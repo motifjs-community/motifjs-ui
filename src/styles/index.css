@@ -1,0 +1,18 @@
+/* The one import an app needs: the design system (reset, fonts, tokens,
+   themes, user preferences, base styles), then this kit's own layer with its
+   component tokens and components. The design system declares
+   `@layer mx.reset, mx.tokens, mx.base;` first, so the `mx.components` layer
+   the files below open comes after them. scripts/build-css.mjs inlines the
+   relative imports into dist/styles.css and keeps the design-system import as
+   it is, for the app's bundler to resolve. */
+@import '@motifx-community/design-system/styles.css';
+@import '../generated/components.css';
+@import './base.css';
+@import '../components/panel/panel.css';
+@import '../components/stack/stack.css';
+@import '../components/grid/grid.css';
+@import '../components/groupbox/groupbox.css';
+@import '../components/splitcontainer/splitcontainer.css';
+@import '../components/label/label.css';
+@import '../components/button/button.css';
+@import '../components/form/form.css';

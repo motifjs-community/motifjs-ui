@@ -1,0 +1,22 @@
+{
+  "groupbox": {
+    "$description": "GroupBox: the titled frame.",
+    "radius": { "$type": "dimension", "$value": "{radius.lg}" },
+    "border": { "$type": "color", "$value": "{color.stroke.surface}" },
+    "padding": { "$type": "dimension", "$value": "{space.4}" },
+    "header": {
+      "inset": { "$type": "dimension", "$value": "{space.3}" },
+      "padding-inline": { "$type": "dimension", "$value": "{space.1}" },
+      "font-weight": { "$type": "fontWeight", "$value": "{font.weight.medium}" }
+    }
+  },
+  "split": {
+    "$description": "SplitContainer: the splitter between its two panels.",
+    "splitter": {
+      "size": { "$type": "dimension", "$value": "{space.1}" },
+      "line": { "$type": "color", "$value": "{color.stroke.divider}" },
+      "hover": { "$type": "color", "$value": "{color.stroke.control.strong}" },
+      "active": { "$type": "color", "$value": "{color.accent.solid}" }
+    }
+  }
+}

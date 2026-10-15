@@ -1,0 +1,323 @@
+/* MxForm and its floating window: a title bar in the bar color with 46px
+   caption buttons, a layered content area and a command area for <footer>. State arrives as data-host, data-window-state,
+   data-active, data-modal, data-minimized-in and data-placed; only tokens.
+   --_mx-z and --_mx-x/y/w/h are written by the component (window order and
+   geometry). */
+@layer mx.components {
+  .mx-form {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+    background: var(--mx-form-body-bg);
+    color: var(--mx-color-fg-primary);
+    font-size: var(--mx-font-size-body);
+    line-height: var(--mx-font-line-body);
+  }
+
+  .mx-form[data-host='embedded'] {
+    background: var(--mx-color-bg-card);
+    border: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+    border-radius: var(--mx-form-radius);
+    overflow: hidden;
+  }
+
+  /* ---- title bar ------------------------------------------------------ */
+
+  .mx-form__titlebar {
+    display: flex;
+    align-items: stretch;
+    gap: var(--mx-form-titlebar-gap);
+    min-block-size: var(--mx-form-titlebar-height);
+    padding-inline-start: var(--mx-form-titlebar-padding-inline);
+    background: var(--mx-form-titlebar-bg);
+    user-select: none;
+  }
+
+  .mx-form[data-host='window'][data-window-state='normal'] > .mx-form__titlebar {
+    touch-action: none;
+  }
+
+  .mx-form__title {
+    flex: 1;
+    align-self: center;
+    min-inline-size: 0;
+    margin: 0;
+    overflow: hidden;
+    font-family: var(--mx-font-family-sans);
+    font-size: var(--mx-form-titlebar-font-size);
+    font-weight: var(--mx-font-weight-regular);
+    line-height: var(--mx-font-line-caption);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Inactive windows dim their title, but only to the secondary
+     text color: tertiary would fail WCAG AA. */
+  .mx-form-window:not([data-active]) .mx-form__title {
+    color: var(--mx-color-fg-secondary);
+  }
+
+  /* ---- caption buttons: glyphs drawn from 1px lines, following currentColor */
+
+  .mx-form__caption {
+    display: flex;
+  }
+
+  .mx-form__caption-button {
+    appearance: none;
+    position: relative;
+    inline-size: var(--mx-form-caption-button-width);
+    min-block-size: var(--mx-form-titlebar-height);
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: var(--mx-color-fg-primary);
+    transition:
+      background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-form__caption-button:hover {
+    background: var(--mx-color-fill-subtle-secondary);
+  }
+
+  .mx-form__caption-button:active {
+    background: var(--mx-color-fill-subtle-tertiary);
+    color: var(--mx-color-fg-secondary);
+  }
+
+  .mx-form__caption-button[data-action='close']:hover,
+  .mx-form__caption-button[data-action='close']:active {
+    background: var(--mx-form-caption-button-close-hover-bg);
+    color: var(--mx-form-caption-button-close-hover-fg);
+  }
+
+  .mx-form-window:not([data-active]) .mx-form__caption-button:not(:hover) {
+    color: var(--mx-color-fg-secondary);
+  }
+
+  .mx-form__caption-button::before,
+  .mx-form__caption-button::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    box-sizing: border-box;
+  }
+
+  .mx-form__caption-button[data-action='minimize']::before {
+    inline-size: var(--mx-form-caption-button-icon);
+    block-size: var(--mx-border-width-1);
+    background: currentColor;
+  }
+
+  .mx-form__caption-button[data-action='maximize']::before {
+    inline-size: var(--mx-form-caption-button-icon);
+    block-size: var(--mx-form-caption-button-icon);
+    border: var(--mx-border-width-1) solid currentColor;
+    border-radius: var(--mx-radius-sm);
+  }
+
+  /* restore: two offset squares */
+  .mx-form__caption-button[data-action='restore']::before,
+  .mx-form__caption-button[data-action='restore']::after {
+    inline-size: calc(var(--mx-form-caption-button-icon) * 0.8);
+    block-size: calc(var(--mx-form-caption-button-icon) * 0.8);
+    border: var(--mx-border-width-1) solid currentColor;
+    border-radius: var(--mx-radius-sm);
+  }
+
+  .mx-form__caption-button[data-action='restore']::before {
+    translate: calc(var(--mx-form-caption-button-icon) * 0.15) calc(var(--mx-form-caption-button-icon) * -0.15);
+  }
+
+  .mx-form__caption-button[data-action='restore']::after {
+    translate: calc(var(--mx-form-caption-button-icon) * -0.15) calc(var(--mx-form-caption-button-icon) * 0.15);
+    background: var(--mx-form-titlebar-bg);
+  }
+
+  .mx-form__caption-button[data-action='restore']:hover::after {
+    background: transparent;
+  }
+
+  .mx-form__caption-button[data-action='close']::before,
+  .mx-form__caption-button[data-action='close']::after {
+    inline-size: calc(var(--mx-form-caption-button-icon) * 1.35);
+    block-size: var(--mx-border-width-1);
+    background: currentColor;
+    rotate: 45deg;
+  }
+
+  .mx-form__caption-button[data-action='close']::after {
+    rotate: -45deg;
+  }
+
+  /* ---- content ------------------------------------------------------ */
+
+  .mx-form__body {
+    flex: 1;
+    min-block-size: 0;
+    padding: var(--mx-form-padding);
+    overflow: auto;
+  }
+
+  .mx-form[data-window-state='minimized'] > .mx-form__body {
+    display: none;
+  }
+
+  /* <footer> in the content: the ContentDialog command area, bleeding to the
+     edges of the content area, buttons trailing with a token gap. */
+  .mx-form__body > footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--mx-control-gap);
+    margin: var(--mx-form-padding) calc(var(--mx-form-padding) * -1) calc(var(--mx-form-padding) * -1);
+    padding: var(--mx-form-padding);
+    background: var(--mx-form-footer-bg);
+    border-block-start: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  }
+
+  .mx-form__body > footer > .mx-button {
+    flex: 0 1 8rem;
+  }
+
+  /* ---- floating window (show / showDialog / x-model) ------------------- */
+
+  /* Centered until the user moves or resizes it; from then on data-placed
+     and the --_mx-x/y/w/h coordinates written by the component apply.
+     Window geometry is physical on purpose: it follows the pointer, in LTR
+     and RTL alike. */
+  .mx-form-window {
+    position: fixed;
+    inset: 0;
+    /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- the window token plus the stack order the component writes */
+    z-index: calc(var(--mx-z-window) + var(--_mx-z, 0));
+    inline-size: min(var(--mx-form-width), calc(100vw - var(--mx-space-8)));
+    block-size: fit-content;
+    min-inline-size: var(--mx-form-min-width);
+    min-block-size: var(--mx-form-min-height);
+    max-inline-size: none;
+    max-block-size: calc(100vh - var(--mx-space-8));
+    margin: auto;
+    padding: 0;
+    overflow: hidden;
+    border: var(--mx-border-width-1) solid var(--mx-form-border);
+    border-radius: var(--mx-form-radius);
+    background: var(--mx-form-body-bg);
+    color: var(--mx-color-fg-primary);
+    box-shadow: var(--mx-form-shadow);
+  }
+
+  .mx-form-window[data-modal] {
+    box-shadow: var(--mx-form-shadow-modal);
+  }
+
+  .mx-form-window[open] {
+    display: flex;
+    flex-direction: column;
+    animation: mx-form-in var(--mx-motion-duration-slow) var(--mx-motion-easing-out);
+  }
+
+  .mx-form-window[data-placed] {
+    inset: 0 auto auto 0;
+    margin: 0;
+    translate: var(--_mx-x) var(--_mx-y);
+    inline-size: var(--_mx-w);
+    block-size: var(--_mx-h);
+    max-block-size: none;
+    animation: none;
+  }
+
+  .mx-form-window > .mx-form {
+    flex: 1;
+    min-block-size: 0;
+  }
+
+  .mx-form-window::backdrop {
+    background: var(--mx-form-backdrop);
+  }
+
+  /* Minimized in place: only the title bar remains. */
+  .mx-form-window[data-window-state='minimized'] {
+    block-size: auto;
+    min-block-size: 0;
+  }
+
+  .mx-form-window[data-window-state='maximized'] {
+    inset: 0;
+    margin: 0;
+    translate: none;
+    inline-size: 100vw;
+    block-size: 100vh;
+    max-block-size: none;
+    border-radius: 0;
+  }
+
+  /* Minimized into a minimize target: a title-bar chip in that area's flow. */
+  .mx-form-window[data-minimized-in] {
+    position: static;
+    display: inline-flex;
+    inset: auto;
+    margin: 0;
+    translate: none;
+    inline-size: var(--mx-form-minimized-width);
+    min-inline-size: 0;
+    block-size: auto;
+    min-block-size: 0;
+    z-index: auto;
+    box-shadow: var(--mx-form-shadow-minimized);
+    animation: none;
+  }
+
+  /* ---- resize handles (physical edges, see above) ------------------------ */
+
+  .mx-form-window__resize {
+    position: absolute;
+    /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- above the content inside the window only */
+    z-index: 1;
+    touch-action: none;
+  }
+
+  .mx-form-window__resize[data-edge='n'],
+  .mx-form-window__resize[data-edge='s'] {
+    left: var(--mx-form-resize-handle);
+    right: var(--mx-form-resize-handle);
+    height: var(--mx-form-resize-handle);
+    cursor: ns-resize;
+  }
+
+  .mx-form-window__resize[data-edge='e'],
+  .mx-form-window__resize[data-edge='w'] {
+    top: var(--mx-form-resize-handle);
+    bottom: var(--mx-form-resize-handle);
+    width: var(--mx-form-resize-handle);
+    cursor: ew-resize;
+  }
+
+  .mx-form-window__resize[data-edge='n'] { top: 0; }
+  .mx-form-window__resize[data-edge='s'] { bottom: 0; }
+  .mx-form-window__resize[data-edge='e'] { right: 0; }
+  .mx-form-window__resize[data-edge='w'] { left: 0; }
+
+  .mx-form-window__resize[data-edge='ne'],
+  .mx-form-window__resize[data-edge='nw'],
+  .mx-form-window__resize[data-edge='se'],
+  .mx-form-window__resize[data-edge='sw'] {
+    width: var(--mx-form-resize-handle);
+    height: var(--mx-form-resize-handle);
+  }
+
+  .mx-form-window__resize[data-edge='ne'] { top: 0; right: 0; cursor: nesw-resize; }
+  .mx-form-window__resize[data-edge='sw'] { bottom: 0; left: 0; cursor: nesw-resize; }
+  .mx-form-window__resize[data-edge='nw'] { top: 0; left: 0; cursor: nwse-resize; }
+  .mx-form-window__resize[data-edge='se'] { bottom: 0; right: 0; cursor: nwse-resize; }
+
+  /* Entrance: a slight scale-down into place. */
+  @keyframes mx-form-in {
+    from {
+      opacity: 0;
+      transform: scale(1.05);
+    }
+  }
+}

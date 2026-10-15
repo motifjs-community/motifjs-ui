@@ -1,0 +1,30 @@
+/* Panel and the docking every Panel-like container does (Panel, GroupBox
+   content, SplitContainer panels). The dock layout is a CSS grid written by
+   src/core/dock.ts: the host gets data-mx-docking and its template, each
+   docked child its area; floating children are positioned absolutely. */
+@layer mx.components {
+  .mx-panel,
+  .mx-split__panel {
+    position: relative;
+    box-sizing: border-box;
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  .mx-panel[data-scrollable] {
+    overflow: auto;
+  }
+
+  [data-mx-docking] {
+    display: grid;
+  }
+
+  [data-mx-docking] > * {
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  [data-dock='float'] {
+    position: absolute;
+  }
+}

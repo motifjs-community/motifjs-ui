@@ -1,0 +1,338 @@
+/* Docs chrome. Everything is drawn from the same tokens the package ships —
+   the docs are the first consumer of the theme system. */
+
+.docs-header {
+  position: sticky;
+  inset-block-start: 0;
+  background: var(--mx-color-bg-surface);
+  border-block-end: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  z-index: var(--mx-z-sticky);
+}
+
+.docs-header__inner {
+  max-inline-size: 70rem;
+  margin-inline: auto;
+  padding: var(--mx-space-3) var(--mx-space-5);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mx-space-3);
+}
+
+.docs-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--mx-space-4);
+}
+
+.docs-brand {
+  font-family: var(--mx-font-family-mono);
+  font-size: var(--mx-font-size-body);
+  color: var(--mx-color-fg-secondary);
+  margin-inline-end: var(--mx-space-2);
+}
+
+.docs-nav a {
+  color: var(--mx-color-fg-secondary);
+  text-decoration: none;
+  font-size: var(--mx-font-size-body);
+  font-weight: var(--mx-font-weight-semibold);
+}
+
+.docs-nav a:hover {
+  color: var(--mx-color-fg-primary);
+}
+
+.docs-nav a[aria-current='page'] {
+  color: var(--mx-color-accent-fg);
+}
+
+.docs-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--mx-space-2);
+}
+
+.docs-group {
+  display: inline-flex;
+  gap: var(--mx-space-1);
+  padding: var(--mx-space-1);
+  background: var(--mx-color-bg-layer);
+  border-radius: var(--mx-radius-lg);
+}
+
+main.docs-main {
+  max-inline-size: 70rem;
+  margin-inline: auto;
+  padding: var(--mx-space-8) var(--mx-space-5) var(--mx-space-16);
+}
+
+.docs-main h1 {
+  font-size: var(--mx-font-size-title);
+  line-height: var(--mx-font-line-title);
+  margin-block: 0 var(--mx-space-3);
+}
+
+.docs-main h2 {
+  font-size: var(--mx-font-size-subtitle);
+  margin-block: var(--mx-space-10) var(--mx-space-3);
+}
+
+.docs-main h3 {
+  font-size: var(--mx-font-size-subtitle);
+  margin-block: var(--mx-space-6) var(--mx-space-2);
+}
+
+.docs-main p.lead {
+  font-size: var(--mx-font-size-subtitle);
+  color: var(--mx-color-fg-secondary);
+  max-inline-size: 48rem;
+  margin-block: 0 var(--mx-space-6);
+}
+
+.docs-main pre {
+  background: var(--mx-color-bg-layer);
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  border-radius: var(--mx-radius-lg);
+  padding: var(--mx-space-4);
+  overflow-x: auto;
+  direction: ltr; /* code reads left to right in RTL pages too */
+  text-align: left;
+  font-family: var(--mx-font-family-mono);
+  font-size: var(--mx-font-size-body);
+  line-height: var(--mx-font-line-body);
+}
+
+.docs-main code {
+  font-family: var(--mx-font-family-mono);
+  font-size: var(--mx-font-size-body);
+}
+
+.docs-main p > code,
+.docs-main li > code,
+.docs-main td > code {
+  background: var(--mx-color-bg-layer);
+  border-radius: var(--mx-radius-sm);
+  padding-inline: var(--mx-space-1);
+}
+
+/* Demo surfaces: a card per example, so the canvas/surface split is visible. */
+.demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mx-space-3);
+  padding: var(--mx-space-5);
+  background: var(--mx-color-bg-surface);
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  border-radius: var(--mx-radius-lg);
+  margin-block: var(--mx-space-3);
+}
+
+.demo--grid {
+  display: grid;
+  grid-template-columns: max-content repeat(3, max-content);
+  align-items: center;
+  column-gap: var(--mx-space-4);
+  row-gap: var(--mx-space-3);
+}
+
+.demo--grid .demo__label {
+  font-size: var(--mx-font-size-caption);
+  color: var(--mx-color-fg-secondary);
+}
+
+/* Token tables. */
+.token-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--mx-font-size-body);
+  margin-block: var(--mx-space-4);
+}
+
+.token-table th,
+.token-table td {
+  text-align: start;
+  padding: var(--mx-space-2) var(--mx-space-3);
+  border-block-end: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  vertical-align: top;
+}
+
+.token-table th {
+  color: var(--mx-color-fg-secondary);
+  font-weight: var(--mx-font-weight-semibold);
+}
+
+.token-table code {
+  white-space: nowrap;
+}
+
+.swatch {
+  display: inline-block;
+  inline-size: var(--mx-space-4);
+  block-size: var(--mx-space-4);
+  border-radius: var(--mx-radius-sm);
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  vertical-align: text-bottom;
+  margin-inline-end: var(--mx-space-2);
+}
+
+.value-cell {
+  white-space: nowrap;
+}
+
+ul.docs-list {
+  padding-inline-start: var(--mx-space-5);
+  line-height: var(--mx-font-line-body);
+}
+
+.docs-main a {
+  color: var(--mx-color-accent-fg);
+}
+
+/* Unlayered, so it would beat the package's disabled look: hand it back. */
+.docs-main a[aria-disabled='true'] {
+  color: var(--mx-color-fg-disabled);
+}
+
+/* MxForm page: the minimize target and the clickable row. */
+.docs-taskbar {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mx-space-2);
+  min-block-size: var(--mx-control-height-md);
+  margin-block-start: var(--mx-space-3);
+  padding: var(--mx-space-2);
+  border: var(--mx-border-width-1) dashed var(--mx-color-stroke-control-strong);
+  border-radius: var(--mx-radius-md);
+}
+
+.docs-row {
+  cursor: pointer;
+}
+
+/* Reference pages: API tables, on-page contents, callouts. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.api-table td:first-child {
+  white-space: nowrap;
+}
+
+.api-table td {
+  line-height: var(--mx-font-line-body);
+}
+
+.docs-toc {
+  margin-block: var(--mx-space-4) var(--mx-space-6);
+  padding: var(--mx-space-3) var(--mx-space-4);
+  background: var(--mx-color-bg-card);
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  border-radius: var(--mx-radius-lg);
+}
+
+.docs-toc__title {
+  font-size: var(--mx-font-size-caption);
+  color: var(--mx-color-fg-secondary);
+}
+
+.docs-toc ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mx-space-1) var(--mx-space-4);
+  margin: var(--mx-space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.docs-note {
+  margin-block: var(--mx-space-3);
+  padding: var(--mx-space-3) var(--mx-space-4);
+  background: var(--mx-color-accent-subtle);
+  border-inline-start: var(--mx-border-width-2) solid var(--mx-color-accent-fg);
+  border-radius: var(--mx-radius-md);
+}
+
+.docs-main h2[id] {
+  scroll-margin-block-start: var(--mx-space-16);
+}
+
+/* Control page: a wrapping row of demo controls, and a card-like panel. */
+.docs-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mx-space-3);
+}
+
+.docs-panel {
+  padding: var(--mx-space-4);
+  background: var(--mx-color-bg-card);
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  border-radius: var(--mx-radius-lg);
+}
+
+.docs-panel[data-disabled] {
+  color: var(--mx-color-fg-disabled);
+}
+
+.demo--stack {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Layout pages: regions made visible, and a fixed-height stage to lay out in. */
+.docs-box {
+  box-sizing: border-box;
+  padding: var(--mx-space-2) var(--mx-space-3);
+  background: var(--mx-color-bg-card);
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-surface);
+  border-radius: var(--mx-radius-md);
+}
+
+.docs-stage {
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: 16rem;
+  background: var(--mx-color-bg-layer);
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  border-radius: var(--mx-radius-lg);
+  overflow: hidden;
+}
+
+.docs-stage--tall {
+  block-size: 22rem;
+}
+
+/* Label page */
+.label-form {
+  align-items: center;
+}
+
+.fruit-list {
+  padding: var(--mx-space-1);
+}
+
+.fruit-list [aria-selected='true'] {
+  font-weight: var(--mx-font-weight-semibold);
+}
+
+.trim-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-2);
+  inline-size: 22rem;
+  max-inline-size: 100%;
+  min-inline-size: 6rem;
+  overflow: hidden;
+  resize: horizontal;
+}
+
+.type-ramp {
+  overflow: hidden;
+}

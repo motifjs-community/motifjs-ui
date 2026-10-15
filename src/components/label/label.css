@@ -1,0 +1,107 @@
+/* Label: a <label> that inherits font and color from where it sits unless
+   a step of the type ramp or a tone is chosen.
+   Everything is data-* attributes; only the max-lines count is inline. */
+@layer mx.components {
+  .mx-label {
+    display: inline-block;
+    box-sizing: border-box;
+    max-inline-size: 100%;
+    overflow-wrap: break-word;
+  }
+
+  /* The type ramp (the design system's font.size / font.line steps) */
+  .mx-label[data-text-style='caption'] {
+    font-size: var(--mx-font-size-caption);
+    line-height: var(--mx-font-line-caption);
+    font-weight: var(--mx-font-weight-regular);
+  }
+
+  .mx-label:is([data-text-style='body'], [data-text-style='bodyStrong']) {
+    font-size: var(--mx-font-size-body);
+    line-height: var(--mx-font-line-body);
+    font-weight: var(--mx-font-weight-regular);
+  }
+
+  .mx-label[data-text-style='bodyStrong'] {
+    font-weight: var(--mx-font-weight-semibold);
+  }
+
+  .mx-label[data-text-style='bodyLarge'] {
+    font-size: var(--mx-font-size-body-large);
+    line-height: var(--mx-font-line-body-large);
+    font-weight: var(--mx-font-weight-regular);
+  }
+
+  .mx-label[data-text-style='subtitle'] {
+    font-size: var(--mx-font-size-subtitle);
+    line-height: var(--mx-font-line-subtitle);
+    font-weight: var(--mx-font-weight-semibold);
+  }
+
+  .mx-label:is([data-text-style='title'], [data-text-style='titleLarge'], [data-text-style='display']) {
+    font-family: var(--mx-font-family-display);
+    font-weight: var(--mx-font-weight-semibold);
+  }
+
+  .mx-label[data-text-style='title'] {
+    font-size: var(--mx-font-size-title);
+    line-height: var(--mx-font-line-title);
+  }
+
+  .mx-label[data-text-style='titleLarge'] {
+    font-size: var(--mx-font-size-title-large);
+    line-height: var(--mx-font-line-title-large);
+  }
+
+  .mx-label[data-text-style='display'] {
+    font-size: var(--mx-font-size-display);
+    line-height: var(--mx-font-line-display);
+  }
+
+  /* Tones */
+  .mx-label[data-tone='primary'] { color: var(--mx-color-fg-primary); }
+  .mx-label[data-tone='secondary'] { color: var(--mx-color-fg-secondary); }
+  .mx-label[data-tone='accent'] { color: var(--mx-color-accent-fg); }
+  .mx-label[data-tone='danger'] { color: var(--mx-color-danger-fg); }
+  .mx-label[data-tone='success'] { color: var(--mx-color-success-fg); }
+  .mx-label[data-tone='caution'] { color: var(--mx-color-caution-fg); }
+
+  /* Alignment: horizontal in reading direction; vertical inside a taller box. */
+  .mx-label[data-text-align='start'] { text-align: start; }
+  .mx-label[data-text-align='center'] { text-align: center; }
+  .mx-label[data-text-align='end'] { text-align: end; }
+  .mx-label[data-text-align='justify'] { text-align: justify; }
+  .mx-label[data-vertical-align='top'] { align-content: start; }
+  .mx-label[data-vertical-align='center'] { align-content: center; }
+  .mx-label[data-vertical-align='bottom'] { align-content: end; }
+
+  /* Cut text. min-inline-size lets a label in a flex row shrink so it can be cut. */
+  .mx-label[data-ellipsis] {
+    min-inline-size: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .mx-label[data-max-lines] {
+    display: -webkit-box;
+    min-inline-size: 0;
+    overflow: hidden;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--_mx-lines);
+    line-clamp: var(--_mx-lines);
+  }
+
+  .mx-label[data-disabled] {
+    color: var(--mx-color-fg-disabled);
+  }
+
+  /* Inside a disabled control the label dims too, but not inside
+     a window opened there: windows do not inherit enabled. */
+  @scope ([data-disabled]) to (dialog) {
+    .mx-label {
+      color: var(--mx-color-fg-disabled);
+    }
+  }
+}

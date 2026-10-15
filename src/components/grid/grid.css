@@ -1,0 +1,9 @@
+/* Grid: a CSS grid; the templates, gaps and padding are inline (written from
+   the track lists), children place themselves with row/column. */
+@layer mx.components {
+  .mx-grid {
+    display: grid;
+    box-sizing: border-box;
+    min-inline-size: 0;
+  }
+}

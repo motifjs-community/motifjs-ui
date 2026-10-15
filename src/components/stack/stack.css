@@ -1,0 +1,32 @@
+/* Stack: one flex line. Direction, alignment and wrapping come as data-*
+   attributes; gap and padding are inline (token steps or free values). */
+@layer mx.components {
+  .mx-stack {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    min-inline-size: 0;
+  }
+
+  .mx-stack[data-orientation='horizontal'] {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .mx-stack[data-align='start'] { align-items: flex-start; }
+  .mx-stack[data-align='center'] { align-items: center; }
+  .mx-stack[data-align='end'] { align-items: flex-end; }
+  .mx-stack[data-align='stretch'] { align-items: stretch; }
+  .mx-stack[data-align='baseline'] { align-items: baseline; }
+
+  .mx-stack[data-justify='start'] { justify-content: flex-start; }
+  .mx-stack[data-justify='center'] { justify-content: center; }
+  .mx-stack[data-justify='end'] { justify-content: flex-end; }
+  .mx-stack[data-justify='space-between'] { justify-content: space-between; }
+  .mx-stack[data-justify='space-around'] { justify-content: space-around; }
+  .mx-stack[data-justify='space-evenly'] { justify-content: space-evenly; }
+
+  .mx-stack[data-wrap] {
+    flex-wrap: wrap;
+  }
+}

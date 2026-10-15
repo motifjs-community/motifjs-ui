@@ -1,0 +1,36 @@
+/* GroupBox: a <fieldset> frame with its <legend> caption on the border line;
+   the fieldset itself holds the content (and docks it, like a Panel). The
+   legend sits inside the start padding, so it is moved back by that padding:
+   --_mx-pad-left/right are written by the component when `padding` is set. */
+@layer mx.components {
+  .mx-groupbox {
+    --_mx-pad-left-or-default: var(--_mx-pad-left, var(--mx-groupbox-padding));
+    --_mx-pad-right-or-default: var(--_mx-pad-right, var(--mx-groupbox-padding));
+    position: relative;
+    box-sizing: border-box;
+    min-inline-size: 0;
+    margin: 0;
+    padding: var(--mx-groupbox-padding);
+    border: var(--mx-border-width-1) solid var(--mx-groupbox-border);
+    border-radius: var(--mx-groupbox-radius);
+    color: var(--mx-color-fg-primary);
+  }
+
+  .mx-groupbox[data-scrollable] {
+    overflow: auto;
+  }
+
+  .mx-groupbox > .mx-groupbox__header {
+    margin-inline-start: calc(var(--mx-groupbox-header-inset) - var(--_mx-pad-left-or-default));
+    padding-inline: var(--mx-groupbox-header-padding-inline);
+    font-weight: var(--mx-groupbox-header-font-weight);
+  }
+
+  .mx-groupbox:dir(rtl) > .mx-groupbox__header {
+    margin-inline-start: calc(var(--mx-groupbox-header-inset) - var(--_mx-pad-right-or-default));
+  }
+
+  .mx-groupbox[data-disabled] > .mx-groupbox__header {
+    color: var(--mx-color-fg-disabled);
+  }
+}

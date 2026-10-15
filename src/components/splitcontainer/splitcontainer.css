@@ -1,0 +1,75 @@
+/* SplitContainer: a three-track grid (first panel, splitter, second panel)
+   whose template the component writes inline; `horizontal` puts the panels
+   side by side, `vertical` one above the other. The splitter is a thin
+   divider line with a wider hit area that darkens on hover and takes the
+   accent while dragged. Tokens only. */
+@layer mx.components {
+  .mx-split {
+    --_mx-splitter-size: var(--_mx-splitter, var(--mx-split-splitter-size));
+    display: grid;
+    box-sizing: border-box;
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  .mx-split[data-orientation='horizontal'] {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .mx-split[data-orientation='vertical'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Fixed tracks, so a collapsed (hidden) part never shifts the others. */
+  .mx-split[data-orientation='horizontal'] > [data-part='first'] { grid-area: 1 / 1; }
+  .mx-split[data-orientation='horizontal'] > .mx-split__splitter { grid-area: 1 / 2; }
+  .mx-split[data-orientation='horizontal'] > [data-part='second'] { grid-area: 1 / 3; }
+  .mx-split[data-orientation='vertical'] > [data-part='first'] { grid-area: 1 / 1; }
+  .mx-split[data-orientation='vertical'] > .mx-split__splitter { grid-area: 2 / 1; }
+  .mx-split[data-orientation='vertical'] > [data-part='second'] { grid-area: 3 / 1; }
+
+  .mx-split__panel {
+    overflow: hidden;
+  }
+
+  .mx-split__panel[data-scrollable] {
+    overflow: auto;
+  }
+
+  .mx-split__splitter {
+    position: relative;
+    touch-action: none;
+  }
+
+  .mx-split[data-orientation='horizontal'] > .mx-split__splitter:not([data-fixed]) { cursor: col-resize; }
+  .mx-split[data-orientation='vertical'] > .mx-split__splitter:not([data-fixed]) { cursor: row-resize; }
+
+  .mx-split__splitter::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    background: var(--mx-split-splitter-line);
+    transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-split[data-orientation='horizontal'] > .mx-split__splitter::before {
+    inline-size: var(--mx-border-width-1);
+  }
+
+  .mx-split[data-orientation='vertical'] > .mx-split__splitter::before {
+    block-size: var(--mx-border-width-1);
+  }
+
+  .mx-split__splitter:not([data-fixed]):hover::before {
+    background: var(--mx-split-splitter-hover);
+  }
+
+  .mx-split[data-dragging] > .mx-split__splitter::before {
+    background: var(--mx-split-splitter-active);
+  }
+
+  .mx-split[data-dragging] {
+    user-select: none;
+  }
+}

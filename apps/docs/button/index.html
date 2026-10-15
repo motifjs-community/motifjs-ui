@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Button · @motifx-community/ui docs</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <script>
+      // Restore theme/density before first paint to avoid a flash.
+      try {
+        var t = localStorage.getItem('mx-docs-theme');
+        if (t) document.documentElement.dataset.theme = t;
+        var d = localStorage.getItem('mx-docs-density');
+        if (d) document.documentElement.dataset.density = d;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

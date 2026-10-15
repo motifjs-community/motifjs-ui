@@ -1,0 +1,338 @@
+[
+  {
+    "name": "button.radius",
+    "cssVar": "--mx-button-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "button.border-width",
+    "cssVar": "--mx-button-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "button.edge-width",
+    "cssVar": "--mx-button-edge-width",
+    "type": "dimension",
+    "ref": "control.edge.width",
+    "value": "2px"
+  },
+  {
+    "name": "button.press-offset",
+    "cssVar": "--mx-button-press-offset",
+    "type": "dimension",
+    "ref": "control.press.offset",
+    "value": "1px"
+  },
+  {
+    "name": "button.font-weight",
+    "cssVar": "--mx-button-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.medium",
+    "value": "500"
+  },
+  {
+    "name": "button.gap",
+    "cssVar": "--mx-button-gap",
+    "type": "dimension",
+    "ref": "control.gap",
+    "value": "0.5rem"
+  },
+  {
+    "name": "button.font-size.sm",
+    "cssVar": "--mx-button-font-size-sm",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "button.font-size.md",
+    "cssVar": "--mx-button-font-size-md",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
+    "name": "button.font-size.lg",
+    "cssVar": "--mx-button-font-size-lg",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
+    "name": "button.height.sm",
+    "cssVar": "--mx-button-height-sm",
+    "type": "dimension",
+    "ref": "control.height.sm",
+    "value": "1.5rem"
+  },
+  {
+    "name": "button.height.md",
+    "cssVar": "--mx-button-height-md",
+    "type": "dimension",
+    "ref": "control.height.md",
+    "value": "2rem"
+  },
+  {
+    "name": "button.height.lg",
+    "cssVar": "--mx-button-height-lg",
+    "type": "dimension",
+    "ref": "control.height.lg",
+    "value": "2.5rem"
+  },
+  {
+    "name": "button.padding.sm",
+    "cssVar": "--mx-button-padding-sm",
+    "type": "dimension",
+    "ref": "control.padding.sm",
+    "value": "0.5rem"
+  },
+  {
+    "name": "button.padding.md",
+    "cssVar": "--mx-button-padding-md",
+    "type": "dimension",
+    "ref": "control.padding.md",
+    "value": "0.6875rem"
+  },
+  {
+    "name": "button.padding.lg",
+    "cssVar": "--mx-button-padding-lg",
+    "type": "dimension",
+    "ref": "control.padding.lg",
+    "value": "1rem"
+  },
+  {
+    "name": "form.radius",
+    "cssVar": "--mx-form-radius",
+    "type": "dimension",
+    "ref": "radius.lg",
+    "value": "0.625rem"
+  },
+  {
+    "name": "form.padding",
+    "cssVar": "--mx-form-padding",
+    "type": "dimension",
+    "ref": "space.6",
+    "value": "1.5rem"
+  },
+  {
+    "name": "form.width",
+    "cssVar": "--mx-form-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "34rem"
+  },
+  {
+    "name": "form.min-width",
+    "cssVar": "--mx-form-min-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "20rem"
+  },
+  {
+    "name": "form.min-height",
+    "cssVar": "--mx-form-min-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "8rem"
+  },
+  {
+    "name": "form.minimized-width",
+    "cssVar": "--mx-form-minimized-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "14rem"
+  },
+  {
+    "name": "form.resize-handle",
+    "cssVar": "--mx-form-resize-handle",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "form.border",
+    "cssVar": "--mx-form-border",
+    "type": "color",
+    "ref": "color.stroke.surface",
+    "value": "rgb(117 117 117 / 0.4)"
+  },
+  {
+    "name": "form.shadow",
+    "cssVar": "--mx-form-shadow",
+    "type": "shadow",
+    "ref": "shadow.28",
+    "value": "0px 14px 28px 0px rgb(0 0 0 / 0.24), 0px 0px 8px 0px rgb(0 0 0 / 0.2)"
+  },
+  {
+    "name": "form.shadow-modal",
+    "cssVar": "--mx-form-shadow-modal",
+    "type": "shadow",
+    "ref": "shadow.64",
+    "value": "0px 32px 64px 0px rgb(0 0 0 / 0.24), 0px 0px 8px 0px rgb(0 0 0 / 0.2)"
+  },
+  {
+    "name": "form.shadow-minimized",
+    "cssVar": "--mx-form-shadow-minimized",
+    "type": "shadow",
+    "ref": "shadow.4",
+    "value": "0px 2px 4px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "form.backdrop",
+    "cssVar": "--mx-form-backdrop",
+    "type": "color",
+    "ref": "color.bg.smoke",
+    "value": "rgb(0 0 0 / 0.3)"
+  },
+  {
+    "name": "form.body-bg",
+    "cssVar": "--mx-form-body-bg",
+    "type": "color",
+    "ref": "color.bg.surface",
+    "value": "#f8f7f3"
+  },
+  {
+    "name": "form.footer-bg",
+    "cssVar": "--mx-form-footer-bg",
+    "type": "color",
+    "ref": "color.bg.layer",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "form.titlebar.bg",
+    "cssVar": "--mx-form-titlebar-bg",
+    "type": "color",
+    "ref": "color.bg.bar",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "form.titlebar.height",
+    "cssVar": "--mx-form-titlebar-height",
+    "type": "dimension",
+    "ref": "bar.height",
+    "value": "2.25rem"
+  },
+  {
+    "name": "form.titlebar.gap",
+    "cssVar": "--mx-form-titlebar-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "form.titlebar.padding-inline",
+    "cssVar": "--mx-form-titlebar-padding-inline",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "form.titlebar.font-size",
+    "cssVar": "--mx-form-titlebar-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "form.caption-button.width",
+    "cssVar": "--mx-form-caption-button-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "2.875rem"
+  },
+  {
+    "name": "form.caption-button.icon",
+    "cssVar": "--mx-form-caption-button-icon",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.625rem"
+  },
+  {
+    "name": "form.caption-button.close-hover-bg",
+    "cssVar": "--mx-form-caption-button-close-hover-bg",
+    "type": "color",
+    "ref": "color.danger.solid",
+    "value": "#b3261a"
+  },
+  {
+    "name": "form.caption-button.close-hover-fg",
+    "cssVar": "--mx-form-caption-button-close-hover-fg",
+    "type": "color",
+    "ref": "color.danger.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "groupbox.radius",
+    "cssVar": "--mx-groupbox-radius",
+    "type": "dimension",
+    "ref": "radius.lg",
+    "value": "0.625rem"
+  },
+  {
+    "name": "groupbox.border",
+    "cssVar": "--mx-groupbox-border",
+    "type": "color",
+    "ref": "color.stroke.surface",
+    "value": "rgb(117 117 117 / 0.4)"
+  },
+  {
+    "name": "groupbox.padding",
+    "cssVar": "--mx-groupbox-padding",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "groupbox.header.inset",
+    "cssVar": "--mx-groupbox-header-inset",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "groupbox.header.padding-inline",
+    "cssVar": "--mx-groupbox-header-padding-inline",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "groupbox.header.font-weight",
+    "cssVar": "--mx-groupbox-header-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.medium",
+    "value": "500"
+  },
+  {
+    "name": "split.splitter.size",
+    "cssVar": "--mx-split-splitter-size",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "split.splitter.line",
+    "cssVar": "--mx-split-splitter-line",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "split.splitter.hover",
+    "cssVar": "--mx-split-splitter-hover",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "split.splitter.active",
+    "cssVar": "--mx-split-splitter-active",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  }
+]

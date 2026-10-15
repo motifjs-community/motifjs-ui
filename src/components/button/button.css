@@ -1,0 +1,173 @@
+/* Button. Styling binds to data-variant / data-size / data-tone and tokens
+   only. The tone picks the palette (private --_… properties), the variant
+   applies it:
+   - solid + neutral  → the standard button: control fill, visible bottom edge
+   - solid + accent   → the accent button; solid + danger the same in the danger color
+   - outline          → transparent with a strong stroke
+   - ghost            → fill only on hover/press
+   Solid buttons are pressable the way the design system describes: an opaque
+   fill, a bottom edge (button.edge-width, color.stroke.control.edge), an inner
+   top highlight (color.highlight.control) and a press offset on :active. */
+@layer mx.components {
+  .mx-button {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--mx-button-gap);
+    border: var(--mx-button-border-width) solid transparent;
+    border-radius: var(--mx-button-radius);
+    font-family: inherit;
+    font-weight: var(--mx-button-font-weight);
+    line-height: var(--mx-font-line-body);
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: default;
+    user-select: none;
+    transition:
+      background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      translate var(--mx-motion-duration-instant) var(--mx-motion-easing-standard);
+  }
+
+  .mx-button[data-size='sm'] {
+    min-block-size: var(--mx-button-height-sm);
+    line-height: var(--mx-font-line-caption);
+    padding-inline: var(--mx-button-padding-sm);
+    font-size: var(--mx-button-font-size-sm);
+  }
+
+  .mx-button[data-size='md'] {
+    min-block-size: var(--mx-button-height-md);
+    padding-inline: var(--mx-button-padding-md);
+    font-size: var(--mx-button-font-size-md);
+  }
+
+  .mx-button[data-size='lg'] {
+    min-block-size: var(--mx-button-height-lg);
+    padding-inline: var(--mx-button-padding-lg);
+    font-size: var(--mx-button-font-size-lg);
+  }
+
+  /* ---- tones ---------------------------------------------------------- */
+
+  .mx-button[data-tone='neutral'] {
+    --_fg: var(--mx-color-fg-primary);
+  }
+
+  .mx-button[data-tone='accent'] {
+    --_solid: var(--mx-color-accent-solid);
+    --_solid-hover: var(--mx-color-accent-solid-hover);
+    --_solid-pressed: var(--mx-color-accent-solid-pressed);
+    --_on-solid: var(--mx-color-accent-on-solid);
+    --_fg: var(--mx-color-accent-fg);
+  }
+
+  .mx-button[data-tone='danger'] {
+    --_solid: var(--mx-color-danger-solid);
+    --_solid-hover: var(--mx-color-danger-solid-hover);
+    --_solid-pressed: var(--mx-color-danger-solid-hover);
+    --_on-solid: var(--mx-color-danger-on-solid);
+    --_fg: var(--mx-color-danger-fg);
+  }
+
+  /* ---- solid: the pressable shape every tone shares ---------------------- */
+
+  .mx-button[data-variant='solid'] {
+    border-block-end-width: var(--mx-button-edge-width);
+    box-shadow: inset 0 var(--mx-button-border-width) 0 var(--mx-color-highlight-control);
+  }
+
+  .mx-button[data-variant='solid']:active:not(:disabled) {
+    translate: 0 var(--mx-button-press-offset);
+    box-shadow: none;
+  }
+
+  /* The focus ring's inner ring is a box-shadow too: keep both. */
+  .mx-button[data-variant='solid']:focus-visible {
+    box-shadow:
+      0 0 0 var(--mx-focus-ring-offset) var(--mx-focus-ring-inner),
+      inset 0 var(--mx-button-border-width) 0 var(--mx-color-highlight-control);
+  }
+
+  /* ---- solid: standard (neutral) ---------------------------------------- */
+
+  .mx-button[data-variant='solid'][data-tone='neutral'] {
+    background: var(--mx-color-fill-control-default);
+    border-color: var(--mx-color-stroke-control-default);
+    border-block-end-color: var(--mx-color-stroke-control-edge);
+    color: var(--mx-color-fg-primary);
+  }
+
+  .mx-button[data-variant='solid'][data-tone='neutral']:hover:not(:disabled) {
+    background: var(--mx-color-fill-control-secondary);
+  }
+
+  .mx-button[data-variant='solid'][data-tone='neutral']:active:not(:disabled) {
+    background: var(--mx-color-fill-control-tertiary);
+    border-block-end-color: var(--mx-color-stroke-control-default);
+  }
+
+  /* ---- solid: accent / danger ------------------------------------------- */
+
+  .mx-button[data-variant='solid']:not([data-tone='neutral']) {
+    background: var(--_solid);
+    border-block-end-color: var(--mx-color-stroke-on-accent-bottom);
+    color: var(--_on-solid);
+  }
+
+  .mx-button[data-variant='solid']:not([data-tone='neutral']):hover:not(:disabled) {
+    background: var(--_solid-hover);
+  }
+
+  .mx-button[data-variant='solid']:not([data-tone='neutral']):active:not(:disabled) {
+    background: var(--_solid-pressed);
+    border-block-end-color: transparent;
+  }
+
+  /* ---- outline and ghost ------------------------------------------------ */
+
+  .mx-button[data-variant='outline'] {
+    background: transparent;
+    border-color: var(--mx-color-stroke-control-strong);
+    color: var(--_fg);
+  }
+
+  .mx-button[data-variant='ghost'] {
+    background: transparent;
+    color: var(--_fg);
+  }
+
+  .mx-button:is([data-variant='outline'], [data-variant='ghost']):hover:not(:disabled) {
+    background: var(--mx-color-fill-subtle-secondary);
+  }
+
+  .mx-button:is([data-variant='outline'], [data-variant='ghost']):active:not(:disabled) {
+    background: var(--mx-color-fill-subtle-tertiary);
+  }
+
+  /* ---- disabled: flat, no edge, no highlight ---------------------------- */
+
+  .mx-button:is(:disabled, [data-disabled]) {
+    color: var(--mx-color-fg-disabled);
+    box-shadow: none;
+  }
+
+  /* The standard look sets its color with a more specific selector: repeat it here. */
+  .mx-button[data-variant='solid'][data-tone='neutral']:is(:disabled, [data-disabled]) {
+    background: var(--mx-color-fill-control-disabled);
+    border-color: var(--mx-color-stroke-control-default);
+    color: var(--mx-color-fg-disabled);
+  }
+
+  .mx-button[data-variant='solid']:not([data-tone='neutral']):is(:disabled, [data-disabled]) {
+    background: var(--mx-color-fill-accent-disabled);
+    border-color: transparent;
+    color: var(--mx-color-fg-on-accent-disabled);
+  }
+
+  .mx-button[data-variant='outline']:is(:disabled, [data-disabled]) {
+    border-color: var(--mx-color-stroke-control-default);
+  }
+}

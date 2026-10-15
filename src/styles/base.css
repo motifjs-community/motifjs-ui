@@ -1,0 +1,22 @@
+/* Rules of the kit that belong to no single component. The reset, the
+   typography ramp, the focus ring and the user-preference overrides come
+   from the design system; this file only adds what the controls need. */
+@layer mx.components {
+  /* Elements a disabled Control covers without a native `disabled` (links,
+     [tabindex], …) get aria-disabled; they look disabled like the rest. */
+  [data-disabled] [aria-disabled='true'],
+  [data-disabled][aria-disabled='true'] {
+    color: var(--mx-color-fg-disabled);
+    cursor: default;
+  }
+
+  /* Access keys (`&Save`): underlined while Alt is held, like Windows, or
+     always with data-mx-access-keys="always" on <html>. */
+  .mx-access-key {
+    text-decoration: none;
+  }
+
+  :root:is([data-mx-alt], [data-mx-access-keys='always']) .mx-access-key {
+    text-decoration: underline;
+  }
+}

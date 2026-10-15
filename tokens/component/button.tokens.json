@@ -1,0 +1,29 @@
+{
+  "button": {
+    "$description": "Button: the pressable look, sized by the density tokens.",
+    "radius": { "$type": "dimension", "$value": "{radius.md}" },
+    "border-width": { "$type": "dimension", "$value": "{border.width.1}" },
+    "edge-width": { "$type": "dimension", "$value": "{control.edge.width}" },
+    "press-offset": { "$type": "dimension", "$value": "{control.press.offset}" },
+    "font-weight": { "$type": "fontWeight", "$value": "{font.weight.medium}" },
+    "gap": { "$type": "dimension", "$value": "{control.gap}" },
+    "font-size": {
+      "$type": "dimension",
+      "sm": { "$value": "{font.size.caption}" },
+      "md": { "$value": "{font.size.body}" },
+      "lg": { "$value": "{font.size.body}" }
+    },
+    "height": {
+      "$type": "dimension",
+      "sm": { "$value": "{control.height.sm}" },
+      "md": { "$value": "{control.height.md}" },
+      "lg": { "$value": "{control.height.lg}" }
+    },
+    "padding": {
+      "$type": "dimension",
+      "sm": { "$value": "{control.padding.sm}" },
+      "md": { "$value": "{control.padding.md}" },
+      "lg": { "$value": "{control.padding.lg}" }
+    }
+  }
+}
