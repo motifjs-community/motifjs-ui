@@ -57,14 +57,14 @@
   },
   "peerDependencies": {
     "@motifx-community/design-system": "0.x",
-    "@motifx/core": "^1.2.0-rc.19",
+    "@motifx/core": "^1.2.0-rc.21",
     "@motifx-community/data": "0.x"
   },
   "devDependencies": {
     "@motifx-community/data": "file:../motifjs-data",
     "@motifx-community/design-system": "file:../motifjs-design-system",
-    "@motifx/compiler": "1.2.0-rc.19",
-    "@motifx/core": "1.2.0-rc.19",
+    "@motifx/compiler": "1.2.0-rc.21",
+    "@motifx/core": "1.2.0-rc.21",
     "@types/node": "^24.19.1",
     "axe-core": "^4.11.0",
     "jsdom": "^30.1.2",
