@@ -4,7 +4,8 @@ import type { GridToolbarItemName } from './grid-toolbar-item-name';
 
 /**
  * The bar above the rows. Without `items` it holds the grid's own items whose features are on, in
- * this order: "New row", "Save changes", "Discard", "Export", the column list, the search box. With
+ * this order: the group panel (at the start), "New row", "Save changes", "Discard", "Export", the
+ * column list, the search box. With
  * `items` it holds exactly those, in that order; one of the grid's items whose feature is off stays
  * out. Read and change it later through `grid.toolbar`.
  */

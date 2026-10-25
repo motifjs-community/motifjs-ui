@@ -1,12 +1,14 @@
 /* DataGrid. The look binds to data-striped, data-header-buttons and data-selection on the root; to
    data-active, data-selected, data-status (new | changed | removed | saving | failed | invalid),
-   data-odd and data-loading on each body row; to data-changed, aria-invalid and data-lookup
+   data-odd and data-loading on each body row (a group row: data-expanded, data-expand, data-locked, --_level); to data-changed, aria-invalid and data-lookup
    (loading | missing) on cells; to
    data-sort, data-sortable, data-dragging and data-resizing on headers; to aria-checked on the
    selection check boxes and data-active on header filter buttons. Action buttons and the filter
    row's condition buttons are plain elements with the kit button's classes. Column widths come
    from --_columns on the viewport; hidden columns, alignment and sticky offsets from the grid's own
-   per-grid sheet. The toolbar is the kit's; text the search found is a <mark>. */
+   per-grid sheet. The toolbar is the kit's; text the search found is a <mark>; the group panel's
+   chips carry data-dir and data-dragging, the panel and the header row data-drop while something
+   can be dropped on them. */
 @layer mx.components {
   .mx-data-grid {
     --_row-height: calc(var(--mx-datagrid-row-height) + var(--mx-datagrid-row-padding));
@@ -134,6 +136,7 @@
   }
 
   .mx-data-grid__cell:focus-visible,
+  .mx-data-grid__group-cell:focus-visible,
   .mx-data-grid__header-cell:focus-visible,
   .mx-data-grid__filter-cell:focus-visible {
     z-index: var(--_z-focus);
@@ -194,6 +197,174 @@
   .mx-data-grid__cell[data-lookup='missing'] {
     color: var(--mx-color-fg-secondary);
     text-decoration: underline dotted;
+  }
+
+  /* Group rows: one cell over every column; its content is moved in by level and stays in view while
+     the rows scroll sideways. */
+  .mx-data-grid__body > .mx-data-grid__group-row {
+    background-color: var(--mx-datagrid-group-background);
+  }
+
+  .mx-data-grid__group-cell {
+    position: relative;
+    grid-column: 1 / -1;
+    min-inline-size: 0;
+    line-height: calc(var(--_row-height) - var(--mx-datagrid-border-width));
+    white-space: nowrap;
+  }
+
+  .mx-data-grid__group-content {
+    position: sticky;
+    inset-inline-start: 0;
+    display: inline-flex;
+    gap: var(--mx-datagrid-gap);
+    align-items: center;
+    max-inline-size: 100%;
+    padding-inline: calc(var(--mx-datagrid-cell-padding) + var(--_level, 0) * var(--mx-datagrid-group-indent)) var(--mx-datagrid-cell-padding);
+    font-weight: var(--mx-datagrid-group-font-weight);
+  }
+
+  .mx-data-grid__group-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mx-data-grid__group-text[hidden],
+  .mx-data-grid__group-own[hidden] {
+    display: none;
+  }
+
+  .mx-data-grid__group-count {
+    font-weight: var(--mx-font-weight-regular);
+    color: var(--mx-datagrid-group-count-color);
+  }
+
+  .mx-data-grid__group-toggle {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--mx-datagrid-button-size);
+    block-size: var(--mx-datagrid-button-size);
+    margin-inline-start: calc(var(--mx-datagrid-gap) * -1);
+    color: var(--mx-color-fg-secondary);
+    cursor: pointer;
+    border-radius: var(--mx-radius-sm);
+  }
+
+  .mx-data-grid__group-toggle:hover {
+    background-color: var(--mx-datagrid-hover);
+  }
+
+  .mx-data-grid__group-toggle > .mx-glyph {
+    inline-size: var(--mx-datagrid-icon-size);
+    block-size: var(--mx-datagrid-icon-size);
+  }
+
+  .mx-data-grid__group-toggle:dir(rtl) > .mx-glyph {
+    scale: -1 1;
+  }
+
+  .mx-data-grid__group-row[data-expanded] .mx-data-grid__group-toggle > .mx-glyph {
+    rotate: 90deg;
+  }
+
+  .mx-data-grid__group-row[data-expand='rowClick']:not([data-locked]) {
+    cursor: pointer;
+  }
+
+  .mx-data-grid__group-row[data-locked] .mx-data-grid__group-toggle {
+    cursor: default;
+  }
+
+  /* The group panel at the start of the toolbar: the grouped columns as chips. */
+  .mx-data-grid__group-panel {
+    position: relative;
+    display: flex;
+    flex: 0 1 auto;
+    gap: var(--mx-datagrid-chip-gap);
+    align-items: center;
+    min-inline-size: 0;
+    min-block-size: var(--mx-datagrid-button-size);
+    padding-inline: var(--mx-datagrid-chip-gap);
+    border-radius: var(--mx-datagrid-chip-radius);
+  }
+
+  .mx-data-grid__group-panel[hidden] {
+    display: none;
+  }
+
+  .mx-data-grid__group-panel[data-drop],
+  .mx-data-grid__row--header[data-drop] {
+    background-image: linear-gradient(var(--mx-datagrid-drop-target), var(--mx-datagrid-drop-target));
+  }
+
+  .mx-data-grid__group-empty {
+    overflow: hidden;
+    color: var(--mx-datagrid-panel-empty-color);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mx-data-grid__group-empty[hidden] {
+    display: none;
+  }
+
+  .mx-data-grid__chip {
+    display: inline-flex;
+    flex: none;
+    gap: var(--mx-datagrid-chip-gap);
+    align-items: center;
+    block-size: var(--mx-datagrid-button-size);
+    padding-inline: var(--mx-datagrid-cell-padding);
+    font: inherit;
+    color: var(--mx-color-fg-primary);
+    cursor: pointer;
+    background-color: var(--mx-datagrid-chip-background);
+    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-chip-border-color);
+    border-radius: var(--mx-datagrid-chip-radius);
+    touch-action: none;
+  }
+
+  .mx-data-grid__chip:hover {
+    background-color: var(--mx-datagrid-hover);
+  }
+
+  .mx-data-grid__chip[data-dragging] {
+    opacity: var(--mx-opacity-disabled);
+  }
+
+  .mx-data-grid__group-panel[data-locked] .mx-data-grid__chip {
+    touch-action: auto;
+  }
+
+  .mx-data-grid__chip-sort {
+    display: inline-flex;
+    color: var(--mx-color-fg-secondary);
+  }
+
+  .mx-data-grid__chip-sort > svg {
+    inline-size: var(--mx-datagrid-icon-size);
+    block-size: var(--mx-datagrid-icon-size);
+  }
+
+  .mx-data-grid__chip[data-dir='asc'] .mx-data-grid__sort-down,
+  .mx-data-grid__chip[data-dir='desc'] .mx-data-grid__sort-up {
+    display: none;
+  }
+
+  /* Where a dragged header or chip lands among the chips. */
+  .mx-data-grid__chip-drop {
+    position: absolute;
+    inset-block: var(--mx-datagrid-chip-gap);
+    inline-size: var(--mx-datagrid-invalid-width);
+    margin-inline-start: calc(var(--mx-datagrid-chip-gap) / -2);
+    pointer-events: none;
+    background-color: var(--mx-color-accent-solid);
+  }
+
+  .mx-data-grid__chip-drop[hidden] {
+    display: none;
   }
 
   /* The row status column: a mark by state, never only a color. */

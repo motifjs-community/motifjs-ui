@@ -132,6 +132,13 @@
     --mx-datagrid-action-gap: var(--mx-space-1);
     --mx-datagrid-filter-padding: var(--mx-space-1);
     --mx-datagrid-values-gap: var(--mx-space-2);
+    --mx-datagrid-group-indent: var(--mx-space-5);
+    --mx-datagrid-group-font-weight: var(--mx-font-weight-medium);
+    --mx-datagrid-group-background: var(--mx-color-fill-subtle-tertiary);
+    --mx-datagrid-chip-gap: var(--mx-space-1);
+    --mx-datagrid-chip-radius: var(--mx-radius-sm);
+    --mx-datagrid-chip-background: var(--mx-color-fill-subtle-secondary);
+    --mx-datagrid-chip-border-color: var(--mx-color-stroke-control-default);
     --mx-field-radius: var(--mx-radius-md);
     --mx-field-border-width: var(--mx-border-width-1);
     --mx-field-focus-width: var(--mx-border-width-2);
@@ -401,6 +408,9 @@
     --mx-datagrid-search-mark-background: var(--mx-color-caution-subtle);
     --mx-datagrid-search-mark-color: var(--mx-color-fg-primary);
     --mx-datagrid-search-mark-line: var(--mx-color-caution-fg);
+    --mx-datagrid-group-count-color: var(--mx-color-fg-secondary);
+    --mx-datagrid-panel-empty-color: var(--mx-color-fg-secondary);
+    --mx-datagrid-drop-target: var(--mx-color-accent-subtle);
     --mx-list-indicator-color: var(--mx-color-accent-fg);
     --mx-menu-shortcut-color: var(--mx-color-fg-secondary);
     --mx-menubar-background: var(--mx-color-bg-bar);

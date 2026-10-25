@@ -89,4 +89,28 @@ export interface GridSettings extends ColumnFeatures {
   highlightCaseSensitive: boolean;
   /** The search looks only in the visible columns. Default `false`: hidden columns too. */
   searchVisibleColumnsOnly: boolean;
+  /** The group panel at the start of the toolbar: the grouped columns as chips, and where headers are dropped to group by them. Default `false`. */
+  groupPanel: boolean;
+  /** Headers can be dragged to the group panel and chips back to the headers or along the panel. Off, the panel only shows the grouping. Default `true`. */
+  groupPanelDragging: boolean;
+  /** What the empty group panel says. Default: the `gridGroupPanelEmpty` text of `uiLocale`. */
+  groupPanelEmptyText: string;
+  /** Groups start open; a column's `autoExpandGroup` decides for its own level. Default `true`. */
+  autoExpandAll: boolean;
+  /** A group opens and closes from its arrow (and the keyboard), or from a click anywhere on its row. A column can set its own. Default `'button'`. */
+  groupExpandMode: 'button' | 'rowClick';
+  /**
+   * Who groups the rows of a data source: `'auto'` the source's adapter when it groups and the source
+   * loads by blocks (else memory), `true` the adapter whenever the source loads by blocks and every
+   * level has a field it groups by, `false` always memory, from every matching row. Default `'auto'`.
+   */
+  remoteGrouping: 'auto' | boolean;
+  /** Grouping in memory over a source that loads pages or blocks: rows asked for per request while every matching row loads; 0 asks for all at once. Default `0`. */
+  groupLoadPageSize: number;
+  /** Keys that open and close a group row (`KeyboardEvent.key` values). Default `['Enter', ' ']`. */
+  groupToggleKeys: readonly string[];
+  /** Right and Left open and close a group row, then go into it and out to the group above. Default `true`. */
+  groupArrowKeys: boolean;
+  /** Pixels a pressed header or chip moves before it is dragged. Default `5`. */
+  dragThreshold: number;
 }

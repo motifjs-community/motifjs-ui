@@ -1,3 +1,5 @@
+import type { GroupPanel } from './GroupPanel';
+
 /** What the header and the column menu ask the grid to do; the grid owns menus, focus and measuring. */
 export interface HeaderHost {
   /** Whether the column has a menu (the feature is on and the menu would not be empty). */
@@ -13,4 +15,8 @@ export interface HeaderHost {
   toggleAll(): void;
   /** The state of the header check box. */
   allState(): boolean | 'mixed';
+  /** The group panel while headers can be dropped on it, else `null`. */
+  groupTarget(): GroupPanel<any> | null;
+  /** Focus back to the active cell (after a menu changed which columns show). */
+  focusActive(): void;
 }

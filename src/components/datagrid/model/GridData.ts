@@ -3,6 +3,12 @@ import { data } from '@motifx-community/data';
 import type { GridChanges } from '../grid-changes';
 import type { DataState } from './data-state';
 import type { GridDataOptions } from './grid-data-options';
+import type { GroupLevel } from './group-level';
+import type { GroupNode } from './group-node';
+import { groupNodes } from './group-nodes';
+import { GroupView } from './GroupView';
+
+type Status = DataState['status'];
 
 /**
  * The rows the grid shows and their unsaved changes: a `DataSource` (all rows, a page, or blocks
@@ -12,6 +18,11 @@ import type { GridDataOptions } from './grid-data-options';
  *   tracker keeps them until a reload) are left out of them, matched by key, so no row shows twice.
  * - `'page'`: the loaded page; while another page loads its rows are not known yet.
  * - `'blocks'`: what is loaded where the view is.
+ *
+ * Grouped, the places are those of the grouped list (`GroupView`): group rows and, in open groups,
+ * data rows. An adapter that groups, under blocks, gives the groups (keys and counts) and the blocks
+ * come in group order, so only what the view shows is loaded; otherwise every matching row is here
+ * and grouped in memory, as with rows in memory.
  */
 export class GridData<T> {
   readonly source: data.DataSource<T, unknown>;
@@ -20,18 +31,44 @@ export class GridData<T> {
   readonly pageSize: number;
   private readonly state: DataState;
   private readonly owned: boolean;
+  private readonly expanded: (node: GroupNode) => boolean;
+  private readonly locale: () => string | undefined;
   private readonly subscriptions: IDisposable[] = [];
   /** `'all'`: the rows without the saved new rows, and those rows' keys; dropped when either side changes. */
   private shownRows: readonly T[] | null = null;
   private savedKeys: Set<string> | null = null;
+  /** The sort the grid gives; grouped on a server, the source sorts by the groups first. */
+  private userSort: readonly data.SortItem[];
+  private sourceStatus: Status = 'loading';
+  private levels: GroupLevel[] = [];
+  /** Who groups (`remoteGrouping`), and rows per request while every row loads for memory. */
+  private remote: 'auto' | boolean = 'auto';
+  private loadSize = 0;
+  /** How the rows are grouped: by the source's adapter (`'server'`), in memory, or not at all. */
+  private groupMode: 'server' | 'memory' | null = null;
+  private groupState: Status = 'ready';
+  private groupGeneration = 0;
+  private groupController: AbortController | undefined;
+  private tree: GroupNode[] = [];
+  private view: GroupView | null = null;
+  /** Memory: the rows in group order, and whether they must be grouped again. */
+  private grouped: T[] = [];
+  private groupedIndex: Map<string, number> | null = null;
+  private regroup = true;
+  /** Memory over pages or blocks: every matching row, loaded apart. */
+  private allRows: T[] | null = null;
+  private allIndex: Map<string, T> | null = null;
 
   constructor(options: GridDataOptions<T>) {
     const source = options.source;
     this.source = source;
     this.owned = options.owned;
     this.state = options.state;
+    this.expanded = options.expanded;
+    this.locale = options.locale;
     this.paged = source.loadMode === 'page' || options.paged;
     this.pageSize = source.loadMode === 'all' ? Math.max(1, Math.floor(options.pageSize)) : source.pageSize;
+    this.userSort = [...options.sort];
     this.tracker = new data.ChangeTracker<T, unknown>({
       source,
       saveMode: options.saveMode,
@@ -43,35 +80,62 @@ export class GridData<T> {
       source.onChanged((e) => this.sourceChanged(e.reason)),
       this.tracker.onChanged((e) => {
         untracked(() => {
-          if (e.reason === 'saved' || e.reason === 'released') this.rowsChanged();
+          if (e.reason === 'saved' || e.reason === 'released') {
+            this.regroup = true;
+            this.rowsChanged();
+          }
           this.state.edits++;
         });
         options.edited(e);
       }),
     );
+    this.sourceStatus = source.status === 'ready' ? 'ready' : source.status === 'error' ? 'error' : 'loading';
     untracked(() => {
-      const st = this.state;
-      st.status = source.status === 'ready' ? 'ready' : source.status === 'error' ? 'error' : 'loading';
-      st.failedBlocks = source.failedBlocks;
-      st.version++;
+      this.state.failedBlocks = source.failedBlocks;
+      this.updateStatus();
     });
+    if (options.group.length) this.setGrouping(options.group, { remote: options.remoteGrouping, loadSize: options.groupLoadPageSize });
+    else if (!sameSort(source.sort, this.userSort)) void source.setSort(this.userSort);
     if (source.status === 'idle') void source.load();
   }
 
   /** The page the source is on (`'page'`). */
   get sourcePage(): number {
-    return this.source.loadMode === 'page' ? this.source.pageIndex : 0;
+    return this.source.loadMode === 'page' && !this.groupMode ? this.source.pageIndex : 0;
   }
 
-  /** Data rows; 0 while the first answer is loading. Reactive. */
+  /** The sort the grid gave (without the groups). */
+  get sort(): readonly data.SortItem[] {
+    return this.userSort;
+  }
+
+  /** Places in the list: data rows, and group rows while grouped; 0 while the first answer is loading. Reactive. */
   get total(): number {
     void this.state.version;
+    if (this.groupMode) return this.groupView()?.size ?? 0;
     if (this.source.loadMode === 'all') return this.rows().length;
     return this.source.total ?? 0;
   }
 
-  /** The data row at `index`, or `undefined` while it is not loaded. */
+  /** Data rows, in every group too. Reactive. */
+  get rowCount(): number {
+    void this.state.version;
+    if (this.groupMode) return this.groupView()?.rowCount ?? 0;
+    return this.total;
+  }
+
+  /** Whether the rows are grouped now. */
+  get isGrouped(): boolean {
+    return this.groupMode !== null;
+  }
+
+  /** The data row at place `index`, or `undefined` while it is not loaded (or a group row is there). */
   rowAt(index: number): T | undefined {
+    if (this.groupMode) {
+      const entry = this.groupView()?.itemAt(index);
+      if (!entry || entry.node) return undefined;
+      return this.groupMode === 'memory' ? this.grouped[entry.data] : this.source.rowAt(entry.data);
+    }
     const s = this.source;
     if (s.loadMode === 'blocks') return s.rowAt(index);
     if (s.loadMode === 'page') {
@@ -82,26 +146,106 @@ export class GridData<T> {
     return this.rows()[index];
   }
 
-  /** The view shows data rows `first` to `end - 1`: blocks load what is missing; `immediate` skips the wait after a jump. */
-  ensure(first: number, end: number, immediate: boolean) {
-    if (this.source.loadMode === 'blocks') this.source.ensure(first, end, immediate);
+  /** A data row by its index among the rows in group order (grouped); `undefined` while it is not loaded. */
+  rowOfData(d: number): T | undefined {
+    if (this.groupMode === 'memory') return this.grouped[d];
+    return this.groupMode === 'server' ? this.source.rowAt(d) : this.rowAt(d);
   }
 
-  /** Keeps the block of the active row loaded; -1 lets it go. */
+  /** The group whose row is at place `index`, or `null`. */
+  groupAt(index: number): GroupNode | null {
+    return this.groupMode ? (this.groupView()?.itemAt(index)?.node ?? null) : null;
+  }
+
+  /** The grouped list, while grouped and known. */
+  groupView(): GroupView | null {
+    if (!this.groupMode) return null;
+    if (this.groupMode === 'memory' && this.regroup) untracked(() => this.groupInMemory());
+    if (!this.view && this.groupState === 'ready') this.view = new GroupView(this.tree, this.expanded);
+    return this.view;
+  }
+
+  /** Memory: the rows in group order; `null` when a server groups them. */
+  groupedRows(): readonly T[] | null {
+    if (this.groupMode !== 'memory') return null;
+    this.groupView();
+    return this.grouped;
+  }
+
+  /** The view shows places `first` to `end - 1`: blocks load what is missing; `immediate` skips the wait after a jump. */
+  ensure(first: number, end: number, immediate: boolean) {
+    if (this.source.loadMode !== 'blocks' || this.groupMode === 'memory') return;
+    if (!this.groupMode) {
+      this.source.ensure(first, end, immediate);
+      return;
+    }
+    const runs = this.groupView()?.rowsBetween(first, end) ?? [];
+    if (runs.length) this.source.ensureRanges(runs, immediate);
+  }
+
+  /** Keeps the block of the row at place `index` loaded; -1 lets it go. */
   pin(index: number) {
-    this.source.pin(index);
+    if (this.groupMode === 'memory') return;
+    if (!this.groupMode || index < 0) {
+      this.source.pin(index);
+      return;
+    }
+    const entry = this.groupView()?.itemAt(index);
+    this.source.pin(entry && !entry.node ? entry.data : -1);
   }
 
   setPage(page: number) {
-    if (this.source.loadMode === 'page') void this.source.setPage(page);
+    if (this.source.loadMode === 'page' && !this.groupMode) void this.source.setPage(page);
   }
 
   setSort(sort: readonly data.SortItem[]) {
-    void this.source.setSort(sort);
+    this.userSort = [...sort];
+    void this.source.setSort(this.sourceSort());
   }
 
   setFilter(filter: data.FilterExpression | null) {
     void this.source.setFilter(filter);
+  }
+
+  /**
+   * Groups the rows by these levels (none: not grouped), with `sort` inside the groups. Under blocks,
+   * the source's adapter groups when every level has a field it can group by and `remote` says so
+   * (`'auto'`: when the adapter groups); anything else is grouped in memory, from every matching row
+   * (`loadSize` a request, 0 all at once).
+   */
+  setGrouping(levels: readonly GroupLevel[], options: { sort?: readonly data.SortItem[]; remote?: 'auto' | boolean; loadSize?: number } = {}) {
+    const source = this.source;
+    this.levels = [...levels];
+    if (options.sort) this.userSort = [...options.sort];
+    if (options.remote !== undefined) this.remote = options.remote;
+    if (options.loadSize !== undefined) this.loadSize = Math.max(0, Math.floor(options.loadSize));
+    const possible = levels.length > 0 && source.loadMode === 'blocks' && levels.every((l) => l.serverField !== null);
+    const server = possible && (this.remote === true || (this.remote === 'auto' && source.adapter.capabilities.group));
+    this.groupMode = !levels.length ? null : server ? 'server' : 'memory';
+    this.stopGroupLoad();
+    this.tree = [];
+    this.view = null;
+    this.grouped = [];
+    this.groupedIndex = null;
+    this.regroup = true;
+    this.allRows = null;
+    this.allIndex = null;
+    this.groupState = 'ready';
+    const order = this.sourceSort();
+    // A new sort is a new query: the groups load when it fires.
+    if (!sameSort(source.sort, order)) void source.setSort(order);
+    else if (this.groupMode === 'server') this.loadGroups();
+    if (this.groupMode === 'memory' && source.loadMode !== 'all') this.loadEveryRow();
+    untracked(() => {
+      this.updateStatus();
+      this.rowsChanged();
+    });
+  }
+
+  /** The open groups changed: the list is made again. */
+  regroupView() {
+    this.view = null;
+    untracked(() => this.state.version++);
   }
 
   /** Loads again, keeping the position; saved new rows leave where they were entered and take their place among the rows. */
@@ -111,22 +255,59 @@ export class GridData<T> {
   }
 
   retry() {
-    void this.source.retry();
+    if (this.groupMode && this.groupState === 'error') this.reloadGroups();
+    else void this.source.retry();
   }
 
-  /** Index of a data row among the data rows, found by its key; -1 when it is not loaded. */
+  /** Place of a data row, found by its key; -1 when it is not loaded or a collapsed group hides it. */
   indexOfRow(row: T): number {
     const s = this.source;
     if (!s.adapter.keys.hasKey(row)) return -1;
+    if (this.groupMode) {
+      const view = this.groupView();
+      const d = this.dataIndexOf(row);
+      return view && d >= 0 ? view.placeOfRow(d) : -1;
+    }
     if (s.loadMode !== 'all' || !this.saved().size) return s.indexOfKey(s.adapter.keyOf(row));
     const id = this.keyIdOf(row);
     return this.rows().findIndex((r) => this.keyIdOf(r) === id);
   }
 
-  /** Whether the source has this row (by key) among its loaded rows. */
+  /** Index of a data row among the rows in group order (grouped), found by its key; -1 when it is not loaded. */
+  dataIndexOf(row: T): number {
+    const s = this.source;
+    if (!s.adapter.keys.hasKey(row)) return -1;
+    if (this.groupMode === 'server') return s.indexOfKey(s.adapter.keyOf(row));
+    this.groupView();
+    if (!this.groupedIndex) {
+      const index = new Map<string, number>();
+      this.grouped.forEach((r, i) => index.set(this.keyIdOf(r), i));
+      this.groupedIndex = index;
+    }
+    return this.groupedIndex.get(this.keyIdOf(row)) ?? -1;
+  }
+
+  /** Whether the rows the grid holds have this row (by key). */
   hasLoaded(row: T): boolean {
     const keys = this.source.adapter.keys;
-    return keys.hasKey(row) && this.source.indexOfKey(keys.keyOf(row)) >= 0;
+    if (!keys.hasKey(row)) return false;
+    if (this.allRows) return this.allByKey().has(this.keyIdOf(row));
+    return this.source.indexOfKey(keys.keyOf(row)) >= 0;
+  }
+
+  /** The row with this key among the rows the grid holds and the source's. */
+  rowByKey(key: unknown): T | undefined {
+    if (this.allRows) {
+      const row = this.allByKey().get(this.source.adapter.keyString(key));
+      if (row !== undefined) return row;
+    }
+    return this.source.rowByKey(key);
+  }
+
+  /** Every row the grid holds now: all of them in memory, the page, or the blocks loaded. */
+  forEachLoaded(fn: (row: T) => void) {
+    if (this.allRows) for (const row of this.allRows) fn(row);
+    else this.source.forEachLoaded((row) => fn(row));
   }
 
   /** The id the tracker keeps a row under: its key as text, or `+1`, `+2` … for a new row. */
@@ -152,6 +333,7 @@ export class GridData<T> {
   }
 
   dispose() {
+    this.stopGroupLoad();
     for (const s of this.subscriptions) s.dispose();
     this.tracker.dispose();
     if (!this.owned) return;
@@ -163,6 +345,15 @@ export class GridData<T> {
   private keyIdOf(row: T): string {
     const adapter = this.source.adapter;
     return adapter.keyString(adapter.keyOf(row));
+  }
+
+  /** The sort the source gets: grouped on a server, the groups' fields come first. */
+  private sourceSort(): data.SortItem[] {
+    if (this.groupMode !== 'server') return [...this.userSort];
+    return data.groupOrder(
+      this.levels.map((l) => ({ field: l.serverField!, dir: l.dir })),
+      this.userSort,
+    );
   }
 
   /** Keys of the saved new rows the tracker still keeps where they were entered. */
@@ -182,10 +373,27 @@ export class GridData<T> {
     return (this.shownRows ??= this.source.rows.filter((row) => !saved.has(this.keyIdOf(row))));
   }
 
+  private allByKey(): Map<string, T> {
+    if (!this.allIndex) {
+      const index = new Map<string, T>();
+      for (const row of this.allRows ?? []) index.set(this.keyIdOf(row), row);
+      this.allIndex = index;
+    }
+    return this.allIndex;
+  }
+
   private rowsChanged() {
     this.shownRows = null;
     this.savedKeys = null;
     this.state.version++;
+  }
+
+  private updateStatus() {
+    const st = this.state;
+    let status = this.sourceStatus;
+    if (this.groupMode === 'memory' && this.source.loadMode !== 'all') status = this.groupState;
+    else if (this.groupMode && this.groupState !== 'ready') status = this.groupState;
+    if (st.status !== status) st.status = status;
   }
 
   private sourceChanged(reason: data.DataSourceChange<T>['reason']) {
@@ -193,12 +401,110 @@ export class GridData<T> {
       const st = this.state;
       const s = this.source;
       // Rows in memory stay while a new query loads; pages and blocks start again.
-      if (reason === 'cleared' || (reason === 'query' && s.loadMode !== 'all')) st.status = 'loading';
-      else if (reason === 'loading' && st.status === 'error') st.status = 'loading';
-      else if (reason === 'loaded') st.status = 'ready';
-      else if (reason === 'failed' && s.status === 'error') st.status = 'error';
+      if (reason === 'cleared' || (reason === 'query' && s.loadMode !== 'all')) this.sourceStatus = 'loading';
+      else if (reason === 'loading' && this.sourceStatus === 'error') this.sourceStatus = 'loading';
+      else if (reason === 'loaded') this.sourceStatus = 'ready';
+      else if (reason === 'failed' && s.status === 'error') this.sourceStatus = 'error';
       st.failedBlocks = s.failedBlocks;
+      if (reason === 'loaded' || reason === 'rows' || reason === 'cleared') this.regroup = true;
+      if (this.groupMode === 'server' && (reason === 'query' || reason === 'reload' || reason === 'rows')) this.loadGroups();
+      if (this.groupMode === 'memory' && s.loadMode !== 'all' && (reason === 'query' || reason === 'reload' || reason === 'rows')) this.loadEveryRow();
+      this.updateStatus();
       this.rowsChanged();
     });
   }
+
+  private reloadGroups() {
+    if (this.groupMode === 'server') this.loadGroups();
+    else if (this.groupMode === 'memory' && this.source.loadMode !== 'all') this.loadEveryRow();
+  }
+
+  /** A server's groups: keys and counts of every level, no rows. */
+  private loadGroups() {
+    const items = this.levels.map((l) => ({ field: l.serverField!, dir: l.dir }));
+    this.startGroupLoad((signal) =>
+      this.source.loadGroups(items, { signal }).then((groups) => {
+        this.tree = groupNodes(groups as data.RowGroup<unknown>[], this.levels, this.locale());
+      }),
+    );
+  }
+
+  /** Every matching row, to group in memory (an adapter that cannot group, or a value only memory reads). */
+  private loadEveryRow() {
+    const size = this.loadSize;
+    this.startGroupLoad(async (signal) => {
+      let rows: T[];
+      if (size <= 0) rows = (await this.source.loadRange({ signal })).rows;
+      else {
+        rows = [];
+        let total = Number.POSITIVE_INFINITY;
+        for (let skip = 0; skip < total; skip += size) {
+          const part = await this.source.loadRange({ skip, take: size, count: skip === 0, signal });
+          if (skip === 0 && part.total !== undefined) total = part.total;
+          for (const row of part.rows) rows.push(row);
+          if (part.rows.length < size) break;
+        }
+      }
+      this.allRows = rows;
+      this.allIndex = null;
+      this.regroup = true;
+    });
+  }
+
+  private startGroupLoad(load: (signal: AbortSignal) => Promise<void>) {
+    this.stopGroupLoad();
+    const controller = new AbortController();
+    this.groupController = controller;
+    const generation = ++this.groupGeneration;
+    this.groupState = 'loading';
+    this.view = null;
+    untracked(() => this.updateStatus());
+    load(controller.signal).then(
+      () => {
+        if (generation !== this.groupGeneration) return;
+        this.groupController = undefined;
+        this.groupState = 'ready';
+        this.view = null;
+        untracked(() => {
+          this.updateStatus();
+          this.rowsChanged();
+        });
+      },
+      (error: unknown) => {
+        if (generation !== this.groupGeneration || data.isAbortError(error)) return;
+        this.groupController = undefined;
+        this.groupState = 'error';
+        this.tree = [];
+        this.view = null;
+        untracked(() => {
+          this.updateStatus();
+          this.rowsChanged();
+        });
+      },
+    );
+  }
+
+  private stopGroupLoad() {
+    this.groupGeneration++;
+    this.groupController?.abort();
+    this.groupController = undefined;
+  }
+
+  /** Groups the rows in memory: the source's rows, or every matching row loaded apart. */
+  private groupInMemory() {
+    this.regroup = false;
+    this.view = null;
+    this.groupedIndex = null;
+    const rows = this.source.loadMode === 'all' ? this.rows() : (this.allRows ?? []);
+    const readers = new Map(this.levels.map((l) => [l.field, l.read]));
+    const orders = new Map(this.levels.map((l) => [l.field, l.compare]));
+    const ctx: data.EvaluateContext = { ...this.source.adapter.evaluateContext, groupValue: (field) => readers.get(field), groupCompare: (field) => orders.get(field) };
+    const result = data.queryArray(rows, { group: this.levels.map((l) => ({ field: l.field, dir: l.dir })) }, ctx);
+    this.grouped = result.rows;
+    this.tree = groupNodes((result.groups ?? []) as data.RowGroup<unknown>[], this.levels, this.locale());
+  }
+}
+
+function sameSort(a: readonly data.SortItem[], b: readonly data.SortItem[]): boolean {
+  return a.length === b.length && a.every((s, i) => s.field === b[i].field && s.dir === b[i].dir);
 }

@@ -155,4 +155,17 @@ export interface UiStrings {
   gridSearchPlaceholder: string;
   gridSearchResults: string;
   gridColumnChooser: string;
+  gridGroupPanel: string;
+  gridGroupPanelEmpty: string;
+  gridGroupByColumn: string;
+  gridUngroup: string;
+  gridUngroupAll: string;
+  gridGroupedBy: string;
+  gridUngroupedBy: string;
+  gridGroupingCleared: string;
+  gridGroupText: string;
+  gridGroupCount: string;
+  gridGroupChipAscending: string;
+  gridGroupChipDescending: string;
+  gridGroupChipHint: string;
 }

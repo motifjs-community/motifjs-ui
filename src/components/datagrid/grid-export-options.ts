@@ -15,6 +15,8 @@ export interface GridExportOptions {
   download?: boolean;
   /** CSV: the field separator. Default: `;` where the locale writes decimals with a comma, else `,`. */
   separator?: string;
+  /** CSV, while grouped: a "Column: value" line before each group. Default `true`. */
+  groups?: boolean;
   /** CSV: a first line of column titles. Default `true`. */
   headers?: boolean;
   /** CSV: start with a byte order mark so spreadsheets read UTF-8. Default `true`. */

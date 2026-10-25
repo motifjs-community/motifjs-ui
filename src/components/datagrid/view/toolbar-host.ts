@@ -1,4 +1,5 @@
 import type { DataGrid } from '../DataGrid';
+import type { GroupPanel } from './GroupPanel';
 
 /** What the toolbar asks the grid; the grid owns its data, menus and focus. */
 export interface ToolbarHost {
@@ -9,4 +10,6 @@ export interface ToolbarHost {
   openColumns(anchor: HTMLElement): void;
   /** Whether the list of columns has a column to show or hide. */
   hasColumns(): boolean;
+  /** The group panel, which the toolbar holds while `groupPanel` is on. */
+  groupPanel(): GroupPanel<any>;
 }

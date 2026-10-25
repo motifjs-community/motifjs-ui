@@ -1,8 +1,10 @@
 import { Component, untracked } from '@motifx/core';
 import type { GridModel } from '../model/GridModel';
+import type { GroupNode } from '../model/group-node';
 import { ScrollGeometry } from '../model/ScrollGeometry';
 import type { ActionWidths } from './ActionWidths';
 import { GridRow } from './GridRow';
+import { GroupRow } from './GroupRow';
 import { nextId } from '../../../core/next-id';
 
 /** Extra rows drawn above and below the viewport. */
@@ -14,12 +16,17 @@ const OVERSCAN = 4;
  * that stay in view keep their element, the others are reused. The DOM never grows with the row
  * count. The active row and the row holding focus are kept even when they scroll out, so focus is
  * never lost. A pooled row follows its row by id first (a new row opened above it moves it, the
- * editor inside goes along), then by position (a loading row that gets its data).
+ * editor inside goes along), then by position (a loading row that gets its data). Group rows have a
+ * pool of their own and follow their group by its id.
  */
 export class GridBody<T> extends Component<HTMLDivElement> {
   /** Every row ever made; reused, never disposed before the grid. */
   readonly pool: GridRow<T>[] = [];
+  /** Every group row ever made. */
+  readonly groupPool: GroupRow<T>[] = [];
   private byIndex = new Map<number, GridRow<T>>();
+  private groupsByIndex = new Map<number, GroupRow<T>>();
+  private readonly groupByElement = new WeakMap<Element, GroupRow<T>>();
   private readonly byElement = new WeakMap<Element, GridRow<T>>();
   private virtualTop = 0;
   private expectedScrollTop = -1;
@@ -38,10 +45,12 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.attr.add({ role: 'rowgroup' });
     this.motif.setDisposable(() => {
       for (const row of this.pool) row.dispose();
+      for (const row of this.groupPool) row.dispose();
     });
     // Lookup keys came: only the cells that show them are drawn again.
     const resolved = this.grid.lookups.onChanged(({ items, keys }) => {
       for (const row of this.byIndex.values()) row.drawLookups(items, keys);
+      for (const row of this.groupsByIndex.values()) row.drawLookup();
     });
     this.motif.setDisposable(() => resolved.dispose());
   }
@@ -130,15 +139,26 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     return this.byIndex.get(index);
   }
 
-  /** The cell element of grid row `index`, if that row is drawn. */
+  /** The cell element of grid row `index`, if that row is drawn; a group row's one cell for any field. */
   cellElement(index: number, field: string): HTMLElement | undefined {
-    return this.byIndex.get(index)?.cells.get(field);
+    return this.byIndex.get(index)?.cells.get(field) ?? this.groupsByIndex.get(index)?.cell;
   }
 
   /** The pooled row an element belongs to. */
   rowOf(el: Element | null): GridRow<T> | undefined {
     const rowEl = el?.closest?.('.mx-data-grid__row');
     return rowEl ? this.byElement.get(rowEl) : undefined;
+  }
+
+  /** The pooled group row an element belongs to. */
+  groupRowOf(el: Element | null): GroupRow<T> | undefined {
+    const rowEl = el?.closest?.('.mx-data-grid__group-row');
+    return rowEl ? this.groupByElement.get(rowEl) : undefined;
+  }
+
+  /** The group row drawn for grid row `index`. */
+  groupRowAt(index: number): GroupRow<T> | undefined {
+    return this.groupsByIndex.get(index);
   }
 
   /** Cells of a column in the rows drawn now (for fitting the column to its content). */
@@ -156,6 +176,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   arrange(visible: string[]) {
     this.visible = visible;
     for (const row of this.pool) row.arrange(visible);
+    for (const row of this.groupPool) row.arrange(visible);
   }
 
   /** Gives the spacer the height of the rows, before a scroll position is written too (a row added at the end makes the rows taller). */
@@ -194,9 +215,9 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       const vt = this.virtualTop;
       top = (i) => g.rowTop(i, scrollTop, vt);
       const need = Math.ceil(g.viewport / g.rowHeight) + 1;
-      // The data counts data rows only: map the window to them.
+      // The data counts its own places only: map the window to them.
       const offset = grid.newRowPosition === 'top' ? grid.state.added : 0;
-      const dataOf = (i: number) => Math.max(0, Math.min(grid.dataTotal, i - offset));
+      const dataOf = (i: number) => Math.max(0, Math.min(data.total, i - offset));
       if (loading) data.ensure(0, need, true);
       else if (end > start && dataOf(end) > dataOf(start)) data.ensure(dataOf(start), dataOf(end), immediate);
     } else {
@@ -221,13 +242,23 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     for (const i of new Set([active, focused])) if (i >= 0 && localOf(i) >= 0 && !inWindow(i)) wanted.push(i);
     data.pin(active >= 0 ? grid.dataIndex(active) : -1);
 
+    // Group rows go to the group pool, matched by their group.
+    const groups = new Map<number, GroupNode>();
+    const rows: number[] = [];
+    for (const i of wanted) {
+      const node = grid.groupAt(i);
+      if (node) groups.set(i, node);
+      else rows.push(i);
+    }
+    this.placeGroups(groups, top, localOf);
+
     // Match pooled rows to wanted rows: by id first, then by position, then any free one.
-    const idOf = wanted.map((i) => grid.rowIdAt(i));
+    const idOf = rows.map((i) => grid.rowIdAt(i));
     const byId = new Map<string, number>();
     idOf.forEach((rowId, n) => rowId !== undefined && byId.set(rowId, n));
     const wantedAt = new Map<number, number>();
-    wanted.forEach((i, n) => wantedAt.set(i, n));
-    const assigned: (GridRow<T> | undefined)[] = new Array(wanted.length);
+    rows.forEach((i, n) => wantedAt.set(i, n));
+    const assigned: (GridRow<T> | undefined)[] = new Array(rows.length);
     const rest: GridRow<T>[] = [];
     for (const row of this.pool) {
       const n = row.rowId !== undefined ? byId.get(row.rowId) : undefined;
@@ -241,7 +272,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       else free.push(row);
     }
     const keep = new Map<number, GridRow<T>>();
-    wanted.forEach((i, n) => {
+    rows.forEach((i, n) => {
       const row = assigned[n] ?? free.pop() ?? this.createRow();
       row.use(i, grid.rowAt(i), idOf[n], top(localOf(i)));
       keep.set(i, row);
@@ -250,9 +281,42 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.byIndex = keep;
     // Rows stay where they are in the DOM: a moved row is styled again from scratch, on every
     // scroll. Assistive technology gets the reading order through aria-owns.
-    const shown = [...keep.entries()].sort((a, b) => a[0] - b[0]).map(([, r]) => r.element.id);
+    const all: [number, HTMLElement][] = [];
+    for (const [i, r] of keep) all.push([i, r.element]);
+    for (const [i, r] of this.groupsByIndex) all.push([i, r.element]);
+    const shown = all.sort((a, b) => a[0] - b[0]).map(([, el]) => el.id);
     const owns = shown.join(' ');
     if (this.element.getAttribute('aria-owns') !== owns) this.element.setAttribute('aria-owns', owns);
+  }
+
+  /** Group rows: the one that showed a group keeps it, the others take the rest. */
+  private placeGroups(groups: Map<number, GroupNode>, top: (local: number) => number, localOf: (i: number) => number) {
+    const ids = new Map<string, number>();
+    for (const [i, node] of groups) ids.set(node.id, i);
+    const keep = new Map<number, GroupRow<T>>();
+    const free: GroupRow<T>[] = [];
+    for (const row of this.groupPool) {
+      const i = row.node ? ids.get(row.node.id) : undefined;
+      if (i !== undefined && !keep.has(i)) keep.set(i, row);
+      else free.push(row);
+    }
+    for (const [i, node] of groups) {
+      const row = keep.get(i) ?? free.pop() ?? this.createGroupRow();
+      row.use(i, node, top(localOf(i)));
+      keep.set(i, row);
+    }
+    for (const row of free) row.release();
+    this.groupsByIndex = keep;
+  }
+
+  private createGroupRow(): GroupRow<T> {
+    const row = new GroupRow(this.grid, this);
+    row.element.id = nextId('grid-row');
+    this.element.append(row.element);
+    row.arrange(this.visible);
+    this.groupPool.push(row);
+    this.groupByElement.set(row.element, row);
+    return row;
   }
 
   private createRow(): GridRow<T> {

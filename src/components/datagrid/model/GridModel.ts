@@ -23,6 +23,10 @@ import { DEFAULT_SETTINGS } from './default-settings';
 import { FilterModel } from './FilterModel';
 import { FilterValues } from './FilterValues';
 import { GridData } from './GridData';
+import { GridGroups } from './GridGroups';
+import type { GroupNode } from './group-node';
+import type { LookupCell } from './lookup-cell';
+import { groupId } from './group-nodes';
 import { GridRowsAdapter } from './GridRowsAdapter';
 import { GridSearch } from './GridSearch';
 import { LayoutStore } from './LayoutStore';
@@ -92,6 +96,11 @@ export class GridModel<T> {
   onBeforeQueryChange: (() => void) | null = null;
   onQueryChange: (() => void) | null = null;
   onLayoutChange: ((layout: GridLayout) => void) | null = null;
+  /** Asked before the grouping changes; `false` keeps it. */
+  onGroupingChanging: ((group: data.GroupItem[], previous: data.GroupItem[], byUser: boolean) => boolean) | null = null;
+  onGroupingChanged: ((group: data.GroupItem[], previous: data.GroupItem[], byUser: boolean) => void) | null = null;
+  /** Asked before a header or a chip dropped changes the grouping; `false` cancels the drop. */
+  onGroupDropping: ((e: { field: string; from: 'header' | 'chip'; to: 'panel' | 'headers'; index: number }) => boolean) | null = null;
   /** Id of the element that holds the active cell's message (`aria-describedby` of an invalid cell). */
   errorId = '';
   readonly selection = new RowSelection();
@@ -101,6 +110,8 @@ export class GridModel<T> {
   readonly values: FilterValues<T>;
   /** The texts of the lookup columns. */
   readonly lookups: LookupTexts<T>;
+  /** What the rows are grouped by, and which groups are open. */
+  readonly groups: GridGroups<T>;
   /** The grid's ready actions, by name; the grid fills them in. */
   builtIns: GridBuiltInActions<T> | null = null;
   /** The filter the source had before the grid added its own. */
@@ -126,7 +137,10 @@ export class GridModel<T> {
     const stored = this.settings.get('saveLayout') ? this.store?.read() : null;
     const layout = stored ?? props.layout;
     this.columns = new ColumnModel(props.columns, layout, this.settings);
-    const sort = (layout?.sort ?? props.sort ?? []).filter((s) => this.columns.defs.has(s.field));
+    this.groups = new GridGroups<T>(this.columns, this.settings);
+    this.groups.set(layout?.group ?? this.columnGroups());
+    this.columns.hiddenByGroup = (field) => this.groups.isGrouped(field) && !this.columns.can(field, 'showWhenGrouped');
+    const sort = (layout?.sort ?? props.sort ?? []).filter((s) => this.columns.defs.has(s.field) && !this.groups.isGrouped(s.field));
     this.state.sort = sort.map((s) => ({ ...s }));
     this.columns.statusWanted = () => this.stats.changed > 0 || this.stats.failed > 0 || this.state.added > 0;
     this.columns.actionsWanted = () => props.actions !== undefined;
@@ -168,11 +182,19 @@ export class GridModel<T> {
       st.editing = null;
       st.busy = false;
       st.page = 0;
+      // A given source's sort is the grid's while the grid has none.
+      if (given && !st.sort.length) st.sort = this.gridSort(given.sort);
       this.data = new GridData<T>({
         source: given ?? this.ownSource(),
         owned: !given,
         paged: read(props.mode) === 'paged',
         pageSize: read(props.pageSize) ?? DEFAULT_PAGE_SIZE,
+        sort: this.sourceSort(st.sort),
+        group: this.groups.levels(),
+        remoteGrouping: this.settings.get('remoteGrouping'),
+        groupLoadPageSize: this.settings.get('groupLoadPageSize'),
+        expanded: (node) => this.groups.isExpanded(node),
+        locale: () => this.formatter.locale,
         saveMode: read(props.saveMode) ?? 'wait',
         createRow: props.newRow?.create,
         validateRow: (row, context) => this.checkRow(row, context),
@@ -180,10 +202,6 @@ export class GridModel<T> {
         edited: (change) => this.edited(change),
       });
       st.page = this.data.sourcePage;
-      if (given) {
-        if (st.sort.length && !this.sameSort(this.sourceSort(st.sort), given.sort)) this.data.setSort(this.sourceSort(st.sort));
-        else st.sort = this.gridSort(given.sort);
-      }
       st.connection++;
     });
   }
@@ -241,9 +259,9 @@ export class GridModel<T> {
 
   // Row numbering.
 
-  /** Rows of the data. */
+  /** Data rows (every group's too). */
   get dataTotal(): number {
-    return this.data.total;
+    return this.data.rowCount;
   }
 
   /** Rows of the grid: data rows and the new-row area. */
@@ -280,6 +298,18 @@ export class GridModel<T> {
     if (k >= 0) return this.addedRows[k]?.row;
     const d = this.dataIndex(i);
     return d >= 0 ? this.data.rowAt(d) : undefined;
+  }
+
+  /** The group whose row is grid row `i`, or `null`. */
+  groupAt(i: number): GroupNode | null {
+    const d = this.dataIndex(i);
+    return d >= 0 ? this.data.groupAt(d) : null;
+  }
+
+  /** What a drawn row follows: a group by its id, else the row's id; `undefined` while it is loading. */
+  keyAt(i: number): string | undefined {
+    const group = this.groupAt(i);
+    return group ? `group:${group.id}` : this.rowIdAt(i);
   }
 
   /** The id of grid row `i`; `undefined` while it is loading. */
@@ -767,6 +797,11 @@ export class GridModel<T> {
   /** Header click: none → ascending → descending → none. With `add` (and `multiSort` on), keeps the other columns. */
   toggleSort(field: string, add = false) {
     if (!this.columns.can(field, 'sortable')) return;
+    // A grouped column's sort is the order of its groups.
+    if (this.groups.isGrouped(field)) {
+      this.toggleGroupOrder(field);
+      return;
+    }
     add = add && this.settings.get('multiSort');
     const current = this.state.sort.find((s) => s.field === field);
     const nextDir = !current ? 'asc' : current.dir === 'asc' ? 'desc' : null;
@@ -793,7 +828,7 @@ export class GridModel<T> {
 
   /** Replaces the sort order. `byUser` reports a layout change. */
   setSort(sort: readonly data.SortItem[], byUser = false) {
-    const next = sort.filter((s) => this.columns.defs.has(s.field)).map((s) => ({ ...s }));
+    const next = sort.filter((s) => this.columns.defs.has(s.field) && !this.groups.isGrouped(s.field)).map((s) => ({ ...s }));
     if (this.sameSort(next, this.state.sort)) return;
     this.onBeforeQueryChange?.();
     this.state.sort = next;
@@ -807,16 +842,19 @@ export class GridModel<T> {
 
   /** Sort position (1-based) and direction of a column, for its header. */
   sortOf(field: string): { dir: 'asc' | 'desc'; position: number } | null {
+    // A grouped column shows the order of its groups, without a number.
+    if (this.groups.isGrouped(field)) return { dir: this.groups.dirOf(field), position: 0 };
     const i = this.state.sort.findIndex((s) => s.field === field);
     return i < 0 ? null : { dir: this.state.sort[i].dir, position: i + 1 };
   }
 
   get layout(): GridLayout {
-    return { columns: this.columns.toLayout(), sort: this.state.sort.map((s) => ({ ...s })) };
+    return { columns: this.columns.toLayout(), sort: this.state.sort.map((s) => ({ ...s })), group: this.groups.items.map((g) => ({ ...g })) };
   }
 
   set layout(layout: GridLayout) {
     this.columns.applyLayout(layout);
+    this.setGroup(layout.group ?? this.columnGroups());
     this.setSort(layout.sort ?? []);
     this.keepActiveFieldVisible();
     this.keepLayout();
@@ -824,9 +862,178 @@ export class GridModel<T> {
 
   resetLayout() {
     this.columns.reset();
+    this.setGroup(this.columnGroups());
     this.setSort(this.props.sort ?? []);
     this.keepActiveFieldVisible();
     this.layoutChanged();
+  }
+
+  // Grouping.
+
+  /** The grouping the columns give: those with a `groupIndex`, in its order. */
+  columnGroups(): data.GroupItem[] {
+    const out: { field: string; at: number }[] = [];
+    for (const col of this.props.columns) {
+      const at = read(col.groupIndex);
+      if (typeof at === 'number' && at >= 0) out.push({ field: col.field, at });
+    }
+    out.sort((a, b) => a.at - b.at);
+    const sort = this.props.sort ?? [];
+    return out.map(({ field }) => ({ field, dir: sort.find((s) => s.field === field)?.dir ?? 'asc' }));
+  }
+
+  /**
+   * Groups the rows by these levels, in order (none: not grouped). A column grouped now leaves the
+   * sort, its direction the order of its groups. `byUser` reports a layout change.
+   */
+  setGroup(items: readonly data.GroupItem[], byUser = false) {
+    const next = this.groups.normalize(items.map((g) => ({ field: g.field, dir: g.dir ?? this.state.sort.find((s) => s.field === g.field)?.dir ?? 'asc' })));
+    if (this.groups.same(next)) return;
+    const previous = this.groups.items.map((g) => ({ ...g }));
+    if (this.onGroupingChanging && !this.onGroupingChanging(next, previous, byUser)) return;
+    const before = this.groups.fields();
+    this.onBeforeQueryChange?.();
+    this.groups.set(next);
+    const st = this.state;
+    st.page = 0;
+    this.generation++;
+    const sort = st.sort.filter((s) => !this.groups.isGrouped(s.field));
+    if (sort.length !== st.sort.length) st.sort = sort;
+    untracked(() => this.data.setGrouping(this.groups.levels(), { sort: this.sourceSort(st.sort) }));
+    this.keepActiveFieldVisible();
+    this.onQueryChange?.();
+    this.onGroupingChanged?.(next, previous, byUser);
+    if (byUser) {
+      const now = this.groups.fields();
+      const added = now.find((f) => !before.includes(f));
+      const removed = before.find((f) => !now.includes(f));
+      if (added !== undefined) this.announce(this.text('gridGroupedBy', { title: this.columns.title(added) }));
+      else if (!now.length) this.announce(this.text('gridGroupingCleared'));
+      else if (removed !== undefined) this.announce(this.text('gridUngroupedBy', { title: this.columns.title(removed) }));
+      this.layoutChanged();
+    } else this.keepLayout();
+  }
+
+  /**
+   * Whether the column menu has "Group by this column", "Ungroup" and "Ungroup all": `groupMenu`, or
+   * while the group panel lets headers be dragged (the menu is the keyboard's way to do the same).
+   */
+  groupMenuShown(field: string): boolean {
+    const own = this.columns.features.get(field)?.own('groupMenu');
+    if (typeof own === 'boolean') return own;
+    const s = this.settings;
+    const set = s.own('groupMenu');
+    if (typeof set === 'boolean') return set;
+    return s.get('groupPanel') && s.get('groupPanelDragging');
+  }
+
+  /** Whether the user may group by a column now: the feature is on, and a data column still shows after it leaves. */
+  canGroupNow(field: string): boolean {
+    if (!this.groups.canGroup(field) || this.groups.isGrouped(field)) return false;
+    return this.columns.can(field, 'showWhenGrouped') || this.columns.visibleData().some((f) => f !== field);
+  }
+
+  /** Whether the user may open and close a group: its column's `allowCollapsing`, else the grid's. */
+  canCollapse(node: GroupNode): boolean {
+    return this.columns.can(node.field, 'allowCollapsing');
+  }
+
+  /** How a group opens: its column's `groupExpandMode`, else the grid's. */
+  expandModeOf(node: GroupNode): 'button' | 'rowClick' {
+    return read(this.columns.defs.get(node.field)?.groupExpandMode) ?? this.settings.get('groupExpandMode');
+  }
+
+  /** The grid's own content for group rows (`groupCell` prop), used by columns without one. */
+  get groupCell(): DataGridProps<T>['groupCell'] {
+    return this.props.groupCell;
+  }
+
+  /** Whether a drop may change the grouping: the app is told first and can cancel it. */
+  groupDropAllowed(field: string, from: 'header' | 'chip', to: 'panel' | 'headers', index: number): boolean {
+    return this.onGroupDropping?.({ field, from, to, index }) ?? true;
+  }
+
+  /** Groups again with what the grouping depends on now (`remoteGrouping`, `groupLoadPageSize`). */
+  regroupWithSettings() {
+    if (!this.groups.any) return;
+    this.onBeforeQueryChange?.();
+    untracked(() => this.data.setGrouping(this.groups.levels(), { remote: this.settings.get('remoteGrouping'), loadSize: this.settings.get('groupLoadPageSize') }));
+    this.onQueryChange?.();
+  }
+
+  /** Groups by a column at a place among the grouped ones (moves it there when it is grouped). */
+  groupBy(field: string, index = Number.MAX_SAFE_INTEGER, byUser = false) {
+    this.setGroup(this.groups.withField(field, index), byUser);
+  }
+
+  ungroup(field: string, byUser = false) {
+    this.setGroup(this.groups.without(field), byUser);
+  }
+
+  /** Ascending ↔ descending order of a grouped column's groups. */
+  toggleGroupOrder(field: string, byUser = true) {
+    if (!this.groups.isGrouped(field)) return;
+    const dir = this.groups.dirOf(field) === 'asc' ? 'desc' : 'asc';
+    this.setGroup(
+      this.groups.items.map((g) => (g.field === field ? { field, dir } : g)),
+      byUser,
+    );
+    if (byUser && this.groups.dirOf(field) === dir) this.announceSort(field, dir);
+  }
+
+  /** Opens or closes one group by its keys; returns whether it changed. The active row stays on what it showed. */
+  setGroupExpanded(node: GroupNode, open: boolean): boolean {
+    let changed = false;
+    this.keepActiveRow(() => (changed = this.groups.setExpanded(node, open)));
+    return changed;
+  }
+
+  /** Opens or closes every group of a level, or of every level. */
+  setAllExpanded(open: boolean, level?: number) {
+    this.keepActiveRow(() => this.groups.setAll(open, level));
+  }
+
+  /** The group with these keys from the top level down, among the groups known now. */
+  findGroup(key: readonly unknown[]): GroupNode | null {
+    const view = this.data.groupView();
+    if (!view || !key.length) return null;
+    const id = groupId(key, this.formatter.locale);
+    return view.allGroups().find((g) => g.id === id) ?? null;
+  }
+
+  /**
+   * A group's value as its column shows it: a lookup's text (nothing while it loads), the formatted
+   * value, "(empty)"; a value of its own (`calculateGroupValue`, `textFrom`) as it is.
+   */
+  groupValue(node: GroupNode, ask = true): LookupCell {
+    const col = this.columns.get(node.field);
+    const key = node.key;
+    if (data.isEmpty(key)) return { text: this.text('gridEmptyOption'), state: 'none' };
+    if (col.calculateGroupValue !== undefined || col.textFrom !== undefined) {
+      return { text: key instanceof Date ? key.toLocaleDateString(this.formatter.locale) : String(key), state: 'none' };
+    }
+    if (col.lookup) return this.lookups.keyText(col, key, ask);
+    return { text: this.formatter.text(col, this.data.rowOfData(node.start) ?? ({} as T), key), state: 'none' };
+  }
+
+  /** "Title: value" of a group, as its row and an export show it. */
+  groupCaption(node: GroupNode): string {
+    return this.text('gridGroupText', { title: this.columns.title(node.field), value: this.groupValue(node).text });
+  }
+
+  /** Runs a change of the open groups and puts the active row back on the group or row it showed (or the group that hides it now). */
+  private keepActiveRow(change: () => void) {
+    const st = this.state;
+    const i = st.activeRow;
+    const group = i >= 0 ? this.groupAt(i) : null;
+    const row = i >= 0 && !group ? this.rowAt(i) : undefined;
+    const d = row !== undefined ? this.data.dataIndexOf(row) : -1;
+    change();
+    this.data.regroupView();
+    const view = this.data.groupView();
+    if (!view || i < 0 || (!group && d < 0)) return;
+    const place = group ? view.placeOfGroup(group.id) : view.shownPlaceOfRow(d);
+    if (place >= 0 && this.viewOfData(place) !== i) st.activeRow = this.viewOfData(place);
   }
 
   layoutChanged() {
@@ -887,7 +1094,7 @@ export class GridModel<T> {
     for (const s of sort) {
       let field: string | undefined = s.field;
       if (!this.columns.defs.has(field)) field = [...this.columns.defs.values()].find((c) => !this.columns.isInternal(c.field) && this.lookups.sortFieldOf(c) === s.field)?.field;
-      if (field !== undefined && !this.columns.isInternal(field)) out.push({ field, dir: s.dir });
+      if (field !== undefined && !this.columns.isInternal(field) && !this.groups.isGrouped(field)) out.push({ field, dir: s.dir });
     }
     return out;
   }

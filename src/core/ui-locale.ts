@@ -154,6 +154,19 @@ export const enStrings: UiStrings = {
   gridSearchPlaceholder: 'Search…',
   gridSearchResults: '{count} records found',
   gridColumnChooser: 'Column chooser',
+  gridGroupPanel: 'Grouping',
+  gridGroupPanelEmpty: 'Drag a column header here to group by that column',
+  gridGroupByColumn: 'Group by this column',
+  gridUngroup: 'Ungroup',
+  gridUngroupAll: 'Ungroup all',
+  gridGroupedBy: 'Grouped by {title}',
+  gridUngroupedBy: 'No longer grouped by {title}',
+  gridGroupingCleared: 'Not grouped any more',
+  gridGroupText: '{title}: {value}',
+  gridGroupCount: '({count})',
+  gridGroupChipAscending: '{title}, groups ascending',
+  gridGroupChipDescending: '{title}, groups descending',
+  gridGroupChipHint: 'Enter turns the order of the groups; Delete ungroups.',
 };
 
 export const trStrings: UiStrings = {
@@ -309,6 +322,19 @@ export const trStrings: UiStrings = {
   gridSearchPlaceholder: 'Ara…',
   gridSearchResults: '{count} kayıt bulundu',
   gridColumnChooser: 'Kolon seçici',
+  gridGroupPanel: 'Gruplama',
+  gridGroupPanelEmpty: 'Bir kolona göre gruplamak için başlığını buraya sürükleyin',
+  gridGroupByColumn: 'Bu kolona göre grupla',
+  gridUngroup: 'Gruplamayı kaldır',
+  gridUngroupAll: 'Bütün gruplamaları kaldır',
+  gridGroupedBy: '{title} kolonuna göre gruplandı',
+  gridUngroupedBy: '{title} gruplaması kaldırıldı',
+  gridGroupingCleared: 'Gruplama kalmadı',
+  gridGroupText: '{title}: {value}',
+  gridGroupCount: '({count})',
+  gridGroupChipAscending: '{title}, gruplar artan',
+  gridGroupChipDescending: '{title}, gruplar azalan',
+  gridGroupChipHint: 'Enter grupların sırasını çevirir; Delete gruplamayı kaldırır.',
 };
 
 function stringsOf(lang: string): UiStrings {

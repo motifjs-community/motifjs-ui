@@ -59,6 +59,8 @@ export class ColumnModel<T> {
   statusWanted: () => boolean = () => false;
   /** Whether the grid has row actions to show. */
   actionsWanted: () => boolean = () => false;
+  /** Whether a column is out of the columns because the rows are grouped by it. */
+  hiddenByGroup: (field: string) => boolean = () => false;
 
   constructor(
     columns: GridColumn<T>[],
@@ -231,7 +233,7 @@ export class ColumnModel<T> {
     const actions = this.showsActions();
     const first = this.settings.get('actionsPosition') === 'start';
     if (actions && first) add(ACTIONS_FIELD);
-    for (const f of order) if (!this.isInternal(f) && !hidden[f]) add(f);
+    for (const f of order) if (!this.isInternal(f) && !hidden[f] && !this.hiddenByGroup(f)) add(f);
     if (actions && !first) add(ACTIONS_FIELD);
     return [...start, ...free, ...end];
   }

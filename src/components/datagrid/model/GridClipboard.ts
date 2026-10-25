@@ -33,6 +33,11 @@ export class GridClipboard<T> {
       return { text: writeDelimited(head ? [head, ...lines] : lines, '\t'), html: htmlTable(head, lines), rows: rows.length };
     }
     const { activeRow, activeField } = model.state;
+    const group = activeRow >= 0 ? model.groupAt(activeRow) : null;
+    if (group) {
+      const caption = model.groupCaption(group);
+      return { text: caption, html: htmlTable(null, [[caption]]), rows: 0 };
+    }
     const row = activeRow >= 0 ? model.rowAt(activeRow) : undefined;
     if (row === undefined || !fields.includes(activeField)) return null;
     const text = this.cellText(row, activeField);
@@ -62,6 +67,14 @@ export class GridClipboard<T> {
       }
       at = model.localOf(r) + 1;
       last = r;
+      // Group rows take no values: the line goes to the next data row.
+      while (model.groupAt(r)) {
+        r = model.viewAt(at);
+        if (r < 0) break;
+        at = model.localOf(r) + 1;
+        last = r;
+      }
+      if (r < 0) break;
       const row = model.rowAt(r);
       const rowId = model.rowIdAt(r);
       if (row === undefined || rowId === undefined) break;
@@ -113,6 +126,8 @@ export class GridClipboard<T> {
     const sel = model.selection;
     if (model.settings.get('selection') !== 'multiple' || sel.empty) return null;
     const source = model.data.source;
+    const grouped = model.data.groupedRows();
+    if (grouped) return grouped.filter((row) => sel.isSelected(model.selectId(row)));
     if (source.loadMode === 'all') return source.rows.filter((row) => sel.isSelected(model.selectId(row)));
     if (sel.all) return 'all';
     const found: { row: T; at: number }[] = [];
@@ -131,7 +146,7 @@ export class GridClipboard<T> {
     if (last < 0 || !settings.get('pasteNewRows') || !settings.get('addRows')) return -1;
     const k = model.addedIndex(last);
     if (k >= 0) return model.insertAdded(k + 1);
-    const atEnd = model.newRowPosition === 'bottom' && model.dataIndex(last) === model.dataTotal - 1;
+    const atEnd = model.newRowPosition === 'bottom' && model.dataIndex(last) === model.data.total - 1;
     return atEnd ? model.insertAdded(model.addedRows.length) : -1;
   }
 }

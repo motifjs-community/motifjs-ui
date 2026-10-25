@@ -700,6 +700,76 @@
     "value": "#845000"
   },
   {
+    "name": "datagrid.group-indent",
+    "cssVar": "--mx-datagrid-group-indent",
+    "type": "dimension",
+    "ref": "space.5",
+    "value": "1.25rem"
+  },
+  {
+    "name": "datagrid.group-font-weight",
+    "cssVar": "--mx-datagrid-group-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.medium",
+    "value": "500"
+  },
+  {
+    "name": "datagrid.group-background",
+    "cssVar": "--mx-datagrid-group-background",
+    "type": "color",
+    "ref": "color.fill.subtle.tertiary",
+    "value": "rgb(0 0 0 / 0.0241)"
+  },
+  {
+    "name": "datagrid.group-count-color",
+    "cssVar": "--mx-datagrid-group-count-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "datagrid.chip-gap",
+    "cssVar": "--mx-datagrid-chip-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "datagrid.chip-radius",
+    "cssVar": "--mx-datagrid-chip-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "datagrid.chip-background",
+    "cssVar": "--mx-datagrid-chip-background",
+    "type": "color",
+    "ref": "color.fill.subtle.secondary",
+    "value": "rgb(0 0 0 / 0.0373)"
+  },
+  {
+    "name": "datagrid.chip-border-color",
+    "cssVar": "--mx-datagrid-chip-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.default",
+    "value": "rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "datagrid.panel-empty-color",
+    "cssVar": "--mx-datagrid-panel-empty-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "datagrid.drop-target",
+    "cssVar": "--mx-datagrid-drop-target",
+    "type": "color",
+    "ref": "color.accent.subtle",
+    "value": "#fbe6de"
+  },
+  {
     "name": "date-box.times-width",
     "cssVar": "--mx-date-box-times-width",
     "type": "dimension",

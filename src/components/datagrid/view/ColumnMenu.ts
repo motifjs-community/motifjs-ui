@@ -11,9 +11,9 @@ import type { HeaderHost } from './header-host';
 const KEEP_OPEN = Symbol('keep open');
 
 /**
- * The column menu, a kit `MenuList` in a `Popup`: sort, the header filter and clearing the column's
- * filter, pin, fit, move, resize, hide, the list of columns (a submenu; also opened alone from the
- * toolbar) and reset, each shown only while its feature is on for the column. Every item
+ * The column menu, a kit `MenuList` in a `Popup`: sort, grouping, the header filter and clearing the
+ * column's filter, pin, fit, move, resize, hide, the list of columns (a submenu; also opened alone
+ * from the toolbar) and reset, each shown only while its feature is on for the column. Every item
  * follows the grid's state while the menu is open.
  */
 export class ColumnMenu<T> {
@@ -130,16 +130,42 @@ export class ColumnMenu<T> {
     const sorted = () => grid.sortOf(field);
     const only = () => grid.state.sort.length === 1;
     const sticky = () => cols.state.sticky[field] ?? null;
+    // A grouped column's sort is the order of its groups.
+    const grouped = () => grid.groups.isGrouped(field);
     const sort = (dir: 'asc' | 'desc' | null) => () => {
+      if (grouped()) {
+        if (dir && dir !== grid.groups.dirOf(field)) grid.toggleGroupOrder(field);
+        return;
+      }
       grid.setSort(dir ? [{ field, dir }] : [], true);
       grid.announceSort(field, dir);
     };
 
     const groups: MenuItem[][] = [
       [
-        { text: t('gridSortAscending'), visible: can('sortable'), enabled: () => !(sorted()?.dir === 'asc' && only()), click: sort('asc') },
-        { text: t('gridSortDescending'), visible: can('sortable'), enabled: () => !(sorted()?.dir === 'desc' && only()), click: sort('desc') },
-        { text: t('gridClearSort'), visible: can('sortable'), enabled: () => !!sorted(), click: sort(null) },
+        { text: t('gridSortAscending'), visible: can('sortable'), enabled: () => (grouped() ? grid.groups.dirOf(field) !== 'asc' : !(sorted()?.dir === 'asc' && only())), click: sort('asc') },
+        { text: t('gridSortDescending'), visible: can('sortable'), enabled: () => (grouped() ? grid.groups.dirOf(field) !== 'desc' : !(sorted()?.dir === 'desc' && only())), click: sort('desc') },
+        { text: t('gridClearSort'), visible: () => cols.can(field, 'sortable') && !grouped(), enabled: () => !!sorted(), click: sort(null) },
+      ],
+      [
+        {
+          text: t('gridGroupByColumn'),
+          visible: () => grid.groupMenuShown(field) && grid.groups.canGroup(field) && !grid.groups.isGrouped(field),
+          enabled: () => grid.canGroupNow(field),
+          click: () => {
+            grid.groupBy(field, Number.MAX_SAFE_INTEGER, true);
+            this.host.focusActive();
+          },
+        },
+        { text: t('gridUngroup'), visible: () => grid.groupMenuShown(field) && grid.groups.isGrouped(field), click: () => grid.ungroup(field, true) },
+        {
+          text: t('gridUngroupAll'),
+          visible: () => grid.groupMenuShown(field) && grid.groups.any,
+          click: () => {
+            grid.setGroup([], true);
+            this.host.focusActive();
+          },
+        },
       ],
       [
         { text: t('gridFilterValues'), visible: () => grid.hasHeaderFilter(field), click: () => this.host.openHeaderFilter(field, this.anchor ?? document.body) },

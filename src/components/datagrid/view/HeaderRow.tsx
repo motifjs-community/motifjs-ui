@@ -7,12 +7,11 @@ import { createCheck, setCheck } from './check-mark';
 import type { HeaderHost } from './header-host';
 import { placeInOrder } from './place-in-order';
 
-const DRAG_THRESHOLD = 5;
-
 /**
  * The header row: a header per column with its title, sort mark, filter and menu buttons and resize
  * handle. A click sorts (Shift adds to the sort), dragging a header moves the column inside its
- * sticky zone, dragging the edge resizes it, a double-click on the edge fits it to its content. The
+ * sticky zone (or, dropped on the group panel, groups by it), dragging the edge resizes it, a
+ * double-click on the edge fits it to its content. The
  * selection column's header is the "select all" check box. Each follows the grid's settings and the
  * column's own value live.
  */
@@ -179,7 +178,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
   /** The sort position, shown next to the arrow when more than one column is sorted. */
   private sortMark(field: string): string {
     const s = this.grid.sortOf(field);
-    return s && this.grid.state.sort.length > 1 ? String(s.position) : '';
+    return s && s.position > 0 && this.grid.state.sort.length > 1 ? String(s.position) : '';
   }
 
   private clickHeader(col: GridColumn<T>, e: MouseEvent) {
@@ -191,29 +190,45 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     this.grid.toggleSort(col.field, e.shiftKey);
   }
 
-  /** Drag a header to move the column within its zone, not across columns that cannot move. */
+  /**
+   * Drag a header to move the column within its zone, not across columns that cannot move; onto the
+   * group panel to group by it.
+   */
   private pressHeader(col: GridColumn<T>, e: PointerEvent) {
-    const cols = this.grid.columns;
-    if (e.button !== 0 || !cols.can(col.field, 'movable')) return;
+    const { grid } = this;
+    const cols = grid.columns;
+    const field = col.field;
+    if (e.button !== 0) return;
     if ((e.target as HTMLElement).closest('.mx-data-grid__resize, .mx-data-grid__menu-button, .mx-data-grid__filter-button')) return;
-    const source = this.cellElement(col.field)!;
+    const panel = grid.canGroupNow(field) ? this.host.groupTarget() : null;
+    const [lo, hi] = cols.moveRange(field);
+    const movable = cols.can(field, 'movable') && lo !== hi;
+    if (!movable && !panel) return;
+    const source = this.cellElement(field)!;
     const startX = e.clientX;
-    const zone = cols.zone(cols.zoneOf(col.field));
-    const [lo, hi] = cols.moveRange(col.field);
-    if (lo === hi) return;
+    const startY = e.clientY;
+    const zone = cols.zone(cols.zoneOf(field));
     // Captured at once: the pointer may leave the header before the drag threshold is reached.
     source.setPointerCapture?.(e.pointerId);
     let dragging = false;
-    const from = zone.indexOf(col.field);
+    const from = zone.indexOf(field);
     let target = from;
+    let place = -1;
     const indicator = this.indicator.element as HTMLElement;
     const rtl = this.host.isRtl();
 
     const move = (ev: PointerEvent) => {
       if (!dragging) {
-        if (Math.abs(ev.clientX - startX) < DRAG_THRESHOLD) return;
+        if (Math.max(Math.abs(ev.clientX - startX), panel ? Math.abs(ev.clientY - startY) : 0) < grid.settings.get('dragThreshold')) return;
         dragging = true;
         source.toggleAttribute('data-dragging', true);
+      }
+      place = panel ? panel.dropIndexAt(ev.clientX, ev.clientY) : -1;
+      panel?.showDrop(place);
+      if (place >= 0 || !movable) {
+        target = from;
+        indicator.hidden = true;
+        return;
       }
       // Target = number of zone columns whose centre lies before the pointer.
       const rects = zone.map((f) => this.cellElement(f)!.getBoundingClientRect());
@@ -235,14 +250,19 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       indicator.style.left = `${x - base.left}px`;
       indicator.hidden = false;
     };
-    const up = () => {
+    const up = (ev: PointerEvent) => {
       source.removeEventListener('pointermove', move);
       source.removeEventListener('pointerup', up);
       source.removeEventListener('pointercancel', up);
       indicator.hidden = true;
+      panel?.showDrop(-1);
       source.toggleAttribute('data-dragging', false);
       if (!dragging) return;
       this.suppressClick = true;
+      if (place >= 0 && ev.type !== 'pointercancel') {
+        if (grid.groupDropAllowed(field, 'header', 'panel', place)) grid.groupBy(field, place, true);
+        return;
+      }
       if (cols.move(col.field, target)) {
         const z = cols.zone(cols.zoneOf(col.field));
         this.grid.announce(this.grid.text('gridMovedTo', { title: cols.title(col.field), position: z.indexOf(col.field) + 1, count: z.length }));
@@ -252,6 +272,46 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     source.addEventListener('pointermove', move);
     source.addEventListener('pointerup', up);
     source.addEventListener('pointercancel', up);
+  }
+
+  /**
+   * Where a grouped column dragged back over the headers would land: its place among the visible
+   * columns of its zone; -1 when the point is not over the headers.
+   */
+  chipDropIndex(field: string, x: number, y?: number): number {
+    if (Number.isNaN(x)) return -1;
+    const box = this.element.getBoundingClientRect();
+    if (y !== undefined && (y < box.top || y > box.bottom || x < box.left || x > box.right)) return -1;
+    const cols = this.grid.columns;
+    const rtl = this.host.isRtl();
+    let n = 0;
+    for (const f of cols.zone(cols.zoneOf(field))) {
+      const r = this.cellElement(f)?.getBoundingClientRect();
+      if (r && (rtl ? x < r.left + r.width / 2 : x > r.left + r.width / 2)) n++;
+    }
+    return n;
+  }
+
+  /** Marks where a grouped column dragged over the headers lands; whether the point is over them (NaN hides the mark). */
+  showChipDrop(field: string, x: number, y: number): boolean {
+    const indicator = this.indicator.element as HTMLElement;
+    const at = this.chipDropIndex(field, x, y);
+    if (at < 0) {
+      indicator.hidden = true;
+      this.element.toggleAttribute('data-drop', false);
+      return false;
+    }
+    const cols = this.grid.columns;
+    const zone = cols.zone(cols.zoneOf(field));
+    const rtl = this.host.isRtl();
+    const base = this.element.getBoundingClientRect();
+    const before = this.cellElement(zone[at])?.getBoundingClientRect();
+    const after = this.cellElement(zone[at - 1])?.getBoundingClientRect();
+    const edge = before ? (rtl ? before.right : before.left) : after ? (rtl ? after.left : after.right) : base.left;
+    indicator.style.left = `${edge - base.left}px`;
+    indicator.hidden = false;
+    this.element.toggleAttribute('data-drop', true);
+    return true;
   }
 
   /** Width the column takes on screen; more than its setting while it flexes. */

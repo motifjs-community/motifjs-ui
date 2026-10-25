@@ -11,7 +11,7 @@ import type { ToolbarHost } from './toolbar-host';
 import type { ToolbarValues } from './toolbar-values';
 
 /** The grid's own items, in the order they take when the app does not list them. */
-const ORDER: readonly GridToolbarItemName[] = ['addRowButton', 'saveButton', 'revertButton', 'exportButton', 'columnChooserButton', 'searchPanel'];
+const ORDER: readonly GridToolbarItemName[] = ['groupPanel', 'addRowButton', 'saveButton', 'revertButton', 'exportButton', 'columnChooserButton', 'searchPanel'];
 
 /** The item of one of the grid's items the app names without changing anything. */
 const PLAIN: GridToolbarItem = Object.freeze({});
@@ -55,7 +55,8 @@ export class GridToolbar<T> {
     this.bar.element.append(this.spacer);
     const stop = effect(() => {
       const list = this.entries();
-      const after = list.map((e) => read(e.item.location) !== 'before');
+      // The group panel starts the bar, the grid's other items end it.
+      const after = list.map((e) => (read(e.item.location) ?? (e.name === 'groupPanel' ? 'before' : 'after')) !== 'before');
       untracked(() => this.place(list, after));
     });
     owner.motif.setDisposable(() => {
@@ -87,6 +88,8 @@ export class GridToolbar<T> {
     switch (name) {
       case 'searchPanel':
         return s.get('searchPanel');
+      case 'groupPanel':
+        return s.get('groupPanel');
       case 'addRowButton':
         return s.get('addRows') && s.get('newRowButton');
       case 'saveButton':
@@ -158,6 +161,7 @@ export class GridToolbar<T> {
   private make(entry: Entry): Made {
     const { item, name } = entry;
     if (name === 'searchPanel') return this.makeSearch(item);
+    if (name === 'groupPanel') return this.makeGroupPanel(item);
     if (!name && item.content) return this.makeContent(item);
     return this.makeButton(entry);
   }
@@ -239,6 +243,15 @@ export class GridToolbar<T> {
       untracked(() => (box.element.style.inlineSize = typeof w === 'number' ? `${w}px` : w));
     });
     return { item, control: box, element: box.element, stops: [width, this.followOverflow(box.element, item, 'never')] };
+  }
+
+  private makeGroupPanel(item: GridToolbarItem): Made {
+    const element = this.host.groupPanel().element;
+    const visible = effect(() => {
+      const on = read(item.visible) !== false;
+      untracked(() => element.toggleAttribute('hidden', !on));
+    });
+    return { item, control: null, element, stops: [visible, this.followOverflow(element, item, 'never')] };
   }
 
   private makeContent(item: GridToolbarItem): Made {

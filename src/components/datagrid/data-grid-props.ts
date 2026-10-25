@@ -6,7 +6,13 @@ import type { GridActionItem } from './grid-action-item';
 import type { GridColumn } from './grid-column';
 import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
 import type { GridFilters } from './grid-filters';
+import type { GridGroupDroppingEventArgs } from './grid-group-dropping-event-args';
+import type { GridGroupingChangedEventArgs } from './grid-grouping-changed-event-args';
+import type { GridGroupingChangingEventArgs } from './grid-grouping-changing-event-args';
 import type { GridLayout } from './grid-layout';
+import type { GroupCellContext } from './group-cell-context';
+import type { GridRowExpandedEventArgs } from './grid-row-expanded-event-args';
+import type { GridRowExpandingEventArgs } from './grid-row-expanding-event-args';
 import type { GridMode } from './grid-mode';
 import type { GridSettingsProps } from './grid-settings-props';
 import type { GridSearchTextChangedEventArgs } from './grid-search-text-changed-event-args';
@@ -84,6 +90,22 @@ export interface DataGridProps<T> extends ControlProps {
   searchText?: Bind<string>;
   /** The search text changed (typed, or set from code). */
   onSearchTextChanged?: (e: GridSearchTextChangedEventArgs) => void;
+  /** Content of your own in every group row whose column has no `groupCell`, made once per pooled group row. */
+  groupCell?: (ctx: GroupCellContext<T>) => unknown;
+  /** The grouping is about to change (user or code): `e.group`, `e.previous`, `e.byUser`; `e.cancel` keeps it. */
+  onGroupingChanging?: (e: GridGroupingChangingEventArgs) => void;
+  /** The grouping changed. */
+  onGroupingChanged?: (e: GridGroupingChangedEventArgs) => void;
+  /** A header or a chip is dropped: `e.field`, `e.from`, `e.to`, `e.index`; `e.cancel` cancels the drop. */
+  onGroupDropping?: (e: GridGroupDroppingEventArgs) => void;
+  /** A group is about to open: `e.key` is its key (the values from the top level down), `e.cancel` keeps it closed. */
+  onRowExpanding?: (e: GridRowExpandingEventArgs) => void;
+  /** A group opened. */
+  onRowExpanded?: (e: GridRowExpandedEventArgs) => void;
+  /** A group is about to close; `e.cancel` keeps it open. */
+  onRowCollapsing?: (e: GridRowExpandingEventArgs) => void;
+  /** A group closed. */
+  onRowCollapsed?: (e: GridRowExpandedEventArgs) => void;
   /** The bar above the rows: which items, and whether it shows. */
   toolbar?: GridToolbar;
   /** Initial filters, by field. Read and change them later through `grid.filters`. */

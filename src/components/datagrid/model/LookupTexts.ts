@@ -72,6 +72,14 @@ export class LookupTexts<T> {
       const text = typeof col.textFrom === 'function' ? col.textFrom(row) : data.getField(row, col.textFrom);
       return { text: text === null || text === undefined ? '' : String(text), state: 'found' };
     }
+    return this.keyText(col, value, ask);
+  }
+
+  /** What a key shows without a row (a group's key): a text the user chose, the item's text, nothing while it loads, or the key itself when the source does not have it. */
+  keyText(col: GridColumn<T>, value: unknown, ask = true): LookupCell {
+    if (data.isEmpty(value)) return { text: '', state: 'none' };
+    const chosen = this.chosen.get(col.field)?.get(KeyedItems.keyString(value));
+    if (chosen !== undefined) return { text: chosen, state: 'found' };
     const items = this.items(col);
     if (!items) return { text: String(value), state: 'none' };
     const known = items.get(value);

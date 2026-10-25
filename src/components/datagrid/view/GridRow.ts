@@ -216,6 +216,10 @@ export class GridRow<T> {
       return;
     }
     el.setAttribute('aria-rowindex', String(index + 1 + model.headRows));
+    // Grouped, the grid is a tree: data rows sit below every level (new rows outside the groups).
+    const levels = model.groups.state.items.length;
+    if (levels) el.setAttribute('aria-level', String(model.addedIndex(index) >= 0 ? 1 : levels + 1));
+    else el.removeAttribute('aria-level');
     el.toggleAttribute('data-odd', index % 2 === 1);
     el.toggleAttribute('data-loading', this.row === undefined);
     const active = model.state.activeRow === index;

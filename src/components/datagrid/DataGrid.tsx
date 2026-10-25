@@ -16,7 +16,12 @@ import type { GridChanges } from './grid-changes';
 import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
 import type { GridExportOptions } from './grid-export-options';
 import type { GridFilters } from './grid-filters';
+import type { GridGroupDroppingEventArgs } from './grid-group-dropping-event-args';
+import type { GridGroupingChangedEventArgs } from './grid-grouping-changed-event-args';
+import type { GridGroupingChangingEventArgs } from './grid-grouping-changing-event-args';
 import type { GridLayout } from './grid-layout';
+import type { GridRowExpandedEventArgs } from './grid-row-expanded-event-args';
+import type { GridRowExpandingEventArgs } from './grid-row-expanding-event-args';
 import type { GridSearchTextChangedEventArgs } from './grid-search-text-changed-event-args';
 import type { GridSelection } from './grid-selection';
 import type { GridSelectionChangedEventArgs } from './grid-selection-changed-event-args';
@@ -27,6 +32,7 @@ import { ACTIONS_FIELD, SELECT_FIELD, STATUS_FIELD } from './model/ColumnModel';
 import { GridClipboard } from './model/GridClipboard';
 import { GridExport } from './model/GridExport';
 import { FILTER_ROW, GridModel, HEADER_ROW } from './model/GridModel';
+import type { GroupNode } from './model/group-node';
 import { Switches } from './model/Switches';
 import { ActionWidths } from './view/ActionWidths';
 import { CellEditor } from './view/CellEditor';
@@ -37,6 +43,7 @@ import type { FilterCell } from './view/FilterCell';
 import { FilterRow } from './view/FilterRow';
 import { GridBody } from './view/GridBody';
 import { GridToolbar } from './view/GridToolbar';
+import { GroupPanel } from './view/GroupPanel';
 import type { GridRow } from './view/GridRow';
 import { HeaderFilter } from './view/HeaderFilter';
 import { HeaderRow } from './view/HeaderRow';
@@ -90,8 +97,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private readonly selectionEmitter = new Emitter<GridSelectionChangedEventArgs>();
   private readonly preparingEmitter = new Emitter<GridEditorPreparingEventArgs<T>>();
   private readonly searchEmitter = new Emitter<GridSearchTextChangedEventArgs>();
+  private readonly expandingEmitter = new Emitter<GridRowExpandingEventArgs>();
+  private readonly expandedEmitter = new Emitter<GridRowExpandedEventArgs>();
+  private readonly collapsingEmitter = new Emitter<GridRowExpandingEventArgs>();
+  private readonly collapsedEmitter = new Emitter<GridRowExpandedEventArgs>();
+  private readonly groupingChangingEmitter = new Emitter<GridGroupingChangingEventArgs>();
+  private readonly groupingChangedEmitter = new Emitter<GridGroupingChangedEventArgs>();
+  private readonly groupDroppingEmitter = new Emitter<GridGroupDroppingEventArgs>();
   private readonly toolbarSwitches: Switches<ToolbarValues>;
   private readonly topBar: GridToolbar<T>;
+  private readonly groupPanel: GroupPanel<T>;
   private readonly styles: ColumnStyles<T>;
   private readonly tip: CellTip;
   private readonly clipboard: GridClipboard<T>;
@@ -133,6 +148,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       openHeaderFilter: (field, anchor) => this.openHeaderFilter(field, anchor),
       toggleAll: () => this.toggleAll(),
       allState: () => this.allState(),
+      groupTarget: () => (this.groupPanel.accepts ? this.groupPanel : null),
+      focusActive: () => this.focusActive(false),
     };
     this.header = new HeaderRow<T>(model, host);
     this.filterRow = new FilterRow<T>(model);
@@ -156,6 +173,30 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     model.onLayoutChange = (layout) => own.onLayoutChange?.(layout);
     model.search.onTextChanged = (text) => this.searchEmitter.fire({ text });
     if (own.onSearchTextChanged) this.onSearchTextChanged(own.onSearchTextChanged);
+    if (own.onRowExpanding) this.onRowExpanding(own.onRowExpanding);
+    if (own.onRowExpanded) this.onRowExpanded(own.onRowExpanded);
+    if (own.onRowCollapsing) this.onRowCollapsing(own.onRowCollapsing);
+    if (own.onRowCollapsed) this.onRowCollapsed(own.onRowCollapsed);
+    if (own.onGroupingChanging) this.onGroupingChanging(own.onGroupingChanging);
+    if (own.onGroupingChanged) this.onGroupingChanged(own.onGroupingChanged);
+    if (own.onGroupDropping) this.onGroupDropping(own.onGroupDropping);
+    model.onGroupingChanging = (group, previous, byUser) => {
+      const e: GridGroupingChangingEventArgs = { group, previous, byUser, cancel: false };
+      this.groupingChangingEmitter.fire(e);
+      return !e.cancel;
+    };
+    model.onGroupingChanged = (group, previous, byUser) => this.groupingChangedEmitter.fire({ group, previous, byUser });
+    model.onGroupDropping = (args) => {
+      const e: GridGroupDroppingEventArgs = { ...args, cancel: false };
+      this.groupDroppingEmitter.fire(e);
+      return !e.cancel;
+    };
+    this.groupPanel = new GroupPanel<T>(model, {
+      isRtl: () => this.isRtl(),
+      showHeaderDrop: (field, x, y) => this.header.showChipDrop(field, x, y),
+      dropOnHeaders: (field, x) => this.dropOnHeaders(field, x),
+      focusRows: () => this.focusActive(true),
+    });
     this.toolbarSwitches = new Switches<ToolbarValues>(['visible', 'items'], {}, own.toolbar ?? {});
     this.topBar = new GridToolbar<T>(
       model,
@@ -165,6 +206,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         canExport: () => this.exporter.fields().length > 0,
         openColumns: (anchor) => this.menu.openColumns(anchor),
         hasColumns: () => this.menu.hasColumns(),
+        groupPanel: () => this.groupPanel,
       },
       this,
     );
@@ -474,10 +516,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const { model } = this;
     const sel = model.selection;
     if (sel.all) return this.loadedRows().filter((row) => sel.isSelected(model.selectId(row)));
-    const source = model.data.source;
     const out: T[] = [];
     for (const key of sel.snapshot().keys) {
-      const row = source.rowByKey(key);
+      const row = model.data.rowByKey(key);
       if (row !== undefined) out.push(row);
     }
     return out;
@@ -584,6 +625,107 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const button = this.topBar.elementOf('columnChooserButton');
     const shown = button && button.isConnected && !button.hidden && !button.hasAttribute('data-overflowed') && this.topBar.bar.element.offsetParent !== null;
     this.menu.openColumns(shown ? button : (this.headEl ?? this.element));
+  }
+
+  // Grouping.
+
+  /**
+   * The grouped columns, in order, with the order of their groups: `[{ field: 'city', dir: 'asc' }]`.
+   * Assigning groups the rows by them (`[]` ungroups); a column grouped now leaves the sort.
+   */
+  get group(): data.GroupItem[] {
+    return this.model.groups.items.map((g) => ({ ...g }));
+  }
+  set group(items: data.GroupItem[]) {
+    this.model.setGroup(items ?? []);
+  }
+
+  /** Takes every grouping away. */
+  clearGrouping() {
+    this.model.setGroup([]);
+  }
+
+  /** Groups by a column, at a place among the grouped ones (default: last); a grouped column moves there. */
+  groupBy(field: string, index?: number, dir?: 'asc' | 'desc') {
+    this.model.columns.get(field);
+    this.model.setGroup(this.model.groups.withField(field, index ?? Number.MAX_SAFE_INTEGER, dir));
+  }
+
+  /** Takes one column out of the grouping. */
+  ungroup(field: string) {
+    this.model.ungroup(field);
+  }
+
+  /** Sets the order of a grouped column's groups. */
+  setGroupOrder(field: string, dir: 'asc' | 'desc') {
+    if (this.model.groups.isGrouped(field) && this.model.groups.dirOf(field) !== dir) this.model.toggleGroupOrder(field, false);
+  }
+
+  /** Raised before the grouping changes, by the user or from code: `e.cancel` keeps it. */
+  get onGroupingChanging(): MotifEvent<GridGroupingChangingEventArgs> {
+    return this.groupingChangingEmitter.event;
+  }
+
+  /** Raised after the grouping changed. */
+  get onGroupingChanged(): MotifEvent<GridGroupingChangedEventArgs> {
+    return this.groupingChangedEmitter.event;
+  }
+
+  /** Raised before a dropped header or chip changes the grouping: `e.cancel` cancels the drop. */
+  get onGroupDropping(): MotifEvent<GridGroupDroppingEventArgs> {
+    return this.groupDroppingEmitter.event;
+  }
+
+  /** Opens every group of a level (0 is the top level), or of every level. */
+  expandAll(level?: number) {
+    this.model.setAllExpanded(true, level);
+  }
+
+  /** Closes every group of a level (0 is the top level), or of every level. */
+  collapseAll(level?: number) {
+    this.model.setAllExpanded(false, level);
+  }
+
+  /**
+   * Opens a group by its key: the values of the groups from the top level down (`['Ankara']`,
+   * `['Ankara', 'Draft']`). Returns whether it opened; a group not known yet (still loading) is not.
+   */
+  expandGroup(key: readonly unknown[]): boolean {
+    const node = this.model.findGroup(key);
+    return !!node && this.toggleGroup(node, true);
+  }
+
+  /** Closes a group by its key (see `expandGroup`). Returns whether it closed. */
+  collapseGroup(key: readonly unknown[]): boolean {
+    const node = this.model.findGroup(key);
+    return !!node && this.toggleGroup(node, false);
+  }
+
+  /** Whether a group is open, by its key (see `expandGroup`). */
+  isGroupExpanded(key: readonly unknown[]): boolean {
+    const node = this.model.findGroup(key);
+    void this.model.groups.state.version;
+    return !!node && this.model.groups.isExpanded(node);
+  }
+
+  /** Raised before a group opens: `e.key` is its key, `e.cancel` keeps it closed. */
+  get onRowExpanding(): MotifEvent<GridRowExpandingEventArgs> {
+    return this.expandingEmitter.event;
+  }
+
+  /** Raised after a group opened. */
+  get onRowExpanded(): MotifEvent<GridRowExpandedEventArgs> {
+    return this.expandedEmitter.event;
+  }
+
+  /** Raised before a group closes: `e.cancel` keeps it open. */
+  get onRowCollapsing(): MotifEvent<GridRowExpandingEventArgs> {
+    return this.collapsingEmitter.event;
+  }
+
+  /** Raised after a group closed. */
+  get onRowCollapsed(): MotifEvent<GridRowExpandedEventArgs> {
+    return this.collapsedEmitter.event;
   }
 
   // Copy, paste, export.
@@ -729,6 +871,47 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       });
     });
 
+    // Open groups: the list follows the switches (autoExpandAll, a column's autoExpandGroup).
+    let firstOpen = true;
+    this.bindings.watch(() => {
+      void model.groups.track();
+      if (firstOpen) {
+        firstOpen = false;
+        return;
+      }
+      untracked(() => model.data.regroupView());
+    });
+
+    // Who groups and how every row loads for it: grouped again when they change.
+    let firstRemote = true;
+    this.bindings.watch(() => {
+      void settings.get('remoteGrouping');
+      void settings.get('groupLoadPageSize');
+      if (firstRemote) {
+        firstRemote = false;
+        return;
+      }
+      untracked(() => model.regroupWithSettings());
+    });
+
+    // A column's groupIndex the app follows: a new value moves the column there, none ungroups it.
+    for (const col of this.props.columns ?? []) {
+      if (typeof col.groupIndex !== 'function') continue;
+      const index = col.groupIndex;
+      let firstIndex = true;
+      this.bindings.watch(() => {
+        const at = index();
+        if (firstIndex) {
+          firstIndex = false;
+          return;
+        }
+        untracked(() => {
+          if (typeof at === 'number' && at >= 0) model.groupBy(col.field, at);
+          else model.ungroup(col.field);
+        });
+      });
+    }
+
     // Order or visibility changed: reorder cells, renumber, keep the active column visible.
     this.bindings.watch(() => {
       const visible = model.columns.visible();
@@ -814,7 +997,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.selectionEmitter.dispose();
     this.preparingEmitter.dispose();
     this.searchEmitter.dispose();
+    this.expandingEmitter.dispose();
+    this.expandedEmitter.dispose();
+    this.collapsingEmitter.dispose();
+    this.collapsedEmitter.dispose();
+    this.groupingChangingEmitter.dispose();
+    this.groupingChangedEmitter.dispose();
+    this.groupDroppingEmitter.dispose();
     this.tip.hide();
+    this.groupPanel.dispose();
     this.model.dispose();
   }
 
@@ -835,7 +1026,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         <div class="mx-data-grid__main">
           <div
             class="mx-data-grid__viewport"
-            role="grid"
+            role={() => (model.groups.any ? 'treegrid' : 'grid')}
             ref={(c) => (this.viewportEl = c.element as HTMLDivElement)}
             aria-label={() => this.text || t('gridLabel')}
             aria-rowcount={() => (st.status === 'loading' ? -1 : model.count + model.headRows)}
@@ -1506,6 +1697,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.syncTabStop();
       return;
     }
+    const groupCell = target.closest?.('.mx-data-grid__group-cell');
+    if (groupCell) {
+      const group = this.body.groupRowOf(groupCell);
+      if (!group || group.index < 0) return;
+      if (this.editor && !this.commitEditor()) return;
+      if (this.model.state.session) this.leave();
+      this.setActive(group.index, this.model.state.activeField);
+      this.syncTabStop();
+      return;
+    }
     const cell = target.closest?.('.mx-data-grid__cell, .mx-data-grid__header-cell') as HTMLElement | null;
     if (!cell) return;
     const field = cell.dataset.field ?? '';
@@ -1549,6 +1750,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
     if (this.editor?.element.contains(target)) return;
+    const group = this.body.groupRowOf(target);
+    if (group && group.index >= 0) {
+      // Leaving the row being edited for a group row may block or wait, as for any row.
+      const st = this.model.state;
+      if (st.busy || st.session) e.preventDefault();
+      if (!st.busy && st.session) this.navigate(group.index, st.activeField, { reveal: false });
+      return;
+    }
     const cell = target.closest?.('.mx-data-grid__cell') as HTMLElement | null;
     if (!cell) return;
     const row = this.body.rowOf(cell);
@@ -1585,10 +1794,76 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       if (field) this.openConditions(field);
       return;
     }
+    const group = this.body.groupRowOf(target);
+    if (group?.node && group.index >= 0) {
+      // The arrow opens and closes; with `groupExpandMode: 'rowClick'` the whole row does.
+      const { model } = this;
+      const onArrow = !!target.closest('.mx-data-grid__group-toggle');
+      if (model.canCollapse(group.node) && (onArrow || model.expandModeOf(group.node) === 'rowClick')) {
+        this.toggleGroup(group.node, !model.groups.isExpanded(group.node));
+      }
+      return;
+    }
     const cell = target.closest?.('.mx-data-grid__cell') as HTMLElement | null;
     const view = cell ? this.body.rowOf(cell) : undefined;
     if (!cell || !view || view.index < 0) return;
     this.clickSelect(e, view, cell.dataset.field ?? '');
+  }
+
+  /** Opens or closes a group, telling it before (it can be cancelled) and after. */
+  private toggleGroup(node: GroupNode, open: boolean): boolean {
+    const { model } = this;
+    if (model.groups.isExpanded(node) === open) return false;
+    const e: GridRowExpandingEventArgs = { key: [...node.path], cancel: false };
+    (open ? this.expandingEmitter : this.collapsingEmitter).fire(e);
+    if (e.cancel || !model.setGroupExpanded(node, open)) return false;
+    (open ? this.expandedEmitter : this.collapsedEmitter).fire({ key: [...node.path] });
+    return true;
+  }
+
+  /**
+   * Keys on a group row: `groupToggleKeys` (Enter and Space) open or close it; with `groupArrowKeys`
+   * Right opens it, or goes to its first row when it is open, and Left closes it, or goes to the
+   * group it is in. Keys that edit do nothing there.
+   */
+  private onGroupKey(e: KeyboardEvent, row: number, node: GroupNode): boolean {
+    const { model } = this;
+    if (e.ctrlKey || e.metaKey || e.altKey) return false;
+    const open = model.groups.isExpanded(node);
+    const can = model.canCollapse(node);
+    if (model.settings.get('groupToggleKeys').includes(e.key)) {
+      e.preventDefault();
+      if (can) this.toggleGroup(node, !open);
+      return true;
+    }
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowLeft': {
+        if (e.shiftKey || !model.settings.get('groupArrowKeys')) return false;
+        e.preventDefault();
+        const forward = (e.key === 'ArrowRight') !== this.isRtl();
+        if (forward && !open && can) this.toggleGroup(node, true);
+        else if (forward && open) this.navigate(model.stepRow(row, 1), model.state.activeField);
+        else if (!forward && open && can) this.toggleGroup(node, false);
+        else if (!forward && node.level > 0) {
+          for (let i = row - 1; i >= 0; i--) {
+            const above = model.groupAt(i);
+            if (above && above.level === node.level - 1) {
+              this.navigate(i, model.state.activeField);
+              break;
+            }
+          }
+        }
+        return true;
+      }
+      case 'F2':
+      case 'Delete':
+      case 'Backspace':
+        e.preventDefault();
+        return true;
+      default:
+        return e.key.length === 1;
+    }
   }
 
   private hasMenu(field: string): boolean {
@@ -1616,6 +1891,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const next = alone ? undefined : cols.partnerOf(field);
     if (next) cols.resizeWithNext(field, next, this.header.shownWidth(field) + this.header.shownWidth(next), Math.ceil(width) + 2);
     else cols.resize(field, Math.ceil(width) + 2);
+  }
+
+  /** A chip dropped on the headers: the column is ungrouped and, when it can move, put where it was dropped. */
+  private dropOnHeaders(field: string, x: number) {
+    const { model } = this;
+    const cols = model.columns;
+    const index = this.header.chipDropIndex(field, x);
+    if (!model.groupDropAllowed(field, 'chip', 'headers', index)) return;
+    model.ungroup(field, true);
+    if (index >= 0 && cols.can(field, 'movable') && cols.move(field, index)) model.layoutChanged();
   }
 
   /** Keyboard move or resize, from the column menu. */
@@ -1744,7 +2029,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const filterCell = target.closest?.('.mx-data-grid__filter-cell');
     if (filterCell && target !== filterCell && this.onFilterEditorKey(e, target)) return;
     if (target.classList.contains('mx-data-grid__action') && this.onActionKey(e, target)) return;
-    if (!target.matches?.('.mx-data-grid__cell, .mx-data-grid__header-cell, .mx-data-grid__filter-cell, .mx-data-grid__action, .mx-data-grid__condition')) return;
+    if (!target.matches?.('.mx-data-grid__cell, .mx-data-grid__group-cell, .mx-data-grid__header-cell, .mx-data-grid__filter-cell, .mx-data-grid__action, .mx-data-grid__condition')) return;
     if (st.adjust) {
       if (this.onAdjustKey(e)) e.preventDefault();
       return;
@@ -1762,6 +2047,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const filters = model.showsFilterRow();
     const mode = model.settings.get('selection');
     const field = st.activeField;
+
+    const group = onRow ? model.groupAt(row) : null;
+    if (group && this.onGroupKey(e, row, group)) return;
 
     if (ctrl && !e.altKey && e.key.toLowerCase() === 'a' && mode === 'multiple' && model.settings.get('selectAll')) {
       e.preventDefault();
@@ -1953,7 +2241,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** Rows loaded now: every row in memory, the page, or the blocks loaded. */
   private loadedRows(): T[] {
     const rows: T[] = [];
-    this.model.data.source.forEachLoaded((row) => rows.push(row));
+    this.model.data.forEachLoaded((row) => rows.push(row));
     return rows;
   }
 

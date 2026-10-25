@@ -14,7 +14,7 @@ import type { GridToolbarItemClickEventArgs } from './grid-toolbar-item-click-ev
 export interface GridToolbarItem {
   /** One of the grid's items to change, or a name of your own for this item. */
   name?: string;
-  /** Which end of the toolbar it sits at. Default `'after'`. */
+  /** Which end of the toolbar it sits at. Default `'after'`; the group panel `'before'`. */
   location?: Bind<'before' | 'after'>;
   text?: Bind<string>;
   icon?: Bind<IconSource | null | undefined>;

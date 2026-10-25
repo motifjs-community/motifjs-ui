@@ -54,7 +54,7 @@ function grid(options: { cacheBlocks?: number } = {}) {
   const server = new Server();
   const source = new data.DataSource<Row, number>({ adapter: server, loadMode: 'blocks', pageSize: 100, cacheBlocks: options.cacheBlocks });
   const state = reactive<DataState>({ status: 'loading', version: 0, edits: 0, failedBlocks: 0 });
-  const rows = new GridData<Row>({ source, owned: true, paged: false, pageSize: 100, saveMode: 'wait', validateRow: () => null, state, edited: () => {} });
+  const rows = new GridData<Row>({ source, owned: true, paged: false, pageSize: 100, sort: [], group: [], remoteGrouping: 'auto', groupLoadPageSize: 0, expanded: () => true, locale: () => 'en', saveMode: 'wait', validateRow: () => null, state, edited: () => {} });
   return { server, rows, state };
 }
 

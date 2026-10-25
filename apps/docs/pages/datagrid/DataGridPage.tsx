@@ -7,6 +7,8 @@ import Clipboard from './examples/Clipboard';
 import Export from './examples/Export';
 import Filters from './examples/Filters';
 import FromCode from './examples/FromCode';
+import Grouping from './examples/Grouping';
+import GroupingServer from './examples/GroupingServer';
 import KeepLayout from './examples/KeepLayout';
 import Localization from './examples/Localization';
 import Lookups from './examples/Lookups';
@@ -37,7 +39,7 @@ const PROPS = [
   ['newRow', '`{ position?: Bind<\'top\' | \'bottom\'>, create?: () => Partial<T> }`', 'bottom', 'Where new rows open and what they start with.'],
   ['validateRow', '`(row, { isNew, changed }) => messages | string | null`', '—', 'Checks a whole row before it is saved: a message per field, or one for the row.'],
   ['settings', '`GridSettingsProps`', '—', 'The feature switches below, each a value or a function.'],
-  ['sort / layout', '`SortItem[]` / `GridLayout`', '—', 'The first sort order; a saved layout.'],
+  ['sort / layout', '`SortItem[]` / `GridLayout`', '—', 'The first sort order; a saved layout (columns, sort and `group`).'],
   ['onLayoutChange', '`(layout) => void`', '—', 'After the user resized, moved, hid, pinned or sorted.'],
   ['layoutKey', '`string`', '—', 'Keeps the layout, the filters and the search text in the browser’s `localStorage` under this name; a grid made again with it gets them back.'],
   ['label', '`Bind<string>`', '`uiLocale` “Data grid”', 'The accessible name. The same as `text`.'],
@@ -48,6 +50,11 @@ const PROPS = [
   ['filters', '`GridFilters`', '—', 'The first filters, by field: `{ city: { op: \'=\', value: \'Ankara\' }, status: { values: [\'Draft\'] } }`.'],
   ['searchText / onSearchTextChanged', '`Bind<string>` / `(e) => void`', '`\'\'`', 'The search panel’s text (a function is followed); told when it changes, typed or set from code (`{ text }`). The two together bind it both ways.'],
   ['toolbar', '`{ visible?: Bind<boolean>, items?: Bind<(GridToolbarItem | GridToolbarItemName)[]> }`', 'the items whose features are on', 'The bar above the rows: which items, in which order and place; `visible` left out shows it while it has an item.'],
+  ['onRowExpanding / onRowExpanded', '`(e) => void`', '—', 'Before and after a group opens: `{ key }`, the values of the groups from the top level down; `e.cancel = true` keeps it closed.'],
+  ['onRowCollapsing / onRowCollapsed', '`(e) => void`', '—', 'Before and after a group closes; `e.cancel = true` keeps it open.'],
+  ['onGroupingChanging / onGroupingChanged', '`(e) => void`', '—', 'Before and after the grouping changes, by the user or from code: `{ group, previous, byUser }`; `e.cancel = true` keeps it.'],
+  ['onGroupDropping', '`(e) => void`', '—', 'A header or a chip dropped to change the grouping: `{ field, from, to, index }`; `e.cancel = true` cancels the drop.'],
+  ['groupCell', '`(ctx) => component`', '—', 'Content of your own in the group rows of columns without a `groupCell`.'],
   ['loadValues', '`(request) => { values, total }`', '—', 'The values of a header filter from a server that cannot group: `{ column, search, filter, skip, take, signal }`.'],
   ['onEditorPreparing', '`(e) => void`', '—', 'Before a cell editor is made: `{ field, row, isNew, options, cancel }`. Change `e.options`, the editor’s props (`enabled = false` disables it), or set `e.cancel`.'],
   ['enabled / disabled, visible, tabStop', 'see Control', '', 'The shared properties of every control.'],
@@ -83,6 +90,17 @@ const SETTINGS = [
   ['highlightSearchText, highlightCaseSensitive', '`true`, `false`', 'Mark what the search found in the cells; mark only text in the same case (the search itself ignores case).'],
   ['searchVisibleColumnsOnly', '`false`', 'Search only the visible columns; by default hidden ones too.'],
   ['searchable', '`true`', 'The columns the search looks in; a column can say otherwise for itself (one that turns its own filters off is left out).'],
+  ['groupPanel', '`false`', 'The group panel at the start of the toolbar: a chip per grouped column, and where headers are dropped to group by them.'],
+  ['groupPanelDragging, groupPanelEmptyText', "`true`, `uiLocale` “Drag a column header here…”", 'Headers drag to the panel and chips back (off: the panel only shows the grouping); what the empty panel says.'],
+  ['groupMenu', 'unset', '“Group by this column”, “Ungroup” and “Ungroup all” in the column menu. Left unset (grid and column), they show while the panel takes headers, as the keyboard’s way to do the same.'],
+  ['groupable, showWhenGrouped', '`true`, `false`', 'The columns the user can group by; a grouped column still shows among the columns. A column can say otherwise for itself.'],
+  ['autoExpandAll, allowCollapsing', '`true`, `true`', 'Groups start open (a column’s `autoExpandGroup` decides for its level); the user can open and close them (code always can; a column can say otherwise).'],
+  ['groupExpandMode', "`'button'`", 'A group opens from its arrow and the keyboard, or with `rowClick` from a click anywhere on its row. A column can set its own.'],
+  ['groupCount', '`true`', 'Group rows show their row count; a column can say otherwise for itself.'],
+  ['groupToggleKeys, groupArrowKeys', "`['Enter', ' ']`, `true`", 'The keys that open and close a group row; Right and Left open, close and go in and out.'],
+  ['remoteGrouping', "`'auto'`", 'Who groups a data source’s rows: `auto` its adapter when it groups (blocks), `true` the adapter whenever the source loads by blocks, `false` always the browser, from every matching row.'],
+  ['groupLoadPageSize', '`0`', 'Grouping in the browser over a source that loads pages or blocks: rows per request while every matching row loads (0: one request).'],
+  ['dragThreshold', '`5`', 'Pixels a pressed header or chip moves before it is dragged.'],
 ];
 
 const COLUMN_FIELDS = [
@@ -100,6 +118,12 @@ const COLUMN_FIELDS = [
   ['setCellValue', '`(values, value, row) => void | Promise`: called when the user commits a value (editor, paste, Delete), before it is written. `values` starts as `{ [field]: value }`; add fields to write them too. A promise keeps the cell busy until it settles.'],
   ['editable, creatable, sortable, resizable, movable, hideable, pinnable, menu, filterRow, headerFilter, copyable, exportable, syncLookupFilterValues, searchable', 'Switch a feature for this column; wins over `settings`.'],
   ['resizeMode', 'How this column’s edge is dragged (`widget` or `nextColumn`); wins over `settings`.'],
+  ['groupIndex', '`Bind<number | undefined>`: the column’s place among the grouped columns; the rows start grouped by it. A function is followed: a new value moves the column there, `undefined` ungroups it.'],
+  ['autoExpandGroup', 'The column’s groups start open; wins over `autoExpandAll`.'],
+  ['groupable, showWhenGrouped, allowCollapsing, groupCount, groupMenu, groupExpandMode', 'The grouping switches for this column; each wins over `settings`.'],
+  ['groupCompare', '`(a, b) => number`: the order of the column’s groups in memory (`dir` still turns it).'],
+  ['calculateGroupValue', '`(row) => value` for rows in memory, or the field a server groups by: what the rows are grouped and the groups ordered by instead of the value.'],
+  ['groupCell', '`(ctx) => component`: content of your own in the column’s group rows, made once per pooled group row; read `ctx.value`, `ctx.text`, `ctx.count`, `ctx.level`, `ctx.key`, `ctx.isExpanded` in getters.'],
 ];
 
 const LOOKUP_FIELDS = [
@@ -128,6 +152,8 @@ const PROPERTIES = [
   ['selectionFilter', 'read-only', 'The selection as a filter of the data layer, for work on the server.'],
   ['filters, filter', 'read/write, read-only', 'The filters by field; the whole filter the rows are loaded with (the search included).'],
   ['searchText', 'read/write, reactive', 'The search text; assigning searches at once, a function is followed.'],
+  ['group', 'read/write, reactive', 'The grouped columns in order with the order of their groups (`[{ field, dir }]`); assign to group, `[]` ungroups.'],
+  ['onRowExpanding, onRowExpanded, onRowCollapsing, onRowCollapsed, onGroupingChanging, onGroupingChanged, onGroupDropping', 'event', 'Subscribe with `grid.onRowExpanded((e) => …)`; the same as the props.'],
   ['toolbar', 'read/write, live', '`grid.toolbar.items = [\'searchPanel\', { text: \'Refresh\', click }]`, `grid.toolbar.visible = false`; a function is followed.'],
   ['onSearchTextChanged', 'event', 'Subscribe with `grid.onSearchTextChanged((e) => …)`; the same as the prop.'],
   ['onSelectionChanged', 'event', 'Subscribe with `grid.onSelectionChanged((e) => …)`.'],
@@ -148,9 +174,13 @@ const METHODS = [
   ['clearFilters()', '', 'Takes every filter away, and the search text.'],
   ['searchByText(text)', '`void`', 'Searches for a text at once, as the search panel does; `\'\'` stops searching.'],
   ['showColumnChooser()', '`void`', 'Opens the column list, under the toolbar’s column button when it shows.'],
+  ['expandAll(level?) / collapseAll(level?)', '`void`', 'Opens or closes every group of a level (0 is the top level), or of every level.'],
+  ['expandGroup(key) / collapseGroup(key) / isGroupExpanded(key)', '`boolean`', 'One group by its key, the values from the top level down (`[\'Ankara\', \'Draft\']`): whether it opened or closed, and whether it is open.'],
+  ['clearGrouping()', '`void`', 'Takes every grouping away.'],
+  ['groupBy(field, index?, dir?) / ungroup(field) / setGroupOrder(field, dir)', '`void`', 'Groups by a column at a place among the grouped ones (a grouped one moves); takes one out; sets the order of its groups.'],
   ['copy() / paste(text)', '`string` / `number`', 'What Ctrl+C and Ctrl+V do: copies the selected rows or the active cell (returns the text); pastes tab-separated text from the active cell (returns the cells written).'],
   ['exportRows(options?)', '`Promise<object[]>`', 'The rows of the filter in the sort order, by field, with the visible exportable columns: shown text or `raw` values; a server’s rows in parts through the data source.'],
-  ['exportCsv(options?)', '`Promise<string>`', 'The same as a CSV file a spreadsheet opens: byte order mark, the locale’s separator, titles first. Options: `values`, `selected`, `fileName`, `download`, `separator`, `headers`, `bom`, `escapeFormulas`, `pageSize`, `onProgress`, `signal`.'],
+  ['exportCsv(options?)', '`Promise<string>`', 'The same as a CSV file a spreadsheet opens: byte order mark, the locale’s separator, titles first, a line per group while grouped. Options: `values`, `selected`, `fileName`, `download`, `separator`, `headers`, `groups`, `bom`, `escapeFormulas`, `pageSize`, `onProgress`, `signal`.'],
 ];
 
 const KEYS = [
@@ -175,6 +205,9 @@ const KEYS = [
   ['Alt + Down on a header', 'The column menu; without one, the header filter.'],
   ['Left / Right, Home / End in the toolbar', 'Move between its items (the toolbar is one Tab stop before the rows); in the search box the arrows stay in its text.'],
   ['Escape, Enter in the search box', 'Empty the box (the rows come back at once); search without waiting for the pause.'],
+  ['Enter, Space on a group row', 'Open or close the group.'],
+  ['Right / Left on a group row', 'Open the group, then go to its first row; close it, then go to the group it is in.'],
+  ['Enter, Delete, Shift + Left / Right on a chip', 'Turn the order of the groups; ungroup; move the chip. Left and Right go from chip to chip like any toolbar item.'],
 ];
 
 const A11Y = [
@@ -191,6 +224,8 @@ const A11Y = [
   ['Filters', 'The filter row is a row of the grid (its fields are named after the column); the condition button names the condition; the header filter is a `dialog` with a listbox.'],
   ['Toolbar', 'The kit’s `Toolbar` (`role="toolbar"`, named after the grid): one Tab stop with arrow keys between its items; a button that shows only its icon is named by its text, which is also its tooltip and its line in the “more” menu.'],
   ['Search', 'The box is a search field named “Search in the grid”; the number of records found is announced politely; what was found is marked with `<mark>`, which reads as the same text.'],
+  ['Group rows', 'Rows of the grid with `aria-expanded` and `aria-level`; their one cell spans the columns (`aria-colspan`), reads “Column: value (count)” and is a cell the arrows reach. Grouping, ungrouping and moving a chip are announced.'],
+  ['Group panel', 'A `group` named “Grouping” in the toolbar; each chip is a button named after its column and the order of its groups, described by the keys it takes. Every drag has a keyboard way: the column menu and the chips’ keys.'],
 ];
 
 const HOOKS = [
@@ -206,6 +241,8 @@ const HOOKS = [
   ['.mx-data-grid__toolbar, __toolbar-gap', 'The toolbar above the rows (the kit’s `.mx-toolbar`) and the gap between its `before` and `after` items.'],
   ['.mx-data-grid__add, __save, __revert, __export, __columns, __search', 'The toolbar’s own items: “New row”, “Save changes”, “Discard”, “Export” (busy while it runs), the column list, the search box.'],
   ['.mx-data-grid__mark', 'Text the search found, a `<mark>` in the cell.'],
+  ['.mx-data-grid__group-row, __group-cell, __group-toggle, __group-count', 'A group row (`data-expanded`, `--_level`), its cell, its arrow and its count.'],
+  ['.mx-data-grid__group-panel, __chip, __group-empty', 'The group panel (`data-drop` while a header can drop there, `data-locked` without dragging), its chips (`data-dir`, `data-dragging`) and its empty text.'],
   ['.mx-data-grid__bar, __pager', 'The bar under the rows and its pager.'],
 ];
 
@@ -218,6 +255,8 @@ const TOKENS = [
   ['datagrid.selected, check-size, check-mark-size, check-radius', 'Selected rows and the selection check boxes.'],
   ['datagrid.action-gap, filter-padding, values-width, values-gap', 'The action buttons, the filter row, the header filter window.'],
   ['datagrid.search-mark-background, search-mark-color, search-mark-line', 'The text the search found: its tint, its text and the line under it.'],
+  ['datagrid.group-indent, group-font-weight, group-background, group-count-color', 'Group rows: the step of each level, the text, the row and the count.'],
+  ['datagrid.chip-gap, chip-radius, chip-background, chip-border-color, panel-empty-color, drop-target', 'The group panel, its chips, its empty text and the tint where something can be dropped.'],
 ];
 
 export default function DataGridPage() {
@@ -226,7 +265,7 @@ export default function DataGridPage() {
       <p class="lead">
         A grid for data entry and large data: rows in memory or from any adapter of the data layer, a virtual list or
         pages, sorting, column layout, editing with the kit's editors, new rows with the Tab chain, three save modes,
-        row actions, selection, filters, a search panel, a toolbar, lookup columns from other services, copy and paste,
+        row actions, selection, filters, a search panel, grouping, a toolbar, lookup columns from other services, copy and paste,
         export and a layout that is kept — and every feature can be turned off, for the grid or for one column.
       </p>
 
@@ -332,6 +371,21 @@ import { data } from '@motifx-community/data';
         </Example>
       </Section>
 
+      <Section anchor="grouping" title="Grouping">
+        <p>
+          <Rich text="Rows are grouped by one column or several: a row per group shows “Column: value (count)” — a lookup column its text, rows in memory the column's format — with an arrow that opens and closes it, and the groups below it moved in. Grouped columns leave the columns unless `showWhenGrouped`. `groupIndex` on the columns groups at the start; `groupPanel` puts the panel at the start of the toolbar, where a header dropped groups by its column; a chip turns the order of its groups when clicked, moves along the panel and, dragged back onto the headers, ungroups the column where it lands. The column menu does the same from the keyboard. A sort sorts the rows inside the groups; the header of a grouped column, like its chip, sorts its groups; `calculateGroupValue` groups by a value of its own. Paged, the pages count group rows and data rows; a closed group is one row." />
+        </p>
+        <Example files={withOrders('Grouping.tsx')} stack>
+          <Grouping />
+        </Example>
+        <p>
+          <Rich text="On a server: a `DataSource` that loads by `blocks` over an adapter that groups is asked only for the groups with their counts (`loadGroups`, `group` with `groupsOnly`); the rows come in group order, in blocks, only for the open groups where the list looks — here the groups start closed (`autoExpandGroup: false`). An adapter that cannot group (OData, REST), a source that loads by page, or a `calculateGroupValue` function gets every matching row, grouped in the browser without remote grouping. Filters, the search and selection work over the groups; “select all” stays every row of the filter. The CSV export writes a “Column: value” line before each group; `group` is kept with the layout." />
+        </p>
+        <Example files={[...withOrders('GroupingServer.tsx'), slowAdapterFile]} stack>
+          <GroupingServer />
+        </Example>
+      </Section>
+
       <Section anchor="toolbar" title="Toolbar">
         <p>
           <Rich text="The bar above the rows holds the grid's own items whose features are on, at the end, in this order: “New row” (`addRows`, `newRowButton`), “Save changes” and “Discard” (batch mode, `saveButtons`), “Export” (`exportButton`), the column list (`columnChooserButton`) and the search box (`searchPanel`); with none of them it does not show. `toolbar.items` lists exactly what it holds: the grid's items by name, an object with a `name` to change one of them, and items of your own — a button with `text`, `icon`, `hint` and `click`, or any component with `content` — at the start (`location: 'before'`) or at the end. Buttons that do not fit go into its “more” menu (`overflow`); the grid's own show only their icons there (`showText`), and their texts in the menu." />
@@ -342,8 +396,8 @@ import { data } from '@motifx-community/data';
         <ApiTable
           head={['Item field', 'What it does']}
           rows={[
-            ['name', 'One of the grid’s items (`searchPanel`, `addRowButton`, `saveButton`, `revertButton`, `exportButton`, `columnChooserButton`) to change, or a name of your own. A grid item whose feature is off stays out.'],
-            ['location', "`'before'` or `'after'` (default): which end of the bar."],
+            ['name', 'One of the grid’s items (`groupPanel`, `searchPanel`, `addRowButton`, `saveButton`, `revertButton`, `exportButton`, `columnChooserButton`) to change, or a name of your own. A grid item whose feature is off stays out.'],
+            ['location', "`'before'` or `'after'` (default; the group panel `'before'`): which end of the bar."],
             ['text, icon, hint', 'The button’s text, icon and tooltip (default: the text when only the icon shows).'],
             ['showText', "`'always'` (default) or `'inMenu'`: only the icon in the bar, the text in the “more” menu (the grid’s own buttons)."],
             ['visible, enabled', 'Leave the item out; dim it.'],

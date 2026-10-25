@@ -98,6 +98,33 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   (the bar keeps the counts, the error summary and the pager); `columnChooserButton` setting,
   `showColumnChooser()`; the `gridPendingChanges` text went with the bar's old buttons. `clearFilters()`
   also clears the search text. `KeyedItems.searchInMemory`.
+- `DataGrid` grouping. Column `groupIndex` (followed when a function), `groupable` (grid and
+  column), `showWhenGrouped`, `autoExpandGroup`, `calculateGroupValue` (a function for rows in
+  memory, a field for a server) and `groupCell`; settings `groupPanel`, `groupPanelDragging`,
+  `groupPanelEmptyText`, `autoExpandAll`, `groupExpandMode` (`button` / `rowClick`, also per column),
+  `remoteGrouping` (`auto` / `true` / `false`), `groupLoadPageSize`, `groupToggleKeys`,
+  `groupArrowKeys`, `dragThreshold`, and the column features `groupable`, `showWhenGrouped`,
+  `allowCollapsing`, `groupCount`, `groupMenu` (grid and column, the column wins), all live; column
+  `groupCompare`; grid `groupCell`; export option `groups`. `grid.group` (read and assign),
+  `groupBy(field, index?, dir?)`, `ungroup(field)`, `setGroupOrder(field, dir)`, `clearGrouping()`,
+  `expandAll(level?)`, `collapseAll(level?)`, `expandGroup(key)`, `collapseGroup(key)`,
+  `isGroupExpanded(key)`; `onRowExpanding` / `onRowExpanded` / `onRowCollapsing` / `onRowCollapsed`,
+  `onGroupingChanging` / `onGroupingChanged` (user or code) and `onGroupDropping` (a header or chip
+  dropped), the "before" ones cancellable. Group rows are pooled like data rows: "Column: value (count)" (a lookup's
+  text, the column's format, "(empty)"), an arrow, moved in by level; a closed group is one row, in
+  the virtual list and in pages alike. The grid is a `treegrid` while grouped (`aria-expanded`,
+  `aria-level`, `aria-colspan`). Enter / Space open and close a group row, Right and Left open and
+  close it and go in and out. The group panel (`groupPanel` toolbar item, at the start): headers
+  dropped on it group, chips turn the order of their groups (click, Enter), move (drag, Shift +
+  arrows) and ungroup (Delete, or dragged back onto the headers, where the column lands); the column
+  menu has "Group by this column", "Ungroup", "Ungroup all". A grouped column leaves the columns and
+  the sort; its header sorts its groups. Data: rows in memory and sources that load everything are
+  grouped in memory; a source that loads by blocks over an adapter that groups is asked for the
+  groups only and loads the rows of the open groups where the list looks; anything else gets every
+  matching row grouped in memory. Filters, search, selection, editing (a saved row moves to its
+  group), copy (a group row copies its text), the CSV export (a "Column: value" line per group) and
+  the kept layout (`group`) work with it. Texts `gridGroup…` / `gridUngroup…` in en and tr; component
+  tokens `datagrid.group-*`, `chip-*`, `panel-empty-color`, `drop-target`.
 - `KeyedItems` (shared, batched key → item cache per source and value field); `DataItems.find`
   goes through it. `DropDown` and `ComboBox` ask for a value on no loaded page by their `valueField`
   when it is a field. `DropDown.open(search)` starts the search box with a text.

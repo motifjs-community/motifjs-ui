@@ -3,6 +3,7 @@ import type { CellContext } from './cell-context';
 import type { ColumnResizeMode } from './column-resize-mode';
 import type { ColumnType } from './column-type';
 import type { EditorContext } from './editor-context';
+import type { GroupCellContext } from './group-cell-context';
 import type { GridFilterOperator } from './grid-filter-operator';
 import type { GridLookup } from './grid-lookup';
 import type { ListOption } from './list-option';
@@ -10,7 +11,7 @@ import type { StickySide } from './sticky-side';
 
 /**
  * Definition of one column. `editable`, `creatable`, `sortable`, `resizable`, `movable`, `hideable`,
- * `pinnable`, `menu`, `filterRow`, `headerFilter`, `copyable`, `exportable`, `syncLookupFilterValues` and `searchable` override the grid's `settings` for this column; each is a value or a function
+ * `pinnable`, `menu`, `filterRow`, `headerFilter`, `copyable`, `exportable`, `syncLookupFilterValues`, `searchable`, `groupable`, `showWhenGrouped`, `allowCollapsing`, `groupCount` and `groupMenu` override the grid's `settings` for this column; each is a value or a function
  * that is followed (`editable` and `creatable` also take a function of the row, which decides per row).
  *
  * @example
@@ -98,4 +99,32 @@ export interface GridColumn<T = any> {
   syncLookupFilterValues?: Bind<boolean>;
   /** The search panel looks in this column. Default: on, unless the column turns its own filters off. */
   searchable?: Bind<boolean>;
+  /** The user can group by this column. Overrides the grid's `groupable`. */
+  groupable?: Bind<boolean>;
+  /**
+   * The column's place among the grouped columns, 0 first; the rows start grouped by it. A function is
+   * followed: a new value moves the column there, `undefined` takes it out.
+   */
+  groupIndex?: Bind<number | undefined>;
+  /** A grouped column still shows among the other columns. Overrides the grid's `showWhenGrouped`. */
+  showWhenGrouped?: Bind<boolean>;
+  /** The user can open and close this column's groups. Overrides the grid's `allowCollapsing`. */
+  allowCollapsing?: Bind<boolean>;
+  /** This column's group rows show their row count. Overrides the grid's `groupCount`. */
+  groupCount?: Bind<boolean>;
+  /** The grouping items of the column menu for this column. Overrides the grid's `groupMenu`. */
+  groupMenu?: Bind<boolean>;
+  /** This column's groups open from their arrow or from a click on the row. Overrides the grid's `groupExpandMode`. */
+  groupExpandMode?: Bind<'button' | 'rowClick'>;
+  /** Orders this column's groups, in memory (`dir` still turns the order). Default: by their values, like a sort. */
+  groupCompare?: (a: unknown, b: unknown) => number;
+  /** The groups of this column start open. Default: the grid's `autoExpandAll`. */
+  autoExpandGroup?: Bind<boolean>;
+  /**
+   * What the rows are grouped by instead of the value: a function of the row (rows in memory), or the
+   * field a server groups by. Groups are ordered by it too.
+   */
+  calculateGroupValue?: string | ((row: T) => unknown);
+  /** Content of your own in the column's group rows, made once per pooled group row; read `ctx` in getters. */
+  groupCell?: (ctx: GroupCellContext<T>) => unknown;
 }

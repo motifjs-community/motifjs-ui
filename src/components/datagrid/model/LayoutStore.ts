@@ -20,7 +20,8 @@ export class LayoutStore {
       if (!isObject(value) || !Array.isArray(value.columns) || !Array.isArray(value.sort)) return null;
       const columns = value.columns.filter((c): c is StoredLayout['columns'][number] => isObject(c) && typeof c.field === 'string' && typeof c.width === 'number');
       const sort = value.sort.filter((s): s is StoredLayout['sort'][number] => isObject(s) && typeof s.field === 'string' && (s.dir === 'asc' || s.dir === 'desc'));
-      return { columns, sort, filters: isObject(value.filters) ? (value.filters as StoredLayout['filters']) : {}, searchText: typeof value.searchText === 'string' ? value.searchText : '' };
+      const group = Array.isArray(value.group) ? value.group.filter((g): g is NonNullable<StoredLayout['group']>[number] => isObject(g) && typeof g.field === 'string' && (g.dir === 'asc' || g.dir === 'desc')) : undefined;
+      return { columns, sort, group, filters: isObject(value.filters) ? (value.filters as StoredLayout['filters']) : {}, searchText: typeof value.searchText === 'string' ? value.searchText : '' };
     } catch {
       return null;
     }

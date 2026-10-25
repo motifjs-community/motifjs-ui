@@ -56,7 +56,12 @@ export default async function ({ page, base, check, axeSource, box }) {
 
   const layout = page.locator('section[aria-labelledby="layout"]');
   const colors = layout.locator('.rg-colors');
-  const at = async (name) => box(colors.getByRole('radio', { name, exact: true }));
+  // Measured once the radios' short transitions have ended, and the next frame is drawn.
+  const at = async (name) => {
+    await colors.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))));
+    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => done())));
+    return box(colors.getByRole('radio', { name, exact: true }));
+  };
   await layout.getByRole('button', { name: '4 columns' }).click();
   let [red, orange, yellow] = [await at('red'), await at('orange'), await at('yellow')];
   check('columns, vertical: down the first column, then the next', Math.abs(red.left - orange.left) < 1 && orange.top > red.top && Math.abs(yellow.top - red.top) < 1 && yellow.left > red.left);

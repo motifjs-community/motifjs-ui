@@ -44,4 +44,21 @@ export interface ColumnFeatures {
    * sets `searchable` itself.
    */
   searchable: boolean;
+  /**
+   * Group by the column: drag its header to the group panel, or "Group by this column" in its menu.
+   * Grouping set in code (`groupIndex`, `grid.group`) works either way. Default `true`.
+   */
+  groupable: boolean;
+  /** A grouped column still shows among the other columns. Default `false`. */
+  showWhenGrouped: boolean;
+  /** The user can open and close the groups of this column; off, only code can (`expandAll()`, `collapseGroup()`…). Default `true`. */
+  allowCollapsing: boolean;
+  /** Group rows show how many rows the group holds, "(12)". Default `true`. */
+  groupCount: boolean;
+  /**
+   * "Group by this column", "Ungroup" and "Ungroup all" in the column menu. Left unset (grid and
+   * column), they show while the group panel lets headers be dragged, as the keyboard's way to do
+   * the same.
+   */
+  groupMenu: boolean;
 }

@@ -12,7 +12,8 @@ const FORMULA_START = /^[=+\-@\t\r]/;
  * The rows of an export: every row of the filter in the sort order, with the visible exportable
  * columns in display order. Rows in memory are taken as they are; a server's come in parts through
  * the data source (`loadRange`), so its own filter, search and sort apply. Cells read like the grid
- * shows them, unsaved edits included; new rows not saved yet are not data and stay out.
+ * shows them, unsaved edits included; new rows not saved yet are not data and stay out. Grouped,
+ * the rows come in group order, every group open, and the CSV has a "Column: value" line per group.
  */
 export class GridExport<T> {
   constructor(private readonly model: GridModel<T>) {}
@@ -28,10 +29,13 @@ export class GridExport<T> {
     const cols = fields.map((f) => model.columns.get(f));
     const shown = options.values !== 'raw';
     const rows = await this.rows(options, signal);
-    // Lookup cells export their texts: every key of the rows is resolved first.
-    const lookups = cols.filter((c) => c.lookup && !c.textFrom);
-    if (shown && lookups.length) await model.lookups.load(lookups, rows.map((row) => ({ ...(row as object), ...(model.edit(model.rowIdOf(row))?.draft ?? {}) }) as T));
+    const view = !options.selected && options.groups !== false ? model.data.groupView() : null;
+    // Lookup cells and groups export their texts: every key of the rows is resolved first.
+    const grouped = view ? model.groups.fields().map((f) => model.columns.get(f)) : [];
+    const lookups = [...cols, ...grouped].filter((c, i, all) => c.lookup && !c.textFrom && all.indexOf(c) === i);
+    if ((shown || view) && lookups.length) await model.lookups.load(lookups, rows.map((row) => ({ ...(row as object), ...(model.edit(model.rowIdOf(row))?.draft ?? {}) }) as T));
     return {
+      groups: view?.allGroups().map((node) => ({ at: node.start, text: model.groupCaption(node), level: node.level })),
       fields,
       rows: rows.map((row) => {
         const rowId = model.rowIdOf(row);
@@ -50,12 +54,20 @@ export class GridExport<T> {
     const cols = table.fields.map((f) => model.columns.get(f));
     const raw = options.values === 'raw';
     const guard = options.escapeFormulas !== false;
-    const lines = table.rows.map((cells) =>
-      cells.map((value, j) => {
-        const text = raw ? formatter.raw(cols[j], value) : String(value ?? '');
-        return guard && cols[j].type !== 'number' && typeof value !== 'number' && FORMULA_START.test(text) ? `'${text}` : text;
-      }),
-    );
+    const safe = (text: string) => (guard && FORMULA_START.test(text) ? `'${text}` : text);
+    const groups = table.groups ?? [];
+    const lines: string[][] = [];
+    let g = 0;
+    table.rows.forEach((cells, i) => {
+      // A group's line before its first row, its text in the first column.
+      for (; g < groups.length && groups[g].at <= i; g++) lines.push([safe(groups[g].text), ...table.fields.slice(1).map(() => '')]);
+      lines.push(
+        cells.map((value, j) => {
+          const text = raw ? formatter.raw(cols[j], value) : String(value ?? '');
+          return cols[j].type !== 'number' && typeof value !== 'number' ? safe(text) : text;
+        }),
+      );
+    });
     const head = options.headers !== false ? [table.fields.map((f) => model.columns.title(f))] : [];
     const separator = options.separator ?? listSeparator(formatter.locale);
     return `${options.bom !== false ? '﻿' : ''}${writeDelimited([...head, ...lines], separator)}\r\n`;
@@ -81,6 +93,12 @@ export class GridExport<T> {
     const sel = model.selection;
     const selected = !!options.selected;
     if (selected && (model.settings.get('selection') === 'none' || sel.empty)) return [];
+    const grouped = model.data.groupedRows();
+    if (grouped) {
+      const rows = selected ? grouped.filter((row) => sel.isSelected(model.selectId(row))) : [...grouped];
+      options.onProgress?.(rows.length, rows.length);
+      return rows;
+    }
     if (source.loadMode === 'all') {
       const rows = selected ? source.rows.filter((row) => sel.isSelected(model.selectId(row))) : [...source.rows];
       options.onProgress?.(rows.length, rows.length);
@@ -110,7 +128,7 @@ export class GridExport<T> {
   private loadedSelected(): T[] {
     const { model } = this;
     const rows: T[] = [];
-    model.data.source.forEachLoaded((row) => {
+    model.data.forEachLoaded((row) => {
       if (model.selection.isSelected(model.selectId(row))) rows.push(row);
     });
     return rows;
