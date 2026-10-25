@@ -1,6 +1,6 @@
 // Building blocks for the reference pages: a section card, a live example with its code, code
 // blocks and API tables whose cells may contain `inline code`.
-import { Component, reactive } from '@motifx/core';
+import { Component, reactive, RouterView, type ComponentBase } from '@motifx/core';
 import { Button } from '@motifx-community/ui';
 import { PageOutline } from '../app/PageOutline';
 import { Code } from './Code';
@@ -30,11 +30,21 @@ export class Section extends Component<HTMLElement, { anchor: string; title: str
   static override elementTag = 'section';
 
   override onConfigured(): void {
-    const { anchor, title } = this.props;
     this.class.add('docs-section');
-    this.attr.add({ 'aria-labelledby': anchor });
+    this.attr.add({ 'aria-labelledby': this.props.anchor });
+  }
+
+  override onBuilt(): void {
+    const { anchor, title } = this.props;
     const outline = this.getService(PageOutline);
-    if (outline) this.motif.setDisposable(outline.add({ anchor, title }));
+    if (outline) this.motif.setDisposable(outline.add({ anchor, title }, this.page()));
+  }
+
+  /** The page this section is on: the child of the router view it sits under. */
+  private page(): object {
+    let node: ComponentBase = this;
+    while (node.parent && !(node.parent instanceof RouterView)) node = node.parent;
+    return node;
   }
 
   override view() {
