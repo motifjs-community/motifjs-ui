@@ -18,6 +18,7 @@ interface ItemLook {
   enabled: boolean;
   shortcut: string;
   submenu: boolean;
+  tone: string;
 }
 
 interface Entry {
@@ -105,6 +106,7 @@ export class MenuList extends Component<HTMLDivElement> {
           radio: !!group,
           enabled: read(item.enabled) !== false,
           shortcut: read(item.shortcut) ?? '',
+          tone: read(item.tone) ?? 'standard',
           submenu: !!children && children.some((child) => read(child.visible) !== false),
         };
       });
@@ -195,6 +197,7 @@ export class MenuList extends Component<HTMLDivElement> {
     if (role !== 'menuitem') element.setAttribute('aria-checked', String(!!look.checked));
     if (!look.enabled) element.setAttribute('aria-disabled', 'true');
     if (look.hint) element.title = look.hint;
+    if (look.tone !== 'standard') element.dataset.tone = look.tone;
     if (look.submenu) {
       element.setAttribute('aria-haspopup', 'menu');
       element.setAttribute('aria-expanded', 'false');

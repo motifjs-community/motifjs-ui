@@ -106,6 +106,7 @@ const PROPERTIES = [
 const METHODS = [
   ['addRow(values?)', '`Promise<boolean>`', 'Opens a new row as the “New row” button does; `false` when the row being edited cannot be left.'],
   ['deleteRow(row?) / restoreRow(row)', '`Promise<boolean>` / `void`', 'Deletes a row (default: the active one) as the save mode says; takes a batch deletion back.'],
+  ['deleteRows(rows)', '`Promise<boolean>`', 'Deletes several rows in one save (one request when the adapter saves in batches), asking once with `confirmDelete`; `false` when a row failed or the user said no.'],
   ['saveChanges() / discardChanges()', '`Promise<{ saved, failed }>` / `void`', 'Sends every unsaved change; drops them all.'],
   ['goToNextError()', '`boolean`', 'Moves to the next row that failed or has a message.'],
   ['runAction(id, rows?) / stopAction()', '`Promise<ran | null>` / `void`', 'Runs an action on rows (default: the rows the bars act on) as a press does; stops the one working on several rows.'],
@@ -273,7 +274,7 @@ export default function DataGridApiPage() {
         <h3>Methods</h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
         <p>
-          <Rich text="The rows and their saving are the data layer's: `grid.dataSource` and `grid.changeTracker` are a `DataSource` and a `ChangeTracker` of `@motifx-community/data`, with their own events (`onChanged`)." />
+          <Rich text="The rows and their saving are the data layer's: `grid.dataSource` and `grid.changeTracker` are a `DataSource` and a `ChangeTracker` of `@motifx-community/data`, with their own events (`onChanged`). `changeTracker.removeRows(rows)` and `removeKeys(keys)` delete several rows in one save, as `deleteRows` does." />
         </p>
       </Section>
     </>

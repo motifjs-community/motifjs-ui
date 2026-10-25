@@ -255,6 +255,21 @@ describe('MenuList submenus', () => {
     expect(menus(b.element)).toHaveLength(1);
   });
 
+  it('writes the tone of an item, none for standard, and follows a function', async () => {
+    const s = reactive<{ tone: 'standard' | 'caution' | 'danger' }>({ tone: 'danger' });
+    const list = new MenuList();
+    page(list);
+    list.setItems([{ text: 'Open' }, { text: 'Approve', tone: 'success' }, { text: 'Delete', tone: () => s.tone }]);
+    const tones = () => itemsOf(list.element).map((i) => i.dataset.tone ?? null);
+    expect(tones()).toEqual([null, 'success', 'danger']);
+    s.tone = 'standard';
+    await settle();
+    expect(tones()).toEqual([null, 'success', null]);
+    s.tone = 'caution';
+    await settle();
+    expect(tones()).toEqual([null, 'success', 'caution']);
+  });
+
   it('can focus the menu itself; Down then goes to the first item', async () => {
     const list = new MenuList();
     page(list);

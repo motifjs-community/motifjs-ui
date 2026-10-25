@@ -1,4 +1,4 @@
-/** Real-browser checks of the datagrid's actions in the toolbar and the bottom bar: nothing without a selection, one row's actions, the common ones of three rows with their count, applied to all three, the bottom bar, the row's context menu, the "menu only" display, and axe. */
+/** Real-browser checks of the datagrid's actions in the toolbar and the bottom bar: nothing without a selection, one row's actions, the common ones of three rows with their count, applied to all three, the bottom bar, the row's context menu, the "menu only" display with the tone of its items, and axe. */
 
 export default async function ({ page, base, check, axeSource }) {
   await page.goto(base + 'datagrid/editing', { waitUntil: 'load' });
@@ -116,6 +116,8 @@ export default async function ({ page, base, check, axeSource }) {
   const moreName = await more.getAttribute('aria-label');
   await more.click();
   const all = await menuItems();
+  const tones = await page.evaluate(() => [...document.querySelectorAll('[role="menu"] [role^="menuitem"]')].filter((i) => i.checkVisibility()).map((i) => `${i.textContent.trim()}:${i.dataset.tone ?? ''}`));
+  check('datagrid bar actions: a danger action’s menu item carries data-tone="danger"', tones.includes('Delete:danger') && tones.includes('Print:'), tones.join(' | '));
   await page.locator('[role="menu"]:visible [role^="menuitem"]', { hasText: 'Print' }).click();
   await page.waitForFunction(() => /printed/.test(document.querySelector('.dg-bar-note')?.textContent ?? ''), null, { timeout: 5000 });
   const note = await page.textContent('.dg-bar-note');

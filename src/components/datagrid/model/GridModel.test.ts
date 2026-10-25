@@ -156,12 +156,12 @@ describe('GridModel edits', () => {
     const removed = vi.fn();
     adapter.onRemoved(removed);
     const r = rows[2];
-    await m.remove(idOf(r), r);
+    await m.removeRows([{ rowId: idOf(r), row: r, index: -1 }]);
     expect(m.status(idOf(r))).toBe('removed');
     expect(removed).not.toHaveBeenCalled();
     m.restore(idOf(r));
     expect(m.edit(idOf(r))).toBeUndefined();
-    await m.remove(idOf(r), r);
+    await m.removeRows([{ rowId: idOf(r), row: r, index: -1 }]);
     await m.saveChanges();
     expect(removed).toHaveBeenCalledWith(expect.objectContaining({ key: 3 }));
     expect(m.edit(idOf(r))).toBeUndefined();

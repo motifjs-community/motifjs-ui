@@ -201,6 +201,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   shown for keyboard focus closed at once when focusing scrolled its field into view; it now follows
   the field while the page scrolls and closes only if the field is off the screen when scrolling ends.
 
+### DataGrid selection look, menu tones, deletions in one save
+
+- Selected rows wear the design language's selection look, as the lists and the tree do: tokens
+  `datagrid.selected` (`color.selection.bg`, was `color.accent.subtle`), new `selected-text`
+  (`color.selection.fg`), `selected-border` (`color.selection.border`), `selected-border-width`
+  (`selection.border-width`), `selected-effect` (`effect.selection`), `indicator-width`,
+  `indicator-length`, `indicator-radius` (`indicator.*`) and `indicator-color`
+  (`color.selection.indicator`). The fill is the row's background, the frame and the effect are
+  drawn over the cells (sticky ones too) and the bar at the start where the language has one (Fluent);
+  none of it takes room. Hover and the active row's tint lie over the fill, the focus ring on top; on
+  a selected row the fill stands for the stripe and the new-row tint.
+- `datagrid.ghost-shadow` and `datagrid.export-shadow` are `{elevation.popup}` (were `{shadow.8}`).
+- `MenuItem.tone` (`Bind<'standard' | 'accent' | 'success' | 'caution' | 'danger'>`): `MenuList`
+  writes `data-tone` on the item (none for `standard`) and follows a function. The grid gives each
+  action's `tone` to its items in the row's "more" menu, the context menu and the bars' "Actions" menu.
+- `deleteRows(rows)`: several rows in one save, asked once. The ready `remove` on several rows
+  (bars, context menu) uses it, through the data layer's `ChangeTracker.removeRows`: in `wait` and
+  `background` one save, one request when the adapter saves in batches; `batch` marks them as before.
+- Docs: the selection look (Selection), `tone` and the one save (Row actions), `deleteRows` (API).
+  `e2e/checks/36-datagrid-bar-actions.mjs` checks that the Delete item carries `data-tone="danger"`.
+- `Toolbar`: a button that moves into the "more" menu keeps its `tone` on the menu item.
+
 ### DataGrid master-detail rows
 
 - `masterDetail` (each field a `Bind`, live through `grid.masterDetail`): `enabled` (the expand

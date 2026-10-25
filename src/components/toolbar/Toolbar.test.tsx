@@ -243,6 +243,19 @@ describe('Toolbar', () => {
     expect(moreFace(t).getAttribute('aria-label')).toBe('Diğer seçenekler');
   });
 
+  it('keeps a button\'s tone on its item in the "more" menu', async () => {
+    let t!: Toolbar;
+    page(
+      <Toolbar ref={(x: Toolbar) => (t = x)}>
+        <Button text="Delete" tone="danger" data-overflow="always" />
+        <Button text="Print" data-overflow="always" />
+      </Toolbar>,
+    );
+    await settle();
+    moreFace(t).click();
+    expect(moreItems(t).map((item) => item.getAttribute('data-tone'))).toEqual(['danger', null]);
+  });
+
   it('keeps an icon-only button named in the "more" menu, and puts a moved one back', async () => {
     const s = reactive({ out: 'always' as 'always' | 'auto' });
     let t!: Toolbar;

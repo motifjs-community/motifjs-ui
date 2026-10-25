@@ -33,6 +33,7 @@ const ITEM = [
   ['group', '`Bind<string>`', 'With `checked`: one choice of a group (`menuitemradio`), shown with a dot.'],
   ['enabled, visible', '`Bind<boolean>`', 'Dimmed and not chosen, or left out.'],
   ['beginGroup', '`Bind<boolean>`', 'A line before the item.'],
+  ['tone', "`Bind<'standard' | 'accent' | 'success' | 'caution' | 'danger'>`", 'The item in the kit tone color (`danger` for a destructive one); a toolbar button moved into the overflow menu keeps its tone.'],
   ['click', '`(e) => void`', 'Chosen, after the menu closed. `e`: `{ item, source, event }`.'],
   ['data', '`unknown`', 'Your own value.'],
 ];

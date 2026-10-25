@@ -15,7 +15,7 @@ const MODES = [
 
 const SETTINGS = [
   ['editMode', "`'row'`", 'How rows are edited and when a row is handed to saving (the table above). Changing it to or from `batch` starts again with the data, like `saveMode`.'],
-  ['confirmDelete', '`true`', 'Deleting a row (`deleteRow()`, the `remove` action) asks first, once for all the rows an action deletes; not in batch mode, where a deletion is only marked and can be taken back. Texts: `gridConfirmDelete`, `gridConfirmDeleteRows`, `gridConfirmDeleteTitle`.'],
+  ['confirmDelete', '`true`', 'Deleting a row (`deleteRow()`, `deleteRows()`, the `remove` action) asks first, once for all the rows an action deletes; not in batch mode, where a deletion is only marked and can be taken back. Texts: `gridConfirmDelete`, `gridConfirmDeleteRows`, `gridConfirmDeleteTitle`.'],
   ['selectTextOnEditStart', '`true`', 'The text of a cell or a form field is selected when its editor opens; off, the caret goes to its end.'],
 ];
 

@@ -535,15 +535,16 @@ function menuItemOf(button: Button): MenuItem {
   const name = () => button.text || face.getAttribute('aria-label') || button.hint || face.textContent?.trim() || '';
   const press = () => face.click();
   if (button.hasMenu && button.split) {
-    return { text: name, icon: () => iconCopy(button.icon), hint: () => button.hint, enabled: () => button.isEnabled, items: () => [{ text: name, click: press }, ...button.menu.map((item, i) => (i ? item : { ...item, beginGroup: true }))] };
+    return { text: name, icon: () => iconCopy(button.icon), hint: () => button.hint, tone: () => button.tone, enabled: () => button.isEnabled, items: () => [{ text: name, click: press }, ...button.menu.map((item, i) => (i ? item : { ...item, beginGroup: true }))] };
   }
   if (button.hasMenu) {
-    return { text: name, icon: () => iconCopy(button.icon), hint: () => button.hint, enabled: () => button.isEnabled, items: () => button.menu };
+    return { text: name, icon: () => iconCopy(button.icon), hint: () => button.hint, tone: () => button.tone, enabled: () => button.isEnabled, items: () => button.menu };
   }
   return {
     text: name,
     icon: () => iconCopy(button.icon),
     hint: () => button.hint,
+    tone: () => button.tone,
     enabled: () => button.isEnabled,
     checked: () => (button.toggle ? button.pressed : undefined),
     click: press,

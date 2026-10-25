@@ -869,10 +869,10 @@ export class GridModel<T> {
     if (rec) this.data.tracker.discard(rec.row);
   }
 
-  /** Deletes a row as the save mode says. */
-  remove(rowId: string, row: T, index = -1): Promise<boolean> {
-    if (index >= 0) this.lastSeen.set(rowId, { index, generation: this.generation });
-    return this.data.tracker.remove(this.edit(rowId)?.row ?? row);
+  /** Deletes rows in one save as the save mode says; `index` is where each row was (-1: not shown). */
+  removeRows(rows: readonly { rowId: string; row: T; index: number }[]): Promise<boolean> {
+    for (const { rowId, index } of rows) if (index >= 0) this.lastSeen.set(rowId, { index, generation: this.generation });
+    return this.data.tracker.removeRows(rows.map(({ rowId, row }) => this.edit(rowId)?.row ?? row));
   }
 
   restore(rowId: string) {

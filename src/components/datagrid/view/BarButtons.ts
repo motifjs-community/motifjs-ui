@@ -144,6 +144,7 @@ export class BarButtons<T> {
       text: sets.label(e),
       icon: e.action.icon,
       hint: e.action.hint,
+      tone: e.action.tone,
       enabled: !e.disabled,
       beginGroup: e.action.beginGroup,
       data: e.action.id,

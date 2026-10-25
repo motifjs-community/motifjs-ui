@@ -251,7 +251,7 @@ describe('DataGrid actions in the bars', () => {
     await grid.dispose();
   });
 
-  it('deletes several rows with the ready action: batch marks all, wait sends each', async () => {
+  it('deletes several rows with the ready action in one save: batch marks all, wait and background send them together', async () => {
     const batch = await make({ actions: (_r, s) => (s.isRemoved ? ['restore'] : ['remove']), saveMode: 'batch', settings: { selection: 'multiple', actionsLocation: 'toolbar' } });
     batch.selectedKeys = [1, 2, 3];
     await settle();
@@ -262,24 +262,40 @@ describe('DataGrid actions in the bars', () => {
     expect(batch.barActions.map((a) => [a.action.id, a.count])).toEqual([['restore', 3]]);
     await batch.dispose();
 
+    const saves: number[] = [];
     const adapter = new TestRows({ data: makeRows(5), key: 'id' });
-    const wait = await make({ dataSource: new data.DataSource<Row, number>({ adapter }), actions: ['remove'], saveMode: 'wait', settings: { selection: 'multiple', actionsLocation: 'bottom', confirmDelete: false } });
+    const wait = await make({
+      dataSource: new data.DataSource<Row, number>({ adapter }),
+      actions: ['remove'],
+      saveMode: 'wait',
+      settings: { selection: 'multiple', actionsLocation: 'bottom', confirmDelete: false },
+      onSaving: (e) => saves.push(e.changes.length),
+    });
     wait.selectedKeys = [2, 4];
     await settle();
     const result = await wait.runAction('remove');
     await settle();
     expect(result).toMatchObject({ done: 2, failed: 0 });
-    expect(adapter.removed).toEqual([2, 4]);
-    expect(wait.total).toBe(3);
+    expect([saves, adapter.removed, wait.total]).toEqual([[2], [2, 4], 3]);
+    // deleteRows in code: one save too.
+    expect(await wait.deleteRows([wait.dataSource.rows[0], wait.dataSource.rows[2]])).toBe(true);
+    expect([saves, adapter.removed, wait.total]).toEqual([[2, 2], [2, 4, 1, 5], 1]);
     await wait.dispose();
 
+    saves.length = 0;
     const background = new TestRows({ data: makeRows(5), key: 'id' });
-    const bg = await make({ dataSource: new data.DataSource<Row, number>({ adapter: background }), actions: ['remove'], saveMode: 'background', settings: { selection: 'multiple', actionsLocation: 'bottom', confirmDelete: false } });
+    const bg = await make({
+      dataSource: new data.DataSource<Row, number>({ adapter: background }),
+      actions: ['remove'],
+      saveMode: 'background',
+      settings: { selection: 'multiple', actionsLocation: 'bottom', confirmDelete: false },
+      onSaving: (e) => saves.push(e.changes.length),
+    });
     bg.selectedKeys = [1, 5];
     await settle();
     await bg.runAction('remove');
     await settle();
-    expect(background.removed).toEqual([1, 5]);
+    expect([saves, background.removed]).toEqual([[2], [1, 5]]);
     await bg.dispose();
   });
 
@@ -412,6 +428,32 @@ describe('DataGrid actions in the bars', () => {
     const items = [...document.querySelectorAll('.mx-button__popup [role^="menuitem"], [role="menu"] [role^="menuitem"]')].map((i) => i.textContent?.trim());
     expect(items).toContain('Approve (2)');
     expect(items).toContain('Print (2)');
+    await grid.dispose();
+  });
+  it('gives the menu items the tone of their action: the row "more" menu, the context menu and the "Actions" menu', async () => {
+    const tones = (items: Iterable<Element>) => [...items].map((i) => [i.textContent?.trim(), (i as HTMLElement).dataset.tone ?? null]);
+    const grid = await make({
+      actions: [{ ...approve(), tone: 'accent' }, print(), 'remove'],
+      settings: { selection: 'multiple', actionsLocation: 'row', actionsDisplay: 'menu' },
+    });
+    click(rowEl(grid, 0).querySelector<HTMLElement>('.mx-data-grid__more')!);
+    await settle();
+    expect(tones(openMenu()!.querySelectorAll('[role^="menuitem"]'))).toEqual([['Approve', 'accent'], ['Print', null], ['Delete', 'danger']]);
+    key(document.activeElement!, 'Escape');
+    await settle();
+    cell(grid, 1, 'name').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    await settle();
+    expect(tones(openMenu()!.querySelectorAll('[role^="menuitem"]'))).toEqual([['Approve', 'accent'], ['Print', null], ['Delete', 'danger']]);
+    key(document.activeElement!, 'Escape');
+    await settle();
+
+    grid.settings.actionsLocation = 'bottom';
+    grid.selectedKeys = [1, 2];
+    await settle();
+    click(faceOf(grid.element.querySelector('.mx-data-grid__bar-actions .mx-data-grid__bar-menu') as HTMLElement));
+    await settle();
+    const items = [...document.querySelectorAll('[role="menu"] [role^="menuitem"]')].filter((el) => !el.closest('.mx-data-grid__menu'));
+    expect(tones(items)).toEqual([['Approve (2)', 'accent'], ['Print (2)', null], ['Delete (2)', 'danger']]);
     await grid.dispose();
   });
 });

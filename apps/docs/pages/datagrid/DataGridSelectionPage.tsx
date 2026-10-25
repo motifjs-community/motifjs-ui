@@ -26,7 +26,7 @@ export default function DataGridSelectionPage() {
     <>
       <Section anchor="selection" title="Selection">
         <p>
-          <Rich text="`selection` is `single` (the selection follows the active row) or `multiple`, with a check box column. A click selects a row, Ctrl adds or takes out, Shift selects a range; Shift+Space, Shift+arrows and Ctrl+A do it from the keyboard. The header check box selects every row of the filter — on a server too: the grid keeps a state, “all but these keys”, never the rows. `selection` gives that state, `selectionFilter` the same as a filter for the server." />
+          <Rich text="`selection` is `single` (the selection follows the active row) or `multiple`, with a check box column. A click selects a row, Ctrl adds or takes out, Shift selects a range; Shift+Space, Shift+arrows and Ctrl+A do it from the keyboard. The header check box selects every row of the filter — on a server too: the grid keeps a state, “all but these keys”, never the rows. `selection` gives that state, `selectionFilter` the same as a filter for the server. Selected rows wear the design language's own selection look, as its lists and trees do: its fill and text colour, and its frame, raised effect or bar at the start where it has them; the hover and the active row's tint lie over it, the keyboard focus ring on top, and a selected row stays one row high." />
         </p>
         <Example files={[...withOrders('Selection.tsx'), slowAdapterFile]} stack>
           <Selection />

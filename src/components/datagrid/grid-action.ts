@@ -21,7 +21,7 @@ export interface GridAction<T = any> {
   icon?: Bind<IconSource | null | undefined>;
   /** Show the text next to the icon. Default: only when there is no icon. */
   showText?: boolean;
-  /** Default `'standard'`. */
+  /** The colour of its button and of its menu items. Default `'standard'`. */
   tone?: 'standard' | 'accent' | 'danger';
   /** Shown as a tooltip. Default: `text` when only the icon shows. */
   hint?: Bind<string>;

@@ -98,11 +98,12 @@
     will-change: transform;
   }
 
-  .mx-data-grid[data-striped] .mx-data-grid__body > .mx-data-grid__row[data-odd] {
+  /* A selected row's fill stands for the stripe and the new-row tint. */
+  .mx-data-grid[data-striped] .mx-data-grid__body > .mx-data-grid__row[data-odd]:not([data-selected]) {
     --_tint: var(--mx-datagrid-stripe);
   }
 
-  .mx-data-grid__body > .mx-data-grid__row[data-status='new'] {
+  .mx-data-grid__body > .mx-data-grid__row[data-status='new']:not([data-selected]) {
     --_tint: var(--mx-datagrid-new);
   }
 
@@ -114,13 +115,40 @@
     --_tint: var(--mx-datagrid-active);
   }
 
-  /* With selection on, the selected rows carry the accent; the active row only the hover tint. */
+  /* With selection on, the active row has only the hover tint, over the selection fill too. */
   .mx-data-grid[data-selection] .mx-data-grid__body > .mx-data-grid__row[data-active] {
     --_tint: var(--mx-datagrid-hover);
   }
 
+  /* The design language's selection look: its fill and text, and a frame, an effect and a bar at
+     the start drawn over the cells (sticky ones too), under the focus ring. None of it takes room. */
   .mx-data-grid__body > .mx-data-grid__row[data-selected] {
-    --_tint: var(--mx-datagrid-selected);
+    color: var(--mx-datagrid-selected-text);
+    background-color: var(--mx-datagrid-selected);
+  }
+
+  .mx-data-grid__body > .mx-data-grid__row[data-selected]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: var(--_z-sticky);
+    pointer-events: none;
+    box-shadow:
+      inset 0 0 0 var(--mx-datagrid-selected-border-width) var(--mx-datagrid-selected-border),
+      var(--mx-datagrid-selected-effect);
+  }
+
+  .mx-data-grid__body > .mx-data-grid__row[data-selected]::before {
+    content: '';
+    position: absolute;
+    inset-block: calc(50% - var(--mx-datagrid-indicator-length) / 2);
+    inset-inline-start: 0;
+    /* Over the sticky cells: it comes before them. */
+    z-index: var(--_z-focus);
+    inline-size: var(--mx-datagrid-indicator-width);
+    pointer-events: none;
+    background: var(--mx-datagrid-indicator-color);
+    border-radius: var(--mx-datagrid-indicator-radius);
   }
 
   /* Cells: one line, cut with an ellipsis. */

@@ -25,6 +25,8 @@ export interface MenuItem {
   shortcut?: Bind<string>;
   /** A submenu, opened at the side of the item. */
   items?: Bind<readonly MenuItem[]>;
+  /** The colour of the item, by what it does (`danger` for a deletion). Default `'standard'`. */
+  tone?: Bind<'standard' | 'accent' | 'success' | 'caution' | 'danger'>;
   /** A line before the item, to group the commands. */
   beginGroup?: Bind<boolean>;
   /** Runs when the item is chosen, after the menu closed. */

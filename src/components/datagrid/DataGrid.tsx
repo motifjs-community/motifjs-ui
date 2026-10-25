@@ -592,21 +592,29 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    * through the queue. A new row never saved is just dropped. With `confirmDelete` (and not in batch
    * mode) the user is asked first. Resolves to `false` when it failed or was not confirmed.
    */
-  async deleteRow(row?: T): Promise<boolean> {
-    let target = this.locate(row);
-    if (!target) return false;
-    if (!this.model.isNew(target.rowId)) {
-      if (!(await this.askDelete(1))) return false;
-      target = this.locate(target.obj);
-      if (!target) return false;
+  deleteRow(row?: T): Promise<boolean> {
+    const target = this.locate(row);
+    return target ? this.deleteRows([target.obj]) : Promise.resolve(false);
+  }
+
+  /**
+   * Deletes several rows in one save, as `deleteRow` does one: in `wait` and `background` they are
+   * sent together, in one request when the adapter saves in batches. The user is asked once.
+   * Resolves to `false` when a row failed or the deletion was not confirmed.
+   */
+  async deleteRows(rows: readonly T[]): Promise<boolean> {
+    const { model } = this;
+    const saved = rows.filter((row) => !model.isNew(this.locate(row)!.rowId)).length;
+    if (saved && !(await this.askDelete(saved))) return false;
+    const targets = rows.map((row) => this.locate(row)!);
+    for (const { rowId } of targets) {
+      if (this.formEdit?.rowId === rowId) this.closeForm(false);
+      if (model.state.session === rowId) {
+        this.closeEditor();
+        model.setSession(null);
+      }
     }
-    const { rowId, obj, index } = target;
-    if (this.formEdit?.rowId === rowId) this.closeForm(false);
-    if (this.model.state.session === rowId) {
-      this.closeEditor();
-      this.model.setSession(null);
-    }
-    return this.model.remove(rowId, obj, index >= 0 ? this.model.dataIndex(index) : -1);
+    return model.removeRows(targets.map(({ rowId, obj, index }) => ({ rowId, row: obj, index: index >= 0 ? model.dataIndex(index) : -1 })));
   }
 
   /** Takes back the deletion mark of a row (batch mode). */
@@ -3949,6 +3957,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         visible: (_row, s) => !s.isRemoved,
         disabled: (_row, s) => s.isSaving,
         onclick: (row) => void this.deleteRow(row),
+        onclickMany: (rows) => this.deleteRows(rows),
       },
       restore: {
         id: 'restore',
@@ -4051,6 +4060,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       text: a.text,
       icon: a.hasIcon ? a.action.icon : undefined,
       hint: a.action.hint,
+      tone: a.action.tone,
       enabled: !a.disabled,
       beginGroup: a.action.beginGroup,
       data: a.action.id,
@@ -4119,6 +4129,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       text: sets.label(e),
       icon: e.action.icon,
       hint: e.action.hint,
+      tone: e.action.tone,
       enabled: !e.disabled,
       beginGroup: e.action.beginGroup,
       data: e.action.id,

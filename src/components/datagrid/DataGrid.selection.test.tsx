@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -85,6 +86,35 @@ describe('DataGrid selection', () => {
     expect(grid.selectedKeys).toEqual([3, 4, 5]);
     await settle();
     expect(grid.element.querySelector('.mx-data-grid__selected')!.textContent).toBe('3 selected');
+    await grid.dispose();
+  });
+
+  it('maps selected rows to the selection roles of the design language; an active row stays selected', async () => {
+    const grid = await make();
+    grid.selectedKeys = [2, 3];
+    grid.focusedRowIndex = 2;
+    await settle();
+    expect([1, 2, 3].map((i) => [rowEl(grid, i).hasAttribute('data-selected'), rowEl(grid, i).hasAttribute('data-active')])).toEqual([
+      [true, false],
+      [true, true],
+      [false, false],
+    ]);
+    expect(grid.element.getAttribute('data-selection')).toBe('multiple');
+    const tokens = JSON.parse(readFileSync('tokens/component/datagrid.tokens.json', 'utf8')).datagrid;
+    const roles = Object.fromEntries(
+      ['selected', 'selected-text', 'selected-border', 'selected-border-width', 'selected-effect', 'indicator-width', 'indicator-length', 'indicator-radius', 'indicator-color'].map((name) => [name, tokens[name].$value]),
+    );
+    expect(roles).toEqual({
+      selected: '{color.selection.bg}',
+      'selected-text': '{color.selection.fg}',
+      'selected-border': '{color.selection.border}',
+      'selected-border-width': '{selection.border-width}',
+      'selected-effect': '{effect.selection}',
+      'indicator-width': '{indicator.thickness}',
+      'indicator-length': '{indicator.length}',
+      'indicator-radius': '{indicator.radius}',
+      'indicator-color': '{color.selection.indicator}',
+    });
     await grid.dispose();
   });
 
