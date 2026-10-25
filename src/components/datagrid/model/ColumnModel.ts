@@ -106,6 +106,21 @@ export class ColumnModel<T> {
     return typeof own === 'boolean' ? own : this.settings.get(feature);
   }
 
+  /**
+   * Whether the search panel looks in a column: its own `searchable`, else off when the column turns
+   * its own filters off, else the grid's `searchable`.
+   */
+  canSearch(field: string): boolean {
+    if (this.isInternal(field)) return false;
+    const own = this.features.get(field)!;
+    const set = own.own('searchable');
+    if (typeof set === 'boolean') return set;
+    const row = own.own('filterRow');
+    const header = own.own('headerFilter');
+    if ((row === false && header !== true) || (header === false && row !== true)) return false;
+    return this.settings.get('searchable');
+  }
+
   /** Whether `feature` is on for at least one visible column. */
   canAny(feature: keyof ColumnFeatures): boolean {
     let any = false;

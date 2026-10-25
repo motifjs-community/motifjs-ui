@@ -32,4 +32,6 @@ export interface GridLookup<T = any> {
   editor?: 'dropdown' | 'combobox' | 'lookup';
   /** Props given to the editor (e.g. the `Lookup`'s `columns`). */
   editorOptions?: Record<string, unknown>;
+  /** The most items whose text holds the search panel's text that the search turns into keys. Default 100. */
+  searchLimit?: number;
 }

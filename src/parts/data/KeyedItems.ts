@@ -170,14 +170,11 @@ export class KeyedItems<T = unknown> {
    * order, and how many there are. The items found are kept, so their keys show at once.
    */
   async search(text: string, search: TextSearch<T>, skip = 0, take = 100): Promise<{ items: T[]; total: number }> {
+    const now = this.searchInMemory(text, search, skip, take);
+    if (now) return now;
     const locale = search.locale ?? pageLocale();
     const lower = text.trim().toLocaleLowerCase(locale);
     const holds = (item: T) => !lower || search.textOf(item).toLocaleLowerCase(locale).includes(lower);
-    if (this.inMemory) {
-      const test = search.filter ? data.createRowFilter<T>(search.filter, { locale }) : null;
-      const all = (this.source as readonly T[]).filter((item) => holds(item) && (!test || (item !== null && typeof item === 'object' && test(item))));
-      return { items: all.slice(skip, skip + take), total: all.length };
-    }
     const adapter = this.adapter!;
     const fields = search.searchFields ?? [];
     if (lower && !fields.length) {
@@ -191,6 +188,18 @@ export class KeyedItems<T = unknown> {
     const result = await adapter.load({ filter: data.and(search.filter, byText), skip, take, count: true });
     this.keep(result.rows);
     return { items: result.rows, total: result.total ?? skip + result.rows.length };
+  }
+
+  /** `search` at once, for items in an array; `null` for items that come from a source. */
+  searchInMemory(text: string, search: TextSearch<T>, skip = 0, take = 100): { items: T[]; total: number } | null {
+    if (!this.inMemory) return null;
+    const locale = search.locale ?? pageLocale();
+    const lower = text.trim().toLocaleLowerCase(locale);
+    const test = search.filter ? data.createRowFilter<T>(search.filter, { locale }) : null;
+    const all = (this.source as readonly T[]).filter(
+      (item) => (!lower || search.textOf(item).toLocaleLowerCase(locale).includes(lower)) && (!test || (item !== null && typeof item === 'object' && test(item))),
+    );
+    return { items: all.slice(skip, skip + take), total: all.length };
   }
 
   /** Forgets everything; keys are asked for again when they are needed. */

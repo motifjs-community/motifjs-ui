@@ -89,7 +89,6 @@ export interface UiStrings {
   gridNewRow: string;
   gridSaveChanges: string;
   gridDiscardChanges: string;
-  gridPendingChanges: string;
   gridSaveErrors: string;
   gridNextError: string;
   gridRowStatus: string;
@@ -151,4 +150,9 @@ export interface UiStrings {
   gridLookupLoading: string;
   gridLookupNoMatch: string;
   gridLookupSeveral: string;
+  gridToolbar: string;
+  gridSearch: string;
+  gridSearchPlaceholder: string;
+  gridSearchResults: string;
+  gridColumnChooser: string;
 }

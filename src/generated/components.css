@@ -398,6 +398,9 @@
     --mx-datagrid-changed: var(--mx-color-accent-solid);
     --mx-datagrid-invalid: var(--mx-color-danger-solid);
     --mx-datagrid-selected: var(--mx-color-accent-subtle);
+    --mx-datagrid-search-mark-background: var(--mx-color-caution-subtle);
+    --mx-datagrid-search-mark-color: var(--mx-color-fg-primary);
+    --mx-datagrid-search-mark-line: var(--mx-color-caution-fg);
     --mx-list-indicator-color: var(--mx-color-accent-fg);
     --mx-menu-shortcut-color: var(--mx-color-fg-secondary);
     --mx-menubar-background: var(--mx-color-bg-bar);

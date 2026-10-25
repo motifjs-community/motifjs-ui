@@ -46,6 +46,7 @@ export function showTooltip(tooltip: Tooltip, anchor: Element, cause: Cause, des
   if (!opening) return;
   document.addEventListener('keydown', onKeyDown, true);
   window.addEventListener('scroll', onScroll, true);
+  window.addEventListener('scrollend', onScrollEnd, true);
   window.addEventListener('resize', onResize);
   tooltip.present(anchor, described);
 }
@@ -58,6 +59,7 @@ export function hideTooltip(tooltip: Tooltip): void {
   closedAt = performance.now();
   document.removeEventListener('keydown', onKeyDown, true);
   window.removeEventListener('scroll', onScroll, true);
+  window.removeEventListener('scrollend', onScrollEnd, true);
   window.removeEventListener('resize', onResize);
   tooltip.dismiss();
 }
@@ -180,8 +182,19 @@ function onScroll(e: Event): void {
   const scrolled = e.target;
   if (!current || !currentAnchor) return;
   if (scrolled !== document && !(scrolled instanceof Node && scrolled.contains(currentAnchor))) return;
-  if (current.showOn === 'manual') current.place();
+  // Focus scrolls a field into view (smoothly, too), and the one reading still needs its tooltip:
+  // it follows the field, and closes only if the field is off the screen once scrolling ends.
+  if (current.showOn === 'manual' || currentCause === 'focus') current.place();
   else hideTooltip(current);
+}
+
+function onScrollEnd(): void {
+  if (current && currentAnchor && currentCause === 'focus' && current.showOn !== 'manual' && !onScreen(currentAnchor)) hideTooltip(current);
+}
+
+function onScreen(el: Element): boolean {
+  const r = el.getBoundingClientRect();
+  return r.bottom > 0 && r.right > 0 && r.top < window.innerHeight && r.left < window.innerWidth;
 }
 
 function onResize(): void {

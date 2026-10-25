@@ -33,3 +33,8 @@ export type { GridFilterValue } from './grid-filter-value';
 export type { GridValuesRequest } from './grid-values-request';
 export type { GridValuesResult } from './grid-values-result';
 export type { GridExportOptions } from './grid-export-options';
+export type { GridToolbar } from './grid-toolbar';
+export type { GridToolbarItem } from './grid-toolbar-item';
+export type { GridToolbarItemName } from './grid-toolbar-item-name';
+export type { GridToolbarItemClickEventArgs } from './grid-toolbar-item-click-event-args';
+export type { GridSearchTextChangedEventArgs } from './grid-search-text-changed-event-args';

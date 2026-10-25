@@ -38,4 +38,10 @@ export interface ColumnFeatures {
    * other columns' filters leave (the cities of the chosen state). Default `true`.
    */
   syncLookupFilterValues: boolean;
+  /**
+   * The search panel looks in this column. Default `true`; a column that turns its own filters off
+   * (`filterRow: false` and no `headerFilter: true`, or the other way round) is left out unless it
+   * sets `searchable` itself.
+   */
+  searchable: boolean;
 }

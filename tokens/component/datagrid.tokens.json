@@ -1,6 +1,6 @@
 {
   "datagrid": {
-    "$description": "DataGrid: rows sized by the density tokens, a bar header, row tints for hover, the active row, selected and new rows and stripes, the marks of unsaved and invalid cells, the selection check boxes, the action buttons, the filter row and the header filter window.",
+    "$description": "DataGrid: rows sized by the density tokens, a bar header, row tints for hover, the active row, selected and new rows and stripes, the marks of unsaved and invalid cells, the selection check boxes, the action buttons, the filter row, the header filter window and the text the search found.",
     "row-height": { "$type": "dimension", "$value": "{control.height.md}" },
     "row-padding": { "$type": "dimension", "$value": "{space.1}" },
     "cell-padding": { "$type": "dimension", "$value": "{control.padding.sm}" },
@@ -37,6 +37,9 @@
     "action-gap": { "$type": "dimension", "$value": "{space.1}" },
     "filter-padding": { "$type": "dimension", "$value": "{space.1}" },
     "values-width": { "$type": "dimension", "$value": { "value": 16, "unit": "rem" } },
-    "values-gap": { "$type": "dimension", "$value": "{space.2}" }
+    "values-gap": { "$type": "dimension", "$value": "{space.2}" },
+    "search-mark-background": { "$type": "color", "$value": "{color.caution.subtle}" },
+    "search-mark-color": { "$type": "color", "$value": "{color.fg.primary}" },
+    "search-mark-line": { "$type": "color", "$value": "{color.caution.fg}" }
   }
 }

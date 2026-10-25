@@ -17,7 +17,7 @@ export interface GridSettings extends ColumnFeatures {
   multiSort: boolean;
   /** The user can add rows (the "New row" button and the Tab chain). `addRow()` always works. Default `false`. */
   addRows: boolean;
-  /** The grid's own "New row" button in the bottom bar, while `addRows` is on. Default `true`. */
+  /** The grid's own "New row" button in the toolbar, while `addRows` is on. Default `true`. */
   newRowButton: boolean;
   /** Tab on the last editable cell of a new row saves it and opens the next new row. Default `true`. */
   tabChain: boolean;
@@ -25,14 +25,16 @@ export interface GridSettings extends ColumnFeatures {
   enterMoves: 'none' | 'down' | 'next';
   /** The narrow column at the start that marks new, changed, removed, saving and failed rows. Default `true`. */
   rowStatus: boolean;
-  /** "Save changes" and "Discard" in the bottom bar while there are unsaved changes (batch mode). Default `true`. */
+  /** "Save changes" and "Discard" in the toolbar (batch mode); they are dimmed while there is nothing to save. Default `true`. */
   saveButtons: boolean;
   /** "N rows with errors" and "Next error" in the bottom bar. Default `true`. */
   errorSummary: boolean;
   /** Header buttons show on hover and focus (always on touch screens), or always. Default `'hover'`. */
   headerButtons: 'hover' | 'always';
-  /** The list of columns (show/hide) in the column menu. Default `true`. */
+  /** The list of columns (show/hide) in the column menu, and behind the toolbar's column button. Default `true`. */
   columnChooser: boolean;
+  /** A button in the toolbar that opens the list of columns (while `columnChooser` is on). Default `false`. */
+  columnChooserButton: boolean;
   /** "Reset layout" in the column menu. Default `true`. */
   layoutReset: boolean;
   /** Full text of a clipped cell, or its message, on hover and on keyboard focus. Default `true`. */
@@ -69,8 +71,22 @@ export interface GridSettings extends ColumnFeatures {
   paste: boolean;
   /** Pasted lines past the last row open new rows (while `addRows` is on). Default `false`. */
   pasteNewRows: boolean;
-  /** An "Export" button in the bottom bar that saves the rows as a CSV file. Default `false`. */
+  /** An "Export" button in the toolbar that saves the rows as a CSV file. Default `false`. */
   exportButton: boolean;
-  /** With `layoutKey`, the layout and the filters are kept in the browser's storage and come back. Default `true`. */
+  /** With `layoutKey`, the layout, the filters and the search text are kept in the browser's storage and come back. Default `true`. */
   saveLayout: boolean;
+  /** A search box in the toolbar that looks for its text in every searchable column at once. Default `false`. */
+  searchPanel: boolean;
+  /** Width of the search box: pixels, or any CSS length. Default `160`. */
+  searchPanelWidth: number | string;
+  /** The search box's placeholder. Default: the `gridSearchPlaceholder` text of `uiLocale`. */
+  searchPlaceholder: string;
+  /** Milliseconds between the last key typed in the search box and the search. Default `700`. */
+  searchDelay: number;
+  /** The text the search found is marked in the cells. Default `true`. */
+  highlightSearchText: boolean;
+  /** Only text in the same case as the search text is marked (the search itself ignores case). Default `false`. */
+  highlightCaseSensitive: boolean;
+  /** The search looks only in the visible columns. Default `false`: hidden columns too. */
+  searchVisibleColumnsOnly: boolean;
 }

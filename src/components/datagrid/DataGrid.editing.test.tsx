@@ -570,7 +570,8 @@ describe('save modes', () => {
     await tick();
     expect(rowEl(grid, 3).dataset.status).toBe('removed');
     expect(grid.changes.count).toBe(4);
-    expect(grid.element.querySelector('.mx-data-grid__changes')!.textContent).toContain('4 unsaved changes');
+    const save = grid.element.querySelector<HTMLButtonElement>('.mx-data-grid__toolbar .mx-data-grid__save')!;
+    expect(save.disabled || save.getAttribute('aria-disabled') === 'true').toBe(false);
     expect(adapter.calls).toEqual([]);
 
     const result = await grid.saveChanges();
@@ -585,6 +586,7 @@ describe('save modes', () => {
     await tick();
     expect(rowEl(grid, 3).hasAttribute('data-status')).toBe(false);
     expect(grid.hasChanges).toBe(false);
+    expect(save.disabled || save.getAttribute('aria-disabled') === 'true').toBe(true);
     await grid.dispose();
     source.dispose();
   });

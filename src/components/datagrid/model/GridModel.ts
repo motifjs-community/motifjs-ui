@@ -24,6 +24,7 @@ import { FilterModel } from './FilterModel';
 import { FilterValues } from './FilterValues';
 import { GridData } from './GridData';
 import { GridRowsAdapter } from './GridRowsAdapter';
+import { GridSearch } from './GridSearch';
 import { LayoutStore } from './LayoutStore';
 import { LookupTexts } from './LookupTexts';
 import type { GridState } from './grid-state';
@@ -95,6 +96,8 @@ export class GridModel<T> {
   errorId = '';
   readonly selection = new RowSelection();
   readonly filters: FilterModel<T>;
+  /** The search panel's text and filter. */
+  readonly search: GridSearch<T>;
   readonly values: FilterValues<T>;
   /** The texts of the lookup columns. */
   readonly lookups: LookupTexts<T>;
@@ -132,6 +135,9 @@ export class GridModel<T> {
     if (filters) this.filters.replace(filters);
     this.values = new FilterValues<T>(this);
     this.lookups = new LookupTexts<T>(() => this.formatter.locale, { missing: () => this.text('gridLookupMissing') });
+    this.search = new GridSearch<T>(this);
+    const searchText = stored ? stored.searchText : read(props.searchText);
+    if (searchText) this.search.start(searchText);
     this.connect();
     this.state.activeField = this.columns.visibleData()[0] ?? '';
   }
@@ -180,6 +186,11 @@ export class GridModel<T> {
       }
       st.connection++;
     });
+  }
+
+  /** The grid holds the rows itself (`rows`), not a given data source. */
+  get ownsRows(): boolean {
+    return !read(this.props.dataSource);
   }
 
   get mode(): GridMode {
@@ -728,6 +739,11 @@ export class GridModel<T> {
     if (key !== this.appliedFilter) this.applyFilter(own, key);
   }
 
+  /** Whether a filter or the search leaves rows out. Reactive. */
+  isFiltered(): boolean {
+    return this.filters.any() || !!this.search.state.applied;
+  }
+
   /** The whole filter of the rows: the source's own and the grid's. */
   get filter(): data.FilterExpression | null {
     void this.state.version;
@@ -821,7 +837,7 @@ export class GridModel<T> {
   /** With `layoutKey` (and `saveLayout` on): the layout and the filters go into the browser's storage. */
   keepLayout() {
     const store = this.store;
-    if (store) untracked(() => this.settings.get('saveLayout') && store.write({ ...this.layout, filters: this.filters.toFilters() }));
+    if (store) untracked(() => this.settings.get('saveLayout') && store.write({ ...this.layout, filters: this.filters.toFilters(), searchText: this.search.state.applied }));
   }
 
   /** After a column was hidden, moves the active cell to a visible column. */
@@ -838,6 +854,7 @@ export class GridModel<T> {
 
   dispose() {
     clearTimeout(this.filterTimer);
+    this.search.dispose();
     this.lookups.dispose();
     this.selection.dispose();
     this.data.dispose();

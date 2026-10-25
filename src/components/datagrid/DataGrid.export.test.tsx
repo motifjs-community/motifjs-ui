@@ -121,15 +121,16 @@ describe('export', () => {
     expect(await grid.exportRows({ selected: true })).toEqual([]);
   });
 
-  it('shows an "Export" button by a setting, and reads unsaved edits like the cells', async () => {
+  it('shows an "Export" button in the toolbar by a setting, and reads unsaved edits like the cells', async () => {
     const rows = makeRows(2);
     const grid = make({ rows, settings: { editable: true }, saveMode: 'batch' });
     await settle();
-    const button = () => grid.element.querySelector<HTMLElement>('.mx-data-grid__export');
+    const button = () => grid.element.querySelector<HTMLElement>('.mx-data-grid__toolbar .mx-data-grid__export');
     expect(button()).toBeNull();
     grid.settings.exportButton = true;
     await settle();
-    expect(button()?.textContent).toBe('Export');
+    // An icon in the bar, named by its tooltip; its text shows in the "more" menu.
+    expect(button()?.getAttribute('title')).toBe('Export');
     (grid.element.querySelector('.mx-data-grid__body [data-field="name"]') as HTMLElement).focus();
     grid.paste('Edited');
     expect((await grid.exportRows())[0].name).toBe('Edited');

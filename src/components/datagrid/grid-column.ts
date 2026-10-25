@@ -10,7 +10,7 @@ import type { StickySide } from './sticky-side';
 
 /**
  * Definition of one column. `editable`, `creatable`, `sortable`, `resizable`, `movable`, `hideable`,
- * `pinnable`, `menu`, `filterRow`, `headerFilter`, `copyable`, `exportable` and `syncLookupFilterValues` override the grid's `settings` for this column; each is a value or a function
+ * `pinnable`, `menu`, `filterRow`, `headerFilter`, `copyable`, `exportable`, `syncLookupFilterValues` and `searchable` override the grid's `settings` for this column; each is a value or a function
  * that is followed (`editable` and `creatable` also take a function of the row, which decides per row).
  *
  * @example
@@ -96,4 +96,6 @@ export interface GridColumn<T = any> {
   setCellValue?: (values: Record<string, unknown>, value: unknown, row: T) => void | Promise<void>;
   /** The filter row and header filter of a lookup column list only the keys of rows the other filters leave. Overrides the grid's `syncLookupFilterValues`. */
   syncLookupFilterValues?: Bind<boolean>;
+  /** The search panel looks in this column. Default: on, unless the column turns its own filters off. */
+  searchable?: Bind<boolean>;
 }

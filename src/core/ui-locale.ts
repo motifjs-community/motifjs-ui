@@ -88,7 +88,6 @@ export const enStrings: UiStrings = {
   gridNewRow: 'New row',
   gridSaveChanges: 'Save changes',
   gridDiscardChanges: 'Discard',
-  gridPendingChanges: '{count} unsaved changes',
   gridSaveErrors: '{count} rows with errors',
   gridNextError: 'Next error',
   gridRowStatus: 'Row status',
@@ -150,6 +149,11 @@ export const enStrings: UiStrings = {
   gridLookupLoading: 'Loading',
   gridLookupNoMatch: 'Nothing in the list is called “{text}”.',
   gridLookupSeveral: 'More than one item in the list is called “{text}”.',
+  gridToolbar: 'Toolbar',
+  gridSearch: 'Search in the grid',
+  gridSearchPlaceholder: 'Search…',
+  gridSearchResults: '{count} records found',
+  gridColumnChooser: 'Column chooser',
 };
 
 export const trStrings: UiStrings = {
@@ -239,7 +243,6 @@ export const trStrings: UiStrings = {
   gridNewRow: 'Yeni satır',
   gridSaveChanges: 'Değişiklikleri kaydet',
   gridDiscardChanges: 'Vazgeç',
-  gridPendingChanges: '{count} kaydedilmemiş değişiklik',
   gridSaveErrors: '{count} satırda hata var',
   gridNextError: 'Sonraki hata',
   gridRowStatus: 'Satır durumu',
@@ -301,6 +304,11 @@ export const trStrings: UiStrings = {
   gridLookupLoading: 'Yükleniyor',
   gridLookupNoMatch: 'Listede “{text}” adında bir şey yok.',
   gridLookupSeveral: 'Listede “{text}” adında birden çok kayıt var.',
+  gridToolbar: 'Araç çubuğu',
+  gridSearch: 'Tabloda ara',
+  gridSearchPlaceholder: 'Ara…',
+  gridSearchResults: '{count} kayıt bulundu',
+  gridColumnChooser: 'Kolon seçici',
 };
 
 function stringsOf(lang: string): UiStrings {

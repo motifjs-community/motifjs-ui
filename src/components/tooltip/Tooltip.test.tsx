@@ -373,6 +373,29 @@ describe('Tooltip', () => {
     document.dispatchEvent(new Event('scroll'));
     expect(shown(tip)).toBe(false);
   });
+  it('one shown for focus follows its target through scrolling, and closes if the target ends up off the screen', async () => {
+    let save!: Button;
+    let tip!: Tooltip;
+    page(
+      <div>
+        <Button ref={(b: Button) => (save = b)} text="Save" />
+        <Tooltip ref={(t: Tooltip) => (tip = t)} target={() => save} text="Saves" />
+      </div>,
+    );
+    await settle();
+    const at = { top: 100 };
+    save.element.getBoundingClientRect = () => ({ top: at.top, bottom: at.top + 30, left: 10, right: 90, width: 80, height: 30, x: 10, y: at.top, toJSON: () => ({}) });
+    save.focus();
+    expect(shown(tip)).toBe(true);
+    document.dispatchEvent(new Event('scroll'));
+    expect(shown(tip)).toBe(true);
+    at.top = -500;
+    document.dispatchEvent(new Event('scroll'));
+    expect(shown(tip)).toBe(true);
+    document.dispatchEvent(new Event('scrollend'));
+    expect(shown(tip)).toBe(false);
+  });
+
   it('a manual one stays through presses and scrolling until code or Escape closes it', async () => {
     const target = document.createElement('button');
     let tip!: Tooltip;

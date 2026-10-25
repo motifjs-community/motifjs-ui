@@ -679,6 +679,27 @@
     "value": "0.5rem"
   },
   {
+    "name": "datagrid.search-mark-background",
+    "cssVar": "--mx-datagrid-search-mark-background",
+    "type": "color",
+    "ref": "color.caution.subtle",
+    "value": "#fff4ce"
+  },
+  {
+    "name": "datagrid.search-mark-color",
+    "cssVar": "--mx-datagrid-search-mark-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "datagrid.search-mark-line",
+    "cssVar": "--mx-datagrid-search-mark-line",
+    "type": "color",
+    "ref": "color.caution.fg",
+    "value": "#845000"
+  },
+  {
     "name": "date-box.times-width",
     "cssVar": "--mx-date-box-times-width",
     "type": "dimension",

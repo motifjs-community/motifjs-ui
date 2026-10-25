@@ -57,6 +57,8 @@ export default async function ({ page, base, check, axeSource, box }) {
   await field.getByLabel('Email').focus();
   const fieldTip = await open.getAttribute('id');
   check('on a TextBox, its input is described while the tooltip shows', (await openCount()) === 1 && ((await field.getByLabel('Email').getAttribute('aria-describedby')) ?? '').split(' ').includes(fieldTip));
+  // Measured once its entry animation has ended: while it slides in, it is not where it lands.
+  await open.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished.catch(() => undefined))));
   const [fieldBox, inputBox] = [await box(open), await box(field.locator('.mx-field'))];
   check('placement end puts it after the field', fieldBox.left >= inputBox.right - 1);
   await page.keyboard.press('Escape');

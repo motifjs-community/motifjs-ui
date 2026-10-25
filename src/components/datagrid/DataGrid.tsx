@@ -1,8 +1,8 @@
-import { Emitter, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { effect, Emitter, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
 import { nextTabbable } from '../../core/focus';
-import { checkMark, chevronDown, dismissMark, downloadMark, pencilMark, plusMark, trashMark, undoMark } from '../../core/glyphs';
+import { checkMark, chevronDown, dismissMark, pencilMark, trashMark, undoMark } from '../../core/glyphs';
 import { nextId } from '../../core/next-id';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Button } from '../button/Button';
@@ -17,14 +17,17 @@ import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event
 import type { GridExportOptions } from './grid-export-options';
 import type { GridFilters } from './grid-filters';
 import type { GridLayout } from './grid-layout';
+import type { GridSearchTextChangedEventArgs } from './grid-search-text-changed-event-args';
 import type { GridSelection } from './grid-selection';
 import type { GridSelectionChangedEventArgs } from './grid-selection-changed-event-args';
 import type { GridSettings } from './grid-settings';
+import type { GridToolbar as GridToolbarOptions } from './grid-toolbar';
 import type { ClipboardContent } from './model/clipboard-content';
 import { ACTIONS_FIELD, SELECT_FIELD, STATUS_FIELD } from './model/ColumnModel';
 import { GridClipboard } from './model/GridClipboard';
 import { GridExport } from './model/GridExport';
 import { FILTER_ROW, GridModel, HEADER_ROW } from './model/GridModel';
+import { Switches } from './model/Switches';
 import { ActionWidths } from './view/ActionWidths';
 import { CellEditor } from './view/CellEditor';
 import { CellTip } from './view/CellTip';
@@ -33,10 +36,12 @@ import { ColumnStyles } from './view/ColumnStyles';
 import type { FilterCell } from './view/FilterCell';
 import { FilterRow } from './view/FilterRow';
 import { GridBody } from './view/GridBody';
+import { GridToolbar } from './view/GridToolbar';
 import type { GridRow } from './view/GridRow';
 import { HeaderFilter } from './view/HeaderFilter';
 import { HeaderRow } from './view/HeaderRow';
 import type { HeaderHost } from './view/header-host';
+import type { ToolbarValues } from './view/toolbar-values';
 import { MenuPopup } from './view/MenuPopup';
 import { OPERATOR_TEXTS } from './view/operator-texts';
 
@@ -58,9 +63,11 @@ const hasKeys = (o: object) => Object.keys(o).length > 0;
  * kit's editors, rows are added (Tab on the last cell of a new row opens the next one) and deleted,
  * and changes are saved through a `ChangeTracker` row by row (waiting or in the background) or all
  * together. Rows carry their own action buttons (those that do not fit go into a "more" menu), can be
- * selected one, several or all (also over data never loaded), and are filtered from a filter row and
- * from value lists in the headers. The grid is a single tab stop navigated with the arrow keys. Every
- * feature can be turned off, for the whole grid (`settings`) or per column, also while it is shown.
+ * selected one, several or all (also over data never loaded), and are filtered from a filter row, from
+ * value lists in the headers and from a search box that looks in every column at once (the text found
+ * is marked). A toolbar above the rows holds the grid's own commands and the app's. The grid is a
+ * single tab stop navigated with the arrow keys. Every feature can be turned off, for the whole grid
+ * (`settings`) or per column, also while it is shown.
  *
  * @example
  * <DataGrid rows={() => this.orders} rowKey="id" columns={columns} settings={{ editable: true }} />
@@ -82,6 +89,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private readonly builtIns: GridBuiltInActions<T>;
   private readonly selectionEmitter = new Emitter<GridSelectionChangedEventArgs>();
   private readonly preparingEmitter = new Emitter<GridEditorPreparingEventArgs<T>>();
+  private readonly searchEmitter = new Emitter<GridSearchTextChangedEventArgs>();
+  private readonly toolbarSwitches: Switches<ToolbarValues>;
+  private readonly topBar: GridToolbar<T>;
   private readonly styles: ColumnStyles<T>;
   private readonly tip: CellTip;
   private readonly clipboard: GridClipboard<T>;
@@ -95,7 +105,6 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private measureEl: HTMLDivElement | null = null;
   /** Which button of the active actions cell has focus. */
   private actionIndex = 0;
-  private addButton: Button | null = null;
   private tabbable: HTMLElement | null = null;
   private editor: CellEditor<T> | null = null;
   /** The row and field the open editor belongs to. */
@@ -104,6 +113,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private activeRowId: string | undefined;
   /** A row the user left with messages (focus went elsewhere); adding a row goes back to it first. */
   private pendingInvalid: string | null = null;
+  /** Stops following a `searchText` function. */
+  private stopSearchBinding: (() => void) | null = null;
 
   constructor(props: IBaseProp<DataGridProps<T>>) {
     super(props);
@@ -143,6 +154,20 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     model.onBeforeQueryChange = () => this.leave();
     model.onQueryChange = () => this.body.toStart();
     model.onLayoutChange = (layout) => own.onLayoutChange?.(layout);
+    model.search.onTextChanged = (text) => this.searchEmitter.fire({ text });
+    if (own.onSearchTextChanged) this.onSearchTextChanged(own.onSearchTextChanged);
+    this.toolbarSwitches = new Switches<ToolbarValues>(['visible', 'items'], {}, own.toolbar ?? {});
+    this.topBar = new GridToolbar<T>(
+      model,
+      this.toolbarSwitches,
+      {
+        grid: this,
+        canExport: () => this.exporter.fields().length > 0,
+        openColumns: (anchor) => this.menu.openColumns(anchor),
+        hasColumns: () => this.menu.hasColumns(),
+      },
+      this,
+    );
   }
 
   // Public API.
@@ -157,6 +182,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** The feature switches, live: `grid.settings.resizable = false`; a function is followed. */
   get settings(): GridSettings {
     return this.model.settings.view;
+  }
+
+  /**
+   * The bar above the rows, live: `grid.toolbar.items = ['searchPanel', { text: 'Refresh', click }]`;
+   * a function is followed. `visible` left out shows the bar while it has an item.
+   */
+  get toolbar(): GridToolbarOptions {
+    return this.toolbarSwitches.view as GridToolbarOptions;
   }
 
   /**
@@ -506,9 +539,51 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.model.filter;
   }
 
-  /** Takes every filter away (the conditions chosen in the filter row stay). */
+  /** Takes every filter away, and the search text (the conditions chosen in the filter row stay). */
   clearFilters() {
     this.model.filters.clearAll();
+    if (this.model.search.state.text) this.model.search.setText('');
+  }
+
+  // Search.
+
+  /**
+   * The search panel's text: the rows shown hold it in a searchable column. Reactive. Assigning
+   * searches at once; a function is followed.
+   */
+  get searchText(): string {
+    return this.model.search.state.text;
+  }
+  set searchText(text: Bind<string>) {
+    this.stopSearchBinding?.();
+    this.stopSearchBinding = null;
+    if (typeof text !== 'function') {
+      this.searchByText(text);
+      return;
+    }
+    const stop = effect(() => {
+      const value = text() ?? '';
+      untracked(() => value !== this.model.search.state.text && this.searchByText(value));
+    });
+    this.stopSearchBinding = stop;
+    this.motif.setDisposable(stop);
+  }
+
+  /** Searches for a text at once, as the search panel does after a typing pause; `''` stops searching. */
+  searchByText(text: string) {
+    this.model.search.setText(text ?? '');
+  }
+
+  /** Raised when the search text changes: typed in the search box, or set from code. */
+  get onSearchTextChanged(): MotifEvent<GridSearchTextChangedEventArgs> {
+    return this.searchEmitter.event;
+  }
+
+  /** Opens the list of columns (show and hide), under the toolbar's column button when it shows. */
+  showColumnChooser() {
+    const button = this.topBar.elementOf('columnChooserButton');
+    const shown = button && button.isConnected && !button.hidden && !button.hasAttribute('data-overflowed') && this.topBar.bar.element.offsetParent !== null;
+    this.menu.openColumns(shown ? button : (this.headEl ?? this.element));
   }
 
   // Copy, paste, export.
@@ -600,6 +675,19 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       untracked(() => model.queueFilter());
     });
 
+    // The search text the app follows; the columns searched changed: search again.
+    const searchProp = this.props.searchText;
+    if (typeof searchProp === 'function') this.searchText = searchProp;
+    let firstFields = true;
+    this.bindings.watch(() => {
+      void model.search.fields().join('\n');
+      if (firstFields) {
+        firstFields = false;
+        return;
+      }
+      untracked(() => model.search.refresh());
+    });
+
     // Keys of the selected rows given by the app.
     this.bindings.watch(() => {
       const keys = read(this.props.selectedKeys);
@@ -686,6 +774,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   override onBuilt() {
+    this.topBar.arrange();
     // Header cells and rows are built in definition order; put them in display order.
     const visible = this.model.columns.visible();
     this.header.arrange(visible);
@@ -724,6 +813,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.editor = null;
     this.selectionEmitter.dispose();
     this.preparingEmitter.dispose();
+    this.searchEmitter.dispose();
     this.tip.hide();
     this.model.dispose();
   }
@@ -736,14 +826,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const count = (n: number) => model.formatter.count(n);
     const overlay = (): 'loading' | 'error' | 'empty' | null =>
       st.status === 'loading' ? 'loading' : st.status === 'error' ? 'error' : model.count === 0 ? 'empty' : null;
-    const showAdd = () => settings.get('addRows') && settings.get('newRowButton');
     const showErrors = () => settings.get('errorSummary') && model.stats.failed > 0;
-    const showSave = () => model.saveMode === 'batch' && settings.get('saveButtons') && model.stats.changed > 0;
     const showSelected = () => settings.get('selection') !== 'none' && settings.get('selectedCount') && this.selectedCount > 0;
-    const showExport = () => settings.get('exportButton') && this.exporter.fields().length > 0;
     const keepFocus = (e: Event) => e.preventDefault();
     return (
       <>
+        {this.topBar.bar}
         <div class="mx-data-grid__main">
           <div
             class="mx-data-grid__viewport"
@@ -782,8 +870,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
               <Spinner size="sm" label={() => t('loading')} />
             </div>
             <div class="mx-data-grid__state" x-display={() => overlay() === 'empty'}>
-              <span>{() => (model.filters.any() ? t('gridNoMatches') : t('gridNoRows'))}</span>
-              <Button class="mx-data-grid__clear-filters" text={() => t('gridClearFilters')} size="sm" variant="outline" visible={() => model.filters.any()} onclick={() => this.clearFilters()} />
+              <span>{() => (model.isFiltered() ? t('gridNoMatches') : t('gridNoRows'))}</span>
+              <Button class="mx-data-grid__clear-filters" text={() => t('gridClearFilters')} size="sm" variant="outline" visible={() => model.isFiltered()} onclick={() => this.clearFilters()} />
             </div>
             <div class="mx-data-grid__state" data-tone="danger" role="alert" x-display={() => overlay() === 'error'}>
               <span>{() => t('loadFailed')}</span>
@@ -793,30 +881,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
           <div class="mx-data-grid__probe" aria-hidden="true" ref={(c) => (this.probeEl = c.element as HTMLDivElement)} />
           <div class="mx-data-grid__measure" aria-hidden="true" ref={(c) => (this.measureEl = c.element as HTMLDivElement)} />
         </div>
-        <div class="mx-data-grid__bar" x-display={() => settings.get('rowCount') || st.failedBlocks > 0 || this.showsPager() || showAdd() || showErrors() || showSave() || showSelected() || showExport()}>
-          <Button
-            class="mx-data-grid__add"
-            ref={(b: Button) => (this.addButton = b)}
-            text={() => t('gridNewRow')}
-            icon={() => plusMark()}
-            size="sm"
-            variant="outline"
-            visible={showAdd}
-            enabled={() => !st.busy}
-            on:pointerdown={keepFocus}
-            onclick={() => void this.addRow()}
-          />
-          <Button
-            class="mx-data-grid__export"
-            text={() => (st.exporting ? t('gridExporting') : t('gridExport'))}
-            icon={() => downloadMark()}
-            size="sm"
-            variant="outline"
-            visible={showExport}
-            enabled={() => !st.exporting && st.status === 'ready'}
-            aria-busy={() => (st.exporting ? 'true' : null)}
-            onclick={() => void this.exportCsv().catch(() => undefined)}
-          />
+        <div class="mx-data-grid__bar" x-display={() => settings.get('rowCount') || st.failedBlocks > 0 || this.showsPager() || showErrors() || showSelected()}>
           <span class="mx-data-grid__count" x-display={() => settings.get('rowCount')}>
             {() => (st.status === 'ready' ? t('gridRecords', { count: count(this.total) }) : '')}
           </span>
@@ -830,11 +895,6 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
           <span class="mx-data-grid__note mx-data-grid__errors" data-tone="danger" role="status" x-display={showErrors}>
             {() => t('gridSaveErrors', { count: count(model.stats.failed) })}
             <Button text={() => t('gridNextError')} size="sm" variant="ghost" on:pointerdown={keepFocus} onclick={() => this.goToNextError()} />
-          </span>
-          <span class="mx-data-grid__note mx-data-grid__changes" x-display={showSave}>
-            {() => t('gridPendingChanges', { count: count(model.stats.changed) })}
-            <Button text={() => t('gridSaveChanges')} size="sm" tone="accent" on:pointerdown={keepFocus} onclick={() => void this.saveChanges()} />
-            <Button text={() => t('gridDiscardChanges')} size="sm" variant="outline" on:pointerdown={keepFocus} onclick={() => this.discardChanges()} />
           </span>
           {/* Named after the grid too: two paged grids on a page are two landmarks. */}
           <nav class="mx-data-grid__pager" aria-label={() => `${t('gridPager')}: ${this.text || t('gridLabel')}`} x-wait={() => !this.showsPager()}>
@@ -1225,7 +1285,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.focusActive(true);
       return;
     }
-    const button = this.addButton;
+    const button = this.topBar.controlOf('addRowButton') as Button | null;
     if (button?.canFocus) {
       button.focus();
       return;

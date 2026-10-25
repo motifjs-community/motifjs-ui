@@ -88,3 +88,12 @@ export const undoMark = (): SVGSVGElement => glyph('M5.5 3.5l-2.5 2.5 2.5 2.5M3 
 
 /** Save to a file. */
 export const downloadMark = (): SVGSVGElement => glyph('M8 2.5v7.5M4.75 6.75L8 10l3.25-3.25M3 12.5v1h10v-1');
+
+/** Keep the changes (a disk). */
+export const saveMark = (): SVGSVGElement => glyph('M3 3h8l2 2v8h-10zM5.5 3v3h4.5v-3M5.5 13v-4h5v4');
+
+/** The list of columns. */
+export const columnsMark = (): SVGSVGElement => glyph('M2.5 3.5h11v9h-11zM6.25 3.5v9M9.75 3.5v9');
+
+/** Look for something. */
+export const searchMark = (): SVGSVGElement => glyph('M7 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM10 10l3.5 3.5');

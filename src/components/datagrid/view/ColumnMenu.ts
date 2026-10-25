@@ -12,7 +12,8 @@ const KEEP_OPEN = Symbol('keep open');
 
 /**
  * The column menu, a kit `MenuList` in a `Popup`: sort, the header filter and clearing the column's
- * filter, pin, fit, move, resize, hide, the list of columns (a submenu) and reset, each shown only while its feature is on for the column. Every item
+ * filter, pin, fit, move, resize, hide, the list of columns (a submenu; also opened alone from the
+ * toolbar) and reset, each shown only while its feature is on for the column. Every item
  * follows the grid's state while the menu is open.
  */
 export class ColumnMenu<T> {
@@ -58,6 +59,23 @@ export class ColumnMenu<T> {
     this.list.focusItem('first');
   }
 
+  /** Opens only the list of columns under `anchor` (the toolbar's button); focus goes back to it. */
+  openColumns(anchor: HTMLElement) {
+    this.anchor = anchor;
+    this.list.element.setAttribute('aria-label', this.grid.text('gridColumnChooser'));
+    this.list.setItems(this.columnItems());
+    this.popup.open(anchor, { toggle: anchor, returnFocus: anchor });
+    this.list.focusItem('first');
+  }
+
+  /** Whether the list of columns would have a column the user can hide. Reactive. */
+  hasColumns(): boolean {
+    const cols = this.grid.columns;
+    let any = false;
+    for (const f of cols.state.order) any = (!cols.isInternal(f) && cols.can(f, 'hideable')) || any;
+    return this.grid.settings.get('columnChooser') && any;
+  }
+
   close() {
     this.popup.close('code');
   }
@@ -67,6 +85,31 @@ export class ColumnMenu<T> {
     let any = false;
     for (const item of this.items(field)) any = read(item.visible) !== false || any;
     return any;
+  }
+
+  /** The list of columns: a check item per data column, which shows or hides it and keeps the menu open. */
+  private columnItems(): MenuItem[] {
+    const { grid } = this;
+    const cols = grid.columns;
+    return cols.state.order
+      .filter((f) => !cols.isInternal(f))
+      .map((f) => ({
+        text: () => cols.title(f),
+        checked: () => !cols.state.hidden[f],
+        enabled: () => cols.can(f, 'hideable') && (!!cols.state.hidden[f] || cols.visibleData().length > 1),
+        data: KEEP_OPEN,
+        click: () => {
+          this.hide(f, !cols.state.hidden[f]);
+          grid.layoutChanged();
+        },
+      }));
+  }
+
+  private hide(field: string, hidden: boolean) {
+    const { grid } = this;
+    grid.columns.setHidden(field, hidden);
+    grid.keepActiveFieldVisible();
+    grid.announce(grid.text(hidden ? 'gridColumnHidden' : 'gridColumnShown', { title: grid.columns.title(field) }));
   }
 
   private chosen(e: MenuItemClickEventArgs) {
@@ -91,23 +134,6 @@ export class ColumnMenu<T> {
       grid.setSort(dir ? [{ field, dir }] : [], true);
       grid.announceSort(field, dir);
     };
-    const hide = (f: string, hidden: boolean) => {
-      cols.setHidden(f, hidden);
-      grid.keepActiveFieldVisible();
-      grid.announce(grid.text(hidden ? 'gridColumnHidden' : 'gridColumnShown', { title: cols.title(f) }));
-    };
-    const dataFields = () => cols.state.order.filter((f) => !cols.isInternal(f));
-    const chooser = (): MenuItem[] =>
-      dataFields().map((f) => ({
-        text: () => cols.title(f),
-        checked: () => !cols.state.hidden[f],
-        enabled: () => cols.can(f, 'hideable') && (!!cols.state.hidden[f] || cols.visibleData().length > 1),
-        data: KEEP_OPEN,
-        click: () => {
-          hide(f, !cols.state.hidden[f]);
-          grid.layoutChanged();
-        },
-      }));
 
     const groups: MenuItem[][] = [
       [
@@ -137,18 +163,10 @@ export class ColumnMenu<T> {
           click: () => this.host.startAdjust('move', field),
         },
         { text: t('gridResizeColumn'), visible: can('resizable'), click: () => this.host.startAdjust('resize', field) },
-        { text: t('gridHideColumn'), visible: can('hideable'), enabled: () => cols.visibleData().length > 1, click: done(() => hide(field, true)) },
+        { text: t('gridHideColumn'), visible: can('hideable'), enabled: () => cols.visibleData().length > 1, click: done(() => this.hide(field, true)) },
       ],
       [
-        {
-          text: t('gridColumns'),
-          visible: () => {
-            let any = false;
-            for (const f of dataFields()) any = cols.can(f, 'hideable') || any;
-            return grid.settings.get('columnChooser') && any;
-          },
-          items: chooser,
-        },
+        { text: t('gridColumns'), visible: () => this.hasColumns(), items: () => this.columnItems() },
       ],
       [{ text: t('gridResetLayout'), visible: () => grid.settings.get('layoutReset'), click: () => grid.resetLayout() }],
     ];

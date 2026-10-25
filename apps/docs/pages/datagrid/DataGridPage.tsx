@@ -14,9 +14,11 @@ import NewRows from './examples/NewRows';
 import Pages from './examples/Pages';
 import RowActions from './examples/RowActions';
 import SaveModes from './examples/SaveModes';
+import Search from './examples/Search';
 import Selection from './examples/Selection';
 import Switches from './examples/Switches';
 import TextFrom from './examples/TextFrom';
+import Toolbar from './examples/Toolbar';
 import Virtual from './examples/Virtual';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
@@ -37,13 +39,15 @@ const PROPS = [
   ['settings', '`GridSettingsProps`', '—', 'The feature switches below, each a value or a function.'],
   ['sort / layout', '`SortItem[]` / `GridLayout`', '—', 'The first sort order; a saved layout.'],
   ['onLayoutChange', '`(layout) => void`', '—', 'After the user resized, moved, hid, pinned or sorted.'],
-  ['layoutKey', '`string`', '—', 'Keeps the layout and the filters in the browser’s `localStorage` under this name; a grid made again with it gets them back.'],
+  ['layoutKey', '`string`', '—', 'Keeps the layout, the filters and the search text in the browser’s `localStorage` under this name; a grid made again with it gets them back.'],
   ['label', '`Bind<string>`', '`uiLocale` “Data grid”', 'The accessible name. The same as `text`.'],
   ['texts / locale', '`Bind<Partial<UiStrings>>` / `Bind<string>`', '— / page language', 'Texts of this grid only; the locale of numbers, dates and sorting.'],
   ['rowHeight', '`Bind<number>`', 'from CSS', 'A fixed row height; by default the density decides.'],
   ['actions', '`GridActionItem[] | (row, state) => GridActionItem[]`', '—', 'The buttons of each row: actions, or the names of the ready ones (`edit`, `remove`, `restore`, `save`, `cancel`). A function is followed per row.'],
   ['selectedKeys / onSelectionChanged', '`Bind<unknown[]>` / `(e) => void`', '—', 'Keys of the selected rows (a function is followed); told after every change of the selection.'],
   ['filters', '`GridFilters`', '—', 'The first filters, by field: `{ city: { op: \'=\', value: \'Ankara\' }, status: { values: [\'Draft\'] } }`.'],
+  ['searchText / onSearchTextChanged', '`Bind<string>` / `(e) => void`', '`\'\'`', 'The search panel’s text (a function is followed); told when it changes, typed or set from code (`{ text }`). The two together bind it both ways.'],
+  ['toolbar', '`{ visible?: Bind<boolean>, items?: Bind<(GridToolbarItem | GridToolbarItemName)[]> }`', 'the items whose features are on', 'The bar above the rows: which items, in which order and place; `visible` left out shows it while it has an item.'],
   ['loadValues', '`(request) => { values, total }`', '—', 'The values of a header filter from a server that cannot group: `{ column, search, filter, skip, take, signal }`.'],
   ['onEditorPreparing', '`(e) => void`', '—', 'Before a cell editor is made: `{ field, row, isNew, options, cancel }`. Change `e.options`, the editor’s props (`enabled = false` disables it), or set `e.cancel`.'],
   ['enabled / disabled, visible, tabStop', 'see Control', '', 'The shared properties of every control.'],
@@ -52,15 +56,16 @@ const PROPS = [
 const SETTINGS = [
   ['editable', '`false`', 'Edit cells in place. A column can decide itself, also per row with `(row) => boolean`.'],
   ['creatable', '`true`', 'Fill the cells of new rows. A column with its own `editable` and no `creatable` uses the same; `editable: false, creatable: true` is entered only when the row is created.'],
-  ['addRows, newRowButton, tabChain', '`false`, `true`, `true`', 'The user adds rows; the bar’s “New row” button; Tab on a new row’s last cell opens the next one.'],
+  ['addRows, newRowButton, tabChain', '`false`, `true`, `true`', 'The user adds rows; the toolbar’s “New row” button; Tab on a new row’s last cell opens the next one.'],
   ['enterMoves', "`'none'`", 'Enter in an editor keeps the value and stays, goes `down`, or goes on like Tab (`next`).'],
   ['rowStatus', '`true`', 'The narrow column that marks new, changed, deleted, saving and failed rows.'],
-  ['saveButtons, errorSummary', '`true`', '“Save changes” and “Discard” in batch mode; “N rows with errors” and “Next error”.'],
+  ['saveButtons, errorSummary', '`true`', '“Save changes” and “Discard” in the toolbar in batch mode (dimmed while there is nothing to save); “N rows with errors” and “Next error” in the bar under the rows.'],
   ['sortable, multiSort', '`true`', 'Sort from the header; Shift adds a column to the sort.'],
   ['resizable, movable, hideable, pinnable, menu', '`true`', 'What the user may do with the columns; a column can say otherwise for itself.'],
   ['resizeMode', "`'widget'`", 'Dragging a column edge: `widget` changes that column and the columns after it shift; `nextColumn` moves only the edge between it and the next column, which gives or takes the difference. A column can set its own.'],
   ['headerButtons', "`'hover'`", 'The menu button shows on hover and focus (always on touch screens), or `always`.'],
   ['columnChooser, layoutReset', '`true`', 'The column list and “Reset layout” in the column menu.'],
+  ['columnChooserButton', '`false`', 'A toolbar button that opens the column list (while `columnChooser` is on).'],
   ['tooltips, striped, rowCount, pager', '`true`, `false`, `true`, `true`', 'Full text of a clipped cell; stripes; the row count; the pager.'],
   ['actionsColumn, actionsPosition, actionsSticky, actionsWidth', "`true`, `'end'`, `true`, `140`", 'The actions column, at the start or the end, pinned to its edge or scrolling with the rows, and its width.'],
   ['selection, selectionColumn, selectAll, selectedCount', "`'none'`, `true`, `true`, `true`", '`single` or `multiple`; the check box column; the header check box and Ctrl+A; “N selected” in the bar.'],
@@ -70,8 +75,14 @@ const SETTINGS = [
   ['copyable, exportable', '`true`', 'Columns that go into what Ctrl+C copies and into an export; a column can say otherwise for itself.'],
   ['copyValues, copyHeaders', "`'shown'`, `false`", 'Ctrl+C copies the text the cells show or their `raw` values; copied rows start with the column titles.'],
   ['paste, pasteNewRows', '`true`, `false`', 'Ctrl+V writes into the editable cells; pasted lines past the last row open new rows (with `addRows`).'],
-  ['exportButton', '`false`', 'An “Export” button in the bar that saves the rows as CSV.'],
-  ['saveLayout', '`true`', 'With `layoutKey`, the layout and the filters are kept and come back.'],
+  ['exportButton', '`false`', 'An “Export” button in the toolbar that saves the rows as CSV.'],
+  ['saveLayout', '`true`', 'With `layoutKey`, the layout, the filters and the search text are kept and come back.'],
+  ['searchPanel', '`false`', 'The search box in the toolbar. `searchText` and `searchByText()` search without it too.'],
+  ['searchPanelWidth, searchPlaceholder', "`160`, `uiLocale` “Search…”", 'The box’s width (pixels or a CSS length) and its placeholder.'],
+  ['searchDelay', '`700`', 'Milliseconds from the last key typed in the search box to the search; Enter searches at once.'],
+  ['highlightSearchText, highlightCaseSensitive', '`true`, `false`', 'Mark what the search found in the cells; mark only text in the same case (the search itself ignores case).'],
+  ['searchVisibleColumnsOnly', '`false`', 'Search only the visible columns; by default hidden ones too.'],
+  ['searchable', '`true`', 'The columns the search looks in; a column can say otherwise for itself (one that turns its own filters off is left out).'],
 ];
 
 const COLUMN_FIELDS = [
@@ -87,7 +98,7 @@ const COLUMN_FIELDS = [
   ['lookup', '`GridLookup`: the cell keeps a key and shows the text of its item from another source (see Lookup columns). `type` still decides the alignment.'],
   ['textFrom, sortField', 'The text of a lookup cell read from the row (`\'customer.name\'` or `(row) => text`): the source is then asked only to edit and to list. The field a server sorts the column by.'],
   ['setCellValue', '`(values, value, row) => void | Promise`: called when the user commits a value (editor, paste, Delete), before it is written. `values` starts as `{ [field]: value }`; add fields to write them too. A promise keeps the cell busy until it settles.'],
-  ['editable, creatable, sortable, resizable, movable, hideable, pinnable, menu, filterRow, headerFilter, copyable, exportable, syncLookupFilterValues', 'Switch a feature for this column; wins over `settings`.'],
+  ['editable, creatable, sortable, resizable, movable, hideable, pinnable, menu, filterRow, headerFilter, copyable, exportable, syncLookupFilterValues, searchable', 'Switch a feature for this column; wins over `settings`.'],
   ['resizeMode', 'How this column’s edge is dragged (`widget` or `nextColumn`); wins over `settings`.'],
 ];
 
@@ -100,6 +111,7 @@ const LOOKUP_FIELDS = [
   ['resolve, batchSize', '`\'batch\'` (default: keys in one request, `batchSize` 100 each) or `\'byKey\'` (one request per key).'],
   ['sortBy', '`Bind<\'key\' | \'text\'>`: rows in memory sorted by the key (default) or by the text shown.'],
   ['editor, editorOptions', '`\'dropdown\'` (default), `\'combobox\'` or `\'lookup\'`, and props for it (a `Lookup`’s `columns`). A column’s own `editor` still wins and gets the lookup in its context.'],
+  ['searchLimit', 'How many items whose text holds the search panel’s text the search turns into keys, at most. Default 100.'],
 ];
 
 const PROPERTIES = [
@@ -114,7 +126,10 @@ const PROPERTIES = [
   ['selection, selectedCount', 'read-only, reactive', 'The selection as a state (`{ all, keys, except, filter }`) and how many rows it holds.'],
   ['selectedKeys, selectedRows', 'read/write, read-only', 'Keys and rows of the selected rows that are known (loaded); assign keys to select them.'],
   ['selectionFilter', 'read-only', 'The selection as a filter of the data layer, for work on the server.'],
-  ['filters, filter', 'read/write, read-only', 'The filters by field; the whole filter the rows are loaded with.'],
+  ['filters, filter', 'read/write, read-only', 'The filters by field; the whole filter the rows are loaded with (the search included).'],
+  ['searchText', 'read/write, reactive', 'The search text; assigning searches at once, a function is followed.'],
+  ['toolbar', 'read/write, live', '`grid.toolbar.items = [\'searchPanel\', { text: \'Refresh\', click }]`, `grid.toolbar.visible = false`; a function is followed.'],
+  ['onSearchTextChanged', 'event', 'Subscribe with `grid.onSearchTextChanged((e) => …)`; the same as the prop.'],
   ['onSelectionChanged', 'event', 'Subscribe with `grid.onSelectionChanged((e) => …)`.'],
   ['onEditorPreparing', 'event', 'Subscribe with `grid.onEditorPreparing((e) => …)`; the same as the prop.'],
 ];
@@ -130,7 +145,9 @@ const METHODS = [
   ['autoSizeColumns() / resetLayout() / focus()', '', 'Fits the columns; back to the definitions; focuses the active cell.'],
   ['selectRow(row, add?) / deselectRow(row) / isSelected(row)', '', 'One row in or out of the selection.'],
   ['selectAll() / clearSelection()', '', 'Every row of the filter, loaded or not; none.'],
-  ['clearFilters()', '', 'Takes every filter away.'],
+  ['clearFilters()', '', 'Takes every filter away, and the search text.'],
+  ['searchByText(text)', '`void`', 'Searches for a text at once, as the search panel does; `\'\'` stops searching.'],
+  ['showColumnChooser()', '`void`', 'Opens the column list, under the toolbar’s column button when it shows.'],
   ['copy() / paste(text)', '`string` / `number`', 'What Ctrl+C and Ctrl+V do: copies the selected rows or the active cell (returns the text); pastes tab-separated text from the active cell (returns the cells written).'],
   ['exportRows(options?)', '`Promise<object[]>`', 'The rows of the filter in the sort order, by field, with the visible exportable columns: shown text or `raw` values; a server’s rows in parts through the data source.'],
   ['exportCsv(options?)', '`Promise<string>`', 'The same as a CSV file a spreadsheet opens: byte order mark, the locale’s separator, titles first. Options: `values`, `selected`, `fileName`, `download`, `separator`, `headers`, `bom`, `escapeFormulas`, `pageSize`, `onProgress`, `signal`.'],
@@ -156,6 +173,8 @@ const KEYS = [
   ['Typing, Enter or F2 on the filter row', 'Into the cell’s value box; Escape or Enter back to the cell; Tab to the next value box; Delete clears the cell.'],
   ['Alt + Down on the filter row', 'The condition menu (for a yes/no column, its list).'],
   ['Alt + Down on a header', 'The column menu; without one, the header filter.'],
+  ['Left / Right, Home / End in the toolbar', 'Move between its items (the toolbar is one Tab stop before the rows); in the search box the arrows stay in its text.'],
+  ['Escape, Enter in the search box', 'Empty the box (the rows come back at once); search without waiting for the pause.'],
 ];
 
 const A11Y = [
@@ -170,6 +189,8 @@ const A11Y = [
   ['Actions', 'Real buttons with the action’s text as their name (also when only the icon shows, with the text as a tooltip); one of them is in the cell’s roving focus; the “more” button has `aria-haspopup="menu"`.'],
   ['Selection', '`aria-multiselectable` on the grid, `aria-selected` on every row while selection is on; the check boxes are `role="checkbox"` with `aria-checked` (`mixed` in the header).'],
   ['Filters', 'The filter row is a row of the grid (its fields are named after the column); the condition button names the condition; the header filter is a `dialog` with a listbox.'],
+  ['Toolbar', 'The kit’s `Toolbar` (`role="toolbar"`, named after the grid): one Tab stop with arrow keys between its items; a button that shows only its icon is named by its text, which is also its tooltip and its line in the “more” menu.'],
+  ['Search', 'The box is a search field named “Search in the grid”; the number of records found is announced politely; what was found is marked with `<mark>`, which reads as the same text.'],
 ];
 
 const HOOKS = [
@@ -182,7 +203,10 @@ const HOOKS = [
   ['.mx-data-grid__filter-button, __values', 'The header filter button (`data-active`) and its window.'],
   ['.mx-data-grid__cell, __header-cell', 'A cell (`data-changed`, `aria-invalid`; a lookup cell `data-lookup="loading"` with `aria-busy`, or `"missing"`), a header (`data-sort`, `data-sortable`).'],
   ['.mx-data-grid__editor', 'The editor of the active cell; its field carries `data-in-cell` and is drawn without a frame.'],
-  ['.mx-data-grid__bar, __pager, __export', 'The bar under the rows, its pager and its “Export” button (`aria-busy` while it runs).'],
+  ['.mx-data-grid__toolbar, __toolbar-gap', 'The toolbar above the rows (the kit’s `.mx-toolbar`) and the gap between its `before` and `after` items.'],
+  ['.mx-data-grid__add, __save, __revert, __export, __columns, __search', 'The toolbar’s own items: “New row”, “Save changes”, “Discard”, “Export” (busy while it runs), the column list, the search box.'],
+  ['.mx-data-grid__mark', 'Text the search found, a `<mark>` in the cell.'],
+  ['.mx-data-grid__bar, __pager', 'The bar under the rows and its pager.'],
 ];
 
 const TOKENS = [
@@ -193,6 +217,7 @@ const TOKENS = [
   ['datagrid.bar-*, gap, icon-size, button-size, resize-width, mark-size, invalid-width, radius, border-width', 'The bar, the header parts and the marks.'],
   ['datagrid.selected, check-size, check-mark-size, check-radius', 'Selected rows and the selection check boxes.'],
   ['datagrid.action-gap, filter-padding, values-width, values-gap', 'The action buttons, the filter row, the header filter window.'],
+  ['datagrid.search-mark-background, search-mark-color, search-mark-line', 'The text the search found: its tint, its text and the line under it.'],
 ];
 
 export default function DataGridPage() {
@@ -201,8 +226,8 @@ export default function DataGridPage() {
       <p class="lead">
         A grid for data entry and large data: rows in memory or from any adapter of the data layer, a virtual list or
         pages, sorting, column layout, editing with the kit's editors, new rows with the Tab chain, three save modes,
-        row actions, selection, filters, lookup columns from other services, copy and paste, export and a layout
-        that is kept — and every feature can be turned off, for the grid or for one column.
+        row actions, selection, filters, a search panel, a toolbar, lookup columns from other services, copy and paste,
+        export and a layout that is kept — and every feature can be turned off, for the grid or for one column.
       </p>
 
       <Section anchor="import" title="Import">
@@ -261,7 +286,7 @@ import { data } from '@motifx-community/data';
 
       <Section anchor="new-rows" title="New rows">
         <p>
-          <Rich text="`addRow()` or the bar's “New row” opens a row at the bottom (the grid goes to the very end; in a virtual list only the last block is loaded) or at the top, with its first cell a new row can fill in edit mode. Tab on the last cell of a new row saves it and opens the next one; Escape drops it; one left untouched goes by itself." />
+          <Rich text="`addRow()` or the toolbar's “New row” opens a row at the bottom (the grid goes to the very end; in a virtual list only the last block is loaded) or at the top, with its first cell a new row can fill in edit mode. Tab on the last cell of a new row saves it and opens the next one; Escape drops it; one left untouched goes by itself." />
         </p>
         <Example files={withOrders('NewRows.tsx')} stack>
           <NewRows />
@@ -295,6 +320,40 @@ import { data } from '@motifx-community/data';
         </Example>
       </Section>
 
+      <Section anchor="search" title="Search panel">
+        <p>
+          <Rich text="`searchPanel` puts a search box in the toolbar: its text is looked for in every searchable column at once, after a short typing pause. Each column reads it by its type — text columns contain it (without case, in the locale), number, date and yes/no columns match it when it reads as one of their values, list columns by their option texts — and the columns are joined with OR, then with the filter row and the header filter with AND. A text no column can read leaves no row. The filter goes to the data source like any other (`data.where`, `data.or`), so a server runs it; what was found is marked in the cells. `searchText` binds the text both ways with `onSearchTextChanged`; `searchByText()` searches from code." />
+        </p>
+        <p>
+          <Rich text="A lookup column is searched by its texts: the lookup source — here a customers service apart from the sales' server — is asked for the items whose text holds the search (at most `searchLimit`), and their keys go to the rows' server as `customerId in [...]`. A column with a `textFrom` field searches that field of the row instead." />
+        </p>
+        <Example files={[...code('Search.tsx', 'customers.ts', 'orders.ts', 'order.ts'), slowAdapterFile]} stack>
+          <Search />
+        </Example>
+      </Section>
+
+      <Section anchor="toolbar" title="Toolbar">
+        <p>
+          <Rich text="The bar above the rows holds the grid's own items whose features are on, at the end, in this order: “New row” (`addRows`, `newRowButton`), “Save changes” and “Discard” (batch mode, `saveButtons`), “Export” (`exportButton`), the column list (`columnChooserButton`) and the search box (`searchPanel`); with none of them it does not show. `toolbar.items` lists exactly what it holds: the grid's items by name, an object with a `name` to change one of them, and items of your own — a button with `text`, `icon`, `hint` and `click`, or any component with `content` — at the start (`location: 'before'`) or at the end. Buttons that do not fit go into its “more” menu (`overflow`); the grid's own show only their icons there (`showText`), and their texts in the menu." />
+        </p>
+        <Example files={withOrders('Toolbar.tsx')} stack>
+          <Toolbar />
+        </Example>
+        <ApiTable
+          head={['Item field', 'What it does']}
+          rows={[
+            ['name', 'One of the grid’s items (`searchPanel`, `addRowButton`, `saveButton`, `revertButton`, `exportButton`, `columnChooserButton`) to change, or a name of your own. A grid item whose feature is off stays out.'],
+            ['location', "`'before'` or `'after'` (default): which end of the bar."],
+            ['text, icon, hint', 'The button’s text, icon and tooltip (default: the text when only the icon shows).'],
+            ['showText', "`'always'` (default) or `'inMenu'`: only the icon in the bar, the text in the “more” menu (the grid’s own buttons)."],
+            ['visible, enabled', 'Leave the item out; dim it.'],
+            ['overflow', "`'never'` (default; the grid’s buttons `'auto'`), `'auto'` or `'always'`: whether it may go into the “more” menu."],
+            ['content', '`() => component`: your own component in place of a button, made once.'],
+            ['click', '`(e) => void` with `{ item, grid, event }`; on a grid item it replaces what the item does.'],
+          ]}
+        />
+      </Section>
+
       <Section anchor="clipboard" title="Copy and paste">
         <p>
           <Rich text="Ctrl+C copies the selected rows, or the active cell, as tab-separated text and an HTML table: a spreadsheet or a document takes it as a table. Ctrl+V on a cell writes tab-separated text — from a spreadsheet, or copied here — into the editable cells from that cell rightwards and downwards. Each value is read by the column type (numbers and dates in the locale, yes or no, a list option by its text) and goes into the row's draft with its checks, as if typed; cells that cannot be edited keep their values. The rows below the active one are saved as the save mode says." />
@@ -306,7 +365,7 @@ import { data } from '@motifx-community/data';
 
       <Section anchor="export" title="Export">
         <p>
-          <Rich text="`exportCsv()` saves the rows of the filter, in the sort order, with the visible columns in their order, as a CSV file a spreadsheet opens as it is: UTF-8 with a byte order mark, the locale's separator (`;` where decimals take a comma), the column titles first, and text that would run as a formula made harmless. `exportRows()` gives the same rows as objects. Rows in memory are taken as they are; a server's are asked for in parts through the data source, so its filter, search and sort apply and nothing on the screen changes. `exportButton` puts an “Export” button in the bar; `exportable` takes a column out." />
+          <Rich text="`exportCsv()` saves the rows of the filter, in the sort order, with the visible columns in their order, as a CSV file a spreadsheet opens as it is: UTF-8 with a byte order mark, the locale's separator (`;` where decimals take a comma), the column titles first, and text that would run as a formula made harmless. `exportRows()` gives the same rows as objects. Rows in memory are taken as they are; a server's are asked for in parts through the data source, so its filter, search and sort apply and nothing on the screen changes. `exportButton` puts an “Export” button in the toolbar; `exportable` takes a column out." />
         </p>
         <Example files={[...withOrders('Export.tsx', 'paged-orders.ts'), slowAdapterFile]} stack>
           <Export />
@@ -337,7 +396,7 @@ import { data } from '@motifx-community/data';
 
       <Section anchor="layout" title="Keeping the layout">
         <p>
-          <Rich text="With `layoutKey` the grid keeps the column widths, order, hidden and pinned columns, the sort and the filters in the browser's `localStorage`, and a grid made again with the same name — after a reload too — gets them back. Storage that is full or blocked is skipped quietly. `resetLayout()` (also in the column menu) goes back to the column definitions. To keep the layout elsewhere, a server for instance, read `layout` and `filters`, listen to `onLayoutChange`, and give them back through the props of the same names." />
+          <Rich text="With `layoutKey` the grid keeps the column widths, order, hidden and pinned columns, the sort, the filters and the search text in the browser's `localStorage`, and a grid made again with the same name — after a reload too — gets them back. Storage that is full or blocked is skipped quietly. `resetLayout()` (also in the column menu) goes back to the column definitions. To keep the layout elsewhere, a server for instance, read `layout` and `filters`, listen to `onLayoutChange`, and give them back through the props of the same names." />
         </p>
         <Example files={withOrders('KeepLayout.tsx')} stack>
           <KeepLayout />
@@ -368,7 +427,7 @@ import { data } from '@motifx-community/data';
 
       <Section anchor="i18n" title="Localization">
         <p>
-          <Rich text="Every text the grid writes — the bar, the pager, the column menu, the row states, the action buttons, the filter conditions, the announcements — comes from `uiLocale.strings` (the `grid…` keys), or from the grid's own `texts`. Numbers and dates follow `locale`." />
+          <Rich text="Every text the grid writes — the toolbar, the search box, the bar, the pager, the column menu, the row states, the action buttons, the filter conditions, the announcements — comes from `uiLocale.strings` (the `grid…` keys), or from the grid's own `texts`. Numbers and dates follow `locale`." />
         </p>
         <Example files={withOrders('Localization.tsx')} stack>
           <Localization />

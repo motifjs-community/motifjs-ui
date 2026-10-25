@@ -81,6 +81,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `onEditorPreparing` event for every column; the `syncLookupFilterValues` setting (grid and
   column); `refreshLookups()`. Filter row "(All)" lists, header filter texts, copy, export and paste
   by text, and a key the source does not have stops its row from being saved.
+- `DataGrid` search panel and toolbar. `searchPanel` (with `searchPanelWidth`, `searchPlaceholder`,
+  `searchDelay`, `highlightSearchText`, `highlightCaseSensitive`, `searchVisibleColumnsOnly`, all
+  live) puts a search box in a toolbar above the rows; `searchText` (followed, told back through
+  `onSearchTextChanged`), `searchByText()`, `searchable` (grid and column; a column that turns its
+  filters off is left out). Text columns contain the text, numbers, dates and yes/no equal it when it
+  reads as one, lists match their option texts, lookup columns ask their own source for the keys
+  whose text holds it (`lookup.searchLimit`) or search a `textFrom` field; the columns are joined
+  with OR and with the filters with AND, a text no column reads keeps no row, and the filter goes to
+  the data source like any other. What was found is marked with `<mark>`; the count is announced; the
+  text is kept with the layout. `toolbar` (`visible`, `items`, also `grid.toolbar`, live): the grid's
+  own items (`addRowButton`, `saveButton`, `revertButton`, `exportButton`, `columnChooserButton`,
+  `searchPanel`) whose features are on, or the listed ones, changed by name, and items of the app's
+  own (buttons or `content`) at the start or the end, on the kit's `Toolbar` with its "more" menu.
+  "New row", "Save changes" / "Discard" and "Export" moved from the bar under the rows to the toolbar
+  (the bar keeps the counts, the error summary and the pager); `columnChooserButton` setting,
+  `showColumnChooser()`; the `gridPendingChanges` text went with the bar's old buttons. `clearFilters()`
+  also clears the search text. `KeyedItems.searchInMemory`.
 - `KeyedItems` (shared, batched key → item cache per source and value field); `DataItems.find`
   goes through it. `DropDown` and `ComboBox` ask for a value on no loaded page by their `valueField`
   when it is a field. `DropDown.open(search)` starts the search box with a text.
@@ -95,7 +112,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `controlState`, so a subclass may have a `state` field.
 - Fixed: `Stack`, `Grid` and `DockPanel` overflowed the call stack when a child was added in their
   `ref`. `TreeView` reported a check again and again when `checkedKeys` was bound both ways with
-  `onCheckChanged` writing the keys back; keys equal to the checked ones now change nothing.
+  `onCheckChanged` writing the keys back; keys equal to the checked ones now change nothing. A tooltip
+  shown for keyboard focus closed at once when focusing scrolled its field into view; it now follows
+  the field while the page scrolls and closes only if the field is off the screen when scrolling ends.
 
 ### DropDown, ComboBox, Autocomplete, Lookup
 

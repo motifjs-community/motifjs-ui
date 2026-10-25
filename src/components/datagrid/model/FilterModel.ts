@@ -4,6 +4,7 @@ import type { ColumnFilter } from '../column-filter';
 import type { GridFilterOperator } from '../grid-filter-operator';
 import type { GridFilters } from '../grid-filters';
 import type { ColumnModel } from './ColumnModel';
+import { dayCondition, dayEnd, dayStart } from './day-condition';
 
 const TEXT_OPS: readonly GridFilterOperator[] = ['contains', 'startswith', 'endswith', '=', '<>', 'isblank', 'isnotblank'];
 const RANGE_OPS: readonly GridFilterOperator[] = ['=', '<>', '<', '<=', '>', '>=', 'between', 'isblank', 'isnotblank'];
@@ -12,14 +13,17 @@ const LIST_OPS: readonly GridFilterOperator[] = ['=', '<>', 'isblank', 'isnotbla
 const empty = (v: unknown) => v === undefined || v === null || v === '' || (typeof v === 'number' && Number.isNaN(v));
 
 /**
- * The grid's filters by field: the filter row's condition and the header filter's values. Turns them
- * into one data-layer filter (`expression`), each column's part only while its feature is on, so
- * switching a feature off takes its filter out. Reads are reactive per column.
+ * The grid's filters by field: the filter row's condition and the header filter's values, and the
+ * search panel's filter. Turns them into one data-layer filter (`expression`), each column's part
+ * only while its feature is on, so switching a feature off takes its filter out. Reads are reactive
+ * per column.
  */
 export class FilterModel<T> {
-  readonly state = reactive({ columns: {} as Record<string, ColumnFilter> });
+  /** `search` counts changes of the search's filter, which is kept outside (it may hold dates). */
+  readonly state = reactive({ columns: {} as Record<string, ColumnFilter>, search: 0 });
   /** The last change came from typing: wait `filterDelay` before applying it. */
   typed = false;
+  private searchPart: data.FilterExpression | null = null;
 
   constructor(private readonly columns: ColumnModel<T>) {}
 
@@ -50,6 +54,19 @@ export class FilterModel<T> {
     const next: Record<string, ColumnFilter> = {};
     for (const [field, f] of Object.entries(untracked(() => ({ ...this.state.columns })))) if (f.op) next[field] = { op: f.op };
     this.state.columns = next;
+  }
+
+  /** The search panel's filter, joined to the others (AND); `null` takes it away. */
+  setSearch(filter: data.FilterExpression | null) {
+    this.typed = false;
+    this.searchPart = filter;
+    this.state.search++;
+  }
+
+  /** The search panel's filter now. Reactive. */
+  search(): data.FilterExpression | null {
+    void this.state.search;
+    return this.searchPart;
   }
 
   /** A copy of the filters that do something. */
@@ -115,7 +132,7 @@ export class FilterModel<T> {
   }
 
   /**
-   * Every column's filter together (AND); `skipValuesOf` leaves one column's header values out (for
+   * Every column's filter and the search together (AND); `skipValuesOf` leaves one column's header values out (for
    * its own value list), `skipColumn` its whole filter (a lookup's lists honor only the other columns).
    */
   expression(skipValuesOf?: string, skipColumn?: string): data.FilterExpression | null {
@@ -125,6 +142,7 @@ export class FilterModel<T> {
       parts.push(this.rowPart(field, f));
       if (field !== skipValuesOf) parts.push(this.valuesPart(field, f));
     }
+    parts.push(this.search());
     return data.and(...parts);
   }
 
@@ -151,35 +169,4 @@ export class FilterModel<T> {
     const blank = values.length < f.values.length;
     return data.or(values.length ? data.where(field, 'in', values) : null, blank ? data.where(field, 'isblank') : null);
   }
-}
-
-/** A date condition by calendar day, whatever time the values carry. */
-function dayCondition(field: string, op: GridFilterOperator, value: unknown): data.FilterExpression | null {
-  const start = dayStart(value);
-  const end = dayEnd(value);
-  if (!start || !end) return null;
-  switch (op) {
-    case '=':
-      return data.where(field, 'between', [start, end]);
-    case '<>':
-      return data.or(data.where(field, '<', start), data.where(field, '>', end));
-    case '<':
-      return data.where(field, '<', start);
-    case '<=':
-      return data.where(field, '<=', end);
-    case '>':
-      return data.where(field, '>', end);
-    default:
-      return data.where(field, '>=', start);
-  }
-}
-
-function dayStart(v: unknown): Date | null {
-  const d = data.toDate(v);
-  return d ? new Date(d.getFullYear(), d.getMonth(), d.getDate()) : null;
-}
-
-function dayEnd(v: unknown): Date | null {
-  const d = dayStart(v);
-  return d ? new Date(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() - 1) : null;
 }

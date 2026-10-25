@@ -9,13 +9,15 @@ import type { GridFilters } from './grid-filters';
 import type { GridLayout } from './grid-layout';
 import type { GridMode } from './grid-mode';
 import type { GridSettingsProps } from './grid-settings-props';
+import type { GridSearchTextChangedEventArgs } from './grid-search-text-changed-event-args';
 import type { GridSelectionChangedEventArgs } from './grid-selection-changed-event-args';
+import type { GridToolbar } from './grid-toolbar';
 import type { GridValuesRequest } from './grid-values-request';
 import type { GridValuesResult } from './grid-values-result';
 import type { NewRowOptions } from './new-row-options';
 import type { RowState } from './row-state';
 
-/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters` and the callbacks is a value or a function that is followed. */
+/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar` (whose fields are) and the callbacks is a value or a function that is followed. */
 export interface DataGridProps<T> extends ControlProps {
   /** Column definitions, in their initial order. */
   columns: GridColumn<T>[];
@@ -41,8 +43,9 @@ export interface DataGridProps<T> extends ControlProps {
   /** Called after the user changes the layout (resize, move, hide, sticky, sort). */
   onLayoutChange?: (layout: GridLayout) => void;
   /**
-   * A name to keep the layout and the filters under in the browser's `localStorage`: they come back
-   * when a grid with the same name is made again, over `layout`, `sort` and `filters`.
+   * A name to keep the layout, the filters and the search text under in the browser's `localStorage`:
+   * they come back when a grid with the same name is made again, over `layout`, `sort`, `filters` and
+   * `searchText`.
    */
   layoutKey?: string;
   /** Accessible name of the grid. The same as `text`. */
@@ -74,6 +77,15 @@ export interface DataGridProps<T> extends ControlProps {
   onSelectionChanged?: (e: GridSelectionChangedEventArgs) => void;
   /** Before a cell editor is made: change its props (`e.options`), or `e.cancel` the edit. */
   onEditorPreparing?: (e: GridEditorPreparingEventArgs<T>) => void;
+  /**
+   * The search panel's text: the rows that hold it in a searchable column. A function is followed;
+   * what the user types comes through `onSearchTextChanged`.
+   */
+  searchText?: Bind<string>;
+  /** The search text changed (typed, or set from code). */
+  onSearchTextChanged?: (e: GridSearchTextChangedEventArgs) => void;
+  /** The bar above the rows: which items, and whether it shows. */
+  toolbar?: GridToolbar;
   /** Initial filters, by field. Read and change them later through `grid.filters`. */
   filters?: GridFilters;
   /**

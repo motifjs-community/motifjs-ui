@@ -238,10 +238,13 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.keyboard.press('ArrowDown');
   await page.keyboard.type('Batch Two');
   await page.keyboard.press('Enter');
-  const pending = await page.locator(`${editing} .mx-data-grid__changes`).textContent();
-  await section.getByRole('button', { name: 'Save changes' }).click();
+  const pending = await page.locator(`${shownRows(editing)}[data-status="changed"]`).count();
+  // "Save changes" sits in the toolbar now, an icon named by its text.
+  const saveButton = page.locator(`${editing} .mx-data-grid__toolbar .mx-data-grid__save`);
+  const named = await saveButton.getAttribute('title');
+  await saveButton.click();
   await page.waitForFunction((sel) => document.querySelectorAll(`${sel} .mx-data-grid__body > .mx-data-grid__row[data-status]`).length === 0, editing, { timeout: 5000 });
-  check('datagrid: batch keeps edits until "Save changes", then saves them', /2 unsaved/.test(pending) && (await cellText(0, 'customer')) === 'Batch One', pending);
+  check('datagrid: batch keeps edits until "Save changes" in the toolbar, then saves them', pending === 2 && named === 'Save changes' && (await cellText(0, 'customer')) === 'Batch One', `${pending} changed rows, ${named}`);
   await section.getByRole('button', { name: 'wait', exact: true }).click();
 
   // New rows at the top: the row opens at the very top, in view.
@@ -634,7 +637,7 @@ async function copyExportLayout({ page, base, check, axeSource }) {
   const added = await page.locator(`${shownRows(clip)}[data-status="new"]`).count();
   check('datagrid clipboard: lines past the last row open new rows when allowed', added === 2, `${added} new rows`);
 
-  // Export: the bar's button saves a CSV file a spreadsheet opens.
+  // Export: the toolbar's button saves a CSV file a spreadsheet opens.
   const exp = '.dg-export';
   await page.locator(exp).scrollIntoViewIfNeeded();
   await page.waitForSelector(`${exp} .mx-data-grid__export`);

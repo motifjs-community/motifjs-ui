@@ -12,6 +12,8 @@ import { placeInOrder } from './place-in-order';
 import type { ResolvedAction } from './resolved-action';
 import { RowActions } from './RowActions';
 
+const NO_RANGES: [number, number][] = [];
+
 const STATUS_TEXT = {
   new: 'gridStatusNew',
   changed: 'gridStatusChanged',
@@ -40,6 +42,10 @@ export class GridRow<T> {
   readonly actions: RowActions<T> | null = null;
   private readonly shown = createSignal(0);
   private readonly texts = new Map<string, Text>();
+  /** The nodes after a cell's text node that mark what the search found, and what they were drawn for. */
+  private readonly marked = new Map<string, { nodes: ChildNode[]; key: string }>();
+  /** Whether the search marks cells now (read when the cells are drawn). */
+  private searching = false;
   private readonly stops: (() => void)[] = [];
   private readonly check: HTMLSpanElement;
 
@@ -275,6 +281,8 @@ export class GridRow<T> {
     void model.state.version;
     const { row, rowId } = this;
     const formatter = model.formatter;
+    // Read once per row: while nothing is searched no cell asks for marks.
+    this.searching = model.search.marking();
     for (const [field, cell] of this.cells) {
       if (model.columns.isInternal(field)) continue;
       const col = model.columns.get(field);
@@ -282,8 +290,8 @@ export class GridRow<T> {
       if (text && col.lookup) this.drawLookup(cell, text, col);
       else {
         if (text) {
-          const shown = formatter.text(col, row, model.value(rowId, row, col));
-          if (text.data !== shown) text.data = shown;
+          const value = model.value(rowId, row, col);
+          this.write(field, text, formatter.text(col, row, value), value);
         }
         busy(cell, model.isBusy(rowId, field));
       }
@@ -299,13 +307,45 @@ export class GridRow<T> {
     }
   }
 
+  /** Writes a cell's text, with what the search found in it marked (`<mark>`). */
+  private write(field: string, text: Text, shown: string, value: unknown) {
+    const ranges = this.searching && this.row !== undefined ? this.model.search.ranges(field, shown, value) : NO_RANGES;
+    const marked = this.marked.get(field);
+    if (!ranges.length) {
+      if (marked) {
+        for (const node of marked.nodes) node.remove();
+        this.marked.delete(field);
+      }
+      if (text.data !== shown) text.data = shown;
+      return;
+    }
+    const key = `${ranges.join(';')}|${shown}`;
+    if (marked?.key === key) return;
+    if (marked) for (const node of marked.nodes) node.remove();
+    const nodes: ChildNode[] = [];
+    let at = ranges[0][0];
+    text.data = shown.slice(0, at);
+    for (const [start, end] of ranges) {
+      if (start > at) nodes.push(document.createTextNode(shown.slice(at, start)));
+      const mark = document.createElement('mark');
+      mark.className = 'mx-data-grid__mark';
+      mark.textContent = shown.slice(start, end);
+      nodes.push(mark);
+      at = end;
+    }
+    if (at < shown.length) nodes.push(document.createTextNode(shown.slice(at)));
+    text.after(...nodes);
+    this.marked.set(field, { nodes, key });
+  }
+
   /** A lookup cell: its text, empty and busy while the key loads, the key itself (muted, with a hint) when the source does not have it. */
   private drawLookup(cell: HTMLDivElement, text: Text, col: GridColumn<T>) {
     const model = this.model;
     const { row, rowId } = this;
     // Keys are asked for once the body is measured, so the first request holds every key on the screen.
-    const look = model.lookups.cell(col, row, model.value(rowId, row, col), model.isChanged(rowId, col.field), model.state.measured);
-    if (text.data !== look.text) text.data = look.text;
+    const value = model.value(rowId, row, col);
+    const look = model.lookups.cell(col, row, value, model.isChanged(rowId, col.field), model.state.measured);
+    this.write(col.field, text, look.text, value);
     if (look.state === 'loading' || look.state === 'missing') cell.dataset.lookup = look.state;
     else delete cell.dataset.lookup;
     if (look.hint) cell.dataset.hint = look.hint;

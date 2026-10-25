@@ -6,7 +6,7 @@
    selection check boxes and data-active on header filter buttons. Action buttons and the filter
    row's condition buttons are plain elements with the kit button's classes. Column widths come
    from --_columns on the viewport; hidden columns, alignment and sticky offsets from the grid's own
-   per-grid sheet. */
+   per-grid sheet. The toolbar is the kit's; text the search found is a <mark>. */
 @layer mx.components {
   .mx-data-grid {
     --_row-height: calc(var(--mx-datagrid-row-height) + var(--mx-datagrid-row-padding));
@@ -610,7 +610,39 @@
     pointer-events: none;
   }
 
-  /* The bar: the new-row button, the row count, errors and unsaved changes, the pager. */
+  /* The toolbar above the rows: the kit's toolbar on the bar color; the gap pushes the `after` items
+     to the end (it measures nothing, so the overflow sees only the items). */
+  .mx-data-grid__toolbar {
+    flex: none;
+    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
+    border-radius: 0;
+  }
+
+  .mx-data-grid__toolbar-gap {
+    inline-size: 0;
+    margin-inline-start: auto;
+  }
+
+  .mx-data-grid__toolbar > .mx-toolbar__more {
+    margin-inline-start: 0;
+  }
+
+  .mx-data-grid__search {
+    min-inline-size: 0;
+  }
+
+  /* Text the search found: a tint and a line under it, so it does not rest on the color alone. */
+  .mx-data-grid__mark {
+    color: var(--mx-datagrid-search-mark-color);
+    background-color: var(--mx-datagrid-search-mark-background);
+    border-radius: var(--mx-radius-sm);
+    text-decoration-line: underline;
+    text-decoration-color: var(--mx-datagrid-search-mark-line);
+    text-decoration-thickness: var(--mx-datagrid-invalid-width);
+    text-underline-offset: var(--mx-datagrid-invalid-width);
+  }
+
+  /* The bar: the row count, the selected count, errors, the pager. */
   .mx-data-grid__bar {
     display: flex;
     flex: none;
@@ -692,6 +724,11 @@
     .mx-data-grid__editor {
       outline: var(--mx-datagrid-invalid-width) solid Highlight;
       outline-offset: calc(var(--mx-datagrid-invalid-width) * -1);
+    }
+
+    .mx-data-grid__mark {
+      color: MarkText;
+      background-color: Mark;
     }
   }
 }
