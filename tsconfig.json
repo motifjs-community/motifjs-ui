@@ -15,7 +15,8 @@
     "types": ["vite/client", "node"],
     "paths": {
       "@motifx-community/ui": ["./src/index.ts"],
-      "@motifx-community/ui/tokens": ["./src/tokens/index.ts"]
+      "@motifx-community/ui/tokens": ["./src/tokens/index.ts"],
+      "@motifx-community/ui/excel": ["./src/excel/index.ts"]
     }
   },
   "include": ["src", "tests", "apps/docs", "vite.config.ts"]

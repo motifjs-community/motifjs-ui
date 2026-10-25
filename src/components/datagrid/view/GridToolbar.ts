@@ -16,8 +16,9 @@ const ORDER: readonly GridToolbarItemName[] = ['groupPanel', 'addRowButton', 'sa
 /** The item of one of the grid's items the app names without changing anything. */
 const PLAIN: GridToolbarItem = Object.freeze({});
 
-type Entry = { key: string; name: GridToolbarItemName | null; item: GridToolbarItem };
-type Made = { item: GridToolbarItem; control: ComponentBase | null; element: HTMLElement; stops: (() => void)[] };
+/** `shape`: the export button is a menu while it offers more than one command, else a plain button. */
+type Entry = { key: string; name: GridToolbarItemName | null; item: GridToolbarItem; shape?: 'menu' | 'plain' };
+type Made = { item: GridToolbarItem; shape?: 'menu' | 'plain'; control: ComponentBase | null; element: HTMLElement; stops: (() => void)[] };
 
 const isOwnName = (name: string | undefined): name is GridToolbarItemName => !!name && (ORDER as readonly string[]).includes(name);
 
@@ -96,7 +97,7 @@ export class GridToolbar<T> {
       case 'revertButton':
         return this.model.saveMode === 'batch' && s.get('saveButtons');
       case 'exportButton':
-        return s.get('exportButton') && this.host.canExport();
+        return s.get('exportButton') && this.host.canExport() && this.host.exportCommands().length > 0;
       default:
         return s.get('columnChooserButton') && this.host.hasColumns();
     }
@@ -111,7 +112,10 @@ export class GridToolbar<T> {
       const name = typeof x === 'string' ? x : x.name;
       if (isOwnName(name)) {
         // One of the grid's items whose feature is off stays out.
-        if (this.has(name) && !out.some((e) => e.key === name)) out.push({ key: name, name, item });
+        if (this.has(name) && !out.some((e) => e.key === name)) {
+          const shape = name === 'exportButton' && !item.click ? (this.host.exportCommands().length > 1 ? 'menu' : 'plain') : undefined;
+          out.push({ key: name, name, item, shape });
+        }
         continue;
       }
       if (!item.content && item.text === undefined && item.icon === undefined) continue;
@@ -132,7 +136,7 @@ export class GridToolbar<T> {
     const next = new Map<string, Made>();
     for (const entry of list) {
       const old = this.made.get(entry.key);
-      next.set(entry.key, old && old.item === entry.item ? old : this.make(entry));
+      next.set(entry.key, old && old.item === entry.item && old.shape === entry.shape ? old : this.make(entry));
     }
     for (const [key, old] of this.made) {
       if (next.get(key) === old) continue;
@@ -165,9 +169,10 @@ export class GridToolbar<T> {
     return this.makeButton(entry);
   }
 
-  private makeButton({ item, name }: Entry): Made {
+  private makeButton({ item, name, shape }: Entry): Made {
     const grid = this.host.grid;
     const own = name ? this.ownButton(name) : null;
+    const menu = shape === 'menu' ? () => this.host.exportCommands().map((c) => ({ text: c.text, enabled: c.enabled, click: () => c.run() })) : undefined;
     const text = () => read(item.text) ?? own?.text() ?? '';
     const iconOnly = () => (read(item.showText) ?? (name ? 'inMenu' : 'always')) === 'inMenu' && (item.icon !== undefined || !!own);
     const button = new Button({
@@ -177,14 +182,17 @@ export class GridToolbar<T> {
       enabled: () => read(item.enabled) !== false && (own?.enabled() ?? true),
       visible: () => read(item.visible) !== false,
       busy: () => !!own?.busy?.(),
+      ...(menu ? { menu } : {}),
     });
     if (own) button.element.classList.add(own.className);
     if (own?.keepFocus) button.element.addEventListener('pointerdown', (e) => e.preventDefault());
-    button.element.addEventListener('click', (event) => {
-      if (item.click) item.click({ item, grid, event });
-      else own?.run(button.element);
-    });
-    return { item, control: button, element: button.element, stops: [this.followOverflow(button.element, item, name ? 'auto' : 'never')] };
+    if (!menu) {
+      button.element.addEventListener('click', (event) => {
+        if (item.click) item.click({ item, grid, event });
+        else own?.run(button.element);
+      });
+    }
+    return { item, shape, control: button, element: button.element, stops: [this.followOverflow(button.element, item, name ? 'auto' : 'never')] };
   }
 
   /** What one of the grid's buttons shows and does. */
@@ -203,11 +211,11 @@ export class GridToolbar<T> {
       case 'exportButton':
         return {
           className: 'mx-data-grid__export',
-          text: () => model.text(st.exporting ? 'gridExporting' : 'gridExport'),
+          text: () => (st.exporting ? model.text('gridExporting') : this.host.exportName()),
           icon: () => downloadMark(),
           enabled: () => st.status === 'ready',
           busy: () => st.exporting,
-          run: () => void grid.exportCsv().catch(() => undefined),
+          run: () => this.host.exportCommands()[0]?.run(),
         };
       default:
         return { className: 'mx-data-grid__columns', text: t('gridColumnChooser'), icon: () => columnsMark(), enabled: () => true, run: (anchor: HTMLElement) => this.host.openColumns(anchor) };

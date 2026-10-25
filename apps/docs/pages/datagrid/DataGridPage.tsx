@@ -4,6 +4,7 @@ import { sources } from '../../shared/sources';
 import BatchSave from './examples/BatchSave';
 import Cascade from './examples/Cascade';
 import Clipboard from './examples/Clipboard';
+import ExcelExport from './examples/ExcelExport';
 import Export from './examples/Export';
 import Filters from './examples/Filters';
 import FromCode from './examples/FromCode';
@@ -55,6 +56,7 @@ const PROPS = [
   ['filters', '`GridFilters`', '—', 'The first filters, by field: `{ city: { op: \'=\', value: \'Ankara\' }, status: { values: [\'Draft\'] } }`.'],
   ['searchText / onSearchTextChanged', '`Bind<string>` / `(e) => void`', '`\'\'`', 'The search panel’s text (a function is followed); told when it changes, typed or set from code (`{ text }`). The two together bind it both ways.'],
   ['toolbar', '`{ visible?: Bind<boolean>, items?: Bind<(GridToolbarItem | GridToolbarItemName)[]> }`', 'the items whose features are on', 'The bar above the rows: which items, in which order and place; `visible` left out shows it while it has an item.'],
+  ['export', '`{ formats?, allowExportSelectedData?, texts? }`, each a `Bind`', "`{ formats: ['csv'] }`", 'What the toolbar’s export button (`exportButton`) offers: a command per format (`\'xlsx\'`, `\'csv\'`, any of your own), and “Export selected rows” for each with `allowExportSelectedData`; one command is a plain button, more a menu. `texts`: `exportTo`, `exportAll`, `exportSelectedRows` (`{format}` is the format’s name), `formats` (names by code). Live through `grid.export`.'],
   ['onRowExpanding / onRowExpanded', '`(e) => void`', '—', 'Before and after a group opens: `{ key }`, the values of the groups from the top level down; `e.cancel = true` keeps it closed.'],
   ['onRowCollapsing / onRowCollapsed', '`(e) => void`', '—', 'Before and after a group closes; `e.cancel = true` keeps it open.'],
   ['onGroupingChanging / onGroupingChanged', '`(e) => void`', '—', 'Before and after the grouping changes, by the user or from code: `{ group, previous, byUser }`; `e.cancel = true` keeps it.'],
@@ -89,7 +91,7 @@ const SETTINGS = [
   ['copyable, exportable', '`true`', 'Columns that go into what Ctrl+C copies and into an export; a column can say otherwise for itself.'],
   ['copyValues, copyHeaders', "`'shown'`, `false`", 'Ctrl+C copies the text the cells show or their `raw` values; copied rows start with the column titles.'],
   ['paste, pasteNewRows', '`true`, `false`', 'Ctrl+V writes into the editable cells; pasted lines past the last row open new rows (with `addRows`).'],
-  ['exportButton', '`false`', 'An “Export” button in the toolbar that saves the rows as CSV.'],
+  ['exportButton', '`false`', 'An “Export” button in the toolbar: the formats of the `export` prop (CSV by default), as a menu when it offers more than one command.'],
   ['saveLayout', '`true`', 'With `layoutKey`, the layout, the filters and the search text are kept and come back.'],
   ['searchPanel', '`false`', 'The search box in the toolbar. `searchText` and `searchByText()` search without it too.'],
   ['searchPanelWidth, searchPlaceholder', "`160`, `uiLocale` “Search…”", 'The box’s width (pixels or a CSS length) and its placeholder.'],
@@ -155,7 +157,7 @@ const EVENTS = [
   ['onRowExpanding / onRowExpanded, onRowCollapsing / onRowCollapsed', '`{ key }`', 'yes / —', 'A group opens or closes.'],
   ['onCopying / onPasting', '`{ text, html, rows }` / `{ text, rowIndex, field }`', 'yes', 'Ctrl+C, `copy()`; Ctrl+V, `paste()`: change the text, or stop it.'],
   ['onSummaryChanged', '`{ total, editing }`', '', 'The summary values were worked out again: new rows, a new filter or search, a save, or (with `recalculateWhileEditing`) an unsaved change.'],
-  ['onExporting / onExported', '`{ format, options }` / `{ format, rows, text? }`', 'yes / —', 'An export is about to start (change its options); it finished.'],
+  ['onExporting / onExported', '`{ format, component, selectedRowsOnly, options }` / `{ format, rows, text? }`', 'yes / —', 'An export is about to start (change its options); for a format the grid does not write (`xlsx`) the handler writes it with `exportDataGrid`. It finished (`exportDataGrid` tells it with `format: \'xlsx\'`).'],
   ['onContextMenuPreparing', '`{ target, field, row?, rowIndex, items }`', 'yes', 'A header’s column menu (`header`) or a row’s menu (`row`: a right click or the context menu key; it opens only when you add items) is about to open: change `items`.'],
   ['onToolbarPreparing', '`{ items }`', '', 'The toolbar is laid out: change the list of items it takes.'],
 ];
@@ -166,7 +168,7 @@ const COLUMN_FIELDS = [
   ['type', '`text`, `number`, `date`, `boolean`, `list`: alignment, format, sorting and the editor (`TextBox`, `NumberBox`, `DateBox`, `CheckBox`, `DropDown`).'],
   ['width, minWidth, maxWidth, flex', 'Pixels (default: the `columnWidth` and `columnMinWidth` settings); `flex` shares the free space until the user resizes.'],
   ['sticky, hidden, align', 'Pinned to an edge; hidden at first; the alignment.'],
-  ['value, format, compare', 'Read the value another way; show it another way; sort it another way (rows in memory).'],
+  ['value, format, compare', 'Read the value another way; show it another way — `Intl` options for a number or date column (`{ style: \'currency\', currency: \'EUR\' }`, which an Excel export turns into the number format too) or a function that writes the text; sort it another way (rows in memory).'],
   ['cell', '`(ctx) => component`: content of your own, made once per pooled cell; read `ctx.row` and `ctx.value` in getters.'],
   ['editor', '`(ctx) => Field | component`: an editor of your own. A `Field` is read through its value; anything else calls `ctx.setValue`.'],
   ['required, validate, options', 'An empty value is not taken; `(value, row) => message`; the choices of a list (an array, or a function of the row, also async).'],
@@ -222,6 +224,7 @@ const PROPERTIES = [
   ['summaryStatus', 'read-only, reactive', '`\'loading\'` while a server works out the totals (or every row loads for them), `\'error\'` when that failed, else `\'ready\'`.'],
   ['onRowExpanding, onRowExpanded, onRowCollapsing, onRowCollapsed, onGroupingChanging, onGroupingChanged, onGroupDropping', 'event', 'Subscribe with `grid.onRowExpanded((e) => …)`; the same as the props.'],
   ['toolbar', 'read/write, live', '`grid.toolbar.items = [\'searchPanel\', { text: \'Refresh\', click }]`, `grid.toolbar.visible = false`; a function is followed.'],
+  ['export', 'read/write, live', '`grid.export.formats = [\'xlsx\', \'csv\']`, `grid.export.allowExportSelectedData = true`; a function is followed.'],
   ['onSearchTextChanged', 'event', 'Subscribe with `grid.onSearchTextChanged((e) => …)`; the same as the prop.'],
   ['onSelectionChanged', 'event', 'Subscribe with `grid.onSelectionChanged((e) => …)`.'],
   ['onEditorPreparing', 'event', 'Subscribe with `grid.onEditorPreparing((e) => …)`; the same as the prop.'],
@@ -253,6 +256,9 @@ const METHODS = [
   ['copy() / paste(text)', '`string` / `number`', 'What Ctrl+C and Ctrl+V do: copies the selected rows or the active cell (returns the text); pastes tab-separated text from the active cell (returns the cells written).'],
   ['exportRows(options?)', '`Promise<object[]>`', 'The rows of the filter in the sort order, by field, with the visible exportable columns: shown text or `raw` values; a server’s rows in parts through the data source. Group footers and the totals come as objects of the same fields (`summaries: false` leaves them out).'],
   ['exportCsv(options?)', '`Promise<string>`', 'The same as a CSV file a spreadsheet opens: byte order mark, the locale’s separator, titles first, a line per group while grouped, group footers after their rows and the totals last. Options: `values`, `selected`, `fileName`, `download`, `separator`, `headers`, `groups`, `summaries`, `bom`, `escapeFormulas`, `pageSize`, `onProgress`, `signal`.'],
+  ['exportTo(format, options?)', '`Promise<void>`', 'What a command of the export button does: `csv` runs `exportCsv`; another format raises `onExporting` with that `format` (and `selectedRowsOnly` from `options.selected`), where the app writes the file.'],
+  ['exportSheet(options, write)', '`Promise<R>`', 'The rows of an export as a sheet of typed cells (header, group rows, data rows, group footers, totals) handed to `write`: what `exportDataGrid` writes, and what a writer of your own (PDF…) takes. Loads like `exportRows`, with the load panel; no `onExporting`, then `onExported`.'],
+  ['cancelExport()', '`void`', 'Stops the export the load panel shows; its promise rejects with an `AbortError`.'],
   ['getTotalSummaryValue(name)', '`unknown`', 'A value of the totals by the item’s `name`, its place in `totalItems`, its type, its column or `type_column` (`\'sum_amount\'`). Reactive.'],
   ['getGroupSummaryValue(key, name)', '`unknown`', 'A value of a group’s summary, the group by its key (as `expandGroup`), the item as above. Reactive.'],
   ['getVisibleRows()', '`GridVisibleRow[]`', 'The rows drawn now: `{ rowIndex, rowType, row, key, groupKey?, element }`.'],
@@ -267,6 +273,21 @@ const METHODS = [
   ['columnOption(field, name?, value?)', '`unknown`', 'Reads or writes a column’s `width`, `visible`, `sticky`, `visibleIndex`, `sortOrder`, `sortIndex`, `groupIndex` or a feature switch; without a name, all of them.'],
   ['getCombinedFilter()', '`FilterExpression | null`', 'The whole filter of the rows: the source’s own, the filter row, the header filters and the search.'],
   ['state() / state(value)', '`GridStateValue` / `void`', 'What the user set up — columns, sort, grouping, filters, search text, page, selected keys, active row — and putting it back.'],
+];
+
+const EXCEL_OPTIONS = [
+  ['component, worksheet', '—', 'The grid, and the ExcelJS worksheet to write to (`workbook.addWorksheet(\'Orders\')`).'],
+  ['topLeftCell', '`{ row: 1, column: 1 }`', 'Where the first cell goes: `{ row, column }` or a reference such as `\'B2\'`.'],
+  ['customizeCell', '—', '`({ gridCell, excelCell }) => void` for every cell, after its value and style are set.'],
+  ['autoFilterEnabled', '`false`', 'Excel’s filter buttons on the header row.'],
+  ['keepColumnWidths', '`true`', 'Columns as wide as in the grid.'],
+  ['selectedRowsOnly', 'the toolbar’s command, else `false`', 'Only the selected rows (no group rows or summaries, as with CSV).'],
+  ['loadPanel', 'on', 'The panel over the rows while they load: `true` / `false`, or `{ enabled, text, showProgress, cancelButton }`.'],
+  ['encodeExecutableContent', '`false`', 'Text a spreadsheet would run as a formula gets a `\'` in front.'],
+  ['headers, frozenHeader', '`true`', 'The row of column titles; it stays in view while the sheet scrolls.'],
+  ['groups, outline, summaries', '`true`', 'Group rows; outline levels by group (at most 7); group summary items, footers and the totals.'],
+  ['numberFormats, booleanText', '`true`, `false`', 'Excel number formats from the columns’ `Intl` formats; the grid’s yes/no text instead of `TRUE` / `FALSE`.'],
+  ['pageSize, onProgress, signal', 'the `exportPageSize` setting', 'Rows per request to a server; told after each part; stops the export (the promise rejects with an `AbortError`).'],
 ];
 
 const KEYS = [
@@ -558,6 +579,19 @@ import { data } from '@motifx-community/data';
         <Example files={[...withOrders('Export.tsx', 'paged-orders.ts'), slowAdapterFile]} stack>
           <Export />
         </Example>
+      </Section>
+
+      <Section anchor="excel" title="Export to Excel">
+        <p>
+          <Rich text="the grid does not carry an xlsx writer: the app brings ExcelJS (`npm i exceljs`, an optional peer dependency) and calls `exportDataGrid({ component, worksheet })` from `@motifx-community/ui/excel` — a separate entry, so apps that never export to Excel never load it. With `export: { formats: ['xlsx', 'csv'] }` the toolbar's export button becomes a menu (“Export all data to Excel”, “Export selected rows to Excel” with `allowExportSelectedData`); the Excel commands raise `onExporting` with `format: 'xlsx'` and `selectedRowsOnly`, and the handler writes the workbook and saves it, here as a Blob download with ExcelJS loaded on the first export." />
+        </p>
+        <Example files={withOrders('ExcelExport.tsx')} stack>
+          <ExcelExport />
+        </Example>
+        <p>
+          <Rich text="The sheet holds the header row (frozen), the rows in the grid's order with its filter, search and grouping — every matching row, a server's loaded in parts while a panel over the rows shows the progress and a button that stops it — the group rows (“Column: value” with their summary items, those aligned by column under their columns) with outline levels Excel folds, the group footers and the totals. Numbers stay numbers with a number format made from the column's `Intl` format, dates stay dates, yes/no cells are Excel's `TRUE` / `FALSE` (`booleanText` writes the grid's text), lookup and list cells hold their texts, a column with a `format` function its text, and widths follow the grid. `customizeCell({ gridCell, excelCell })` changes any cell; `gridCell` has `rowType`, `column`, `data`, `value`, `groupIndex`, `groupSummaryItems` and `totalSummaryItemName`. The promise resolves with the cells written, `{ from, to }`." />
+        </p>
+        <ApiTable head={['exportDataGrid option', 'Default', 'What it does']} rows={EXCEL_OPTIONS} />
       </Section>
 
       <Section anchor="lookups" title="Lookup columns">

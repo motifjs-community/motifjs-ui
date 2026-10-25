@@ -71,7 +71,7 @@ export interface GridSettings extends ColumnFeatures {
   paste: boolean;
   /** Pasted lines past the last row open new rows (while `addRows` is on). Default `false`. */
   pasteNewRows: boolean;
-  /** An "Export" button in the toolbar that saves the rows as a CSV file. Default `false`. */
+  /** An "Export" button in the toolbar: the formats of `export` (a CSV file by default), as a menu when it offers more than one. Default `false`. */
   exportButton: boolean;
   /** With `layoutKey`, the layout, the filters and the search text are kept in the browser's storage and come back. Default `true`. */
   saveLayout: boolean;

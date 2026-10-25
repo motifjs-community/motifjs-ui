@@ -13,6 +13,7 @@ import type { GridEditCanceledEventArgs } from './grid-edit-canceled-event-args'
 import type { GridEditCancelingEventArgs } from './grid-edit-canceling-event-args';
 import type { GridEditingStartEventArgs } from './grid-editing-start-event-args';
 import type { GridExportedEventArgs } from './grid-exported-event-args';
+import type { GridExportSettings } from './grid-export-settings';
 import type { GridExportingEventArgs } from './grid-exporting-event-args';
 import type { GridFilterChangedEventArgs } from './grid-filter-changed-event-args';
 import type { GridFilterChangingEventArgs } from './grid-filter-changing-event-args';
@@ -65,7 +66,7 @@ import type { GridValuesResult } from './grid-values-result';
 import type { NewRowOptions } from './new-row-options';
 import type { RowState } from './row-state';
 
-/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar` (whose fields are) and the callbacks is a value or a function that is followed. */
+/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar` and `export` (whose fields are) and the callbacks is a value or a function that is followed. */
 export interface DataGridProps<T> extends ControlProps {
   /** Column definitions, in their initial order. */
   columns: GridColumn<T>[];
@@ -166,6 +167,8 @@ export interface DataGridProps<T> extends ControlProps {
   onRowCollapsed?: (e: GridRowExpandedEventArgs) => void;
   /** The bar above the rows: which items, and whether it shows. */
   toolbar?: GridToolbar;
+  /** What the toolbar's export button (`settings.exportButton`) offers: the formats, "Export selected rows", the texts. */
+  export?: GridExportSettings;
   /** Initial filters, by field. Read and change them later through `grid.filters`. */
   filters?: GridFilters;
   /**

@@ -15,6 +15,8 @@ export class CellFormatter {
   readonly collator: Intl.Collator;
   private readonly number: Intl.NumberFormat;
   private readonly date: Intl.DateTimeFormat;
+  /** Formatters of the columns' own `Intl` options. */
+  private readonly own = new WeakMap<object, Intl.NumberFormat | Intl.DateTimeFormat>();
 
   constructor(
     readonly locale: string,
@@ -36,14 +38,14 @@ export class CellFormatter {
   /** Display text of a cell; `v` is the value to show (the unsaved edit, when there is one). */
   text<T>(col: GridColumn<T>, row: T | undefined, v: unknown): string {
     if (row === undefined || row === null) return '';
-    if (col.format) return col.format(v, row);
+    if (typeof col.format === 'function') return col.format(v, row);
     if (data.isEmpty(v)) return '';
     switch (col.type) {
       case 'number':
-        return typeof v === 'number' ? this.number.format(v) : String(v);
+        return typeof v === 'number' ? this.numberFormat(col).format(v) : String(v);
       case 'date': {
         const d = data.toDate(v);
-        return d ? this.date.format(d) : String(v);
+        return d ? this.dateFormat(col).format(d) : String(v);
       }
       case 'boolean':
         return this.yesNo()[v ? 0 : 1];
@@ -52,6 +54,18 @@ export class CellFormatter {
       default:
         return String(v);
     }
+  }
+
+  /** The `Intl` options a number column shows its values with; `undefined` when its `format` is a function. */
+  numberOptions<T>(col: GridColumn<T>): Intl.NumberFormatOptions | undefined {
+    if (typeof col.format === 'function') return undefined;
+    return (col.format as Intl.NumberFormatOptions | undefined) ?? {};
+  }
+
+  /** The `Intl` options a date column shows its values with; `undefined` when its `format` is a function. */
+  dateOptions<T>(col: GridColumn<T>): Intl.DateTimeFormatOptions | undefined {
+    if (typeof col.format === 'function') return undefined;
+    return (col.format as Intl.DateTimeFormatOptions | undefined) ?? { dateStyle: 'short' };
   }
 
   /** A value as plain text in no locale's format: numbers as written in code, dates as `yyyy-mm-dd` (with the time when it has one), `true` / `false`. */
@@ -104,6 +118,22 @@ export class CellFormatter {
       default:
         return { ok: true, value: text };
     }
+  }
+
+  private numberFormat<T>(col: GridColumn<T>): Intl.NumberFormat {
+    const options = col.format;
+    if (!options || typeof options !== 'object') return this.number;
+    let f = this.own.get(options);
+    if (!f) this.own.set(options, (f = new Intl.NumberFormat(this.locale, options as Intl.NumberFormatOptions)));
+    return f as Intl.NumberFormat;
+  }
+
+  private dateFormat<T>(col: GridColumn<T>): Intl.DateTimeFormat {
+    const options = col.format;
+    if (!options || typeof options !== 'object') return this.date;
+    let f = this.own.get(options);
+    if (!f) this.own.set(options, (f = new Intl.DateTimeFormat(this.locale, options as Intl.DateTimeFormatOptions)));
+    return f as Intl.DateTimeFormat;
   }
 
   private optionLabel<T>(col: GridColumn<T>, v: unknown): string | undefined {

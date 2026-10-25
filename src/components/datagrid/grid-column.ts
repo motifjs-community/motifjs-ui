@@ -43,8 +43,12 @@ export interface GridColumn<T = any> {
   align?: 'start' | 'center' | 'end';
   /** Reads the value instead of `row[field]`. */
   value?: (row: T) => unknown;
-  /** Turns the value into display text. Default: `Intl` formatting by `type` and `locale`. */
-  format?: (value: unknown, row: T) => string;
+  /**
+   * How the value shows: `Intl` options for a number or a date column (`{ style: 'currency', currency: 'EUR' }`,
+   * `{ dateStyle: 'medium' }`), which an Excel export turns into the cell's number format too, or a
+   * function that writes the text (exported as that text). Default: `Intl` formatting by `type` and `locale`.
+   */
+  format?: ((value: unknown, row: T) => string) | Intl.NumberFormatOptions | Intl.DateTimeFormatOptions;
   /** Compares two values for sorting rows in memory. Default: by `type`, text in the locale. */
   compare?: (a: unknown, b: unknown) => number;
   /** Custom cell content, built once per pooled cell. Read `ctx.row` inside getters. */

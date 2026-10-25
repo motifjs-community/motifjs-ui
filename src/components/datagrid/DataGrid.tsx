@@ -1,12 +1,14 @@
-import { effect, Emitter, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { effect, Emitter, reactive, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
 import { nextTabbable } from '../../core/focus';
 import { checkMark, chevronDown, dismissMark, pencilMark, trashMark, undoMark } from '../../core/glyphs';
+import { fillTemplate } from '../../core/fill-template';
 import { nextId } from '../../core/next-id';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Button } from '../button/Button';
 import { DropDown } from '../dropdown/DropDown';
+import { ProgressBar } from '../progress/ProgressBar';
 import { Spinner } from '../progress/Spinner';
 import { TextBox } from '../textbox/TextBox';
 import type { ColumnFeatures } from './column-features';
@@ -61,6 +63,10 @@ import type { GridBuiltInActions } from './grid-built-in-actions';
 import type { GridChanges } from './grid-changes';
 import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
 import type { GridExportOptions } from './grid-export-options';
+import type { GridExportSettings } from './grid-export-settings';
+import type { GridLoadPanel } from './grid-load-panel';
+import type { GridSheet } from './grid-sheet';
+import type { GridSheetOptions } from './grid-sheet-options';
 import type { GridFilters } from './grid-filters';
 import type { GridGroupDroppingEventArgs } from './grid-group-dropping-event-args';
 import type { GridGroupingChangedEventArgs } from './grid-grouping-changed-event-args';
@@ -74,6 +80,7 @@ import type { GridSelectionChangedEventArgs } from './grid-selection-changed-eve
 import type { GridSettings } from './grid-settings';
 import type { GridToolbar as GridToolbarOptions } from './grid-toolbar';
 import type { ClipboardContent } from './model/clipboard-content';
+import type { ExportTable } from './model/export-table';
 import { ACTIONS_FIELD, SELECT_FIELD, STATUS_FIELD } from './model/ColumnModel';
 import { GridClipboard } from './model/GridClipboard';
 import { GridExport } from './model/GridExport';
@@ -95,6 +102,8 @@ import type { GridRow } from './view/GridRow';
 import { HeaderFilter } from './view/HeaderFilter';
 import { HeaderRow } from './view/HeaderRow';
 import type { HeaderHost } from './view/header-host';
+import type { ExportCommand } from './view/export-command';
+import type { ExportValues } from './view/export-values';
 import type { ToolbarValues } from './view/toolbar-values';
 import { MenuPopup } from './view/MenuPopup';
 import { TotalRow } from './view/TotalRow';
@@ -154,6 +163,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private readonly exporter: GridExport<T>;
   /** Exports running, stopped when the grid goes away. */
   private readonly exports = new Set<AbortController>();
+  private readonly exportSwitches: Switches<ExportValues>;
+  /** The panel over the rows while an export with `loadPanel` runs. */
+  private readonly exportPanel = reactive({ shown: false, text: '', progress: true, cancel: true, loaded: 0, total: 0 });
+  private stopPanelExport: (() => void) | null = null;
+  /** "Export selected rows" was chosen for a format the app writes: its next `exportSheet()` takes the selection. */
+  private selectedNext = false;
   private readonly gridId = nextId('data-grid');
   private viewportEl: HTMLDivElement | null = null;
   private headEl: HTMLDivElement | null = null;
@@ -254,12 +269,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     });
     this.toolbarSwitches = new Switches<ToolbarValues>(['visible', 'items'], {}, own.toolbar ?? {});
     this.toolbarSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `toolbar.${name}`, value, previous }));
+    this.exportSwitches = new Switches<ExportValues>(['formats', 'allowExportSelectedData', 'texts'], {}, own.export ?? {});
+    this.exportSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `export.${name}`, value, previous }));
     this.topBar = new GridToolbar<T>(
       model,
       this.toolbarSwitches,
       {
         grid: this,
         canExport: () => this.exporter.fields().length > 0,
+        exportCommands: () => this.exportCommands(),
+        exportName: () => this.exportSwitches.get('texts')?.exportTo ?? model.text('gridExport'),
         openColumns: (anchor) => this.menu.openColumns(anchor),
         hasColumns: () => this.menu.hasColumns(),
         groupPanel: () => this.groupPanel,
@@ -294,6 +313,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    */
   get toolbar(): GridToolbarOptions {
     return this.toolbarSwitches.view as GridToolbarOptions;
+  }
+
+  /**
+   * What the toolbar's export button offers, live: `grid.export.formats = ['xlsx', 'csv']`; a
+   * function is followed.
+   */
+  get export(): GridExportSettings {
+    return this.exportSwitches.view as GridExportSettings;
   }
 
   /**
@@ -1387,9 +1414,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    * with the texts they show (`summaries: false` leaves them out).
    */
   async exportRows(options: GridExportOptions = {}): Promise<Record<string, unknown>[]> {
-    const run = await this.runExport('rows', options);
+    const run = await this.runExport('rows', options, (o, signal) => this.exporter.table(o, signal));
     if (!run) return [];
-    const { table } = run;
+    const table = run.result;
     const rows: Record<string, unknown>[] = [];
     const summaries = this.exporter.summaryObjects(table);
     let next = 0;
@@ -1407,9 +1434,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    * with a byte order mark, the locale's separator, column titles first. Returns the text.
    */
   async exportCsv(options: GridExportOptions = {}): Promise<string> {
-    const run = await this.runExport('csv', options);
+    const run = await this.runExport('csv', options, (o, signal) => this.exporter.table(o, signal));
     if (!run) return '';
-    const { table } = run;
+    const table = run.result;
     options = run.options;
     const text = this.exporter.csv(table, options);
     if (options.download !== false) {
@@ -1418,6 +1445,54 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     }
     this.model.events.tell(this.model.events.exported, () => ({ format: 'csv' as const, rows: table.rows.length, text }));
     return text;
+  }
+
+  /**
+   * What a command of the toolbar's export button does: `'csv'` runs `exportCsv`; any other format
+   * raises `onExporting` with that `format` and `selectedRowsOnly`, and the app writes the file
+   * there (`exportDataGrid` for `'xlsx'`).
+   */
+  async exportTo(format: string, options: GridExportOptions = {}): Promise<void> {
+    if (format === 'csv') {
+      await this.exportCsv(options);
+      return;
+    }
+    const ev = this.model.events;
+    this.selectedNext = !!options.selected;
+    if (!ev.listened(ev.exporting)) {
+      console.warn(`DataGrid: nothing writes '${format}' files. Write them in onExporting (exportDataGrid from @motifx-community/ui/excel for 'xlsx').`);
+      return;
+    }
+    const e: GridExportingEventArgs = { format, component: this, selectedRowsOnly: !!options.selected, options: { ...options }, cancel: false };
+    ev.exporting.fire(e);
+    if (e.cancel) this.selectedNext = false;
+  }
+
+  /**
+   * The rows of an export as a sheet of typed cells (header, group rows, data rows, group footers,
+   * totals), handed to `write`, a file writer: `exportDataGrid` writes it to an ExcelJS worksheet.
+   * The rows load as `exportRows` loads them (in parts from a server, with progress, stopped by
+   * `signal` or the load panel's button). `onExported` follows with `format` once `write` is done.
+   * Raises no `onExporting`: this is what an `onExporting` handler calls.
+   */
+  async exportSheet<R>(options: GridSheetOptions, write: (sheet: GridSheet<T>) => R | Promise<R>): Promise<R> {
+    const selected = options.selectedRowsOnly ?? this.selectedNext;
+    this.selectedNext = false;
+    const format = options.format ?? 'xlsx';
+    const given: GridExportOptions = { selected, pageSize: options.pageSize, onProgress: options.onProgress, signal: options.signal, loadPanel: options.loadPanel ?? true };
+    const collect = (o: GridExportOptions, signal: AbortSignal) =>
+      this.exporter.sheet({ ...options, onProgress: o.onProgress, selected, rtl: this.isRtl(), widthOf: (field) => this.shownWidth(field) }, signal);
+    const run = await this.runExport(format, given, collect, false);
+    const sheet = run!.result;
+    const result = await write(sheet);
+    const rows = sheet.rows.filter((r) => r.rowType === 'data').length;
+    this.model.events.tell(this.model.events.exported, () => ({ format, rows }));
+    return result;
+  }
+
+  /** Stops the export the load panel shows (its promise rejects with an `AbortError`). */
+  cancelExport() {
+    this.stopPanelExport?.();
   }
 
   // Lifecycle.
@@ -1727,6 +1802,19 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
               <span>{() => t('loadFailed')}</span>
               <Button text={() => t('retry')} size="sm" variant="outline" onclick={() => this.retry()} />
             </div>
+          </div>
+          <div class="mx-data-grid__export-panel" x-display={() => this.exportPanel.shown}>
+            <ProgressBar
+              class="mx-data-grid__export-progress"
+              label={() => this.exportPanel.text || t('gridExporting')}
+              value={() => (this.exportPanel.progress && this.exportPanel.total > 0 ? this.exportPanel.loaded : null)}
+              max={() => Math.max(1, this.exportPanel.total)}
+              showValue={() => this.exportPanel.progress && this.exportPanel.total > 0}
+              valueText={() => t('gridExportProgress', { loaded: count(this.exportPanel.loaded), total: count(this.exportPanel.total) })}
+              size="sm"
+              stretch
+            />
+            <Button class="mx-data-grid__export-cancel" text={() => t('gridExportCancel')} size="sm" variant="outline" visible={() => this.exportPanel.cancel} onclick={() => this.cancelExport()} />
           </div>
           <div class="mx-data-grid__probe" aria-hidden="true" ref={(c) => (this.probeEl = c.element as HTMLDivElement)} />
           <div class="mx-data-grid__measure" aria-hidden="true" ref={(c) => (this.measureEl = c.element as HTMLDivElement)} />
@@ -3308,12 +3396,20 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.paste(text);
   }
 
-  /** Collects the rows of an export, after `onExporting` (which may change the options or cancel: `null`). */
-  private async runExport(format: 'rows' | 'csv', options: GridExportOptions) {
+  /**
+   * Collects the rows of an export, after `onExporting` when `ask` (which may change the options or
+   * cancel: `null`). The load panel, when asked for, shows the progress and stops the export.
+   */
+  private async runExport<R extends ExportTable | GridSheet<T>>(
+    format: string,
+    options: GridExportOptions,
+    collect: (options: GridExportOptions, signal: AbortSignal) => Promise<R>,
+    ask = true,
+  ): Promise<{ result: R; options: GridExportOptions } | null> {
     const { model } = this;
     const ev = model.events;
-    if (ev.listened(ev.exporting)) {
-      const e = { format, options: { ...options }, cancel: false };
+    if (ask && ev.listened(ev.exporting)) {
+      const e: GridExportingEventArgs = { format, component: this, selectedRowsOnly: !!options.selected, options: { ...options }, cancel: false };
       ev.exporting.fire(e);
       if (e.cancel) return null;
       options = e.options;
@@ -3324,18 +3420,81 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.exports.add(controller);
     model.state.exporting = true;
     model.announce(model.text('gridExporting'));
+    const panel = this.openExportPanel(options.loadPanel, stop);
+    const told = options.onProgress;
+    const tracked: GridExportOptions = panel ? { ...options, onProgress: (loaded, total) => (this.showProgress(loaded, total), told?.(loaded, total)) } : options;
     try {
-      const table = await this.exporter.table(options, controller.signal);
-      model.announce(model.text('gridExported', { count: model.formatter.count(table.rows.length) }));
-      return { table, options };
+      const result = await collect(tracked, controller.signal);
+      const count = 'fields' in result ? result.rows.length : result.rows.filter((r) => r.rowType === 'data').length;
+      model.announce(model.text('gridExported', { count: model.formatter.count(count) }));
+      return { result, options };
     } catch (error) {
-      if (!controller.signal.aborted) model.announce(model.text('gridExportFailed'));
-      throw error;
+      const aborted = controller.signal.aborted;
+      model.announce(model.text(aborted ? 'gridExportCanceled' : 'gridExportFailed'));
+      // Stopped: the abort's reason (an `AbortError`), whatever the request failed with.
+      throw aborted ? controller.signal.reason : error;
     } finally {
       options.signal?.removeEventListener('abort', stop);
       this.exports.delete(controller);
-      if (!this.isDisposed) model.state.exporting = false;
+      if (panel && this.stopPanelExport === stop) {
+        this.stopPanelExport = null;
+        this.exportPanel.shown = false;
+      }
+      if (!this.isDisposed) model.state.exporting = this.exports.size > 0;
     }
+  }
+
+  /** Shows the load panel for an export that asks for it; whether it shows. */
+  private openExportPanel(given: boolean | GridLoadPanel | undefined, stop: () => void): boolean {
+    const panel: GridLoadPanel = typeof given === 'object' ? given : { enabled: !!given };
+    if (panel.enabled === false) return false;
+    const p = this.exportPanel;
+    p.text = panel.text ?? '';
+    p.progress = panel.showProgress !== false;
+    p.cancel = panel.cancelButton !== false;
+    p.loaded = 0;
+    p.total = 0;
+    p.shown = true;
+    this.stopPanelExport = stop;
+    return true;
+  }
+
+  private showProgress(loaded: number, total: number) {
+    this.exportPanel.loaded = loaded;
+    this.exportPanel.total = total;
+  }
+
+  /** A column's width on screen: its header cell's, else the width the grid keeps for it. */
+  private shownWidth(field: string): number {
+    const cell = this.headEl?.querySelector<HTMLElement>(`[data-field="${CSS.escape(field)}"]`);
+    return cell && cell.offsetWidth > 0 ? cell.offsetWidth : this.model.columns.width(field);
+  }
+
+  /** The commands of the toolbar's export button, from `export`. Reactive. */
+  private exportCommands(): ExportCommand[] {
+    const sw = this.exportSwitches;
+    const model = this.model;
+    const texts = sw.get('texts') ?? {};
+    const withSelected = !!sw.get('allowExportSelectedData') && model.settings.get('selection') !== 'none';
+    const out: ExportCommand[] = [];
+    for (const format of sw.get('formats') ?? ['csv']) {
+      const name = { format: texts.formats?.[format] ?? this.formatName(format) };
+      const run = (selected: boolean) => () => void this.exportTo(format, { selected }).catch(() => undefined);
+      out.push({ format, selected: false, enabled: true, text: texts.exportAll ? fillTemplate(texts.exportAll, name) : model.text('gridExportAll', name), run: run(false) });
+      if (withSelected) {
+        const text = texts.exportSelectedRows ? fillTemplate(texts.exportSelectedRows, name) : model.text('gridExportSelectedRows', name);
+        out.push({ format, selected: true, enabled: this.selectedCount > 0, text, run: run(true) });
+      }
+    }
+    return out;
+  }
+
+  private formatName(format: string): string {
+    const model = this.model;
+    if (format === 'xlsx') return model.text('gridFormatXlsx');
+    if (format === 'csv') return model.text('gridFormatCsv');
+    if (format === 'pdf') return model.text('gridFormatPdf');
+    return format.toUpperCase();
   }
 
   // Filters.

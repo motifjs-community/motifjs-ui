@@ -35,7 +35,7 @@ each (`npm run dev`).
 | Buttons and commands | `Button` (menu, split, drop-down, toggle, busy), `Toolbar` (overflow menu), `MenuBar`, `ContextMenu` |
 | Editors | `TextBox` (mask, validation), `TextArea` (auto-grow), `NumberBox` (locale formats, spin), `DateBox` (date, time, both), `Calendar`, `Slider` (range) |
 | Choice | `CheckBox` (three states), `Switch`, `RadioGroup`, `DropDown`, `ComboBox`, `Autocomplete`, `Lookup` (columns), `TagBox`, `ListBox` |
-| Data | `DataGrid` (virtual or paged, editing with three save modes, row actions, selection, filters, search panel, grouping with a group panel, toolbar, lookup columns, copy and paste, CSV export, kept layout), `TreeView` (lazy, check boxes, filter); lists and grids read `@motifx-community/data` sources |
+| Data | `DataGrid` (virtual or paged, editing with three save modes, row actions, selection, filters, search panel, grouping with a group panel, toolbar, lookup columns, copy and paste, CSV and Excel export, kept layout), `TreeView` (lazy, check boxes, filter); lists and grids read `@motifx-community/data` sources |
 | Layout and windows | `Stack`, `Grid`, `DockPanel`, `Panel`, `GroupBox`, `SplitContainer`, `FormLayout`, `Tabs`, `Accordion`, `MxForm` (window and modal form), `messageBox`, `confirm` |
 | Feedback | `ProgressBar`, `Spinner` (cover a panel), `Tooltip`, `Toast` |
 | Shared parts | `Field` (base of every editor), `InputMask`, `ValidationGroup`, `validateFields`, `checkRules`, `OptionList`, `DataItems`, `Popup`, `MenuList`, date helpers (`datePatternOf`) |
@@ -82,6 +82,9 @@ addShortcut('Mod+K', () => palette.open()); // app-wide
 
 - `@motifx-community/ui/tokens` exports `cssVar` / `cssProperty` and a `TokenName` that is the design
   system's names plus the component token names, for styles written in TS.
+- `@motifx-community/ui/excel` exports `exportDataGrid`, which writes a `DataGrid` to an ExcelJS
+  worksheet. ExcelJS is an optional peer dependency the app installs; apps that do not import this
+  entry never load it.
 - RTL through logical properties.
 
 ## Docs

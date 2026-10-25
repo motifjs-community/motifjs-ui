@@ -201,6 +201,39 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   shown for keyboard focus closed at once when focusing scrolled its field into view; it now follows
   the field while the page scrolls and closes only if the field is off the screen when scrolling ends.
 
+### DataGrid Excel export
+
+- New entry `@motifx-community/ui/excel`: `exportDataGrid({ component, worksheet, … })` writes a
+  `DataGrid` to an ExcelJS worksheet's `excelExporter.exportDataGrid`; ExcelJS is an
+  optional peer dependency the app brings, and apps that do not import the entry never load it. It
+  resolves with the cells written (`{ from, to }`). Options `topLeftCell` (`{ row, column }` or
+  `'B2'`), `customizeCell({ gridCell, excelCell })`, `autoFilterEnabled`, `keepColumnWidths`,
+  `selectedRowsOnly`, `loadPanel`, `encodeExecutableContent`, and `headers`, `frozenHeader`, `groups`,
+  `outline`, `summaries`, `numberFormats`, `booleanText`, `pageSize`, `onProgress`, `signal`. Also
+  `excelNumberFormat` and `excelDateFormat` (an `Intl` format as an Excel number format).
+- The sheet: a frozen header row, the rows in the grid's order with its filter, search and grouping
+  (every matching row, a server's in parts), group rows ("Column: value" with their summary items,
+  aligned ones under their columns) with outline levels, group footers and the totals (several items
+  of a column a row each). Numbers stay numbers with a number format made from the column's `Intl`
+  format, dates stay dates, yes/no cells are `TRUE` / `FALSE`, lookup and list cells and columns with a
+  `format` function hold their texts; widths follow the grid.
+- Column `format` also takes `Intl` options for number and date columns (shown by the grid, and the
+  number format in Excel).
+- `export` prop and live `grid.export` (`formats`, default `['csv']`; `allowExportSelectedData`;
+  `texts`: `exportTo`, `exportAll`, `exportSelectedRows`, `formats`): the toolbar's export button
+  offers a command per format, and "Export selected rows" for each, as a menu when there is more than
+  one. `csv` is written by the grid as before; other formats raise `onExporting` with `format`,
+  `component` and `selectedRowsOnly`, where the app writes the file. `exportTo(format, options)`,
+  `exportSheet(options, write)` (the rows as a sheet of typed cells for any writer; `onExported`
+  follows with its `format`), `cancelExport()`; types `GridSheet`, `GridSheetRow`, `GridSheetCell`,
+  `GridSheetColumn`, `GridExportCell`, `GridSheetOptions`, `GridExportSettings`, `GridExportTexts`,
+  `GridLoadPanel`.
+- A load panel over the rows while an export runs, with its progress and a button that stops it
+  (`loadPanel`; on for `exportDataGrid`, off for `exportCsv` / `exportRows`). A stopped export rejects
+  with the `AbortError`. Texts `gridExportAll`, `gridExportSelectedRows`, `gridExportProgress`,
+  `gridExportCancel`, `gridExportCanceled`, `gridFormatXlsx`, `gridFormatCsv`, `gridFormatPdf` in en
+  and tr. ExcelJS 4.4 as a dev dependency for the tests and the docs.
+
 ### DropDown, ComboBox, Autocomplete, Lookup
 
 - `DropDown`: pick one item (APG select-only combobox); `items` (plain values, `DropDownItem`s or any

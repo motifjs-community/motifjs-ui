@@ -147,6 +147,14 @@ export interface UiStrings {
   gridExporting: string;
   gridExported: string;
   gridExportFailed: string;
+  gridExportCanceled: string;
+  gridExportAll: string;
+  gridExportSelectedRows: string;
+  gridExportProgress: string;
+  gridExportCancel: string;
+  gridFormatXlsx: string;
+  gridFormatCsv: string;
+  gridFormatPdf: string;
   gridLookupMissing: string;
   gridLookupLoading: string;
   gridLookupNoMatch: string;

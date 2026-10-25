@@ -1,3 +1,5 @@
+import type { GridLoadPanel } from './grid-load-panel';
+
 /** How `exportCsv()` and `exportRows()` write the rows. Every field has a default. */
 export interface GridExportOptions {
   /** The text the cells show, or their values (numbers and dates in a neutral form). Default `'shown'`. */
@@ -9,6 +11,8 @@ export interface GridExportOptions {
   /** Told after each part arrives. */
   onProgress?: (loaded: number, total: number) => void;
   signal?: AbortSignal;
+  /** The panel over the rows while it runs, with its progress and a button that stops it; `true` turns it on. Default off. */
+  loadPanel?: boolean | GridLoadPanel;
   /** CSV: the file name. Default: the grid's label, or `export`, with `.csv`. */
   fileName?: string;
   /** CSV: save the file (else only the text is returned). Default `true`. */

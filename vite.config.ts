@@ -20,6 +20,7 @@ export default defineConfig({
       entry: {
         index: entry('./src/index.ts'),
         'tokens/index': entry('./src/tokens/index.ts'),
+        'excel/index': entry('./src/excel/index.ts'),
       },
       formats: ['es'],
       fileName: (_format, name) => `${name}.js`,
@@ -27,7 +28,8 @@ export default defineConfig({
     rollupOptions: {
       // @motifx/core and the design system are peers: bundling core would mean
       // two reactivity engines, bundling the token map a second copy of it.
-      external: [/^@motifx\/core/, /^@motifx-community\/design-system/, /^@motifx-community\/data/],
+      // ExcelJS is the app's: the excel entry only writes to the worksheet it is given.
+      external: [/^@motifx\/core/, /^@motifx-community\/design-system/, /^@motifx-community\/data/, /^exceljs/],
     },
     sourcemap: true,
     minify: false,

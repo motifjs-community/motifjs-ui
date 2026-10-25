@@ -891,6 +891,28 @@
     color: var(--mx-color-danger-fg);
   }
 
+  /* An export with its load panel: progress and a stop button over the rows. */
+  .mx-data-grid__export-panel {
+    position: absolute;
+    inset: 0;
+    block-size: fit-content;
+    margin: auto;
+    display: flex;
+    align-items: flex-end;
+    gap: var(--mx-space-3);
+    inline-size: min(22rem, calc(100% - 2 * var(--mx-space-3)));
+    padding: var(--mx-space-3);
+    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
+    border-radius: var(--mx-radius-sm);
+    background: var(--mx-datagrid-background);
+    box-shadow: var(--mx-shadow-8);
+  }
+
+  .mx-data-grid__export-progress {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
   .mx-data-grid__probe {
     position: absolute;
     inline-size: var(--mx-datagrid-border-width);
