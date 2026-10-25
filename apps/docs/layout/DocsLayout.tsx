@@ -95,9 +95,10 @@ export class DocsLayout extends Component<HTMLDivElement> {
     this.outline.current = current;
   }
 
-  private matches(label: string): boolean {
+  /** A page matches the filter by its label, its title or its group's title ("grid" finds every DataGrid page). */
+  private matches(page: { label: string; title: string }, group: string): boolean {
     const filter = this.state.filter.trim().toLocaleLowerCase();
-    return !filter || label.toLocaleLowerCase().includes(filter);
+    return !filter || [page.label, page.title, group].some((text) => text.toLocaleLowerCase().includes(filter));
   }
 
   /** A group shows its pages unless closed; a filter shows every match. */
@@ -181,7 +182,7 @@ export class DocsLayout extends Component<HTMLDivElement> {
             x-model={() => s.filter}
           />
           {GROUPS.map((group) => (
-            <div key={group.title} class="docs-sidebar__group" x-wait={() => !group.pages.some((p) => this.matches(p.label))}>
+            <div key={group.title} class="docs-sidebar__group" x-wait={() => !group.pages.some((p) => this.matches(p, group.title))}>
               <button type="button" class="docs-sidebar__title" aria-expanded={() => this.groupOpen(group.title)} onclick={() => this.toggleGroup(group.title)}>
                 <svg viewBox="0 0 16 16" aria-hidden="true">
                   <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -190,7 +191,7 @@ export class DocsLayout extends Component<HTMLDivElement> {
               </button>
               <ul x-wait={() => !this.groupOpen(group.title)}>
                 {group.pages.map((p) => (
-                  <li key={p.id} x-wait={() => !this.matches(p.label)}>
+                  <li key={p.id} x-wait={() => !this.matches(p, group.title)}>
                     <a rel="router" href={p.path} aria-current={() => (this.nav.meta.page === p.id ? 'page' : false)}>
                       {p.label}
                     </a>
@@ -199,7 +200,7 @@ export class DocsLayout extends Component<HTMLDivElement> {
               </ul>
             </div>
           ))}
-          <p class="docs-sidebar__empty" x-wait={() => PAGES.some((p) => this.matches(p.label))}>
+          <p class="docs-sidebar__empty" x-wait={() => PAGES.some((p) => this.matches(p, p.group))}>
             No page matches.
           </p>
         </nav>
@@ -216,12 +217,12 @@ export class DocsLayout extends Component<HTMLDivElement> {
               <nav class="docs-pager" aria-label="Previous and next page">
                 <a class="docs-pager__link" rel="router prev" href={() => this.neighbour(-1)?.path ?? '/'} x-wait={() => !this.neighbour(-1)}>
                   <small>Previous</small>
-                  <span>{() => this.neighbour(-1)?.label ?? ''}</span>
+                  <span>{() => this.neighbour(-1)?.title ?? ''}</span>
                 </a>
                 <span x-wait={() => !!this.neighbour(-1)} />
                 <a class="docs-pager__link docs-pager__link--next" rel="router next" href={() => this.neighbour(1)?.path ?? '/'} x-wait={() => !this.neighbour(1)}>
                   <small>Next</small>
-                  <span>{() => this.neighbour(1)?.label ?? ''}</span>
+                  <span>{() => this.neighbour(1)?.title ?? ''}</span>
                 </a>
               </nav>
             </article>
@@ -244,7 +245,7 @@ export class DocsLayout extends Component<HTMLDivElement> {
                   {(this.page?.related ?? []).map((id) => PAGES.find((p) => p.id === id)!).map((p) => (
                     <li key={p.id}>
                       <a rel="router" href={p.path}>
-                        {p.label}
+                        {p.title}
                       </a>
                     </li>
                   ))}
