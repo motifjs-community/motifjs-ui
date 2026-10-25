@@ -1,7 +1,7 @@
 /** Real-browser checks of the datagrid's summaries: totals under their columns following a filter, the row of totals pinned under the rows and moving sideways, group summaries in group rows and footers, recalculating while editing, a server's summaries, axe and the frame rate of a grouped virtual list with footers. */
 
 export default async function ({ page, base, check, axeSource, box }) {
-  await page.goto(base + 'datagrid', { waitUntil: 'load' });
+  await page.goto(base + 'datagrid/grouping', { waitUntil: 'load' });
   const local = '.dg-summaries';
   const section = page.locator('section[aria-labelledby="summaries"]');
   // What an item shows: its first part; the naming text after it is for assistive technology only.

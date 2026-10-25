@@ -9,16 +9,38 @@ import { ExampleCode } from './ExampleCode';
 
 let seq = 0;
 
-/** Splits "text with `code` in it" into keyed parts for rendering. */
-function parts(text: string): { id: number; text: string; code: boolean }[] {
-  return text.split('`').map((t, i) => ({ id: ++seq, text: t, code: i % 2 === 1 }));
+const LINK = /\[([^\]]+)\]\(([^)\s]+)\)/g;
+
+/** Splits "text with `code` and [a link](/page#anchor) in it" into keyed parts for rendering. */
+function parts(text: string): { id: number; text: string; code: boolean; href: string }[] {
+  return text.split('`').flatMap((t, i) => {
+    if (i % 2 === 1) return [{ id: ++seq, text: t, code: true, href: '' }];
+    // With its two groups, split() gives: text, link text, address, text …
+    const pieces = t.split(LINK);
+    const out = [];
+    for (let at = 0; at < pieces.length; at += 3) {
+      out.push({ id: ++seq, text: pieces[at], code: false, href: '' });
+      if (at + 2 < pieces.length) out.push({ id: ++seq, text: pieces[at + 1], code: false, href: pieces[at + 2] });
+    }
+    return out;
+  });
 }
 
-/** Inline text where `backticked` spans render as code. */
+/** Inline text where `backticked` spans render as code and [text](/page#anchor) as a link. */
 export function Rich(props: { text: string }) {
   return (
     <span>
-      {parts(props.text).map((p) => (p.code ? <code key={p.id}>{p.text}</code> : <span key={p.id}>{p.text}</span>))}
+      {parts(props.text).map((p) =>
+        p.code ? (
+          <code key={p.id}>{p.text}</code>
+        ) : p.href ? (
+          <a key={p.id} rel="router" href={p.href}>
+            {p.text}
+          </a>
+        ) : (
+          <span key={p.id}>{p.text}</span>
+        ),
+      )}
     </span>
   );
 }

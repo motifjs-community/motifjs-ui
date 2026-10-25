@@ -35,6 +35,13 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   listbox: () => import('../pages/listbox/ListBoxPage'),
   tagbox: () => import('../pages/tagbox/TagBoxPage'),
   datagrid: () => import('../pages/datagrid/DataGridPage'),
+  'datagrid-editing': () => import('../pages/datagrid/DataGridEditingPage'),
+  'datagrid-filtering': () => import('../pages/datagrid/DataGridFilteringPage'),
+  'datagrid-lookups': () => import('../pages/datagrid/DataGridLookupsPage'),
+  'datagrid-grouping': () => import('../pages/datagrid/DataGridGroupingPage'),
+  'datagrid-selection': () => import('../pages/datagrid/DataGridSelectionPage'),
+  'datagrid-layout': () => import('../pages/datagrid/DataGridLayoutPage'),
+  'datagrid-api': () => import('../pages/datagrid/DataGridApiPage'),
 };
 
 /** One layout; every page is loaded when it is first opened. */

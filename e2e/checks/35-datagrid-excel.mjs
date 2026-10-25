@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import ExcelJS from 'exceljs';
 
 export default async function ({ page, base, check }) {
-  await page.goto(base + 'datagrid', { waitUntil: 'load' });
+  await page.goto(base + 'datagrid/selection', { waitUntil: 'load' });
   const grid = '.dg-excel';
   await page.locator(grid).scrollIntoViewIfNeeded();
   await page.waitForSelector(`${grid} .mx-data-grid__group-row:not([hidden])`);

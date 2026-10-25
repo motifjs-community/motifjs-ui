@@ -1,7 +1,7 @@
 /** Real-browser checks of the datagrid's lookup columns: texts from another service in one batched request, editing with the lookup editor, the cascading province and district, the filter row's "(All)" list, the header filter's names, textFrom without requests, and axe. */
 
 export default async function ({ page, base, check, axeSource }) {
-  await page.goto(base + 'datagrid', { waitUntil: 'load' });
+  await page.goto(base + 'datagrid/lookups', { waitUntil: 'load' });
   const grid = '.dg-lookups';
   const rows = (g) => `${g} .mx-data-grid__body > .mx-data-grid__row:not([hidden])`;
   const cellAt = (g, i, field) => `${rows(g)}[aria-rowindex="${i + 1}"] [data-field="${field}"]`;

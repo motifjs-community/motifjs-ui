@@ -77,7 +77,20 @@ export const GROUPS = [
       { id: 'treeview', label: 'TreeView', title: 'TreeView', path: '/treeview', related: ['dropdown', 'checkbox'] },
       { id: 'listbox', label: 'ListBox', title: 'ListBox', path: '/listbox', related: ['tagbox', 'combobox'] },
       { id: 'tagbox', label: 'TagBox', title: 'TagBox', path: '/tagbox', related: ['listbox', 'combobox'] },
-      { id: 'datagrid', label: 'DataGrid', title: 'DataGrid', path: '/datagrid', related: ['listbox', 'treeview'] },
+    ],
+  },
+  {
+    title: 'DataGrid',
+    section: 'Components',
+    pages: [
+      { id: 'datagrid', label: 'Overview', title: 'DataGrid', path: '/datagrid', related: ['datagrid-editing', 'datagrid-filtering', 'datagrid-api'] },
+      { id: 'datagrid-editing', label: 'Editing', title: 'DataGrid: Editing', path: '/datagrid/editing', related: ['datagrid-lookups', 'datagrid-selection', 'datagrid-layout'] },
+      { id: 'datagrid-filtering', label: 'Filtering and search', title: 'DataGrid: Filtering and search', path: '/datagrid/filtering', related: ['datagrid-lookups', 'datagrid-grouping', 'datagrid-layout'] },
+      { id: 'datagrid-lookups', label: 'Lookup columns', title: 'DataGrid: Lookup columns', path: '/datagrid/lookups', related: ['datagrid-editing', 'datagrid-filtering', 'lookup'] },
+      { id: 'datagrid-grouping', label: 'Grouping and summaries', title: 'DataGrid: Grouping and summaries', path: '/datagrid/grouping', related: ['datagrid-filtering', 'datagrid-selection', 'datagrid-api'] },
+      { id: 'datagrid-selection', label: 'Selection and export', title: 'DataGrid: Selection and export', path: '/datagrid/selection', related: ['datagrid-editing', 'datagrid-grouping', 'datagrid-layout'] },
+      { id: 'datagrid-layout', label: 'Layout and events', title: 'DataGrid: Layout and events', path: '/datagrid/layout', related: ['datagrid-api', 'datagrid-filtering', 'toolbar'] },
+      { id: 'datagrid-api', label: 'API reference', title: 'DataGrid: API reference', path: '/datagrid/api', related: ['datagrid', 'datagrid-layout', 'control'] },
     ],
   },
 ] as const;

@@ -1,7 +1,7 @@
 /** Real-browser checks of the datagrid's grouping: a header dragged to the group panel, group rows with their counts, opening and closing by mouse and keyboard, the chips' order and removal, the column menu, grouping on a server, axe and the frame rate of a grouped virtual list. */
 
 export default async function ({ page, base, check, axeSource }) {
-  await page.goto(base + 'datagrid', { waitUntil: 'load' });
+  await page.goto(base + 'datagrid/grouping', { waitUntil: 'load' });
   const local = '.dg-grouping';
   const groups = (g) => page.evaluate((s) => [...document.querySelectorAll(`${s} .mx-data-grid__group-row:not([hidden])`)].sort((a, b) => a.getAttribute('aria-rowindex') - b.getAttribute('aria-rowindex')).map((r) => `${r.getAttribute('aria-level')}${r.getAttribute('aria-expanded') === 'true' ? '>' : '+'} ${r.textContent.trim()}`), g);
   const chips = () => page.evaluate((s) => [...document.querySelectorAll(`${s} .mx-data-grid__chip`)].map((c) => `${c.textContent}:${c.dataset.dir}`), local);

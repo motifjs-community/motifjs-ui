@@ -1,7 +1,7 @@
 /** Real-browser checks of the datagrid's events: cells styled by onCellPrepared while scrolling, a row menu from onContextMenuPreparing, a save stopped by onRowUpdating, the log, and the frame rate with a listener. */
 
 export default async function ({ page, base, check }) {
-  await page.goto(base + 'datagrid', { waitUntil: 'load' });
+  await page.goto(base + 'datagrid/layout', { waitUntil: 'load' });
   const grid = '.dg-events';
   const rows = `${grid} .mx-data-grid__body > .mx-data-grid__row:not([hidden]):not([data-loading])`;
   const log = () => page.evaluate(() => [...document.querySelectorAll('.dg-events-log li')].map((li) => li.textContent));

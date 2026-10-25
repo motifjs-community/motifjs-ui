@@ -1,4 +1,4 @@
-/** Real-browser checks of the datagrid page: the virtual body and its requests, keyboard, focus, column layout by mouse and keyboard, sticky columns, the tooltip, pages, editing (the new-row chain, a server error, batch saving), settings, density, row actions, selection, filters, batch saving over pages, copy and paste through the clipboard, export, the kept layout and axe. */
+/** Real-browser checks of the datagrid pages: the virtual body and its requests, keyboard, focus, column layout by mouse and keyboard, sticky columns, the tooltip, pages, editing (the new-row chain, a server error, batch saving), settings, density, row actions, selection, filters, batch saving over pages, copy and paste through the clipboard, export, the kept layout and axe. */
 import { readFileSync } from 'node:fs';
 
 export default async function ({ page, base, check, axeSource, box }) {
@@ -171,8 +171,11 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('datagrid: the last page asks for one page', (await pagedLoads()) - pagedBefore === 1, `${(await pagedLoads()) - pagedBefore} loads`);
 
   // Editing: a new row at the end, the Tab chain, Escape.
+  await page.goto(base + 'datagrid/editing', { waitUntil: 'load' });
+  await page.evaluate(() => document.documentElement.removeAttribute('data-density'));
   const editing = '.dg-editing';
   await page.locator(editing).scrollIntoViewIfNeeded();
+  await page.waitForFunction((sel) => document.querySelectorAll(sel).length > 3, `${shownRows(editing)}:not([data-loading])`);
   const where = () =>
     page.evaluate(() => {
       const el = document.activeElement;
@@ -267,6 +270,8 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.keyboard.press('Escape');
 
   // Settings, live.
+  await page.goto(base + 'datagrid/layout', { waitUntil: 'load' });
+  await page.evaluate(() => document.documentElement.removeAttribute('data-density'));
   const settings = page.locator('section[aria-labelledby="settings"]');
   const switches = '.dg-settings';
   await page.locator(switches).scrollIntoViewIfNeeded();
@@ -329,9 +334,9 @@ export default async function ({ page, base, check, axeSource, box }) {
   await copyExportLayout({ page, base, check, axeSource });
 }
 
-/** Row actions, selection and filters, on a fresh page. */
+/** Row actions, selection and filters, on fresh pages. */
 async function actionsSelectionFilters({ page, base, check, axeSource }) {
-  await page.goto(base + 'datagrid', { waitUntil: 'load' });
+  await page.goto(base + 'datagrid/editing', { waitUntil: 'load' });
   await page.evaluate(() => document.documentElement.removeAttribute('data-density'));
   const shownRows = (grid) => `${grid} .mx-data-grid__body > .mx-data-grid__row:not([hidden])`;
   const row = (grid, n) => `${shownRows(grid)}[aria-rowindex="${n}"]`;
@@ -422,6 +427,8 @@ async function actionsSelectionFilters({ page, base, check, axeSource }) {
   await actionSection.getByRole('button', { name: '140px' }).click();
 
   // Selection.
+  await page.goto(base + 'datagrid/selection', { waitUntil: 'load' });
+  await page.evaluate(() => document.documentElement.removeAttribute('data-density'));
   const sel = '.dg-selection';
   const state = () => page.locator('.dg-selection-state').textContent();
   await page.locator(sel).scrollIntoViewIfNeeded();
@@ -489,6 +496,8 @@ async function actionsSelectionFilters({ page, base, check, axeSource }) {
   await page.click(`${server} [role=columnheader][data-field="mx:select"]`);
 
   // Filters.
+  await page.goto(base + 'datagrid/filtering', { waitUntil: 'load' });
+  await page.evaluate(() => document.documentElement.removeAttribute('data-density'));
   const filters = '.dg-filters';
   const count = async () => Number((await page.locator('.dg-filter-count').textContent()).match(/^([\d,]+)/)[1].replace(/,/g, ''));
   await page.locator(filters).scrollIntoViewIfNeeded();
@@ -559,9 +568,9 @@ async function actionsSelectionFilters({ page, base, check, axeSource }) {
   check('datagrid filters: the filter goes to the data source as a data-layer filter', /"op":"in"/.test(sent) && /Draft/.test(sent), sent);
 }
 
-/** Batch saving over pages, copy and paste, export and the kept layout, on a fresh page. */
+/** Batch saving over pages, copy and paste, export and the kept layout, on fresh pages. */
 async function copyExportLayout({ page, base, check, axeSource }) {
-  await page.goto(base + 'datagrid', { waitUntil: 'load' });
+  await page.goto(base + 'datagrid/editing', { waitUntil: 'load' });
   const shownRows = (grid) => `${grid} .mx-data-grid__body > .mx-data-grid__row:not([hidden])`;
   const cellAt = (grid, row, field) => `${shownRows(grid)}[aria-rowindex="${row}"] [data-field="${field}"]`;
 
@@ -583,6 +592,7 @@ async function copyExportLayout({ page, base, check, axeSource }) {
   check('datagrid batch: edits on two pages are kept and saved together', (await page.textContent('.dg-batch-note')).startsWith('0 unsaved'), await page.textContent('.dg-batch-note'));
 
   // Copy and paste through the real clipboard: the copy event carries the text and a table.
+  await page.goto(base + 'datagrid/selection', { waitUntil: 'load' });
   const clip = '.dg-clipboard';
   await page.locator(clip).scrollIntoViewIfNeeded();
   await page.waitForSelector(cellAt(clip, 2, 'customer'));
@@ -654,7 +664,19 @@ async function copyExportLayout({ page, base, check, axeSource }) {
   await page.waitForFunction(() => document.querySelector('.dg-exported').textContent.startsWith('[{'));
   const objects = JSON.parse(await page.textContent('.dg-exported'));
   check('datagrid export: exportRows gives the rows in the sort order, by field, with raw values', objects.length === 2 && objects[0].amount <= objects[1].amount && Object.keys(objects[0])[0] === 'id', JSON.stringify(objects).slice(0, 160));
-  const pagedLoadCount = async () => Number((await page.locator('.dg-paged-loads').textContent()).match(/^(\d+)/)[1]);
+  // The server's loads are counted under the paged grid of the overview: read them there, in the same document.
+  const openInPage = async (path) => {
+    await page.locator(`.docs-sidebar a[href="${path}"]`).click();
+    await page.waitForURL((url) => url.pathname === path);
+  };
+  const pagedLoadCount = async () => {
+    await openInPage('/datagrid');
+    await page.waitForSelector(`${shownRows('.dg-paged')}:not([data-loading])`);
+    const count = Number((await page.locator('.dg-paged-loads').textContent()).match(/^(\d+)/)[1]);
+    await openInPage('/datagrid/selection');
+    await page.locator('section[aria-labelledby="export"]').waitFor();
+    return count;
+  };
   const loadsBefore = await pagedLoadCount();
   const [serverFile] = await Promise.all([page.waitForEvent('download', { timeout: 60_000 }), page.locator('section[aria-labelledby="export"]').getByRole('button', { name: 'Export the 100,000 orders by page' }).click()]);
   const serverCsv = readFileSync(await serverFile.path(), 'utf8');
@@ -663,7 +685,11 @@ async function copyExportLayout({ page, base, check, axeSource }) {
   const exportLoads = (await pagedLoadCount()) - loadsBefore;
   check('datagrid export: a server grid exports every row in parts through its data source', serverLines === 100_002 && exportLoads === 10 && serverFile.suggestedFilename() === 'orders.csv', `${serverLines} lines, ${exportLoads} loads`);
 
+  await page.addScriptTag({ content: axeSource });
+  const axeSelection = await page.evaluate(async () => (await window.axe.run(document)).violations.map((v) => `selection page ${v.id}: ${v.nodes.length}`));
+
   // The layout comes back after a reload.
+  await page.goto(base + 'datagrid/layout', { waitUntil: 'load' });
   const lay = '.dg-layout';
   await page.evaluate(() => localStorage.removeItem('motifx-ui:data-grid:docs-orders'));
   await page.locator(lay).scrollIntoViewIfNeeded();
@@ -700,6 +726,6 @@ async function copyExportLayout({ page, base, check, axeSource }) {
   check('datagrid layout: "Reset the layout" goes back to the column definitions', reset.sort === null && reset.city === 120, JSON.stringify(reset));
   await page.evaluate(() => localStorage.removeItem('motifx-ui:data-grid:docs-orders'));
   await page.addScriptTag({ content: axeSource });
-  const axeFound = await page.evaluate(async () => (await window.axe.run(document)).violations.map((v) => `${v.id}: ${v.nodes.length}`));
+  const axeFound = [...axeSelection, ...(await page.evaluate(async () => (await window.axe.run(document)).violations.map((v) => `${v.id}: ${v.nodes.length}`)))];
   check('datagrid: axe clean with the export, clipboard and layout examples', axeFound.length === 0, axeFound.join('; '));
 }

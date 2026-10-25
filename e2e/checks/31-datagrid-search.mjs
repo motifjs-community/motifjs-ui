@@ -1,7 +1,7 @@
 /** Real-browser checks of the datagrid's search panel and toolbar: typing searches after the pause (rows in memory and a server), lookup names found on their own service, the marks, Escape, the toolbar's items, places, overflow and keys, and axe. */
 
 export default async function ({ page, base, check, axeSource }) {
-  await page.goto(base + 'datagrid', { waitUntil: 'load' });
+  await page.goto(base + 'datagrid/filtering', { waitUntil: 'load' });
   const rows = (g) => `${g} .mx-data-grid__body > .mx-data-grid__row:not([hidden]):not([data-loading])`;
   const texts = (g, field) => page.evaluate(([s, f]) => [...document.querySelectorAll(s)].map((r) => r.querySelector(`[data-field="${f}"]`)?.textContent ?? ''), [rows(g), field]);
   const marks = (g) => page.evaluate((s) => [...document.querySelectorAll(`${s} mark`)].map((m) => m.textContent), rows(g));
@@ -72,6 +72,7 @@ export default async function ({ page, base, check, axeSource }) {
   check('datagrid search: axe clean with marks in the cells', searched.length === 0, searched.join('; '));
 
   // The toolbar: the page's items at the start, the grid's own at the end.
+  await page.goto(base + 'datagrid/layout', { waitUntil: 'load' });
   const tools = '.dg-toolbar';
   const bar = `${tools} .mx-data-grid__toolbar`;
   await page.locator(tools).scrollIntoViewIfNeeded();

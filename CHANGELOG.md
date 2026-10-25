@@ -388,3 +388,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   localization, API tables, styling hooks, tokens) and a token reference: the component tokens,
   and the design system's layers for reference (from its `json/*` export). The theme and density
   switches use the design system's `setTheme` / `setDensity`.
+- The DataGrid reference is a side-menu group of eight pages (overview, editing, filtering and
+  search, lookup columns, grouping and summaries, selection and export, layout and events, API
+  reference), at most five live grids each, so no page is slow to open; a pointer to a section on
+  another page is a link (`[text](/page#anchor)` in a table cell's text).
