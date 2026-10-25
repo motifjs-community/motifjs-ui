@@ -12,9 +12,6 @@ import { DEFAULT_SETTINGS } from './default-settings';
 import type { StickyOffset } from './sticky-offset';
 import { Switches } from './Switches';
 
-export const DEFAULT_WIDTH = 140;
-export const DEFAULT_MIN_WIDTH = 48;
-
 /**
  * Field of the row status column: added by the grid, always first, not part of the layout, and shown
  * only while rows can be edited or added (`showsStatus`).
@@ -24,8 +21,6 @@ export const STATUS_FIELD = 'mx:status';
 export const SELECT_FIELD = 'mx:select';
 /** Field of the actions column: at the start or the end, pinned or scrolling, by the settings. */
 export const ACTIONS_FIELD = 'mx:actions';
-const STATUS_WIDTH = 28;
-const SELECT_WIDTH = 36;
 const LOCKED: Partial<ColumnFeatures> = {
   editable: false,
   creatable: false,
@@ -67,8 +62,8 @@ export class ColumnModel<T> {
     layout?: GridLayout,
     private readonly settings: Switches<GridSettings> = new Switches<GridSettings>(Object.keys(DEFAULT_SETTINGS) as (keyof GridSettings)[], DEFAULT_SETTINGS),
   ) {
-    this.defs.set(STATUS_FIELD, { field: STATUS_FIELD, title: '', width: STATUS_WIDTH, minWidth: STATUS_WIDTH, sticky: 'start', align: 'center' });
-    this.defs.set(SELECT_FIELD, { field: SELECT_FIELD, title: '', width: SELECT_WIDTH, minWidth: SELECT_WIDTH, align: 'center' });
+    this.defs.set(STATUS_FIELD, { field: STATUS_FIELD, title: '', sticky: 'start', align: 'center' });
+    this.defs.set(SELECT_FIELD, { field: SELECT_FIELD, title: '', align: 'center' });
     this.defs.set(ACTIONS_FIELD, { field: ACTIONS_FIELD, title: '' });
     for (const field of [STATUS_FIELD, SELECT_FIELD, ACTIONS_FIELD]) this.features.set(field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, LOCKED));
     for (const c of columns) {
@@ -202,8 +197,9 @@ export class ColumnModel<T> {
     const flex: Record<string, number> = {};
     const hidden: Record<string, boolean> = {};
     const sticky: Record<string, StickySide | null> = {};
+    // A column without a width of its own follows the `columnWidth` setting.
     for (const [field, def] of this.defs) {
-      width[field] = this.clampWidth(field, def.width ?? DEFAULT_WIDTH);
+      if (def.width !== undefined) width[field] = this.clampWidth(field, def.width);
       flex[field] = def.flex ?? 0;
       hidden[field] = !!def.hidden;
       sticky[field] = def.sticky ?? null;
@@ -245,12 +241,19 @@ export class ColumnModel<T> {
 
   width(field: string): number {
     if (field === ACTIONS_FIELD) return Math.max(0, Math.round(this.settings.get('actionsWidth')));
-    return this.state.width[field] ?? DEFAULT_WIDTH;
+    if (field === STATUS_FIELD) return Math.max(0, Math.round(this.settings.get('rowStatusWidth')));
+    if (field === SELECT_FIELD) return Math.max(0, Math.round(this.settings.get('selectionColumnWidth')));
+    return this.state.width[field] ?? this.clampWidth(field, this.settings.get('columnWidth'));
+  }
+
+  /** The smallest width of a column: its own `minWidth`, else the `columnMinWidth` setting. */
+  minWidth(field: string): number {
+    return this.get(field).minWidth ?? this.settings.get('columnMinWidth');
   }
 
   clampWidth(field: string, px: number): number {
     const def = this.get(field);
-    const min = def.minWidth ?? DEFAULT_MIN_WIDTH;
+    const min = this.minWidth(field);
     const max = def.maxWidth ?? Number.POSITIVE_INFINITY;
     return Math.round(Math.min(max, Math.max(min, px)));
   }
@@ -327,8 +330,8 @@ export class ColumnModel<T> {
   resizeWithNext(field: string, next: string, total: number, px: number): number {
     const a = this.get(field);
     const b = this.get(next);
-    const lo = Math.max(a.minWidth ?? DEFAULT_MIN_WIDTH, total - (b.maxWidth ?? Number.POSITIVE_INFINITY));
-    const hi = Math.min(a.maxWidth ?? Number.POSITIVE_INFINITY, total - (b.minWidth ?? DEFAULT_MIN_WIDTH));
+    const lo = Math.max(this.minWidth(field), total - (b.maxWidth ?? Number.POSITIVE_INFINITY));
+    const hi = Math.min(a.maxWidth ?? Number.POSITIVE_INFINITY, total - this.minWidth(next));
     if (lo > hi) return this.width(field);
     const w = Math.round(Math.min(hi, Math.max(lo, px)));
     this.state.width[field] = w;

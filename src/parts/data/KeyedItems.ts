@@ -6,11 +6,6 @@ import type { TextSearch } from './text-search';
 
 type Source = data.DataSource<any, any> | readonly unknown[];
 
-/** Requests `'byKey'` runs at the same time. */
-const PARALLEL = 6;
-/** Items a text search asks for when it looks for an exact text (paste). */
-const TEXT_MATCHES = 50;
-
 const registry = new WeakMap<object, Map<string, KeyedItems<any>>>();
 const watched = new WeakSet<object>();
 
@@ -42,6 +37,10 @@ export class KeyedItems<T = unknown> {
   /** `'batch'`: the keys of a moment in one request each `batchSize`; `'byKey'`: one request per key. Default: `'batch'` when the service filters, else `'byKey'`. */
   resolve: 'batch' | 'byKey';
   batchSize = 100;
+  /** `'byKey'`: requests at the same time. */
+  parallelRequests = 6;
+  /** Items asked for when an exact text is looked for (a pasted text). */
+  pasteSearchLimit = 50;
   private readonly entries = new Map<string, KeyedItem<T>>();
   private readonly waiting = new Map<string, Promise<void>>();
   private queue = new Map<string, unknown>();
@@ -160,7 +159,7 @@ export class KeyedItems<T = unknown> {
   async findByText(text: string, search: TextSearch<T>): Promise<T[]> {
     const known = this.findLoadedByText(text, search);
     if (known.length || this.inMemory || !text.trim()) return known;
-    const { items } = await this.search(text.trim(), search, 0, TEXT_MATCHES);
+    const { items } = await this.search(text.trim(), search, 0, Math.max(1, this.pasteSearchLimit));
     const locale = search.locale ?? pageLocale();
     return items.filter((item) => sameText(search.textOf(item), text, locale));
   }
@@ -263,7 +262,7 @@ export class KeyedItems<T = unknown> {
     const worker = async () => {
       while (next < jobs.length) await jobs[next++]();
     };
-    await Promise.all(Array.from({ length: Math.min(byKey ? PARALLEL : 1, jobs.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(byKey ? Math.max(1, this.parallelRequests) : 1, jobs.length) }, worker));
   }
 
   private async loadMany(field: string, part: [string, unknown][], generation: number) {

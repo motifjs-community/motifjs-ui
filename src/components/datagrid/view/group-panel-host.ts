@@ -7,4 +7,6 @@ export interface GroupPanelHost {
   dropOnHeaders(field: string, x: number): void;
   /** The last chip went away: focus goes back to the rows. */
   focusRows(): void;
+  /** A key on a chip, before the panel handles it: `false` when the app takes it (`onKeyHandling`). */
+  keyHandling(e: KeyboardEvent): boolean;
 }

@@ -133,6 +133,31 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   maximize, nested modals), `messageBox`, `confirm`.
 - Commands: `Toolbar` (roving focus, overflow menu), `MenuBar`, `ContextMenu`; `MenuList` gained
   submenus, shortcuts and radio items.
+- `DataGrid`: every behaviour is the developer's, today's value its default. New settings
+  `tooltipDelay` (500), `extraRows` (4), `columnWidth` (140), `columnMinWidth` (48), `rowStatusWidth`
+  (28), `selectionColumnWidth` (36), `resizeStep` (10), `resizeFineStep` (1), `pagerNeighbors` (1),
+  `pagerNavigation` (`true`), `pagerInfo` (`true`), `headerFilterPageSize` (100), `headerFilterRows`
+  (8), `exportPageSize` (1000), `trueTexts` / `falseTexts`, `editKeys` (`['Enter', 'F2']`),
+  `clearKeys` (`['Delete']`), `editOnKeyPress` (`true`), `startEditAction` (`'dblClick'`); column
+  fields `headerCell`, `editOnKeyPress`, `startEditAction`, `trueTexts`, `falseTexts` (a column's
+  value wins); lookup fields `pageSize` (50), `filterSearchLimit` (1000), `parallelRequests` (6),
+  `pasteSearchLimit` (50); prop `layoutStorage` (default `localStorage`). Events, the standard names,
+  `…ing` cancelable: `onCellClick`, `onCellDblClick`, `onRowClick`, `onRowDblClick`, `onCellPrepared`,
+  `onRowPrepared`, `onContentReady`, `onDataErrorOccurred`, `onEditingStart`, `onInitNewRow`,
+  `onSaving` / `onSaved`, `onRowInserting` / `Inserted`, `onRowUpdating` / `Updated`, `onRowRemoving` /
+  `Removed`, `onEditCanceling` / `Canceled`, `onFocusedCellChanging` / `Changed`,
+  `onFocusedRowChanging` / `Changed`, `onKeyHandling` (`onKeyDown`, a DOM event name in
+  JSX), `onOptionChanged`, `onExporting` / `onExported`, `onContextMenuPreparing` (the column menu's
+  items, and a row menu on right click or Shift + F10 when items are added), `onToolbarPreparing`,
+  `onSelectionChanging`, `onSortChanging` / `Changed`, `onFilterChanging` / `Changed`,
+  `onPageChanging` / `Changed`, `onLayoutChanging`, `onSearchTextChanging`, `onCopying`, `onPasting`;
+  every event also as `grid.onX(fn)`. State and methods: `status`, `loadError`, `failedBlocks`,
+  `editingCell`, `saving`, `exporting`, `focusedRowIndex`, `focusedRowKey`, `getVisibleRows()`,
+  `getRowElement()`, `getCellElement()`, `getKeyByRowIndex()`, `getRowIndexByKey()`, `byKey()`,
+  `cellValue()`, `navigateToRow()`, `focusCell()`, `editCell()`, `editRow()`, `closeEditCell()`,
+  `beginUpdate()` / `endUpdate()`, `repaint()`, `columnOption()`, `getCombinedFilter()`, `state()`.
+  `OptionList` `extraRows` (6) and `typingDelay` (600); `KeyedItems` `parallelRequests` (6) and
+  `pasteSearchLimit` (50).
 - Feedback: `ProgressBar`, `Spinner` (with `Spinner.cover`), `Tooltip` / `addTooltip`, `Toast` /
   `toast` / `Toaster`.
 - `Control` binds DOM events given from code (`new Button({ onclick })`); its private state getter is

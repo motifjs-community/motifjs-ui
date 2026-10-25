@@ -38,7 +38,15 @@ export class GridSearch<T> {
   setText(text: string, typed = false) {
     clearTimeout(this.timer);
     this.timer = undefined;
-    if (this.state.text !== text) {
+    const previous = this.state.text;
+    if (previous !== text) {
+      const { events } = this.model;
+      if (!events.ask(events.searchTextChanging, () => ({ text, previous, cancel: false }))) {
+        // The box shows the text it had.
+        this.state.text = text;
+        this.state.text = previous;
+        return;
+      }
       this.state.text = text;
       this.onTextChanged?.(text);
     }

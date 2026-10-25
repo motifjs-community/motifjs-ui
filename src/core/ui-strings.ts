@@ -107,6 +107,7 @@ export interface UiStrings {
   gridSaveFailed: string;
   gridActions: string;
   gridMoreActions: string;
+  gridRowMenu: string;
   gridEdit: string;
   gridDelete: string;
   gridRestore: string;

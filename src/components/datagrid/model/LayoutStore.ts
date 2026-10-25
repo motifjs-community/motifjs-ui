@@ -1,3 +1,4 @@
+import type { LayoutStorage } from '../layout-storage';
 import type { StoredLayout } from './stored-layout';
 
 const PREFIX = 'motifx-ui:data-grid:';
@@ -5,16 +6,23 @@ const PREFIX = 'motifx-ui:data-grid:';
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /**
- * A grid's layout, filters and search text in `localStorage` under its `layoutKey`. Storage can be missing, full
- * or blocked (a private window, a sandbox): then nothing is kept and nothing fails.
+ * A grid's layout, filters and search text in `localStorage` (or the storage given) under its `layoutKey`.
+ * Storage can be missing, full or blocked (a private window, a sandbox): then nothing is kept and nothing fails.
  */
 export class LayoutStore {
-  constructor(private readonly key: string) {}
+  constructor(
+    private readonly key: string,
+    private readonly storage?: LayoutStorage,
+  ) {}
+
+  private get place(): LayoutStorage | undefined {
+    return this.storage ?? globalThis.localStorage;
+  }
 
   /** The kept layout, or `null` when there is none or it cannot be read. */
   read(): StoredLayout | null {
     try {
-      const text = globalThis.localStorage?.getItem(PREFIX + this.key);
+      const text = this.place?.getItem(PREFIX + this.key);
       if (!text) return null;
       const value: unknown = JSON.parse(text);
       if (!isObject(value) || !Array.isArray(value.columns) || !Array.isArray(value.sort)) return null;
@@ -29,7 +37,7 @@ export class LayoutStore {
 
   write(layout: StoredLayout) {
     try {
-      globalThis.localStorage?.setItem(PREFIX + this.key, JSON.stringify(layout));
+      this.place?.setItem(PREFIX + this.key, JSON.stringify(layout));
     } catch {
       // Full or blocked storage: the layout is not kept.
     }
@@ -37,7 +45,7 @@ export class LayoutStore {
 
   clear() {
     try {
-      globalThis.localStorage?.removeItem(PREFIX + this.key);
+      this.place?.removeItem(PREFIX + this.key);
     } catch {
       // Blocked storage.
     }

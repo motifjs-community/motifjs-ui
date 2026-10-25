@@ -7,9 +7,6 @@ import { GridRow } from './GridRow';
 import { GroupRow } from './GroupRow';
 import { nextId } from '../../../core/next-id';
 
-/** Extra rows drawn above and below the viewport. */
-const OVERSCAN = 4;
-
 /**
  * The body: a spacer as tall as the rows (capped, see `ScrollGeometry`) holding a small pool of
  * absolutely placed `GridRow`s. On every scroll the pool is filled again for the rows in view: rows
@@ -172,6 +169,21 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     return out;
   }
 
+  /** The rows drawn now, data and group rows, in grid order. */
+  drawn(): { index: number; element: HTMLElement; group: GroupNode | null }[] {
+    const out: { index: number; element: HTMLElement; group: GroupNode | null }[] = [];
+    for (const [index, row] of this.byIndex) out.push({ index, element: row.element, group: null });
+    for (const [index, row] of this.groupsByIndex) out.push({ index, element: row.element, group: row.node });
+    return out.sort((a, b) => a.index - b.index);
+  }
+
+  /** Draws every row in use again. */
+  repaint() {
+    for (const row of this.byIndex.values()) row.redraw();
+    for (const row of this.groupsByIndex.values()) row.redraw();
+    this.relayout(true);
+  }
+
   /** Display order of the cells, after a column layout change. */
   arrange(visible: string[]) {
     this.visible = visible;
@@ -210,8 +222,9 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       this.expectedScrollTop = -1;
       this.virtualTop = Math.max(0, Math.min(g.maxVirtualTop, this.virtualTop));
       const vis = g.visibleRange(this.virtualTop);
-      start = Math.max(0, vis.first - OVERSCAN);
-      end = Math.min(g.total, vis.end + OVERSCAN);
+      const extra = Math.max(0, Math.floor(grid.settings.get('extraRows')));
+      start = Math.max(0, vis.first - extra);
+      end = Math.min(g.total, vis.end + extra);
       const vt = this.virtualTop;
       top = (i) => g.rowTop(i, scrollTop, vt);
       const need = Math.ceil(g.viewport / g.rowHeight) + 1;

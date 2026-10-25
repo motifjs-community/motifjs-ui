@@ -20,6 +20,7 @@ import Search from './examples/Search';
 import Selection from './examples/Selection';
 import Switches from './examples/Switches';
 import TextFrom from './examples/TextFrom';
+import Events from './examples/Events';
 import Toolbar from './examples/Toolbar';
 import Virtual from './examples/Virtual';
 
@@ -42,6 +43,8 @@ const PROPS = [
   ['sort / layout', '`SortItem[]` / `GridLayout`', '—', 'The first sort order; a saved layout (columns, sort and `group`).'],
   ['onLayoutChange', '`(layout) => void`', '—', 'After the user resized, moved, hid, pinned or sorted.'],
   ['layoutKey', '`string`', '—', 'Keeps the layout, the filters and the search text in the browser’s `localStorage` under this name; a grid made again with it gets them back.'],
+  ['layoutStorage', '`{ getItem, setItem, removeItem }`', '`localStorage`', 'Where `layoutKey` keeps them: `sessionStorage`, or a store of your own.'],
+  ['on…', '`(e) => void`', '—', 'Every event of the Events table below, by its name (`onCellClick`, `onRowUpdating` …); `grid.onCellClick(fn)` listens the same way.'],
   ['label', '`Bind<string>`', '`uiLocale` “Data grid”', 'The accessible name. The same as `text`.'],
   ['texts / locale', '`Bind<Partial<UiStrings>>` / `Bind<string>`', '— / page language', 'Texts of this grid only; the locale of numbers, dates and sorting.'],
   ['rowHeight', '`Bind<number>`', 'from CSS', 'A fixed row height; by default the density decides.'],
@@ -101,12 +104,58 @@ const SETTINGS = [
   ['remoteGrouping', "`'auto'`", 'Who groups a data source’s rows: `auto` its adapter when it groups (blocks), `true` the adapter whenever the source loads by blocks, `false` always the browser, from every matching row.'],
   ['groupLoadPageSize', '`0`', 'Grouping in the browser over a source that loads pages or blocks: rows per request while every matching row loads (0: one request).'],
   ['dragThreshold', '`5`', 'Pixels a pressed header or chip moves before it is dragged.'],
+  ['columnWidth, columnMinWidth', '`140`, `48`', 'The width of a column that gives none, and the smallest width the user can resize one to; a column’s `width` and `minWidth` win.'],
+  ['rowStatusWidth, selectionColumnWidth', '`28`, `36`', 'Widths of the row status column and the check box column.'],
+  ['resizeStep, resizeFineStep', '`10`, `1`', 'Pixels one arrow key resizes a column by (“Width” in the column menu), and with Shift.'],
+  ['tooltipDelay', '`500`', 'Milliseconds the pointer rests on a cell before its tooltip shows (keyboard focus shows it at once).'],
+  ['extraRows', '`4`', 'Rows drawn above and below the visible ones, so a quick scroll shows no gap; more costs more per scroll.'],
+  ['pagerNeighbors, pagerNavigation, pagerInfo', '`1`, `true`, `true`', 'Page buttons on each side of the current page; the first, previous, next and last buttons; “Page 3 of 12”.'],
+  ['headerFilterPageSize, headerFilterRows', '`100`, `8`', 'Values the header filter loads per request; the height of its list in rows.'],
+  ['exportPageSize', '`1000`', 'Rows an export asks a server for per request; `exportCsv({ pageSize })` wins.'],
+  ['trueTexts, falseTexts', "`['true', '1', 'x', '✓', '✔']`, `['false', '0', '']`", 'Pasted texts read as yes and as no in a yes/no column, besides the `yes` and `no` texts; a column can give its own.'],
+  ['editKeys, clearKeys', "`['Enter', 'F2']`, `['Delete']`", 'Keys that open the active cell’s editor, and that empty it (`KeyboardEvent.key` values).'],
+  ['editOnKeyPress', '`true`', 'Typing a character on a cell opens its editor with it. A column can set its own.'],
+  ['startEditAction', "`'dblClick'`", 'A double-click, or one `click` on the active cell, opens its editor. A column can set its own.'],
 ];
+
+const EVENTS = [
+  ['onCellClick / onCellDblClick', '`{ field, row, rowIndex, rowType, groupKey?, element, event }`', 'yes', 'A cell was clicked or double-clicked; cancel: no selection, no group toggle, no editor.'],
+  ['onRowClick / onRowDblClick', '`{ row, rowIndex, rowType, groupKey?, element, event }`', 'yes', 'The same for the row, after its cell’s event.'],
+  ['onCellPrepared', '`{ field, row, rowIndex, value, isNew, element }`', '', 'A cell was drawn for a row: style it. Cells are reused while scrolling, so set and clear what you change. Costs nothing while nobody listens.'],
+  ['onRowPrepared', '`{ row, rowIndex, rowType, groupKey?, isSelected, element }`', '', 'A data or group row was drawn; the same rule.'],
+  ['onContentReady', '`{ total }`', '', 'Rows arrived and are laid out (after a load, a filter, a sort, a page, a resize).'],
+  ['onDataErrorOccurred', '`{ error, operation, row? }`', '', 'A load (`operation: \'load\'`) or the save of a row (`\'save\'`, with `row`) failed.'],
+  ['onEditingStart', '`{ field, row, rowIndex, isNew }`', 'yes', 'A cell editor is about to open.'],
+  ['onEditorPreparing', '`{ field, row, isNew, options }`', 'yes', 'The editor is about to be made: change its props in `options`.'],
+  ['onInitNewRow', '`{ data, values }`', 'yes', 'A new row is about to open: `data` is what it starts with, `values` what counts as entered; cancel opens no row.'],
+  ['onSaving / onSaved', '`{ changes }` / `{ changes, saved, failed }`', 'yes / —', 'Changes are about to be sent (leaving a row, the background queue, “Save changes”); the answer came.'],
+  ['onRowInserting / onRowInserted', '`{ row, data }` / `{ row, key }`', 'yes / —', 'Per new row: change `data` (what is sent) or keep it unsent; it was saved.'],
+  ['onRowUpdating / onRowUpdated', '`{ key, row, changes }` / `{ key, row, changes }`', 'yes / —', 'Per changed row: change `changes` or keep them unsent; they were saved.'],
+  ['onRowRemoving / onRowRemoved', '`{ key, row }`', 'yes / —', 'Per deleted row, when the deletion is sent (batch: on “Save changes”); it was deleted.'],
+  ['onEditCanceling / onEditCanceled', '`{ rows }`', 'yes / —', 'Unsaved changes are about to be dropped: Escape on a row, the “Cancel” action, `discardChanges()`.'],
+  ['onFocusedCellChanging / onFocusedCellChanged', '`{ rowIndex, field, previousRowIndex, previousField, row }`', 'yes / —', 'The active cell moves (keys, a click, code); -1 is the header, -2 the filter row.'],
+  ['onFocusedRowChanging / onFocusedRowChanged', '`{ rowIndex, previousRowIndex, row }` / `{ rowIndex, row, key }`', 'yes / —', 'The active row changes.'],
+  ['onKeyHandling', '`{ event, rowIndex, field }`', 'yes', 'A key went down in the rows, an editor, the filter row or a group chip, before the grid handles it; cancel and handle it yourself. the standard calls it `onKeyDown`, a DOM event name in JSX.'],
+  ['onOptionChanged', '`{ name, field?, value, previous }`', '', 'A setting was assigned: `grid.settings`, `columnSettings(field)` (with `field`), `toolbar` (`toolbar.visible`, `toolbar.items`), `columnOption`.'],
+  ['onSortChanging / onSortChanged', '`{ sort, previous, byUser }`', 'yes / —', 'The sort is about to change, by the user or from code.'],
+  ['onFilterChanging / onFilterChanged', '`{ filters, previous }` / `{ filters, filter }`', 'yes / —', 'The filter row and header filters are about to apply; cancel puts the ones before back in the cells.'],
+  ['onSearchTextChanging / onSearchTextChanged', '`{ text, previous }` / `{ text }`', 'yes / —', 'The search text is about to change; cancel keeps the one before in the box.'],
+  ['onPageChanging / onPageChanged', '`{ page, previous }`', 'yes / —', 'Another page is about to show.'],
+  ['onSelectionChanging / onSelectionChanged', '`{ selection, previous }` / `{ selection }`', 'yes / —', 'The selection is about to change, by the user or from code.'],
+  ['onLayoutChanging / onLayoutChange', '`{ layout, previous }` / `layout`', 'yes / —', 'The user resized, moved, hid, pinned, sorted or reset; cancel puts the layout before back.'],
+  ['onGroupingChanging / onGroupingChanged, onGroupDropping', 'see Grouping', 'yes', 'The grouping; a dropped header or chip.'],
+  ['onRowExpanding / onRowExpanded, onRowCollapsing / onRowCollapsed', '`{ key }`', 'yes / —', 'A group opens or closes.'],
+  ['onCopying / onPasting', '`{ text, html, rows }` / `{ text, rowIndex, field }`', 'yes', 'Ctrl+C, `copy()`; Ctrl+V, `paste()`: change the text, or stop it.'],
+  ['onExporting / onExported', '`{ format, options }` / `{ format, rows, text? }`', 'yes / —', 'An export is about to start (change its options); it finished.'],
+  ['onContextMenuPreparing', '`{ target, field, row?, rowIndex, items }`', 'yes', 'A header’s column menu (`header`) or a row’s menu (`row`: a right click or the context menu key; it opens only when you add items) is about to open: change `items`.'],
+  ['onToolbarPreparing', '`{ items }`', '', 'The toolbar is laid out: change the list of items it takes.'],
+];
+
 
 const COLUMN_FIELDS = [
   ['field, title', 'The value’s key (a dotted path reads a nested value) and the header text (`Bind<string>`).'],
   ['type', '`text`, `number`, `date`, `boolean`, `list`: alignment, format, sorting and the editor (`TextBox`, `NumberBox`, `DateBox`, `CheckBox`, `DropDown`).'],
-  ['width, minWidth, maxWidth, flex', 'Pixels; `flex` shares the free space until the user resizes.'],
+  ['width, minWidth, maxWidth, flex', 'Pixels (default: the `columnWidth` and `columnMinWidth` settings); `flex` shares the free space until the user resizes.'],
   ['sticky, hidden, align', 'Pinned to an edge; hidden at first; the alignment.'],
   ['value, format, compare', 'Read the value another way; show it another way; sort it another way (rows in memory).'],
   ['cell', '`(ctx) => component`: content of your own, made once per pooled cell; read `ctx.row` and `ctx.value` in getters.'],
@@ -118,6 +167,9 @@ const COLUMN_FIELDS = [
   ['setCellValue', '`(values, value, row) => void | Promise`: called when the user commits a value (editor, paste, Delete), before it is written. `values` starts as `{ [field]: value }`; add fields to write them too. A promise keeps the cell busy until it settles.'],
   ['editable, creatable, sortable, resizable, movable, hideable, pinnable, menu, filterRow, headerFilter, copyable, exportable, syncLookupFilterValues, searchable', 'Switch a feature for this column; wins over `settings`.'],
   ['resizeMode', 'How this column’s edge is dragged (`widget` or `nextColumn`); wins over `settings`.'],
+  ['headerCell', '`(ctx) => component | Node | string`: content of your own in the header in place of the title text, made once; `ctx.title`, `ctx.sort`, `ctx.column` in getters. The title stays the header’s accessible name.'],
+  ['editOnKeyPress, startEditAction', 'How the user opens this column’s editor; wins over `settings`.'],
+  ['trueTexts, falseTexts', 'A yes/no column: the pasted texts read as yes and as no; wins over `settings`.'],
   ['groupIndex', '`Bind<number | undefined>`: the column’s place among the grouped columns; the rows start grouped by it. A function is followed: a new value moves the column there, `undefined` ungroups it.'],
   ['autoExpandGroup', 'The column’s groups start open; wins over `autoExpandAll`.'],
   ['groupable, showWhenGrouped, allowCollapsing, groupCount, groupMenu, groupExpandMode', 'The grouping switches for this column; each wins over `settings`.'],
@@ -136,6 +188,10 @@ const LOOKUP_FIELDS = [
   ['sortBy', '`Bind<\'key\' | \'text\'>`: rows in memory sorted by the key (default) or by the text shown.'],
   ['editor, editorOptions', '`\'dropdown\'` (default), `\'combobox\'` or `\'lookup\'`, and props for it (a `Lookup`’s `columns`). A column’s own `editor` still wins and gets the lookup in its context.'],
   ['searchLimit', 'How many items whose text holds the search panel’s text the search turns into keys, at most. Default 100.'],
+  ['filterSearchLimit', 'The same for the header filter’s search box. Default 1000.'],
+  ['pageSize', 'Items the editor’s list loads per request while it scrolls (a data source). Default 50.'],
+  ['parallelRequests', '`\'byKey\'`: requests at the same time. Default 6.'],
+  ['pasteSearchLimit', 'Items a pasted text is looked for in. Default 50.'],
 ];
 
 const PROPERTIES = [
@@ -158,6 +214,11 @@ const PROPERTIES = [
   ['onSearchTextChanged', 'event', 'Subscribe with `grid.onSearchTextChanged((e) => …)`; the same as the prop.'],
   ['onSelectionChanged', 'event', 'Subscribe with `grid.onSelectionChanged((e) => …)`.'],
   ['onEditorPreparing', 'event', 'Subscribe with `grid.onEditorPreparing((e) => …)`; the same as the prop.'],
+  ['every event of the Events table', 'event', '`grid.onRowUpdating((e) => …)` returns a handle; `dispose()` stops listening.'],
+  ['status, loadError, failedBlocks', 'read-only, reactive', '`\'loading\' | \'ready\' | \'error\'`; the error of the last load; blocks that failed after the first answer.'],
+  ['editingCell', 'read-only, reactive', 'The cell whose editor is open: `{ rowIndex, field, row }`, or `null`.'],
+  ['saving, exporting', 'read-only, reactive', 'A row is being saved and the grid waits (`wait` mode); an export is running.'],
+  ['focusedRowIndex, focusedRowKey', 'read/write', 'The active row by index or key; assigning moves there (a key: when its row is loaded).'],
 ];
 
 const METHODS = [
@@ -181,6 +242,18 @@ const METHODS = [
   ['copy() / paste(text)', '`string` / `number`', 'What Ctrl+C and Ctrl+V do: copies the selected rows or the active cell (returns the text); pastes tab-separated text from the active cell (returns the cells written).'],
   ['exportRows(options?)', '`Promise<object[]>`', 'The rows of the filter in the sort order, by field, with the visible exportable columns: shown text or `raw` values; a server’s rows in parts through the data source.'],
   ['exportCsv(options?)', '`Promise<string>`', 'The same as a CSV file a spreadsheet opens: byte order mark, the locale’s separator, titles first, a line per group while grouped. Options: `values`, `selected`, `fileName`, `download`, `separator`, `headers`, `groups`, `bom`, `escapeFormulas`, `pageSize`, `onProgress`, `signal`.'],
+  ['getVisibleRows()', '`GridVisibleRow[]`', 'The rows drawn now: `{ rowIndex, rowType, row, key, groupKey?, element }`.'],
+  ['getRowElement(i) / getCellElement(i, field)', '`HTMLElement | undefined`', 'The element of a drawn row or cell.'],
+  ['getKeyByRowIndex(i) / getRowIndexByKey(key)', '`unknown` / `number`', 'A row’s key by its index, and the index of a loaded row by its key (-1 when it is not loaded).'],
+  ['byKey(key)', '`Promise<T | undefined>`', 'The row with this key: loaded, found before, or asked of the data source.'],
+  ['cellValue(i, field, value?)', '`unknown`', 'The value a cell shows; with `value`, writes it as the user would (checked, and saved as the save mode says).'],
+  ['navigateToRow(key)', '`Promise<boolean>`', 'Goes to the row with this key (its page in paged mode) and makes it the active row.'],
+  ['focusCell(i, field?) / editCell(i, field) / editRow(i) / closeEditCell()', '`boolean`', 'Moves the active cell as the arrows do; opens a cell’s editor, or the first one of a row; keeps the open editor’s value and closes it.'],
+  ['beginUpdate() / endUpdate()', '`void`', 'Changes from code in between lay the rows out once, at the last `endUpdate()`.'],
+  ['repaint()', '`void`', 'Draws the rows on the screen again, without loading (after what a template or `onRowPrepared` reads changed).'],
+  ['columnOption(field, name?, value?)', '`unknown`', 'Reads or writes a column’s `width`, `visible`, `sticky`, `visibleIndex`, `sortOrder`, `sortIndex`, `groupIndex` or a feature switch; without a name, all of them.'],
+  ['getCombinedFilter()', '`FilterExpression | null`', 'The whole filter of the rows: the source’s own, the filter row, the header filters and the search.'],
+  ['state() / state(value)', '`GridStateValue` / `void`', 'What the user set up — columns, sort, grouping, filters, search text, page, selected keys, active row — and putting it back.'],
 ];
 
 const KEYS = [
@@ -192,6 +265,8 @@ const KEYS = [
   ['Typing, Enter, F2, double-click', 'Edit the cell; typing starts with that character (a lookup cell opens its list and searches it).'],
   ['Space, Delete, Backspace', 'Toggle a check box column; empty the cell; edit from empty.'],
   ['Escape', 'In an editor: close it without the value (a new row goes). On a row: take its edits back.'],
+  ['Shift + F10, the context menu key (row)', 'The row’s menu, when `onContextMenuPreparing` gives it items.'],
+  ['Any key', 'The keys that edit and empty a cell are the `editKeys` and `clearKeys` settings; `onKeyHandling` takes any key before the grid does.'],
   ['Tab / Shift + Tab in an editor', 'The next / previous editable cell, row by row; at the end of a new row the next new row opens.'],
   ['Up / Down in an editor', 'Keep the value and go to the row above or below.'],
   ['Left / Right in the actions cell', 'Move between its buttons; Enter or Space presses one; Alt + Down opens the “more” menu.'],
@@ -465,6 +540,16 @@ import { data } from '@motifx-community/data';
           <Switches />
         </Example>
         <ApiTable head={['Setting', 'Default', 'What it does']} rows={SETTINGS} />
+      </Section>
+
+      <Section anchor="events" title="Events">
+        <p>
+          <Rich text="Every action of the user has an event, given as a prop or listened to with `grid.onX((e) => …)`; one that is about to happen (`…ing`) can be stopped with `e.cancel = true`, and most can change what happens (the values sent, the items of a menu, the text copied). Here amounts over 900 are drawn in bold, the rows get a menu of their own (right click, or Shift + F10), a change to “Cancelled” is not saved, and the list tells what happened. Methods do the same from code: `editCell`, `cellValue`, `navigateToRow`, `columnOption`, `state()` and the others in the API reference." />
+        </p>
+        <Example files={withOrders('Events.tsx')} stack>
+          <Events />
+        </Example>
+        <ApiTable head={['Event', 'Gets', 'Cancel', 'When']} rows={EVENTS} />
       </Section>
 
       <Section anchor="columns" title="Columns">

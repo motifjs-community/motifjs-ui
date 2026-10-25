@@ -1,8 +1,6 @@
 import type { ComponentBase } from '@motifx/core';
 import { Tooltip } from '../../tooltip/Tooltip';
 
-const HOVER_DELAY = 500;
-
 const overflows = (el: Element) => el.scrollWidth > el.clientWidth + 1;
 
 /** The message of a cell with an error (`data-error`), else `''`. */
@@ -24,7 +22,11 @@ export class CellTip {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private current: Element | null = null;
 
-  constructor(owner: ComponentBase) {
+  constructor(
+    owner: ComponentBase,
+    /** Milliseconds the pointer rests before the tip shows. */
+    private readonly delay: () => number,
+  ) {
     this.tip = new Tooltip({ showOn: 'manual', placement: 'bottom-start' });
     this.tip.element.classList.add('mx-data-grid__tip');
     owner.controls.add(this.tip);
@@ -37,7 +39,7 @@ export class CellTip {
     this.hide();
     if (!target || target.closest('.mx-data-grid__editor') || !this.worth(target)) return;
     this.current = target;
-    this.timer = setTimeout(() => this.show(target), HOVER_DELAY);
+    this.timer = setTimeout(() => this.show(target), Math.max(0, this.delay()));
   }
 
   /** A cell or a header got keyboard focus. */

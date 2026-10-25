@@ -104,8 +104,7 @@ export class GridToolbar<T> {
 
   /** The items of the bar now, in order. Reactive. */
   private entries(): Entry[] {
-    const given = this.options.get('items');
-    if (!given) return ORDER.filter((name) => this.has(name)).map((name) => ({ key: name, name, item: PLAIN }));
+    const given = this.host.prepare(this.options.get('items') ?? ORDER.filter((name) => this.has(name)));
     const out: Entry[] = [];
     for (const x of given) {
       const item = typeof x === 'string' ? (isOwnName(x) ? PLAIN : { name: x }) : x;

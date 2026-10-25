@@ -152,4 +152,36 @@ describe('KeyedItems', () => {
     items.clear();
     expect(items.get(2)).toBeUndefined();
   });
+
+  it('runs parallelRequests one-key requests at the same time (default 6)', async () => {
+    const service = new Service();
+    service.filters = false;
+    let running = 0;
+    let most = 0;
+    const real = (service as any).findRow.bind(service);
+    (service as any).findRow = async (key: number) => {
+      running++;
+      most = Math.max(most, running);
+      await new Promise((r) => setTimeout(r, 1));
+      running--;
+      return real(key);
+    };
+    const items = KeyedItems.of<Customer>(source(service));
+    await items.request([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(most).toBe(6);
+    most = 0;
+    items.parallelRequests = 2;
+    await items.request([9, 10, 11, 12]);
+    expect(most).toBe(2);
+  });
+
+  it('looks for a pasted text among pasteSearchLimit items (default 50)', async () => {
+    const service = new Service();
+    const items = KeyedItems.of<Customer>(source(service), 'id');
+    await items.findByText('Customer 7', { textOf, searchFields: ['name'] });
+    expect(service.loads.at(-1)?.take).toBe(50);
+    items.pasteSearchLimit = 5;
+    await items.findByText('Customer 8', { textOf, searchFields: ['name'] });
+    expect(service.loads.at(-1)?.take).toBe(5);
+  });
 });

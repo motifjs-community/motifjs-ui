@@ -34,4 +34,12 @@ export interface GridLookup<T = any> {
   editorOptions?: Record<string, unknown>;
   /** The most items whose text holds the search panel's text that the search turns into keys. Default 100. */
   searchLimit?: number;
+  /** Items the editor's list loads per request while it scrolls (a data source). Default 50. */
+  pageSize?: number;
+  /** The most items whose text holds the header filter's search text that it turns into keys. Default 1000. */
+  filterSearchLimit?: number;
+  /** `'byKey'`: requests at the same time. Default 6. */
+  parallelRequests?: number;
+  /** Items a pasted text is looked for in. Default 50. */
+  pasteSearchLimit?: number;
 }

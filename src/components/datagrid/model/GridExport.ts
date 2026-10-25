@@ -5,7 +5,6 @@ import type { ExportTable } from './export-table';
 import type { GridModel } from './GridModel';
 import { listSeparator } from './list-separator';
 
-const DEFAULT_PAGE_SIZE = 1000;
 const FORMULA_START = /^[=+\-@\t\r]/;
 
 /**
@@ -111,7 +110,7 @@ export class GridExport<T> {
       if (keys?.length !== 1) return this.loadedSelected();
       filter = state.all ? (state.except.length ? data.not(data.where(keys[0], 'in', state.except)) : null) : data.where(keys[0], 'in', state.keys);
     }
-    const size = Math.max(1, Math.floor(options.pageSize ?? DEFAULT_PAGE_SIZE));
+    const size = Math.max(1, Math.floor(options.pageSize ?? this.model.settings.get('exportPageSize')));
     const out: T[] = [];
     let total = Number.POSITIVE_INFINITY;
     for (let skip = 0; skip < total; skip += size) {

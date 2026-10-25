@@ -10,9 +10,6 @@ import { sameValue } from './same-value';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-const TRUE_TEXTS = new Set(['true', '1', 'x', '✓', '✔']);
-const FALSE_TEXTS = new Set(['false', '0', '']);
-
 /** Cell values as text and back, by column type, with `Intl` in one locale; also the record counts. */
 export class CellFormatter {
   readonly collator: Intl.Collator;
@@ -23,6 +20,8 @@ export class CellFormatter {
     readonly locale: string,
     private readonly yesNo: () => [string, string],
     private readonly messages: () => { number: string; date: string; other: string } = () => ({ number: '', date: '', other: '' }),
+    /** Texts read as yes and as no, besides the yes / no words. */
+    private readonly boolTexts: () => [readonly string[], readonly string[]] = () => [['true', '1', 'x', '✓', '✔'], ['false', '0', '']],
   ) {
     this.number = new Intl.NumberFormat(locale);
     this.date = new Intl.DateTimeFormat(locale, { dateStyle: 'short' });
@@ -86,8 +85,12 @@ export class CellFormatter {
       case 'boolean': {
         const lower = plain.toLocaleLowerCase(this.locale);
         const [yes, no] = this.yesNo().map((t) => t.toLocaleLowerCase(this.locale));
-        if (lower === yes || TRUE_TEXTS.has(lower)) return { ok: true, value: true };
-        if (lower === no || FALSE_TEXTS.has(lower)) return { ok: true, value: false };
+        const [ownTrue, ownFalse] = this.boolTexts();
+        const trueTexts = col.trueTexts ?? ownTrue;
+        const falseTexts = col.falseTexts ?? ownFalse;
+        const has = (list: readonly string[]) => list.some((t) => t.toLocaleLowerCase(this.locale) === lower);
+        if (lower === yes || has(trueTexts)) return { ok: true, value: true };
+        if (lower === no || has(falseTexts)) return { ok: true, value: false };
         return { ok: false, message: this.messages().other };
       }
       case 'list': {

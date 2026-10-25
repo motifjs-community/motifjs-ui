@@ -1,4 +1,4 @@
-import { reactive } from '@motifx/core';
+import { reactive, untracked } from '@motifx/core';
 
 /**
  * Named values that are each a plain value or a function that is followed (a function without
@@ -8,6 +8,8 @@ import { reactive } from '@motifx/core';
  */
 export class Switches<T extends object> {
   readonly view: T;
+  /** Called after a value is assigned through `view`, with the value read before and after. */
+  changed: ((key: keyof T & string, value: unknown, previous: unknown) => void) | null = null;
   private readonly raw: Record<string, unknown>;
 
   constructor(
@@ -23,7 +25,11 @@ export class Switches<T extends object> {
       get: (_target, key) => (typeof key === 'string' && names.has(key) ? this.get(key as keyof T & string) : undefined),
       set: (_target, key, value) => {
         if (typeof key !== 'string' || !names.has(key)) return false;
+        const name = key as keyof T & string;
+        const changed = this.changed;
+        const previous = changed ? untracked(() => this.get(name)) : undefined;
         this.raw[key] = value;
+        if (changed) untracked(() => changed(name, this.get(name), previous));
         return true;
       },
       has: (_target, key) => typeof key === 'string' && names.has(key),

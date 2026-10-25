@@ -1,4 +1,4 @@
-import { ComponentBase, createSignal, effect } from '@motifx/core';
+import { ComponentBase, createSignal, effect, untracked } from '@motifx/core';
 import { chevronEnd } from '../../../core/glyphs';
 import type { GroupCellContext } from '../group-cell-context';
 import type { GridModel } from '../model/GridModel';
@@ -72,6 +72,11 @@ export class GroupRow<T> {
     this.element.style.transform = `translateY(${top}px)`;
   }
 
+  /** Draws the row again as it is. */
+  redraw() {
+    this.shown.value = this.shown.peek() + 1;
+  }
+
   /** Back to the pool, hidden. */
   release() {
     if (this.index !== -1 || this.node !== null) {
@@ -114,6 +119,8 @@ export class GroupRow<T> {
     element.toggleAttribute('data-expanded', open);
     element.toggleAttribute('data-active', model.state.activeRow === index);
     element.style.setProperty('--_level', String(node.level));
+    const ev = model.events;
+    if (ev.listened(ev.rowPrepared)) untracked(() => ev.rowPrepared.fire({ row: undefined, rowIndex: index, rowType: 'group', groupKey: [...node.path], isSelected: false, element }));
   }
 
   private drawText() {

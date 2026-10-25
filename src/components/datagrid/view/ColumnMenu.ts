@@ -50,11 +50,16 @@ export class ColumnMenu<T> {
     return this.popup.isOpen;
   }
 
-  /** Opens the menu of `field` under `anchor`; focus goes back to `returnTo` when it closes. */
-  open(field: string, anchor: HTMLElement, returnTo: HTMLElement) {
+  /**
+   * Opens the menu of `field` under `anchor`; focus goes back to `returnTo` when it closes. `prepare`
+   * may change the items, or return `null` to open nothing.
+   */
+  open(field: string, anchor: HTMLElement, returnTo: HTMLElement, prepare: (items: MenuItem[]) => MenuItem[] | null = (items) => items) {
+    const items = prepare(this.items(field));
+    if (!items) return;
     this.anchor = returnTo;
     this.list.element.setAttribute('aria-label', this.grid.text('gridColumnMenu', { title: this.grid.columns.title(field) }));
-    this.list.setItems(this.items(field));
+    this.list.setItems(items);
     this.popup.open(anchor, { toggle: anchor, returnFocus: returnTo });
     this.list.focusItem('first');
   }

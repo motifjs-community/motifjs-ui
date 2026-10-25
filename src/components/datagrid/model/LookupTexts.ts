@@ -37,6 +37,8 @@ export class LookupTexts<T> {
     const items = KeyedItems.of<any>(source, lookup.valueField);
     if (lookup.resolve) items.resolve = lookup.resolve;
     if (lookup.batchSize) items.batchSize = lookup.batchSize;
+    if (lookup.parallelRequests) items.parallelRequests = lookup.parallelRequests;
+    if (lookup.pasteSearchLimit) items.pasteSearchLimit = lookup.pasteSearchLimit;
     if (!this.watched.has(items)) this.watched.set(items, items.onResolved((keys) => this.changedEmitter.fire({ items, keys })));
     return items;
   }

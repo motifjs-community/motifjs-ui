@@ -1,6 +1,7 @@
 import { Component, ComponentBase, effect } from '@motifx/core';
 import { chevronDown, chevronUp, filterMark, moreMark } from '../../../core/glyphs';
 import type { GridColumn } from '../grid-column';
+import type { HeaderCellContext } from '../header-cell-context';
 import { ACTIONS_FIELD, SELECT_FIELD } from '../model/ColumnModel';
 import { HEADER_ROW, type GridModel } from '../model/GridModel';
 import { createCheck, setCheck } from './check-mark';
@@ -42,6 +43,15 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     this.controls.add(...cells, this.indicator);
   }
 
+  // A column's own header content replaces the title once the headers are built.
+  override onBuilt() {
+    for (const field of this.grid.columns.state.order) {
+      const col = this.grid.columns.get(field);
+      const span = col.headerCell ? this.cellElement(field)?.querySelector<HTMLElement>('.mx-data-grid__title') : null;
+      if (span) this.ownTitle(col, span);
+    }
+  }
+
   /** Puts the headers in display order and numbers the visible ones. */
   arrange(visible: string[]) {
     if (!this.indicator) return;
@@ -60,6 +70,27 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       el.removeAttribute('aria-colindex');
     }
     placeInOrder(this.element, [...desired, this.indicator.element as Element]);
+  }
+
+  /** A column's own `headerCell` content in place of the title text. */
+  private ownTitle(col: GridColumn<T>, span: HTMLElement) {
+    const { grid } = this;
+    const ctx: HeaderCellContext<T> = {
+      column: col,
+      get title() {
+        return grid.columns.title(col.field);
+      },
+      get sort() {
+        return grid.sortOf(col.field)?.dir ?? null;
+      },
+    };
+    const content = col.headerCell!(ctx);
+    span.textContent = '';
+    if (content instanceof ComponentBase) {
+      this.controls.add(content);
+      span.append(content.element as Node);
+    } else if (content instanceof Node) span.append(content);
+    else if (content !== undefined && content !== null) span.append(String(content));
   }
 
   cellElement(field: string): HTMLElement | undefined {
@@ -94,6 +125,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
         data-sort={() => sort()?.dir ?? null}
         data-sortable={() => (cols.can(field, 'sortable') ? '' : null)}
         aria-sort={ariaSort}
+        aria-label={() => (col.headerCell ? title() : null)}
         onpointerdown={(e: PointerEvent) => this.pressHeader(col, e)}
         onclick={(e: MouseEvent) => this.clickHeader(col, e)}
       >

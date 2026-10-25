@@ -7,7 +7,6 @@ import { LookupValues } from './LookupValues';
 import type { ValueLoader } from './value-loader';
 import { ValueListAdapter } from './ValueListAdapter';
 
-const PAGE = 100;
 
 /** A value as a map key: equal dates are equal, `1` and `'1'` are not. */
 const bucketOf = (v: unknown) => (v instanceof Date ? `d${v.getTime()}` : `${typeof v}:${String(v)}`);
@@ -47,7 +46,7 @@ export class FilterValues<T> {
     if (col.lookup) return this.lookups.source(field, 'blank');
     const textOf = (value: unknown) => (isBlank(value) ? this.model.text('gridEmptyOption') : this.model.formatter.text(col, {} as T, value));
     const adapter = new ValueListAdapter(this.loader(field), textOf);
-    return new data.DataSource<GridFilterValue, unknown>({ adapter, loadMode: 'blocks', pageSize: PAGE, searchFields: ['text'] });
+    return new data.DataSource<GridFilterValue, unknown>({ adapter, loadMode: 'blocks', pageSize: Math.max(1, Math.floor(this.model.settings.get('headerFilterPageSize'))), searchFields: ['text'] });
   }
 
   private loader(field: string): ValueLoader {

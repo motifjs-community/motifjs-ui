@@ -4,6 +4,7 @@ import type { ColumnResizeMode } from './column-resize-mode';
 import type { ColumnType } from './column-type';
 import type { EditorContext } from './editor-context';
 import type { GroupCellContext } from './group-cell-context';
+import type { HeaderCellContext } from './header-cell-context';
 import type { GridFilterOperator } from './grid-filter-operator';
 import type { GridLookup } from './grid-lookup';
 import type { ListOption } from './list-option';
@@ -22,11 +23,13 @@ export interface GridColumn<T = any> {
   field: string;
   /** Header text. */
   title: Bind<string>;
+  /** Content of your own in the header cell instead of the title text, made once; read `ctx` in getters. The title stays the cell's accessible name. */
+  headerCell?: (ctx: HeaderCellContext<T>) => unknown;
   /** Value type; decides alignment, formatting, comparison and the editor. Default `'text'`. */
   type?: ColumnType;
-  /** Width in pixels. Default 140. */
+  /** Width in pixels. Default: the grid's `columnWidth` setting (140). */
   width?: number;
-  /** Smallest width the user can resize to. Default 48. */
+  /** Smallest width the user can resize to. Default: the grid's `columnMinWidth` setting (48). */
   minWidth?: number;
   /** Largest width the user can resize to. */
   maxWidth?: number;
@@ -52,6 +55,14 @@ export interface GridColumn<T = any> {
   resizable?: Bind<boolean>;
   /** How this column's edge is dragged; overrides the grid's `resizeMode`. */
   resizeMode?: Bind<ColumnResizeMode>;
+  /** Typing a character on a cell opens its editor. Overrides the grid's `editOnKeyPress`. */
+  editOnKeyPress?: Bind<boolean>;
+  /** A double-click or one click opens a cell's editor. Overrides the grid's `startEditAction`. */
+  startEditAction?: Bind<'click' | 'dblClick'>;
+  /** A yes/no column: pasted texts read as yes. Overrides the grid's `trueTexts`. */
+  trueTexts?: readonly string[];
+  /** A yes/no column: pasted texts read as no. Overrides the grid's `falseTexts`. */
+  falseTexts?: readonly string[];
   movable?: Bind<boolean>;
   hideable?: Bind<boolean>;
   pinnable?: Bind<boolean>;

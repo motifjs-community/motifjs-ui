@@ -23,6 +23,10 @@ export class RowSelection {
   private anchorIndex = -1;
   private base: Snapshot | null = null;
   private readonly changedEmitter = new Emitter<GridSelection>();
+  /** Asked before a change shows (while `wanted()`): `false` puts the selection before back. */
+  guard: { wanted: () => boolean; allow: (next: GridSelection, previous: GridSelection) => boolean } | null = null;
+  /** The selection before the change being made, while the guard asks. */
+  private before: (Snapshot & { filter: data.FilterExpression | null; anchor: number; base: Snapshot | null }) | null = null;
 
   readonly onChanged: MotifEvent<GridSelection> = this.changedEmitter.event;
 
@@ -61,9 +65,9 @@ export class RowSelection {
 
   /** Selects a row or takes it out. Returns whether anything changed. */
   set(id: string, key: unknown, on: boolean): boolean {
+    this.remember();
     if (!this.put(id, key, on)) return false;
-    this.changed();
-    return true;
+    return this.changed();
   }
 
   toggle(id: string, key: unknown) {
@@ -73,6 +77,7 @@ export class RowSelection {
   /** Only this row; the anchor moves to it. */
   only(id: string, key: unknown, index: number) {
     const same = !this.state.all && this.keys.size === 1 && this.keys.has(id);
+    this.remember();
     this.setAnchor(index);
     if (same) return;
     this.keys = new Map([[id, key]]);
@@ -89,6 +94,7 @@ export class RowSelection {
 
   /** The selection from before the anchor, plus `rows` (the range from the anchor). */
   extend(rows: readonly [string, unknown][]) {
+    this.remember();
     this.base ??= { all: this.state.all, keys: new Map(this.keys), except: new Map(this.except) };
     this.keys = new Map(this.base.keys);
     this.except = new Map(this.base.except);
@@ -99,6 +105,7 @@ export class RowSelection {
 
   /** Every row of `filter`. */
   selectAll(filter: data.FilterExpression | null) {
+    this.remember();
     this.keys = new Map();
     this.except = new Map();
     this.filter = filter;
@@ -109,6 +116,7 @@ export class RowSelection {
 
   clear() {
     if (!this.state.all && !this.keys.size) return;
+    this.remember();
     this.keys = new Map();
     this.except = new Map();
     this.state.all = false;
@@ -120,6 +128,7 @@ export class RowSelection {
   replace(rows: readonly [string, unknown][]) {
     const next = new Map(rows);
     if (!this.state.all && next.size === this.keys.size && [...next.keys()].every((id) => this.keys.has(id))) return;
+    this.remember();
     this.keys = next;
     this.except = new Map();
     this.state.all = false;
@@ -166,8 +175,35 @@ export class RowSelection {
     return true;
   }
 
-  private changed() {
+  /** Keeps the selection as it is now, so a change the guard refuses can be taken back. */
+  private remember() {
+    if (!this.guard?.wanted()) return;
+    this.before = { all: this.state.all, keys: new Map(this.keys), except: new Map(this.except), filter: this.filter, anchor: this.anchorIndex, base: this.base };
+  }
+
+  /** The change is made: the guard is asked first, then it shows and is told. Returns whether it stays. */
+  private changed(): boolean {
+    const before = this.before;
+    this.before = null;
+    if (this.guard && before) {
+      const previous: GridSelection = {
+        all: before.all,
+        keys: before.all ? [] : [...before.keys.values()],
+        except: before.all ? [...before.except.values()] : [],
+        filter: before.all ? before.filter : null,
+      };
+      if (!this.guard.allow(untracked(() => this.snapshot()), previous)) {
+        this.keys = before.keys;
+        this.except = before.except;
+        this.filter = before.filter;
+        this.anchorIndex = before.anchor;
+        this.base = before.base;
+        untracked(() => (this.state.all = before.all));
+        return false;
+      }
+    }
     untracked(() => this.state.version++);
     this.changedEmitter.fire(this.snapshot());
+    return true;
   }
 }

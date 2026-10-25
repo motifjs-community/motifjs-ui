@@ -5,9 +5,7 @@ import type { GridModel } from './GridModel';
 import type { ValueLoader } from './value-loader';
 import { ValueListAdapter } from './ValueListAdapter';
 
-const PAGE = 100;
 /** Items of the lookup source a typed search may match, whose keys are then looked for among the rows. */
-const SEARCH_LIMIT = 1000;
 
 type Entry = { value: unknown; text: string; count?: number };
 
@@ -37,7 +35,7 @@ export class LookupValues<T> {
       return model.lookups.textOfKey(col, value);
     };
     const adapter = new ValueListAdapter(this.loader(field, first), textOf);
-    return new data.DataSource<GridFilterValue, unknown>({ adapter, loadMode: 'blocks', pageSize: PAGE, searchFields: ['text'] });
+    return new data.DataSource<GridFilterValue, unknown>({ adapter, loadMode: 'blocks', pageSize: Math.max(1, Math.floor(model.settings.get('headerFilterPageSize'))), searchFields: ['text'] });
   }
 
   private loader(field: string, first: 'all' | 'blank'): ValueLoader {
@@ -100,7 +98,7 @@ export class LookupValues<T> {
     if (!source.adapter.capabilities.group || !items) return null;
     if (search) {
       // The text is searched in the lookup source; its keys are then looked for among the rows.
-      const { items: matches } = await items.search(search, lookups.search(col), 0, SEARCH_LIMIT);
+      const { items: matches } = await items.search(search, lookups.search(col), 0, Math.max(1, col.lookup?.filterSearchLimit ?? 1000));
       if (!matches.length) return { values: [], total: 0 };
       filter = data.and(filter, data.where(field, 'in', matches.map((m) => items.valueOf(m))));
     }

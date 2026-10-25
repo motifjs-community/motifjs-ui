@@ -1,4 +1,4 @@
-import { reactive, read, untracked } from '@motifx/core';
+import { reactive, read, untracked, type IDisposable } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { fillTemplate } from '../../../core/fill-template';
 import { pageLocale } from '../../../core/page-locale';
@@ -23,6 +23,7 @@ import { DEFAULT_SETTINGS } from './default-settings';
 import { FilterModel } from './FilterModel';
 import { FilterValues } from './FilterValues';
 import { GridData } from './GridData';
+import { GridEvents } from './GridEvents';
 import { GridGroups } from './GridGroups';
 import type { GroupNode } from './group-node';
 import type { LookupCell } from './lookup-cell';
@@ -65,6 +66,8 @@ const BASE_FILTERS = new WeakMap<object, data.FilterExpression | null>();
 export class GridModel<T> {
   readonly columns: ColumnModel<T>;
   readonly settings: Switches<GridSettings>;
+  /** Every event of the grid. */
+  readonly events = new GridEvents<T>();
   readonly state: GridState = reactive({
     sort: [],
     page: 0,
@@ -130,13 +133,25 @@ export class GridModel<T> {
   private readonly settling = new Map<string, Set<Promise<unknown>>>();
   /** Cells waiting for their `setCellValue`, by row id. */
   private readonly busyCells = new Map<string, Set<string>>();
+  /** The filters the rows have now, to put back when `onFilterChanging` cancels new ones. */
+  private appliedFilters: GridFilters = {};
+  /** The layout before the user's last change, to put back when `onLayoutChanging` cancels one. */
+  private lastLayout: GridLayout | null = null;
+  /** What a new row starts with while it is being made (`onInitNewRow` may change it). */
+  private initialRow: Partial<T> | null = null;
+  /** Listeners on the data and its tracker, made again with them. */
+  private dataSubscriptions: IDisposable[] = [];
 
   constructor(private readonly props: DataGridProps<T>) {
     this.settings = new Switches<GridSettings>(Object.keys(DEFAULT_SETTINGS) as (keyof GridSettings)[], DEFAULT_SETTINGS, props.settings ?? {});
-    this.store = props.layoutKey ? new LayoutStore(props.layoutKey) : null;
+    this.settings.changed = (name, value, previous) => this.events.tell(this.events.optionChanged, () => ({ name, value, previous }));
+    this.store = props.layoutKey ? new LayoutStore(props.layoutKey, props.layoutStorage) : null;
     const stored = this.settings.get('saveLayout') ? this.store?.read() : null;
     const layout = stored ?? props.layout;
     this.columns = new ColumnModel(props.columns, layout, this.settings);
+    for (const [field, switches] of this.columns.features) {
+      switches.changed = (name, value, previous) => this.events.tell(this.events.optionChanged, () => ({ name, field, value, previous }));
+    }
     this.groups = new GridGroups<T>(this.columns, this.settings);
     this.groups.set(layout?.group ?? this.columnGroups());
     this.columns.hiddenByGroup = (field) => this.groups.isGrouped(field) && !this.columns.can(field, 'showWhenGrouped');
@@ -147,6 +162,11 @@ export class GridModel<T> {
     this.filters = new FilterModel<T>(this.columns);
     const filters = stored ? this.reviveDates(stored.filters) : props.filters;
     if (filters) this.filters.replace(filters);
+    this.appliedFilters = this.filters.toFilters();
+    this.selection.guard = {
+      wanted: () => this.events.listened(this.events.selectionChanging),
+      allow: (next, previous) => this.events.ask(this.events.selectionChanging, () => ({ selection: next, previous, cancel: false })),
+    };
     this.values = new FilterValues<T>(this);
     this.lookups = new LookupTexts<T>(() => this.formatter.locale, { missing: () => this.text('gridLookupMissing') });
     this.search = new GridSearch<T>(this);
@@ -154,6 +174,7 @@ export class GridModel<T> {
     if (searchText) this.search.start(searchText);
     this.connect();
     this.state.activeField = this.columns.visibleData()[0] ?? '';
+    this.lastLayout = this.layout;
   }
 
   // Data.
@@ -163,6 +184,7 @@ export class GridModel<T> {
     const props = this.props;
     const given = read(props.dataSource) ?? null;
     untracked(() => {
+      for (const s of this.dataSubscriptions.splice(0)) s.dispose();
       this.data?.dispose();
       clearTimeout(this.filterTimer);
       this.selection.clear();
@@ -196,14 +218,58 @@ export class GridModel<T> {
         expanded: (node) => this.groups.isExpanded(node),
         locale: () => this.formatter.locale,
         saveMode: read(props.saveMode) ?? 'wait',
-        createRow: props.newRow?.create,
+        createRow: () => this.initialRow ?? props.newRow?.create?.() ?? {},
         validateRow: (row, context) => this.checkRow(row, context),
         state: st,
         edited: (change) => this.edited(change),
       });
       st.page = this.data.sourcePage;
       st.connection++;
+      this.listenToData();
     });
+  }
+
+  /** The data's events become the grid's: errors, and each row of a save before and after it is sent. */
+  private listenToData() {
+    const { events } = this;
+    const { source, tracker } = this.data;
+    this.dataSubscriptions.push(
+      source.onChanged((e) => {
+        if (e.reason === 'failed' && source.error) events.tell(events.dataErrorOccurred, () => ({ error: source.error!, operation: 'load' as const }));
+      }),
+      tracker.onSaving((e) => {
+        if (!events.ask(events.saving, () => ({ changes: e.changes, cancel: false }))) {
+          e.cancel = true;
+          return;
+        }
+        e.changes.forEach((change, i) => {
+          const row = e.rows[i];
+          const go =
+            change.type === 'insert'
+              ? events.ask(events.rowInserting, () => ({ row, data: change.data, cancel: false }))
+              : change.type === 'update'
+                ? events.ask(events.rowUpdating, () => ({ key: change.key, row: (change.original ?? row) as T, changes: change.data, cancel: false }))
+                : events.ask(events.rowRemoving, () => ({ key: change.key, row, cancel: false }));
+          if (!go) e.skip(row);
+        });
+      }),
+      tracker.onSaved((e) => {
+        let saved = 0;
+        e.outcomes.forEach((outcome, i) => {
+          const row = e.rows[i];
+          const change = e.changes[i];
+          if (!outcome.ok) {
+            events.tell(events.dataErrorOccurred, () => ({ error: outcome.error, operation: 'save' as const, row }));
+            return;
+          }
+          saved++;
+          if (change.type === 'insert') events.tell(events.rowInserted, () => ({ row, key: outcome.key }));
+          else if (change.type === 'update') events.tell(events.rowUpdated, () => ({ key: change.key, row, changes: change.data }));
+          else events.tell(events.rowRemoved, () => ({ key: change.key, row }));
+        });
+        events.tell(events.saved, () => ({ changes: e.changes, saved, failed: e.outcomes.length - saved }));
+      }),
+    );
   }
 
   /** The grid holds the rows itself (`rows`), not a given data source. */
@@ -248,6 +314,7 @@ export class GridModel<T> {
         locale,
         () => [this.text('yes'), this.text('no')],
         () => ({ number: this.text('gridInvalidNumber'), date: this.text('invalidDate'), other: this.text('invalid') }),
+        () => [this.settings.get('trueTexts'), this.settings.get('falseTexts')],
       );
     return this.formatterCache;
   }
@@ -422,19 +489,37 @@ export class GridModel<T> {
   }
 
   /** Goes to a page; the active row moves to its first row unless the caller places it (`moveActive` false). */
-  setPage(page: number, moveActive = true) {
+  setPage(page: number, moveActive = true): boolean {
     const p = Math.max(0, Math.min(this.pageCount() - 1, Math.floor(page)));
-    if (p === this.state.page) return;
+    const previous = this.state.page;
+    if (p === previous) return false;
+    const { events } = this;
+    if (!events.ask(events.pageChanging, () => ({ page: p, previous, cancel: false }))) return false;
     this.state.page = p;
     this.data.setPage(p);
     if (moveActive && this.state.activeRow >= 0) this.state.activeRow = this.firstRow();
+    events.tell(events.pageChanged, () => ({ page: p, previous }));
+    return true;
   }
 
   // The new-row area.
 
   /** Opens a new row at position `k` of the new-row area; rows after it move down, the active row with them. `values` count as entered. Returns its grid index. */
   insertAdded(k: number, values?: Partial<T>): number {
-    const row = this.data.tracker.add(values);
+    const e = { data: { ...(this.props.newRow?.create?.() ?? {}) } as Partial<T>, values: { ...(values ?? {}) } as Partial<T>, cancel: false };
+    const { events } = this;
+    if (events.listened(events.initNewRow)) {
+      events.initNewRow.fire(e);
+      if (e.cancel) return -1;
+    }
+    values = e.values;
+    this.initialRow = e.data;
+    let row: T;
+    try {
+      row = this.data.tracker.add(values);
+    } finally {
+      this.initialRow = null;
+    }
     const rowId = this.rowIdOf(row);
     for (const [field, value] of Object.entries(values ?? {})) {
       const col = this.columns.defs.get(field);
@@ -782,6 +867,16 @@ export class GridModel<T> {
 
   private applyFilter(own: data.FilterExpression | null, key: string) {
     this.filterTimer = undefined;
+    const { events } = this;
+    const filters = this.filters.toFilters();
+    // The search changes the filter too; it has events of its own.
+    const changed = JSON.stringify(filters) !== JSON.stringify(this.appliedFilters);
+    if (changed && !events.ask(events.filterChanging, () => ({ filters, previous: this.appliedFilters, cancel: false }))) {
+      // Back to the filters the rows have: the cells show them again, nothing loads.
+      this.filters.replace(this.appliedFilters);
+      return;
+    }
+    this.appliedFilters = filters;
     this.onBeforeQueryChange?.();
     this.appliedFilter = key;
     this.state.page = 0;
@@ -790,6 +885,7 @@ export class GridModel<T> {
     this.data.setFilter(data.and(this.baseFilter, own));
     this.onQueryChange?.();
     this.keepLayout();
+    if (changed) events.tell(events.filterChanged, () => ({ filters, filter: this.data.source.filter }));
   }
 
   // Sort, layout.
@@ -817,8 +913,7 @@ export class GridModel<T> {
     } else {
       sort = nextDir ? [{ field, dir: nextDir }] : [];
     }
-    this.setSort(sort, true);
-    this.announceSort(field, nextDir);
+    if (this.setSort(sort, true)) this.announceSort(field, nextDir);
   }
 
   announceSort(field: string, dir: 'asc' | 'desc' | null) {
@@ -826,18 +921,23 @@ export class GridModel<T> {
     this.announce(dir ? this.text(dir === 'asc' ? 'gridSortedAscending' : 'gridSortedDescending', { title }) : this.text('gridSortCleared'));
   }
 
-  /** Replaces the sort order. `byUser` reports a layout change. */
-  setSort(sort: readonly data.SortItem[], byUser = false) {
+  /** Replaces the sort order. `byUser` reports a layout change. Returns whether it changed (`onSortChanging` may keep it). */
+  setSort(sort: readonly data.SortItem[], byUser = false): boolean {
     const next = sort.filter((s) => this.columns.defs.has(s.field) && !this.groups.isGrouped(s.field)).map((s) => ({ ...s }));
-    if (this.sameSort(next, this.state.sort)) return;
+    if (this.sameSort(next, this.state.sort)) return false;
+    const { events } = this;
+    const previous = this.state.sort.map((s) => ({ ...s }));
+    if (!events.ask(events.sortChanging, () => ({ sort: next, previous, byUser, cancel: false }))) return false;
     this.onBeforeQueryChange?.();
     this.state.sort = next;
     this.state.page = 0;
     this.generation++;
     this.data.setSort(this.sourceSort(next));
     this.onQueryChange?.();
+    events.tell(events.sortChanged, () => ({ sort: next, previous, byUser }));
     if (byUser) this.layoutChanged();
     else this.keepLayout();
+    return true;
   }
 
   /** Sort position (1-based) and direction of a column, for its header. */
@@ -1036,13 +1136,25 @@ export class GridModel<T> {
     if (place >= 0 && this.viewOfData(place) !== i) st.activeRow = this.viewOfData(place);
   }
 
+  /** The user changed the layout: told before (`onLayoutChanging` may put the one before back) and after. */
   layoutChanged() {
+    const { events } = this;
+    const previous = this.lastLayout;
+    if (previous && events.listened(events.layoutChanging)) {
+      const e = { layout: this.layout, previous, cancel: false };
+      events.layoutChanging.fire(e);
+      if (e.cancel) {
+        this.layout = previous;
+        return;
+      }
+    }
     this.keepLayout();
     this.onLayoutChange?.(this.layout);
   }
 
   /** With `layoutKey` (and `saveLayout` on): the layout and the filters go into the browser's storage. */
   keepLayout() {
+    this.lastLayout = this.layout;
     const store = this.store;
     if (store) untracked(() => this.settings.get('saveLayout') && store.write({ ...this.layout, filters: this.filters.toFilters(), searchText: this.search.state.applied }));
   }
@@ -1061,6 +1173,8 @@ export class GridModel<T> {
 
   dispose() {
     clearTimeout(this.filterTimer);
+    for (const s of this.dataSubscriptions.splice(0)) s.dispose();
+    this.events.dispose();
     this.search.dispose();
     this.lookups.dispose();
     this.selection.dispose();

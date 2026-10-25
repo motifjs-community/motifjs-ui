@@ -89,6 +89,11 @@ export class GridRow<T> {
     this.element.style.transform = `translateY(${top}px)`;
   }
 
+  /** Draws the row again as it is. */
+  redraw() {
+    this.shown.value = this.shown.peek() + 1;
+  }
+
   /** Back to the pool, hidden. */
   release() {
     if (this.index !== -1 || this.row !== undefined) {
@@ -309,6 +314,23 @@ export class GridRow<T> {
         cell.removeAttribute('aria-invalid');
       }
     }
+    const ev = model.events;
+    if (row !== undefined && this.index >= 0 && (ev.listened(ev.cellPrepared) || ev.listened(ev.rowPrepared))) untracked(() => this.tellPrepared(row));
+  }
+
+  /** `onCellPrepared` for each cell of the row (the grid's own columns too), then `onRowPrepared`. */
+  private tellPrepared(row: T) {
+    const { model, index, rowId } = this;
+    const ev = model.events;
+    const isNew = model.isNew(rowId);
+    if (ev.listened(ev.cellPrepared)) {
+      for (const [field, element] of this.cells) {
+        const value = model.columns.isInternal(field) ? undefined : model.value(rowId, row, model.columns.get(field));
+        ev.cellPrepared.fire({ field, row, rowIndex: index, value, isNew, element });
+      }
+    }
+    const isSelected = !isNew && model.selection.isSelected(model.selectId(row));
+    ev.tell(ev.rowPrepared, () => ({ row, rowIndex: index, rowType: isNew ? ('new' as const) : ('data' as const), isSelected, element: this.element }));
   }
 
   /** Writes a cell's text, with what the search found in it marked (`<mark>`). */

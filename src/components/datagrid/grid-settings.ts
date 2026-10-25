@@ -113,4 +113,44 @@ export interface GridSettings extends ColumnFeatures {
   groupArrowKeys: boolean;
   /** Pixels a pressed header or chip moves before it is dragged. Default `5`. */
   dragThreshold: number;
+  /** Milliseconds the pointer rests on a cell before its tooltip shows (keyboard focus shows it at once). Default `500`. */
+  tooltipDelay: number;
+  /** Rows drawn above and below the visible ones, so a quick scroll shows no gap. More costs more per scroll. Default `4`. */
+  extraRows: number;
+  /** Width of a column that gives none, in pixels. Default `140`. */
+  columnWidth: number;
+  /** Smallest width the user can resize a column to, for columns that give no `minWidth`. Default `48`. */
+  columnMinWidth: number;
+  /** Width of the row status column, in pixels. Default `28`. */
+  rowStatusWidth: number;
+  /** Width of the selection column (multiple selection), in pixels. Default `36`. */
+  selectionColumnWidth: number;
+  /** Pixels one arrow key resizes a column by ("Width" in the column menu). Default `10`. */
+  resizeStep: number;
+  /** Pixels one arrow key resizes a column by while Shift is held. Default `1`. */
+  resizeFineStep: number;
+  /** Page buttons shown on each side of the current page in the pager (and near its ends). Default `1`. */
+  pagerNeighbors: number;
+  /** The pager's first, previous, next and last buttons. Default `true`. */
+  pagerNavigation: boolean;
+  /** "Page 3 of 12" in the pager. Default `true`. */
+  pagerInfo: boolean;
+  /** Values the header filter loads per request while its list scrolls. Default `100`. */
+  headerFilterPageSize: number;
+  /** Height of the header filter's list, in rows. Default `8`. */
+  headerFilterRows: number;
+  /** Rows an export asks a server for per request; `exportCsv({ pageSize })` wins. Default `1000`. */
+  exportPageSize: number;
+  /** Pasted texts read as "yes" in a yes/no column, besides the `yes` text of `uiLocale` (any case). Default `['true', '1', 'x', '✓', '✔']`. */
+  trueTexts: readonly string[];
+  /** Pasted texts read as "no" in a yes/no column, besides the `no` text of `uiLocale` (any case). Default `['false', '0', '']`. */
+  falseTexts: readonly string[];
+  /** Keys that open the active cell's editor with its value (`KeyboardEvent.key` values). Default `['Enter', 'F2']`. */
+  editKeys: readonly string[];
+  /** Keys that empty the active cell without opening its editor. Default `['Delete']`. */
+  clearKeys: readonly string[];
+  /** Typing a character on a cell opens its editor with that character. Default `true`. */
+  editOnKeyPress: boolean;
+  /** What opens a cell's editor with the pointer: a double-click, or one click on the cell. Default `'dblClick'`. */
+  startEditAction: 'click' | 'dblClick';
 }

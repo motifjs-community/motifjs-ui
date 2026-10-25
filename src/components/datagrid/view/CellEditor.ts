@@ -22,7 +22,6 @@ import type { EditorKind } from './editor-kind';
 import type { EditorValue } from './editor-value';
 
 /** Rows of a lookup editor's list asked for at a time. */
-const LOOKUP_PAGE = 50;
 
 type Options = Record<string, unknown>;
 
@@ -309,7 +308,7 @@ export class CellEditor<T> {
       this.ownSource = new data.DataSource<any, any>({
         adapter: (source as data.DataSource<any, any>).adapter,
         loadMode: 'blocks',
-        pageSize: LOOKUP_PAGE,
+        pageSize: Math.max(1, Math.floor(lookup.pageSize ?? 50)),
         filter: search.filter,
         searchFields: search.searchFields?.length ? search.searchFields : undefined,
         params: (source as data.DataSource<any, any>).params,

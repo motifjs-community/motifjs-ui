@@ -3,6 +3,46 @@ import type { data } from '@motifx-community/data';
 import type { ControlProps } from '../../core/control';
 import type { UiStrings } from '../../core/ui-strings';
 import type { GridActionItem } from './grid-action-item';
+import type { GridCellClickEventArgs } from './grid-cell-click-event-args';
+import type { GridCellPreparedEventArgs } from './grid-cell-prepared-event-args';
+import type { GridContentReadyEventArgs } from './grid-content-ready-event-args';
+import type { GridContextMenuPreparingEventArgs } from './grid-context-menu-preparing-event-args';
+import type { GridCopyingEventArgs } from './grid-copying-event-args';
+import type { GridDataErrorEventArgs } from './grid-data-error-event-args';
+import type { GridEditCanceledEventArgs } from './grid-edit-canceled-event-args';
+import type { GridEditCancelingEventArgs } from './grid-edit-canceling-event-args';
+import type { GridEditingStartEventArgs } from './grid-editing-start-event-args';
+import type { GridExportedEventArgs } from './grid-exported-event-args';
+import type { GridExportingEventArgs } from './grid-exporting-event-args';
+import type { GridFilterChangedEventArgs } from './grid-filter-changed-event-args';
+import type { GridFilterChangingEventArgs } from './grid-filter-changing-event-args';
+import type { GridFocusedCellChangedEventArgs } from './grid-focused-cell-changed-event-args';
+import type { GridFocusedCellChangingEventArgs } from './grid-focused-cell-changing-event-args';
+import type { GridFocusedRowChangedEventArgs } from './grid-focused-row-changed-event-args';
+import type { GridFocusedRowChangingEventArgs } from './grid-focused-row-changing-event-args';
+import type { GridInitNewRowEventArgs } from './grid-init-new-row-event-args';
+import type { GridKeyHandlingEventArgs } from './grid-key-handling-event-args';
+import type { GridLayoutChangingEventArgs } from './grid-layout-changing-event-args';
+import type { GridOptionChangedEventArgs } from './grid-option-changed-event-args';
+import type { GridPageChangedEventArgs } from './grid-page-changed-event-args';
+import type { GridPageChangingEventArgs } from './grid-page-changing-event-args';
+import type { GridPastingEventArgs } from './grid-pasting-event-args';
+import type { GridRowClickEventArgs } from './grid-row-click-event-args';
+import type { GridRowInsertedEventArgs } from './grid-row-inserted-event-args';
+import type { GridRowInsertingEventArgs } from './grid-row-inserting-event-args';
+import type { GridRowPreparedEventArgs } from './grid-row-prepared-event-args';
+import type { GridRowRemovedEventArgs } from './grid-row-removed-event-args';
+import type { GridRowRemovingEventArgs } from './grid-row-removing-event-args';
+import type { GridRowUpdatedEventArgs } from './grid-row-updated-event-args';
+import type { GridRowUpdatingEventArgs } from './grid-row-updating-event-args';
+import type { GridSavedEventArgs } from './grid-saved-event-args';
+import type { GridSavingEventArgs } from './grid-saving-event-args';
+import type { GridSearchTextChangingEventArgs } from './grid-search-text-changing-event-args';
+import type { GridSelectionChangingEventArgs } from './grid-selection-changing-event-args';
+import type { GridSortChangedEventArgs } from './grid-sort-changed-event-args';
+import type { GridSortChangingEventArgs } from './grid-sort-changing-event-args';
+import type { GridToolbarPreparingEventArgs } from './grid-toolbar-preparing-event-args';
+import type { LayoutStorage } from './layout-storage';
 import type { GridColumn } from './grid-column';
 import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
 import type { GridFilters } from './grid-filters';
@@ -48,12 +88,16 @@ export interface DataGridProps<T> extends ControlProps {
   layout?: GridLayout;
   /** Called after the user changes the layout (resize, move, hide, sticky, sort). */
   onLayoutChange?: (layout: GridLayout) => void;
+  /** The user is about to change the layout; `e.cancel` puts the one before back. */
+  onLayoutChanging?: (e: GridLayoutChangingEventArgs) => void;
   /**
    * A name to keep the layout, the filters and the search text under in the browser's `localStorage`:
    * they come back when a grid with the same name is made again, over `layout`, `sort`, `filters` and
    * `searchText`.
    */
   layoutKey?: string;
+  /** Where `layoutKey` keeps the layout: `sessionStorage`, or any object with `getItem`, `setItem` and `removeItem`. Default `localStorage`. */
+  layoutStorage?: LayoutStorage;
   /** Accessible name of the grid. The same as `text`. */
   label?: Bind<string>;
   /** Texts for this grid only, over `uiLocale.strings`. */
@@ -80,6 +124,8 @@ export interface DataGridProps<T> extends ControlProps {
   actions?: readonly GridActionItem<T>[] | ((row: T, state: RowState) => readonly GridActionItem<T>[]);
   /** Keys of the selected rows; a function is followed. The user's changes come through `onSelectionChanged`. */
   selectedKeys?: Bind<readonly unknown[]>;
+  /** The selection is about to change; `e.cancel` keeps it. */
+  onSelectionChanging?: (e: GridSelectionChangingEventArgs) => void;
   onSelectionChanged?: (e: GridSelectionChangedEventArgs) => void;
   /** Before a cell editor is made: change its props (`e.options`), or `e.cancel` the edit. */
   onEditorPreparing?: (e: GridEditorPreparingEventArgs<T>) => void;
@@ -88,6 +134,8 @@ export interface DataGridProps<T> extends ControlProps {
    * what the user types comes through `onSearchTextChanged`.
    */
   searchText?: Bind<string>;
+  /** The search text is about to change; `e.cancel` keeps the one before. */
+  onSearchTextChanging?: (e: GridSearchTextChangingEventArgs) => void;
   /** The search text changed (typed, or set from code). */
   onSearchTextChanged?: (e: GridSearchTextChangedEventArgs) => void;
   /** Content of your own in every group row whose column has no `groupCell`, made once per pooled group row. */
@@ -116,4 +164,70 @@ export interface DataGridProps<T> extends ControlProps {
    * adapters that group give the values themselves.
    */
   loadValues?: (request: GridValuesRequest<T>) => GridValuesResult | Promise<GridValuesResult>;
+  /** A cell was clicked; `e.cancel` stops the grid's own handling (select, group, edit). */
+  onCellClick?: (e: GridCellClickEventArgs<T>) => void;
+  /** A cell was double-clicked; `e.cancel` keeps its editor closed. */
+  onCellDblClick?: (e: GridCellClickEventArgs<T>) => void;
+  /** A row was clicked (after its cell's event); `e.cancel` stops the grid's own handling. */
+  onRowClick?: (e: GridRowClickEventArgs<T>) => void;
+  /** A row was double-clicked; `e.cancel` keeps the editor closed. */
+  onRowDblClick?: (e: GridRowClickEventArgs<T>) => void;
+  /** A cell was drawn for a row: style it (the element is reused; set and clear what you change). */
+  onCellPrepared?: (e: GridCellPreparedEventArgs<T>) => void;
+  /** A row was drawn: style it (the element is reused; set and clear what you change). */
+  onRowPrepared?: (e: GridRowPreparedEventArgs<T>) => void;
+  /** Rows arrived and are laid out. */
+  onContentReady?: (e: GridContentReadyEventArgs) => void;
+  /** Loading or saving failed. */
+  onDataErrorOccurred?: (e: GridDataErrorEventArgs<T>) => void;
+  /** A cell editor is about to open; `e.cancel` keeps it closed. */
+  onEditingStart?: (e: GridEditingStartEventArgs<T>) => void;
+  /** A new row is about to open: change `e.data` (what it starts with) or `e.values` (entered), or `e.cancel`. */
+  onInitNewRow?: (e: GridInitNewRowEventArgs<T>) => void;
+  /** Changes are about to be sent; `e.cancel` keeps them all unsent. */
+  onSaving?: (e: GridSavingEventArgs<T>) => void;
+  /** The answer to a save came. */
+  onSaved?: (e: GridSavedEventArgs<T>) => void;
+  /** A new row is about to be sent; change `e.data`, or `e.cancel`. */
+  onRowInserting?: (e: GridRowInsertingEventArgs<T>) => void;
+  onRowInserted?: (e: GridRowInsertedEventArgs<T>) => void;
+  /** A row's changes are about to be sent; change `e.changes`, or `e.cancel`. */
+  onRowUpdating?: (e: GridRowUpdatingEventArgs<T>) => void;
+  onRowUpdated?: (e: GridRowUpdatedEventArgs<T>) => void;
+  /** A row's deletion is about to be sent; `e.cancel` keeps the row. */
+  onRowRemoving?: (e: GridRowRemovingEventArgs<T>) => void;
+  onRowRemoved?: (e: GridRowRemovedEventArgs<T>) => void;
+  /** Unsaved changes are about to be dropped (Escape, "Cancel", `discardChanges()`); `e.cancel` keeps them. */
+  onEditCanceling?: (e: GridEditCancelingEventArgs<T>) => void;
+  onEditCanceled?: (e: GridEditCanceledEventArgs<T>) => void;
+  /** The active cell is about to move; `e.cancel` keeps it. */
+  onFocusedCellChanging?: (e: GridFocusedCellChangingEventArgs<T>) => void;
+  onFocusedCellChanged?: (e: GridFocusedCellChangedEventArgs<T>) => void;
+  /** The active row is about to change; `e.cancel` keeps it. */
+  onFocusedRowChanging?: (e: GridFocusedRowChangingEventArgs<T>) => void;
+  onFocusedRowChanged?: (e: GridFocusedRowChangedEventArgs<T>) => void;
+  /** A key is about to be handled by the grid (`onKeyDown`); `e.cancel` stops the grid's handling. */
+  onKeyHandling?: (e: GridKeyHandlingEventArgs) => void;
+  /** A setting of the grid, a column or the toolbar was assigned. */
+  onOptionChanged?: (e: GridOptionChangedEventArgs) => void;
+  /** An export is about to start; change `e.options`, or `e.cancel`. */
+  onExporting?: (e: GridExportingEventArgs) => void;
+  onExported?: (e: GridExportedEventArgs) => void;
+  /** A column menu or a row's menu is about to open: change `e.items`, or `e.cancel`. */
+  onContextMenuPreparing?: (e: GridContextMenuPreparingEventArgs<T>) => void;
+  /** The toolbar is laid out: change `e.items`. */
+  onToolbarPreparing?: (e: GridToolbarPreparingEventArgs) => void;
+  /** The sort is about to change; `e.cancel` keeps it. */
+  onSortChanging?: (e: GridSortChangingEventArgs) => void;
+  onSortChanged?: (e: GridSortChangedEventArgs) => void;
+  /** The filters are about to apply; `e.cancel` puts the ones before back. */
+  onFilterChanging?: (e: GridFilterChangingEventArgs) => void;
+  onFilterChanged?: (e: GridFilterChangedEventArgs) => void;
+  /** Another page is about to show; `e.cancel` stays. */
+  onPageChanging?: (e: GridPageChangingEventArgs) => void;
+  onPageChanged?: (e: GridPageChangedEventArgs) => void;
+  /** Cells are about to be copied; change `e.text` / `e.html`, or `e.cancel`. */
+  onCopying?: (e: GridCopyingEventArgs) => void;
+  /** Text is about to be pasted; change `e.text`, or `e.cancel`. */
+  onPasting?: (e: GridPastingEventArgs) => void;
 }

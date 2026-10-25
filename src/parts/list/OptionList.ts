@@ -11,11 +11,6 @@ import { readItemField } from './read-item-field';
 
 type Row = { header: string } | { index: number };
 
-/** Rows drawn above and below the visible ones in a long list. */
-const OVERSCAN = 6;
-/** Typed letters join one search while they come this close together. */
-const TYPING_MS = 600;
-
 /**
  * The options of a drop-down, a combo box or a list box (`role="listbox"`). The owner gives the
  * items and how to read them, says which are selected, and moves the highlight from its own keys
@@ -36,6 +31,10 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   multiple = false;
   /** Lists with more rows than this draw only the ones in view. */
   windowFrom = 100;
+  /** Rows drawn above and below the visible ones in a long list. */
+  extraRows = 6;
+  /** Milliseconds within which typed letters join one search. */
+  typingDelay = 600;
   /** What an empty list says; `uiLocale`'s "No items" by default. */
   emptyText: (() => string) | null = null;
 
@@ -186,7 +185,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   /** The next enabled option whose text starts with what was typed lately; -1 when none. */
   typeAhead(key: string): number {
     const now = Date.now();
-    this.typed = now - this.typedAt < TYPING_MS ? this.typed + key : key;
+    this.typed = now - this.typedAt < this.typingDelay ? this.typed + key : key;
     this.typedAt = now;
     const text = this.typed.toLocaleLowerCase();
     const n = this.size;
@@ -303,9 +302,9 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     const height = this.rowHeight;
     const top = this.element.scrollTop;
     const view = this.element.clientHeight || height * 10;
-    const first = Math.max(0, Math.floor(top / height) - OVERSCAN);
+    const first = Math.max(0, Math.floor(top / height) - this.extraRows);
     const count = this.rowCount;
-    const end = Math.min(count, Math.ceil((top + view) / height) + OVERSCAN);
+    const end = Math.min(count, Math.ceil((top + view) / height) + this.extraRows);
     if (first === this.drawn.first && end === this.drawn.end) return;
     this.drawn = { first, end };
     this.ensure?.(first, end);

@@ -7,7 +7,6 @@ import type { GridFilterValue } from '../grid-filter-value';
 import type { GridModel } from '../model/GridModel';
 
 /** Rows the value list shows before it scrolls. */
-const LIST_ROWS = 8;
 
 /**
  * The header filter: a window next to the header with the column's values in the kit's `ListBox`
@@ -53,7 +52,7 @@ export class HeaderFilter<T> {
       dataSource: this.source,
       textField: 'text',
       valueField: 'value',
-      height: LIST_ROWS,
+      height: Math.max(1, Math.floor(model.settings.get('headerFilterRows'))),
       value: [...(model.filters.get(field)?.values ?? [])],
       itemTemplate: (item, host) => this.drawItem(item, host),
     });

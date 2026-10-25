@@ -167,6 +167,7 @@ export class GroupPanel<T> {
   /** Delete ungroups; Shift + Left / Right moves the chip (Enter and Space press it). */
   private onChipKey(e: KeyboardEvent, field: string) {
     const { model } = this;
+    if (!this.host.keyHandling(e)) return;
     if (!model.settings.get('groupPanelDragging') || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === 'Delete' || e.key === 'Backspace') {
       e.preventDefault();
