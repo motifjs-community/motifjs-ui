@@ -51,6 +51,8 @@ import type { GridSearchTextChangingEventArgs } from './grid-search-text-changin
 import type { GridSelectionChangingEventArgs } from './grid-selection-changing-event-args';
 import type { GridSortChangedEventArgs } from './grid-sort-changed-event-args';
 import type { GridSortChangingEventArgs } from './grid-sort-changing-event-args';
+import type { GridSummary } from './grid-summary';
+import type { GridSummaryChangedEventArgs } from './grid-summary-changed-event-args';
 import type { GridStateValue } from './grid-state-value';
 import type { GridToolbarPreparingEventArgs } from './grid-toolbar-preparing-event-args';
 import type { GridVisibleRow } from './grid-visible-row';
@@ -95,6 +97,7 @@ import { HeaderRow } from './view/HeaderRow';
 import type { HeaderHost } from './view/header-host';
 import type { ToolbarValues } from './view/toolbar-values';
 import { MenuPopup } from './view/MenuPopup';
+import { TotalRow } from './view/TotalRow';
 import { OPERATOR_TEXTS } from './view/operator-texts';
 import { COLUMN_FEATURES } from './model/column-feature-names';
 
@@ -118,7 +121,8 @@ const hasKeys = (o: object) => Object.keys(o).length > 0;
  * together. Rows carry their own action buttons (those that do not fit go into a "more" menu), can be
  * selected one, several or all (also over data never loaded), and are filtered from a filter row, from
  * value lists in the headers and from a search box that looks in every column at once (the text found
- * is marked). A toolbar above the rows holds the grid's own commands and the app's. The grid is a
+ * is marked). Rows can be grouped, with summaries in the group rows and footers, and totals in a
+ * row under the rows. A toolbar above the rows holds the grid's own commands and the app's. The grid is a
  * single tab stop navigated with the arrow keys. Every feature can be turned off, for the whole grid
  * (`settings`) or per column, also while it is shown.
  *
@@ -134,6 +138,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private readonly header: HeaderRow<T>;
   private readonly filterRow: FilterRow<T>;
   private readonly body: GridBody<T>;
+  private readonly totalRow: TotalRow<T>;
   private readonly menu: ColumnMenu<T>;
   private readonly headerFilter: HeaderFilter<T>;
   private readonly moreMenu: MenuPopup;
@@ -152,6 +157,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private readonly gridId = nextId('data-grid');
   private viewportEl: HTMLDivElement | null = null;
   private headEl: HTMLDivElement | null = null;
+  private footEl: HTMLDivElement | null = null;
   private probeEl: HTMLDivElement | null = null;
   private measureEl: HTMLDivElement | null = null;
   /** Which button of the active actions cell has focus. */
@@ -202,6 +208,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.filterRow = new FilterRow<T>(model);
     this.widths = new ActionWidths(() => this.measureEl);
     this.body = new GridBody<T>(model, () => this.viewportEl, this.widths);
+    this.totalRow = new TotalRow<T>(model);
+    model.summaries.component = this;
     this.menu = new ColumnMenu<T>(model, host, this);
     this.headerFilter = new HeaderFilter<T>(model, this);
     this.moreMenu = new MenuPopup(this, 'mx-data-grid__menu');
@@ -803,7 +811,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /** The element of grid row `rowIndex` while it is drawn. */
   getRowElement(rowIndex: number): HTMLElement | undefined {
-    return this.body.rowAt(rowIndex)?.element ?? this.body.groupRowAt(rowIndex)?.element;
+    return this.body.rowAt(rowIndex)?.element ?? this.body.groupRowAt(rowIndex)?.element ?? this.body.footerRowAt(rowIndex)?.element;
   }
 
   /** The element of a cell while its row is drawn; a group row's one cell for any field. */
@@ -1273,6 +1281,44 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.on(this.model.events.rowCollapsed);
   }
 
+  // Summaries.
+
+  /**
+   * The summaries: `totalItems` in the row under the rows, `groupItems` in group rows and footers. A
+   * function is followed; so is every field of the items.
+   */
+  get summary(): GridSummary<T> {
+    return this.model.summaries.config();
+  }
+  set summary(summary: Bind<GridSummary<T>>) {
+    this.model.summaries.value = summary;
+  }
+
+  /**
+   * A value of the total summary: by the item's `name`, its place in `totalItems`, its type, its
+   * column or `type_column` (`'sum_amount'`); `undefined` while it is not known. Reactive.
+   */
+  getTotalSummaryValue(name: string | number): unknown {
+    return this.model.summaries.totalValue(name);
+  }
+
+  /** A value of the group summary of the group with this key (see `expandGroup`), by the item as `getTotalSummaryValue` finds it. Reactive. */
+  getGroupSummaryValue(key: readonly unknown[], name: string | number): unknown {
+    void this.model.state.version;
+    const node = this.model.findGroup(key);
+    return node ? this.model.summaries.groupValue(node, name) : undefined;
+  }
+
+  /** `'loading'` while a server works out the totals (or every row loads for them), `'error'` when that failed. */
+  get summaryStatus(): 'loading' | 'ready' | 'error' {
+    return this.model.summaries.state.status;
+  }
+
+  /** Raised when the summary values were worked out again. */
+  get onSummaryChanged(): MotifEvent<GridSummaryChangedEventArgs> {
+    return this.on(this.model.events.summaryChanged);
+  }
+
   // Copy, paste, export.
 
   /**
@@ -1337,12 +1383,21 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    * The rows of the filter in the sort order, with the visible exportable columns in display order,
    * as objects by field: the text the cells show, or their values (`values: 'raw'`). Rows in memory
    * are taken as they are; a server's are asked for in parts (`pageSize`) through the data source.
+   * Group footers follow their rows and the row of totals comes last, as objects of the same fields
+   * with the texts they show (`summaries: false` leaves them out).
    */
   async exportRows(options: GridExportOptions = {}): Promise<Record<string, unknown>[]> {
     const run = await this.runExport('rows', options);
     if (!run) return [];
     const { table } = run;
-    const rows = table.rows.map((cells) => Object.fromEntries(table.fields.map((f, j) => [f, cells[j]])));
+    const rows: Record<string, unknown>[] = [];
+    const summaries = this.exporter.summaryObjects(table);
+    let next = 0;
+    table.rows.forEach((cells, i) => {
+      for (; next < summaries.length && summaries[next].after <= i; next++) rows.push(summaries[next].values);
+      rows.push(Object.fromEntries(table.fields.map((f, j) => [f, cells[j]])));
+    });
+    for (; next < summaries.length; next++) rows.push(summaries[next].values);
     this.model.events.tell(this.model.events.exported, () => ({ format: 'rows' as const, rows: rows.length }));
     return rows;
   }
@@ -1480,6 +1535,31 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       });
     }
 
+    // Summaries: other items or other ways to work them out start again; group items a server
+    // cannot compute group the rows in memory; footer rows come and go with their items.
+    let firstSummary = true;
+    let lastServer = '';
+    let lastFooters = false;
+    this.bindings.watch(() => {
+      const s = model.summaries;
+      void s.signature();
+      const server = JSON.stringify(s.serverItems(s.groupItems(), model.data.source.adapter));
+      const footers = s.hasFooters();
+      if (firstSummary) {
+        firstSummary = false;
+        lastServer = server;
+        lastFooters = footers;
+        return;
+      }
+      untracked(() => {
+        s.refresh();
+        if (server !== lastServer) model.regroupWithSettings();
+        else if (footers !== lastFooters) model.data.regroupView();
+        lastServer = server;
+        lastFooters = footers;
+      });
+    });
+
     // Order or visibility changed: reorder cells, renumber, keep the active column visible.
     this.bindings.watch(() => {
       const visible = model.columns.visible();
@@ -1488,6 +1568,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         this.header.arrange(visible);
         if (filterRow) this.filterRow.arrange(visible);
         this.body.arrange(visible);
+        this.totalRow.arrange(visible);
         model.keepActiveFieldVisible();
         this.syncTabStop();
       });
@@ -1539,6 +1620,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.header.arrange(visible);
     if (this.model.showsFilterRow()) this.filterRow.arrange(visible);
     this.body.arrange(visible);
+    this.totalRow.arrange(visible);
   }
 
   override onMounted() {
@@ -1559,6 +1641,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       const ro = new ResizeObserver(() => this.measure());
       ro.observe(vp);
       if (this.headEl) ro.observe(this.headEl);
+      if (this.footEl) ro.observe(this.footEl);
       if (this.probeEl) ro.observe(this.probeEl);
       this.motif.setDisposable(() => ro.disconnect());
     }
@@ -1595,7 +1678,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
             role={() => (model.groups.any ? 'treegrid' : 'grid')}
             ref={(c) => (this.viewportEl = c.element as HTMLDivElement)}
             aria-label={() => this.text || t('gridLabel')}
-            aria-rowcount={() => (st.status === 'loading' ? -1 : model.count + model.headRows)}
+            aria-rowcount={() => (st.status === 'loading' ? -1 : model.count + model.headRows + (model.summaries.showsTotal() ? 1 : 0))}
             aria-multiselectable={() => (settings.get('selection') === 'multiple' ? 'true' : null)}
             aria-colcount={() => model.columns.visible().length}
             aria-busy={() => (st.status === 'loading' || st.busy ? 'true' : null)}
@@ -1622,6 +1705,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
               {this.filterRow}
             </div>
             {this.body}
+            <div
+              class="mx-data-grid__foot"
+              role="rowgroup"
+              aria-label={() => t('gridTotalSummary')}
+              hidden={() => !model.summaries.showsTotal()}
+              ref={(c) => (this.footEl = c.element as HTMLDivElement)}
+            >
+              {this.totalRow}
+            </div>
           </div>
           <div class="mx-data-grid__overlay" x-display={() => overlay() !== null}>
             <div class="mx-data-grid__state" x-display={() => overlay() === 'loading'}>
@@ -1764,8 +1856,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (!vp) return;
     const state = this.model.state;
     const head = this.headEl?.offsetHeight ?? 0;
+    const foot = this.footEl?.offsetHeight ?? 0;
     this.element.style.setProperty('--_head-height', `${head}px`);
-    const viewport = Math.max(0, vp.clientHeight - head);
+    const viewport = Math.max(0, vp.clientHeight - head - foot);
     if (viewport !== state.viewport) state.viewport = viewport;
     if (viewport > 0 && !state.measured) state.measured = true;
     const fixed = this.model.fixedRowHeight;
@@ -1899,6 +1992,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private rowTypeOf(i: number): GridRowType {
     const { model } = this;
     if (model.groupAt(i)) return 'group';
+    if (model.footerAt(i)) return 'groupFooter';
     return model.isNew(model.rowIdAt(i)) ? 'new' : 'data';
   }
 
@@ -2328,9 +2422,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.syncTabStop();
       return;
     }
-    const groupCell = target.closest?.('.mx-data-grid__group-cell');
+    // The row of totals: the rows are left, as for any place outside them.
+    if (target.classList.contains('mx-data-grid__total-row')) {
+      if (this.editor && !this.commitEditor()) return;
+      if (this.model.state.session) this.leave();
+      return;
+    }
+    const groupCell = target.closest?.('.mx-data-grid__group-cell') ?? (target.classList.contains('mx-data-grid__group-footer') ? target : null);
     if (groupCell) {
-      const group = this.body.groupRowOf(groupCell);
+      const group = this.body.groupRowOf(groupCell) ?? this.body.footerRowOf(groupCell);
       if (!group || group.index < 0) return;
       if (!this.canMoveTo(group.index, this.model.state.activeField)) {
         this.focusActive(false);
@@ -2393,9 +2493,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
     if (this.editor?.element.contains(target)) return;
-    const group = this.body.groupRowOf(target);
+    const group = this.body.groupRowOf(target) ?? this.body.footerRowOf(target);
     if (group && group.index >= 0) {
-      // Leaving the row being edited for a group row may block or wait, as for any row.
+      // Leaving the row being edited for a group row or footer may block or wait, as for any row.
       const st = this.model.state;
       if (st.busy || st.session) e.preventDefault();
       if (!st.busy && st.session) this.navigate(group.index, st.activeField, { reveal: false });
@@ -2423,6 +2523,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.askClick(e, true, group.cell, group.element, group.index, group.node.field, group.node);
       return;
     }
+    const footer = this.body.footerRowOf(target);
+    if (footer?.node && footer.index >= 0) {
+      const cell = (target.closest?.('.mx-data-grid__cell') as HTMLElement | null) ?? footer.element;
+      this.askClick(e, true, cell, footer.element, footer.index, cell.dataset.field ?? '', footer.node);
+      return;
+    }
+    if (this.clickedTotals(e, true)) return;
     const cell = target.closest?.('.mx-data-grid__cell') as HTMLElement | null;
     const row = cell ? this.body.rowOf(cell) : undefined;
     if (!cell || !row || row.index < 0) return;
@@ -2432,15 +2539,24 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /** The click events of a cell and of its row; whether the grid may go on with its own handling. */
-  private askClick(e: MouseEvent, double: boolean, cell: HTMLElement, rowEl: HTMLElement, index: number, field: string, group: GroupNode | null): boolean {
+  private askClick(e: MouseEvent, double: boolean, cell: HTMLElement, rowEl: HTMLElement, index: number, field: string, group: GroupNode | null, rowType = this.rowTypeOf(index)): boolean {
     const { model } = this;
     const ev = model.events;
-    const row = group ? undefined : model.rowAt(index);
-    const rowType = this.rowTypeOf(index);
+    const row = group || rowType === 'totalFooter' ? undefined : model.rowAt(index);
     const groupKey = group ? [...group.path] : undefined;
     const cellOk = ev.ask(double ? ev.cellDblClick : ev.cellClick, () => ({ field, row, rowIndex: index, rowType, groupKey, element: cell, event: e, cancel: false }));
     const rowOk = ev.ask(double ? ev.rowDblClick : ev.rowClick, () => ({ row, rowIndex: index, rowType, groupKey, element: rowEl, event: e, cancel: false }));
     return cellOk && rowOk;
+  }
+
+  /** A click on the row of totals: its cell's and its row's events (`rowType: 'totalFooter'`). */
+  private clickedTotals(e: MouseEvent, double: boolean): boolean {
+    const target = e.target as HTMLElement;
+    const row = target.closest?.('.mx-data-grid__total-row') as HTMLElement | null;
+    if (!row) return false;
+    const cell = (target.closest('.mx-data-grid__cell') as HTMLElement | null) ?? row;
+    this.askClick(e, double, cell, row, this.model.count, cell.dataset.field ?? '', null, 'totalFooter');
+    return true;
   }
 
   /** A right click on a row: its menu, when `onContextMenuPreparing` gives it items. */
@@ -2448,8 +2564,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const target = e.target as HTMLElement;
     if (this.editor?.element.contains(target)) return;
     const group = this.body.groupRowOf(target);
-    const cell = group ? group.cell : (target.closest?.('.mx-data-grid__cell') as HTMLElement | null);
-    const index = group ? group.index : cell ? (this.body.rowOf(cell)?.index ?? -1) : -1;
+    const footer = group ? undefined : this.body.footerRowOf(target);
+    const cell = group ? group.cell : footer ? footer.element : (target.closest?.('.mx-data-grid__cell') as HTMLElement | null);
+    const index = group ? group.index : footer ? footer.index : cell ? (this.body.rowOf(cell)?.index ?? -1) : -1;
     if (!cell || index < 0) return;
     if (this.openRowMenu(index, group?.node?.field ?? cell.dataset.field ?? '', cell)) e.preventDefault();
   }
@@ -2505,6 +2622,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       }
       return;
     }
+    const footer = this.body.footerRowOf(target);
+    if (footer?.node && footer.index >= 0) {
+      const cell = (target.closest?.('.mx-data-grid__cell') as HTMLElement | null) ?? footer.element;
+      this.askClick(e, false, cell, footer.element, footer.index, cell.dataset.field ?? '', footer.node);
+      return;
+    }
+    if (this.clickedTotals(e, false)) return;
     const cell = target.closest?.('.mx-data-grid__cell') as HTMLElement | null;
     const view = cell ? this.body.rowOf(cell) : undefined;
     if (!cell || !view || view.index < 0) return;
@@ -2744,7 +2868,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const filterCell = target.closest?.('.mx-data-grid__filter-cell');
     if (filterCell && target !== filterCell && this.onFilterEditorKey(e, target)) return;
     if (target.classList.contains('mx-data-grid__action') && this.onActionKey(e, target)) return;
-    if (!target.matches?.('.mx-data-grid__cell, .mx-data-grid__group-cell, .mx-data-grid__header-cell, .mx-data-grid__filter-cell, .mx-data-grid__action, .mx-data-grid__condition')) return;
+    if (!target.matches?.('.mx-data-grid__cell, .mx-data-grid__group-cell, .mx-data-grid__group-footer, .mx-data-grid__header-cell, .mx-data-grid__filter-cell, .mx-data-grid__action, .mx-data-grid__condition')) return;
     if (st.adjust) {
       if (this.onAdjustKey(e)) e.preventDefault();
       return;
@@ -2765,6 +2889,11 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
     const group = onRow ? model.groupAt(row) : null;
     if (group && this.onGroupKey(e, row, group)) return;
+    // A group footer is read, not edited: keys that edit or select do nothing there.
+    if (onRow && !group && model.footerAt(row) && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key.length === 1 || model.settings.get('editKeys').includes(e.key) || model.settings.get('clearKeys').includes(e.key) || e.key === 'Backspace')) {
+      e.preventDefault();
+      return;
+    }
 
     if (ctrl && !e.altKey && e.key.toLowerCase() === 'a' && mode === 'multiple' && model.settings.get('selectAll')) {
       e.preventDefault();

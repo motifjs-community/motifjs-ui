@@ -4,6 +4,7 @@ import type { GroupNode } from '../model/group-node';
 import { ScrollGeometry } from '../model/ScrollGeometry';
 import type { ActionWidths } from './ActionWidths';
 import { GridRow } from './GridRow';
+import { GroupFooterRow } from './GroupFooterRow';
 import { GroupRow } from './GroupRow';
 import { nextId } from '../../../core/next-id';
 
@@ -13,17 +14,21 @@ import { nextId } from '../../../core/next-id';
  * that stay in view keep their element, the others are reused. The DOM never grows with the row
  * count. The active row and the row holding focus are kept even when they scroll out, so focus is
  * never lost. A pooled row follows its row by id first (a new row opened above it moves it, the
- * editor inside goes along), then by position (a loading row that gets its data). Group rows have a
- * pool of their own and follow their group by its id.
+ * editor inside goes along), then by position (a loading row that gets its data). Group rows and
+ * group footers have pools of their own and follow their group by its id.
  */
 export class GridBody<T> extends Component<HTMLDivElement> {
   /** Every row ever made; reused, never disposed before the grid. */
   readonly pool: GridRow<T>[] = [];
   /** Every group row ever made. */
   readonly groupPool: GroupRow<T>[] = [];
+  /** Every group footer ever made. */
+  readonly footerPool: GroupFooterRow<T>[] = [];
   private byIndex = new Map<number, GridRow<T>>();
   private groupsByIndex = new Map<number, GroupRow<T>>();
+  private footersByIndex = new Map<number, GroupFooterRow<T>>();
   private readonly groupByElement = new WeakMap<Element, GroupRow<T>>();
+  private readonly footerByElement = new WeakMap<Element, GroupFooterRow<T>>();
   private readonly byElement = new WeakMap<Element, GridRow<T>>();
   private virtualTop = 0;
   private expectedScrollTop = -1;
@@ -43,6 +48,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.motif.setDisposable(() => {
       for (const row of this.pool) row.dispose();
       for (const row of this.groupPool) row.dispose();
+      for (const row of this.footerPool) row.dispose();
     });
     // Lookup keys came: only the cells that show them are drawn again.
     const resolved = this.grid.lookups.onChanged(({ items, keys }) => {
@@ -136,9 +142,9 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     return this.byIndex.get(index);
   }
 
-  /** The cell element of grid row `index`, if that row is drawn; a group row's one cell for any field. */
+  /** The cell element of grid row `index`, if that row is drawn; a group row's one cell, or a group footer itself, for any field. */
   cellElement(index: number, field: string): HTMLElement | undefined {
-    return this.byIndex.get(index)?.cells.get(field) ?? this.groupsByIndex.get(index)?.cell;
+    return this.byIndex.get(index)?.cells.get(field) ?? this.groupsByIndex.get(index)?.cell ?? this.footersByIndex.get(index)?.element;
   }
 
   /** The pooled row an element belongs to. */
@@ -158,6 +164,17 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     return this.groupsByIndex.get(index);
   }
 
+  /** The pooled group footer an element belongs to. */
+  footerRowOf(el: Element | null): GroupFooterRow<T> | undefined {
+    const rowEl = el?.closest?.('.mx-data-grid__group-footer');
+    return rowEl ? this.footerByElement.get(rowEl) : undefined;
+  }
+
+  /** The group footer drawn for grid row `index`. */
+  footerRowAt(index: number): GroupFooterRow<T> | undefined {
+    return this.footersByIndex.get(index);
+  }
+
   /** Cells of a column in the rows drawn now (for fitting the column to its content). */
   renderedCells(field: string): HTMLElement[] {
     const out: HTMLElement[] = [];
@@ -169,11 +186,12 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     return out;
   }
 
-  /** The rows drawn now, data and group rows, in grid order. */
+  /** The rows drawn now, data rows, group rows and group footers, in grid order. */
   drawn(): { index: number; element: HTMLElement; group: GroupNode | null }[] {
     const out: { index: number; element: HTMLElement; group: GroupNode | null }[] = [];
     for (const [index, row] of this.byIndex) out.push({ index, element: row.element, group: null });
     for (const [index, row] of this.groupsByIndex) out.push({ index, element: row.element, group: row.node });
+    for (const [index, row] of this.footersByIndex) out.push({ index, element: row.element, group: row.node });
     return out.sort((a, b) => a.index - b.index);
   }
 
@@ -181,6 +199,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   repaint() {
     for (const row of this.byIndex.values()) row.redraw();
     for (const row of this.groupsByIndex.values()) row.redraw();
+    for (const row of this.footersByIndex.values()) row.redraw();
     this.relayout(true);
   }
 
@@ -189,6 +208,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.visible = visible;
     for (const row of this.pool) row.arrange(visible);
     for (const row of this.groupPool) row.arrange(visible);
+    for (const row of this.footerPool) row.arrange(visible);
   }
 
   /** Gives the spacer the height of the rows, before a scroll position is written too (a row added at the end makes the rows taller). */
@@ -255,15 +275,19 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     for (const i of new Set([active, focused])) if (i >= 0 && localOf(i) >= 0 && !inWindow(i)) wanted.push(i);
     data.pin(active >= 0 ? grid.dataIndex(active) : -1);
 
-    // Group rows go to the group pool, matched by their group.
+    // Group rows and footers go to their pools, matched by their group.
     const groups = new Map<number, GroupNode>();
+    const footers = new Map<number, GroupNode>();
     const rows: number[] = [];
     for (const i of wanted) {
       const node = grid.groupAt(i);
+      const footer = node ? null : grid.footerAt(i);
       if (node) groups.set(i, node);
+      else if (footer) footers.set(i, footer);
       else rows.push(i);
     }
     this.placeGroups(groups, top, localOf);
+    this.placeFooters(footers, top, localOf);
 
     // Match pooled rows to wanted rows: by id first, then by position, then any free one.
     const idOf = rows.map((i) => grid.rowIdAt(i));
@@ -297,6 +321,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     const all: [number, HTMLElement][] = [];
     for (const [i, r] of keep) all.push([i, r.element]);
     for (const [i, r] of this.groupsByIndex) all.push([i, r.element]);
+    for (const [i, r] of this.footersByIndex) all.push([i, r.element]);
     const shown = all.sort((a, b) => a[0] - b[0]).map(([, el]) => el.id);
     const owns = shown.join(' ');
     if (this.element.getAttribute('aria-owns') !== owns) this.element.setAttribute('aria-owns', owns);
@@ -320,6 +345,36 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     }
     for (const row of free) row.release();
     this.groupsByIndex = keep;
+  }
+
+  /** Group footers: the one that showed a group's footer keeps it, the others take the rest. */
+  private placeFooters(footers: Map<number, GroupNode>, top: (local: number) => number, localOf: (i: number) => number) {
+    const ids = new Map<string, number>();
+    for (const [i, node] of footers) ids.set(node.id, i);
+    const keep = new Map<number, GroupFooterRow<T>>();
+    const free: GroupFooterRow<T>[] = [];
+    for (const row of this.footerPool) {
+      const i = row.node ? ids.get(row.node.id) : undefined;
+      if (i !== undefined && !keep.has(i)) keep.set(i, row);
+      else free.push(row);
+    }
+    for (const [i, node] of footers) {
+      const row = keep.get(i) ?? free.pop() ?? this.createFooterRow();
+      row.use(i, node, top(localOf(i)));
+      keep.set(i, row);
+    }
+    for (const row of free) row.release();
+    this.footersByIndex = keep;
+  }
+
+  private createFooterRow(): GroupFooterRow<T> {
+    const row = new GroupFooterRow(this.grid);
+    row.element.id = nextId('grid-row');
+    this.element.append(row.element);
+    row.arrange(this.visible);
+    this.footerPool.push(row);
+    this.footerByElement.set(row.element, row);
+    return row;
   }
 
   private createGroupRow(): GroupRow<T> {

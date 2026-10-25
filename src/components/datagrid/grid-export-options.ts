@@ -17,6 +17,12 @@ export interface GridExportOptions {
   separator?: string;
   /** CSV, while grouped: a "Column: value" line before each group. Default `true`. */
   groups?: boolean;
+  /**
+   * The summaries as the grid shows them: each group's footer line after its rows, the row of totals
+   * last (as objects of the same fields in `exportRows()`), and the group summary items on the group
+   * lines. Several items of one column share a cell, one per line. Not with `selected`. Default `true`.
+   */
+  summaries?: boolean;
   /** CSV: a first line of column titles. Default `true`. */
   headers?: boolean;
   /** CSV: start with a byte order mark so spreadsheets read UTF-8. Default `true`. */

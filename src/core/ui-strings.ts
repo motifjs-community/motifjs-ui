@@ -169,4 +169,15 @@ export interface UiStrings {
   gridGroupChipAscending: string;
   gridGroupChipDescending: string;
   gridGroupChipHint: string;
+  gridSummarySum: string;
+  gridSummarySumOtherColumn: string;
+  gridSummaryMin: string;
+  gridSummaryMinOtherColumn: string;
+  gridSummaryMax: string;
+  gridSummaryMaxOtherColumn: string;
+  gridSummaryAvg: string;
+  gridSummaryAvgOtherColumn: string;
+  gridSummaryCount: string;
+  gridSummarySeparator: string;
+  gridTotalSummary: string;
 }

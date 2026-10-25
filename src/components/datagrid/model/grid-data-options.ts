@@ -20,6 +20,10 @@ export interface GridDataOptions<T> {
   groupLoadPageSize: number;
   /** Whether a group is open. */
   expanded: (node: GroupNode) => boolean;
+  /** Whether each open group ends with a footer row. */
+  footers: () => boolean;
+  /** The group summaries a server is asked for with its groups; `null` when they can only be computed in memory, which then groups the rows. */
+  groupSummary: () => readonly data.SummaryItem[] | null;
   /** The locale group keys are compared in. */
   locale: () => string | undefined;
   saveMode: data.SaveMode;

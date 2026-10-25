@@ -32,6 +32,8 @@ export class GridData<T> {
   private readonly state: DataState;
   private readonly owned: boolean;
   private readonly expanded: (node: GroupNode) => boolean;
+  private readonly footers: () => boolean;
+  private readonly groupSummary: () => readonly data.SummaryItem[] | null;
   private readonly locale: () => string | undefined;
   private readonly subscriptions: IDisposable[] = [];
   /** `'all'`: the rows without the saved new rows, and those rows' keys; dropped when either side changes. */
@@ -58,6 +60,9 @@ export class GridData<T> {
   /** Memory over pages or blocks: every matching row, loaded apart. */
   private allRows: T[] | null = null;
   private allIndex: Map<string, T> | null = null;
+  /** Every matching row of pages or blocks, loading or loaded, for grouping and summaries alike; dropped with the row set. */
+  private everyLoad: Promise<T[]> | undefined;
+  private everyController: AbortController | undefined;
 
   constructor(options: GridDataOptions<T>) {
     const source = options.source;
@@ -65,7 +70,10 @@ export class GridData<T> {
     this.owned = options.owned;
     this.state = options.state;
     this.expanded = options.expanded;
+    this.footers = options.footers;
+    this.groupSummary = options.groupSummary;
     this.locale = options.locale;
+    this.loadSize = Math.max(0, Math.floor(options.groupLoadPageSize));
     this.paged = source.loadMode === 'page' || options.paged;
     this.pageSize = source.loadMode === 'all' ? Math.max(1, Math.floor(options.pageSize)) : source.pageSize;
     this.userSort = [...options.sort];
@@ -129,7 +137,7 @@ export class GridData<T> {
     return this.groupMode !== null;
   }
 
-  /** The data row at place `index`, or `undefined` while it is not loaded (or a group row is there). */
+  /** The data row at place `index`, or `undefined` while it is not loaded (or a group row or footer is there). */
   rowAt(index: number): T | undefined {
     if (this.groupMode) {
       const entry = this.groupView()?.itemAt(index);
@@ -154,14 +162,21 @@ export class GridData<T> {
 
   /** The group whose row is at place `index`, or `null`. */
   groupAt(index: number): GroupNode | null {
-    return this.groupMode ? (this.groupView()?.itemAt(index)?.node ?? null) : null;
+    const entry = this.groupMode ? this.groupView()?.itemAt(index) : null;
+    return entry && entry.footer === false ? entry.node : null;
+  }
+
+  /** The group whose footer row is at place `index`, or `null`. */
+  footerAt(index: number): GroupNode | null {
+    const entry = this.groupMode ? this.groupView()?.itemAt(index) : null;
+    return entry?.footer ? entry.node : null;
   }
 
   /** The grouped list, while grouped and known. */
   groupView(): GroupView | null {
     if (!this.groupMode) return null;
     if (this.groupMode === 'memory' && this.regroup) untracked(() => this.groupInMemory());
-    if (!this.view && this.groupState === 'ready') this.view = new GroupView(this.tree, this.expanded);
+    if (!this.view && this.groupState === 'ready') this.view = new GroupView(this.tree, this.expanded, untracked(() => this.footers()));
     return this.view;
   }
 
@@ -170,6 +185,47 @@ export class GridData<T> {
     if (this.groupMode !== 'memory') return null;
     this.groupView();
     return this.grouped;
+  }
+
+  /** Memory: the rows of a group, levels below included; `null` when a server groups them. */
+  rowsOfGroup(node: GroupNode): T[] | null {
+    const rows = this.groupedRows();
+    return rows ? rows.slice(node.start, node.start + node.count) : null;
+  }
+
+  /** Whether a server groups the rows (its groups carry the summaries it was asked for). */
+  get groupedOnServer(): boolean {
+    return this.groupMode === 'server';
+  }
+
+  /**
+   * Every matching row of a source that loads pages or blocks, asked for once per row set (`size`
+   * rows a request, 0 all at once) and kept until the filter, the search or the rows change. Grouping
+   * and summaries in memory share it.
+   */
+  everyRow(size: number): Promise<T[]> {
+    if (this.everyLoad) return this.everyLoad;
+    const controller = new AbortController();
+    this.everyController = controller;
+    const signal = controller.signal;
+    const step = Math.max(0, Math.floor(size));
+    const load = (async () => {
+      if (step <= 0) return (await this.source.loadRange({ signal })).rows;
+      const rows: T[] = [];
+      let total = Number.POSITIVE_INFINITY;
+      for (let skip = 0; skip < total; skip += step) {
+        const part = await this.source.loadRange({ skip, take: step, count: skip === 0, signal });
+        if (skip === 0 && part.total !== undefined) total = part.total;
+        for (const row of part.rows) rows.push(row);
+        if (part.rows.length < step) break;
+      }
+      return rows;
+    })();
+    this.everyLoad = load;
+    load.catch(() => {
+      if (this.everyLoad === load) this.everyLoad = undefined;
+    });
+    return load;
   }
 
   /** The view shows places `first` to `end - 1`: blocks load what is missing; `immediate` skips the wait after a jump. */
@@ -219,7 +275,8 @@ export class GridData<T> {
     if (options.sort) this.userSort = [...options.sort];
     if (options.remote !== undefined) this.remote = options.remote;
     if (options.loadSize !== undefined) this.loadSize = Math.max(0, Math.floor(options.loadSize));
-    const possible = levels.length > 0 && source.loadMode === 'blocks' && levels.every((l) => l.serverField !== null);
+    // Group summaries only memory can compute keep the grouping in memory too.
+    const possible = levels.length > 0 && source.loadMode === 'blocks' && levels.every((l) => l.serverField !== null) && untracked(() => this.groupSummary()) !== null;
     const server = possible && (this.remote === true || (this.remote === 'auto' && source.adapter.capabilities.group));
     this.groupMode = !levels.length ? null : server ? 'server' : 'memory';
     this.stopGroupLoad();
@@ -334,6 +391,7 @@ export class GridData<T> {
 
   dispose() {
     this.stopGroupLoad();
+    this.dropEveryRow();
     for (const s of this.subscriptions) s.dispose();
     this.tracker.dispose();
     if (!this.owned) return;
@@ -407,6 +465,7 @@ export class GridData<T> {
       else if (reason === 'failed' && s.status === 'error') this.sourceStatus = 'error';
       st.failedBlocks = s.failedBlocks;
       if (reason === 'loaded' || reason === 'rows' || reason === 'cleared') this.regroup = true;
+      if (reason === 'query' || reason === 'reload' || reason === 'rows') this.dropEveryRow();
       if (this.groupMode === 'server' && (reason === 'query' || reason === 'reload' || reason === 'rows')) this.loadGroups();
       if (this.groupMode === 'memory' && s.loadMode !== 'all' && (reason === 'query' || reason === 'reload' || reason === 'rows')) this.loadEveryRow();
       this.updateStatus();
@@ -419,11 +478,13 @@ export class GridData<T> {
     else if (this.groupMode === 'memory' && this.source.loadMode !== 'all') this.loadEveryRow();
   }
 
-  /** A server's groups: keys and counts of every level, no rows. */
+  /** A server's groups: keys and counts of every level, and their summaries, no rows. */
   private loadGroups() {
     const items = this.levels.map((l) => ({ field: l.serverField!, dir: l.dir }));
+    const summary = untracked(() => this.groupSummary());
+    const groupSummary = summary?.length ? summary : undefined;
     this.startGroupLoad((signal) =>
-      this.source.loadGroups(items, { signal }).then((groups) => {
+      this.source.loadGroups(items, { signal, groupSummary }).then((groups) => {
         this.tree = groupNodes(groups as data.RowGroup<unknown>[], this.levels, this.locale());
       }),
     );
@@ -431,20 +492,8 @@ export class GridData<T> {
 
   /** Every matching row, to group in memory (an adapter that cannot group, or a value only memory reads). */
   private loadEveryRow() {
-    const size = this.loadSize;
-    this.startGroupLoad(async (signal) => {
-      let rows: T[];
-      if (size <= 0) rows = (await this.source.loadRange({ signal })).rows;
-      else {
-        rows = [];
-        let total = Number.POSITIVE_INFINITY;
-        for (let skip = 0; skip < total; skip += size) {
-          const part = await this.source.loadRange({ skip, take: size, count: skip === 0, signal });
-          if (skip === 0 && part.total !== undefined) total = part.total;
-          for (const row of part.rows) rows.push(row);
-          if (part.rows.length < size) break;
-        }
-      }
+    this.startGroupLoad(async () => {
+      const rows = await this.everyRow(this.loadSize);
       this.allRows = rows;
       this.allIndex = null;
       this.regroup = true;
@@ -488,6 +537,12 @@ export class GridData<T> {
     this.groupGeneration++;
     this.groupController?.abort();
     this.groupController = undefined;
+  }
+
+  private dropEveryRow() {
+    this.everyController?.abort();
+    this.everyController = undefined;
+    this.everyLoad = undefined;
   }
 
   /** Groups the rows in memory: the source's rows, or every matching row loaded apart. */

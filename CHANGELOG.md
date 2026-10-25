@@ -160,6 +160,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `beginUpdate()` / `endUpdate()`, `repaint()`, `columnOption()`, `getCombinedFilter()`, `state()`.
   `OptionList` `extraRows` (6) and `typingDelay` (600); `KeyedItems` `parallelRequests` (6) and
   `pasteSearchLimit` (50).
+- `DataGrid` summaries's `summary`. Prop and property `summary` (`totalItems`,
+  `groupItems`, `calculateCustomSummary`, `recalculateWhileEditing`, `skipEmptyValues`, `texts`, each
+  followed when a function); item fields `column`, `summaryType` (`sum`, `min`, `max`, `avg`, `count`,
+  `custom`), `name`, `showInColumn`, `valueFormat` (`Intl` options or a function; default the column's
+  format), `displayFormat` (`{0}`, `{1}`), `customizeText`, `alignment`, `cssClass`, `skipEmptyValues`,
+  `visible`, and for group items `showInGroupFooter`, `alignByColumn`. Settings `totalSummary`,
+  `groupSummary` (an item's `visible` wins), `totalSummaryTabStop`, `remoteSummary` (`auto` / `true` /
+  `false`); `groupLoadPageSize` also paces every-row loads for summaries. `getTotalSummaryValue(name)`
+  (by name, place, type, column or `type_column`), `getGroupSummaryValue(key, name)`, `summaryStatus`,
+  `onSummaryChanged` (`{ total, editing }`). The row of totals sits under the rows in a sticky row group,
+  moves sideways with the columns (sticky ones stay), stacks several items in a column, is a row of the
+  ARIA model and a Tab stop of its own; its cells read as items that name their column ("Sum of Amount:
+  1,234"). Group items show after the group row's count, under their columns in the group row, or in
+  group footer rows (pooled like the other rows, reached by the arrows, in pages too). Totals of rows in
+  memory are worked out in the data path; a source that loads pages or blocks asks its adapter
+  (`DataSource.loadSummary`) or loads every matching row once (shared with grouping); a server that
+  groups gets the group summaries with the groups, and group items only memory can work out group in
+  memory. `rowType` `groupFooter` and `totalFooter` in the click and prepared events; `GroupCellContext`
+  `summaryItems`. Export: group footers after their rows and the totals last in the CSV and
+  `exportRows()`, group items on the group lines; option `summaries`. Texts `gridSummary…`,
+  `gridSummarySeparator`, `gridTotalSummary` in en and tr.
 - Feedback: `ProgressBar`, `Spinner` (with `Spinner.cover`), `Tooltip` / `addTooltip`, `Toast` /
   `toast` / `Toaster`.
 - `Control` binds DOM events given from code (`new Button({ onclick })`); its private state getter is

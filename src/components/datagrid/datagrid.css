@@ -240,6 +240,68 @@
     color: var(--mx-datagrid-group-count-color);
   }
 
+  .mx-data-grid__group-summary {
+    font-weight: var(--mx-font-weight-regular);
+    color: var(--mx-datagrid-group-count-color);
+  }
+
+  /* Group summary items under their columns: cells on the group row's line, after its text. */
+  .mx-data-grid__group-row > .mx-data-grid__summary-cell {
+    grid-row: 1;
+    font-weight: var(--mx-font-weight-regular);
+  }
+
+  .mx-data-grid__group-row > .mx-data-grid__summary-cell[hidden] {
+    display: none;
+  }
+
+  .mx-data-grid__group-cell {
+    grid-row: 1;
+  }
+
+  /* A group's footer: its summary items under their columns, on one line. */
+  .mx-data-grid__body > .mx-data-grid__group-footer {
+    outline: none;
+    background-color: var(--mx-datagrid-group-background);
+  }
+
+  .mx-data-grid__group-footer:focus-visible {
+    z-index: var(--_z-focus);
+    box-shadow: inset 0 0 0 var(--mx-focus-ring-width) var(--mx-focus-ring-color);
+  }
+
+  /* The row of totals: under the rows, at the bottom of the viewport while they scroll. */
+  .mx-data-grid__foot {
+    position: sticky;
+    inset-block-end: 0;
+    z-index: var(--_z-head);
+    inline-size: max-content;
+    min-inline-size: 100%;
+  }
+
+  .mx-data-grid__total-row {
+    block-size: auto;
+    min-block-size: var(--_row-height);
+    font-weight: var(--mx-datagrid-head-font-weight);
+    color: var(--mx-color-fg-primary);
+    background-color: var(--mx-datagrid-head-background);
+    border-block-start: var(--mx-datagrid-border-width) solid var(--mx-datagrid-edge-color);
+    outline: none;
+  }
+
+  .mx-data-grid__total-row:focus-visible {
+    box-shadow: inset 0 0 0 var(--mx-focus-ring-width) var(--mx-focus-ring-color);
+  }
+
+  .mx-data-grid__total-row[data-state='loading'] {
+    color: var(--mx-color-fg-tertiary);
+  }
+
+  .mx-data-grid__summary-item {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .mx-data-grid__group-toggle {
     display: inline-flex;
     flex: none;

@@ -16,4 +16,6 @@ export interface GroupNode {
   start: number;
   /** The groups of the next level; `null` in the last level, whose rows come next. */
   children: GroupNode[] | null;
+  /** The group summary values a server gave with the group, in the order they were asked for. */
+  summary?: unknown[];
 }

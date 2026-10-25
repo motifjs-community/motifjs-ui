@@ -3,12 +3,16 @@ import { chevronEnd } from '../../../core/glyphs';
 import type { GroupCellContext } from '../group-cell-context';
 import type { GridModel } from '../model/GridModel';
 import type { GroupNode } from '../model/group-node';
+import type { SummaryPart } from '../model/summary-part';
+import { fillSummaryCell } from './summary-cell';
 
 /**
- * One pooled group row of the body: an arrow, "Column: value" and the row count in one cell that
- * spans the columns, moved in by its level. Like the data rows it is made once and shows other
- * groups while the user scrolls; a column's own `groupCell` content is made the first time the row
- * shows a group of that column, and kept.
+ * One pooled group row of the body: an arrow, "Column: value", the row count and the group summary
+ * items in one cell that spans the columns, moved in by its level. Items aligned by column
+ * (`alignByColumn`) get cells of their own under their columns, and the group's cell ends before
+ * the first of them. Like the data rows it is made once and shows other groups while the user
+ * scrolls; a column's own `groupCell` content is made the first time the row shows a group of that
+ * column, and kept.
  */
 export class GroupRow<T> {
   readonly element: HTMLDivElement;
@@ -20,6 +24,10 @@ export class GroupRow<T> {
   private readonly text: HTMLSpanElement;
   private readonly caption = document.createTextNode('');
   private readonly count = document.createTextNode('');
+  private readonly summary = document.createTextNode('');
+  /** Cells of the items aligned by column, by field; made when first needed. */
+  private readonly aligned = new Map<string, HTMLDivElement>();
+  private visible: string[] = [];
   /** Columns' own contents, by field. */
   private readonly own = new Map<string, HTMLElement>();
   private readonly stops: (() => void)[] = [];
@@ -49,7 +57,10 @@ export class GroupRow<T> {
     const count = document.createElement('span');
     count.className = 'mx-data-grid__group-count';
     count.append(this.count);
-    this.text.append(this.caption, count);
+    const summary = document.createElement('span');
+    summary.className = 'mx-data-grid__group-summary';
+    summary.append(this.summary);
+    this.text.append(this.caption, count, summary);
     content.append(toggle, this.text);
     cell.append(content);
     el.append(cell);
@@ -58,6 +69,7 @@ export class GroupRow<T> {
     this.stops.push(
       effect(() => this.drawLook()),
       effect(() => this.drawText()),
+      effect(() => this.drawSummary()),
     );
   }
 
@@ -87,9 +99,10 @@ export class GroupRow<T> {
     this.element.hidden = true;
   }
 
-  /** The cell spans the visible columns. */
+  /** The cell spans the visible columns, up to the first one holding an aligned item. */
   arrange(visible: string[]) {
-    this.cell.setAttribute('aria-colspan', String(Math.max(1, visible.length)));
+    this.visible = visible;
+    this.redraw();
   }
 
   /** Lookup keys came: the text is drawn again when it shows one. */
@@ -121,6 +134,52 @@ export class GroupRow<T> {
     element.style.setProperty('--_level', String(node.level));
     const ev = model.events;
     if (ev.listened(ev.rowPrepared)) untracked(() => ev.rowPrepared.fire({ row: undefined, rowIndex: index, rowType: 'group', groupKey: [...node.path], isSelected: false, element }));
+  }
+
+  /**
+   * Group summary items: after the count, or under their columns (`alignByColumn`), not under the
+   * first column, which holds the text, nor under a column that does not show.
+   */
+  private drawSummary() {
+    void this.shown.value;
+    const { model, node, visible } = this;
+    const inText: string[] = [];
+    let aligned = new Map<string, SummaryPart[]>();
+    if (node) {
+      const s = model.summaries;
+      const values = s.groupValues(node);
+      const items = s.groupItems().filter((i) => i.visible && !i.footer);
+      const under = items.filter((i) => i.align && i.place !== undefined && visible.indexOf(i.place) > 0);
+      aligned = s.partsByColumn(under, values);
+      for (const i of items) {
+        if (under.includes(i)) continue;
+        const text = s.text(i, values[i.index], i.field !== node.field);
+        if (text) inText.push(text);
+      }
+    }
+    const separator = model.text('gridSummarySeparator');
+    this.summary.data = inText.length ? separator + inText.join(separator) : '';
+    let first = visible.length;
+    for (const field of aligned.keys()) first = Math.min(first, visible.indexOf(field));
+    this.cell.style.gridColumn = first < visible.length ? `1 / ${first + 1}` : '';
+    this.cell.setAttribute('aria-colspan', String(Math.max(1, first)));
+    for (const [field, parts] of aligned) {
+      let cell = this.aligned.get(field);
+      if (!cell) {
+        cell = document.createElement('div');
+        cell.className = 'mx-data-grid__cell mx-data-grid__summary-cell';
+        cell.setAttribute('role', 'gridcell');
+        cell.dataset.field = field;
+        this.element.append(cell);
+        this.aligned.set(field, cell);
+      }
+      const at = visible.indexOf(field);
+      cell.hidden = false;
+      cell.style.gridColumn = String(at + 1);
+      cell.setAttribute('aria-colindex', String(at + 1));
+      fillSummaryCell(cell, parts, separator);
+    }
+    for (const [field, cell] of this.aligned) if (!aligned.has(field)) cell.hidden = true;
   }
 
   private drawText() {
@@ -187,6 +246,10 @@ export class GroupRow<T> {
         const n = node();
         void model.groups.state.version;
         return n ? model.groups.isExpanded(n) : false;
+      },
+      get summaryItems() {
+        const n = node();
+        return n ? model.summaries.groupEntries(n, false) : [];
       },
       column: this.model.columns.get(field),
     };

@@ -168,6 +168,17 @@ export const enStrings: UiStrings = {
   gridGroupChipAscending: '{title}, groups ascending',
   gridGroupChipDescending: '{title}, groups descending',
   gridGroupChipHint: 'Enter turns the order of the groups; Delete ungroups.',
+  gridSummarySum: 'Sum: {0}',
+  gridSummarySumOtherColumn: 'Sum of {1}: {0}',
+  gridSummaryMin: 'Min: {0}',
+  gridSummaryMinOtherColumn: 'Min of {1}: {0}',
+  gridSummaryMax: 'Max: {0}',
+  gridSummaryMaxOtherColumn: 'Max of {1}: {0}',
+  gridSummaryAvg: 'Avg: {0}',
+  gridSummaryAvgOtherColumn: 'Avg of {1}: {0}',
+  gridSummaryCount: 'Count: {0}',
+  gridSummarySeparator: ' · ',
+  gridTotalSummary: 'Totals',
 };
 
 export const trStrings: UiStrings = {
@@ -337,6 +348,17 @@ export const trStrings: UiStrings = {
   gridGroupChipAscending: '{title}, gruplar artan',
   gridGroupChipDescending: '{title}, gruplar azalan',
   gridGroupChipHint: 'Enter grupların sırasını çevirir; Delete gruplamayı kaldırır.',
+  gridSummarySum: 'Toplam: {0}',
+  gridSummarySumOtherColumn: '{1} toplamı: {0}',
+  gridSummaryMin: 'En küçük: {0}',
+  gridSummaryMinOtherColumn: 'En küçük {1}: {0}',
+  gridSummaryMax: 'En büyük: {0}',
+  gridSummaryMaxOtherColumn: 'En büyük {1}: {0}',
+  gridSummaryAvg: 'Ortalama: {0}',
+  gridSummaryAvgOtherColumn: '{1} ortalaması: {0}',
+  gridSummaryCount: 'Sayı: {0}',
+  gridSummarySeparator: ' · ',
+  gridTotalSummary: 'Toplamlar',
 };
 
 function stringsOf(lang: string): UiStrings {

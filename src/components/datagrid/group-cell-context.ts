@@ -1,4 +1,5 @@
 import type { GridColumn } from './grid-column';
+import type { GridSummaryValue } from './grid-summary-value';
 
 /**
  * What a column's own group cell (`groupCell`) receives. The grid reuses the group row for other
@@ -16,5 +17,7 @@ export interface GroupCellContext<T> {
   /** The values of the groups from the top level down to this one: the group's key for `expandGroup`. */
   readonly key: readonly unknown[];
   readonly isExpanded: boolean;
+  /** The group summary items of the group row (not of its footer) with their values and texts. */
+  readonly summaryItems: readonly GridSummaryValue[];
   readonly column: GridColumn<T>;
 }

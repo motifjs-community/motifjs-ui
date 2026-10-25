@@ -46,6 +46,7 @@ import type { GridSelectionChangedEventArgs } from '../grid-selection-changed-ev
 import type { GridSelectionChangingEventArgs } from '../grid-selection-changing-event-args';
 import type { GridSortChangedEventArgs } from '../grid-sort-changed-event-args';
 import type { GridSortChangingEventArgs } from '../grid-sort-changing-event-args';
+import type { GridSummaryChangedEventArgs } from '../grid-summary-changed-event-args';
 import type { GridToolbarPreparingEventArgs } from '../grid-toolbar-preparing-event-args';
 
 /**
@@ -106,6 +107,7 @@ export class GridEvents<T> {
   readonly layoutChanged = new Emitter<GridLayout>();
   readonly copying = new Emitter<GridCopyingEventArgs>();
   readonly pasting = new Emitter<GridPastingEventArgs>();
+  readonly summaryChanged = new Emitter<GridSummaryChangedEventArgs>();
 
   private readonly counts = new Map<Emitter<any>, number>();
   private readonly events = new Map<Emitter<any>, MotifEvent<any>>();

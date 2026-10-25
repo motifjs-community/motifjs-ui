@@ -30,6 +30,7 @@ import type { LookupCell } from './lookup-cell';
 import { groupId } from './group-nodes';
 import { GridRowsAdapter } from './GridRowsAdapter';
 import { GridSearch } from './GridSearch';
+import { GridSummaries } from './GridSummaries';
 import { LayoutStore } from './LayoutStore';
 import { LookupTexts } from './LookupTexts';
 import type { GridState } from './grid-state';
@@ -115,6 +116,8 @@ export class GridModel<T> {
   readonly lookups: LookupTexts<T>;
   /** What the rows are grouped by, and which groups are open. */
   readonly groups: GridGroups<T>;
+  /** The summary items, their values and texts. */
+  readonly summaries: GridSummaries<T>;
   /** The grid's ready actions, by name; the grid fills them in. */
   builtIns: GridBuiltInActions<T> | null = null;
   /** The filter the source had before the grid added its own. */
@@ -170,6 +173,7 @@ export class GridModel<T> {
     this.values = new FilterValues<T>(this);
     this.lookups = new LookupTexts<T>(() => this.formatter.locale, { missing: () => this.text('gridLookupMissing') });
     this.search = new GridSearch<T>(this);
+    this.summaries = new GridSummaries<T>(this, props.summary);
     const searchText = stored ? stored.searchText : read(props.searchText);
     if (searchText) this.search.start(searchText);
     this.connect();
@@ -206,8 +210,9 @@ export class GridModel<T> {
       st.page = 0;
       // A given source's sort is the grid's while the grid has none.
       if (given && !st.sort.length) st.sort = this.gridSort(given.sort);
+      const source = given ?? this.ownSource();
       this.data = new GridData<T>({
-        source: given ?? this.ownSource(),
+        source,
         owned: !given,
         paged: read(props.mode) === 'paged',
         pageSize: read(props.pageSize) ?? DEFAULT_PAGE_SIZE,
@@ -216,6 +221,8 @@ export class GridModel<T> {
         remoteGrouping: this.settings.get('remoteGrouping'),
         groupLoadPageSize: this.settings.get('groupLoadPageSize'),
         expanded: (node) => this.groups.isExpanded(node),
+        footers: () => this.summaries.hasFooters(),
+        groupSummary: () => this.summaries.serverItems(this.summaries.groupItems(), source.adapter),
         locale: () => this.formatter.locale,
         saveMode: read(props.saveMode) ?? 'wait',
         createRow: () => this.initialRow ?? props.newRow?.create?.() ?? {},
@@ -226,6 +233,7 @@ export class GridModel<T> {
       st.page = this.data.sourcePage;
       st.connection++;
       this.listenToData();
+      this.summaries.connect(this.data);
     });
   }
 
@@ -373,10 +381,18 @@ export class GridModel<T> {
     return d >= 0 ? this.data.groupAt(d) : null;
   }
 
-  /** What a drawn row follows: a group by its id, else the row's id; `undefined` while it is loading. */
+  /** The group whose footer row is grid row `i`, or `null`. */
+  footerAt(i: number): GroupNode | null {
+    const d = this.dataIndex(i);
+    return d >= 0 ? this.data.footerAt(d) : null;
+  }
+
+  /** What a drawn row follows: a group (or its footer) by its id, else the row's id; `undefined` while it is loading. */
   keyAt(i: number): string | undefined {
     const group = this.groupAt(i);
-    return group ? `group:${group.id}` : this.rowIdAt(i);
+    if (group) return `group:${group.id}`;
+    const footer = this.footerAt(i);
+    return footer ? `footer:${footer.id}` : this.rowIdAt(i);
   }
 
   /** The id of grid row `i`; `undefined` while it is loading. */
@@ -1125,14 +1141,17 @@ export class GridModel<T> {
   private keepActiveRow(change: () => void) {
     const st = this.state;
     const i = st.activeRow;
-    const group = i >= 0 ? this.groupAt(i) : null;
+    const footer = i >= 0 ? this.footerAt(i) : null;
+    const group = i >= 0 ? (this.groupAt(i) ?? footer) : null;
     const row = i >= 0 && !group ? this.rowAt(i) : undefined;
     const d = row !== undefined ? this.data.dataIndexOf(row) : -1;
     change();
     this.data.regroupView();
     const view = this.data.groupView();
     if (!view || i < 0 || (!group && d < 0)) return;
-    const place = group ? view.placeOfGroup(group.id) : view.shownPlaceOfRow(d);
+    // A footer that no longer shows leaves the active row on its group.
+    const own = footer ? view.placeOfFooter(footer.id) : -1;
+    const place = own >= 0 ? own : group ? view.placeOfGroup(group.id) : view.shownPlaceOfRow(d);
     if (place >= 0 && this.viewOfData(place) !== i) st.activeRow = this.viewOfData(place);
   }
 
@@ -1176,6 +1195,7 @@ export class GridModel<T> {
     for (const s of this.dataSubscriptions.splice(0)) s.dispose();
     this.events.dispose();
     this.search.dispose();
+    this.summaries.dispose();
     this.lookups.dispose();
     this.selection.dispose();
     this.data.dispose();

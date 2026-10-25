@@ -44,6 +44,19 @@ describe('GroupView', () => {
     expect(view.allGroups()).toHaveLength(6);
   });
 
+  it('ends each open group with its footer, inner groups first, and skips the footers of closed ones', () => {
+    const nodes = tree();
+    const view = new GroupView(nodes, (n) => n.id !== nodes[1].id, true);
+    // Ankara, Draft, 3 rows, its footer, Paid, 3 rows, its footer, Ankara's footer, Bursa (closed).
+    expect(view.size).toBe(13);
+    const kinds = Array.from({ length: view.size }, (_, i) => {
+      const e = view.itemAt(i)!;
+      return e.node ? `${e.footer ? '=' : '>'}${e.node.key}` : String(e.data);
+    });
+    expect(kinds).toEqual(['>Ankara', '>Draft', '0', '1', '2', '=Draft', '>Paid', '3', '4', '5', '=Paid', '=Ankara', '>Bursa']);
+    expect([view.placeOfRow(3), view.placeOfGroup(nodes[1].id), view.rowsBetween(4, 9)]).toEqual([7, 12, [[2, 3], [3, 5]]]);
+  });
+
   it('runs a list of a hundred thousand rows in groups without a place per row', () => {
     const big = Array.from({ length: 100_000 }, (_, i) => ({ id: i, g: `g${String(Math.floor(i / 100)).padStart(4, '0')}` }));
     const level: GroupLevel[] = [{ field: 'g', dir: 'asc', serverField: 'g', read: undefined, compare: undefined }];

@@ -41,6 +41,8 @@ import type { GridSearchTextChangingEventArgs } from './grid-search-text-changin
 import type { GridSelectionChangingEventArgs } from './grid-selection-changing-event-args';
 import type { GridSortChangedEventArgs } from './grid-sort-changed-event-args';
 import type { GridSortChangingEventArgs } from './grid-sort-changing-event-args';
+import type { GridSummary } from './grid-summary';
+import type { GridSummaryChangedEventArgs } from './grid-summary-changed-event-args';
 import type { GridToolbarPreparingEventArgs } from './grid-toolbar-preparing-event-args';
 import type { LayoutStorage } from './layout-storage';
 import type { GridColumn } from './grid-column';
@@ -138,6 +140,14 @@ export interface DataGridProps<T> extends ControlProps {
   onSearchTextChanging?: (e: GridSearchTextChangingEventArgs) => void;
   /** The search text changed (typed, or set from code). */
   onSearchTextChanged?: (e: GridSearchTextChangedEventArgs) => void;
+  /**
+   * Values of the rows under the filter and the search: a row of totals under the rows
+   * (`totalItems`) and values of each group in its row or footer (`groupItems`), also custom ones.
+   * Read and change it later through `grid.summary`.
+   */
+  summary?: Bind<GridSummary<T>>;
+  /** The summary values were worked out again (new data, or unsaved changes with `recalculateWhileEditing`). */
+  onSummaryChanged?: (e: GridSummaryChangedEventArgs) => void;
   /** Content of your own in every group row whose column has no `groupCell`, made once per pooled group row. */
   groupCell?: (ctx: GroupCellContext<T>) => unknown;
   /** The grouping is about to change (user or code): `e.group`, `e.previous`, `e.byUser`; `e.cancel` keeps it. */

@@ -1,0 +1,380 @@
+import { createSignal, reactive, read, untracked, type Bind, type IDisposable } from '@motifx/core';
+import { data } from '@motifx-community/data';
+import { fillTemplate } from '../../../core/fill-template';
+import type { UiStrings } from '../../../core/ui-strings';
+import type { GridCustomSummaryInfo } from '../grid-custom-summary-info';
+import type { GridGroupSummaryItem } from '../grid-group-summary-item';
+import type { GridSummary } from '../grid-summary';
+import type { GridSummaryTexts } from '../grid-summary-texts';
+import type { GridSummaryType } from '../grid-summary-type';
+import type { GridSummaryValue } from '../grid-summary-value';
+import { cellValue } from './cell-value';
+import type { GridData } from './GridData';
+import type { GridModel } from './GridModel';
+import type { GroupNode } from './group-node';
+import type { PlacedItem } from './placed-item';
+import type { SummaryPart } from './summary-part';
+
+const TEXT_KEYS: Record<keyof GridSummaryTexts, keyof UiStrings> = {
+  sum: 'gridSummarySum',
+  sumOtherColumn: 'gridSummarySumOtherColumn',
+  min: 'gridSummaryMin',
+  minOtherColumn: 'gridSummaryMinOtherColumn',
+  max: 'gridSummaryMax',
+  maxOtherColumn: 'gridSummaryMaxOtherColumn',
+  avg: 'gridSummaryAvg',
+  avgOtherColumn: 'gridSummaryAvgOtherColumn',
+  count: 'gridSummaryCount',
+};
+
+type Steps<T> = { -readonly [K in keyof GridCustomSummaryInfo<T>]: GridCustomSummaryInfo<T>[K] };
+
+/** Unsaved changes the values follow (`recalculateWhileEditing`), by row id. */
+interface Edits<T> {
+  drafts: Map<string, Readonly<Record<string, unknown>>>;
+  removed: Set<string>;
+  added: T[];
+}
+
+/**
+ * The grid's summaries: the items of the `summary` prop as they read now, their values and their
+ * texts. Totals of rows in memory are worked out at once; a source that loads pages or blocks asks
+ * its adapter (`remoteSummary`) or loads every matching row once per row set and works them out
+ * here. Group values come with a server's groups, or are worked out per group the first time a row
+ * shows it. Unsaved changes count while `recalculateWhileEditing` is on; saved ones always do.
+ */
+export class GridSummaries<T> {
+  readonly state = reactive({ status: 'ready' as 'loading' | 'ready' | 'error', version: 0 });
+  /** The grid, which `calculateCustomSummary` receives as `component`. */
+  component: unknown = null;
+  private readonly given = createSignal<Bind<GridSummary<T>> | undefined>(undefined);
+  private readonly totals = createSignal<readonly unknown[]>([]);
+  private data: GridData<T> | null = null;
+  private subscriptions: IDisposable[] = [];
+  private generation = 0;
+  private groupCache = new WeakMap<GroupNode, unknown[]>();
+
+  constructor(
+    private readonly model: GridModel<T>,
+    summary: Bind<GridSummary<T>> | undefined,
+  ) {
+    this.given.value = summary;
+  }
+
+  /** The `summary` prop as given (a value or a function). */
+  get value(): Bind<GridSummary<T>> | undefined {
+    return this.given.value;
+  }
+
+  set value(summary: Bind<GridSummary<T>> | undefined) {
+    this.given.value = summary;
+  }
+
+  /** The summary as it reads now. Reactive. */
+  config(): GridSummary<T> {
+    return read(this.given.value) ?? {};
+  }
+
+  /** The values of `totalItems`, in order. Reactive. */
+  get total(): readonly unknown[] {
+    return this.totals.value;
+  }
+
+  totalItems(): PlacedItem[] {
+    return this.place(read(this.config().totalItems) ?? [], 'totalSummary');
+  }
+
+  groupItems(): PlacedItem[] {
+    return this.place(read(this.config().groupItems) ?? [], 'groupSummary');
+  }
+
+  /** Whether the row of totals shows: an item is visible. Reactive. */
+  showsTotal(): boolean {
+    return this.totalItems().some((i) => i.visible);
+  }
+
+  /** Whether each open group ends with a footer row. Reactive. */
+  hasFooters(): boolean {
+    return this.groupItems().some((i) => i.visible && i.footer);
+  }
+
+  /** What the values depend on (not how they show), as text: a change means working them out again. */
+  signature(): string {
+    const c = this.config();
+    const part = (items: PlacedItem[]) => items.map((i) => [i.type, i.field, i.name, read(i.item.skipEmptyValues)]);
+    const s = this.model.settings;
+    return JSON.stringify([part(this.totalItems()), part(this.groupItems()), read(c.recalculateWhileEditing), read(c.skipEmptyValues), s.get('remoteSummary'), s.get('groupLoadPageSize')]);
+  }
+
+  /** The items as a server is asked for them, or `null` when the browser has to work them out. */
+  serverItems(items: readonly PlacedItem[], adapter: data.DataAdapter<T, unknown>): data.SummaryItem[] | null {
+    const remote = this.model.settings.get('remoteSummary');
+    if (remote === false || (remote === 'auto' && !adapter.capabilities.summary)) return null;
+    const out: data.SummaryItem[] = [];
+    for (const i of items) {
+      if (i.type === 'count') out.push({ type: 'count' });
+      else if (i.type === 'custom' || i.field === undefined || this.model.columns.defs.get(i.field)?.value) return null;
+      else out.push({ type: i.type, field: i.field });
+    }
+    return out;
+  }
+
+  /** Follows the rows and the unsaved changes of new data. */
+  connect(gridData: GridData<T>) {
+    for (const s of this.subscriptions.splice(0)) s.dispose();
+    this.data = gridData;
+    const source = gridData.source;
+    this.subscriptions.push(
+      source.onChanged((e) => {
+        const all = source.loadMode === 'all';
+        const changed = all ? e.reason === 'loaded' || e.reason === 'rows' || e.reason === 'cleared' : e.reason === 'query' || e.reason === 'reload' || e.reason === 'rows';
+        if (changed) this.refresh();
+      }),
+      gridData.tracker.onChanged((e) => {
+        // A save reaches the rows, which the source tells.
+        if (e.reason === 'saved' || e.reason === 'released') return;
+        if (this.followsEdits()) this.refresh(true);
+      }),
+    );
+    this.refresh();
+  }
+
+  /** Works the values out again; `editing` when only unsaved changes moved. */
+  refresh(editing = false) {
+    const gridData = this.data;
+    if (!gridData) return;
+    this.groupCache = new WeakMap();
+    untracked(() => this.state.version++);
+    const items = untracked(() => this.totalItems());
+    const source = gridData.source;
+    const server = items.length && source.loadMode !== 'all' ? untracked(() => this.serverItems(items, source.adapter)) : null;
+    // A server's totals do not move with unsaved changes.
+    if (server && editing) return;
+    const generation = ++this.generation;
+    if (!items.length) {
+      this.setTotal([], editing);
+      return;
+    }
+    if (source.loadMode === 'all') {
+      // The rows of a query still loading come with `loaded`.
+      if (source.status === 'ready') this.setTotal(this.compute(items, source.rows, undefined, true), editing);
+      return;
+    }
+    untracked(() => (this.state.status = 'loading'));
+    const work = server ? source.loadSummary(server) : gridData.everyRow(this.model.settings.get('groupLoadPageSize')).then((rows) => this.compute(items, rows, undefined, true));
+    work.then(
+      (values) => {
+        if (generation === this.generation) this.setTotal(values, editing);
+      },
+      (error: unknown) => {
+        if (generation !== this.generation || data.isAbortError(error)) return;
+        untracked(() => (this.state.status = 'error'));
+        const ev = this.model.events;
+        ev.tell(ev.dataErrorOccurred, () => ({ error: data.DataError.from(error, 'load'), operation: 'load' as const }));
+      },
+    );
+  }
+
+  /** The values of `groupItems` for a group: a server's, or worked out from its rows once. Reactive. */
+  groupValues(node: GroupNode): readonly unknown[] {
+    void this.state.version;
+    const items = this.groupItems();
+    if (!items.length) return [];
+    if (node.summary) return node.summary;
+    let values = this.groupCache.get(node);
+    if (!values) {
+      const rows = this.data?.rowsOfGroup(node);
+      values = rows ? untracked(() => this.compute(items, rows, node.level, false)) : [];
+      this.groupCache.set(node, values);
+    }
+    return values;
+  }
+
+  /** A total value by the item's name, place, type, column or `type_column`, as `getTotalSummaryValue`. Reactive. */
+  totalValue(name: string | number): unknown {
+    const at = this.find(this.totalItems(), name);
+    return at < 0 ? undefined : this.total[at];
+  }
+
+  /** A group's value by the item's name (as `totalValue`). Reactive. */
+  groupValue(node: GroupNode, name: string | number): unknown {
+    const at = this.find(this.groupItems(), name);
+    return at < 0 ? undefined : this.groupValues(node)[at];
+  }
+
+  /** The visible items of a group with their values and texts, in order; with `footer`, only those of the footer (or of the group row). Reactive. */
+  groupEntries(node: GroupNode, footer?: boolean): GridSummaryValue[] {
+    const values = this.groupValues(node);
+    return this.groupItems()
+      .filter((i) => i.visible && (footer === undefined || i.footer === footer))
+      .map((i) => ({ name: i.name, column: i.field, summaryType: i.type, value: values[i.index], text: this.text(i, values[i.index], i.field !== node.field) }));
+  }
+
+  /** The text of an item with its value; `''` when there is no value to show. */
+  text(i: PlacedItem, value: unknown, otherColumn: boolean): string {
+    if (value === undefined || value === null || (typeof value === 'number' && Number.isNaN(value))) return '';
+    const valueText = this.format(i, value);
+    if (i.item.customizeText) return i.item.customizeText({ value, valueText });
+    const pattern = read(i.item.displayFormat) ?? this.pattern(i.type, otherColumn && i.field !== undefined);
+    return fillTemplate(pattern, { 0: valueText, 1: i.field === undefined ? '' : this.title(i.field) });
+  }
+
+  /** An item ready to draw, or `null` when it has no value to show. */
+  part(i: PlacedItem, value: unknown, otherColumn: boolean): SummaryPart | null {
+    const text = this.text(i, value, otherColumn);
+    if (!text) return null;
+    return { text, label: otherColumn ? text : this.text(i, value, true), align: read(i.item.alignment) ?? undefined, cssClass: read(i.item.cssClass) ?? undefined };
+  }
+
+  /** The parts of the visible items, by the column each shows under. Reactive. */
+  partsByColumn(items: readonly PlacedItem[], values: readonly unknown[]): Map<string, SummaryPart[]> {
+    const out = new Map<string, SummaryPart[]>();
+    for (const i of items) {
+      if (!i.visible || i.place === undefined) continue;
+      const part = this.part(i, values[i.index], i.place !== i.field);
+      if (!part) continue;
+      const list = out.get(i.place);
+      if (list) list.push(part);
+      else out.set(i.place, [part]);
+    }
+    return out;
+  }
+
+  dispose() {
+    this.generation++;
+    for (const s of this.subscriptions.splice(0)) s.dispose();
+    this.data = null;
+  }
+
+  private place(items: readonly GridGroupSummaryItem[], setting: 'totalSummary' | 'groupSummary'): PlacedItem[] {
+    return items.map((item, index) => {
+      const field = read(item.column) ?? undefined;
+      return {
+        index,
+        item,
+        type: read(item.summaryType) ?? 'count',
+        field,
+        place: read(item.showInColumn) ?? field,
+        name: read(item.name) ?? undefined,
+        footer: !!read(item.showInGroupFooter),
+        align: !!read(item.alignByColumn),
+        visible: read(item.visible) ?? this.model.settings.get(setting),
+      };
+    });
+  }
+
+  private find(items: readonly PlacedItem[], name: string | number): number {
+    return items.findIndex((i, n) => i.name === name || n === name || i.type === name || i.field === name || `${i.type}_${i.field}` === name);
+  }
+
+  private followsEdits(): boolean {
+    return !!untracked(() => read(this.config().recalculateWhileEditing));
+  }
+
+  private setTotal(values: readonly unknown[], editing: boolean) {
+    untracked(() => {
+      this.totals.value = values;
+      this.state.status = 'ready';
+    });
+    const ev = this.model.events;
+    ev.tell(ev.summaryChanged, () => ({ total: values, editing }));
+  }
+
+  /** The values of `items` over `rows`; with `withNew`, unsaved new rows count too. */
+  private compute(items: readonly PlacedItem[], rows: readonly T[], groupIndex: number | undefined, withNew: boolean): unknown[] {
+    const edits = this.followsEdits() ? this.edits() : null;
+    let list: readonly T[] = rows;
+    if (edits) {
+      const tracker = this.data!.tracker;
+      const out: T[] = [];
+      for (const row of rows) {
+        const id = tracker.rowIdOf(row);
+        if (edits.removed.has(id)) continue;
+        const draft = edits.drafts.get(id);
+        out.push(draft ? ({ ...(row as object), ...draft } as T) : row);
+      }
+      if (withNew) out.push(...edits.added);
+      list = out;
+    }
+    const columns = this.model.columns;
+    const readerOf = (field: string) => {
+      const col = columns.defs.get(field);
+      return col && !columns.isInternal(field) ? (row: unknown) => cellValue(col, row as T) : (row: unknown) => data.getField(row, field);
+    };
+    const skipAll = untracked(() => read(this.config().skipEmptyValues)) ?? true;
+    const skips = untracked(() => items.map((i) => read(i.item.skipEmptyValues) ?? skipAll));
+    const adapter = this.data!.source.adapter;
+    const ctx: data.EvaluateContext = { fields: adapter.fields, locale: this.model.formatter.locale, summaryValue: readerOf };
+    const builtIn = items.filter((i) => i.type !== 'custom' && (i.type === 'count' || i.field !== undefined));
+    const values = data.summarize(
+      list,
+      builtIn.map((i): data.SummaryItem => ({ type: i.type as data.SummaryType, field: i.field, skipEmpty: skips[i.index] })),
+      ctx,
+    );
+    const out: unknown[] = items.map(() => null);
+    builtIn.forEach((i, n) => (out[i.index] = values[n]));
+    for (const i of items) if (i.type === 'custom') out[i.index] = this.custom(i, list, groupIndex, skips[i.index], readerOf);
+    return out;
+  }
+
+  /** A `custom` item: `calculateCustomSummary` through start, a calculate per row, finalize. */
+  private custom(i: PlacedItem, rows: readonly T[], groupIndex: number | undefined, skip: boolean, readerOf: (field: string) => (row: unknown) => unknown): unknown {
+    const calculate = untracked(() => this.config().calculateCustomSummary);
+    if (!calculate) return undefined;
+    const value = i.field === undefined ? (row: unknown) => row : readerOf(i.field);
+    const info: Steps<T> = { name: i.name, summaryProcess: 'start', value: undefined, totalValue: undefined, groupIndex, component: this.component as Steps<T>['component'] };
+    calculate(info);
+    info.summaryProcess = 'calculate';
+    for (const row of rows) {
+      const v = value(row);
+      if (skip && i.field !== undefined && data.isEmpty(v)) continue;
+      info.value = v;
+      calculate(info);
+    }
+    info.summaryProcess = 'finalize';
+    info.value = undefined;
+    calculate(info);
+    return info.totalValue;
+  }
+
+  private edits(): Edits<T> | null {
+    const tracker = this.data?.tracker;
+    if (!tracker) return null;
+    const edits: Edits<T> = { drafts: new Map(), removed: new Set(), added: [] };
+    for (const row of tracker.pendingRows()) {
+      const rec = tracker.editOf(row);
+      if (!rec) continue;
+      if (rec.isNew) {
+        if (!rec.removed) edits.added.push({ ...(rec.row as object), ...rec.draft } as T);
+      } else if (rec.removed) edits.removed.add(rec.rowId);
+      else edits.drafts.set(rec.rowId, rec.draft);
+    }
+    return edits.drafts.size || edits.removed.size || edits.added.length ? edits : null;
+  }
+
+  private pattern(type: GridSummaryType, otherColumn: boolean): string {
+    if (type === 'custom') return '{0}';
+    const key: keyof GridSummaryTexts = otherColumn && type !== 'count' ? `${type}OtherColumn` : type;
+    return read(this.config().texts)?.[key] ?? this.model.text(TEXT_KEYS[key]);
+  }
+
+  private title(field: string): string {
+    const cols = this.model.columns;
+    return cols.defs.has(field) && !cols.isInternal(field) ? cols.title(field) : field;
+  }
+
+  private format(i: PlacedItem, value: unknown): string {
+    const formatter = this.model.formatter;
+    const given = i.item.valueFormat;
+    if (typeof given === 'function' && given.length > 0) return (given as (v: unknown) => string)(value);
+    const options = read(given as Bind<Intl.NumberFormatOptions | Intl.DateTimeFormatOptions | undefined>);
+    const col = i.field !== undefined && !this.model.columns.isInternal(i.field) ? this.model.columns.defs.get(i.field) : undefined;
+    const date = value instanceof Date ? value : col?.type === 'date' ? data.toDate(value) : null;
+    if (options && date) return new Intl.DateTimeFormat(formatter.locale, options as Intl.DateTimeFormatOptions).format(date);
+    if (options && typeof value === 'number') return new Intl.NumberFormat(formatter.locale, options as Intl.NumberFormatOptions).format(value);
+    if (i.type === 'count' && typeof value === 'number') return formatter.count(value);
+    if (col && i.type !== 'custom') return formatter.text(col, {} as T, value);
+    if (date) return date.toLocaleDateString(formatter.locale);
+    return typeof value === 'number' ? formatter.count(value) : String(value);
+  }
+}

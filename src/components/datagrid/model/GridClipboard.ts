@@ -67,8 +67,8 @@ export class GridClipboard<T> {
       }
       at = model.localOf(r) + 1;
       last = r;
-      // Group rows take no values: the line goes to the next data row.
-      while (model.groupAt(r)) {
+      // Group rows and footers take no values: the line goes to the next data row.
+      while (model.groupAt(r) || model.footerAt(r)) {
         r = model.viewAt(at);
         if (r < 0) break;
         at = model.localOf(r) + 1;

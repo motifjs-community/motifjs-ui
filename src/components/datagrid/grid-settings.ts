@@ -105,8 +105,24 @@ export interface GridSettings extends ColumnFeatures {
    * level has a field it groups by, `false` always memory, from every matching row. Default `'auto'`.
    */
   remoteGrouping: 'auto' | boolean;
-  /** Grouping in memory over a source that loads pages or blocks: rows asked for per request while every matching row loads; 0 asks for all at once. Default `0`. */
+  /**
+   * Grouping or summaries in memory over a source that loads pages or blocks: rows asked for per
+   * request while every matching row loads; 0 asks for all at once. Default `0`.
+   */
   groupLoadPageSize: number;
+  /** The row under the rows with the items of `summary.totalItems`; an item's `visible` wins. Default `true`. */
+  totalSummary: boolean;
+  /** The items of `summary.groupItems` in group rows and group footers; an item's `visible` wins. Default `true`. */
+  groupSummary: boolean;
+  /** The row of totals is a stop of its own in the Tab order after the rows, so the keyboard reaches it. Default `true`. */
+  totalSummaryTabStop: boolean;
+  /**
+   * Who computes the summaries of a data source that loads pages or blocks: `'auto'` the source's
+   * adapter when it can (its `summary` capability), `true` the adapter always (it may load every row
+   * to do so), `false` the browser, from every matching row. Items of type `custom`, and items of a
+   * column with a `value` reader, are always computed in the browser. Default `'auto'`.
+   */
+  remoteSummary: 'auto' | boolean;
   /** Keys that open and close a group row (`KeyboardEvent.key` values). Default `['Enter', ' ']`. */
   groupToggleKeys: readonly string[];
   /** Right and Left open and close a group row, then go into it and out to the group above. Default `true`. */

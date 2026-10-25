@@ -15,6 +15,7 @@ export function groupNodes(groups: readonly data.RowGroup<unknown>[], levels: re
     list.map((g) => {
       const path = [...parent, g.key];
       const node: GroupNode = { id: groupId(path, locale), level, field: levels[level]?.field ?? g.field, key: g.key, path, count: g.count, start, children: null };
+      if (g.summary) node.summary = g.summary;
       if (g.groups && level + 1 < levels.length) node.children = make(g.groups, level + 1, path);
       else start += g.count;
       return node;

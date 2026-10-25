@@ -3,6 +3,8 @@ import type { GridExportOptions } from '../grid-export-options';
 import { writeDelimited } from './delimited-text';
 import type { ExportTable } from './export-table';
 import type { GridModel } from './GridModel';
+import type { GroupNode } from './group-node';
+import type { PlacedItem } from './placed-item';
 import { listSeparator } from './list-separator';
 
 const FORMULA_START = /^[=+\-@\t\r]/;
@@ -13,6 +15,7 @@ const FORMULA_START = /^[=+\-@\t\r]/;
  * the data source (`loadRange`), so its own filter, search and sort apply. Cells read like the grid
  * shows them, unsaved edits included; new rows not saved yet are not data and stay out. Grouped,
  * the rows come in group order, every group open, and the CSV has a "Column: value" line per group.
+ * The summaries come as the grid shows them: group footers after their rows, the totals last.
  */
 export class GridExport<T> {
   constructor(private readonly model: GridModel<T>) {}
@@ -29,12 +32,21 @@ export class GridExport<T> {
     const shown = options.values !== 'raw';
     const rows = await this.rows(options, signal);
     const view = !options.selected && options.groups !== false ? model.data.groupView() : null;
+    const summaries = !options.selected && options.summaries !== false;
     // Lookup cells and groups export their texts: every key of the rows is resolved first.
     const grouped = view ? model.groups.fields().map((f) => model.columns.get(f)) : [];
     const lookups = [...cols, ...grouped].filter((c, i, all) => c.lookup && !c.textFrom && all.indexOf(c) === i);
     if ((shown || view) && lookups.length) await model.lookups.load(lookups, rows.map((row) => ({ ...(row as object), ...(model.edit(model.rowIdOf(row))?.draft ?? {}) }) as T));
+    const s = model.summaries;
+    const raw = !shown;
+    const groupItems = summaries ? s.groupItems().filter((i) => i.visible) : [];
+    const totalItems = summaries ? s.totalItems() : [];
+    const nodes = view?.allGroups() ?? [];
+    const footers = groupItems.some((i) => i.footer) ? nodes.map((node) => ({ at: node.start + node.count, level: node.level, cells: this.cells(fields, groupItems.filter((i) => i.footer), s.groupValues(node), raw) })) : undefined;
     return {
-      groups: view?.allGroups().map((node) => ({ at: node.start, text: model.groupCaption(node), level: node.level })),
+      groups: nodes.map((node) => this.groupLine(node, fields, groupItems.filter((i) => !i.footer), raw)),
+      footers: footers?.sort((a, b) => a.at - b.at || b.level - a.level),
+      total: totalItems.some((i) => i.visible) ? this.cells(fields, totalItems, s.total, raw) : undefined,
       fields,
       rows: rows.map((row) => {
         const rowId = model.rowIdOf(row);
@@ -55,11 +67,17 @@ export class GridExport<T> {
     const guard = options.escapeFormulas !== false;
     const safe = (text: string) => (guard && FORMULA_START.test(text) ? `'${text}` : text);
     const groups = table.groups ?? [];
+    const footers = table.footers ?? [];
     const lines: string[][] = [];
     let g = 0;
+    let f = 0;
+    const closeGroups = (i: number) => {
+      for (; f < footers.length && footers[f].at <= i; f++) lines.push(footers[f].cells.map(safe));
+    };
     table.rows.forEach((cells, i) => {
+      closeGroups(i);
       // A group's line before its first row, its text in the first column.
-      for (; g < groups.length && groups[g].at <= i; g++) lines.push([safe(groups[g].text), ...table.fields.slice(1).map(() => '')]);
+      for (; g < groups.length && groups[g].at <= i; g++) lines.push([safe(groups[g].text), ...groups[g].cells.slice(1).map(safe)]);
       lines.push(
         cells.map((value, j) => {
           const text = raw ? formatter.raw(cols[j], value) : String(value ?? '');
@@ -67,9 +85,47 @@ export class GridExport<T> {
         }),
       );
     });
+    closeGroups(Number.POSITIVE_INFINITY);
+    if (table.total) lines.push(table.total.map(safe));
     const head = options.headers !== false ? [table.fields.map((f) => model.columns.title(f))] : [];
     const separator = options.separator ?? listSeparator(formatter.locale);
     return `${options.bom !== false ? '﻿' : ''}${writeDelimited([...head, ...lines], separator)}\r\n`;
+  }
+
+  /** The summary lines of a table as objects by field, in the order they come: footers after their rows, the totals last. */
+  summaryObjects(table: ExportTable): { after: number; values: Record<string, string> }[] {
+    const of = (cells: string[]) => Object.fromEntries(table.fields.map((f, j) => [f, cells[j]]));
+    const out = (table.footers ?? []).map((footer) => ({ after: footer.at, values: of(footer.cells) }));
+    if (table.total) out.push({ after: table.rows.length, values: of(table.total) });
+    return out;
+  }
+
+  /** Summary items under their columns, as cells by field; several in a cell one per line. */
+  private cells(fields: readonly string[], items: readonly PlacedItem[], values: readonly unknown[], raw: boolean): string[] {
+    const { model } = this;
+    return fields.map((field) => {
+      const texts: string[] = [];
+      for (const i of items) {
+        if (!i.visible || i.place !== field) continue;
+        const value = values[i.index];
+        const col = i.field !== undefined && model.columns.defs.has(i.field) ? model.columns.get(i.field) : null;
+        const text = raw ? (data.isEmpty(value) ? '' : col ? model.formatter.raw(col, value) : String(value)) : model.summaries.text(i, value, i.place !== i.field);
+        if (text) texts.push(text);
+      }
+      return texts.join('\n');
+    });
+  }
+
+  /** A group's line: "Column: value", its summary items after it, those aligned by column under their columns. */
+  private groupLine(node: GroupNode, fields: readonly string[], items: readonly PlacedItem[], raw: boolean) {
+    const { model } = this;
+    const s = model.summaries;
+    const values = items.length ? s.groupValues(node) : [];
+    const under = items.filter((i) => i.align && i.place !== undefined && fields.indexOf(i.place) > 0);
+    const inText = items.filter((i) => !under.includes(i)).map((i) => s.text(i, values[i.index], i.field !== node.field)).filter(Boolean);
+    const separator = model.text('gridSummarySeparator');
+    const text = model.groupCaption(node) + (inText.length ? separator + inText.join(separator) : '');
+    return { at: node.start, text, level: node.level, cells: this.cells(fields, under, values, raw) };
   }
 
   /** Saves text as a file through a link the browser downloads. */

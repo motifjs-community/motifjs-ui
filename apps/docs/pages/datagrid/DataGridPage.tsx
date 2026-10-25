@@ -18,6 +18,8 @@ import RowActions from './examples/RowActions';
 import SaveModes from './examples/SaveModes';
 import Search from './examples/Search';
 import Selection from './examples/Selection';
+import Summaries from './examples/Summaries';
+import SummariesServer from './examples/SummariesServer';
 import Switches from './examples/Switches';
 import TextFrom from './examples/TextFrom';
 import Events from './examples/Events';
@@ -58,6 +60,8 @@ const PROPS = [
   ['onGroupingChanging / onGroupingChanged', '`(e) => void`', '—', 'Before and after the grouping changes, by the user or from code: `{ group, previous, byUser }`; `e.cancel = true` keeps it.'],
   ['onGroupDropping', '`(e) => void`', '—', 'A header or a chip dropped to change the grouping: `{ field, from, to, index }`; `e.cancel = true` cancels the drop.'],
   ['groupCell', '`(ctx) => component`', '—', 'Content of your own in the group rows of columns without a `groupCell`.'],
+  ['summary', '`Bind<GridSummary>`', '—', 'The summaries: `totalItems` in the row under the rows, `groupItems` in group rows and footers, and how they are worked out. See Summaries.'],
+  ['onSummaryChanged', '`(e) => void`', '—', 'The summary values were worked out again: `{ total, editing }`.'],
   ['loadValues', '`(request) => { values, total }`', '—', 'The values of a header filter from a server that cannot group: `{ column, search, filter, skip, take, signal }`.'],
   ['onEditorPreparing', '`(e) => void`', '—', 'Before a cell editor is made: `{ field, row, isNew, options, cancel }`. Change `e.options`, the editor’s props (`enabled = false` disables it), or set `e.cancel`.'],
   ['enabled / disabled, visible, tabStop', 'see Control', '', 'The shared properties of every control.'],
@@ -102,7 +106,10 @@ const SETTINGS = [
   ['groupCount', '`true`', 'Group rows show their row count; a column can say otherwise for itself.'],
   ['groupToggleKeys, groupArrowKeys', "`['Enter', ' ']`, `true`", 'The keys that open and close a group row; Right and Left open, close and go in and out.'],
   ['remoteGrouping', "`'auto'`", 'Who groups a data source’s rows: `auto` its adapter when it groups (blocks), `true` the adapter whenever the source loads by blocks, `false` always the browser, from every matching row.'],
-  ['groupLoadPageSize', '`0`', 'Grouping in the browser over a source that loads pages or blocks: rows per request while every matching row loads (0: one request).'],
+  ['groupLoadPageSize', '`0`', 'Grouping or summaries in the browser over a source that loads pages or blocks: rows per request while every matching row loads (0: one request).'],
+  ['totalSummary, groupSummary', '`true`', 'The row of totals with the items of `summary.totalItems`; the items of `summary.groupItems` in group rows and footers. An item’s `visible` wins.'],
+  ['totalSummaryTabStop', '`true`', 'The row of totals is a Tab stop of its own after the rows.'],
+  ['remoteSummary', "`'auto'`", 'Who works out the summaries of a source that loads pages or blocks: `auto` its adapter when it has the `summary` capability, `true` the adapter always, `false` the browser, from every matching row. `custom` items and columns with a `value` reader are always worked out in the browser.'],
   ['dragThreshold', '`5`', 'Pixels a pressed header or chip moves before it is dragged.'],
   ['dragGhost', '`true`', 'A dragged header or chip shows its title next to the pointer, marked with what a drop would do: group, move, ungroup. While a header is dragged the whole toolbar takes drops for the group panel and is marked.'],
   ['columnWidth, columnMinWidth', '`140`, `48`', 'The width of a column that gives none, and the smallest width the user can resize one to; a column’s `width` and `minWidth` win.'],
@@ -120,10 +127,10 @@ const SETTINGS = [
 ];
 
 const EVENTS = [
-  ['onCellClick / onCellDblClick', '`{ field, row, rowIndex, rowType, groupKey?, element, event }`', 'yes', 'A cell was clicked or double-clicked; cancel: no selection, no group toggle, no editor.'],
+  ['onCellClick / onCellDblClick', '`{ field, row, rowIndex, rowType, groupKey?, element, event }`', 'yes', 'A cell was clicked or double-clicked (also in a group footer, `rowType: \'groupFooter\'`, and in the row of totals, `\'totalFooter\'`); cancel: no selection, no group toggle, no editor.'],
   ['onRowClick / onRowDblClick', '`{ row, rowIndex, rowType, groupKey?, element, event }`', 'yes', 'The same for the row, after its cell’s event.'],
   ['onCellPrepared', '`{ field, row, rowIndex, value, isNew, element }`', '', 'A cell was drawn for a row: style it. Cells are reused while scrolling, so set and clear what you change. Costs nothing while nobody listens.'],
-  ['onRowPrepared', '`{ row, rowIndex, rowType, groupKey?, isSelected, element }`', '', 'A data or group row was drawn; the same rule.'],
+  ['onRowPrepared', '`{ row, rowIndex, rowType, groupKey?, isSelected, element }`', '', 'A data row, group row, group footer (`groupFooter`) or the row of totals (`totalFooter`) was drawn; the same rule.'],
   ['onContentReady', '`{ total }`', '', 'Rows arrived and are laid out (after a load, a filter, a sort, a page, a resize).'],
   ['onDataErrorOccurred', '`{ error, operation, row? }`', '', 'A load (`operation: \'load\'`) or the save of a row (`\'save\'`, with `row`) failed.'],
   ['onEditingStart', '`{ field, row, rowIndex, isNew }`', 'yes', 'A cell editor is about to open.'],
@@ -147,6 +154,7 @@ const EVENTS = [
   ['onGroupingChanging / onGroupingChanged, onGroupDropping', 'see Grouping', 'yes', 'The grouping; a dropped header or chip.'],
   ['onRowExpanding / onRowExpanded, onRowCollapsing / onRowCollapsed', '`{ key }`', 'yes / —', 'A group opens or closes.'],
   ['onCopying / onPasting', '`{ text, html, rows }` / `{ text, rowIndex, field }`', 'yes', 'Ctrl+C, `copy()`; Ctrl+V, `paste()`: change the text, or stop it.'],
+  ['onSummaryChanged', '`{ total, editing }`', '', 'The summary values were worked out again: new rows, a new filter or search, a save, or (with `recalculateWhileEditing`) an unsaved change.'],
   ['onExporting / onExported', '`{ format, options }` / `{ format, rows, text? }`', 'yes / —', 'An export is about to start (change its options); it finished.'],
   ['onContextMenuPreparing', '`{ target, field, row?, rowIndex, items }`', 'yes', 'A header’s column menu (`header`) or a row’s menu (`row`: a right click or the context menu key; it opens only when you add items) is about to open: change `items`.'],
   ['onToolbarPreparing', '`{ items }`', '', 'The toolbar is laid out: change the list of items it takes.'],
@@ -176,7 +184,7 @@ const COLUMN_FIELDS = [
   ['groupable, showWhenGrouped, allowCollapsing, groupCount, groupMenu, groupExpandMode', 'The grouping switches for this column; each wins over `settings`.'],
   ['groupCompare', '`(a, b) => number`: the order of the column’s groups in memory (`dir` still turns it).'],
   ['calculateGroupValue', '`(row) => value` for rows in memory, or the field a server groups by: what the rows are grouped and the groups ordered by instead of the value.'],
-  ['groupCell', '`(ctx) => component`: content of your own in the column’s group rows, made once per pooled group row; read `ctx.value`, `ctx.text`, `ctx.count`, `ctx.level`, `ctx.key`, `ctx.isExpanded` in getters.'],
+  ['groupCell', '`(ctx) => component`: content of your own in the column’s group rows, made once per pooled group row; read `ctx.value`, `ctx.text`, `ctx.count`, `ctx.level`, `ctx.key`, `ctx.isExpanded`, `ctx.summaryItems` (`{ name, column, summaryType, value, text }` of the group row) in getters.'],
 ];
 
 const LOOKUP_FIELDS = [
@@ -210,6 +218,8 @@ const PROPERTIES = [
   ['filters, filter', 'read/write, read-only', 'The filters by field; the whole filter the rows are loaded with (the search included).'],
   ['searchText', 'read/write, reactive', 'The search text; assigning searches at once, a function is followed.'],
   ['group', 'read/write, reactive', 'The grouped columns in order with the order of their groups (`[{ field, dir }]`); assign to group, `[]` ungroups.'],
+  ['summary', 'read/write, reactive', 'The summaries as they read now; assign a new one, or a function that is followed.'],
+  ['summaryStatus', 'read-only, reactive', '`\'loading\'` while a server works out the totals (or every row loads for them), `\'error\'` when that failed, else `\'ready\'`.'],
   ['onRowExpanding, onRowExpanded, onRowCollapsing, onRowCollapsed, onGroupingChanging, onGroupingChanged, onGroupDropping', 'event', 'Subscribe with `grid.onRowExpanded((e) => …)`; the same as the props.'],
   ['toolbar', 'read/write, live', '`grid.toolbar.items = [\'searchPanel\', { text: \'Refresh\', click }]`, `grid.toolbar.visible = false`; a function is followed.'],
   ['onSearchTextChanged', 'event', 'Subscribe with `grid.onSearchTextChanged((e) => …)`; the same as the prop.'],
@@ -241,8 +251,10 @@ const METHODS = [
   ['clearGrouping()', '`void`', 'Takes every grouping away.'],
   ['groupBy(field, index?, dir?) / ungroup(field) / setGroupOrder(field, dir)', '`void`', 'Groups by a column at a place among the grouped ones (a grouped one moves); takes one out; sets the order of its groups.'],
   ['copy() / paste(text)', '`string` / `number`', 'What Ctrl+C and Ctrl+V do: copies the selected rows or the active cell (returns the text); pastes tab-separated text from the active cell (returns the cells written).'],
-  ['exportRows(options?)', '`Promise<object[]>`', 'The rows of the filter in the sort order, by field, with the visible exportable columns: shown text or `raw` values; a server’s rows in parts through the data source.'],
-  ['exportCsv(options?)', '`Promise<string>`', 'The same as a CSV file a spreadsheet opens: byte order mark, the locale’s separator, titles first, a line per group while grouped. Options: `values`, `selected`, `fileName`, `download`, `separator`, `headers`, `groups`, `bom`, `escapeFormulas`, `pageSize`, `onProgress`, `signal`.'],
+  ['exportRows(options?)', '`Promise<object[]>`', 'The rows of the filter in the sort order, by field, with the visible exportable columns: shown text or `raw` values; a server’s rows in parts through the data source. Group footers and the totals come as objects of the same fields (`summaries: false` leaves them out).'],
+  ['exportCsv(options?)', '`Promise<string>`', 'The same as a CSV file a spreadsheet opens: byte order mark, the locale’s separator, titles first, a line per group while grouped, group footers after their rows and the totals last. Options: `values`, `selected`, `fileName`, `download`, `separator`, `headers`, `groups`, `summaries`, `bom`, `escapeFormulas`, `pageSize`, `onProgress`, `signal`.'],
+  ['getTotalSummaryValue(name)', '`unknown`', 'A value of the totals by the item’s `name`, its place in `totalItems`, its type, its column or `type_column` (`\'sum_amount\'`). Reactive.'],
+  ['getGroupSummaryValue(key, name)', '`unknown`', 'A value of a group’s summary, the group by its key (as `expandGroup`), the item as above. Reactive.'],
   ['getVisibleRows()', '`GridVisibleRow[]`', 'The rows drawn now: `{ rowIndex, rowType, row, key, groupKey?, element }`.'],
   ['getRowElement(i) / getCellElement(i, field)', '`HTMLElement | undefined`', 'The element of a drawn row or cell.'],
   ['getKeyByRowIndex(i) / getRowIndexByKey(key)', '`unknown` / `number`', 'A row’s key by its index, and the index of a loaded row by its key (-1 when it is not loaded).'],
@@ -282,6 +294,8 @@ const KEYS = [
   ['Left / Right, Home / End in the toolbar', 'Move between its items (the toolbar is one Tab stop before the rows); in the search box the arrows stay in its text.'],
   ['Escape, Enter in the search box', 'Empty the box (the rows come back at once); search without waiting for the pause.'],
   ['Enter, Space on a group row', 'Open or close the group.'],
+  ['Arrow keys on a group footer', 'The footer is a row the arrows reach like a group row; the keys that edit or select do nothing there.'],
+  ['Tab after the rows', 'The row of totals (`totalSummaryTabStop`); Shift + Tab goes back to the active cell. Ctrl + End goes to the last row, as before.'],
   ['Right / Left on a group row', 'Open the group, then go to its first row; close it, then go to the group it is in.'],
   ['Enter, Delete, Shift + Left / Right on a chip', 'Turn the order of the groups; ungroup; move the chip. Left and Right go from chip to chip like any toolbar item.'],
 ];
@@ -301,6 +315,7 @@ const A11Y = [
   ['Toolbar', 'The kit’s `Toolbar` (`role="toolbar"`, named after the grid): one Tab stop with arrow keys between its items; a button that shows only its icon is named by its text, which is also its tooltip and its line in the “more” menu.'],
   ['Search', 'The box is a search field named “Search in the grid”; the number of records found is announced politely; what was found is marked with `<mark>`, which reads as the same text.'],
   ['Group rows', 'Rows of the grid with `aria-expanded` and `aria-level`; their one cell spans the columns (`aria-colspan`), reads “Column: value (count)” and is a cell the arrows reach. Grouping, ungrouping and moving a chip are announced.'],
+  ['Summaries', 'The row of totals is a row of the grid after the rows (`aria-rowindex`, counted in `aria-rowcount`) in a row group named “Totals”; each cell is named by what its items say about their columns (“Sum of Amount: 1,234”), also when it shows only “Sum: 1,234”. Group footers are rows with `aria-level`; items under their columns in a group row are cells of that row. `aria-busy` while a server works the totals out.'],
   ['Group panel', 'A `group` named “Grouping” in the toolbar; each chip is a button named after its column and the order of its groups, described by the keys it takes. Every drag has a keyboard way: the column menu and the chips’ keys.'],
 ];
 
@@ -318,6 +333,9 @@ const HOOKS = [
   ['.mx-data-grid__add, __save, __revert, __export, __columns, __search', 'The toolbar’s own items: “New row”, “Save changes”, “Discard”, “Export” (busy while it runs), the column list, the search box.'],
   ['.mx-data-grid__mark', 'Text the search found, a `<mark>` in the cell.'],
   ['.mx-data-grid__group-row, __group-cell, __group-toggle, __group-count', 'A group row (`data-expanded`, `--_level`), its cell, its arrow and its count.'],
+  ['.mx-data-grid__foot, __total-row', 'The sticky row group under the rows and its row of totals (`data-state="loading"` while a server works them out).'],
+  ['.mx-data-grid__summary-cell, __summary-item', 'A cell holding summary items (row of totals, group footer, an aligned item of a group row) and each item in it, with the item’s `cssClass`.'],
+  ['.mx-data-grid__group-footer, __group-summary', 'A group footer (`--_level`); the summary text after a group row’s count.'],
   ['.mx-data-grid__group-panel, __chip, __group-empty', 'The group panel (`data-drop` while a header can drop there, `data-locked` without dragging), its chips (`data-dir`, `data-dragging`) and its empty text.'],
   ['.mx-data-grid__bar, __pager', 'The bar under the rows and its pager.'],
 ];
@@ -341,7 +359,7 @@ export default function DataGridPage() {
       <p class="lead">
         A grid for data entry and large data: rows in memory or from any adapter of the data layer, a virtual list or
         pages, sorting, column layout, editing with the kit's editors, new rows with the Tab chain, three save modes,
-        row actions, selection, filters, a search panel, grouping, a toolbar, lookup columns from other services, copy and paste,
+        row actions, selection, filters, a search panel, grouping, summaries, a toolbar, lookup columns from other services, copy and paste,
         export and a layout that is kept — and every feature can be turned off, for the grid or for one column.
       </p>
 
@@ -462,6 +480,46 @@ import { data } from '@motifx-community/data';
         </Example>
       </Section>
 
+      <Section anchor="summaries" title="Summaries">
+        <p>
+          <Rich text="`summary` gives values of the rows under the filter and the search: `totalItems` in a row of totals under the rows — it stays at the bottom while the rows scroll and moves sideways with the columns — and `groupItems` for each group: after the group row's count, under their column in the group row (`alignByColumn`), or in a footer row after the group's rows (`showInGroupFooter`). An item aggregates a `column` (its `value` reader too) with `summaryType` `sum`, `min`, `max`, `avg`, `count` or `custom`, shows under `showInColumn` (else its column), several in one column one under the other, and its text is `displayFormat` (`{0}` the value, `{1}` the column) or a text of `summary.texts` and `uiLocale`, formatted by `valueFormat` (`Intl` options or a function; else the column's format), or `customizeText`. A `custom` item goes through `calculateCustomSummary` in three steps: `start`, `calculate` per row, `finalize`. Empty values are left out (`skipEmptyValues`; `count` counts every row). Unsaved edits count once saved, or as they are made with `recalculateWhileEditing`. `getTotalSummaryValue(name)` and `getGroupSummaryValue(key, name)` read the values; `onSummaryChanged` tells when they are worked out again; the CSV and `exportRows()` write the footers and the totals." />
+        </p>
+        <Example files={withOrders('Summaries.tsx')} stack>
+          <Summaries />
+        </Example>
+        <p>
+          <Rich text="On a server: a source that loads pages or blocks asks its adapter for the totals of the query when the adapter has the `summary` capability (`remoteSummary`; `DataSource.loadSummary`), and asks for the group summaries with the groups when it groups (`loadGroups` with `groupSummary`). Here the made-up server does both: one request for the totals, one for the groups, whatever the list shows. An adapter without it, a `custom` item or a computed column get every matching row, loaded once per row set (`groupLoadPageSize` a request), and the values are worked out in the browser; group summaries only the browser can work out group the rows in the browser too." />
+        </p>
+        <Example files={[...withOrders('SummariesServer.tsx'), slowAdapterFile]} stack>
+          <SummariesServer />
+        </Example>
+        <ApiTable
+          head={['Field', 'What it does']}
+          rows={[
+            ['totalItems, groupItems', 'The items of the row of totals and of each group; a function is followed.'],
+            ['calculateCustomSummary', '`(e) => void` with `{ name, summaryProcess, value, totalValue, groupIndex, component }`: one function for every `custom` item; set `e.totalValue` at `start`, fold `e.value` (the column’s value, or the row without a column) into it at each `calculate`, adjust it at `finalize`.'],
+            ['recalculateWhileEditing', '`false`: the values follow unsaved edits, new rows and rows marked for deletion. Off, they change once the changes are saved.'],
+            ['skipEmptyValues', '`true`: empty values (`null`, `undefined`, `\'\'`) are left out of what the browser works out; off, `sum` and `avg` count them as 0. An item can set its own.'],
+            ['texts', 'The item texts by type: `sum`, `sumOtherColumn`, `min`, `minOtherColumn`, `max`, `maxOtherColumn`, `avg`, `avgOtherColumn`, `count`; over the `gridSummary…` texts of `uiLocale` and the grid’s `texts`.'],
+          ]}
+        />
+        <ApiTable
+          head={['Item field', 'What it does']}
+          rows={[
+            ['column', 'The column aggregated. Without one, `count` counts rows and `custom` gets the rows themselves.'],
+            ['summaryType', "`'sum' | 'min' | 'max' | 'avg' | 'count' | 'custom'`, default `'count'`."],
+            ['name', 'Names the item for `getTotalSummaryValue` and `calculateCustomSummary`.'],
+            ['showInColumn', 'The column the item shows under (default: `column`); away from its column the text names the column (“Sum of Amount: …”).'],
+            ['valueFormat', '`Intl.NumberFormatOptions`, `Intl.DateTimeFormatOptions` or `(value) => string`; default: the column’s format (`count`: a plain number).'],
+            ['displayFormat, customizeText', 'The text, `{0}` the formatted value and `{1}` the column’s title; `({ value, valueText }) => string` wins over it.'],
+            ['alignment, cssClass', "`'start' | 'center' | 'end'` (default: the column's); a class of your own on the item."],
+            ['skipEmptyValues', 'Leave empty values out for this item; default `summary.skipEmptyValues`.'],
+            ['visible', 'Show the item; default the `totalSummary` (`groupSummary`) setting.'],
+            ['showInGroupFooter, alignByColumn', 'Group items: in the group footer; under their column in the group row, not under the first column, which holds the text.'],
+          ]}
+        />
+      </Section>
+
       <Section anchor="toolbar" title="Toolbar">
         <p>
           <Rich text="The bar above the rows holds the grid's own items whose features are on, at the end, in this order: “New row” (`addRows`, `newRowButton`), “Save changes” and “Discard” (batch mode, `saveButtons`), “Export” (`exportButton`), the column list (`columnChooserButton`) and the search box (`searchPanel`); with none of them it does not show. `toolbar.items` lists exactly what it holds: the grid's items by name, an object with a `name` to change one of them, and items of your own — a button with `text`, `icon`, `hint` and `click`, or any component with `content` — at the start (`location: 'before'`) or at the end. Buttons that do not fit go into its “more” menu (`overflow`); the grid's own show only their icons there (`showText`), and their texts in the menu." />
@@ -567,7 +625,7 @@ import { data } from '@motifx-community/data';
 
       <Section anchor="i18n" title="Localization">
         <p>
-          <Rich text="Every text the grid writes — the toolbar, the search box, the bar, the pager, the column menu, the row states, the action buttons, the filter conditions, the announcements — comes from `uiLocale.strings` (the `grid…` keys), or from the grid's own `texts`. Numbers and dates follow `locale`." />
+          <Rich text="Every text the grid writes — the toolbar, the search box, the bar, the pager, the column menu, the row states, the action buttons, the filter conditions, the summary texts (`gridSummarySum`, `gridSummarySumOtherColumn`, … `gridSummaryCount`, `gridSummarySeparator`, `gridTotalSummary`), the announcements — comes from `uiLocale.strings` (the `grid…` keys), or from the grid's own `texts`. Numbers and dates follow `locale`." />
         </p>
         <Example files={withOrders('Localization.tsx')} stack>
           <Localization />
