@@ -12,4 +12,6 @@ export interface ResolvedAction<T> {
   disabled: boolean;
   hasIcon: boolean;
   showText: boolean;
+  /** In the "more" menu when it does not fit, always, or never. */
+  menu: 'auto' | 'always' | 'never';
 }

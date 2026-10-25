@@ -54,6 +54,10 @@ export class ColumnModel<T> {
   statusWanted: () => boolean = () => false;
   /** Whether the grid has row actions to show. */
   actionsWanted: () => boolean = () => false;
+  /** Whether some action sits in the row (not in a bar). */
+  actionsInRow: () => boolean = () => true;
+  /** The width of the actions column in the `'menu'` display (the "more" button alone), or `null`. */
+  actionsMenuWidth: () => number | null = () => null;
   /** Whether a column is out of the columns because the rows are grouped by it. */
   hiddenByGroup: (field: string) => boolean = () => false;
 
@@ -173,7 +177,7 @@ export class ColumnModel<T> {
   }
 
   showsActions(): boolean {
-    return this.settings.get('actionsColumn') && this.actionsWanted();
+    return this.settings.get('actionsColumn') && this.actionsWanted() && this.actionsInRow();
   }
 
   /** The edge a column sticks to, or `null`. The grid's own columns take theirs from the settings. */
@@ -240,7 +244,11 @@ export class ColumnModel<T> {
   }
 
   width(field: string): number {
-    if (field === ACTIONS_FIELD) return Math.max(0, Math.round(this.settings.get('actionsWidth')));
+    if (field === ACTIONS_FIELD) {
+      const width = Math.max(0, Math.round(this.settings.get('actionsWidth')));
+      const menu = this.actionsMenuWidth();
+      return menu === null ? width : Math.min(width, Math.round(menu));
+    }
     if (field === STATUS_FIELD) return Math.max(0, Math.round(this.settings.get('rowStatusWidth')));
     if (field === SELECT_FIELD) return Math.max(0, Math.round(this.settings.get('selectionColumnWidth')));
     return this.state.width[field] ?? this.clampWidth(field, this.settings.get('columnWidth'));

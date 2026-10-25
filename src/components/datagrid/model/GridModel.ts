@@ -4,9 +4,9 @@ import { fillTemplate } from '../../../core/fill-template';
 import { pageLocale } from '../../../core/page-locale';
 import { uiLocale } from '../../../core/ui-locale';
 import type { UiStrings } from '../../../core/ui-strings';
-import type { BuiltInAction } from '../built-in-action';
 import type { DataGridProps } from '../data-grid-props';
 import type { GridAction } from '../grid-action';
+import type { GridActionItem } from '../grid-action-item';
 import type { GridBuiltInActions } from '../grid-built-in-actions';
 import type { GridColumn } from '../grid-column';
 import type { GridFilters } from '../grid-filters';
@@ -16,6 +16,7 @@ import type { GridSettings } from '../grid-settings';
 import type { RowState } from '../row-state';
 import type { EditorValue } from '../view/editor-value';
 import type { AddedRow } from './added-row';
+import { ActionSets } from './ActionSets';
 import { CellFormatter } from './CellFormatter';
 import { cellValue } from './cell-value';
 import { ColumnModel } from './ColumnModel';
@@ -90,6 +91,7 @@ export class GridModel<T> {
     edits: 0,
     failedBlocks: 0,
     exporting: false,
+    acting: false,
   } as GridState) as GridState;
   /** The new-row area, in display order. */
   readonly addedRows: AddedRow<T>[] = [];
@@ -120,6 +122,8 @@ export class GridModel<T> {
   readonly summaries: GridSummaries<T>;
   /** The grid's ready actions, by name; the grid fills them in. */
   builtIns: GridBuiltInActions<T> | null = null;
+  /** The actions the bars show and the rows they act on. */
+  readonly actionSets = new ActionSets<T>(this);
   /** The filter the source had before the grid added its own. */
   baseFilter: data.FilterExpression | null = null;
   /** The grid's filter the source has now, as text. */
@@ -162,6 +166,7 @@ export class GridModel<T> {
     this.state.sort = sort.map((s) => ({ ...s }));
     this.columns.statusWanted = () => this.stats.changed > 0 || this.stats.failed > 0 || this.state.added > 0;
     this.columns.actionsWanted = () => props.actions !== undefined;
+    this.columns.actionsInRow = () => this.actionSets.inRow();
     this.filters = new FilterModel<T>(this.columns);
     const filters = stored ? this.reviveDates(stored.filters) : props.filters;
     if (filters) this.filters.replace(filters);
@@ -834,13 +839,24 @@ export class GridModel<T> {
     };
   }
 
+  /** Whether the `actions` prop is given. */
+  get hasActions(): boolean {
+    return this.props.actions !== undefined;
+  }
+
+  /** The `actions` prop when it is a list; `null` when it is a function (or not given). */
+  get actionList(): readonly GridActionItem<T>[] | null {
+    const given = this.props.actions;
+    return given && typeof given !== 'function' ? given : null;
+  }
+
   /** The actions a row shows, in order: names turned into the ready actions, the hidden ones left out. Reactive. */
   rowActions(row: T, state: RowState): GridAction<T>[] {
     const given = this.props.actions;
     const items = (typeof given === 'function' ? given(row, state) : given) ?? [];
     const out: GridAction<T>[] = [];
     for (const item of items) {
-      const action = typeof item === 'string' ? this.builtIns?.[item as BuiltInAction] : item;
+      const action = this.actionSets.resolve(item);
       if (!action) continue;
       const visible = typeof action.visible === 'function' ? action.visible(row, state) : action.visible;
       if (visible !== false) out.push(action);

@@ -1,4 +1,6 @@
 import { DisposableStore, Emitter, type EventArgs, type IDisposable, type Event as MotifEvent } from '@motifx/core';
+import type { GridActionRanEventArgs } from '../grid-action-ran-event-args';
+import type { GridActionRunningEventArgs } from '../grid-action-running-event-args';
 import type { GridCellClickEventArgs } from '../grid-cell-click-event-args';
 import type { GridCellPreparedEventArgs } from '../grid-cell-prepared-event-args';
 import type { GridContentReadyEventArgs } from '../grid-content-ready-event-args';
@@ -108,6 +110,8 @@ export class GridEvents<T> {
   readonly copying = new Emitter<GridCopyingEventArgs>();
   readonly pasting = new Emitter<GridPastingEventArgs>();
   readonly summaryChanged = new Emitter<GridSummaryChangedEventArgs>();
+  readonly actionRunning = new Emitter<GridActionRunningEventArgs<T>>();
+  readonly actionRan = new Emitter<GridActionRanEventArgs<T>>();
 
   private readonly counts = new Map<Emitter<any>, number>();
   private readonly events = new Map<Emitter<any>, MotifEvent<any>>();

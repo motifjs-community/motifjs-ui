@@ -20,6 +20,9 @@ const SETTINGS = [
   ['columnChooserButton', '`false`', 'A toolbar button that opens the column list (while `columnChooser` is on).'],
   ['tooltips, striped, rowCount, pager', '`true`, `false`, `true`, `true`', 'Full text of a clipped cell; stripes; the row count; the pager.'],
   ['actionsColumn, actionsPosition, actionsSticky, actionsWidth', "`true`, `'end'`, `true`, `140`", 'The actions column, at the start or the end, pinned to its edge or scrolling with the rows, and its width.'],
+  ['actionsLocation, actionsTarget, actionsDisplay', "`'row'`, `'auto'`, `'auto'`", 'Where the actions show (the row, the toolbar, the bottom bar), which rows the bars act on, and buttons or a menu only: see [Row actions](/datagrid/editing#actions).'],
+  ['actionsMultipleEnabled, actionsShowCount, actionsStopOnError', "`'all'`, `true`, `false`", 'Actions on several rows: enabled for all or any, the count after the text, a failed row stops the rest.'],
+  ['actionsProgress, actionsStopButton, actionsContextMenu', '`true`, `true`, `true`', 'The progress panel and its Stop button while an action works on several rows; the actions in the row’s context menu.'],
   ['selection, selectionColumn, selectAll, selectedCount', "`'none'`, `true`, `true`, `true`", '`single` or `multiple`; the check box column; the header check box and Ctrl+A; “N selected” in the bar.'],
   ['filterRow, headerFilter', '`false`', 'The filter row and the header filter; a column can turn them on or off for itself.'],
   ['syncLookupFilterValues', '`true`', 'A lookup column’s filter row and header filter list only the keys of the rows the other filters leave; off, they list the lookup source. A column can say otherwise for itself.'],
@@ -95,7 +98,8 @@ const EVENTS = [
   ['onCopying / onPasting', '`{ text, html, rows }` / `{ text, rowIndex, field }`', 'yes', 'Ctrl+C, `copy()`; Ctrl+V, `paste()`: change the text, or stop it.'],
   ['onSummaryChanged', '`{ total, editing }`', '', 'The summary values were worked out again: new rows, a new filter or search, a save, or (with `recalculateWhileEditing`) an unsaved change.'],
   ['onExporting / onExported', '`{ format, component, selectedRowsOnly, options }` / `{ format, rows, text? }`', 'yes / —', 'An export is about to start (change its options); for a format the grid does not write (`xlsx`) the handler writes it with `exportDataGrid`. It finished (`exportDataGrid` tells it with `format: \'xlsx\'`).'],
-  ['onContextMenuPreparing', '`{ target, field, row?, rowIndex, items }`', 'yes', 'A header’s column menu (`header`) or a row’s menu (`row`: a right click or the context menu key; it opens only when you add items) is about to open: change `items`.'],
+  ['onContextMenuPreparing', '`{ target, field, row?, rowIndex, items }`', 'yes', 'A header’s column menu (`header`) or a row’s menu (`row`: a right click or the context menu key; `items` hold the row’s actions, and it opens only when it has items) is about to open: change `items`.'],
+  ['onActionRunning / onActionRan', '`{ action, rows, selection, location }` / `{ action, rows, location, done, failed, canceled, errors }`', 'yes / —', 'An action is about to run; it ran. See [Row actions](/datagrid/editing#actions).'],
   ['onToolbarPreparing', '`{ items }`', '', 'The toolbar is laid out: change the list of items it takes.'],
 ];
 
@@ -112,8 +116,8 @@ export default function DataGridLayoutPage() {
         <ApiTable
           head={['Item field', 'What it does']}
           rows={[
-            ['name', 'One of the grid’s items (`groupPanel`, `searchPanel`, `addRowButton`, `saveButton`, `revertButton`, `exportButton`, `columnChooserButton`) to change, or a name of your own. A grid item whose feature is off stays out.'],
-            ['location', "`'before'` or `'after'` (default; the group panel `'before'`): which end of the bar."],
+            ['name', 'One of the grid’s items (`groupPanel`, `rowActions`, `searchPanel`, `addRowButton`, `saveButton`, `revertButton`, `exportButton`, `columnChooserButton`) to change, or a name of your own. A grid item whose feature is off stays out.'],
+            ['location', "`'before'` or `'after'` (default; the group panel and `rowActions` `'before'`): which end of the bar."],
             ['text, icon, hint', 'The button’s text, icon and tooltip (default: the text when only the icon shows).'],
             ['showText', "`'always'` (default) or `'inMenu'`: only the icon in the bar, the text in the “more” menu (the grid’s own buttons)."],
             ['visible, enabled', 'Leave the item out; dim it.'],

@@ -201,6 +201,48 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   shown for keyboard focus closed at once when focusing scrolled its field into view; it now follows
   the field while the page scrolls and closes only if the field is off the screen when scrolling ends.
 
+### DataGrid actions in the bars
+
+- Row actions can show in the toolbar (`actionsLocation: 'toolbar'`, the new `rowActions` toolbar
+  item, at the start, placed through `toolbar.items` like the others) or at the start of the bottom
+  bar (`'bottom'`, on a kit `Toolbar` of its own) for the rows they act on: the selected rows, or the
+  active row without selection (`actionsTarget: 'selection' | 'focused' | 'auto'`). Default
+  `'row'`, as before; an action's `location` wins, and the actions column shows only while an action
+  sits in the row. No target: nothing shows. One row: its own actions, as the row would show them.
+  Several rows: the actions every row has (same `id`, visible for each), disabled while disabled for
+  one of them (`actionsMultipleEnabled: 'any'`: enabled for any, and run on those), with the count
+  after the text ("Print (3)", `actionsShowCount`), named "Print, 3 rows" and described by what the
+  bar acts on ("Actions for 3 selected rows"), which is announced when it changes.
+- Running on several rows: `onclickMany(rows, e)` once, else `onclick` for each row in turn, a
+  promise waited for; a throw, a rejection or a promise of `false` counts the row as failed and does
+  not stop the others unless `actionsStopOnError` (or the action's `stopOnError`). While it waits the
+  export load panel shows the progress and a Stop button (`actionsProgress`, `actionsStopButton`,
+  `grid.stopAction()`); the outcome is announced ("Print: 2 of 3 done, 1 failed"). `multiple: false`
+  keeps an action to one row (the ready `edit`). The ready `remove` marks every row in batch mode and
+  sends each in the other modes.
+- After "select all" over a server (rows not loaded) only actions with `onclickSelection(selection,
+  e)` show; they get the selection state of `grid.selection`.
+- A row's actions are in its context menu (right click, Shift+F10 / the context menu key), wherever
+  they show: inside a selection of several rows the common ones, with the count, for all of them;
+  right click makes the row the active one. `actionsContextMenu` and an action's `contextMenu` turn
+  it off; `onContextMenuPreparing` gets them in `e.items`; an empty menu does not open.
+- `actionsDisplay: 'menu'`: a row shows only its "more" button, every action in its menu, and the
+  column is as wide as that button (unless an action is a button always); the bars show one
+  "Actions" menu button. An action's `menu: 'auto' | 'always' | 'never'` wins. The row's "more"
+  button is named "More actions for row N".
+- New: `onActionRunning` (cancelable: `{ action, rows, selection, location }`), `onActionRan`
+  (`{ action, rows, location, done, failed, canceled, errors }`), `grid.runAction(id, rows?)`,
+  `grid.actionTargets`, `grid.barActions`, `grid.stopAction()`. A press in a row runs through the same
+  events. `GridAction.onclick` is optional now and may return a promise; new fields `location`,
+  `menu`, `multiple`, `multipleEnabled`, `stopOnError`, `showCount`, `contextMenu`, `beginGroup`,
+  `onclickMany`, `onclickSelection`. Texts in en and tr (`gridActionCount`, `gridActionCountLabel`,
+  `gridActionsForRow`, `gridActionsForSelectedRow`, `gridActionsForSelectedRows`, `gridActionRunning`,
+  `gridActionProgress`, `gridActionStop`, `gridActionDone`, `gridActionPartly`, `gridActionFailed`,
+  `gridActionStopped`, `gridMoreActionsForRow`).
+- Docs: "Row actions" has a new example (location switch, menu only, Approve with `onclickMany`,
+  Print row by row, Delete) and tables of the settings, action fields, events and members; a browser
+  check `e2e/checks/36-datagrid-bar-actions.mjs`.
+
 ### DataGrid Excel export
 
 - New entry `@motifx-community/ui/excel`: `exportDataGrid({ component, worksheet, … })` writes a

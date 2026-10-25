@@ -1014,6 +1014,21 @@
     scale: -1 1;
   }
 
+  /* The actions of the selected rows in the bottom bar: the kit's toolbar, without its own bar look,
+     taking the room the other items leave so what does not fit goes into its "more" menu. */
+  .mx-data-grid__bar-actions {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .mx-data-grid__bar-actions[hidden],
+  .mx-data-grid__bar-action[hidden],
+  .mx-data-grid__bar-menu[hidden] {
+    display: none;
+  }
+
   /* Read by screen readers only. */
   .mx-data-grid__live,
   .mx-data-grid__hidden-text {

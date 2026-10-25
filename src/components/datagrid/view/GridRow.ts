@@ -138,6 +138,7 @@ export class GridRow<T> {
 
   dispose() {
     for (const stop of this.stops) stop();
+    this.model.actionSets.markRow(this, false, false);
   }
 
   private cell(col: GridColumn<T>): HTMLDivElement {
@@ -263,16 +264,28 @@ export class GridRow<T> {
   private drawActions() {
     void this.shown.value;
     const model = this.model;
+    const sets = model.actionSets;
     const { row, rowId, index } = this;
     const width = model.columns.width(ACTIONS_FIELD);
     void model.state.rowHeight;
-    const more = model.text('gridMoreActions');
+    const display = model.settings.get('actionsDisplay');
+    const more = { label: model.text('gridMoreActionsForRow', { row: model.formatter.count(index + 1) }), hint: model.text('gridMoreActions') };
+    const shows = model.columns.showsActions();
     let list: ResolvedAction<T>[] = [];
-    if (model.columns.showsActions() && row !== undefined && rowId !== undefined && index >= 0) {
+    let inRow = false;
+    let never = false;
+    // With `actions` as a function the rows tell whether an action sits in the row.
+    if ((shows || !model.actionList) && row !== undefined && rowId !== undefined && index >= 0) {
       const state = model.rowState(row, rowId, index);
-      list = model.rowActions(row, state).map((action) => this.resolve(action, row, state));
+      const placed = model.rowActions(row, state).filter((a) => sets.locationOf(a) === 'row');
+      inRow = placed.length > 0;
+      never = placed.some((a) => sets.menuOf(a) === 'never');
+      if (shows) list = placed.map((action) => this.resolve(action, row, state));
     }
-    untracked(() => this.actions!.draw(list, width, more));
+    untracked(() => {
+      sets.markRow(this, inRow, never);
+      this.actions!.draw(list, width, more, display);
+    });
   }
 
   private resolve(action: GridAction<T>, row: T, state: RowState): ResolvedAction<T> {
@@ -280,7 +293,7 @@ export class GridRow<T> {
     const hasIcon = action.icon !== undefined && action.icon !== null;
     const showText = action.showText ?? !hasIcon;
     const disabled = typeof action.disabled === 'function' ? action.disabled(row, state) : !!action.disabled;
-    return { action, row, state, text, hint: read(action.hint) ?? (showText ? '' : text), disabled, hasIcon, showText };
+    return { action, row, state, text, hint: read(action.hint) ?? (showText ? '' : text), disabled, hasIcon, showText, menu: this.model.actionSets.menuOf(action) };
   }
 
   private drawCells() {

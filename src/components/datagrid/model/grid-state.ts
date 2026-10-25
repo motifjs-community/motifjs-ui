@@ -30,4 +30,6 @@ export interface GridState extends DataState {
   connection: number;
   /** An export is collecting rows. */
   exporting: boolean;
+  /** An action is working on rows and the grid waits for it (a promise came back). */
+  acting: boolean;
 }

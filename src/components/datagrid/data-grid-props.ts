@@ -3,6 +3,8 @@ import type { data } from '@motifx-community/data';
 import type { ControlProps } from '../../core/control';
 import type { UiStrings } from '../../core/ui-strings';
 import type { GridActionItem } from './grid-action-item';
+import type { GridActionRanEventArgs } from './grid-action-ran-event-args';
+import type { GridActionRunningEventArgs } from './grid-action-running-event-args';
 import type { GridCellClickEventArgs } from './grid-cell-click-event-args';
 import type { GridCellPreparedEventArgs } from './grid-cell-prepared-event-args';
 import type { GridContentReadyEventArgs } from './grid-content-ready-event-args';
@@ -125,6 +127,10 @@ export interface DataGridProps<T> extends ControlProps {
    * `'save'`, `'cancel'`).
    */
   actions?: readonly GridActionItem<T>[] | ((row: T, state: RowState) => readonly GridActionItem<T>[]);
+  /** An action is about to run (in a row, a bar, a row's menu or from code): `e.cancel` keeps it from running. */
+  onActionRunning?: (e: GridActionRunningEventArgs<T>) => void;
+  /** An action ran: on how many rows it worked or failed, and whether it was stopped. */
+  onActionRan?: (e: GridActionRanEventArgs<T>) => void;
   /** Keys of the selected rows; a function is followed. The user's changes come through `onSelectionChanged`. */
   selectedKeys?: Bind<readonly unknown[]>;
   /** The selection is about to change; `e.cancel` keeps it. */

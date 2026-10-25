@@ -80,7 +80,8 @@ describe('DataGrid row actions', () => {
     expect(ids(grid, 0)).toEqual(['print', 'approve', 'more']);
     const more = buttons(grid, 0).at(-1)!;
     expect(more.getAttribute('aria-haspopup')).toBe('menu');
-    expect(more.getAttribute('aria-label')).toBe('More actions');
+    expect(more.getAttribute('aria-label')).toBe('More actions for row 1');
+    expect(more.dataset.hint).toBe('More actions');
     more.click();
     await settle();
     const menu = grid.element.querySelector('.mx-data-grid__menu:not([hidden]) [role="menu"]')!;

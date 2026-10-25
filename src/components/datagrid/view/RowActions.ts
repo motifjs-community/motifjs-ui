@@ -5,8 +5,9 @@ import type { ResolvedAction } from './resolved-action';
 
 /**
  * The buttons of one pooled row's actions cell. The first actions that fit the column show as
- * buttons, in order; the rest go into the "more" menu at the end. Buttons are reused as the row
- * shows other rows.
+ * buttons, in order; the rest go into the "more" menu at the end. An action's `menu` keeps it in the
+ * menu always or never; the `'menu'` display puts every other one there. Buttons are reused as the
+ * row shows other rows.
  */
 export class RowActions<T> {
   /** Actions shown as buttons, in order. */
@@ -21,10 +22,10 @@ export class RowActions<T> {
     private readonly widths: ActionWidths,
   ) {}
 
-  draw(list: ResolvedAction<T>[], width: number, moreLabel: string) {
-    const fit = this.fit(list, width);
-    this.shown = list.slice(0, fit);
-    this.overflow = list.slice(fit);
+  draw(list: ResolvedAction<T>[], width: number, more: { label: string; hint: string }, display: 'auto' | 'menu') {
+    const shown = this.fit(list, width, display);
+    this.shown = list.filter((a) => shown.has(a));
+    this.overflow = list.filter((a) => !shown.has(a));
     while (this.buttons.length < this.shown.length) {
       const button = createActionButton();
       this.buttons.push(button);
@@ -38,8 +39,8 @@ export class RowActions<T> {
     if (this.overflow.length && !this.more) this.more = this.createMore();
     if (this.more) {
       this.more.hidden = !this.overflow.length;
-      this.more.setAttribute('aria-label', moreLabel);
-      this.more.dataset.hint = moreLabel;
+      this.more.setAttribute('aria-label', more.label);
+      this.more.dataset.hint = more.hint;
     }
   }
 
@@ -70,23 +71,26 @@ export class RowActions<T> {
     return more;
   }
 
-  /** How many of the actions show as buttons in `width` pixels: all, or as many as fit next to the "more" button. */
-  private fit(list: ResolvedAction<T>[], width: number): number {
-    if (!list.length) return 0;
+  /** The actions that show as buttons in `width` pixels: all when they fit, else the ones kept as buttons and, in order, as many others as fit next to the "more" button. */
+  private fit(list: ResolvedAction<T>[], width: number, display: 'auto' | 'menu'): Set<ResolvedAction<T>> {
+    const kept = list.filter((a) => a.menu === 'never' || (a.menu === 'auto' && display === 'auto'));
+    if (!kept.length) return new Set();
     const frame = this.widths.frame();
-    const sizes = list.map((a) => this.widths.width(a));
+    const sizes = new Map(kept.map((a) => [a, this.widths.width(a)]));
     const room = width - frame.padding;
-    const all = sizes.reduce((sum, w) => sum + w, 0) + frame.gap * (sizes.length - 1);
-    if (all <= room) return list.length;
+    const all = [...sizes.values()].reduce((sum, w) => sum + w, 0) + frame.gap * (kept.length - 1);
+    if (kept.length === list.length && all <= room) return new Set(list);
     const budget = room - frame.more - frame.gap;
+    const out = new Set(kept.filter((a) => a.menu === 'never'));
     let used = 0;
-    let n = 0;
-    for (const w of sizes) {
-      const next = used + (n ? frame.gap : 0) + w;
+    for (const a of out) used += (used ? frame.gap : 0) + sizes.get(a)!;
+    for (const a of kept) {
+      if (out.has(a)) continue;
+      const next = used + (used ? frame.gap : 0) + sizes.get(a)!;
       if (next > budget) break;
       used = next;
-      n++;
+      out.add(a);
     }
-    return n;
+    return out;
   }
 }

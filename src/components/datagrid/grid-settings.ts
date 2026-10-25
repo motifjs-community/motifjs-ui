@@ -1,5 +1,6 @@
 import type { ColumnFeatures } from './column-features';
 import type { ColumnResizeMode } from './column-resize-mode';
+import type { GridActionLocation } from './grid-action-location';
 
 /**
  * Everything in the grid that can be turned on or off. Give some of them through the `settings`
@@ -53,6 +54,35 @@ export interface GridSettings extends ColumnFeatures {
   actionsSticky: boolean;
   /** Width of the actions column in pixels; actions that do not fit go into its "more" menu. Default `140`. */
   actionsWidth: number;
+  /**
+   * Where the actions show: in each row, in the toolbar (the `rowActions` item) or in the bottom bar,
+   * for the rows they act on (`actionsTarget`). An action's `location` wins. Default `'row'`.
+   */
+  actionsLocation: GridActionLocation;
+  /**
+   * The rows the toolbar and the bottom bar act on: the selected rows, the active row, or `'auto'`:
+   * the selected rows while selection is on, else the active row. Default `'auto'`.
+   */
+  actionsTarget: 'selection' | 'focused' | 'auto';
+  /**
+   * How actions show: `'auto'` the buttons that fit and a "more" menu for the rest; `'menu'` only the
+   * "more" button, with every action in its menu (in the bars, one "Actions" menu button). The column
+   * is then as wide as that button, unless an action is a button always (`menu: 'never'`): then
+   * `actionsWidth`. An action's `menu` wins. The context menu always lists them all. Default `'auto'`.
+   */
+  actionsDisplay: 'auto' | 'menu';
+  /** On several rows an action can be used while it is enabled for all of them, or for any (it runs on those). Default `'all'`. */
+  actionsMultipleEnabled: 'all' | 'any';
+  /** The count of rows after an action's text when it acts on several ("Approve (3)"). Default `true`. */
+  actionsShowCount: boolean;
+  /** Running an action on several rows one by one, a failed row stops the rest. Default `false`. */
+  actionsStopOnError: boolean;
+  /** While an action works on several rows: a panel over the rows with the progress. Default `true`. */
+  actionsProgress: boolean;
+  /** A "Stop" button in that panel. Default `true`. */
+  actionsStopButton: boolean;
+  /** A row's actions in its context menu (right click, Shift+F10), wherever they show. Default `true`. */
+  actionsContextMenu: boolean;
   /** No selection, one row, or any number of rows. Default `'none'`. */
   selection: 'none' | 'single' | 'multiple';
   /** The check box column in front of the rows (multiple selection). Default `true`. */

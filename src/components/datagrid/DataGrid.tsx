@@ -11,6 +11,7 @@ import { DropDown } from '../dropdown/DropDown';
 import { ProgressBar } from '../progress/ProgressBar';
 import { Spinner } from '../progress/Spinner';
 import { TextBox } from '../textbox/TextBox';
+import { Toolbar } from '../toolbar/Toolbar';
 import type { ColumnFeatures } from './column-features';
 import type { ColumnOptionName } from './column-option-name';
 import type { GridCellClickEventArgs } from './grid-cell-click-event-args';
@@ -59,6 +60,10 @@ import type { GridStateValue } from './grid-state-value';
 import type { GridToolbarPreparingEventArgs } from './grid-toolbar-preparing-event-args';
 import type { GridVisibleRow } from './grid-visible-row';
 import type { DataGridProps } from './data-grid-props';
+import type { GridActionRanEventArgs } from './grid-action-ran-event-args';
+import type { GridActionRun } from './grid-action-run';
+import type { GridActionRunningEventArgs } from './grid-action-running-event-args';
+import type { GridBarAction } from './grid-bar-action';
 import type { GridBuiltInActions } from './grid-built-in-actions';
 import type { GridChanges } from './grid-changes';
 import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
@@ -79,6 +84,9 @@ import type { GridSelection } from './grid-selection';
 import type { GridSelectionChangedEventArgs } from './grid-selection-changed-event-args';
 import type { GridSettings } from './grid-settings';
 import type { GridToolbar as GridToolbarOptions } from './grid-toolbar';
+import type { ActionEntry } from './model/action-entry';
+import type { ActionTarget } from './model/action-target';
+import { ActionRunner } from './model/ActionRunner';
 import type { ClipboardContent } from './model/clipboard-content';
 import type { ExportTable } from './model/export-table';
 import { ACTIONS_FIELD, SELECT_FIELD, STATUS_FIELD } from './model/ColumnModel';
@@ -88,6 +96,8 @@ import { FILTER_ROW, GridModel, HEADER_ROW } from './model/GridModel';
 import type { GroupNode } from './model/group-node';
 import { Switches } from './model/Switches';
 import { ActionWidths } from './view/ActionWidths';
+import { BarButtons } from './view/BarButtons';
+import type { ResolvedAction } from './view/resolved-action';
 import { CellEditor } from './view/CellEditor';
 import { CellTip } from './view/CellTip';
 import { ColumnMenu } from './view/ColumnMenu';
@@ -164,9 +174,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** Exports running, stopped when the grid goes away. */
   private readonly exports = new Set<AbortController>();
   private readonly exportSwitches: Switches<ExportValues>;
-  /** The panel over the rows while an export with `loadPanel` runs. */
-  private readonly exportPanel = reactive({ shown: false, text: '', progress: true, cancel: true, loaded: 0, total: 0 });
+  /** The panel over the rows while an export with `loadPanel` runs, or an action works on several rows. */
+  private readonly exportPanel = reactive({ shown: false, kind: 'export' as 'export' | 'action', text: '', progress: true, cancel: true, loaded: 0, total: 0 });
   private stopPanelExport: (() => void) | null = null;
+  private readonly runner: ActionRunner<T>;
+  /** The actions of the target rows in the bottom bar, on a kit toolbar of their own. */
+  private readonly bottomBar: Toolbar;
+  private readonly bottomActions: BarButtons<T>;
   /** "Export selected rows" was chosen for a format the app writes: its next `exportSheet()` takes the selection. */
   private selectedNext = false;
   private readonly gridId = nextId('data-grid');
@@ -231,6 +245,48 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.conditionMenu = new MenuPopup(this, 'mx-data-grid__menu', 'bottom-start');
     this.builtIns = this.createActions();
     model.builtIns = this.builtIns;
+    // In the 'menu' display the column is as wide as the "more" button, unless an action stays a button.
+    model.columns.actionsMenuWidth = () => {
+      void model.state.rowHeight;
+      if (model.settings.get('actionsDisplay') !== 'menu' || model.actionSets.anyNever()) return null;
+      const frame = untracked(() => this.widths.frame());
+      return frame.more > 0 ? Math.ceil(frame.padding + frame.more) : 40;
+    };
+    this.runner = new ActionRunner<T>(model, {
+      open: (text, stop) => {
+        const p = this.exportPanel;
+        if (p.shown) return false;
+        p.kind = 'action';
+        p.text = text;
+        p.progress = true;
+        p.cancel = model.settings.get('actionsStopButton');
+        p.loaded = 0;
+        p.total = 0;
+        p.shown = true;
+        this.stopPanelExport = stop;
+        return true;
+      },
+      progress: (done, total) => this.showProgress(done, total),
+      close: () => {
+        if (this.exportPanel.kind !== 'action') return;
+        this.exportPanel.shown = false;
+        this.stopPanelExport = null;
+      },
+    });
+    this.bottomBar = new Toolbar({ label: () => model.actionSets.targetLabel() || model.text('gridActions'), size: 'sm' });
+    this.bottomBar.element.classList.add('mx-data-grid__bar-actions');
+    const bottomActions: BarButtons<T> = new BarButtons<T>(model, 'bottom', {
+      run: (entry) => void this.startEntry(entry, 'bottom'),
+      added: (button) => {
+        this.bottomBar.controls.add(button);
+        const menu = this.bottomBar.element.querySelector(':scope > .mx-data-grid__bar-menu');
+        if (menu) this.bottomBar.element.insertBefore(button.element, menu);
+      },
+    });
+    this.bottomActions = bottomActions;
+    this.bottomBar.controls.add(bottomActions.menuButton);
+    this.bottomBar.visible = () => this.bottomShown();
+    this.motif.setDisposable(() => bottomActions.dispose());
     const ev = model.events;
     model.selection.onChanged((selection) => ev.selectionChanged.fire({ selection }));
     this.tip = new CellTip(this, () => model.settings.get('tooltipDelay'));
@@ -282,6 +338,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         openColumns: (anchor) => this.menu.openColumns(anchor),
         hasColumns: () => this.menu.hasColumns(),
         groupPanel: () => this.groupPanel,
+        gridId: this.gridId,
+        hasBarActions: () => model.actionSets.canShowIn('toolbar'),
+        barEntries: () => model.actionSets.barEntries('toolbar'),
+        runBarAction: (entry, location) => void this.startEntry(entry, location),
         prepare: (items) => {
           if (!ev.listened(ev.toolbarPreparing)) return items;
           const e = { items: [...items] };
@@ -1048,6 +1108,51 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.builtIns;
   }
 
+  /**
+   * The rows the toolbar's and the bottom bar's actions act on now (`actionsTarget`): the selected
+   * rows or the active one. Empty for nothing, and for a selection whose rows are not loaded (read
+   * `selection` then). Reactive.
+   */
+  get actionTargets(): T[] {
+    const target = this.model.actionSets.target();
+    return target.kind === 'rows' ? [...target.rows] : [];
+  }
+
+  /** The actions the toolbar and the bottom bar show now, for those rows. Reactive. */
+  get barActions(): GridBarAction<T>[] {
+    const sets = this.model.actionSets;
+    return (['toolbar', 'bottom'] as const).flatMap((location) =>
+      sets.barEntries(location).map((e) => ({ action: e.action, location, text: e.text, count: e.count, disabled: e.disabled, rows: e.items.map((it) => it.row) })),
+    );
+  }
+
+  /**
+   * Runs an action from code, as a press does: on `rows`, or on the rows the bars act on now. Rows
+   * share an action by its `id`; it runs only where it is visible and enabled for them. Resolves to
+   * the outcome, or `null` when the action is not there or `onActionRunning` cancelled it.
+   */
+  runAction(id: string, rows?: readonly T[]): Promise<GridActionRanEventArgs<T> | null> {
+    const sets = this.model.actionSets;
+    const target: ActionTarget<T> = rows ? (rows.length ? { kind: 'rows', rows: [...rows], from: 'focused' } : { kind: 'none' }) : sets.target();
+    const entry = untracked(() => sets.entries(target, () => true).find((e) => e.action.id === id));
+    return entry ? this.startEntry(entry, 'code') : Promise.resolve(null);
+  }
+
+  /** Stops the action working on several rows (the rows not started are left). */
+  stopAction() {
+    this.runner.stop();
+  }
+
+  /** Raised before an action runs (in a row, a bar, a row's menu or from code): `e.cancel` keeps it from running. */
+  get onActionRunning(): MotifEvent<GridActionRunningEventArgs<T>> {
+    return this.on(this.model.events.actionRunning);
+  }
+
+  /** Raised when an action ran: on how many rows it worked or failed, and whether it was stopped. */
+  get onActionRan(): MotifEvent<GridActionRanEventArgs<T>> {
+    return this.on(this.model.events.actionRan);
+  }
+
   // Selection.
 
   /** The selection as a state: rows one by one, or every row of a filter but some. Reactive. */
@@ -1492,7 +1597,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /** Stops the export the load panel shows (its promise rejects with an `AbortError`). */
   cancelExport() {
-    this.stopPanelExport?.();
+    if (this.exportPanel.kind === 'export') this.stopPanelExport?.();
   }
 
   // Lifecycle.
@@ -1529,6 +1634,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         return;
       }
       untracked(() => model.search.refresh());
+    });
+
+    // What the bars' actions act on is said politely when it changes (not when the grid starts).
+    let barTarget: string | null = null;
+    this.bindings.watch(() => {
+      const text = this.barShown() ? model.actionSets.targetLabel() : '';
+      untracked(() => {
+        if (barTarget !== null && text && text !== barTarget) model.announce(text);
+        barTarget = text;
+      });
     });
 
     // Keys of the selected rows given by the app.
@@ -1730,6 +1845,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   override onDisposing() {
     for (const controller of this.exports) controller.abort();
+    this.runner.dispose();
     this.editor = null;
     this.tip.hide();
     this.groupPanel.dispose();
@@ -1746,6 +1862,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       st.status === 'loading' ? 'loading' : st.status === 'error' ? 'error' : model.count === 0 ? 'empty' : null;
     const showErrors = () => settings.get('errorSummary') && model.stats.failed > 0;
     const showSelected = () => settings.get('selection') !== 'none' && settings.get('selectedCount') && this.selectedCount > 0;
+    const panel = this.exportPanel;
+    const acting = () => panel.kind === 'action';
     const keepFocus = (e: Event) => e.preventDefault();
     return (
       <>
@@ -1809,20 +1927,30 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
           <div class="mx-data-grid__export-panel" x-display={() => this.exportPanel.shown}>
             <ProgressBar
               class="mx-data-grid__export-progress"
-              label={() => this.exportPanel.text || t('gridExporting')}
-              value={() => (this.exportPanel.progress && this.exportPanel.total > 0 ? this.exportPanel.loaded : null)}
-              max={() => Math.max(1, this.exportPanel.total)}
-              showValue={() => this.exportPanel.progress && this.exportPanel.total > 0}
-              valueText={() => t('gridExportProgress', { loaded: count(this.exportPanel.loaded), total: count(this.exportPanel.total) })}
+              label={() => panel.text || t('gridExporting')}
+              value={() => (panel.progress && panel.total > 0 ? panel.loaded : null)}
+              max={() => Math.max(1, panel.total)}
+              showValue={() => panel.progress && panel.total > 0}
+              valueText={() =>
+                acting() ? t('gridActionProgress', { done: count(panel.loaded), total: count(panel.total) }) : t('gridExportProgress', { loaded: count(panel.loaded), total: count(panel.total) })
+              }
               size="sm"
               stretch
             />
-            <Button class="mx-data-grid__export-cancel" text={() => t('gridExportCancel')} size="sm" variant="outline" visible={() => this.exportPanel.cancel} onclick={() => this.cancelExport()} />
+            <Button
+              class="mx-data-grid__export-cancel"
+              text={() => (acting() ? t('gridActionStop') : t('gridExportCancel'))}
+              size="sm"
+              variant="outline"
+              visible={() => panel.cancel}
+              onclick={() => this.stopPanelExport?.()}
+            />
           </div>
           <div class="mx-data-grid__probe" aria-hidden="true" ref={(c) => (this.probeEl = c.element as HTMLDivElement)} />
           <div class="mx-data-grid__measure" aria-hidden="true" ref={(c) => (this.measureEl = c.element as HTMLDivElement)} />
         </div>
-        <div class="mx-data-grid__bar" x-display={() => settings.get('rowCount') || st.failedBlocks > 0 || this.showsPager() || showErrors() || showSelected()}>
+        <div class="mx-data-grid__bar" x-display={() => settings.get('rowCount') || st.failedBlocks > 0 || this.showsPager() || showErrors() || showSelected() || this.bottomShown()}>
+          {this.bottomBar}
           <span class="mx-data-grid__count" x-display={() => settings.get('rowCount')}>
             {() => (st.status === 'ready' ? t('gridRecords', { count: count(this.total) }) : '')}
           </span>
@@ -1915,6 +2043,19 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   // Elements, measuring.
+
+  /** Whether the bottom bar holds actions now. Reactive. */
+  private bottomShown(): boolean {
+    const shown = this.bottomActions.shown();
+    return shown.buttons.length + shown.menu.length > 0;
+  }
+
+  /** Whether the toolbar or the bottom bar holds actions now. Reactive. */
+  private barShown(): boolean {
+    if (this.bottomShown()) return true;
+    const sets = this.model.actionSets;
+    return sets.canShowIn('toolbar') && this.topBar.shown() && sets.barEntries('toolbar').length > 0;
+  }
 
   private showsPager(): boolean {
     return this.model.mode === 'paged' && this.model.settings.get('pager');
@@ -2659,14 +2800,18 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const cell = group ? group.cell : footer ? footer.element : (target.closest?.('.mx-data-grid__cell') as HTMLElement | null);
     const index = group ? group.index : footer ? footer.index : cell ? (this.body.rowOf(cell)?.index ?? -1) : -1;
     if (!cell || index < 0) return;
-    if (this.openRowMenu(index, group?.node?.field ?? cell.dataset.field ?? '', cell)) e.preventDefault();
+    const field = group?.node?.field ?? cell.dataset.field ?? '';
+    // A data row's menu belongs to that row: it becomes the active one (the selection stays).
+    if (!group && !footer && index !== this.model.state.activeRow) this.navigate(index, field, { reveal: false });
+    if (this.openRowMenu(index, field, cell)) e.preventDefault();
   }
 
-  /** A row's menu: the items `onContextMenuPreparing` gives it (none of its own). Returns whether it opened. */
+  /** A row's menu: the row's actions, and what `onContextMenuPreparing` makes of them. Returns whether it opened. */
   private openRowMenu(index: number, field: string, anchor: HTMLElement): boolean {
     const { model } = this;
-    const row = model.groupAt(index) ? undefined : model.rowAt(index);
-    const items = this.prepareMenu('row', field, index, row, []);
+    const row = model.groupAt(index) || model.footerAt(index) ? undefined : model.rowAt(index);
+    const own = row !== undefined && !model.state.busy ? untracked(() => this.actionMenuItems(row)) : [];
+    const items = this.prepareMenu('row', field, index, row, own);
     if (!items?.length) return false;
     this.moreMenu.open(items, anchor, model.text('gridRowMenu'));
     return true;
@@ -2693,7 +2838,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (this.editor?.element.contains(target)) return;
     const action = target.closest?.('.mx-data-grid__action') as HTMLElement | null;
     if (action) {
-      this.runAction(action);
+      this.pressAction(action);
       return;
     }
     const condition = target.closest?.('.mx-data-grid__condition') as HTMLElement | null;
@@ -3222,6 +3367,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       edit: {
         id: 'edit',
         text: t('gridEdit'),
+        multiple: false,
         icon: () => pencilMark(),
         visible: (row, s) => !s.isRemoved && !s.isEditing && this.model.columns.visibleData().some((f) => this.model.columns.canFill(f, row, s.isNew)),
         disabled: (_row, s) => s.isSaving,
@@ -3309,7 +3455,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /** A press on an action button: the action runs, the "more" button opens its menu. */
-  private runAction(button: HTMLElement) {
+  private pressAction(button: HTMLElement) {
     const view = this.body.rowOf(button);
     const hit = view?.actions?.actionOf(button);
     const st = this.model.state;
@@ -3320,17 +3466,67 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     }
     // A row with messages could not be left for this one.
     if (hit.disabled || (st.session && st.session !== view.rowId)) return;
-    hit.action.onclick(hit.row, hit.state);
+    void this.runner.run(this.entryOf(hit), 'row');
   }
 
   private openMore(view: GridRow<T>, button: HTMLElement) {
+    const st = this.model.state;
     const items: MenuItem[] = (view.actions?.overflow ?? []).map((a) => ({
       text: a.text,
       icon: a.hasIcon ? a.action.icon : undefined,
+      hint: a.action.hint,
       enabled: !a.disabled,
-      click: () => a.action.onclick(a.row, a.state),
+      beginGroup: a.action.beginGroup,
+      data: a.action.id,
+      click: () => {
+        if (!st.busy && !(st.session && st.session !== view.rowId)) void this.runner.run(this.entryOf(a), 'row');
+      },
     }));
     this.moreMenu.open(items, button, this.model.text('gridMoreActions'));
+  }
+
+  /** One row's action as an entry to run. */
+  private entryOf(a: ResolvedAction<T>): ActionEntry<T> {
+    return { action: a.action, text: a.text, count: 1, disabled: a.disabled, items: [{ row: a.row, state: a.state, action: a.action }], selection: null, fromSelection: false };
+  }
+
+  /**
+   * Runs an action of a bar, a row's menu or code. The row being edited is left first (saved as the
+   * mode says) unless the action is for that row alone.
+   */
+  private startEntry(entry: ActionEntry<T>, location: GridActionRun['location']): Promise<GridActionRanEventArgs<T> | null> {
+    const { model } = this;
+    const st = model.state;
+    if (st.busy) return Promise.resolve(null);
+    const own = entry.items.length === 1 && model.rowIdOf(entry.items[0].row) === st.session;
+    if (!st.session || own) return this.runner.run(entry, location);
+    return new Promise((resolve) => {
+      this.leaveRowThen(
+        () => resolve(this.runner.run(entry, location)),
+        () => resolve(null),
+      );
+    });
+  }
+
+  /**
+   * A row's actions for its context menu: the common ones of the selection when the row is one of
+   * several selected rows, else the row's own; wherever they show.
+   */
+  private actionMenuItems(row: T): MenuItem[] {
+    const { model } = this;
+    const sets = model.actionSets;
+    const sel = model.selection;
+    const inSelection = model.settings.get('selection') === 'multiple' && sel.isSelected(model.selectId(row)) && sel.count(model.dataTotal) > 1;
+    const target: ActionTarget<T> = inSelection ? sets.selectionTarget() : { kind: 'rows', rows: [row], from: 'focused' };
+    return sets.entries(target, (a) => sets.inContextMenu(a)).map((e) => ({
+      text: sets.label(e),
+      icon: e.action.icon,
+      hint: e.action.hint,
+      enabled: !e.disabled,
+      beginGroup: e.action.beginGroup,
+      data: e.action.id,
+      click: () => void this.startEntry(e, 'contextMenu'),
+    }));
   }
 
   /** Keys on an action button: Left and Right move between the buttons of the cell; Enter and Space press it. */

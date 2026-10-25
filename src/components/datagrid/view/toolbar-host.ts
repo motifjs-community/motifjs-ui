@@ -1,6 +1,7 @@
 import type { DataGrid } from '../DataGrid';
 import type { GridToolbarItem } from '../grid-toolbar-item';
 import type { GridToolbarItemName } from '../grid-toolbar-item-name';
+import type { ActionEntry } from '../model/action-entry';
 import type { ExportCommand } from './export-command';
 import type { GroupPanel } from './GroupPanel';
 
@@ -19,6 +20,14 @@ export interface ToolbarHost {
   hasColumns(): boolean;
   /** The group panel, which the toolbar holds while `groupPanel` is on. */
   groupPanel(): GroupPanel<any>;
+  /** Id of the grid, for ids of the bar's own elements. */
+  gridId: string;
+  /** Whether actions can show in the toolbar (the `rowActions` item). Reactive. */
+  hasBarActions(): boolean;
+  /** The actions the toolbar shows now. Reactive. */
+  barEntries(): ActionEntry<any>[];
+  /** Runs an action of the bar on its rows. */
+  runBarAction(entry: ActionEntry<any>, location: 'toolbar'): void;
   /** The items the bar takes, as `onToolbarPreparing` leaves them. */
   prepare(items: readonly (GridToolbarItem | GridToolbarItemName)[]): readonly (GridToolbarItem | GridToolbarItemName)[];
 }
