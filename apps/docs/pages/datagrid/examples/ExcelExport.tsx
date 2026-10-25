@@ -57,7 +57,7 @@ export default function ExcelExport() {
     <>
       <DataGrid
         class="dg-excel"
-        style="block-size: 22rem"
+        style="block-size: 32rem"
         rows={makeOrders(200)}
         rowKey="id"
         columns={byCity}

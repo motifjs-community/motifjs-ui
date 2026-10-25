@@ -21,7 +21,7 @@ export default function Grouping() {
       </Stack>
       <DataGrid
         class="dg-grouping"
-        style="block-size: 24rem"
+        style="block-size: 34rem"
         rows={makeOrders(500)}
         rowKey="id"
         columns={grouped}

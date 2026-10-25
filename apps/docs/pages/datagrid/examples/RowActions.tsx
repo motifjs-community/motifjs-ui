@@ -8,7 +8,7 @@ const WIDTHS = [100, 140, 260];
 
 /** Buttons per row from a function of the row and its state; the rest go into "more". */
 export default function RowActions() {
-  const s = reactive({ orders: makeOrders(30), at: 'end' as 'start' | 'end', sticky: true, width: 140, note: '' });
+  const s = reactive({ orders: makeOrders(30), at: 'end' as 'start' | 'end', sticky: true, width: 260, note: '' });
 
   const approve: GridAction<Order> = {
     id: 'approve',
@@ -36,7 +36,7 @@ export default function RowActions() {
       </Stack>
       <DataGrid
         class="dg-actions"
-        style="block-size: 20rem"
+        style="block-size: 30rem"
         rows={() => s.orders}
         rowKey="id"
         columns={columns}

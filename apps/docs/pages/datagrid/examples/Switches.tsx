@@ -24,7 +24,7 @@ export default function Switches() {
       </Stack>
       <DataGrid
         class="dg-settings"
-        style="block-size: 16rem"
+        style="block-size: 28rem"
         rows={makeOrders(25)}
         rowKey="id"
         label="Switches"

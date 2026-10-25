@@ -20,7 +20,7 @@ export default function GroupingServer() {
     <>
       <DataGrid
         class="dg-grouping-server"
-        style="block-size: 22rem"
+        style="block-size: 32rem"
         dataSource={orders}
         columns={grouped}
         label="100,000 orders by status"

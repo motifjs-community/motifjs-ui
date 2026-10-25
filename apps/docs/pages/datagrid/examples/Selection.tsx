@@ -30,7 +30,7 @@ export default function Selection() {
       </Stack>
       <DataGrid
         class="dg-selection"
-        style="block-size: 16rem"
+        style="block-size: 28rem"
         rows={makeOrders(40)}
         rowKey="id"
         columns={columns}
@@ -43,7 +43,7 @@ export default function Selection() {
       <output class="dg-selection-state">{() => `${(grid?.selectedCount ?? 0).toLocaleString('en')} selected: ${describe(s.selection)}`}</output>
       <DataGrid
         class="dg-server-selection"
-        style="block-size: 16rem"
+        style="block-size: 28rem"
         dataSource={orders}
         columns={columns}
         label="100,000 orders to select"

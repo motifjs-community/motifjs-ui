@@ -16,7 +16,7 @@ export default function NewRows() {
       </Stack>
       <DataGrid
         class="dg-new"
-        style="block-size: 18rem"
+        style="block-size: 28rem"
         rows={makeOrders(12)}
         rowKey="id"
         columns={columns}

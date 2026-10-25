@@ -20,7 +20,7 @@ export default function Localization() {
         </span>
       </Stack>
       <DataGrid
-        style="block-size: 10rem"
+        style="block-size: 20rem"
         rows={[] as Order[]}
         rowKey="id"
         columns={columns.slice(0, 4)}

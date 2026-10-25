@@ -23,7 +23,7 @@ export default function SaveModes() {
       </Stack>
       <DataGrid
         class="dg-editing"
-        style="block-size: 22rem"
+        style="block-size: 32rem"
         dataSource={orders}
         columns={columns}
         label="Orders to edit"

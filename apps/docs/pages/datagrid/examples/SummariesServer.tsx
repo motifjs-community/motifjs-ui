@@ -22,7 +22,7 @@ export default function SummariesServer() {
     <>
       <DataGrid
         class="dg-summaries-server"
-        style="block-size: 22rem"
+        style="block-size: 32rem"
         dataSource={orders}
         columns={byStatus}
         label="100,000 orders with server totals"

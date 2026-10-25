@@ -23,7 +23,7 @@ export default function KeepLayout() {
       {s.shown && (
         <DataGrid
           class="dg-layout"
-          style="block-size: 18rem"
+          style="block-size: 28rem"
           rows={makeOrders(40)}
           rowKey="id"
           columns={filterColumns}

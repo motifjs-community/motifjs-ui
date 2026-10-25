@@ -32,7 +32,7 @@ export default function Export() {
     <>
       <DataGrid
         class="dg-export"
-        style="block-size: 16rem"
+        style="block-size: 28rem"
         rows={makeOrders(60)}
         rowKey="id"
         columns={filterColumns}

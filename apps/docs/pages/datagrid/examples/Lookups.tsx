@@ -48,7 +48,7 @@ export default function Lookups() {
     <>
       <DataGrid
         class="dg-lookups"
-        style="block-size: 20rem"
+        style="block-size: 30rem"
         rows={sales}
         rowKey="id"
         columns={columns}

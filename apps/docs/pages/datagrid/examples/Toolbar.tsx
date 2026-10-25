@@ -21,7 +21,7 @@ export default function Toolbar() {
   return (
     <DataGrid
       class="dg-toolbar"
-      style="block-size: 20rem"
+      style="block-size: 30rem"
       rows={makeOrders(120)}
       rowKey="id"
       columns={columns}

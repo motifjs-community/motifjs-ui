@@ -868,6 +868,11 @@
     display: none;
   }
 
+  /* No rows to show: the body keeps room for the message, also in a grid without a height. */
+  .mx-data-grid:is([data-state='empty'], [data-state='loading'], [data-state='error']) .mx-data-grid__body {
+    min-block-size: calc(var(--_row-height) * var(--_empty-rows, 3));
+  }
+
   /* Loading, empty and error over the body. */
   .mx-data-grid__overlay {
     position: absolute;

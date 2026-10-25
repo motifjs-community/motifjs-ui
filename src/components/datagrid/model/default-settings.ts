@@ -74,6 +74,7 @@ export const DEFAULT_SETTINGS: GridSettings = {
   groupArrowKeys: true,
   dragThreshold: 5,
   dragGhost: true,
+  emptyRows: 3,
   tooltipDelay: 500,
   extraRows: 4,
   columnWidth: 140,

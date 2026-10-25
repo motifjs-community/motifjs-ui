@@ -352,6 +352,9 @@ async function actionsSelectionFilters({ page, base, check, axeSource }) {
   const actionSection = page.locator('section[aria-labelledby="actions"]');
   await page.locator(actions).scrollIntoViewIfNeeded();
   await page.waitForFunction((sel) => document.querySelectorAll(sel).length > 3, `${shownRows(actions)}:not([data-loading])`);
+  // The example opens wide, every action on show; at 140 px the rest go into "more".
+  await actionSection.getByRole('button', { name: '140px' }).click();
+  await page.waitForTimeout(100);
   const buttonsOf = (n) => page.evaluate((sel) => [...document.querySelectorAll(`${sel} .mx-data-grid__actions > button:not([hidden])`)].map((b) => b.dataset.action ?? 'more'), row(actions, n));
   let shown = await buttonsOf(3);
   check('datagrid actions: the first actions show, the rest go into "more"', shown.join(',') === 'edit,remove,more', shown.join(','));

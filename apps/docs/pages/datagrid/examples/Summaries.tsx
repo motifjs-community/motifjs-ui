@@ -43,7 +43,7 @@ export default function Summaries() {
       </Stack>
       <DataGrid
         class="dg-summaries"
-        style="block-size: 24rem"
+        style="block-size: 34rem"
         rows={makeOrders(300)}
         rowKey="id"
         columns={byCity}

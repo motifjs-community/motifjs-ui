@@ -16,7 +16,7 @@ export default function Events() {
     <>
       <DataGrid
         class="dg-events"
-        style="block-size: 18rem"
+        style="block-size: 28rem"
         rows={makeOrders(60)}
         rowKey="id"
         columns={columns}

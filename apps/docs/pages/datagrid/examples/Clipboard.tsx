@@ -17,7 +17,7 @@ export default function Clipboard() {
       </Stack>
       <DataGrid
         class="dg-clipboard"
-        style="block-size: 18rem"
+        style="block-size: 28rem"
         rows={makeOrders(20)}
         rowKey="id"
         columns={columns}

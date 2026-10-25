@@ -33,7 +33,7 @@ export default function Search() {
       </Stack>
       <DataGrid
         class="dg-search"
-        style="block-size: 20rem"
+        style="block-size: 30rem"
         rows={makeOrders(200)}
         rowKey="id"
         columns={columns}
@@ -46,7 +46,7 @@ export default function Search() {
       <output class="dg-search-text">{() => `Searching for “${s.text}”`}</output>
       <DataGrid
         class="dg-server-search"
-        style="block-size: 20rem"
+        style="block-size: 30rem"
         dataSource={sales}
         columns={saleColumns}
         label="50,000 sales to search"

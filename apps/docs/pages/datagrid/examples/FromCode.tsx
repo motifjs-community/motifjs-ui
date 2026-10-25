@@ -15,7 +15,7 @@ export default function FromCode() {
     if (!host) return;
     host.controls.clear();
     const made = new DataGrid<Order>({ rows: makeOrders(8), rowKey: 'id', columns: columns.slice(0, 4), settings: { striped: true }, label: 'Created with new' });
-    made.element.style.blockSize = '14rem';
+    made.element.style.blockSize = '24rem';
     host.controls.add(made);
     made.sort = [{ field: 'customer', dir: 'asc' }];
   };
@@ -24,7 +24,7 @@ export default function FromCode() {
     <>
       <DataGrid
         class="dg-local"
-        style="block-size: 20rem"
+        style="block-size: 30rem"
         rows={() => s.orders}
         rowKey="id"
         columns={columns}

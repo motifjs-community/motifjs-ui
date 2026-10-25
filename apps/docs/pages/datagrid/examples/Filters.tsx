@@ -19,7 +19,7 @@ export default function Filters() {
     <>
       <DataGrid
         class="dg-filters"
-        style="block-size: 20rem"
+        style="block-size: 30rem"
         rows={makeOrders(200)}
         rowKey="id"
         columns={filterColumns}
@@ -35,7 +35,7 @@ export default function Filters() {
       </Stack>
       <DataGrid
         class="dg-server-filters"
-        style="block-size: 20rem"
+        style="block-size: 30rem"
         dataSource={orders}
         columns={filterColumns}
         label="100,000 orders to filter"

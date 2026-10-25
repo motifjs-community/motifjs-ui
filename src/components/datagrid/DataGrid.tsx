@@ -1507,7 +1507,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       'data-striped': () => (settings.get('striped') ? '' : null),
       'data-header-buttons': () => settings.get('headerButtons'),
       'data-selection': () => (settings.get('selection') === 'none' ? null : settings.get('selection')),
+      // While there are no rows to show, the body keeps room for the message (`emptyRows`).
+      'data-state': () => (model.state.status === 'loading' ? 'loading' : model.state.status === 'error' ? 'error' : model.count === 0 ? 'empty' : null),
     });
+    this.bindings.watch(() => this.element.style.setProperty('--_empty-rows', String(Math.max(0, settings.get('emptyRows')))));
 
     // Filters: applied at once, or after a typing pause; a feature switched off takes its filter out.
     this.bindings.watch(() => {

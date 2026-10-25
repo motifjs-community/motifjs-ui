@@ -1,3 +1,4 @@
+import { reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount, tick } from '../../../tests/helpers';
@@ -83,6 +84,21 @@ describe('settings', () => {
     grid.settings.columnMinWidth = 20;
     grid.columnOption('name', 'width', 10);
     expect(grid.columnOption('name', 'width')).toBe(20);
+    await grid.dispose();
+  });
+
+  it('marks a grid with no rows to show and gives it emptyRows of room, live', async () => {
+    const s = reactive({ rows: [] as Row[] });
+    const grid = make({ rows: () => s.rows });
+    await settle();
+    expect(grid.element.dataset.state).toBe('empty');
+    expect(grid.element.style.getPropertyValue('--_empty-rows')).toBe('3');
+    grid.settings.emptyRows = 5;
+    await tick();
+    expect(grid.element.style.getPropertyValue('--_empty-rows')).toBe('5');
+    s.rows = makeRows(2);
+    await settle();
+    expect([grid.total, grid.element.dataset.state]).toEqual([2, undefined]);
     await grid.dispose();
   });
 

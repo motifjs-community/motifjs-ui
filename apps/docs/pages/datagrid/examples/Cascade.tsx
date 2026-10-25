@@ -43,7 +43,7 @@ export default function Cascade() {
   return (
     <DataGrid
       class="dg-cascade"
-      style="block-size: 14rem"
+      style="block-size: 24rem"
       rows={branches}
       rowKey="id"
       columns={columns}

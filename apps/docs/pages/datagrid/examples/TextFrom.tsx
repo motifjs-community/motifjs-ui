@@ -37,7 +37,7 @@ export default function TextFrom() {
 
   return (
     <>
-      <DataGrid class="dg-text-from" style="block-size: 18rem" dataSource={invoiceSource} columns={columns} label="Invoices" locale="en" saveMode="batch" settings={{ editable: true }} />
+      <DataGrid class="dg-text-from" style="block-size: 28rem" dataSource={invoiceSource} columns={columns} label="Invoices" locale="en" saveMode="batch" settings={{ editable: true }} />
       <output class="dg-text-from-requests">{() => `${s.requests} requests to the customers service`}</output>
     </>
   );

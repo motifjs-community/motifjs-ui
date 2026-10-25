@@ -21,7 +21,7 @@ export default function BatchSave() {
     <>
       <DataGrid
         class="dg-batch"
-        style="block-size: 24rem"
+        style="block-size: 34rem"
         dataSource={orders}
         columns={columns}
         label="Orders saved together"

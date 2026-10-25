@@ -16,7 +16,7 @@ export default function Virtual() {
 
   return (
     <>
-      <DataGrid class="dg-virtual" style="block-size: 22rem" dataSource={orders} columns={columns} label="100,000 orders" locale="en" ref={(g: DataGrid<Order>) => (grid = g)} />
+      <DataGrid class="dg-virtual" style="block-size: 32rem" dataSource={orders} columns={columns} label="100,000 orders" locale="en" ref={(g: DataGrid<Order>) => (grid = g)} />
       <Stack orientation="horizontal" wrap align="center">
         <Button text="Go to the end" variant="outline" onclick={() => grid?.scrollToIndex(grid.total - 1, 'end')} />
         <Button text="Back to the top" variant="outline" onclick={() => grid?.scrollToIndex(0)} />
