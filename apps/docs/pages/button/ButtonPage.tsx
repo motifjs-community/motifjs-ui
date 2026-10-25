@@ -1,17 +1,17 @@
-import { reactive, type Component } from '@motifx/core';
-import { Button, enStrings, trStrings, uiLocale, type ButtonSize, type ButtonTone, type ButtonVariant, type MenuItem } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import Busy from './examples/Busy';
+import Disabled from './examples/Disabled';
+import DropDown from './examples/DropDown';
+import FromCode from './examples/FromCode';
+import IconAndChildren from './examples/IconAndChildren';
+import Localization from './examples/Localization';
+import Menu from './examples/Menu';
+import Split from './examples/Split';
+import Toggle from './examples/Toggle';
+import VariantsTonesSizes from './examples/VariantsTonesSizes';
 
-/** A small save icon for the demos: any element or component can be an icon. */
-const SaveIcon = () => (
-  <svg viewBox="0 0 16 16" aria-hidden="true">
-    <path d="M3 2.5h8l2.5 2.5v8.5h-10.5zM5.5 2.5v3.5h5v-3.5M5 13.5v-4h6v4" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
-  </svg>
-);
-
-const VARIANTS: ButtonVariant[] = ['solid', 'outline', 'ghost'];
-const TONES: ButtonTone[] = ['standard', 'accent', 'danger'];
-const SIZES: ButtonSize[] = ['sm', 'md', 'lg'];
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['text', '`Bind<string>`', "`''`", 'The caption. `&` marks the access key (`&Save` → Alt+S), `&&` is a literal `&`. JSX children come after it.'],
@@ -104,39 +104,6 @@ const TOKENS = [
 ];
 
 export default function ButtonPage() {
-  const s = reactive({
-    size: 'md' as ButtonSize,
-    added: 0,
-    bold: false,
-    busy: false,
-    enabled: false,
-    log: [] as string[],
-    wrap: true,
-    split: true,
-    lang: 'en',
-  });
-  const note = (text: string) => s.log.unshift(text);
-  let toolbar: Component<HTMLDivElement> | null = null;
-
-  const addFromCode = () => {
-    const b = new Button({ text: `Button ${++s.added}`, variant: 'outline' });
-    b.motif.on('click', () => (b.text = `${b.text} ✓`));
-    toolbar?.controls.add(b);
-  };
-
-  const runBusy = () => {
-    s.busy = true;
-    setTimeout(() => (s.busy = false), 1500);
-  };
-
-  const fileMenu = (): MenuItem[] => [
-    { text: '&New', icon: () => <SaveIcon />, click: () => note('New') },
-    { text: '&Open…', click: () => note('Open…') },
-    { text: 'Open &recent', enabled: false },
-    { text: '&Word wrap', checked: () => s.wrap, beginGroup: true, click: () => (s.wrap = !s.wrap) },
-    { text: 'E&xit', beginGroup: true, click: () => note('Exit') },
-  ];
-
   return (
     <>
       <p class="lead">
@@ -158,21 +125,8 @@ import { Button, type MenuItem } from '@motifx-community/ui';
         <p>
           <Rich text="Both ways are complete. Every prop takes a value or a function; a function of a reactive object keeps the button in step with it. A property set from code takes the same." />
         </p>
-        <Example
-          code={`
-// JSX, bound to state
-<Button text="&Save" tone="accent" busy={() => this.model.saving} onclick={() => this.model.save()} />
-
-// code: create, add anywhere, change later
-const retry = new Button({ text: 'Retry', variant: 'outline' });
-this.toolbar.controls.add(retry);
-retry.motif.on('click', () => this.load());
-retry.busy = () => this.model.loading;           // followed
-retry.text = () => \`Retry (\${this.model.tries})\`;  // followed
-`}
-        >
-          <Button text="Add a button from code" onclick={addFromCode} />
-          <div class="docs-flow" ref={(c: Component<HTMLDivElement>) => (toolbar = c)} />
+        <Example files={code('FromCode.tsx')}>
+          <FromCode />
         </Example>
       </Section>
 
@@ -182,47 +136,17 @@ retry.text = () => \`Retry (\${this.model.tries})\`;  // followed
           move when pressed. <code>outline</code> has a frame, <code>ghost</code> shows only on hover. The tone picks the
           colors; the size the height, from the density tokens (switch Compact above).
         </p>
-        <div class="demo demo--stack">
-          <div class="docs-flow" role="group" aria-label="Size">
-            {SIZES.map((size) => (
-              <Button
-                key={size}
-                text={size}
-                size="sm"
-                variant={() => (s.size === size ? 'solid' : 'ghost')}
-                aria-pressed={() => s.size === size}
-                onclick={() => (s.size = size)}
-              />
-            ))}
-          </div>
-          {TONES.map((tone) => (
-            <div key={tone} class="docs-flow">
-              {VARIANTS.map((variant) => (
-                <Button key={variant} text={`${tone} ${variant}`} tone={tone} variant={variant} size={() => s.size} />
-              ))}
-            </div>
-          ))}
-        </div>
+        <Example files={code('VariantsTonesSizes.tsx')} stack>
+          <VariantsTonesSizes />
+        </Example>
       </Section>
 
       <Section anchor="content" title="Text, icon, children">
         <p>
           <Rich text="`text` is the caption; JSX children come after it. `icon` takes an image address or any element or component, before the text or after it (`iconPosition`). A button with only an icon needs a name: give it a `hint`." />
         </p>
-        <Example
-          code={`
-<Button text="Save" icon={() => <SaveIcon />} />
-<Button text="Next" icon="/icons/next.svg" iconPosition="end" />
-<Button icon={() => <SaveIcon />} hint="Save" variant="ghost" />
-<Button>Total <b>42</b></Button>
-`}
-        >
-          <Button text="Save" icon={() => <SaveIcon />} />
-          <Button text="Next" icon="../favicon.svg" iconPosition="end" variant="outline" />
-          <Button icon={() => <SaveIcon />} hint="Save" variant="ghost" />
-          <Button tone="accent">
-            Total <b>42</b>
-          </Button>
+        <Example files={code('IconAndChildren.tsx')}>
+          <IconAndChildren />
         </Example>
       </Section>
 
@@ -230,15 +154,8 @@ retry.text = () => \`Retry (\${this.model.tries})\`;  // followed
         <p>
           <Rich text="With `toggle` a click turns `pressed` on and off; `x-model` binds it two-way." />
         </p>
-        <Example
-          code={`
-<Button text="Bold" toggle x-model={() => this.format.bold} />
-`}
-        >
-          <Button text="Bold" toggle x-model={() => s.bold} />
-          <span>
-            bold: <output class="bold-state">{() => String(s.bold)}</output>
-          </span>
+        <Example files={code('Toggle.tsx')}>
+          <Toggle />
         </Example>
       </Section>
 
@@ -246,12 +163,8 @@ retry.text = () => \`Retry (\${this.model.tries})\`;  // followed
         <p>
           <Rich text="While `busy`, a spinner shows over the content, presses are ignored and the size does not change. The text stays for screen readers, with `aria-busy`." />
         </p>
-        <Example
-          code={`
-<Button text="Send" tone="accent" busy={() => this.model.sending} onclick={() => this.model.send()} />
-`}
-        >
-          <Button text="Send" tone="accent" busy={() => s.busy} onclick={runBusy} />
+        <Example files={code('Busy.tsx')}>
+          <Busy />
         </Example>
       </Section>
 
@@ -259,36 +172,17 @@ retry.text = () => \`Retry (\${this.model.tries})\`;  // followed
         <p>
           <Rich text="A disabled button is natively disabled: it leaves the Tab order and cannot be pressed. With `focusableWhenDisabled` it keeps its place and only gets `aria-disabled`, so a keyboard or screen reader user can still find it — and a hint can say why it is off." />
         </p>
-        <div class="demo">
-          <Button text="Toggle enabled" variant="outline" onclick={() => (s.enabled = !s.enabled)} />
-          <Button text="Plain" enabled={() => s.enabled} />
-          <Button text="Focusable" enabled={() => s.enabled} focusableWhenDisabled hint="Fill in the form first" />
-        </div>
+        <Example files={code('Disabled.tsx')}>
+          <Disabled />
+        </Example>
       </Section>
 
       <Section anchor="menu" title="Menu">
         <p>
           <Rich text="With `menu` the whole button opens a list of commands. Items can have an icon, a check mark, a group line, be disabled or hidden; each `&` key chooses its item while the menu is open. An item field may be a function: the open menu follows what it reads." />
         </p>
-        <Example
-          code={`
-<Button
-  text="&File"
-  menu={() => [
-    { text: '&New', icon: () => <NewIcon />, click: () => this.create() },
-    { text: '&Open…', click: () => this.open() },
-    { text: 'Open &recent', enabled: false },
-    { text: 'Delete', enabled: () => this.selection.length > 0 },
-    { text: '&Word wrap', checked: () => this.view.wrap, beginGroup: true, click: () => (this.view.wrap = !this.view.wrap) },
-  ]}
-  onItemClick={(e) => this.log(e.item.text)}
-/>
-`}
-        >
-          <Button text="&File" menu={fileMenu} variant="outline" />
-          <span>
-            Last: <output class="menu-log">{() => s.log[0] ?? '—'}</output>
-          </span>
+        <Example files={code('Menu.tsx')}>
+          <Menu />
         </Example>
       </Section>
 
@@ -296,34 +190,8 @@ retry.text = () => \`Retry (\${this.model.tries})\`;  // followed
         <p>
           <Rich text="With `split` the button keeps its own action (`onclick`) and an arrow next to it opens the menu. The two are separate Tab stops; Alt+Down on the button opens the menu too. `split` can change at any time; a menu itself (`split`, `menu` or `dropDown`) must be there when the button is created, since it makes the button two parts." />
         </p>
-        <Example
-          code={`
-<Button
-  text="&Save"
-  tone="accent"
-  split
-  onclick={() => this.save()}
-  menu={[
-    { text: 'Save &as…', click: () => this.saveAs() },
-    { text: 'Save a&ll', click: () => this.saveAll() },
-  ]}
-/>
-`}
-        >
-          <Button
-            text="Sa&ve"
-            tone="accent"
-            split={() => s.split}
-            onclick={() => note('Save')}
-            menu={[
-              { text: 'Save &as…', click: () => note('Save as…') },
-              { text: 'Save a&ll', click: () => note('Save all') },
-            ]}
-          />
-          <Button text="split" size="sm" variant="ghost" toggle x-model={() => s.split} />
-          <span>
-            Last: <output class="split-log">{() => s.log[0] ?? '—'}</output>
-          </span>
+        <Example files={code('Split.tsx')}>
+          <Split />
         </Example>
       </Section>
 
@@ -331,25 +199,8 @@ retry.text = () => \`Retry (\${this.model.tries})\`;  // followed
         <p>
           <Rich text="`dropDown` opens any component instead of a menu: a picker, a small form. Focus goes to its first field; Escape or a press outside closes it." />
         </p>
-        <Example
-          code={`
-<Button text="Filter" variant="outline" dropDown={<FilterForm model={this.filter} />} />
-`}
-        >
-          <Button
-            text="Filter"
-            variant="outline"
-            dropDown={
-              <div class="docs-flow docs-dropdown">
-                <label>
-                  From <input name="from" type="date" />
-                </label>
-                <label>
-                  To <input name="to" type="date" />
-                </label>
-              </div>
-            }
-          />
+        <Example files={code('DropDown.tsx')}>
+          <DropDown />
         </Example>
       </Section>
 
@@ -365,25 +216,8 @@ retry.text = () => \`Retry (\${this.model.tries})\`;  // followed
         <p>
           <Rich text="The only text a button writes itself is the name of a split button's arrow. It comes from `uiLocale.strings`, which starts with the page's `lang` (English and Turkish ship) and can be set to any `UiStrings`; every button follows at once." />
         </p>
-        <Example
-          code={`
-import { uiLocale, trStrings } from '@motifx-community/ui';
-
-uiLocale.strings = trStrings;                                    // "Diğer seçenekler"
-uiLocale.strings = { ...uiLocale.strings, moreOptions: 'Mehr' };  // your own
-`}
-        >
-          <Button
-            text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')}
-            variant="outline"
-            onclick={() => {
-              s.lang = s.lang === 'en' ? 'tr' : 'en';
-              uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
-            }}
-          />
-          <span>
-            The arrow above is named <output class="arrow-name">{() => uiLocale.strings.moreOptions}</output>
-          </span>
+        <Example files={code('Localization.tsx')}>
+          <Localization />
         </Example>
       </Section>
 

@@ -146,6 +146,10 @@ export const enStrings: UiStrings = {
   gridExporting: 'Exporting…',
   gridExported: '{count} rows exported',
   gridExportFailed: 'The export failed.',
+  gridLookupMissing: 'Not found in the list',
+  gridLookupLoading: 'Loading',
+  gridLookupNoMatch: 'Nothing in the list is called “{text}”.',
+  gridLookupSeveral: 'More than one item in the list is called “{text}”.',
 };
 
 export const trStrings: UiStrings = {
@@ -293,6 +297,10 @@ export const trStrings: UiStrings = {
   gridExporting: 'Dışa aktarılıyor…',
   gridExported: '{count} satır dışa aktarıldı',
   gridExportFailed: 'Dışa aktarılamadı.',
+  gridLookupMissing: 'Listede bulunamadı',
+  gridLookupLoading: 'Yükleniyor',
+  gridLookupNoMatch: 'Listede “{text}” adında bir şey yok.',
+  gridLookupSeveral: 'Listede “{text}” adında birden çok kayıt var.',
 };
 
 function stringsOf(lang: string): UiStrings {

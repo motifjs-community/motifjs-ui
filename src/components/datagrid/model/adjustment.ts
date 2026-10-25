@@ -2,6 +2,6 @@
 export interface Adjustment {
   kind: 'move' | 'resize';
   field: string;
-  /** Order (move) or width (resize) before it started, for Escape. */
-  original: string[] | number;
+  /** Order (move) or widths and flex shares (resize) before it started, for Escape. */
+  original: string[] | { width: Record<string, number>; flex: Record<string, number> };
 }

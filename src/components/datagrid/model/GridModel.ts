@@ -14,6 +14,7 @@ import type { GridLayout } from '../grid-layout';
 import type { GridMode } from '../grid-mode';
 import type { GridSettings } from '../grid-settings';
 import type { RowState } from '../row-state';
+import type { EditorValue } from '../view/editor-value';
 import type { AddedRow } from './added-row';
 import { CellFormatter } from './CellFormatter';
 import { cellValue } from './cell-value';
@@ -24,10 +25,12 @@ import { FilterValues } from './FilterValues';
 import { GridData } from './GridData';
 import { GridRowsAdapter } from './GridRowsAdapter';
 import { LayoutStore } from './LayoutStore';
+import { LookupTexts } from './LookupTexts';
 import type { GridState } from './grid-state';
 import type { RowRun } from './row-run';
 import type { RowStatus } from './row-status';
 import { RowSelection } from './RowSelection';
+import { sameValue } from './same-value';
 import { Switches } from './Switches';
 
 /** `activeRow` value of the header row. Rows are 0…count-1. */
@@ -62,6 +65,7 @@ export class GridModel<T> {
     page: 0,
     rowHeight: DEFAULT_ROW_HEIGHT,
     viewport: 0,
+    measured: false,
     activeRow: HEADER_ROW,
     activeField: '',
     touched: false,
@@ -92,6 +96,8 @@ export class GridModel<T> {
   readonly selection = new RowSelection();
   readonly filters: FilterModel<T>;
   readonly values: FilterValues<T>;
+  /** The texts of the lookup columns. */
+  readonly lookups: LookupTexts<T>;
   /** The grid's ready actions, by name; the grid fills them in. */
   builtIns: GridBuiltInActions<T> | null = null;
   /** The filter the source had before the grid added its own. */
@@ -106,6 +112,10 @@ export class GridModel<T> {
   private readonly removing = new Set<string>();
   /** Where the layout and the filters are kept (`layoutKey`). */
   private readonly store: LayoutStore | null;
+  /** Work a row waits for before it is sent: an async `setCellValue`, a lookup key being checked. */
+  private readonly settling = new Map<string, Set<Promise<unknown>>>();
+  /** Cells waiting for their `setCellValue`, by row id. */
+  private readonly busyCells = new Map<string, Set<string>>();
 
   constructor(private readonly props: DataGridProps<T>) {
     this.settings = new Switches<GridSettings>(Object.keys(DEFAULT_SETTINGS) as (keyof GridSettings)[], DEFAULT_SETTINGS, props.settings ?? {});
@@ -121,6 +131,7 @@ export class GridModel<T> {
     const filters = stored ? this.reviveDates(stored.filters) : props.filters;
     if (filters) this.filters.replace(filters);
     this.values = new FilterValues<T>(this);
+    this.lookups = new LookupTexts<T>(() => this.formatter.locale, { missing: () => this.text('gridLookupMissing') });
     this.connect();
     this.state.activeField = this.columns.visibleData()[0] ?? '';
   }
@@ -164,8 +175,8 @@ export class GridModel<T> {
       });
       st.page = this.data.sourcePage;
       if (given) {
-        if (st.sort.length && !this.sameSort(st.sort, given.sort)) this.data.setSort(st.sort);
-        else st.sort = given.sort.filter((s) => this.columns.defs.has(s.field)).map((s) => ({ ...s }));
+        if (st.sort.length && !this.sameSort(this.sourceSort(st.sort), given.sort)) this.data.setSort(this.sourceSort(st.sort));
+        else st.sort = this.gridSort(given.sort);
       }
       st.connection++;
     });
@@ -384,6 +395,10 @@ export class GridModel<T> {
   insertAdded(k: number, values?: Partial<T>): number {
     const row = this.data.tracker.add(values);
     const rowId = this.rowIdOf(row);
+    for (const [field, value] of Object.entries(values ?? {})) {
+      const col = this.columns.defs.get(field);
+      if (col?.lookup && !data.isEmpty(value)) this.checkKey(rowId, row, col, value);
+    }
     const at = Math.max(0, Math.min(this.addedRows.length, k));
     const i = this.viewOfAdded(at);
     untracked(() => {
@@ -489,11 +504,72 @@ export class GridModel<T> {
     const tracker = this.data.tracker;
     tracker.setValue(row, field, value ?? null);
     if (index >= 0) this.lastSeen.set(rowId, { index, generation: this.generation });
-    const col = this.columns.get(field);
+    const col = this.columns.defs.get(field);
+    if (!col || this.columns.isInternal(field)) return;
     const rec = this.edit(rowId);
     const full = { ...(row as object), ...(rec?.draft ?? {}) } as T;
     const message = this.fieldMessage(col, this.value(rowId, row, col), full);
     if (message) tracker.setError(row, field, message);
+    else if (col.lookup && !data.isEmpty(value)) this.checkKey(rowId, row, col, value);
+  }
+
+  /**
+   * The user commits a value into a cell: the column's `setCellValue` says which fields are written
+   * (it may wait; the cell is busy meanwhile), then each is written and checked.
+   */
+  writeCell(rowId: string, row: T, field: string, value: unknown, index = -1) {
+    const col = this.columns.get(field);
+    if (!col.setCellValue) {
+      this.setValue(rowId, row, field, value, index);
+      return;
+    }
+    const values: Record<string, unknown> = { [field]: value };
+    const write = () => {
+      for (const [f, v] of Object.entries(values)) this.setValue(rowId, row, f, v, index);
+    };
+    const fail = (error: unknown) => this.setError(row, field, (error as Error | undefined)?.message || this.text('invalid'));
+    let result: void | Promise<void>;
+    try {
+      result = col.setCellValue(values, value, { ...(row as object), ...(this.edit(rowId)?.draft ?? {}) } as T);
+    } catch (error) {
+      fail(error);
+      return;
+    }
+    if (!result || typeof (result as Promise<void>).then !== 'function') {
+      write();
+      return;
+    }
+    this.settle(rowId, (result as Promise<void>).then(write, fail), field);
+  }
+
+  /** The work a row waits for before it is sent (an async `setCellValue`, a lookup key being checked), or `null`. */
+  whenSettled(rowId: string): Promise<void> | null {
+    const wait = this.settling.get(rowId);
+    return wait?.size ? Promise.all(wait).then(() => undefined) : null;
+  }
+
+  /** A value that comes later (a pasted text the lookup source is asked about): the cell is busy until then, then it is written or shows the message. */
+  writeLater(rowId: string, row: T, field: string, value: Promise<EditorValue>, index = -1) {
+    const work = value.then((r) => (r.ok ? this.writeCell(rowId, row, field, r.value, index) : this.setError(row, field, r.message)));
+    this.settle(rowId, work, field);
+  }
+
+  /** Whether a cell waits for its value (`setCellValue`, a pasted lookup text). Reactive. */
+  isBusy(rowId: string | undefined, field: string): boolean {
+    void this.state.edits;
+    return !!rowId && !!this.busyCells.get(rowId)?.has(field);
+  }
+
+  /** The text a cell shows (copy, export): a lookup's text (its key while that is not known), else the formatted value. */
+  shownText(rowId: string | undefined, row: T, col: GridColumn<T>, value: unknown = this.value(rowId, row, col)): string {
+    if (!col.lookup) return this.formatter.text(col, row, value);
+    const look = this.lookups.cell(col, row, value, this.isChanged(rowId, col.field));
+    return look.state === 'loading' ? String(value) : look.text;
+  }
+
+  /** Forgets the texts of the lookup columns and asks for them again. */
+  refreshLookups() {
+    this.lookups.refresh([...this.columns.defs.values()].filter((c) => c.lookup));
   }
 
   setError(row: T, field: string, message: string) {
@@ -506,8 +582,16 @@ export class GridModel<T> {
     return rec ? this.data.tracker.validate(rec.row) : null;
   }
 
-  /** The user left the row: it is sent as the save mode says. `true` when the grid may go on at once, else whether the save worked. */
+  /** The user left the row: it is sent as the save mode says, after the work it waits for. `true` when the grid may go on at once, else whether the save worked. */
   commit(rowId: string): true | Promise<boolean> {
+    const wait = this.settling.get(rowId);
+    if (wait?.size) {
+      return Promise.all(wait).then(() => {
+        if (this.validate(rowId) !== null) return false;
+        const result = this.commit(rowId);
+        return result === true ? true : result;
+      });
+    }
     const rec = this.edit(rowId);
     if (!rec) return true;
     const result = this.data.tracker.commit(rec.row);
@@ -532,6 +616,8 @@ export class GridModel<T> {
   }
 
   async saveChanges(): Promise<{ saved: number; failed: number }> {
+    const waits = [...this.settling.values()].flatMap((set) => [...set]);
+    if (waits.length) await Promise.all(waits);
     const result = await this.data.tracker.saveChanges();
     if (result.saved) this.announce(this.text('gridChangesSaved', { count: this.formatter.count(result.saved) }));
     return result;
@@ -579,7 +665,7 @@ export class GridModel<T> {
 
   /** Whether a column's header filter can be used: the feature is on and its values can be had. */
   hasHeaderFilter(field: string): boolean {
-    return !this.columns.isInternal(field) && this.columns.can(field, 'headerFilter') && this.values.available();
+    return !this.columns.isInternal(field) && this.columns.can(field, 'headerFilter') && this.values.available(field);
   }
 
   /** The id the selection keeps a row under: its key as text; `undefined` for a row without a key (a new one). */
@@ -697,7 +783,7 @@ export class GridModel<T> {
     this.state.sort = next;
     this.state.page = 0;
     this.generation++;
-    this.data.setSort(next);
+    this.data.setSort(this.sourceSort(next));
     this.onQueryChange?.();
     if (byUser) this.layoutChanged();
     else this.keepLayout();
@@ -752,6 +838,7 @@ export class GridModel<T> {
 
   dispose() {
     clearTimeout(this.filterTimer);
+    this.lookups.dispose();
     this.selection.dispose();
     this.data.dispose();
   }
@@ -768,6 +855,26 @@ export class GridModel<T> {
     return out;
   }
 
+  /**
+   * The sort a given source gets: a column's `sortField` (or the field of its `textFrom`) instead of
+   * its own. The grid's own source of rows in memory reads the columns itself.
+   */
+  private sourceSort(sort: readonly data.SortItem[]): data.SortItem[] {
+    if (!read(this.props.dataSource)) return sort.map((s) => ({ ...s }));
+    return sort.map((s) => ({ field: this.lookups.sortFieldOf(this.columns.get(s.field)), dir: s.dir }));
+  }
+
+  /** A source's sort as the grid's columns name it. */
+  private gridSort(sort: readonly data.SortItem[]): data.SortItem[] {
+    const out: data.SortItem[] = [];
+    for (const s of sort) {
+      let field: string | undefined = s.field;
+      if (!this.columns.defs.has(field)) field = [...this.columns.defs.values()].find((c) => !this.columns.isInternal(c.field) && this.lookups.sortFieldOf(c) === s.field)?.field;
+      if (field !== undefined && !this.columns.isInternal(field)) out.push({ field, dir: s.dir });
+    }
+    return out;
+  }
+
   private sameSort(a: readonly data.SortItem[], b: readonly data.SortItem[]): boolean {
     return a.length === b.length && a.every((s, i) => s.field === b[i].field && s.dir === b[i].dir);
   }
@@ -777,9 +884,15 @@ export class GridModel<T> {
     const props = this.props;
     const fields: Record<string, data.FieldType> = {};
     for (const col of props.columns) if (col.type && FIELD_TYPES[col.type] && !col.value) fields[col.field] = FIELD_TYPES[col.type];
+    const column = (field: string) => (this.columns.defs.get(field) ?? { field, title: '' }) as GridColumn<T>;
     const adapter = new GridRowsAdapter<T & object>(
       { data: () => (read(props.rows) ?? []) as (T & object)[], key: props.rowKey as data.KeyExpr<T & object>, fields, locale: this.formatter.locale },
-      (field) => (this.columns.defs.get(field) ?? { field, title: '' }) as GridColumn<T & object>,
+      column as (field: string) => GridColumn<T & object>,
+      {
+        sortValue: (field) => this.lookups.sortValue(column(field)) as ((row: T & object) => unknown) | undefined,
+        // Sorting by a lookup's text needs the text of every key of the rows first.
+        beforeSort: (sort, rows) => this.lookups.load(sort.map((s) => column(s.field)).filter((c) => this.lookups.sortsByText(c)), rows as unknown as T[]),
+      },
     );
     return new data.DataSource<T, unknown>({ adapter: adapter as unknown as data.DataAdapter<T, unknown>, loadMode: 'all', sort: this.state.sort, filter: this.filters.expression() });
   }
@@ -813,7 +926,39 @@ export class GridModel<T> {
 
   private fieldMessage(col: GridColumn<T>, value: unknown, row: T): string {
     if (col.required && data.isEmpty(value)) return this.text('required');
+    if (col.lookup && this.lookups.isMissing(col, value)) return this.text('gridLookupMissing');
     return col.validate?.(value, row) || '';
+  }
+
+  /** A lookup key not known yet is asked for; one the source does not have stops the row from being saved. */
+  private checkKey(rowId: string, row: T, col: GridColumn<T>, value: unknown) {
+    const items = this.lookups.items(col);
+    const known = items?.get(value);
+    if (!items || (known && known.state !== 'loading')) return;
+    const check = items.request([value]).then(() => {
+      if (!this.isChanged(rowId, col.field) || !sameValue(this.value(rowId, row, col), value) || !this.lookups.isMissing(col, value)) return;
+      this.data.tracker.setError(row, col.field, this.text('gridLookupMissing'));
+    });
+    this.settle(rowId, check);
+  }
+
+  /** A row waits for `work` before it is sent; with a field, that cell shows it is busy meanwhile. */
+  private settle(rowId: string, work: Promise<unknown>, field?: string) {
+    let set = this.settling.get(rowId);
+    if (!set) this.settling.set(rowId, (set = new Set()));
+    set.add(work);
+    if (field) {
+      let busy = this.busyCells.get(rowId);
+      if (!busy) this.busyCells.set(rowId, (busy = new Set()));
+      busy.add(field);
+      untracked(() => this.state.edits++);
+    }
+    const done = () => {
+      set.delete(work);
+      if (!set.size) this.settling.delete(rowId);
+      if (field && this.busyCells.get(rowId)?.delete(field)) untracked(() => this.state.edits++);
+    };
+    work.then(done, done);
   }
 
   /** The tracker told something: keep the new-row area in step. */

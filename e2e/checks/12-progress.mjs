@@ -57,10 +57,10 @@ export default async function ({ page, base, check, axeSource, box }) {
   await load.focus();
   await page.keyboard.press('Enter');
   const layer = cover.getByRole('progressbar', { name: 'Loading orders' });
-  const [panelBox, layerBox] = [await box(cover.locator('.docs-panel')), await box(layer)];
+  const [panelBox, layerBox] = [await box(cover.locator('.pr-panel')), await box(layer)];
   check('the spinner covers the panel inside its border', Math.abs(panelBox.width - layerBox.width) <= 2 && Math.abs(panelBox.height - layerBox.height) <= 2, `${panelBox.width}x${panelBox.height} vs ${layerBox.width}x${layerBox.height}`);
   check('focus waits on the spinner', await layer.evaluate((el) => document.activeElement === el));
-  check('the panel is busy and what is under the spinner is inert', (await cover.locator('.docs-panel').getAttribute('aria-busy')) === 'true' && (await cover.locator('input').evaluate((el) => !!el.closest('[inert]'))));
+  check('the panel is busy and what is under the spinner is inert', (await cover.locator('.pr-panel').getAttribute('aria-busy')) === 'true' && (await cover.locator('input').evaluate((el) => !!el.closest('[inert]'))));
   await page.keyboard.press('Tab');
   check('Tab does not reach into the covered panel', await cover.locator('input').evaluate((el) => document.activeElement !== el && !document.activeElement?.closest('[inert]')));
   await layer.focus();

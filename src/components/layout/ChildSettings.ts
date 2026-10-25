@@ -33,7 +33,15 @@ export class ChildSettings {
       for (const stop of this.running) stop();
       this.running.clear();
     });
-    for (const child of owner.controls.items) this.add(child);
+  }
+
+  /**
+   * Picks up the children already there. Called once the container has stored this object: the
+   * handler reads the settings back through the container.
+   */
+  addPresent(): this {
+    for (const child of this.owner.controls.items) this.add(child);
+    return this;
   }
 
   /** The children that take part, in order. */

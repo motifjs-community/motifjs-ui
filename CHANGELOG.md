@@ -70,7 +70,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `@motifx-community/data`: virtual or paged, sorting, column layout, editing with the kit's
   editors, new rows, three save modes, row actions, selection over any number of rows, filter row
   and header filter, copy and paste, CSV export, a saved layout). Rows stay in place in the DOM
-  while scrolling; the reading order is given through `aria-owns`.
+  while scrolling; the reading order is given through `aria-owns`. `resizeMode` (grid and column):
+  `widget` resizes the column alone, `nextColumn` moves only the edge between it and the next column.
+- `DataGrid` lookup columns: `lookup` (a `DataSource` of any adapter, also of another service, or an
+  array; `valueField`, `textField`, `searchFields`, `filter(row)`, `allowClearing`, `resolve`
+  `batch` / `byKey`, `batchSize`, `sortBy`, `editor` `dropdown` / `combobox` / `lookup`,
+  `editorOptions`). Only the keys on the screen are asked for, several in one request, and only the
+  cells that show them are drawn again; loading and "not found" states; the chosen text is
+  remembered. `textFrom` and `sortField` on any column; `setCellValue` (also async) and the
+  `onEditorPreparing` event for every column; the `syncLookupFilterValues` setting (grid and
+  column); `refreshLookups()`. Filter row "(All)" lists, header filter texts, copy, export and paste
+  by text, and a key the source does not have stops its row from being saved.
+- `KeyedItems` (shared, batched key → item cache per source and value field); `DataItems.find`
+  goes through it. `DropDown` and `ComboBox` ask for a value on no loaded page by their `valueField`
+  when it is a field. `DropDown.open(search)` starts the search box with a text.
 - Layout and windows: `Stack`, `Grid`, `DockPanel`, `Panel`, `GroupBox`, `SplitContainer`, `Tabs`,
   `Accordion`, `MxForm` (window and modal form, `show` / `showDialog`, move, resize, minimize,
   maximize, nested modals), `messageBox`, `confirm`.
@@ -80,6 +93,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `toast` / `Toaster`.
 - `Control` binds DOM events given from code (`new Button({ onclick })`); its private state getter is
   `controlState`, so a subclass may have a `state` field.
+- Fixed: `Stack`, `Grid` and `DockPanel` overflowed the call stack when a child was added in their
+  `ref`. `TreeView` reported a check again and again when `checkedKeys` was bound both ways with
+  `onCheckChanged` writing the keys back; keys equal to the checked ones now change nothing.
 
 ### DropDown, ComboBox, Autocomplete, Lookup
 
@@ -127,6 +143,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - The docs site is one MotifJS app: `Application` + router (history mode), `DocsLayout` with a
   `RouterView`, pages loaded when first opened, `SiteSettings` and `PageOutline` services (each
   `Section` adds itself to the outline), the side-menu search is a `TextBox`.
+- Every example is its own file (`pages/<id>/examples/`), complete with imports and state; the page
+  runs it and "Show code" shows its exact source, a tab per file, with a Copy button. The content
+  column grows with wide windows. The browser checks fail on any MotifJS console warning.
 
 ### design system
 

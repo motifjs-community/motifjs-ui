@@ -1,6 +1,7 @@
 /* DataGrid. The look binds to data-striped, data-header-buttons and data-selection on the root; to
    data-active, data-selected, data-status (new | changed | removed | saving | failed | invalid),
-   data-odd and data-loading on each body row; to data-changed and aria-invalid on cells; to
+   data-odd and data-loading on each body row; to data-changed, aria-invalid and data-lookup
+   (loading | missing) on cells; to
    data-sort, data-sortable, data-dragging and data-resizing on headers; to aria-checked on the
    selection check boxes and data-active on header filter buttons. Action buttons and the filter
    row's condition buttons are plain elements with the kit button's classes. Column widths come
@@ -177,6 +178,22 @@
     inset-block: 35%;
     background-color: var(--mx-datagrid-placeholder);
     border-radius: var(--mx-radius-sm);
+  }
+
+  /* A lookup cell whose key is still asked for: the same soft bar. */
+  .mx-data-grid__cell[data-lookup='loading']::after {
+    content: '';
+    position: absolute;
+    inset-inline: var(--mx-datagrid-cell-padding);
+    inset-block: 35%;
+    background-color: var(--mx-datagrid-placeholder);
+    border-radius: var(--mx-radius-sm);
+  }
+
+  /* A key the lookup source does not have: the key itself, muted and underlined; the hint tells why. */
+  .mx-data-grid__cell[data-lookup='missing'] {
+    color: var(--mx-color-fg-secondary);
+    text-decoration: underline dotted;
   }
 
   /* The row status column: a mark by state, never only a color. */

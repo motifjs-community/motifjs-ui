@@ -1,39 +1,13 @@
-import { reactive, type Component } from '@motifx/core';
-import { data } from '@motifx-community/data';
-import { Button, Switch, TagBox, ValidationGroup, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import Customers from './examples/Customers';
+import CustomTags from './examples/CustomTags';
+import FromCode from './examples/FromCode';
+import Localization from './examples/Localization';
+import TeamList from './examples/TeamList';
+import Validation from './examples/Validation';
 
-interface Person {
-  id: number;
-  name: string;
-  team: string;
-  initials: string;
-  away?: boolean;
-}
-
-const PEOPLE: Person[] = [
-  { id: 1, name: 'Ada Lovelace', team: 'Design', initials: 'AL' },
-  { id: 2, name: 'Grace Hopper', team: 'Design', initials: 'GH' },
-  { id: 3, name: 'Alan Turing', team: 'Engineering', initials: 'AT' },
-  { id: 4, name: 'Barbara Liskov', team: 'Engineering', initials: 'BL', away: true },
-  { id: 5, name: 'Edsger Dijkstra', team: 'Engineering', initials: 'ED' },
-  { id: 6, name: 'Margaret Hamilton', team: 'Research', initials: 'MH' },
-  { id: 7, name: 'Donald Knuth', team: 'Research', initials: 'DK' },
-];
-
-const SKILLS = ['CSS', 'Go', 'HTML', 'Java', 'JavaScript', 'Kotlin', 'Python', 'Rust', 'SQL', 'Swift', 'TypeScript'];
-
-interface Customer {
-  id: number;
-  name: string;
-}
-
-const CUSTOMERS: Customer[] = Array.from({ length: 5000 }, (_, i) => ({ id: i + 1, name: `Customer ${String(i + 1).padStart(4, '0')}` }));
-
-/** 5,000 customers behind the adapter of the data layer, loaded in blocks while the list scrolls. */
-function customerSource() {
-  return new data.DataSource<Customer, number>({ adapter: new data.ArrayAdapter({ data: CUSTOMERS, key: 'id' }), loadMode: 'blocks', pageSize: 50, searchFields: ['name'] });
-}
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['value', '`Bind<V[]>`', '`[]`', 'The values of the chosen items. `x-model` binds it; every change writes a new array.'],
@@ -114,37 +88,6 @@ const TOKENS = [
 ];
 
 export default function TagBoxPage() {
-  const s = reactive({
-    skills: ['TypeScript', 'CSS'] as string[],
-    team: [1, 3] as number[],
-    customers: [12, 4321] as number[],
-    labels: ['bug'] as string[],
-    required: [] as string[],
-    closeOnSelect: false,
-    hideSelected: false,
-    selectAll: false,
-    limit: false,
-    result: '',
-    lang: 'en',
-    made: 0,
-  });
-  const customers = customerSource();
-  const group = new ValidationGroup();
-  let host: Component<HTMLDivElement> | undefined;
-  const person = (p: Person, el: HTMLElement) => {
-    const badge = el.appendChild(document.createElement('span'));
-    badge.style.color = 'var(--mx-color-accent-fg)';
-    badge.style.fontWeight = 'var(--mx-font-weight-semibold)';
-    badge.textContent = p.initials;
-    el.append(` ${p.name}`);
-  };
-  const addFromCode = () => {
-    const tags = new TagBox<string, string>({ label: `Skills ${++s.made}`, items: SKILLS, placeholder: 'Pick some' });
-    tags.onValueChanged((e) => (s.result = `${tags.label}: ${e.value.join(', ')}`));
-    host?.controls.add(tags);
-    tags.focus();
-  };
-
   return (
     <>
       <p class="lead">
@@ -165,23 +108,8 @@ import { data } from '@motifx-community/data';
         <p>
           <Rich text="`x-model` binds an array; every change writes a new one. Created with `new`, the same properties are set from code." />
         </p>
-        <Example
-          code={`
-<TagBox label="&Skills" items={skills} x-model={() => this.form.skills} />
-
-const tags = new TagBox({ label: 'Skills', items: skills, placeholder: 'Pick some' });
-tags.onValueChanged((e) => console.log(e.value));
-this.panel.controls.add(tags);
-`}
-          stack
-        >
-          <TagBox label="&Skills" items={SKILLS} x-model={() => s.skills} stretch />
-          <div class="docs-flow">
-            <output class="tg-skills">{() => `skills: ${JSON.stringify(s.skills)}`}</output>
-            <Button text="Add a tag box from code" variant="outline" onclick={addFromCode} />
-            <output class="tg-made">{() => s.result}</output>
-          </div>
-          <div class="docs-flow" ref={(c: Component<HTMLDivElement>) => (host = c)} />
+        <Example files={code('FromCode.tsx', 'skills.ts')} stack>
+          <FromCode />
         </Example>
       </Section>
 
@@ -189,48 +117,8 @@ this.panel.controls.add(tags);
         <p>
           <Rich text="The list keeps open while you choose, shows the chosen items checked and can have a “Select all” row. Each switch is a prop you can bind." />
         </p>
-        <Example
-          code={`
-<TagBox
-  label="Team"
-  items={this.people}
-  textField="name"
-  valueField="id"
-  groupField="team"
-  enabledField={(p) => !p.away}
-  itemTemplate={drawPerson}
-  closeOnSelect={() => this.ui.closeOnSelect}
-  hideSelected={() => this.ui.hideSelected}
-  selectAll={() => this.ui.selectAll}
-  maxSelected={() => (this.ui.limit ? 3 : 0)}
-  x-model={() => this.form.team}
-/>
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <Switch label="Close on select" x-model={() => s.closeOnSelect} />
-            <Switch label="Hide chosen" x-model={() => s.hideSelected} />
-            <Switch label="Select all" x-model={() => s.selectAll} />
-            <Switch label="At most 3" x-model={() => s.limit} />
-          </div>
-          <TagBox
-            label="Team"
-            items={PEOPLE}
-            textField="name"
-            valueField="id"
-            groupField="team"
-            enabledField={(p: Person) => !p.away}
-            itemTemplate={person}
-            closeOnSelect={() => s.closeOnSelect}
-            hideSelected={() => s.hideSelected}
-            selectAll={() => s.selectAll}
-            maxSelected={() => (s.limit ? 3 : 0)}
-            placeholder="Add people"
-            stretch
-            x-model={() => s.team}
-          />
-          <output class="tg-team">{() => `ids: ${JSON.stringify(s.team)}`}</output>
+        <Example files={code('TeamList.tsx')} stack>
+          <TeamList />
         </Example>
       </Section>
 
@@ -238,21 +126,8 @@ this.panel.controls.add(tags);
         <p>
           <Rich text="With `dataSource` the typed text searches the data source (its `searchFields`). In `'blocks'` mode only the rows in view load; the tags of values on no loaded page are found by key. `maxTags` keeps the field short. This one holds 5,000 customers." />
         </p>
-        <Example
-          code={`
-const customers = new data.DataSource({
-  adapter: new data.ArrayAdapter({ data: rows, key: 'id' }),
-  loadMode: 'blocks',
-  searchFields: ['name'],
-});
-
-<TagBox label="Customers" dataSource={customers} textField="name" valueField="id"
-  maxTags={3} selectAll clearButton x-model={() => this.mail.to} />
-`}
-          stack
-        >
-          <TagBox label="Customers" dataSource={customers} textField="name" valueField="id" maxTags={3} selectAll clearButton stretch x-model={() => s.customers} />
-          <output class="tg-customers">{() => `${s.customers.length} chosen${s.customers.length && s.customers.length < 6 ? `: ${s.customers.join(', ')}` : ''}`}</output>
+        <Example files={code('Customers.tsx')} stack>
+          <Customers />
         </Example>
       </Section>
 
@@ -260,50 +135,14 @@ const customers = new data.DataSource({
         <p>
           <Rich text="With `acceptCustomValue`, Enter adds text that matches no item as a tag; `customValue` shapes it or turns it down. `tagTemplate` draws a tag your way." />
         </p>
-        <Example
-          code={`
-<TagBox
-  label="Labels"
-  items={['bug', 'docs', 'feature']}
-  acceptCustomValue
-  customValue={(text) => (text.length > 1 ? text.toLowerCase() : null)}
-  x-model={() => this.issue.labels}
-/>
-`}
-        >
-          <TagBox
-            label="Labels"
-            items={['bug', 'docs', 'feature', 'question']}
-            acceptCustomValue
-            customValue={(text: string) => (text.length > 1 ? text.toLowerCase() : null)}
-            helpText="Type a new label and press Enter."
-            x-model={() => s.labels}
-          />
-          <output class="tg-labels">{() => `labels: ${JSON.stringify(s.labels)}`}</output>
+        <Example files={code('CustomTags.tsx')}>
+          <CustomTags />
         </Example>
       </Section>
 
       <Section anchor="validation" title="Validation and states">
-        <Example
-          code={`
-<TagBox label="Reviewers" items={people} required validationGroup={group} />
-<TagBox label="Read-only" items={skills} value={['Go', 'Rust']} readOnly />
-`}
-        >
-          <TagBox label="Reviewers" items={SKILLS} required validationGroup={group} x-model={() => s.required} />
-          <TagBox label="Read-only" items={SKILLS} value={['Go', 'Rust']} readOnly />
-          <TagBox label="Disabled" items={SKILLS} value={['Go', 'Rust']} enabled={false} />
-          <div class="docs-flow">
-            <Button
-              text="Check"
-              variant="outline"
-              onclick={async () => {
-                const result = await group.validate();
-                s.result = result.valid ? 'Fine.' : 'Pick a reviewer.';
-              }}
-            />
-            <output class="tg-check">{() => s.result}</output>
-          </div>
+        <Example files={code('Validation.tsx', 'skills.ts')}>
+          <Validation />
         </Example>
       </Section>
 
@@ -319,20 +158,8 @@ const customers = new data.DataSource({
         <p>
           <Rich text="The remove buttons (`removeItem`, “Remove {text}”), the “+3” tag (`moreItems`), “Select all”, the buttons and the list texts come from `uiLocale.strings`." />
         </p>
-        <Example
-          code={`
-uiLocale.strings = trStrings;
-`}
-        >
-          <Button
-            text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')}
-            variant="outline"
-            onclick={() => {
-              s.lang = s.lang === 'en' ? 'tr' : 'en';
-              uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
-            }}
-          />
-          <TagBox label="Skills" items={SKILLS} value={['CSS', 'Go', 'HTML', 'Rust']} maxTags={2} selectAll clearButton />
+        <Example files={code('Localization.tsx', 'skills.ts')}>
+          <Localization />
         </Example>
       </Section>
 

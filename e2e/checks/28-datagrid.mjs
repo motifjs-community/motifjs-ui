@@ -267,6 +267,42 @@ export default async function ({ page, base, check, axeSource, box }) {
   const settings = page.locator('section[aria-labelledby="settings"]');
   const switches = '.dg-settings';
   await page.locator(switches).scrollIntoViewIfNeeded();
+  // A column that flexes to fill the grid starts resizing from the width it shows.
+  {
+    // Wide enough for the columns to leave room, so the customer column flexes.
+    const size = page.viewportSize();
+    await page.setViewportSize({ width: 1920, height: size.height });
+    await page.locator(switches).scrollIntoViewIfNeeded();
+    const header = page.locator(`${switches} [role=columnheader][data-field="customer"]`);
+    const before = Math.round((await box(header)).width);
+    const edge = await box(header.locator('.mx-data-grid__resize'));
+    await page.mouse.move(edge.x + edge.width / 2, edge.y + edge.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(edge.x + edge.width / 2 - 40, edge.y + edge.height / 2, { steps: 5 });
+    await page.mouse.up();
+    const after = Math.round((await box(header)).width);
+    await page.setViewportSize(size);
+    check('datagrid: a flexing column follows the mouse from its shown width', before > 200 && Math.abs(before - 40 - after) <= 2, `${before} → ${after}`);
+  }
+  // Resizing against the next column moves one edge only.
+  {
+    await settings.getByText('Resize against the next column', { exact: true }).click();
+    const edges = () =>
+      page.evaluate((sel) => Object.fromEntries(['customer', 'city', 'date'].map((f) => [f, document.querySelector(`${sel} [role=columnheader][data-field="${f}"]`).getBoundingClientRect()]).map(([f, r]) => [f, { left: Math.round(r.left), width: Math.round(r.width) }])), switches);
+    const before = await edges();
+    const edge = await box(page.locator(`${switches} [role=columnheader][data-field="customer"] .mx-data-grid__resize`));
+    await page.mouse.move(edge.x + edge.width / 2, edge.y + edge.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(edge.x + edge.width / 2 + 50, edge.y + edge.height / 2, { steps: 5 });
+    await page.mouse.up();
+    const after = await edges();
+    check(
+      "datagrid: 'nextColumn' resizing gives the width to the next column and leaves the rest in place",
+      Math.abs(after.customer.width - before.customer.width - 50) <= 2 && Math.abs(after.city.width - before.city.width + 50) <= 2 && after.date.left === before.date.left,
+      `${JSON.stringify(before)} → ${JSON.stringify(after)}`,
+    );
+    await settings.getByText('Resize against the next column', { exact: true }).click();
+  }
   const handles = () => page.evaluate((sel) => [...document.querySelectorAll(`${sel} .mx-data-grid__resize`)].filter((el) => el.offsetParent).length, switches);
   const withHandles = await handles();
   await settings.getByText('Resizing', { exact: true }).click();
@@ -644,6 +680,8 @@ async function copyExportLayout({ page, base, check, axeSource }) {
   await page.reload({ waitUntil: 'load' });
   await page.locator(lay).scrollIntoViewIfNeeded();
   await page.waitForSelector(cellAt(lay, 3, 'customer'));
+  // The column widths are applied once the grid is in the page, which may come after its first rows.
+  await page.waitForFunction((s) => document.querySelector(`${s} .mx-data-grid__viewport`)?.style.getPropertyValue('--_columns'), lay);
   const back = await page.evaluate((s) => ({
     sort: document.querySelector(`${s} [role=columnheader][data-field="customer"]`).getAttribute('aria-sort'),
     city: Math.round(document.querySelector(`${s} [role=columnheader][data-field="city"]`).getBoundingClientRect().width),

@@ -7,6 +7,8 @@
   --docs-topbar: var(--mx-space-12);
   --docs-sidebar: 18rem;
   --docs-rail: 13rem;
+  /* The page grows with the window up to this; examples and tables take the room, text keeps a readable line. */
+  --docs-content: 88rem;
 }
 
 .docs-shell {
@@ -247,7 +249,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--mx-space-3);
-  max-inline-size: calc(52rem + var(--docs-rail) + var(--mx-space-10));
+  max-inline-size: calc(var(--docs-content) + var(--docs-rail) + var(--mx-space-10));
   margin-block-end: var(--mx-space-6);
 }
 
@@ -272,7 +274,8 @@
 
 .docs-body {
   display: grid;
-  grid-template-columns: minmax(0, 52rem) var(--docs-rail);
+  grid-template-columns: minmax(0, 1fr) var(--docs-rail);
+  max-inline-size: calc(var(--docs-content) + var(--docs-rail) + var(--mx-space-10));
   align-items: start;
   gap: var(--mx-space-10);
 }
@@ -307,6 +310,10 @@
 
 .docs-section > :last-child {
   margin-block-end: 0;
+}
+
+.docs-section > p {
+  max-inline-size: 80ch;
 }
 
 /* Examples: a bar with the title and "Show code", the example, its code. */
@@ -349,6 +356,21 @@
 
 .docs-example__code pre {
   margin-block: 0;
+}
+
+/* A file of an example's code; "Copy" sits in its top corner. */
+.docs-code-file {
+  position: relative;
+}
+
+.docs-code-file__copy {
+  position: absolute;
+  inset-block-start: var(--mx-space-2);
+  inset-inline-end: var(--mx-space-2);
+}
+
+.docs-code-file pre {
+  padding-inline-end: var(--mx-space-20, 5rem);
 }
 
 /* A demo without code: a framed stage inside its card. */
@@ -473,7 +495,7 @@
 
 @media (width < 80rem) {
   .docs-body {
-    grid-template-columns: minmax(0, 52rem);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .docs-rail {

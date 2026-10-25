@@ -1,32 +1,17 @@
-import { reactive, type Component } from '@motifx/core';
-import {
-  Button,
-  DockPanel,
-  Grid,
-  GroupBox,
-  Panel,
-  SplitContainer,
-  Stack,
-  TextBox,
-  enStrings,
-  trStrings,
-  uiLocale,
-  type Dock,
-  type LayoutAlign,
-  type SplitPanel,
-  type SplitPosition,
-  type StackJustify,
-} from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import AppShell from './examples/AppShell';
+import FromCode from './examples/FromCode';
+import GridForm from './examples/GridForm';
+import GridTracks from './examples/GridTracks';
+import GroupBoxes from './examples/GroupBoxes';
+import Localization from './examples/Localization';
+import NestedSplit from './examples/NestedSplit';
+import Panels from './examples/Panels';
+import Spacing from './examples/Spacing';
+import StackOptions from './examples/StackOptions';
 
-const ALIGNS: LayoutAlign[] = ['start', 'center', 'end', 'stretch', 'baseline'];
-const JUSTIFIES: StackJustify[] = ['start', 'center', 'end', 'space-between', 'space-evenly'];
-const STEPS = ['xxs', 'xs', 'sm', 'md', 'lg', 'xl', 'xxl'] as const;
-const FOLDERS = ['Inbox', 'Drafts', 'Sent', 'Archive', 'Spam', 'Trash'];
-
-const FRAME = 'border: var(--mx-border-width-1) solid var(--mx-color-stroke-card); border-radius: var(--mx-radius-lg);';
-const BAR = 'background: var(--mx-color-bg-bar);';
-const LAYER = 'background: var(--mx-color-bg-layer);';
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const SPACE = [
   ["'xxs' … 'xxl'", 'A step of the spacing scale: `xxs`, `xs`, `sm`, `md`, `lg`, `xl`, `xxl`, from the `layout.space.*` tokens (the design system\'s `space.1` … `space.12`). Density and themes reach them.'],
@@ -165,54 +150,6 @@ const TOKENS = [
 ];
 
 export default function LayoutPage() {
-  const s = reactive({
-    added: 0,
-    orientation: 'horizontal' as 'horizontal' | 'vertical',
-    align: 'center' as LayoutAlign,
-    justify: 'start' as StackJustify,
-    wrap: false,
-    reverse: false,
-    gap: 'sm' as string,
-    columns: 2,
-    sideDock: 'start' as Dock,
-    messages: 3,
-    tree: 180 as SplitPosition,
-    fixed: 'first' as SplitPanel,
-    log: '',
-    groupOn: true,
-    lang: 'en',
-  });
-  let bar: Stack | null = null;
-  let shell: DockPanel | null = null;
-  let notes: Panel | null = null;
-  let outer: SplitContainer | null = null;
-
-  const addButton = () => bar?.controls.add(new Button({ text: `Button ${++s.added}`, variant: 'outline', grow: s.added % 3 === 0 }));
-
-  const toggleNotes = () => {
-    if (notes) {
-      shell?.controls.remove(notes);
-      notes = null;
-      return;
-    }
-    notes = new Panel({ dock: 'end', padding: 'sm' });
-    notes.element.setAttribute('style', `inline-size: 9rem; ${LAYER}`);
-    notes.element.classList.add('layout-notes');
-    notes.controls.add(<span>Notes, added from code.</span>);
-    shell?.controls.add(notes);
-  };
-
-  const buildFromCode = (host: Component<HTMLDivElement>) => {
-    const grid = new Grid({ columns: '* *', gap: 'xs' });
-    grid.element.classList.add('layout-coded');
-    grid.controls.add(
-      new TextBox({ label: 'From', stretch: true }),
-      new TextBox({ label: 'To', stretch: true }),
-      new TextBox({ label: 'Subject', stretch: true, columnSpan: 2 }),
-    );
-    host.controls.add(grid);
-  };
-
   return (
     <>
       <p class="lead">
@@ -234,26 +171,8 @@ import { Stack, Grid, Panel, GroupBox, DockPanel, SplitContainer, type LayoutSpa
         <p>
           <Rich text="Children come as JSX or are added later with `controls.add`; either way the container picks them up. A child says where it goes in its own props (`grow`, `row`, `dock`…), whatever kind of component it is." />
         </p>
-        <Example
-          code={`
-<Stack orientation="horizontal" gap="sm" wrap>
-  <Button text="One" />
-</Stack>
-
-const grid = new Grid({ columns: '* *', gap: 'xs' });
-grid.controls.add(
-  new TextBox({ label: 'From', stretch: true }),
-  new TextBox({ label: 'To', stretch: true }),
-  new TextBox({ label: 'Subject', stretch: true, columnSpan: 2 }),
-);
-this.host.controls.add(grid);
-`}
-          stack
-        >
-          <Stack ref={(c: Stack) => (bar = c)} orientation="horizontal" gap="sm" wrap align="center" style="inline-size: 100%">
-            <Button text="Add a button" tone="accent" onclick={addButton} />
-          </Stack>
-          <div style="inline-size: 100%" ref={(c: Component<HTMLDivElement>) => buildFromCode(c)} />
+        <Example files={code('FromCode.tsx')} stack>
+          <FromCode />
         </Example>
       </Section>
 
@@ -261,50 +180,8 @@ this.host.controls.add(grid);
         <p>
           <Rich text="A row or a column with a gap. `align` places the children across the direction, `justify` along it; `wrap` starts a new line when they do not fit. A child with `grow` takes the free space." />
         </p>
-        <Example
-          code={`
-<Stack orientation="horizontal" gap="sm" align="center" justify="end">
-  <TextBox label="Search" labelMode="hidden" placeholder="Search" grow />
-  <Button text="Go" />
-</Stack>
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Orientation">
-            {(['horizontal', 'vertical'] as const).map((o) => (
-              <Button key={o} text={o} size="sm" variant={() => (s.orientation === o ? 'solid' : 'ghost')} aria-pressed={() => s.orientation === o} onclick={() => (s.orientation = o)} />
-            ))}
-          </div>
-          <div class="docs-flow" role="group" aria-label="Align">
-            {ALIGNS.map((a) => (
-              <Button key={a} text={a} size="sm" variant={() => (s.align === a ? 'solid' : 'ghost')} aria-pressed={() => s.align === a} onclick={() => (s.align = a)} />
-            ))}
-          </div>
-          <div class="docs-flow" role="group" aria-label="Justify">
-            {JUSTIFIES.map((j) => (
-              <Button key={j} text={j} size="sm" variant={() => (s.justify === j ? 'solid' : 'ghost')} aria-pressed={() => s.justify === j} onclick={() => (s.justify = j)} />
-            ))}
-          </div>
-          <div class="docs-flow">
-            <Button text="wrap" size="sm" toggle x-model={() => s.wrap} variant="outline" />
-            <Button text="reverse" size="sm" toggle x-model={() => s.reverse} variant="outline" />
-          </div>
-          <Stack
-            class="layout-stack-demo"
-            orientation={() => s.orientation}
-            align={() => s.align}
-            justify={() => s.justify}
-            wrap={() => s.wrap}
-            reverse={() => s.reverse}
-            gap="sm"
-            padding="sm"
-            style={`inline-size: 100%; min-block-size: 10rem; ${FRAME}`}
-          >
-            <Panel variant="card" padding="sm">One</Panel>
-            <Panel variant="card" padding="md">Two, taller</Panel>
-            <Panel variant="card" padding="sm">Three</Panel>
-            <TextBox label="Grows" labelMode="hidden" placeholder="I grow" grow />
-          </Stack>
+        <Example files={code('StackOptions.tsx')} stack>
+          <StackOptions />
         </Example>
       </Section>
 
@@ -313,24 +190,8 @@ this.host.controls.add(grid);
           <Rich text="`gap` and `padding` take a step of the spacing scale, a number of pixels or any CSS length." />
         </p>
         <ApiTable head={['Value', 'Means']} rows={SPACE} />
-        <Example
-          code={`
-<Stack orientation="horizontal" gap="lg" />
-<Stack gap={12} padding="xs md" />
-<Grid gap="1.5rem" />
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Gap">
-            {STEPS.map((step) => (
-              <Button key={step} text={step} size="sm" variant={() => (s.gap === step ? 'solid' : 'ghost')} aria-pressed={() => s.gap === step} onclick={() => (s.gap = step)} />
-            ))}
-          </div>
-          <Stack class="layout-gap-demo" orientation="horizontal" gap={() => s.gap} padding="xs">
-            <Panel variant="card" padding="sm">A</Panel>
-            <Panel variant="card" padding="sm">B</Panel>
-            <Panel variant="card" padding="sm">C</Panel>
-          </Stack>
+        <Example files={code('Spacing.tsx')} stack>
+          <Spacing />
         </Example>
       </Section>
 
@@ -339,51 +200,11 @@ this.host.controls.add(grid);
           <Rich text="Rows and columns written like CSS. Children fill the cells in order, or say where they go: `row`, `column`, `rowSpan`, `columnSpan`, counted from 1." />
         </p>
         <ApiTable head={['Tracks', 'Means']} rows={TRACKS} />
-        <Example
-          title="A form"
-          code={`
-<Grid columns={() => this.columns} gap="sm" align="end">
-  <TextBox label="First name" stretch />
-  <TextBox label="Last name" stretch />
-  <TextBox label="Street" stretch column={1} columnSpan={2} />
-  <TextBox label="City" stretch />
-  <TextBox label="Postal code" stretch />
-  <Stack orientation="horizontal" justify="end" column={1} columnSpan={-1}>…</Stack>
-</Grid>
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Columns">
-            {[1, 2, 3].map((n) => (
-              <Button key={n} text={`${n} column${n > 1 ? 's' : ''}`} size="sm" variant={() => (s.columns === n ? 'solid' : 'ghost')} aria-pressed={() => s.columns === n} onclick={() => (s.columns = n)} />
-            ))}
-          </div>
-          <Grid class="layout-form" columns={() => s.columns} gap="sm" align="end" style="inline-size: 100%">
-            <TextBox label="First name" stretch />
-            <TextBox label="Last name" stretch />
-            <TextBox label="Street" stretch column={1} columnSpan={() => Math.min(2, s.columns)} />
-            <TextBox label="City" stretch />
-            <TextBox label="Postal code" stretch />
-            <Stack orientation="horizontal" justify="end" gap="xs" column="1" columnSpan={() => s.columns}>
-              <Button text="Cancel" variant="ghost" />
-              <Button text="Save" tone="accent" />
-            </Stack>
-          </Grid>
+        <Example title="A form" files={code('GridForm.tsx')} stack>
+          <GridForm />
         </Example>
-        <Example
-          title="Fixed and flexible tracks"
-          code={`
-<Grid columns="120 * 2*" rows="auto 4rem" gap="xs">…</Grid>
-`}
-        >
-          <Grid class="layout-tracks" columns="120 * 2*" rows="auto 4rem" gap="xs" style="inline-size: 100%">
-            <Panel variant="card" padding="xs">120px</Panel>
-            <Panel variant="card" padding="xs">1fr</Panel>
-            <Panel variant="card" padding="xs">2fr</Panel>
-            <Panel variant="card" padding="xs" column={2} columnSpan={2}>
-              row 2, columns 2–3
-            </Panel>
-          </Grid>
+        <Example title="Fixed and flexible tracks" files={code('GridTracks.tsx')}>
+          <GridTracks />
         </Example>
       </Section>
 
@@ -391,25 +212,8 @@ this.host.controls.add(grid);
         <p>
           <Rich text="A plain box: padding, a frame if you want one, and its own scrolling. A scrolling panel is a Tab stop, so it can be scrolled with the keys; `text` names it." />
         </p>
-        <Example
-          code={`
-<Panel text="Terms" scrollable="vertical" padding="md" variant="outline" style="block-size: 8rem">…</Panel>
-<Panel variant="card" padding="md">A card</Panel>
-`}
-        >
-          <Panel class="layout-scroll" text="Terms" scrollable="vertical" padding="md" variant="outline" style="block-size: 8rem; inline-size: 18rem">
-            <p>1. The service is offered as it is.</p>
-            <p>2. You keep the rights to what you upload.</p>
-            <p>3. We may change these terms with a notice of 30 days.</p>
-            <p>4. Either side may end the agreement at any time.</p>
-            <p>5. The law of the place you live in applies.</p>
-          </Panel>
-          <Panel variant="card" padding="md">
-            A card
-          </Panel>
-          <Panel variant="outline" padding="md">
-            An outline
-          </Panel>
+        <Example files={code('Panels.tsx')}>
+          <Panels />
         </Example>
       </Section>
 
@@ -417,27 +221,8 @@ this.host.controls.add(grid);
         <p>
           <Rich text="A titled frame around related controls: a `<fieldset>`, so screen readers name the group by its title and disabling it disables what is inside. The title's `&` key focuses the first control; `collapsible` makes the title show and hide the content." />
         </p>
-        <Example
-          code={`
-<GroupBox title="&Address" enabled={() => this.editing}>
-  <TextBox label="Street" stretch />
-  <TextBox label="City" stretch />
-</GroupBox>
-<GroupBox title="More &options" collapsible collapsed>…</GroupBox>
-`}
-          stack
-        >
-          <Button text="Enabled" size="sm" variant="outline" toggle x-model={() => s.groupOn} />
-          <Grid columns="* *" gap="md" style="inline-size: 100%" align="start">
-            <GroupBox title="&Address" enabled={() => s.groupOn}>
-              <TextBox label="Street" stretch />
-              <TextBox label="City" stretch />
-            </GroupBox>
-            <GroupBox title="More &options" collapsible collapsed>
-              <TextBox label="Coupon" stretch />
-              <TextBox label="Gift note" stretch />
-            </GroupBox>
-          </Grid>
+        <Example files={code('GroupBoxes.tsx')} stack>
+          <GroupBoxes />
         </Example>
       </Section>
 
@@ -445,54 +230,8 @@ this.host.controls.add(grid);
         <p>
           <Rich text="Children stick to the edges in the order they come — `top`, `bottom`, `start`, `end` (these two follow the reading direction) — and `fill` takes what is left. A `float` child sits over the rest at its own `left` / `top` / `right` / `bottom`. Laid out with CSS grid: nothing runs when the size changes." />
         </p>
-        <Example
-          title="An app shell"
-          code={`
-<DockPanel style="block-size: 22rem">
-  <Stack dock="top" orientation="horizontal" align="center" gap="sm" padding="xs sm">
-    <strong>Mail</strong>
-    <TextBox label="Search" labelMode="hidden" placeholder="Search" grow />
-    <Button text="New" tone="accent" />
-  </Stack>
-  <Panel dock={() => this.side} scrollable="vertical" padding="xs" style="inline-size: 11rem">…</Panel>
-  <Stack dock="bottom" orientation="horizontal" justify="space-between" padding="xxs sm">…</Stack>
-  <Panel text="Message" scrollable padding="md">…</Panel>
-  <Button dock="float" right={16} bottom={48} text="Help" />
-</DockPanel>
-
-const notes = new Panel({ dock: 'end', padding: 'sm' });
-shell.controls.add(notes);
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <Button text={() => `Sidebar: ${s.sideDock}`} size="sm" variant="outline" onclick={() => (s.sideDock = s.sideDock === 'start' ? 'end' : 'start')} />
-            <Button text="Notes panel from code" size="sm" variant="outline" onclick={toggleNotes} />
-          </div>
-          <DockPanel class="layout-shell" ref={(c: DockPanel) => (shell = c)} style={`block-size: 22rem; inline-size: 100%; overflow: hidden; ${FRAME}`}>
-            <Stack dock="top" orientation="horizontal" align="center" gap="sm" padding="xs sm" style={BAR}>
-              <strong>Mail</strong>
-              <TextBox label="Search mail" labelMode="hidden" placeholder="Search" grow />
-              <Button text="New" tone="accent" onclick={() => s.messages++} />
-            </Stack>
-            <Panel class="layout-side" dock={() => s.sideDock} scrollable="vertical" padding="xs" text="Mailboxes" style={`inline-size: 11rem; ${LAYER}`}>
-              <Stack gap="xxs">
-                {FOLDERS.map((f) => (
-                  <Button key={f} text={f} variant="ghost" stretch />
-                ))}
-              </Stack>
-            </Panel>
-            <Stack class="layout-status" dock="bottom" orientation="horizontal" justify="space-between" padding="xxs sm" style={BAR}>
-              <span>Ready</span>
-              <span>{() => `${s.messages} messages`}</span>
-            </Stack>
-            <Panel class="layout-content" text="Message" scrollable padding="md">
-              <h3 style="margin-block-start: 0">Welcome</h3>
-              <p>The header, the folders and the status bar are docked; this panel fills the rest and scrolls on its own.</p>
-              <p>Switch the sidebar to the other side, or add a panel from code: the layout follows at once.</p>
-            </Panel>
-            <Button class="layout-help" dock="float" right={16} bottom={48} text="Help" variant="outline" />
-          </DockPanel>
+        <Example title="An app shell" files={code('AppShell.tsx')} stack>
+          <AppShell />
         </Example>
       </Section>
 
@@ -500,54 +239,8 @@ shell.controls.add(notes);
         <p>
           <Rich text="Two panes, `first` and `second`, with a splitter between them that the pointer drags and the keys move. `fixedPanel` keeps one pane's size when the container is resized; the minimum sizes hold; Enter hides the first pane and brings it back. Split containers nest." />
         </p>
-        <Example
-          title="Nested split containers"
-          code={`
-<SplitContainer position={180} fixedPanel="first" firstMinSize={120} secondMinSize={200}
-                x-model={() => this.layout.tree} onSplitterMoved={(e) => this.save(e.position)}>
-  <Panel text="Folders" scrollable padding="sm">…</Panel>
-  <SplitContainer orientation="vertical" position="65%" secondMinSize={48}>
-    <Panel text="Editor" scrollable padding="sm">…</Panel>
-    <Panel text="Output" scrollable padding="sm">…</Panel>
-  </SplitContainer>
-</SplitContainer>
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <Button text="Hide folders" size="sm" variant="outline" onclick={() => outer?.collapse('first')} />
-            <Button text="Restore" size="sm" variant="outline" onclick={() => outer?.restore()} />
-            <Button text={() => `fixedPanel: ${s.fixed}`} size="sm" variant="outline" onclick={() => (s.fixed = s.fixed === 'first' ? 'none' : 'first')} />
-            <output class="layout-split-out">{() => `position: ${s.tree}`}</output>
-            <output class="layout-split-log">{() => s.log}</output>
-          </div>
-          <SplitContainer
-            class="layout-split"
-            ref={(c: SplitContainer) => (outer = c)}
-            position={180}
-            fixedPanel={() => s.fixed}
-            firstMinSize={120}
-            secondMinSize={200}
-            x-model={() => s.tree}
-            onSplitterMoved={(e: { position: SplitPosition; byUser: boolean; collapsed: SplitPanel }) => (s.log = `moved${e.byUser ? ' by you' : ''}${e.collapsed !== 'none' ? `, ${e.collapsed} hidden` : ''}`)}
-            style={`block-size: 20rem; inline-size: 100%; ${FRAME}`}
-          >
-            <Panel text="Folders" scrollable padding="sm" style={LAYER}>
-              <Stack gap="xxs">
-                {FOLDERS.map((f) => (
-                  <Button key={f} text={f} variant="ghost" stretch />
-                ))}
-              </Stack>
-            </Panel>
-            <SplitContainer orientation="vertical" position="65%" secondMinSize={48}>
-              <Panel text="Editor" scrollable padding="sm">
-                <p>Drag the splitters, or Tab to one and use the arrow keys, Home, End and Enter.</p>
-              </Panel>
-              <Panel text="Output" scrollable padding="sm" style={LAYER}>
-                <code>Build finished in 1.2 s.</code>
-              </Panel>
-            </SplitContainer>
-          </SplitContainer>
+        <Example title="Nested split containers" files={code('NestedSplit.tsx')} stack>
+          <NestedSplit />
         </Example>
       </Section>
 
@@ -563,22 +256,8 @@ shell.controls.add(notes);
         <p>
           <Rich text="The only text the containers write is the splitter's name, `uiLocale.strings.resize`, unless `splitterLabel` gives one." />
         </p>
-        <Example
-          code={`
-uiLocale.strings = trStrings;
-`}
-        >
-          <Button
-            text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')}
-            variant="outline"
-            onclick={() => {
-              s.lang = s.lang === 'en' ? 'tr' : 'en';
-              uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
-            }}
-          />
-          <span>
-            The splitter is named <output class="layout-resize">{() => uiLocale.strings.resize}</output>
-          </span>
+        <Example files={code('Localization.tsx')}>
+          <Localization />
         </Example>
       </Section>
 

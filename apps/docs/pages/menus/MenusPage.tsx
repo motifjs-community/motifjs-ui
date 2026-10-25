@@ -1,6 +1,10 @@
-import { reactive, type Component } from '@motifx/core';
-import { attachContextMenu, CheckBox, ContextMenu, MenuBar, type MenuItem } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import AttachedMenu from './examples/AttachedMenu';
+import FileList from './examples/FileList';
+import MainMenu from './examples/MainMenu';
+
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const BAR_PROPS = [
   ['items', '`Bind<readonly MenuItem[]>`', '`[]`', 'The top items; their `items` are the menus they open. A top item without `items` runs its `click`.'],
@@ -89,95 +93,7 @@ const TOKENS = [
   ['menu.shortcut-gap, menu.shortcut-color, menu.arrow-size', 'The shortcut text and the submenu arrow.'],
 ];
 
-interface FileRow {
-  id: number;
-  name: string;
-  locked: boolean;
-  starred: boolean;
-}
-
 export default function MenusPage() {
-  const s = reactive({
-    log: 'Nothing chosen yet.',
-    wrap: true,
-    statusBar: false,
-    zoom: '100%',
-    theme: 'light',
-    f10: false,
-    canUndo: true,
-    files: [
-      { id: 1, name: 'report.docx', locked: false, starred: true },
-      { id: 2, name: 'budget.xlsx', locked: true, starred: false },
-      { id: 3, name: 'photo.png', locked: false, starred: false },
-    ] as FileRow[],
-    zone: 'Right-click here, or focus me and press the Menu key.',
-  });
-  let renamed = 0;
-
-  const did = (what: string) => (s.log = what);
-  const undo = (back: boolean) => {
-    s.canUndo = !back;
-    did(back ? 'Undo' : 'Redo');
-  };
-  const rename = (row: FileRow) => {
-    row.name = `copy-${++renamed}-${row.name}`;
-    did(`Renamed to ${row.name}`);
-  };
-  const zoom = (value: string): MenuItem => ({ text: value, group: 'zoom', checked: () => s.zoom === value, click: () => (s.zoom = value) });
-  const theme = (value: string, text: string): MenuItem => ({ text, group: 'theme', checked: () => s.theme === value, click: () => (s.theme = value) });
-
-  const menus: MenuItem[] = [
-    {
-      text: '&File',
-      items: [
-        { text: '&New', shortcut: 'Ctrl+N', click: () => did('New') },
-        { text: '&Open…', shortcut: 'Ctrl+O', click: () => did('Open…') },
-        { text: 'Open &recent', items: ['report.docx', 'budget.xlsx', 'notes.md'].map((name) => ({ text: name, click: () => did(`Open ${name}`) })) },
-        { text: '&Save', shortcut: 'Ctrl+S', beginGroup: true, click: () => did('Save') },
-        { text: 'Save &as…', click: () => did('Save as…') },
-        { text: 'E&xit', beginGroup: true, click: () => did('Exit') },
-      ],
-    },
-    {
-      text: '&Edit',
-      items: [
-        { text: '&Undo', shortcut: 'Ctrl+Z', enabled: () => s.canUndo, click: () => undo(true) },
-        { text: '&Redo', shortcut: 'Ctrl+Y', click: () => undo(false) },
-        { text: 'Cu&t', shortcut: 'Ctrl+X', beginGroup: true, click: () => did('Cut') },
-        { text: '&Copy', shortcut: 'Ctrl+C', click: () => did('Copy') },
-        { text: '&Paste', shortcut: 'Ctrl+V', click: () => did('Paste') },
-        { text: 'Paste &special', enabled: false },
-      ],
-    },
-    {
-      text: '&View',
-      items: [
-        { text: '&Word wrap', checked: () => s.wrap, click: () => (s.wrap = !s.wrap) },
-        { text: '&Status bar', checked: () => s.statusBar, click: () => (s.statusBar = !s.statusBar) },
-        { ...zoom('100%'), beginGroup: true },
-        zoom('125%'),
-        zoom('150%'),
-        { text: '&Theme', beginGroup: true, items: [theme('light', 'Light'), theme('dark', 'Dark'), theme('system', 'Same as the system')] },
-      ],
-    },
-    { text: '&Help', items: [{ text: '&About', click: () => did('About') }] },
-  ];
-
-  const rowItems = (row: FileRow): MenuItem[] => [
-    { text: '&Open', click: () => did(`Open ${row.name}`) },
-    { text: '&Rename', enabled: !row.locked, click: () => rename(row) },
-    { text: '&Star', checked: row.starred, click: () => (row.starred = !row.starred) },
-    { text: '&Move to', items: ['Documents', 'Pictures', 'Archive'].map((folder) => ({ text: folder, click: () => did(`Move ${row.name} to ${folder}`) })) },
-    { text: '&Delete', shortcut: 'Del', beginGroup: true, enabled: !row.locked, click: () => (s.files = s.files.filter((f) => f !== row)) },
-  ];
-
-  const rowOf = (el: Element) => {
-    const id = Number(el.closest('[data-id]')?.getAttribute('data-id'));
-    return s.files.find((f) => f.id === id);
-  };
-
-  let list: Component<HTMLUListElement> | null = null;
-
   return (
     <>
       <p class="lead">
@@ -197,32 +113,8 @@ import { MenuBar, ContextMenu, attachContextMenu, type MenuItem } from '@motifx-
         <p>
           <Rich text="A `MenuBar` takes its top items as `items`; each one's `items` is its menu. `&File` makes Alt+F open File. Left and Right move along the bar and, while a menu is open, to the next menu; Escape goes back to the bar." />
         </p>
-        <Example
-          code={`
-<MenuBar label="Main" items={[
-  { text: '&File', items: [
-    { text: '&New', shortcut: 'Ctrl+N', click: () => this.create() },
-    { text: 'Open &recent', items: this.recent.map((f) => ({ text: f, click: () => this.open(f) })) },
-    { text: 'E&xit', beginGroup: true, click: () => this.exit() },
-  ] },
-  { text: '&View', items: [
-    { text: '&Word wrap', checked: () => this.view.wrap, click: () => (this.view.wrap = !this.view.wrap) },
-    { text: '100%', group: 'zoom', checked: () => this.view.zoom === 100, click: () => (this.view.zoom = 100) },
-    { text: '150%', group: 'zoom', checked: () => this.view.zoom === 150, click: () => (this.view.zoom = 150) },
-  ] },
-]} />
-
-const bar = new MenuBar({ label: 'Main', items: this.menus, focusOnF10: true });
-bar.onItemClick((e) => console.log(e.item.text));
-`}
-          stack
-        >
-          <MenuBar label="Main" items={menus} focusOnF10={() => s.f10} style="inline-size: 100%" />
-          <div class="docs-flow">
-            <CheckBox label="F10 focuses the bar" x-model={() => s.f10} />
-            <output class="mb-log">{() => s.log}</output>
-          </div>
-          <span class="mb-view">{() => `Word wrap ${s.wrap ? 'on' : 'off'} · status bar ${s.statusBar ? 'on' : 'off'} · zoom ${s.zoom} · theme ${s.theme}`}</span>
+        <Example files={code('MainMenu.tsx')} stack>
+          <MainMenu />
         </Example>
       </Section>
 
@@ -237,60 +129,11 @@ bar.onItemClick((e) => console.log(e.item.text));
         <p>
           <Rich text="A `ContextMenu` opens on its target’s right-click at the pointer, and with the Menu key or Shift+F10 at the focused element. `onOpening` gets the element (`e.target`) and builds the items for it, here for the row of a list; `e.cancel = true` leaves the browser its own menu. It closes on Escape, a press outside, and when the page scrolls." />
         </p>
-        <Example
-          code={`
-<ul ref={(c) => (this.list = c)}>…</ul>
-<ContextMenu
-  target={() => this.list}
-  onOpening={(e) => {
-    const row = this.rowOf(e.target);
-    if (row) e.items = this.rowItems(row);
-    else e.cancel = true;
-  }}
-/>
-`}
-          stack
-        >
-          <ul class="docs-panel cm-list" aria-label="Files" ref={(c: Component<HTMLUListElement>) => (list = c)} style="inline-size: 100%; margin: 0; list-style: none">
-            {s.files.map((file) => (
-              <li key={file.id} data-id={String(file.id)} tabindex="0" style="padding-block: var(--mx-space-2)">
-                {() => `${file.starred ? '★ ' : ''}${file.name}${file.locked ? ' (locked)' : ''}`}
-              </li>
-            ))}
-          </ul>
-          <ContextMenu
-            target={() => list}
-            label="File"
-            onOpening={(e) => {
-              const row = rowOf(e.target);
-              if (row) e.items = rowItems(row);
-              else e.cancel = true;
-            }}
-          />
-          <output class="cm-log">{() => s.log}</output>
+        <Example files={code('FileList.tsx')} stack>
+          <FileList />
         </Example>
-        <Example
-          title="attachContextMenu"
-          code={`
-const remove = attachContextMenu(this.zone, (e) => [
-  { text: 'Say where', click: () => console.log(e.target) },
-]);
-`}
-        >
-          <div
-            class="docs-panel cm-zone"
-            tabindex="0"
-            onBuilt={(c: Component<HTMLDivElement>) =>
-              c.motif.setDisposable(
-                attachContextMenu(c, (e) => [
-                  { text: '&Say where', click: () => (s.zone = `Opened ${e.byKeyboard ? 'from the keyboard' : 'with the pointer'} on <${e.target.tagName.toLowerCase()}>.`) },
-                  { text: '&Reset', click: () => (s.zone = 'Right-click here, or focus me and press the Menu key.') },
-                ]),
-              )
-            }
-          >
-            {() => s.zone}
-          </div>
+        <Example title="attachContextMenu" files={code('AttachedMenu.tsx')}>
+          <AttachedMenu />
         </Example>
       </Section>
 

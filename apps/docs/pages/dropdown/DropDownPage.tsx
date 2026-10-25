@@ -1,29 +1,13 @@
-import { reactive } from '@motifx/core';
-import { Button, DropDown, ValidationGroup, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import Countries from './examples/Countries';
+import FromCode from './examples/FromCode';
+import LiveItems from './examples/LiveItems';
+import Localization from './examples/Localization';
+import LongList from './examples/LongList';
+import Validation from './examples/Validation';
 
-interface Country {
-  code: string;
-  name: string;
-  region: string;
-  flag: string;
-  member?: boolean;
-}
-
-const COUNTRIES: Country[] = [
-  { code: 'TR', name: 'Türkiye', region: 'Europe', flag: '🇹🇷', member: true },
-  { code: 'DE', name: 'Germany', region: 'Europe', flag: '🇩🇪', member: true },
-  { code: 'FR', name: 'France', region: 'Europe', flag: '🇫🇷', member: true },
-  { code: 'NO', name: 'Norway', region: 'Europe', flag: '🇳🇴', member: false },
-  { code: 'JP', name: 'Japan', region: 'Asia', flag: '🇯🇵', member: true },
-  { code: 'KR', name: 'Korea', region: 'Asia', flag: '🇰🇷', member: true },
-  { code: 'BR', name: 'Brazil', region: 'Americas', flag: '🇧🇷', member: true },
-  { code: 'CA', name: 'Canada', region: 'Americas', flag: '🇨🇦', member: true },
-];
-
-const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
-
-const MANY = Array.from({ length: 5000 }, (_, i) => ({ value: i + 1, text: `Order #${String(i + 1).padStart(5, '0')}` }));
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['value', '`Bind<V | null>`', '`null`', 'The value of the chosen item. `x-model` binds it two-way.'],
@@ -47,7 +31,7 @@ const PROPERTIES = [
 ];
 
 const METHODS = [
-  ['open()', '`boolean`', 'Opens the list; `false` when disabled or read-only.'],
+  ['open(search?)', '`boolean`', 'Opens the list; `search` starts the search box with that text. `false` when disabled or read-only.'],
   ['close()', '`void`', 'Closes it; focus goes back to the field.'],
   ['clear()', '`void`', 'Empties the value.'],
   ['validate(), resetValidation(), focus()', '', 'See TextBox.'],
@@ -93,22 +77,6 @@ const TOKENS = [
 ];
 
 export default function DropDownPage() {
-  const s = reactive({
-    city: 'İzmir' as string | null,
-    country: 'TR' as string | null,
-    order: 1200 as number | null,
-    size: null as string | null,
-    priority: 'normal' as string | null,
-    lang: 'en',
-    result: '',
-    items: ['Draft', 'Review'] as string[],
-    status: 'Draft' as string | null,
-  });
-  const group = new ValidationGroup();
-  const flag = (c: Country, host: HTMLElement) => {
-    host.textContent = `${c.flag}  ${c.name}`;
-  };
-
   return (
     <>
       <p class="lead">
@@ -128,21 +96,8 @@ import { DropDown, type DropDownItem } from '@motifx-community/ui';
         <p>
           <Rich text="`items` can be plain values; `x-model` binds the value. Created with `new`, the same properties are set from code." />
         </p>
-        <Example
-          code={`
-<DropDown label="&City" items={['Ankara', 'Bursa', 'İzmir']} x-model={() => this.form.city} />
-
-const size = new DropDown({ label: 'Size', items: ['S', 'M', 'L'], placeholder: 'Pick one' });
-size.onValueChanged((e) => console.log(e.value));
-this.panel.controls.add(size);
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <DropDown label="&City" items={CITIES} x-model={() => s.city} />
-            <output class="dd-city">{() => `city: ${s.city ?? '—'}`}</output>
-          </div>
-          <DropDown label="Size" items={['S', 'M', 'L', 'XL']} placeholder="Pick one" x-model={() => s.size} clearButton />
+        <Example files={code('FromCode.tsx', 'cities.ts')} stack>
+          <FromCode />
         </Example>
       </Section>
 
@@ -150,33 +105,8 @@ this.panel.controls.add(size);
         <p>
           <Rich text="Objects of your own are read through `textField` and `valueField` (a name or a function); `groupField` puts options under headers, `enabledField` keeps some from being chosen, and a template draws an option your way." />
         </p>
-        <Example
-          code={`
-<DropDown
-  label="Country"
-  items={this.countries}
-  textField="name"
-  valueField="code"
-  groupField="region"
-  enabledField={(c) => c.member}
-  itemTemplate={(c, host) => (host.textContent = \`\${c.flag}  \${c.name}\`)}
-  fieldTemplate={(c, host) => (host.textContent = \`\${c.flag}  \${c.name}\`)}
-  x-model={() => this.form.country}
-/>
-`}
-        >
-          <DropDown
-            label="Country"
-            items={COUNTRIES}
-            textField="name"
-            valueField="code"
-            groupField="region"
-            enabledField={(c: Country) => c.member !== false}
-            itemTemplate={flag}
-            fieldTemplate={flag}
-            x-model={() => s.country}
-          />
-          <output class="dd-country">{() => `code: ${s.country ?? '—'}`}</output>
+        <Example files={code('Countries.tsx')}>
+          <Countries />
         </Example>
       </Section>
 
@@ -184,13 +114,8 @@ this.panel.controls.add(size);
         <p>
           <Rich text="`searchEnabled` puts a search box at the top of the list. A long list draws only the rows in view: this one has 5,000 orders." />
         </p>
-        <Example
-          code={`
-<DropDown label="Order" items={orders} searchEnabled x-model={() => this.form.order} />
-`}
-        >
-          <DropDown label="Order" items={MANY} searchEnabled x-model={() => s.order} />
-          <output class="dd-order">{() => `order: ${s.order ?? '—'}`}</output>
+        <Example files={code('LongList.tsx')}>
+          <LongList />
         </Example>
       </Section>
 
@@ -198,36 +123,14 @@ this.panel.controls.add(size);
         <p>
           <Rich text="`items` given as a function is followed, and so are changes inside a reactive array: the open list and the field show them at once." />
         </p>
-        <Example
-          code={`
-<DropDown label="Status" items={() => this.model.statuses} x-model={() => this.form.status} />
-this.model.statuses.push('Published');
-`}
-        >
-          <DropDown label="Status" items={() => s.items} x-model={() => s.status} />
-          <Button text="Add “Published”" variant="outline" enabled={() => !s.items.includes('Published')} onclick={() => s.items.push('Published')} />
+        <Example files={code('LiveItems.tsx')}>
+          <LiveItems />
         </Example>
       </Section>
 
       <Section anchor="validation" title="Validation and states">
-        <Example
-          code={`
-<DropDown label="Priority" items={['low', 'normal', 'high']} required validationGroup={group} />
-<DropDown label="Assignee" items={people} readOnly />
-`}
-        >
-          <DropDown label="Priority" items={['low', 'normal', 'high']} required clearButton validationGroup={group} x-model={() => s.priority} />
-          <DropDown label="Read-only" items={CITIES} value="Bursa" readOnly />
-          <DropDown label="Disabled" items={CITIES} value="Bursa" enabled={false} />
-          <Button
-            text="Check"
-            variant="outline"
-            onclick={async () => {
-              const result = await group.validate();
-              s.result = result.valid ? 'Fine.' : 'Pick a priority.';
-            }}
-          />
-          <output class="dd-check">{() => s.result}</output>
+        <Example files={code('Validation.tsx', 'cities.ts')}>
+          <Validation />
         </Example>
       </Section>
 
@@ -243,20 +146,8 @@ this.model.statuses.push('Published');
         <p>
           <Rich text="The search box, the clear button and the empty list text come from `uiLocale.strings`." />
         </p>
-        <Example
-          code={`
-uiLocale.strings = trStrings;
-`}
-        >
-          <Button
-            text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')}
-            variant="outline"
-            onclick={() => {
-              s.lang = s.lang === 'en' ? 'tr' : 'en';
-              uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
-            }}
-          />
-          <DropDown label="Empty" items={[]} placeholder="Open me" />
+        <Example files={code('Localization.tsx')}>
+          <Localization />
         </Example>
       </Section>
 

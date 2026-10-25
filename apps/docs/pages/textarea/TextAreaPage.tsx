@@ -1,9 +1,15 @@
-import { reactive, type Component } from '@motifx/core';
-import { Button, enStrings, TextArea, trStrings, uiLocale, type FieldLabelMode, type TextAreaResize } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import AutoGrow from './examples/AutoGrow';
+import CounterAndLimits from './examples/CounterAndLimits';
+import CtrlEnter from './examples/CtrlEnter';
+import FromCode from './examples/FromCode';
+import LabelModes from './examples/LabelModes';
+import Localization from './examples/Localization';
+import Resize from './examples/Resize';
+import States from './examples/States';
 
-const RESIZES: TextAreaResize[] = ['none', 'vertical', 'both'];
-const MODES: FieldLabelMode[] = ['top', 'side', 'floating', 'hidden'];
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['value', '`Bind<string>`', "`''`", 'The text, lines separated by `\\n`. `x-model` binds it two-way.'],
@@ -74,35 +80,6 @@ const HOOKS = [
 ];
 
 export default function TextAreaPage() {
-  const s = reactive({
-    comment: 'MotifJS keeps the DOM it builds.',
-    story: '',
-    resize: 'vertical' as TextAreaResize,
-    labelMode: 'top' as FieldLabelMode,
-    bio: '',
-    message: '',
-    sent: [] as { id: number; text: string }[],
-    log: '',
-    editable: true,
-    lang: 'en',
-  });
-  let added = 0;
-  let host: Component<HTMLDivElement> | null = null;
-  let sentCount = 0;
-
-  const addFromCode = () => {
-    const area = new TextArea({ label: `Note ${++added}`, rows: 2, autoGrow: true, maxRows: 5, clearButton: true });
-    area.onValueChanged((e) => (s.log = `${area.label}: ${e.value.split('\n').length} line(s)`));
-    host?.controls.add(area);
-    area.focus();
-  };
-
-  const send = (text: string) => {
-    if (!text.trim()) return;
-    s.sent.push({ id: ++sentCount, text });
-    s.message = '';
-  };
-
   return (
     <>
       <p class="lead">
@@ -122,22 +99,8 @@ import { TextArea, type TextAreaProps } from '@motifx-community/ui';
         <p>
           <Rich text="Every prop takes a value or a function; `x-model` binds the text two-way. Created with `new`, the same properties are set from code." />
         </p>
-        <Example
-          code={`
-<TextArea label="&Comment" x-model={() => this.form.comment} />
-
-const note = new TextArea({ label: 'Note', rows: 2, autoGrow: true, maxRows: 5 });
-note.onValueChanged((e) => console.log(e.value));
-this.panel.controls.add(note);
-`}
-          stack
-        >
-          <TextArea label="&Comment" x-model={() => s.comment} helpText={() => `${s.comment.length} characters`} stretch />
-          <div class="docs-flow">
-            <Button text="Add a note from code" variant="outline" onclick={addFromCode} />
-            <output class="ta-log">{() => s.log}</output>
-          </div>
-          <div class="docs-flow" ref={(c: Component<HTMLDivElement>) => (host = c)} />
+        <Example files={code('FromCode.tsx')} stack>
+          <FromCode />
         </Example>
       </Section>
 
@@ -145,12 +108,8 @@ this.panel.controls.add(note);
         <p>
           <Rich text="With `autoGrow` the box follows the text: never smaller than `minRows` lines, never taller than `maxRows`; past that it scrolls. A narrower box wraps into more lines and grows too." />
         </p>
-        <Example
-          code={`
-<TextArea label="Story" autoGrow minRows={2} maxRows={6} x-model={() => this.form.story} />
-`}
-        >
-          <TextArea label="Story" autoGrow minRows={2} maxRows={6} placeholder="Type a few lines…" x-model={() => s.story} stretch />
+        <Example files={code('AutoGrow.tsx')}>
+          <AutoGrow />
         </Example>
       </Section>
 
@@ -158,25 +117,8 @@ this.panel.controls.add(note);
         <p>
           <Rich text="The grip at the corner of the box lets the user drag it taller (`vertical`, the default), in both directions (`both`), or not at all (`none`)." />
         </p>
-        <Example
-          code={`
-<TextArea label="Notes" resize="both" />
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Resize">
-            {RESIZES.map((resize) => (
-              <Button
-                key={resize}
-                text={resize}
-                size="sm"
-                variant={() => (s.resize === resize ? 'solid' : 'ghost')}
-                aria-pressed={() => s.resize === resize}
-                onclick={() => (s.resize = resize)}
-              />
-            ))}
-          </div>
-          <TextArea label="Notes" resize={() => s.resize} rows={4} />
+        <Example files={code('Resize.tsx')} stack>
+          <Resize />
         </Example>
       </Section>
 
@@ -184,12 +126,8 @@ this.panel.controls.add(note);
         <p>
           <Rich text="`maxLength` stops typing at the limit, `minLength` is checked when the field is left; `showCounter` shows the count under the box." />
         </p>
-        <Example
-          code={`
-<TextArea label="Bio" maxLength={160} minLength={10} showCounter clearButton />
-`}
-        >
-          <TextArea label="Bio" maxLength={160} minLength={10} showCounter clearButton x-model={() => s.bio} stretch />
+        <Example files={code('CounterAndLimits.tsx')}>
+          <CounterAndLimits />
         </Example>
       </Section>
 
@@ -197,61 +135,20 @@ this.panel.controls.add(note);
         <p>
           <Rich text="Enter starts a new line. Ctrl+Enter (Cmd+Enter on a Mac) fires `onEnter` with the value: the usual way to send a message or save a note." />
         </p>
-        <Example
-          code={`
-<TextArea
-  label="Message"
-  helpText="Ctrl+Enter sends."
-  autoGrow
-  maxRows={4}
-  x-model={() => this.chat.draft}
-  onEnter={(e) => this.chat.send(e.value)}
-/>
-`}
-          stack
-        >
-          <ul class="ta-sent">
-            {s.sent.map((m) => (
-              <li key={m.id}>{m.text}</li>
-            ))}
-          </ul>
-          <TextArea label="Message" helpText="Ctrl+Enter sends." autoGrow rows={1} maxRows={4} x-model={() => s.message} onEnter={(e) => send(e.value)} stretch />
+        <Example files={code('CtrlEnter.tsx')} stack>
+          <CtrlEnter />
         </Example>
       </Section>
 
       <Section anchor="label" title="Label">
-        <Example
-          code={`
-<TextArea label="Address" labelMode="floating" />
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Label mode">
-            {MODES.map((mode) => (
-              <Button
-                key={mode}
-                text={mode}
-                size="sm"
-                variant={() => (s.labelMode === mode ? 'solid' : 'ghost')}
-                aria-pressed={() => s.labelMode === mode}
-                onclick={() => (s.labelMode = mode)}
-              />
-            ))}
-          </div>
-          <TextArea label="Address" labelMode={() => s.labelMode} rows={2} />
+        <Example files={code('LabelModes.tsx')} stack>
+          <LabelModes />
         </Example>
       </Section>
 
       <Section anchor="states" title="Read-only, disabled, required">
-        <Example
-          code={`
-<TextArea label="Terms" readOnly value={terms} />
-<TextArea label="Reason" required enabled={() => this.editing} />
-`}
-        >
-          <Button text="Toggle" variant="outline" onclick={() => (s.editable = !s.editable)} />
-          <TextArea label="Terms" readOnly={() => !s.editable} value={'Line one of the terms.\nLine two of the terms.'} rows={2} />
-          <TextArea label="Reason" required enabled={() => s.editable} rows={2} />
+        <Example files={code('States.tsx')}>
+          <States />
         </Example>
       </Section>
 
@@ -267,22 +164,8 @@ this.panel.controls.add(note);
         <p>
           <Rich text="The name of the clear button and the validation messages come from `uiLocale.strings`." />
         </p>
-        <Example
-          code={`
-uiLocale.strings = trStrings;
-`}
-        >
-          <Button
-            text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')}
-            variant="outline"
-            onclick={() => {
-              s.lang = s.lang === 'en' ? 'tr' : 'en';
-              uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
-            }}
-          />
-          <span>
-            The clear button reads <output>{() => uiLocale.strings.clear}</output>
-          </span>
+        <Example files={code('Localization.tsx')}>
+          <Localization />
         </Example>
       </Section>
 

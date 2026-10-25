@@ -14,7 +14,7 @@ export class ValueListAdapter extends data.DataAdapter<GridFilterValue, unknown>
 
   constructor(
     private readonly loader: ValueLoader,
-    private readonly textOf: (value: unknown) => string,
+    private readonly textOf: (value: unknown) => string | Promise<string>,
   ) {
     super({ key: 'value' });
   }
@@ -26,18 +26,19 @@ export class ValueListAdapter extends data.DataAdapter<GridFilterValue, unknown>
   protected async loadRows(options: data.LoadOptions): Promise<data.LoadResult<GridFilterValue>> {
     const signal = options.signal ?? new AbortController().signal;
     const result = await this.loader({ search: searchOf(options.filter), skip: options.skip ?? 0, take: options.take ?? ALL, signal });
-    const rows = result.values.map((v) => {
+    const rows: GridFilterValue[] = [];
+    for (const v of result.values) {
       const value = v.value === undefined ? null : v.value;
-      const row: GridFilterValue = { value, text: v.text ?? this.textOf(value) };
+      const row: GridFilterValue = { value, text: v.text ?? (await this.textOf(value)) };
       if (v.count !== undefined) row.count = v.count;
       this.known.set(this.keyString(value), row);
-      return row;
-    });
+      rows.push(row);
+    }
     return { rows, total: result.total };
   }
 
   protected override async findRow(key: unknown): Promise<GridFilterValue | undefined> {
-    return this.known.get(this.keyString(key)) ?? { value: key, text: this.textOf(key) };
+    return this.known.get(this.keyString(key)) ?? { value: key, text: await this.textOf(key) };
   }
 }
 

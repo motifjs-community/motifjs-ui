@@ -64,10 +64,18 @@ try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   const pageErrors = [];
   page.on('pageerror', (e) => pageErrors.push(String(e)));
+  // MotifJS reports misuse (an effect that keeps triggering itself, a lifecycle error) on the console.
+  const motifNotes = [];
+  page.on('console', (m) => {
+    if ((m.type() === 'warning' || m.type() === 'error') && /\[motifjs\]|MJX\d/.test(m.text())) motifNotes.push(`${new URL(page.url()).pathname}: ${m.text().slice(0, 160)}`);
+  });
 
-  // Axe on every page, in light and dark.
+  // Axe on every page, in light and dark; no MotifJS warning while a page is opened.
   for (const path of PATHS) {
+    const notesBefore = motifNotes.length;
     await page.goto(base + path, { waitUntil: 'load' });
+    await page.waitForTimeout(300);
+    check(`no MotifJS warnings on /${path}`, motifNotes.length === notesBefore, motifNotes.slice(notesBefore, notesBefore + 2).join(' | '));
     await page.addScriptTag({ content: axeSource });
     for (const theme of ['light', 'dark']) {
       await page.evaluate((t) => { document.documentElement.dataset.theme = t; }, theme);
@@ -86,6 +94,7 @@ try {
   }
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 3).join(' | '));
+  check('no MotifJS warnings during the checks', motifNotes.length === 0, motifNotes.slice(0, 3).join(' | '));
 } finally {
   await browser.close();
   killServer();

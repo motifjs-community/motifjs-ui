@@ -79,6 +79,8 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     this.observeProperty('showDropDownButton', () => this.renderArrow());
     this.observeProperty('clearButton', () => this.renderClear());
     this.observeProperty('dataSource', () => this.renderSource());
+    // A value field by name lets a value on no loaded page be asked for by that field.
+    this.observeProperty<ItemField<T> | undefined>('valueField', (field) => (parts.items.valueField = typeof field === 'string' ? field : undefined));
     this.observeProperty('searchMode', (mode) => (parts.items.searchMode = mode === 'startswith' ? 'startswith' : 'contains'));
     parts.items.textOf = (item) => this.itemText(item);
     parts.items.onChanged(() => this.itemsChanged());

@@ -33,4 +33,9 @@ export interface ColumnFeatures {
   copyable: boolean;
   /** The column goes into `exportCsv()` and `exportRows()`. Default `true`. */
   exportable: boolean;
+  /**
+   * A lookup column's filter row and header filter list only the keys present in the rows that the
+   * other columns' filters leave (the cities of the chosen state). Default `true`.
+   */
+  syncLookupFilterValues: boolean;
 }

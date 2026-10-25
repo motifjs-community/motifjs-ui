@@ -3,6 +3,9 @@
 import { Component, reactive } from '@motifx/core';
 import { Button } from '@motifx-community/ui';
 import { PageOutline } from '../app/PageOutline';
+import { Code } from './Code';
+import type { ExampleFile } from './example-file';
+import { ExampleCode } from './ExampleCode';
 
 let seq = 0;
 
@@ -20,14 +23,7 @@ export function Rich(props: { text: string }) {
   );
 }
 
-/** A code example. It may scroll sideways, so it takes focus: the keys scroll it. */
-export function Code(props: { code: string }) {
-  return (
-    <pre tabindex="0">
-      <code>{props.code.trim()}</code>
-    </pre>
-  );
-}
+export { Code };
 
 /** One part of a page, on a card. It joins the page outline the sections on the right list. */
 export class Section extends Component<HTMLElement, { anchor: string; title: string }> {
@@ -57,8 +53,11 @@ const CodeIcon = () => (
   </svg>
 );
 
-/** A live example: a bar with its title and "Show code", the example itself, and its code when asked for. */
-export class Example extends Component<HTMLDivElement, { title?: string; code?: string; stack?: boolean }> {
+/**
+ * A live example: a bar with its title and "Show code", the example itself, and its code when asked
+ * for: `files` are the example's own source files (a tab each), `code` a short snippet.
+ */
+export class Example extends Component<HTMLDivElement, { title?: string; files?: ExampleFile[]; code?: string; stack?: boolean }> {
   static override elementTag = 'div';
 
   private readonly state = reactive({ code: false });
@@ -68,7 +67,8 @@ export class Example extends Component<HTMLDivElement, { title?: string; code?: 
   }
 
   override view() {
-    const { title, code, stack } = this.props;
+    const { title, files, stack } = this.props;
+    const code = files?.length || this.props.code;
     return (
       <>
         <div class="docs-example__bar">
@@ -88,7 +88,7 @@ export class Example extends Component<HTMLDivElement, { title?: string; code?: 
         </div>
         <div class={stack ? 'docs-example__stage docs-example__stage--stack' : 'docs-example__stage'}>{this.childs}</div>
         <div class="docs-example__code" x-wait={() => !this.state.code}>
-          <Code code={code ?? ''} />
+          {files?.length ? <ExampleCode files={files} /> : <Code code={this.props.code ?? ''} />}
         </div>
       </>
     );

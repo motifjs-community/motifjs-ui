@@ -1,46 +1,10 @@
-import { reactive } from '@motifx/core';
-import { FormLayout, type FormItem } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import CustomerForm from './examples/CustomerForm';
 
-const COUNTRIES = [
-  { value: 'TR', text: 'Türkiye' },
-  { value: 'DE', text: 'Germany' },
-  { value: 'FR', text: 'France' },
-];
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 export default function FormLayoutPage() {
-  const customer = reactive({
-    name: 'Ada Lovelace',
-    email: '',
-    phone: '',
-    birthday: null as Date | null,
-    country: 'TR' as string | null,
-    city: 'İstanbul',
-    vip: false,
-    credit: 1000,
-    note: '',
-  });
-  const s = reactive({ result: '', columns: 2, readOnly: false });
-
-  const items: FormItem[] = [
-    { field: 'name', label: '&Name', required: true },
-    { field: 'email', label: 'Email', editor: 'email', required: true },
-    { field: 'phone', label: 'Phone', editorProps: { mask: '(000) 000 00 00', type: 'tel' } },
-    { field: 'birthday', label: 'Birthday', editor: 'date', editorProps: { max: new Date() } },
-    {
-      group: 'Address',
-      columns: 2,
-      items: [
-        { field: 'country', label: 'Country', editor: 'dropdown', editorProps: { items: COUNTRIES } },
-        { field: 'city', label: 'City' },
-      ],
-    },
-    { field: 'vip', label: 'VIP customer', editor: 'switch' },
-    { field: 'credit', label: 'Credit limit', editorProps: { format: { style: 'currency', currency: 'TRY' }, min: 0 }, visible: () => customer.vip },
-    { field: 'note', label: 'Note', editor: 'textarea', colSpan: 'all' },
-    { button: { text: 'Save', tone: 'accent', submit: true } },
-  ];
-
   return (
     <>
       <p class="lead">
@@ -58,40 +22,8 @@ import { FormLayout, type FormItem } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="form" title="A form over an object">
-        <Example
-          code={`
-<FormLayout
-  data={this.customer}
-  columns={2}
-  onValidSubmit={() => this.save()}
-  items={[
-    { field: 'name', label: '&Name', required: true },
-    { field: 'email', label: 'Email', editor: 'email', required: true },
-    { field: 'phone', label: 'Phone', editorProps: { mask: '(000) 000 00 00' } },
-    { field: 'birthday', label: 'Birthday', editor: 'date' },
-    { group: 'Address', columns: 2, items: [
-      { field: 'country', label: 'Country', editor: 'dropdown', editorProps: { items: countries } },
-      { field: 'city', label: 'City' },
-    ] },
-    { field: 'vip', label: 'VIP customer', editor: 'switch' },
-    { field: 'credit', label: 'Credit limit', visible: () => this.customer.vip },
-    { field: 'note', label: 'Note', editor: 'textarea', colSpan: 'all' },
-    { button: { text: 'Save', tone: 'accent', submit: true } },
-  ]}
-/>
-`}
-          stack
-        >
-          <FormLayout
-            data={customer}
-            columns={() => s.columns}
-            readOnly={() => s.readOnly}
-            items={items}
-            onValidSubmit={() => (s.result = `Saved ${customer.name}.`)}
-            onInvalidSubmit={(e) => (s.result = `${e.invalid.length} field(s) to fix.`)}
-          />
-          <output class="fl-result">{() => s.result}</output>
-          <output class="fl-data">{() => `${customer.name} · ${customer.email || '—'} · ${customer.city} · vip: ${customer.vip}`}</output>
+        <Example files={code('CustomerForm.tsx')} stack>
+          <CustomerForm />
         </Example>
       </Section>
 

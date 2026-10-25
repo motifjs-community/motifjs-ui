@@ -1,9 +1,12 @@
-import { reactive, type Component } from '@motifx/core';
-import { Button, Switch, ValidationGroup, type ControlSize, type SwitchStateText } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import Caption from './examples/Caption';
+import FromCode from './examples/FromCode';
+import Sizes from './examples/Sizes';
+import StateText from './examples/StateText';
+import States from './examples/States';
 
-const SIZES: ControlSize[] = ['sm', 'md', 'lg'];
-const PLACES: SwitchStateText[] = ['inside', 'beside', 'none'];
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['value', '`Bind<boolean>`', '`false`', 'On or off. `x-model` binds it two-way.'],
@@ -73,27 +76,6 @@ const TOKENS = [
 ];
 
 export default function SwitchPage() {
-  const s = reactive({
-    wifi: true,
-    place: 'inside' as SwitchStateText,
-    sync: false,
-    dark: false,
-    updates: true,
-    terms: false,
-    editable: true,
-    result: '',
-  });
-  const group = new ValidationGroup();
-  let added = 0;
-  let host: Component<HTMLDivElement> | null = null;
-
-  const addFromCode = () => {
-    const sw = new Switch({ label: `Feature ${++added}`, onText: 'On', offText: 'Off' });
-    sw.onValueChanged((e) => (s.result = `${sw.label}: ${e.value ? 'on' : 'off'}`));
-    host?.controls.add(sw);
-    sw.focus();
-  };
-
   return (
     <>
       <p class="lead">
@@ -113,22 +95,8 @@ import { Switch } from '@motifx-community/ui';
         <p>
           <Rich text="Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set from code." />
         </p>
-        <Example
-          code={`
-<Switch label="&Wi-Fi" x-model={() => this.settings.wifi} />
-
-const sw = new Switch({ label: 'Feature 1', onText: 'On', offText: 'Off' });
-sw.onValueChanged((e) => console.log(e.value, e.byUser));
-this.panel.controls.add(sw);
-`}
-          stack
-        >
-          <Switch label="&Wi-Fi" x-model={() => s.wifi} helpText={() => (s.wifi ? 'Connected to Home.' : 'Not connected.')} />
-          <div class="docs-flow">
-            <Button text="Add a switch from code" variant="outline" onclick={addFromCode} />
-            <output class="sw-result">{() => s.result}</output>
-          </div>
-          <div class="docs-flow" ref={(c: Component<HTMLDivElement>) => (host = c)} />
+        <Example files={code('FromCode.tsx')} stack>
+          <FromCode />
         </Example>
       </Section>
 
@@ -136,26 +104,8 @@ this.panel.controls.add(sw);
         <p>
           <Rich text="`onText` and `offText` show in the track (the track grows to fit them) or next to it. The texts are for the eye; the switch says its state itself." />
         </p>
-        <Example
-          code={`
-<Switch label="Sync" onText="On" offText="Off" showStateText="beside" x-model={() => this.sync} />
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Text position">
-            {PLACES.map((place) => (
-              <Button
-                key={place}
-                text={place}
-                size="sm"
-                variant={() => (s.place === place ? 'solid' : 'ghost')}
-                aria-pressed={() => s.place === place}
-                onclick={() => (s.place = place)}
-              />
-            ))}
-          </div>
-          <Switch label="&Sync" class="sw-sync" onText="On" offText="Off" showStateText={() => s.place} x-model={() => s.sync} />
-          <Switch label="Dark mode" onText="Dark" offText="Light" showStateText={() => s.place} x-model={() => s.dark} />
+        <Example files={code('StateText.tsx')} stack>
+          <StateText />
         </Example>
       </Section>
 
@@ -163,55 +113,20 @@ this.panel.controls.add(sw);
         <p>
           <Rich text={'The caption sits after the track, or before it with `labelPosition="start"`; with `stretch` the field takes the width and the track goes to the far end, as in a settings list.'} />
         </p>
-        <Example
-          code={`
-<Switch label="Automatic updates" labelPosition="start" stretch x-model={() => this.updates} />
-`}
-          stack
-        >
-          <div style="inline-size: 22rem">
-            <Switch label="Automatic updates" labelPosition="start" stretch x-model={() => s.updates} />
-            <Switch label="Send usage data" labelPosition="start" stretch helpText="Anonymous, once a week." />
-          </div>
+        <Example files={code('Caption.tsx')} stack>
+          <Caption />
         </Example>
       </Section>
 
       <Section anchor="sizes" title="Sizes">
-        <Example
-          code={`
-<Switch label="Small" size="sm" />
-<Switch label="Large" size="lg" onText="On" offText="Off" />
-`}
-        >
-          {SIZES.map((size) => (
-            <Switch key={size} label={size} size={size} value={size === 'md'} onText="On" offText="Off" />
-          ))}
+        <Example files={code('Sizes.tsx')}>
+          <Sizes />
         </Example>
       </Section>
 
       <Section anchor="states" title="Required, read-only, disabled">
-        <Example
-          code={`
-<Switch label="I agree" required validationGroup={group} />
-<Switch label="Locked" readOnly value={true} />
-<Switch label="Disabled" enabled={false} />
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <Switch label="I &agree to the terms" required validationGroup={group} x-model={() => s.terms} />
-            <Button
-              text="Continue"
-              tone="accent"
-              onclick={async () => (s.result = (await group.validate()).valid ? 'Thanks.' : 'Please agree first.')}
-            />
-          </div>
-          <div class="docs-flow">
-            <Button text="Toggle" variant="outline" onclick={() => (s.editable = !s.editable)} />
-            <Switch label="Read-only" readOnly={() => !s.editable} value={true} />
-            <Switch label="Disabled on" enabled={() => s.editable} value={true} />
-            <Switch label="Disabled off" enabled={() => s.editable} />
-          </div>
+        <Example files={code('States.tsx')} stack>
+          <States />
         </Example>
       </Section>
 

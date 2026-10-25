@@ -158,7 +158,8 @@ export class Grid extends Control<HTMLDivElement, GridProps> {
 
   private get settings(): ChildSettings {
     const self = this as unknown as { [CHILDREN]?: ChildSettings };
-    return (self[CHILDREN] ??= new ChildSettings(this, CELL, {
+    if (self[CHILDREN]) return self[CHILDREN];
+    self[CHILDREN] = new ChildSettings(this, CELL, {
       changed: (child, el) => {
         const get = (name: string) => this.settings.get(child, name);
         this.place(el, 'grid-row-start', line(get('row')));
@@ -169,7 +170,8 @@ export class Grid extends Control<HTMLDivElement, GridProps> {
       left: (_child, el) => {
         for (const name of PLACEMENT) el.style.removeProperty(name);
       },
-    }));
+    });
+    return self[CHILDREN].addPresent();
   }
 
   private place(el: HTMLElement, name: string, value: string): void {

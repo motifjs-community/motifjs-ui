@@ -39,6 +39,11 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.motif.setDisposable(() => {
       for (const row of this.pool) row.dispose();
     });
+    // Lookup keys came: only the cells that show them are drawn again.
+    const resolved = this.grid.lookups.onChanged(({ items, keys }) => {
+      for (const row of this.byIndex.values()) row.drawLookups(items, keys);
+    });
+    this.motif.setDisposable(() => resolved.dispose());
   }
 
   /** Geometry of the rows the body lays out (all rows, or one page). */

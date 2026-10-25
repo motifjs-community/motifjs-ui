@@ -13,6 +13,7 @@ import type { ColumnFeatures } from './column-features';
 import type { DataGridProps } from './data-grid-props';
 import type { GridBuiltInActions } from './grid-built-in-actions';
 import type { GridChanges } from './grid-changes';
+import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
 import type { GridExportOptions } from './grid-export-options';
 import type { GridFilters } from './grid-filters';
 import type { GridLayout } from './grid-layout';
@@ -80,6 +81,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private readonly widths: ActionWidths;
   private readonly builtIns: GridBuiltInActions<T>;
   private readonly selectionEmitter = new Emitter<GridSelectionChangedEventArgs>();
+  private readonly preparingEmitter = new Emitter<GridEditorPreparingEventArgs<T>>();
   private readonly styles: ColumnStyles<T>;
   private readonly tip: CellTip;
   private readonly clipboard: GridClipboard<T>;
@@ -133,6 +135,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     model.builtIns = this.builtIns;
     model.selection.onChanged((selection) => this.selectionEmitter.fire({ selection }));
     if (own.onSelectionChanged) this.onSelectionChanged(own.onSelectionChanged);
+    if (own.onEditorPreparing) this.onEditorPreparing(own.onEditorPreparing);
     this.tip = new CellTip(this);
     this.clipboard = new GridClipboard<T>(model);
     this.exporter = new GridExport<T>(model);
@@ -248,10 +251,21 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.resetLayout();
   }
 
-  /** Loads the rows again, keeping the position; saved new rows leave the new-row area and take their place among the rows. */
+  /** Loads the rows again, keeping the position, and the texts of the lookup columns; saved new rows leave the new-row area and take their place among the rows. */
   refresh() {
     this.leave();
+    this.model.refreshLookups();
     this.model.data.refresh();
+  }
+
+  /** Forgets the texts of the lookup columns and asks for the ones on the screen again. */
+  refreshLookups() {
+    this.model.refreshLookups();
+  }
+
+  /** Raised before a cell editor is made: change its props (`e.options`), or `e.cancel` the edit. */
+  get onEditorPreparing(): MotifEvent<GridEditorPreparingEventArgs<T>> {
+    return this.preparingEmitter.event;
   }
 
   /** Loads what failed to load again. */
@@ -268,7 +282,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** Fits every visible, resizable column to its header and the rows shown. */
   autoSizeColumns() {
     for (const field of this.model.columns.visible()) {
-      if (this.model.columns.can(field, 'resizable')) this.autoSize(field);
+      if (this.model.columns.can(field, 'resizable')) this.autoSize(field, true);
     }
     this.model.keepLayout();
   }
@@ -526,10 +540,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const activeId = model.rowIdAt(st.activeRow);
     if (activeId === undefined || (st.session && st.session !== activeId)) return 0;
     const result = this.clipboard.paste(text, st.activeRow, st.activeField);
-    for (const rowId of result.rowIds) {
-      if (rowId === activeId) continue;
+    const save = (rowId: string) => {
       if (model.isUntouched(rowId)) model.discard(rowId);
       else if (model.saveMode !== 'batch' && model.hasPending(rowId) && model.validate(rowId) === null) void model.commit(rowId);
+    };
+    for (const rowId of result.rowIds) {
+      if (rowId === activeId) continue;
+      // A pasted lookup text the source is asked about is written once it is a key.
+      const wait = model.whenSettled(rowId);
+      if (wait) void wait.then(() => !this.isDisposed && model.state.session !== rowId && save(rowId));
+      else save(rowId);
     }
     if (model.hasPending(activeId) || model.edit(activeId)?.isNew) model.setSession(activeId);
     model.announce(result.cells ? model.text('gridPasted', { count: model.formatter.count(result.cells) }) : model.text('gridNothingPasted'));
@@ -703,6 +723,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     for (const controller of this.exports) controller.abort();
     this.editor = null;
     this.selectionEmitter.dispose();
+    this.preparingEmitter.dispose();
     this.tip.hide();
     this.model.dispose();
   }
@@ -924,6 +945,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.element.style.setProperty('--_head-height', `${head}px`);
     const viewport = Math.max(0, vp.clientHeight - head);
     if (viewport !== state.viewport) state.viewport = viewport;
+    if (viewport > 0 && !state.measured) state.measured = true;
     const fixed = this.model.fixedRowHeight;
     const h = fixed ?? this.probeEl?.offsetHeight ?? 0;
     if (h > 0 && h !== state.rowHeight) {
@@ -1091,7 +1113,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const value = model.value(rowId, row, col);
     const typed = col.type === 'date' || col.type === 'boolean' ? undefined : initialText;
     const merged = { ...(row as object), ...(rec?.draft ?? {}) } as T;
-    const editor = new CellEditor<T>(model, col, merged, value, typed, { commit: () => this.finishEdit('none'), cancel: () => this.cancelEdit() }, this.body);
+    const prepare = (options: Record<string, unknown>) => {
+      const e: GridEditorPreparingEventArgs<T> = { field, row: { ...merged }, isNew: !!rec?.isNew, options, cancel: false };
+      this.preparingEmitter.fire(e);
+      return !e.cancel;
+    };
+    const editor = new CellEditor<T>(model, col, merged, value, typed, { commit: () => this.finishEdit('none'), cancel: () => this.cancelEdit() }, this.body, prepare);
+    if (editor.cancelled) {
+      editor.dispose();
+      return false;
+    }
     cell.append(editor.element);
     this.editor = editor;
     this.editRow = { rowId, row, field };
@@ -1116,7 +1147,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       return false;
     }
     const i = this.model.indexOfKey(at.rowId, this.model.state.activeRow);
-    this.model.setValue(at.rowId, at.row, at.field, r.value, i >= 0 ? this.model.dataIndex(i) : -1);
+    const col = this.model.columns.get(at.field);
+    if (col.lookup) this.model.lookups.remember(col, r.value, ed.chosen());
+    this.model.writeCell(at.rowId, at.row, at.field, r.value, i >= 0 ? this.model.dataIndex(i) : -1);
     this.closeEditor();
     return true;
   }
@@ -1214,7 +1247,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (rec?.saving || rec?.removed || !model.columns.canFill(st.activeField, row, !!rec?.isNew)) return false;
     if (st.session && st.session !== rowId) return false;
     const col = model.columns.get(st.activeField);
-    model.setValue(rowId, row, st.activeField, value(model.value(rowId, row, col)), model.dataIndex(i));
+    model.writeCell(rowId, row, st.activeField, value(model.value(rowId, row, col)), model.dataIndex(i));
     model.setSession(rowId);
     return true;
   }
@@ -1508,8 +1541,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.menu.open(field, anchor, this.header.cellElement(field)!);
   }
 
-  /** Fits a column to its header and the rows shown now. */
-  private autoSize(field: string) {
+  /** Fits a column to its header and the rows shown now; in `'nextColumn'` mode the next column gives or takes the difference, unless `alone`. */
+  private autoSize(field: string, alone = false) {
     const headerCell = this.header.cellElement(field);
     if (!headerCell) return;
     const title = headerCell.querySelector<HTMLElement>('.mx-data-grid__title');
@@ -1519,14 +1552,24 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       const pad = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) || 0;
       width = Math.max(width, textWidth(cell) + pad);
     }
-    this.model.columns.resize(field, Math.ceil(width) + 2);
+    const cols = this.model.columns;
+    const next = alone ? undefined : cols.partnerOf(field);
+    if (next) cols.resizeWithNext(field, next, this.header.shownWidth(field) + this.header.shownWidth(next), Math.ceil(width) + 2);
+    else cols.resize(field, Math.ceil(width) + 2);
   }
 
   /** Keyboard move or resize, from the column menu. */
   private startAdjust(kind: 'move' | 'resize', field: string) {
     const { model } = this;
     const cols = model.columns;
-    model.state.adjust = { kind, field, original: kind === 'move' ? [...cols.state.order] : cols.width(field) };
+    model.state.adjust = { kind, field, original: kind === 'move' ? [...cols.state.order] : { width: { ...cols.state.width }, flex: { ...cols.state.flex } } };
+    if (kind === 'resize') {
+      // Steps start from the widths on screen: a flexing column is wider than its setting.
+      const shown = this.header.shownWidth(field);
+      const next = cols.partnerOf(field);
+      if (next) cols.resizeWithNext(field, next, shown + this.header.shownWidth(next), shown);
+      else cols.resize(field, shown);
+    }
     this.setActive(HEADER_ROW, field);
     this.focusActive(true);
     model.announce(model.text(kind === 'move' ? 'gridMovingHint' : 'gridResizingHint', { title: cols.title(field) }));
@@ -1539,7 +1582,11 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const cols = this.model.columns;
     if (!keep) {
       if (adjust.kind === 'move') cols.state.order = adjust.original as string[];
-      else cols.state.width[adjust.field] = adjust.original as number;
+      else {
+        const { width, flex } = adjust.original as { width: Record<string, number>; flex: Record<string, number> };
+        cols.state.width = width;
+        cols.state.flex = flex;
+      }
       return;
     }
     this.model.layoutChanged();
@@ -1558,7 +1605,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         model.announce(model.text('gridMovedTo', { title, position: zone.indexOf(adjust.field) + 1, count: zone.length }));
       } else {
         const step = e.shiftKey ? 1 : 10;
-        const w = cols.resize(adjust.field, cols.width(adjust.field) + (forward ? step : -step));
+        const px = cols.width(adjust.field) + (forward ? step : -step);
+        const next = cols.partnerOf(adjust.field);
+        const w = next ? cols.resizeWithNext(adjust.field, next, cols.width(adjust.field) + cols.width(next), px) : cols.resize(adjust.field, px);
         model.announce(model.text('gridWidthIs', { title, width: w }));
       }
       this.focusActive(true);
@@ -1582,8 +1631,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    */
   private onEditorCapture(e: KeyboardEvent) {
     const ed = this.editor;
+    // Escape on a lookup's closed list ends the edit (the list would empty a field that has a clear button).
+    if (ed?.kind === 'lookup' && e.key === 'Escape' && e.target === ed.input && !ed.listOpen) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.cancelEdit();
+      return;
+    }
     if (!ed || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-    if (ed.kind === 'list' || ed.kind === 'custom' || e.target !== ed.input) return;
+    if (ed.kind === 'list' || ed.kind === 'lookup' || ed.kind === 'custom' || e.target !== ed.input) return;
     e.preventDefault();
     e.stopPropagation();
     if (this.model.state.busy) return;
@@ -1719,7 +1775,11 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         else this.startEdit();
         return;
       case 'Escape':
-        if (onRow && this.cancelRowEdits()) e.preventDefault();
+        // An editor that could not take focus (disabled by onEditorPreparing) closes first.
+        if (this.editor) {
+          e.preventDefault();
+          this.cancelEdit();
+        } else if (onRow && this.cancelRowEdits()) e.preventDefault();
         return;
       case 'Delete':
         if (row === FILTER_ROW) {

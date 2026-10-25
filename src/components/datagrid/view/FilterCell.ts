@@ -1,4 +1,4 @@
-import { Component, effect, read, type ComponentBase } from '@motifx/core';
+import { Component, effect, reactive, read, type ComponentBase } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { DateBox } from '../../datebox/DateBox';
 import { DropDown } from '../../dropdown/DropDown';
@@ -7,6 +7,7 @@ import { NumberBox } from '../../numberbox/NumberBox';
 import { TextBox } from '../../textbox/TextBox';
 import type { Field } from '../../../parts/field/Field';
 import type { ColumnFilter } from '../column-filter';
+import type { GridFilterValue } from '../grid-filter-value';
 import type { GridModel } from '../model/GridModel';
 import { optionOf } from '../model/option-of';
 import { createActionButton } from './action-button';
@@ -40,7 +41,7 @@ export class FilterCell<T> {
     const box = holder.element;
     box.className = 'mx-data-grid__filter';
     cell.append(box);
-    this.condition = col.type === 'boolean' ? null : this.createCondition();
+    this.condition = col.type === 'boolean' || col.lookup ? null : this.createCondition();
     const get = () => model.filters.get(field) ?? ({} as ColumnFilter);
     const set = (change: Partial<ColumnFilter>, typed: boolean) => model.filters.update(field, change, typed);
     const title = () => model.columns.title(field);
@@ -53,7 +54,8 @@ export class FilterCell<T> {
     const firstLabel = () => model.text(between() ? 'gridFilterFrom' : 'gridFilterFor', { title: title() });
     const secondLabel = () => model.text('gridFilterTo', { title: title() });
     const locale = () => model.formatter.locale;
-    switch (col.type) {
+    if (col.lookup) this.editors.push(this.lookupList(firstLabel, get, set));
+    else switch (col.type) {
       case 'number':
         for (const key of ['value', 'value2'] as const) {
           this.editors.push(
@@ -148,6 +150,50 @@ export class FilterCell<T> {
 
   dispose() {
     for (const stop of this.stops) stop();
+  }
+
+  /**
+   * A lookup column's list: "(All)" first, then the texts of its keys, searched by text. Its values
+   * are asked for the first time it opens, and again when the other filters changed since.
+   */
+  private lookupList(label: () => string, get: () => ColumnFilter, set: (change: Partial<ColumnFilter>, typed: boolean) => void): DropDown<GridFilterValue, unknown> {
+    const model = this.model;
+    const col = model.columns.get(this.field);
+    const values = model.values.lookups.source(this.field, 'all');
+    const look = reactive({ opened: false, texts: 0 });
+    let loadedWith = '';
+    const texts = model.lookups.onChanged(() => look.texts++);
+    this.stops.push(() => {
+      texts.dispose();
+      const adapter = values.adapter;
+      values.dispose();
+      adapter.dispose();
+    });
+    return new DropDown<GridFilterValue, unknown>({
+      labelMode: 'hidden',
+      size: 'sm',
+      tabStop: false,
+      label,
+      searchEnabled: true,
+      textField: 'text',
+      valueField: 'value',
+      placeholder: () => model.text('gridAll'),
+      dataSource: () => (look.opened ? values : null),
+      // Until it opens, the field shows the chosen key's text alone.
+      items: () => {
+        void look.texts;
+        const value = get().value;
+        return data.isEmpty(value) ? [] : [{ value, text: model.lookups.textOfKey(col, value) }];
+      },
+      value: () => (get().value === undefined ? null : get().value),
+      onValueChanged: (e) => e.byUser && set({ value: e.value ?? undefined }, false),
+      onOpened: () => {
+        const filter = JSON.stringify(model.values.lookups.otherFilter(this.field));
+        if (look.opened && filter !== loadedWith) void values.reload();
+        loadedWith = filter;
+        look.opened = true;
+      },
+    });
   }
 
   /** The choices of a list or yes/no column; "All" first stands for no filter. */

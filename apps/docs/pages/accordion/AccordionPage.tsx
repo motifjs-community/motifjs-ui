@@ -1,21 +1,11 @@
-import { reactive, type Component } from '@motifx/core';
-import { Accordion, AccordionItem, Button, TextBox, type AccordionChevron, type AccordionVariant } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import FromCode from './examples/FromCode';
+import LazySections from './examples/LazySections';
+import OneOrSeveral from './examples/OneOrSeveral';
+import VariantsAndSizes from './examples/VariantsAndSizes';
 
-const TruckIcon = () => (
-  <svg viewBox="0 0 16 16" aria-hidden="true">
-    <path d="M1.5 4.5h8v6h-8zM9.5 6.5h3l2 2v2h-5M4 12.5a1 1 0 1 0 0-.01M12 12.5a1 1 0 1 0 0-.01" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
-  </svg>
-);
-
-const VARIANTS: AccordionVariant[] = ['list', 'separated', 'flush'];
-const CHEVRONS: AccordionChevron[] = ['end', 'start', 'none'];
-
-const FAQ = [
-  { q: 'Can I pay later?', a: 'Yes, within 30 days of the invoice.' },
-  { q: 'Do you ship abroad?', a: 'To most countries in Europe.' },
-  { q: 'How do I return an item?', a: 'Send it back within 14 days with the slip in the box.' },
-];
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['value', '`Bind<(string | number)[]>`', '`[]`', 'The open items\' keys (an item without a key: its index). `x-model` binds it two-way.'],
@@ -96,29 +86,6 @@ const TOKENS = [
 ];
 
 export default function AccordionPage() {
-  const s = reactive({
-    open: ['shipping'] as (string | number)[],
-    multiple: false,
-    collapsible: true,
-    variant: 'list' as AccordionVariant,
-    chevron: 'end' as AccordionChevron,
-    address: '',
-    log: '',
-    builds: 0,
-  });
-  let added = 0;
-
-  const faq = new Accordion({ variant: 'separated', multiple: true });
-  for (const entry of FAQ) faq.add(new AccordionItem({ title: entry.q, content: () => <p>{entry.a}</p> }));
-  faq.onExpanded((e) => (s.log = `Opened “${e.item.title}”${e.byUser ? ' by the user' : ' from code'}.`));
-  const addQuestion = () => {
-    const n = ++added;
-    const item = faq.add(new AccordionItem({ title: `Question ${n}`, content: () => <p>Answer {n}.</p> }));
-    item.expanded = true;
-  };
-
-  const place = (target: Accordion) => (c: Component<HTMLDivElement>) => c.controls.add(target);
-
   return (
     <>
       <p class="lead">
@@ -138,39 +105,8 @@ import { Accordion, AccordionItem } from '@motifx-community/ui';
         <p>
           <Rich text="An `<AccordionItem>`'s children are its section. `value` lists the open items' keys and `x-model` binds it two-way. Created with `new`, items are added and removed from code." />
         </p>
-        <Example
-          code={`
-<Accordion x-model={() => this.state.open}>
-  <AccordionItem key="shipping" title="&Shipping" icon={() => <TruckIcon />}>
-    <TextBox label="Address" x-model={() => this.form.address} />
-  </AccordionItem>
-  <AccordionItem key="payment" title="&Payment">…</AccordionItem>
-</Accordion>
-
-const faq = new Accordion({ variant: 'separated', multiple: true });
-faq.add(new AccordionItem({ title: 'Can I pay later?', content: () => <p>Yes…</p> }));
-faq.onExpanded((e) => console.log(e.item.title, e.byUser));
-this.panel.controls.add(faq);
-`}
-          stack
-        >
-          <Accordion class="acc-ways" x-model={() => s.open}>
-            <AccordionItem key="shipping" title="&Shipping" icon={() => <TruckIcon />}>
-              <TextBox label="Address" x-model={() => s.address} />
-            </AccordionItem>
-            <AccordionItem key="payment" title="&Payment">
-              <p>Card or bank transfer.</p>
-            </AccordionItem>
-            <AccordionItem key="review" title="&Review">
-              <p>{() => `Ship to: ${s.address || '—'}`}</p>
-            </AccordionItem>
-          </Accordion>
-          <output class="acc-value">{() => `value: [${s.open.map((k) => JSON.stringify(k)).join(', ')}]`}</output>
-          <div class="docs-flow">
-            <Button text="Add a question from code" variant="outline" onclick={addQuestion} />
-            <output class="acc-log">{() => s.log}</output>
-          </div>
-          <div style="inline-size: 100%" onBuilt={place(faq)} />
+        <Example files={code('FromCode.tsx')} stack>
+          <FromCode />
         </Example>
       </Section>
 
@@ -178,31 +114,8 @@ this.panel.controls.add(faq);
         <p>
           <Rich text="One item is open at a time; with `multiple` several can be. `collapsible={false}` keeps one open: its header cannot close it." />
         </p>
-        <Example
-          code={`
-<Accordion multiple>…</Accordion>
-<Accordion collapsible={false}>…</Accordion>
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <Button text="Multiple" size="sm" variant="outline" toggle x-model={() => s.multiple} />
-            <Button text="Collapsible" size="sm" variant="outline" toggle x-model={() => s.collapsible} />
-          </div>
-          <Accordion class="acc-multiple" multiple={() => s.multiple} collapsible={() => s.collapsible}>
-            <AccordionItem title="Monday">
-              <p>Monday.</p>
-            </AccordionItem>
-            <AccordionItem title="Tuesday">
-              <p>Tuesday.</p>
-            </AccordionItem>
-            <AccordionItem title="Wednesday" enabled={false}>
-              <p>Wednesday.</p>
-            </AccordionItem>
-            <AccordionItem title="Thursday">
-              <p>Thursday.</p>
-            </AccordionItem>
-          </Accordion>
+        <Example files={code('OneOrSeveral.tsx')} stack>
+          <OneOrSeveral />
         </Example>
       </Section>
 
@@ -210,75 +123,14 @@ this.panel.controls.add(faq);
         <p>
           <Rich text="A section is built when it is first opened and kept afterwards (`lazy`, on by default). An item with a `content` factory and `keepAlive={false}` has its content disposed when it closes and made again when it opens." />
         </p>
-        <Example
-          code={`
-<AccordionItem title="Report" content={() => <Report />} />
-<AccordionItem title="Live" keepAlive={false} content={() => <LiveView />} />
-`}
-          stack
-        >
-          <Accordion class="acc-lazy" multiple>
-            <AccordionItem
-              title="Kept"
-              content={() => {
-                s.builds++;
-                return <TextBox label="Type, close, open again" />;
-              }}
-            />
-            <AccordionItem
-              title="Made each time"
-              keepAlive={false}
-              content={() => {
-                s.builds++;
-                return <TextBox label="Starts empty each time" />;
-              }}
-            />
-          </Accordion>
-          <output class="acc-builds">{() => `Sections built: ${s.builds}`}</output>
+        <Example files={code('LazySections.tsx')} stack>
+          <LazySections />
         </Example>
       </Section>
 
       <Section anchor="look" title="Variants and sizes">
-        <Example
-          code={`
-<Accordion variant="separated" size="lg" chevron="start">…</Accordion>
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Variant">
-            {VARIANTS.map((variant) => (
-              <Button
-                key={variant}
-                text={variant}
-                size="sm"
-                variant={() => (s.variant === variant ? 'solid' : 'ghost')}
-                aria-pressed={() => s.variant === variant}
-                onclick={() => (s.variant = variant)}
-              />
-            ))}
-          </div>
-          <div class="docs-flow" role="group" aria-label="Chevron">
-            {CHEVRONS.map((chevron) => (
-              <Button
-                key={chevron}
-                text={`chevron ${chevron}`}
-                size="sm"
-                variant={() => (s.chevron === chevron ? 'solid' : 'ghost')}
-                aria-pressed={() => s.chevron === chevron}
-                onclick={() => (s.chevron = chevron)}
-              />
-            ))}
-          </div>
-          {(['sm', 'md', 'lg'] as const).map((size) => (
-            <Accordion key={size} class="acc-look" size={size} variant={() => s.variant} chevron={() => s.chevron}>
-              <AccordionItem title={`Size ${size}`} expanded>
-                <p>The section of a {size} accordion.</p>
-              </AccordionItem>
-              <AccordionItem title="Another">
-                <p>Another section.</p>
-              </AccordionItem>
-            </Accordion>
-          ))}
+        <Example files={code('VariantsAndSizes.tsx')} stack>
+          <VariantsAndSizes />
         </Example>
       </Section>
 

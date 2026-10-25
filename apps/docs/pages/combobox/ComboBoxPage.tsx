@@ -1,25 +1,11 @@
-import { reactive } from '@motifx/core';
-import { data } from '@motifx-community/data';
-import { Autocomplete, ComboBox } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
-import { SlowAdapter } from '../../shared/slow-adapter';
+import { slowAdapterFile } from '../../shared/slow-adapter-file';
+import { sources } from '../../shared/sources';
+import CustomValues from './examples/CustomValues';
+import FromCode from './examples/FromCode';
+import Products from './examples/Products';
 
-const CITIES = ['Adana', 'Ankara', 'Antalya', 'Bursa', 'Diyarbakır', 'Erzurum', 'Eskişehir', 'Gaziantep', 'İstanbul', 'İzmir', 'Kayseri', 'Konya', 'Mersin', 'Samsun', 'Trabzon'];
-
-interface Product {
-  id: number;
-  name: string;
-  category: string;
-}
-
-const CATEGORIES = ['Beverages', 'Condiments', 'Dairy', 'Grains', 'Produce', 'Seafood'];
-const PRODUCTS: Product[] = Array.from({ length: 10000 }, (_, i) => ({ id: i + 1, name: `${CATEGORIES[i % 6]} item ${i + 1}`, category: CATEGORIES[i % 6] }));
-
-/** A server that answers a little later, as a real one would: the adapter of the data layer over an array. */
-function productSource() {
-  const adapter = new SlowAdapter<Product, number>({ data: PRODUCTS, key: 'id' }, 300);
-  return new data.DataSource<Product, number>({ adapter, loadMode: 'blocks', pageSize: 50, searchFields: ['name'] });
-}
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['value', '`Bind<V | null>`', '`null`', 'The value of the chosen item; `x-model` binds it.'],
@@ -43,9 +29,6 @@ const KEYS = [
 ];
 
 export default function ComboBoxPage() {
-  const s = reactive({ city: 'İzmir' as string | null, product: 2500 as number | null, tag: '', query: '' });
-  const products = productSource();
-
   return (
     <>
       <p class="lead">
@@ -63,16 +46,8 @@ import { data } from '@motifx-community/data';
       </Section>
 
       <Section anchor="ways" title="From JSX and from code">
-        <Example
-          code={`
-<ComboBox label="&City" items={cities} x-model={() => this.form.city} clearButton />
-
-const city = new ComboBox({ label: 'City', items: cities, minSearchLength: 2 });
-this.panel.controls.add(city);
-`}
-        >
-          <ComboBox label="&City" items={CITIES} x-model={() => s.city} clearButton />
-          <output class="cb-city">{() => `city: ${s.city ?? '—'}`}</output>
+        <Example files={code('FromCode.tsx', 'cities.ts')}>
+          <FromCode />
         </Example>
       </Section>
 
@@ -80,32 +55,14 @@ this.panel.controls.add(city);
         <p>
           <Rich text="With `dataSource` the search goes to the data source (its `searchFields`), after `searchDelay`. In `'blocks'` mode only the rows in view load; a value on no loaded page is found by key, so the field shows its text at once. This one holds 10,000 products and answers after 300 ms." />
         </p>
-        <Example
-          code={`
-const products = new data.DataSource({
-  adapter: new data.ODataAdapter({ url: '/odata/Products', key: 'ProductID' }),
-  loadMode: 'blocks',
-  searchFields: ['ProductName'],
-});
-
-<ComboBox label="Product" dataSource={products} textField="name" valueField="id" x-model={() => this.line.product} />
-`}
-        >
-          <ComboBox label="Product" dataSource={products} textField="name" valueField="id" x-model={() => s.product} stretch />
-          <output class="cb-product">{() => `product: ${s.product ?? '—'}`}</output>
+        <Example files={[...code('Products.tsx'), slowAdapterFile]}>
+          <Products />
         </Example>
       </Section>
 
       <Section anchor="custom" title="Custom values and Autocomplete">
-        <Example
-          code={`
-<ComboBox label="Tag" items={tags} acceptCustomValue x-model={() => this.form.tag} />
-<Autocomplete label="Search" items={recent} x-model={() => this.query} />
-`}
-        >
-          <ComboBox label="Tag" items={['bug', 'feature', 'docs']} acceptCustomValue x-model={() => s.tag} />
-          <Autocomplete label="Search" items={CITIES} x-model={() => s.query} />
-          <output class="cb-query">{() => `query: "${s.query}"`}</output>
+        <Example files={code('CustomValues.tsx', 'cities.ts')}>
+          <CustomValues />
         </Example>
       </Section>
 

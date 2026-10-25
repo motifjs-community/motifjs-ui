@@ -329,6 +329,23 @@ describe('TreeView', () => {
     expect(row(t, 'Root 1').hasAttribute('aria-expanded')).toBe(false);
   });
 
+  it('reports a check once when the keys are bound both ways', async () => {
+    const s = reactive({ checked: [] as unknown[] });
+    const changed = vi.fn((e: { keys: unknown[] }) => (s.checked = e.keys));
+    const t = new TreeView<Folder>({ items: files(), showCheckBoxes: true, selectionMode: 'none', expandedKeys: ['src'], checkedKeys: () => s.checked, onCheckChanged: changed });
+    page(t);
+    await settle();
+    click(part(row(t, 'app.ts'), 'check'));
+    await settle();
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(s.checked).toEqual(['app']);
+    s.checked = ['docs'];
+    await settle();
+    expect(t.checkedKeys).toEqual(['docs', 'readme']);
+    expect(s.checked).toEqual(['docs', 'readme']);
+    expect(changed).toHaveBeenCalledTimes(2);
+  });
+
   it('checks rows with tri-state parents', async () => {
     const changed = vi.fn();
     const t = new TreeView<Folder>({ items: files(), showCheckBoxes: true, selectionMode: 'none', expandedKeys: ['src', 'lib'], onCheckChanged: changed });

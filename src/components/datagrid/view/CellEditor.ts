@@ -1,9 +1,11 @@
 import { Component, ComponentBase, read } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { CheckBox } from '../../checkbox/CheckBox';
+import { ComboBox } from '../../combobox/ComboBox';
 import { DateBox } from '../../datebox/DateBox';
 import { DropDown } from '../../dropdown/DropDown';
 import type { DropDownItem } from '../../dropdown/drop-down-item';
+import { Lookup } from '../../lookup/Lookup';
 import { NumberBox } from '../../numberbox/NumberBox';
 import { parseNumber } from '../../numberbox/number-text';
 import { TextBox } from '../../textbox/TextBox';
@@ -19,22 +21,34 @@ import type { EditorHost } from './editor-host';
 import type { EditorKind } from './editor-kind';
 import type { EditorValue } from './editor-value';
 
+/** Rows of a lookup editor's list asked for at a time. */
+const LOOKUP_PAGE = 50;
+
+type Options = Record<string, unknown>;
+
 /**
  * The editor of the cell in edit mode: a kit field drawn without its frame inside the cell (a
- * `TextBox`, a `NumberBox`, a `DateBox`, a `CheckBox` or a `DropDown`, by the column type), or the
- * column's own `editor`. Only one exists at a time; it is made when editing starts and disposed when
- * it ends.
+ * `TextBox`, a `NumberBox`, a `DateBox`, a `CheckBox` or a `DropDown`, by the column type; a
+ * `DropDown`, `ComboBox` or `Lookup` over the items of a lookup column), or the column's own
+ * `editor`. Only one exists at a time; it is made when editing starts and disposed when it ends.
+ * `prepare` sees the kit field's props first and may change them, or say no (`false`).
  */
 export class CellEditor<T> {
   readonly kind: EditorKind;
   /** The element placed in the cell. */
   readonly box: Component<HTMLDivElement>;
-  private readonly field: Field<any> | null;
+  /** The edit was called off before the editor was made. */
+  readonly cancelled: boolean = false;
+  private readonly field: Field<any> | null = null;
   private custom: unknown;
+  private customText: string | undefined;
   /** A `list` column whose options are still loading. */
   private loadingOptions = false;
   /** The text typed to start editing is in the input. */
   private typedIn = false;
+  /** The lookup editor's own data source, on the adapter of the column's source. */
+  private ownSource: data.DataSource<any, any> | null = null;
+  private disposed = false;
 
   constructor(
     private readonly model: GridModel<T>,
@@ -42,33 +56,50 @@ export class CellEditor<T> {
     private readonly row: T,
     private readonly value: unknown,
     private readonly initialText: string | undefined,
-    host: EditorHost,
+    private readonly host: EditorHost,
     owner: ComponentBase,
+    prepare: (options: Options) => boolean = () => true,
   ) {
     this.custom = value;
     const type = column.type;
-    this.kind = column.editor ? 'custom' : type === 'number' || type === 'date' || type === 'boolean' || type === 'list' ? type : 'text';
+    this.kind = column.editor ? 'custom' : column.lookup ? 'lookup' : type === 'number' || type === 'date' || type === 'boolean' || type === 'list' ? type : 'text';
     const box = new Component<HTMLDivElement>('div');
     this.box = box;
     owner.controls.add(box);
     box.element.className = 'mx-data-grid__editor';
     box.element.dataset.kind = this.kind;
-    let content: unknown;
     if (column.editor) {
+      if (!prepare({})) {
+        this.cancelled = true;
+        return;
+      }
       const ctx: EditorContext<T> = {
         row,
         column,
+        lookup: column.lookup,
         value,
         initialText,
-        setValue: (v) => (this.custom = v),
+        setValue: (v, text) => {
+          this.custom = v;
+          this.customText = text;
+        },
         commit: () => host.commit(),
         cancel: () => host.cancel(),
       };
-      content = column.editor(ctx);
+      const content = column.editor(ctx);
       if (content instanceof Field) content.value = value;
-    } else content = this.createField();
-    this.field = content instanceof Field ? content : null;
-    if (content instanceof ComponentBase) box.controls.add(content);
+      this.field = content instanceof Field ? content : null;
+      if (content instanceof ComponentBase) box.controls.add(content);
+    } else {
+      const options = this.kind === 'lookup' ? this.lookupOptions() : this.options();
+      if (!prepare(options)) {
+        this.cancelled = true;
+        this.ownSource?.dispose();
+        return;
+      }
+      this.field = this.kind === 'lookup' ? this.createLookup(options) : this.createField(options);
+      box.controls.add(this.field);
+    }
     this.field?.element.setAttribute('data-in-cell', '');
   }
 
@@ -81,7 +112,12 @@ export class CellEditor<T> {
     return (this.field as unknown as { focusElement?: HTMLElement } | null)?.focusElement ?? null;
   }
 
-  /** Focuses the editor; the text is selected, or the caret goes after what was typed to start editing. */
+  /** A lookup's list is open. */
+  get listOpen(): boolean {
+    return !!(this.field as unknown as { opened?: boolean } | null)?.opened;
+  }
+
+  /** Focuses the editor; the text is selected, or the caret goes after what was typed to start editing (a lookup's list opens and searches it). */
   focus() {
     const field = this.field;
     if (!field) {
@@ -90,9 +126,19 @@ export class CellEditor<T> {
       return;
     }
     field.focus();
+    const typed = this.initialText !== undefined && !this.typedIn;
+    if (this.kind === 'lookup') {
+      this.typedIn = true;
+      if (!typed || !this.initialText) return;
+      if (field instanceof DropDown) field.open(this.initialText);
+      else if (field instanceof ComboBox) {
+        field.inputElement.value = this.initialText;
+        field.inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      return;
+    }
     const input = this.input;
     if (!(input instanceof HTMLInputElement) || input.type === 'checkbox' || (this.kind !== 'text' && this.kind !== 'number')) return;
-    const typed = this.initialText !== undefined && !this.typedIn;
     if (typed && this.kind === 'number') {
       input.value = this.initialText!;
       input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -112,6 +158,8 @@ export class CellEditor<T> {
         return { ok: true, value: !!field!.value };
       case 'list':
         return { ok: true, value: this.loadingOptions ? this.value : (field!.value ?? null) };
+      case 'lookup':
+        return { ok: true, value: field!.value ?? null };
       case 'date': {
         const box = field as DateBox;
         if (box.unfinished) return { ok: false, message: this.model.text('invalidDate') };
@@ -129,6 +177,13 @@ export class CellEditor<T> {
     }
   }
 
+  /** What the editor chose for its value, to show for that key: the lookup item, or the text a custom editor gave. */
+  chosen(): unknown {
+    if (this.kind === 'custom') return this.customText;
+    const field = this.field as unknown as { selectedItem?: unknown } | null;
+    return this.kind === 'lookup' ? field?.selectedItem : undefined;
+  }
+
   /**
    * Whether a key belongs to the editor rather than to the grid: arrows and Home/End inside text,
    * the arrows of a list, Space, and everything in a custom editor but Tab, Enter and Escape.
@@ -142,7 +197,7 @@ export class CellEditor<T> {
         return this.kind !== 'boolean';
       case 'ArrowUp':
       case 'ArrowDown':
-        return this.kind === 'list' || this.kind === 'custom';
+        return this.kind === 'list' || this.kind === 'lookup' || this.kind === 'custom';
       case 'Enter':
         return false;
       case ' ':
@@ -153,10 +208,12 @@ export class CellEditor<T> {
   }
 
   dispose() {
+    this.disposed = true;
     void this.box.dispose();
+    this.ownSource?.dispose();
   }
 
-  private createField(): Field<any> {
+  private options(): Options {
     const col = this.column;
     const label = read(col.title) ?? '';
     const align = this.model.columns.align(col.field);
@@ -164,29 +221,38 @@ export class CellEditor<T> {
     const common = { label, labelMode: 'hidden' as const };
     switch (this.kind) {
       case 'number':
-        return new NumberBox({ ...common, value: typeof value === 'number' ? value : null, showSpinButtons: false, locale: this.model.formatter.locale, align });
+        return { ...common, value: typeof value === 'number' ? value : null, showSpinButtons: false, locale: this.model.formatter.locale, align };
       case 'date':
-        return new DateBox({ ...common, value: data.toDate(value), locale: this.model.formatter.locale });
+        return { ...common, value: data.toDate(value), locale: this.model.formatter.locale };
       case 'boolean':
-        return new CheckBox({ ...common, value: !!value });
+        return { ...common, value: !!value };
       case 'list':
-        return this.createList();
+        return { label, labelMode: 'hidden', value: value ?? null };
       default:
-        return new TextBox({
-          ...common,
-          value: this.initialText ?? (data.isEmpty(value) ? '' : String(value)),
-          align,
-          spellcheck: false,
-          autocomplete: 'off',
-        });
+        return { ...common, value: this.initialText ?? (data.isEmpty(value) ? '' : String(value)), align, spellcheck: false, autocomplete: 'off' };
     }
   }
 
-  private createList(): Field<any> {
+  private createField(options: Options): Field<any> {
+    switch (this.kind) {
+      case 'number':
+        return new NumberBox(options);
+      case 'date':
+        return new DateBox(options);
+      case 'boolean':
+        return new CheckBox(options);
+      case 'list':
+        return this.createList(options);
+      default:
+        return new TextBox(options);
+    }
+  }
+
+  private createList(options: Options): Field<any> {
     const col = this.column;
-    const list = new DropDown<DropDownItem, unknown>({ label: read(col.title) ?? '', labelMode: 'hidden', value: this.value ?? null });
-    const fill = (options: readonly ListOption[]) => {
-      const items: DropDownItem[] = options.map(optionOf).map((o) => ({ value: o.value, text: o.label }));
+    const list = new DropDown<DropDownItem, unknown>(options);
+    const fill = (choices: readonly ListOption[]) => {
+      const items: DropDownItem[] = choices.map(optionOf).map((o) => ({ value: o.value, text: o.label }));
       if (!col.required) items.unshift({ value: null, text: this.model.text('gridEmptyOption') });
       list.items = items;
       const typed = this.initialText;
@@ -202,13 +268,73 @@ export class CellEditor<T> {
       void Promise.resolve()
         .then(() => source(this.row))
         .catch(() => [] as readonly ListOption[])
-        .then((options) => {
+        .then((choices) => {
           if (list.isDisposed) return;
           this.loadingOptions = false;
           list.readOnly = false;
-          fill(options);
+          fill(choices);
         });
     } else fill(source ?? []);
     return list;
+  }
+
+  /**
+   * The props of a lookup's editor: its items narrowed for the row (`lookup.filter`), from the
+   * array, or from a data source of its own over the column's adapter (so its search never changes
+   * a source the page shows elsewhere), with search, the clear button and `editorOptions`.
+   */
+  private lookupOptions(): Options {
+    const col = this.column;
+    const lookup = col.lookup!;
+    const lookups = this.model.lookups;
+    const items = lookups.items(col);
+    const source = read(lookup.dataSource);
+    const search = lookups.search(col, this.row);
+    const options: Options = {
+      label: read(col.title) ?? '',
+      labelMode: 'hidden',
+      value: data.isEmpty(this.value) ? null : this.value,
+      textField: (item: unknown) => lookups.textOf(col, item),
+      clearButton: lookup.allowClearing ?? false,
+      searchEnabled: true,
+    };
+    if (Array.isArray(source)) {
+      const test = search.filter ? data.createRowFilter<object>(search.filter, { locale: search.locale }) : null;
+      options.items = test ? source.filter((item) => item !== null && typeof item === 'object' && test(item as object)) : source;
+      options.valueField = lookup.valueField ?? ((item: unknown) => items!.valueOf(item));
+    } else if (source) {
+      const keys = (source as data.DataSource<any, any>).adapter.keys.fields;
+      options.valueField = lookup.valueField ?? (keys?.length === 1 ? keys[0] : (item: unknown) => items!.valueOf(item));
+      options.searchEnabled = !!search.searchFields?.length;
+      this.ownSource = new data.DataSource<any, any>({
+        adapter: (source as data.DataSource<any, any>).adapter,
+        loadMode: 'blocks',
+        pageSize: LOOKUP_PAGE,
+        filter: search.filter,
+        searchFields: search.searchFields?.length ? search.searchFields : undefined,
+        params: (source as data.DataSource<any, any>).params,
+      });
+      options.dataSource = this.ownSource;
+    }
+    Object.assign(options, lookup.editorOptions);
+    return options;
+  }
+
+  /** The lookup's editor: a `DropDown` (default), a `ComboBox` (it searches as it is typed in, so it needs a field to search) or a `Lookup`. A pick commits the cell. */
+  private createLookup(options: Options): Field<any> {
+    const kind = this.column.lookup!.editor ?? 'dropdown';
+    const canType = !this.ownSource || options.searchEnabled !== false;
+    let field: Field<any>;
+    if (kind === 'combobox' && canType) {
+      const props = { ...options };
+      delete props.searchEnabled;
+      field = new ComboBox<any, unknown>(props);
+    } else if (kind === 'lookup') field = new Lookup<any, unknown>(options);
+    else field = new DropDown<any, unknown>(options);
+    // Picking an item is the whole edit: the cell keeps it, unless something else (Tab) already moved on.
+    field.onValueChanged((e) => {
+      if (e.byUser) queueMicrotask(() => !this.disposed && this.host.commit());
+    });
+    return field;
   }
 }

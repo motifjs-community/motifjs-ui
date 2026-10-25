@@ -147,4 +147,8 @@ export interface UiStrings {
   gridExporting: string;
   gridExported: string;
   gridExportFailed: string;
+  gridLookupMissing: string;
+  gridLookupLoading: string;
+  gridLookupNoMatch: string;
+  gridLookupSeveral: string;
 }

@@ -254,7 +254,13 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     source.addEventListener('pointercancel', up);
   }
 
-  /** Drag the edge to resize. */
+  /** Width the column takes on screen; more than its setting while it flexes. */
+  shownWidth(field: string): number {
+    const w = this.cellElement(field)?.getBoundingClientRect().width;
+    return w ? Math.round(w) : this.grid.columns.width(field);
+  }
+
+  /** Drag the edge to resize: the column alone, or against the next one. */
   private pressHandle(col: GridColumn<T>, e: PointerEvent) {
     const cols = this.grid.columns;
     if (e.button !== 0 || !cols.can(col.field, 'resizable')) return;
@@ -263,11 +269,18 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     const handle = e.currentTarget as HTMLElement;
     handle.setPointerCapture?.(e.pointerId);
     const startX = e.clientX;
-    const startWidth = cols.width(col.field);
+    const next = cols.partnerOf(col.field);
+    // From the width on screen: a flexing column is wider than its setting.
+    const startWidth = this.shownWidth(col.field);
+    const total = next ? startWidth + this.shownWidth(next) : 0;
     const sign = this.host.isRtl() ? -1 : 1;
     const cell = this.cellElement(col.field)!;
     cell.toggleAttribute('data-resizing', true);
-    const move = (ev: PointerEvent) => cols.resize(col.field, startWidth + sign * (ev.clientX - startX));
+    const move = (ev: PointerEvent) => {
+      const px = startWidth + sign * (ev.clientX - startX);
+      if (next) cols.resizeWithNext(col.field, next, total, px);
+      else cols.resize(col.field, px);
+    };
     const up = () => {
       handle.removeEventListener('pointermove', move);
       handle.removeEventListener('pointerup', up);

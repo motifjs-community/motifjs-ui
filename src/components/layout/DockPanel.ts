@@ -97,13 +97,15 @@ export class DockPanel extends Control<HTMLDivElement, DockPanelProps> {
 
   private get settings(): ChildSettings {
     const self = this as unknown as { [CHILDREN]?: ChildSettings };
-    return (self[CHILDREN] ??= new ChildSettings(this, SETTINGS, {
+    if (self[CHILDREN]) return self[CHILDREN];
+    self[CHILDREN] = new ChildSettings(this, SETTINGS, {
       changed: () => this.arrange(),
       left: (_child, el) => {
         this.clear(el);
         this.arrange();
       },
-    }));
+    });
+    return self[CHILDREN].addPresent();
   }
 
   /** Gives every child its grid area: each docked one takes an edge of what the ones before it left. */

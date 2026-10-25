@@ -103,6 +103,13 @@ describe('Stack', () => {
     expect(child.element.style.flexGrow).toBe('');
   });
 
+  it('takes children added in its ref, before it has read their settings', async () => {
+    const child = new Button({ text: 'A', grow: true });
+    page(<Stack ref={(c: Stack) => c.controls.add(child)} />);
+    await tick();
+    expect(child.element.style.flexGrow).toBe('1');
+  });
+
   it('cascades enabled and visible to what is inside', async () => {
     const s = reactive({ on: true });
     let stack!: Stack;

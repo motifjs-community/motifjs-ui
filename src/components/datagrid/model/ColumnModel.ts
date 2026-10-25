@@ -1,6 +1,7 @@
 import { reactive, read } from '@motifx/core';
 import type { ColumnFeatures } from '../column-features';
 import type { ColumnLayout } from '../column-layout';
+import type { ColumnResizeMode } from '../column-resize-mode';
 import type { GridColumn } from '../grid-column';
 import type { GridLayout } from '../grid-layout';
 import type { GridSettings } from '../grid-settings';
@@ -283,6 +284,40 @@ export class ColumnModel<T> {
     const w = this.clampWidth(field, px);
     this.state.width[field] = w;
     this.state.flex[field] = 0;
+    return w;
+  }
+
+  /** How the column's edge is dragged: its own mode, else the grid's. */
+  resizeModeOf(field: string): ColumnResizeMode {
+    return read(this.get(field).resizeMode) ?? this.settings.get('resizeMode');
+  }
+
+  /**
+   * The column that gives or takes the width when `field` is resized in `'nextColumn'` mode: the
+   * next visible one in its zone, if it can be resized. Without one the column changes alone.
+   */
+  partnerOf(field: string): string | undefined {
+    if (this.resizeModeOf(field) !== 'nextColumn') return undefined;
+    const zone = this.zone(this.zoneOf(field));
+    const next = zone[zone.indexOf(field) + 1];
+    return next !== undefined && this.can(next, 'resizable') ? next : undefined;
+  }
+
+  /**
+   * Moves the edge between a column and the next one: `field` gets `px`, `next` gets the rest of
+   * `total`, both within their limits. Turns flex off for both. Returns the width of `field`.
+   */
+  resizeWithNext(field: string, next: string, total: number, px: number): number {
+    const a = this.get(field);
+    const b = this.get(next);
+    const lo = Math.max(a.minWidth ?? DEFAULT_MIN_WIDTH, total - (b.maxWidth ?? Number.POSITIVE_INFINITY));
+    const hi = Math.min(a.maxWidth ?? Number.POSITIVE_INFINITY, total - (b.minWidth ?? DEFAULT_MIN_WIDTH));
+    if (lo > hi) return this.width(field);
+    const w = Math.round(Math.min(hi, Math.max(lo, px)));
+    this.state.width[field] = w;
+    this.state.width[next] = Math.round(total) - w;
+    this.state.flex[field] = 0;
+    this.state.flex[next] = 0;
     return w;
   }
 

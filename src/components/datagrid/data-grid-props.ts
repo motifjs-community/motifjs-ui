@@ -4,6 +4,7 @@ import type { ControlProps } from '../../core/control';
 import type { UiStrings } from '../../core/ui-strings';
 import type { GridActionItem } from './grid-action-item';
 import type { GridColumn } from './grid-column';
+import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
 import type { GridFilters } from './grid-filters';
 import type { GridLayout } from './grid-layout';
 import type { GridMode } from './grid-mode';
@@ -71,6 +72,8 @@ export interface DataGridProps<T> extends ControlProps {
   /** Keys of the selected rows; a function is followed. The user's changes come through `onSelectionChanged`. */
   selectedKeys?: Bind<readonly unknown[]>;
   onSelectionChanged?: (e: GridSelectionChangedEventArgs) => void;
+  /** Before a cell editor is made: change its props (`e.options`), or `e.cancel` the edit. */
+  onEditorPreparing?: (e: GridEditorPreparingEventArgs<T>) => void;
   /** Initial filters, by field. Read and change them later through `grid.filters`. */
   filters?: GridFilters;
   /**

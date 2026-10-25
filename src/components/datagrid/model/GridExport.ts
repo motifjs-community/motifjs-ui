@@ -28,14 +28,16 @@ export class GridExport<T> {
     const cols = fields.map((f) => model.columns.get(f));
     const shown = options.values !== 'raw';
     const rows = await this.rows(options, signal);
-    const formatter = model.formatter;
+    // Lookup cells export their texts: every key of the rows is resolved first.
+    const lookups = cols.filter((c) => c.lookup && !c.textFrom);
+    if (shown && lookups.length) await model.lookups.load(lookups, rows.map((row) => ({ ...(row as object), ...(model.edit(model.rowIdOf(row))?.draft ?? {}) }) as T));
     return {
       fields,
       rows: rows.map((row) => {
         const rowId = model.rowIdOf(row);
         return cols.map((col) => {
           const value = model.value(rowId, row, col);
-          return shown ? formatter.text(col, row, value) : value;
+          return shown ? model.shownText(rowId, row, col, value) : value;
         });
       }),
     };

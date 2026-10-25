@@ -1,6 +1,8 @@
 export { DataGrid } from './DataGrid';
 export type { DataGridProps } from './data-grid-props';
 export type { GridColumn } from './grid-column';
+export type { GridLookup } from './grid-lookup';
+export type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
 export type { GridSettings } from './grid-settings';
 export type { GridSettingsProps } from './grid-settings-props';
 export type { ColumnFeatures } from './column-features';
@@ -11,6 +13,7 @@ export type { ListOption } from './list-option';
 export type { GridLayout } from './grid-layout';
 export type { ColumnLayout } from './column-layout';
 export type { StickySide } from './sticky-side';
+export type { ColumnResizeMode } from './column-resize-mode';
 export type { GridMode } from './grid-mode';
 export type { GridChanges } from './grid-changes';
 export type { RowChange } from './row-change';

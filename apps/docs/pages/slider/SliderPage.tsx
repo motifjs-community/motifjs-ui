@@ -1,8 +1,15 @@
-import { reactive, type Component } from '@motifx/core';
-import { Button, enStrings, Slider, trStrings, uiLocale, type SliderShowValue, type SliderValue } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import FromCode from './examples/FromCode';
+import Localization from './examples/Localization';
+import Range from './examples/Range';
+import States from './examples/States';
+import StepsAndMarks from './examples/StepsAndMarks';
+import UpdateOn from './examples/UpdateOn';
+import ValueBubble from './examples/ValueBubble';
+import Vertical from './examples/Vertical';
 
-const SHOW: SliderShowValue[] = ['never', 'drag', 'always'];
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['value', '`Bind<number | [number, number]>`', '`min` / `[min, max]`', 'The value; `[start, end]` with `range`. `x-model` binds it two-way. It is kept on the steps and inside the bounds.'],
@@ -82,36 +89,7 @@ const TOKENS = [
   ['field.width', 'The width of a horizontal slider, as for every field.'],
 ];
 
-const EURO: Intl.NumberFormatOptions = { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 };
-
 export default function SliderPage() {
-  const s = reactive({
-    volume: 40,
-    price: [120, 380] as SliderValue,
-    zoom: 100,
-    rating: 6,
-    temp: 21,
-    show: 'drag' as SliderShowValue,
-    bass: 4,
-    mid: 0,
-    treble: -2,
-    live: 50,
-    committed: 50,
-    age: 16,
-    editable: true,
-    lang: 'en',
-    result: '',
-  });
-  let added = 0;
-  let host: Component<HTMLDivElement> | null = null;
-
-  const addFromCode = () => {
-    const slider = new Slider({ label: `Slider ${++added}`, value: 50, showValue: 'drag' });
-    slider.onValueChanged((e) => (s.result = `${slider.label}: ${String(e.value)}`));
-    host?.controls.add(slider);
-    slider.focus();
-  };
-
   return (
     <>
       <p class="lead">
@@ -132,23 +110,8 @@ import { Slider, type SliderValue } from '@motifx-community/ui';
         <p>
           <Rich text="Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set from code." />
         </p>
-        <Example
-          code={`
-<Slider label="&Volume" x-model={() => this.settings.volume} />
-
-const zoom = new Slider({ label: 'Zoom', min: 25, max: 400, step: 25 });
-zoom.onValueChanged((e) => console.log(e.value, e.byUser));
-this.panel.controls.add(zoom);
-zoom.value = 100;
-`}
-          stack
-        >
-          <Slider label="&Volume" x-model={() => s.volume} helpText={() => `Volume: ${s.volume}`} />
-          <div class="docs-flow">
-            <Button text="Add a slider from code" variant="outline" onclick={addFromCode} />
-            <output class="sl-result">{() => s.result}</output>
-          </div>
-          <div class="docs-flow" ref={(c: Component<HTMLDivElement>) => (host = c)} />
+        <Example files={code('FromCode.tsx')} stack>
+          <FromCode />
         </Example>
       </Section>
 
@@ -156,23 +119,8 @@ zoom.value = 100;
         <p>
           <Rich text="With `range` there are two thumbs and the value is `[start, end]`. The thumbs cannot cross; `minDistance` keeps them apart. A press on the track moves the nearer thumb." />
         </p>
-        <Example
-          code={`
-<Slider
-  label="Price"
-  range
-  max={500}
-  step={10}
-  minDistance={50}
-  format={{ style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }}
-  showValue="drag"
-  x-model={() => this.filter.price}
-/>
-`}
-          stack
-        >
-          <Slider label="Price" range max={500} step={10} minDistance={50} format={EURO} showValue="drag" x-model={() => s.price} />
-          <output class="sl-price">{() => `value: [${(s.price as number[]).join(', ')}]`}</output>
+        <Example files={code('Range.tsx')} stack>
+          <Range />
         </Example>
       </Section>
 
@@ -180,17 +128,8 @@ zoom.value = 100;
         <p>
           <Rich text="`step` sets the values a thumb stops at. `ticks` draws a mark at every step, or with a number that many equal parts; `tickLabels` writes the values under them." />
         </p>
-        <Example
-          code={`
-<Slider label="Zoom" min={25} max={200} step={25} ticks tickLabels format={{ style: 'unit', unit: 'percent' }} />
-<Slider label="Rating" max={10} ticks={5} tickLabels />
-<Slider label="Opacity" max={1} step={0} tickLabels format={{ style: 'percent' }} />
-`}
-          stack
-        >
-          <Slider label="Zoom" min={25} max={200} step={25} ticks tickLabels format={{ style: 'unit', unit: 'percent' }} x-model={() => s.zoom} />
-          <Slider label="Rating" max={10} ticks={5} tickLabels x-model={() => s.rating} />
-          <Slider label="Opacity" max={1} step={0} value={0.5} tickLabels showValue="drag" format={{ style: 'percent' }} />
+        <Example files={code('StepsAndMarks.tsx')} stack>
+          <StepsAndMarks />
         </Example>
       </Section>
 
@@ -198,42 +137,8 @@ zoom.value = 100;
         <p>
           <Rich text="`showValue` puts the value in a bubble over the thumb while it is moved (`drag`, also while a key moves it) or `always`. `format` writes it with `Intl.NumberFormat`; `valueText` gives screen readers their own words." />
         </p>
-        <Example
-          code={`
-<Slider
-  label="Temperature"
-  min={16}
-  max={28}
-  step={0.5}
-  showValue="always"
-  format={{ style: 'unit', unit: 'celsius' }}
-  valueText={(v) => \`\${v} degrees\`}
-/>
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Show value">
-            {SHOW.map((show) => (
-              <Button
-                key={show}
-                text={show}
-                size="sm"
-                variant={() => (s.show === show ? 'solid' : 'ghost')}
-                aria-pressed={() => s.show === show}
-                onclick={() => (s.show = show)}
-              />
-            ))}
-          </div>
-          <Slider
-            label="Temperature"
-            min={16}
-            max={28}
-            step={0.5}
-            showValue={() => s.show}
-            format={{ style: 'unit', unit: 'celsius' }}
-            valueText={(v) => `${v} degrees`}
-            x-model={() => s.temp}
-          />
+        <Example files={code('ValueBubble.tsx')} stack>
+          <ValueBubble />
         </Example>
       </Section>
 
@@ -241,14 +146,8 @@ zoom.value = 100;
         <p>
           <Rich text={'`orientation="vertical"` stands the track up; up is more, and the Up arrow moves it up.'} />
         </p>
-        <Example
-          code={`
-<Slider label="Bass" orientation="vertical" min={-12} max={12} ticks={4} tickLabels showValue="drag" />
-`}
-        >
-          <Slider label="Bass" orientation="vertical" min={-12} max={12} ticks={4} tickLabels showValue="drag" x-model={() => s.bass} />
-          <Slider label="Mid" orientation="vertical" min={-12} max={12} ticks={4} tickLabels showValue="drag" x-model={() => s.mid} />
-          <Slider label="Treble" orientation="vertical" min={-12} max={12} ticks={4} tickLabels showValue="drag" x-model={() => s.treble} />
+        <Example files={code('Vertical.tsx')}>
+          <Vertical />
         </Example>
       </Section>
 
@@ -256,42 +155,14 @@ zoom.value = 100;
         <p>
           <Rich text={'By default the value follows the thumb while it is dragged. With `updateOn="change"` it changes once, when the thumb is let go — for work that should not run on every move, such as a search. The keys change it at once either way.'} />
         </p>
-        <Example
-          code={`
-<Slider label="Live" x-model={() => this.live} />
-<Slider label="On release" updateOn="change" x-model={() => this.committed} />
-`}
-          stack
-        >
-          <Slider label="Live" showValue="drag" x-model={() => s.live} />
-          <output class="sl-live">{() => `live: ${s.live}`}</output>
-          <Slider label="On release" updateOn="change" showValue="drag" x-model={() => s.committed} />
-          <output class="sl-committed">{() => `on release: ${s.committed}`}</output>
+        <Example files={code('UpdateOn.tsx')} stack>
+          <UpdateOn />
         </Example>
       </Section>
 
       <Section anchor="states" title="Sizes, read-only, disabled, validation">
-        <Example
-          code={`
-<Slider label="Small" size="sm" />
-<Slider label="Read-only" value={30} readOnly={() => !this.editing} />
-<Slider label="Disabled" value={30} enabled={() => this.editing} />
-<Slider label="Age" max={99} validateOn="input"
-  rules={[{ type: 'range', min: 18, message: 'You must be 18 or older.' }]} />
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <Slider label="Small" size="sm" value={30} />
-            <Slider label="Medium" value={50} />
-            <Slider label="Large" size="lg" value={70} />
-          </div>
-          <Button text="Toggle" variant="outline" onclick={() => (s.editable = !s.editable)} />
-          <div class="docs-flow">
-            <Slider label="Read-only" value={30} readOnly={() => !s.editable} />
-            <Slider label="Disabled" range value={[20, 60]} enabled={() => s.editable} />
-          </div>
-          <Slider label="Age" max={99} validateOn="input" rules={[{ type: 'range', min: 18, message: 'You must be 18 or older.' }]} x-model={() => s.age} />
+        <Example files={code('States.tsx')} stack>
+          <States />
         </Example>
       </Section>
 
@@ -307,23 +178,8 @@ zoom.value = 100;
         <p>
           <Rich text="The names of the two thumbs of a range come from `uiLocale.strings` (`minimum`, `maximum`); numbers are written in `locale`, by default the page's `lang`." />
         </p>
-        <Example
-          code={`
-uiLocale.strings = trStrings;
-<Slider label="Fiyat" range locale="tr" format={{ style: 'currency', currency: 'TRY' }} />
-`}
-        >
-          <Button
-            text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')}
-            variant="outline"
-            onclick={() => {
-              s.lang = s.lang === 'en' ? 'tr' : 'en';
-              uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
-            }}
-          />
-          <span>
-            The start thumb is named <output class="sl-minimum">{() => uiLocale.strings.minimum}</output>
-          </span>
+        <Example files={code('Localization.tsx')}>
+          <Localization />
         </Example>
       </Section>
 

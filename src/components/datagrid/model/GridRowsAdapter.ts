@@ -1,13 +1,19 @@
 import { data } from '@motifx-community/data';
 import type { GridColumn } from '../grid-column';
+import type { RowsSorting } from './rows-sorting';
 
 /**
  * The adapter the grid puts its `rows` in: an `ArrayAdapter` that sorts and filters by the columns'
  * own `value` readers, sorts with their `compare` functions, and gives a new row the next number when
- * the key is a number field.
+ * the key is a number field. `sorting` can read a column another way for sorting (a lookup's text)
+ * and wait for what that needs before the rows are sorted.
  */
 export class GridRowsAdapter<T extends object> extends data.ArrayAdapter<T, unknown> {
-  constructor(options: data.ArrayAdapterOptions<T>, column: (field: string) => GridColumn<T>) {
+  constructor(
+    options: data.ArrayAdapterOptions<T>,
+    column: (field: string) => GridColumn<T>,
+    private readonly sorting?: RowsSorting<T>,
+  ) {
     super({
       createKey: (_values, rows) => {
         const field = typeof options.key === 'string' ? options.key : '';
@@ -19,10 +25,15 @@ export class GridRowsAdapter<T extends object> extends data.ArrayAdapter<T, unkn
         }
         return max + 1;
       },
-      sortValue: (field) => column(field).value,
+      sortValue: (field) => (sorting ? sorting.sortValue(field) : column(field).value),
       filterValue: (field) => column(field).value,
       compare: (field) => column(field).compare,
       ...options,
     });
+  }
+
+  protected override async loadRows(options: data.LoadOptions): Promise<data.LoadResult<T>> {
+    if (this.sorting && options.sort?.length) await this.sorting.beforeSort(options.sort, this.rows);
+    return super.loadRows(options);
   }
 }

@@ -1,15 +1,14 @@
-import { reactive } from '@motifx/core';
-import { Button, enStrings, toast, Toaster, trStrings, uiLocale, type Toast, type ToastPosition, type ToastTone } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import DurationAndUpdate from './examples/DurationAndUpdate';
+import FromCode from './examples/FromCode';
+import Localization from './examples/Localization';
+import OwnToaster from './examples/OwnToaster';
+import Positions from './examples/Positions';
+import Tones from './examples/Tones';
+import Undo from './examples/Undo';
 
-const TONES: { tone: ToastTone; text: string }[] = [
-  { tone: 'info', text: 'A new version is ready.' },
-  { tone: 'success', text: 'Your changes are saved.' },
-  { tone: 'caution', text: 'Your session ends in 5 minutes.' },
-  { tone: 'danger', text: 'The server did not answer.' },
-];
-
-const POSITIONS: ToastPosition[] = ['top-start', 'top', 'top-end', 'bottom-start', 'bottom', 'bottom-end'];
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const OPTIONS = [
   ['text', '`Bind<string>`', "`''`", 'The message.'],
@@ -81,44 +80,6 @@ const TOKENS = [
 ];
 
 export default function ToastPage() {
-  const s = reactive({
-    mails: ['Invoice #1042', 'Team lunch on Friday', 'Your order shipped'],
-    progress: 0,
-    uploading: false,
-    max: 2,
-    count: 0,
-    reason: '',
-    lang: 'en',
-  });
-  let demo: Toaster | null = null;
-
-  const archive = () => {
-    const mail = s.mails.shift();
-    if (!mail) return;
-    toast.info(`“${mail}” archived.`, { action: { text: 'Undo', click: () => s.mails.unshift(mail) } });
-  };
-
-  const upload = () => {
-    if (s.uploading) return;
-    s.uploading = true;
-    s.progress = 0;
-    const t = toast.show({ title: 'report.pdf', text: () => `Uploading… ${s.progress}%`, duration: 0, closeButton: false });
-    const timer = setInterval(() => {
-      s.progress = Math.min(100, s.progress + 10);
-      if (s.progress < 100) return;
-      clearInterval(timer);
-      s.uploading = false;
-      t.update({ text: 'Uploaded.', tone: 'success', duration: 4000, closeButton: true });
-    }, 300);
-    void t.closed.then(() => clearInterval(timer));
-  };
-
-  const watch = async () => {
-    s.reason = 'waiting…';
-    const t: Toast = toast.show({ text: 'Close me any way you like.', duration: 3000, action: { text: 'Done' } });
-    s.reason = `closed by: ${await t.closed}`;
-  };
-
   return (
     <>
       <p class="lead">
@@ -138,19 +99,8 @@ import { toast, Toast, Toaster, type ToastTone, type ToastPosition } from '@moti
         <p>
           <Rich text="`toast.show()` and its tone shortcuts return the `Toast`, an object you can `close()`, `update()` or await. They use `Toaster.default`, made in `document.body` the first time; an app can put a `Toaster` of its own where it wants it in JSX and make it the default." />
         </p>
-        <Example
-          code={`
-toast.success('Your changes are saved.');
-const t = toast.show({ title: 'Export', text: 'Preparing the file…', duration: 0 });
-t.close();
-
-// In the app's layout: the region where it belongs in the Tab order.
-<Toaster position="top" ref={(t) => (Toaster.default = t)} />
-`}
-        >
-          <Button text="Show a toast" tone="accent" onclick={() => toast.success('Your changes are saved.', { title: 'Saved' })} />
-          <Button text="Watch how it closes" variant="outline" onclick={watch} />
-          <output class="toast-reason">{() => s.reason}</output>
+        <Example files={code('FromCode.tsx')}>
+          <FromCode />
         </Example>
       </Section>
 
@@ -158,17 +108,8 @@ t.close();
         <p>
           <Rich text="`tone` sets the glyph, its color, and how a screen reader reads the toast: politely for `info` and `success`, at once for `caution` and `danger`." />
         </p>
-        <Example
-          code={`
-toast.info('A new version is ready.');
-toast.success('Your changes are saved.');
-toast.caution('Your session ends in 5 minutes.');
-toast.danger('The server did not answer.', { title: 'Not sent' });
-`}
-        >
-          {TONES.map(({ tone, text }) => (
-            <Button key={tone} text={tone} variant="outline" onclick={() => toast.show({ tone, text })} />
-          ))}
+        <Example files={code('Tones.tsx')}>
+          <Tones />
         </Example>
       </Section>
 
@@ -176,19 +117,8 @@ toast.danger('The server did not answer.', { title: 'Not sent' });
         <p>
           <Rich text="`action` adds a button; it runs `click`, then closes the toast. Make the undone thing come back, rather than asking first." />
         </p>
-        <Example
-          code={`
-const mail = this.mails.shift();
-toast.info(\`“\${mail}” archived.\`, {
-  action: { text: 'Undo', click: () => this.mails.unshift(mail) },
-});
-`}
-          stack
-        >
-          <p class="toast-mails">{() => (s.mails.length ? `Inbox: ${s.mails.join(' · ')}` : 'The inbox is empty.')}</p>
-          <div class="docs-flow">
-            <Button text="Archive the first" variant="outline" enabled={() => s.mails.length > 0} onclick={archive} />
-          </div>
+        <Example files={code('Undo.tsx')} stack>
+          <Undo />
         </Example>
       </Section>
 
@@ -196,16 +126,8 @@ toast.info(\`“\${mail}” archived.\`, {
         <p>
           <Rich text="`duration` is 5 seconds by default; `0` keeps the toast until it is closed. Every option takes a function too, and `update()` changes a shown toast and starts its time again." />
         </p>
-        <Example
-          code={`
-const t = toast.show({ text: () => \`Uploading… \${this.progress}%\`, duration: 0, closeButton: false });
-// … when it is done:
-t.update({ text: 'Uploaded.', tone: 'success', duration: 4000, closeButton: true });
-`}
-        >
-          <Button text="Upload a file" variant="outline" enabled={() => !s.uploading} onclick={upload} />
-          <Button text="A toast that stays" variant="outline" onclick={() => toast.caution('This one stays until you close it.', { duration: 0 })} />
-          <Button text="Close all" variant="ghost" onclick={() => toast.closeAll()} />
+        <Example files={code('DurationAndUpdate.tsx')}>
+          <DurationAndUpdate />
         </Example>
       </Section>
 
@@ -213,14 +135,8 @@ t.update({ text: 'Uploaded.', tone: 'success', duration: 4000, closeButton: true
         <p>
           <Rich text="Six positions; start and end follow the reading direction. The newest toast is nearest the edge. A toast's `position` beats its toaster's." />
         </p>
-        <Example
-          code={`
-toast.info('Up here', { position: 'top' });
-`}
-        >
-          {POSITIONS.map((position) => (
-            <Button key={position} text={position} size="sm" variant="outline" onclick={() => toast.info(`At ${position}.`, { position })} />
-          ))}
+        <Example files={code('Positions.tsx')}>
+          <Positions />
         </Example>
       </Section>
 
@@ -228,33 +144,8 @@ toast.info('Up here', { position: 'top' });
         <p>
           <Rich text="A `Toaster` is the region the toasts show in. `max` limits how many show at once at one position; the rest wait and come in as others close. This one sits right here in the page, so Tab reaches its toasts after these buttons." />
         </p>
-        <Example
-          code={`
-<Toaster ref={(t) => (this.uploads = t)} position="top-start" max={() => this.max} text="Upload notifications" />
-
-this.uploads.show({ text: 'photo.jpg is uploaded.', tone: 'success' });
-`}
-        >
-          <Toaster ref={(t: Toaster) => (demo = t)} position="top-start" max={() => s.max} text="Demo notifications" />
-          <div class="docs-flow" role="group" aria-label="Max">
-            {[1, 2, 3].map((max) => (
-              <Button
-                key={max}
-                text={`max ${max}`}
-                size="sm"
-                variant={() => (s.max === max ? 'solid' : 'ghost')}
-                aria-pressed={() => s.max === max}
-                onclick={() => (s.max = max)}
-              />
-            ))}
-          </div>
-          <Button
-            text="Add five"
-            variant="outline"
-            onclick={() => {
-              for (let i = 0; i < 5; i++) demo?.success(`photo-${++s.count}.jpg is uploaded.`, { duration: 3000 });
-            }}
-          />
+        <Example files={code('OwnToaster.tsx')}>
+          <OwnToaster />
         </Example>
       </Section>
 
@@ -270,20 +161,8 @@ this.uploads.show({ text: 'photo.jpg is uploaded.', tone: 'success' });
         <p>
           <Rich text="The name of the region and of the close button come from `uiLocale.strings` (`notifications`, `close`) and follow a change at once." />
         </p>
-        <Example
-          code={`
-uiLocale.strings = trStrings;
-`}
-        >
-          <Button
-            text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')}
-            variant="outline"
-            onclick={() => {
-              s.lang = s.lang === 'en' ? 'tr' : 'en';
-              uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
-            }}
-          />
-          <Button text="Show a toast" variant="outline" onclick={() => toast.info(s.lang === 'en' ? 'Hello.' : 'Merhaba.')} />
+        <Example files={code('Localization.tsx')}>
+          <Localization />
         </Example>
       </Section>
 

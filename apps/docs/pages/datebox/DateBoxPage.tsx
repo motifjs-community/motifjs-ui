@@ -1,9 +1,12 @@
-import { reactive } from '@motifx/core';
-import { Button, DateBox, ValidationGroup, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import FromCode from './examples/FromCode';
+import Limits from './examples/Limits';
+import Locales from './examples/Locales';
+import Localization from './examples/Localization';
+import TimeAndDate from './examples/TimeAndDate';
 
-const today = new Date();
-const inDays = (n: number) => new Date(today.getFullYear(), today.getMonth(), today.getDate() + n);
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['value', '`Bind<Date | null>`', '`null`', 'The date. `x-model` binds it two-way.'],
@@ -37,16 +40,6 @@ const A11Y = [
 ];
 
 export default function DateBoxPage() {
-  const s = reactive({
-    day: inDays(3) as Date | null,
-    meeting: null as Date | null,
-    alarm: null as Date | null,
-    trip: null as Date | null,
-    lang: 'en',
-    result: '',
-  });
-  const group = new ValidationGroup();
-
   return (
     <>
       <p class="lead">
@@ -63,17 +56,8 @@ import { DateBox } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="ways" title="From JSX and from code">
-        <Example
-          code={`
-<DateBox label="&Delivery" x-model={() => this.order.delivery} />
-
-const due = new DateBox({ label: 'Due', locale: 'tr-TR', clearButton: true });
-due.value = new Date(2026, 9, 25);
-this.panel.controls.add(due);
-`}
-        >
-          <DateBox label="&Delivery" x-model={() => s.day} clearButton />
-          <output class="db-day">{() => (s.day ? s.day.toDateString() : '—')}</output>
+        <Example files={code('FromCode.tsx')}>
+          <FromCode />
         </Example>
       </Section>
 
@@ -81,63 +65,20 @@ this.panel.controls.add(due);
         <p>
           <Rich text="The mask follows the locale: day, month and year in its order, with its separators. Month and day names in the calendar, and the first day of the week, come from it too." />
         </p>
-        <Example
-          code={`
-<DateBox label="Türkçe" locale="tr-TR" />
-<DateBox label="English (US)" locale="en-US" />
-<DateBox label="日本語" locale="ja-JP" />
-`}
-        >
-          <DateBox label="Türkçe" locale="tr-TR" x-model={() => s.trip} />
-          <DateBox label="English (US)" locale="en-US" x-model={() => s.trip} />
-          <DateBox label="日本語" locale="ja-JP" x-model={() => s.trip} />
+        <Example files={code('Locales.tsx')}>
+          <Locales />
         </Example>
       </Section>
 
       <Section anchor="types" title="Time and date with time">
-        <Example
-          code={`
-<DateBox label="Meeting" type="datetime" timeStep={15} displayFormat={{ dateStyle: 'medium', timeStyle: 'short' }} />
-<DateBox label="Alarm" type="time" />
-`}
-        >
-          <DateBox label="Meeting" type="datetime" timeStep={15} displayFormat={{ dateStyle: 'medium', timeStyle: 'short' }} x-model={() => s.meeting} stretch />
-          <DateBox label="Alarm" type="time" x-model={() => s.alarm} />
+        <Example files={code('TimeAndDate.tsx')}>
+          <TimeAndDate />
         </Example>
       </Section>
 
       <Section anchor="limits" title="Limits and validation">
-        <Example
-          code={`
-<DateBox
-  label="Appointment"
-  required
-  min={new Date()}
-  max={inDays(60)}
-  disabledDates={(d) => d.getDay() === 0 || d.getDay() === 6}
-  validationGroup={group}
-/>
-`}
-        >
-          <DateBox
-            label="Appointment"
-            required
-            min={today}
-            max={inDays(60)}
-            disabledDates={(d: Date) => d.getDay() === 0 || d.getDay() === 6}
-            helpText="A weekday in the next 60 days."
-            validationGroup={group}
-            showTodayButton
-          />
-          <Button
-            text="Check"
-            variant="outline"
-            onclick={async () => {
-              const result = await group.validate();
-              s.result = result.valid ? 'Booked.' : 'Pick a weekday in the next 60 days.';
-            }}
-          />
-          <output class="db-check">{() => s.result}</output>
+        <Example files={code('Limits.tsx')}>
+          <Limits />
         </Example>
       </Section>
 
@@ -153,19 +94,8 @@ this.panel.controls.add(due);
         <p>
           <Rich text="Button names and messages come from `uiLocale.strings`; dates and names from `locale`." />
         </p>
-        <Example
-          code={`
-uiLocale.strings = trStrings;
-`}
-        >
-          <Button
-            text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')}
-            variant="outline"
-            onclick={() => {
-              s.lang = s.lang === 'en' ? 'tr' : 'en';
-              uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
-            }}
-          />
+        <Example files={code('Localization.tsx')}>
+          <Localization />
         </Example>
       </Section>
 

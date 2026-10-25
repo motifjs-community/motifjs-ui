@@ -87,9 +87,10 @@ export class FilterModel<T> {
     return false;
   }
 
-  /** The conditions the filter row offers for a column; none for a check box column. */
+  /** The conditions the filter row offers for a column; none for a check box column and a lookup column (always `=`). */
   operators(field: string): readonly GridFilterOperator[] {
     const col = this.columns.get(field);
+    if (col.lookup) return [];
     const own = col.filterOperators?.length ? col.filterOperators : null;
     switch (col.type) {
       case 'boolean':
@@ -113,11 +114,14 @@ export class FilterModel<T> {
     return col.filterOperator && ops.includes(col.filterOperator) ? col.filterOperator : (ops[0] ?? '=');
   }
 
-  /** Every column's filter together (AND); `skipValuesOf` leaves one column's header values out (for its own value list). */
-  expression(skipValuesOf?: string): data.FilterExpression | null {
+  /**
+   * Every column's filter together (AND); `skipValuesOf` leaves one column's header values out (for
+   * its own value list), `skipColumn` its whole filter (a lookup's lists honor only the other columns).
+   */
+  expression(skipValuesOf?: string, skipColumn?: string): data.FilterExpression | null {
     const parts: (data.FilterExpression | null)[] = [];
     for (const [field, f] of Object.entries(this.state.columns)) {
-      if (!this.columns.defs.has(field)) continue;
+      if (!this.columns.defs.has(field) || field === skipColumn) continue;
       parts.push(this.rowPart(field, f));
       if (field !== skipValuesOf) parts.push(this.valuesPart(field, f));
     }
@@ -128,6 +132,7 @@ export class FilterModel<T> {
     if (!this.columns.can(field, 'filterRow')) return null;
     const col = this.columns.get(field);
     if (col.type === 'boolean') return typeof f.value === 'boolean' ? data.where(field, '=', f.value) : null;
+    if (col.lookup) return empty(f.value) ? null : data.where(field, '=', f.value);
     const op = this.operator(field);
     if (op === 'isblank' || op === 'isnotblank') return data.where(field, op);
     if (op === 'between') {

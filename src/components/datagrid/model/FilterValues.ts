@@ -3,6 +3,7 @@ import type { GridFilterValue } from '../grid-filter-value';
 import type { GridValuesResult } from '../grid-values-result';
 import { cellValue } from './cell-value';
 import type { GridModel } from './GridModel';
+import { LookupValues } from './LookupValues';
 import type { ValueLoader } from './value-loader';
 import { ValueListAdapter } from './ValueListAdapter';
 
@@ -19,24 +20,31 @@ const isBlank = (v: unknown) => v === undefined || v === null || (typeof v === '
  * groups (one grouped load per part, with counts). Every way honors the other filters.
  */
 export class FilterValues<T> {
-  constructor(private readonly model: GridModel<T>) {}
+  /** The lists of the lookup columns. */
+  readonly lookups: LookupValues<T>;
 
-  /** Whether the values of the column can be listed at all. */
-  available(): boolean {
+  constructor(private readonly model: GridModel<T>) {
+    this.lookups = new LookupValues<T>(model);
+  }
+
+  /** Whether the values of the column can be listed at all (a lookup column's always can: from its source). */
+  available(field?: string): boolean {
+    if (field !== undefined && this.model.columns.get(field).lookup) return true;
     const source = this.model.data.source;
     return !!this.model.loadValues || source.loadMode === 'all' || source.adapter.capabilities.group;
   }
 
-  /** Whether the list can search: always in memory; on a server, text columns only. */
+  /** Whether the list can search: always in memory and in a lookup column (by text); on a server, text columns only. */
   searchable(field: string): boolean {
-    if (this.model.loadValues || this.model.data.source.loadMode === 'all') return true;
     const col = this.model.columns.get(field);
+    if (col.lookup || this.model.loadValues || this.model.data.source.loadMode === 'all') return true;
     return (col.type ?? 'text') === 'text' && !col.value;
   }
 
   /** A source of the column's values for the list, made for one opening of the header filter. */
   source(field: string): data.DataSource<GridFilterValue, unknown> {
     const col = this.model.columns.get(field);
+    if (col.lookup) return this.lookups.source(field, 'blank');
     const textOf = (value: unknown) => (isBlank(value) ? this.model.text('gridEmptyOption') : this.model.formatter.text(col, {} as T, value));
     const adapter = new ValueListAdapter(this.loader(field), textOf);
     return new data.DataSource<GridFilterValue, unknown>({ adapter, loadMode: 'blocks', pageSize: PAGE, searchFields: ['text'] });

@@ -1,87 +1,28 @@
-import { reactive, type Component } from '@motifx/core';
-import { data } from '@motifx-community/data';
-import { Button, CheckBox, DataGrid, enStrings, trStrings, uiLocale, type GridAction, type GridColumn } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
-import { SlowAdapter } from '../../shared/slow-adapter';
+import { slowAdapterFile } from '../../shared/slow-adapter-file';
+import { sources } from '../../shared/sources';
+import BatchSave from './examples/BatchSave';
+import Cascade from './examples/Cascade';
+import Clipboard from './examples/Clipboard';
+import Export from './examples/Export';
+import Filters from './examples/Filters';
+import FromCode from './examples/FromCode';
+import KeepLayout from './examples/KeepLayout';
+import Localization from './examples/Localization';
+import Lookups from './examples/Lookups';
+import NewRows from './examples/NewRows';
+import Pages from './examples/Pages';
+import RowActions from './examples/RowActions';
+import SaveModes from './examples/SaveModes';
+import Selection from './examples/Selection';
+import Switches from './examples/Switches';
+import TextFrom from './examples/TextFrom';
+import Virtual from './examples/Virtual';
 
-interface Order {
-  id: number;
-  customer: string;
-  city: string;
-  date: string;
-  status: string;
-  paid: boolean;
-  amount: number;
-  note: string;
-}
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
-const CUSTOMERS = ['Ada Lovelace', 'Grace Hopper', 'Alan Turing', 'Cahit Arf', 'Katherine Johnson', 'Edsger Dijkstra', 'Barbara Liskov', 'Donald Knuth', 'İlhan Koman', 'Margaret Hamilton'];
-const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
-const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
-const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
-
-function makeOrders(n: number): Order[] {
-  const day = Date.UTC(2026, 0, 1);
-  return Array.from({ length: n }, (_, i) => ({
-    id: i + 1,
-    customer: CUSTOMERS[(i * 7) % CUSTOMERS.length],
-    city: CITIES[(i * 3) % CITIES.length],
-    date: new Date(day + ((i * 37) % 300) * 86_400_000).toISOString().slice(0, 10),
-    status: STATUSES[i % STATUSES.length],
-    paid: i % 3 === 0,
-    amount: ((i * 7919) % 100_000) / 100,
-    note: NOTES[i % NOTES.length],
-  }));
-}
-
-const money = new Intl.NumberFormat('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-const COLUMNS: GridColumn<Order>[] = [
-  { field: 'id', title: 'No', type: 'number', width: 80, sticky: 'start', editable: false },
-  { field: 'customer', title: 'Customer', width: 180, flex: 1, required: true },
-  { field: 'city', title: 'City', type: 'list', width: 120, options: CITIES },
-  { field: 'date', title: 'Date', type: 'date', width: 130, editable: false, creatable: true },
-  { field: 'status', title: 'Status', type: 'list', width: 120, options: STATUSES, required: true },
-  { field: 'paid', title: 'Paid', type: 'boolean', width: 80 },
-  { field: 'note', title: 'Note', width: 200 },
-  {
-    field: 'amount',
-    title: 'Amount',
-    type: 'number',
-    width: 120,
-    sticky: 'end',
-    required: true,
-    validate: (v) => (typeof v === 'number' && v < 0 ? 'The amount cannot be negative.' : null),
-    format: (v) => (typeof v === 'number' ? money.format(v) : ''),
-  },
-];
-
-/** The columns of the filter examples: a filter cell and a header filter on most of them. */
-const FILTER_COLUMNS: GridColumn<Order>[] = COLUMNS.map((c) => ({ ...c, filterRow: c.field !== 'note', headerFilter: c.field !== 'note' && c.field !== 'id' }));
-
-const today = () => new Date().toISOString().slice(0, 10);
-const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
-
-/** Orders in memory that answer like a server, and turn down a note with "error" in it. */
-class OrderService extends SlowAdapter<Order, number> {
-  protected override updateRow(key: number, changes: Partial<Order>): Promise<Partial<Order>> {
-    return this.later(changes, () => super.updateRow(key, changes));
-  }
-
-  protected override insertRow(values: Partial<Order>): Promise<Partial<Order>> {
-    return this.later(values, () => super.insertRow(values));
-  }
-
-  private later(values: Partial<Order>, save: () => Promise<Partial<Order>>): Promise<Partial<Order>> {
-    const message = 'The server does not take this note.';
-    return new Promise((done, fail) =>
-      setTimeout(() => {
-        if (String(values.note ?? '').includes('error')) fail(data.DataError.create('MJD202', { operation: 'save', fields: { note: message } }, message));
-        else save().then(done, fail);
-      }, 300),
-    );
-  }
-}
+/** An example's file, then the order data it uses. */
+const withOrders = (name: string, ...more: string[]) => code(name, ...more, 'orders.ts', 'order.ts');
 
 const PROPS = [
   ['columns', '`GridColumn<T>[]`', '—', 'The column definitions, in their first order. See Columns below.'],
@@ -104,6 +45,7 @@ const PROPS = [
   ['selectedKeys / onSelectionChanged', '`Bind<unknown[]>` / `(e) => void`', '—', 'Keys of the selected rows (a function is followed); told after every change of the selection.'],
   ['filters', '`GridFilters`', '—', 'The first filters, by field: `{ city: { op: \'=\', value: \'Ankara\' }, status: { values: [\'Draft\'] } }`.'],
   ['loadValues', '`(request) => { values, total }`', '—', 'The values of a header filter from a server that cannot group: `{ column, search, filter, skip, take, signal }`.'],
+  ['onEditorPreparing', '`(e) => void`', '—', 'Before a cell editor is made: `{ field, row, isNew, options, cancel }`. Change `e.options`, the editor’s props (`enabled = false` disables it), or set `e.cancel`.'],
   ['enabled / disabled, visible, tabStop', 'see Control', '', 'The shared properties of every control.'],
 ];
 
@@ -116,12 +58,14 @@ const SETTINGS = [
   ['saveButtons, errorSummary', '`true`', '“Save changes” and “Discard” in batch mode; “N rows with errors” and “Next error”.'],
   ['sortable, multiSort', '`true`', 'Sort from the header; Shift adds a column to the sort.'],
   ['resizable, movable, hideable, pinnable, menu', '`true`', 'What the user may do with the columns; a column can say otherwise for itself.'],
+  ['resizeMode', "`'widget'`", 'Dragging a column edge: `widget` changes that column and the columns after it shift; `nextColumn` moves only the edge between it and the next column, which gives or takes the difference. A column can set its own.'],
   ['headerButtons', "`'hover'`", 'The menu button shows on hover and focus (always on touch screens), or `always`.'],
   ['columnChooser, layoutReset', '`true`', 'The column list and “Reset layout” in the column menu.'],
   ['tooltips, striped, rowCount, pager', '`true`, `false`, `true`, `true`', 'Full text of a clipped cell; stripes; the row count; the pager.'],
   ['actionsColumn, actionsPosition, actionsSticky, actionsWidth', "`true`, `'end'`, `true`, `140`", 'The actions column, at the start or the end, pinned to its edge or scrolling with the rows, and its width.'],
   ['selection, selectionColumn, selectAll, selectedCount', "`'none'`, `true`, `true`, `true`", '`single` or `multiple`; the check box column; the header check box and Ctrl+A; “N selected” in the bar.'],
   ['filterRow, headerFilter', '`false`', 'The filter row and the header filter; a column can turn them on or off for itself.'],
+  ['syncLookupFilterValues', '`true`', 'A lookup column’s filter row and header filter list only the keys of the rows the other filters leave; off, they list the lookup source. A column can say otherwise for itself.'],
   ['filterDelay', '`300`', 'Milliseconds from the last key typed in the filter row to the filter.'],
   ['copyable, exportable', '`true`', 'Columns that go into what Ctrl+C copies and into an export; a column can say otherwise for itself.'],
   ['copyValues, copyHeaders', "`'shown'`, `false`", 'Ctrl+C copies the text the cells show or their `raw` values; copied rows start with the column titles.'],
@@ -140,7 +84,22 @@ const COLUMN_FIELDS = [
   ['editor', '`(ctx) => Field | component`: an editor of your own. A `Field` is read through its value; anything else calls `ctx.setValue`.'],
   ['required, validate, options', 'An empty value is not taken; `(value, row) => message`; the choices of a list (an array, or a function of the row, also async).'],
   ['filterOperators, filterOperator', 'The conditions the filter row offers for the column, and the one it starts with.'],
-  ['editable, creatable, sortable, resizable, movable, hideable, pinnable, menu, filterRow, headerFilter, copyable, exportable', 'Switch a feature for this column; wins over `settings`.'],
+  ['lookup', '`GridLookup`: the cell keeps a key and shows the text of its item from another source (see Lookup columns). `type` still decides the alignment.'],
+  ['textFrom, sortField', 'The text of a lookup cell read from the row (`\'customer.name\'` or `(row) => text`): the source is then asked only to edit and to list. The field a server sorts the column by.'],
+  ['setCellValue', '`(values, value, row) => void | Promise`: called when the user commits a value (editor, paste, Delete), before it is written. `values` starts as `{ [field]: value }`; add fields to write them too. A promise keeps the cell busy until it settles.'],
+  ['editable, creatable, sortable, resizable, movable, hideable, pinnable, menu, filterRow, headerFilter, copyable, exportable, syncLookupFilterValues', 'Switch a feature for this column; wins over `settings`.'],
+  ['resizeMode', 'How this column’s edge is dragged (`widget` or `nextColumn`); wins over `settings`.'],
+];
+
+const LOOKUP_FIELDS = [
+  ['dataSource', '`Bind<DataSource | unknown[]>`: the items, searched and resolved on their own service, or an array in memory.'],
+  ['valueField, textField', 'The field that matches the cell value (default: the source’s key; an array of plain values: the value); the text shown, a field or `(item) => text` (default: the value).'],
+  ['searchFields', 'Fields the editor and the text searches look in. Default: `textField` when it is a field.'],
+  ['filter', '`(row) => FilterExpression`: narrows the items for a row (cascading lists); `null` row: the filter lists.'],
+  ['allowClearing', '`Bind<boolean>`: a clear button in the editor. Default `false`.'],
+  ['resolve, batchSize', '`\'batch\'` (default: keys in one request, `batchSize` 100 each) or `\'byKey\'` (one request per key).'],
+  ['sortBy', '`Bind<\'key\' | \'text\'>`: rows in memory sorted by the key (default) or by the text shown.'],
+  ['editor, editorOptions', '`\'dropdown\'` (default), `\'combobox\'` or `\'lookup\'`, and props for it (a `Lookup`’s `columns`). A column’s own `editor` still wins and gets the lookup in its context.'],
 ];
 
 const PROPERTIES = [
@@ -157,6 +116,7 @@ const PROPERTIES = [
   ['selectionFilter', 'read-only', 'The selection as a filter of the data layer, for work on the server.'],
   ['filters, filter', 'read/write, read-only', 'The filters by field; the whole filter the rows are loaded with.'],
   ['onSelectionChanged', 'event', 'Subscribe with `grid.onSelectionChanged((e) => …)`.'],
+  ['onEditorPreparing', 'event', 'Subscribe with `grid.onEditorPreparing((e) => …)`; the same as the prop.'],
 ];
 
 const METHODS = [
@@ -164,7 +124,8 @@ const METHODS = [
   ['deleteRow(row?) / restoreRow(row)', '`Promise<boolean>` / `void`', 'Deletes a row (default: the active one) as the save mode says; takes a batch deletion back.'],
   ['saveChanges() / discardChanges()', '`Promise<{ saved, failed }>` / `void`', 'Sends every unsaved change; drops them all.'],
   ['goToNextError()', '`boolean`', 'Moves to the next row that failed or has a message.'],
-  ['refresh() / retry()', '`void`', 'Loads again keeping the position; loads what failed again.'],
+  ['refresh() / retry()', '`void`', 'Loads again keeping the position (the lookup texts too); loads what failed again.'],
+  ['refreshLookups()', '`void`', 'Forgets the texts of the lookup columns and asks for the ones on the screen again.'],
   ['scrollToIndex(i, align?)', '`void`', 'Brings a row into view (in paged mode: its page).'],
   ['autoSizeColumns() / resetLayout() / focus()', '', 'Fits the columns; back to the definitions; focuses the active cell.'],
   ['selectRow(row, add?) / deselectRow(row) / isSelected(row)', '', 'One row in or out of the selection.'],
@@ -181,7 +142,7 @@ const KEYS = [
   ['PageUp / PageDown', 'A screen up or down.'],
   ['Enter (header), Shift + Enter', 'Sort; add the column to the sort.'],
   ['Alt + Down, Shift + F10 (header)', 'The column menu; there “Move” and “Width” work with Left and Right, Enter keeps, Escape takes back.'],
-  ['Typing, Enter, F2, double-click', 'Edit the cell; typing starts with that character.'],
+  ['Typing, Enter, F2, double-click', 'Edit the cell; typing starts with that character (a lookup cell opens its list and searches it).'],
   ['Space, Delete, Backspace', 'Toggle a check box column; empty the cell; edit from empty.'],
   ['Escape', 'In an editor: close it without the value (a new row goes). On a row: take its edits back.'],
   ['Tab / Shift + Tab in an editor', 'The next / previous editable cell, row by row; at the end of a new row the next new row opens.'],
@@ -204,7 +165,8 @@ const A11Y = [
   ['Sorting', '`aria-sort` on the first sorted header.'],
   ['Messages', 'A cell with a message has `aria-invalid` and is described by it while it is active; the status cell names the row’s state, not only with a color.'],
   ['Announcements', 'Sorting, moving, saving, errors, copying, pasting and exports are announced through a polite live region.'],
-  ['Busy', '`aria-busy` while the first rows load and while a row is saved in `wait` mode.'],
+  ['Busy', '`aria-busy` while the first rows load and while a row is saved in `wait` mode; on a lookup cell while its text loads, and on a cell while its `setCellValue` runs.'],
+  ['Lookup keys', 'A key the lookup source does not have is not shown only by its color: it is underlined and its hint (“Not found in the list”) shows on hover and focus.'],
   ['Actions', 'Real buttons with the action’s text as their name (also when only the icon shows, with the text as a tooltip); one of them is in the cell’s roving focus; the “more” button has `aria-haspopup="menu"`.'],
   ['Selection', '`aria-multiselectable` on the grid, `aria-selected` on every row while selection is on; the check boxes are `role="checkbox"` with `aria-checked` (`mixed` in the header).'],
   ['Filters', 'The filter row is a row of the grid (its fields are named after the column); the condition button names the condition; the header filter is a `dialog` with a listbox.'],
@@ -218,7 +180,7 @@ const HOOKS = [
   ['.mx-data-grid__select, __check', 'The selection column and its check box (`aria-checked`).'],
   ['.mx-data-grid__row--filter, __filter-cell, __condition', 'The filter row, its cells, the condition button (`data-set`).'],
   ['.mx-data-grid__filter-button, __values', 'The header filter button (`data-active`) and its window.'],
-  ['.mx-data-grid__cell, __header-cell', 'A cell (`data-changed`, `aria-invalid`), a header (`data-sort`, `data-sortable`).'],
+  ['.mx-data-grid__cell, __header-cell', 'A cell (`data-changed`, `aria-invalid`; a lookup cell `data-lookup="loading"` with `aria-busy`, or `"missing"`), a header (`data-sort`, `data-sortable`).'],
   ['.mx-data-grid__editor', 'The editor of the active cell; its field carries `data-in-cell` and is drawn without a frame.'],
   ['.mx-data-grid__bar, __pager, __export', 'The bar under the rows, its pager and its “Export” button (`aria-busy` while it runs).'],
 ];
@@ -234,118 +196,13 @@ const TOKENS = [
 ];
 
 export default function DataGridPage() {
-  const s = reactive({
-    orders: makeOrders(40),
-    loads: 0,
-    pagedLoads: 0,
-    saveMode: 'wait' as data.SaveMode,
-    position: 'bottom' as 'top' | 'bottom',
-    lang: 'en',
-    striped: true,
-    resizable: true,
-    movable: true,
-    pinnable: true,
-    menu: true,
-    tooltips: true,
-    always: false,
-    rowCount: true,
-    added: 0,
-    actionOrders: makeOrders(30),
-    actionsAt: 'end' as 'start' | 'end',
-    actionsSticky: true,
-    actionsWidth: 140,
-    actionNote: '',
-    selectionMode: 'multiple' as 'none' | 'single' | 'multiple',
-    filterNote: '',
-    copyRaw: false,
-    copyHeaders: false,
-    pasteRows: false,
-    copied: '',
-    exported: '',
-    progress: '',
-    keepLayout: true,
-    showLayout: true,
-    batchNote: '',
-  });
-
-  // Server-like data: 100,000 orders that answer late, loaded in blocks where the list looks.
-  const many = makeOrders(100_000);
-  const blocks = new SlowAdapter<Order, number>({ data: many, key: 'id' }, 300);
-  blocks.onLoading(() => s.loads++);
-  const virtualSource = new data.DataSource<Order, number>({ adapter: blocks, loadMode: 'blocks', pageSize: 100 });
-  const pages = new SlowAdapter<Order, number>({ data: many, key: 'id' }, 250);
-  pages.onLoading(() => s.pagedLoads++);
-  const pagedSource = new data.DataSource<Order, number>({ adapter: pages, loadMode: 'page', pageSize: 20 });
-  const service = new OrderService({ data: makeOrders(30), key: 'id', createKey: (_values, rows) => rows.length + 1 }, 300);
-  const editSource = new data.DataSource<Order, number>({ adapter: service, loadMode: 'all' });
-  const batchService = new OrderService({ data: makeOrders(200), key: 'id', createKey: (_values, rows) => rows.length + 1 }, 250);
-  const batchSource = new data.DataSource<Order, number>({ adapter: batchService, loadMode: 'page', pageSize: 15 });
-
-  let local: DataGrid<Order> | null = null;
-  let virtual: DataGrid<Order> | null = null;
-  let editing: DataGrid<Order> | null = null;
-  let host: Component<HTMLDivElement> | null = null;
-  let selecting: DataGrid<Order> | null = null;
-  let serverSelecting: DataGrid<Order> | null = null;
-  let filtering: DataGrid<Order> | null = null;
-  let serverFiltering: DataGrid<Order> | null = null;
-  let paged: DataGrid<Order> | null = null;
-  let batch: DataGrid<Order> | null = null;
-  let clip: DataGrid<Order> | null = null;
-  let exporting: DataGrid<Order> | null = null;
-  let kept: DataGrid<Order> | null = null;
-
-  const approve: GridAction<Order> = {
-    id: 'approve',
-    text: 'Approve',
-    tone: 'accent',
-    visible: (row) => row.status === 'Draft',
-    onclick: (row) => {
-      row.status = 'Approved';
-      s.actionNote = `Order ${row.id} approved`;
-    },
-  };
-  const print: GridAction<Order> = { id: 'print', text: 'Print', onclick: (row) => (s.actionNote = `Order ${row.id} sent to the printer`) };
-  const mail: GridAction<Order> = { id: 'mail', text: 'Mail the customer', disabled: (row) => !row.paid, onclick: (row) => (s.actionNote = `Mail to ${row.customer}`) };
-
-  // Server-like data for selection and filters: the adapter groups, so header filters get their values from it.
-  const selectSource = new data.DataSource<Order, number>({ adapter: new SlowAdapter<Order, number>({ data: many, key: 'id' }, 200), loadMode: 'blocks', pageSize: 100 });
-  const filterSource = new data.DataSource<Order, number>({ adapter: new SlowAdapter<Order, number>({ data: many, key: 'id' }, 200), loadMode: 'blocks', pageSize: 100 });
-  const describe = (sel: { all: boolean; keys: unknown[]; except: unknown[] } | undefined) =>
-    !sel ? '' : sel.all ? `all but ${sel.except.length} (${sel.except.slice(0, 5).join(', ')})` : `${sel.keys.length} picked (${sel.keys.slice(0, 5).join(', ')})`;
-
-  const addFromCode = () => {
-    if (!host) return;
-    host.controls.clear();
-    const grid = new DataGrid<Order>({ rows: makeOrders(8), rowKey: 'id', columns: COLUMNS.slice(0, 4), settings: { striped: true }, label: 'Created with new' });
-    grid.element.style.blockSize = '14rem';
-    host.controls.add(grid);
-    grid.sort = [{ field: 'customer', dir: 'asc' }];
-    s.added++;
-  };
-
-  const exportServer = async () => {
-    s.progress = 'starting…';
-    try {
-      await paged?.exportCsv({ pageSize: 10_000, fileName: 'orders', onProgress: (n, total) => (s.progress = `${n.toLocaleString('en')} of ${total.toLocaleString('en')}`) });
-      s.progress += ' — saved';
-    } catch {
-      s.progress = 'failed';
-    }
-  };
-
-  const makeAgain = () => {
-    s.showLayout = false;
-    setTimeout(() => (s.showLayout = true), 0);
-  };
-
   return (
     <>
       <p class="lead">
         A grid for data entry and large data: rows in memory or from any adapter of the data layer, a virtual list or
         pages, sorting, column layout, editing with the kit's editors, new rows with the Tab chain, three save modes,
-        row actions, selection, filters, copy and paste, export and a layout that is kept — and every feature can be
-        turned off, for the grid or for one column.
+        row actions, selection, filters, lookup columns from other services, copy and paste, export and a layout
+        that is kept — and every feature can be turned off, for the grid or for one column.
       </p>
 
       <Section anchor="import" title="Import">
@@ -361,42 +218,8 @@ import { data } from '@motifx-community/data';
         <p>
           <Rich text="Give rows in memory with `rows` and their key with `rowKey`; the grid puts them in a `DataSource` over an `ArrayAdapter` itself. Every prop takes a value or a function. Created with `new`, the grid is an object like any other: add it, sort it, ask it." />
         </p>
-        <Example
-          code={`
-<DataGrid
-  rows={() => this.orders}
-  rowKey="id"
-  columns={columns}
-  settings={{ editable: true, addRows: true, striped: true }}
-  newRow={{ create: () => ({ date: today(), status: 'Draft' }) }}
-  ref={(g) => (this.grid = g)}
-/>
-
-const grid = new DataGrid<Order>({ rows, rowKey: 'id', columns });
-this.panel.controls.add(grid);
-grid.sort = [{ field: 'customer', dir: 'asc' }];
-`}
-          stack
-        >
-          <DataGrid
-            class="dg-local"
-            style="block-size: 20rem"
-            rows={() => s.orders}
-            rowKey="id"
-            columns={COLUMNS}
-            label="Orders"
-            locale="en"
-            settings={{ editable: true, addRows: true, striped: true }}
-            newRow={{ create: newOrder }}
-            ref={(g: DataGrid<Order>) => (local = g)}
-          />
-          <div class="docs-flow">
-            <Button text="Add a row from code" variant="outline" onclick={() => void local?.addRow({ customer: 'Ada Lovelace' })} />
-            <Button text="Push an order into the array" variant="outline" onclick={() => s.orders.push({ ...makeOrders(1)[0], id: s.orders.length + 1, customer: 'Pushed' })} />
-            <Button text="Add a grid from code" variant="outline" onclick={addFromCode} />
-            <output class="dg-local-count">{() => `${s.orders.length} orders in the array`}</output>
-          </div>
-          <div class="docs-flow" ref={(c: Component<HTMLDivElement>) => (host = c)} />
+        <Example files={withOrders('FromCode.tsx')} stack>
+          <FromCode />
         </Example>
       </Section>
 
@@ -404,25 +227,8 @@ grid.sort = [{ field: 'customer', dir: 'asc' }];
         <p>
           <Rich text="With a `DataSource` that loads by `blocks`, the scroll bar is sized from the total and only the rows where the list looks are asked for. A jump (Ctrl+End, dragging the bar) asks only where it lands; a block left behind while loading is aborted. A row that has not come yet shows as a placeholder. Above 10 million pixels of rows the bar is scaled." />
         </p>
-        <Example
-          code={`
-const orders = new data.DataSource({
-  adapter: new data.ODataAdapter({ url: '/odata/Orders', key: 'OrderID' }),
-  loadMode: 'blocks',
-  pageSize: 100,
-});
-
-<DataGrid dataSource={orders} columns={columns} />
-`}
-          stack
-        >
-          <DataGrid class="dg-virtual" style="block-size: 22rem" dataSource={virtualSource} columns={COLUMNS} label="100,000 orders" locale="en" ref={(g: DataGrid<Order>) => (virtual = g)} />
-          <div class="docs-flow">
-            <Button text="Go to the end" variant="outline" onclick={() => virtual?.scrollToIndex(virtual.total - 1, 'end')} />
-            <Button text="Back to the top" variant="outline" onclick={() => virtual?.scrollToIndex(0)} />
-            <Button text="Fit the columns" variant="outline" onclick={() => virtual?.autoSizeColumns()} />
-            <output class="dg-loads">{() => `${s.loads} loads for ${virtual?.total ?? 0} rows`}</output>
-          </div>
+        <Example files={[...withOrders('Virtual.tsx'), slowAdapterFile]} stack>
+          <Virtual />
         </Example>
       </Section>
 
@@ -430,17 +236,8 @@ const orders = new data.DataSource({
         <p>
           <Rich text="A `DataSource` that loads by `page` makes a paged grid: one page is asked for at a time, and a sort goes back to the first page. Rows in memory page with `mode` set to `paged`." />
         </p>
-        <Example
-          code={`
-const orders = new data.DataSource({ adapter, loadMode: 'page', pageSize: 20 });
-<DataGrid dataSource={orders} columns={columns} />
-
-<DataGrid rows={() => this.orders} rowKey="id" mode="paged" pageSize={20} columns={columns} />
-`}
-          stack
-        >
-          <DataGrid class="dg-paged" style="block-size: 24rem" dataSource={pagedSource} columns={COLUMNS} label="Orders by page" locale="en" ref={(g: DataGrid<Order>) => (paged = g)} />
-          <output class="dg-paged-loads">{() => `${s.pagedLoads} loads`}</output>
+        <Example files={[...withOrders('Pages.tsx', 'paged-orders.ts'), slowAdapterFile]} stack>
+          <Pages />
         </Example>
       </Section>
 
@@ -448,42 +245,8 @@ const orders = new data.DataSource({ adapter, loadMode: 'page', pageSize: 20 });
         <p>
           <Rich text="Typing on a cell, Enter, F2 or a double-click opens its editor; only the active cell has one. What is typed goes into the row's draft in the grid's `ChangeTracker`, kept by key, and the row is saved when it is left: `wait` sends it and waits, `background` sends it through one queue and goes on, `batch` keeps everything until “Save changes”. A row with a message cannot be left; Escape gives up. This service turns down a note with “error” in it." />
         </p>
-        <Example
-          code={`
-<DataGrid
-  dataSource={orders}
-  columns={columns}
-  saveMode={() => this.saveMode}
-  settings={{ editable: true, addRows: true }}
-  validateRow={(row) => (row.status === 'Cancelled' && row.paid ? { paid: 'A cancelled order is not paid.' } : null)}
-/>
-<Button text="Save" enabled={() => grid.hasChanges} onclick={() => grid.saveChanges()} />
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Save mode">
-            {(['wait', 'background', 'batch'] as const).map((mode) => (
-              <Button key={mode} text={mode} size="sm" variant={() => (s.saveMode === mode ? 'solid' : 'ghost')} aria-pressed={() => s.saveMode === mode} onclick={() => (s.saveMode = mode)} />
-            ))}
-          </div>
-          <DataGrid
-            class="dg-editing"
-            style="block-size: 22rem"
-            dataSource={editSource}
-            columns={COLUMNS}
-            label="Orders to edit"
-            locale="en"
-            saveMode={() => s.saveMode}
-            settings={{ editable: true, addRows: true, striped: true }}
-            newRow={{ create: newOrder }}
-            validateRow={(row: Order) => (row.status === 'Cancelled' && row.paid ? { paid: 'A cancelled order is not paid.' } : null)}
-            ref={(g: DataGrid<Order>) => (editing = g)}
-          />
-          <div class="docs-flow">
-            <Button text="Delete the active row" variant="outline" onclick={() => void editing?.deleteRow()} />
-            <Button text="Undo the deletion" variant="ghost" visible={() => s.saveMode === 'batch'} onclick={() => editing?.activeRow && editing.restoreRow(editing.activeRow)} />
-            <output class="dg-changes">{() => `${editing?.changes.count ?? 0} unsaved, ${editing?.errorCount ?? 0} with errors`}</output>
-          </div>
+        <Example files={[...withOrders('SaveModes.tsx', 'order-service.ts'), slowAdapterFile]} stack>
+          <SaveModes />
         </Example>
       </Section>
 
@@ -491,44 +254,8 @@ const orders = new data.DataSource({ adapter, loadMode: 'page', pageSize: 20 });
         <p>
           <Rich text="With `saveMode: 'batch'` every edit, new row and deletion waits for `saveChanges()`; then the deletions, the updates and the new rows go out, each kind in one call, and rows the server turns down keep their marks. Here over a server that loads by page: the changes stay while the pages turn, and the page's own buttons follow `hasChanges`." />
         </p>
-        <Example
-          code={`
-const orders = new data.DataSource({ adapter, loadMode: 'page', pageSize: 15 });
-
-<DataGrid dataSource={orders} columns={columns} saveMode="batch"
-  settings={{ editable: true, addRows: true, saveButtons: false }}
-  actions={(row, state) => (state.isRemoved ? ['restore'] : ['remove'])}
-  ref={(g) => (this.grid = g)} />
-<Button text="Save changes" enabled={() => this.grid.hasChanges} onclick={() => this.grid.saveChanges()} />
-`}
-          stack
-        >
-          <DataGrid
-            class="dg-batch"
-            style="block-size: 24rem"
-            dataSource={batchSource}
-            columns={COLUMNS}
-            label="Orders saved together"
-            locale="en"
-            saveMode="batch"
-            settings={{ editable: true, addRows: true, saveButtons: false, actionsWidth: 100 }}
-            newRow={{ create: newOrder }}
-            actions={(_row: Order, state) => (state.isRemoved ? ['restore'] : ['remove'])}
-            ref={(g: DataGrid<Order>) => (batch = g)}
-          />
-          <div class="docs-flow">
-            <Button
-              text="Save changes"
-              tone="accent"
-              enabled={() => !!batch?.hasChanges}
-              onclick={async () => {
-                const result = await batch?.saveChanges();
-                if (result) s.batchNote = `${result.saved} saved, ${result.failed} failed`;
-              }}
-            />
-            <Button text="Discard" variant="outline" enabled={() => !!batch?.hasChanges} onclick={() => batch?.discardChanges()} />
-            <output class="dg-batch-note">{() => `${batch?.changes.count ?? 0} unsaved${s.batchNote ? ` · ${s.batchNote}` : ''}`}</output>
-          </div>
+        <Example files={[...withOrders('BatchSave.tsx', 'order-service.ts'), slowAdapterFile]} stack>
+          <BatchSave />
         </Example>
       </Section>
 
@@ -536,30 +263,8 @@ const orders = new data.DataSource({ adapter, loadMode: 'page', pageSize: 15 });
         <p>
           <Rich text="`addRow()` or the bar's “New row” opens a row at the bottom (the grid goes to the very end; in a virtual list only the last block is loaded) or at the top, with its first cell a new row can fill in edit mode. Tab on the last cell of a new row saves it and opens the next one; Escape drops it; one left untouched goes by itself." />
         </p>
-        <Example
-          code={`
-<DataGrid rows={() => this.orders} rowKey="id" columns={columns}
-  settings={{ editable: true, addRows: true }}
-  newRow={{ position: () => this.position, create: () => ({ date: today() }) }} />
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="New rows">
-            {(['bottom', 'top'] as const).map((position) => (
-              <Button key={position} text={position} size="sm" variant={() => (s.position === position ? 'solid' : 'ghost')} aria-pressed={() => s.position === position} onclick={() => (s.position = position)} />
-            ))}
-          </div>
-          <DataGrid
-            class="dg-new"
-            style="block-size: 18rem"
-            rows={makeOrders(12)}
-            rowKey="id"
-            columns={COLUMNS}
-            label="New rows"
-            locale="en"
-            settings={{ editable: true, addRows: true }}
-            newRow={{ position: () => s.position, create: newOrder }}
-          />
+        <Example files={withOrders('NewRows.tsx')} stack>
+          <NewRows />
         </Example>
       </Section>
 
@@ -567,42 +272,8 @@ const orders = new data.DataSource({ adapter, loadMode: 'page', pageSize: 15 });
         <p>
           <Rich text="`actions` gives each row its buttons, as a list or as a function of the row and its state (`isNew`, `isEditing`, `isDirty`, `isSaving`, `hasError`, `isRemoved`, `isSelected`); when what the function reads changes, the row's buttons change. The grid's ready actions are named by strings. The buttons that do not fit the column go into the “more” menu, the first ones in the list stay. The column sits at the start or the end, pinned to its edge or scrolling with the rows." />
         </p>
-        <Example
-          code={`
-const approve: GridAction<Order> = {
-  id: 'approve', text: 'Approve', tone: 'accent',
-  visible: (row) => row.status === 'Draft',
-  onclick: (row) => (row.status = 'Approved'),
-};
-
-<DataGrid rows={() => this.orders} rowKey="id" columns={columns}
-  actions={(row, state) => (state.isRemoved ? ['restore'] : [approve, 'edit', 'remove', print, mail])}
-  settings={{ editable: true, actionsPosition: () => this.at, actionsSticky: () => this.sticky, actionsWidth: () => this.width }} />
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Actions column">
-            {(['start', 'end'] as const).map((at) => (
-              <Button key={at} text={at} size="sm" variant={() => (s.actionsAt === at ? 'solid' : 'ghost')} aria-pressed={() => s.actionsAt === at} onclick={() => (s.actionsAt = at)} />
-            ))}
-            <CheckBox label="Pinned" x-model={() => s.actionsSticky} />
-            {[100, 140, 260].map((w) => (
-              <Button key={`w${w}`} text={`${w}px`} size="sm" variant={() => (s.actionsWidth === w ? 'solid' : 'ghost')} aria-pressed={() => s.actionsWidth === w} onclick={() => (s.actionsWidth = w)} />
-            ))}
-          </div>
-          <DataGrid
-            class="dg-actions"
-            style="block-size: 20rem"
-            rows={() => s.actionOrders}
-            rowKey="id"
-            columns={COLUMNS}
-            label="Orders with actions"
-            locale="en"
-            saveMode="batch"
-            actions={(row: Order, state) => (state.isRemoved ? ['restore'] : [approve, 'edit', 'remove', print, mail])}
-            settings={{ editable: true, actionsPosition: () => s.actionsAt, actionsSticky: () => s.actionsSticky, actionsWidth: () => s.actionsWidth }}
-          />
-          <output class="dg-action-note">{() => s.actionNote}</output>
+        <Example files={withOrders('RowActions.tsx')} stack>
+          <RowActions />
         </Example>
       </Section>
 
@@ -610,47 +281,8 @@ const approve: GridAction<Order> = {
         <p>
           <Rich text="`selection` is `single` (the selection follows the active row) or `multiple`, with a check box column. A click selects a row, Ctrl adds or takes out, Shift selects a range; Shift+Space, Shift+arrows and Ctrl+A do it from the keyboard. The header check box selects every row of the filter — on a server too: the grid keeps a state, “all but these keys”, never the rows. `selection` gives that state, `selectionFilter` the same as a filter for the server." />
         </p>
-        <Example
-          code={`
-<DataGrid rows={() => this.orders} rowKey="id" columns={columns}
-  settings={{ selection: 'multiple' }}
-  selectedKeys={() => this.keys}
-  onSelectionChanged={(e) => (this.keys = e.selection.keys)} />
-
-grid.selection;       // { all: true, except: [7, 12], filter: … }
-grid.selectionFilter; // and(filter, not(id in [7, 12]))
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Selection mode">
-            {(['none', 'single', 'multiple'] as const).map((mode) => (
-              <Button key={mode} text={mode} size="sm" variant={() => (s.selectionMode === mode ? 'solid' : 'ghost')} aria-pressed={() => s.selectionMode === mode} onclick={() => (s.selectionMode = mode)} />
-            ))}
-          </div>
-          <DataGrid
-            class="dg-selection"
-            style="block-size: 16rem"
-            rows={makeOrders(40)}
-            rowKey="id"
-            columns={COLUMNS}
-            label="Orders to select"
-            locale="en"
-            settings={{ selection: () => s.selectionMode }}
-            ref={(g: DataGrid<Order>) => (selecting = g)}
-          />
-          <output class="dg-selection-state">{() => `${(selecting?.selectedCount ?? 0).toLocaleString('en')} selected: ${describe(selecting?.selection)}`}</output>
-          <DataGrid
-            class="dg-server-selection"
-            style="block-size: 16rem"
-            dataSource={selectSource}
-            columns={COLUMNS}
-            label="100,000 orders to select"
-            locale="en"
-            settings={{ selection: 'multiple' }}
-            actions={[print, mail]}
-            ref={(g: DataGrid<Order>) => (serverSelecting = g)}
-          />
-          <output class="dg-server-selection-state">{() => `${(serverSelecting?.selectedCount ?? 0).toLocaleString('en')} selected: ${describe(serverSelecting?.selection)}`}</output>
+        <Example files={[...withOrders('Selection.tsx'), slowAdapterFile]} stack>
+          <Selection />
         </Example>
       </Section>
 
@@ -658,46 +290,8 @@ grid.selectionFilter; // and(filter, not(id in [7, 12]))
         <p>
           <Rich text="The filter row has a cell per column: a condition chosen in the cell, by the column type (contains, starts with, =, <, between, empty…), and the kit's field for the value; typing applies after a short pause. The header filter lists the column's values with their counts, honoring the other filters: rows in memory are counted by the grid, an adapter that groups is asked with `group`, any other server answers `loadValues`. Both feed the data source's filter (`data.where`, `data.and`, `data.or`), together with AND." />
         </p>
-        <Example
-          code={`
-const columns = [
-  { field: 'customer', title: 'Customer', filterRow: true, headerFilter: true },
-  { field: 'amount', title: 'Amount', type: 'number', filterRow: true, filterOperator: '>=' },
-  …
-];
-<DataGrid rows={() => this.orders} rowKey="id" columns={columns} settings={{ filterRow: true, headerFilter: true }} />
-
-grid.filters = { city: { values: ['Ankara', 'İzmir'] }, amount: { op: 'between', value: 100, value2: 500 } };
-grid.filter; // the data layer's filter the rows are loaded with
-`}
-          stack
-        >
-          <DataGrid
-            class="dg-filters"
-            style="block-size: 20rem"
-            rows={makeOrders(200)}
-            rowKey="id"
-            columns={FILTER_COLUMNS}
-            label="Orders to filter"
-            locale="en"
-            settings={{ striped: true }}
-            ref={(g: DataGrid<Order>) => (filtering = g)}
-          />
-          <div class="docs-flow">
-            <Button text="Ankara and İzmir, 100 to 500" variant="outline" onclick={() => filtering && (filtering.filters = { city: { values: ['Ankara', 'İzmir'] }, amount: { op: 'between', value: 100, value2: 500 } })} />
-            <Button text="Clear the filters" variant="ghost" onclick={() => filtering?.clearFilters()} />
-            <output class="dg-filter-count">{() => `${filtering?.total ?? 0} of 200 orders`}</output>
-          </div>
-          <DataGrid
-            class="dg-server-filters"
-            style="block-size: 20rem"
-            dataSource={filterSource}
-            columns={FILTER_COLUMNS}
-            label="100,000 orders to filter"
-            locale="en"
-            ref={(g: DataGrid<Order>) => (serverFiltering = g)}
-          />
-          <output class="dg-server-filter">{() => `${(serverFiltering?.total ?? 0).toLocaleString('en')} orders · ${JSON.stringify(serverFiltering?.filter ?? null)}`}</output>
+        <Example files={[...withOrders('Filters.tsx'), slowAdapterFile]} stack>
+          <Filters />
         </Example>
       </Section>
 
@@ -705,46 +299,8 @@ grid.filter; // the data layer's filter the rows are loaded with
         <p>
           <Rich text="Ctrl+C copies the selected rows, or the active cell, as tab-separated text and an HTML table: a spreadsheet or a document takes it as a table. Ctrl+V on a cell writes tab-separated text — from a spreadsheet, or copied here — into the editable cells from that cell rightwards and downwards. Each value is read by the column type (numbers and dates in the locale, yes or no, a list option by its text) and goes into the row's draft with its checks, as if typed; cells that cannot be edited keep their values. The rows below the active one are saved as the save mode says." />
         </p>
-        <Example
-          code={`
-<DataGrid rows={() => this.orders} rowKey="id" columns={columns}
-  settings={{ editable: true, selection: 'multiple', copyValues: 'shown', copyHeaders: true, addRows: true, pasteNewRows: true }} />
-
-grid.copy(); // what Ctrl+C copies, as text
-grid.paste('Ada Lovelace\\tİzmir\\nGrace Hopper\\tAnkara');
-{ field: 'note', title: 'Note', copyable: false }
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <CheckBox label="Values, not the shown text" x-model={() => s.copyRaw} />
-            <CheckBox label="Column titles" x-model={() => s.copyHeaders} />
-            <CheckBox label="New rows from extra lines" x-model={() => s.pasteRows} />
-          </div>
-          <DataGrid
-            class="dg-clipboard"
-            style="block-size: 18rem"
-            rows={makeOrders(20)}
-            rowKey="id"
-            columns={COLUMNS}
-            label="Orders to copy"
-            locale="en"
-            saveMode="batch"
-            settings={{
-              editable: true,
-              addRows: true,
-              selection: 'multiple',
-              copyValues: () => (s.copyRaw ? 'raw' : 'shown'),
-              copyHeaders: () => s.copyHeaders,
-              pasteNewRows: () => s.pasteRows,
-            }}
-            ref={(g: DataGrid<Order>) => (clip = g)}
-          />
-          <div class="docs-flow">
-            <Button text="Copy from code" variant="outline" onclick={() => (s.copied = clip?.copy() ?? '')} />
-            <Button text="Paste two lines at the active cell" variant="outline" onclick={() => clip?.paste('Ada Lovelace\tİzmir\nGrace Hopper\tAnkara')} />
-            <output class="dg-copied">{() => (s.copied ? `Copied: ${s.copied.replace(/\t/g, ' → ').replace(/\r?\n/g, ' ¶ ')}` : '')}</output>
-          </div>
+        <Example files={withOrders('Clipboard.tsx')} stack>
+          <Clipboard />
         </Example>
       </Section>
 
@@ -752,77 +308,39 @@ grid.paste('Ada Lovelace\\tİzmir\\nGrace Hopper\\tAnkara');
         <p>
           <Rich text="`exportCsv()` saves the rows of the filter, in the sort order, with the visible columns in their order, as a CSV file a spreadsheet opens as it is: UTF-8 with a byte order mark, the locale's separator (`;` where decimals take a comma), the column titles first, and text that would run as a formula made harmless. `exportRows()` gives the same rows as objects. Rows in memory are taken as they are; a server's are asked for in parts through the data source, so its filter, search and sort apply and nothing on the screen changes. `exportButton` puts an “Export” button in the bar; `exportable` takes a column out." />
         </p>
-        <Example
-          code={`
-<DataGrid rows={() => this.orders} rowKey="id" columns={columns} settings={{ exportButton: true }} />
-
-await grid.exportCsv({ fileName: 'orders' });
-const rows = await grid.exportRows({ values: 'raw', selected: true });
-await serverGrid.exportCsv({ pageSize: 10_000, onProgress: (n, total) => (this.progress = n / total) });
-`}
-          stack
-        >
-          <DataGrid
-            class="dg-export"
-            style="block-size: 16rem"
-            rows={makeOrders(60)}
-            rowKey="id"
-            columns={FILTER_COLUMNS}
-            label="Orders to export"
-            locale="en"
-            settings={{ exportButton: true, filterRow: true }}
-            ref={(g: DataGrid<Order>) => (exporting = g)}
-          />
-          <div class="docs-flow">
-            <Button
-              text="The first two rows as objects"
-              variant="outline"
-              onclick={async () => {
-                const rows = (await exporting?.exportRows({ values: 'raw' })) ?? [];
-                s.exported = JSON.stringify(rows.slice(0, 2));
-              }}
-            />
-            <Button text="Export the 100,000 orders by page" variant="outline" onclick={() => void exportServer()} />
-          </div>
-          <output class="dg-exported">{() => s.exported}</output>
-          <output class="dg-export-progress">{() => (s.progress ? `Server export: ${s.progress}` : '')}</output>
+        <Example files={[...withOrders('Export.tsx', 'paged-orders.ts'), slowAdapterFile]} stack>
+          <Export />
         </Example>
+      </Section>
+
+      <Section anchor="lookups" title="Lookup columns">
+        <p>
+          <Rich text="A column with `lookup` keeps a key (a customer id) and shows the text of its item, from a `DataSource` of any adapter — another service, another protocol than the rows — or from an array. Only the keys on the screen are asked for: the unknown ones of a moment go out together (`id in [...]`, at most `batchSize` each), or one by one with `resolve: 'byKey'` for a service that gives one item by key. The texts are kept per source and shared by every column and grid using it. While a key loads its cell is empty and busy; a key the source does not have shows as it is, muted, and stops its row from being saved." />
+        </p>
+        <Example files={[...code('Lookups.tsx', 'customers.ts'), slowAdapterFile]} stack>
+          <Lookups />
+        </Example>
+        <p>
+          <Rich text="Editing opens a `DropDown` with search (or `editor: 'combobox'`, or the kit's `Lookup` with columns) over a data source of its own on the same adapter, so its search never moves a source the page shows. Typing on the cell opens the list and searches what was typed; the picked text shows at once. `filter(row)` narrows the list for the row, `setCellValue` writes other fields with the value — here a new province empties the district — and `onEditorPreparing` changes the editor's props: the district waits for a province." />
+        </p>
+        <Example files={code('Cascade.tsx', 'places.ts')} stack>
+          <Cascade />
+        </Example>
+        <p>
+          <Rich text="When the row already brings the text (OData `$expand`), `textFrom` reads it there and the lookup source is asked only to edit and to list; `sortField` sorts the server by it. Without them a lookup column sorts by its key; rows in memory can sort by the text with `sortBy: 'text'`. The filter row offers “(All)” and the texts (always `=`), the header filter the texts with “(empty)” first, both searched by text and, with `syncLookupFilterValues`, holding only the keys of the rows the other filters leave. Copy and export write the text (`raw`: the key); a pasted text becomes the key of the one item that has it." />
+        </p>
+        <Example files={[...code('TextFrom.tsx', 'customers.ts'), slowAdapterFile]} stack>
+          <TextFrom />
+        </Example>
+        <ApiTable head={['Lookup field', 'What it does']} rows={LOOKUP_FIELDS} />
       </Section>
 
       <Section anchor="layout" title="Keeping the layout">
         <p>
           <Rich text="With `layoutKey` the grid keeps the column widths, order, hidden and pinned columns, the sort and the filters in the browser's `localStorage`, and a grid made again with the same name — after a reload too — gets them back. Storage that is full or blocked is skipped quietly. `resetLayout()` (also in the column menu) goes back to the column definitions. To keep the layout elsewhere, a server for instance, read `layout` and `filters`, listen to `onLayoutChange`, and give them back through the props of the same names." />
         </p>
-        <Example
-          code={`
-<DataGrid rows={() => this.orders} rowKey="id" columns={columns} layoutKey="orders"
-  settings={{ saveLayout: () => this.keep }} />
-
-grid.resetLayout();
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <CheckBox label="Keep the layout" x-model={() => s.keepLayout} />
-            <Button text="Make the grid again" variant="outline" onclick={makeAgain} />
-            <Button text="Reset the layout" variant="ghost" onclick={() => kept?.resetLayout()} />
-          </div>
-          {() =>
-            s.showLayout && (
-              <DataGrid
-                class="dg-layout"
-                style="block-size: 18rem"
-                rows={makeOrders(40)}
-                rowKey="id"
-                columns={FILTER_COLUMNS}
-                label="Orders that keep their layout"
-                locale="en"
-                layoutKey="docs-orders"
-                settings={{ saveLayout: () => s.keepLayout }}
-                ref={(g: DataGrid<Order>) => (kept = g)}
-              />
-            )
-          }
+        <Example files={withOrders('KeepLayout.tsx')} stack>
+          <KeepLayout />
         </Example>
       </Section>
 
@@ -830,44 +348,8 @@ grid.resetLayout();
         <p>
           <Rich text="Every feature has a switch in `settings`, each a value or a function; a column can turn one on or off for itself, and its value wins. `grid.settings` and `grid.columnSettings(field)` change them while the grid shows." />
         </p>
-        <Example
-          code={`
-<DataGrid settings={{ resizable: () => this.resizable, striped: true }} columns={[{ field: 'id', title: 'No', movable: false, menu: false }, …]} />
-
-grid.settings.headerButtons = 'always';
-grid.columnSettings('customer').resizable = false;
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <CheckBox label="Striped" x-model={() => s.striped} />
-            <CheckBox label="Resizing" x-model={() => s.resizable} />
-            <CheckBox label="Moving" x-model={() => s.movable} />
-            <CheckBox label="Pinning" x-model={() => s.pinnable} />
-            <CheckBox label="Column menu" x-model={() => s.menu} />
-            <CheckBox label="Menu button always" x-model={() => s.always} />
-            <CheckBox label="Tooltips" x-model={() => s.tooltips} />
-            <CheckBox label="Row count" x-model={() => s.rowCount} />
-          </div>
-          <DataGrid
-            class="dg-settings"
-            style="block-size: 16rem"
-            rows={makeOrders(25)}
-            rowKey="id"
-            label="Switches"
-            locale="en"
-            columns={[{ ...COLUMNS[0], movable: false, menu: false }, ...COLUMNS.slice(1)]}
-            settings={{
-              striped: () => s.striped,
-              resizable: () => s.resizable,
-              movable: () => s.movable,
-              pinnable: () => s.pinnable,
-              menu: () => s.menu,
-              headerButtons: () => (s.always ? 'always' : 'hover'),
-              tooltips: () => s.tooltips,
-              rowCount: () => s.rowCount,
-            }}
-          />
+        <Example files={withOrders('Switches.tsx')} stack>
+          <Switches />
         </Example>
         <ApiTable head={['Setting', 'Default', 'What it does']} rows={SETTINGS} />
       </Section>
@@ -888,23 +370,8 @@ grid.columnSettings('customer').resizable = false;
         <p>
           <Rich text="Every text the grid writes — the bar, the pager, the column menu, the row states, the action buttons, the filter conditions, the announcements — comes from `uiLocale.strings` (the `grid…` keys), or from the grid's own `texts`. Numbers and dates follow `locale`." />
         </p>
-        <Example
-          code={`
-uiLocale.strings = trStrings;
-<DataGrid texts={{ gridNoRows: 'Nothing here yet' }} locale="tr" … />
-`}
-        >
-          <Button
-            text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')}
-            variant="outline"
-            onclick={() => {
-              s.lang = s.lang === 'en' ? 'tr' : 'en';
-              uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
-            }}
-          />
-          <span>
-            New row reads <output class="dg-text">{() => uiLocale.strings.gridNewRow}</output>
-          </span>
+        <Example files={withOrders('Localization.tsx')} stack>
+          <Localization />
         </Example>
       </Section>
 

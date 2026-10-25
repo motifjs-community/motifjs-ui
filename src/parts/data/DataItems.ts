@@ -1,6 +1,7 @@
 import { Emitter, type Event as MotifEvent, type IDisposable } from '@motifx/core';
 import type { data } from '@motifx-community/data';
 import type { ItemSource } from '../list/item-source';
+import { KeyedItems } from './KeyedItems';
 
 type Source<T> = data.DataSource<T, unknown>;
 
@@ -19,6 +20,8 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
 
   /** How an item is searched in memory. */
   textOf: (item: T) => string = (item) => String(item);
+  /** The field of an item that holds its value, when it is not the source's key: a value on no loaded page is asked for by it. */
+  valueField: string | undefined;
   searchMode: 'contains' | 'startswith' = 'contains';
 
   readonly onChanged: MotifEvent<void> = this.changedEmitter.event;
@@ -95,11 +98,18 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
     }
   }
 
-  /** The item whose value is `value`: among the items, else asked from the data source by key. */
+  /**
+   * The item whose value is `value`: among the items, else asked from the data source by key, through
+   * the cache every list and grid over the same adapter shares (`KeyedItems`), so the keys several
+   * lists need at once go out in one request.
+   */
   async find(value: unknown, valueOf: (item: T) => unknown, same: (a: unknown, b: unknown) => boolean = Object.is): Promise<T | undefined> {
     const near = this.findLoaded(value, valueOf, same);
     if (near !== undefined || !this.source) return near;
-    return this.source.byKey(value);
+    if (value === null || value === undefined) return undefined;
+    const known = KeyedItems.of<T>(this.source, this.valueField);
+    await known.request([value]);
+    return known.get(value)?.item;
   }
 
   findLoaded(value: unknown, valueOf: (item: T) => unknown, same: (a: unknown, b: unknown) => boolean = Object.is): T | undefined {

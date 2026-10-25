@@ -1,8 +1,10 @@
-import { reactive } from '@motifx/core';
-import { Button, Calendar, type CalendarView } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import FromCode from './examples/FromCode';
+import Limits from './examples/Limits';
+import Views from './examples/Views';
 
-const VIEWS: CalendarView[] = ['month', 'year', 'decade'];
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['value', '`Bind<Date | null>`', '`null`', 'The chosen date. `x-model` binds it two-way.'],
@@ -26,8 +28,6 @@ const KEYS = [
 ];
 
 export default function CalendarPage() {
-  const s = reactive({ day: new Date() as Date | null, month: null as Date | null, view: 'month' as CalendarView });
-
   return (
     <>
       <p class="lead">
@@ -44,28 +44,14 @@ import { Calendar } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="ways" title="From JSX and from code">
-        <Example
-          code={`
-<Calendar x-model={() => this.form.day} showWeekNumbers showTodayButton />
-
-const calendar = new Calendar({ locale: 'tr-TR' });
-calendar.onValueChanged((e) => console.log(e.value));
-this.panel.controls.add(calendar);
-calendar.goTo(new Date(2027, 0, 1));
-`}
-        >
-          <Calendar x-model={() => s.day} showWeekNumbers showTodayButton />
-          <output class="cal-day">{() => (s.day ? s.day.toDateString() : '—')}</output>
+        <Example files={code('FromCode.tsx')}>
+          <FromCode />
         </Example>
       </Section>
 
       <Section anchor="limits" title="Limits">
-        <Example
-          code={`
-<Calendar min={new Date()} disabledDates={(d) => d.getDay() === 0} locale="tr-TR" />
-`}
-        >
-          <Calendar min={new Date()} disabledDates={(d: Date) => d.getDay() === 0} locale="tr-TR" />
+        <Example files={code('Limits.tsx')}>
+          <Limits />
         </Example>
       </Section>
 
@@ -73,20 +59,8 @@ calendar.goTo(new Date(2027, 0, 1));
         <p>
           <Rich text="The title zooms out to the months of the year and to twelve years; a choice there zooms back in. `minView` makes a month or a year the choice itself." />
         </p>
-        <Example
-          code={`
-<Calendar currentView={() => this.view} />
-<Calendar minView="year" x-model={() => this.form.month} />
-`}
-        >
-          <div class="docs-flow" role="group" aria-label="View">
-            {VIEWS.map((view) => (
-              <Button key={view} text={view} size="sm" variant={() => (s.view === view ? 'solid' : 'ghost')} aria-pressed={() => s.view === view} onclick={() => (s.view = view)} />
-            ))}
-          </div>
-          <Calendar currentView={() => s.view} />
-          <Calendar minView="year" x-model={() => s.month} />
-          <output>{() => (s.month ? s.month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : '—')}</output>
+        <Example files={code('Views.tsx')}>
+          <Views />
         </Example>
       </Section>
 

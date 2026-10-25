@@ -1,14 +1,16 @@
 import type { Bind } from '@motifx/core';
 import type { CellContext } from './cell-context';
+import type { ColumnResizeMode } from './column-resize-mode';
 import type { ColumnType } from './column-type';
 import type { EditorContext } from './editor-context';
 import type { GridFilterOperator } from './grid-filter-operator';
+import type { GridLookup } from './grid-lookup';
 import type { ListOption } from './list-option';
 import type { StickySide } from './sticky-side';
 
 /**
  * Definition of one column. `editable`, `creatable`, `sortable`, `resizable`, `movable`, `hideable`,
- * `pinnable`, `menu`, `filterRow`, `headerFilter`, `copyable` and `exportable` override the grid's `settings` for this column; each is a value or a function
+ * `pinnable`, `menu`, `filterRow`, `headerFilter`, `copyable`, `exportable` and `syncLookupFilterValues` override the grid's `settings` for this column; each is a value or a function
  * that is followed (`editable` and `creatable` also take a function of the row, which decides per row).
  *
  * @example
@@ -47,6 +49,8 @@ export interface GridColumn<T = any> {
   creatable?: boolean | ((row: T) => boolean);
   sortable?: Bind<boolean>;
   resizable?: Bind<boolean>;
+  /** How this column's edge is dragged; overrides the grid's `resizeMode`. */
+  resizeMode?: Bind<ColumnResizeMode>;
   movable?: Bind<boolean>;
   hideable?: Bind<boolean>;
   pinnable?: Bind<boolean>;
@@ -70,4 +74,26 @@ export interface GridColumn<T = any> {
    * that calls `ctx.setValue`.
    */
   editor?: (ctx: EditorContext<T>) => unknown;
+  /**
+   * The cell keeps a key and shows the text of its item from another source (a service, an array).
+   * The column is shown, edited, filtered, sorted, copied and exported as a lookup; `type` still
+   * decides the alignment.
+   */
+  lookup?: GridLookup<T>;
+  /**
+   * The text of a lookup cell read from the row itself (`'customer.name'` of an expanded relation);
+   * the lookup source is then asked only to edit and to list. The field form is also what a server
+   * sorts by.
+   */
+  textFrom?: string | ((row: T) => string);
+  /** The field the rows are sorted by for this column (a server sorts by it), instead of `field`. */
+  sortField?: string;
+  /**
+   * Called when the user commits a value into a cell (editor, paste, Delete), before it is written.
+   * `values` starts as `{ [field]: value }`; change it to write other fields too (clear the city when
+   * the state changes). May return a promise: the cell shows that it is busy until it settles.
+   */
+  setCellValue?: (values: Record<string, unknown>, value: unknown, row: T) => void | Promise<void>;
+  /** The filter row and header filter of a lookup column list only the keys of rows the other filters leave. Overrides the grid's `syncLookupFilterValues`. */
+  syncLookupFilterValues?: Bind<boolean>;
 }

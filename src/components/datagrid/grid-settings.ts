@@ -1,4 +1,5 @@
 import type { ColumnFeatures } from './column-features';
+import type { ColumnResizeMode } from './column-resize-mode';
 
 /**
  * Everything in the grid that can be turned on or off. Give some of them through the `settings`
@@ -6,6 +7,12 @@ import type { ColumnFeatures } from './column-features';
  * and the grid follows.
  */
 export interface GridSettings extends ColumnFeatures {
+  /**
+   * Resizing a column: `'widget'` changes that column alone and the columns after it shift with it;
+   * `'nextColumn'` moves only the edge between it and the next column, which gives or takes the
+   * difference, so nothing else moves. A column can set its own. Default `'widget'`.
+   */
+  resizeMode: ColumnResizeMode;
   /** Shift+click (Shift+Enter) on a header adds the column to the sort. Default `true`. */
   multiSort: boolean;
   /** The user can add rows (the "New row" button and the Tab chain). `addRow()` always works. Default `false`. */

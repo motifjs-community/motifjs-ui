@@ -15,10 +15,10 @@ export default async function ({ page, base, check }) {
   });
   check('a disabled panel disables the native input inside', await nameBox.isDisabled());
   check('…and the control inside it', await page.getByRole('button', { name: 'Inner button' }).isDisabled());
-  check('…and takes the link out of the Tab order', (await page.locator('.docs-panel a').getAttribute('tabindex')) === '-1');
+  check('…and takes the link out of the Tab order', (await page.locator('.ctl-panel a').getAttribute('tabindex')) === '-1');
   const focusAfter = await page.evaluate(() => document.activeElement?.tagName + ':' + (document.activeElement?.textContent ?? ''));
   check('focus moved on instead of falling to <body>', !focusAfter.startsWith('BODY'), focusAfter);
   await page.getByRole('button', { name: 'Toggle panel enabled' }).click();
   check('enabling restores the input', !(await nameBox.isDisabled()));
-  check('enabling restores the link', !(await page.locator('.docs-panel a').getAttribute('tabindex')));
+  check('enabling restores the link', !(await page.locator('.ctl-panel a').getAttribute('tabindex')));
 }

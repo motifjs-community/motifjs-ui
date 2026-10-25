@@ -3,6 +3,7 @@ import type { CellContext } from '../cell-context';
 import type { GridAction } from '../grid-action';
 import type { GridColumn } from '../grid-column';
 import { ACTIONS_FIELD, SELECT_FIELD, STATUS_FIELD } from '../model/ColumnModel';
+import { KeyedItems } from '../../../parts/data/KeyedItems';
 import type { GridModel } from '../model/GridModel';
 import type { RowState } from '../row-state';
 import type { ActionWidths } from './ActionWidths';
@@ -109,6 +110,19 @@ export class GridRow<T> {
       cell.removeAttribute('aria-colindex');
     }
     placeInOrder(this.element, desired);
+  }
+
+  /** Keys of a lookup source came: the lookup cells that show one of them are drawn again (all of them for `null`). */
+  drawLookups(items: KeyedItems<any>, keys: readonly string[] | null) {
+    if (this.row === undefined) return;
+    const model = this.model;
+    const wanted = keys ? new Set(keys) : null;
+    for (const [field, text] of this.texts) {
+      const col = model.columns.get(field);
+      if (!col.lookup || model.lookups.items(col) !== items) continue;
+      if (wanted && !wanted.has(KeyedItems.keyString(model.value(this.rowId, this.row, col)))) continue;
+      this.drawLookup(this.cells.get(field)!, text, col);
+    }
   }
 
   dispose() {
@@ -265,9 +279,13 @@ export class GridRow<T> {
       if (model.columns.isInternal(field)) continue;
       const col = model.columns.get(field);
       const text = this.texts.get(field);
-      if (text) {
-        const shown = formatter.text(col, row, model.value(rowId, row, col));
-        if (text.data !== shown) text.data = shown;
+      if (text && col.lookup) this.drawLookup(cell, text, col);
+      else {
+        if (text) {
+          const shown = formatter.text(col, row, model.value(rowId, row, col));
+          if (text.data !== shown) text.data = shown;
+        }
+        busy(cell, model.isBusy(rowId, field));
       }
       const error = model.error(rowId, field);
       cell.toggleAttribute('data-changed', model.isChanged(rowId, field));
@@ -280,4 +298,23 @@ export class GridRow<T> {
       }
     }
   }
+
+  /** A lookup cell: its text, empty and busy while the key loads, the key itself (muted, with a hint) when the source does not have it. */
+  private drawLookup(cell: HTMLDivElement, text: Text, col: GridColumn<T>) {
+    const model = this.model;
+    const { row, rowId } = this;
+    // Keys are asked for once the body is measured, so the first request holds every key on the screen.
+    const look = model.lookups.cell(col, row, model.value(rowId, row, col), model.isChanged(rowId, col.field), model.state.measured);
+    if (text.data !== look.text) text.data = look.text;
+    if (look.state === 'loading' || look.state === 'missing') cell.dataset.lookup = look.state;
+    else delete cell.dataset.lookup;
+    if (look.hint) cell.dataset.hint = look.hint;
+    else delete cell.dataset.hint;
+    busy(cell, look.state === 'loading' || model.isBusy(rowId, col.field));
+  }
+}
+
+function busy(cell: HTMLElement, on: boolean) {
+  if (on) cell.setAttribute('aria-busy', 'true');
+  else cell.removeAttribute('aria-busy');
 }

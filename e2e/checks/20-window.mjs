@@ -15,7 +15,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.keyboard.type('motif');
   await page.keyboard.press('Enter');
   await page.waitForTimeout(100);
-  check('Enter in the field clicks the accept button and closes it', !(await find.evaluate((el) => el.open)) && (await page.locator('.win-answer').textContent()) === 'Searched for “motif”.');
+  check('Enter in the field clicks the accept button and closes it', !(await find.evaluate((el) => el.open)) && (await page.locator('.win-found').textContent()) === 'Searched for “motif”.');
   check('focus goes back to the button that opened it', await findButton.evaluate((el) => document.activeElement === el));
   await findButton.click();
   await find.waitFor({ state: 'visible' });

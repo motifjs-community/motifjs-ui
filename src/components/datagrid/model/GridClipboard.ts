@@ -1,3 +1,4 @@
+import type { EditorValue } from '../view/editor-value';
 import type { ClipboardContent } from './clipboard-content';
 import { readDelimited, writeDelimited } from './delimited-text';
 import type { GridModel } from './GridModel';
@@ -71,9 +72,13 @@ export class GridClipboard<T> {
         const f = fields[start + j];
         if (f === undefined || !cols.canFill(f, row, !!rec?.isNew)) return;
         const col = cols.get(f);
-        const read = model.formatter.parse(col, cell, model.value(rowId, row, col));
-        if (read.ok) {
-          model.setValue(rowId, row, f, read.value, model.dataIndex(r));
+        const read = col.lookup ? this.lookupKey(rowId, row, f, cell) : model.formatter.parse(col, cell, model.value(rowId, row, col));
+        if (read instanceof Promise) {
+          // The source is asked for the text; the cell is busy until it answers.
+          model.writeLater(rowId, row, f, read, model.dataIndex(r));
+          result.cells++;
+        } else if (read.ok) {
+          model.writeCell(rowId, row, f, read.value, model.dataIndex(r));
           result.cells++;
         } else {
           model.setError(row, f, read.message);
@@ -88,8 +93,18 @@ export class GridClipboard<T> {
   cellText(row: T, field: string): string {
     const { model } = this;
     const col = model.columns.get(field);
-    const value = model.value(model.rowIdOf(row), row, col);
-    return model.settings.get('copyValues') === 'raw' ? model.formatter.raw(col, value) : model.formatter.text(col, row, value);
+    const rowId = model.rowIdOf(row);
+    const value = model.value(rowId, row, col);
+    return model.settings.get('copyValues') === 'raw' ? model.formatter.raw(col, value) : model.shownText(rowId, row, col, value);
+  }
+
+  /** Pasted text of a lookup cell read as a key: exactly one item of the source must have that text. */
+  private lookupKey(rowId: string, row: T, field: string, text: string): EditorValue | Promise<EditorValue> {
+    const { model } = this;
+    const col = model.columns.get(field);
+    const merged = { ...(row as object), ...(model.edit(rowId)?.draft ?? {}) } as T;
+    const shown = text.trim();
+    return model.lookups.parse(col, text, merged, { none: model.text('gridLookupNoMatch', { text: shown }), several: model.text('gridLookupSeveral', { text: shown }) });
   }
 
   /** The selected rows in the grid's order; `null` without a multiple selection, `'all'` for "all" over data that loads in parts. */

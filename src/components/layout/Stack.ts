@@ -102,7 +102,8 @@ export class Stack extends Control<HTMLDivElement, StackProps> {
 
   private get settings(): ChildSettings {
     const self = this as unknown as { [CHILDREN]?: ChildSettings };
-    return (self[CHILDREN] ??= new ChildSettings(this, ['grow'], {
+    if (self[CHILDREN]) return self[CHILDREN];
+    self[CHILDREN] = new ChildSettings(this, ['grow'], {
       changed: (child, el) => {
         const grow = this.settings.get(child, 'grow');
         const amount = grow === true ? 1 : typeof grow === 'number' && grow > 0 ? grow : 0;
@@ -114,7 +115,8 @@ export class Stack extends Control<HTMLDivElement, StackProps> {
         el.style.removeProperty('flex-grow');
         el.removeAttribute('data-mx-grow');
       },
-    }));
+    });
+    return self[CHILDREN].addPresent();
   }
 
   private renderLook(): void {

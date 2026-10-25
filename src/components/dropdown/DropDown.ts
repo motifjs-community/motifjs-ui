@@ -83,6 +83,8 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
       untracked(() => this.renderField(item, text, placeholder, template));
     });
     this.observeProperty('dataSource', () => this.renderSource());
+    // A value field by name lets a value on no loaded page be asked for by that field.
+    this.observeProperty<ItemField<T> | undefined>('valueField', (field) => (parts.source.valueField = typeof field === 'string' ? field : undefined));
     parts.source.onChanged(() => this.sourceChanged());
     this.listen();
     this.motif.setDisposable(() => {
@@ -210,8 +212,8 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     return this.dropParts.closed.event;
   }
 
-  /** Opens the list; `false` when it cannot be used now. */
-  open(): boolean {
+  /** Opens the list; `search` starts the search box with that text (or jumps to it without one). `false` when it cannot be used now. */
+  open(search?: string): boolean {
     if (!this.isEnabled || this.peekProperty('readOnly')) return false;
     const parts = this.dropParts;
     const popup = (parts.popup ??= this.createPopup());
@@ -231,6 +233,10 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     else list.move('first');
     this.pointAt(list.activeIndex);
     if (parts.search) parts.search.focus();
+    if (search && parts.search) {
+      parts.search.value = search;
+      parts.search.inputElement.setSelectionRange(search.length, search.length);
+    } else if (search) this.typeAhead(search);
     parts.opened.fire();
     return true;
   }

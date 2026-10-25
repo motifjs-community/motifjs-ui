@@ -13,6 +13,8 @@ export const DEFAULT_SETTINGS: GridSettings = {
   headerFilter: false,
   copyable: true,
   exportable: true,
+  syncLookupFilterValues: true,
+  resizeMode: 'widget',
   multiSort: true,
   addRows: false,
   newRowButton: true,

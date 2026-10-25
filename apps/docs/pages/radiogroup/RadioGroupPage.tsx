@@ -1,8 +1,13 @@
-import { reactive, type Component } from '@motifx/core';
-import { Button, RadioGroup, ValidationGroup, type ControlSize, type RadioGroupOrientation, type RadioItem } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import FromCode from './examples/FromCode';
+import FromData from './examples/FromData';
+import Layout from './examples/Layout';
+import OptionDetails from './examples/OptionDetails';
+import Sizes from './examples/Sizes';
+import States from './examples/States';
 
-const SIZES: ControlSize[] = ['sm', 'md', 'lg'];
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['value', '`Bind<T | null>`', '`null`', 'The value of the chosen item; `null` when none is chosen. `x-model` binds it two-way.'],
@@ -82,46 +87,7 @@ const TOKENS = [
   ['radiogroup.border-width', 'The circle border.'],
 ];
 
-interface Plan {
-  id: number;
-  name: string;
-  price: number;
-}
-
 export default function RadioGroupPage() {
-  const s = reactive({
-    size: 'M' as string | null,
-    plan: 2 as number | null,
-    shipping: 'std' as string | null,
-    expressOpen: false,
-    orientation: 'vertical' as RadioGroupOrientation,
-    columns: 0,
-    color: 'teal' as string | null,
-    payment: null as string | null,
-    editable: true,
-    result: '',
-  });
-  const plans = reactive<Plan[]>([
-    { id: 1, name: 'Free', price: 0 },
-    { id: 2, name: 'Pro', price: 12 },
-    { id: 3, name: 'Team', price: 30 },
-  ]);
-  const shipping: RadioItem<string>[] = [
-    { value: 'std', text: 'Standard', helpText: '3–5 working days', hint: 'Free over 50 €' },
-    { value: 'exp', text: 'Express', helpText: () => (s.expressOpen ? 'Tomorrow' : 'Not before the weekend'), enabled: () => s.expressOpen },
-    { value: 'pick', text: 'Pick up in store', helpText: 'Ready in 2 hours' },
-  ];
-  const colors = ['red', 'orange', 'yellow', 'green', 'teal', 'blue', 'indigo', 'violet'];
-  const group = new ValidationGroup();
-  let host: Component<HTMLDivElement> | null = null;
-
-  const addFromCode = () => {
-    const ship = new RadioGroup<string>({ label: 'Gift wrap', orientation: 'horizontal', items: ['None', 'Paper', 'Box'], value: 'None' });
-    ship.onValueChanged((e) => (s.result = `Gift wrap: ${e.value}`));
-    host?.controls.add(ship);
-    ship.focus();
-  };
-
   return (
     <>
       <p class="lead">
@@ -142,22 +108,8 @@ import { RadioGroup, type RadioItem } from '@motifx-community/ui';
         <p>
           <Rich text="A plain value is its own text. `x-model` binds the chosen value two-way. Created with `new`, the same properties are set from code." />
         </p>
-        <Example
-          code={`
-<RadioGroup label="&Size" items={['S', 'M', 'L', 'XL']} x-model={() => this.order.size} />
-
-const wrap = new RadioGroup({ label: 'Gift wrap', orientation: 'horizontal', items: ['None', 'Paper', 'Box'], value: 'None' });
-wrap.onValueChanged((e) => console.log(e.value));
-this.panel.controls.add(wrap);
-`}
-          stack
-        >
-          <RadioGroup label="&Size" items={['S', 'M', 'L', 'XL']} x-model={() => s.size} helpText={() => `Chosen: ${s.size ?? 'nothing'}`} />
-          <div class="docs-flow">
-            <Button text="Add a group from code" variant="outline" onclick={addFromCode} />
-            <output class="rg-result">{() => s.result}</output>
-          </div>
-          <div class="docs-flow" ref={(c: Component<HTMLDivElement>) => (host = c)} />
+        <Example files={code('FromCode.tsx')} stack>
+          <FromCode />
         </Example>
       </Section>
 
@@ -165,37 +117,8 @@ this.panel.controls.add(wrap);
         <p>
           <Rich text="Objects of your own shape take `itemText` and `itemValue` (a property name or a function). Given as a function of a reactive array, the list is followed: add, remove or rename and the options change at once, focus and choice kept." />
         </p>
-        <Example
-          code={`
-<RadioGroup
-  label="Plan"
-  items={() => this.plans}
-  itemText={(p) => \`\${p.name} — \${p.price} €\`}
-  itemValue="id"
-  x-model={() => this.account.planId}
-/>
-this.plans.push({ id: 4, name: 'Enterprise', price: 99 });
-`}
-          stack
-        >
-          <RadioGroup
-            label="&Plan"
-            class="rg-plans"
-            items={() => plans}
-            itemText={(p) => `${(p as Plan).name} — ${(p as Plan).price} €`}
-            itemValue="id"
-            x-model={() => s.plan}
-          />
-          <div class="docs-flow">
-            <Button
-              text="Add a plan"
-              variant="outline"
-              enabled={() => plans.length < 6}
-              onclick={() => plans.push({ id: plans.length + 1, name: `Plan ${plans.length + 1}`, price: plans.length * 20 })}
-            />
-            <Button text="Raise prices" variant="outline" onclick={() => plans.forEach((p) => (p.price += 1))} />
-            <output class="rg-plan">{() => `value: ${String(s.plan)}`}</output>
-          </div>
+        <Example files={code('FromData.tsx')} stack>
+          <FromData />
         </Example>
       </Section>
 
@@ -203,89 +126,26 @@ this.plans.push({ id: 4, name: 'Enterprise', price: 99 });
         <p>
           <Rich text="A `RadioItem` brings its own `enabled`, `visible`, `hint` and `helpText`, each a value or a function. The arrow keys skip what cannot be chosen." />
         </p>
-        <Example
-          code={`
-const shipping: RadioItem<string>[] = [
-  { value: 'std', text: 'Standard', helpText: '3–5 working days', hint: 'Free over 50 €' },
-  { value: 'exp', text: 'Express', helpText: 'Tomorrow', enabled: () => this.expressOpen },
-  { value: 'pick', text: 'Pick up in store', helpText: 'Ready in 2 hours' },
-];
-<RadioGroup label="Shipping" items={shipping} x-model={() => this.order.shipping} />
-`}
-          stack
-        >
-          <Button
-            text={() => (s.expressOpen ? 'Close express' : 'Open express')}
-            variant="outline"
-            onclick={() => (s.expressOpen = !s.expressOpen)}
-          />
-          <RadioGroup label="S&hipping" class="rg-shipping" items={shipping} x-model={() => s.shipping} />
+        <Example files={code('OptionDetails.tsx')} stack>
+          <OptionDetails />
         </Example>
       </Section>
 
       <Section anchor="layout" title="Orientation and columns">
-        <Example
-          code={`
-<RadioGroup label="Color" items={colors} orientation="horizontal" />
-<RadioGroup label="Color" items={colors} columns={4} />
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Layout">
-            {(['vertical', 'horizontal'] as RadioGroupOrientation[]).map((o) => (
-              <Button
-                key={o}
-                text={o}
-                size="sm"
-                variant={() => (s.orientation === o ? 'solid' : 'ghost')}
-                aria-pressed={() => s.orientation === o}
-                onclick={() => (s.orientation = o)}
-              />
-            ))}
-            {[0, 2, 4].map((n) => (
-              <Button
-                key={`c${n}`}
-                text={n ? `${n} columns` : 'no grid'}
-                size="sm"
-                variant={() => (s.columns === n ? 'solid' : 'ghost')}
-                aria-pressed={() => s.columns === n}
-                onclick={() => (s.columns = n)}
-              />
-            ))}
-          </div>
-          <RadioGroup label="&Color" class="rg-colors" items={colors} orientation={() => s.orientation} columns={() => s.columns} x-model={() => s.color} />
+        <Example files={code('Layout.tsx')} stack>
+          <Layout />
         </Example>
       </Section>
 
       <Section anchor="sizes" title="Sizes">
-        <Example
-          code={`
-<RadioGroup label="Small" size="sm" items={['One', 'Two']} />
-`}
-        >
-          {SIZES.map((size) => (
-            <RadioGroup key={size} label={size} size={size} items={['One', 'Two']} value="Two" />
-          ))}
+        <Example files={code('Sizes.tsx')}>
+          <Sizes />
         </Example>
       </Section>
 
       <Section anchor="validation" title="Required, read-only, disabled">
-        <Example
-          code={`
-<RadioGroup label="Payment" required validationGroup={group} items={['Card', 'Transfer']} />
-<RadioGroup label="Plan" readOnly value="Pro" items={['Free', 'Pro']} />
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <RadioGroup label="Pa&yment" orientation="horizontal" required validationGroup={group} items={['Card', 'Transfer', 'Cash']} x-model={() => s.payment} />
-            <Button text="Pay" tone="accent" onclick={async () => (s.result = (await group.validate()).valid ? 'Paid.' : 'Choose a payment.')} />
-          </div>
-          <div class="docs-flow">
-            <Button text="Toggle" variant="outline" onclick={() => (s.editable = !s.editable)} />
-            <RadioGroup label="Read-only" readOnly={() => !s.editable} items={['Free', 'Pro']} value="Pro" />
-            <RadioGroup label="Disabled" enabled={() => s.editable} items={['Free', 'Pro']} value="Pro" />
-          </div>
+        <Example files={code('States.tsx')} stack>
+          <States />
         </Example>
       </Section>
 

@@ -544,7 +544,8 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       else if (name === 'expandedKeys') {
         this.takeExpanded(value);
         this.redraw();
-      } else if (name === 'checkedKeys') {
+      } else if (name === 'checkedKeys' && !this.isChecked(value)) {
+        // The keys we just reported, written back by a two-way binding, change nothing.
         this.takeChecked(value);
         this.checksChanged(null, false);
       }
@@ -736,6 +737,12 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
 
   private takeChecked(value: unknown): void {
     if (Array.isArray(value)) this.parts.checked = new Set(value);
+  }
+
+  /** Whether a key list holds exactly the keys checked now. */
+  private isChecked(value: unknown): boolean {
+    const checked = this.parts.checked;
+    return Array.isArray(value) && value.length === checked.size && value.every((key) => checked.has(key));
   }
 
   /** Brings a key list's storage in step, without dropping a bound getter. */

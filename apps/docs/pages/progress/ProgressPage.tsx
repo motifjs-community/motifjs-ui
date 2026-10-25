@@ -1,9 +1,15 @@
-import { reactive, type Component } from '@motifx/core';
-import { Button, enStrings, ProgressBar, Spinner, TextBox, trStrings, uiLocale, type ControlSize, type ProgressTone } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import Cover from './examples/Cover';
+import Delay from './examples/Delay';
+import FromCode from './examples/FromCode';
+import Localization from './examples/Localization';
+import NotKnown from './examples/NotKnown';
+import Sizes from './examples/Sizes';
+import Spinners from './examples/Spinners';
+import Tones from './examples/Tones';
 
-const TONES: ProgressTone[] = ['accent', 'neutral', 'success', 'caution', 'danger'];
-const SIZES: ControlSize[] = ['sm', 'md', 'lg'];
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const BAR_PROPS = [
   ['value', '`Bind<number | null>`', '`null`', 'How far the work is. `null` (or no value) when that is not known: the bar runs to and fro.'],
@@ -63,53 +69,6 @@ const TOKENS = [
 ];
 
 export default function ProgressPage() {
-  const s = reactive({
-    upload: 0,
-    uploading: false,
-    files: 3,
-    busy: false,
-    lang: 'en',
-    result: '',
-  });
-  let added = 0;
-  let host: Component<HTMLDivElement> | null = null;
-  let panel: Component<HTMLDivElement> | null = null;
-
-  const upload = () => {
-    if (s.uploading) return;
-    s.uploading = true;
-    s.upload = 0;
-    const timer = setInterval(() => {
-      s.upload = Math.min(100, s.upload + 7);
-      if (s.upload < 100) return;
-      clearInterval(timer);
-      s.uploading = false;
-    }, 120);
-  };
-
-  const addFromCode = () => {
-    const bar = new ProgressBar({ label: `Task ${++added}`, value: 25 * added, showValue: true, tone: 'success' });
-    host?.controls.add(bar);
-  };
-
-  const work = (ms: number) => {
-    s.busy = true;
-    s.result = '';
-    setTimeout(() => {
-      s.busy = false;
-      s.result = `Done after ${ms} ms.`;
-    }, ms);
-  };
-
-  const load = () => {
-    if (!panel) return;
-    const done = Spinner.cover(panel, { label: 'Loading orders' });
-    setTimeout(() => {
-      done();
-      s.result = 'Orders loaded.';
-    }, 1500);
-  };
-
   return (
     <>
       <p class="lead">
@@ -129,22 +88,8 @@ import { ProgressBar, Spinner, type ProgressTone } from '@motifx-community/ui';
         <p>
           <Rich text="Every prop takes a value or a function; a function of a reactive object keeps the bar in step with the work. Created with `new`, the same properties are set from code." />
         </p>
-        <Example
-          code={`
-<ProgressBar label="Uploading" value={() => this.upload.percent} showValue />
-
-const bar = new ProgressBar({ label: 'Import', showValue: true, tone: 'success' });
-this.panel.controls.add(bar);
-bar.value = 25;
-`}
-          stack
-        >
-          <ProgressBar label="Uploading" value={() => s.upload} showValue stretch />
-          <div class="docs-flow">
-            <Button text="Upload" tone="accent" enabled={() => !s.uploading} onclick={upload} />
-            <Button text="Add a bar from code" variant="outline" onclick={addFromCode} />
-          </div>
-          <div class="docs-flow" ref={(c: Component<HTMLDivElement>) => (host = c)} />
+        <Example files={code('FromCode.tsx')} stack>
+          <FromCode />
         </Example>
       </Section>
 
@@ -152,27 +97,14 @@ bar.value = 25;
         <p>
           <Rich text="Without a value (`null`) the bar runs to and fro; give it a number once the work can tell how far it is." />
         </p>
-        <Example
-          code={`
-<ProgressBar label="Preparing" value={null} />
-<ProgressBar label="Copying" value={() => (this.copy.total ? this.copy.done : null)} max={() => this.copy.total} />
-`}
-          stack
-        >
-          <ProgressBar label="Preparing" value={null} />
+        <Example files={code('NotKnown.tsx')} stack>
+          <NotKnown />
         </Example>
       </Section>
 
       <Section anchor="tones" title="Tones">
-        <Example
-          code={`
-<ProgressBar label="Disk" value={92} tone="danger" showValue />
-`}
-          stack
-        >
-          {TONES.map((tone) => (
-            <ProgressBar key={tone} label={tone} value={20 + TONES.indexOf(tone) * 18} tone={tone} showValue />
-          ))}
+        <Example files={code('Tones.tsx')} stack>
+          <Tones />
         </Example>
       </Section>
 
@@ -180,38 +112,14 @@ bar.value = 25;
         <p>
           <Rich text={'`size` sets the thickness. `labelPosition="side"` puts the label before the bar and the value after it. `valueText` writes the value its own way.'} />
         </p>
-        <Example
-          code={`
-<ProgressBar label="Small" size="sm" value={30} />
-<ProgressBar label="Files" labelPosition="side" max={12} value={() => this.done} showValue
-  valueText={(v) => \`\${v} of 12\`} />
-`}
-          stack
-        >
-          {SIZES.map((size) => (
-            <ProgressBar key={size} label={`Size ${size}`} size={size} value={60} />
-          ))}
-          <ProgressBar label="Files" labelPosition="side" max={12} value={() => s.files} showValue valueText={(v) => `${v} of 12`} stretch />
-          <Button text="One more file" size="sm" variant="outline" onclick={() => (s.files = s.files >= 12 ? 0 : s.files + 1)} />
+        <Example files={code('Sizes.tsx')} stack>
+          <Sizes />
         </Example>
       </Section>
 
       <Section anchor="spinner" title="Spinner">
-        <Example
-          code={`
-<Spinner />
-<Spinner label="Loading orders" />
-<Spinner label="Saving" labelPosition="bottom" size="lg" />
-`}
-        >
-          {SIZES.map((size) => (
-            <Spinner key={size} size={size} />
-          ))}
-          <Spinner label="Loading orders" />
-          <Spinner label="Saving" labelPosition="bottom" size="lg" />
-          {TONES.slice(1).map((tone) => (
-            <Spinner key={tone} tone={tone} size="sm" label={tone} />
-          ))}
+        <Example files={code('Spinners.tsx')}>
+          <Spinners />
         </Example>
       </Section>
 
@@ -219,18 +127,8 @@ bar.value = 25;
         <p>
           <Rich text="A spinner with `delay` stays unseen for that long, from when it is created or shown again. Quick work shows nothing; slow work shows the spinner." />
         </p>
-        <Example
-          code={`
-<Spinner label="Working" delay={400} visible={() => this.busy} />
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <Button text="Quick work (200 ms)" variant="outline" onclick={() => work(200)} />
-            <Button text="Slow work (2 s)" variant="outline" onclick={() => work(2000)} />
-            <Spinner label="Working" delay={400} visible={() => s.busy} />
-          </div>
-          <output class="pr-result">{() => s.result}</output>
+        <Example files={code('Delay.tsx')} stack>
+          <Delay />
         </Example>
       </Section>
 
@@ -238,21 +136,8 @@ bar.value = 25;
         <p>
           <Rich text="`Spinner.cover(target)` lays a spinner over a component or an element and returns the function that takes it away. What is under it cannot be pressed or focused; focus that was inside waits on the spinner and comes back afterwards." />
         </p>
-        <Example
-          code={`
-const done = Spinner.cover(this.ordersPanel, { label: 'Loading orders', delay: 200 });
-try {
-  await this.orders.load();
-} finally {
-  done();
-}
-`}
-          stack
-        >
-          <div class="docs-panel docs-flow" ref={(c: Component<HTMLDivElement>) => (panel = c)}>
-            <TextBox label="Customer" value="Ada" />
-            <Button text="Load orders" tone="accent" onclick={load} />
-          </div>
+        <Example files={code('Cover.tsx')} stack>
+          <Cover />
         </Example>
       </Section>
 
@@ -264,24 +149,8 @@ try {
         <p>
           <Rich text="A bar or a spinner without a label is named `uiLocale.strings.loading`. The percent is written in `locale`, by default the page's `lang`." />
         </p>
-        <Example
-          code={`
-uiLocale.strings = trStrings;
-<ProgressBar value={40} showValue locale="tr" />   // %40
-`}
-        >
-          <Button
-            text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')}
-            variant="outline"
-            onclick={() => {
-              s.lang = s.lang === 'en' ? 'tr' : 'en';
-              uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
-            }}
-          />
-          <ProgressBar value={40} showValue locale={() => s.lang} />
-          <span>
-            Unlabelled ones are named <output class="pr-loading">{() => uiLocale.strings.loading}</output>
-          </span>
+        <Example files={code('Localization.tsx')}>
+          <Localization />
         </Example>
       </Section>
 

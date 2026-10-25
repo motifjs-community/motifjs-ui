@@ -1,40 +1,13 @@
-import { reactive, type Component } from '@motifx/core';
-import { data } from '@motifx-community/data';
-import { Button, ListBox, Switch, ValidationGroup, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import Countries from './examples/Countries';
+import FromCode from './examples/FromCode';
+import Localization from './examples/Localization';
+import Orders from './examples/Orders';
+import SeveralItems from './examples/SeveralItems';
+import Validation from './examples/Validation';
 
-interface Country {
-  code: string;
-  name: string;
-  region: string;
-  flag: string;
-  member?: boolean;
-}
-
-const COUNTRIES: Country[] = [
-  { code: 'TR', name: 'Türkiye', region: 'Europe', flag: '🇹🇷' },
-  { code: 'DE', name: 'Germany', region: 'Europe', flag: '🇩🇪' },
-  { code: 'FR', name: 'France', region: 'Europe', flag: '🇫🇷' },
-  { code: 'NO', name: 'Norway', region: 'Europe', flag: '🇳🇴', member: false },
-  { code: 'JP', name: 'Japan', region: 'Asia', flag: '🇯🇵' },
-  { code: 'KR', name: 'Korea', region: 'Asia', flag: '🇰🇷' },
-  { code: 'BR', name: 'Brazil', region: 'Americas', flag: '🇧🇷' },
-  { code: 'CA', name: 'Canada', region: 'Americas', flag: '🇨🇦' },
-];
-
-const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
-
-interface Order {
-  id: number;
-  name: string;
-}
-
-const ORDERS: Order[] = Array.from({ length: 5000 }, (_, i) => ({ id: i + 1, name: `Order #${String(i + 1).padStart(5, '0')}` }));
-
-/** 5,000 orders behind the adapter of the data layer, loaded in blocks while the list scrolls. */
-function orderSource() {
-  return new data.DataSource<Order, number>({ adapter: new data.ArrayAdapter({ data: ORDERS, key: 'id' }), loadMode: 'blocks', pageSize: 50, searchFields: ['name'] });
-}
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['value', '`Bind<V | V[] | null>`', '`null` / `[]`', 'The chosen value (single) or values (multiple). `x-model` binds it; a change writes a new array.'],
@@ -112,34 +85,6 @@ const TOKENS = [
 ];
 
 export default function ListBoxPage() {
-  const s = reactive({
-    city: 'İzmir' as string | null,
-    picked: ['Bursa', 'Konya'] as string[],
-    multiple: true,
-    checkBoxes: true,
-    selectAll: true,
-    follows: true,
-    search: false,
-    country: 'JP' as string | null,
-    orders: [42, 4321] as number[],
-    required: [] as string[],
-    result: '',
-    lang: 'en',
-    made: 0,
-  });
-  const orders = orderSource();
-  const group = new ValidationGroup();
-  let host: Component<HTMLDivElement> | undefined;
-  const flag = (c: Country, el: HTMLElement) => {
-    el.textContent = `${c.flag}  ${c.name}`;
-  };
-  const addFromCode = () => {
-    const list = new ListBox<string, string>({ label: `Size ${++s.made}`, items: ['S', 'M', 'L', 'XL'], height: 4 });
-    list.onValueChanged((e) => (s.result = `${list.label}: ${e.value}`));
-    host?.controls.add(list);
-    list.focus();
-  };
-
   return (
     <>
       <p class="lead">
@@ -160,22 +105,8 @@ import { data } from '@motifx-community/data';
         <p>
           <Rich text="`items` can be plain values; `x-model` binds the value. Created with `new`, the same properties are set from code." />
         </p>
-        <Example
-          code={`
-<ListBox label="&City" items={['Ankara', 'Bursa', 'İzmir']} x-model={() => this.form.city} />
-
-const size = new ListBox({ label: 'Size', items: ['S', 'M', 'L', 'XL'], height: 4 });
-size.onValueChanged((e) => console.log(e.value));
-this.panel.controls.add(size);
-`}
-        >
-          <ListBox label="&City" items={CITIES} x-model={() => s.city} />
-          <div class="docs-flow">
-            <output class="lb-city">{() => `city: ${s.city ?? '—'}`}</output>
-            <Button text="Add a list from code" variant="outline" onclick={addFromCode} />
-            <output class="lb-made">{() => s.result}</output>
-          </div>
-          <div class="docs-flow" ref={(c: Component<HTMLDivElement>) => (host = c)} />
+        <Example files={code('FromCode.tsx', 'cities.ts')}>
+          <FromCode />
         </Example>
       </Section>
 
@@ -183,42 +114,8 @@ this.panel.controls.add(size);
         <p>
           <Rich text="With `selectionMode` set to `'multiple'` the value is an array, and every change writes a new one. Each switch below is a prop you can bind." />
         </p>
-        <Example
-          code={`
-<ListBox
-  label="Cities"
-  items={cities}
-  selectionMode={() => (this.ui.multiple ? 'multiple' : 'single')}
-  showCheckBoxes={() => this.ui.checkBoxes}
-  selectAll={() => this.ui.selectAll}
-  selectionFollowsFocus={() => this.ui.follows}
-  searchEnabled={() => this.ui.search}
-  x-model={() => this.form.cities}
-/>
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <Switch label="Multiple" x-model={() => s.multiple} />
-            <Switch label="Check boxes" x-model={() => s.checkBoxes} />
-            <Switch label="Select all" x-model={() => s.selectAll} />
-            <Switch label="Selection follows focus" x-model={() => s.follows} />
-            <Switch label="Search" x-model={() => s.search} />
-          </div>
-          <div class="docs-flow">
-            <ListBox
-              label="Cities"
-              items={CITIES}
-              selectionMode={() => (s.multiple ? 'multiple' : 'single')}
-              showCheckBoxes={() => s.checkBoxes}
-              selectAll={() => s.selectAll}
-              selectionFollowsFocus={() => s.follows}
-              searchEnabled={() => s.search}
-              value={() => (s.multiple ? s.picked : (s.picked[0] ?? null))}
-              onValueChanged={(e) => (s.picked = Array.isArray(e.value) ? (e.value as string[]) : e.value === null ? [] : [e.value as string])}
-            />
-            <output class="lb-picked">{() => `value: ${JSON.stringify(s.multiple ? s.picked : (s.picked[0] ?? null))}`}</output>
-          </div>
+        <Example files={code('SeveralItems.tsx', 'cities.ts')} stack>
+          <SeveralItems />
         </Example>
       </Section>
 
@@ -226,33 +123,8 @@ this.panel.controls.add(size);
         <p>
           <Rich text="Objects of your own are read through `textField` and `valueField`; `groupField` puts items under headers, `enabledField` keeps some from being chosen, and `itemTemplate` draws an item your way." />
         </p>
-        <Example
-          code={`
-<ListBox
-  label="Country"
-  items={this.countries}
-  textField="name"
-  valueField="code"
-  groupField="region"
-  enabledField={(c) => c.member !== false}
-  itemTemplate={(c, host) => (host.textContent = \`\${c.flag}  \${c.name}\`)}
-  height={8}
-  x-model={() => this.form.country}
-/>
-`}
-        >
-          <ListBox
-            label="Country"
-            items={COUNTRIES}
-            textField="name"
-            valueField="code"
-            groupField="region"
-            enabledField={(c: Country) => c.member !== false}
-            itemTemplate={flag}
-            height={8}
-            x-model={() => s.country}
-          />
-          <output class="lb-country">{() => `code: ${s.country ?? '—'}`}</output>
+        <Example files={code('Countries.tsx')}>
+          <Countries />
         </Example>
       </Section>
 
@@ -260,62 +132,14 @@ this.panel.controls.add(size);
         <p>
           <Rich text="With `dataSource` the list reads a `DataSource` of the data layer, and the search goes to it (its `searchFields`). In `'blocks'` mode only the rows in view load while the list scrolls; chosen values on rows not loaded yet stay chosen, and “Select all” loads the values of every matching row. This one holds 5,000 orders." />
         </p>
-        <Example
-          code={`
-const orders = new data.DataSource({
-  adapter: new data.ArrayAdapter({ data: rows, key: 'id' }),
-  loadMode: 'blocks',
-  searchFields: ['name'],
-});
-
-<ListBox label="Orders" dataSource={orders} textField="name" valueField="id"
-  selectionMode="multiple" selectAll searchEnabled height={10} x-model={() => this.form.orders} />
-`}
-        >
-          <ListBox
-            label="Orders"
-            dataSource={orders}
-            textField="name"
-            valueField="id"
-            selectionMode="multiple"
-            selectAll
-            searchEnabled
-            height={10}
-            x-model={() => s.orders}
-          />
-          <output class="lb-orders">{() => `${s.orders.length} chosen${s.orders.length && s.orders.length < 6 ? `: ${s.orders.join(', ')}` : ''}`}</output>
+        <Example files={code('Orders.tsx')}>
+          <Orders />
         </Example>
       </Section>
 
       <Section anchor="validation" title="Validation and states">
-        <Example
-          code={`
-<ListBox label="Sizes" items={sizes} selectionMode="multiple" required validationGroup={group} />
-<ListBox label="Read-only" items={cities} value="Bursa" readOnly />
-`}
-        >
-          <ListBox
-            label="Sizes"
-            items={['S', 'M', 'L', 'XL']}
-            selectionMode="multiple"
-            required
-            helpText="Pick one or more."
-            validationGroup={group}
-            x-model={() => s.required}
-          />
-          <ListBox label="Read-only" items={CITIES} value="Bursa" readOnly height={4} />
-          <ListBox label="Disabled" items={CITIES} value="Bursa" enabled={false} height={4} />
-          <div class="docs-flow">
-            <Button
-              text="Check"
-              variant="outline"
-              onclick={async () => {
-                const result = await group.validate();
-                s.result = result.valid ? 'Fine.' : 'Pick a size.';
-              }}
-            />
-            <output class="lb-check">{() => s.result}</output>
-          </div>
+        <Example files={code('Validation.tsx', 'cities.ts')}>
+          <Validation />
         </Example>
       </Section>
 
@@ -331,21 +155,8 @@ const orders = new data.DataSource({
         <p>
           <Rich text="“Select all”, the search box, “No items” and “Loading…” come from `uiLocale.strings` (`selectAll`, `search`, `noItems`, `loading`)." />
         </p>
-        <Example
-          code={`
-uiLocale.strings = trStrings;
-`}
-        >
-          <Button
-            text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')}
-            variant="outline"
-            onclick={() => {
-              s.lang = s.lang === 'en' ? 'tr' : 'en';
-              uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
-            }}
-          />
-          <ListBox label="Fruit" items={['Apple', 'Cherry', 'Pear']} selectionMode="multiple" selectAll searchEnabled />
-          <ListBox label="Empty" items={[]} height={3} />
+        <Example files={code('Localization.tsx')}>
+          <Localization />
         </Example>
       </Section>
 

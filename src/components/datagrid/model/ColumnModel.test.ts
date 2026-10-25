@@ -112,6 +112,43 @@ describe('ColumnModel', () => {
     expect(cols.template(['a'])).toBe('300px');
   });
 
+  it("in 'nextColumn' mode trades width with the next column only", () => {
+    const settings = settingsOf({ resizeMode: 'nextColumn' });
+    const cols = new ColumnModel(
+      [
+        { field: 'a', title: 'A', width: 100 },
+        { field: 'b', title: 'B', width: 150, minWidth: 80, flex: 1 },
+        { field: 'c', title: 'C', width: 120 },
+        { field: 'd', title: 'D', width: 90, sticky: 'end' },
+      ],
+      undefined,
+      settings,
+    );
+    expect(cols.partnerOf('a')).toBe('b');
+    expect(cols.resizeWithNext('a', 'b', 250, 140)).toBe(140);
+    expect([cols.width('a'), cols.width('b'), cols.width('c')]).toEqual([140, 110, 120]);
+    expect(cols.state.flex.b).toBe(0);
+    // The next column keeps its smallest width.
+    expect(cols.resizeWithNext('a', 'b', 250, 240)).toBe(170);
+    expect(cols.width('b')).toBe(80);
+    // The last column of its zone has no partner and changes alone.
+    expect(cols.partnerOf('c')).toBeUndefined();
+    expect(cols.partnerOf('d')).toBeUndefined();
+  });
+
+  it("follows the column's own resize mode, and skips a next column that cannot be resized", () => {
+    const state = { mode: 'widget' as 'widget' | 'nextColumn' };
+    const cols = new ColumnModel([
+      { field: 'a', title: 'A', resizeMode: () => state.mode },
+      { field: 'b', title: 'B', resizeMode: 'nextColumn' },
+      { field: 'c', title: 'C', resizable: false },
+    ]);
+    expect(cols.partnerOf('a')).toBeUndefined();
+    state.mode = 'nextColumn';
+    expect(cols.partnerOf('a')).toBe('b');
+    expect(cols.partnerOf('b')).toBeUndefined();
+  });
+
   it('never hides the last visible column', () => {
     const cols = new ColumnModel([
       { field: 'a', title: 'A' },

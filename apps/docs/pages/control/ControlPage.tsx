@@ -1,9 +1,9 @@
-import { reactive } from '@motifx/core';
-import { Button, Control } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import AddFromCode from './examples/AddFromCode';
+import EnabledPanel from './examples/EnabledPanel';
 
-/** A plain container control for the demos: a div whose JSX children core renders. */
-class DemoPanel extends Control<HTMLDivElement> {}
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['text', '`Bind<string>`', "`''`", 'The control\'s text. Where it shows is up to the control: a button\'s caption, a form\'s title.'],
@@ -68,16 +68,6 @@ const COST = [
 ];
 
 export default function ControlPage() {
-  const s = reactive({ added: 0, panelEnabled: true });
-  let target: DemoPanel | null = null;
-  let codePanel: DemoPanel | null = null;
-
-  const addFromCode = () => {
-    const b = new Button({ text: `Button ${++s.added}` });
-    b.motif.on('click', () => (b.text = `${b.text} ✓`));
-    target?.controls.add(b);
-  };
-
   return (
     <>
       <p class="lead">
@@ -117,10 +107,9 @@ unread.text = () => \`Unread (\${this.mail.count})\`; // a function is followed
         <p>
           <code>Badge</code> is the control written in <a href="#own">Writing a control</a>.
         </p>
-        <div class="demo">
-          <Button text="Add a button from code" onclick={addFromCode} />
-          <DemoPanel class="docs-flow" ref={(p: DemoPanel) => (target = p)} />
-        </div>
+        <Example files={code('AddFromCode.tsx')}>
+          <AddFromCode />
+        </Example>
       </Section>
 
       <Section anchor="rules" title="How a property gets its value">
@@ -154,25 +143,8 @@ unread.text = () => \`Unread (\${this.mail.count})\`; // a function is followed
           If focus was inside, it moves to the next usable element in the same window (or the one before it) instead of
           falling to <code>&lt;body&gt;</code>.
         </p>
-        <Example
-          code={`
-<CustomerPanel enabled={() => !this.model.saving} />
-
-// or from code
-this.customerPanel.enabled = false;
-saveButton.enabled;   // true: its own value
-saveButton.isEnabled; // false while it sits in the disabled panel
-`}
-          stack
-        >
-          <Button text="Toggle panel enabled" onclick={() => (codePanel!.enabled = !codePanel!.enabled)} />
-          <DemoPanel class="docs-flow docs-panel" ref={(p: DemoPanel) => (codePanel = p)}>
-            <label>
-              Name <input name="panel-name" />
-            </label>
-            <Button text="Inner button" />
-            <a href="#enabled">A link</a>
-          </DemoPanel>
+        <Example files={code('EnabledPanel.tsx')} stack>
+          <EnabledPanel />
         </Example>
       </Section>
 

@@ -1,135 +1,16 @@
-import { reactive, type Component } from '@motifx/core';
-import { Button, TextBox, TreeView, enStrings, trStrings, uiLocale, type TreeViewSelectionMode } from '@motifx-community/ui';
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import FileExplorer from './examples/FileExplorer';
+import FlatData from './examples/FlatData';
+import FromCode from './examples/FromCode';
+import LargeTree from './examples/LargeTree';
+import Localization from './examples/Localization';
+import Permissions from './examples/Permissions';
+import Search from './examples/Search';
+import Selection from './examples/Selection';
+import SizesAndLines from './examples/SizesAndLines';
 
-interface Entry {
-  id: string;
-  text: string;
-  folder?: boolean;
-  hasChildren?: boolean;
-  children?: Entry[];
-  enabled?: boolean;
-  expanded?: boolean;
-  count?: number;
-}
-
-const SVG = 'http://www.w3.org/2000/svg';
-
-/** A small outline icon, a new element for each row. */
-function icon(path: string): SVGSVGElement {
-  const svg = document.createElementNS(SVG, 'svg');
-  svg.setAttribute('viewBox', '0 0 16 16');
-  const line = svg.appendChild(document.createElementNS(SVG, 'path'));
-  line.setAttribute('d', path);
-  line.setAttribute('fill', 'none');
-  line.setAttribute('stroke', 'currentColor');
-  line.setAttribute('stroke-width', '1.2');
-  line.setAttribute('stroke-linejoin', 'round');
-  return svg;
-}
-
-const FOLDER = 'M1.5 3.5h5l1.5 1.5h6.5v8h-13z';
-const FILE = 'M3.5 1.5h6l3 3v10h-9zM9.5 1.5v3h3';
-
-const PROJECT = (): Entry[] => [
-  {
-    id: 'src',
-    text: 'src',
-    folder: true,
-    children: [
-      { id: 'main', text: 'main.ts' },
-      {
-        id: 'components',
-        text: 'components',
-        folder: true,
-        children: [
-          { id: 'button', text: 'Button.ts' },
-          { id: 'tree', text: 'TreeView.ts' },
-        ],
-      },
-    ],
-  },
-  { id: 'docs', text: 'docs', folder: true, children: [{ id: 'guide', text: 'guide.md' }] },
-  { id: 'package', text: 'package.json' },
-];
-
-/** A made-up disk: each folder's entries, read with a delay. */
-const DISK: Record<string, string[]> = {
-  '/': ['Documents/', 'Pictures/', 'Shared/', 'notes.txt'],
-  '/Documents/': ['Invoices/', 'Letters/', 'plan.docx'],
-  '/Documents/Invoices/': ['2025/', '2026/'],
-  '/Documents/Invoices/2025/': ['january.pdf', 'february.pdf'],
-  '/Documents/Invoices/2026/': ['march.pdf'],
-  '/Documents/Letters/': [],
-  '/Pictures/': ['holiday.jpg', 'cat.png'],
-  '/Shared/': ['team.xlsx'],
-};
-
-function entriesOf(path: string): Entry[] {
-  return (DISK[path] ?? []).map((name) => {
-    const folder = name.endsWith('/');
-    return { id: path + name, text: folder ? name.slice(0, -1) : name, folder, hasChildren: folder };
-  });
-}
-
-const PERMISSIONS = (): Entry[] => [
-  {
-    id: 'admin',
-    text: 'Administration',
-    expanded: true,
-    children: [
-      { id: 'users', text: 'Users', children: [{ id: 'users.view', text: 'View' }, { id: 'users.edit', text: 'Edit' }, { id: 'users.delete', text: 'Delete' }] },
-      { id: 'roles', text: 'Roles', children: [{ id: 'roles.view', text: 'View' }, { id: 'roles.edit', text: 'Edit' }] },
-    ],
-  },
-  {
-    id: 'content',
-    text: 'Content',
-    expanded: true,
-    children: [
-      { id: 'articles', text: 'Articles', children: [{ id: 'articles.read', text: 'Read' }, { id: 'articles.write', text: 'Write' }, { id: 'articles.publish', text: 'Publish' }] },
-      { id: 'media', text: 'Media', children: [{ id: 'media.upload', text: 'Upload' }, { id: 'media.delete', text: 'Delete' }] },
-    ],
-  },
-  { id: 'billing', text: 'Billing', children: [{ id: 'invoices', text: 'Invoices' }, { id: 'cards', text: 'Payment methods', enabled: false }] },
-];
-
-const WORLD = (): Entry[] => [
-  {
-    id: 'europe',
-    text: 'Europe',
-    children: [
-      { id: 'tr', text: 'Türkiye', children: [{ id: 'ankara', text: 'Ankara' }, { id: 'istanbul', text: 'İstanbul' }, { id: 'izmir', text: 'İzmir' }] },
-      { id: 'de', text: 'Germany', children: [{ id: 'berlin', text: 'Berlin' }, { id: 'hamburg', text: 'Hamburg' }] },
-      { id: 'it', text: 'Italy', children: [{ id: 'rome', text: 'Rome' }, { id: 'milan', text: 'Milan' }] },
-    ],
-  },
-  {
-    id: 'asia',
-    text: 'Asia',
-    children: [
-      { id: 'jp', text: 'Japan', children: [{ id: 'tokyo', text: 'Tokyo' }, { id: 'osaka', text: 'Osaka' }] },
-      { id: 'kr', text: 'Korea', children: [{ id: 'seoul', text: 'Seoul' }, { id: 'busan', text: 'Busan' }] },
-    ],
-  },
-  { id: 'americas', text: 'Americas', children: [{ id: 'ca', text: 'Canada', children: [{ id: 'toronto', text: 'Toronto' }, { id: 'montreal', text: 'Montreal' }] }] },
-];
-
-const FLAT = [
-  { id: 1, name: 'Company', parent: null },
-  { id: 2, name: 'Sales', parent: 1 },
-  { id: 3, name: 'Engineering', parent: 1 },
-  { id: 4, name: 'Web', parent: 3 },
-  { id: 5, name: 'Mobile', parent: 3 },
-];
-
-const MANY: Entry[] = Array.from({ length: 50 }, (_, d) => ({
-  id: `d${d}`,
-  text: `Department ${d + 1}`,
-  children: Array.from({ length: 200 }, (_, p) => ({ id: `d${d}p${p}`, text: `Person ${d + 1}.${p + 1}` })),
-}));
-
-const PANEL = 'inline-size: 100%; max-inline-size: 26rem; padding: var(--mx-space-1); border: var(--mx-border-width-1) solid var(--mx-color-stroke-card); border-radius: var(--mx-radius-lg); background: var(--mx-color-bg-card)';
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
   ['items', '`Bind<readonly T[]>`', '`[]`', 'Nested items (a `children` array) or flat ones (a `parentId`). A function is followed, and so are changes inside a reactive array.'],
@@ -225,56 +106,6 @@ const TOKENS = [
 ];
 
 export default function TreeViewPage() {
-  const s = reactive({
-    file: 'tree' as unknown,
-    opened: '',
-    clicked: '',
-    picked: [] as unknown[],
-    mode: 'multiple' as TreeViewSelectionMode,
-    checked: ['users.view', 'articles.read'] as unknown[],
-    recursive: true,
-    search: '',
-    startsWith: false,
-    lines: true,
-    size: 'md' as 'sm' | 'md' | 'lg',
-    expandOn: 'expander' as 'expander' | 'click' | 'dblclick',
-    lang: 'en',
-    loads: 0,
-  });
-  const menu = reactive<Entry[]>([
-    { id: 'home', text: 'Home' },
-    { id: 'products', text: 'Products', children: [{ id: 'new', text: 'New' }] },
-  ]);
-  let added = 0;
-  let failed = false;
-  let permissions!: TreeView<Entry>;
-
-  const coded = new TreeView<Entry>({ items: menu, label: 'Menu', selectionMode: 'none' });
-  coded.onItemClick((e) => (s.clicked = `Pressed “${e.item.text}”.`));
-  const addPage = () => {
-    added++;
-    menu[1].children!.push({ id: `p${added}`, text: `Product ${added}` });
-    coded.expand('products');
-  };
-
-  const big = new TreeView<Entry>({ items: MANY, label: 'People', showLines: true });
-  big.element.style.blockSize = '20rem';
-
-  const loadChildren = (entry: Entry) =>
-    new Promise<Entry[]>((resolve, reject) => {
-      s.loads++;
-      setTimeout(() => {
-        if (entry.id === '/Shared/' && !failed) {
-          failed = true;
-          reject(new Error('The share is offline.'));
-        } else {
-          resolve(entriesOf(entry.id));
-        }
-      }, 500);
-    });
-
-  const place = (target: TreeView<Entry>) => (c: Component<HTMLDivElement>) => c.controls.add(target);
-
   return (
     <>
       <p class="lead">
@@ -294,30 +125,8 @@ import { TreeView } from '@motifx-community/ui';
         <p>
           <Rich text="Items are objects with a `children` array (or a `parentId`, see below). `value` is the selected row's key and `x-model` binds it two-way. Created with `new`, the tree is filled and driven from code; a reactive array given as `items` is followed when it changes in place." />
         </p>
-        <Example
-          code={`
-<TreeView label="Project files" items={PROJECT} expandedKeys={['src', 'components']} x-model={() => this.state.file} />
-
-const menu = reactive([{ id: 'home', text: 'Home' }, { id: 'products', text: 'Products', children: [] }]);
-const tree = new TreeView({ items: menu, label: 'Menu', selectionMode: 'none' });
-tree.onItemClick((e) => console.log(e.item.text));
-menu[1].children.push({ id: 'p1', text: 'Product 1' });
-tree.expand('products');
-this.panel.controls.add(tree);
-`}
-          stack
-        >
-          <div style={PANEL}>
-            <TreeView class="tv-ways" label="Project files" items={PROJECT()} expandedKeys={['src', 'components']} x-model={() => s.file} />
-          </div>
-          <output class="tv-value">{() => `value: ${JSON.stringify(s.file)}`}</output>
-          <div class="docs-flow">
-            <Button text="Add a product from code" variant="outline" onclick={addPage} />
-            <Button text="Expand all" variant="ghost" onclick={() => coded.expandAll()} />
-            <Button text="Collapse all" variant="ghost" onclick={() => coded.collapseAll()} />
-            <output class="tv-clicked">{() => s.clicked}</output>
-          </div>
-          <div style={PANEL} onBuilt={place(coded)} />
+        <Example files={code('FromCode.tsx', 'project.ts', 'entry.ts')} stack>
+          <FromCode />
         </Example>
       </Section>
 
@@ -325,30 +134,8 @@ this.panel.controls.add(tree);
         <p>
           <Rich text="`loadChildren` loads a row's children the first time it opens; `hasChildren: false` marks a row with nothing to load. While loading the row is busy; when the load fails it says so and offers a retry (here “Shared” fails once). Icons come from `iconField`, here a function." />
         </p>
-        <Example
-          code={`
-<TreeView
-  label="Disk"
-  items={[{ id: '/', text: 'My disk', folder: true }]}
-  loadChildren={(entry) => api.list(entry.id)}
-  iconField={(entry) => icon(entry.folder ? FOLDER : FILE)}
-  expandOn="dblclick"
-/>
-`}
-          stack
-        >
-          <div style={PANEL}>
-            <TreeView
-              class="tv-lazy"
-              label="Disk"
-              items={[{ id: '/', text: 'My disk', folder: true }]}
-              loadChildren={loadChildren}
-              iconField={(entry: Entry) => icon(entry.folder ? FOLDER : FILE)}
-              expandOn="dblclick"
-              onExpanded={(e) => (s.opened = `Opened ${e.item.text}.`)}
-            />
-          </div>
-          <output class="tv-loads">{() => `Loads: ${s.loads}. ${s.opened}`}</output>
+        <Example files={code('FileExplorer.tsx', 'icon.ts', 'entry.ts')} stack>
+          <FileExplorer />
         </Example>
       </Section>
 
@@ -356,28 +143,8 @@ this.panel.controls.add(tree);
         <p>
           <Rich text="`selectionMode` is `single` (default), `multiple` or `none`. With `multiple`, Ctrl (⌘) + press adds or removes a row, Shift + press selects a range, and the keys follow the APG multi-select tree." />
         </p>
-        <Example
-          code={`
-<TreeView items={WORLD} selectionMode="multiple" x-model={() => this.state.picked} />
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Selection mode">
-            {(['single', 'multiple', 'none'] as const).map((mode) => (
-              <Button
-                key={mode}
-                text={mode}
-                size="sm"
-                variant={() => (s.mode === mode ? 'solid' : 'ghost')}
-                aria-pressed={() => s.mode === mode}
-                onclick={() => (s.mode = mode)}
-              />
-            ))}
-          </div>
-          <div style={PANEL}>
-            <TreeView class="tv-select" label="Places" items={WORLD()} expandedKeys={['europe', 'tr']} selectionMode={() => s.mode} x-model={() => s.picked} />
-          </div>
-          <output class="tv-picked">{() => `value: ${JSON.stringify(s.picked)}`}</output>
+        <Example files={code('Selection.tsx', 'world.ts', 'entry.ts')} stack>
+          <Selection />
         </Example>
       </Section>
 
@@ -385,37 +152,8 @@ this.panel.controls.add(tree);
         <p>
           <Rich text="`showCheckBoxes` puts a check box on every row. Checking a parent checks its children and a parent shows mixed while only some are (`checkRecursive`, on by default). `checkedKeys` gives and reports the checked rows; Space toggles the focused one." />
         </p>
-        <Example
-          code={`
-<TreeView
-  items={PERMISSIONS}
-  showCheckBoxes
-  selectionMode="none"
-  checkedKeys={() => this.role.rights}
-  onCheckChanged={(e) => (this.role.rights = e.keys)}
-/>
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <Button text="Recursive" size="sm" variant="outline" toggle x-model={() => s.recursive} />
-            <Button text="Check all" size="sm" variant="ghost" onclick={() => permissions.checkAll()} />
-            <Button text="Uncheck all" size="sm" variant="ghost" onclick={() => permissions.uncheckAll()} />
-          </div>
-          <div style={PANEL}>
-            <TreeView
-              ref={(t: TreeView<Entry>) => (permissions = t)}
-              class="tv-checks"
-              label="Permissions"
-              items={PERMISSIONS()}
-              showCheckBoxes
-              selectionMode="none"
-              checkRecursive={() => s.recursive}
-              checkedKeys={() => s.checked}
-              onCheckChanged={(e) => (s.checked = e.keys)}
-            />
-          </div>
-          <output class="tv-checked">{() => `checkedKeys: ${JSON.stringify(s.checked)}`}</output>
+        <Example files={code('Permissions.tsx', 'entry.ts')} stack>
+          <Permissions />
         </Example>
       </Section>
 
@@ -423,23 +161,8 @@ this.panel.controls.add(tree);
         <p>
           <Rich text="`searchEnabled` adds a search box; matches show with their parents, opened, and clearing the search brings the rows back as they were. `searchValue` (or `filter(text)`) filters from code; `searchMode` is `contains` or `startswith`." />
         </p>
-        <Example
-          code={`
-<TreeView items={WORLD} searchEnabled searchMode="startswith" />
-<TreeView items={WORLD} searchValue={() => this.state.search} />
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <Button text="Starts with" size="sm" variant="outline" toggle x-model={() => s.startsWith} />
-          </div>
-          <div style={PANEL}>
-            <TreeView class="tv-search" label="Cities" items={WORLD()} searchEnabled searchMode={() => (s.startsWith ? 'startswith' : 'contains')} />
-          </div>
-          <TextBox label="Filter from outside" x-model={() => s.search} clearButton />
-          <div style={PANEL}>
-            <TreeView class="tv-filter" label="Filtered cities" items={WORLD()} searchValue={() => s.search} />
-          </div>
+        <Example files={code('Search.tsx', 'world.ts', 'entry.ts')} stack>
+          <Search />
         </Example>
       </Section>
 
@@ -447,35 +170,8 @@ this.panel.controls.add(tree);
         <p>
           <Rich text="Flat rows name their parent (`parentField`, default `parentId`). Any field can be a property name or a function. `itemTemplate` draws a row's content; `enabledField` and `expandedField` act per row." />
         </p>
-        <Example
-          code={`
-<TreeView items={FLAT} parentField="parent" textField={(row) => row.name} expandedKeys={[1, 3]} />
-<TreeView items={MAIL} itemTemplate={(item, host) => { host.append(item.text, badge(item.count)); }} />
-`}
-          stack
-        >
-          <div style={PANEL}>
-            <TreeView class="tv-flat" label="Company" items={FLAT} parentField="parent" textField={(row: (typeof FLAT)[number]) => row.name} expandedKeys={[1, 3]} />
-          </div>
-          <div style={PANEL}>
-            <TreeView
-              class="tv-template"
-              label="Mail"
-              items={[
-                { id: 'inbox', text: 'Inbox', count: 12, expanded: true, children: [{ id: 'work', text: 'Work', count: 3 }, { id: 'family', text: 'Family' }] },
-                { id: 'sent', text: 'Sent' },
-                { id: 'spam', text: 'Spam', count: 99, enabled: false },
-              ]}
-              itemTemplate={(item: Entry, host: HTMLElement) => {
-                host.append(item.text);
-                if (item.count) {
-                  const badge = document.createElement('strong');
-                  badge.textContent = ` · ${item.count}`;
-                  host.append(badge);
-                }
-              }}
-            />
-          </div>
+        <Example files={code('FlatData.tsx', 'entry.ts')} stack>
+          <FlatData />
         </Example>
       </Section>
 
@@ -483,67 +179,14 @@ this.panel.controls.add(tree);
         <p>
           <Rich text="Only open rows are drawn, and with more than `virtualFrom` (500) rows on screen only the rows in view are: here 50 departments of 200 people, 10,050 rows when all are open. Give the tree a height so it scrolls inside." />
         </p>
-        <Example
-          code={`
-const people = new TreeView({ items: departments, label: 'People', showLines: true });
-people.element.style.blockSize = '20rem';
-people.expandAll();
-`}
-          stack
-        >
-          <div class="docs-flow">
-            <Button text="Expand all" variant="outline" onclick={() => big.expandAll()} />
-            <Button text="Collapse all" variant="ghost" onclick={() => big.collapseAll()} />
-            <Button text="Go to Person 37.150" variant="ghost" onclick={() => big.focusNode('d36p149')} />
-          </div>
-          <div class="tv-large" style={PANEL} onBuilt={place(big)} />
+        <Example files={code('LargeTree.tsx', 'entry.ts')} stack>
+          <LargeTree />
         </Example>
       </Section>
 
       <Section anchor="look" title="Sizes, lines and opening">
-        <Example
-          code={`
-<TreeView size="sm" showLines expandOn="click" />
-`}
-          stack
-        >
-          <div class="docs-flow" role="group" aria-label="Size">
-            {(['sm', 'md', 'lg'] as const).map((size) => (
-              <Button
-                key={size}
-                text={size}
-                size="sm"
-                variant={() => (s.size === size ? 'solid' : 'ghost')}
-                aria-pressed={() => s.size === size}
-                onclick={() => (s.size = size)}
-              />
-            ))}
-            <Button text="Lines" size="sm" variant="outline" toggle x-model={() => s.lines} />
-          </div>
-          <div class="docs-flow" role="group" aria-label="Opens on">
-            {(['expander', 'click', 'dblclick'] as const).map((how) => (
-              <Button
-                key={how}
-                text={`expandOn ${how}`}
-                size="sm"
-                variant={() => (s.expandOn === how ? 'solid' : 'ghost')}
-                aria-pressed={() => s.expandOn === how}
-                onclick={() => (s.expandOn = how)}
-              />
-            ))}
-          </div>
-          <div style={PANEL}>
-            <TreeView
-              class="tv-look"
-              label="Look"
-              items={PROJECT()}
-              expandedKeys={['src', 'components', 'docs']}
-              size={() => s.size}
-              showLines={() => s.lines}
-              expandOn={() => s.expandOn}
-              iconField={(entry: Entry) => icon(entry.folder ? FOLDER : FILE)}
-            />
-          </div>
+        <Example files={code('SizesAndLines.tsx', 'project.ts', 'icon.ts', 'entry.ts')} stack>
+          <SizesAndLines />
         </Example>
       </Section>
 
@@ -559,22 +202,8 @@ people.expandAll();
         <p>
           <Rich text="The tree writes four texts, all from `uiLocale.strings`: `noItems` (nothing to show), `loadFailed` and `retry` (a failed load) and `search` (the search box)." />
         </p>
-        <Example
-          code={`
-uiLocale.strings = trStrings;
-`}
-        >
-          <Button
-            text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')}
-            variant="outline"
-            onclick={() => {
-              s.lang = s.lang === 'en' ? 'tr' : 'en';
-              uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
-            }}
-          />
-          <span>
-            A failed load reads <output class="tv-failed">{() => `${uiLocale.strings.loadFailed} ${uiLocale.strings.retry}`}</output>
-          </span>
+        <Example files={code('Localization.tsx')}>
+          <Localization />
         </Example>
       </Section>
 
