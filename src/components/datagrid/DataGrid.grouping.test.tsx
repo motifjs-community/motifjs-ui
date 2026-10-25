@@ -347,19 +347,25 @@ describe('the group panel and the column menu', () => {
     const grid = await make({ settings: { groupPanel: true } });
     const panel = panelOf(grid);
     Object.defineProperty(panel, 'offsetParent', { configurable: true, get: () => document.body });
-    rect(panel, { left: 0, top: 0, width: 400, height: 30 });
+    // The whole toolbar takes drops for the panel.
+    const bar = grid.element.querySelector('.mx-data-grid__toolbar')!;
+    rect(bar, { left: 0, top: 0, width: 600, height: 30 });
     const head = grid.element.querySelector('.mx-data-grid__row--header')!;
     rect(head, { left: 0, top: 40, width: 600, height: 30 });
     const header = (f: string) => grid.element.querySelector<HTMLElement>(`.mx-data-grid__header-cell[data-field="${f}"]`)!;
     ['id', 'name', 'city', 'status', 'qty'].forEach((f, i) => rect(header(f), { left: i * 100, top: 40, width: 100, height: 30 }));
     pointer(header('status'), 'pointerdown', 350, 55);
-    pointer(header('status'), 'pointermove', 360, 20);
-    expect(panel.hasAttribute('data-drop')).toBe(true);
-    pointer(header('status'), 'pointerup', 360, 20);
+    pointer(header('status'), 'pointermove', 560, 20);
+    expect(bar.hasAttribute('data-drop')).toBe(true);
+    expect(bar.hasAttribute('data-drop-ready')).toBe(true);
+    expect(grid.element.querySelector('.mx-data-grid__ghost')!.getAttribute('data-target')).toBe('group');
+    pointer(header('status'), 'pointerup', 560, 20);
     await settle();
     expect(grid.group).toEqual([{ field: 'status', dir: 'asc' }]);
     expect(headers(grid)).toEqual(['id', 'name', 'city', 'qty']);
-    expect(panel.hasAttribute('data-drop')).toBe(false);
+    expect(bar.hasAttribute('data-drop')).toBe(false);
+    expect(bar.hasAttribute('data-drop-ready')).toBe(false);
+    expect(grid.element.querySelector('.mx-data-grid__ghost')).toBeNull();
     // The chip back onto the headers, between Id and Name.
     const chip = panel.querySelector<HTMLElement>('.mx-data-grid__chip')!;
     rect(chip, { left: 10, top: 5, width: 80, height: 20 });
@@ -531,7 +537,9 @@ describe('grouping options and events', () => {
     });
     const panel = panelOf(grid);
     Object.defineProperty(panel, 'offsetParent', { configurable: true, get: () => document.body });
-    rect(panel, { left: 0, top: 0, width: 400, height: 30 });
+    // The whole toolbar takes drops for the panel.
+    const bar = grid.element.querySelector('.mx-data-grid__toolbar')!;
+    rect(bar, { left: 0, top: 0, width: 600, height: 30 });
     const header = (f: string) => grid.element.querySelector<HTMLElement>(`.mx-data-grid__header-cell[data-field="${f}"]`)!;
     // Under the threshold of 20 pixels nothing is dragged.
     pointer(header('status'), 'pointerdown', 350, 25);

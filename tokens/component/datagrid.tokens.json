@@ -50,6 +50,10 @@
     "chip-background": { "$type": "color", "$value": "{color.fill.subtle.secondary}" },
     "chip-border-color": { "$type": "color", "$value": "{color.stroke.control.default}" },
     "panel-empty-color": { "$type": "color", "$value": "{color.fg.secondary}" },
-    "drop-target": { "$type": "color", "$value": "{color.accent.subtle}" }
+    "drop-target": { "$type": "color", "$value": "{color.accent.subtle}" },
+    "drop-ready": { "$type": "color", "$value": "{color.accent.solid}" },
+    "ghost-border-color": { "$type": "color", "$value": "{color.stroke.control.default}" },
+    "ghost-target-color": { "$type": "color", "$value": "{color.accent.solid}" },
+    "ghost-shadow": { "$type": "shadow", "$value": "{shadow.8}" }
   }
 }

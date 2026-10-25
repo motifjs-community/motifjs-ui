@@ -104,6 +104,7 @@ const SETTINGS = [
   ['remoteGrouping', "`'auto'`", 'Who groups a data source’s rows: `auto` its adapter when it groups (blocks), `true` the adapter whenever the source loads by blocks, `false` always the browser, from every matching row.'],
   ['groupLoadPageSize', '`0`', 'Grouping in the browser over a source that loads pages or blocks: rows per request while every matching row loads (0: one request).'],
   ['dragThreshold', '`5`', 'Pixels a pressed header or chip moves before it is dragged.'],
+  ['dragGhost', '`true`', 'A dragged header or chip shows its title next to the pointer, marked with what a drop would do: group, move, ungroup. While a header is dragged the whole toolbar takes drops for the group panel and is marked.'],
   ['columnWidth, columnMinWidth', '`140`, `48`', 'The width of a column that gives none, and the smallest width the user can resize one to; a column’s `width` and `minWidth` win.'],
   ['rowStatusWidth, selectionColumnWidth', '`28`, `36`', 'Widths of the row status column and the check box column.'],
   ['resizeStep, resizeFineStep', '`10`, `1`', 'Pixels one arrow key resizes a column by (“Width” in the column menu), and with Shift.'],

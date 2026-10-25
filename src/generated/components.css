@@ -139,6 +139,8 @@
     --mx-datagrid-chip-radius: var(--mx-radius-sm);
     --mx-datagrid-chip-background: var(--mx-color-fill-subtle-secondary);
     --mx-datagrid-chip-border-color: var(--mx-color-stroke-control-default);
+    --mx-datagrid-ghost-border-color: var(--mx-color-stroke-control-default);
+    --mx-datagrid-ghost-shadow: var(--mx-shadow-8);
     --mx-field-radius: var(--mx-radius-md);
     --mx-field-border-width: var(--mx-border-width-1);
     --mx-field-focus-width: var(--mx-border-width-2);
@@ -411,6 +413,8 @@
     --mx-datagrid-group-count-color: var(--mx-color-fg-secondary);
     --mx-datagrid-panel-empty-color: var(--mx-color-fg-secondary);
     --mx-datagrid-drop-target: var(--mx-color-accent-subtle);
+    --mx-datagrid-drop-ready: var(--mx-color-accent-solid);
+    --mx-datagrid-ghost-target-color: var(--mx-color-accent-solid);
     --mx-list-indicator-color: var(--mx-color-accent-fg);
     --mx-menu-shortcut-color: var(--mx-color-fg-secondary);
     --mx-menubar-background: var(--mx-color-bg-bar);

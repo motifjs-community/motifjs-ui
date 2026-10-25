@@ -770,6 +770,34 @@
     "value": "#fbe6de"
   },
   {
+    "name": "datagrid.drop-ready",
+    "cssVar": "--mx-datagrid-drop-ready",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "datagrid.ghost-border-color",
+    "cssVar": "--mx-datagrid-ghost-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.default",
+    "value": "rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "datagrid.ghost-target-color",
+    "cssVar": "--mx-datagrid-ghost-target-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "datagrid.ghost-shadow",
+    "cssVar": "--mx-datagrid-ghost-shadow",
+    "type": "shadow",
+    "ref": "shadow.8",
+    "value": "0px 4px 8px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
     "name": "date-box.times-width",
     "cssVar": "--mx-date-box-times-width",
     "type": "dimension",

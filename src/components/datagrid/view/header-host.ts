@@ -1,3 +1,4 @@
+import type { DragGhost } from './DragGhost';
 import type { GroupPanel } from './GroupPanel';
 
 /** What the header and the column menu ask the grid to do; the grid owns menus, focus and measuring. */
@@ -15,6 +16,8 @@ export interface HeaderHost {
   toggleAll(): void;
   /** The state of the header check box. */
   allState(): boolean | 'mixed';
+  /** The picture that follows a dragged header. */
+  readonly ghost: DragGhost;
   /** The group panel while headers can be dropped on it, else `null`. */
   groupTarget(): GroupPanel<any> | null;
   /** Focus back to the active cell (after a menu changed which columns show). */

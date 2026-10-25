@@ -113,6 +113,8 @@ export interface GridSettings extends ColumnFeatures {
   groupArrowKeys: boolean;
   /** Pixels a pressed header or chip moves before it is dragged. Default `5`. */
   dragThreshold: number;
+  /** A dragged header or chip shows its title next to the pointer, marked with what a drop would do. Default `true`. */
+  dragGhost: boolean;
   /** Milliseconds the pointer rests on a cell before its tooltip shows (keyboard focus shows it at once). Default `500`. */
   tooltipDelay: number;
   /** Rows drawn above and below the visible ones, so a quick scroll shows no gap. More costs more per scroll. Default `4`. */

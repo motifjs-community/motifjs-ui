@@ -69,6 +69,7 @@ export const DEFAULT_SETTINGS: GridSettings = {
   groupToggleKeys: ['Enter', ' '],
   groupArrowKeys: true,
   dragThreshold: 5,
+  dragGhost: true,
   tooltipDelay: 500,
   extraRows: 4,
   columnWidth: 140,

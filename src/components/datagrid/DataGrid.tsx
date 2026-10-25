@@ -87,6 +87,7 @@ import type { FilterCell } from './view/FilterCell';
 import { FilterRow } from './view/FilterRow';
 import { GridBody } from './view/GridBody';
 import { GridToolbar } from './view/GridToolbar';
+import { DragGhost } from './view/DragGhost';
 import { GroupPanel } from './view/GroupPanel';
 import type { GridRow } from './view/GridRow';
 import { HeaderFilter } from './view/HeaderFilter';
@@ -178,7 +179,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const model = new GridModel<T>(own);
     this.model = model;
     model.errorId = `${this.gridId}-error`;
+    const ghost = new DragGhost(
+      () => this.element as HTMLElement,
+      () => model.settings.get('dragGhost'),
+    );
+    this.motif.setDisposable(() => ghost.hide());
     const host: HeaderHost = {
+      ghost,
       hasMenu: (field) => this.hasMenu(field),
       openMenu: (field, anchor) => this.openMenu(field, anchor),
       autoSize: (field) => this.autoSize(field),
@@ -230,6 +237,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       return !e.cancel;
     };
     this.groupPanel = new GroupPanel<T>(model, {
+      ghost,
       isRtl: () => this.isRtl(),
       showHeaderDrop: (field, x, y) => this.header.showChipDrop(field, x, y),
       dropOnHeaders: (field, x) => this.dropOnHeaders(field, x),

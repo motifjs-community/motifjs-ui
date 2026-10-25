@@ -1,6 +1,10 @@
+import type { DragGhost } from './DragGhost';
+
 /** What the group panel asks the grid: the headers it drops chips on, and where focus goes. */
 export interface GroupPanelHost {
   isRtl(): boolean;
+  /** The picture that follows a dragged chip. */
+  readonly ghost: DragGhost;
   /** Marks where a chip dragged over the headers lands (NaN hides the mark); whether the point is over them. */
   showHeaderDrop(field: string, x: number, y: number): boolean;
   /** A chip was dropped on the headers at `x`: the column is ungrouped and put there. */

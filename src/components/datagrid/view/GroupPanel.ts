@@ -45,9 +45,19 @@ export class GroupPanel<T> {
     return this.model.settings.get('groupPanelDragging') && this.element.isConnected && this.element.offsetParent !== null;
   }
 
-  /** The place among the chips a point drops at, or -1 when it is not over the panel. */
+  /** Where drops for the panel are taken: the whole toolbar it sits in, not only its chips. */
+  get dropArea(): HTMLElement {
+    return this.element.closest<HTMLElement>('.mx-data-grid__toolbar') ?? this.element;
+  }
+
+  /** Marks the drop area while a header that can be grouped is dragged. */
+  showReady(on: boolean) {
+    this.dropArea.toggleAttribute('data-drop-ready', on);
+  }
+
+  /** The place among the chips a point drops at, or -1 when it is not over the drop area. */
   dropIndexAt(x: number, y: number): number {
-    const box = this.element.getBoundingClientRect();
+    const box = this.dropArea.getBoundingClientRect();
     if (x < box.left || x > box.right || y < box.top || y > box.bottom) return -1;
     const rtl = this.host.isRtl();
     let n = 0;
@@ -63,7 +73,7 @@ export class GroupPanel<T> {
   /** Marks where a drop at place `index` lands; -1 hides the mark. */
   showDrop(index: number) {
     const el = this.element;
-    el.toggleAttribute('data-drop', index >= 0);
+    this.dropArea.toggleAttribute('data-drop', index >= 0);
     if (index < 0) {
       this.drop.hidden = true;
       return;
@@ -208,16 +218,19 @@ export class GroupPanel<T> {
         if (Math.max(Math.abs(ev.clientX - startX), Math.abs(ev.clientY - startY)) < model.settings.get('dragThreshold')) return;
         dragging = true;
         chip.toggleAttribute('data-dragging', true);
+        this.host.ghost.show(chip, ev.clientX, ev.clientY);
       }
       place = this.dropIndexAt(ev.clientX, ev.clientY);
       this.showDrop(place);
       header = place < 0 && this.host.showHeaderDrop(field, ev.clientX, ev.clientY);
+      this.host.ghost.move(ev.clientX, ev.clientY, place >= 0 ? 'move' : header ? 'ungroup' : 'none');
     };
     const up = (ev: PointerEvent) => {
       chip.removeEventListener('pointermove', move);
       chip.removeEventListener('pointerup', up);
       chip.removeEventListener('pointercancel', up);
       chip.toggleAttribute('data-dragging', false);
+      this.host.ghost.hide();
       this.showDrop(-1);
       this.host.showHeaderDrop(field, Number.NaN, Number.NaN);
       if (!dragging) return;

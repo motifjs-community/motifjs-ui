@@ -19,6 +19,7 @@
     --_z-focus: 2;
     --_z-head: 3;
     --_z-drop: 4;
+    --_z-ghost: 5;
 
     position: relative;
     display: flex;
@@ -365,6 +366,58 @@
 
   .mx-data-grid__chip-drop[hidden] {
     display: none;
+  }
+
+  /* While a header is dragged the whole toolbar takes drops for the group panel: outlined, then filled under the pointer. */
+  .mx-data-grid__toolbar[data-drop-ready] {
+    outline: var(--mx-datagrid-border-width) dashed var(--mx-datagrid-drop-ready);
+    outline-offset: calc(var(--mx-datagrid-border-width) * -1);
+  }
+
+  .mx-data-grid__toolbar[data-drop] {
+    background-image: linear-gradient(var(--mx-datagrid-drop-target), var(--mx-datagrid-drop-target));
+  }
+
+  /* A copy of the dragged header (with the header row's look) or chip, next to the pointer. */
+  .mx-data-grid__ghost {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: var(--_z-ghost);
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: var(--mx-datagrid-chip-radius);
+    box-shadow: var(--mx-datagrid-ghost-shadow);
+  }
+
+  .mx-data-grid__ghost[data-kind='header'] {
+    font-weight: var(--mx-datagrid-head-font-weight);
+    color: var(--mx-datagrid-head-color);
+    background-color: var(--mx-datagrid-head-background);
+    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-ghost-border-color);
+  }
+
+  .mx-data-grid__ghost > .mx-data-grid__header-cell {
+    box-sizing: border-box;
+  }
+
+  /* Where a drop would group, move or ungroup the column: an edge in the accent color, never only a color. */
+  .mx-data-grid__ghost[data-target='group'],
+  .mx-data-grid__ghost[data-target='move'],
+  .mx-data-grid__ghost[data-target='ungroup'] {
+    outline: var(--mx-datagrid-invalid-width) solid var(--mx-datagrid-ghost-target-color);
+  }
+
+  @media (forced-colors: active) {
+    .mx-data-grid__ghost {
+      border-color: CanvasText;
+    }
+
+    .mx-data-grid__ghost[data-target='group'],
+    .mx-data-grid__ghost[data-target='move'],
+    .mx-data-grid__ghost[data-target='ungroup'] {
+      outline-color: Highlight;
+    }
   }
 
   /* The row status column: a mark by state, never only a color. */

@@ -17,17 +17,32 @@ export default async function ({ page, base, check, axeSource }) {
   }, local);
   check('datagrid grouping: a group row is a row with one cell over the columns; the grouped columns leave the headers', row.role === 'row' && row.cell === 'gridcell' && Number(row.span) === row.headers.length && !row.headers.includes('city') && !row.headers.includes('status'), JSON.stringify(row));
 
-  // Drag the Customer header onto the group panel, after the chips.
+  // Drag the Customer header onto the toolbar, far from the chips: the whole bar takes it for the group panel.
   const header = page.locator(`${local} .mx-data-grid__header-cell[data-field="customer"]`);
-  const panel = page.locator(`${local} .mx-data-grid__group-panel`);
+  const bar = page.locator(`${local} .mx-data-grid__toolbar`);
   const hb = await header.boundingBox();
-  const pb = await panel.boundingBox();
+  const tb = await bar.boundingBox();
   await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
   await page.mouse.down();
-  await page.mouse.move(hb.x + hb.width / 2, pb.y + pb.height / 2, { steps: 4 });
-  await page.mouse.move(pb.x + pb.width - 4, pb.y + pb.height / 2, { steps: 4 });
-  const marked = await panel.evaluate((el) => el.hasAttribute('data-drop'));
+  await page.mouse.move(hb.x + hb.width / 2 + 30, hb.y + hb.height / 2, { steps: 3 });
+  const ready = await page.evaluate((s) => {
+    const ghost = document.querySelector(`${s} .mx-data-grid__ghost`);
+    return { ready: document.querySelector(`${s} .mx-data-grid__toolbar`).hasAttribute('data-drop-ready'), ghost: ghost?.textContent ?? null };
+  }, local);
+  check('datagrid grouping: dragging a header shows its title next to the pointer and marks the toolbar as a drop place', ready.ready && ready.ghost === 'Customer', JSON.stringify(ready));
+  await page.mouse.move(tb.x + tb.width * 0.6, tb.y + tb.height / 2, { steps: 4 });
+  const over = await page.evaluate((s) => ({
+    drop: document.querySelector(`${s} .mx-data-grid__toolbar`).hasAttribute('data-drop'),
+    target: document.querySelector(`${s} .mx-data-grid__ghost`)?.dataset.target ?? null,
+    under: (() => {
+      const g = document.querySelector(`${s} .mx-data-grid__ghost`).getBoundingClientRect();
+      return { x: Math.round(g.left), y: Math.round(g.top) };
+    })(),
+  }), local);
+  const marked = over.drop && over.target === 'group' && Math.abs(over.under.x - (tb.x + tb.width * 0.6) - 14) <= 2;
+  check('datagrid grouping: over the toolbar the ghost says it will group, next to the pointer', marked, JSON.stringify(over));
   await page.mouse.up();
+  check('datagrid grouping: the ghost and the marks go when the header is dropped', await page.evaluate((s) => !document.querySelector(`${s} .mx-data-grid__ghost`) && !document.querySelector(`${s} .mx-data-grid__toolbar`).hasAttribute('data-drop-ready'), local));
   await page.waitForFunction((s) => document.querySelectorAll(`${s} .mx-data-grid__chip`).length === 3, local);
   const third = await groups(local);
   check('datagrid grouping: a header dragged to the panel groups by its column, the panel shows where it lands', marked && (await chips()).join() === 'City:asc,Status:asc,Customer:asc' && third[2].startsWith('3> Customer: '), `${(await chips()).join()} · ${third[2]}`);

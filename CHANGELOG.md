@@ -115,7 +115,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   the virtual list and in pages alike. The grid is a `treegrid` while grouped (`aria-expanded`,
   `aria-level`, `aria-colspan`). Enter / Space open and close a group row, Right and Left open and
   close it and go in and out. The group panel (`groupPanel` toolbar item, at the start): headers
-  dropped on it group, chips turn the order of their groups (click, Enter), move (drag, Shift +
+  dropped anywhere on the toolbar group (the bar is outlined while a header is dragged and filled
+  under the pointer; a copy of the dragged header or chip follows the pointer, marked when a drop
+  would group, move or ungroup; `dragGhost` turns it off), chips turn the order of their groups (click, Enter), move (drag, Shift +
   arrows) and ungroup (Delete, or dragged back onto the headers, where the column lands); the column
   menu has "Group by this column", "Ungroup", "Ungroup all". A grouped column leaves the columns and
   the sort; its header sorts its groups. Data: rows in memory and sources that load everything are

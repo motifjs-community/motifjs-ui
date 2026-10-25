@@ -6,6 +6,7 @@ import { ACTIONS_FIELD, SELECT_FIELD } from '../model/ColumnModel';
 import { HEADER_ROW, type GridModel } from '../model/GridModel';
 import { createCheck, setCheck } from './check-mark';
 import type { HeaderHost } from './header-host';
+import type { GhostTarget } from './ghost-target';
 import { placeInOrder } from './place-in-order';
 
 /**
@@ -249,18 +250,25 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     const indicator = this.indicator.element as HTMLElement;
     const rtl = this.host.isRtl();
 
+    const ghost = this.host.ghost;
     const move = (ev: PointerEvent) => {
       if (!dragging) {
         if (Math.max(Math.abs(ev.clientX - startX), panel ? Math.abs(ev.clientY - startY) : 0) < grid.settings.get('dragThreshold')) return;
         dragging = true;
         source.toggleAttribute('data-dragging', true);
+        panel?.showReady(true);
+        ghost.show(source, ev.clientX, ev.clientY);
       }
+      ghost.move(ev.clientX, ev.clientY, aim(ev));
+    };
+    /** Marks where a drop at the pointer lands, and says what it would do. */
+    const aim = (ev: PointerEvent): GhostTarget => {
       place = panel ? panel.dropIndexAt(ev.clientX, ev.clientY) : -1;
       panel?.showDrop(place);
       if (place >= 0 || !movable) {
         target = from;
         indicator.hidden = true;
-        return;
+        return place >= 0 ? 'group' : 'none';
       }
       // Target = number of zone columns whose centre lies before the pointer.
       const rects = zone.map((f) => this.cellElement(f)!.getBoundingClientRect());
@@ -272,7 +280,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       target = Math.max(lo, Math.min(hi, count > from ? count - 1 : count));
       if (target === from) {
         indicator.hidden = true;
-        return;
+        return 'none';
       }
       // The mark sits on the boundary the column would land on.
       const base = this.element.getBoundingClientRect();
@@ -281,6 +289,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       const x = rtl ? (after ? r.left : r.right) : after ? r.right : r.left;
       indicator.style.left = `${x - base.left}px`;
       indicator.hidden = false;
+      return 'move';
     };
     const up = (ev: PointerEvent) => {
       source.removeEventListener('pointermove', move);
@@ -288,6 +297,8 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       source.removeEventListener('pointercancel', up);
       indicator.hidden = true;
       panel?.showDrop(-1);
+      panel?.showReady(false);
+      ghost.hide();
       source.toggleAttribute('data-dragging', false);
       if (!dragging) return;
       this.suppressClick = true;
