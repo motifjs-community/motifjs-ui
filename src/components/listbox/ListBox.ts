@@ -486,10 +486,18 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     const el = list.element;
     el.addEventListener('keydown', (e) => this.keyDown(e));
     el.addEventListener('focus', () => this.gotFocus());
-    // The list keeps focus off its options; a press still focuses the list itself.
+    // The list keeps focus off its options; a press still focuses the list itself, without the
+    // keyboard ring (Chrome would show it when the focus before came from the keyboard).
     el.addEventListener('mousedown', (e) => {
-      if (e.button === 0) this.focus();
+      if (e.button !== 0 || !this.enabled) return;
+      el.removeAttribute('data-keys');
+      if (document.activeElement !== el) el.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
     });
+    // Keys after a press bring the ring back (`data-keys`); the browser would not.
+    el.addEventListener('keydown', (e) => {
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key !== 'Shift' && e.key !== 'Tab') el.setAttribute('data-keys', '');
+    });
+    el.addEventListener('blur', () => el.removeAttribute('data-keys'));
     el.addEventListener('pointermove', () => this.pointAt());
     list.onChosen((e) => this.chosen(e));
   }

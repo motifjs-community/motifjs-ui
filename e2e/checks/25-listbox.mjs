@@ -78,4 +78,16 @@ export default async function ({ page, base, check, axeSource, box }) {
   await readOnly.focus();
   await page.keyboard.press('ArrowDown');
   check('a read-only list moves but does not choose', (await readOnly.getAttribute('aria-readonly')) === 'true' && (await readOnly.locator('[aria-selected="true"]').textContent()) === 'Bursa');
+
+  // Keyboard first, then a mouse press: no keyboard ring; keys after it bring the ring back.
+  const first = page.locator('[role="listbox"]').first();
+  await first.scrollIntoViewIfNeeded();
+  await page.locator('.docs-filter input').focus();
+  await page.keyboard.press('Tab');
+  await first.locator('[role="option"]').nth(1).click();
+  const pressed = await first.evaluate((el) => ({ focused: document.activeElement === el, ring: el.matches(':focus-visible') }));
+  check('a mouse press focuses the list without the keyboard ring', pressed.focused && !pressed.ring, JSON.stringify(pressed));
+  await page.keyboard.press('ArrowDown');
+  const ring = await first.evaluate((el) => getComputedStyle(el.querySelector('.mx-list__item[data-active]')).outlineStyle);
+  check('…and the arrow keys bring the ring back', ring !== 'none', ring);
 }
