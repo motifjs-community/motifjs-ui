@@ -196,6 +196,8 @@ export interface UiStrings {
   gridGroupChipAscending: string;
   gridGroupChipDescending: string;
   gridGroupChipHint: string;
+  gridDetails: string;
+  gridDetailsOf: string;
   gridSummarySum: string;
   gridSummarySumOtherColumn: string;
   gridSummaryMin: string;

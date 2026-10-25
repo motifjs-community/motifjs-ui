@@ -23,6 +23,7 @@ import { CellRules } from './CellRules';
 import { cellValue } from './cell-value';
 import { ColumnModel } from './ColumnModel';
 import { DEFAULT_SETTINGS } from './default-settings';
+import { DetailRows } from './DetailRows';
 import { FilterModel } from './FilterModel';
 import { FilterValues } from './FilterValues';
 import { GridData } from './GridData';
@@ -122,6 +123,12 @@ export class GridModel<T> {
   readonly groups: GridGroups<T>;
   /** The summary items, their values and texts. */
   readonly summaries: GridSummaries<T>;
+  /** Which rows have their details open (`masterDetail`), and its options. */
+  readonly details: DetailRows<T>;
+  /** `aria-rowindex` of grid row `i`; the body counts the open details above it in. */
+  ariaRowIndex: (i: number) => number = (i) => i + 1 + this.headRows;
+  /** How many rows laid out have their details open (the body tells). */
+  openDetailCount: () => number = () => 0;
   /** The grid's ready actions, by name; the grid fills them in. */
   builtIns: GridBuiltInActions<T> | null = null;
   /** The actions the bars show and the rows they act on. */
@@ -175,6 +182,9 @@ export class GridModel<T> {
     this.columns.statusWanted = () => this.stats.changed > 0 || this.stats.failed > 0 || this.state.added > 0;
     this.columns.actionsWanted = () => props.actions !== undefined;
     this.columns.actionsInRow = () => this.actionSets.inRow();
+    this.details = new DetailRows<T>(props.masterDetail);
+    this.columns.expandWanted = () => this.details.enabled;
+    this.columns.expandWidth = () => this.details.options.get('columnWidth');
     this.filters = new FilterModel<T>(this.columns);
     const filters = stored ? this.reviveDates(stored.filters) : props.filters;
     if (filters) this.filters.replace(filters);
@@ -547,6 +557,36 @@ export class GridModel<T> {
     if (moveActive && this.state.activeRow >= 0) this.state.activeRow = this.firstRow();
     events.tell(events.pageChanged, () => ({ page: p, previous }));
     return true;
+  }
+
+  // Details (`masterDetail`).
+
+  /** The key text of grid row `i` when it can have details: a loaded data row with a key, outside the new-row area, that `canExpand` lets open. Reactive. */
+  detailId(i: number): string | undefined {
+    if (!this.details.on || i < 0 || this.addedIndex(i) >= 0) return undefined;
+    const row = this.rowAt(i);
+    if (row === undefined || !this.details.canExpand(row)) return undefined;
+    return this.selectId(row);
+  }
+
+  /** Whether grid row `i` shows its details. */
+  isDetailOpen(i: number): boolean {
+    const details = this.details;
+    if (!details.on || i < 0 || this.addedIndex(i) >= 0) return false;
+    // Every row open and none closed: no key is needed.
+    if (!details.exceptionCount) {
+      if (!details.allOpen) return false;
+      const row = this.rowAt(i);
+      return row !== undefined && details.canExpand(row) && this.data.source.adapter.keys.hasKey(row);
+    }
+    const id = this.detailId(i);
+    return id !== undefined && details.isOpen(id);
+  }
+
+  /** The grid index of the loaded row with this key, or -1. */
+  indexOfDetailKey(key: unknown): number {
+    const row = this.data.rowByKey(key);
+    return row === undefined ? -1 : this.indexOfRow(row);
   }
 
   // The new-row area.

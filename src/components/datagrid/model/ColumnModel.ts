@@ -21,6 +21,8 @@ export const STATUS_FIELD = 'mx:status';
 export const SELECT_FIELD = 'mx:select';
 /** Field of the actions column: at the start or the end, pinned or scrolling, by the settings. */
 export const ACTIONS_FIELD = 'mx:actions';
+/** Field of the expand column of `masterDetail`: after the status and check box columns, pinned to the start. */
+export const EXPAND_FIELD = 'mx:expand';
 const LOCKED: Partial<ColumnFeatures> = {
   editable: false,
   creatable: false,
@@ -60,6 +62,10 @@ export class ColumnModel<T> {
   actionsMenuWidth: () => number | null = () => null;
   /** Whether a column is out of the columns because the rows are grouped by it. */
   hiddenByGroup: (field: string) => boolean = () => false;
+  /** Whether the expand column of `masterDetail` shows. */
+  expandWanted: () => boolean = () => false;
+  /** The width of the expand column. */
+  expandWidth: () => number = () => 36;
 
   constructor(
     columns: GridColumn<T>[],
@@ -69,7 +75,8 @@ export class ColumnModel<T> {
     this.defs.set(STATUS_FIELD, { field: STATUS_FIELD, title: '', sticky: 'start', align: 'center' });
     this.defs.set(SELECT_FIELD, { field: SELECT_FIELD, title: '', align: 'center' });
     this.defs.set(ACTIONS_FIELD, { field: ACTIONS_FIELD, title: '' });
-    for (const field of [STATUS_FIELD, SELECT_FIELD, ACTIONS_FIELD]) this.features.set(field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, LOCKED));
+    this.defs.set(EXPAND_FIELD, { field: EXPAND_FIELD, title: '', align: 'center' });
+    for (const field of [STATUS_FIELD, SELECT_FIELD, EXPAND_FIELD, ACTIONS_FIELD]) this.features.set(field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, LOCKED));
     for (const c of columns) {
       if (this.defs.has(c.field)) throw new Error(`[motifx-ui] DataGrid: duplicate or reserved column field "${c.field}"`);
       this.defs.set(c.field, c);
@@ -79,9 +86,9 @@ export class ColumnModel<T> {
     if (layout) this.applyLayout(layout);
   }
 
-  /** Columns the grid adds itself: row status, selection, actions. */
+  /** Columns the grid adds itself: row status, selection, expand, actions. */
   isInternal(field: string): boolean {
-    return field === STATUS_FIELD || field === SELECT_FIELD || field === ACTIONS_FIELD;
+    return field === STATUS_FIELD || field === SELECT_FIELD || field === EXPAND_FIELD || field === ACTIONS_FIELD;
   }
 
   /** The definition of a column. */
@@ -182,7 +189,7 @@ export class ColumnModel<T> {
 
   /** The edge a column sticks to, or `null`. The grid's own columns take theirs from the settings. */
   sideOf(field: string): StickySide | null {
-    if (field === STATUS_FIELD || field === SELECT_FIELD) return 'start';
+    if (field === STATUS_FIELD || field === SELECT_FIELD || field === EXPAND_FIELD) return 'start';
     if (field === ACTIONS_FIELD) return this.settings.get('actionsSticky') ? this.settings.get('actionsPosition') : null;
     return this.state.sticky[field] ?? null;
   }
@@ -218,7 +225,7 @@ export class ColumnModel<T> {
     return this.sideOf(field) ?? 'free';
   }
 
-  /** Visible fields in display order: status, check boxes, then the zones; the actions column first or last in its zone. */
+  /** Visible fields in display order: status, check boxes, expand, then the zones; the actions column first or last in its zone. */
   visible(): string[] {
     const start: string[] = [];
     const free: string[] = [];
@@ -230,6 +237,7 @@ export class ColumnModel<T> {
     };
     if (this.showsStatus()) add(STATUS_FIELD);
     if (this.showsSelect()) add(SELECT_FIELD);
+    if (this.expandWanted()) add(EXPAND_FIELD);
     const actions = this.showsActions();
     const first = this.settings.get('actionsPosition') === 'start';
     if (actions && first) add(ACTIONS_FIELD);
@@ -251,6 +259,7 @@ export class ColumnModel<T> {
     }
     if (field === STATUS_FIELD) return Math.max(0, Math.round(this.settings.get('rowStatusWidth')));
     if (field === SELECT_FIELD) return Math.max(0, Math.round(this.settings.get('selectionColumnWidth')));
+    if (field === EXPAND_FIELD) return Math.max(0, Math.round(this.expandWidth()));
     return this.state.width[field] ?? this.clampWidth(field, this.settings.get('columnWidth'));
   }
 

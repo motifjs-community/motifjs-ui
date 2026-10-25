@@ -2,12 +2,13 @@ import { ComponentBase, createSignal, effect, read, untracked } from '@motifx/co
 import type { CellContext } from '../cell-context';
 import type { GridAction } from '../grid-action';
 import type { GridColumn } from '../grid-column';
-import { ACTIONS_FIELD, SELECT_FIELD, STATUS_FIELD } from '../model/ColumnModel';
+import { ACTIONS_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from '../model/ColumnModel';
 import { KeyedItems } from '../../../parts/data/KeyedItems';
 import type { GridModel } from '../model/GridModel';
 import type { RowState } from '../row-state';
 import type { ActionWidths } from './ActionWidths';
 import { createCheck, setCheck } from './check-mark';
+import { createExpandButton, setExpandButton } from './expand-button';
 import { placeInOrder } from './place-in-order';
 import type { ResolvedAction } from './resolved-action';
 import { RowActions } from './RowActions';
@@ -48,6 +49,7 @@ export class GridRow<T> {
   private searching = false;
   private readonly stops: (() => void)[] = [];
   private readonly check: HTMLSpanElement;
+  private readonly expand: HTMLSpanElement;
 
   constructor(
     private readonly model: GridModel<T>,
@@ -61,9 +63,11 @@ export class GridRow<T> {
     el.hidden = true;
     this.element = el;
     this.check = createCheck(model.text('gridSelectRow'));
+    this.expand = createExpandButton(model.text('gridDetails'));
     for (const field of model.columns.state.order) {
       if (field === STATUS_FIELD) el.append(this.statusCell());
       else if (field === SELECT_FIELD) el.append(this.ownCell(field, 'mx-data-grid__select', this.check));
+      else if (field === EXPAND_FIELD) el.append(this.ownCell(field, 'mx-data-grid__expand', this.expand));
       else if (field === ACTIONS_FIELD) el.append(this.ownCell(field, 'mx-data-grid__actions'));
       else el.append(this.cell(model.columns.get(field)));
     }
@@ -87,6 +91,19 @@ export class GridRow<T> {
     }
     this.element.hidden = false;
     this.element.style.transform = `translateY(${top}px)`;
+  }
+
+  /**
+   * Shows whether the row's details are open (`masterDetail`): the arrow, and `aria-expanded` on the
+   * row too while the grid is a tree (grouped; ARIA allows it on the rows of a treegrid only).
+   * `controls` is the id of the details' row while it is drawn.
+   */
+  drawExpand(can: boolean, open: boolean, controls: string | null) {
+    const el = this.element;
+    setExpandButton(this.expand, can, open, this.model.text('gridDetails'), controls);
+    if (can && this.model.groups.any) el.setAttribute('aria-expanded', String(open));
+    else el.removeAttribute('aria-expanded');
+    el.toggleAttribute('data-expanded', can && open);
   }
 
   /** Draws the row again as it is. */
@@ -221,7 +238,7 @@ export class GridRow<T> {
       el.removeAttribute('aria-rowindex');
       return;
     }
-    el.setAttribute('aria-rowindex', String(index + 1 + model.headRows));
+    el.setAttribute('aria-rowindex', String(model.ariaRowIndex(index)));
     // Grouped, the grid is a tree: data rows sit below every level (new rows outside the groups).
     const levels = model.groups.state.items.length;
     if (levels) el.setAttribute('aria-level', String(model.addedIndex(index) >= 0 ? 1 : levels + 1));

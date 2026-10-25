@@ -1,8 +1,11 @@
 import { Component, untracked } from '@motifx/core';
+import { ExtraHeights } from '../model/ExtraHeights';
 import type { GridModel } from '../model/GridModel';
 import type { GroupNode } from '../model/group-node';
 import { ScrollGeometry } from '../model/ScrollGeometry';
 import type { ActionWidths } from './ActionWidths';
+import type { DetailHost } from './detail-host';
+import { DetailRow } from './DetailRow';
 import { GridRow } from './GridRow';
 import { GroupFooterRow } from './GroupFooterRow';
 import { GroupRow } from './GroupRow';
@@ -15,7 +18,9 @@ import { nextId } from '../../../core/next-id';
  * count. The active row and the row holding focus are kept even when they scroll out, so focus is
  * never lost. A pooled row follows its row by id first (a new row opened above it moves it, the
  * editor inside goes along), then by position (a loading row that gets its data). Group rows and
- * group footers have pools of their own and follow their group by its id.
+ * group footers have pools of their own and follow their group by its id. A row's details
+ * (`masterDetail`) are not pooled: each belongs to its row, sits under it, and is as tall as it was
+ * measured (`ExtraHeights` keeps the sums), so the scroll bar and `reveal` stay right.
  */
 export class GridBody<T> extends Component<HTMLDivElement> {
   /** Every row ever made; reused, never disposed before the grid. */
@@ -32,16 +37,33 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   private readonly byElement = new WeakMap<Element, GridRow<T>>();
   private virtualTop = 0;
   private expectedScrollTop = -1;
+  /** Set while the body lays out again in the same frame for details measured for the first time. */
+  private again = false;
   private visible: string[] = [];
   /** The edit form shown in place of a row (`editMode: 'form'`), and the height it was measured at. */
   private form: { rowId: string; row: T; index: number; element: HTMLDivElement; height: number; observer: ResizeObserver | null } | null = null;
+  /** Rows' details by key text: made when first shown, kept while open (and closed, with `keepDetails`) up to `keepLimit` out of view. */
+  private readonly details = new Map<string, DetailRow<T>>();
+  private readonly detailByElement = new WeakMap<Element, DetailRow<T>>();
+  /** Details drawn now, by grid index of their row. */
+  private detailsByIndex = new Map<number, DetailRow<T>>();
+  /** The open details of the rows laid out, and what they were found for. */
+  private extras: ExtraHeights | null = null;
+  private extrasFor = '';
+  /** The data the kept details were last checked against. */
+  private checkedFor = '';
+  private detailObserver: ResizeObserver | null = null;
+  private layouts = 0;
+  private readonly detailHost: DetailHost<T>;
 
   constructor(
     private readonly grid: GridModel<T>,
     private readonly viewport: () => HTMLElement | null,
     private readonly widths: ActionWidths,
+    host: Omit<DetailHost<T>, 'owner'>,
   ) {
     super();
+    this.detailHost = { owner: this, grid: host.grid, collapse: (key) => host.collapse(key) };
   }
 
   override onConfigured() {
@@ -51,7 +73,12 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       for (const row of this.pool) row.dispose();
       for (const row of this.groupPool) row.dispose();
       for (const row of this.footerPool) row.dispose();
+      this.detailObserver?.disconnect();
+      for (const detail of this.details.values()) detail.dispose();
+      this.details.clear();
     });
+    this.grid.ariaRowIndex = (i) => this.ariaRowIndex(i);
+    this.grid.openDetailCount = () => untracked(() => this.openExtras()?.size ?? 0);
     // Lookup keys came: only the cells that show them are drawn again.
     const resolved = this.grid.lookups.onChanged(({ items, keys }) => {
       for (const row of this.byIndex.values()) row.drawLookups(items, keys);
@@ -60,14 +87,55 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.motif.setDisposable(() => resolved.dispose());
   }
 
-  /** Geometry of the rows the body lays out (all rows, or one page); the edit form's row is as tall as the form. */
+  /** Geometry of the rows the body lays out (all rows, or one page); the edit form's row is as tall as the form, open details add their height. */
   geometry(): ScrollGeometry {
     const grid = this.grid;
     const rowHeight = grid.state.rowHeight;
     const at = this.formIndex();
     const local = at < 0 ? -1 : grid.mode === 'virtual' ? at : grid.localOf(at);
     const tall = local >= 0 && this.form ? { at: local, extra: Math.max(0, this.form.height - rowHeight) } : null;
-    return new ScrollGeometry(grid.reachable(), rowHeight, Math.max(rowHeight, grid.state.viewport), ScrollGeometry.MAX_HEIGHT, tall);
+    return new ScrollGeometry(grid.reachable(), rowHeight, Math.max(rowHeight, grid.state.viewport), ScrollGeometry.MAX_HEIGHT, tall, this.openExtras());
+  }
+
+  /** The details drawn now, in grid order. */
+  drawnDetails(): DetailRow<T>[] {
+    return [...this.detailsByIndex.entries()].sort((a, b) => a[0] - b[0]).map(([, d]) => d);
+  }
+
+  /** The details drawn under grid row `index`. */
+  detailAt(index: number): DetailRow<T> | undefined {
+    return this.detailsByIndex.get(index);
+  }
+
+  /** The details of this grid an element is in (not those of a grid inside them). */
+  detailOf(el: Element | null): DetailRow<T> | undefined {
+    let node: Element | null = el;
+    while (node && node !== this.element) {
+      const detail = this.detailByElement.get(node);
+      if (detail) return detail;
+      node = node.parentElement;
+    }
+    return undefined;
+  }
+
+  /** The options or the open rows changed in a way the body cannot see: the details are found again. */
+  refreshDetails() {
+    this.extrasFor = '';
+    this.relayout(true);
+  }
+
+  /** Disposes every row's details (another template); they are made again when they show. */
+  dropDetails() {
+    for (const detail of [...this.details.values()]) this.dropDetail(detail);
+    this.refreshDetails();
+  }
+
+  /** Measures the details drawn now (the ResizeObserver does it as their content changes); the rows after one that changed move. */
+  measureDetails(only?: Iterable<DetailRow<T>>): boolean {
+    let changed = false;
+    for (const detail of only ?? this.detailsByIndex.values()) changed = this.measureDetail(detail) || changed;
+    if (changed) this.relayout(true);
+    return changed;
   }
 
   /** Shows `content` (the edit form) in place of grid row `index` (the row `row`, `rowId`), across the grid, as tall as it is. */
@@ -91,6 +159,90 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     }
     this.relayout(true);
     this.measureForm();
+  }
+
+  /** `aria-rowindex` of grid row `i`: the open details above it count as rows. */
+  private ariaRowIndex(i: number): number {
+    const grid = this.grid;
+    const n = i + 1 + grid.headRows;
+    const extras = this.extras;
+    if (!extras?.size) return n;
+    const local = grid.mode === 'virtual' ? i : grid.localOf(i);
+    return local < 0 ? n : n + extras.countBefore(local);
+  }
+
+  /** The open details of the rows laid out (all rows, or one page), found again when the rows or the open ones change. */
+  private openExtras(): ExtraHeights | null {
+    return untracked(() => {
+      const grid = this.grid;
+      const details = grid.details;
+      if (!details.on) return (this.extras = null);
+      const st = grid.state;
+      const key = `${st.version}|${st.connection}|${st.added}|${st.page}|${details.state.version}|${grid.mode}|${grid.reachable()}`;
+      if (this.extras && key === this.extrasFor) return this.extras;
+      this.extrasFor = key;
+      this.extras = this.findExtras();
+      return this.extras;
+    });
+  }
+
+  private findExtras(): ExtraHeights {
+    const grid = this.grid;
+    const details = grid.details;
+    const virtual = grid.mode === 'virtual';
+    const at: number[] = [];
+    if (details.allOpen) {
+      const n = grid.reachable();
+      for (let l = 0; l < n; l++) if (grid.isDetailOpen(virtual ? l : grid.viewAt(l))) at.push(l);
+    } else {
+      for (const key of details.exceptions()) {
+        const i = grid.indexOfDetailKey(key);
+        const l = i < 0 ? -1 : virtual ? i : grid.localOf(i);
+        if (l >= 0 && grid.isDetailOpen(i)) at.push(l);
+      }
+      at.sort((a, b) => a - b);
+    }
+    const extras = new ExtraHeights(at);
+    // A height of their own counts at once; the details drawn before keep what they measured.
+    const fixed = details.options.get('height');
+    if (fixed !== undefined) {
+      at.forEach((l, slot) => {
+        const row = grid.rowAt(virtual ? l : grid.viewAt(l));
+        if (row !== undefined) extras.set(slot, typeof fixed === 'function' ? fixed(row) : fixed);
+      });
+    }
+    for (const detail of this.details.values()) {
+      if (detail.height <= 0) continue;
+      const i = grid.indexOfDetailKey(detail.key);
+      const slot = i < 0 ? -1 : extras.slotOf(virtual ? i : grid.localOf(i));
+      if (slot >= 0) extras.set(slot, detail.height);
+    }
+    extras.estimate = extras.average ?? Math.max(0, details.options.get('estimatedHeight'));
+    return extras;
+  }
+
+  private measureDetail(detail: DetailRow<T>): boolean {
+    if (!detail.shown || detail.index < 0) return false;
+    const height = detail.element.offsetHeight;
+    if (height <= 0 || height === detail.height) return false;
+    detail.height = height;
+    const extras = this.extras;
+    if (extras) {
+      const grid = this.grid;
+      const slot = extras.slotOf(grid.mode === 'virtual' ? detail.index : grid.localOf(detail.index));
+      if (slot >= 0) {
+        extras.set(slot, height);
+        extras.estimate = extras.average ?? Math.max(0, grid.details.options.get('estimatedHeight'));
+      }
+    }
+    return true;
+  }
+
+  private dropDetail(detail: DetailRow<T>) {
+    this.detailObserver?.unobserve(detail.element);
+    this.details.delete(detail.id);
+    for (const [i, d] of this.detailsByIndex) if (d === detail) this.detailsByIndex.delete(i);
+    detail.dispose();
   }
 
   /** Takes the edit form away; its row shows again. */
@@ -336,7 +488,10 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     const active = grid.state.activeRow;
     const focused = this.rowOf(document.activeElement)?.index ?? -1;
     const formAt = this.formIndex();
-    for (const i of new Set([active, focused, formAt])) if (i >= 0 && localOf(i) >= 0 && !inWindow(i)) wanted.push(i);
+    // Focus in a row's details keeps the row and its details drawn.
+    const inDetail = this.detailOf(document.activeElement);
+    const detailRow = inDetail ? (inDetail.index >= 0 ? inDetail.index : grid.indexOfDetailKey(inDetail.key)) : -1;
+    for (const i of new Set([active, focused, formAt, detailRow])) if (i >= 0 && localOf(i) >= 0 && !inWindow(i)) wanted.push(i);
     const pinned = formAt >= 0 ? formAt : active;
     data.pin(pinned >= 0 ? grid.dataIndex(pinned) : -1);
 
@@ -382,16 +537,130 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     });
     for (const row of free) row.release();
     this.byIndex = keep;
+    const fresh = this.placeDetails(formAt >= 0 ? [...rows, formAt] : rows, top, localOf, g, vp);
     // Rows stay where they are in the DOM: a moved row is styled again from scratch, on every
-    // scroll. Assistive technology gets the reading order through aria-owns.
+    // scroll. Assistive technology gets the reading order through aria-owns; a row's details
+    // come right after it, and count as a row in `aria-rowindex`.
     const all: [number, HTMLElement][] = [];
     for (const [i, r] of keep) all.push([i, r.element]);
     if (this.form && formAt >= 0) all.push([formAt, this.form.element]);
     for (const [i, r] of this.groupsByIndex) all.push([i, r.element]);
     for (const [i, r] of this.footersByIndex) all.push([i, r.element]);
+    const detailsOn = this.detailsByIndex.size > 0;
+    for (const [i, d] of this.detailsByIndex) all.push([i + 0.5, d.element]);
     const shown = all.sort((a, b) => a[0] - b[0]).map(([, el]) => el.id);
     const owns = shown.join(' ');
     if (this.element.getAttribute('aria-owns') !== owns) this.element.setAttribute('aria-owns', owns);
+    if (detailsOn || this.extras) {
+      for (const [i, el] of all) {
+        const index = String(Number.isInteger(i) ? this.ariaRowIndex(i) : this.ariaRowIndex(i - 0.5) + 1);
+        if (el.getAttribute('aria-rowindex') !== index) el.setAttribute('aria-rowindex', index);
+      }
+    }
+    // Details drawn for the first time are measured at once, so the rows after them are placed in this frame.
+    if (!this.again && fresh.length && fresh.some((d) => this.measureDetail(d))) {
+      this.again = true;
+      try {
+        this.layout(vp, immediate);
+      } finally {
+        this.again = false;
+      }
+    }
+  }
+
+  /**
+   * Details under the rows that show theirs (made the first time); the others are parked, and those
+   * not wanted any more disposed. Returns the details drawn now that were not before.
+   */
+  private placeDetails(rows: number[], top: (local: number) => number, localOf: (i: number) => number, g: ScrollGeometry, vp: HTMLElement): DetailRow<T>[] {
+    const grid = this.grid;
+    const on = grid.details.on;
+    const shown = new Map<number, DetailRow<T>>();
+    const fresh: DetailRow<T>[] = [];
+    this.layouts++;
+    if (on) {
+      const columns = this.visible.length;
+      for (const i of rows) {
+        if (!grid.isDetailOpen(i)) continue;
+        const id = grid.detailId(i);
+        const row = grid.rowAt(i);
+        if (id === undefined || row === undefined) continue;
+        const detail = this.details.get(id) ?? this.createDetail(id, row);
+        const l = localOf(i);
+        const was = detail.index;
+        detail.use(i, row, top(l) + g.rowHeightOf(l), vp.scrollLeft, vp.clientWidth, columns);
+        detail.seen = this.layouts;
+        shown.set(i, detail);
+        if (was !== i) fresh.push(detail);
+      }
+    }
+    const drawn = new Set(shown.values());
+    for (const detail of this.details.values()) if (!drawn.has(detail)) detail.park();
+    this.detailsByIndex = shown;
+    for (const [i, row] of this.byIndex) {
+      if (!on) {
+        if (row.element.hasAttribute('aria-expanded')) row.drawExpand(false, false, null);
+        continue;
+      }
+      const can = grid.detailId(i) !== undefined;
+      row.drawExpand(can, can && grid.isDetailOpen(i), shown.get(i)?.element.id ?? null);
+    }
+    this.tidyDetails(drawn);
+    const ev = grid.events;
+    if (ev.listened(ev.rowPrepared)) {
+      for (const detail of fresh) {
+        const row = detail.row;
+        ev.rowPrepared.fire({ row, rowIndex: detail.index, rowType: 'detail', isSelected: grid.selection.isSelected(grid.selectId(row)), element: detail.element });
+      }
+    }
+    return fresh;
+  }
+
+  /** Disposes the details not wanted any more: closed ones (without `keepDetails`), those whose row is gone, the ones seen longest ago past `keepLimit`. */
+  private tidyDetails(drawn: Set<DetailRow<T>>) {
+    const grid = this.grid;
+    const details = grid.details;
+    if (!details.on) {
+      for (const detail of [...this.details.values()]) this.dropDetail(detail);
+      return;
+    }
+    const st = grid.state;
+    const data = `${st.version}|${st.connection}`;
+    const check = data !== this.checkedFor;
+    this.checkedFor = data;
+    const keep = details.options.get('keepDetails');
+    const kept: DetailRow<T>[] = [];
+    for (const detail of [...this.details.values()]) {
+      if (drawn.has(detail)) continue;
+      // The row left the data (filtered out, deleted, not loaded any more): its details go with it.
+      if ((!keep && !details.isOpen(detail.id)) || (check && grid.data.rowByKey(detail.key) === undefined)) this.dropDetail(detail);
+      else kept.push(detail);
+    }
+    const limit = Math.max(0, Math.floor(details.options.get('keepLimit')));
+    if (kept.length <= limit) return;
+    kept.sort((a, b) => a.seen - b.seen);
+    for (const detail of kept.slice(0, kept.length - limit)) this.dropDetail(detail);
+  }
+
+  private createDetail(id: string, row: T): DetailRow<T> {
+    const adapter = this.grid.data.source.adapter;
+    const detail = new DetailRow<T>(this.grid, this.detailHost, id, adapter.keyOf(row), row, nextId('grid-row'));
+    this.element.append(detail.element);
+    this.details.set(id, detail);
+    this.detailByElement.set(detail.element, detail);
+    if (!this.detailObserver && typeof ResizeObserver !== 'undefined') {
+      this.detailObserver = new ResizeObserver((entries) => {
+        if (this.isDisposed) return;
+        const measured: DetailRow<T>[] = [];
+        for (const entry of entries) {
+          const d = this.detailByElement.get(entry.target);
+          if (d) measured.push(d);
+        }
+        this.measureDetails(measured);
+      });
+    }
+    this.detailObserver?.observe(detail.element);
+    return detail;
   }
 
   /** The edit form's row: at its row's place, as wide as the viewport and kept in it while the rows scroll sideways. */
@@ -401,7 +670,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     const el = form.element;
     el.hidden = top < 0;
     if (top < 0) return;
-    el.setAttribute('aria-rowindex', String(index + 1 + this.grid.headRows));
+    el.setAttribute('aria-rowindex', String(this.ariaRowIndex(index)));
     el.firstElementChild?.setAttribute('aria-colspan', String(Math.max(1, this.visible.length)));
     el.style.inlineSize = `${vp.clientWidth}px`;
     el.style.transform = `translate(${vp.scrollLeft}px, ${top}px)`;

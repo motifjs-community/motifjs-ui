@@ -22,7 +22,10 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
     this.class.add('mx-data-grid__row mx-data-grid__total-row');
     this.attr.add({
       role: 'row',
-      'aria-rowindex': () => String(grid.count + grid.headRows + 1),
+      'aria-rowindex': () => {
+        void grid.details.state.version;
+        return String(grid.count + grid.headRows + 1 + grid.openDetailCount());
+      },
       tabindex: () => (grid.settings.get('totalSummaryTabStop') && grid.summaries.showsTotal() ? '0' : null),
       'aria-busy': () => (grid.summaries.state.status === 'loading' ? 'true' : null),
       'data-state': () => (grid.summaries.state.status === 'ready' ? null : grid.summaries.state.status),

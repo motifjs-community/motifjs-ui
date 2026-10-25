@@ -90,7 +90,7 @@ export class GroupFooterRow<T> {
       element.removeAttribute('aria-rowindex');
       return;
     }
-    element.setAttribute('aria-rowindex', String(index + 1 + model.headRows));
+    element.setAttribute('aria-rowindex', String(model.ariaRowIndex(index)));
     element.setAttribute('aria-level', String(node.level + 2));
     element.toggleAttribute('data-active', model.state.activeRow === index);
     element.style.setProperty('--_level', String(node.level));

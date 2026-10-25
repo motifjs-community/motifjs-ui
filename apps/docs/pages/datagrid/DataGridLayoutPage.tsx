@@ -96,7 +96,7 @@ const EVENTS = [
   ['onSelectionChanging / onSelectionChanged', '`{ selection, previous }` / `{ selection }`', 'yes / —', 'The selection is about to change, by the user or from code.'],
   ['onLayoutChanging / onLayoutChange', '`{ layout, previous }` / `layout`', 'yes / —', 'The user resized, moved, hid, pinned, sorted or reset; cancel puts the layout before back.'],
   ['onGroupingChanging / onGroupingChanged, onGroupDropping', 'see [Grouping](/datagrid/grouping#grouping)', 'yes', 'The grouping; a dropped header or chip.'],
-  ['onRowExpanding / onRowExpanded, onRowCollapsing / onRowCollapsed', '`{ key }`', 'yes / —', 'A group opens or closes.'],
+  ['onRowExpanding / onRowExpanded, onRowCollapsing / onRowCollapsed', '`{ kind, key, row }`', 'yes / —', "A group (`kind: 'group'`) or a row's details (`kind: 'detail'`) open or close."],
   ['onCopying / onPasting', '`{ text, html, rows }` / `{ text, rowIndex, field }`', 'yes', 'Ctrl+C, `copy()`; Ctrl+V, `paste()`: change the text, or stop it.'],
   ['onSummaryChanged', '`{ total, editing }`', '', 'The summary values were worked out again: new rows, a new filter or search, a save, or (with `recalculateWhileEditing`) an unsaved change.'],
   ['onExporting / onExported', '`{ format, component, selectedRowsOnly, options }` / `{ format, rows, text? }`', 'yes / —', 'An export is about to start (change its options); for a format the grid does not write (`xlsx`) the handler writes it with `exportDataGrid`. It finished (`exportDataGrid` tells it with `format: \'xlsx\'`).'],

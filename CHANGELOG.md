@@ -201,6 +201,39 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   shown for keyboard focus closed at once when focusing scrolled its field into view; it now follows
   the field while the page scrolls and closes only if the field is off the screen when scrolling ends.
 
+### DataGrid master-detail rows
+
+- `masterDetail` (each field a `Bind`, live through `grid.masterDetail`): `enabled` (the expand
+  column, after the status and check box columns, pinned like them), `template(ctx)` (what a row's
+  details hold: a component, an element or a text; `ctx` has `row`, `rowIndex`, `key`, `grid`,
+  `collapse()`), `autoExpandAll`, `canExpand` (a value or a function of the row), `keepDetails`
+  (default `true`: a closed row keeps its content), `keepLimit` (default `100` details kept out of
+  view), `height` (a value or a function of the row; default the content's), `estimatedHeight`
+  (default `200`), `columnWidth` (default `36`), `toggleKeys` (default `['Enter', ' ']`), `arrowKeys`
+  (default `true`). Changing `enabled`, `autoExpandAll` or `template` opens or closes every row again.
+- A row's details are a row of their own under it, one cell across the grid that stays in place while
+  the columns scroll sideways. They are not pooled: made the first time they show, kept while the row
+  is open (parked out of view, laid out but not drawn), disposed when the row leaves the data, past
+  `keepLimit`, on closing without `keepDetails`, or with the grid. Their height is measured (a
+  `ResizeObserver`, so a tab or a nested grid that changes size moves the rows after it) and fed to the
+  scroll geometry (`ExtraHeights`, two Fenwick trees), so the scroll bar, `reveal` and moving to a row
+  stay right in the virtual list and on a page; the pooled rows keep their path.
+- Methods `expandRow(key)`, `collapseRow(key)`, `isRowExpanded(key)` (reactive), `expandAllRows()`,
+  `collapseAllRows()`. The row events are the groups' ones, now with `kind: 'group' | 'detail'` (and
+  `row` for details): `onRowExpanding` / `onRowCollapsing` (cancellable) and `onRowExpanded` /
+  `onRowCollapsed`, from the user and from code. `onRowPrepared` with `rowType: 'detail'`,
+  `getVisibleRows()` lists the details after their row. `GridRowExpandingEventArgs` and
+  `GridRowExpandedEventArgs` are unions by `kind`: a handler that reads a group's `key` narrows first.
+- Keyboard and ARIA: Enter / Space and Right / Left on the expand cell, Tab into the row's details,
+  Escape or Shift+Tab back to the row, Tab out of the grid from their last stop; with details on the
+  screen Tab never lands in another row's details. The arrow is a button with `aria-expanded` and
+  `aria-controls`; grouped (a treegrid) the row says `aria-expanded` too. The details come right after
+  their row in `aria-owns`, count in `aria-rowindex` / `aria-rowcount`, and are named “Details of row
+  3”. Clicks, keys, focus, paste and tooltips inside the details are left to their content.
+- Texts `gridDetails`, `gridDetailsOf` (en, tr); tokens `datagrid.expand-color`, `expand-radius`,
+  `detail-padding`, `detail-background`. Docs: “Master-detail” page (`/datagrid/master-detail`).
+  `e2e/checks/39-datagrid-master-detail.mjs`.
+
 ### DataGrid edit forms, popups and validation rules
 
 - `settings.editMode: 'row' | 'cell' | 'batch' | 'form' | 'popup'` (default `'row'`, live): how a

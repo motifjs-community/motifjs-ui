@@ -1,6 +1,6 @@
 /* DataGrid. The look binds to data-striped, data-header-buttons and data-selection on the root; to
    data-active, data-selected, data-status (new | changed | removed | saving | failed | invalid),
-   data-odd and data-loading on each body row (a group row: data-expanded, data-expand, data-locked, --_level); to data-changed, aria-invalid and data-lookup
+   data-odd, data-loading and data-expanded (master-detail) on each body row (a group row: data-expanded, data-expand, data-locked, --_level); to data-changed, aria-invalid and data-lookup
    (loading | missing) on cells; to
    data-sort, data-sortable, data-dragging and data-resizing on headers; to aria-checked on the
    selection check boxes and data-active on header filter buttons. Action buttons and the filter
@@ -642,6 +642,81 @@
 
   .mx-field[data-in-cell] .mx-field__foot {
     display: none;
+  }
+
+  /* The expand column of master-detail rows: an arrow that turns when the row's details are open. */
+  .mx-data-grid__expand {
+    display: grid;
+    place-items: center;
+    padding-inline: 0;
+  }
+
+  .mx-data-grid__expand-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--mx-datagrid-button-size);
+    block-size: var(--mx-datagrid-button-size);
+    color: var(--mx-datagrid-expand-color);
+    cursor: pointer;
+    border-radius: var(--mx-datagrid-expand-radius);
+  }
+
+  .mx-data-grid__expand-button[hidden] {
+    display: none;
+  }
+
+  .mx-data-grid__expand-button:hover {
+    background-color: var(--mx-datagrid-hover);
+  }
+
+  .mx-data-grid__expand-button > .mx-glyph {
+    inline-size: var(--mx-datagrid-icon-size);
+    block-size: var(--mx-datagrid-icon-size);
+  }
+
+  .mx-data-grid__expand-button:dir(rtl) > .mx-glyph {
+    scale: -1 1;
+  }
+
+  .mx-data-grid__expand-button[aria-expanded='true'] > .mx-glyph {
+    rotate: 90deg;
+  }
+
+  /* A row's details: one cell across the viewport under the row, kept in view while the rows scroll
+     sideways. Out of view they stay laid out but are not drawn, so their content keeps its state. */
+  .mx-data-grid__body > .mx-data-grid__detail-row {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: var(--_z-sticky);
+    box-sizing: border-box;
+    background-color: var(--mx-datagrid-detail-background);
+    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
+  }
+
+  .mx-data-grid__body > .mx-data-grid__detail-row[hidden] {
+    display: block;
+    visibility: hidden;
+    content-visibility: hidden;
+  }
+
+  .mx-data-grid__detail-cell {
+    box-sizing: border-box;
+    padding: var(--mx-datagrid-detail-padding);
+    line-height: normal;
+    white-space: normal;
+    outline: none;
+  }
+
+  .mx-data-grid__detail-cell[data-fixed] {
+    overflow: auto;
+  }
+
+  .mx-data-grid__detail-cell:focus-visible {
+    outline: var(--mx-datagrid-cell-focus-width) solid var(--mx-datagrid-cell-focus-color);
+    outline-offset: calc(var(--mx-datagrid-cell-focus-width) * -1);
+    box-shadow: var(--mx-datagrid-cell-focus-halo);
   }
 
   /* The edit form in place of a row: one cell across the viewport, as tall as the form. */

@@ -102,9 +102,10 @@ describe('grouping rows in memory', () => {
     const told: string[] = [];
     const grid = await make({
       columns: columns().map((c) => (c.field === 'city' ? { ...c, groupIndex: 0 } : c)),
-      onRowCollapsing: (e) => told.push(`collapsing ${e.key.join('/')}`),
-      onRowCollapsed: (e) => told.push(`collapsed ${e.key.join('/')}`),
+      onRowCollapsing: (e) => e.kind === 'group' && told.push(`collapsing ${e.key.join('/')}`),
+      onRowCollapsed: (e) => e.kind === 'group' && told.push(`collapsed ${e.key.join('/')}`),
       onRowExpanding: (e) => {
+        if (e.kind !== 'group') return;
         told.push(`expanding ${e.key.join('/')}`);
         if (e.key[0] === 'izm') e.cancel = true;
       },

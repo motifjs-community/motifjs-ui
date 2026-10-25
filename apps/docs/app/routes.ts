@@ -40,6 +40,7 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   'datagrid-filtering': () => import('../pages/datagrid/DataGridFilteringPage'),
   'datagrid-lookups': () => import('../pages/datagrid/DataGridLookupsPage'),
   'datagrid-grouping': () => import('../pages/datagrid/DataGridGroupingPage'),
+  'datagrid-master-detail': () => import('../pages/datagrid/DataGridMasterDetailPage'),
   'datagrid-selection': () => import('../pages/datagrid/DataGridSelectionPage'),
   'datagrid-layout': () => import('../pages/datagrid/DataGridLayoutPage'),
   'datagrid-api': () => import('../pages/datagrid/DataGridApiPage'),

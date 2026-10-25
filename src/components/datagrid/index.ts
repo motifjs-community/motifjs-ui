@@ -10,6 +10,8 @@ export type { GridRowValidatingEventArgs } from './grid-row-validating-event-arg
 export type { GridColumnFormItem } from './grid-column-form-item';
 export type { GridEditForm } from './grid-edit-form';
 export type { GridEditPopup } from './grid-edit-popup';
+export type { GridMasterDetail } from './grid-master-detail';
+export type { DetailContext } from './detail-context';
 export type { GridSettings } from './grid-settings';
 export type { GridSettingsProps } from './grid-settings-props';
 export type { ColumnFeatures } from './column-features';

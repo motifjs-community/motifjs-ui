@@ -121,7 +121,7 @@ export class GroupRow<T> {
       element.removeAttribute('aria-rowindex');
       return;
     }
-    element.setAttribute('aria-rowindex', String(index + 1 + model.headRows));
+    element.setAttribute('aria-rowindex', String(model.ariaRowIndex(index)));
     element.setAttribute('aria-level', String(node.level + 1));
     void model.groups.state.version;
     void model.state.version;

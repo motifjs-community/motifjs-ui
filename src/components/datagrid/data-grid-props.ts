@@ -51,6 +51,7 @@ import type { LayoutStorage } from './layout-storage';
 import type { GridColumn } from './grid-column';
 import type { GridEditForm } from './grid-edit-form';
 import type { GridEditPopup } from './grid-edit-popup';
+import type { GridMasterDetail } from './grid-master-detail';
 import type { GridEditorPreparedEventArgs } from './grid-editor-prepared-event-args';
 import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
 import type { GridRowValidatingEventArgs } from './grid-row-validating-event-args';
@@ -72,7 +73,7 @@ import type { GridValuesResult } from './grid-values-result';
 import type { NewRowOptions } from './new-row-options';
 import type { RowState } from './row-state';
 
-/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form` and `popup` (whose fields are) and the callbacks is a value or a function that is followed. */
+/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form`, `popup` and `masterDetail` (whose fields are) and the callbacks is a value or a function that is followed. */
 export interface DataGridProps<T> extends ControlProps {
   /** Column definitions, in their initial order. */
   columns: GridColumn<T>[];
@@ -123,6 +124,8 @@ export interface DataGridProps<T> extends ControlProps {
   form?: GridEditForm;
   /** The window of `settings.editMode: 'popup'`: title, size, buttons. Read and change it later through `grid.popup`. */
   popup?: GridEditPopup;
+  /** Details under the rows: an expand column, and what `template` makes for each row in a row across the grid. Read and change it later through `grid.masterDetail`. */
+  masterDetail?: GridMasterDetail<T>;
   /** Checks a whole row before it is saved: a message per field, or one message for the row. */
   validateRow?: (
     row: T,
@@ -175,13 +178,16 @@ export interface DataGridProps<T> extends ControlProps {
   onGroupingChanged?: (e: GridGroupingChangedEventArgs) => void;
   /** A header or a chip is dropped: `e.field`, `e.from`, `e.to`, `e.index`; `e.cancel` cancels the drop. */
   onGroupDropping?: (e: GridGroupDroppingEventArgs) => void;
-  /** A group is about to open: `e.key` is its key (the values from the top level down), `e.cancel` keeps it closed. */
+  /**
+   * A group or a row's details are about to open: `e.kind` says which (`'group'`, `'detail'`), `e.key`
+   * is the group's key (the values from the top level down) or the row's; `e.cancel` keeps it closed.
+   */
   onRowExpanding?: (e: GridRowExpandingEventArgs) => void;
-  /** A group opened. */
+  /** A group or a row's details opened. */
   onRowExpanded?: (e: GridRowExpandedEventArgs) => void;
-  /** A group is about to close; `e.cancel` keeps it open. */
+  /** A group or a row's details are about to close; `e.cancel` keeps it open. */
   onRowCollapsing?: (e: GridRowExpandingEventArgs) => void;
-  /** A group closed. */
+  /** A group or a row's details closed. */
   onRowCollapsed?: (e: GridRowExpandedEventArgs) => void;
   /** The bar above the rows: which items, and whether it shows. */
   toolbar?: GridToolbar;

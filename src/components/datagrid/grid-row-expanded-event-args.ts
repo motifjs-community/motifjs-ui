@@ -1,5 +1,4 @@
-/** A group opened or closed (by the user or from code). */
-export interface GridRowExpandedEventArgs {
-  /** The values of the groups from the top level down to this one. */
-  readonly key: readonly unknown[];
-}
+/** A group, or a row's details (`masterDetail`), opened or closed, by the user or from code. See `GridRowExpandingEventArgs`. */
+export type GridRowExpandedEventArgs =
+  | { readonly kind: 'group'; readonly key: readonly unknown[]; readonly row?: undefined }
+  | { readonly kind: 'detail'; readonly key: unknown; readonly row: unknown };

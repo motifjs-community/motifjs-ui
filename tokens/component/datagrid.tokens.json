@@ -1,6 +1,6 @@
 {
   "datagrid": {
-    "$description": "DataGrid: rows sized by the density tokens, a bar header, row tints for hover, the active row, selected and new rows and stripes, the marks of unsaved and invalid cells, the selection check boxes, the action buttons, the filter row, the header filter window, the text the search found, the group rows and the group panel's chips, the status marks, the load states, the export panel and the edit form in place of a row.",
+    "$description": "DataGrid: rows sized by the density tokens, a bar header, row tints for hover, the active row, selected and new rows and stripes, the marks of unsaved and invalid cells, the selection check boxes, the action buttons, the filter row, the header filter window, the text the search found, the group rows and the group panel's chips, the status marks, the load states, the export panel, the edit form in place of a row, and the expand arrows and details of master-detail rows.",
     "row-height": { "$type": "dimension", "$value": "{control.height.md}" },
     "row-padding": { "$type": "dimension", "$value": "{space.1}" },
     "cell-padding": { "$type": "dimension", "$value": "{control.padding.sm}" },
@@ -123,6 +123,10 @@
     "form-background": { "$type": "color", "$value": "{color.bg.surface}" },
     "form-message-color": { "$type": "color", "$value": "{color.danger.fg}" },
     "form-label-color": { "$type": "color", "$value": "{color.fg.secondary}" },
-    "form-label-font-size": { "$type": "dimension", "$value": "{font.size.caption}" }
+    "form-label-font-size": { "$type": "dimension", "$value": "{font.size.caption}" },
+    "expand-color": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "expand-radius": { "$type": "dimension", "$value": "{radius.sm}" },
+    "detail-padding": { "$type": "dimension", "$value": "{space.3}" },
+    "detail-background": { "$type": "color", "$value": "{color.bg.bar}" }
   }
 }

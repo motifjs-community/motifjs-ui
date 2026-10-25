@@ -2,7 +2,7 @@ import { Component, ComponentBase, effect } from '@motifx/core';
 import { chevronDown, chevronUp, filterMark, moreMark } from '../../../core/glyphs';
 import type { GridColumn } from '../grid-column';
 import type { HeaderCellContext } from '../header-cell-context';
-import { ACTIONS_FIELD, SELECT_FIELD } from '../model/ColumnModel';
+import { ACTIONS_FIELD, EXPAND_FIELD, SELECT_FIELD } from '../model/ColumnModel';
 import { HEADER_ROW, type GridModel } from '../model/GridModel';
 import { createCheck, setCheck } from './check-mark';
 import type { HeaderHost } from './header-host';
@@ -104,7 +104,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     const field = col.field;
     if (field === SELECT_FIELD) return this.selectCell();
     const internal = cols.isInternal(field);
-    const title = () => (field === ACTIONS_FIELD ? grid.text('gridActions') : internal ? grid.text('gridRowStatus') : cols.title(field));
+    const title = () => (field === ACTIONS_FIELD ? grid.text('gridActions') : field === EXPAND_FIELD ? grid.text('gridDetails') : internal ? grid.text('gridRowStatus') : cols.title(field));
     const sort = () => grid.sortOf(field);
     const ariaSort = () => {
       const s = sort();
