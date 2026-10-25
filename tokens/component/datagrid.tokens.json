@@ -33,7 +33,7 @@
     "selected": { "$type": "color", "$value": "{color.accent.subtle}" },
     "check-size": { "$type": "dimension", "$value": { "value": 0.875, "unit": "rem" } },
     "check-mark-size": { "$type": "dimension", "$value": "{icon.size.sm}" },
-    "check-radius": { "$type": "dimension", "$value": "{radius.sm}" },
+    "check-radius": { "$type": "dimension", "$value": "{radius.xs}" },
     "action-gap": { "$type": "dimension", "$value": "{space.1}" },
     "filter-padding": { "$type": "dimension", "$value": "{space.1}" },
     "values-width": { "$type": "dimension", "$value": { "value": 16, "unit": "rem" } },

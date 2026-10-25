@@ -88,7 +88,8 @@
     --_fill-active: var(--mx-color-fill-control-tertiary);
     --_stroke: var(--mx-color-stroke-control-strong);
     --_stroke-edge: var(--mx-color-stroke-control-edge);
-    --_glow: inset 0 var(--mx-checkbox-border-width) 0 var(--mx-color-highlight-control);
+    /* The depth sits under the box, not in its bottom border: the outline stays whole on any background. */
+    --_glow: inset 0 var(--mx-checkbox-border-width) 0 var(--mx-color-highlight-control), 0 var(--mx-checkbox-border-width) 0 var(--_stroke-edge);
     --_press: var(--mx-control-press-offset);
   }
 
@@ -139,7 +140,6 @@
     margin: 0;
     background: var(--_fill);
     border: var(--mx-checkbox-border-width) solid var(--_stroke);
-    border-block-end-color: var(--_stroke-edge);
     border-radius: var(--mx-checkbox-radius);
     box-shadow: var(--_glow);
     cursor: default;

@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Check boxes and radios
+
+- The check box, the radio circle and the check boxes of DataGrid, ListBox and TreeView draw one
+  stroke all around; the pressable depth is a 1px shadow under the mark instead of a darker bottom
+  border, which vanished on dark backgrounds and left the outline open at the bottom.
+- `checkbox.radius` and the `check-radius` of DataGrid, ListBox and TreeView read the design
+  system's new `radius.xs`, so a check box stays square in a design language with round corners
+  (Lounge). Same 4px as before in Tactile.
+- The docs site has a Style menu (Tactile / Lounge) next to Theme, kept between visits.
+
 ### rewrite
 
 - The components are being rewritten from scratch, one at a time. Removed: `Button`, `Label`,

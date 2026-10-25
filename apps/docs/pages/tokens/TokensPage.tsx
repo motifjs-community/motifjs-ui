@@ -32,6 +32,7 @@ const compact = compactJson as Record<string, DesignToken>;
 const rows = (layer: string) => Object.entries(light).filter(([, t]) => t.layer === layer);
 const semantic = rows('semantic');
 const density = rows('density');
+const identity = rows('identity');
 const primitive = rows('primitive');
 
 const Swatch = (props: { value: string }) => (
@@ -51,8 +52,8 @@ export default function TokensPage() {
   return (
     <>
       <p class="lead">
-        Four layers. The first three — primitives, semantic tokens per theme, density — come from{' '}
-        <code>@motifx-community/design-system</code> and are listed here for reference. The fourth, the component
+        Five layers. The first four — primitives, the design language's own scales, semantic tokens per theme,
+        density — come from <code>@motifx-community/design-system</code> and are listed here for reference. The fifth, the component
         tokens, is this kit's own: a fine-tuning knob per component, each referencing a design-system token, written
         in <code>@layer mx.components</code>. Components bring their own; none has been written yet.
       </p>
@@ -165,8 +166,41 @@ export default function TokensPage() {
         </table>
       </Section>
 
+      <Section anchor="identity" title="Identity ({identity.length})">
+        <p>
+          What a design language brings of its own: corner radii, shadows, type and motion. The names are the same in
+          every language; <code>data-identity</code> picks whose values apply. Tactile, shown here, is the default.
+        </p>
+        <table class="token-table">
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Type</th>
+              <th>CSS variable</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {identity.map(([name, t]) => (
+              <tr key={name}>
+                <td>
+                  <code>{name}</code>
+                </td>
+                <td>{t.type}</td>
+                <td>
+                  <code>{t.cssVar}</code>
+                </td>
+                <td>
+                  <Value type={t.type} value={t.value} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Section>
+
       <Section anchor="primitive" title="Primitive ({primitive.length})">
-        <p>The raw palette and scales. Themes and components never hardcode these values; they reference them.</p>
+        <p>The shared palette and scales, the same in every design language. Themes and components never hardcode these values; they reference them.</p>
         <table class="token-table">
           <thead>
             <tr>

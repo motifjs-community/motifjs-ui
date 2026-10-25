@@ -318,7 +318,7 @@
     "name": "checkbox.radius",
     "cssVar": "--mx-checkbox-radius",
     "type": "dimension",
-    "ref": "radius.sm",
+    "ref": "radius.xs",
     "value": "0.25rem"
   },
   {
@@ -647,7 +647,7 @@
     "name": "datagrid.check-radius",
     "cssVar": "--mx-datagrid-check-radius",
     "type": "dimension",
-    "ref": "radius.sm",
+    "ref": "radius.xs",
     "value": "0.25rem"
   },
   {
@@ -1284,7 +1284,7 @@
     "name": "listbox.check-radius",
     "cssVar": "--mx-listbox-check-radius",
     "type": "dimension",
-    "ref": "radius.sm",
+    "ref": "radius.xs",
     "value": "0.25rem"
   },
   {
@@ -2754,7 +2754,7 @@
     "name": "treeview.check-radius",
     "cssVar": "--mx-treeview-check-radius",
     "type": "dimension",
-    "ref": "radius.sm",
+    "ref": "radius.xs",
     "value": "0.25rem"
   },
   {

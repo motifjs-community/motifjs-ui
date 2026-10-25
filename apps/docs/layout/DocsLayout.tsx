@@ -1,5 +1,5 @@
 import { Component, reactive, RouterView, untracked, useNavigation } from '@motifx/core';
-import type { ThemeChoice } from '@motifx-community/design-system';
+import type { IdentityName, ThemeChoice } from '@motifx-community/design-system';
 import { Button, TextBox } from '@motifx-community/ui';
 import { GROUPS, PAGES, SECTIONS } from '../app/pages';
 import { PageOutline } from '../app/PageOutline';
@@ -11,6 +11,11 @@ const THEMES: { id: ThemeChoice; label: string }[] = [
   { id: 'light', label: 'Light' },
   { id: 'dark', label: 'Dark' },
   { id: 'high-contrast', label: 'High contrast' },
+];
+
+const STYLES: { id: IdentityName | 'default'; label: string }[] = [
+  { id: 'default', label: 'Tactile' },
+  { id: 'lounge', label: 'Lounge' },
 ];
 
 /** How far below the top bar a section heading may be and still count as the one being read. */
@@ -141,6 +146,12 @@ export class DocsLayout extends Component<HTMLDivElement> {
             ))}
           </nav>
           <div class="docs-topbar__tools">
+            <Button
+              text="Style"
+              size="sm"
+              variant="ghost"
+              menu={STYLES.map((t) => ({ text: t.label, checked: () => settings.identity === t.id, click: () => (settings.identity = t.id) }))}
+            />
             <Button
               text="Theme"
               size="sm"

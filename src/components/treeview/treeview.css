@@ -213,9 +213,10 @@
     color: var(--mx-color-accent-on-solid);
     background: var(--_fill);
     border: var(--mx-border-width-1) solid var(--_stroke);
-    border-block-end-color: var(--_stroke-edge);
     border-radius: var(--mx-treeview-check-radius);
-    box-shadow: inset 0 var(--mx-border-width-1) 0 var(--mx-color-highlight-control);
+    box-shadow:
+      inset 0 var(--mx-border-width-1) 0 var(--mx-color-highlight-control),
+      0 var(--mx-border-width-1) 0 var(--_stroke-edge);
     transition:
       background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);

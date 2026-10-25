@@ -8,7 +8,7 @@
 // The design system's own source is *included*, so a reference to a token
 // that does not exist, or a `$type` that differs from the referenced token's,
 // fails the build; only the component tokens are written. The primitive,
-// semantic and density layers themselves come from
+// language, semantic and density layers themselves come from
 // `@motifx-community/design-system/styles.css`, never from here.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -25,8 +25,13 @@ const ds = slash(dirname(createRequire(import.meta.url).resolve('@motifx-communi
 export const LAYER = 'mx.components';
 export const PREFIX = 'mx';
 export const SOURCE = `${root}/tokens/component/*.tokens.json`;
-/** The design-system layers references resolve against (light theme, comfortable density: names are the same in every theme). */
-export const INCLUDE = [`${ds}/tokens/primitive/*.json`, `${ds}/tokens/semantic/light.json`, `${ds}/tokens/density/comfortable.json`];
+/** The design-system layers references resolve against: the default language, light theme, comfortable density (names are the same in every language and theme). */
+export const INCLUDE = [
+  `${ds}/tokens/primitive/*.json`,
+  `${ds}/tokens/identity/tactile/base.json`,
+  `${ds}/tokens/identity/tactile/light.json`,
+  `${ds}/tokens/identity/tactile/density/comfortable.json`,
+];
 
 // ---- value renderers (DTCG 2025.10 objects to CSS) ----------------------------------------
 // The same rendering the design system uses, so a literal value here and a

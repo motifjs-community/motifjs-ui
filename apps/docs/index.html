@@ -6,8 +6,10 @@
     <title>@motifx-community/ui docs</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script>
-      // Restore theme/density before first paint to avoid a flash.
+      // Restore design language/theme/density before first paint to avoid a flash.
       try {
+        var i = localStorage.getItem('mx-docs-identity');
+        if (i) document.documentElement.dataset.identity = i;
         var t = localStorage.getItem('mx-docs-theme');
         if (t) document.documentElement.dataset.theme = t;
         var d = localStorage.getItem('mx-docs-density');

@@ -35,7 +35,7 @@
     "icon-size": { "$type": "dimension", "$value": "{icon.size.md}" },
     "check-size": { "$type": "dimension", "$value": "{icon.size.md}" },
     "check-mark-size": { "$type": "dimension", "$value": "{icon.size.sm}" },
-    "check-radius": { "$type": "dimension", "$value": "{radius.sm}" },
+    "check-radius": { "$type": "dimension", "$value": "{radius.xs}" },
     "line-width": { "$type": "dimension", "$value": "{border.width.1}" },
     "line-color": { "$type": "color", "$value": "{color.stroke.divider}" },
     "search-gap": { "$type": "dimension", "$value": "{space.2}" }

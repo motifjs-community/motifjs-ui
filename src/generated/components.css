@@ -91,7 +91,7 @@
     --mx-calendar-title-font-weight: var(--mx-font-weight-semibold);
     --mx-calendar-head-font-size: var(--mx-font-size-caption);
     --mx-calendar-today-width: var(--mx-border-width-1);
-    --mx-checkbox-radius: var(--mx-radius-sm);
+    --mx-checkbox-radius: var(--mx-radius-xs);
     --mx-checkbox-border-width: var(--mx-border-width-1);
     --mx-checkbox-gap: var(--mx-space-2);
     --mx-checkbox-size-md: var(--mx-icon-size-md);
@@ -128,7 +128,7 @@
     --mx-datagrid-stripe: var(--mx-color-fill-subtle-tertiary);
     --mx-datagrid-placeholder: var(--mx-color-fill-subtle-secondary);
     --mx-datagrid-check-mark-size: var(--mx-icon-size-sm);
-    --mx-datagrid-check-radius: var(--mx-radius-sm);
+    --mx-datagrid-check-radius: var(--mx-radius-xs);
     --mx-datagrid-action-gap: var(--mx-space-1);
     --mx-datagrid-filter-padding: var(--mx-space-1);
     --mx-datagrid-values-gap: var(--mx-space-2);
@@ -203,7 +203,7 @@
     --mx-listbox-padding: var(--mx-space-1);
     --mx-listbox-gap: var(--mx-space-1);
     --mx-listbox-check-size: var(--mx-icon-size-md);
-    --mx-listbox-check-radius: var(--mx-radius-sm);
+    --mx-listbox-check-radius: var(--mx-radius-xs);
     --mx-listbox-check-border-width: var(--mx-border-width-1);
     --mx-listbox-divider-width: var(--mx-border-width-1);
     --mx-lookup-column-gap: var(--mx-space-3);
@@ -370,7 +370,7 @@
     --mx-treeview-icon-size: var(--mx-icon-size-md);
     --mx-treeview-check-size: var(--mx-icon-size-md);
     --mx-treeview-check-mark-size: var(--mx-icon-size-sm);
-    --mx-treeview-check-radius: var(--mx-radius-sm);
+    --mx-treeview-check-radius: var(--mx-radius-xs);
     --mx-treeview-line-width: var(--mx-border-width-1);
     --mx-treeview-line-color: var(--mx-color-stroke-divider);
     --mx-treeview-search-gap: var(--mx-space-2);

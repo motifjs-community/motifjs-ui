@@ -534,9 +534,10 @@
     color: var(--mx-color-accent-on-solid);
     background: var(--mx-color-fill-control-default);
     border: var(--mx-datagrid-border-width) solid var(--mx-color-stroke-control-strong);
-    border-block-end-color: var(--mx-color-stroke-control-edge);
     border-radius: var(--mx-datagrid-check-radius);
-    box-shadow: inset 0 var(--mx-datagrid-border-width) 0 var(--mx-color-highlight-control);
+    box-shadow:
+      inset 0 var(--mx-datagrid-border-width) 0 var(--mx-color-highlight-control),
+      0 var(--mx-datagrid-border-width) 0 var(--mx-color-stroke-control-edge);
   }
 
   .mx-data-grid__check[hidden] {
@@ -546,7 +547,9 @@
   .mx-data-grid__check:is([aria-checked='true'], [aria-checked='mixed']) {
     background: var(--mx-color-accent-solid);
     border-color: var(--mx-color-accent-solid);
-    border-block-end-color: var(--mx-color-stroke-on-accent-bottom);
+    box-shadow:
+      inset 0 var(--mx-datagrid-border-width) 0 var(--mx-color-highlight-control),
+      0 var(--mx-datagrid-border-width) 0 var(--mx-color-stroke-on-accent-bottom);
   }
 
   .mx-data-grid__check[aria-disabled='true'] {

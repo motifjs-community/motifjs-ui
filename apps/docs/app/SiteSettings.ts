@@ -1,5 +1,14 @@
 import { reactive } from '@motifx/core';
-import { getDensity, getTheme, setDensity, setTheme, type ThemeChoice } from '@motifx-community/design-system';
+import {
+  getDensity,
+  getIdentity,
+  getTheme,
+  setDensity,
+  setIdentity,
+  setTheme,
+  type IdentityName,
+  type ThemeChoice,
+} from '@motifx-community/design-system';
 
 function store(key: string, value: string | null): void {
   try {
@@ -10,13 +19,23 @@ function store(key: string, value: string | null): void {
   }
 }
 
-/** The reader's choices for the whole site: theme, density and direction, kept between visits. */
+/** The reader's choices for the whole site: design language, theme, density and direction, kept between visits. */
 export class SiteSettings {
   private readonly state = reactive({
+    identity: getIdentity(),
     theme: getTheme(),
     compact: getDensity() === 'compact',
     rtl: document.documentElement.dir === 'rtl',
   });
+
+  get identity(): IdentityName | 'default' {
+    return this.state.identity;
+  }
+  set identity(id: IdentityName | 'default') {
+    this.state.identity = id;
+    setIdentity(id);
+    store('mx-docs-identity', id === 'default' ? null : id);
+  }
 
   get theme(): ThemeChoice {
     return this.state.theme;
