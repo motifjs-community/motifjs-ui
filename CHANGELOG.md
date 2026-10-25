@@ -201,25 +201,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   shown for keyboard focus closed at once when focusing scrolled its field into view; it now follows
   the field while the page scrolls and closes only if the field is off the screen when scrolling ends.
 
-### DataGrid actions in the bars
-
-- Row actions can show in the toolbar (`actionsLocation: 'toolbar'`, the new `rowActions` toolbar
-  item, at the start, placed through `toolbar.items` like the others) or at the start of the bottom
-  bar (`'bottom'`, on a kit `Toolbar` of its own) for the rows they act on: the selected rows, or the
-  active row without selection (`actionsTarget: 'selection' | 'focused' | 'auto'`). Default
-  `'row'`, as before; an action's `location` wins, and the actions column shows only while an action
-  sits in the row. No target: nothing shows. One row: its own actions, as the row would show them.
-  Several rows: the actions every row has (same `id`, visible for each), disabled while disabled for
-  one of them (`actionsMultipleEnabled: 'any'`: enabled for any, and run on those), with the count
-  after the text ("Print (3)", `actionsShowCount`), named "Print, 3 rows" and described by what the
-  bar acts on ("Actions for 3 selected rows"), which is announced when it changes.
-- Running on several rows: `onclickMany(rows, e)` once, else `onclick` for each row in turn, a
-  promise waited for; a throw, a rejection or a promise of `false` counts the row as failed and does
-  not stop the others unless `actionsStopOnError` (or the action's `stopOnError`). While it waits the
-  export load panel shows the progress and a Stop button (`actionsProgress`, `actionsStopButton`,
-  `grid.stopAction()`); the outcome is announced ("Print: 2 of 3 done, 1 failed"). `multiple: false`
-  keeps an action to one row (the ready `edit`). The ready `remove` marks every row in batch mode and
-  sends each in the other modes.
 ### DataGrid edit forms, popups and validation rules
 
 - `settings.editMode: 'row' | 'cell' | 'batch' | 'form' | 'popup'` (default `'row'`, live): how a
@@ -273,6 +254,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   options, rules, events and methods; rows in the API and layout pages; a browser check
   `e2e/checks/38-datagrid-forms.mjs`.
 
+### DataGrid actions in the bars
+
+- Row actions can show in the toolbar (`actionsLocation: 'toolbar'`, the new `rowActions` toolbar
+  item, at the start, placed through `toolbar.items` like the others) or at the start of the bottom
+  bar (`'bottom'`, on a kit `Toolbar` of its own) for the rows they act on: the selected rows, or the
+  active row without selection (`actionsTarget: 'selection' | 'focused' | 'auto'`). Default
+  `'row'`, as before; an action's `location` wins, and the actions column shows only while an action
+  sits in the row. No target: nothing shows. One row: its own actions, as the row would show them.
+  Several rows: the actions every row has (same `id`, visible for each), disabled while disabled for
+  one of them (`actionsMultipleEnabled: 'any'`: enabled for any, and run on those), with the count
+  after the text ("Print (3)", `actionsShowCount`), named "Print, 3 rows" and described by what the
+  bar acts on ("Actions for 3 selected rows"), which is announced when it changes.
+- Running on several rows: `onclickMany(rows, e)` once, else `onclick` for each row in turn, a
+  promise waited for; a throw, a rejection or a promise of `false` counts the row as failed and does
+  not stop the others unless `actionsStopOnError` (or the action's `stopOnError`). While it waits the
+  export load panel shows the progress and a Stop button (`actionsProgress`, `actionsStopButton`,
+  `grid.stopAction()`); the outcome is announced ("Print: 2 of 3 done, 1 failed"). `multiple: false`
+  keeps an action to one row (the ready `edit`). The ready `remove` marks every row in batch mode and
+  sends each in the other modes.
 - After "select all" over a server (rows not loaded) only actions with `onclickSelection(selection,
   e)` show; they get the selection state of `grid.selection`.
 - A row's actions are in its context menu (right click, Shift+F10 / the context menu key), wherever
