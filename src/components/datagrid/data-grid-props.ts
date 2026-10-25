@@ -49,7 +49,11 @@ import type { GridSummaryChangedEventArgs } from './grid-summary-changed-event-a
 import type { GridToolbarPreparingEventArgs } from './grid-toolbar-preparing-event-args';
 import type { LayoutStorage } from './layout-storage';
 import type { GridColumn } from './grid-column';
+import type { GridEditForm } from './grid-edit-form';
+import type { GridEditPopup } from './grid-edit-popup';
+import type { GridEditorPreparedEventArgs } from './grid-editor-prepared-event-args';
 import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
+import type { GridRowValidatingEventArgs } from './grid-row-validating-event-args';
 import type { GridFilters } from './grid-filters';
 import type { GridGroupDroppingEventArgs } from './grid-group-dropping-event-args';
 import type { GridGroupingChangedEventArgs } from './grid-grouping-changed-event-args';
@@ -68,7 +72,7 @@ import type { GridValuesResult } from './grid-values-result';
 import type { NewRowOptions } from './new-row-options';
 import type { RowState } from './row-state';
 
-/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar` and `export` (whose fields are) and the callbacks is a value or a function that is followed. */
+/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form` and `popup` (whose fields are) and the callbacks is a value or a function that is followed. */
 export interface DataGridProps<T> extends ControlProps {
   /** Column definitions, in their initial order. */
   columns: GridColumn<T>[];
@@ -115,6 +119,10 @@ export interface DataGridProps<T> extends ControlProps {
   saveMode?: Bind<data.SaveMode>;
   /** Where new rows open and their initial values. */
   newRow?: NewRowOptions<T>;
+  /** The edit form of `settings.editMode` `'form'` and `'popup'`: its items, columns and labels. Read and change it later through `grid.form`. */
+  form?: GridEditForm;
+  /** The window of `settings.editMode: 'popup'`: title, size, buttons. Read and change it later through `grid.popup`. */
+  popup?: GridEditPopup;
   /** Checks a whole row before it is saved: a message per field, or one message for the row. */
   validateRow?: (
     row: T,
@@ -136,8 +144,12 @@ export interface DataGridProps<T> extends ControlProps {
   /** The selection is about to change; `e.cancel` keeps it. */
   onSelectionChanging?: (e: GridSelectionChangingEventArgs) => void;
   onSelectionChanged?: (e: GridSelectionChangedEventArgs) => void;
-  /** Before a cell editor is made: change its props (`e.options`), or `e.cancel` the edit. */
+  /** Before an editor of a cell or of an edit form field is made: change its props (`e.options`), or `e.cancel` it. */
   onEditorPreparing?: (e: GridEditorPreparingEventArgs<T>) => void;
+  /** An editor was made, in a cell or in the edit form. */
+  onEditorPrepared?: (e: GridEditorPreparedEventArgs<T>) => void;
+  /** A row is checked before it is saved, after its cells: add or remove messages, or `e.isValid = false`. */
+  onRowValidating?: (e: GridRowValidatingEventArgs<T>) => void;
   /**
    * The search panel's text: the rows that hold it in a searchable column. A function is followed;
    * what the user types comes through `onSearchTextChanged`.
@@ -199,7 +211,7 @@ export interface DataGridProps<T> extends ControlProps {
   onContentReady?: (e: GridContentReadyEventArgs) => void;
   /** Loading or saving failed. */
   onDataErrorOccurred?: (e: GridDataErrorEventArgs<T>) => void;
-  /** A cell editor is about to open; `e.cancel` keeps it closed. */
+  /** A cell editor, or a row's edit form, is about to open; `e.cancel` keeps it closed. */
   onEditingStart?: (e: GridEditingStartEventArgs<T>) => void;
   /** A new row is about to open: change `e.data` (what it starts with) or `e.values` (entered), or `e.cancel`. */
   onInitNewRow?: (e: GridInitNewRowEventArgs<T>) => void;

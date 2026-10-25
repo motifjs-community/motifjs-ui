@@ -29,8 +29,9 @@ type Options = Record<string, unknown>;
  * The editor of the cell in edit mode: a kit field drawn without its frame inside the cell (a
  * `TextBox`, a `NumberBox`, a `DateBox`, a `CheckBox` or a `DropDown`, by the column type; a
  * `DropDown`, `ComboBox` or `Lookup` over the items of a lookup column), or the column's own
- * `editor`. Only one exists at a time; it is made when editing starts and disposed when it ends.
- * `prepare` sees the kit field's props first and may change them, or say no (`false`).
+ * `editor`. Only one exists at a time in the cells; it is made when editing starts and disposed when
+ * it ends. The edit form makes one per field, with its frame and label (`form`: the field props the
+ * form gives). `prepare` sees the kit field's props first and may change them, or say no (`false`).
  */
 export class CellEditor<T> {
   readonly kind: EditorKind;
@@ -39,6 +40,8 @@ export class CellEditor<T> {
   /** The edit was called off before the editor was made. */
   readonly cancelled: boolean = false;
   private readonly field: Field<any> | null = null;
+  /** A custom editor's content, when it is a component. */
+  private content: ComponentBase | null = null;
   private custom: unknown;
   private customText: string | undefined;
   /** A `list` column whose options are still loading. */
@@ -58,6 +61,7 @@ export class CellEditor<T> {
     private readonly host: EditorHost,
     owner: ComponentBase,
     prepare: (options: Options) => boolean = () => true,
+    private readonly form: Options | null = null,
   ) {
     this.custom = value;
     const type = column.type;
@@ -86,9 +90,19 @@ export class CellEditor<T> {
         cancel: () => host.cancel(),
       };
       const content = column.editor(ctx);
-      if (content instanceof Field) content.value = value;
+      if (content instanceof Field) {
+        content.value = value;
+        if (form) for (const [name, given] of Object.entries(form)) if (name in content && given !== undefined) (content as unknown as Options)[name] = given;
+      } else if (form && content instanceof ComponentBase) {
+        const caption = box.element.appendChild(document.createElement('span'));
+        caption.className = 'mx-data-grid__form-label';
+        caption.textContent = String(read(form.label as string | (() => string)) ?? '');
+      }
       this.field = content instanceof Field ? content : null;
-      if (content instanceof ComponentBase) box.controls.add(content);
+      if (content instanceof ComponentBase) {
+        this.content = content;
+        box.controls.add(content);
+      }
     } else {
       const options = this.kind === 'lookup' ? this.lookupOptions() : this.options();
       if (!prepare(options)) {
@@ -99,7 +113,12 @@ export class CellEditor<T> {
       this.field = this.kind === 'lookup' ? this.createLookup(options) : this.createField(options);
       box.controls.add(this.field);
     }
-    this.field?.element.setAttribute('data-in-cell', '');
+    if (!form) this.field?.element.setAttribute('data-in-cell', '');
+  }
+
+  /** The editor component: the kit field, or a custom editor's content. */
+  get editor(): ComponentBase | null {
+    return this.field ?? this.content;
   }
 
   get element(): HTMLElement {
@@ -143,8 +162,8 @@ export class CellEditor<T> {
       input.dispatchEvent(new Event('input', { bubbles: true }));
     }
     this.typedIn = true;
-    if (typed) input.setSelectionRange(input.value.length, input.value.length);
-    else input.select();
+    if (!typed && this.model.settings.get('selectTextOnEditStart')) input.select();
+    else input.setSelectionRange(input.value.length, input.value.length);
   }
 
   /** Reads the value; a number or a date that cannot be read is reported, not kept. */
@@ -213,6 +232,15 @@ export class CellEditor<T> {
   }
 
   private options(): Options {
+    const own = this.cellOptions();
+    if (!this.form) return own;
+    // In the form: framed, with the spin buttons; no alignment of the cell.
+    delete own.showSpinButtons;
+    delete own.align;
+    return { ...own, ...this.form };
+  }
+
+  private cellOptions(): Options {
     const col = this.column;
     const label = read(col.title) ?? '';
     const align = this.model.columns.align(col.field);
@@ -252,7 +280,7 @@ export class CellEditor<T> {
     const list = new DropDown<DropDownItem, unknown>(options);
     const fill = (choices: readonly ListOption[]) => {
       const items: DropDownItem[] = choices.map(optionOf).map((o) => ({ value: o.value, text: o.label }));
-      if (!col.required) items.unshift({ value: null, text: this.model.text('gridEmptyOption') });
+      if (!this.model.isRequired(col)) items.unshift({ value: null, text: this.model.text('gridEmptyOption') });
       list.items = items;
       const typed = this.initialText;
       if (!typed) return;
@@ -315,7 +343,7 @@ export class CellEditor<T> {
       });
       options.dataSource = this.ownSource;
     }
-    Object.assign(options, lookup.editorOptions);
+    Object.assign(options, lookup.editorOptions, this.form);
     return options;
   }
 

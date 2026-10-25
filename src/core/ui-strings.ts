@@ -126,6 +126,12 @@ export interface UiStrings {
   gridRestore: string;
   gridSave: string;
   gridCancelEdit: string;
+  gridRowInvalid: string;
+  gridConfirmDelete: string;
+  gridConfirmDeleteRows: string;
+  gridConfirmDeleteTitle: string;
+  gridEditRowTitle: string;
+  gridNewRowTitle: string;
   gridSelectRow: string;
   gridSelectAll: string;
   gridSelectedCount: string;

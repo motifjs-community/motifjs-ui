@@ -1,8 +1,9 @@
 import type { EventArgs } from '@motifx/core';
 
 /**
- * A cell editor is about to be made. `options` are the props the editor gets: change them (`enabled =
- * false` disables it, `clearButton`, `placeholder`…); `cancel` keeps the cell from being edited.
+ * An editor of a cell or of an edit form field is about to be made. `options` are the props the
+ * editor gets: change them (`enabled = false` disables it, `clearButton`, `placeholder`…); `cancel`
+ * keeps the cell from being edited, or leaves the field out of the form.
  */
 export interface GridEditorPreparingEventArgs<T> extends EventArgs {
   readonly field: string;

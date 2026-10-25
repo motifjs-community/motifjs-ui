@@ -36,6 +36,7 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   tagbox: () => import('../pages/tagbox/TagBoxPage'),
   datagrid: () => import('../pages/datagrid/DataGridPage'),
   'datagrid-editing': () => import('../pages/datagrid/DataGridEditingPage'),
+  'datagrid-forms': () => import('../pages/datagrid/DataGridFormsPage'),
   'datagrid-filtering': () => import('../pages/datagrid/DataGridFilteringPage'),
   'datagrid-lookups': () => import('../pages/datagrid/DataGridLookupsPage'),
   'datagrid-grouping': () => import('../pages/datagrid/DataGridGroupingPage'),

@@ -263,7 +263,7 @@ describe('DataGrid actions in the bars', () => {
     await batch.dispose();
 
     const adapter = new TestRows({ data: makeRows(5), key: 'id' });
-    const wait = await make({ dataSource: new data.DataSource<Row, number>({ adapter }), actions: ['remove'], saveMode: 'wait', settings: { selection: 'multiple', actionsLocation: 'bottom' } });
+    const wait = await make({ dataSource: new data.DataSource<Row, number>({ adapter }), actions: ['remove'], saveMode: 'wait', settings: { selection: 'multiple', actionsLocation: 'bottom', confirmDelete: false } });
     wait.selectedKeys = [2, 4];
     await settle();
     const result = await wait.runAction('remove');
@@ -274,7 +274,7 @@ describe('DataGrid actions in the bars', () => {
     await wait.dispose();
 
     const background = new TestRows({ data: makeRows(5), key: 'id' });
-    const bg = await make({ dataSource: new data.DataSource<Row, number>({ adapter: background }), actions: ['remove'], saveMode: 'background', settings: { selection: 'multiple', actionsLocation: 'bottom' } });
+    const bg = await make({ dataSource: new data.DataSource<Row, number>({ adapter: background }), actions: ['remove'], saveMode: 'background', settings: { selection: 'multiple', actionsLocation: 'bottom', confirmDelete: false } });
     bg.selectedKeys = [1, 5];
     await settle();
     await bg.runAction('remove');

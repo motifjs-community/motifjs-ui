@@ -66,6 +66,7 @@ const SETTINGS = [
   ['editKeys, clearKeys', "`['Enter', 'F2']`, `['Delete']`", 'Keys that open the active cell’s editor, and that empty it (`KeyboardEvent.key` values).'],
   ['editOnKeyPress', '`true`', 'Typing a character on a cell opens its editor with it. A column can set its own.'],
   ['startEditAction', "`'dblClick'`", 'A double-click, or one `click` on the active cell, opens its editor. A column can set its own.'],
+  ['editMode, confirmDelete, selectTextOnEditStart', "`'row'`, `true`, `true`", 'How rows are edited: in the cells (`row`, `cell`, `batch`) or in a form (`form`, `popup`); deleting asks first; an editor opens with its text selected. See [Edit forms and popups](/datagrid/forms#forms).'],
 ];
 
 const EVENTS = [
@@ -75,8 +76,9 @@ const EVENTS = [
   ['onRowPrepared', '`{ row, rowIndex, rowType, groupKey?, isSelected, element }`', '', 'A data row, group row, group footer (`groupFooter`) or the row of totals (`totalFooter`) was drawn; the same rule.'],
   ['onContentReady', '`{ total }`', '', 'Rows arrived and are laid out (after a load, a filter, a sort, a page, a resize).'],
   ['onDataErrorOccurred', '`{ error, operation, row? }`', '', 'A load (`operation: \'load\'`) or the save of a row (`\'save\'`, with `row`) failed.'],
-  ['onEditingStart', '`{ field, row, rowIndex, isNew }`', 'yes', 'A cell editor is about to open.'],
-  ['onEditorPreparing', '`{ field, row, isNew, options }`', 'yes', 'The editor is about to be made: change its props in `options`.'],
+  ['onEditingStart', '`{ field, row, rowIndex, isNew }`', 'yes', "A cell editor, or a row’s edit form (`field` `''`), is about to open."],
+  ['onEditorPreparing / onEditorPrepared', '`{ field, row, isNew, options }` / `{ field, row, isNew, editor, element, place }`', 'yes / —', 'An editor of a cell or of a form field is about to be made (change its props in `options`); it was made.'],
+  ['onRowValidating', '`{ key, row, isNew, changed, errors, isValid, errorText }`', 'yes', 'A row is checked before it is saved, after its cells: add messages to `errors`, or `isValid = false` (or cancel) with `errorText`.'],
   ['onInitNewRow', '`{ data, values }`', 'yes', 'A new row is about to open: `data` is what it starts with, `values` what counts as entered; cancel opens no row.'],
   ['onSaving / onSaved', '`{ changes }` / `{ changes, saved, failed }`', 'yes / —', 'Changes are about to be sent (leaving a row, the background queue, “Save changes”); the answer came.'],
   ['onRowInserting / onRowInserted', '`{ row, data }` / `{ row, key }`', 'yes / —', 'Per new row: change `data` (what is sent) or keep it unsent; it was saved.'],

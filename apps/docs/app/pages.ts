@@ -85,6 +85,7 @@ export const GROUPS = [
     pages: [
       { id: 'datagrid', label: 'Overview', title: 'DataGrid', path: '/datagrid', related: ['datagrid-editing', 'datagrid-filtering', 'datagrid-api'] },
       { id: 'datagrid-editing', label: 'Editing', title: 'DataGrid: Editing', path: '/datagrid/editing', related: ['datagrid-lookups', 'datagrid-selection', 'datagrid-layout'] },
+      { id: 'datagrid-forms', label: 'Edit forms and popups', title: 'DataGrid: Edit forms and popups', path: '/datagrid/forms', related: ['datagrid-editing', 'formlayout', 'window'] },
       { id: 'datagrid-filtering', label: 'Filtering and search', title: 'DataGrid: Filtering and search', path: '/datagrid/filtering', related: ['datagrid-lookups', 'datagrid-grouping', 'datagrid-layout'] },
       { id: 'datagrid-lookups', label: 'Lookup columns', title: 'DataGrid: Lookup columns', path: '/datagrid/lookups', related: ['datagrid-editing', 'datagrid-filtering', 'lookup'] },
       { id: 'datagrid-grouping', label: 'Grouping and summaries', title: 'DataGrid: Grouping and summaries', path: '/datagrid/grouping', related: ['datagrid-filtering', 'datagrid-selection', 'datagrid-api'] },

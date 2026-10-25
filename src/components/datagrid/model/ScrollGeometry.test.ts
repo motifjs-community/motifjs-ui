@@ -51,4 +51,19 @@ describe('ScrollGeometry', () => {
     expect(geo.revealRow(3200, 10)).toBe(320);
     expect(geo.revealRow(0, 999, 'start')).toBe(geo.maxVirtualTop);
   });
+
+  it('makes room for one taller row (the edit form) and moves the rows after it', () => {
+    const geo = new ScrollGeometry(100, 32, 640, ScrollGeometry.MAX_HEIGHT, { at: 10, extra: 300 });
+    expect(geo.contentHeight).toBe(100 * 32 + 300);
+    expect(geo.offsetOf(10)).toBe(320);
+    expect(geo.offsetOf(11)).toBe(320 + 32 + 300);
+    expect(geo.heightOf(10)).toBe(332);
+    expect(geo.indexAt(500)).toBe(10);
+    expect(geo.indexAt(320 + 332 + 40)).toBe(12);
+    expect(geo.visibleRange(400)).toEqual({ first: 10, end: 24 });
+    // A form taller than the view shows from its top.
+    const tall = new ScrollGeometry(100, 32, 200, ScrollGeometry.MAX_HEIGHT, { at: 10, extra: 400 });
+    expect(tall.revealRow(0, 10)).toBe(320);
+    expect(tall.revealRow(0, 12)).toBe(13 * 32 + 400 - 200);
+  });
 });

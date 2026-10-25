@@ -203,4 +203,17 @@ export interface GridSettings extends ColumnFeatures {
   editOnKeyPress: boolean;
   /** What opens a cell's editor with the pointer: a double-click, or one click on the cell. Default `'dblClick'`. */
   startEditAction: 'click' | 'dblClick';
+  /**
+   * How a row is edited and when it is handed to saving: `'row'` in the cells, on leaving the row;
+   * `'cell'` in the cells, on leaving each cell (a new row on leaving it); `'batch'` in the cells,
+   * kept until `saveChanges()` (the same as `saveMode: 'batch'`); `'form'` in a form that takes the
+   * row's place, on its Save; `'popup'` in that form in a modal window, on its Save. How a row
+   * handed over is sent is `saveMode`'s: waiting, in the background or kept for `saveChanges()`.
+   * Default `'row'`.
+   */
+  editMode: 'row' | 'cell' | 'batch' | 'form' | 'popup';
+  /** Deleting a row asks first (not in batch mode, where a deletion is only marked). Default `true`. */
+  confirmDelete: boolean;
+  /** The text of a cell is selected when its editor opens; off, the caret goes to its end. Default `true`. */
+  selectTextOnEditStart: boolean;
 }

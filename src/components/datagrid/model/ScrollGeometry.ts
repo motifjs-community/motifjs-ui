@@ -17,11 +17,37 @@ export class ScrollGeometry {
     /** Visible height of the body (the viewport minus the sticky header). */
     readonly viewport: number,
     readonly max = ScrollGeometry.MAX_HEIGHT,
+    /** One row taller than the others (the edit form in place of a row): its position and the height it adds. */
+    readonly tall: { at: number; extra: number } | null = null,
   ) {}
 
   /** Height of all rows. */
   get contentHeight(): number {
-    return this.total * this.rowHeight;
+    return this.total * this.rowHeight + this.extraHeight;
+  }
+
+  /** Top of row `index` in the full content. */
+  offsetOf(index: number): number {
+    const tall = this.tall;
+    return index * this.rowHeight + (tall && index > tall.at ? tall.extra : 0);
+  }
+
+  /** Height of row `index`. */
+  heightOf(index: number): number {
+    return this.rowHeight + (this.tall?.at === index ? this.tall.extra : 0);
+  }
+
+  /** The row at an offset in the full content. */
+  indexAt(offset: number): number {
+    const tall = this.tall;
+    if (!tall || offset < (tall.at + 1) * this.rowHeight) return Math.floor(offset / this.rowHeight);
+    if (offset < (tall.at + 1) * this.rowHeight + tall.extra) return tall.at;
+    return Math.floor((offset - tall.extra) / this.rowHeight);
+  }
+
+  private get extraHeight(): number {
+    const tall = this.tall;
+    return tall && tall.at >= 0 && tall.at < this.total ? tall.extra : 0;
   }
 
   /** Height given to the spacer element. */
@@ -57,26 +83,26 @@ export class ScrollGeometry {
 
   /** Top of row `index` inside the spacer, for the current native and virtual offsets. */
   rowTop(index: number, scrollTop: number, virtualTop: number): number {
-    return scrollTop + index * this.rowHeight - virtualTop;
+    return scrollTop + this.offsetOf(index) - virtualTop;
   }
 
   /** Rows that intersect the viewport: `first` inclusive, `end` exclusive. */
   visibleRange(virtualTop: number): { first: number; end: number } {
     if (this.total <= 0 || this.rowHeight <= 0) return { first: 0, end: 0 };
-    const first = clamp(Math.floor(virtualTop / this.rowHeight), 0, this.total - 1);
-    const end = clamp(Math.ceil((virtualTop + this.viewport) / this.rowHeight), first + 1, this.total);
+    const first = clamp(this.indexAt(virtualTop), 0, this.total - 1);
+    const end = clamp(this.indexAt(Math.max(virtualTop, virtualTop + this.viewport - 1)) + 1, first + 1, this.total);
     return { first, end };
   }
 
   /** Virtual offset that brings row `index` fully into view: `nearest` moves as little as possible, `start` / `end` align it. */
   revealRow(virtualTop: number, index: number, align: 'nearest' | 'start' | 'end' = 'nearest'): number {
-    const top = index * this.rowHeight;
-    const bottom = top + this.rowHeight;
+    const top = this.offsetOf(index);
+    const bottom = top + this.heightOf(index);
     let v = virtualTop;
     if (align === 'start') v = top;
     else if (align === 'end') v = bottom - this.viewport;
     else if (top < virtualTop) v = top;
-    else if (bottom > virtualTop + this.viewport) v = bottom - this.viewport;
+    else if (bottom > virtualTop + this.viewport) v = Math.min(top, bottom - this.viewport);
     return clamp(v, 0, this.maxVirtualTop);
   }
 }

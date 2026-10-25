@@ -593,7 +593,7 @@ describe('save modes', () => {
 
   it('deletes a row of the rows in memory at once', async () => {
     const rows = makeRows(3);
-    const grid = make({ rows, settings: { editable: true } });
+    const grid = make({ rows, settings: { editable: true, confirmDelete: false } });
     await settle();
     expect(await grid.deleteRow(rows[1])).toBe(true);
     await settle();

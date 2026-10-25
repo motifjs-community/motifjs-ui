@@ -220,6 +220,59 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `grid.stopAction()`); the outcome is announced ("Print: 2 of 3 done, 1 failed"). `multiple: false`
   keeps an action to one row (the ready `edit`). The ready `remove` marks every row in batch mode and
   sends each in the other modes.
+### DataGrid edit forms, popups and validation rules
+
+- `settings.editMode: 'row' | 'cell' | 'batch' | 'form' | 'popup'` (default `'row'`, live): how a
+  row is edited and when it is handed to saving. `saveMode` still says how a row handed over is
+  sent. `'row'` is what the grid did before (in the cells, on leaving the row); `'cell'` saves an
+  existing row as each of its cells is left (a new row on leaving it); `'batch'` sets the save mode
+  to `'batch'` (the same as `saveMode: 'batch'` with `'row'`), and switching to or from it starts
+  again with the data, like `saveMode`.
+- `'form'`: the row opens as a form in its place, across the grid's width — the kit's `FormLayout`
+  with a field per column, each the editor its cell gets (by type, a lookup's, the column's own
+  `editor`), framed and labelled, read-only where the user cannot fill it, with the messages of the
+  checks on the fields and the row's own message above them. The rows after it move down by its
+  height, in the virtual list and on a page. Save (or Enter in a one-line field) saves the row as the
+  save mode says, Cancel (or Escape) gives it up; focus goes into the form and back to the row. A
+  field whose value changed through another (`setCellValue`) is made again. Typing on a cell does
+  not open it; Enter, F2, the start-edit click, the `edit` action, `editRow()` and `addRow()` do.
+  Editing another row, a new row, sorting, filtering, paging and `refresh()` give the form up, as
+  the standard does.
+- `'popup'`: the same form in the kit's `MxForm` as a modal window, for existing and new rows:
+  Save and Cancel in its footer (Enter and Escape press them), the close button cancels, focus stays
+  inside and comes back to the row.
+- `form` prop / `grid.form` (live): `items` (field names or kit `FormItem`s — a column's field gets
+  its editor; groups, buttons and templates are the form's own), `colCount` (default 2),
+  `minColWidth`, `labelMode`. `popup` prop / `grid.popup` (live): `title`, `showTitle`, `width`,
+  `height`, `resizable`, `movable`, `showCloseButton`, `showMaximize`, `fullScreen`. Column
+  `formItem`: `visible`, `colSpan`, `label`, `helpText`, `editorOptions`, `order`. `onOptionChanged`
+  tells `form.*` and `popup.*`.
+- Column `validationRules`, the standard set: `required` (`trim`), `numeric`, `range`, `stringLength`
+  (`trim`), `pattern`, `email`, `compare` (`comparisonTarget(row)`, `comparisonType`), `custom` and
+  `async` (`validationCallback({ value, row, column, rule })`), each with `message`,
+  `ignoreEmptyValue` (defaults) and, where the standard has it, `reevaluate` (on for
+  `async`). Checked with the kit's `checkRules` as a value is written and before the row is saved,
+  after `required` and `validate` (which keep working); `async` rules run last and together, the row
+  waits for them (its cell busy) and a value is not checked twice. Batch `saveChanges()` checks every
+  row first. Messages in the cells, the form and the window.
+- `onRowValidating` (`{ key, row, isNew, changed, errors, isValid, errorText, cancel }`) after the
+  cells, once per check of the row: add or take out messages, or say no with `errorText`.
+  `onEditorPrepared` (`{ field, row, isNew, editor, element, place: 'cell' | 'form' }`).
+  `onEditingStart` comes for the form too (`field` `''`); `onEditorPreparing` for every form field
+  (`cancel` leaves it out).
+- `settings.confirmDelete` (default `true`): `deleteRow()` and the ready `remove`
+  ask with the kit's `confirm()` first, once for all the rows an action deletes; not in batch mode.
+  `settings.selectTextOnEditStart` (default `true`, what the grid did): off, the caret goes to the end.
+- Methods: `editRow(i)` opens the form in the form modes, `editRowByKey(key)`, `saveEditData()`,
+  `cancelEditData()`; `closeEditCell()` keeps the form's values. Texts in en and tr:
+  `gridConfirmDelete`, `gridConfirmDeleteRows`, `gridConfirmDeleteTitle`, `gridEditRowTitle`,
+  `gridNewRowTitle`, `gridRowInvalid`. Tokens: `datagrid.form-padding`, `form-gap`,
+  `form-background`, `form-message-color`, `form-label-color`, `form-label-font-size`.
+- Docs: a new page "Edit forms and popups" (`/datagrid/forms`: the form with groups and an edit-mode
+  switch, the window, the rules with an async one) with the tables of modes, settings, form and popup
+  options, rules, events and methods; rows in the API and layout pages; a browser check
+  `e2e/checks/38-datagrid-forms.mjs`.
+
 - After "select all" over a server (rows not loaded) only actions with `onclickSelection(selection,
   e)` show; they get the selection state of `grid.selection`.
 - A row's actions are in its context menu (right click, Shift+F10 / the context menu key), wherever

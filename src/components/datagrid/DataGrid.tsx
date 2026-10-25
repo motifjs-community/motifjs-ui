@@ -7,6 +7,8 @@ import { fillTemplate } from '../../core/fill-template';
 import { nextId } from '../../core/next-id';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Button } from '../button/Button';
+import { confirm } from '../form/confirm';
+import { MxForm } from '../form/MxForm';
 import { DropDown } from '../dropdown/DropDown';
 import { ProgressBar } from '../progress/ProgressBar';
 import { Spinner } from '../progress/Spinner';
@@ -66,7 +68,11 @@ import type { GridActionRunningEventArgs } from './grid-action-running-event-arg
 import type { GridBarAction } from './grid-bar-action';
 import type { GridBuiltInActions } from './grid-built-in-actions';
 import type { GridChanges } from './grid-changes';
+import type { GridEditForm } from './grid-edit-form';
+import type { GridEditPopup } from './grid-edit-popup';
+import type { GridEditorPreparedEventArgs } from './grid-editor-prepared-event-args';
 import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
+import type { GridRowValidatingEventArgs } from './grid-row-validating-event-args';
 import type { GridExportOptions } from './grid-export-options';
 import type { GridExportSettings } from './grid-export-settings';
 import type { GridLoadPanel } from './grid-load-panel';
@@ -107,6 +113,9 @@ import { FilterRow } from './view/FilterRow';
 import { GridBody } from './view/GridBody';
 import { GridToolbar } from './view/GridToolbar';
 import { DragGhost } from './view/DragGhost';
+import { EditForm } from './view/EditForm';
+import type { FormValues } from './view/form-values';
+import type { PopupValues } from './view/popup-values';
 import { GroupPanel } from './view/GroupPanel';
 import type { GridRow } from './view/GridRow';
 import { HeaderFilter } from './view/HeaderFilter';
@@ -203,6 +212,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private stopSearchBinding: (() => void) | null = null;
   /** A key `onKeyHandling` cancelled: the grid leaves it alone. */
   private skippedKey: KeyboardEvent | null = null;
+  /** The row being edited in the edit form (`editMode` `'form'`, `'popup'`), and the window it is in. */
+  private formEdit: { mode: 'form' | 'popup'; rowId: string; row: T; form: EditForm<T>; window: MxForm | null } | null = null;
+  private readonly formSwitches: Switches<FormValues>;
+  private readonly popupSwitches: Switches<PopupValues>;
+  /** The ready `remove` was confirmed for the rows it runs on: `deleteRow` does not ask again. */
+  private deleteConfirmed = false;
   /** `beginUpdate()` calls not ended yet, and whether the body waits to be laid out. */
   private updates = 0;
   private relayoutWaiting = false;
@@ -293,7 +308,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.clipboard = new GridClipboard<T>(model);
     this.exporter = new GridExport<T>(model);
     this.styles = new ColumnStyles<T>(model.columns, this.gridId);
-    model.onBeforeQueryChange = () => this.leave();
+    model.onBeforeQueryChange = () => {
+      this.dropForm();
+      this.leave();
+    };
     model.onQueryChange = () => this.body.toStart();
     model.onLayoutChange = (layout) => ev.layoutChanged.fire(layout);
     model.search.onTextChanged = (text) => ev.searchTextChanged.fire({ text });
@@ -325,6 +343,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     });
     this.toolbarSwitches = new Switches<ToolbarValues>(['visible', 'items'], {}, own.toolbar ?? {});
     this.toolbarSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `toolbar.${name}`, value, previous }));
+    this.formSwitches = new Switches<FormValues>(['items', 'colCount', 'minColWidth', 'labelMode'], { colCount: 2, labelMode: 'top' }, own.form ?? {});
+    this.formSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `form.${name}`, value, previous }));
+    this.popupSwitches = new Switches<PopupValues>(
+      ['title', 'showTitle', 'width', 'height', 'resizable', 'movable', 'showCloseButton', 'showMaximize', 'fullScreen'],
+      { showTitle: true, resizable: true, movable: true, showCloseButton: true, showMaximize: false, fullScreen: false },
+      own.popup ?? {},
+    );
+    this.popupSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `popup.${name}`, value, previous }));
     this.exportSwitches = new Switches<ExportValues>(['formats', 'allowExportSelectedData', 'texts'], {}, own.export ?? {});
     this.exportSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `export.${name}`, value, previous }));
     this.topBar = new GridToolbar<T>(
@@ -383,6 +409,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.exportSwitches.view as GridExportSettings;
   }
 
+  /** The edit form of `editMode` `'form'` and `'popup'`, live: `grid.form.colCount = 3`; a function is followed. */
+  get form(): GridEditForm {
+    return this.formSwitches.view as GridEditForm;
+  }
+
+  /** The window of `editMode: 'popup'`, live: `grid.popup.width = '40rem'`; a function is followed. */
+  get popup(): GridEditPopup {
+    return this.popupSwitches.view as GridEditPopup;
+  }
+
   /**
    * One column's own feature switches, live. A value set here wins over `settings`; `undefined`
    * follows `settings` again.
@@ -428,6 +464,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.model.state.page;
   }
   set page(page: number) {
+    this.dropForm();
     this.leave();
     this.model.setPage(page);
   }
@@ -477,6 +514,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /** Loads the rows again, keeping the position, and the texts of the lookup columns; saved new rows leave the new-row area and take their place among the rows. */
   refresh() {
+    this.dropForm();
     this.leave();
     this.model.refreshLookups();
     this.model.data.refresh();
@@ -526,6 +564,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   addRow(values?: Partial<T>): Promise<boolean> {
     const { model } = this;
     if (model.state.busy) return Promise.resolve(false);
+    if (this.formEdit && !this.cancelForm(false)) return Promise.resolve(false);
     const pending = this.pendingInvalid;
     if (pending && pending !== model.state.session && hasKeys(model.edit(pending)?.errors ?? {})) {
       this.focusError(pending, this.firstErrorField(pending));
@@ -547,12 +586,19 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /**
    * Deletes a row (default: the active one) as the save mode says: `batch` marks it until
    * `saveChanges()`, `wait` sends it and resolves when the answer is in, `background` sends it
-   * through the queue. A new row never saved is just dropped. Resolves to `false` when it failed.
+   * through the queue. A new row never saved is just dropped. With `confirmDelete` (and not in batch
+   * mode) the user is asked first. Resolves to `false` when it failed or was not confirmed.
    */
-  deleteRow(row?: T): Promise<boolean> {
-    const target = this.locate(row);
-    if (!target) return Promise.resolve(false);
+  async deleteRow(row?: T): Promise<boolean> {
+    let target = this.locate(row);
+    if (!target) return false;
+    if (!this.model.isNew(target.rowId)) {
+      if (!(await this.askDelete(1))) return false;
+      target = this.locate(target.obj);
+      if (!target) return false;
+    }
     const { rowId, obj, index } = target;
+    if (this.formEdit?.rowId === rowId) this.closeForm(false);
     if (this.model.state.session === rowId) {
       this.closeEditor();
       this.model.setSession(null);
@@ -573,6 +619,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   async saveChanges(): Promise<{ saved: number; failed: number }> {
     const { model } = this;
     if (model.state.busy) return { saved: 0, failed: 0 };
+    if (this.formEdit && !(await this.saveForm())) return { saved: 0, failed: 1 };
     if (!this.commitEditor()) return { saved: 0, failed: 1 };
     const rowId = model.state.session;
     if (rowId) {
@@ -596,6 +643,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   discardChanges() {
     const rows = this.model.data.tracker.pendingRows();
     if (!this.canDrop(rows)) return;
+    this.closeForm(false);
     this.closeEditor();
     this.model.setSession(null);
     this.pendingInvalid = null;
@@ -628,6 +676,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   private on<A>(emitter: Emitter<A>): MotifEvent<A> {
     return this.model.events.event(emitter);
+  }
+
+  /** Raised after an editor was made, in a cell or in the edit form. */
+  get onEditorPrepared(): MotifEvent<GridEditorPreparedEventArgs<T>> {
+    return this.on(this.model.events.editorPrepared);
+  }
+
+  /** Raised when a row is checked before it is saved: add messages to `e.errors`, or `e.isValid = false`. */
+  get onRowValidating(): MotifEvent<GridRowValidatingEventArgs<T>> {
+    return this.on(this.model.events.rowValidating);
   }
 
   /** Raised when a cell is clicked: `e.cancel` stops what the grid does with it (select, open or close a group, edit). */
@@ -969,17 +1027,63 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.navigate(rowIndex, field, { edit: true });
   }
 
-  /** Opens the editor of a row's first cell the user can fill. */
+  /** Opens the editor of a row's first cell the user can fill; with `editMode` `'form'` or `'popup'`, the row's edit form. */
   editRow(rowIndex: number): boolean {
     const field = this.editableFields(rowIndex)[0];
     return field !== undefined && this.navigate(rowIndex, field, { edit: true });
   }
 
-  /** Keeps the open editor's value and closes it (the row stays the edited one until it is left). `false` when the value cannot be read. */
+  /** `editRow` for the row with this key, while it is loaded. */
+  editRowByKey(key: unknown): boolean {
+    const i = this.getRowIndexByKey(key);
+    return i >= 0 && this.editRow(i);
+  }
+
+  /**
+   * Saves what is being edited, as Save does: the edit form, else the row being edited (as the save
+   * mode says); in batch mode every unsaved change (`saveChanges()`). Resolves to whether it worked.
+   */
+  async saveEditData(): Promise<boolean> {
+    const { model } = this;
+    if (this.formEdit && !(await this.saveForm())) return false;
+    if (model.saveMode === 'batch') return (await this.saveChanges()).failed === 0;
+    if (!model.state.session && !this.editor) return true;
+    return new Promise((resolve) => {
+      this.leaveRowThen(
+        () => resolve(true),
+        () => resolve(false),
+      );
+    });
+  }
+
+  /** Gives up what is being edited, as Cancel does: the edit form or the row being edited; in batch mode every unsaved change (`discardChanges()`). */
+  cancelEditData() {
+    const { model } = this;
+    if (this.formEdit) {
+      this.cancelForm(true);
+      return;
+    }
+    if (model.saveMode === 'batch') {
+      this.discardChanges();
+      return;
+    }
+    const rec = model.edit(model.state.session ?? undefined);
+    if (rec) this.cancelRow(rec.row);
+    else this.closeEditor();
+  }
+
+  /**
+   * Keeps the open editor's value and closes it (the row stays the edited one until it is left; in
+   * `'cell'` mode it is saved). In the edit form, keeps every field's value. `false` when a value cannot be read.
+   */
   closeEditCell(): boolean {
+    if (this.formEdit) return this.formEdit.form.keepAll() === null;
     if (!this.editor) return true;
     const ok = this.commitEditor();
-    if (ok) this.focusActive(false);
+    if (ok) {
+      this.focusActive(false);
+      this.saveCell();
+    }
     return ok;
   }
 
@@ -1667,6 +1771,26 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         return;
       }
       untracked(() => {
+        this.closeForm(false);
+        this.closeEditor();
+        this.pendingInvalid = null;
+        model.connect();
+        this.body.toStart();
+      });
+    });
+
+    // Another edit mode: an open form closes, and to or from 'batch' the data starts again with that save mode.
+    let firstEditMode = true;
+    this.bindings.watch(() => {
+      const mode = settings.get('editMode');
+      if (firstEditMode) {
+        firstEditMode = false;
+        return;
+      }
+      untracked(() => {
+        if (this.formEdit && (mode === 'form' || mode === 'popup' ? mode !== this.formEdit.mode : true)) this.dropForm();
+        if (model.wantedSaveMode() === model.data.tracker.saveMode) return;
+        this.closeForm(false);
         this.closeEditor();
         this.pendingInvalid = null;
         model.connect();
@@ -2146,6 +2270,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       const last = model.lastRow();
       st.activeRow = last < 0 ? HEADER_ROW : model.mode === 'virtual' ? Math.min(st.activeRow, last) : model.firstRow();
     }
+    if (this.formEdit?.mode === 'form' && this.body.formIndex() < 0) this.closeForm(false);
     // The editor belongs to its row; if that row is no longer where the editor is, finish it.
     if (this.editor && this.editTarget) {
       const at = this.body.rowOf(this.editor.element);
@@ -2157,6 +2282,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   private activeElement(): HTMLElement | undefined {
     const { activeRow, activeField } = this.model.state;
+    if (activeRow >= 0 && this.formEdit?.mode === 'form' && activeRow === this.body.formIndex()) {
+      const cell = this.body.formCell();
+      if (cell) return cell;
+    }
     if (activeRow >= 0) {
       const cell = this.body.cellElement(activeRow, activeField);
       if (cell && activeField === ACTIONS_FIELD) {
@@ -2284,6 +2413,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const st = model.state;
     const i = st.activeRow;
     const field = st.activeField;
+    // In the form modes a row is edited in its form; typing on a cell does not open it.
+    if (model.editsInForm) return initialText === undefined && i >= 0 && this.openForm(i, field);
     if (i < 0 || st.busy || model.columns.isInternal(field)) return false;
     const row = model.rowAt(i);
     const rowId = model.rowIdAt(i);
@@ -2311,12 +2442,201 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     cell.append(editor.element);
     this.editor = editor;
     this.editTarget = { rowId, row, field };
+    this.editorPrepared(field, merged, !!rec?.isNew, editor, 'cell');
     st.editing = { rowId, field };
     model.setSession(rowId);
     if (this.pendingInvalid === rowId) this.pendingInvalid = null;
     this.tip.hide();
     editor.focus();
     return true;
+  }
+
+  /** `onEditorPrepared` for an editor just made. */
+  private editorPrepared(field: string, row: T, isNew: boolean, editor: CellEditor<T>, place: 'cell' | 'form') {
+    const ev = this.model.events;
+    ev.tell(ev.editorPrepared, () => ({ field, row: { ...row }, isNew, editor: editor.editor, element: editor.element, place }));
+  }
+
+  /** Whether an element is inside the edit form shown in place of a row. */
+  private inForm(target: Element | null): boolean {
+    return !!target && !!this.formEdit && this.formEdit.form.element.contains(target);
+  }
+
+  /**
+   * Opens the edit form of grid row `i` (`editMode` `'form'`: in place of the row; `'popup'`: in a
+   * modal window), with focus on `field` when it can be filled in. A form open on another row is
+   * given up first, as Cancel does.
+   */
+  private openForm(i: number, field: string): boolean {
+    const { model } = this;
+    const st = model.state;
+    const row = model.rowAt(i);
+    const rowId = model.rowIdAt(i);
+    if (st.busy || row === undefined || rowId === undefined || model.groupAt(i) || model.footerAt(i)) return false;
+    const rec = model.edit(rowId);
+    const isNew = !!rec?.isNew;
+    if (rec?.saving || rec?.removed) return false;
+    if (this.formEdit?.rowId === rowId) return this.formEdit.form.focus(field);
+    if (!model.columns.visibleData().some((f) => model.columns.canFill(f, row, isNew))) return false;
+    if (this.formEdit && !this.cancelForm(false)) return false;
+    const merged = { ...(row as object), ...(rec?.draft ?? {}) } as T;
+    if (!model.events.ask(model.events.editingStart, () => ({ field: '', row: merged, rowIndex: i, isNew, cancel: false }))) return false;
+    this.closeEditor();
+    model.setSession(rowId, row);
+    if (this.pendingInvalid === rowId) this.pendingInvalid = null;
+    this.tip.hide();
+    const mode = model.editMode === 'popup' ? 'popup' : 'form';
+    const form = new EditForm<T>(
+      model,
+      rowId,
+      row,
+      this.formSwitches,
+      {
+        save: () => void this.saveForm(),
+        cancel: () => this.cancelForm(true),
+        prepare: (f, r, n, options) => {
+          const e: GridEditorPreparingEventArgs<T> = { field: f, row: { ...r }, isNew: n, options, cancel: false };
+          model.events.editorPreparing.fire(e);
+          return !e.cancel;
+        },
+        prepared: (f, r, n, editor) => this.editorPrepared(f, r, n, editor, 'form'),
+      },
+      mode === 'form',
+    );
+    this.formEdit = { mode, rowId, row, form, window: null };
+    if (mode === 'form') {
+      this.body.controls.add(form);
+      this.body.showForm(rowId, row, i, form.element);
+      this.body.reveal(i);
+      this.syncTabStop();
+      form.focus(field);
+    } else this.openWindow(form, isNew);
+    return true;
+  }
+
+  /** The edit form in a modal window (`editMode: 'popup'`): Save and Cancel in its footer, Enter and Escape press them. */
+  private openWindow(form: EditForm<T>, isNew: boolean) {
+    const { model } = this;
+    const p = this.popupSwitches;
+    const title = () => p.get('title') ?? model.text(isNew ? 'gridNewRowTitle' : 'gridEditRowTitle');
+    const win = new MxForm({
+      title: () => (p.get('showTitle') ? title() : ''),
+      content: form,
+      footer: form.buttons,
+      width: () => p.get('width') ?? '',
+      height: () => p.get('height') ?? '',
+      resizable: () => p.get('resizable'),
+      movable: () => p.get('movable'),
+      showClose: () => p.get('showCloseButton'),
+      showMaximize: () => p.get('showMaximize'),
+      windowState: () => (p.get('fullScreen') ? 'maximized' : 'normal'),
+      acceptButton: form.saveButton,
+      cancelButton: form.cancelButton,
+    });
+    win.element.classList.add('mx-data-grid__popup');
+    // Without the title shown, the window still has its name.
+    win.motif.setDisposable(
+      effect(() => {
+        if (p.get('showTitle')) win.element.removeAttribute('aria-label');
+        else win.element.setAttribute('aria-label', title());
+      }),
+    );
+    win.onShown(() => form.focus(this.model.state.activeField));
+    // Closed by the user some other way (the close button): as Cancel, which may keep it open.
+    win.onClosing((e) => {
+      if (this.formEdit?.window !== win) return;
+      if (e.reason === 'owner' || this.isDisposed) this.formEdit = null;
+      else if (!this.cancelForm(true, true)) e.cancel = true;
+    });
+    this.formEdit!.window = win;
+    void win.showDialog(this);
+  }
+
+  /** Save in the edit form: every field is kept, the row checked and saved as the save mode says; the form closes once it is. */
+  private async saveForm(): Promise<boolean> {
+    const fe = this.formEdit;
+    const { model } = this;
+    const st = model.state;
+    if (!fe) return true;
+    if (st.busy) return false;
+    const unread = fe.form.keepAll();
+    if (unread !== null) {
+      fe.form.focus(unread);
+      return false;
+    }
+    const { rowId } = fe;
+    const bad = model.validate(rowId);
+    if (bad !== null) {
+      this.formError(bad);
+      return false;
+    }
+    model.setSession(null);
+    if (this.pendingInvalid === rowId) this.pendingInvalid = null;
+    const result = model.commit(rowId);
+    let ok = true;
+    if (result !== true) {
+      st.busy = true;
+      ok = await result;
+      st.busy = false;
+      if (this.isDisposed) return ok;
+    }
+    if (this.formEdit !== fe) return ok;
+    if (!ok) {
+      model.setSession(rowId, fe.row);
+      this.formError(this.firstErrorField(rowId));
+      return false;
+    }
+    this.closeForm(true);
+    return true;
+  }
+
+  /** A message stops the form from being saved: focus goes to its field. */
+  private formError(field: string) {
+    const fe = this.formEdit;
+    if (!fe) return;
+    fe.form.focus(field || undefined);
+    this.model.announce(this.model.text('gridFixErrors'));
+  }
+
+  /**
+   * Cancel in the edit form: the row's unsaved edits are dropped (a new row goes away) and the form
+   * closes; `onEditCanceling` may keep it open. `closing`: its window is closing already.
+   */
+  private cancelForm(focusRow: boolean, closing = false): boolean {
+    const fe = this.formEdit;
+    if (!fe) return true;
+    const { model } = this;
+    const rows = [model.edit(fe.rowId)?.row ?? fe.row];
+    if (!this.canDrop(rows)) return false;
+    this.closeForm(false, closing);
+    if (model.state.session === fe.rowId) model.setSession(null);
+    if (this.pendingInvalid === fe.rowId) this.pendingInvalid = null;
+    if (model.isNew(fe.rowId) && focusRow) this.removeNewRow(fe.rowId);
+    else {
+      model.discard(fe.rowId);
+      if (focusRow) this.focusActive(true);
+    }
+    this.dropped(rows);
+    return true;
+  }
+
+  /** The data is about to change (sort, filter, page, refresh) or the edit mode changed: the form is given up. */
+  private dropForm() {
+    if (this.formEdit && !this.cancelForm(false)) this.closeForm(false);
+  }
+
+  /** Takes the edit form away (and its window); with `focusRow`, focus goes back to the row. */
+  private closeForm(focusRow: boolean, closing = false) {
+    const fe = this.formEdit;
+    if (!fe) return;
+    this.formEdit = null;
+    const hadFocus = fe.form.element.contains(document.activeElement);
+    if (fe.window) {
+      if (!closing && fe.window.isOpen) fe.window.close();
+    } else this.body.hideForm();
+    if (!fe.form.isDisposed && !fe.window) void fe.form.dispose();
+    this.syncTabStop();
+    if (focusRow || (hadFocus && !fe.window)) this.focusActive(true);
   }
 
   /** Writes the editor's value into the row's draft and closes it; `false` (the editor stays) when it cannot be read. */
@@ -2366,7 +2686,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         return;
       }
     }
-    this.commitEditor();
+    if (this.commitEditor()) this.saveCell();
+  }
+
+  /** `editMode: 'cell'`: a row that is not new is handed to saving as each of its cells is left. */
+  private savesEachCell(rowId: string | null | undefined): boolean {
+    return this.model.editMode === 'cell' && !!rowId && !this.model.isNew(rowId);
+  }
+
+  /** In `'cell'` mode the cell just kept is saved now: the row is left (checked, then sent as the save mode says). */
+  private saveCell() {
+    if (this.savesEachCell(this.model.state.session)) this.leaveRowThen(() => this.focusActive(false));
   }
 
   /** Escape in an editor: a new row goes away; elsewhere the editor closes without keeping the value. */
@@ -2447,11 +2777,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const rowId = i >= 0 ? model.rowIdAt(i) : undefined;
     if (row === undefined || rowId === undefined || model.columns.isInternal(st.activeField)) return false;
     const rec = model.edit(rowId);
-    if (rec?.saving || rec?.removed || !model.columns.canFill(st.activeField, row, !!rec?.isNew)) return false;
+    if (model.editsInForm || rec?.saving || rec?.removed || !model.columns.canFill(st.activeField, row, !!rec?.isNew)) return false;
     if (st.session && st.session !== rowId) return false;
     const col = model.columns.get(st.activeField);
     model.writeCell(rowId, row, st.activeField, value(model.value(rowId, row, col)), model.dataIndex(i));
     model.setSession(rowId);
+    this.saveCell();
     return true;
   }
 
@@ -2578,6 +2909,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    */
   private leave() {
     const { model } = this;
+    if (this.formEdit) return;
     if (this.editor && !this.commitEditor()) this.closeEditor();
     const rowId = model.state.session;
     if (!rowId || model.state.busy) return;
@@ -2620,7 +2952,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const st = model.state;
     if (st.busy || !this.canMoveTo(row, field)) return false;
     const target = row >= 0 ? model.rowIdAt(row) : undefined;
-    if (st.session && target === st.session) {
+    if (this.formEdit) {
+      if (!opts.edit || target === this.formEdit.rowId) {
+        this.goToCell(row, field, opts);
+        return true;
+      }
+      // Editing another row gives up the form, as Cancel does.
+      if (!this.cancelForm(false)) return false;
+    }
+    if (st.session && target === st.session && !this.savesEachCell(st.session)) {
       if (!this.commitEditor()) return false;
       this.goToCell(row, field, opts);
       return true;
@@ -2643,6 +2983,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private onFocusIn(e: FocusEvent) {
     const target = e.target as HTMLElement;
     if (this.editor?.element.contains(target)) return;
+    if (this.inForm(target)) {
+      const i = this.body.formIndex();
+      if (i >= 0 && i !== this.model.state.activeRow) this.setActive(i, this.model.state.activeField);
+      this.syncTabStop();
+      return;
+    }
     const filterCell = target.closest?.('.mx-data-grid__filter-cell') as HTMLElement | null;
     if (filterCell) {
       if (!this.canMoveTo(FILTER_ROW, filterCell.dataset.field ?? '')) {
@@ -2712,6 +3058,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (next && vp?.contains(next)) return;
     this.tip.hide();
     if (this.model.state.adjust) this.endAdjust(true);
+    if (this.formEdit) return;
     // Leaving the rows ends the edit; focus that only moved inside the grid's own work comes back at
     // once, and switching windows keeps everything as it is.
     if (!next && typeof document.hasFocus === 'function' && !document.hasFocus()) return;
@@ -2724,7 +3071,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private onPointerDown(e: PointerEvent) {
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
-    if (this.editor?.element.contains(target)) return;
+    if (this.editor?.element.contains(target) || this.inForm(target)) return;
     const group = this.body.groupRowOf(target) ?? this.body.footerRowOf(target);
     if (group && group.index >= 0) {
       // Leaving the row being edited for a group row or footer may block or wait, as for any row.
@@ -2749,7 +3096,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   private onDoubleClick(e: MouseEvent) {
     const target = e.target as HTMLElement;
-    if (this.editor?.element.contains(target)) return;
+    if (this.editor?.element.contains(target) || this.inForm(target)) return;
     const group = this.body.groupRowOf(target);
     if (group?.node && group.index >= 0) {
       this.askClick(e, true, group.cell, group.element, group.index, group.node.field, group.node);
@@ -2794,7 +3141,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** A right click on a row: its menu, when `onContextMenuPreparing` gives it items. */
   private onContextMenu(e: MouseEvent) {
     const target = e.target as HTMLElement;
-    if (this.editor?.element.contains(target)) return;
+    if (this.editor?.element.contains(target) || this.inForm(target)) return;
     const group = this.body.groupRowOf(target);
     const footer = group ? undefined : this.body.footerRowOf(target);
     const cell = group ? group.cell : footer ? footer.element : (target.closest?.('.mx-data-grid__cell') as HTMLElement | null);
@@ -2835,7 +3182,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   private onClick(e: MouseEvent) {
     const target = e.target as HTMLElement;
-    if (this.editor?.element.contains(target)) return;
+    if (this.editor?.element.contains(target) || this.inForm(target)) return;
     const action = target.closest?.('.mx-data-grid__action') as HTMLElement | null;
     if (action) {
       this.pressAction(action);
@@ -3104,7 +3451,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const filterCell = target.closest?.('.mx-data-grid__filter-cell');
     if (filterCell && target !== filterCell && this.onFilterEditorKey(e, target)) return;
     if (target.classList.contains('mx-data-grid__action') && this.onActionKey(e, target)) return;
-    if (!target.matches?.('.mx-data-grid__cell, .mx-data-grid__group-cell, .mx-data-grid__group-footer, .mx-data-grid__header-cell, .mx-data-grid__filter-cell, .mx-data-grid__action, .mx-data-grid__condition')) return;
+    if (!target.matches?.('.mx-data-grid__cell, .mx-data-grid__form-cell, .mx-data-grid__group-cell, .mx-data-grid__group-footer, .mx-data-grid__header-cell, .mx-data-grid__filter-cell, .mx-data-grid__action, .mx-data-grid__condition')) return;
     if (st.adjust) {
       if (this.onAdjustKey(e)) e.preventDefault();
       return;
@@ -3421,6 +3768,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const { model } = this;
     const target = this.locate(row);
     if (!target) return;
+    if (this.formEdit?.rowId === target.rowId) {
+      void this.saveForm();
+      return;
+    }
     if (model.state.session === target.rowId) {
       this.leaveRowThen(() => this.focusActive(false));
       return;
@@ -3439,6 +3790,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const { model } = this;
     const target = this.locate(row);
     if (!target) return;
+    if (this.formEdit?.rowId === target.rowId) {
+      this.cancelForm(true);
+      return;
+    }
     const rows = [target.obj];
     if (!this.canDrop(rows)) return;
     if (this.editTarget?.rowId === target.rowId) this.closeEditor();
@@ -3466,7 +3821,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     }
     // A row with messages could not be left for this one.
     if (hit.disabled || (st.session && st.session !== view.rowId)) return;
-    void this.runner.run(this.entryOf(hit), 'row');
+    void this.run(this.entryOf(hit), 'row');
   }
 
   private openMore(view: GridRow<T>, button: HTMLElement) {
@@ -3479,10 +3834,31 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       beginGroup: a.action.beginGroup,
       data: a.action.id,
       click: () => {
-        if (!st.busy && !(st.session && st.session !== view.rowId)) void this.runner.run(this.entryOf(a), 'row');
+        if (!st.busy && !(st.session && st.session !== view.rowId)) void this.run(this.entryOf(a), 'row');
       },
     }));
     this.moreMenu.open(items, button, this.model.text('gridMoreActions'));
+  }
+
+  /** Runs an action; the ready `remove` asks once for all its rows first (`confirmDelete`). */
+  private async run(entry: ActionEntry<T>, location: GridActionRun['location']): Promise<GridActionRanEventArgs<T> | null> {
+    if (entry.action.onclick !== this.builtIns.remove.onclick) return this.runner.run(entry, location);
+    const saved = entry.items.filter((it) => !this.model.isNew(this.model.rowIdOf(it.row)));
+    if (saved.length && !(await this.askDelete(saved.length))) return null;
+    this.deleteConfirmed = true;
+    try {
+      return await this.runner.run(entry, location);
+    } finally {
+      this.deleteConfirmed = false;
+    }
+  }
+
+  /** Asks before rows are deleted, unless `confirmDelete` is off or the deletion is only marked (batch). */
+  private askDelete(count: number): Promise<boolean> {
+    const { model } = this;
+    if (this.deleteConfirmed || !model.settings.get('confirmDelete') || model.saveMode === 'batch') return Promise.resolve(true);
+    const text = count > 1 ? model.text('gridConfirmDeleteRows', { count: model.formatter.count(count) }) : model.text('gridConfirmDelete');
+    return confirm(text, { title: model.text('gridConfirmDeleteTitle'), buttons: ['yes', 'no'], host: this });
   }
 
   /** One row's action as an entry to run. */
@@ -3499,10 +3875,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const st = model.state;
     if (st.busy) return Promise.resolve(null);
     const own = entry.items.length === 1 && model.rowIdOf(entry.items[0].row) === st.session;
-    if (!st.session || own) return this.runner.run(entry, location);
+    if (!st.session || own) return this.run(entry, location);
     return new Promise((resolve) => {
       this.leaveRowThen(
-        () => resolve(this.runner.run(entry, location)),
+        () => resolve(this.run(entry, location)),
         () => resolve(null),
       );
     });

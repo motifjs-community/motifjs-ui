@@ -33,6 +33,8 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   private virtualTop = 0;
   private expectedScrollTop = -1;
   private visible: string[] = [];
+  /** The edit form shown in place of a row (`editMode: 'form'`), and the height it was measured at. */
+  private form: { rowId: string; row: T; index: number; element: HTMLDivElement; height: number; observer: ResizeObserver | null } | null = null;
 
   constructor(
     private readonly grid: GridModel<T>,
@@ -58,10 +60,71 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.motif.setDisposable(() => resolved.dispose());
   }
 
-  /** Geometry of the rows the body lays out (all rows, or one page). */
+  /** Geometry of the rows the body lays out (all rows, or one page); the edit form's row is as tall as the form. */
   geometry(): ScrollGeometry {
-    const rowHeight = this.grid.state.rowHeight;
-    return new ScrollGeometry(this.grid.reachable(), rowHeight, Math.max(rowHeight, this.grid.state.viewport));
+    const grid = this.grid;
+    const rowHeight = grid.state.rowHeight;
+    const at = this.formIndex();
+    const local = at < 0 ? -1 : grid.mode === 'virtual' ? at : grid.localOf(at);
+    const tall = local >= 0 && this.form ? { at: local, extra: Math.max(0, this.form.height - rowHeight) } : null;
+    return new ScrollGeometry(grid.reachable(), rowHeight, Math.max(rowHeight, grid.state.viewport), ScrollGeometry.MAX_HEIGHT, tall);
+  }
+
+  /** Shows `content` (the edit form) in place of grid row `index` (the row `row`, `rowId`), across the grid, as tall as it is. */
+  showForm(rowId: string, row: T, index: number, content: HTMLElement) {
+    this.hideForm();
+    const el = document.createElement('div');
+    el.className = 'mx-data-grid__form-row';
+    el.setAttribute('role', 'row');
+    el.id = nextId('grid-row');
+    const cell = el.appendChild(document.createElement('div'));
+    cell.className = 'mx-data-grid__form-cell';
+    cell.setAttribute('role', 'gridcell');
+    cell.tabIndex = -1;
+    cell.append(content);
+    this.element.append(el);
+    const form: NonNullable<GridBody<T>['form']> = { rowId, row, index, element: el, height: 0, observer: null };
+    this.form = form;
+    if (typeof ResizeObserver !== 'undefined') {
+      form.observer = new ResizeObserver(() => this.measureForm());
+      form.observer.observe(el);
+    }
+    this.relayout(true);
+    this.measureForm();
+  }
+
+  /** Takes the edit form away; its row shows again. */
+  hideForm() {
+    const form = this.form;
+    if (!form) return;
+    this.form = null;
+    form.observer?.disconnect();
+    form.element.remove();
+    this.relayout(true);
+  }
+
+  /** The cell that holds the edit form: the active cell while the form's row is the active row. */
+  formCell(): HTMLElement | null {
+    return (this.form?.element.firstElementChild as HTMLElement | null) ?? null;
+  }
+
+  /** The grid index of the row the edit form stands for, or -1. */
+  formIndex(): number {
+    const form = this.form;
+    if (!form) return -1;
+    const at = this.grid.indexOfKey(form.rowId, form.index);
+    form.index = at >= 0 ? at : this.grid.indexOfRow(form.row);
+    return form.index;
+  }
+
+  /** The form's height changed (fields shown, messages): the rows after it move. */
+  private measureForm() {
+    const form = this.form;
+    if (!form) return;
+    const height = form.element.offsetHeight;
+    if (height === form.height) return;
+    form.height = height;
+    this.relayout(true);
   }
 
   /** Works out again which rows show and where. Safe to call from anywhere; reads are untracked. */
@@ -213,7 +276,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
 
   /** Gives the spacer the height of the rows, before a scroll position is written too (a row added at the end makes the rows taller). */
   private sizeSpacer(g: ScrollGeometry) {
-    this.element.style.height = `${this.grid.mode === 'virtual' ? g.spacerHeight : g.total * g.rowHeight}px`;
+    this.element.style.height = `${this.grid.mode === 'virtual' ? g.spacerHeight : g.contentHeight}px`;
   }
 
   private setVirtualTop(vp: HTMLElement, g: ScrollGeometry, v: number, immediate: boolean) {
@@ -256,7 +319,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     } else {
       start = 0;
       end = g.total;
-      top = (local) => local * g.rowHeight;
+      top = (local) => g.offsetOf(local);
       const range = grid.dataRange();
       data.ensure(range.first, loading ? range.first + grid.pageSize : Math.max(range.end, range.first + 1), true);
     }
@@ -272,8 +335,10 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     };
     const active = grid.state.activeRow;
     const focused = this.rowOf(document.activeElement)?.index ?? -1;
-    for (const i of new Set([active, focused])) if (i >= 0 && localOf(i) >= 0 && !inWindow(i)) wanted.push(i);
-    data.pin(active >= 0 ? grid.dataIndex(active) : -1);
+    const formAt = this.formIndex();
+    for (const i of new Set([active, focused, formAt])) if (i >= 0 && localOf(i) >= 0 && !inWindow(i)) wanted.push(i);
+    const pinned = formAt >= 0 ? formAt : active;
+    data.pin(pinned >= 0 ? grid.dataIndex(pinned) : -1);
 
     // Group rows and footers go to their pools, matched by their group.
     const groups = new Map<number, GroupNode>();
@@ -284,8 +349,9 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       const footer = node ? null : grid.footerAt(i);
       if (node) groups.set(i, node);
       else if (footer) footers.set(i, footer);
-      else rows.push(i);
+      else if (i !== formAt) rows.push(i);
     }
+    this.placeForm(formAt, formAt >= 0 && localOf(formAt) >= 0 ? top(localOf(formAt)) : -1, vp);
     this.placeGroups(groups, top, localOf);
     this.placeFooters(footers, top, localOf);
 
@@ -320,11 +386,25 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     // scroll. Assistive technology gets the reading order through aria-owns.
     const all: [number, HTMLElement][] = [];
     for (const [i, r] of keep) all.push([i, r.element]);
+    if (this.form && formAt >= 0) all.push([formAt, this.form.element]);
     for (const [i, r] of this.groupsByIndex) all.push([i, r.element]);
     for (const [i, r] of this.footersByIndex) all.push([i, r.element]);
     const shown = all.sort((a, b) => a[0] - b[0]).map(([, el]) => el.id);
     const owns = shown.join(' ');
     if (this.element.getAttribute('aria-owns') !== owns) this.element.setAttribute('aria-owns', owns);
+  }
+
+  /** The edit form's row: at its row's place, as wide as the viewport and kept in it while the rows scroll sideways. */
+  private placeForm(index: number, top: number, vp: HTMLElement) {
+    const form = this.form;
+    if (!form) return;
+    const el = form.element;
+    el.hidden = top < 0;
+    if (top < 0) return;
+    el.setAttribute('aria-rowindex', String(index + 1 + this.grid.headRows));
+    el.firstElementChild?.setAttribute('aria-colspan', String(Math.max(1, this.visible.length)));
+    el.style.inlineSize = `${vp.clientWidth}px`;
+    el.style.transform = `translate(${vp.scrollLeft}px, ${top}px)`;
   }
 
   /** Group rows: the one that showed a group keeps it, the others take the rest. */

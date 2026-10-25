@@ -12,12 +12,14 @@ import type { GridColumn } from '../grid-column';
 import type { GridFilters } from '../grid-filters';
 import type { GridLayout } from '../grid-layout';
 import type { GridMode } from '../grid-mode';
+import type { GridRowValidatingEventArgs } from '../grid-row-validating-event-args';
 import type { GridSettings } from '../grid-settings';
 import type { RowState } from '../row-state';
 import type { EditorValue } from '../view/editor-value';
 import type { AddedRow } from './added-row';
 import { ActionSets } from './ActionSets';
 import { CellFormatter } from './CellFormatter';
+import { CellRules } from './CellRules';
 import { cellValue } from './cell-value';
 import { ColumnModel } from './ColumnModel';
 import { DEFAULT_SETTINGS } from './default-settings';
@@ -148,6 +150,12 @@ export class GridModel<T> {
   private initialRow: Partial<T> | null = null;
   /** Listeners on the data and its tracker, made again with them. */
   private dataSubscriptions: IDisposable[] = [];
+  /** The columns' `validationRules` and what they found. */
+  readonly rules = new CellRules<T>((key) => this.text(key));
+  /** The row being checked now, while the grid asks the tracker to check it. */
+  private checking: string | null = null;
+  /** What `onRowValidating` made of a row in a round, kept for the checks of the same round. */
+  private readonly rowChecks = new Map<string, { round: number; errors: Record<string, string> }>();
 
   constructor(private readonly props: DataGridProps<T>) {
     this.settings = new Switches<GridSettings>(Object.keys(DEFAULT_SETTINGS) as (keyof GridSettings)[], DEFAULT_SETTINGS, props.settings ?? {});
@@ -207,6 +215,8 @@ export class GridModel<T> {
       } else this.baseFilter = null;
       for (const a of this.addedRows.splice(0)) this.lastSeen.delete(a.rowId);
       this.removing.clear();
+      this.rules.forget();
+      this.rowChecks.clear();
       const st = this.state;
       st.added = 0;
       st.session = null;
@@ -229,7 +239,7 @@ export class GridModel<T> {
         footers: () => this.summaries.hasFooters(),
         groupSummary: () => this.summaries.serverItems(this.summaries.groupItems(), source.adapter),
         locale: () => this.formatter.locale,
-        saveMode: read(props.saveMode) ?? 'wait',
+        saveMode: this.wantedSaveMode(),
         createRow: () => this.initialRow ?? props.newRow?.create?.() ?? {},
         validateRow: (row, context) => this.checkRow(row, context),
         state: st,
@@ -298,6 +308,22 @@ export class GridModel<T> {
   get saveMode(): data.SaveMode {
     void this.state.connection;
     return this.data.tracker.saveMode;
+  }
+
+  /** The save mode the data is made with: `'batch'` for `editMode: 'batch'`, else the `saveMode` prop (default `'wait'`). */
+  wantedSaveMode(): data.SaveMode {
+    return this.settings.get('editMode') === 'batch' ? 'batch' : (read(this.props.saveMode) ?? 'wait');
+  }
+
+  /** How rows are edited now. Reactive. */
+  get editMode(): GridSettings['editMode'] {
+    return this.settings.get('editMode');
+  }
+
+  /** Rows are edited in a form (in place or in a window), not in their cells. Reactive. */
+  get editsInForm(): boolean {
+    const mode = this.settings.get('editMode');
+    return mode === 'form' || mode === 'popup';
   }
 
   get pageSize(): number {
@@ -655,9 +681,40 @@ export class GridModel<T> {
     if (!col || this.columns.isInternal(field)) return;
     const rec = this.edit(rowId);
     const full = { ...(row as object), ...(rec?.draft ?? {}) } as T;
-    const message = this.fieldMessage(col, this.value(rowId, row, col), full);
-    if (message) tracker.setError(row, field, message);
-    else if (col.lookup && !data.isEmpty(value)) this.checkKey(rowId, row, col, value);
+    const shown = this.value(rowId, row, col);
+    const message = this.fieldMessage(col, shown, full);
+    if (message) {
+      tracker.setError(row, field, message);
+      return;
+    }
+    if (col.lookup && !data.isEmpty(value)) this.checkKey(rowId, row, col, value);
+    if (this.rules.has(col)) this.checkRules(rowId, row, col, shown, full);
+  }
+
+  /** A column has `validationRules`. */
+  hasRules(): boolean {
+    for (const col of this.columns.defs.values()) if (this.rules.has(col)) return true;
+    return false;
+  }
+
+  /** A column that must be filled in: `required`, or a `required` rule. */
+  isRequired(col: GridColumn<T>): boolean {
+    return !!col.required || this.rules.requires(col);
+  }
+
+  /** Checks a written value against the column's rules; the message shows when they are done (the row waits for them). */
+  private checkRules(rowId: string, row: T, col: GridColumn<T>, value: unknown, full: T) {
+    const known = this.rules.known(rowId, col, value);
+    if (known !== undefined) {
+      if (known) this.data.tracker.setError(row, col.field, known);
+      return;
+    }
+    const work = this.rules.check(rowId, col, value, full).then((message) => {
+      const rec = this.edit(rowId);
+      if (!message || !rec || rec.removed || !sameValue(this.value(rowId, row, col), value) || rec.errors[col.field]) return;
+      this.data.tracker.setError(row, col.field, message);
+    });
+    this.settle(rowId, work, this.rules.waits(col) ? col.field : undefined);
   }
 
   /**
@@ -723,10 +780,20 @@ export class GridModel<T> {
     this.data.tracker.setError(row, field, message);
   }
 
-  /** Checks the row before it is saved: the first field with a message (`''` for one of the whole row), or `null`. */
-  validate(rowId: string): string | null {
+  /**
+   * Checks the row before it is saved: the first field with a message (`''` for one of the whole row),
+   * or `null`. `fresh` starts a new round of the rules that run on every check (`reevaluate`).
+   */
+  validate(rowId: string, fresh = true): string | null {
     const rec = this.edit(rowId);
-    return rec ? this.data.tracker.validate(rec.row) : null;
+    if (!rec) return null;
+    if (fresh) this.rules.round++;
+    this.checking = rowId;
+    try {
+      return this.data.tracker.validate(rec.row);
+    } finally {
+      this.checking = null;
+    }
   }
 
   /** The user left the row: it is sent as the save mode says, after the work it waits for. `true` when the grid may go on at once, else whether the save worked. */
@@ -734,14 +801,25 @@ export class GridModel<T> {
     const wait = this.settling.get(rowId);
     if (wait?.size) {
       return Promise.all(wait).then(() => {
-        if (this.validate(rowId) !== null) return false;
+        if (this.validate(rowId, false) !== null) return false;
         const result = this.commit(rowId);
         return result === true ? true : result;
       });
     }
     const rec = this.edit(rowId);
     if (!rec) return true;
-    const result = this.data.tracker.commit(rec.row);
+    // Rules not checked yet for these values start now; the row is sent once they are done.
+    if (!rec.removed && this.hasRules()) {
+      this.validate(rowId, false);
+      if (this.settling.get(rowId)?.size) return this.commit(rowId);
+    }
+    this.checking = rowId;
+    let result: boolean | Promise<boolean>;
+    try {
+      result = this.data.tracker.commit(rec.row);
+    } finally {
+      this.checking = null;
+    }
     return result === true ? true : result === false ? Promise.resolve(false) : result;
   }
 
@@ -763,6 +841,12 @@ export class GridModel<T> {
   }
 
   async saveChanges(): Promise<{ saved: number; failed: number }> {
+    // Every row to send is checked first, so that the rules not checked yet run and are waited for.
+    this.rules.round++;
+    for (const row of this.data.tracker.pendingRows()) {
+      const rowId = this.rowIdOf(row);
+      if (!this.edit(rowId)?.removed) this.validate(rowId, false);
+    }
     const waits = [...this.settling.values()].flatMap((set) => [...set]);
     if (waits.length) await Promise.all(waits);
     const result = await this.data.tracker.saveChanges();
@@ -786,9 +870,9 @@ export class GridModel<T> {
   }
 
   /** The row the user is in: its message does not count as failed yet, and `background` does not send it. */
-  setSession(rowId: string | null) {
+  setSession(rowId: string | null, given?: T) {
     this.state.session = rowId;
-    const row = rowId ? (this.edit(rowId)?.row ?? this.addedRows.find((a) => a.rowId === rowId)?.row) : undefined;
+    const row = rowId ? (this.edit(rowId)?.row ?? this.addedRows.find((a) => a.rowId === rowId)?.row ?? given) : undefined;
     this.data.tracker.currentRow = row ?? null;
     untracked(() => this.state.edits++);
   }
@@ -1271,14 +1355,38 @@ export class GridModel<T> {
     return new data.DataSource<T, unknown>({ adapter: adapter as unknown as data.DataAdapter<T, unknown>, loadMode: 'all', sort: this.state.sort, filter: this.filters.expression() });
   }
 
+  /** The id of a row the tracker checks (it gives a copy with the edits applied). */
+  private idOfChecked(row: T, isNew: boolean): string | undefined {
+    if (this.checking) return this.checking;
+    if (!isNew) return this.rowIdOf(row);
+    const keys = Object.keys(row as object);
+    const same = (a: AddedRow<T>) => {
+      const rec = this.edit(a.rowId);
+      if (!rec?.isNew) return false;
+      const full = { ...(a.row as object), ...rec.draft } as Record<string, unknown>;
+      return Object.keys(full).length === keys.length && keys.every((k) => Object.is(full[k], (row as Record<string, unknown>)[k]));
+    };
+    return this.addedRows.find(same)?.rowId;
+  }
+
   /** The grid's checks of a row, as the tracker runs them before it is saved. */
   private checkRow(row: T, context: { isNew: boolean; changed: readonly string[] }): Record<string, string> {
     const fields = this.columns.visibleData().filter((f) => this.columns.canFill(f, row, context.isNew));
+    const rowId = this.idOfChecked(row, context.isNew);
     const found: Record<string, string> = {};
+    let waiting = false;
     for (const field of fields) {
       if (!context.isNew && !context.changed.includes(field)) continue;
       const col = this.columns.get(field);
-      const message = this.fieldMessage(col, cellValue(col, row), row);
+      const value = cellValue(col, row);
+      let message = this.fieldMessage(col, value, row);
+      if (!message && rowId !== undefined && this.rules.has(col)) {
+        const known = this.rules.known(rowId, col, value);
+        if (known === undefined) {
+          waiting = true;
+          this.settle(rowId, this.rules.check(rowId, col, value, row), this.rules.waits(col) ? field : undefined);
+        } else message = known;
+      }
       if (message) found[field] = message;
     }
     let whole = '';
@@ -1295,7 +1403,34 @@ export class GridModel<T> {
     const errors: Record<string, string> = {};
     for (const field of fields) if (found[field]) errors[field] = found[field];
     if (whole) errors[''] = whole;
-    return errors;
+    if (rowId === undefined || !this.events.listened(this.events.rowValidating)) return errors;
+    // `onRowValidating` comes once the cells are checked, once per round; its answer is kept for the round.
+    const kept = this.rowChecks.get(rowId);
+    if (kept?.round === this.rules.round) return kept.errors;
+    if (waiting || this.settling.get(rowId)?.size) return errors;
+    const adapter = this.data.source.adapter;
+    const e: GridRowValidatingEventArgs<T> = {
+      key: context.isNew || !adapter.keys.hasKey(row) ? undefined : adapter.keyOf(row),
+      row,
+      isNew: context.isNew,
+      changed: context.changed,
+      errors: { ...errors },
+      isValid: !hasKeys(errors),
+      errorText: errors[''] ?? '',
+      cancel: false,
+    };
+    this.events.rowValidating.fire(e);
+    const out: Record<string, string> = {};
+    const toRow = (message: string) => (out[''] = out[''] ? `${out['']} ${message}` : message);
+    for (const [field, message] of Object.entries(e.errors)) {
+      if (!message) continue;
+      if (field !== '' && fields.includes(field)) out[field] = message;
+      else toRow(message);
+    }
+    if (e.errorText && !out['']?.includes(e.errorText)) toRow(e.errorText);
+    if ((!e.isValid || e.cancel) && !hasKeys(out)) out[''] = this.text('gridRowInvalid');
+    this.rowChecks.set(rowId, { round: this.rules.round, errors: out });
+    return out;
   }
 
   private fieldMessage(col: GridColumn<T>, value: unknown, row: T): string {

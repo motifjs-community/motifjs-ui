@@ -104,4 +104,7 @@ export const DEFAULT_SETTINGS: GridSettings = {
   clearKeys: ['Delete'],
   editOnKeyPress: true,
   startEditAction: 'dblClick',
+  editMode: 'row',
+  confirmDelete: true,
+  selectTextOnEditStart: true,
 };

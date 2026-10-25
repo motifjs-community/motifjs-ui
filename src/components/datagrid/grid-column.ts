@@ -6,7 +6,9 @@ import type { EditorContext } from './editor-context';
 import type { GroupCellContext } from './group-cell-context';
 import type { HeaderCellContext } from './header-cell-context';
 import type { GridFilterOperator } from './grid-filter-operator';
+import type { GridColumnFormItem } from './grid-column-form-item';
 import type { GridLookup } from './grid-lookup';
+import type { GridValidationRule } from './grid-validation-rule';
 import type { ListOption } from './list-option';
 import type { StickySide } from './sticky-side';
 
@@ -83,6 +85,14 @@ export interface GridColumn<T = any> {
   required?: boolean;
   /** Checks a value; return the message to show, or nothing. `row` has the unsaved edits applied. */
   validate?: (value: unknown, row: T) => string | null | undefined;
+  /**
+   * the standard rule set, checked after `required` and `validate`: `required`, `numeric`, `range`,
+   * `stringLength`, `pattern`, `email`, `compare`, `custom` and `async`. A value is checked when it is
+   * written and when the row is checked before it is saved; the row waits for an `async` rule.
+   */
+  validationRules?: readonly GridValidationRule<T>[];
+  /** How the column shows in the edit form (`editMode` `'form'` or `'popup'`). */
+  formItem?: GridColumnFormItem;
   /** Choices of a `list` column: an array, or a function of the row (may return a promise). */
   options?: readonly ListOption[] | ((row: T) => readonly ListOption[] | Promise<readonly ListOption[]>);
   /**
