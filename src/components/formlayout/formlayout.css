@@ -1,0 +1,48 @@
+/* FormLayout: the fields of an object on a grid of columns; groups under captions. */
+@layer mx.components {
+  .mx-form-layout {
+    display: block;
+  }
+
+  .mx-form-layout__grid {
+    display: grid;
+    grid-template-columns: repeat(var(--_form-columns, 1), minmax(0, 1fr));
+    gap: var(--mx-form-layout-row-gap) var(--mx-form-layout-column-gap);
+    align-items: start;
+  }
+
+  .mx-form-layout[data-fluid] > .mx-form-layout__grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--_form-min)), 1fr));
+  }
+
+  .mx-form-layout__item {
+    grid-column: span var(--_form-span, 1);
+    min-inline-size: 0;
+  }
+
+  .mx-form-layout__item[data-span='all'] {
+    grid-column: 1 / -1;
+  }
+
+  .mx-form-layout__item[hidden] {
+    display: none;
+  }
+
+  /* Buttons sit on the line of the fields' boxes. */
+  .mx-form-layout__item[data-kind='button'] {
+    align-self: end;
+  }
+
+  .mx-form-layout__group {
+    min-inline-size: 0;
+    margin: 0;
+    padding: var(--mx-form-layout-group-padding);
+    border: var(--mx-border-width-1) solid var(--mx-color-stroke-divider);
+    border-radius: var(--mx-form-layout-group-radius);
+  }
+
+  .mx-form-layout__caption {
+    padding-inline: var(--mx-space-1);
+    font-weight: var(--mx-form-layout-caption-weight);
+  }
+}

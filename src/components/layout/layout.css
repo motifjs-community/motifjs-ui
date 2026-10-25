@@ -1,0 +1,401 @@
+/* Layout containers. The look binds to data-* attributes the components write and to tokens
+   only; the sizes the app gives (gap, padding, tracks) arrive as inline custom properties
+   (--_gap, --_row-gap, --_column-gap) or inline grid properties. Each container sets its own
+   --_gap default, so a nested one never inherits its parent's. Children of Stack, Grid and
+   DockPanel carry their own placement inline, written from their props. */
+@layer mx.components {
+  /* Stack. */
+
+  .mx-stack {
+    --_gap: var(--mx-layout-gap);
+    display: flex;
+    flex-direction: column;
+    gap: var(--_gap);
+    min-inline-size: 0;
+  }
+
+  .mx-stack[data-inline] {
+    display: inline-flex;
+    vertical-align: middle;
+  }
+
+  .mx-stack[data-orientation='horizontal'] {
+    flex-direction: row;
+  }
+
+  .mx-stack[data-orientation='vertical'][data-reverse] {
+    flex-direction: column-reverse;
+  }
+
+  .mx-stack[data-orientation='horizontal'][data-reverse] {
+    flex-direction: row-reverse;
+  }
+
+  .mx-stack[data-wrap] {
+    flex-wrap: wrap;
+  }
+
+  .mx-stack[data-align='start'] {
+    align-items: flex-start;
+  }
+
+  .mx-stack[data-align='center'] {
+    align-items: center;
+  }
+
+  .mx-stack[data-align='end'] {
+    align-items: flex-end;
+  }
+
+  .mx-stack[data-align='stretch'] {
+    align-items: stretch;
+  }
+
+  .mx-stack[data-align='baseline'] {
+    align-items: baseline;
+  }
+
+  .mx-stack[data-justify='start'] {
+    justify-content: flex-start;
+  }
+
+  .mx-stack[data-justify='center'] {
+    justify-content: center;
+  }
+
+  .mx-stack[data-justify='end'] {
+    justify-content: flex-end;
+  }
+
+  .mx-stack[data-justify='space-between'] {
+    justify-content: space-between;
+  }
+
+  .mx-stack[data-justify='space-around'] {
+    justify-content: space-around;
+  }
+
+  .mx-stack[data-justify='space-evenly'] {
+    justify-content: space-evenly;
+  }
+
+  /* A growing child may also shrink below its content. */
+  .mx-stack > [data-mx-grow] {
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  /* Grid. */
+
+  .mx-grid {
+    --_gap: var(--mx-layout-gap);
+    --_row-gap: var(--_gap);
+    --_column-gap: var(--_gap);
+    display: grid;
+    row-gap: var(--_row-gap);
+    column-gap: var(--_column-gap);
+    min-inline-size: 0;
+  }
+
+  .mx-grid[data-inline] {
+    display: inline-grid;
+    vertical-align: middle;
+  }
+
+  .mx-grid[data-align='start'] {
+    align-items: start;
+  }
+
+  .mx-grid[data-align='center'] {
+    align-items: center;
+  }
+
+  .mx-grid[data-align='end'] {
+    align-items: end;
+  }
+
+  .mx-grid[data-align='stretch'] {
+    align-items: stretch;
+  }
+
+  .mx-grid[data-align='baseline'] {
+    align-items: baseline;
+  }
+
+  .mx-grid[data-justify='start'] {
+    justify-items: start;
+  }
+
+  .mx-grid[data-justify='center'] {
+    justify-items: center;
+  }
+
+  .mx-grid[data-justify='end'] {
+    justify-items: end;
+  }
+
+  .mx-grid[data-justify='stretch'] {
+    justify-items: stretch;
+  }
+
+  /* Panel. */
+
+  .mx-panel {
+    display: block;
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  .mx-panel[data-variant='outline'] {
+    border: var(--mx-layout-panel-border-width) solid var(--mx-color-stroke-card);
+    border-radius: var(--mx-layout-panel-radius);
+  }
+
+  .mx-panel[data-variant='card'] {
+    background: var(--mx-color-bg-card);
+    border: var(--mx-layout-panel-border-width) solid var(--mx-color-stroke-card);
+    border-radius: var(--mx-layout-panel-radius);
+    box-shadow: var(--mx-shadow-2);
+  }
+
+  .mx-panel[data-scroll='both'] {
+    overflow: auto;
+  }
+
+  .mx-panel[data-scroll='vertical'] {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .mx-panel[data-scroll='horizontal'] {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  /* GroupBox. */
+
+  .mx-group-box {
+    --_gap: var(--mx-layout-group-box-gap);
+    display: flex;
+    flex-direction: column;
+    gap: var(--_gap);
+    min-inline-size: 0;
+    margin: 0;
+    padding: var(--mx-layout-group-box-padding);
+    color: var(--mx-color-fg-primary);
+    border: var(--mx-layout-group-box-border-width) solid var(--mx-color-stroke-card);
+    border-radius: var(--mx-layout-group-box-radius);
+  }
+
+  .mx-group-box[data-variant='plain'] {
+    padding: 0;
+    border-color: transparent;
+  }
+
+  .mx-group-box__legend {
+    padding-block: 0;
+    padding-inline: var(--mx-layout-group-box-legend-padding);
+    font-size: var(--mx-layout-group-box-font-size);
+    font-weight: var(--mx-layout-group-box-font-weight);
+    line-height: var(--mx-font-line-body);
+  }
+
+  .mx-group-box[data-variant='plain'] > .mx-group-box__legend {
+    padding-inline: 0;
+    padding-block-end: var(--_gap);
+  }
+
+  .mx-group-box[data-disabled] > .mx-group-box__legend {
+    color: var(--mx-color-fg-disabled);
+  }
+
+  .mx-group-box__toggle {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mx-control-gap);
+    margin: 0;
+    padding-block: 0;
+    padding-inline: var(--mx-layout-group-box-legend-padding);
+    margin-inline: calc(var(--mx-layout-group-box-legend-padding) * -1);
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-radius: var(--mx-radius-sm);
+    cursor: default;
+    transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-group-box__toggle:hover:not(:disabled) {
+    background: var(--mx-color-fill-subtle-secondary);
+  }
+
+  .mx-group-box__toggle:active:not(:disabled) {
+    background: var(--mx-color-fill-subtle-tertiary);
+  }
+
+  .mx-group-box__chevron {
+    color: var(--mx-color-fg-secondary);
+    transition: rotate var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
+  }
+
+  .mx-group-box[data-collapsed] .mx-group-box__chevron {
+    rotate: -90deg;
+  }
+
+  .mx-group-box[data-collapsed] .mx-group-box__chevron:dir(rtl) {
+    rotate: 90deg;
+  }
+
+  .mx-group-box[data-collapsed] > :not(legend) {
+    display: none;
+  }
+
+  .mx-group-box[data-collapsed]:not([data-variant='plain']) {
+    padding-block-end: 0;
+  }
+
+  /* DockPanel. */
+
+  .mx-dock-panel {
+    position: relative;
+    display: grid;
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  .mx-dock-panel > [data-mx-dock='fill'] {
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  .mx-dock-panel > [data-mx-dock='float'] {
+    position: absolute;
+  }
+
+  /* SplitContainer. */
+
+  .mx-split-container {
+    display: grid;
+    block-size: 100%;
+    min-inline-size: 0;
+    min-block-size: 0;
+    overflow: hidden;
+  }
+
+  .mx-split-container[data-orientation='horizontal'] {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .mx-split-container[data-orientation='vertical'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* One child fills the pane; a pane set to scroll keeps its own overflow. */
+  .mx-split-container__pane {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .mx-split-container[data-orientation='horizontal'] > [data-pane='first'] {
+    grid-area: 1 / 1;
+  }
+
+  .mx-split-container[data-orientation='horizontal'] > .mx-split-container__splitter {
+    grid-area: 1 / 2;
+  }
+
+  .mx-split-container[data-orientation='horizontal'] > [data-pane='second'] {
+    grid-area: 1 / 3;
+  }
+
+  .mx-split-container[data-orientation='vertical'] > [data-pane='first'] {
+    grid-area: 1 / 1;
+  }
+
+  .mx-split-container[data-orientation='vertical'] > .mx-split-container__splitter {
+    grid-area: 2 / 1;
+  }
+
+  .mx-split-container[data-orientation='vertical'] > [data-pane='second'] {
+    grid-area: 3 / 1;
+  }
+
+  .mx-split-container[data-collapsed='first'] > [data-pane='first'],
+  .mx-split-container[data-collapsed='second'] > [data-pane='second'] {
+    visibility: hidden;
+  }
+
+  .mx-split-container__splitter {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    --_line: var(--mx-layout-splitter-line-width);
+    --_line-color: var(--mx-color-stroke-divider);
+    --_grip-color: var(--mx-color-stroke-control-strong);
+  }
+
+  .mx-split-container__splitter::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    background: var(--_line-color);
+    transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-split-container__splitter::after {
+    content: '';
+    position: relative;
+    background: var(--_grip-color);
+    border-radius: var(--mx-radius-full);
+    transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-split-container[data-orientation='horizontal'] > .mx-split-container__splitter::before {
+    inline-size: var(--_line);
+  }
+
+  .mx-split-container[data-orientation='vertical'] > .mx-split-container__splitter::before {
+    block-size: var(--_line);
+  }
+
+  .mx-split-container[data-orientation='horizontal'] > .mx-split-container__splitter::after {
+    inline-size: var(--mx-layout-splitter-grip-thickness);
+    block-size: var(--mx-layout-splitter-grip-length);
+  }
+
+  .mx-split-container[data-orientation='vertical'] > .mx-split-container__splitter::after {
+    inline-size: var(--mx-layout-splitter-grip-length);
+    block-size: var(--mx-layout-splitter-grip-thickness);
+  }
+
+  .mx-split-container[data-resizable][data-orientation='horizontal'] > .mx-split-container__splitter {
+    cursor: col-resize;
+  }
+
+  .mx-split-container[data-resizable][data-orientation='vertical'] > .mx-split-container__splitter {
+    cursor: row-resize;
+  }
+
+  .mx-split-container[data-resizable]:not([data-disabled]) > .mx-split-container__splitter:hover,
+  .mx-split-container[data-dragging] > .mx-split-container__splitter {
+    --_line: var(--mx-layout-splitter-active-width);
+    --_line-color: var(--mx-color-accent-solid);
+    --_grip-color: var(--mx-color-accent-solid);
+  }
+
+  .mx-split-container:not([data-resizable]) > .mx-split-container__splitter::after,
+  .mx-split-container[data-disabled] > .mx-split-container__splitter::after {
+    background: var(--mx-color-stroke-control-default);
+  }
+
+  .mx-split-container[data-disabled] > .mx-split-container__splitter {
+    cursor: default;
+  }
+}

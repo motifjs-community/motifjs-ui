@@ -1,7 +1,7 @@
 import { Component } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../tests/helpers';
-import { Button } from '../components/button/Button';
+import { TestButton } from '../../tests/controls';
 import { FocusContainer, tabOrder } from './container';
 import { Control } from './control';
 
@@ -35,8 +35,8 @@ const tab = (shift = false) => {
 describe('Control: disabled alias and tabIndex', () => {
   it('takes disabled as the inverse of enabled, as prop and property', async () => {
     const state = { busy: true };
-    const a = new Button({ text: 'A', disabled: true });
-    const b = new Button({ text: 'B', disabled: () => state.busy });
+    const a = new TestButton({ text: 'A', disabled: true });
+    const b = new TestButton({ text: 'B', disabled: () => state.busy });
     page(a, b);
     await settle();
     expect(a.element.disabled).toBe(true);
@@ -48,12 +48,12 @@ describe('Control: disabled alias and tabIndex', () => {
   });
 
   it('lets enabled win when both are given', () => {
-    const b = new Button({ text: 'B', enabled: true, disabled: true });
+    const b = new TestButton({ text: 'B', enabled: true, disabled: true });
     expect(b.enabled).toBe(true);
   });
 
   it('writes a non-default tabIndex where containers look for it', () => {
-    const b = new Button({ text: 'B', tabIndex: 3 });
+    const b = new TestButton({ text: 'B', tabIndex: 3 });
     expect(b.element.getAttribute('data-mx-tabindex')).toBe('3');
     b.tabIndex = 0;
     expect(b.element.hasAttribute('data-mx-tabindex')).toBe(false);
@@ -62,8 +62,8 @@ describe('Control: disabled alias and tabIndex', () => {
 
 describe('FocusContainer', () => {
   it('tracks the active control and treats a nested container as one control', async () => {
-    const save = new Button({ text: 'Save' });
-    const inner = new Button({ text: 'Inner' });
+    const save = new TestButton({ text: 'Save' });
+    const inner = new TestButton({ text: 'Inner' });
     const nested = new Box({ childs: [inner] });
     const box = new Box({ childs: [save, nested, <input name="plain" />] });
     page(box);
@@ -80,8 +80,8 @@ describe('FocusContainer', () => {
   });
 
   it('restoreFocus puts focus back where it was', async () => {
-    const box = new Box({ childs: [new Button({ text: 'One' }), <input name="two" />] });
-    const outside = new Button({ text: 'Outside' });
+    const box = new Box({ childs: [new TestButton({ text: 'One' }), <input name="two" />] });
+    const outside = new TestButton({ text: 'Outside' });
     page(box, outside);
     await settle();
     const two = box.element.querySelector<HTMLInputElement>('[name=two]')!;
@@ -92,7 +92,7 @@ describe('FocusContainer', () => {
   });
 
   it('restoreFocus falls back to the first control in Tab order', async () => {
-    const box = new Box({ childs: [new Button({ text: 'Second', tabIndex: 2 }), new Button({ text: 'First', tabIndex: 1 })] });
+    const box = new Box({ childs: [new TestButton({ text: 'Second', tabIndex: 2 }), new TestButton({ text: 'First', tabIndex: 1 })] });
     page(box);
     await settle();
     expect(box.restoreFocus()).toBe(true);
@@ -102,10 +102,10 @@ describe('FocusContainer', () => {
   it('orders Tab by tabIndex per level of the control tree, ties in document order', async () => {
     const group = new Panel({
       tabIndex: 1,
-      childs: [new Button({ text: 'g-b', tabIndex: 2 }), new Button({ text: 'g-a', tabIndex: 1 })],
+      childs: [new TestButton({ text: 'g-b', tabIndex: 2 }), new TestButton({ text: 'g-a', tabIndex: 1 })],
     });
     const box = new Box({
-      childs: [new Button({ text: 'last', tabIndex: 5 }), group, <input name="plain" />, new Button({ text: 'zero' })],
+      childs: [new TestButton({ text: 'last', tabIndex: 5 }), group, <input name="plain" />, new TestButton({ text: 'zero' })],
     });
     page(box);
     await settle();
@@ -114,10 +114,10 @@ describe('FocusContainer', () => {
   });
 
   it('runs Tab in that order and leaves the container after the last one', async () => {
-    const a = new Button({ text: 'a', tabIndex: 2 });
-    const b = new Button({ text: 'b', tabIndex: 1 });
+    const a = new TestButton({ text: 'a', tabIndex: 2 });
+    const b = new TestButton({ text: 'b', tabIndex: 1 });
     const box = new Box({ childs: [a, b] });
-    const after = new Button({ text: 'after' });
+    const after = new TestButton({ text: 'after' });
     page(box, after);
     await settle();
 
@@ -132,7 +132,7 @@ describe('FocusContainer', () => {
   });
 
   it('leaves Tab to the browser while no control sets a tabIndex', async () => {
-    const box = new Box({ childs: [new Button({ text: 'a' }), new Button({ text: 'b' })] });
+    const box = new Box({ childs: [new TestButton({ text: 'a' }), new TestButton({ text: 'b' })] });
     page(box);
     await settle();
     (box.element.firstElementChild as HTMLElement).focus();

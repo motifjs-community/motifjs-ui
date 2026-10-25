@@ -51,8 +51,7 @@ export class FocusContainer<TElement extends HTMLElement = HTMLElement, TProps e
 
   /**
    * Whether Tab wraps around inside this container instead of leaving it.
-   * `false` here; a modal window (an `MxForm` shown with `showDialog`)
-   * returns `true`.
+   * `false` here; a modal window returns `true`.
    */
   protected get cyclesTab(): boolean {
     return false;

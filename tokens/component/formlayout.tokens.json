@@ -1,0 +1,10 @@
+{
+  "form-layout": {
+    "$description": "FormLayout: the gaps between fields and the look of groups.",
+    "row-gap": { "$type": "dimension", "$value": "{space.4}" },
+    "column-gap": { "$type": "dimension", "$value": "{space.4}" },
+    "group-padding": { "$type": "dimension", "$value": "{space.4}" },
+    "group-radius": { "$type": "dimension", "$value": "{radius.lg}" },
+    "caption-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" }
+  }
+}

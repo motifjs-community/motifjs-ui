@@ -1,0 +1,32 @@
+{
+  "window": {
+    "$description": "MxForm: a window or a modal dialog with its title bar, content and buttons row.",
+    "radius": { "$type": "dimension", "$value": "{radius.lg}" },
+    "border-width": { "$type": "dimension", "$value": "{border.width.1}" },
+    "border-color": { "$type": "color", "$value": "{color.stroke.surface}" },
+    "background": { "$type": "color", "$value": "{color.bg.surface}" },
+    "shadow": { "$type": "shadow", "$value": "{shadow.28}" },
+    "shadow-inactive": { "$type": "shadow", "$value": "{shadow.8}" },
+    "shadow-modal": { "$type": "shadow", "$value": "{shadow.64}" },
+    "backdrop": { "$type": "color", "$value": "{color.bg.smoke}" },
+    "bar-background": { "$type": "color", "$value": "{color.bg.bar}" },
+    "bar-height": { "$type": "dimension", "$value": "{bar.height}" },
+    "bar-padding": { "$type": "dimension", "$value": "{space.3}" },
+    "bar-gap": { "$type": "dimension", "$value": "{space.2}" },
+    "bar-border-color": { "$type": "color", "$value": "{color.stroke.divider}" },
+    "title-font-size": { "$type": "dimension", "$value": "{font.size.body}" },
+    "title-font-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" },
+    "icon-size": { "$type": "dimension", "$value": "{icon.size.md}" },
+    "padding": { "$type": "dimension", "$value": "{space.5}" },
+    "footer-padding": { "$type": "dimension", "$value": "{space.4}" },
+    "footer-gap": { "$type": "dimension", "$value": "{space.2}" },
+    "min-width": { "$type": "dimension", "$value": { "value": 16, "unit": "rem" } },
+    "min-height": { "$type": "dimension", "$value": { "value": 6, "unit": "rem" } },
+    "viewport-margin": { "$type": "dimension", "$value": "{space.4}" },
+    "resize-edge": { "$type": "dimension", "$value": "{space.2}" },
+    "enter-offset": { "$type": "dimension", "$value": "{space.4}" },
+    "message-gap": { "$type": "dimension", "$value": "{space.3}" },
+    "message-icon-size": { "$type": "dimension", "$value": "{icon.size.lg}" },
+    "message-width": { "$type": "dimension", "$value": { "value": 28, "unit": "rem" } }
+  }
+}

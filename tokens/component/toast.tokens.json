@@ -1,0 +1,18 @@
+{
+  "toast": {
+    "$description": "Toast: short notifications stacked at an edge of the window.",
+    "width": { "$type": "dimension", "$value": { "value": 22, "unit": "rem" } },
+    "inset": { "$type": "dimension", "$value": "{space.4}" },
+    "gap": { "$type": "dimension", "$value": "{space.2}" },
+    "padding": { "$type": "dimension", "$value": "{space.3}" },
+    "content-gap": { "$type": "dimension", "$value": "{space.3}" },
+    "radius": { "$type": "dimension", "$value": "{radius.lg}" },
+    "border-width": { "$type": "dimension", "$value": "{border.width.1}" },
+    "icon-size": { "$type": "dimension", "$value": "{icon.size.md}" },
+    "title-font-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" },
+    "slide": { "$type": "dimension", "$value": "{space.6}" },
+    "background": { "$type": "color", "$value": "{color.bg.surface}" },
+    "border-color": { "$type": "color", "$value": "{color.stroke.surface}" },
+    "shadow": { "$type": "shadow", "$value": "{shadow.16}" }
+  }
+}

@@ -1,0 +1,47 @@
+/* Lookup: a drop-down whose list is a table of columns under a header. */
+@layer mx.components {
+  .mx-lookup__popup {
+    min-inline-size: var(--_lookup-width, var(--mx-lookup-popup-width));
+  }
+
+  .mx-lookup__header,
+  .mx-lookup__row {
+    display: grid;
+    grid-template-columns: var(--_lookup-columns, 1fr);
+    gap: var(--mx-lookup-column-gap);
+    align-items: center;
+  }
+
+  .mx-lookup__row {
+    flex: 1 1 auto;
+  }
+
+  .mx-lookup__header {
+    flex: none;
+    padding-block: var(--mx-space-1);
+    padding-inline: var(--mx-list-item-padding);
+    font-size: var(--mx-lookup-header-font-size);
+    font-weight: var(--mx-lookup-header-font-weight);
+    color: var(--mx-color-fg-secondary);
+    border-block-end: var(--mx-border-width-1) solid var(--mx-color-stroke-divider);
+  }
+
+  .mx-lookup__header[hidden] {
+    display: none;
+  }
+
+  .mx-lookup__cell {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mx-lookup__cell[data-align='center'] {
+    text-align: center;
+  }
+
+  .mx-lookup__cell[data-align='end'] {
+    text-align: end;
+  }
+}

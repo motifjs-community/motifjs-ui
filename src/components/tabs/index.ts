@@ -1,0 +1,11 @@
+export { Tabs } from './Tabs';
+export { Tab } from './Tab';
+export type { TabsProps } from './tabs-props';
+export type { TabProps } from './tab-props';
+export type { TabsPlacement } from './tabs-placement';
+export type { TabsVariant } from './tabs-variant';
+export type { TabsActivation } from './tabs-activation';
+export type { TabSelectingEventArgs } from './tab-selecting-event-args';
+export type { TabSelectionChangedEventArgs } from './tab-selection-changed-event-args';
+export type { TabCloseEventArgs } from './tab-close-event-args';
+export type { ContentFactory } from './PanelContent';

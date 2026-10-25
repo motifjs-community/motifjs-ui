@@ -1,7 +1,7 @@
 import { Component, effect, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../tests/helpers';
-import { Button } from '../components/button/Button';
+import { TestButton } from '../../tests/controls';
 import { Control } from './control';
 
 let hosts: Component[] = [];
@@ -43,7 +43,7 @@ describe('Control properties', () => {
   });
 
   it('is reactive to read: an effect follows a property set from code', async () => {
-    const b = new Button({ text: 'One' });
+    const b = new TestButton({ text: 'One' });
     const seen: string[] = [];
     const stop = effect(() => void seen.push(b.text));
     b.text = 'Two';
@@ -54,7 +54,7 @@ describe('Control properties', () => {
 
   it('follows a getter prop, and a value set from code replaces that binding', async () => {
     const state = reactive({ busy: false });
-    const b = new Button({ enabled: () => !state.busy, text: 'Save' });
+    const b = new TestButton({ enabled: () => !state.busy, text: 'Save' });
     page(b);
     await tick();
     state.busy = true;
@@ -72,8 +72,8 @@ describe('Control properties', () => {
 
   it('keeps what a ref callback did: core calls refs before subclass fields exist', async () => {
     const seen: string[] = [];
-    const b = new Button({
-      ref: (btn: Button) => {
+    const b = new TestButton({
+      ref: (btn: TestButton) => {
         btn.text = 'From ref';
         btn.bindings.watch(() => void seen.push(btn.text));
       },
@@ -87,7 +87,7 @@ describe('Control properties', () => {
   });
 
   it('visible hides and shows the control (core hide/show)', async () => {
-    const b = new Button({ text: 'Peek', visible: false });
+    const b = new TestButton({ text: 'Peek', visible: false });
     const host = page(b);
     await settle();
     expect(host.element.querySelector('button')).toBeNull();
@@ -112,7 +112,7 @@ describe('Control properties', () => {
 
 describe('Control enabled cascade', () => {
   it('disables everything inside a disabled container and restores it exactly', async () => {
-    const inner = new Button({ text: 'Inner' });
+    const inner = new TestButton({ text: 'Inner' });
     const panel = new Panel({
       childs: [
         inner,
@@ -147,7 +147,7 @@ describe('Control enabled cascade', () => {
   });
 
   it('keeps a control disabled while any covering container or its own value says so', async () => {
-    const inner = new Button({ text: 'Inner' });
+    const inner = new TestButton({ text: 'Inner' });
     const panel = new Panel({ childs: [inner] });
     page(panel);
     await settle();
@@ -219,7 +219,7 @@ describe('Control enabled cascade', () => {
 
   it('never leaves focus on <body> when the focused part gets disabled or hidden', async () => {
     const panel = new Panel({ childs: [<input name="inside" />] });
-    const next = new Button({ text: 'Next' });
+    const next = new TestButton({ text: 'Next' });
     const other = new Panel({ childs: [<input name="other" />] });
     page(panel, next, other);
     await settle();
@@ -236,7 +236,7 @@ describe('Control enabled cascade', () => {
 
 describe('Control focus', () => {
   it('focus() focuses a usable control and reports failure otherwise', async () => {
-    const b = new Button({ text: 'Go' });
+    const b = new TestButton({ text: 'Go' });
     const plain = new Panel();
     page(b, plain);
     await settle();
@@ -255,7 +255,7 @@ describe('Control focus', () => {
   });
 
   it('is focusable from code but not by Tab when tabStop is false', async () => {
-    const b = new Button({ text: 'Skip', tabStop: false });
+    const b = new TestButton({ text: 'Skip', tabStop: false });
     page(b);
     await settle();
     expect(b.element.tabIndex).toBe(-1);

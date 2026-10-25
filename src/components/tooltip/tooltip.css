@@ -1,0 +1,54 @@
+/* Tooltip: a small surface in the top layer (or above the page where popovers are missing).
+   placePopup writes its position; the gap to the target is the margin of the side it opens on. */
+@layer mx.components {
+  .mx-tooltip {
+    position: fixed;
+    inset: auto;
+    z-index: var(--mx-z-toast);
+    box-sizing: border-box;
+    inline-size: max-content;
+    max-inline-size: var(--mx-tooltip-max-width);
+    margin: 0;
+    padding-block: var(--mx-tooltip-padding-block);
+    padding-inline: var(--mx-tooltip-padding-inline);
+    overflow: visible;
+    font-size: var(--mx-tooltip-font-size);
+    font-weight: var(--mx-font-weight-regular);
+    line-height: var(--mx-font-line-caption);
+    color: var(--mx-color-fg-primary);
+    text-align: start;
+    overflow-wrap: break-word;
+    white-space: normal;
+    background: var(--mx-tooltip-background);
+    border: var(--mx-tooltip-border-width) solid var(--mx-tooltip-border-color);
+    border-radius: var(--mx-tooltip-radius);
+    box-shadow: var(--mx-tooltip-shadow);
+    animation: mx-tooltip-in var(--mx-motion-duration-fast) var(--mx-motion-easing-out);
+  }
+
+  .mx-tooltip[hidden] {
+    display: none;
+  }
+
+  .mx-tooltip[data-side='bottom'] {
+    margin-block-start: var(--mx-tooltip-offset);
+  }
+
+  .mx-tooltip[data-side='top'] {
+    margin-block-end: var(--mx-tooltip-offset);
+  }
+
+  .mx-tooltip[data-side='end'] {
+    margin-inline-start: var(--mx-tooltip-offset);
+  }
+
+  .mx-tooltip[data-side='start'] {
+    margin-inline-end: var(--mx-tooltip-offset);
+  }
+
+  @keyframes mx-tooltip-in {
+    from {
+      opacity: 0;
+    }
+  }
+}

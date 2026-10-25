@@ -1,6 +1,8 @@
 /** What the stack needs from a shown window: its element and an active flag it can flip. */
 export interface StackedWindow {
   readonly element: HTMLElement;
+  /** A modal window: while it is on top, keys reach nothing outside it. */
+  readonly modal?: boolean;
   setActive(active: boolean): void;
 }
 

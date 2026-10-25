@@ -1,0 +1,64 @@
+/* DropDown: the field shows the chosen item; the list opens on a popup below it. */
+@layer mx.components {
+  .mx-drop-down .mx-field__box {
+    cursor: default;
+  }
+
+  .mx-drop-down__display {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    align-self: stretch;
+    min-inline-size: 0;
+    outline: none;
+  }
+
+  .mx-drop-down__display:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .mx-drop-down__text {
+    display: flex;
+    align-items: center;
+    gap: var(--mx-field-gap);
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mx-drop-down__text[data-placeholder] {
+    color: var(--mx-color-fg-secondary);
+  }
+
+  .mx-drop-down__chevron {
+    color: var(--mx-color-fg-secondary);
+    transition: rotate var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-drop-down[data-open] .mx-drop-down__chevron {
+    rotate: 0.5turn;
+  }
+
+  .mx-drop-down[data-disabled] .mx-drop-down__chevron {
+    color: var(--mx-color-fg-disabled);
+  }
+
+  /* The search box stays; the list scrolls. */
+  .mx-drop-down__popup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mx-space-1);
+    overflow: hidden;
+  }
+
+  .mx-drop-down__popup > .mx-list {
+    flex: 1 1 auto;
+    min-block-size: 0;
+  }
+
+  .mx-drop-down__search {
+    flex: none;
+  }
+}

@@ -7,6 +7,9 @@
     "press-offset": { "$type": "dimension", "$value": "{control.press.offset}" },
     "font-weight": { "$type": "fontWeight", "$value": "{font.weight.medium}" },
     "gap": { "$type": "dimension", "$value": "{control.gap}" },
+    "icon-size": { "$type": "dimension", "$value": "{icon.size.md}" },
+    "arrow-padding": { "$type": "dimension", "$value": "{control.padding.sm}" },
+    "spinner-width": { "$type": "dimension", "$value": "{border.width.2}" },
     "font-size": {
       "$type": "dimension",
       "sm": { "$value": "{font.size.caption}" },

@@ -1,0 +1,252 @@
+import { effect, read, untracked, type Bind, type ComponentBase, type IBaseProp } from '@motifx/core';
+import { Control } from '../../core/control';
+import type { FieldLabelMode } from '../../parts/field/field-label-mode';
+import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
+import { ValidationGroup } from '../../parts/validation/ValidationGroup';
+import type { ValidationResult } from '../../parts/validation/validation-result';
+import { Button } from '../button/Button';
+import { CheckBox } from '../checkbox/CheckBox';
+import { ComboBox } from '../combobox/ComboBox';
+import { DateBox } from '../datebox/DateBox';
+import { DropDown } from '../dropdown/DropDown';
+import { Lookup } from '../lookup/Lookup';
+import { NumberBox } from '../numberbox/NumberBox';
+import { RadioGroup } from '../radiogroup/RadioGroup';
+import { Slider } from '../slider/Slider';
+import { Switch } from '../switch/Switch';
+import { TextArea } from '../textarea/TextArea';
+import { TextBox } from '../textbox/TextBox';
+import type { FormEditorFactory } from './form-editor-factory';
+import type { FormItem } from './form-item';
+import type { FormLayoutProps } from './form-layout-props';
+
+type Props = Record<string, unknown>;
+
+const OWN = ['data', 'items', 'columns', 'minColumnWidth', 'labelMode', 'readOnly'] as const;
+
+const PARTS = Symbol('mx.formlayout');
+
+interface Parts {
+  group: ValidationGroup;
+  made: ComponentBase[];
+  editors: Map<string, ComponentBase>;
+  stops: (() => void)[];
+}
+
+/**
+ * Lays out the fields of a data object: each item a field with its editor (chosen by name or by the
+ * type of the value), a group under a caption, a button or a component of your own. The editors are
+ * bound to the object both ways and checked together; sending the form checks them first.
+ *
+ * @example
+ * <FormLayout data={this.order} columns={2} onValidSubmit={() => this.save()} items={[
+ *   { field: 'customer', label: '&Customer', editor: 'lookup', editorProps: { dataSource: this.customers }, required: true },
+ *   { field: 'date', label: 'Date' },
+ *   { field: 'note', label: 'Note', editor: 'textarea', colSpan: 'all' },
+ *   { button: { text: 'Save', tone: 'accent', submit: true } },
+ * ]} />
+ */
+export class FormLayout<T extends object = Record<string, unknown>> extends Control<HTMLFormElement, FormLayoutProps<T>> {
+  /** The editors forms know by name; add yours: `FormLayout.editors.set('color', (p) => new ColorBox(p))`. */
+  static readonly editors = new Map<string, FormEditorFactory>([
+    ['text', (p) => new TextBox(p)],
+    ['password', (p) => new TextBox({ ...p, type: 'password' })],
+    ['email', (p) => new TextBox({ ...p, type: 'email' })],
+    ['textarea', (p) => new TextArea(p)],
+    ['number', (p) => new NumberBox(p)],
+    ['date', (p) => new DateBox(p)],
+    ['datetime', (p) => new DateBox({ ...p, type: 'datetime' })],
+    ['time', (p) => new DateBox({ ...p, type: 'time' })],
+    ['checkbox', (p) => new CheckBox(p)],
+    ['switch', (p) => new Switch(p)],
+    ['dropdown', (p) => new DropDown(p)],
+    ['combobox', (p) => new ComboBox(p)],
+    ['lookup', (p) => new Lookup(p)],
+    ['radio', (p) => new RadioGroup(p)],
+    ['slider', (p) => new Slider(p)],
+  ]);
+
+  constructor(props?: IBaseProp<FormLayoutProps<T>>) {
+    super('form', props);
+    const own = (this.props ?? {}) as FormLayoutProps<T>;
+    this.element.classList.add('mx-form-layout');
+    this.element.noValidate = true;
+    for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
+    this.observeProperty<number>('columns', (n) => this.element.style.setProperty('--_form-columns', String(Math.max(1, n || 1))));
+    this.observeProperty<string>('minColumnWidth', (width) => {
+      if (width) this.element.style.setProperty('--_form-min', width);
+      else this.element.style.removeProperty('--_form-min');
+      this.element.toggleAttribute('data-fluid', !!width);
+    });
+    this.element.addEventListener('submit', (e) => {
+      e.preventDefault();
+      void this.submit(e);
+    });
+    this.motif.on('x:built', () => {
+      // Items and data: what the form is made of.
+      const stop = effect(() => {
+        void this.getProperty('items');
+        void this.getProperty('data');
+        untracked(() => this.render());
+      });
+      this.motif.setDisposable(stop);
+    });
+    this.motif.setDisposable(() => this.clear());
+  }
+
+  get data(): T | null {
+    return this.getProperty<T | null | undefined>('data') ?? null;
+  }
+  set data(value: Bind<T | null>) {
+    this.assignProperty('data', value);
+  }
+  get items(): readonly FormItem[] {
+    return this.getProperty<readonly FormItem[] | undefined>('items') ?? [];
+  }
+  set items(value: Bind<readonly FormItem[]>) {
+    this.assignProperty('items', value);
+  }
+  get columns(): number {
+    return this.getProperty<number | undefined>('columns') ?? 1;
+  }
+  set columns(value: Bind<number>) {
+    this.assignProperty('columns', value);
+  }
+  get minColumnWidth(): string {
+    return this.getProperty<string | undefined>('minColumnWidth') ?? '';
+  }
+  set minColumnWidth(value: Bind<string>) {
+    this.assignProperty('minColumnWidth', value);
+  }
+  get labelMode(): FieldLabelMode {
+    return this.getProperty<FieldLabelMode | undefined>('labelMode') ?? 'top';
+  }
+  set labelMode(value: Bind<FieldLabelMode>) {
+    this.assignProperty('labelMode', value);
+  }
+  get readOnly(): boolean {
+    return !!this.getProperty<boolean>('readOnly');
+  }
+  set readOnly(value: Bind<boolean>) {
+    this.assignProperty('readOnly', value, Boolean);
+  }
+
+  /** The group every field of the form is checked in. */
+  get validationGroup(): ValidationGroup {
+    return this.formParts.group;
+  }
+
+  get isValid(): boolean {
+    return this.formParts.group.isValid;
+  }
+
+  /** The editor of a field. */
+  editorOf(field: string): ComponentBase | undefined {
+    return this.formParts.editors.get(field);
+  }
+
+  validate(options?: { focus?: boolean }): Promise<ValidationResult> {
+    return this.formParts.group.validate(options);
+  }
+
+  resetValidation(): void {
+    this.formParts.group.reset();
+  }
+
+  /** Checks every field, then reports the form as sent (`onValidSubmit`) or not (`onInvalidSubmit`). */
+  async submit(event: Event = new Event('submit')): Promise<boolean> {
+    const result = await this.validate();
+    if (result.valid) this.props?.onValidSubmit?.({ data: this.peekProperty<T | null>('data') ?? null, event });
+    else this.props?.onInvalidSubmit?.(result);
+    return result.valid;
+  }
+
+  private get formParts(): Parts {
+    const self = this as unknown as { [PARTS]?: Parts };
+    return (self[PARTS] ??= { group: new ValidationGroup(), made: [], editors: new Map(), stops: [] });
+  }
+
+  private clear(): void {
+    const parts = this.formParts;
+    for (const stop of parts.stops.splice(0)) stop();
+    for (const made of parts.made.splice(0)) if (!made.isDisposed) void made.dispose();
+    parts.editors.clear();
+  }
+
+  private render(): void {
+    this.clear();
+    const items = this.peekProperty<readonly FormItem[]>('items') ?? [];
+    this.element.querySelector(':scope > .mx-form-layout__grid')?.remove();
+    const grid = this.element.appendChild(document.createElement('div'));
+    grid.className = 'mx-form-layout__grid';
+    for (const item of items) this.place(item, grid);
+  }
+
+  private place(item: FormItem, host: HTMLElement): void {
+    const parts = this.formParts;
+    const cell = host.appendChild(document.createElement('div'));
+    cell.className = 'mx-form-layout__item';
+    if (item.colSpan === 'all') cell.dataset.span = 'all';
+    else if (item.colSpan && item.colSpan > 1) cell.style.setProperty('--_form-span', String(item.colSpan));
+    if (item.visible !== undefined) parts.stops.push(effect(() => (cell.hidden = read(item.visible) === false)));
+
+    if (item.items) {
+      const group = cell.appendChild(document.createElement('fieldset'));
+      group.className = 'mx-form-layout__group';
+      cell.dataset.span = item.colSpan === undefined ? 'all' : cell.dataset.span;
+      if (item.group !== undefined) {
+        const legend = group.appendChild(document.createElement('legend'));
+        legend.className = 'mx-form-layout__caption';
+        parts.stops.push(effect(() => (legend.textContent = read(item.group) ?? '')));
+      }
+      const inner = group.appendChild(document.createElement('div'));
+      inner.className = 'mx-form-layout__grid';
+      if (item.columns) inner.style.setProperty('--_form-columns', String(item.columns));
+      for (const child of item.items) this.place(child, inner);
+      return;
+    }
+    const component = item.template ? item.template() : item.button ? this.button(item) : item.field ? this.editor(item) : null;
+    if (!component) return;
+    this.controls.add(component);
+    parts.made.push(component);
+    cell.append(component.element as Node);
+    if (item.button) cell.dataset.kind = 'button';
+  }
+
+  private button(item: FormItem): ComponentBase {
+    const { submit, ...props } = item.button!;
+    return new Button({ ...props, type: submit ? 'submit' : (props.type ?? 'button') });
+  }
+
+  private editor(item: FormItem): ComponentBase {
+    const field = item.field!;
+    const value = () => (this.getProperty<T | null | undefined>('data') as Record<string, unknown> | null | undefined)?.[field];
+    const name = item.editor ?? this.editorFor(untracked(value));
+    const factory = FormLayout.editors.get(name) ?? FormLayout.editors.get('text')!;
+    const props: Props = {
+      label: item.label ?? field,
+      value,
+      onValueChanged: (e: ValueChangedEventArgs<unknown>) => {
+        const data = this.peekProperty<T | null>('data') as Record<string, unknown> | null;
+        if (e.byUser && data) data[field] = e.value;
+      },
+      validationGroup: this.formParts.group,
+      labelMode: () => this.getProperty<FieldLabelMode | undefined>('labelMode') ?? 'top',
+      readOnly: () => !!this.getProperty<boolean>('readOnly') || read(item.readOnly) === true,
+      stretch: true,
+      ...item.editorProps,
+    };
+    for (const key of ['required', 'rules', 'helpText', 'enabled'] as const) if (item[key] !== undefined) props[key] = item[key];
+    const editor = factory(props);
+    this.formParts.editors.set(field, editor);
+    return editor;
+  }
+
+  /** An editor that fits the value: text, number, check box or date. */
+  private editorFor(value: unknown): string {
+    if (typeof value === 'number') return 'number';
+    if (typeof value === 'boolean') return 'checkbox';
+    if (value instanceof Date) return 'date';
+    return 'text';
+  }
+}

@@ -1,0 +1,248 @@
+import { Component, reactive, RouterView, untracked, useNavigation } from '@motifx/core';
+import type { ThemeChoice } from '@motifx-community/design-system';
+import { Button, TextBox } from '@motifx-community/ui';
+import { GROUPS, PAGES, SECTIONS } from '../app/pages';
+import { PageOutline } from '../app/PageOutline';
+import { SiteSettings } from '../app/SiteSettings';
+import { MenuIcon, SearchIcon, SourceIcon } from './icons';
+
+const THEMES: { id: ThemeChoice; label: string }[] = [
+  { id: 'system', label: 'System' },
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
+  { id: 'high-contrast', label: 'High contrast' },
+];
+
+/** How far below the top bar a section heading may be and still count as the one being read. */
+const READING_LINE = 140;
+
+const VERSION = '0.0.0';
+
+/**
+ * The frame of the site: the top bar, the side menu (a drawer on narrow screens), the page the
+ * router shows, and on the right its sections and related pages.
+ */
+export class DocsLayout extends Component<HTMLDivElement> {
+  private readonly nav = useNavigation();
+  private readonly state = reactive({ navOpen: false, filter: '', closed: [] as string[] });
+  private menuButton: Button | null = null;
+  private main: Component<HTMLElement> | null = null;
+
+  override onConfigured(): void {
+    this.class.add('docs-shell');
+    this.bindings.watch(() => this.element.toggleAttribute('data-nav-open', this.state.navOpen));
+    let first = true;
+    this.bindings.watch(() => {
+      void this.nav.uri;
+      untracked(() => this.pageChanged(first));
+      first = false;
+    });
+  }
+
+  override onMounted(): void {
+    const onScroll = () => this.followScroll();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || !this.state.navOpen) return;
+      this.state.navOpen = false;
+      this.menuButton?.focus();
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('keydown', onKey);
+    this.motif.setDisposable(() => {
+      window.removeEventListener('scroll', onScroll);
+      document.removeEventListener('keydown', onKey);
+    });
+  }
+
+  private get settings(): SiteSettings {
+    return this.getService(SiteSettings)!;
+  }
+
+  private get outline(): PageOutline {
+    return this.getService(PageOutline)!;
+  }
+
+  private get page() {
+    return PAGES.find((p) => p.id === this.nav.meta.page);
+  }
+
+  private neighbour(step: number) {
+    const at = PAGES.findIndex((p) => p.id === this.nav.meta.page);
+    return at < 0 ? undefined : PAGES[at + step];
+  }
+
+  private pageChanged(first: boolean): void {
+    const page = this.page;
+    document.title = page && page.id !== 'home' ? `${page.title} · MotifJS UI` : 'MotifJS UI';
+    this.state.navOpen = false;
+    // A new page is read from its top: focus goes there, as after a full page load.
+    if (!first) this.main?.element.focus({ preventScroll: true });
+    requestAnimationFrame(() => this.followScroll());
+  }
+
+  /** The section being read: the last one whose heading has passed the reading line. */
+  private followScroll(): void {
+    let current = this.outline.sections[0]?.anchor ?? '';
+    for (const { anchor } of this.outline.sections) {
+      const heading = document.getElementById(anchor);
+      if (heading && heading.getBoundingClientRect().top < READING_LINE) current = anchor;
+    }
+    this.outline.current = current;
+  }
+
+  private matches(label: string): boolean {
+    const filter = this.state.filter.trim().toLocaleLowerCase();
+    return !filter || label.toLocaleLowerCase().includes(filter);
+  }
+
+  /** A group shows its pages unless closed; a filter shows every match. */
+  private groupOpen(title: string): boolean {
+    return !!this.state.filter.trim() || !this.state.closed.includes(title);
+  }
+
+  private toggleGroup(title: string): void {
+    const closed = this.state.closed;
+    const at = closed.indexOf(title);
+    if (at >= 0) closed.splice(at, 1);
+    else closed.push(title);
+  }
+
+  override view() {
+    const s = this.state;
+    const settings = this.settings;
+    const outline = this.outline;
+    return (
+      <>
+        <a class="docs-skip" href="#content">
+          Skip to content
+        </a>
+        <header class="docs-topbar">
+          <Button
+            class="docs-menu-toggle"
+            variant="ghost"
+            icon={() => <MenuIcon />}
+            hint="Menu"
+            aria-controls="docs-sidebar"
+            aria-expanded={() => s.navOpen}
+            onclick={() => (s.navOpen = !s.navOpen)}
+            ref={(b: Button) => (this.menuButton = b)}
+          />
+          <a class="docs-brand" rel="router" href="/">
+            <img src="/favicon.svg" alt="" />
+            <span class="docs-brand__name">
+              MotifJS <strong>UI</strong>
+            </span>
+          </a>
+          <nav class="docs-topnav" aria-label="Site">
+            {SECTIONS.map((section) => (
+              <a key={section.title} rel="router" href={section.path} aria-current={() => (this.page?.section === section.title ? 'true' : false)}>
+                {section.title}
+              </a>
+            ))}
+          </nav>
+          <div class="docs-topbar__tools">
+            <Button
+              text="Theme"
+              size="sm"
+              variant="ghost"
+              menu={THEMES.map((t) => ({ text: t.label, checked: () => settings.theme === t.id, click: () => (settings.theme = t.id) }))}
+            />
+            <Button text="Compact" size="sm" variant="ghost" toggle x-model={() => settings.compact} />
+            <Button text="RTL" size="sm" variant="ghost" toggle x-model={() => settings.rtl} />
+            <a class="docs-topbar__source" href="https://github.com/motifjs-community/motifjs-ui" aria-label="Source on GitHub">
+              <SourceIcon />
+            </a>
+          </div>
+        </header>
+
+        <div class="docs-scrim" onclick={() => (s.navOpen = false)} />
+        <nav id="docs-sidebar" class="docs-sidebar" aria-label="Documentation">
+          <TextBox
+            class="docs-filter"
+            type="search"
+            label="Search pages"
+            labelMode="hidden"
+            placeholder="Search pages"
+            variant="underline"
+            icon={() => <SearchIcon />}
+            clearButton
+            stretch
+            x-model={() => s.filter}
+          />
+          {GROUPS.map((group) => (
+            <div key={group.title} class="docs-sidebar__group" x-wait={() => !group.pages.some((p) => this.matches(p.label))}>
+              <button type="button" class="docs-sidebar__title" aria-expanded={() => this.groupOpen(group.title)} onclick={() => this.toggleGroup(group.title)}>
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                {group.title}
+              </button>
+              <ul x-wait={() => !this.groupOpen(group.title)}>
+                {group.pages.map((p) => (
+                  <li key={p.id} x-wait={() => !this.matches(p.label)}>
+                    <a rel="router" href={p.path} aria-current={() => (this.nav.meta.page === p.id ? 'page' : false)}>
+                      {p.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          <p class="docs-sidebar__empty" x-wait={() => PAGES.some((p) => this.matches(p.label))}>
+            No page matches.
+          </p>
+        </nav>
+
+        <main id="content" class="docs-main" tabindex="-1" ref={(c: Component<HTMLElement>) => (this.main = c)}>
+          <header class="docs-pagehead">
+            <h1>{() => this.page?.title ?? 'Page not found'}</h1>
+            <span class="docs-pagehead__tag">{() => this.page?.group ?? ''}</span>
+            <span class="docs-pagehead__version">@motifx-community/ui {VERSION}</span>
+          </header>
+          <div class="docs-body">
+            <article class="docs-article">
+              <RouterView />
+              <nav class="docs-pager" aria-label="Previous and next page">
+                <a class="docs-pager__link" rel="router prev" href={() => this.neighbour(-1)?.path ?? '/'} x-wait={() => !this.neighbour(-1)}>
+                  <small>Previous</small>
+                  <span>{() => this.neighbour(-1)?.label ?? ''}</span>
+                </a>
+                <span x-wait={() => !!this.neighbour(-1)} />
+                <a class="docs-pager__link docs-pager__link--next" rel="router next" href={() => this.neighbour(1)?.path ?? '/'} x-wait={() => !this.neighbour(1)}>
+                  <small>Next</small>
+                  <span>{() => this.neighbour(1)?.label ?? ''}</span>
+                </a>
+              </nav>
+            </article>
+            <div class="docs-rail">
+              <nav aria-label="On this page" x-wait={() => !outline.sections.length}>
+                <p class="docs-rail__title">On this page</p>
+                <ul class="docs-rail__sections">
+                  {outline.sections.map((entry) => (
+                    <li key={entry.anchor}>
+                      <a href={`#${entry.anchor}`} aria-current={() => (outline.current === entry.anchor ? 'location' : false)}>
+                        {entry.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+              <nav aria-label="Related pages" x-wait={() => !this.page?.related.length}>
+                <p class="docs-rail__title">Related pages</p>
+                <ul class="docs-rail__related">
+                  {(this.page?.related ?? []).map((id) => PAGES.find((p) => p.id === id)!).map((p) => (
+                    <li key={p.id}>
+                      <a rel="router" href={p.path}>
+                        {p.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+}

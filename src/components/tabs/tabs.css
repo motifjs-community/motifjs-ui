@@ -1,0 +1,354 @@
+/* Tabs. The look binds to data-placement / data-variant / data-size on the root and to the
+   tab's own state (aria-selected, aria-disabled). The strip is a scroll box; a tab's focus
+   ring is drawn inside it, so the box does not clip it. */
+@layer mx.components {
+  .mx-tabs {
+    display: flex;
+    flex-direction: column;
+    inline-size: 100%;
+    min-inline-size: 0;
+    color: var(--mx-color-fg-primary);
+    --_divider: var(--mx-tabs-divider-width) solid var(--mx-color-stroke-divider);
+  }
+
+  .mx-tabs[data-placement='bottom'] {
+    flex-direction: column-reverse;
+  }
+
+  .mx-tabs[data-placement='start'] {
+    flex-direction: row;
+  }
+
+  .mx-tabs[data-placement='end'] {
+    flex-direction: row-reverse;
+  }
+
+  .mx-tabs[data-size='sm'] {
+    --_height: var(--mx-tabs-height-sm);
+    --_padding: var(--mx-tabs-padding-sm);
+    --_font-size: var(--mx-tabs-font-size-sm);
+    --_line: var(--mx-font-line-caption);
+  }
+
+  .mx-tabs[data-size='md'] {
+    --_height: var(--mx-tabs-height-md);
+    --_padding: var(--mx-tabs-padding-md);
+    --_font-size: var(--mx-tabs-font-size-md);
+    --_line: var(--mx-font-line-body);
+  }
+
+  .mx-tabs[data-size='lg'] {
+    --_height: var(--mx-tabs-height-lg);
+    --_padding: var(--mx-tabs-padding-lg);
+    --_font-size: var(--mx-tabs-font-size-lg);
+    --_line: var(--mx-font-line-body-large);
+  }
+
+  /* The strip. */
+
+  .mx-tabs__strip {
+    display: flex;
+    flex: none;
+    align-items: stretch;
+    min-inline-size: 0;
+  }
+
+  .mx-tabs:is([data-placement='start'], [data-placement='end']) > .mx-tabs__strip {
+    flex-direction: column;
+    inline-size: var(--mx-tabs-vertical-width);
+  }
+
+  .mx-tabs__list {
+    display: flex;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    min-block-size: 0;
+    overflow: auto;
+    scrollbar-width: thin;
+  }
+
+  .mx-tabs[data-scroll-buttons] .mx-tabs__list {
+    scrollbar-width: none;
+  }
+
+  .mx-tabs:is([data-placement='start'], [data-placement='end']) .mx-tabs__list {
+    flex-direction: column;
+  }
+
+  .mx-tabs__scroll {
+    display: none;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: var(--mx-tabs-scroll-size);
+    min-block-size: var(--mx-tabs-scroll-size);
+    color: var(--mx-color-fg-secondary);
+    border-radius: var(--mx-tabs-radius);
+    cursor: default;
+    user-select: none;
+  }
+
+  .mx-tabs[data-overflow] .mx-tabs__scroll {
+    display: flex;
+  }
+
+  .mx-tabs__scroll:hover:not([data-end]) {
+    color: var(--mx-color-fg-primary);
+    background: var(--mx-color-fill-subtle-secondary);
+  }
+
+  .mx-tabs__scroll[data-end] {
+    color: var(--mx-color-fg-disabled);
+  }
+
+  /* The glyph is a down arrow: turned to point along the strip. */
+  .mx-tabs__scroll[data-direction='back'] > svg {
+    rotate: 90deg;
+  }
+
+  .mx-tabs__scroll[data-direction='forward'] > svg {
+    rotate: -90deg;
+  }
+
+  .mx-tabs__scroll[data-direction='back']:dir(rtl) > svg {
+    rotate: -90deg;
+  }
+
+  .mx-tabs__scroll[data-direction='forward']:dir(rtl) > svg {
+    rotate: 90deg;
+  }
+
+  .mx-tabs:is([data-placement='start'], [data-placement='end']) .mx-tabs__scroll[data-direction='back'] > svg {
+    rotate: 180deg;
+  }
+
+  .mx-tabs:is([data-placement='start'], [data-placement='end']) .mx-tabs__scroll[data-direction='forward'] > svg {
+    rotate: none;
+  }
+
+  /* A tab. */
+
+  .mx-tabs__tab {
+    appearance: none;
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: var(--mx-tabs-gap);
+    min-block-size: var(--_height);
+    margin: 0;
+    padding-block: 0;
+    padding-inline: var(--_padding);
+    font: inherit;
+    font-size: var(--_font-size);
+    font-weight: var(--mx-tabs-font-weight);
+    line-height: var(--_line);
+    white-space: nowrap;
+    color: var(--mx-color-fg-secondary);
+    background: transparent;
+    border: 0;
+    border-radius: var(--mx-tabs-radius);
+    cursor: default;
+    user-select: none;
+    transition:
+      background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-tabs__tab:hover:not([aria-selected='true'], :disabled, [aria-disabled='true']) {
+    color: var(--mx-color-fg-primary);
+    background: var(--mx-color-fill-subtle-secondary);
+  }
+
+  .mx-tabs__tab[aria-selected='true'] {
+    color: var(--mx-color-fg-primary);
+  }
+
+  .mx-tabs__tab:is(:disabled, [aria-disabled='true']) {
+    color: var(--mx-color-fg-disabled);
+  }
+
+  .mx-tabs__tab:focus-visible {
+    outline-offset: calc(var(--mx-focus-ring-width) * -1);
+    box-shadow: inset 0 0 0 calc(var(--mx-focus-ring-width) + var(--mx-focus-ring-offset)) var(--mx-focus-ring-inner);
+  }
+
+  .mx-tabs[data-stretch]:is([data-placement='top'], [data-placement='bottom']) .mx-tabs__tab {
+    flex: 1 0 auto;
+  }
+
+  .mx-tabs:is([data-placement='start'], [data-placement='end']) .mx-tabs__tab {
+    justify-content: flex-start;
+    text-align: start;
+  }
+
+  .mx-tabs__label {
+    min-inline-size: 0;
+  }
+
+  .mx-tabs__icon {
+    display: inline-flex;
+    flex: none;
+    inline-size: var(--mx-tabs-icon-size);
+    block-size: var(--mx-tabs-icon-size);
+  }
+
+  .mx-tabs__icon > :is(img, svg) {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .mx-tabs__badge {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: var(--mx-tabs-badge-height);
+    block-size: var(--mx-tabs-badge-height);
+    padding-inline: var(--mx-tabs-badge-padding);
+    font-size: var(--mx-tabs-badge-font-size);
+    line-height: 1;
+    color: var(--mx-color-fg-primary);
+    background: var(--mx-color-fill-subtle-tertiary);
+    border-radius: var(--mx-radius-full);
+  }
+
+  .mx-tabs__close {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--mx-tabs-close-size);
+    block-size: var(--mx-tabs-close-size);
+    margin-inline-end: calc(var(--_padding) / -2);
+    color: var(--mx-color-fg-secondary);
+    border-radius: var(--mx-tabs-close-radius);
+  }
+
+  .mx-tabs__close:hover {
+    color: var(--mx-color-fg-primary);
+    background: var(--mx-color-fill-subtle-tertiary);
+  }
+
+  .mx-tabs__tab:is(:disabled, [aria-disabled='true']) .mx-tabs__close {
+    color: inherit;
+    background: transparent;
+  }
+
+  /* Line: a divider along the panel and a bar on the selected tab. */
+
+  .mx-tabs[data-variant='line'] .mx-tabs__tab {
+    border-radius: 0;
+  }
+
+  .mx-tabs[data-variant='line'][data-placement='top'] > .mx-tabs__strip {
+    border-block-end: var(--_divider);
+  }
+
+  .mx-tabs[data-variant='line'][data-placement='bottom'] > .mx-tabs__strip {
+    border-block-start: var(--_divider);
+  }
+
+  .mx-tabs[data-variant='line'][data-placement='start'] > .mx-tabs__strip {
+    border-inline-end: var(--_divider);
+  }
+
+  .mx-tabs[data-variant='line'][data-placement='end'] > .mx-tabs__strip {
+    border-inline-start: var(--_divider);
+  }
+
+  .mx-tabs[data-variant='line'] .mx-tabs__tab::after {
+    content: '';
+    position: absolute;
+    inset-inline: var(--_padding);
+    inset-block-end: 0;
+    block-size: var(--mx-tabs-indicator-width);
+    background: transparent;
+    border-radius: var(--mx-radius-full);
+    transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-tabs[data-variant='line'][data-placement='bottom'] .mx-tabs__tab::after {
+    inset-block: 0 auto;
+  }
+
+  .mx-tabs[data-variant='line']:is([data-placement='start'], [data-placement='end']) .mx-tabs__tab::after {
+    inset-block: var(--mx-tabs-strip-padding);
+    inset-inline: auto 0;
+    inline-size: var(--mx-tabs-indicator-width);
+    block-size: auto;
+  }
+
+  .mx-tabs[data-variant='line'][data-placement='end'] .mx-tabs__tab::after {
+    inset-inline: 0 auto;
+  }
+
+  .mx-tabs[data-variant='line'] .mx-tabs__tab[aria-selected='true']::after {
+    background: var(--mx-color-accent-solid);
+  }
+
+  .mx-tabs[data-variant='line'] .mx-tabs__tab[aria-selected='true']:is(:disabled, [aria-disabled='true'])::after {
+    background: var(--mx-color-fg-disabled);
+  }
+
+  /* Pill: the tabs sit on a tray, the selected one is a raised control. */
+
+  .mx-tabs[data-variant='pill'] > .mx-tabs__strip {
+    background: var(--mx-color-fill-subtle-secondary);
+    border-radius: var(--mx-tabs-radius);
+  }
+
+  .mx-tabs[data-variant='pill']:not([data-stretch]):is([data-placement='top'], [data-placement='bottom']) > .mx-tabs__strip {
+    align-self: flex-start;
+    max-inline-size: 100%;
+  }
+
+  .mx-tabs[data-variant='pill'] .mx-tabs__list {
+    gap: var(--mx-tabs-tab-gap);
+    padding: var(--mx-tabs-strip-padding);
+  }
+
+  .mx-tabs[data-variant='pill'] .mx-tabs__tab:hover:not([aria-selected='true'], :disabled, [aria-disabled='true']) {
+    background: var(--mx-color-fill-subtle-tertiary);
+  }
+
+  .mx-tabs[data-variant='pill'] .mx-tabs__tab[aria-selected='true'] {
+    background: var(--mx-color-fill-control-default);
+    box-shadow:
+      inset 0 0 0 var(--mx-tabs-divider-width) var(--mx-color-stroke-control-default),
+      inset 0 calc(var(--mx-control-edge-width) * -1) 0 var(--mx-color-stroke-control-edge);
+  }
+
+  .mx-tabs[data-variant='pill'] .mx-tabs__tab[aria-selected='true']:focus-visible {
+    box-shadow: inset 0 0 0 calc(var(--mx-focus-ring-width) + var(--mx-focus-ring-offset)) var(--mx-focus-ring-inner);
+  }
+
+  .mx-tabs[data-variant='pill'] .mx-tabs__tab[aria-selected='true'] .mx-tabs__badge {
+    color: var(--mx-color-accent-on-solid);
+    background: var(--mx-color-accent-solid);
+  }
+
+  /* Panels. */
+
+  .mx-tabs__panels {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  .mx-tabs__panel {
+    padding: var(--mx-tabs-panel-padding);
+  }
+
+  .mx-tabs[data-variant='pill']:is([data-placement='top'], [data-placement='bottom']) .mx-tabs__panel {
+    padding-inline: 0;
+  }
+
+  .mx-tabs__panel > :first-child {
+    margin-block-start: 0;
+  }
+
+  .mx-tabs__panel > :last-child {
+    margin-block-end: 0;
+  }
+}

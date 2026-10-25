@@ -1,0 +1,72 @@
+/* Toolbar: a row (or a column) of controls on the bar color. Items that left for the "more" menu
+   and the "more" button while it is not needed are out of the layout; separators run across the
+   toolbar. */
+@layer mx.components {
+  .mx-toolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--mx-toolbar-gap);
+    box-sizing: border-box;
+    min-inline-size: 0;
+    min-block-size: var(--mx-toolbar-height);
+    padding: var(--mx-toolbar-padding);
+    background: var(--mx-toolbar-background);
+    border-radius: var(--mx-toolbar-radius);
+  }
+
+  .mx-toolbar[data-orientation='vertical'] {
+    flex-direction: column;
+    align-items: stretch;
+    inline-size: max-content;
+    min-block-size: 0;
+  }
+
+  .mx-toolbar[data-overflow='menu'] {
+    overflow: hidden;
+  }
+
+  .mx-toolbar[data-overflow='wrap'] {
+    flex-wrap: wrap;
+  }
+
+  .mx-toolbar[data-overflow='scroll'] {
+    overflow: auto;
+    scrollbar-width: thin;
+  }
+
+  .mx-toolbar > :is([data-overflowed], [data-idle]) {
+    display: none;
+  }
+
+  .mx-toolbar > * {
+    flex: none;
+  }
+
+  .mx-toolbar > .mx-toolbar__more {
+    margin-inline-start: auto;
+  }
+
+  .mx-toolbar[data-orientation='vertical'] > .mx-toolbar__more {
+    margin-inline-start: 0;
+    margin-block-start: auto;
+  }
+
+  .mx-toolbar__more .mx-button__chevron {
+    display: none;
+  }
+
+  .mx-toolbar__separator {
+    align-self: stretch;
+    inline-size: var(--mx-toolbar-separator-width);
+    margin-block: var(--mx-toolbar-separator-inset);
+    background: var(--mx-toolbar-separator-color);
+  }
+
+  .mx-toolbar[data-orientation='vertical'] > .mx-toolbar__separator {
+    inline-size: auto;
+    block-size: var(--mx-toolbar-separator-width);
+    margin-block: 0;
+    margin-inline: var(--mx-toolbar-separator-inset);
+  }
+}

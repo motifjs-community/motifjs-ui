@@ -1,0 +1,30 @@
+{
+  "accordion": {
+    "$description": "Accordion: headers that open and close their sections, sized by the density tokens.",
+    "radius": { "$type": "dimension", "$value": "{radius.lg}" },
+    "border-width": { "$type": "dimension", "$value": "{border.width.1}" },
+    "gap": { "$type": "dimension", "$value": "{control.gap}" },
+    "card-gap": { "$type": "dimension", "$value": "{space.2}" },
+    "font-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" },
+    "icon-size": { "$type": "dimension", "$value": "{icon.size.md}" },
+    "content-padding": { "$type": "dimension", "$value": "{space.4}" },
+    "font-size": {
+      "$type": "dimension",
+      "sm": { "$value": "{font.size.caption}" },
+      "md": { "$value": "{font.size.body}" },
+      "lg": { "$value": "{font.size.body-large}" }
+    },
+    "height": {
+      "$type": "dimension",
+      "sm": { "$value": "{control.height.sm}" },
+      "md": { "$value": "{control.height.md}" },
+      "lg": { "$value": "{control.height.lg}" }
+    },
+    "padding": {
+      "$type": "dimension",
+      "sm": { "$value": "{control.padding.sm}" },
+      "md": { "$value": "{control.padding.md}" },
+      "lg": { "$value": "{control.padding.lg}" }
+    }
+  }
+}

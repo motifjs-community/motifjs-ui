@@ -1,14 +1,14 @@
-import { Component, reactive, type ComponentBase } from '@motifx/core';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { Component, effect, reactive } from '@motifx/core';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import type { CloseReason, FormResult } from '../../core/form-result';
-import { uiLocale, enStrings, trStrings } from '../../core/locale';
-import { tabbableIn } from '../../core/focus';
+import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
-import { MxForm, type FormClosedEventArgs, type FormClosingEventArgs } from './MxForm';
+import { Button } from '../button/Button';
+import { TextBox } from '../textbox/TextBox';
+import { confirm } from './confirm';
+import { messageBox } from './message-box';
+import { MxForm } from './MxForm';
 
-// jsdom has HTMLDialogElement but none of its methods; the real top layer,
-// inert page and Tab trapping are checked in the browser smoke test.
 beforeAll(() => {
   const proto = HTMLDialogElement.prototype as HTMLDialogElement & Record<string, unknown>;
   proto.show = function (this: HTMLDialogElement) {
@@ -16,7 +16,6 @@ beforeAll(() => {
   };
   proto.showModal = function (this: HTMLDialogElement) {
     this.setAttribute('open', '');
-    this.setAttribute('data-test-modal', '');
   };
   proto.close = function (this: HTMLDialogElement) {
     this.removeAttribute('open');
@@ -26,530 +25,535 @@ beforeAll(() => {
 let hosts: Component[] = [];
 
 afterEach(async () => {
+  uiLocale.strings = enStrings;
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
+  while (windowStack.top()) windowStack.remove(windowStack.top()!);
   document.body.innerHTML = '';
-  uiLocale.set(enStrings);
 });
 
-/** A page-like host mounted in the document. */
-function page(...children: ComponentBase[]) {
+function page(...children: Parameters<typeof mountHost>) {
   const host = mountHost(...children);
   hosts.push(host);
   return host;
 }
 
-/** Lets mount observers and reactive flushes run. */
 async function settle() {
   for (let i = 0; i < 5; i++) await tick();
   await new Promise((r) => setTimeout(r, 0));
+  for (let i = 0; i < 5; i++) await tick();
 }
 
-class CustomerForm extends MxForm {
-  override view() {
-    return (
-      <>
-        <input name="customer" autofocus />
-        <footer>
-          <button type="button" data-result="cancel">
-            Cancel
-          </button>
-          <button type="button" data-result="ok">
-            Save
-          </button>
-        </footer>
-      </>
-    );
-  }
+function press(key: string, init: KeyboardEventInit = {}, target = document.activeElement as HTMLElement) {
+  const e = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
+  target.dispatchEvent(e);
+  return e.defaultPrevented;
 }
 
-const q = <T extends Element = HTMLElement>(root: ParentNode, sel: string) => root.querySelector<T>(sel)!;
+const tools = (f: MxForm) => Array.from(f.element.querySelectorAll<HTMLButtonElement>('.mx-form__tools button'));
+const closeButton = (f: MxForm) => f.element.querySelector<HTMLButtonElement>('.mx-form__close')!;
+const content = (f: MxForm) => f.element.querySelector<HTMLElement>('.mx-form__content')!;
 
-describe('MxForm content', () => {
-  it('a subclass view() fills the content area and the frame stays', async () => {
-    const form = new CustomerForm({ text: 'Customer' });
-    const host = page(form);
-    await settle();
-    const el = form.element;
-    expect(el.classList.contains('mx-form')).toBe(true);
-    expect(q(el, '.mx-form__title').textContent).toBe('Customer');
-    expect(q(el, '.mx-form__body input[name="customer"]')).toBeTruthy();
-    expect(el.querySelector('.mx-form__titlebar input')).toBeNull();
-    // Embedded in a page it is a labelled region.
-    expect(el.getAttribute('data-host')).toBe('embedded');
-    expect(el.getAttribute('role')).toBe('region');
-    expect(el.getAttribute('aria-labelledby')).toBe(q(el, '.mx-form__title').id);
-    expect(host.element.contains(el)).toBe(true);
-  });
-
-  it('takes content from the content prop or from JSX children', async () => {
-    const byProp = new MxForm({ text: 'A', content: () => <p class="from-prop">prop</p> });
-    let byChildren!: MxForm;
-    page(
-      byProp,
-      <MxForm text="B" ref={(f: MxForm) => (byChildren = f)}>
-        <p class="from-children">children</p>
-      </MxForm>,
-    );
-    await settle();
-    expect(q(byProp.element, '.mx-form__body .from-prop').textContent).toBe('prop');
-    expect(q(byChildren.element, '.mx-form__body .from-children').textContent).toBe('children');
-  });
-
-  it('shows caption buttons by option, labelled from the locale and live on language change', async () => {
-    const form = new MxForm({ text: 'X', showMaximize: true });
-    page(form);
-    await settle();
-    const close = q(form.element, '[data-action="close"]');
-    expect(close.getAttribute('aria-label')).toBe('Close');
-    expect(form.element.querySelector('[data-action="minimize"]')).toBeNull();
-    const max = q(form.element, '[data-action="maximize"]');
-    uiLocale.set(trStrings);
-    await settle();
-    expect(close.getAttribute('aria-label')).toBe('Kapat');
-    max.click();
-    await settle();
-    expect(form.windowState).toBe('maximized');
-    expect(form.element.getAttribute('data-window-state')).toBe('maximized');
-    expect(max.getAttribute('aria-label')).toBe(trStrings.restore);
-  });
-});
-
-describe('MxForm.show / showDialog', () => {
-  it('show(host) adds a modeless window to the host and labels it by the caption', async () => {
+describe('MxForm', () => {
+  it('shows modeless from code, in its host, named by its title', async () => {
     const host = page();
-    const form = new CustomerForm({ text: 'Customer' }).show(host);
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+    const log: string[] = [];
+    const form = new MxForm({ title: '&Settings', content: new TextBox({ label: 'Name' }) });
+    form.onLoaded(() => log.push('load'));
+    form.onShown(() => log.push('shown'));
+    form.show(host);
     await settle();
-    const win = q<HTMLDialogElement>(host.element, 'dialog.mx-form-window');
-    expect(win.hasAttribute('open')).toBe(true);
-    expect(win.hasAttribute('data-test-modal')).toBe(false);
-    expect(win.contains(form.element)).toBe(true);
-    expect(win.getAttribute('aria-labelledby')).toBe(form.titleId);
-    expect(form.element.getAttribute('role')).toBeNull();
-    expect(form.isOpen).toBe(true);
-    expect(form.isActive).toBe(true);
-    await form.close();
+    expect(form.parent).toBe(host);
+    expect(form.element.tagName).toBe('DIALOG');
+    expect(form.element.hasAttribute('open')).toBe(true);
+    expect(form.element.getAttribute('role')).toBe('dialog');
+    expect(form.element.hasAttribute('aria-modal')).toBe(false);
+    const title = form.element.querySelector('.mx-form__title')!;
+    expect(title.textContent).toBe('Settings');
+    expect(form.element.getAttribute('aria-labelledby')).toBe(title.id);
+    expect(form.isOpen && !form.isModal && form.isActive).toBe(true);
+    expect(windowStack.top()?.element).toBe(form.element);
+    expect(windowStack.top()?.modal).toBe(false);
+    expect(log).toEqual(['load', 'shown']);
+    expect(document.activeElement).toBe(content(form).querySelector('input'));
   });
 
-  it('showDialog resolves with the result of the clicked result button and the form dies', async () => {
+  it('shows modal with showDialog, resolves with the result, disposes itself and gives focus back', async () => {
     const host = page();
-    const form = new CustomerForm({ text: 'Customer' });
-    const result = form.showDialog(host);
+    const opener = new Button({ text: 'Open' });
+    host.controls.add(opener);
+    opener.focus();
+    const closing = vi.fn();
+    const closed = vi.fn();
+    const form = new MxForm({ title: 'Delete', onClosing: closing, onClosed: closed });
+    const done = form.showDialog(host);
     await settle();
-    const win = q(host.element, 'dialog.mx-form-window');
-    expect(win.hasAttribute('data-test-modal')).toBe(true);
-    q(form.element, '[data-result="ok"]').click();
-    expect(await result).toBe('ok');
+    expect(form.element.getAttribute('aria-modal')).toBe('true');
+    expect(form.element.hasAttribute('data-modal')).toBe(true);
+    expect(windowStack.top()?.modal).toBe(true);
+    expect(form.close('ok')).toBe(true);
+    expect(await done).toBe('ok');
+    expect(closing.mock.calls[0][0]).toMatchObject({ result: 'ok', reason: 'code' });
+    expect(closed.mock.calls[0][0]).toMatchObject({ result: 'ok', reason: 'code' });
     await settle();
     expect(form.isDisposed).toBe(true);
-    expect(host.element.querySelector('dialog')).toBeNull();
+    expect(host.controls.items).not.toContain(form);
     expect(windowStack.size).toBe(0);
-  });
-
-  it('onClosing can cancel (also async), and onClosed reports the result', async () => {
-    const host = page();
-    let allow = false;
-    const closed: FormClosedEventArgs[] = [];
-    const form = new CustomerForm({
-      text: 'Customer',
-      onClosing: async (e: FormClosingEventArgs) => {
-        await tick();
-        if (!allow) e.cancel = true;
-      },
-      onClosed: (e: FormClosedEventArgs) => closed.push(e),
-    });
-    const result = form.showDialog(host);
-    await settle();
-    expect(await form.close('ok')).toBe(false);
-    expect(form.isOpen).toBe(true);
-    allow = true;
-    expect(await form.close('yes')).toBe(true);
-    expect(await result).toBe('yes');
-    expect(closed).toHaveLength(1);
-    expect(closed[0].reason).toBe('code');
-  });
-
-  it('dies with disposeRef while open, resolving none with reason owner', async () => {
-    const host = page();
-    const owner = new Component<HTMLDivElement>('div');
-    host.controls.add(owner);
-    const reasons: string[] = [];
-    const form = new CustomerForm({ onClosed: (e: FormClosedEventArgs) => reasons.push(e.reason) });
-    const result = form.showDialog(host, owner);
-    await settle();
-    await owner.dispose();
-    expect(await result).toBe('none');
-    await settle();
-    expect(reasons).toEqual(['owner']);
-    expect(form.isDisposed).toBe(true);
-    expect(host.element.querySelector('dialog')).toBeNull();
-  });
-
-  it('dies with its host when no disposeRef is given', async () => {
-    const outer = page();
-    const host = new Component<HTMLDivElement>('div');
-    outer.controls.add(host);
-    const form = new CustomerForm();
-    const result = form.showDialog(host);
-    await settle();
-    await host.dispose();
-    expect(await result).toBe('none');
-    expect(form.isDisposed).toBe(true);
-  });
-
-  it('after a normal close the disposeRef listener is gone (no leak, no late close)', async () => {
-    const host = page();
-    const owner = new Component<HTMLDivElement>('div');
-    host.controls.add(owner);
-    // Record what the form subscribes on the owner and what it removes again.
-    const subscribed: unknown[] = [];
-    const removed: unknown[] = [];
-    const on = owner.motif.on.bind(owner.motif);
-    const off = owner.motif.off.bind(owner.motif);
-    owner.motif.on = ((event: string, cb: () => void, dom?: boolean) => {
-      if (event === 'x:disposing') subscribed.push(cb);
-      return on(event, cb, dom);
-    }) as typeof owner.motif.on;
-    owner.motif.off = ((event: string, cb: () => void) => {
-      if (event === 'x:disposing') removed.push(cb);
-      return off(event, cb);
-    }) as typeof owner.motif.off;
-
-    const closed: string[] = [];
-    const form = new CustomerForm({ onClosed: (e: FormClosedEventArgs) => closed.push(e.reason) });
-    const result = form.showDialog(host, owner);
-    await settle();
-    expect(subscribed).toHaveLength(1);
-    q(form.element, '[data-result="cancel"]').click();
-    expect(await result).toBe('cancel');
-    expect(removed).toEqual(subscribed);
-    await owner.dispose();
-    expect(closed).toEqual(['code']);
-  });
-
-  it('nested dialogs stack; closing the inner one leaves the outer one active', async () => {
-    const host = page();
-    const outer = new CustomerForm({ text: 'Outer' });
-    const outerResult = outer.showDialog(host);
-    await settle();
-    const inner = new CustomerForm({ text: 'Inner' });
-    const innerResult = inner.showDialog(outer);
-    await settle();
-    expect(windowStack.size).toBe(2);
-    expect(inner.isActive).toBe(true);
-    expect(outer.isActive).toBe(false);
-    expect(outer.element.contains(inner.element)).toBe(true);
-    // Enter inside the inner form must not reach the outer form's accept button.
-    let outerAccepted = false;
-    const outerAccept = (<button type="button" onclick={() => (outerAccepted = true)} />) as Component;
-    (outer.props as { defaultButton?: unknown }).defaultButton = outerAccept;
-    q(inner.element, 'input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-    expect(outerAccepted).toBe(false);
-    q(inner.element, '[data-result="ok"]').click();
-    expect(await innerResult).toBe('ok');
-    expect(outer.isOpen).toBe(true);
-    expect(outer.isActive).toBe(true);
-    // Disposing the outer one takes nothing else down with it now.
-    q(outer.element, ':scope > .mx-form__body [data-result="cancel"]').click();
-    expect(await outerResult).toBe('cancel');
-    expect(windowStack.size).toBe(0);
-  });
-
-  it('a form shown inside a dialog dies with that dialog', async () => {
-    const host = page();
-    const outer = new CustomerForm({ text: 'Outer' });
-    const outerResult = outer.showDialog(host);
-    await settle();
-    const tool = new CustomerForm({ text: 'Tool' }).show(outer);
-    await settle();
-    void outer.close('ok');
-    expect(await outerResult).toBe('ok');
-    await settle();
-    expect(tool.isDisposed).toBe(true);
-    expect(windowStack.size).toBe(0);
-  });
-});
-
-describe('MxForm keyboard and focus', () => {
-  it('focuses [autofocus] on open and returns focus to the opener on close', async () => {
-    const opener = (<button type="button">Open</button>) as Component<HTMLButtonElement>;
-    const host = page(opener);
-    await settle();
-    opener.element.focus();
-    const form = new CustomerForm();
-    const result = form.showDialog(host);
-    await settle();
-    expect(document.activeElement).toBe(q(form.element, 'input[name="customer"]'));
-    q(form.element, '[data-result="ok"]').click();
-    await result;
     expect(document.activeElement).toBe(opener.element);
   });
 
-  it('without a cancelButton, Escape closes a modal form (like a native modal dialog) unless closeOnEscape is false', async () => {
+  it('result: set before close, read after', async () => {
     const host = page();
-    const escape = (f: MxForm) =>
-      q(f.element, 'input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
-
-    const modal = new CustomerForm();
-    const result = modal.showDialog(host);
+    const form = new MxForm({ title: 'Pick' });
+    const done = form.showDialog(host);
     await settle();
-    escape(modal);
-    expect(await result).toBe('cancel');
-
-    const kept = new CustomerForm({ closeOnEscape: false });
-    void kept.showDialog(host);
-    await settle();
-    escape(kept);
-    await settle();
-    expect(kept.isOpen).toBe(true);
-    await kept.close();
+    expect(form.result).toBe('cancel');
+    form.result = 'second';
+    form.close();
+    expect(await done).toBe('second');
   });
 
-  it('a modeless window closes on Escape only with closeOnEscape', async () => {
+  it('from JSX: x-model shows it, the user closing it writes false, it stays alive', async () => {
+    const s = reactive({ open: false });
+    let form!: MxForm;
+    const closed = vi.fn();
+    page(
+      <MxForm ref={(f: MxForm) => (form = f)} title="Find" x-model={() => s.open} onClosed={closed}>
+        <p class="inside">Hello</p>
+      </MxForm>,
+    );
+    await settle();
+    expect(form.isOpen).toBe(false);
+    expect(content(form).querySelector('.inside')).not.toBeNull();
+    s.open = true;
+    await settle();
+    expect(form.isOpen).toBe(true);
+    expect(form.isModal).toBe(false);
+    closeButton(form).click();
+    await settle();
+    expect(s.open).toBe(false);
+    expect(form.isOpen).toBe(false);
+    expect(form.element.hasAttribute('open')).toBe(false);
+    expect(form.isDisposed).toBe(false);
+    expect(closed.mock.calls[0][0]).toMatchObject({ result: 'cancel', reason: 'user' });
+    s.open = true;
+    await settle();
+    expect(form.isOpen).toBe(true);
+    s.open = false;
+    await settle();
+    expect(form.isOpen).toBe(false);
+  });
+
+  it('from JSX: modal, and open from the start', async () => {
+    const s = reactive({ open: true });
+    let form!: MxForm;
+    page(<MxForm ref={(f: MxForm) => (form = f)} title="Welcome" modal x-model={() => s.open} />);
+    await settle();
+    expect(form.isOpen).toBe(true);
+    expect(form.isModal).toBe(true);
+    press('Escape', {}, form.element);
+    await settle();
+    expect(s.open).toBe(false);
+  });
+
+  it('event props from JSX', async () => {
+    const s = reactive({ open: true });
+    const log: string[] = [];
+    page(
+      <MxForm
+        title="Props"
+        x-model={() => s.open}
+        onLoaded={() => log.push('loaded')}
+        onShown={() => log.push('shown')}
+        onActivate={() => log.push('activate')}
+        onClosed={(e) => log.push(`closed:${e.result}`)}
+      />,
+    );
+    await settle();
+    s.open = false;
+    await settle();
+    expect(log).toEqual(['loaded', 'activate', 'shown', 'closed:cancel']);
+  });
+
+  it('disposeOnClose: off keeps a form from code to show again', async () => {
     const host = page();
-    const escape = (f: MxForm) =>
-      q(f.element, 'input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
-
-    const plain = new CustomerForm();
-    plain.show(host);
-    await settle();
-    escape(plain);
-    await settle();
-    expect(plain.isOpen).toBe(true);
-    await plain.close();
-
-    const closable = new CustomerForm({ closeOnEscape: true });
-    closable.show(host);
-    await settle();
-    escape(closable);
-    await settle();
-    expect(closable.isDisposed).toBe(true);
-  });
-
-  it('showClose={false} removes the caption close button', async () => {
-    const form = new CustomerForm({ showClose: false });
-    page(form);
-    await settle();
-    expect(form.element.querySelector('[data-action="close"]')).toBeNull();
-  });
-
-  it('Enter clicks the defaultButton, Escape the cancelButton', async () => {
-    const host = page();
-    let ok!: Component<HTMLButtonElement>;
-    let cancel!: Component<HTMLButtonElement>;
-    class Confirm extends MxForm {
-      override view() {
-        return (
-          <>
-            <input name="q" />
-            <button type="button" ref={(c: Component<HTMLButtonElement>) => (cancel = c)} data-result="no">
-              No
-            </button>
-            <button type="button" ref={(c: Component<HTMLButtonElement>) => (ok = c)} data-result="yes">
-              Yes
-            </button>
-          </>
-        );
-      }
-    }
-    const a = new Confirm({ defaultButton: () => ok, cancelButton: () => cancel });
-    const ra = a.showDialog(host);
-    await settle();
-    q(a.element, 'input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-    expect(await ra).toBe('yes');
-
-    const b = new Confirm({ defaultButton: () => ok, cancelButton: () => cancel });
-    const rb = b.showDialog(host);
-    await settle();
-    q(b.element, 'input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
-    expect(await rb).toBe('no');
-  });
-
-  it('in a modal window, Tab wraps around inside the form; a modeless one lets it out', async () => {
-    const host = page();
-    const tab = (el: HTMLElement, shiftKey = false) =>
-      el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true }));
-
-    const modal = new CustomerForm({ text: 'Tabs' });
-    void modal.showDialog(host);
-    await settle();
-    const order = tabbableIn(modal.element);
-    order[order.length - 1].focus();
-    tab(order[order.length - 1]);
-    expect(document.activeElement).toBe(order[0]);
-    tab(order[0], true);
-    expect(document.activeElement).toBe(order[order.length - 1]);
-    await modal.close();
-
-    const modeless = new CustomerForm({ text: 'Tabs' });
-    modeless.show(host);
-    await settle();
-    const last = tabbableIn(modeless.element).at(-1)!;
-    last.focus();
-    const wrapped = !tab(last); // not prevented: the browser moves on to the page
-    expect(wrapped).toBe(false);
-    expect(document.activeElement).toBe(last);
-    await modeless.close();
-  });
-
-  it('remembers its active control and gets focus back when its title is clicked', async () => {
-    const host = page(<input name="outside" />);
-    const form = new CustomerForm({ text: 'Back' });
-    form.show(host);
-    await settle();
-    const save = q(form.element, '[data-result="ok"]');
-    save.focus();
-    q(host.element, '[name=outside]').focus();
-
-    q(form.element, '.mx-form__title').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }));
-    expect(document.activeElement).toBe(save);
-    await form.close();
-  });
-});
-
-describe('MxForm window boundary', () => {
-  it('events bubble inside the window and stop at its root', async () => {
-    let hostClicks = 0;
-    const host = page();
-    host.motif.on('click', () => hostClicks++);
-    host.motif.on('keydown', () => hostClicks++);
-    const form = new CustomerForm({ text: 'Contained' });
-    const result = form.showDialog(host);
-    await settle();
-    // The form's own click handling (inside the window) still sees the click…
-    q(form.element, '[data-result="ok"]').click();
-    expect(await result).toBe('ok');
-    // …but the host the window was added to never does.
-    expect(hostClicks).toBe(0);
-  });
-});
-
-describe('MxForm with x-model', () => {
-  class Page extends Component<HTMLDivElement> {
-    state = reactive({ open: false, closes: 0 });
-    form!: CustomerForm;
-    override view() {
-      return (
-        <div>
-          <button type="button" class="opener" onclick={() => (this.state.open = true)}>
-            Open
-          </button>
-          <CustomerForm
-            text="Bound"
-            modal
-            ref={(f: CustomerForm) => (this.form = f)}
-            x-model={() => this.state.open}
-            onClosed={() => this.state.closes++}
-          />
-        </div>
-      );
-    }
-  }
-
-  it('opens with the state, writes false back when the user closes, and keeps its state', async () => {
-    const p = new Page();
-    page(p);
-    await settle();
-    const win = q<HTMLDialogElement>(p.element, 'dialog.mx-form-window');
-    expect(win.hasAttribute('open')).toBe(false);
-    expect(win.contains(p.form.element)).toBe(true);
-
-    p.state.open = true;
-    await settle();
-    expect(win.hasAttribute('open')).toBe(true);
-    expect(win.hasAttribute('data-test-modal')).toBe(true);
-    q<HTMLInputElement>(p.form.element, 'input').value = 'kept';
-
-    q(p.form.element, '[data-result="ok"]').click();
-    await settle();
-    expect(p.state.open).toBe(false); // two-way
-    expect(win.hasAttribute('open')).toBe(false);
-    expect(p.form.isDisposed).toBe(false);
-    expect(p.form.result).toBe('ok');
-    expect(p.state.closes).toBe(1);
-
-    p.state.open = true;
-    await settle();
-    expect(win.hasAttribute('open')).toBe(true);
-    expect(q<HTMLInputElement>(p.form.element, 'input').value).toBe('kept');
-
-    p.state.open = false; // closing from code
-    await settle();
-    expect(win.hasAttribute('open')).toBe(false);
-    expect(p.state.closes).toBe(2);
-  });
-
-  it('a cancelled close puts the state back to open', async () => {
-    const p = new Page();
-    page(p);
-    await settle();
-    p.form.props.onClosing = (e: FormClosingEventArgs) => void (e.cancel = true);
-    p.state.open = true;
-    await settle();
-    p.state.open = false;
-    await settle();
-    expect(p.form.isOpen).toBe(true);
-    expect(p.state.open).toBe(true);
-  });
-
-  it('dies with its parent', async () => {
-    const p = new Page();
-    const host = page(p);
-    await settle();
-    p.state.open = true;
-    await settle();
-    const form = p.form; // dispose clears the page's fields
-    host.controls.remove(p);
-    await settle();
-    expect(form.isDisposed).toBe(true);
-    expect(windowStack.size).toBe(0);
-  });
-});
-
-describe('MxForm minimize', () => {
-  it('collapses to the title bar without a target, docks into the target when given', async () => {
-    const host = page();
-    const taskbar = new Component<HTMLDivElement>('div');
-    host.controls.add(taskbar);
-
-    const inPlace = new CustomerForm({ text: 'In place', showMinimize: true }).show(host);
-    await settle();
-    q(inPlace.element, '[data-action="minimize"]').click();
-    await settle();
-    const win1 = inPlace.element.closest('dialog')!;
-    expect(win1.getAttribute('data-window-state')).toBe('minimized');
-    expect(win1.parentElement).toBe(host.element);
-    expect(q(inPlace.element, '[data-action="restore"]').getAttribute('aria-label')).toBe('Restore');
-
-    const docked = new CustomerForm({ text: 'Docked', showMinimize: true, minimizeTarget: taskbar }).show(host);
-    await settle();
-    q(docked.element, '[data-action="minimize"]').click();
-    await settle();
-    const win2 = docked.element.closest('dialog')!;
-    expect(win2.parentElement).toBe(taskbar.element);
-    expect(win2.hasAttribute('data-minimized-in')).toBe(true);
-    expect(docked.isOpen).toBe(true);
-
-    q(docked.element, '[data-action="restore"]').click();
-    await settle();
-    expect(win2.parentElement).toBe(host.element);
-    expect(win2.hasAttribute('data-minimized-in')).toBe(false);
-    await docked.close();
-    await inPlace.close();
-  });
-
-  it('a modal form is never minimized: the page behind it stays blocked', async () => {
-    const host = page();
-    const taskbar = new Component<HTMLDivElement>('div');
-    host.controls.add(taskbar);
-    const form = new CustomerForm({ showMinimize: true, minimizeTarget: taskbar });
+    const form = new MxForm({ title: 'Again', disposeOnClose: false });
     void form.showDialog(host);
     await settle();
-    const minimize = form.element.querySelector<HTMLElement>('[data-action="minimize"]');
-    expect(!minimize || minimize.hidden || getComputedStyle(minimize).display === 'none').toBe(true);
-    form.windowState = 'minimized';
+    form.close();
     await settle();
+    expect(form.isDisposed).toBe(false);
+    const again = form.showDialog(host);
+    await settle();
+    expect(form.isOpen).toBe(true);
+    form.close('ok');
+    expect(await again).toBe('ok');
+  });
+
+  it('onClosing can keep it open; x-model goes back to true', async () => {
+    const s = reactive({ open: true });
+    let form!: MxForm;
+    let keep = true;
+    page(<MxForm ref={(f: MxForm) => (form = f)} title="Edit" x-model={() => s.open} onClosing={(e) => (e.cancel = keep)} />);
+    await settle();
+    closeButton(form).click();
+    await settle();
+    expect(form.isOpen).toBe(true);
+    expect(s.open).toBe(true);
+    s.open = false;
+    await settle();
+    expect(form.isOpen).toBe(true);
+    expect(s.open).toBe(true);
+    keep = false;
+    expect(form.close()).toBe(true);
+    await settle();
+    expect(s.open).toBe(false);
+  });
+
+  it('places view(), the content prop and controls added later in the content area', async () => {
+    class Settings extends MxForm {
+      constructor() {
+        super({ title: 'Settings' });
+      }
+      override view() {
+        return <p class="from-view">From view</p>;
+      }
+    }
+    const host = page();
+    const form = new Settings();
+    form.show(host);
+    await settle();
+    expect(content(form).querySelector('.from-view')).not.toBeNull();
+    const late = new TextBox({ label: 'Late' });
+    form.controls.add(late);
+    await settle();
+    expect(content(form).contains(late.element)).toBe(true);
+    const footer = new Component<HTMLDivElement>('div');
+    form.footer = footer;
+    expect(form.element.querySelector('.mx-form__footer')!.contains(footer.element)).toBe(true);
+    expect(form.element.querySelector<HTMLElement>('.mx-form__footer')!.hidden).toBe(false);
+  });
+
+  it('Escape: closes a modal form, not a modeless one; closeOnEscape and cancelButton decide', async () => {
+    const host = page();
+    const modeless = new MxForm({ title: 'Tools' });
+    modeless.show(host);
+    await settle();
+    press('Escape', {}, modeless.element);
+    expect(modeless.isOpen).toBe(true);
+    modeless.closeOnEscape = true;
+    press('Escape', {}, modeless.element);
+    expect(modeless.isOpen).toBe(false);
+
+    const modal = new MxForm({ title: 'Ask', closeOnEscape: false });
+    const done = modal.showDialog(host);
+    await settle();
+    expect(press('Escape', {}, modal.element)).toBe(true);
+    expect(modal.isOpen).toBe(true);
+    const cancel = new Button({ text: 'Cancel' });
+    const clicked = vi.fn(() => modal.close('cancelled'));
+    cancel.element.addEventListener('click', clicked);
+    modal.controls.add(cancel);
+    modal.cancelButton = cancel;
+    press('Escape', {}, modal.element);
+    expect(clicked).toHaveBeenCalledTimes(1);
+    expect(await done).toBe('cancelled');
+  });
+
+  it('Enter in a one-line field clicks the accept button, not in a text area or on a button', async () => {
+    const host = page();
+    const ok = new Button({ text: 'OK' });
+    const other = new Button({ text: 'Other' });
+    const accepted = vi.fn();
+    ok.element.addEventListener('click', accepted);
+    const box = new TextBox({ label: 'Name' });
+    const area = document.createElement('textarea');
+    const form = new MxForm({ title: 'Rename', acceptButton: ok });
+    form.controls.add(box, ok, other);
+    form.show(host);
+    await settle();
+    content(form).append(area);
+    const input = box.element.querySelector('input')!;
+    expect(press('Enter', {}, input)).toBe(true);
+    expect(accepted).toHaveBeenCalledTimes(1);
+    press('Enter', {}, area);
+    press('Enter', {}, other.element);
+    press('Enter', { shiftKey: true }, input);
+    expect(accepted).toHaveBeenCalledTimes(1);
+    ok.enabled = false;
+    press('Enter', {}, input);
+    expect(accepted).toHaveBeenCalledTimes(1);
+  });
+
+  it('events stop at the window root', async () => {
+    const host = page();
+    const seen = vi.fn();
+    host.element.addEventListener('click', seen);
+    host.element.addEventListener('keydown', seen);
+    const inner = new Button({ text: 'Inner' });
+    const innerSeen = vi.fn();
+    const wrap = new Component<HTMLDivElement>('div');
+    wrap.controls.add(inner);
+    const form = new MxForm({ title: 'Box', content: wrap });
+    form.show(host);
+    await settle();
+    wrap.element.addEventListener('click', innerSeen);
+    inner.element.click();
+    press('a', {}, inner.element);
+    expect(innerSeen).toHaveBeenCalledTimes(1);
+    expect(seen).not.toHaveBeenCalled();
+  });
+
+  it('dies with disposeRef even while open', async () => {
+    const host = page();
+    const owner = new Component<HTMLDivElement>('div');
+    host.controls.add(owner);
+    const closed = vi.fn();
+    const form = new MxForm({ title: 'Owned', onClosed: closed });
+    const done = form.showDialog(host, owner);
+    await settle();
+    await owner.dispose();
+    await settle();
+    expect(form.isDisposed).toBe(true);
+    expect(closed.mock.calls[0][0]).toMatchObject({ reason: 'owner' });
+    expect(await done).toBe('cancel');
+    expect(windowStack.size).toBe(0);
+  });
+
+  it('dies with its host', async () => {
+    const host = page();
+    const holder = new Component<HTMLDivElement>('div');
+    host.controls.add(holder);
+    const form = new MxForm({ title: 'Inside' });
+    form.show(holder);
+    await settle();
+    await holder.dispose();
+    expect(form.isDisposed).toBe(true);
+  });
+
+  it('nested: a modal from a modal is on top; closing it gives focus back inside the first', async () => {
+    const host = page();
+    const go = new Button({ text: 'More' });
+    const first = new MxForm({ title: 'First', content: go });
+    void first.showDialog(host);
+    await settle();
+    go.focus();
+    const second = new MxForm({ title: 'Second' });
+    const done = second.showDialog(first);
+    await settle();
+    expect(second.parent).toBe(first);
+    expect(windowStack.top()?.element).toBe(second.element);
+    expect(first.isActive).toBe(false);
+    expect(second.isActive).toBe(true);
+    second.close('ok');
+    expect(await done).toBe('ok');
+    expect(first.isActive).toBe(true);
+    expect(document.activeElement).toBe(go.element);
+  });
+
+  it('Tab cycles inside a modal form', async () => {
+    const host = page();
+    const a = new Button({ text: 'A' });
+    const b = new Button({ text: 'B' });
+    const form = new MxForm({ title: 'Cycle', showClose: false });
+    form.controls.add(a, b);
+    void form.showDialog(host);
+    await settle();
+    b.focus();
+    expect(press('Tab')).toBe(true);
+    expect(document.activeElement).toBe(a.element);
+    expect(press('Tab', { shiftKey: true })).toBe(true);
+    expect(document.activeElement).toBe(b.element);
+  });
+
+  it('focuses [autofocus], else the first field, else the accept button', async () => {
+    const host = page();
+    const ok = new Button({ text: 'OK' });
+    const plain = new MxForm({ title: 'Plain', acceptButton: ok });
+    plain.controls.add(new Button({ text: 'Help' }), ok);
+    plain.show(host);
+    await settle();
+    expect(document.activeElement).toBe(ok.element);
+    plain.close();
+    const auto = new Button({ text: 'Auto' });
+    auto.element.setAttribute('autofocus', '');
+    const withAuto = new MxForm({ title: 'Auto' });
+    withAuto.controls.add(new TextBox({ label: 'First' }), auto);
+    withAuto.show(host);
+    await settle();
+    expect(document.activeElement).toBe(auto.element);
+  });
+
+  it('title bar buttons: switches, maximize, minimize to the title bar or to a target', async () => {
+    const host = page();
+    const target = document.createElement('div');
+    document.body.append(target);
+    const form = new MxForm({ title: 'Notes', showMinimize: true, showMaximize: true });
+    form.show(host);
+    await settle();
+    expect(tools(form).map((b) => b.getAttribute('aria-label'))).toEqual(['Minimize', 'Maximize', 'Close']);
+    tools(form)[1].click();
+    expect(form.windowState).toBe('maximized');
+    expect(form.element.dataset.state).toBe('maximized');
+    expect(tools(form)[1].getAttribute('aria-label')).toBe('Restore');
+    form.element.querySelector('.mx-form__bar')!.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(form.windowState).toBe('normal');
-    expect(form.element.closest('dialog')!.parentElement).toBe(host.element);
-    await form.close();
+    tools(form)[0].click();
+    expect(form.element.dataset.state).toBe('minimized');
+    expect(form.element.hasAttribute('data-docked')).toBe(false);
+    tools(form)[0].click();
+    expect(form.windowState).toBe('normal');
+
+    form.minimizeTarget = target;
+    form.minimize();
+    expect(form.element.hasAttribute('data-docked')).toBe(true);
+    const chip = target.querySelector<HTMLButtonElement>('.mx-form-chip')!;
+    expect(chip.textContent).toBe('Notes');
+    expect(windowStack.size).toBe(0);
+    chip.click();
+    expect(form.windowState).toBe('normal');
+    expect(target.querySelector('.mx-form-chip')).toBeNull();
+    expect(windowStack.top()?.element).toBe(form.element);
+
+    form.showMinimize = false;
+    form.showClose = false;
+    expect(tools(form).map((b) => b.getAttribute('aria-label'))).toEqual(['Maximize']);
+  });
+
+  it('a modal form cannot be minimized', async () => {
+    const host = page();
+    const form = new MxForm({ title: 'Modal', showMinimize: true });
+    void form.showDialog(host);
+    await settle();
+    expect(tools(form).map((b) => b.getAttribute('aria-label'))).toEqual(['Close']);
+    form.minimize();
+    expect(form.windowState).toBe('normal');
+    expect(form.element.dataset.state).toBe('normal');
+  });
+
+  it('frame switches, size and start position', async () => {
+    const host = page();
+    const s = reactive({ resizable: true, width: '30rem' });
+    const form = new MxForm({ title: 'Frame', resizable: () => s.resizable, width: () => s.width, startPosition: 'manual', left: 40, top: '2rem' });
+    form.show(host);
+    await settle();
+    const el = form.element;
+    expect(el.hasAttribute('data-resizable') && el.hasAttribute('data-movable')).toBe(true);
+    expect(el.style.getPropertyValue('--_mx-w')).toBe('30rem');
+    expect(el.hasAttribute('data-placed')).toBe(true);
+    expect(el.style.getPropertyValue('--_mx-x')).toBe('40px');
+    expect(el.style.getPropertyValue('--_mx-y')).toBe('2rem');
+    s.resizable = false;
+    s.width = '20rem';
+    await settle();
+    expect(el.hasAttribute('data-resizable')).toBe(false);
+    expect(el.style.getPropertyValue('--_mx-w')).toBe('20rem');
+    form.movable = false;
+    expect(el.hasAttribute('data-movable')).toBe(false);
+    form.startPosition = 'center';
+    form.close();
+    const again = new MxForm({ title: 'Centered' });
+    again.show(host);
+    await settle();
+    expect(again.element.hasAttribute('data-placed')).toBe(false);
+  });
+
+  it('properties are reactive', async () => {
+    const host = page();
+    const form = new MxForm({ title: 'One' });
+    const seen: string[] = [];
+    const stop = effect(() => void seen.push(`${form.title}:${form.isOpen}`));
+    form.show(host);
+    await settle();
+    form.title = 'Two';
+    await settle();
+    stop();
+    expect(seen).toEqual(['One:false', 'One:true', 'Two:true']);
+  });
+
+  it('activation follows the window stack', async () => {
+    const host = page();
+    const a = new MxForm({ title: 'A' });
+    const b = new MxForm({ title: 'B' });
+    const log: string[] = [];
+    a.onActivate(() => log.push('a+'));
+    a.onDeactivate(() => log.push('a-'));
+    a.show(host);
+    b.show(host);
+    await settle();
+    expect(a.isActive).toBe(false);
+    a.element.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    expect(a.isActive && !b.isActive).toBe(true);
+    expect(a.element.hasAttribute('data-active')).toBe(true);
+    expect(log).toEqual(['a+', 'a-', 'a+']);
+  });
+
+  it('follows uiLocale', async () => {
+    const host = page();
+    const form = new MxForm({ title: 'Lang', showMaximize: true });
+    form.show(host);
+    await settle();
+    uiLocale.strings = trStrings;
+    await settle();
+    expect(tools(form).map((b) => b.getAttribute('aria-label'))).toEqual(['Büyüt', 'Kapat']);
+  });
+});
+
+describe('messageBox and confirm', () => {
+  it('shows a modal alert with named buttons and resolves with the one pressed', async () => {
+    const host = page();
+    const done = messageBox({ title: 'Delete', text: 'Delete the file?', buttons: ['yes', 'no'], tone: 'danger', host });
+    await settle();
+    const form = host.controls.items.find((c) => c instanceof MxForm) as MxForm;
+    const el = form.element;
+    expect(el.getAttribute('role')).toBe('alertdialog');
+    expect(el.getAttribute('aria-modal')).toBe('true');
+    expect(document.getElementById(el.getAttribute('aria-describedby')!)!.textContent).toBe('Delete the file?');
+    const buttons = Array.from(el.querySelectorAll<HTMLButtonElement>('.mx-form__footer button'));
+    expect(buttons.map((b) => b.textContent)).toEqual(['Yes', 'No']);
+    // A danger box starts on the safe button.
+    expect(document.activeElement).toBe(buttons[1]);
+    buttons[0].click();
+    expect(await done).toBe('yes');
+  });
+
+  it('Escape answers with the cancel button; texts follow uiLocale', async () => {
+    const host = page();
+    uiLocale.strings = trStrings;
+    const done = messageBox({ text: 'Kaydedilsin mi?', buttons: ['ok', 'cancel'], host });
+    await settle();
+    const form = host.controls.items.find((c) => c instanceof MxForm) as MxForm;
+    expect(form.element.getAttribute('role')).toBe('dialog');
+    const buttons = Array.from(form.element.querySelectorAll<HTMLButtonElement>('.mx-form__footer button'));
+    expect(buttons.map((b) => b.textContent)).toEqual(['Tamam', 'İptal']);
+    expect(document.activeElement).toBe(buttons[0]);
+    press('Escape');
+    expect(await done).toBe('cancel');
+  });
+
+  it('confirm resolves true for OK, false for Cancel', async () => {
+    const host = page();
+    const yes = confirm('Go on?', { host });
+    await settle();
+    (document.querySelector('.mx-form__footer button') as HTMLButtonElement).click();
+    expect(await yes).toBe(true);
+    await settle();
+    const no = confirm('Go on?', { host });
+    await settle();
+    press('Escape');
+    expect(await no).toBe(false);
+  });
+
+  it('works without a host or an application', async () => {
+    const done = messageBox({ text: 'Alone' });
+    await settle();
+    const dialog = document.querySelector('dialog.mx-form')!;
+    expect(dialog.hasAttribute('open')).toBe(true);
+    (dialog.querySelector('.mx-form__footer button') as HTMLButtonElement).click();
+    expect(await done).toBe('ok');
+    await settle();
+    expect(document.querySelector('dialog.mx-form')).toBeNull();
   });
 });

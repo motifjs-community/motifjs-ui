@@ -1,0 +1,104 @@
+/* List: the options of a drop-down, a combo box or a list box. The highlight is data-active, the
+   chosen ones data-selected (a bar at the start, a check mark in a multiple list). */
+@layer mx.components {
+  .mx-list {
+    display: flex;
+    flex-direction: column;
+    max-block-size: var(--mx-list-max-height);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .mx-list > [role='group'] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mx-list__item {
+    position: relative;
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--mx-list-item-gap);
+    min-block-size: var(--mx-list-item-height);
+    padding-inline: var(--mx-list-item-padding);
+    border-radius: var(--mx-list-item-radius);
+    cursor: default;
+    user-select: none;
+  }
+
+  .mx-list__item[data-selected] {
+    background: var(--mx-list-item-selected);
+  }
+
+  .mx-list__item[data-active] {
+    background: var(--mx-list-item-highlight);
+  }
+
+  .mx-list:not([aria-multiselectable]) .mx-list__item[data-selected]::before {
+    content: '';
+    position: absolute;
+    inset-block: 25%;
+    inset-inline-start: 0;
+    inline-size: var(--mx-list-indicator-width);
+    background: var(--mx-list-indicator-color);
+    border-radius: var(--mx-radius-full);
+  }
+
+  .mx-list__item[aria-disabled='true'] {
+    color: var(--mx-color-fg-disabled);
+  }
+
+  .mx-list__check {
+    display: inline-flex;
+    flex: none;
+    visibility: hidden;
+    color: var(--mx-list-indicator-color);
+  }
+
+  .mx-list__item[data-selected] .mx-list__check {
+    visibility: visible;
+  }
+
+  .mx-list__icon {
+    display: inline-flex;
+    flex: none;
+    inline-size: var(--mx-list-icon-size);
+    block-size: var(--mx-list-icon-size);
+  }
+
+  .mx-list__icon > :is(img, svg) {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .mx-list__text {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* As high as an option: a long list counts rows of one height. */
+  .mx-list__header {
+    display: flex;
+    flex: none;
+    align-items: flex-end;
+    block-size: var(--mx-list-item-height);
+    padding-inline: var(--mx-list-item-padding);
+    padding-block-end: var(--mx-space-1);
+    font-size: var(--mx-list-header-font-size);
+    font-weight: var(--mx-list-header-font-weight);
+    color: var(--mx-color-fg-secondary);
+  }
+
+  .mx-list__space {
+    flex: none;
+  }
+
+  .mx-list__empty {
+    padding: var(--mx-list-item-padding);
+    color: var(--mx-color-fg-secondary);
+  }
+}

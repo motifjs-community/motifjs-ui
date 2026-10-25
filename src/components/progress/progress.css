@@ -1,0 +1,231 @@
+/* ProgressBar and Spinner. The bar's width comes from --_value, which the bar writes; the rest
+   binds to data-state, data-tone, data-size, data-label-position, data-waiting and data-cover.
+   Reduced motion zeroes the motion tokens: the indeterminate bar then rests as a tinted track and
+   the ring stands still. Forced colors: the drawn parts keep the system colors the tokens map to. */
+@layer mx.components {
+  .mx-progress,
+  .mx-spinner {
+    --_tone: var(--mx-color-accent-solid);
+    --_tone-subtle: var(--mx-color-accent-subtle);
+  }
+
+  :is(.mx-progress, .mx-spinner)[data-tone='neutral'] {
+    --_tone: var(--mx-color-fg-secondary);
+    --_tone-subtle: var(--mx-color-fill-subtle-secondary);
+  }
+
+  :is(.mx-progress, .mx-spinner)[data-tone='success'] {
+    --_tone: var(--mx-color-success-fg);
+    --_tone-subtle: var(--mx-color-success-subtle);
+  }
+
+  :is(.mx-progress, .mx-spinner)[data-tone='caution'] {
+    --_tone: var(--mx-color-caution-fg);
+    --_tone-subtle: var(--mx-color-caution-subtle);
+  }
+
+  :is(.mx-progress, .mx-spinner)[data-tone='danger'] {
+    --_tone: var(--mx-color-danger-solid);
+    --_tone-subtle: var(--mx-color-danger-subtle);
+  }
+
+  /* ProgressBar. */
+
+  .mx-progress {
+    display: inline-flex;
+    flex-direction: column;
+    gap: var(--mx-progress-head-gap);
+    inline-size: var(--mx-progress-width);
+    max-inline-size: 100%;
+    vertical-align: middle;
+    color: var(--mx-color-fg-primary);
+
+    --_thickness: var(--mx-progress-thickness-md);
+  }
+
+  .mx-progress[data-size='sm'] {
+    --_thickness: var(--mx-progress-thickness-sm);
+  }
+
+  .mx-progress[data-size='lg'] {
+    --_thickness: var(--mx-progress-thickness-lg);
+  }
+
+  .mx-progress[data-stretch] {
+    display: flex;
+    inline-size: 100%;
+  }
+
+  .mx-progress__head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--mx-progress-gap);
+  }
+
+  .mx-progress__head[hidden],
+  .mx-progress__head > [hidden] {
+    display: none;
+  }
+
+  .mx-progress__label {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    font-weight: var(--mx-progress-label-font-weight);
+    overflow-wrap: anywhere;
+  }
+
+  .mx-progress__value {
+    flex: none;
+    margin-inline-start: auto;
+    font-size: var(--mx-progress-value-font-size);
+    font-variant-numeric: tabular-nums;
+    color: var(--mx-color-fg-secondary);
+  }
+
+  .mx-progress__track {
+    position: relative;
+    overflow: hidden;
+    block-size: var(--_thickness);
+    background: var(--mx-color-stroke-control-default);
+    border-radius: var(--mx-progress-radius);
+    forced-color-adjust: none;
+  }
+
+  .mx-progress__bar {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: var(--_value);
+    background: var(--_tone);
+    border-radius: inherit;
+    transition: inline-size var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
+  }
+
+  /* Not known: a tinted track with a part that runs along it. */
+  .mx-progress[data-state='indeterminate'] .mx-progress__bar {
+    inline-size: 100%;
+    background: var(--_tone-subtle);
+  }
+
+  .mx-progress[data-state='indeterminate'] .mx-progress__bar::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: 0;
+    background: var(--_tone);
+    border-radius: inherit;
+    animation: mx-progress-run calc(var(--mx-motion-duration-slow) * 7) var(--mx-motion-easing-standard) infinite;
+  }
+
+  @keyframes mx-progress-run {
+    from {
+      inset-inline-start: -40%;
+      inline-size: 40%;
+    }
+
+    to {
+      inset-inline-start: 100%;
+      inline-size: 40%;
+    }
+  }
+
+  /* Beside: the label, the bar, then the value. */
+  .mx-progress[data-label-position='side'] {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--mx-progress-gap);
+  }
+
+  .mx-progress[data-label-position='side'] .mx-progress__head {
+    display: contents;
+  }
+
+  .mx-progress[data-label-position='side'] .mx-progress__label {
+    flex: none;
+  }
+
+  .mx-progress[data-label-position='side'] .mx-progress__track {
+    flex: 1 1 auto;
+    order: 1;
+  }
+
+  .mx-progress[data-label-position='side'] .mx-progress__value {
+    order: 2;
+    margin-inline-start: 0;
+  }
+
+  /* Spinner. */
+
+  .mx-spinner {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mx-spinner-gap);
+    vertical-align: middle;
+    color: var(--mx-color-fg-secondary);
+    transition: opacity var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
+
+    --_size: var(--mx-spinner-size-md);
+    --_ring: var(--mx-spinner-ring-width-md);
+  }
+
+  .mx-spinner[data-size='sm'] {
+    --_size: var(--mx-spinner-size-sm);
+    --_ring: var(--mx-spinner-ring-width-sm);
+  }
+
+  .mx-spinner[data-size='lg'] {
+    --_size: var(--mx-spinner-size-lg);
+    --_ring: var(--mx-spinner-ring-width-lg);
+  }
+
+  .mx-spinner[data-label-position='bottom'] {
+    flex-direction: column;
+  }
+
+  .mx-spinner[data-waiting] {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  .mx-spinner__ring {
+    flex: none;
+    inline-size: var(--_size);
+    block-size: var(--_size);
+    border: var(--_ring) solid var(--mx-color-stroke-control-default);
+    border-block-start-color: var(--_tone);
+    border-radius: var(--mx-radius-full);
+    forced-color-adjust: none;
+    animation: mx-spinner-turn calc(var(--mx-motion-duration-slow) * 3) linear infinite;
+  }
+
+  .mx-spinner__label[hidden] {
+    display: none;
+  }
+
+  @keyframes mx-spinner-turn {
+    to {
+      rotate: 1turn;
+    }
+  }
+
+  /* Over a container while it loads. */
+  :where([data-mx-covered]) {
+    position: relative;
+  }
+
+  .mx-spinner[data-cover] {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    padding: var(--mx-spinner-cover-padding);
+    color: var(--mx-color-fg-primary);
+    background: var(--mx-spinner-cover-background);
+    border-radius: inherit;
+  }
+
+  .mx-spinner[data-cover]:focus-visible {
+    outline-offset: calc(-1 * var(--mx-focus-ring-width));
+  }
+}

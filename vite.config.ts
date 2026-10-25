@@ -27,7 +27,7 @@ export default defineConfig({
     rollupOptions: {
       // @motifx/core and the design system are peers: bundling core would mean
       // two reactivity engines, bundling the token map a second copy of it.
-      external: [/^@motifx\/core/, /^@motifx-community\/design-system/],
+      external: [/^@motifx\/core/, /^@motifx-community\/design-system/, /^@motifx-community\/data/],
     },
     sourcemap: true,
     minify: false,

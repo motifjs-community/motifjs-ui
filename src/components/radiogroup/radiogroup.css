@@ -1,0 +1,188 @@
+/* RadioGroup: the field's label is the group's caption above the options; the text-field frame of
+   .mx-field is taken away. Each option is a native radio drawn as a circle, with its text and an
+   optional help line. The look binds to data-size, data-orientation, data-columns, :checked and
+   the field's state attributes; --_columns and --_rows are written with columns. */
+@layer mx.components {
+  .mx-radio-group {
+    --_fill: var(--mx-color-fill-control-default);
+    --_fill-hover: var(--mx-color-fill-control-secondary);
+    --_fill-active: var(--mx-color-fill-control-tertiary);
+    --_stroke: var(--mx-color-stroke-control-strong);
+    --_stroke-edge: var(--mx-color-stroke-control-edge);
+    --_glow: inset 0 var(--mx-radiogroup-border-width) 0 var(--mx-color-highlight-control);
+    --_press: var(--mx-control-press-offset);
+  }
+
+  .mx-radio-group.mx-field:not([data-stretch]) {
+    inline-size: auto;
+  }
+
+  .mx-radio-group[data-size='sm'] {
+    --_box: var(--mx-radiogroup-size-sm);
+    --_dot: var(--mx-radiogroup-dot-size-sm);
+    --_row: var(--mx-radiogroup-height-sm);
+    --_text-size: var(--mx-radiogroup-font-size-sm);
+  }
+
+  .mx-radio-group[data-size='md'] {
+    --_box: var(--mx-radiogroup-size-md);
+    --_dot: var(--mx-radiogroup-dot-size-md);
+    --_row: var(--mx-radiogroup-height-md);
+    --_text-size: var(--mx-radiogroup-font-size-md);
+  }
+
+  .mx-radio-group[data-size='lg'] {
+    --_box: var(--mx-radiogroup-size-lg);
+    --_dot: var(--mx-radiogroup-dot-size-lg);
+    --_row: var(--mx-radiogroup-height-lg);
+    --_text-size: var(--mx-radiogroup-font-size-lg);
+  }
+
+  .mx-radio-group[data-invalid] {
+    --_stroke: var(--mx-color-danger-solid);
+    --_stroke-edge: var(--mx-color-danger-solid);
+  }
+
+  .mx-radio-group[data-readonly] {
+    --_fill-hover: var(--_fill);
+    --_fill-active: var(--_fill);
+    --_press: 0;
+  }
+
+  /* A label that floats has nothing to float in: it stays above, as with `top`. */
+  .mx-radio-group.mx-field[data-label-mode='floating'] > .mx-field__label {
+    position: static;
+    display: block;
+    block-size: auto;
+    margin: 0 0 var(--mx-field-label-gap);
+    font-size: inherit;
+    font-weight: var(--mx-field-label-font-weight);
+    color: inherit;
+    pointer-events: auto;
+  }
+
+  .mx-radio-group.mx-field .mx-field__box {
+    display: block;
+    min-block-size: 0;
+    padding: 0;
+    font-size: var(--_text-size);
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    cursor: default;
+  }
+
+  .mx-radio-group :is(.mx-field__icon, .mx-field__prefix, .mx-field__suffix, .mx-field__start, .mx-field__end) {
+    display: none;
+  }
+
+  /* The options. */
+
+  .mx-radio-group__list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mx-radio-group[data-orientation='horizontal'] .mx-radio-group__list {
+    flex-flow: row wrap;
+    column-gap: var(--mx-radiogroup-column-gap);
+  }
+
+  .mx-radio-group[data-columns] .mx-radio-group__list {
+    display: grid;
+    grid-template-columns: repeat(var(--_columns), auto);
+    grid-auto-flow: row;
+    column-gap: var(--mx-radiogroup-column-gap);
+  }
+
+  /* Vertical in columns: down the first column, then the next. */
+  .mx-radio-group[data-columns][data-orientation='vertical'] .mx-radio-group__list {
+    grid-template-rows: repeat(var(--_rows), auto);
+    grid-auto-flow: column;
+  }
+
+  .mx-radio-group__item[hidden] {
+    display: none;
+  }
+
+  .mx-radio-group__label {
+    display: flex;
+    align-items: center;
+    gap: var(--mx-radiogroup-gap);
+    min-block-size: var(--_row);
+  }
+
+  .mx-radio-group__help {
+    display: block;
+    margin-block-start: calc(var(--mx-space-1) * -1);
+    padding-block-end: var(--mx-space-1);
+    padding-inline-start: calc(var(--_box) + var(--mx-radiogroup-gap));
+    font-size: var(--mx-radiogroup-help-font-size);
+    line-height: var(--mx-radiogroup-help-line);
+    color: var(--mx-color-fg-secondary);
+  }
+
+  .mx-radio-group__input {
+    appearance: none;
+    flex: none;
+    box-sizing: border-box;
+    inline-size: var(--_box);
+    block-size: var(--_box);
+    margin: 0;
+    background: var(--_fill);
+    border: var(--mx-radiogroup-border-width) solid var(--_stroke);
+    border-block-end-color: var(--_stroke-edge);
+    border-radius: var(--mx-radius-full);
+    box-shadow: var(--_glow);
+    cursor: default;
+    transition:
+      background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      border-width var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      translate var(--mx-motion-duration-instant) var(--mx-motion-easing-standard);
+  }
+
+  .mx-radio-group__input:hover {
+    background: var(--_fill-hover);
+  }
+
+  .mx-radio-group__input:active {
+    background: var(--_fill-active);
+    box-shadow: none;
+    translate: 0 var(--_press);
+  }
+
+  /* Chosen: a thick accent ring around a dot of the on-accent color. */
+  .mx-radio-group__input:checked {
+    background: var(--mx-color-accent-on-solid);
+    border-width: calc((var(--_box) - var(--_dot)) / 2);
+    border-color: var(--mx-color-accent-solid);
+  }
+
+  .mx-radio-group:not([data-readonly]) .mx-radio-group__input:checked:hover {
+    border-color: var(--mx-color-accent-solid-hover);
+  }
+
+  .mx-radio-group__input:focus-visible {
+    box-shadow:
+      0 0 0 var(--mx-focus-ring-offset) var(--mx-focus-ring-inner),
+      var(--_glow);
+  }
+
+  .mx-radio-group__input:disabled {
+    background: var(--mx-color-fill-control-disabled);
+    border-color: var(--mx-color-stroke-control-default);
+    box-shadow: none;
+  }
+
+  .mx-radio-group__input:checked:disabled {
+    background: var(--mx-color-fg-on-accent-disabled);
+    border-color: var(--mx-color-fill-accent-disabled);
+  }
+
+  /* The help line of a disabled option keeps its color: it is a description, it must stay readable. */
+  .mx-radio-group__input:disabled + .mx-radio-group__text {
+    color: var(--mx-color-fg-disabled);
+  }
+}

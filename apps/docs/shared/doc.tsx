@@ -1,5 +1,8 @@
-// Small building blocks for the reference pages: code blocks, API tables
-// whose cells may contain `inline code`, and an on-page table of contents.
+// Building blocks for the reference pages: a section card, a live example with its code, code
+// blocks and API tables whose cells may contain `inline code`.
+import { Component, reactive } from '@motifx/core';
+import { Button } from '@motifx-community/ui';
+import { PageOutline } from '../app/PageOutline';
 
 let seq = 0;
 
@@ -17,20 +20,86 @@ export function Rich(props: { text: string }) {
   );
 }
 
-/** A code example. */
+/** A code example. It may scroll sideways, so it takes focus: the keys scroll it. */
 export function Code(props: { code: string }) {
   return (
-    <pre>
+    <pre tabindex="0">
       <code>{props.code.trim()}</code>
     </pre>
   );
+}
+
+/** One part of a page, on a card. It joins the page outline the sections on the right list. */
+export class Section extends Component<HTMLElement, { anchor: string; title: string }> {
+  static override elementTag = 'section';
+
+  override onConfigured(): void {
+    const { anchor, title } = this.props;
+    this.class.add('docs-section');
+    this.attr.add({ 'aria-labelledby': anchor });
+    const outline = this.getService(PageOutline);
+    if (outline) this.motif.setDisposable(outline.add({ anchor, title }));
+  }
+
+  override view() {
+    return (
+      <>
+        <h2 id={this.props.anchor}>{this.props.title}</h2>
+        {this.childs}
+      </>
+    );
+  }
+}
+
+const CodeIcon = () => (
+  <svg viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+);
+
+/** A live example: a bar with its title and "Show code", the example itself, and its code when asked for. */
+export class Example extends Component<HTMLDivElement, { title?: string; code?: string; stack?: boolean }> {
+  static override elementTag = 'div';
+
+  private readonly state = reactive({ code: false });
+
+  override onConfigured(): void {
+    this.class.add('docs-example');
+  }
+
+  override view() {
+    const { title, code, stack } = this.props;
+    return (
+      <>
+        <div class="docs-example__bar">
+          <h3 class="docs-example__title" x-wait={() => !title}>
+            {title ?? ''}
+          </h3>
+          <div x-wait={() => !code}>
+            <Button
+              text={() => (this.state.code ? 'Hide code' : 'Show code')}
+              icon={() => <CodeIcon />}
+              size="sm"
+              variant="ghost"
+              toggle
+              x-model={() => this.state.code}
+            />
+          </div>
+        </div>
+        <div class={stack ? 'docs-example__stage docs-example__stage--stack' : 'docs-example__stage'}>{this.childs}</div>
+        <div class="docs-example__code" x-wait={() => !this.state.code}>
+          <Code code={code ?? ''} />
+        </div>
+      </>
+    );
+  }
 }
 
 /** A reference table: the first column is the name (rendered as code), the rest is rich text. */
 export function ApiTable(props: { head: string[]; rows: string[][] }) {
   const rows = props.rows.map((cells) => ({ id: ++seq, cells: cells.map((c) => ({ id: ++seq, text: c })) }));
   return (
-    <div class="table-scroll">
+    <div class="table-scroll" tabindex="0">
       <table class="token-table api-table">
         <thead>
           <tr>
@@ -58,21 +127,5 @@ export function ApiTable(props: { head: string[]; rows: string[][] }) {
         </tbody>
       </table>
     </div>
-  );
-}
-
-/** The on-page table of contents; `items` are [anchor id, label]. */
-export function Toc(props: { items: [string, string][] }) {
-  return (
-    <nav class="docs-toc" aria-label="On this page">
-      <span class="docs-toc__title">On this page</span>
-      <ul>
-        {props.items.map(([id, label]) => (
-          <li key={id}>
-            <a href={`#${id}`}>{label}</a>
-          </li>
-        ))}
-      </ul>
-    </nav>
   );
 }

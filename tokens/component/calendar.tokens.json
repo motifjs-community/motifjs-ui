@@ -1,0 +1,16 @@
+{
+  "calendar": {
+    "$description": "Calendar: the month grid and its year and decade views.",
+    "cell-size": { "$type": "dimension", "$value": "{control.height.md}" },
+    "cell-radius": { "$type": "dimension", "$value": "{radius.full}" },
+    "block-radius": { "$type": "dimension", "$value": "{radius.md}" },
+    "gap": { "$type": "dimension", "$value": "{space.2}" },
+    "padding": { "$type": "dimension", "$value": "{space.2}" },
+    "title-font-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" },
+    "head-font-size": { "$type": "dimension", "$value": "{font.size.caption}" },
+    "today-width": { "$type": "dimension", "$value": "{border.width.1}" },
+    "selected-background": { "$type": "color", "$value": "{color.accent.solid}" },
+    "selected-color": { "$type": "color", "$value": "{color.accent.on-solid}" },
+    "today-color": { "$type": "color", "$value": "{color.accent.fg}" }
+  }
+}

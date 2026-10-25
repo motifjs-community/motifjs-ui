@@ -1,0 +1,32 @@
+import { Tooltip } from './Tooltip';
+import { linkTooltip, unlinkTooltip } from './tooltip-hub';
+import type { TooltipProps } from './tooltip-props';
+import type { TooltipTarget } from './tooltip-target';
+
+/**
+ * Gives `target` a tooltip, made only when it is first needed: cheap enough for many elements.
+ * Returns the function that removes it; for a component it also goes when the component does.
+ *
+ * @example
+ * for (const cell of row.cells) addTooltip(cell, cell.title);
+ * const remove = addTooltip(this.help, { text: 'Opens the guide', placement: 'end' });
+ */
+export function addTooltip(target: TooltipTarget, options: string | Omit<TooltipProps, 'target'>): () => void {
+  const element = target instanceof Element ? target : (target.element as Element);
+  const props = typeof options === 'string' ? { text: options } : options;
+  let tooltip: Tooltip | null = null;
+  let removed = false;
+  const create = () => (tooltip ??= new Tooltip({ ...props, target: element }));
+  linkTooltip(element, create);
+  const remove = () => {
+    if (removed) return;
+    removed = true;
+    unlinkTooltip(element, create);
+    const made = tooltip as Tooltip | null;
+    if (made) unlinkTooltip(element, made);
+    made?.close();
+    void made?.dispose();
+  };
+  if (!(target instanceof Element)) target.motif.setDisposable(remove);
+  return remove;
+}

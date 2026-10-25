@@ -1,0 +1,13 @@
+/* ContextMenu: no box of its own where it is placed. Its anchor is an invisible point the menu's
+   popup opens next to (the pointer, or the focused element); the look is the menu's. */
+@layer mx.components {
+  .mx-context-menu {
+    display: contents;
+  }
+
+  .mx-context-menu__anchor {
+    position: fixed;
+    pointer-events: none;
+    visibility: hidden;
+  }
+}

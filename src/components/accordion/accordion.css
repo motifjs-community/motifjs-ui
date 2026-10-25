@@ -1,0 +1,185 @@
+/* Accordion. The look binds to data-variant / data-size / data-chevron on the root and to
+   data-expanded on each item. A section opens by growing its grid row from 0fr to 1fr, so its
+   height animates without being measured; a closed one is visibility: hidden, out of reach of
+   Tab and screen readers. Reduced motion zeroes the durations. */
+@layer mx.components {
+  .mx-accordion {
+    display: flex;
+    flex-direction: column;
+    inline-size: 100%;
+    min-inline-size: 0;
+    color: var(--mx-color-fg-primary);
+    --_line: var(--mx-accordion-border-width) solid var(--mx-color-stroke-card);
+  }
+
+  .mx-accordion[data-size='sm'] {
+    --_height: var(--mx-accordion-height-sm);
+    --_padding: var(--mx-accordion-padding-sm);
+    --_font-size: var(--mx-accordion-font-size-sm);
+    --_line-height: var(--mx-font-line-caption);
+  }
+
+  .mx-accordion[data-size='md'] {
+    --_height: var(--mx-accordion-height-md);
+    --_padding: var(--mx-accordion-padding-md);
+    --_font-size: var(--mx-accordion-font-size-md);
+    --_line-height: var(--mx-font-line-body);
+  }
+
+  .mx-accordion[data-size='lg'] {
+    --_height: var(--mx-accordion-height-lg);
+    --_padding: var(--mx-accordion-padding-lg);
+    --_font-size: var(--mx-accordion-font-size-lg);
+    --_line-height: var(--mx-font-line-body-large);
+  }
+
+  /* Variants. */
+
+  .mx-accordion[data-variant='list'] {
+    overflow: hidden;
+    background: var(--mx-color-bg-card);
+    border: var(--_line);
+    border-radius: var(--mx-accordion-radius);
+  }
+
+  .mx-accordion[data-variant='list'] > .mx-accordion__item + .mx-accordion__item {
+    border-block-start: var(--_line);
+  }
+
+  .mx-accordion[data-variant='separated'] {
+    gap: var(--mx-accordion-card-gap);
+  }
+
+  .mx-accordion[data-variant='separated'] > .mx-accordion__item {
+    overflow: hidden;
+    background: var(--mx-color-bg-card);
+    border: var(--_line);
+    border-radius: var(--mx-accordion-radius);
+  }
+
+  .mx-accordion[data-variant='flush'] > .mx-accordion__item {
+    border-block-end: var(--_line);
+  }
+
+  /* The header. */
+
+  .mx-accordion__heading {
+    margin: 0;
+  }
+
+  .mx-accordion__header {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    gap: var(--mx-accordion-gap);
+    inline-size: 100%;
+    min-block-size: var(--_height);
+    margin: 0;
+    padding-block: 0;
+    padding-inline: var(--_padding);
+    font: inherit;
+    font-size: var(--_font-size);
+    font-weight: var(--mx-accordion-font-weight);
+    line-height: var(--_line-height);
+    text-align: start;
+    color: var(--mx-color-fg-primary);
+    background: transparent;
+    border: 0;
+    cursor: default;
+    transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-accordion__header:hover:not(:disabled, [aria-disabled='true']) {
+    background: var(--mx-color-fill-subtle-secondary);
+  }
+
+  .mx-accordion__header:active:not(:disabled, [aria-disabled='true']) {
+    background: var(--mx-color-fill-subtle-tertiary);
+  }
+
+  .mx-accordion__header:disabled {
+    color: var(--mx-color-fg-disabled);
+  }
+
+  /* Inside a box that clips its corners: the ring is drawn inside the header. */
+  .mx-accordion__header:focus-visible {
+    outline-offset: calc(var(--mx-focus-ring-width) * -1);
+    box-shadow: inset 0 0 0 calc(var(--mx-focus-ring-width) + var(--mx-focus-ring-offset)) var(--mx-focus-ring-inner);
+  }
+
+  .mx-accordion__label {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  .mx-accordion__icon {
+    display: inline-flex;
+    flex: none;
+    inline-size: var(--mx-accordion-icon-size);
+    block-size: var(--mx-accordion-icon-size);
+  }
+
+  .mx-accordion__icon > :is(img, svg) {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .mx-accordion__chevron {
+    color: var(--mx-color-fg-secondary);
+    transition: rotate var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
+  }
+
+  .mx-accordion[data-chevron='start'] .mx-accordion__chevron {
+    order: -1;
+  }
+
+  .mx-accordion[data-chevron='none'] .mx-accordion__chevron {
+    display: none;
+  }
+
+  .mx-accordion__item[data-expanded] > .mx-accordion__heading .mx-accordion__chevron {
+    rotate: 180deg;
+  }
+
+  /* The section. */
+
+  .mx-accordion__region {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+      grid-template-rows var(--mx-motion-duration-normal) var(--mx-motion-easing-standard),
+      visibility 0s linear var(--mx-motion-duration-normal);
+  }
+
+  .mx-accordion__item[data-expanded] > .mx-accordion__region {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition:
+      grid-template-rows var(--mx-motion-duration-normal) var(--mx-motion-easing-standard),
+      visibility 0s;
+  }
+
+  /* No block padding here: a closed row of 0 height would keep it. The space above and
+     below the content is drawn inside, where the row clips it. */
+  .mx-accordion__body {
+    min-block-size: 0;
+    overflow: hidden;
+    padding-inline: var(--_padding);
+  }
+
+  .mx-accordion__body::before,
+  .mx-accordion__body::after {
+    content: '';
+    display: block;
+    block-size: var(--mx-accordion-content-padding);
+  }
+
+  .mx-accordion__body > :first-child {
+    margin-block-start: 0;
+  }
+
+  .mx-accordion__body > :last-child {
+    margin-block-end: 0;
+  }
+}

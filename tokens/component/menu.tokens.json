@@ -1,0 +1,16 @@
+{
+  "menu": {
+    "$description": "Menu: a list of commands on a popup.",
+    "item-height": { "$type": "dimension", "$value": "{control.height.md}" },
+    "item-padding": { "$type": "dimension", "$value": "{control.padding.md}" },
+    "item-gap": { "$type": "dimension", "$value": "{control.gap}" },
+    "item-radius": { "$type": "dimension", "$value": "{radius.sm}" },
+    "item-highlight": { "$type": "color", "$value": "{color.fill.subtle.secondary}" },
+    "icon-size": { "$type": "dimension", "$value": "{icon.size.md}" },
+    "separator-color": { "$type": "color", "$value": "{color.stroke.divider}" },
+    "separator-gap": { "$type": "dimension", "$value": "{space.1}" },
+    "shortcut-gap": { "$type": "dimension", "$value": "{space.6}" },
+    "shortcut-color": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "arrow-size": { "$type": "dimension", "$value": "{icon.size.sm}" }
+  }
+}

@@ -158,8 +158,8 @@ function activeWindow(focus: Element | null): Element | null {
 
 /** The front-most modal window: the window stack knows it (and jsdom has no `:modal`). */
 function topModal(): Element | null {
-  const top = windowStack.top() as { element: Element; form?: { isModal?: boolean } } | undefined;
-  return top?.form?.isModal ? top.element : null;
+  const top = windowStack.top();
+  return top?.modal ? top.element : null;
 }
 
 // Showing the access keys. Elsewhere than on Apple platforms, holding Alt
@@ -263,7 +263,7 @@ function depthOf(el: Element): number {
   return d;
 }
 
-// ---- access keys -----------------------------------------------------------------
+// Access keys.
 
 function runAccessKey(e: KeyboardEvent, focus: HTMLElement | null, win: Element | null): boolean {
   if (!isAccessKeyPress(e)) return false;
@@ -306,7 +306,7 @@ function hasAccessKey(el: Element, modifiers: string, e: KeyboardEvent): boolean
 }
 
 function usable(el: HTMLElement): boolean {
-  // A disabled Control's key is not consumed (a Label is never natively disabled).
+  // A disabled Control's key is not consumed (one that is not a form element is never natively disabled).
   if (controlOf(el)?.isEnabled === false) return false;
   return (
     !(el as HTMLButtonElement).disabled &&

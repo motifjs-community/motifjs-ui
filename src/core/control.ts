@@ -4,10 +4,7 @@ import { disableSubtree, rescueTarget } from './enable';
 import { deepActiveElement, isFocusable } from './focus';
 import { installFocusGuard } from './focus-guard';
 import { addShortcut, installKeyboard, type ShortcutHandler, type ShortcutOptions } from './keyboard';
-import { type Dock } from './dock';
-import { localeOf, type UiStrings } from './locale';
 import { accessKeyToken, setAccessKeyAttribute } from './access-key';
-import { toLength, type Length } from './space';
 
 /** Props every {@link Control} understands. Each one is also a settable property. */
 export interface ControlProps {
@@ -27,44 +24,7 @@ export interface ControlProps {
    * where you can: document order is also the order screen readers read in.
    */
   tabIndex?: Bind<number>;
-
-  // ---- layout props, read by the container the control sits in
-
-  /**
-   * Where the control goes in a Panel, a GroupBox or a split panel:
-   * `top` / `bottom` / `start` / `end` stick to that edge of what is left
-   * (`start` is the left in LTR, the right in RTL), `fill` takes the rest,
-   * `float` is positioned freely with `left` / `top` / `right` / `bottom`.
-   * Default `none` (normal flow).
-   */
-  dock?: Bind<Dock>;
-  /** CSS offsets of a floating control. The edges given are the ones it stays anchored to (`left` + `right` stretches it). */
-  left?: Bind<Length | undefined>;
-  top?: Bind<Length | undefined>;
-  right?: Bind<Length | undefined>;
-  bottom?: Bind<Length | undefined>;
-  /** Size: a number of pixels or any CSS length. Unset, the control sizes to its content or its layout slot. */
-  width?: Bind<Length | undefined>;
-  height?: Bind<Length | undefined>;
-  /** In a Grid: the row and column line (1-based, like CSS `grid-row` / `grid-column`) and how many it spans. */
-  row?: Bind<number | undefined>;
-  column?: Bind<number | undefined>;
-  rowSpan?: Bind<number | undefined>;
-  columnSpan?: Bind<number | undefined>;
 }
-
-/** The layout props, also settable properties; each one costs nothing until used. */
-const LAYOUT_PROPS = ['dock', 'left', 'top', 'right', 'bottom', 'width', 'height', 'row', 'column', 'rowSpan', 'columnSpan'] as const;
-type LayoutProp = (typeof LAYOUT_PROPS)[number];
-/** CSS property written for each length prop. */
-const LENGTH_CSS: Partial<Record<LayoutProp, string>> = {
-  left: 'left',
-  top: 'top',
-  right: 'right',
-  bottom: 'bottom',
-  width: 'width',
-  height: 'height',
-};
 
 /** One property's storage. Created on first use, so untouched properties cost nothing. */
 interface Slot {
@@ -77,27 +37,20 @@ interface Slot {
   appliers?: ((value: unknown) => void)[];
 }
 
-/** See `Control.state`. */
+/** See `Control.controlState`. */
 interface ControlState {
   slots?: Map<string, Slot>;
   enableRelease: (() => void) | null;
   enableCleanupRegistered: boolean;
-  model?: ModelBinding;
   /** The focus element's own `tabindex` while `tabStop` is false (`null`: it had none). */
   tabindexBeforeStop?: string | null;
-  localeStrings?: UiStrings;
   /** The `Alt+…` token this control wrote into `aria-keyshortcuts`. */
   accessKeyToken: string | null;
 }
 
 const STATE = Symbol('mx.control');
 
-interface ModelBinding {
-  propertyName: string;
-  setter?: (value: unknown) => void;
-}
-
-const DEFAULTS: Record<string, unknown> = { text: '', enabled: true, visible: true, tabStop: true, tabIndex: 0, dock: 'none' };
+const DEFAULTS: Record<string, unknown> = { text: '', enabled: true, visible: true, tabStop: true, tabIndex: 0 };
 
 /**
  * The base of every `@motifx-community/ui` control: the shared properties
@@ -106,8 +59,9 @@ const DEFAULTS: Record<string, unknown> = { text: '', enabled: true, visible: tr
  *
  * - A prop can be a value or a getter (`enabled={() => !state.busy}`); a
  *   getter keeps the property in sync with the state.
- * - Every property can be set from code (`ctrl.enabled = false`). Setting it
- *   replaces a getter given as prop: from then on the code owns the value.
+ * - Every property can be set from code, with a value (`ctrl.enabled = false`:
+ *   it replaces a getter given before, the code owns the value from then on) or
+ *   with a function (`ctrl.enabled = () => !state.busy`: bound and followed).
  * - Every property is reactive to read: `{() => ctrl.text}` or a watch follows it.
  *
  * Cost model: a property nobody set or bound costs nothing; a plain value is
@@ -130,7 +84,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
    * base constructor, before field initializers run, and an initializer would
    * then wipe whatever the ref did (a property set, a reader subscribed).
    */
-  private get state(): ControlState {
+  private get controlState(): ControlState {
     const self = this as unknown as { [STATE]?: ControlState };
     return (self[STATE] ??= { enableRelease: null, enableCleanupRegistered: false, accessKeyToken: null });
   }
@@ -145,24 +99,28 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     registerControl(this.element, this);
     installFocusGuard();
     const props = (this.props ?? {}) as ControlProps;
-    for (const name of ['text', 'enabled', 'visible', 'tabStop', 'tabIndex', ...LAYOUT_PROPS] as const) {
+    for (const name of ['text', 'enabled', 'visible', 'tabStop', 'tabIndex'] as const) {
       if (props[name] !== undefined) this.bindProperty(name, props[name]);
     }
     const disabled = props.disabled;
     if (props.enabled === undefined && disabled !== undefined) {
       this.bindProperty('enabled', typeof disabled === 'function' ? () => !disabled() : !disabled);
     }
+    // DOM events given to `new X({ onclick })` from code; in JSX the compiler binds them itself.
+    for (const [name, handler] of Object.entries(props)) {
+      if (/^on[a-z]+$/.test(name) && typeof handler === 'function') this.motif.on(name.slice(2), handler as (...args: unknown[]) => unknown);
+    }
   }
 
-  // ---- shared properties ---------------------------------------------------
+  // Shared properties.
 
   /** The control's text (caption, label, title…). Reactive. */
   get text(): string {
     return this.getProperty<string>('text');
   }
 
-  set text(value: string) {
-    this.setProperty('text', value ?? '');
+  set text(value: Bind<string>) {
+    this.assignProperty('text', value, (v) => v ?? '');
   }
 
   /**
@@ -174,8 +132,8 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     return this.getProperty<boolean>('enabled');
   }
 
-  set enabled(value: boolean) {
-    this.setProperty('enabled', !!value);
+  set enabled(value: Bind<boolean>) {
+    this.assignProperty('enabled', value, Boolean);
   }
 
   /** The inverse of {@link enabled}, as in HTML. Reactive. */
@@ -183,8 +141,8 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     return !this.enabled;
   }
 
-  set disabled(value: boolean) {
-    this.enabled = !value;
+  set disabled(value: Bind<boolean>) {
+    this.assignProperty('enabled', value, (v) => !v);
   }
 
   /**
@@ -201,8 +159,8 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     return this.getProperty<boolean>('visible');
   }
 
-  set visible(value: boolean) {
-    this.setProperty('visible', !!value);
+  set visible(value: Bind<boolean>) {
+    this.assignProperty('visible', value, Boolean);
   }
 
   /** `false` takes the control out of the Tab order (see the prop). Reactive. */
@@ -210,78 +168,8 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     return this.getProperty<boolean>('tabStop');
   }
 
-  set tabStop(value: boolean) {
-    this.setProperty('tabStop', !!value);
-  }
-
-  // ---- layout (see the props) ------------------------------------------------
-
-  /** See the prop. Reactive. */
-  get dock(): Dock {
-    return this.getProperty<Dock>('dock');
-  }
-  set dock(value: Dock) {
-    this.setProperty('dock', value ?? 'none');
-  }
-  get left(): Length | undefined {
-    return this.getProperty<Length | undefined>('left');
-  }
-  set left(value: Length | undefined) {
-    this.setProperty('left', value);
-  }
-  get top(): Length | undefined {
-    return this.getProperty<Length | undefined>('top');
-  }
-  set top(value: Length | undefined) {
-    this.setProperty('top', value);
-  }
-  get right(): Length | undefined {
-    return this.getProperty<Length | undefined>('right');
-  }
-  set right(value: Length | undefined) {
-    this.setProperty('right', value);
-  }
-  get bottom(): Length | undefined {
-    return this.getProperty<Length | undefined>('bottom');
-  }
-  set bottom(value: Length | undefined) {
-    this.setProperty('bottom', value);
-  }
-  get width(): Length | undefined {
-    return this.getProperty<Length | undefined>('width');
-  }
-  set width(value: Length | undefined) {
-    this.setProperty('width', value);
-  }
-  get height(): Length | undefined {
-    return this.getProperty<Length | undefined>('height');
-  }
-  set height(value: Length | undefined) {
-    this.setProperty('height', value);
-  }
-  get row(): number | undefined {
-    return this.getProperty<number | undefined>('row');
-  }
-  set row(value: number | undefined) {
-    this.setProperty('row', value);
-  }
-  get column(): number | undefined {
-    return this.getProperty<number | undefined>('column');
-  }
-  set column(value: number | undefined) {
-    this.setProperty('column', value);
-  }
-  get rowSpan(): number | undefined {
-    return this.getProperty<number | undefined>('rowSpan');
-  }
-  set rowSpan(value: number | undefined) {
-    this.setProperty('rowSpan', value);
-  }
-  get columnSpan(): number | undefined {
-    return this.getProperty<number | undefined>('columnSpan');
-  }
-  set columnSpan(value: number | undefined) {
-    this.setProperty('columnSpan', value);
+  set tabStop(value: Bind<boolean>) {
+    this.assignProperty('tabStop', value, Boolean);
   }
 
   /** See the prop. Reactive. */
@@ -289,13 +177,13 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     return this.getProperty<number>('tabIndex');
   }
 
-  set tabIndex(value: number) {
-    this.setProperty('tabIndex', Number(value) || 0);
+  set tabIndex(value: Bind<number>) {
+    this.assignProperty('tabIndex', value, (v) => Number(v) || 0);
   }
 
   /**
-   * The nearest ancestor that is a `Control`, not crossing a window (a form
-   * shown inside a disabled panel is not disabled by it).
+   * The nearest ancestor that is a `Control`, not crossing a window (a window
+   * opened inside a disabled control is not disabled by it).
    */
   get parentControl(): Control | null {
     for (let p = this.parent; p; p = p.parent) {
@@ -305,7 +193,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     return null;
   }
 
-  // ---- focus -----------------------------------------------------------------
+  // Focus.
 
   /** The element that takes focus; the root by default. Composite controls override it. */
   protected get focusElement(): HTMLElement {
@@ -336,11 +224,11 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     return this.focused;
   }
 
-  // ---- keyboard ----------------------------------------------------------------
+  // Keyboard.
 
   /**
    * What the control's access key (`&Save` → Alt+S) does. Focuses it by
-   * default; a button also clicks itself. Returns whether it did something.
+   * default; a button-like control also clicks itself. Returns whether it did something.
    */
   onAccessKey(): boolean {
     return this.focus();
@@ -367,13 +255,13 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
    */
   protected setAccessKey(key: string | null): void {
     const token = key ? accessKeyToken(key) : null;
-    if (token === this.state.accessKeyToken) return;
-    setAccessKeyAttribute(this.focusElement, this.state.accessKeyToken, token);
-    this.state.accessKeyToken = token;
+    if (token === this.controlState.accessKeyToken) return;
+    setAccessKeyAttribute(this.focusElement, this.controlState.accessKeyToken, token);
+    this.controlState.accessKeyToken = token;
     if (token) installKeyboard();
   }
 
-  // ---- property storage, for subclasses ------------------------------------
+  // Property storage, for subclasses.
 
   /** Reads a property, tracked: reactive readers update when it changes. */
   protected getProperty<T>(name: string): T {
@@ -389,6 +277,24 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     slot.stop?.();
     slot.stop = undefined;
     this.store(name, slot, value);
+  }
+
+  /** Stores a value the user entered; a bound getter is kept. */
+  protected changeProperty(name: string, value: unknown): void {
+    this.store(name, this.slot(name), value);
+  }
+
+  /**
+   * What a property setter does: a value is set (`setProperty`), a function is bound in place of
+   * whatever was there (`bindProperty`) and followed. `normalize` shapes the value either way.
+   */
+  protected assignProperty<T>(name: string, value: Bind<T>, normalize: (value: T) => unknown = (v) => v): void {
+    if (typeof value === 'function') {
+      const get = value as () => T;
+      this.bindProperty(name, () => normalize(get()));
+    } else {
+      this.setProperty(name, normalize(value));
+    }
   }
 
   /**
@@ -424,7 +330,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   }
 
   private slot(name: string): Slot {
-    const slots = (this.state.slots ??= new Map());
+    const slots = (this.controlState.slots ??= new Map());
     let slot = slots.get(name);
     if (!slot) slots.set(name, (slot = { value: DEFAULTS[name] }));
     return slot;
@@ -454,37 +360,25 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
       // whether Tab needs their help at all.
       if (value) this.element.setAttribute('data-mx-tabindex', String(value));
       else this.element.removeAttribute('data-mx-tabindex');
-    } else if (name === 'dock') {
-      // The dock host watches this attribute and lays its children out again.
-      if (value && value !== 'none') this.element.setAttribute('data-dock', String(value));
-      else this.element.removeAttribute('data-dock');
-    } else if (LENGTH_CSS[name as LayoutProp]) {
-      const css = toLength(value as Length | undefined);
-      if (css) this.element.style.setProperty(LENGTH_CSS[name as LayoutProp]!, css);
-      else this.element.style.removeProperty(LENGTH_CSS[name as LayoutProp]!);
-    } else if (name === 'row' || name === 'rowSpan') {
-      this.element.style.gridRow = gridLine(this.peekProperty('row'), this.peekProperty('rowSpan'));
-    } else if (name === 'column' || name === 'columnSpan') {
-      this.element.style.gridColumn = gridLine(this.peekProperty('column'), this.peekProperty('columnSpan'));
     }
   }
 
   /** A property's current value without tracking it. */
   protected peekProperty<T>(name: string): T | undefined {
-    return this.state.slots?.get(name)?.value as T | undefined;
+    return this.controlState.slots?.get(name)?.value as T | undefined;
   }
 
   private applyEnabled(enabled: boolean): void {
-    if (!enabled && !this.state.enableRelease) {
-      this.state.enableRelease = disableSubtree(this.element);
+    if (!enabled && !this.controlState.enableRelease) {
+      this.controlState.enableRelease = disableSubtree(this.element);
       this.element.setAttribute('data-disabled', '');
-      if (!this.state.enableCleanupRegistered) {
-        this.state.enableCleanupRegistered = true;
-        this.motif.setDisposable(() => this.state.enableRelease?.());
+      if (!this.controlState.enableCleanupRegistered) {
+        this.controlState.enableCleanupRegistered = true;
+        this.motif.setDisposable(() => this.controlState.enableRelease?.());
       }
-    } else if (enabled && this.state.enableRelease) {
-      this.state.enableRelease();
-      this.state.enableRelease = null;
+    } else if (enabled && this.controlState.enableRelease) {
+      this.controlState.enableRelease();
+      this.controlState.enableRelease = null;
       this.element.removeAttribute('data-disabled');
     }
   }
@@ -500,53 +394,14 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
 
   private applyTabStop(tabStop: boolean): void {
     const el = this.focusElement;
-    if (!tabStop && this.state.tabindexBeforeStop === undefined) {
-      this.state.tabindexBeforeStop = el.getAttribute('tabindex');
+    if (!tabStop && this.controlState.tabindexBeforeStop === undefined) {
+      this.controlState.tabindexBeforeStop = el.getAttribute('tabindex');
       el.setAttribute('tabindex', '-1');
-    } else if (tabStop && this.state.tabindexBeforeStop !== undefined) {
-      const original = this.state.tabindexBeforeStop;
-      this.state.tabindexBeforeStop = undefined;
+    } else if (tabStop && this.controlState.tabindexBeforeStop !== undefined) {
+      const original = this.controlState.tabindexBeforeStop;
+      this.controlState.tabindexBeforeStop = undefined;
       if (original === null) el.removeAttribute('tabindex');
       else el.setAttribute('tabindex', original);
     }
   }
-
-  // ---- x-model and locale, for subclasses ----------------------------------
-
-  /**
-   * Whether the control is bound with `x-model` (core writes the bound state
-   * to the control's `value` property). Known once the control is configured.
-   */
-  protected get hasModel(): boolean {
-    return !!this.modelBinding();
-  }
-
-  /** Writes a new value back to the state bound with `x-model` (two-way binding). */
-  protected writeModel(value: unknown): void {
-    this.modelBinding()?.setter?.(value);
-  }
-
-  private modelBinding(): ModelBinding | undefined {
-    // Cached once found; looked up again until then (bindings are added while building).
-    return (this.state.model ??= (this.bindings.items as unknown as ModelBinding[]).find(
-      (b) => b.propertyName === 'value' && typeof b.setter === 'function',
-    ));
-  }
-
-  /** The texts this control writes itself: the app's `UiLocale` (DI), else the shared one. Reactive. */
-  protected get strings(): UiStrings {
-    return (this.state.localeStrings ??= localeOf(this).strings);
-  }
-}
-
-/** The element that takes a control's focus (its protected `focusElement`), for controls that point at another one (Label). */
-export function focusElementOf(control: Control): HTMLElement {
-  return (control as unknown as { focusElement: HTMLElement }).focusElement;
-}
-
-/** CSS `grid-row` / `grid-column` for a 1-based line and a span; empty when neither is set. */
-function gridLine(index: number | undefined, span: number | undefined): string {
-  const n = span && span > 1 ? span : 1;
-  if (index === undefined || index === null) return n > 1 ? `span ${n}` : '';
-  return `${index} / span ${n}`;
 }

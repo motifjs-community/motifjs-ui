@@ -1,0 +1,17 @@
+{
+  "list": {
+    "$description": "List: the options of a drop-down, a combo box or a list box.",
+    "item-height": { "$type": "dimension", "$value": "{control.height.md}" },
+    "item-padding": { "$type": "dimension", "$value": "{control.padding.md}" },
+    "item-gap": { "$type": "dimension", "$value": "{control.gap}" },
+    "item-radius": { "$type": "dimension", "$value": "{radius.sm}" },
+    "item-highlight": { "$type": "color", "$value": "{color.fill.subtle.secondary}" },
+    "item-selected": { "$type": "color", "$value": "{color.fill.subtle.secondary}" },
+    "indicator-width": { "$type": "dimension", "$value": "{border.width.2}" },
+    "indicator-color": { "$type": "color", "$value": "{color.accent.fg}" },
+    "header-font-size": { "$type": "dimension", "$value": "{font.size.caption}" },
+    "header-font-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" },
+    "max-height": { "$type": "dimension", "$value": { "value": 20, "unit": "rem" } },
+    "icon-size": { "$type": "dimension", "$value": "{icon.size.md}" }
+  }
+}

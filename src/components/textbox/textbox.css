@@ -1,0 +1,16 @@
+/* TextBox: the password button, and the browser's own buttons it replaces. */
+@layer mx.components {
+  .mx-text-box .mx-field__input::-webkit-search-cancel-button,
+  .mx-text-box .mx-field__input::-webkit-search-decoration {
+    appearance: none;
+  }
+
+  .mx-text-box .mx-field__input::-ms-reveal,
+  .mx-text-box .mx-field__input::-ms-clear {
+    display: none;
+  }
+
+  .mx-text-box__reveal[aria-pressed='true'] {
+    color: var(--mx-color-fg-primary);
+  }
+}

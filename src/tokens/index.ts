@@ -15,7 +15,7 @@ export const tokens = { ...designTokens, ...componentTokens } as const;
  * compile time. Use it wherever a style is written in TS instead of CSS.
  *
  * @example
- * <div style={{ background: cssVar('color.accent.solid'), borderRadius: cssVar('button.radius') }} />
+ * <div style={{ background: cssVar('color.accent.solid'), borderRadius: cssVar('radius.md') }} />
  */
 export function cssVar(name: TokenName): `var(${string})` {
   return `var(${tokens[name].cssVar})`;
@@ -26,7 +26,7 @@ export function cssVar(name: TokenName): `var(${string})` {
  * for writing an override on an element.
  *
  * @example
- * el.style.setProperty(cssProperty('form.width'), '40rem');
+ * el.style.setProperty(cssProperty('color.accent.solid'), 'rebeccapurple');
  */
 export function cssProperty(name: TokenName): `--${string}` {
   return tokens[name].cssVar;

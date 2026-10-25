@@ -1,0 +1,22 @@
+/* DateBox: the field with a mask, the calendar and the times on a popup. */
+@layer mx.components {
+  .mx-date-box__popup {
+    display: flex;
+    align-items: stretch;
+    gap: var(--mx-space-1);
+  }
+
+  .mx-date-box__times {
+    min-inline-size: var(--mx-date-box-times-width);
+    max-block-size: var(--mx-date-box-times-height);
+  }
+
+  .mx-date-box__popup > .mx-calendar + .mx-date-box__times {
+    padding-inline-start: var(--mx-space-1);
+    border-inline-start: var(--mx-border-width-1) solid var(--mx-color-stroke-divider);
+  }
+
+  .mx-date-box__times:focus-visible {
+    outline-offset: calc(-1 * var(--mx-focus-ring-width));
+  }
+}

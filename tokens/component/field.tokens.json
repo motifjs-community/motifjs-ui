@@ -1,0 +1,39 @@
+{
+  "field": {
+    "$description": "Field: the box of the text-like editors, with its label and the line under it.",
+    "width": { "$type": "dimension", "$value": { "value": 16, "unit": "rem" } },
+    "radius": { "$type": "dimension", "$value": "{radius.md}" },
+    "border-width": { "$type": "dimension", "$value": "{border.width.1}" },
+    "focus-width": { "$type": "dimension", "$value": "{border.width.2}" },
+    "gap": { "$type": "dimension", "$value": "{space.2}" },
+    "label-gap": { "$type": "dimension", "$value": "{space.1}" },
+    "label-width": { "$type": "dimension", "$value": { "value": 8, "unit": "rem" } },
+    "label-font-weight": { "$type": "fontWeight", "$value": "{font.weight.medium}" },
+    "message-gap": { "$type": "dimension", "$value": "{space.1}" },
+    "message-font-size": { "$type": "dimension", "$value": "{font.size.caption}" },
+    "message-line": { "$type": "dimension", "$value": "{font.line.caption}" },
+    "icon-size": { "$type": "dimension", "$value": "{icon.size.md}" },
+    "button-inset": { "$type": "dimension", "$value": "{space.1}" },
+    "button-radius": { "$type": "dimension", "$value": "{radius.sm}" },
+    "floating-height": { "$type": "dimension", "$value": { "value": 3, "unit": "rem" } },
+    "floating-font-size": { "$type": "dimension", "$value": "{font.size.caption}" },
+    "font-size": {
+      "$type": "dimension",
+      "sm": { "$value": "{font.size.caption}" },
+      "md": { "$value": "{font.size.body}" },
+      "lg": { "$value": "{font.size.body-large}" }
+    },
+    "height": {
+      "$type": "dimension",
+      "sm": { "$value": "{control.height.sm}" },
+      "md": { "$value": "{control.height.md}" },
+      "lg": { "$value": "{control.height.lg}" }
+    },
+    "padding": {
+      "$type": "dimension",
+      "sm": { "$value": "{control.padding.sm}" },
+      "md": { "$value": "{control.padding.md}" },
+      "lg": { "$value": "{control.padding.lg}" }
+    }
+  }
+}

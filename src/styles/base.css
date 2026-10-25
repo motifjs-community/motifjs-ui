@@ -19,4 +19,11 @@
   :root:is([data-mx-alt], [data-mx-access-keys='always']) .mx-access-key {
     text-decoration: underline;
   }
+
+  /* The kit's own small glyphs (a chevron, a check mark), drawn in the text color. */
+  .mx-glyph {
+    flex: none;
+    inline-size: var(--mx-icon-size-sm);
+    block-size: var(--mx-icon-size-sm);
+  }
 }

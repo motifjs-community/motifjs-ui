@@ -1,0 +1,117 @@
+/* Toast and Toaster. A toaster is a region with a fixed stack at each edge position in use;
+   a toast is a surface card whose tone shows in its glyph. It slides in from its edge and fades
+   out, with the motion tokens (none under reduced motion). */
+@layer mx.components {
+  .mx-toaster__stack {
+    position: fixed;
+    z-index: var(--mx-z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--mx-toast-gap);
+    box-sizing: border-box;
+    inline-size: var(--mx-toast-width);
+    max-inline-size: calc(100vw - 2 * var(--mx-toast-inset));
+    pointer-events: none;
+  }
+
+  .mx-toaster__stack[data-position^='top'] {
+    inset-block-start: var(--mx-toast-inset);
+  }
+
+  .mx-toaster__stack[data-position^='bottom'] {
+    inset-block-end: var(--mx-toast-inset);
+  }
+
+  .mx-toaster__stack[data-position$='-start'] {
+    inset-inline-start: var(--mx-toast-inset);
+  }
+
+  .mx-toaster__stack[data-position$='-end'] {
+    inset-inline-end: var(--mx-toast-inset);
+  }
+
+  .mx-toaster__stack:is([data-position='top'], [data-position='bottom']) {
+    inset-inline: 0;
+    margin-inline: auto;
+  }
+
+  .mx-toast {
+    --_slide: var(--mx-toast-slide);
+    --_tint: var(--mx-color-fg-secondary);
+
+    display: flex;
+    gap: var(--mx-toast-content-gap);
+    align-items: flex-start;
+    box-sizing: border-box;
+    padding: var(--mx-toast-padding);
+    font-size: var(--mx-font-size-body);
+    line-height: var(--mx-font-line-body);
+    color: var(--mx-color-fg-primary);
+    background: var(--mx-toast-background);
+    border: var(--mx-toast-border-width) solid var(--mx-toast-border-color);
+    border-radius: var(--mx-toast-radius);
+    box-shadow: var(--mx-toast-shadow);
+    pointer-events: auto;
+    transition:
+      opacity var(--mx-motion-duration-normal) var(--mx-motion-easing-out),
+      translate var(--mx-motion-duration-normal) var(--mx-motion-easing-out);
+  }
+
+  .mx-toaster__stack[data-position^='top'] .mx-toast {
+    --_slide: calc(-1 * var(--mx-toast-slide));
+  }
+
+  .mx-toast[data-state='entering'] {
+    opacity: 0;
+    translate: 0 var(--_slide);
+  }
+
+  .mx-toast[data-state='leaving'] {
+    opacity: 0;
+  }
+
+  .mx-toast[data-tone='success'] {
+    --_tint: var(--mx-color-success-fg);
+  }
+
+  .mx-toast[data-tone='caution'] {
+    --_tint: var(--mx-color-caution-fg);
+  }
+
+  .mx-toast[data-tone='danger'] {
+    --_tint: var(--mx-color-danger-fg);
+  }
+
+  .mx-toast__icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    block-size: var(--mx-font-line-body);
+    color: var(--_tint);
+  }
+
+  .mx-toast__icon[hidden] {
+    display: none;
+  }
+
+  .mx-toast__icon > * {
+    inline-size: var(--mx-toast-icon-size);
+    block-size: var(--mx-toast-icon-size);
+  }
+
+  .mx-toast__body {
+    flex: 1;
+    min-inline-size: 0;
+    overflow-wrap: break-word;
+  }
+
+  .mx-toast__title {
+    font-weight: var(--mx-toast-title-font-weight);
+  }
+
+  .mx-toast__action,
+  .mx-toast__close {
+    flex: none;
+    align-self: center;
+  }
+}

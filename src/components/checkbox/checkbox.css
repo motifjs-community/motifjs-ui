@@ -1,0 +1,214 @@
+/* CheckBox, and the layout every field drawn as a native checkbox shares (.mx-toggle-field: CheckBox,
+   Switch): the box and its caption side by side, the help or error line under the caption. The
+   text-field frame of .mx-field is taken away. The look binds to data-size, data-state
+   (checked | unchecked | mixed), data-label-position and the field's state attributes. */
+@layer mx.components {
+  /* The shared layout. */
+
+  /* [data-label-mode] outweighs the label modes of field.css; only `hidden` keeps its meaning. */
+  .mx-toggle-field.mx-field[data-label-mode] {
+    display: inline-grid;
+    inline-size: auto;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'control label'
+      '. foot';
+    column-gap: var(--_gap);
+    align-items: center;
+  }
+
+  .mx-toggle-field.mx-field[data-label-mode][data-label-position='start'] {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'label control'
+      'foot .';
+  }
+
+  .mx-toggle-field.mx-field[data-label-mode][data-stretch] {
+    display: grid;
+    inline-size: 100%;
+  }
+
+  .mx-toggle-field.mx-field:is([data-label-mode='hidden'], :has(> .mx-field__label[hidden])) {
+    column-gap: 0;
+  }
+
+  .mx-toggle-field.mx-field:not([data-label-mode='hidden']) > .mx-field__label {
+    grid-area: label;
+    position: static;
+    block-size: auto;
+    margin: 0;
+    font-size: var(--_text-size);
+    font-weight: var(--mx-font-weight-regular);
+    color: var(--mx-color-fg-primary);
+    pointer-events: auto;
+    transition: none;
+  }
+
+  .mx-toggle-field.mx-field[data-disabled]:not([data-label-mode='hidden']) > .mx-field__label {
+    color: var(--mx-color-fg-disabled);
+  }
+
+  /* The box holds the control and what is drawn over it, in one cell. */
+  .mx-toggle-field.mx-field .mx-field__box {
+    grid-area: control;
+    display: grid;
+    align-items: center;
+    justify-items: start;
+    min-block-size: var(--_row);
+    padding: 0;
+    font-size: var(--_text-size);
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    cursor: default;
+    transition: none;
+  }
+
+  .mx-toggle-field .mx-field__box > * {
+    grid-area: 1 / 1;
+  }
+
+  .mx-toggle-field.mx-field .mx-field__foot {
+    grid-area: foot;
+  }
+
+  /* Text-field parts have no place next to a box. */
+  .mx-toggle-field :is(.mx-field__icon, .mx-field__prefix, .mx-field__suffix, .mx-field__start, .mx-field__end) {
+    display: none;
+  }
+
+  /* CheckBox. */
+
+  .mx-check-box {
+    --_gap: var(--mx-checkbox-gap);
+    --_fill: var(--mx-color-fill-control-default);
+    --_fill-hover: var(--mx-color-fill-control-secondary);
+    --_fill-active: var(--mx-color-fill-control-tertiary);
+    --_stroke: var(--mx-color-stroke-control-strong);
+    --_stroke-edge: var(--mx-color-stroke-control-edge);
+    --_glow: inset 0 var(--mx-checkbox-border-width) 0 var(--mx-color-highlight-control);
+    --_press: var(--mx-control-press-offset);
+  }
+
+  .mx-check-box[data-size='sm'] {
+    --_box: var(--mx-checkbox-size-sm);
+    --_mark-size: var(--mx-checkbox-mark-size-sm);
+    --_row: var(--mx-checkbox-height-sm);
+    --_text-size: var(--mx-checkbox-font-size-sm);
+  }
+
+  .mx-check-box[data-size='md'] {
+    --_box: var(--mx-checkbox-size-md);
+    --_mark-size: var(--mx-checkbox-mark-size-md);
+    --_row: var(--mx-checkbox-height-md);
+    --_text-size: var(--mx-checkbox-font-size-md);
+  }
+
+  .mx-check-box[data-size='lg'] {
+    --_box: var(--mx-checkbox-size-lg);
+    --_mark-size: var(--mx-checkbox-mark-size-lg);
+    --_row: var(--mx-checkbox-height-lg);
+    --_text-size: var(--mx-checkbox-font-size-lg);
+  }
+
+  .mx-check-box:is([data-state='checked'], [data-state='mixed']) {
+    --_fill: var(--mx-color-accent-solid);
+    --_fill-hover: var(--mx-color-accent-solid-hover);
+    --_fill-active: var(--mx-color-accent-solid-pressed);
+    --_stroke: var(--mx-color-accent-solid);
+    --_stroke-edge: var(--mx-color-stroke-on-accent-bottom);
+  }
+
+  .mx-check-box[data-invalid]:not([data-state='checked']) {
+    --_stroke: var(--mx-color-danger-solid);
+    --_stroke-edge: var(--mx-color-danger-solid);
+  }
+
+  .mx-check-box[data-readonly] {
+    --_fill-hover: var(--_fill);
+    --_fill-active: var(--_fill);
+    --_press: 0;
+  }
+
+  .mx-check-box__input {
+    appearance: none;
+    inline-size: var(--_box);
+    block-size: var(--_box);
+    margin: 0;
+    background: var(--_fill);
+    border: var(--mx-checkbox-border-width) solid var(--_stroke);
+    border-block-end-color: var(--_stroke-edge);
+    border-radius: var(--mx-checkbox-radius);
+    box-shadow: var(--_glow);
+    cursor: default;
+    transition:
+      background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      translate var(--mx-motion-duration-instant) var(--mx-motion-easing-standard);
+  }
+
+  .mx-check-box__input:hover {
+    background: var(--_fill-hover);
+  }
+
+  .mx-check-box__input:active,
+  .mx-check-box__input:active ~ .mx-check-box__mark {
+    translate: 0 var(--_press);
+  }
+
+  .mx-check-box__input:active {
+    background: var(--_fill-active);
+    box-shadow: none;
+  }
+
+  /* The focus ring's inner ring is a box-shadow too: keep both. */
+  .mx-check-box__input:focus-visible {
+    box-shadow:
+      0 0 0 var(--mx-focus-ring-offset) var(--mx-focus-ring-inner),
+      var(--_glow);
+  }
+
+  .mx-check-box__input:disabled {
+    background: var(--mx-color-fill-control-disabled);
+    border-color: var(--mx-color-stroke-control-default);
+    box-shadow: none;
+  }
+
+  .mx-check-box:is([data-state='checked'], [data-state='mixed']) .mx-check-box__input:disabled {
+    background: var(--mx-color-fill-accent-disabled);
+    border-color: transparent;
+  }
+
+  /* The mark is drawn over the box (positioned, so it paints above it) and lets clicks through. */
+  .mx-check-box .mx-field__box > .mx-check-box__mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    place-self: center start;
+    inline-size: var(--_box);
+    block-size: var(--_box);
+    margin: 0;
+    color: var(--mx-color-accent-on-solid);
+    pointer-events: none;
+    transition: translate var(--mx-motion-duration-instant) var(--mx-motion-easing-standard);
+  }
+
+  .mx-check-box[data-disabled] .mx-check-box__mark {
+    color: var(--mx-color-fg-on-accent-disabled);
+  }
+
+  .mx-check-box__mark > .mx-glyph {
+    grid-area: 1 / 1;
+    inline-size: var(--_mark-size);
+    block-size: var(--_mark-size);
+    opacity: 0;
+    transition: opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-check-box[data-state='checked'] .mx-check-box__check,
+  .mx-check-box[data-state='mixed'] .mx-check-box__dash {
+    opacity: 1;
+  }
+}

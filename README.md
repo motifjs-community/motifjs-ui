@@ -6,65 +6,56 @@ bind to state. Everything is drawn from the [MotifJS design system](https://gith
 (`@motifx-community/design-system`): its tokens, themes, density, fonts and user-preference
 overrides. This package adds the components and their component tokens, nothing else.
 
-> **Status:** early. Components are built one at a time; today: `MxForm` and `Button`, on the `Control` base. Not yet
-> published to npm.
+> **Status:** the full set is in (see the table). Not yet published
+> to npm.
 
 ## Install
 
 ```sh
-npm i @motifx/core @motifx-community/design-system @motifx-community/ui
+npm i @motifx/core @motifx-community/design-system @motifx-community/data @motifx-community/ui
 ```
 
 ```tsx
-import '@motifx-community/ui/styles.css'; // imports the design system first, then the components
-import { Button, MxForm, type FormResult } from '@motifx-community/ui';
+import '@motifx-community/ui/styles.css'; // imports the design system first, then this kit's layer
+import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/ui';
 ```
 
 `styles.css` begins with `@import '@motifx-community/design-system/styles.css'`, which a bundler
 (Vite, the MotifJS default) resolves. Without a bundler, link the design system's stylesheet first and
 this one after it.
 
-## 30 seconds
+## What is here
+
+Every component works from JSX (bound to state) and from code (`new X({...})`, added anywhere,
+changed later); every prop and property takes a value or a function. The docs site has a page for
+each (`npm run dev`).
+
+| Group | Components |
+| --- | --- |
+| Buttons and commands | `Button` (menu, split, drop-down, toggle, busy), `Toolbar` (overflow menu), `MenuBar`, `ContextMenu` |
+| Editors | `TextBox` (mask, validation), `TextArea` (auto-grow), `NumberBox` (locale formats, spin), `DateBox` (date, time, both), `Calendar`, `Slider` (range) |
+| Choice | `CheckBox` (three states), `Switch`, `RadioGroup`, `DropDown`, `ComboBox`, `Autocomplete`, `Lookup` (columns), `TagBox`, `ListBox` |
+| Data | `DataGrid` (virtual or paged, editing with three save modes, row actions, selection, filters, copy and paste, CSV export, kept layout), `TreeView` (lazy, check boxes, filter); lists and grids read `@motifx-community/data` sources |
+| Layout and windows | `Stack`, `Grid`, `DockPanel`, `Panel`, `GroupBox`, `SplitContainer`, `FormLayout`, `Tabs`, `Accordion`, `MxForm` (window and modal form), `messageBox`, `confirm` |
+| Feedback | `ProgressBar`, `Spinner` (cover a panel), `Tooltip`, `Toast` |
+| Shared parts | `Field` (base of every editor), `InputMask`, `ValidationGroup`, `validateFields`, `checkRules`, `OptionList`, `DataItems`, `Popup`, `MenuList`, date helpers (`datePatternOf`) |
+| Base | `Control`, `FocusContainer`, `addShortcut`, `parseAccessKey`, `uiLocale` (English, Turkish) |
+
+Focus never falls to `<body>` because a control was disabled, hidden, removed or disposed; it moves to
+the next usable element. Focus rings show only for keyboard use.
 
 ```tsx
-class ConfirmForm extends MxForm {
-  view() {
-    return (
-      <>
-        <p>Delete this record?</p>
-        <footer>
-          <Button tone="danger" data-result="yes">Delete</Button>
-          <Button data-result="no" ref={(b) => (this.cancelButton = b)}>Cancel</Button>
-        </footer>
-      </>
-    );
+<Button text="&Save" tone="accent" busy={() => this.model.saving} onclick={() => this.model.save()} />
+<Button text="Save" split onclick={() => this.save()} menu={[{ text: 'Save &as…', click: () => this.saveAs() }]} />
+
+class SearchBox extends FocusContainer<HTMLDivElement> {
+  override onConfigured() {
+    this.addShortcut('Escape', () => this.clear(), { inEditable: true }); // while focus is inside
   }
 }
 
-// on a click — nothing declared in a template beforehand:
-const answer = await new ConfirmForm({ text: 'Delete' }).showDialog(this);
-if (answer === 'yes') this.model.delete();
+addShortcut('Mod+K', () => palette.open()); // app-wide
 ```
-
-The same form can open modeless (`show`), follow a state two-way (`<ConfirmForm modal
-x-model={() => this.state.confirming} />`) or sit embedded in a page. It dies when it closes, or
-with the component that owns it.
-
-## Components
-
-| Component | What it is | Docs |
-| --- | --- | --- |
-| `Control` | The base of every control: `text`, `enabled` / `isEnabled`, `visible`, `tabStop` and focus, the same from JSX and from code | `apps/docs/control` |
-| `Label` | Text that names a control: accessible name, click and `&` access key go to its `target`; the type ramp and tones; ellipsis / max lines | `apps/docs/label` |
-| `Panel` | Container with padding (token steps or free CSS), own scrolling and docking (top / bottom / start / end / fill / float) | `apps/docs/panel` |
-| `Stack` | One line of children, vertical or horizontal, with a gap | `apps/docs/stack` |
-| `Grid` | Sized rows and columns (`auto, 1fr, 2fr, 120`), children by `row` / `column` | `apps/docs/grid` |
-| `GroupBox` | Titled frame (`<fieldset>`), access key to its first field, docks like a Panel | `apps/docs/groupbox` |
-| `SplitContainer` | Two panels and a splitter: drag, arrow keys, fixed panel, min sizes, collapse | `apps/docs/splitcontainer` |
-| `MxForm` | A form shown when needed: modeless window, modal dialog that answers with a result, `x-model`-bound window, or embedded; move, resize, maximize, minimize to a target; lifetime bound to an owner | `apps/docs/form` |
-| `Button` | Standard / accent / danger, outline and ghost buttons, `variant` × `tone` × `size`, all reactive; solid buttons are pressable (bottom edge, press offset) | `apps/docs/button` |
-
-Shared exports: `FormResult`, `CloseReason`, `UiLocale` / `uiLocale` / `enStrings` / `trStrings`.
 
 ## Design system and component tokens
 
@@ -72,20 +63,17 @@ Shared exports: `FormResult`, `CloseReason`, `UiLocale` / `uiLocale` / `enString
   OS preference by default), density (`data-density="compact"`), the fonts, reduced motion, reduced
   transparency and forced colors all come from `@motifx-community/design-system`. Its
   `--mx-*` custom properties are the contract; this package never redefines them.
-- This package adds one layer on top: **component tokens** (`button.*`, `form.*`, `groupbox.*`,
-  `split.*`), DTCG JSON in `tokens/component/`, each a fine-tuning knob of one component that
-  references a design-system token (`button.radius` → `{radius.md}`, `form.titlebar.height` →
-  `{bar.height}`). They are built with Style Dictionary against the design system's source, so a
-  reference to a token that does not exist fails the build, and written as `--mx-button-*`,
-  `--mx-form-*`, … inside `@layer mx.components`, after the design system's `mx.base`.
-- Un-layered app CSS wins over both packages. Override a component token to restyle one component
-  everywhere, or a design-system token to restyle everything:
+- Each component brings its **component tokens**: DTCG JSON in `tokens/component/`, each a fine-tuning
+  knob of one component that references a design-system token. They are built with Style Dictionary
+  against the design system's source, so a reference to a token that does not exist fails the build,
+  and written inside `@layer mx.components`, after the design system's `mx.base`: one group per component
+  (`button.*`, `field.*`, `list.*`, `calendar.*` …).
+- Un-layered app CSS wins over both packages. Override a design-system token to restyle everything:
 
 ```css
 /* after styles.css */
 :root {
-  --mx-form-width: 40rem; /* every window opens wider */
-  --mx-color-accent-solid: #8764b8; /* every accent surface, in every component */
+  --mx-color-accent-solid: #8764b8;
   --mx-color-accent-solid-hover: #9373c0;
   --mx-color-accent-solid-pressed: #7e5aaf;
   --mx-color-accent-fg: #5c2e91;
@@ -98,10 +86,10 @@ Shared exports: `FormResult`, `CloseReason`, `UiLocale` / `uiLocale` / `enString
 
 ## Docs
 
-`apps/docs` is the reference site (Vite + MotifJS): a full page per component — usage, behaviour,
-keyboard and accessibility, localization, API tables, styling hooks and tokens — plus a token
-reference (the component tokens, and the design system's layers for reference). `npm run dev`
-serves it on port 4500.
+`apps/docs` is the reference site, itself a MotifJS app: one `Application` with the router (a
+layout and a lazily loaded page per address), the reader's settings in a DI service, and the kit's
+own components. A full page per component, `Control`, keyboard and focus, and a token reference.
+`npm run dev` serves it on port 4500.
 
 ## Contributing
 

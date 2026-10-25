@@ -1,0 +1,161 @@
+/* Switch: the native checkbox is the track; the thumb and the on / off text are drawn over it (or
+   next to it) and let clicks through. The layout with the caption comes from .mx-toggle-field
+   (checkbox.css). The look binds to data-size, data-state (checked | unchecked), data-state-text
+   (inside | beside | none) and the field's state attributes. */
+@layer mx.components {
+  .mx-switch {
+    --_gap: var(--mx-switch-gap);
+    --_inset: var(--mx-switch-thumb-inset);
+    --_thumb: calc(var(--_track-height) - 2 * var(--_inset));
+    --_fill: var(--mx-color-fill-control-default);
+    --_fill-hover: var(--mx-color-fill-control-secondary);
+    --_stroke: var(--mx-color-stroke-control-strong);
+    --_knob: var(--mx-color-fg-secondary);
+    --_state-color: var(--mx-color-fg-secondary);
+  }
+
+  .mx-switch[data-size='sm'] {
+    --_track-width: var(--mx-switch-track-width-sm);
+    --_track-height: var(--mx-switch-track-height-sm);
+    --_row: var(--mx-switch-height-sm);
+    --_text-size: var(--mx-switch-font-size-sm);
+  }
+
+  .mx-switch[data-size='md'] {
+    --_track-width: var(--mx-switch-track-width-md);
+    --_track-height: var(--mx-switch-track-height-md);
+    --_row: var(--mx-switch-height-md);
+    --_text-size: var(--mx-switch-font-size-md);
+  }
+
+  .mx-switch[data-size='lg'] {
+    --_track-width: var(--mx-switch-track-width-lg);
+    --_track-height: var(--mx-switch-track-height-lg);
+    --_row: var(--mx-switch-height-lg);
+    --_text-size: var(--mx-switch-font-size-lg);
+  }
+
+  .mx-switch[data-state='checked'] {
+    --_fill: var(--mx-color-accent-solid);
+    --_fill-hover: var(--mx-color-accent-solid-hover);
+    --_stroke: var(--mx-color-accent-solid);
+    --_knob: var(--mx-color-accent-on-solid);
+    --_state-color: var(--mx-color-accent-on-solid);
+  }
+
+  .mx-switch[data-invalid]:not([data-state='checked']) {
+    --_stroke: var(--mx-color-danger-solid);
+  }
+
+  .mx-switch[data-readonly] {
+    --_fill-hover: var(--_fill);
+  }
+
+  .mx-switch[data-disabled] {
+    --_fill: var(--mx-color-fill-control-disabled);
+    --_fill-hover: var(--_fill);
+    --_stroke: var(--mx-color-stroke-control-default);
+    --_knob: var(--mx-color-fg-disabled);
+    --_state-color: var(--mx-color-fg-disabled);
+  }
+
+  .mx-switch[data-disabled][data-state='checked'] {
+    --_fill: var(--mx-color-fill-accent-disabled);
+    --_stroke: transparent;
+    --_knob: var(--mx-color-fg-on-accent-disabled);
+    --_state-color: var(--mx-color-fg-on-accent-disabled);
+  }
+
+  /* The track fills its cell, which is as wide as the track or the text inside it. */
+  .mx-switch__input {
+    appearance: none;
+    justify-self: stretch;
+    min-inline-size: var(--_track-width);
+    block-size: var(--_track-height);
+    margin: 0;
+    background: var(--_fill);
+    border: var(--mx-switch-border-width) solid var(--_stroke);
+    border-radius: var(--mx-radius-full);
+    cursor: default;
+    transition:
+      background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-switch__input:hover {
+    background: var(--_fill-hover);
+  }
+
+  .mx-switch .mx-field__box > .mx-switch__thumb {
+    --_thumb-width: var(--_thumb);
+
+    position: relative;
+    display: block;
+    inline-size: var(--_thumb-width);
+    block-size: var(--_thumb);
+    margin: 0;
+    margin-inline-start: var(--_inset);
+    background: var(--_knob);
+    border-radius: var(--mx-radius-full);
+    pointer-events: none;
+    transition:
+      margin-inline-start var(--mx-motion-duration-normal) var(--mx-motion-easing-standard),
+      inline-size var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  /* A margin in percent is measured against the cell, that is the track. */
+  .mx-switch[data-state='checked'] .mx-field__box > .mx-switch__thumb {
+    margin-inline-start: calc(100% - var(--_thumb-width) - var(--_inset));
+  }
+
+  /* Pressed, the thumb stretches toward where it will go. */
+  .mx-switch:not([data-readonly]) .mx-switch__input:active ~ .mx-switch__thumb {
+    --_thumb-width: calc(var(--_thumb) + var(--_inset));
+  }
+
+  .mx-switch .mx-field__box > .mx-switch__text {
+    position: relative;
+    display: grid;
+    margin: 0;
+    font-size: var(--mx-switch-text-font-size);
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .mx-switch__text > span {
+    grid-area: 1 / 1;
+  }
+
+  .mx-switch[data-state='checked'] .mx-switch__off,
+  .mx-switch:not([data-state='checked']) .mx-switch__on {
+    visibility: hidden;
+  }
+
+  /* Inside: the text sits on the side the thumb is not on. */
+  .mx-switch[data-state-text='inside'] .mx-field__box > .mx-switch__text {
+    padding-inline: calc(var(--_thumb) + 2 * var(--_inset)) var(--mx-switch-text-padding);
+    color: var(--_state-color);
+    transition: color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-switch[data-state-text='inside'][data-state='checked'] .mx-field__box > .mx-switch__text {
+    padding-inline: var(--mx-switch-text-padding) calc(var(--_thumb) + 2 * var(--_inset));
+  }
+
+  .mx-switch[data-state-text='beside'] .mx-field__box > .mx-switch__text {
+    grid-area: 1 / 2;
+    margin-inline-start: var(--_gap);
+    font-size: var(--_text-size);
+    color: var(--mx-color-fg-primary);
+  }
+
+  .mx-switch[data-disabled][data-state-text='beside'] .mx-field__box > .mx-switch__text {
+    color: var(--mx-color-fg-disabled);
+  }
+
+  .mx-switch[data-state-text='none'] .mx-field__box > .mx-switch__text {
+    display: none;
+  }
+}

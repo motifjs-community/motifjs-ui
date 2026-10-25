@@ -1,0 +1,7 @@
+{
+  "date-box": {
+    "$description": "DateBox: the list of times next to the calendar.",
+    "times-width": { "$type": "dimension", "$value": { "value": 6, "unit": "rem" } },
+    "times-height": { "$type": "dimension", "$value": { "value": 18, "unit": "rem" } }
+  }
+}

@@ -1,8 +1,7 @@
 import { Component } from '@motifx/core';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../tests/helpers';
-import { Button } from '../components/button/Button';
-import { MxForm } from '../components/form/MxForm';
+import { TestButton, TestWindow } from '../../tests/controls';
 import { Control } from './control';
 import { addShortcut, parseChord } from './keyboard';
 import { parseAccessKey } from './access-key';
@@ -120,21 +119,21 @@ describe('addShortcut', () => {
     expect(deletes).toBe(1);
   });
 
-  it('is silent while a modal form is open, except inside it', async () => {
+  it('is silent while a modal window is open, except inside it', async () => {
     const calls: string[] = [];
     removers.push(addShortcut('Ctrl+K', () => void calls.push('app')));
     const host = page();
-    const form = new MxForm({ text: 'Modal', content: () => <input name="in-modal" /> });
-    void form.showDialog(host);
+    const win = new TestWindow({ childs: [<input name="in-modal" />] });
+    win.open(host);
     await settle();
-    form.addShortcut('Ctrl+K', () => void calls.push('form'));
-    form.element.querySelector<HTMLInputElement>('[name=in-modal]')!.focus();
+    win.addShortcut('Ctrl+K', () => void calls.push('window'));
+    win.element.querySelector<HTMLInputElement>('[name=in-modal]')!.focus();
     press('k', { ctrlKey: true });
-    expect(calls).toEqual(['form']);
-    await form.close();
+    expect(calls).toEqual(['window']);
+    await win.close();
     await settle();
     press('k', { ctrlKey: true });
-    expect(calls).toEqual(['form', 'app']);
+    expect(calls).toEqual(['window', 'app']);
   });
 
   it('Control.addShortcut goes away with the control', async () => {
@@ -162,7 +161,7 @@ describe('access keys (&Text)', () => {
   });
 
   it('renders the key underlinable, keeps the plain name, and announces Alt+key', async () => {
-    const b = new Button({ text: '&Kaydet' });
+    const b = new TestButton({ text: '&Kaydet' });
     page(b);
     await settle();
     expect(b.element.textContent).toBe('Kaydet');
@@ -176,7 +175,7 @@ describe('access keys (&Text)', () => {
 
   it('clicks a button on Alt + its key, but not on AltGr', async () => {
     let clicks = 0;
-    const b = new Button({ text: '&Save' });
+    const b = new TestButton({ text: '&Save' });
     b.motif.on('click', () => clicks++);
     page(b, <input name="field" />);
     await settle();
@@ -189,8 +188,8 @@ describe('access keys (&Text)', () => {
 
   it('moves focus between controls sharing a key instead of clicking', async () => {
     let clicks = 0;
-    const one = new Button({ text: '&Open' });
-    const two = new Button({ text: '&Other' });
+    const one = new TestButton({ text: '&Open' });
+    const two = new TestButton({ text: '&Other' });
     one.motif.on('click', () => clicks++);
     two.motif.on('click', () => clicks++);
     page(one, two);
@@ -203,29 +202,29 @@ describe('access keys (&Text)', () => {
   });
 
   it('ignores disabled controls and works for plain elements with aria-keyshortcuts', async () => {
-    const off = new Button({ text: '&Name', enabled: false });
+    const off = new TestButton({ text: '&Name', enabled: false });
     page(off, <input name="n" aria-keyshortcuts="Alt+N" />);
     await settle();
     press('n', { altKey: true });
     expect(document.activeElement).toBe(document.querySelector('[name=n]'));
   });
 
-  it('only uses the keys of the modal form while one is open', async () => {
+  it('only uses the keys of the modal window while one is open', async () => {
     let pageClicks = 0;
-    const pageButton = new Button({ text: '&Print' });
+    const pageButton = new TestButton({ text: '&Print' });
     pageButton.motif.on('click', () => pageClicks++);
     const host = page(pageButton);
-    const form = new MxForm({ text: 'Modal', content: () => <input name="p" aria-keyshortcuts="Alt+P" /> });
-    void form.showDialog(host);
+    const win = new TestWindow({ childs: [<input name="p" aria-keyshortcuts="Alt+P" />] });
+    win.open(host);
     await settle();
     press('p', { altKey: true });
     expect(pageClicks).toBe(0);
-    expect(document.activeElement).toBe(form.element.querySelector('[name=p]'));
-    await form.close();
+    expect(document.activeElement).toBe(win.element.querySelector('[name=p]'));
+    await win.close();
   });
 
   it('shows the access keys while Alt is held, and after a tap until the next action', async () => {
-    page(new Button({ text: '&Save' }));
+    page(new TestButton({ text: '&Save' }));
     await settle();
     const shown = () => document.documentElement.hasAttribute('data-mx-alt');
     const altDown = () => press('Alt', { altKey: true });
@@ -263,7 +262,7 @@ describe('access keys (&Text)', () => {
   });
 
   it('leaves the Alt tap to the browser when the page has no access keys', async () => {
-    page(new Button({ text: 'Plain' }));
+    page(new TestButton({ text: 'Plain' }));
     removers.push(addShortcut('Ctrl+Q', () => {})); // installs the listener
     await settle();
     expect(press('Alt', { altKey: true })).toBe(false);
@@ -275,7 +274,7 @@ describe('access keys (&Text)', () => {
     Object.defineProperty(navigator, 'platform', { value: 'MacIntel', configurable: true });
     try {
       let clicks = 0;
-      const b = new Button({ text: '&Save' });
+      const b = new TestButton({ text: '&Save' });
       b.motif.on('click', () => clicks++);
       page(b);
       await settle();
@@ -299,8 +298,8 @@ describe('access keys (&Text)', () => {
 
 describe('focus guard', () => {
   it('moves focus on when a focused control is removed', async () => {
-    const doomed = new Button({ text: 'Doomed' });
-    const next = new Button({ text: 'Next' });
+    const doomed = new TestButton({ text: 'Doomed' });
+    const next = new TestButton({ text: 'Next' });
     page(new Panel({ childs: [doomed] }), next);
     await settle();
     doomed.element.focus();
@@ -312,7 +311,7 @@ describe('focus guard', () => {
   });
 
   it('leaves focus alone after a click on an empty spot', async () => {
-    const b = new Button({ text: 'Stay' });
+    const b = new TestButton({ text: 'Stay' });
     page(b);
     await settle();
     b.element.focus();

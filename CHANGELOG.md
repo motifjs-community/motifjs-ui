@@ -6,6 +6,128 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### rewrite
+
+- The components are being rewritten from scratch, one at a time. Removed: `Button`, `Label`,
+  `Panel`, `Stack`, `Grid`, `GroupBox`, `SplitContainer`, `MxForm`, their component tokens and docs
+  pages, the layout props of `Control` (`dock`, offsets, size, grid cells), `UiLocale`,
+  `FormResult` / `CloseReason` and the `x-model` helpers of `Control`. The entries below describe
+  them as they were.
+- Kept: `Control`, `FocusContainer`, `addShortcut`, `parseAccessKey`, the focus guard and the
+  `enabled` cascade. The window stack marks a modal window with `modal`. The token build writes
+  empty files when there are no component tokens.
+
+### Button
+
+- `Button`: a native `<button>`; `variant` (solid / outline / ghost), `tone` (standard / accent /
+  danger), `size` (sm / md / lg) from the density tokens, pressable solid faces; `text` with an `&`
+  access key or JSX children; `icon` (an address, an element or a component) at the start or end;
+  `stretch`, `type`, `hint`; `toggle` / `pressed` with `x-model`; `busy` (spinner, presses ignored,
+  size kept, `aria-busy`); `focusableWhenDisabled` (`aria-disabled`, stays in the Tab order). Every
+  prop is a value or a function and a settable, reactive property; set from code, a function is
+  bound and followed too (`Control` setters as well: `ctrl.enabled = () => !state.busy`).
+- A menu: `menu` (items with icon, hint, enabled, visible, checked, beginGroup, each a value or a
+  function the open menu follows; click, data) or any
+  content (`dropDown`), opened by the whole button or, with `split`, by an arrow next to it while the
+  button keeps its own action; `split` changes live; `opened`, `open()`, `close()`, `onItemClick`.
+- Shared parts: `Popup` (top layer, follows its anchor, flips when there is no room, closes on
+  Escape / a press outside / focus leaving, gives focus back) and `MenuList` (arrows, Home / End,
+  letters, `&` keys); `placePopup`; `IconSource`.
+- `uiLocale` / `enStrings` / `trStrings` / `UiStrings`: the texts controls write, reactive, starting
+  with the page's `lang`.
+- Component tokens `button.*`, `popup.*`, `menu.*`. `@motifx/core` 1.2.0-rc.19.
+
+### TextBox
+
+- `TextBox`: a native `<input>` in a field frame; `label` (`&` access key) with `labelMode` top /
+  side / floating / hidden, `placeholder`, `helpText`, `hint`, `prefix` / `suffix`, `icon`,
+  `buttons` (your own, each with `enabled`, `visible`, `position`, `tabStop`), `clearButton`
+  (Escape too), `type` (text, password with a reveal button, email, search, tel, url), `maxLength`
+  / `minLength` / `showCounter`, `updateOn` input / change, `selectOnFocus`, `align`, `readOnly`,
+  `required`, `size`, `variant` (outline, filled, underline), `stretch`, `inputMode`,
+  `autocomplete`, `spellcheck`, `name`; `onValueChanged` (`byUser`), `onEnter`, `onValidated`.
+- Mask: `mask` (`0` digit, `9` optional digit, `a` letter, `*` letter or digit, `\` fixed),
+  `maskChars` (own characters with case), `maskPlaceholder`, `maskValue` raw / formatted,
+  `showMask`; typing, deleting and pasting follow the mask; an unfilled mask fails validation.
+- Validation: `rules` (required, email, url, pattern, length, range, compare, custom, async),
+  `error` from outside, `validateOn` blur / input / manual, `isValid`, `validationMessage`,
+  `validating`, `validate()`, `resetValidation()`; `ValidationGroup` and `validateFields(root)`
+  focus the first failed field. Messages come from `uiLocale` and follow it.
+- Shared parts: `Field` (the base of every editor), `InputMask` / `MaskedText` / `parseMask`
+  (work on any `<input>`), `checkRules`. `Control.changeProperty` stores a user's value without
+  dropping a bound getter. New `uiLocale` texts. Component tokens `field.*`.
+
+### The rest of the set
+
+- Editors: `TextArea` (auto-grow between `minRows` / `maxRows`, resize, counter, Ctrl+Enter),
+  `NumberBox` (`min` / `max` / `step` / `largeStep`, spin buttons that repeat, wheel, `Intl` formats
+  with locale-aware typing, decimal arithmetic, `clamp`, `allowEmpty`), `Slider` (one value or a
+  range, ticks and labels, value bubble, vertical, RTL).
+- Choice: `CheckBox` (three states), `Switch`, `RadioGroup` (APG keys, columns), `ListBox` (single or
+  multiple, select all, search, data sources), `TagBox` (tags, search, `maxTags`, custom values).
+- Data: `TreeView` (nested or flat items, lazy children with retry, selection, tri-state check boxes,
+  filter, long trees drawn in view), `DataGrid` (moved in from motifjs-data-grid onto
+  `@motifx-community/data`: virtual or paged, sorting, column layout, editing with the kit's
+  editors, new rows, three save modes, row actions, selection over any number of rows, filter row
+  and header filter, copy and paste, CSV export, a saved layout). Rows stay in place in the DOM
+  while scrolling; the reading order is given through `aria-owns`.
+- Layout and windows: `Stack`, `Grid`, `DockPanel`, `Panel`, `GroupBox`, `SplitContainer`, `Tabs`,
+  `Accordion`, `MxForm` (window and modal form, `show` / `showDialog`, move, resize, minimize,
+  maximize, nested modals), `messageBox`, `confirm`.
+- Commands: `Toolbar` (roving focus, overflow menu), `MenuBar`, `ContextMenu`; `MenuList` gained
+  submenus, shortcuts and radio items.
+- Feedback: `ProgressBar`, `Spinner` (with `Spinner.cover`), `Tooltip` / `addTooltip`, `Toast` /
+  `toast` / `Toaster`.
+- `Control` binds DOM events given from code (`new Button({ onclick })`); its private state getter is
+  `controlState`, so a subclass may have a `state` field.
+
+### DropDown, ComboBox, Autocomplete, Lookup
+
+- `DropDown`: pick one item (APG select-only combobox); `items` (plain values, `DropDownItem`s or any
+  shape through `textField` / `valueField` / `iconField` / `groupField` / `enabledField`) or a
+  `dataSource` of `@motifx-community/data` (searched on the server, a value on no loaded page found
+  by key); `searchEnabled` (a TextBox in the list), `searchMode`, `searchDelay`, `clearButton`,
+  `itemTemplate`, `fieldTemplate`, `matchWidth`, groups, type-ahead, long lists drawn in view only.
+- `ComboBox`: a text field whose list follows the text (APG combobox, list autocomplete); items in
+  memory or a data source; `minSearchLength`, `searchDelay`, `acceptCustomValue`, `autoHighlight`,
+  `showDropDownButton`. `Autocomplete`: the value is the text.
+- `Lookup`: a drop-down with a table-like list (`columns` with captions, widths, alignment), a search
+  box on by default, for data sources.
+- Shared parts: `OptionList` (`role="listbox"`, items or an `ItemSource` that loads while scrolled,
+  windowing with spacer rows, `handleKey`, `typeAhead`), `DataItems` (an array or a `DataSource`
+  behind one interface), `readItemField`, `functionValue` (a function prop with parameters is the
+  value, one without is a getter). `@motifx-community/data` is a peer dependency.
+
+### Calendar, DateBox
+
+- `Calendar`: the APG date grid with year and decade views; `min`, `max`, `disabledDates`, `locale`
+  (names and first day of the week from `Intl`), `firstDayOfWeek`, `showWeekNumbers` (ISO),
+  `showOtherMonths`, `showTodayButton`, `currentView`, `minView` (pick a month or a year).
+- `DateBox`: `type` date / time / datetime typed through a mask in the locale's order
+  (`datePatternOf`), a calendar and a list of times (`timeStep`, `showSeconds`) on a popup,
+  `displayFormat` while not edited, `min` / `max` / `disabledDates` checked, an unfinished text
+  reported (`unfinished`, `invalidDate`).
+
+### FormLayout
+
+- `FormLayout`: the fields of a data object on a grid (`columns`, `minColumnWidth`), each with an
+  editor by name or by the type of its value (`FormLayout.editors` can be extended), bound both ways;
+  groups with captions, `colSpan`, `visible`, buttons (`submit`), templates; one validation group;
+  `onValidSubmit` / `onInvalidSubmit`.
+
+### Field
+
+- A stored `null` stays `null` (a nullable value round-trips). A field checked when it is left waits
+  for a press in progress to end, so an error line appearing cannot move a button away from the
+  pointer. The clear button is shared (`showClearButton`). `Popup` placements on every side
+  (`top`, `start`, `end-start` …) and a closed popup stays hidden whatever its content's display.
+
+### docs app
+
+- The docs site is one MotifJS app: `Application` + router (history mode), `DocsLayout` with a
+  `RouterView`, pages loaded when first opened, `SiteSettings` and `PageOutline` services (each
+  `Section` adds itself to the outline), the side-menu search is a `TextBox`.
+
 ### design system
 
 - The look comes from `@motifx-community/design-system` (a peer dependency): its primitive,

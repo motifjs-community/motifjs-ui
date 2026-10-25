@@ -1,0 +1,680 @@
+/* DataGrid. The look binds to data-striped, data-header-buttons and data-selection on the root; to
+   data-active, data-selected, data-status (new | changed | removed | saving | failed | invalid),
+   data-odd and data-loading on each body row; to data-changed and aria-invalid on cells; to
+   data-sort, data-sortable, data-dragging and data-resizing on headers; to aria-checked on the
+   selection check boxes and data-active on header filter buttons. Action buttons and the filter
+   row's condition buttons are plain elements with the kit button's classes. Column widths come
+   from --_columns on the viewport; hidden columns, alignment and sticky offsets from the grid's own
+   per-grid sheet. */
+@layer mx.components {
+  .mx-data-grid {
+    --_row-height: calc(var(--mx-datagrid-row-height) + var(--mx-datagrid-row-padding));
+    --_sticky-start: inset calc(var(--mx-datagrid-border-width) * -1) 0 0 var(--mx-datagrid-edge-color);
+    --_sticky-end: inset var(--mx-datagrid-border-width) 0 0 var(--mx-datagrid-edge-color);
+    /* Stacking inside the grid only. */
+    --_z-sticky: 1;
+    --_z-focus: 2;
+    --_z-head: 3;
+    --_z-drop: 4;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: 0;
+    min-inline-size: 0;
+    overflow: hidden;
+    font-size: var(--mx-datagrid-font-size);
+    color: var(--mx-color-fg-primary);
+    background-color: var(--mx-datagrid-background);
+    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-outline-color);
+    border-radius: var(--mx-datagrid-radius);
+  }
+
+  .mx-data-grid__main {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    min-block-size: 0;
+  }
+
+  .mx-data-grid__viewport {
+    position: relative;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    outline: none;
+  }
+
+  /* Rows share one template, so the header and the body line up. */
+  .mx-data-grid__row {
+    --_tint: transparent;
+
+    display: grid;
+    grid-template-columns: var(--_columns);
+    inline-size: max-content;
+    min-inline-size: 100%;
+    block-size: var(--_row-height);
+    background-color: var(--mx-datagrid-background);
+    background-image: linear-gradient(var(--_tint), var(--_tint));
+  }
+
+  .mx-data-grid__row[hidden] {
+    display: none;
+  }
+
+  .mx-data-grid__head {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: var(--_z-head);
+  }
+
+  .mx-data-grid__row--header {
+    position: relative;
+    font-weight: var(--mx-datagrid-head-font-weight);
+    color: var(--mx-datagrid-head-color);
+    background-color: var(--mx-datagrid-head-background);
+    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-edge-color);
+  }
+
+  .mx-data-grid__body {
+    position: relative;
+    inline-size: max-content;
+    min-inline-size: 100%;
+  }
+
+  .mx-data-grid__body > .mx-data-grid__row {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    box-sizing: border-box;
+    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
+    will-change: transform;
+  }
+
+  .mx-data-grid[data-striped] .mx-data-grid__body > .mx-data-grid__row[data-odd] {
+    --_tint: var(--mx-datagrid-stripe);
+  }
+
+  .mx-data-grid__body > .mx-data-grid__row[data-status='new'] {
+    --_tint: var(--mx-datagrid-new);
+  }
+
+  .mx-data-grid__body > .mx-data-grid__row:hover {
+    --_tint: var(--mx-datagrid-hover);
+  }
+
+  .mx-data-grid__body > .mx-data-grid__row[data-active] {
+    --_tint: var(--mx-datagrid-active);
+  }
+
+  /* With selection on, the selected rows carry the accent; the active row only the hover tint. */
+  .mx-data-grid[data-selection] .mx-data-grid__body > .mx-data-grid__row[data-active] {
+    --_tint: var(--mx-datagrid-hover);
+  }
+
+  .mx-data-grid__body > .mx-data-grid__row[data-selected] {
+    --_tint: var(--mx-datagrid-selected);
+  }
+
+  /* Cells: one line, cut with an ellipsis. */
+  .mx-data-grid__cell,
+  .mx-data-grid__header-cell {
+    position: relative;
+    min-inline-size: 0;
+    padding-inline: var(--mx-datagrid-cell-padding);
+    overflow: hidden;
+    line-height: calc(var(--_row-height) - var(--mx-datagrid-border-width));
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: inherit;
+  }
+
+  .mx-data-grid__cell:focus-visible,
+  .mx-data-grid__header-cell:focus-visible,
+  .mx-data-grid__filter-cell:focus-visible {
+    z-index: var(--_z-focus);
+    outline: var(--mx-focus-ring-width) solid var(--mx-focus-ring-color);
+    outline-offset: calc(var(--mx-focus-ring-width) * -1);
+    box-shadow: inset 0 0 0 calc(var(--mx-focus-ring-width) + var(--mx-focus-ring-offset)) var(--mx-focus-ring-inner);
+  }
+
+  /* An unsaved value: a corner mark. A message: a frame; the text shows on hover and focus. */
+  .mx-data-grid__cell[data-changed]::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    border-block-start: var(--mx-datagrid-mark-size) solid var(--mx-datagrid-changed);
+    border-inline-end: var(--mx-datagrid-mark-size) solid transparent;
+    pointer-events: none;
+  }
+
+  .mx-data-grid__cell[aria-invalid='true']::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: var(--mx-datagrid-invalid-width) solid var(--mx-datagrid-invalid);
+    pointer-events: none;
+  }
+
+  .mx-data-grid__row[data-status='removed'] .mx-data-grid__cell:not(.mx-data-grid__status) {
+    color: var(--mx-color-fg-tertiary);
+    text-decoration: line-through;
+  }
+
+  .mx-data-grid__row[data-status='saving'] .mx-data-grid__cell:not(.mx-data-grid__status) {
+    color: var(--mx-color-fg-secondary);
+  }
+
+  /* Rows still loading: a soft bar in each cell. */
+  .mx-data-grid__row[data-loading] .mx-data-grid__cell::after {
+    content: '';
+    position: absolute;
+    inset-inline: var(--mx-datagrid-cell-padding);
+    inset-block: 35%;
+    background-color: var(--mx-datagrid-placeholder);
+    border-radius: var(--mx-radius-sm);
+  }
+
+  /* The row status column: a mark by state, never only a color. */
+  .mx-data-grid__status {
+    padding-inline: 0;
+    text-align: center;
+  }
+
+  .mx-data-grid__status-mark {
+    font-size: var(--mx-font-size-caption);
+    font-weight: var(--mx-font-weight-bold);
+  }
+
+  .mx-data-grid__status[data-status='new'] .mx-data-grid__status-mark::before {
+    content: '+';
+    color: var(--mx-color-success-fg);
+  }
+
+  .mx-data-grid__status[data-status='changed'] .mx-data-grid__status-mark::before {
+    content: '\270E';
+    color: var(--mx-color-accent-fg);
+  }
+
+  .mx-data-grid__status[data-status='removed'] .mx-data-grid__status-mark::before {
+    content: '\2212';
+    color: var(--mx-color-fg-secondary);
+  }
+
+  .mx-data-grid__status[data-status='saving'] .mx-data-grid__status-mark::before {
+    content: '\2026';
+    color: var(--mx-color-accent-fg);
+  }
+
+  .mx-data-grid__status:is([data-status='failed'], [data-status='invalid']) .mx-data-grid__status-mark::before {
+    content: '!';
+    color: var(--mx-color-danger-fg);
+  }
+
+  /* The selection column: a check box drawn like the kit's, the cell keeps the focus. */
+  .mx-data-grid__select {
+    display: grid;
+    place-items: center;
+    padding-inline: 0;
+  }
+
+  .mx-data-grid__check {
+    display: inline-grid;
+    place-items: center;
+    box-sizing: border-box;
+    inline-size: var(--mx-datagrid-check-size);
+    block-size: var(--mx-datagrid-check-size);
+    color: var(--mx-color-accent-on-solid);
+    background: var(--mx-color-fill-control-default);
+    border: var(--mx-datagrid-border-width) solid var(--mx-color-stroke-control-strong);
+    border-block-end-color: var(--mx-color-stroke-control-edge);
+    border-radius: var(--mx-datagrid-check-radius);
+    box-shadow: inset 0 var(--mx-datagrid-border-width) 0 var(--mx-color-highlight-control);
+  }
+
+  .mx-data-grid__check[hidden] {
+    display: none;
+  }
+
+  .mx-data-grid__check:is([aria-checked='true'], [aria-checked='mixed']) {
+    background: var(--mx-color-accent-solid);
+    border-color: var(--mx-color-accent-solid);
+    border-block-end-color: var(--mx-color-stroke-on-accent-bottom);
+  }
+
+  .mx-data-grid__check[aria-disabled='true'] {
+    opacity: var(--mx-opacity-disabled);
+  }
+
+  .mx-data-grid__check > .mx-glyph {
+    grid-area: 1 / 1;
+    inline-size: var(--mx-datagrid-check-mark-size);
+    block-size: var(--mx-datagrid-check-mark-size);
+    opacity: 0;
+  }
+
+  .mx-data-grid__check[aria-checked='true'] > .mx-data-grid__check-mark,
+  .mx-data-grid__check[aria-checked='mixed'] > .mx-data-grid__check-dash {
+    opacity: 1;
+  }
+
+  .mx-data-grid__header-cell.mx-data-grid__select {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  /* The actions column: kit buttons side by side, the "more" button last. */
+  .mx-data-grid__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--mx-datagrid-action-gap);
+    text-overflow: clip;
+  }
+
+  .mx-data-grid__action {
+    flex: none;
+  }
+
+  .mx-data-grid__action[hidden] {
+    display: none;
+  }
+
+  /* Hidden cell where the action buttons are measured once. */
+  .mx-data-grid__measure {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .mx-data-grid__measure > .mx-data-grid__actions {
+    inline-size: max-content;
+  }
+
+  /* The editor covers its cell; only the active cell has one. Its field is drawn without a frame. */
+  .mx-data-grid__editor {
+    position: absolute;
+    inset: 0;
+    z-index: var(--_z-focus);
+    display: flex;
+    align-items: center;
+    line-height: normal;
+    white-space: normal;
+    background-color: var(--mx-datagrid-background);
+    box-shadow: inset 0 0 0 var(--mx-datagrid-invalid-width) var(--mx-color-accent-solid);
+  }
+
+  .mx-data-grid__editor[data-kind='boolean'] {
+    justify-content: center;
+  }
+
+  .mx-data-grid__editor > .mx-field[data-in-cell] {
+    flex: 1 1 auto;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .mx-data-grid__editor[data-kind='boolean'] > .mx-field[data-in-cell] {
+    flex: none;
+    inline-size: auto;
+  }
+
+  .mx-field[data-in-cell] .mx-field__box {
+    block-size: 100%;
+    min-block-size: 0;
+    padding-inline: var(--mx-datagrid-cell-padding);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .mx-field[data-in-cell] .mx-field__foot {
+    display: none;
+  }
+
+  /* Headers. */
+  .mx-data-grid__header-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--mx-datagrid-gap);
+    user-select: none;
+  }
+
+  .mx-data-grid__header-cell[data-sortable] {
+    cursor: pointer;
+  }
+
+  .mx-data-grid__header-cell:hover {
+    background-image: linear-gradient(var(--mx-datagrid-hover), var(--mx-datagrid-hover));
+  }
+
+  .mx-data-grid__header-cell[data-dragging] {
+    opacity: var(--mx-opacity-disabled);
+  }
+
+  .mx-data-grid__title {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mx-data-grid__sort {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--mx-datagrid-gap);
+    font-size: var(--mx-font-size-caption);
+    color: var(--mx-color-accent-fg);
+  }
+
+  .mx-data-grid__sort > svg {
+    display: none;
+    inline-size: var(--mx-datagrid-icon-size);
+    block-size: var(--mx-datagrid-icon-size);
+  }
+
+  .mx-data-grid__header-cell[data-sort='asc'] .mx-data-grid__sort-up,
+  .mx-data-grid__header-cell[data-sort='desc'] .mx-data-grid__sort-down {
+    display: block;
+  }
+
+  .mx-data-grid__menu-button,
+  .mx-data-grid__filter-button {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--mx-datagrid-button-size);
+    block-size: var(--mx-datagrid-button-size);
+    padding: 0;
+    color: inherit;
+    background-color: transparent;
+    border: 0;
+    border-radius: var(--mx-radius-sm);
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .mx-data-grid__menu-button:hover,
+  .mx-data-grid__filter-button:hover {
+    background-color: var(--mx-color-fill-subtle-secondary);
+  }
+
+  .mx-data-grid__header-cell:is(:hover, :focus-within) :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button),
+  :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button):focus-visible,
+  .mx-data-grid[data-header-buttons='always'] :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button) {
+    opacity: 1;
+  }
+
+  /* A column with a filter shows it, hover or not. */
+  .mx-data-grid__filter-button[data-active] {
+    color: var(--mx-color-accent-fg);
+    opacity: 1;
+  }
+
+  .mx-data-grid__filter-button > .mx-glyph,
+  .mx-data-grid__menu-button > .mx-glyph {
+    inline-size: var(--mx-datagrid-icon-size);
+    block-size: var(--mx-datagrid-icon-size);
+  }
+
+  /* No hover on touch screens: the header buttons always show. */
+  @media (hover: none) {
+    .mx-data-grid__menu-button,
+    .mx-data-grid__filter-button {
+      opacity: 1;
+    }
+  }
+
+  /* The filter row: a condition button and small kit fields in every cell. */
+  .mx-data-grid__row--filter {
+    background-color: var(--mx-datagrid-head-background);
+    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
+  }
+
+  .mx-data-grid__filter-cell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-inline-size: 0;
+    padding-inline: var(--mx-datagrid-filter-padding);
+    overflow: hidden;
+    background: inherit;
+  }
+
+  .mx-data-grid__filter {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: var(--mx-datagrid-gap);
+    min-inline-size: 0;
+  }
+
+  .mx-data-grid__filter[hidden] {
+    display: none;
+  }
+
+  .mx-data-grid__filter > .mx-field[data-in-filter] {
+    flex: 1 1 0;
+    inline-size: auto;
+    min-inline-size: 0;
+  }
+
+  .mx-field[data-in-filter] .mx-field__foot {
+    display: none;
+  }
+
+  .mx-data-grid__condition {
+    flex: none;
+    min-inline-size: var(--mx-datagrid-button-size);
+  }
+
+  .mx-data-grid__condition[data-set] {
+    --_fg: var(--mx-color-accent-fg);
+  }
+
+  .mx-data-grid__condition-mark {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The header filter window: the value list and its buttons. */
+  .mx-data-grid__values {
+    display: grid;
+    gap: var(--mx-datagrid-values-gap);
+    box-sizing: border-box;
+    inline-size: var(--mx-datagrid-values-width);
+    padding: var(--mx-datagrid-values-gap);
+  }
+
+  .mx-data-grid__values-list > .mx-field {
+    inline-size: 100%;
+  }
+
+  .mx-data-grid__values-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--mx-datagrid-values-gap);
+  }
+
+  .mx-data-grid__values .mx-list__text {
+    display: flex;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  .mx-data-grid__value-text {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mx-data-grid__value-count {
+    flex: none;
+    margin-inline-start: auto;
+    padding-inline-start: var(--mx-datagrid-values-gap);
+    font-variant-numeric: tabular-nums;
+    color: var(--mx-color-fg-tertiary);
+  }
+
+  .mx-data-grid__resize {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    inline-size: var(--mx-datagrid-resize-width);
+    cursor: col-resize;
+    touch-action: none;
+  }
+
+  .mx-data-grid__resize::after {
+    content: '';
+    position: absolute;
+    inset-block: 25%;
+    inset-inline-end: 0;
+    inline-size: var(--mx-datagrid-border-width);
+    background-color: var(--mx-datagrid-edge-color);
+  }
+
+  .mx-data-grid__resize:hover::after,
+  .mx-data-grid__header-cell[data-resizing] .mx-data-grid__resize::after {
+    inset-block: 0;
+    inline-size: var(--mx-datagrid-invalid-width);
+    background-color: var(--mx-color-accent-solid);
+  }
+
+  .mx-data-grid__drop {
+    position: absolute;
+    inset-block: 0;
+    z-index: var(--_z-drop);
+    inline-size: var(--mx-datagrid-invalid-width);
+    background-color: var(--mx-color-accent-solid);
+    pointer-events: none;
+  }
+
+  .mx-data-grid__drop[hidden] {
+    display: none;
+  }
+
+  /* Loading, empty and error over the body. */
+  .mx-data-grid__overlay {
+    position: absolute;
+    inset: var(--_head-height, 0) 0 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+
+  .mx-data-grid__state {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mx-space-2);
+    padding: var(--mx-space-2) var(--mx-space-3);
+    color: var(--mx-color-fg-secondary);
+    pointer-events: auto;
+  }
+
+  .mx-data-grid__state[data-tone='danger'],
+  .mx-data-grid__note[data-tone='danger'] {
+    color: var(--mx-color-danger-fg);
+  }
+
+  .mx-data-grid__probe {
+    position: absolute;
+    inline-size: var(--mx-datagrid-border-width);
+    block-size: var(--_row-height);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  /* The bar: the new-row button, the row count, errors and unsaved changes, the pager. */
+  .mx-data-grid__bar {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--mx-datagrid-bar-gap);
+    min-block-size: var(--_row-height);
+    padding-inline: var(--mx-datagrid-bar-padding);
+    font-size: var(--mx-datagrid-bar-font-size);
+    color: var(--mx-color-fg-secondary);
+    background-color: var(--mx-datagrid-head-background);
+    border-block-start: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
+  }
+
+  .mx-data-grid__note {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mx-space-2);
+  }
+
+  .mx-data-grid__pager {
+    display: flex;
+    align-items: center;
+    gap: var(--mx-datagrid-gap);
+    margin-inline-start: auto;
+  }
+
+  .mx-data-grid__page-gap {
+    padding-inline: var(--mx-datagrid-gap);
+  }
+
+  .mx-data-grid__page-info {
+    margin-inline-start: var(--mx-space-2);
+  }
+
+  .mx-data-grid__step-icon {
+    display: inline-flex;
+  }
+
+  .mx-data-grid__step-icon > svg + svg {
+    margin-inline-start: calc(var(--mx-datagrid-icon-size) / -2);
+  }
+
+  .mx-data-grid__page-step:is([data-step='first'], [data-step='previous']) .mx-data-grid__step-icon > svg {
+    rotate: 90deg;
+  }
+
+  .mx-data-grid__page-step:is([data-step='next'], [data-step='last']) .mx-data-grid__step-icon > svg {
+    rotate: -90deg;
+  }
+
+  .mx-data-grid__page-step:dir(rtl) .mx-data-grid__step-icon {
+    scale: -1 1;
+  }
+
+  /* Read by screen readers only. */
+  .mx-data-grid__live,
+  .mx-data-grid__hidden-text {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .mx-data-grid__tip[data-error] {
+    color: var(--mx-color-danger-fg);
+    border-color: var(--mx-datagrid-invalid);
+  }
+
+  @media (forced-colors: active) {
+    .mx-data-grid__body > .mx-data-grid__row[data-active] {
+      outline: var(--mx-datagrid-border-width) solid Highlight;
+      outline-offset: calc(var(--mx-datagrid-border-width) * -1);
+    }
+
+    .mx-data-grid__editor {
+      outline: var(--mx-datagrid-invalid-width) solid Highlight;
+      outline-offset: calc(var(--mx-datagrid-invalid-width) * -1);
+    }
+  }
+}

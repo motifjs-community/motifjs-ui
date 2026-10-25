@@ -1,0 +1,13 @@
+{
+  "toolbar": {
+    "$description": "Toolbar: a bar of commands on the bar color, its controls sized by the density tokens.",
+    "height": { "$type": "dimension", "$value": "{bar.height}" },
+    "padding": { "$type": "dimension", "$value": "{space.1}" },
+    "gap": { "$type": "dimension", "$value": "{space.1}" },
+    "radius": { "$type": "dimension", "$value": "{radius.md}" },
+    "background": { "$type": "color", "$value": "{color.bg.bar}" },
+    "separator-color": { "$type": "color", "$value": "{color.stroke.divider}" },
+    "separator-width": { "$type": "dimension", "$value": "{border.width.1}" },
+    "separator-inset": { "$type": "dimension", "$value": "{space.1}" }
+  }
+}

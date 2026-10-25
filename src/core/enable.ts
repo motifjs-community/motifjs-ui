@@ -12,6 +12,8 @@ const NATIVE = 'button, input, select, textarea, fieldset, optgroup, option';
 /** Other focusable elements: taken out of the tab order and marked `aria-disabled`. */
 const FOCUSABLE = 'a[href], area[href], [tabindex], [contenteditable]:not([contenteditable="false"]), summary, iframe';
 const DISABLEABLE = `${NATIVE}, ${FOCUSABLE}`;
+/** Elements that keep focus while disabled (a control asked for it): only `aria-disabled`, so they stay in the tab order. */
+const KEEPS_FOCUS = '[data-mx-focusable-disabled]';
 /** Pointer input swallowed inside a disabled root, before any handler sees it. */
 const BLOCKED_EVENTS = ['pointerdown', 'mousedown', 'click', 'dblclick', 'auxclick', 'contextmenu'];
 
@@ -19,6 +21,7 @@ interface Mark {
   /** The disabled roots covering this element. */
   roots: Set<Element>;
   native: boolean;
+  keepsFocus: boolean;
   /** What to restore: the element's own `disabled`, or its `tabindex` / `aria-disabled`. */
   disabled: boolean;
   tabindex: string | null;
@@ -39,10 +42,12 @@ function cover(el: Element, root: Element): void {
   let m = marks.get(el);
   if (m?.roots.has(root)) return;
   if (!m) {
-    const native = el.matches(NATIVE);
+    const keepsFocus = el.matches(KEEPS_FOCUS);
+    const native = el.matches(NATIVE) && !keepsFocus;
     m = {
       roots: new Set(),
       native,
+      keepsFocus,
       disabled: el.hasAttribute('disabled'),
       tabindex: el.getAttribute('tabindex'),
       ariaDisabled: el.getAttribute('aria-disabled'),
@@ -50,7 +55,7 @@ function cover(el: Element, root: Element): void {
     marks.set(el, m);
     if (native) el.setAttribute('disabled', '');
     else {
-      el.setAttribute('tabindex', '-1');
+      if (!keepsFocus) el.setAttribute('tabindex', '-1');
       el.setAttribute('aria-disabled', 'true');
     }
   }
@@ -103,7 +108,7 @@ function onMutations(records: MutationRecord[]): void {
     if (r.attributeName === 'disabled' && m.native) {
       m.disabled = el.hasAttribute('disabled');
       el.setAttribute('disabled', '');
-    } else if (r.attributeName === 'tabindex' && !m.native) {
+    } else if (r.attributeName === 'tabindex' && !m.native && !m.keepsFocus) {
       m.tabindex = el.getAttribute('tabindex');
       el.setAttribute('tabindex', '-1');
     }
@@ -139,7 +144,8 @@ function block(e: Event): void {
 export function disableSubtree(root: HTMLElement): () => void {
   if (roots.has(root)) return () => {};
   if (observer) onMutations(observer.takeRecords());
-  const rescue = rescueTarget(root);
+  // Focus on a part that keeps it stays there.
+  const rescue = deepActiveElement()?.matches(KEEPS_FOCUS) ? null : rescueTarget(root);
   roots.add(root);
   for (const el of disableables(root)) if (!inWindowBelow(el, root)) cover(el, root);
   for (const type of BLOCKED_EVENTS) root.addEventListener(type, block, true);

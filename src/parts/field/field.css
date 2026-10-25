@@ -1,0 +1,352 @@
+/* Field: the label, the box with the editor and its buttons, the line for help or an error.
+   The look binds to data-size / data-variant / data-label-mode and to the state attributes the
+   field writes (data-invalid, data-readonly, data-disabled, data-filled). */
+@layer mx.components {
+  .mx-field {
+    display: inline-flex;
+    flex-direction: column;
+    inline-size: var(--mx-field-width);
+    max-inline-size: 100%;
+    vertical-align: top;
+    color: var(--mx-color-fg-primary);
+
+    --_bg: var(--mx-color-fill-control-default);
+    --_bg-hover: var(--mx-color-fill-control-secondary);
+    --_bg-focus: var(--mx-color-bg-surface);
+    --_border: var(--mx-color-stroke-control-default);
+    --_edge: var(--mx-color-stroke-control-strong);
+    --_edge-focus: var(--mx-color-accent-solid);
+  }
+
+  .mx-field[data-stretch] {
+    display: flex;
+    inline-size: 100%;
+  }
+
+  .mx-field[data-size='sm'] {
+    --_height: var(--mx-field-height-sm);
+    --_padding: var(--mx-field-padding-sm);
+    --_font-size: var(--mx-field-font-size-sm);
+  }
+
+  .mx-field[data-size='md'] {
+    --_height: var(--mx-field-height-md);
+    --_padding: var(--mx-field-padding-md);
+    --_font-size: var(--mx-field-font-size-md);
+  }
+
+  .mx-field[data-size='lg'] {
+    --_height: var(--mx-field-height-lg);
+    --_padding: var(--mx-field-padding-lg);
+    --_font-size: var(--mx-field-font-size-lg);
+  }
+
+  .mx-field[data-variant='filled'] {
+    --_bg: var(--mx-color-fill-subtle-secondary);
+    --_bg-hover: var(--mx-color-fill-subtle-tertiary);
+    --_border: transparent;
+  }
+
+  .mx-field[data-variant='underline'] {
+    --_bg: transparent;
+    --_bg-hover: transparent;
+    --_bg-focus: transparent;
+    --_border: transparent;
+  }
+
+  .mx-field[data-invalid] {
+    --_edge: var(--mx-color-danger-solid);
+    --_edge-focus: var(--mx-color-danger-solid);
+  }
+
+  .mx-field[data-invalid]:not([data-variant='underline']) {
+    --_border: var(--mx-color-danger-solid);
+  }
+
+  .mx-field[data-readonly] {
+    --_bg-hover: var(--_bg);
+    --_bg-focus: var(--_bg);
+    --_edge: var(--mx-color-stroke-control-default);
+    --_edge-focus: var(--mx-color-stroke-control-strong);
+  }
+
+  /* Label. */
+
+  .mx-field__label {
+    margin-block-end: var(--mx-field-label-gap);
+    font-weight: var(--mx-field-label-font-weight);
+    overflow-wrap: anywhere;
+  }
+
+  .mx-field__label[hidden] {
+    display: none;
+  }
+
+  .mx-field__required {
+    margin-inline-start: var(--mx-space-1);
+    color: var(--mx-color-danger-fg);
+  }
+
+  .mx-field[data-label-mode='hidden'] .mx-field__label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .mx-field[data-label-mode='side'] {
+    display: inline-grid;
+    inline-size: calc(var(--mx-field-label-width) + var(--mx-field-gap) + var(--mx-field-width));
+    grid-template-columns: var(--mx-field-label-width) minmax(0, 1fr);
+    column-gap: var(--mx-field-gap);
+    align-items: center;
+  }
+
+  .mx-field[data-label-mode='side'] .mx-field__label {
+    margin-block-end: 0;
+  }
+
+  .mx-field[data-label-mode='side'][data-stretch] {
+    display: grid;
+  }
+
+  .mx-field[data-label-mode='side'] > :not(.mx-field__label) {
+    grid-column: 2;
+  }
+
+  /* Floating: the label rests inside the box and moves up once there is something in it. */
+  .mx-field[data-label-mode='floating'] {
+    position: relative;
+  }
+
+  .mx-field[data-label-mode='floating'] .mx-field__box {
+    min-block-size: var(--mx-field-floating-height);
+    align-items: flex-end;
+    padding-block-end: var(--mx-space-2);
+  }
+
+  .mx-field[data-label-mode='floating'] .mx-field__label {
+    position: absolute;
+    margin: 0;
+    inset-block-start: 0;
+    inset-inline-start: calc(var(--_padding) + var(--mx-field-border-width));
+    display: flex;
+    align-items: center;
+    block-size: var(--mx-field-floating-height);
+    font-size: var(--_font-size);
+    font-weight: var(--mx-font-weight-regular);
+    color: var(--mx-color-fg-secondary);
+    pointer-events: none;
+    transition:
+      block-size var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      font-size var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-field[data-label-mode='floating']:is(:focus-within, [data-filled], [data-placeholder], [data-prefix], [data-icon]) .mx-field__label {
+    block-size: calc(var(--mx-field-floating-height) / 2);
+    font-size: var(--mx-field-floating-font-size);
+    font-weight: var(--mx-field-label-font-weight);
+  }
+
+  /* Box. */
+
+  .mx-field__box {
+    display: flex;
+    align-items: center;
+    gap: var(--mx-field-gap);
+    min-block-size: var(--_height);
+    padding-inline: var(--_padding);
+    font-size: var(--_font-size);
+    background: var(--_bg);
+    border: var(--mx-field-border-width) solid var(--_border);
+    border-block-end-color: var(--_edge);
+    border-radius: var(--mx-field-radius);
+    cursor: text;
+    transition:
+      background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-field[data-variant='underline'] .mx-field__box {
+    border-radius: 0;
+  }
+
+  .mx-field__box:hover {
+    background: var(--_bg-hover);
+  }
+
+  /* Focus: the bottom line turns thick and accent colored. */
+  .mx-field__box:focus-within {
+    background: var(--_bg-focus);
+    border-block-end-color: var(--_edge-focus);
+    box-shadow: inset 0 calc(var(--mx-field-border-width) - var(--mx-field-focus-width)) 0 0 var(--_edge-focus);
+  }
+
+  .mx-field[data-disabled] .mx-field__box {
+    color: var(--mx-color-fg-disabled);
+    background: var(--mx-color-fill-control-disabled);
+    border-color: var(--mx-color-stroke-control-default);
+    box-shadow: none;
+    cursor: default;
+  }
+
+  .mx-field[data-disabled] .mx-field__label {
+    color: var(--mx-color-fg-disabled);
+  }
+
+  .mx-field__control {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  .mx-field__input {
+    inline-size: 100%;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    outline: none;
+    box-shadow: none;
+  }
+
+  .mx-field__input:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .mx-field__input::placeholder {
+    color: var(--mx-color-fg-secondary);
+    opacity: 1;
+  }
+
+  .mx-field[data-align='center'] .mx-field__input {
+    text-align: center;
+  }
+
+  .mx-field[data-align='end'] .mx-field__input {
+    text-align: end;
+  }
+
+  .mx-field__icon {
+    display: inline-flex;
+    flex: none;
+    inline-size: var(--mx-field-icon-size);
+    block-size: var(--mx-field-icon-size);
+    color: var(--mx-color-fg-secondary);
+  }
+
+  .mx-field__icon > :is(img, svg) {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .mx-field__prefix,
+  .mx-field__suffix {
+    flex: none;
+    color: var(--mx-color-fg-secondary);
+    white-space: nowrap;
+  }
+
+  .mx-field__start,
+  .mx-field__tools,
+  .mx-field__end,
+  .mx-field__actions {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--mx-space-1);
+  }
+
+  /* Buttons at the edge sit close to it. */
+  .mx-field__box > :first-child:is(.mx-field__start) {
+    margin-inline-start: calc(var(--mx-field-button-inset) - var(--_padding));
+  }
+
+  .mx-field__box > :last-child:is(.mx-field__tools, .mx-field__end, .mx-field__actions) {
+    margin-inline-end: calc(var(--mx-field-button-inset) - var(--_padding));
+  }
+
+  /* Buttons in the box. */
+
+  .mx-field__button {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--mx-space-1);
+    min-inline-size: calc(var(--_height) - 2 * var(--mx-field-button-inset));
+    block-size: calc(var(--_height) - 2 * var(--mx-field-button-inset));
+    margin: 0;
+    padding-block: 0;
+    padding-inline: var(--mx-space-1);
+    font: inherit;
+    color: var(--mx-color-fg-secondary);
+    background: transparent;
+    border: 0;
+    border-radius: var(--mx-field-button-radius);
+    cursor: default;
+  }
+
+  .mx-field:is(:not([data-filled]), [data-readonly], [data-disabled]) .mx-field__clear {
+    display: none;
+  }
+
+  .mx-field__button:hover:not(:disabled) {
+    color: var(--mx-color-fg-primary);
+    background: var(--mx-color-fill-subtle-secondary);
+  }
+
+  .mx-field__button:active:not(:disabled) {
+    background: var(--mx-color-fill-subtle-tertiary);
+  }
+
+  .mx-field__button:disabled {
+    color: var(--mx-color-fg-disabled);
+  }
+
+  .mx-field__button-icon {
+    display: inline-flex;
+    inline-size: var(--mx-field-icon-size);
+    block-size: var(--mx-field-icon-size);
+  }
+
+  .mx-field__button-icon > :is(img, svg) {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  /* The line under the box. */
+
+  .mx-field__foot {
+    display: flex;
+    gap: var(--mx-field-gap);
+    font-size: var(--mx-field-message-font-size);
+    line-height: var(--mx-field-message-line);
+    color: var(--mx-color-fg-secondary);
+  }
+
+  /* The message is a live region: it stays in the page, empty, so a new error is read out. */
+  .mx-field[data-message] .mx-field__foot {
+    padding-block-start: var(--mx-field-message-gap);
+  }
+
+  .mx-field__message {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  .mx-field[data-invalid] .mx-field__message {
+    color: var(--mx-color-danger-fg);
+  }
+
+  .mx-field__counter {
+    flex: none;
+    margin-inline-start: auto;
+    font-variant-numeric: tabular-nums;
+  }
+}

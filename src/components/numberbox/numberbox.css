@@ -1,0 +1,32 @@
+/* NumberBox: the spin buttons at the end of the box, on top of each other or side by side. */
+@layer mx.components {
+  .mx-number-box .mx-field__input {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mx-number-box__spin[data-layout='stacked'] {
+    flex-direction: column;
+    gap: 0;
+    align-self: stretch;
+    justify-content: center;
+  }
+
+  .mx-field__box > .mx-number-box__spin[data-layout='stacked']:last-child {
+    margin-inline-end: calc(var(--mx-number-box-spin-inset) - var(--_padding));
+  }
+
+  .mx-number-box__spin[data-layout='stacked'] .mx-number-box__step {
+    min-inline-size: var(--mx-number-box-spin-width);
+    block-size: calc((var(--_height) - 2 * var(--mx-field-border-width) - 2 * var(--mx-number-box-spin-inset)) / 2);
+    padding: 0;
+  }
+
+  .mx-number-box__spin[data-layout='stacked'] .mx-glyph {
+    block-size: 100%;
+    max-block-size: var(--mx-icon-size-sm);
+  }
+
+  .mx-number-box[data-readonly] .mx-number-box__spin {
+    visibility: hidden;
+  }
+}

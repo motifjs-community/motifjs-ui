@@ -1,0 +1,82 @@
+/* ListBox: a list that stays on the page, in the field's box, with a search box above it. The look
+   binds to data-selection-mode, data-check-boxes and the field's state attributes; the rows are the
+   shared list's (data-active, data-selected, data-select-all, data-mixed). */
+@layer mx.components {
+  .mx-list-box {
+    --_bg-hover: var(--_bg);
+  }
+
+  .mx-list-box .mx-field__box {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--mx-listbox-gap);
+    padding: var(--mx-listbox-padding);
+    cursor: default;
+  }
+
+  .mx-list-box .mx-field__control {
+    outline: none;
+  }
+
+  /* A disabled list cannot be focused, so it does not scroll either. */
+  .mx-list-box[data-disabled] .mx-list {
+    overflow: hidden;
+  }
+
+  /* The highlight shows while the list is in use; the keys also draw the focus ring around it. */
+  .mx-list-box .mx-list:not(:focus, :hover) .mx-list__item[data-active]:not([data-selected]) {
+    background: transparent;
+  }
+
+  .mx-list-box .mx-list:focus-visible .mx-list__item[data-active] {
+    outline: var(--mx-focus-ring-width) solid var(--mx-focus-ring-color);
+    outline-offset: calc(-1 * var(--mx-focus-ring-width));
+  }
+
+  .mx-list-box[data-check-boxes] .mx-list__check {
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--mx-listbox-check-size);
+    block-size: var(--mx-listbox-check-size);
+    color: transparent;
+    visibility: visible;
+    background: var(--mx-color-fill-control-default);
+    border: var(--mx-listbox-check-border-width) solid var(--mx-color-stroke-control-strong);
+    border-radius: var(--mx-listbox-check-radius);
+  }
+
+  .mx-list-box[data-check-boxes] .mx-list__item[data-selected] .mx-list__check {
+    color: var(--mx-color-accent-on-solid);
+    background: var(--mx-color-accent-solid);
+    border-color: var(--mx-color-accent-solid);
+  }
+
+  .mx-list-box[data-check-boxes] .mx-list__item[aria-disabled='true'] .mx-list__check {
+    background: var(--mx-color-fill-control-disabled);
+    border-color: var(--mx-color-stroke-control-default);
+  }
+
+  .mx-list-box[data-disabled][data-check-boxes] .mx-list__item[data-selected] .mx-list__check {
+    color: var(--mx-color-fg-on-accent-disabled);
+    background: var(--mx-color-fill-accent-disabled);
+    border-color: transparent;
+  }
+
+  /* A line under "Select all", drawn over the row so every row keeps one height. */
+  .mx-list__item[data-select-all] {
+    font-weight: var(--mx-font-weight-medium);
+  }
+
+  .mx-list__item[data-select-all]::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    block-size: var(--mx-listbox-divider-width);
+    background: var(--mx-color-stroke-divider);
+  }
+
+  .mx-list-box__search {
+    flex: none;
+  }
+}

@@ -1,0 +1,307 @@
+/* TreeView. The look binds to data-size, data-lines and data-windowed on the root, and to
+   data-selected, data-expanded, data-branch, data-state (checked | unchecked | mixed),
+   data-loading, data-error and data-disabled on each item. An item holds its row and, while it is
+   open, a group of its children; --_level (set on the item) indents the row. Only the row is
+   painted, so the hover, the selection and the focus ring stay one row high. */
+@layer mx.components {
+  .mx-tree-view {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mx-treeview-search-gap);
+    min-inline-size: 0;
+    min-block-size: 0;
+    color: var(--mx-color-fg-primary);
+    font-size: var(--_font-size);
+    line-height: var(--_line-height);
+  }
+
+  .mx-tree-view[data-size='sm'] {
+    --_row: var(--mx-treeview-row-height-sm);
+    --_padding: var(--mx-treeview-padding-sm);
+    --_indent: var(--mx-treeview-indent-sm);
+    --_font-size: var(--mx-treeview-font-size-sm);
+    --_line-height: var(--mx-font-line-caption);
+  }
+
+  .mx-tree-view[data-size='md'] {
+    --_row: var(--mx-treeview-row-height-md);
+    --_padding: var(--mx-treeview-padding-md);
+    --_indent: var(--mx-treeview-indent-md);
+    --_font-size: var(--mx-treeview-font-size-md);
+    --_line-height: var(--mx-font-line-body);
+  }
+
+  .mx-tree-view[data-size='lg'] {
+    --_row: var(--mx-treeview-row-height-lg);
+    --_padding: var(--mx-treeview-padding-lg);
+    --_indent: var(--mx-treeview-indent-lg);
+    --_font-size: var(--mx-treeview-font-size-lg);
+    --_line-height: var(--mx-font-line-body-large);
+  }
+
+  .mx-tree-view__search {
+    flex: none;
+  }
+
+  .mx-tree-view__body {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .mx-tree-view__body[hidden] {
+    display: none;
+  }
+
+  .mx-tree-view__empty {
+    padding: var(--_padding);
+    color: var(--mx-color-fg-secondary);
+  }
+
+  .mx-tree-view__space {
+    flex: none;
+  }
+
+  /* A row. */
+
+  .mx-tree-view__item {
+    display: block;
+  }
+
+  /* The ring goes on the row, not around the open branch under it. */
+  .mx-tree-view__item:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .mx-tree-view__row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--mx-treeview-gap);
+    min-block-size: var(--_row);
+    padding-inline: calc(var(--_padding) + (var(--_level) - 1) * var(--_indent)) var(--_padding);
+    border-radius: var(--mx-treeview-radius);
+    cursor: default;
+    user-select: none;
+    transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  /* A long tree counts rows of one height. */
+  .mx-tree-view[data-windowed] .mx-tree-view__row {
+    block-size: var(--_row);
+  }
+
+  .mx-tree-view__item:not([data-disabled]) > .mx-tree-view__row:hover {
+    background: var(--mx-treeview-hover);
+  }
+
+  .mx-tree-view__item[data-selected] > .mx-tree-view__row {
+    background: var(--mx-treeview-selected);
+  }
+
+  .mx-tree-view__item[data-selected] > .mx-tree-view__row::before {
+    content: '';
+    position: absolute;
+    inset-block: 25%;
+    inset-inline-start: 0;
+    inline-size: var(--mx-treeview-indicator-width);
+    background: var(--mx-treeview-indicator-color);
+    border-radius: var(--mx-radius-full);
+  }
+
+  .mx-tree-view__item:focus-visible > .mx-tree-view__row {
+    outline: var(--mx-focus-ring-width) solid var(--mx-focus-ring-color);
+    outline-offset: calc(var(--mx-focus-ring-width) * -1);
+    box-shadow: inset 0 0 0 calc(var(--mx-focus-ring-width) + var(--mx-focus-ring-offset)) var(--mx-focus-ring-inner);
+  }
+
+  .mx-tree-view__item[data-disabled] > .mx-tree-view__row {
+    color: var(--mx-color-fg-disabled);
+  }
+
+  /* Lines under each parent's arrow, one per level above the row. */
+  .mx-tree-view[data-lines] .mx-tree-view__row::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(var(--_padding) + (var(--mx-treeview-expander-size) - var(--mx-treeview-line-width)) / 2);
+    inline-size: calc((var(--_level) - 1) * var(--_indent));
+    background: repeating-linear-gradient(
+      to right,
+      var(--mx-treeview-line-color) 0 var(--mx-treeview-line-width),
+      transparent var(--mx-treeview-line-width) var(--_indent)
+    );
+    pointer-events: none;
+  }
+
+  .mx-tree-view[data-lines]:dir(rtl) .mx-tree-view__row::after {
+    background: repeating-linear-gradient(
+      to left,
+      var(--mx-treeview-line-color) 0 var(--mx-treeview-line-width),
+      transparent var(--mx-treeview-line-width) var(--_indent)
+    );
+  }
+
+  /* The arrow. */
+
+  .mx-tree-view__expander {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    inline-size: var(--mx-treeview-expander-size);
+    block-size: var(--mx-treeview-expander-size);
+    color: var(--mx-color-fg-secondary);
+  }
+
+  .mx-tree-view__expander > * {
+    grid-area: 1 / 1;
+  }
+
+  .mx-tree-view__expander > .mx-glyph {
+    transition: rotate var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
+  }
+
+  .mx-tree-view__item:not([data-branch]) > .mx-tree-view__row > .mx-tree-view__expander > .mx-glyph,
+  .mx-tree-view__item[data-loading] > .mx-tree-view__row > .mx-tree-view__expander > .mx-glyph {
+    visibility: hidden;
+  }
+
+  .mx-tree-view__item[data-expanded] > .mx-tree-view__row > .mx-tree-view__expander > .mx-glyph {
+    rotate: 90deg;
+  }
+
+  .mx-tree-view:dir(rtl) .mx-tree-view__expander > .mx-glyph {
+    scale: -1 1;
+  }
+
+  .mx-tree-view:dir(rtl) .mx-tree-view__item[data-expanded] > .mx-tree-view__row > .mx-tree-view__expander > .mx-glyph {
+    rotate: -90deg;
+  }
+
+  .mx-tree-view__item[data-loading] > .mx-tree-view__row > .mx-tree-view__expander::after {
+    content: '';
+    grid-area: 1 / 1;
+    inline-size: var(--mx-icon-size-sm);
+    block-size: var(--mx-icon-size-sm);
+    border: var(--mx-border-width-2) solid currentColor;
+    border-inline-end-color: transparent;
+    border-radius: var(--mx-radius-full);
+    animation: mx-tree-view-spin calc(var(--mx-motion-duration-slow) * 3) linear infinite;
+  }
+
+  @keyframes mx-tree-view-spin {
+    to {
+      rotate: 1turn;
+    }
+  }
+
+  /* The check box. */
+
+  .mx-tree-view__check {
+    --_fill: var(--mx-color-fill-control-default);
+    --_fill-hover: var(--mx-color-fill-control-secondary);
+    --_stroke: var(--mx-color-stroke-control-strong);
+    --_stroke-edge: var(--mx-color-stroke-control-edge);
+
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    inline-size: var(--mx-treeview-check-size);
+    block-size: var(--mx-treeview-check-size);
+    color: var(--mx-color-accent-on-solid);
+    background: var(--_fill);
+    border: var(--mx-border-width-1) solid var(--_stroke);
+    border-block-end-color: var(--_stroke-edge);
+    border-radius: var(--mx-treeview-check-radius);
+    box-shadow: inset 0 var(--mx-border-width-1) 0 var(--mx-color-highlight-control);
+    transition:
+      background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-tree-view__check:hover {
+    background: var(--_fill-hover);
+  }
+
+  .mx-tree-view__item:is([data-state='checked'], [data-state='mixed']) > .mx-tree-view__row > .mx-tree-view__check {
+    --_fill: var(--mx-color-accent-solid);
+    --_fill-hover: var(--mx-color-accent-solid-hover);
+    --_stroke: var(--mx-color-accent-solid);
+    --_stroke-edge: var(--mx-color-stroke-on-accent-bottom);
+  }
+
+  .mx-tree-view__item[data-disabled] > .mx-tree-view__row > .mx-tree-view__check {
+    --_fill: var(--mx-color-fill-control-disabled);
+    --_fill-hover: var(--_fill);
+    --_stroke: var(--mx-color-stroke-control-default);
+    --_stroke-edge: var(--_stroke);
+
+    color: var(--mx-color-fg-on-accent-disabled);
+    box-shadow: none;
+  }
+
+  .mx-tree-view__item[data-disabled]:is([data-state='checked'], [data-state='mixed']) > .mx-tree-view__row > .mx-tree-view__check {
+    --_fill: var(--mx-color-fill-accent-disabled);
+    --_stroke: transparent;
+  }
+
+  .mx-tree-view__check > .mx-glyph {
+    grid-area: 1 / 1;
+    inline-size: var(--mx-treeview-check-mark-size);
+    block-size: var(--mx-treeview-check-mark-size);
+    opacity: 0;
+    transition: opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-tree-view__item[data-state='checked'] > .mx-tree-view__row .mx-tree-view__check-mark,
+  .mx-tree-view__item[data-state='mixed'] > .mx-tree-view__row .mx-tree-view__dash-mark {
+    opacity: 1;
+  }
+
+  /* Icon, text, a failed load. */
+
+  .mx-tree-view__icon {
+    display: inline-flex;
+    flex: none;
+    inline-size: var(--mx-treeview-icon-size);
+    block-size: var(--mx-treeview-icon-size);
+  }
+
+  .mx-tree-view__icon > :is(img, svg) {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .mx-tree-view__text {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mx-tree-view__error {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--mx-treeview-gap);
+    font-size: var(--mx-font-size-caption);
+    color: var(--mx-color-danger-fg);
+  }
+
+  .mx-tree-view__retry {
+    appearance: none;
+    margin: 0;
+    padding-block: 0;
+    padding-inline: var(--mx-space-1);
+    font: inherit;
+    color: var(--mx-color-accent-fg);
+    text-decoration: underline;
+    background: none;
+    border: 0;
+    border-radius: var(--mx-radius-sm);
+    cursor: pointer;
+  }
+}

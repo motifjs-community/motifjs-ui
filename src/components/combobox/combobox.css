@@ -1,0 +1,34 @@
+/* ComboBox and Autocomplete: a text field with a list on a popup that follows the text. */
+@layer mx.components {
+  /* Typed text can be cleared before it is a value. */
+  .mx-combo-box[data-text]:not([data-readonly], [data-disabled]) .mx-field__clear {
+    display: inline-flex;
+  }
+
+  .mx-combo-box__arrow .mx-glyph {
+    transition: rotate var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-combo-box[data-open] .mx-combo-box__arrow .mx-glyph {
+    rotate: 0.5turn;
+  }
+
+  .mx-combo-box[data-readonly] .mx-combo-box__arrow {
+    display: none;
+  }
+
+  .mx-combo-box__popup {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .mx-combo-box__popup > .mx-list {
+    flex: 1 1 auto;
+    min-block-size: 0;
+  }
+
+  .mx-list__item[data-loading] {
+    color: var(--mx-color-fg-secondary);
+  }
+}

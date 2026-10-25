@@ -1,0 +1,9 @@
+{
+  "lookup": {
+    "$description": "Lookup: the table-like list of a drop-down.",
+    "popup-width": { "$type": "dimension", "$value": { "value": 28, "unit": "rem" } },
+    "column-gap": { "$type": "dimension", "$value": "{space.3}" },
+    "header-font-size": { "$type": "dimension", "$value": "{font.size.caption}" },
+    "header-font-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" }
+  }
+}

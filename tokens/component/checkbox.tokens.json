@@ -1,0 +1,32 @@
+{
+  "checkbox": {
+    "$description": "CheckBox: the box, its mark and the caption next to it. Switch and RadioGroup share the caption layout.",
+    "radius": { "$type": "dimension", "$value": "{radius.sm}" },
+    "border-width": { "$type": "dimension", "$value": "{border.width.1}" },
+    "gap": { "$type": "dimension", "$value": "{space.2}" },
+    "size": {
+      "$type": "dimension",
+      "sm": { "$value": { "value": 0.875, "unit": "rem" } },
+      "md": { "$value": "{icon.size.md}" },
+      "lg": { "$value": "{icon.size.lg}" }
+    },
+    "mark-size": {
+      "$type": "dimension",
+      "sm": { "$value": "{icon.size.sm}" },
+      "md": { "$value": "{icon.size.sm}" },
+      "lg": { "$value": "{icon.size.md}" }
+    },
+    "height": {
+      "$type": "dimension",
+      "sm": { "$value": "{control.height.sm}" },
+      "md": { "$value": "{control.height.md}" },
+      "lg": { "$value": "{control.height.lg}" }
+    },
+    "font-size": {
+      "$type": "dimension",
+      "sm": { "$value": "{font.size.caption}" },
+      "md": { "$value": "{font.size.body}" },
+      "lg": { "$value": "{font.size.body-large}" }
+    }
+  }
+}

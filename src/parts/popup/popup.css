@@ -1,0 +1,40 @@
+/* Popup: a fixed surface in the top layer (or above the page where popovers are missing).
+   placePopup writes its position; the gap to the anchor is the margin of the side it opens on. */
+@layer mx.components {
+  .mx-popup {
+    position: fixed;
+    inset: auto;
+    z-index: var(--mx-z-dropdown);
+    box-sizing: border-box;
+    margin: 0;
+    padding: var(--mx-popup-padding);
+    overflow: auto;
+    overscroll-behavior: contain;
+    color: var(--mx-color-fg-primary);
+    background: var(--mx-popup-background);
+    border: var(--mx-popup-border-width) solid var(--mx-popup-border-color);
+    border-radius: var(--mx-popup-radius);
+    box-shadow: var(--mx-popup-shadow);
+  }
+
+  /* Closed, it stays out of the page whatever display its content asks for. */
+  .mx-popup:is([popover]:not(:popover-open), [hidden]) {
+    display: none;
+  }
+
+  .mx-popup[data-side='bottom'] {
+    margin-block-start: var(--mx-popup-offset);
+  }
+
+  .mx-popup[data-side='top'] {
+    margin-block-end: var(--mx-popup-offset);
+  }
+
+  .mx-popup[data-side='end'] {
+    margin-inline-start: var(--mx-popup-offset);
+  }
+
+  .mx-popup[data-side='start'] {
+    margin-inline-end: var(--mx-popup-offset);
+  }
+}

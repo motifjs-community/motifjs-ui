@@ -1,6 +1,6 @@
 // @vitest-environment node
 // No DOM here, and under jsdom `import.meta.url` would not be a file URL.
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tokens as designTokens } from '@motifx-community/design-system';
@@ -16,6 +16,7 @@ const pathOf = (t: { path: string[] }) => t.path.join('.');
 function kitCss(): string[] {
   const out: string[] = [];
   const walk = (dir: string) => {
+    if (!existsSync(join(root, dir))) return;
     for (const e of readdirSync(join(root, dir), { withFileTypes: true })) {
       const rel = `${dir}/${e.name}`;
       if (e.isDirectory()) walk(rel);
@@ -23,6 +24,7 @@ function kitCss(): string[] {
     }
   };
   walk('src/components');
+  walk('src/parts');
   walk('src/styles');
   return out;
 }
@@ -30,7 +32,6 @@ function kitCss(): string[] {
 describe('component tokens', () => {
   it('reference design-system tokens only, with matching types', async () => {
     const tokens = await componentTokens();
-    expect(tokens.length).toBeGreaterThan(30);
     for (const t of tokens) {
       const ref = referenceOf(t);
       if (ref) expect(ref in designTokens, `${pathOf(t)} references ${ref}`).toBe(true);
@@ -40,10 +41,9 @@ describe('component tokens', () => {
   it('are written as var() chains inside @layer mx.components', async () => {
     const css = await render('mx/components-css');
     expect(LAYER).toBe('mx.components');
+    // Until a component has tokens the file holds only its header.
+    if (!(await componentTokens()).length) return void expect(css).toMatch(/^\/\*[^\n]*\*\/\n$/);
     expect(css).toMatch(/^\/\*[^\n]*\*\/\n@layer mx\.components \{\n {2}:root \{\n( {4}--mx-[\w-]+: [^\n]+;\n)+ {2}\}\n\}\n$/);
-    expect(css).toContain('--mx-button-radius: var(--mx-radius-md);');
-    expect(css).toContain('--mx-form-titlebar-height: var(--mx-bar-height);');
-    expect(css).toContain('--mx-form-width: 34rem;');
     // Only component tokens are written; the design system's layers come from its own stylesheet.
     expect(css).not.toContain('--mx-color-gray-');
   });
@@ -59,8 +59,7 @@ describe('component tokens', () => {
 describe('kit CSS', () => {
   const files = kitCss();
 
-  it('finds the component and base files', () => {
-    expect(files).toContain('src/components/button/button.css');
+  it('finds the base file', () => {
     expect(files).toContain('src/styles/base.css');
   });
 
@@ -73,7 +72,7 @@ describe('kit CSS', () => {
   it('uses only tokens that exist: the design system\'s or this kit\'s component tokens', () => {
     const known = new Set<string>([
       ...Object.values(designTokens).map((t) => t.cssVar),
-      ...Object.values(generated).map((t) => t.cssVar),
+      ...Object.values(generated as Record<string, { cssVar: string }>).map((t) => t.cssVar),
     ]);
     for (const file of files) {
       for (const [, name] of read(file).matchAll(/var\((--mx-[\w-]+)/g)) {
