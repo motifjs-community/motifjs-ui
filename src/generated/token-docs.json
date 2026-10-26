@@ -5831,6 +5831,20 @@
     "value": "0.25rem"
   },
   {
+    "name": "tabdocs.list-search-height",
+    "cssVar": "--mx-tabdocs-list-search-height",
+    "type": "dimension",
+    "ref": "control.height.md",
+    "value": "2rem"
+  },
+  {
+    "name": "tabdocs.list-search-font-size",
+    "cssVar": "--mx-tabdocs-list-search-font-size",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
     "name": "tabdocs.drag-source-opacity",
     "cssVar": "--mx-tabdocs-drag-source-opacity",
     "type": "number",

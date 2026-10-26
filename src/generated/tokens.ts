@@ -835,6 +835,8 @@ export const componentTokens = {
   'tabdocs.list-dirty-size': { cssVar: '--mx-tabdocs-list-dirty-size', type: 'dimension', layer: 'component' },
   'tabdocs.list-dirty-color': { cssVar: '--mx-tabdocs-list-dirty-color', type: 'color', layer: 'component' },
   'tabdocs.list-gap': { cssVar: '--mx-tabdocs-list-gap', type: 'dimension', layer: 'component' },
+  'tabdocs.list-search-height': { cssVar: '--mx-tabdocs-list-search-height', type: 'dimension', layer: 'component' },
+  'tabdocs.list-search-font-size': { cssVar: '--mx-tabdocs-list-search-font-size', type: 'dimension', layer: 'component' },
   'tabdocs.drag-source-opacity': { cssVar: '--mx-tabdocs-drag-source-opacity', type: 'number', layer: 'component' },
   'tabdocs.ghost-bg': { cssVar: '--mx-tabdocs-ghost-bg', type: 'color', layer: 'component' },
   'tabdocs.ghost-border-width': { cssVar: '--mx-tabdocs-ghost-border-width', type: 'dimension', layer: 'component' },

@@ -109,6 +109,20 @@
     display: none;
   }
 
+  /* Marks apart (data-marks-apart): the mark has its own column before the icons, kept empty on the
+     items that are not checked, and a checked item keeps its icon. */
+  .mx-menu[data-marks-apart]:is([data-checks], [data-icons]) .mx-menu__check {
+    display: inline-flex;
+  }
+
+  .mx-menu[data-marks-apart] .mx-menu__item:has(> .mx-menu__check > *) > .mx-menu__icon {
+    display: inline-flex;
+  }
+
+  .mx-menu[data-marks-apart]:not([data-icons]) .mx-menu__icon {
+    display: none;
+  }
+
   .mx-menu__check > svg,
   .mx-menu__icon > :is(img, svg) {
     inline-size: 100%;

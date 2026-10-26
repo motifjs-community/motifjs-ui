@@ -1241,6 +1241,12 @@
     flex: none;
   }
 
+  /* The search is a row of the menu: its height and text are the menu items' in every language. */
+  .mx-tabdocs__search .mx-field__box {
+    min-block-size: var(--mx-tabdocs-list-search-height);
+    font-size: var(--mx-tabdocs-list-search-font-size);
+  }
+
   .mx-tabdocs__documents {
     max-block-size: var(--mx-tabdocs-list-max-height);
     overflow-y: auto;

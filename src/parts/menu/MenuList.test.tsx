@@ -2,6 +2,7 @@ import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { Button } from '../../components/button/Button';
+import { checkMark } from '../../core/glyphs';
 import type { MenuItem } from './menu-item';
 import type { MenuItemClickEventArgs } from './menu-item-click-event-args';
 import { MenuList } from './MenuList';
@@ -304,6 +305,29 @@ describe('MenuList submenus', () => {
     list.markColumn = false;
     list.setItems([{ text: 'Close all' }]);
     expect(list.element.hasAttribute('data-icons')).toBe(false);
+  });
+
+  it('can keep the icon of a checked item, the mark in a column of its own, and a check for a chosen radio item', async () => {
+    const list = new MenuList();
+    page(list);
+    const icon = () => document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const items = [
+      { text: 'index.ts', icon, group: 'doc', checked: true },
+      { text: 'app.ts', icon, group: 'doc', checked: false },
+    ];
+    list.setItems(items);
+    const mark = () => itemsOf(list.element)[0].querySelector('.mx-menu__check svg path')!.getAttribute('d');
+    const dot = mark();
+    expect(list.element.hasAttribute('data-marks-apart')).toBe(false);
+
+    list.markBesideIcon = true;
+    list.radioMark = 'check';
+    list.setItems(items);
+    expect(list.element.hasAttribute('data-marks-apart')).toBe(true);
+    expect(itemsOf(list.element)[0].querySelector('.mx-menu__icon svg')).not.toBeNull();
+    expect(mark()).not.toBe(dot);
+    expect(mark()).toBe(checkMark().querySelector('path')!.getAttribute('d'));
+    expect(itemsOf(list.element)[0].getAttribute('role')).toBe('menuitemradio');
   });
 
   it('can focus the menu itself; Down then goes to the first item', async () => {

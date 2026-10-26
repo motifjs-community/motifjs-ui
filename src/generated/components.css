@@ -553,6 +553,8 @@
     --mx-tabdocs-count-font-weight: var(--mx-font-weight-semibold);
     --mx-tabdocs-bar-button-padding: var(--mx-space-1);
     --mx-tabdocs-list-gap: var(--mx-space-1);
+    --mx-tabdocs-list-search-height: var(--mx-control-height-md);
+    --mx-tabdocs-list-search-font-size: var(--mx-font-size-body);
     --mx-tabdocs-drag-source-opacity: var(--mx-opacity-disabled);
     --mx-tabdocs-ghost-border-width: var(--mx-border-width-1);
     --mx-tabdocs-ghost-border-color: var(--mx-color-stroke-control-default);
@@ -1239,6 +1241,7 @@
     --mx-switch-track-height-md: 2rem;
     --mx-switch-track-height-lg: 2.25rem;
     --mx-tabdocs-indicator-width: 3px;
+    --mx-tabdocs-list-search-height: 2.75rem;
     --mx-tabdocs-autohide-indicator-width: 3px;
     --mx-tabs-indicator-width: 3px;
     --mx-tabs-height-md: 3rem;

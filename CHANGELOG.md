@@ -1112,3 +1112,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   tokens `menu.description-font-size`, `menu.description-color`), part of the item's name, never a key
   or `aria-keyshortcuts`; typing to an item goes by the label alone. `MenuList.markColumn` keeps the
   column for a mark or an icon when no item has one, so the texts line up with a menu beside it.
+- TabDocumentManager document menu: the shown document keeps its icon and gets a check in a column of
+  its own (a dot already means unsaved there); the search is as tall as the menu's items in every
+  language (tokens `tabdocs.list-search-height`, `list-search-font-size`; Material 44 px instead of its
+  56 px field). `MenuList.markBesideIcon` gives the mark its own column before the icons, and
+  `MenuList.radioMark: 'dot' | 'check'` chooses how a chosen radio item is marked.

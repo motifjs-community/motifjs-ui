@@ -61,6 +61,10 @@ export class MenuList extends Component<HTMLDivElement> {
   parentList: MenuList | null = null;
   /** Keeps the column for a mark or an icon when no item has one, so the texts line up with a menu beside it. */
   markColumn = false;
+  /** A checked item keeps its icon: the mark gets a column of its own, before the icons. */
+  markBesideIcon = false;
+  /** How a chosen radio item is marked: a dot, or a check (when a dot means something else in the menu). */
+  radioMark: 'dot' | 'check' = 'dot';
 
   private entries: Entry[] = [];
   private releases: (() => void)[] = [];
@@ -190,6 +194,7 @@ export class MenuList extends Component<HTMLDivElement> {
     }
     this.element.toggleAttribute('data-checks', checks);
     this.element.toggleAttribute('data-icons', icons || this.markColumn);
+    this.element.toggleAttribute('data-marks-apart', this.markBesideIcon);
     if (focused >= 0) this.entries[Math.min(focused, this.entries.length - 1)]?.element.focus();
     if (openItem) {
       // The open submenu stays with its item, or goes with it.
@@ -217,7 +222,7 @@ export class MenuList extends Component<HTMLDivElement> {
 
     const check = element.appendChild(this.element.ownerDocument.createElement('span'));
     check.className = 'mx-menu__check';
-    if (look.checked) check.append(look.radio ? radioMark() : checkMark());
+    if (look.checked) check.append(look.radio && this.radioMark === 'dot' ? radioMark() : checkMark());
     const icon = element.appendChild(this.element.ownerDocument.createElement('span'));
     icon.className = 'mx-menu__icon';
     const source = look.item.icon === undefined ? null : read(look.item.icon);

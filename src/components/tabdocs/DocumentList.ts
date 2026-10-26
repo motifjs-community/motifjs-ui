@@ -58,6 +58,9 @@ export class DocumentList {
     const documents = this.documentMenu;
     documents.source = manager;
     documents.element.classList.add('mx-tabdocs__documents');
+    // The shown document keeps its icon and gets a check beside it: a dot is the unsaved mark here.
+    documents.markBesideIcon = true;
+    documents.radioMark = 'check';
     documents.onChosen((e) => this.choose(e.item.data as TabDocument));
     popup.controls.add(documents);
 
@@ -65,8 +68,9 @@ export class DocumentList {
       const commands = (this.commandMenu = new MenuList());
       commands.source = manager;
       commands.element.classList.add('mx-tabdocs__commands');
-      // The documents always have a mark column (the shown one's mark): the commands' texts line up with theirs.
+      // The documents have a column for the check and one for icons: the commands' texts line up with theirs.
       commands.markColumn = true;
+      commands.markBesideIcon = true;
       commands.onChosen((e) => {
         popup.close('code');
         e.item.click?.(e);
@@ -113,6 +117,8 @@ export class DocumentList {
     this.showDocuments('');
     const menu = this.commandMenu;
     if (menu) {
+      // Without the documents there is nothing to line up with.
+      menu.markColumn = menu.markBesideIcon = showList;
       menu.setItems(commands);
       menu.element.hidden = !commands.length;
       this.commandsFirst = !!options.commandsFirst;
