@@ -348,7 +348,7 @@ describe('TabDocumentManager: dragging a tab', () => {
     keep.dispose();
   });
 
-  it('dragOver and dropping can send the drop elsewhere; outside every manager it is refused', async () => {
+  it('dragOver and dropping can send the drop elsewhere; outside every manager it floats, or is refused where it may not', async () => {
     const m = managerWith([['A', 'B'], ['C']]);
     lay(m);
     const log = record(m);
@@ -362,11 +362,21 @@ describe('TabDocumentManager: dragging a tab', () => {
     expect(log).toContain('split down');
     lay(m);
     log.length = 0;
+    m.allowFloat = false;
     drag(header(m, 'B'), [
       [100, 15],
       [900, 500],
     ]);
     expect(log).toEqual(['starting B', 'over strip:0:0:-', 'over outside:-:-1:-', 'ended false']);
+    m.allowFloat = true;
+    log.length = 0;
+    drag(header(m, 'B'), [
+      [100, 15],
+      [900, 500],
+    ]);
+    expect(log).toEqual(['starting B', 'over strip:0:0:-', 'over float:-:-1:-', 'dropping float:-:-1:-', 'moving B', 'moved B', 'dropped float B', 'ended true']);
+    expect(m.floatingWindows).toHaveLength(1);
+    expect(m.floatingWindows[0].documents.map((d) => d.title)).toEqual(['B']);
   });
 
   it('follows allowDrag (the document first), allowDragGroups and a group that takes no drops', async () => {

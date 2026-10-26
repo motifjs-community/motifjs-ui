@@ -1,7 +1,8 @@
 /**
- * What a drag shows inside a manager: the translucent area a drop would take, and the mark between
- * two tabs where a tab would go. Both sit in the manager's element; the area glides from place to
- * place (the motion tokens, so reduced motion makes it jump).
+ * What a drag shows for a manager: the translucent area a drop would take, and the mark between
+ * two tabs where a tab would go. Both sit in the manager's element, fixed in the viewport above its
+ * floating windows; the area glides from place to place (the motion tokens, so reduced motion
+ * makes it jump).
  */
 export class DropMarks {
   private readonly area: HTMLDivElement;
@@ -35,15 +36,14 @@ export class DropMarks {
       return;
     }
     if (!el.isConnected) this.root.append(el);
-    const root = this.root.getBoundingClientRect();
     const fresh = el.hidden;
     // Shown again: it starts where it is, it does not glide in from where it was last.
     if (fresh) el.setAttribute('data-instant', '');
     el.hidden = false;
-    // Boxes of the viewport, so the sides are the screen's in either direction.
+    // Fixed in the viewport, so it shows over a floating window outside the manager too.
     const style = el.style;
-    style.left = `${Math.round(box.left - root.left - this.root.clientLeft)}px`;
-    style.top = `${Math.round(box.top - root.top - this.root.clientTop)}px`;
+    style.left = `${Math.round(box.left)}px`;
+    style.top = `${Math.round(box.top)}px`;
     // A line (no width) takes its width from the style, centred on the place.
     style.width = box.width ? `${Math.round(box.width)}px` : '';
     style.height = `${Math.round(box.height)}px`;

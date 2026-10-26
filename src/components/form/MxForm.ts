@@ -10,6 +10,11 @@ import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
 import { uiLocale } from '../../core/ui-locale';
 import { windowStack, type StackedWindow } from '../../core/window-stack';
+import { followPointer } from '../../parts/window/follow-pointer';
+import { resizeBox } from '../../parts/window/resize-box';
+import { resizeFrame } from '../../parts/window/resize-frame';
+import type { WindowBox } from '../../parts/window/window-box';
+import type { WindowEdge } from '../../parts/window/window-edge';
 import { Button } from '../button/Button';
 import type { FormCloseReason } from './form-close-reason';
 import type { FormClosedEventArgs } from './form-closed-event-args';
@@ -46,8 +51,6 @@ const OWN = [
   'disposeOnClose',
 ] as const;
 
-const EDGES = ['top', 'bottom', 'start', 'end', 'top-start', 'top-end', 'bottom-start', 'bottom-end'] as const;
-
 /** Events that bubble inside the window and stop at its root. */
 const CONTAINED = [
   'click',
@@ -82,8 +85,6 @@ const ENTER_FIELDS =
 
 /** What the form focuses first when it opens, before trying a button. */
 const FIELDS = `${ENTER_FIELDS}, textarea, [contenteditable]:not([contenteditable=false]), [role=slider], [role=switch], [role=checkbox], [role=radio], [role=listbox]`;
-
-type Edge = (typeof EDGES)[number];
 
 /** The parts and the running state of a form. On one object made on first use: the base constructor already renders. */
 interface Parts {
@@ -535,15 +536,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     const footer = document.createElement('div');
     footer.className = 'mx-form__footer';
     footer.hidden = true;
-    const frame = document.createElement('div');
-    frame.className = 'mx-form__frame';
-    frame.setAttribute('aria-hidden', 'true');
-    for (const edge of EDGES) {
-      const handle = document.createElement('div');
-      handle.className = 'mx-form__resize';
-      handle.dataset.edge = edge;
-      frame.append(handle);
-    }
+    const frame = resizeFrame(document, 'mx-form__frame', 'mx-form__resize');
     el.append(bar, content, footer, frame);
 
     const self = this;
@@ -1074,7 +1067,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   }
 
   /** Where the form is, from the start edge of the viewport. */
-  private box(): { x: number; y: number; w: number; h: number } {
+  private box(): WindowBox {
     const r = this.element.getBoundingClientRect();
     const x = this.rtl ? viewport().w - r.right : r.left;
     return { x, y: r.top, w: r.width, h: r.height };
@@ -1122,7 +1115,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     if (e.button !== 0 || !handle || !this.parts.open || !this.resizable || this.windowState !== 'normal') return;
     e.preventDefault();
     windowStack.bringToFront(this.parts.entry);
-    const edge = handle.dataset.edge as Edge;
+    const edge = handle.dataset.edge as WindowEdge;
     const start = this.box();
     const css = getComputedStyle(this.element);
     const minW = parseFloat(css.minInlineSize || css.minWidth) || 0;
@@ -1130,19 +1123,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     const sign = this.rtl ? -1 : 1;
     this.placeAt(start.x, start.y);
     this.drag(handle, e, (dx, dy) => {
-      const view = viewport();
-      const ix = sign * dx;
-      let { x, y, w, h } = start;
-      if (edge.includes('end')) w = Math.min(Math.max(minW, start.w + ix), view.w - start.x);
-      if (edge.includes('start')) {
-        w = Math.min(Math.max(minW, start.w - ix), start.x + start.w);
-        x = start.x + start.w - w;
-      }
-      if (edge.includes('bottom')) h = Math.min(Math.max(minH, start.h + dy), view.h - start.y);
-      if (edge.includes('top')) {
-        h = Math.min(Math.max(minH, start.h - dy), start.y + start.h);
-        y = start.y + start.h - h;
-      }
+      const { x, y, w, h } = resizeBox(edge, start, sign * dx, dy, { w: minW, h: minH }, viewport());
       const style = this.element.style;
       style.setProperty('--_mx-w', `${Math.round(w)}px`);
       style.setProperty('--_mx-h', `${Math.round(h)}px`);
@@ -1152,21 +1133,11 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
 
   /** Follows the pointer from `e` until it is released, then keeps the new place and size. */
   private drag(on: HTMLElement, e: PointerEvent, move: (dx: number, dy: number) => void): void {
-    const sx = e.clientX;
-    const sy = e.clientY;
-    on.setPointerCapture?.(e.pointerId);
     this.element.setAttribute('data-dragging', '');
-    const onMove = (m: PointerEvent) => move(m.clientX - sx, m.clientY - sy);
-    const onUp = () => {
-      on.removeEventListener('pointermove', onMove);
-      on.removeEventListener('pointerup', onUp);
-      on.removeEventListener('pointercancel', onUp);
+    followPointer(on, e, move, () => {
       this.element.removeAttribute('data-dragging');
       this.keepGeometry();
-    };
-    on.addEventListener('pointermove', onMove);
-    on.addEventListener('pointerup', onUp);
-    on.addEventListener('pointercancel', onUp);
+    });
   }
 
   /** After a move or a resize, the props say where the form is and how big. */

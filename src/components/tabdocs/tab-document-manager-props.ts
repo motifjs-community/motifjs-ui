@@ -29,6 +29,17 @@ import type { TabListScope } from './tab-list-scope';
 import type { TabMenuCommand } from './tab-menu-command';
 import type { TabContextMenuEventArgs } from './tab-context-menu-event-args';
 import type { TabCopyModifier } from './tab-copy-modifier';
+import type { TabAutoHiddenEventArgs } from './tab-auto-hidden-event-args';
+import type { TabAutoHidingEventArgs } from './tab-auto-hiding-event-args';
+import type { TabDockGuideKind } from './tab-dock-guide-kind';
+import type { TabDockSide } from './tab-dock-side';
+import type { TabDockedEventArgs } from './tab-docked-event-args';
+import type { TabDockingEventArgs } from './tab-docking-event-args';
+import type { TabFloatedEventArgs } from './tab-floated-event-args';
+import type { TabFloatingEventArgs } from './tab-floating-event-args';
+import type { TabSlideEventArgs } from './tab-slide-event-args';
+import type { TabWindowClosedEventArgs } from './tab-window-closed-event-args';
+import type { TabWindowClosingEventArgs } from './tab-window-closing-event-args';
 import type { TabDragEndedEventArgs } from './tab-drag-ended-event-args';
 import type { TabDragStartingEventArgs } from './tab-drag-starting-event-args';
 import type { TabDropEventArgs } from './tab-drop-event-args';
@@ -144,6 +155,34 @@ export interface TabDocumentManagerProps extends ControlProps {
   dragGhost?: Bind<boolean>;
   /** A strip scrolls while a drag is near its ends. Default `true`. */
   dragAutoScroll?: Bind<boolean>;
+  /** Documents and groups can float in windows of their own in the page (a document's own `allowFloat` wins). Default `true`. */
+  allowFloat?: Bind<boolean>;
+  /** Documents and groups can go to the dock areas around the documents (a document's own `allowDock` wins). Default `true`. */
+  allowDock?: Bind<boolean>;
+  /** Which dock areas documents may go to (a document's own `dockSides` wins). Default all four. */
+  dockSides?: Bind<readonly TabDockSide[]>;
+  /** Dock areas can fold to the manager's edge (a document's own `allowAutoHide: false` keeps its area open). Default `true`. */
+  allowAutoHide?: Bind<boolean>;
+  /** The size a floating window opens at; `null`: the size of the group it comes from. Default `null`. */
+  floatingWindowSize?: Bind<{ width: number; height: number } | null>;
+  /** Floating windows stay inside the viewport when moved, resized, or the page gets smaller. Default `true`. */
+  keepFloatingInView?: Bind<boolean>;
+  /** A floating window whose last document closes closes too. Default `true`. */
+  closeEmptyWindows?: Bind<boolean>;
+  /** A double click on the empty part of a floating window's strip puts it back where it was docked. Default `true`. */
+  dockOnDoubleClick?: Bind<boolean>;
+  /** The size a new dock area of each side starts with: pixels, or a share such as `'25%'`. Default `{ left: 240, right: 240, top: 160, bottom: 200 }`. */
+  dockAreaSize?: Bind<Partial<Record<TabDockSide, number | string>>>;
+  /** The smallest size of a dock area, in pixels. Default 120. */
+  dockAreaMinSize?: Bind<number>;
+  /** Resting the pointer on a folded area's title slides it out (after `autoHideDelay`); off, only a click or a key does. Default `true`. */
+  autoHideHover?: Bind<boolean>;
+  /** How long, in milliseconds, the pointer rests on a title before its area slides out, or stays away before it slides back. Default 500. */
+  autoHideDelay?: Bind<number>;
+  /** While dragging, dock guides show over the group under the pointer and at the manager's edges; a drop away from them and from the strips floats. Off, a drop on a group's content goes by its edge zones (and outside the manager floats). Default `false`. */
+  dockGuides?: Bind<boolean>;
+  /** Which dock guides show. Default both: `['group', 'edges']`. */
+  dockGuideKinds?: Bind<readonly TabDockGuideKind[]>;
   /** Which keys the manager starts with. Default `'auto'`. */
   keyPreset?: Bind<TabKeyPreset>;
   /** Changes some keys; the rest keep the preset's. */
@@ -182,4 +221,14 @@ export interface TabDocumentManagerProps extends ControlProps {
   onDropping?: (e: TabDropEventArgs) => void;
   onDropped?: (e: TabDroppedEventArgs) => void;
   onDragEnded?: (e: TabDragEndedEventArgs) => void;
+  onFloating?: (e: TabFloatingEventArgs) => void;
+  onFloated?: (e: TabFloatedEventArgs) => void;
+  onDocking?: (e: TabDockingEventArgs) => void;
+  onDocked?: (e: TabDockedEventArgs) => void;
+  onAutoHiding?: (e: TabAutoHidingEventArgs) => void;
+  onAutoHidden?: (e: TabAutoHiddenEventArgs) => void;
+  onSlideChanging?: (e: TabSlideEventArgs) => void;
+  onSlideChanged?: (e: TabSlideEventArgs) => void;
+  onWindowClosing?: (e: TabWindowClosingEventArgs) => void;
+  onWindowClosed?: (e: TabWindowClosedEventArgs) => void;
 }

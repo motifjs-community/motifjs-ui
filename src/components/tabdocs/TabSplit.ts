@@ -1,6 +1,7 @@
 import { nextId } from '../../core/next-id';
 import type { LayoutOrientation } from '../layout/layout-orientation';
 import type { LayoutItem } from './layout-item';
+import type { SashOwner } from './sash-owner';
 import { placeNode } from './place-node';
 import { SplitSash } from './SplitSash';
 import type { TabDocumentManager } from './TabDocumentManager';
@@ -10,7 +11,7 @@ import { TabGroup } from './TabGroup';
  * A branch of the layout: groups or other splits side by side (`horizontal`) or one under the
  * other, each with its share of the room, a splitter between each two.
  */
-export class TabSplit {
+export class TabSplit implements SashOwner {
   readonly element: HTMLDivElement;
   parentSplit: TabSplit | null = null;
   children: LayoutItem[] = [];
@@ -64,6 +65,11 @@ export class TabSplit {
 
   even(): void {
     this.sizes = this.children.map(() => 1 / this.children.length);
+  }
+
+  /** A double click on a splitter evens this split. */
+  resetSizes(): void {
+    this.manager.evenSizesBy(this, true);
   }
 
   /** Moves the splitter after child `index` by `delta` pixels, within the smallest sizes. */

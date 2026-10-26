@@ -87,7 +87,8 @@ export const GROUPS = [
       { id: 'tabdocs', label: 'Overview', title: 'TabDocumentManager', path: '/tabdocs', related: ['tabdocs-tabs', 'tabdocs-menus', 'tabdocs-drag', 'tabs'] },
       { id: 'tabdocs-tabs', label: 'Tabs', title: 'TabDocumentManager: Tabs', path: '/tabdocs/tabs', related: ['tabdocs', 'tabdocs-menus', 'tabs'] },
       { id: 'tabdocs-menus', label: 'Menus and keys', title: 'TabDocumentManager: Menus and keys', path: '/tabdocs/menus', related: ['tabdocs', 'tabdocs-tabs', 'menus'] },
-      { id: 'tabdocs-drag', label: 'Drag and drop', title: 'TabDocumentManager: Drag and drop', path: '/tabdocs/drag', related: ['tabdocs', 'tabdocs-tabs', 'tabdocs-menus'] },
+      { id: 'tabdocs-drag', label: 'Drag and drop', title: 'TabDocumentManager: Drag and drop', path: '/tabdocs/drag', related: ['tabdocs', 'tabdocs-tabs', 'tabdocs-menus', 'tabdocs-dock'] },
+      { id: 'tabdocs-dock', label: 'Dock and floating windows', title: 'TabDocumentManager: Dock and floating windows', path: '/tabdocs/dock', related: ['tabdocs', 'tabdocs-drag', 'window'] },
     ],
   },
   {

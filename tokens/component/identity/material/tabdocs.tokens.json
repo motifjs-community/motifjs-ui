@@ -1,12 +1,23 @@
 {
   "tabdocs": {
-    "$description": "Material document tabs: the 3 px indicator of the language's tabs.",
+    "$description": "Material document tabs: the 3 px indicator of the language's tabs, on the document tabs and on the titles of folded dock areas; dock guides of its middle control height (its large one is 56).",
     "indicator-width": {
       "$type": "dimension",
       "$value": {
         "value": 3,
         "unit": "px"
       }
+    },
+    "autohide-indicator-width": {
+      "$type": "dimension",
+      "$value": {
+        "value": 3,
+        "unit": "px"
+      }
+    },
+    "guide-size": {
+      "$type": "dimension",
+      "$value": "{control.height.md}"
     }
   }
 }

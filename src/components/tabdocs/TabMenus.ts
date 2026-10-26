@@ -3,6 +3,8 @@ import type { MenuItem } from '../../parts/menu/menu-item';
 import { ContextMenu } from '../contextmenu/ContextMenu';
 import type { ContextMenuOpeningEventArgs } from '../contextmenu/context-menu-opening-event-args';
 import type { TabContextMenuEventArgs } from './tab-context-menu-event-args';
+import type { TabDockSide } from './tab-dock-side';
+import type { TabDragSubject } from './tab-drag-subject';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
@@ -32,10 +34,21 @@ const TEXTS: Record<TabMenuCommand, keyof UiStrings> = {
   reopenClosed: 'tabDocsReopenClosed',
   lock: 'tabDocsLock',
   unlock: 'tabDocsUnlock',
+  float: 'tabDocsFloat',
+  dock: 'tabDocsDock',
+  dockLeft: 'tabDocsDockLeft',
+  dockRight: 'tabDocsDockRight',
+  dockTop: 'tabDocsDockTop',
+  dockBottom: 'tabDocsDockBottom',
+  autoHide: 'tabDocsAutoHide',
+  maximizeWindow: 'tabDocsMaximizeWindow',
+  closeWindow: 'tabDocsCloseWindow',
 };
 
-/** One built-in item: its command, whether it can be chosen now, the key shown with it. */
-type Entry = [TabMenuCommand, boolean?, string?];
+const SIDES = ['Left', 'Right', 'Top', 'Bottom'] as const;
+
+/** One built-in item: its command, whether it can be chosen now, the key shown with it, a text other than its own. */
+type Entry = [TabMenuCommand, boolean?, string?, (keyof UiStrings)?];
 
 /**
  * The context menus of a manager: one for a tab, one for the empty strip. Built each time one
@@ -72,10 +85,31 @@ export class TabMenus {
         [doc.preview ? ['keepOpen', true, keys.keepOpen[0]] : null, [doc.pinned ? 'unpin' : 'pin', true, keys.togglePin[0]]],
         [['splitUp'], ['splitDown'], ['splitLeft'], ['splitRight', true, keys.splitRight[0]]],
         [['moveNext', true, keys.moveToNextGroup[0]], ['movePrevious', true, keys.moveToPreviousGroup[0]], ['moveTo', m.mayDrag(doc), keys.moveTo[0]]],
+        this.dockEntries({ document: doc, group, manager: m, copy: false }),
       ],
       group,
       doc,
     );
+  }
+
+  /** Float, dock back, dock to each side, auto hide: for a document, a group or (in a window) the window. */
+  private dockEntries(subject: TabDragSubject): (Entry | null)[] {
+    const m = this.manager;
+    const keys = m.keys;
+    const { document: doc, group } = subject;
+    const w = group.window;
+    const area = group.dockArea;
+    const alone = !!area && area.groups.length === 1 && (!doc || group.documents.length === 1);
+    const entries: (Entry | null)[] = [
+      w ? ['dock', true, doc ? keys.dock[0] : undefined] : null,
+      ['float', m.maySubject(subject, 'float'), doc ? keys.float[0] : undefined],
+      ...SIDES.map((name): Entry => {
+        const side = name.toLowerCase() as TabDockSide;
+        return [`dock${name}`, m.maySubject(subject, side) && !(alone && area?.side === side), doc ? keys[`dock${name}`][0] : undefined];
+      }),
+      area ? ['autoHide', m.mayAutoHide(area), keys.toggleAutoHide[0], area.autoHidden ? 'tabDocsAutoHideOff' : 'tabDocsAutoHide'] : null,
+    ];
+    return entries;
   }
 
   /** The items of the empty strip's menu. */
@@ -94,6 +128,13 @@ export class TabMenus {
         ],
         [[group.locked ? 'unlock' : 'lock']],
         [['splitRight', true, keys.splitRight[0]], ['splitDown'], ['moveGroupTo', m.allowDragGroups && m.dragPeers().some((p) => p.groups.some((g) => g !== group))]],
+        this.dockEntries({ document: null, group, manager: m, copy: false }),
+        group.window
+          ? [
+              ['maximizeWindow', true, keys.maximizeWindow[0], group.window.isMaximized ? 'tabDocsRestoreWindow' : 'tabDocsMaximizeWindow'],
+              ['closeWindow', true, keys.closeWindow[0]],
+            ]
+          : [],
       ],
       group,
       null,
@@ -110,9 +151,9 @@ export class TabMenus {
     const items: MenuItem[] = [];
     for (const section of sections) {
       const entries = section.filter((entry): entry is Entry => !!entry && shown[entry[0]] !== false);
-      entries.forEach(([command, enabled, shortcut], i) => {
+      entries.forEach(([command, enabled, shortcut, text], i) => {
         items.push({
-          text: m.textOf(TEXTS[command]),
+          text: m.textOf(text ?? TEXTS[command]),
           enabled: enabled ?? true,
           shortcut: shortcut ?? '',
           beginGroup: i === 0 && items.length > 0,

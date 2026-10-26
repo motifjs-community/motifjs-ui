@@ -120,7 +120,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   const saved = saving.locator('.mx-tabdocs');
   const layoutOf = () => saved.locator('.mx-tabdocs__group').evaluateAll((all) => all.map((g) => [...g.querySelectorAll('.mx-tabdocs__title')].map((t) => t.textContent).join('+')).join(' | '));
   const first = await layoutOf();
-  check('the saved layout is JSON', JSON.parse(await saving.locator('.td-json').textContent()).version === 1);
+  check('the saved layout is JSON', JSON.parse(await saving.locator('.td-json').textContent()).version === 2);
   await saved.getByRole('tab', { name: 'Notes' }).locator('.mx-tabdocs__close').click();
   await saved.getByRole('tab', { name: 'To do' }).click();
   await saved.getByRole('button', { name: 'Split right' }).first().click();

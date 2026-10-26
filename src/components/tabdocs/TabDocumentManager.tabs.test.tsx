@@ -295,6 +295,11 @@ describe('TabDocumentManager: menus', () => {
       'Move to the next group',
       'Move to the previous group',
       'Move to…',
+      'Float in a window',
+      'Dock left',
+      'Dock right',
+      'Dock at the top',
+      'Dock at the bottom',
     ]);
     menuItem(m, 'Pin').click();
     expect(b.pinned).toBe(true);
@@ -344,7 +349,21 @@ describe('TabDocumentManager: menus', () => {
     const m = manager({ newDocument: () => ({ title: `Untitled-${++made}`, content: () => text('new') }) });
     const strip = m.groups[0].element.querySelector<HTMLElement>('.mx-tabdocs__strip')!;
     rightClick(strip);
-    expect(menuNames(m)).toEqual(['New document', 'Reopen closed', 'Close all', 'Close saved', 'Lock group', 'Split right', 'Split down', 'Move group to…']);
+    expect(menuNames(m)).toEqual([
+      'New document',
+      'Reopen closed',
+      'Close all',
+      'Close saved',
+      'Lock group',
+      'Split right',
+      'Split down',
+      'Move group to…',
+      'Float in a window',
+      'Dock left',
+      'Dock right',
+      'Dock at the top',
+      'Dock at the bottom',
+    ]);
     expect(menuItem(m, 'Reopen closed').getAttribute('aria-disabled')).toBe('true');
     menuItem(m, 'New document').click();
     expect(titles(m)).toEqual(['Untitled-1']);

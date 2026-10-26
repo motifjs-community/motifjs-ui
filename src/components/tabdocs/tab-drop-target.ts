@@ -4,8 +4,9 @@ import type { TabDropPlace } from './tab-drop-place';
 
 /**
  * Something a dragged document or group can be dropped on. A manager asks its targets in order and
- * the first answer wins; the built-in one covers the strips, the groups and the edges of the
- * layout. Others come first (`addDropTarget`).
+ * the first answer wins: the docking one first (the dock guides, folded areas, floating), the
+ * built-in one (the strips, the groups and the edges of the layout) last. An app's targets come
+ * first (`addDropTarget`).
  */
 export interface TabDropTarget {
   /** The kinds of place it answers with (`TabDropPlace.target`). */
@@ -15,4 +16,6 @@ export interface TabDropTarget {
   marks(place: TabDropPlace, drag: TabDragSubject): TabDropMarks;
   /** Makes the drop; returns whether it happened. */
   drop(place: TabDropPlace, drag: TabDragSubject): boolean;
+  /** Told where the pointer is while it is over this target's manager (or one of its floating windows), and `null` once it leaves or the drag ends. */
+  follow?(point: { x: number; y: number } | null, drag: TabDragSubject): void;
 }

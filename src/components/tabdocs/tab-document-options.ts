@@ -3,6 +3,7 @@ import type { IconSource } from '../../core/icon-source';
 import type { ToolbarItem } from '../toolbar/toolbar-item';
 import type { ContentLifetime } from './content-lifetime';
 import type { TabContentClone } from './tab-content-clone';
+import type { TabDockSide } from './tab-dock-side';
 import type { TabDocumentContent } from './tab-document-content';
 import type { TabTone } from './tab-tone';
 
@@ -35,6 +36,14 @@ export interface TabDocumentOptions {
   allowDuplicate?: Bind<boolean | undefined>;
   /** This document's own setting; left out, the manager's `allowDrag`. */
   allowDrag?: Bind<boolean | undefined>;
+  /** This document's own setting; left out, the manager's `allowFloat`. */
+  allowFloat?: Bind<boolean | undefined>;
+  /** This document's own setting; left out, the manager's `allowDock`. */
+  allowDock?: Bind<boolean | undefined>;
+  /** The dock areas this document may go to; left out, the manager's `dockSides`. */
+  dockSides?: Bind<readonly TabDockSide[] | undefined>;
+  /** This document's own setting; left out, the manager's `allowAutoHide`. */
+  allowAutoHide?: Bind<boolean | undefined>;
   /** Buttons for the group's toolbar while this document is the active one. */
   actions?: Bind<readonly ToolbarItem[]>;
   content?: TabDocumentContent;

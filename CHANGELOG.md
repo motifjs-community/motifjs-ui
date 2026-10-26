@@ -918,3 +918,59 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `core/keyboard.ts`, for keys a component reads itself. Glyph `gripMark`.
 - Docs: a Drag and drop page (dragging, settings, two managers side by side, the keys, changing a
   drop, the API); `e2e/checks/47-tabdocs-drag.mjs`; 46 chooses menu items with real clicks again.
+- Milestone 4, docking. Floating windows in the page (`TabWindow`): `float(doc | group, rect?)`, a drag
+  let go outside every manager (or, with the dock guides, away from them), Ctrl + K O, the menus. A
+  window holds groups as the documents' area does (split, resized, dragged between), opens as large as
+  the group it came from (`floatingWindowSize`), moves by the empty part of its strips (the strip is
+  its title), resizes from its edges and corners, comes to the front when pressed (the page's
+  `windowStack`), maximizes within the page and is restored, stays in the viewport
+  (`keepFloatingInView`), closes with its last document (`closeEmptyWindows`) and docks back where it
+  was on a double click on its strip (`dockOnDoubleClick`), "Dock back" or Ctrl + K D. Its maximize and
+  close buttons sit in the group at its top end corner. `moveWindow`, `resizeWindow`, `maximizeWindow`,
+  `restoreWindow`, `closeWindow` (each document still asks), `focusWindow`; the window's own `move`,
+  `resize`, `maximize`, `restore`, `close`, `dock(side?)`, `focus`; `floatingWindows` (reactive, back to
+  front). Ctrl + K Space moves it by the arrows and resizes it with Shift.
+- Dock areas (`TabDockArea`) on the manager's four sides, nesting in the order they were made: each
+  holds its own layout, has a size in pixels or a share (`dockAreaSize` per side, `dockAreaMinSize`,
+  the documents keep their smallest) and a splitter moved by the mouse and the splitter keys.
+  `dock(doc | group | window, side?, size?)` (a document not open yet opens there), `resizeDockArea`,
+  `dockAreas`, `dockArea(side)`; empty areas go. Folded (`autoHide(area | doc, on)`, the pin in the
+  area's toolbar, the menu, Ctrl + K H), only the titles stay along the edge (a toolbar); a click,
+  Enter or resting on a title (`autoHideHover`, `autoHideDelay`) slides the area out over the
+  documents (`showAutoHidden`), a press outside, Escape or focus leaving slides it back
+  (`hideAutoHidden`). Auto hide is the area's, not one document's.
+- Dock guides (`dockGuides`, off by default; `dockGuideKinds`): while dragging, a cross over the group
+  under the pointer and a guide in the middle of each edge of the manager, shown only over a manager
+  or one of its windows; the guide pointed at shows the area a drop would take, a drop away from the
+  guides and strips floats. They are a drop target on the list of milestone 3 (`dockDropTarget`, asked
+  before the built-in one; `TabDropTarget.follow` tells a target where the pointer is). New place
+  kinds `'dock-guide'`, `'dock-area'` (`dockSide`) and `'float'` (`rect`). A drop over a manager outside
+  the `dragGroup` is refused rather than floated.
+- Settings, the document's own first: `allowFloat`, `allowDock`, `dockSides`, `allowAutoHide`
+  (`TabDocument` and the manager); `TabDocument.window` / `dockArea` and `TabGroup.window` /
+  `dockArea` (reactive). Opening a document without a group never puts it in a dock area.
+- Events, each cancelable and then reported: `onFloating` (the rect may change) / `onFloated`,
+  `onDocking` (side and size may change) / `onDocked`, `onAutoHiding` / `onAutoHidden` (`on`),
+  `onSlideChanging` / `onSlideChanged` (a folded area sliding out or back), `onWindowClosing` /
+  `onWindowClosed` (`reason`: closed, docked, empty). `onLayoutChanging` / `onLayoutChanged` also for
+  `float`, `dock`, `autoHide`, `resizeArea`, `moveWindow`, `resizeWindow`, `maximizeWindow`,
+  `restoreWindow`, `closeWindow`, with `window` or `area`.
+- Keys and menus: float, dock back, dock left / right / top / bottom (Ctrl + K, Alt + an arrow), auto
+  hide on the tab and strip menus and as keys; F6 / Shift + F6 go round the documents, the dock areas
+  and the windows (`focusPart`); "Move to…" goes on past the edge of the layout to the dock area of
+  that side and to a window of its own. Announced: floated, docked, folded and shown, slid out,
+  window closed, maximized, restored (en, tr).
+- The layout saves the dock areas (side, size, folded, layout) and the windows (place, maximized, back
+  to front, where they dock back, layout): `TabLayout.version` 2; a version 1 layout still loads.
+- Look: `tabdocs.window-*`, `area-*`, `panel-*`, `autohide-*`, `guide-*` tokens; Material's guides are
+  its middle control height, Material and Lilac's folded titles have their 3 px indicator. The root is
+  a grid now (the documents in the middle, the areas around them); the drop area and the mark are
+  fixed in the viewport, above the windows.
+- Kit: content moved between groups (core's `Transporter`, and `placeNode` without `moveBefore`) lost
+  the scroll of everything scrolled inside it: `keepScroll` reads it before and writes it back after
+  (CORE-REPORTS R29). `parts/window/` (`followPointer`, `resizeBox`, `resizeFrame`, `WindowBox`,
+  `WindowEdge`): the move and resize of `MxForm`, which the floating windows use too. `dockGuideMark`
+  glyph. A menu or a popup opened from a slid out area keeps it open.
+- Docs: a "Dock and floating windows" page (an editor with tool areas, floating by code, the settings,
+  saving the whole layout, the keys, the API); `e2e/checks/48-tabdocs-dock.mjs`; 45 reads layout
+  version 2; the drag and drop page says what a drop outside the manager does now.

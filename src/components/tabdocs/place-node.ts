@@ -1,6 +1,9 @@
+import { keepScroll } from './keep-scroll';
+
 /**
  * Puts `node` into `parent` before `before`. A node already on the page is moved with
- * `moveBefore` where the browser has it, so what is inside keeps its state (scroll, focus, frames).
+ * `moveBefore` where the browser has it, so what is inside keeps its state (scroll, focus, frames);
+ * elsewhere what scrolled inside it scrolls back.
  */
 export function placeNode(parent: Element, node: Element, before: Node | null): void {
   if (before === node || (node.parentNode === parent && node.nextSibling === before)) return;
@@ -13,5 +16,5 @@ export function placeNode(parent: Element, node: Element, before: Node | null): 
       // Not movable here (another root, say): insert it as usual.
     }
   }
-  parent.insertBefore(node, before);
+  keepScroll(node, () => parent.insertBefore(node, before));
 }

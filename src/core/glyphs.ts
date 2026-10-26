@@ -112,3 +112,14 @@ export const gripMark = (): SVGSVGElement =>
   glyph(
     'M5.25 4a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM9.25 4a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM5.25 8a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM9.25 8a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM5.25 12a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM9.25 12a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0z',
   );
+
+const GUIDES: Record<'center' | 'left' | 'right' | 'up' | 'down', string> = {
+  center: 'M5.5 5.5h5v5h-5z',
+  left: 'M6.5 2.5v11',
+  right: 'M9.5 2.5v11',
+  up: 'M2.5 6.5h11',
+  down: 'M2.5 9.5h11',
+};
+
+/** A dock guide: a window with the part a drop there would take marked. */
+export const dockGuideMark = (side: 'center' | 'left' | 'right' | 'up' | 'down'): SVGSVGElement => glyph(`M2.5 2.5h11v11h-11z${GUIDES[side]}`);

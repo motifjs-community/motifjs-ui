@@ -1,19 +1,22 @@
 import { Component, Transporter, untracked, type Bind } from '@motifx/core';
 import { FocusContainer } from '../../core/container';
 import { deepActiveElement, isShown } from '../../core/focus';
-import { chevronDown, gripMark, lockMark, maximizeMark, moreMark, restoreMark, splitMark } from '../../core/glyphs';
+import { chevronDown, dismissMark, gripMark, lockMark, maximizeMark, moreMark, pinMark, restoreMark, splitMark } from '../../core/glyphs';
 import { nextId } from '../../core/next-id';
 import { Toolbar } from '../toolbar/Toolbar';
 import type { ToolbarItem } from '../toolbar/toolbar-item';
 import type { DocumentTab } from './DocumentTab';
+import { keepScroll } from './keep-scroll';
 import { placeNode } from './place-node';
 import type { SplitDirection } from './split-direction';
+import type { TabDockArea } from './TabDockArea';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabDropSide } from './tab-drop-side';
 import type { TabOpenOptions } from './tab-open-options';
 import type { TabToolbarItems } from './tab-toolbar-items';
 import type { TabSplit } from './TabSplit';
+import type { TabWindow } from './TabWindow';
 
 interface Parts {
   manager: TabDocumentManager;
@@ -30,8 +33,10 @@ interface Parts {
   tips: Component<HTMLDivElement>;
   empty: HTMLDivElement;
   actions: Toolbar;
-  /** The built-in toolbar buttons: split, maximize, the lock mark, "…". */
+  /** The built-in toolbar buttons: split, maximize, the lock mark, "…", auto hide, and a window's maximize and close. */
   own: ToolbarItem[];
+  /** The auto hide button of a group in a dock area. */
+  autoHide: ToolbarItem;
   /** The handle the group is dragged by (and moved with the keys), first in the toolbar. */
   grip: ToolbarItem;
   /** The app's buttons for this group, made once by the manager's `toolbarItems`. */
@@ -128,6 +133,14 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   }
   get isEmpty(): boolean {
     return this.documents.length === 0;
+  }
+  /** The floating window it is in, `null` elsewhere. Reactive. */
+  get window(): TabWindow | null {
+    return this.getProperty<TabWindow | null | undefined>('window') ?? null;
+  }
+  /** The dock area it is in, `null` elsewhere. Reactive. */
+  get dockArea(): TabDockArea | null {
+    return this.getProperty<TabDockArea | null | undefined>('dockArea') ?? null;
   }
   /** Its place in the manager's `groups`, from 0. Reactive. */
   get index(): number {
@@ -234,7 +247,8 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     const at = Math.max(0, Math.min(index, parts.tabs.length));
     parts.tabs.splice(at, 0, tab);
     parts.recent.push(tab);
-    if (tab.panel.parent) Transporter.transport(tab.panel, parts.panels);
+    // Core moves the panel with appendChild: what scrolled inside it would start at the top again.
+    if (tab.panel.parent) keepScroll(tab.panel.element, () => Transporter.transport(tab.panel, parts.panels));
     else parts.panels.controls.add(tab.panel);
     tab.group = this;
     tab.attachTooltip(parts.tips);
@@ -312,6 +326,18 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     if (tab) this.reveal(tab);
   }
 
+  /** @internal Where the manager has put it: a floating window, a dock area, or among the documents; `title`: its strip is the window's title. */
+  placeIn(window: TabWindow | null, area: TabDockArea | null, title: boolean): void {
+    untracked(() => {
+      if (this.window !== window) this.setProperty('window', window);
+      if (this.dockArea !== area) this.setProperty('dockArea', area);
+      if (!!this.getProperty('windowTitle') !== title) this.setProperty('windowTitle', title);
+    });
+    this.element.toggleAttribute('data-floating', !!window);
+    if (area) this.element.dataset.dock = area.side;
+    else this.element.removeAttribute('data-dock');
+  }
+
   /** @internal */
   markActive(on: boolean): void {
     this.element.toggleAttribute('data-active', on);
@@ -332,6 +358,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     this.element.setAttribute('aria-label', manager.textOf(locked ? 'tabDocsLockState' : 'tabDocsGroup', { n: number }));
     this.parts.list.setAttribute('aria-label', manager.textOf('tabDocsTabs', { n: number }));
     this.parts.actions.controlOf(this.parts.grip)?.element.classList.add('mx-tabdocs__grip');
+    this.parts.actions.controlOf(this.parts.autoHide)?.element.classList.add('mx-tabdocs__auto-hide');
     this.parts.empty.textContent = manager.textOf('tabDocsEmpty');
   }
 
@@ -479,14 +506,36 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     const split: ToolbarItem = {
       icon: () => splitMark(),
       hint: () => manager.textOf('tabDocsSplitRight'),
-      visible: () => manager.groupActions,
+      // A tool in a dock area splits from its menu; its toolbar keeps to the tool's own buttons.
+      visible: () => manager.groupActions && !this.dockArea,
       click: () => manager.splitByUser(this, 'right'),
     };
     const maximize: ToolbarItem = {
       icon: () => (this.isMaximized ? restoreMark() : maximizeMark()),
       hint: () => manager.textOf(this.isMaximized ? 'tabDocsRestore' : 'tabDocsMaximize'),
-      visible: () => manager.groupActions && (this.isMaximized || manager.groups.length > 1),
+      visible: () => manager.groupActions && !this.window && !this.dockArea && (this.isMaximized || manager.canMaximize(this)),
       click: () => manager.toggleMaximizeByUser(this),
+    };
+    // A dock area's pin: folds the area to its edge, or brings it back. It stays in sight in a narrow area.
+    const autoHide: ToolbarItem = {
+      overflow: 'never',
+      icon: () => pinMark(),
+      hint: () => manager.textOf(this.dockArea?.autoHidden ? 'tabDocsAutoHideOff' : 'tabDocsAutoHide'),
+      visible: () => manager.groupActions && !!this.dockArea && manager.mayAutoHide(this.dockArea),
+      click: () => manager.toggleAutoHideByUser(this),
+    };
+    // The window's own buttons, in the group whose strip is its title.
+    const windowMaximize: ToolbarItem = {
+      icon: () => (this.window?.isMaximized ? restoreMark() : maximizeMark()),
+      hint: () => manager.textOf(this.window?.isMaximized ? 'tabDocsRestoreWindow' : 'tabDocsMaximizeWindow'),
+      visible: () => manager.groupActions && !!this.getProperty('windowTitle'),
+      click: () => manager.toggleWindowMaximizeByUser(this),
+    };
+    const windowClose: ToolbarItem = {
+      icon: () => dismissMark(),
+      hint: () => manager.textOf('tabDocsCloseWindow'),
+      visible: () => manager.groupActions && !!this.getProperty('windowTitle'),
+      click: () => manager.closeWindowByUser(this),
     };
     const lock: ToolbarItem = {
       icon: () => lockMark(),
@@ -500,7 +549,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       visible: () => manager.groupActions && manager.openList,
       click: () => manager.showOpenList(this),
     };
-    const own = [split, maximize, lock, more];
+    const own = [split, maximize, lock, more, autoHide, windowMaximize, windowClose];
     // Its click starts "Move group to…"; it never folds into the toolbar's menu.
     const grip: ToolbarItem = {
       icon: () => gripMark(),
@@ -539,6 +588,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       empty,
       actions,
       own,
+      autoHide,
       grip,
       app: { make: null, items: [] },
       more,

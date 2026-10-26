@@ -27,6 +27,30 @@ const LOCAL: Pick<
   | 'targetPreviousGroup'
   | 'targetDrop'
   | 'targetCancel'
+  | 'float'
+  | 'dock'
+  | 'dockLeft'
+  | 'dockRight'
+  | 'dockTop'
+  | 'dockBottom'
+  | 'toggleAutoHide'
+  | 'autoHideNext'
+  | 'autoHidePrevious'
+  | 'nextPart'
+  | 'previousPart'
+  | 'moveWindow'
+  | 'maximizeWindow'
+  | 'closeWindow'
+  | 'windowLeft'
+  | 'windowRight'
+  | 'windowUp'
+  | 'windowDown'
+  | 'windowNarrower'
+  | 'windowWider'
+  | 'windowShorter'
+  | 'windowTaller'
+  | 'windowDone'
+  | 'windowCancel'
 > = {
   stripNext: ['ArrowRight'],
   stripPrevious: ['ArrowLeft'],
@@ -52,6 +76,30 @@ const LOCAL: Pick<
   targetPreviousGroup: ['Shift+Tab'],
   targetDrop: ['Enter'],
   targetCancel: ['Escape'],
+  float: ['Ctrl+K O'],
+  dock: ['Ctrl+K D'],
+  dockLeft: ['Ctrl+K Alt+ArrowLeft'],
+  dockRight: ['Ctrl+K Alt+ArrowRight'],
+  dockTop: ['Ctrl+K Alt+ArrowUp'],
+  dockBottom: ['Ctrl+K Alt+ArrowDown'],
+  toggleAutoHide: ['Ctrl+K H'],
+  autoHideNext: ['ArrowDown', 'ArrowRight'],
+  autoHidePrevious: ['ArrowUp', 'ArrowLeft'],
+  nextPart: ['F6'],
+  previousPart: ['Shift+F6'],
+  moveWindow: ['Ctrl+K Space'],
+  maximizeWindow: ['Ctrl+K Shift+M'],
+  closeWindow: ['Ctrl+K Shift+W'],
+  windowLeft: ['ArrowLeft'],
+  windowRight: ['ArrowRight'],
+  windowUp: ['ArrowUp'],
+  windowDown: ['ArrowDown'],
+  windowNarrower: ['Shift+ArrowLeft'],
+  windowWider: ['Shift+ArrowRight'],
+  windowShorter: ['Shift+ArrowUp'],
+  windowTaller: ['Shift+ArrowDown'],
+  windowDone: ['Enter'],
+  windowCancel: ['Escape'],
 };
 
 /**

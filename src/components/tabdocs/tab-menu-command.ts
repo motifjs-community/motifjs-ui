@@ -21,4 +21,13 @@ export type TabMenuCommand =
   | 'newDocument'
   | 'reopenClosed'
   | 'lock'
-  | 'unlock';
+  | 'unlock'
+  | 'float'
+  | 'dock'
+  | 'dockLeft'
+  | 'dockRight'
+  | 'dockTop'
+  | 'dockBottom'
+  | 'autoHide'
+  | 'maximizeWindow'
+  | 'closeWindow';

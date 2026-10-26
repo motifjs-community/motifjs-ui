@@ -62,4 +62,38 @@ export interface TabDocumentKeys {
   resizeLarger: string[];
   resizeMin: string[];
   resizeMax: string[];
+  /** Moves the active document into a floating window of its own. */
+  float: string[];
+  /** Puts the active document back where it was docked (from a floating window). */
+  dock: string[];
+  /** Moves the active document into the dock area on that side. */
+  dockLeft: string[];
+  dockRight: string[];
+  dockTop: string[];
+  dockBottom: string[];
+  /** Folds the active document's dock area to its edge, or brings it back. */
+  toggleAutoHide: string[];
+  /** Focus to the next or previous part: the documents, each dock area, each floating window. */
+  nextPart: string[];
+  previousPart: string[];
+  /** In a folded dock area's strip of titles: the next and the previous title (Home and End are `stripFirst`, `stripLast`). */
+  autoHideNext: string[];
+  autoHidePrevious: string[];
+  /** In a floating window: moves and resizes it with the keys below until Enter or Escape. */
+  moveWindow: string[];
+  /** In a floating window: maximizes it within the page, or restores it. */
+  maximizeWindow: string[];
+  /** In a floating window: closes it with its documents. */
+  closeWindow: string[];
+  /** While moving a window by keys: moves it, makes it narrower, wider, shorter, taller; keeps it there; puts it back. */
+  windowLeft: string[];
+  windowRight: string[];
+  windowUp: string[];
+  windowDown: string[];
+  windowNarrower: string[];
+  windowWider: string[];
+  windowShorter: string[];
+  windowTaller: string[];
+  windowDone: string[];
+  windowCancel: string[];
 }

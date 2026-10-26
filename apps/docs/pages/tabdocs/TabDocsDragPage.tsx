@@ -15,7 +15,7 @@ const DROPS = [
   ['An edge of the layout', 'A thin band along the manager\'s sides (`layoutEdgeSize`): a new group along that whole side (`layoutEdgeDrop`).'],
   ['Ctrl held (Option on a Mac)', 'Opens a copy there instead, when the document may be open twice (`allowDuplicate`, `copyModifier`).'],
   ['A group, by the empty part of its bar or its handle', 'Moves the group with all its tabs beside another group or along an edge of the layout; into another group (or its strip) its tabs join that group.'],
-  ['Outside the manager', 'Refused for now (`onDragOver` reports it with `target: \'outside\'`).'],
+  ['Outside the manager', 'Floats in a window of its own (see [Dock and floating windows](/tabdocs/dock)); where it may not float (`allowFloat`), or over a manager outside its `dragGroup`, it is refused (`target: \'outside\'`).'],
 ];
 
 const PROPS = [
@@ -56,7 +56,7 @@ const METHODS = [
 
 const EVENTS = [
   ['onDragStarting(e)', '`{ document, group, pointerType, byKeyboard }`, cancelable; `document` is `null` for a group.'],
-  ['onDragOver(e)', "`{ document, from, target, manager, group, index, side, copy, byKeyboard }`: change the place, or `cancel` to refuse it. `target` is `'strip'`, `'group'`, `'edge'` or `'outside'` (refused)."],
+  ['onDragOver(e)', "`{ document, from, target, manager, group, index, side, copy, byKeyboard }`: change the place, or `cancel` to refuse it. `target` is `'strip'`, `'group'`, `'edge'`, `'float'`, `'dock-guide'`, `'dock-area'` or `'outside'` (refused)."],
   ['onDropping(e)', 'The same, just before the drop; cancel keeps everything where it is.'],
   ['onDropped(e)', 'Where it ended: `group` is the new group of a split, `document` the copy when one was opened.'],
   ['onDragEnded(e)', '`{ document, from, dropped, byKeyboard }`, dropped or not.'],

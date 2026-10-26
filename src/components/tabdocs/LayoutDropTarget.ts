@@ -21,19 +21,19 @@ export class LayoutDropTarget implements TabDropTarget {
   constructor(private readonly manager: TabDocumentManager) {}
 
   placeAt(x: number, y: number, drag: TabDragSubject): TabDropPlace | null {
-    for (const group of this.manager.groups) {
-      const box = group.element.getBoundingClientRect();
-      if (group.element.closest('[hidden]') || !contains(box, x, y)) continue;
-      if (!group.acceptsDrop) return null;
-      if (contains(group.barElement.getBoundingClientRect(), x, y)) return this.stripPlace(group, this.indexAt(group, x, y, drag), drag);
-      const content = group.panelsElement.getBoundingClientRect();
-      const edge = this.layoutEdgeAt(group, content, x, y);
-      const along = edge ? this.edgePlace(edge, drag) : null;
-      if (along) return along;
-      const side = this.sideAt(group, content, x, y);
-      return side ? this.groupPlace(group, side, drag) : null;
-    }
-    return null;
+    const m = this.manager;
+    if (drag.window && drag.manager !== m) return null;
+    const group = m.groupAt(x, y, drag.window ?? null);
+    if (!group || !group.acceptsDrop) return null;
+    if (contains(group.barElement.getBoundingClientRect(), x, y)) return this.stripPlace(group, this.indexAt(group, x, y, drag), drag);
+    // The dock guides take the place of the zones; a window moved docks by them or by a strip only.
+    if (m.dockGuides || drag.window) return null;
+    const content = group.panelsElement.getBoundingClientRect();
+    const edge = !group.window && !group.dockArea ? this.layoutEdgeAt(group, content, x, y) : null;
+    const along = edge ? this.edgePlace(edge, drag) : null;
+    if (along) return along;
+    const side = this.sideAt(group, content, x, y);
+    return side ? this.groupPlace(group, side, drag) : null;
   }
 
   marks(place: TabDropPlace, drag: TabDragSubject): TabDropMarks {
@@ -53,6 +53,7 @@ export class LayoutDropTarget implements TabDropTarget {
   /** The place among a group's tabs, `null` when nothing would change or the group takes nothing. */
   stripPlace(group: TabGroup, index: number, drag: TabDragSubject): TabDropPlace | null {
     if (!group.acceptsDrop || (!drag.document && drag.group === group)) return null;
+    if (drag.window && group.window === drag.window) return null;
     if (drag.document && drag.copy && drag.group === group) return null;
     return { target: 'strip', manager: this.manager, group, index: this.clampIndex(group, index, drag), side: null };
   }
@@ -60,6 +61,7 @@ export class LayoutDropTarget implements TabDropTarget {
   /** Into a group or beside it; `null` when the group takes nothing there or nothing would change. */
   groupPlace(group: TabGroup, side: TabDropSide, drag: TabDragSubject): TabDropPlace | null {
     if (!group.acceptsDrop || !group.dropSidesNow.includes(side)) return null;
+    if (drag.window && group.window === drag.window) return null;
     if (drag.group === group) {
       // A group onto itself, a document into the group it is in, or out of it into a group of its own beside it.
       if (!drag.document || side === 'center' || (!drag.copy && group.documents.length < 2)) return null;
@@ -71,8 +73,8 @@ export class LayoutDropTarget implements TabDropTarget {
   edgePlace(side: SplitDirection, drag: TabDragSubject): TabDropPlace | null {
     const m = this.manager;
     if (!m.layoutEdgeDrop) return null;
-    const groups = m.groups;
-    const only = groups.length === 1 && drag.manager === m;
+    const groups = m.groups.filter((g) => !g.window && !g.dockArea);
+    const only = groups.length === 1 && drag.manager === m && groups[0] === drag.group;
     if (only && (!drag.document || (!drag.copy && groups[0].documents.length < 2))) return null;
     return { target: 'edge', manager: m, group: null, index: -1, side };
   }

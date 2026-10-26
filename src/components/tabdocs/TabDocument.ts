@@ -4,11 +4,14 @@ import { nextId } from '../../core/next-id';
 import type { ToolbarItem } from '../toolbar/toolbar-item';
 import type { ContentLifetime } from './content-lifetime';
 import type { TabContentClone } from './tab-content-clone';
+import type { TabDockSide } from './tab-dock-side';
 import type { TabDocumentContent } from './tab-document-content';
 import type { TabDocumentOptions } from './tab-document-options';
+import type { TabDockArea } from './TabDockArea';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 import type { TabTone } from './tab-tone';
+import type { TabWindow } from './TabWindow';
 
 const FIELDS = [
   'title',
@@ -24,6 +27,10 @@ const FIELDS = [
   'contentLifetime',
   'allowDuplicate',
   'allowDrag',
+  'allowFloat',
+  'allowDock',
+  'dockSides',
+  'allowAutoHide',
   'actions',
   'state',
 ] as const;
@@ -146,6 +153,34 @@ export class TabDocument {
   set allowDrag(value: Bind<boolean | undefined>) {
     this.slot('allowDrag').value = value;
   }
+  /** The document's own setting; `undefined` follows the manager's `allowFloat`. */
+  get allowFloat(): boolean | undefined {
+    return this.get<boolean>('allowFloat') ?? undefined;
+  }
+  set allowFloat(value: Bind<boolean | undefined>) {
+    this.slot('allowFloat').value = value;
+  }
+  /** The document's own setting; `undefined` follows the manager's `allowDock`. */
+  get allowDock(): boolean | undefined {
+    return this.get<boolean>('allowDock') ?? undefined;
+  }
+  set allowDock(value: Bind<boolean | undefined>) {
+    this.slot('allowDock').value = value;
+  }
+  /** The dock areas it may go to; `undefined` follows the manager's `dockSides`. */
+  get dockSides(): readonly TabDockSide[] | undefined {
+    return this.get<readonly TabDockSide[]>('dockSides') ?? undefined;
+  }
+  set dockSides(value: Bind<readonly TabDockSide[] | undefined>) {
+    this.slot('dockSides').value = value;
+  }
+  /** The document's own setting; `undefined` follows the manager's `allowAutoHide`. */
+  get allowAutoHide(): boolean | undefined {
+    return this.get<boolean>('allowAutoHide') ?? undefined;
+  }
+  set allowAutoHide(value: Bind<boolean | undefined>) {
+    this.slot('allowAutoHide').value = value;
+  }
   get actions(): readonly ToolbarItem[] {
     return this.get<readonly ToolbarItem[]>('actions') ?? NO_ACTIONS;
   }
@@ -182,6 +217,15 @@ export class TabDocument {
   /** The content made for it, `null` while it is not built. */
   get contentComponent(): ComponentBase | null {
     return this.manager?.contentOf(this) ?? null;
+  }
+
+  /** The floating window it is in, `null` elsewhere. Reactive. */
+  get window(): TabWindow | null {
+    return this.group?.window ?? null;
+  }
+  /** The dock area it is in, `null` elsewhere. Reactive. */
+  get dockArea(): TabDockArea | null {
+    return this.group?.dockArea ?? null;
   }
 
   /** Makes it its group's active tab. */

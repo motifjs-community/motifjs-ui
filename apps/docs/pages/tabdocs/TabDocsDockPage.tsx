@@ -1,0 +1,196 @@
+import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import DockIde from './examples/DockIde';
+import DockOptions from './examples/DockOptions';
+import DockSaveRestore from './examples/DockSaveRestore';
+import FloatFromCode from './examples/FloatFromCode';
+
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
+
+const DROPS = [
+  ['A guide of the cross over a group', 'Its middle puts the tab (or the group, or the window) into that group; a side splits that group, as an edge zone does without guides.'],
+  ['A guide at an edge of the manager', 'Into the dock area of that side: a tab joins the area\'s group, a group or a window goes along the area. The area is made when there is none, at `dockAreaSize`.'],
+  ['A strip', 'Among its tabs, as before; a floating window dropped on a strip gives that group all its documents and closes.'],
+  ['The titles of a folded area', 'Into that area.'],
+  ['Anywhere else (guides on), or outside every manager', 'Floats: a window of its own at the pointer, as large as the group it came from (`floatingWindowSize`). A floating window moved by its strip stays where it is let go.'],
+  ['Over a manager outside its `dragGroup`', 'Refused: nothing floats over another manager.'],
+];
+
+const PROPS = [
+  ['allowFloat', '`Bind<boolean>`', '`true`', 'Documents and groups can float; a document\'s own `allowFloat` wins.'],
+  ['allowDock', '`Bind<boolean>`', '`true`', 'Documents and groups can go to the dock areas; a document\'s own `allowDock` wins.'],
+  ['dockSides', "`Bind<readonly ('left' | 'right' | 'top' | 'bottom')[]>`", 'all four', 'Which dock areas documents may go to; a document\'s own `dockSides` wins. `left` is the start side (the right one right to left).'],
+  ['allowAutoHide', '`Bind<boolean>`', '`true`', 'Dock areas can fold to the edge; a document with `allowAutoHide: false` keeps its area open.'],
+  ['dockGuides', '`Bind<boolean>`', '`false`', 'The guides while dragging; a drop away from them and from the strips floats. Off, a group\'s edge zones work as on the [drag and drop page](/tabdocs/drag), and only outside the manager a drop floats.'],
+  ['dockGuideKinds', "`Bind<readonly ('group' | 'edges')[]>`", 'both', 'The cross over the group under the pointer, the four guides at the manager\'s edges.'],
+  ['floatingWindowSize', '`Bind<{ width, height } | null>`', '`null`', 'The size a window opens at; `null`: the size of the group it comes from.'],
+  ['keepFloatingInView', '`Bind<boolean>`', '`true`', 'Windows stay inside the viewport when moved, resized, or the page gets smaller.'],
+  ['closeEmptyWindows', '`Bind<boolean>`', '`true`', 'A window whose last document closes closes too; off, it stays with an empty group.'],
+  ['dockOnDoubleClick', '`Bind<boolean>`', '`true`', 'A double click on the empty part of a window\'s strip docks it back.'],
+  ['dockAreaSize', '`Bind<Partial<Record<side, number | string>>>`', '`{ left: 240, right: 240, top: 160, bottom: 200 }`', 'The size a new area of each side starts with: pixels, or a share such as `\'25%\'`.'],
+  ['dockAreaMinSize', '`Bind<number>`', '`120`', 'The smallest size of an area, in pixels; the documents keep `minGroupWidth` / `minGroupHeight`.'],
+  ['autoHideHover, autoHideDelay', '`Bind<boolean>`, `Bind<number>`', '`true`, `500`', 'Resting the pointer on a folded area\'s title slides it out after that many milliseconds, and away from it and the area slides it back.'],
+];
+
+const DOCUMENT = [
+  ['allowFloat, allowDock, allowAutoHide', '`Bind<boolean | undefined>`', 'This document\'s own settings; `undefined` follows the manager.'],
+  ['dockSides', '`Bind<readonly TabDockSide[] | undefined>`', 'The dock areas this document may go to.'],
+  ['window, dockArea', 'read-only, reactive', 'The floating window or the dock area it is in, `null` elsewhere (also on `TabGroup`).'],
+];
+
+const METHODS = [
+  ['float(doc | group, rect?)', '`TabWindow | null`', 'Into a window of its own; `rect` is `{ x, y, width, height }` in the viewport.'],
+  ['dock(doc | group | window, side?, size?)', '`boolean`', 'Into the dock area of `side`, made at `size` when there is none; without a side, back where it was docked before it floated.'],
+  ['autoHide(area | doc, on?)', '`boolean`', 'Folds the area to the edge (`true`) or brings it back.'],
+  ['showAutoHidden(doc), hideAutoHidden()', '`boolean`', 'Slides a folded area out with that document shown, or back.'],
+  ['moveWindow(w, x, y), resizeWindow(w, width, height)', '`boolean`', 'By code, asking `onLayoutChanging` first; kept in view by `keepFloatingInView`.'],
+  ['maximizeWindow(w), restoreWindow(w)', '`boolean`', 'The whole page, and back to its place.'],
+  ['closeWindow(w)', '`Promise<boolean>`', 'Closes its documents (each asks through `onClosing`), then the window.'],
+  ['focusWindow(w), focusPart(by?)', '`boolean`', 'Brings a window to the front with focus where it was; the next (`-1`: previous) part: the documents, each area, each window.'],
+  ['resizeDockArea(area, size)', '`boolean`', 'Pixels, or a share such as `\'25%\'`.'],
+  ['floatingWindows, dockAreas', 'read-only, reactive', 'The windows, the one at the back first; the areas, the outermost first. `dockArea(side)` finds one.'],
+  ['saveLayout(), loadLayout(layout, factory?)', '`TabLayout` (version 2)', 'Also the areas (`side`, `size`, `autoHide`, their layout) and the windows (`rect`, `maximized`, where they dock back, their layout). A version 1 layout still loads.'],
+];
+
+const WINDOW = [
+  ['rect, isMaximized, isActive', 'read-only, reactive', 'Where it is and how big (as it is restored), maximized, the front window of the page.'],
+  ['groups, documents, index', 'read-only, reactive', 'Its groups (split as the documents\' are), their documents, its place in `floatingWindows`.'],
+  ['move, resize, maximize, restore, close, dock(side?), focus', 'methods', 'The manager\'s methods for this window.'],
+];
+
+const AREA = [
+  ['side, size, autoHidden, isOpen', 'read-only, reactive', 'Its side; its size as set (pixels or a share); folded to the edge; slid out now.'],
+  ['groups, documents, index, rect', 'read-only', 'Its groups, their documents, its place in `dockAreas`, its box on the screen.'],
+  ['resize(size), autoHide(on?), show(doc?)', 'methods', 'The manager\'s methods for this area.'],
+];
+
+const EVENTS = [
+  ['onFloating(e) / onFloated(e)', '`{ document, group, rect }`, cancelable, `rect` may be changed; then `{ document, group, window }`. `document` is `null` for a group.'],
+  ['onDocking(e) / onDocked(e)', '`{ document, group, window, side, size }`, cancelable, `side` and `size` may be changed (`side: null`: back where it was docked); then `{ document, group, area, side }`.'],
+  ['onAutoHiding(e) / onAutoHidden(e)', '`{ area, on }`, cancelable; then the same.'],
+  ['onSlideChanging(e) / onSlideChanged(e)', '`{ area, document, open }`: a folded area slides out (`document` shown) or back (`null`); cancelable.'],
+  ['onWindowClosing(e) / onWindowClosed(e)', '`{ window }`, cancelable; then `{ window, reason }`: `\'closed\'`, `\'docked\'` or `\'empty\'`.'],
+  ['onLayoutChanging / onLayoutChanged', "Also `'float'`, `'dock'`, `'autoHide'`, `'resizeArea'`, `'moveWindow'`, `'resizeWindow'`, `'maximizeWindow'`, `'restoreWindow'`, `'closeWindow'`, with `window` or `area`."],
+  ['onDragOver, onDropping, onDropped', "New `target` kinds: `'dock-guide'` (a guide of the cross, with `group` and `side`), `'dock-area'` (with `dockSide`), `'float'` (with `rect`)."],
+];
+
+const KEYS = [
+  ['Ctrl + K, then O', 'Floats the active document (`float`).'],
+  ['Ctrl + K, then D', 'Docks it back where it was (`dock`).'],
+  ['Ctrl + K, then Alt + an arrow', 'Into the dock area on that side (`dockLeft`, `dockRight`, `dockTop`, `dockBottom`).'],
+  ['Ctrl + K, then H', 'Folds the active document\'s area to its edge, or brings it back (`toggleAutoHide`).'],
+  ['F6, Shift + F6', 'The next / previous part: the documents, each dock area, each floating window (`nextPart`, `previousPart`).'],
+  ['Ctrl + K, then Space', 'In a window: moves it with the arrows, resizes it with Shift and an arrow; Enter keeps it, Escape puts it back (`moveWindow`, `windowLeft`…`windowTaller`, `windowDone`, `windowCancel`).'],
+  ['Ctrl + K, then Shift + M; Ctrl + K, then Shift + W', 'Maximizes or restores the window; closes it (`maximizeWindow`, `closeWindow`).'],
+  ['In a folded area\'s titles', 'The arrows go along them (`autoHideNext`, `autoHidePrevious`), Home and End to the ends, Enter or Space slides the area out, Escape back.'],
+  ['"Move to…"', 'Past the edge of the layout, the same arrow goes on to the dock area of that side, then to a window of its own.'],
+];
+
+const A11Y = [
+  ['Windows', 'A non-modal `dialog` named "Floating window n"; each of its groups is a `group` as in the documents\' area. It comes to the front on a press or on focus.'],
+  ['Dock areas', 'A `region` named after its side ("Left dock area"); its splitter is a `separator` with its size as a value, moved by the splitter keys.'],
+  ['Folded areas', 'Their titles are a `toolbar` ("Hidden on the left") of buttons with `aria-expanded` and `aria-controls` the area; one tab stop, the arrows inside.'],
+  ['Announcements', 'Floated, docked (with the area), folded and shown, slid out, window closed, maximized and restored, politely.'],
+];
+
+const STYLING = [
+  ['.mx-tabdocs__window', 'A floating window; `data-active`, `data-maximized`, `data-moving`, `data-resizing`. Its place and size are `--_x`, `--_y`, `--_w`, `--_h`.'],
+  ['.mx-tabdocs__area', 'A dock area; `data-side`, `data-auto-hide`, `data-open` (slid out). `.mx-tabdocs__area-sash` is its splitter.'],
+  ['.mx-tabdocs__autohide, .mx-tabdocs__autohide-tab', 'The titles of a folded area; a title has `data-open` while its document is slid out.'],
+  ['.mx-tabdocs__guide', 'A dock guide: `data-kind` (`cross`, `edge`), `data-side`, `data-pointed`.'],
+  ['tabdocs.window-*, area-*, panel-*, autohide-*, guide-*', 'Their tokens.'],
+];
+
+export default function TabDocsDockPage() {
+  return (
+    <>
+      <p class="lead">
+        Documents and whole groups float in windows of their own in the page and dock again into the documents' groups or into dock areas around them,
+        which fold to the manager's edge. The mouse, the keys and the code do the same, through the same events.
+      </p>
+
+      <Section anchor="ide" title="Tool areas around the documents">
+        <p>
+          <Rich text="A dock area holds groups of its own beside the documents and resizes by its splitter. Folded (the pin in its toolbar, the tab menu, Ctrl+K H, or `autoHide`), only its titles stay at the edge; one of them slides the area out over the documents, and a press outside, Escape or focus leaving slides it back." />
+        </p>
+        <Example files={code('DockIde.tsx', 'tools.tsx', 'files.tsx')} stack>
+          <DockIde />
+        </Example>
+        <ApiTable head={['Dropped on', 'What happens']} rows={DROPS} />
+      </Section>
+
+      <Section anchor="windows" title="Floating windows">
+        <p>
+          <Rich text="A window holds groups as the documents' area does, split and resized the same way. It moves by the empty part of its strips, resizes from its edges and corners, comes to the front when pressed, maximizes within the page, and a double click on its strip docks it back. Its documents keep their content: nothing is made again." />
+        </p>
+        <Example files={code('FloatFromCode.tsx', 'files.tsx')} stack>
+          <FloatFromCode />
+        </Example>
+      </Section>
+
+      <Section anchor="options" title="Settings">
+        <p>
+          <Rich text="Each part is a setting and changes live; a document's own `allowFloat`, `allowDock`, `dockSides` and `allowAutoHide` win over the manager's. Here package.json may not float and README.md docks only at the bottom." />
+        </p>
+        <Example files={code('DockOptions.tsx', 'tools.tsx', 'files.tsx')} stack>
+          <DockOptions />
+        </Example>
+      </Section>
+
+      <Section anchor="layout" title="Saving the whole layout">
+        <p>
+          <Rich text="`saveLayout` writes the dock areas and the floating windows too; `loadLayout` puts them back, and still loads a layout saved before them (version 1)." />
+        </p>
+        <Example files={code('DockSaveRestore.tsx', 'tools.tsx', 'contents.tsx', 'files.tsx')} stack>
+          <DockSaveRestore />
+        </Example>
+      </Section>
+
+      <Section anchor="events" title="Changing or refusing">
+        <Code
+          code={`
+docs.onDocking((e) => {
+  // Reports go to the bottom, whatever side they were dropped on.
+  if (e.document?.type === 'report' && e.side) e.side = 'bottom';
+});
+docs.onFloating((e) => {
+  // Windows open in the middle of the page.
+  e.rect = { ...e.rect, x: (innerWidth - e.rect.width) / 2, y: 80 };
+});
+docs.onWindowClosing((e) => {
+  if (e.window.documents.some((d) => d.dirty)) e.cancel = !confirm('Close the window?');
+});
+`}
+        />
+      </Section>
+
+      <Section anchor="keys" title="From the keyboard">
+        <ApiTable head={['Keys', 'Does']} rows={KEYS} />
+      </Section>
+
+      <Section anchor="a11y" title="Accessibility">
+        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+      </Section>
+
+      <Section anchor="api" title="API">
+        <h3>Props</h3>
+        <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
+        <h3>TabDocument</h3>
+        <ApiTable head={['Field', 'Type', 'Description']} rows={DOCUMENT} />
+        <h3>Methods</h3>
+        <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
+        <h3>TabWindow</h3>
+        <ApiTable head={['Member', 'Kind', 'Description']} rows={WINDOW} />
+        <h3>TabDockArea</h3>
+        <ApiTable head={['Member', 'Kind', 'Description']} rows={AREA} />
+        <h3>Events</h3>
+        <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
+        <h3>Styling hooks</h3>
+        <ApiTable head={['Selector or token', 'What']} rows={STYLING} />
+        <p>
+          <Rich text="The rest of the API is on the [overview](/tabdocs#api), [Tabs](/tabdocs/tabs), [Menus and keys](/tabdocs/menus) and [Drag and drop](/tabdocs/drag)." />
+        </p>
+      </Section>
+    </>
+  );
+}

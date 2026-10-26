@@ -10,6 +10,7 @@ import type { TabDropEventArgs } from './tab-drop-event-args';
 import type { TabDropPlace } from './tab-drop-place';
 import type { TabDropTarget } from './tab-drop-target';
 import type { TabGroup } from './TabGroup';
+import type { TabRect } from './tab-rect';
 
 /** A press on a tab or on a group's empty bar that may become a drag. */
 interface Press {
@@ -45,6 +46,10 @@ interface Session {
   wasGroup: TabGroup | null;
   scrolls: Map<HTMLElement, number>;
   frame: number;
+  /** A window moved: where it was. */
+  windowStart: TabRect | null;
+  /** The managers whose targets were told where the pointer is. */
+  followed: Set<TabDocumentManager>;
   modifiers: { ctrlKey: boolean; altKey: boolean; shiftKey: boolean; metaKey: boolean };
 }
 
@@ -95,6 +100,8 @@ export class TabDrag {
     const e = { document: subject.document, group: subject.group, pointerType, byKeyboard, cancel: false, source: m };
     m.dragStarting(e);
     if (e.cancel) return false;
+    const w = subject.window ?? null;
+    if (w && !m.windowChanging('moveWindow', w, !byKeyboard)) return false;
     this.session = {
       subject,
       source,
@@ -114,10 +121,13 @@ export class TabDrag {
       scrolls: new Map(),
       frame: 0,
       modifiers: { ctrlKey: false, altKey: false, shiftKey: false, metaKey: false },
+      windowStart: w ? { ...w.rect } : null,
+      followed: new Set(),
     };
     m.dragStarted(subject);
-    const dragged = subject.document ? source : subject.group.element;
+    const dragged = subject.document ? source : w ? null : subject.group.element;
     dragged?.toggleAttribute('data-dragging', true);
+    w?.markMoving(true);
     return true;
   }
 
@@ -132,7 +142,7 @@ export class TabDrag {
       const e = this.args(place, place.target === 'outside');
       m.dragOver(e);
       s.subject.copy = e.copy && m.mayCopyDocument(s.subject.document);
-      const chosen: TabDropPlace = { target: e.target, manager: e.manager, group: e.group, index: e.index, side: e.side };
+      const chosen: TabDropPlace = { target: e.target, manager: e.manager, group: e.group, index: e.index, side: e.side, dockSide: e.dockSide ?? null, rect: e.rect ?? null };
       // Outside is only reported, for now.
       if (!e.cancel && chosen.target !== 'outside') {
         s.place = chosen;
@@ -154,13 +164,15 @@ export class TabDrag {
     cancelFrame(m, s.frame);
     this.ghost.hide();
     s.shownIn?.dropMarks.hide();
+    for (const peer of s.followed) for (const t of peer.dropTargets) t.follow?.(null, s.subject);
+    s.subject.window?.markMoving(false);
     (s.subject.document ? s.source : s.subject.group.element)?.removeAttribute('data-dragging');
     for (const peer of m.dragPeers()) delete peer.element.dataset.dragging;
     let dropped = false;
     if (drop && s.place && s.target) {
       const e = this.args(s.place, false, s);
       m.dropping(e);
-      const place: TabDropPlace = { target: e.target, manager: e.manager, group: e.group, index: e.index, side: e.side };
+      const place: TabDropPlace = { target: e.target, manager: e.manager, group: e.group, index: e.index, side: e.side, dockSide: e.dockSide ?? null, rect: e.rect ?? null };
       const target = place.target === s.place.target && place.manager === s.place.manager ? s.target : this.targetFor(place);
       s.subject.copy = e.copy && m.mayCopyDocument(s.subject.document);
       if (!e.cancel && target) dropped = untracked(() => target.drop(place, s.subject));
@@ -228,6 +240,9 @@ export class TabDrag {
     if (!group) return null;
     const tab = group.tabOf(el);
     if (tab) return m.mayDrag(tab.document) ? { subject: { document: tab.document, group, manager: m, copy: false }, source: tab.header } : null;
+    // A floating window's strips are its title: the window moves with everything in it.
+    const w = group.window;
+    if (w && (group.isStripSpace(el) || group.isGrip(el))) return w.isMaximized ? null : { subject: { document: null, group, manager: m, copy: false, window: w }, source: group.barElement };
     if ((group.isStripSpace(el) || group.isGrip(el)) && m.allowDragGroups) return { subject: { document: null, group, manager: m, copy: false }, source: group.barElement };
     return null;
   }
@@ -256,8 +271,11 @@ export class TabDrag {
     } catch {
       // A pointer that is gone already: the window listeners still follow it.
     }
-    const source = press.subject.document ? press.source : press.subject.group.listElement;
-    this.ghost.show(source, s.x, s.y, press.subject.document ? 'tab' : 'group');
+    // A window moved is its own picture.
+    if (!press.subject.window) {
+      const source = press.subject.document ? press.source : press.subject.group.listElement;
+      this.ghost.show(source, s.x, s.y, press.subject.document ? 'tab' : 'group');
+    }
     this.track();
   }
 
@@ -343,24 +361,55 @@ export class TabDrag {
     if (!s || s.byKeyboard) return;
     const m = this.manager;
     s.subject.copy = this.copyHeld(s.modifiers) && m.mayCopyDocument(s.subject.document);
+    const w = s.subject.window;
+    if (w && s.windowStart) {
+      w.place({ ...s.windowStart, x: s.windowStart.x + s.x - s.start.x, y: s.windowStart.y + s.y - s.start.y });
+      m.keepWindowInView(w);
+    }
     const found = this.find(s.x, s.y);
     this.aim(found.place, found.target);
     this.hover();
     this.autoScroll();
   }
 
-  /** The place under the pointer: the targets of the manager it is over, or outside every one. */
+  /**
+   * The place under the pointer: the targets of the manager it is over (or of the manager of the
+   * floating window it is over: windows lie above everything), else floating, else outside.
+   */
   private find(x: number, y: number): { place: TabDropPlace | null; target: TabDropTarget | null } {
     const s = this.session!;
-    for (const m of this.manager.dragPeers()) {
-      if (m.element.closest('[hidden]') || !contains(m.element.getBoundingClientRect(), x, y)) continue;
-      for (const target of m.dropTargets) {
+    const over = this.managerAt(x, y);
+    for (const peer of this.peers()) {
+      if (peer !== over && !s.followed.has(peer)) continue;
+      for (const t of peer.dropTargets) t.follow?.(peer === over ? { x, y } : null, s.subject);
+      if (peer === over) s.followed.add(peer);
+      else s.followed.delete(peer);
+    }
+    if (over) {
+      for (const target of over.dropTargets) {
         const place = target.placeAt(x, y, s.subject);
         if (place) return { place, target };
       }
       return { place: null, target: null };
     }
-    return { place: OUTSIDE, target: null };
+    const float = this.manager.foreignAt(x, y) ? null : this.manager.floatPlace(s.subject, x, y);
+    return float ? { place: float, target: this.targetFor(float) } : { place: OUTSIDE, target: null };
+  }
+
+  /** The managers a drag may drop in: those of its `dragGroup`; a window moved stays with its own. */
+  private peers(): TabDocumentManager[] {
+    return this.session?.subject.window ? [this.manager] : this.manager.dragPeers();
+  }
+
+  /** The manager under a point: the one of the front window there, else the one whose box holds it. */
+  private managerAt(x: number, y: number): TabDocumentManager | null {
+    const s = this.session!;
+    const peers = this.peers();
+    const windows = peers.flatMap((m) => m.windowsFrontFirst()).filter((w) => w !== s.subject.window);
+    windows.sort((a, b) => Number(b.element.style.getPropertyValue('--_mx-z')) - Number(a.element.style.getPropertyValue('--_mx-z')));
+    const front = windows.find((w) => contains(w.element.getBoundingClientRect(), x, y));
+    if (front) return front.manager;
+    return peers.find((m) => !m.element.closest('[hidden]') && contains(m.element.getBoundingClientRect(), x, y)) ?? null;
   }
 
   private targetFor(place: TabDropPlace): TabDropTarget | null {
@@ -441,16 +490,17 @@ export class TabDrag {
   }
 
   private rowAt(x: number, y: number): HTMLElement | null {
-    for (const m of this.manager.dragPeers()) {
-      for (const group of m.groups) {
-        if (!group.element.closest('[hidden]') && contains(group.barElement.getBoundingClientRect(), x, y)) return group.rowElement;
-      }
+    const s = this.session;
+    for (const m of this.peers()) {
+      const group = m.groupAt(x, y, s?.subject.window ?? null);
+      if (group && contains(group.barElement.getBoundingClientRect(), x, y)) return group.rowElement;
     }
     return null;
   }
 
-  /** Canceled: what hovering activated and the strips scrolling moved go back. */
+  /** Canceled: what hovering activated and the strips scrolling moved go back, and a window moved. */
   private putBack(s: Session): void {
+    if (s.subject.window && s.windowStart) s.subject.window.place(s.windowStart);
     for (const [row, left] of s.scrolls) row.scrollLeft = left;
     for (const [group, doc] of s.was) if (doc && doc.group === group) group.manager.activateFromDrag(doc);
     if (s.wasGroup && s.was.size) s.wasGroup.manager.useGroupFromDrag(s.wasGroup);

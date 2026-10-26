@@ -5845,6 +5845,314 @@
     "value": "#c24523"
   },
   {
+    "name": "tabdocs.window-bg",
+    "cssVar": "--mx-tabdocs-window-bg",
+    "type": "color",
+    "ref": "color.bg.surface",
+    "value": "#f8f7f3"
+  },
+  {
+    "name": "tabdocs.window-border-width",
+    "cssVar": "--mx-tabdocs-window-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "tabdocs.window-border-color",
+    "cssVar": "--mx-tabdocs-window-border-color",
+    "type": "color",
+    "ref": "color.stroke.surface",
+    "value": "rgb(117 117 117 / 0.4)"
+  },
+  {
+    "name": "tabdocs.window-radius",
+    "cssVar": "--mx-tabdocs-window-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "tabdocs.window-shadow",
+    "cssVar": "--mx-tabdocs-window-shadow",
+    "type": "shadow",
+    "ref": "elevation.window",
+    "value": "0px 14px 28px 0px rgb(0 0 0 / 0.24), 0px 0px 8px 0px rgb(0 0 0 / 0.2)"
+  },
+  {
+    "name": "tabdocs.window-shadow-inactive",
+    "cssVar": "--mx-tabdocs-window-shadow-inactive",
+    "type": "shadow",
+    "ref": "elevation.window-inactive",
+    "value": "0px 4px 8px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "tabdocs.window-min-width",
+    "cssVar": "--mx-tabdocs-window-min-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "16rem"
+  },
+  {
+    "name": "tabdocs.window-min-height",
+    "cssVar": "--mx-tabdocs-window-min-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "9rem"
+  },
+  {
+    "name": "tabdocs.window-resize-edge",
+    "cssVar": "--mx-tabdocs-window-resize-edge",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "tabdocs.area-bg",
+    "cssVar": "--mx-tabdocs-area-bg",
+    "type": "color",
+    "ref": "color.bg.layer",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "tabdocs.panel-shadow",
+    "cssVar": "--mx-tabdocs-panel-shadow",
+    "type": "shadow",
+    "ref": "elevation.popup",
+    "value": "0px 8px 16px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "tabdocs.panel-border-width",
+    "cssVar": "--mx-tabdocs-panel-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "tabdocs.panel-border-color",
+    "cssVar": "--mx-tabdocs-panel-border-color",
+    "type": "color",
+    "ref": "color.stroke.surface",
+    "value": "rgb(117 117 117 / 0.4)"
+  },
+  {
+    "name": "tabdocs.autohide-bg",
+    "cssVar": "--mx-tabdocs-autohide-bg",
+    "type": "color",
+    "ref": "color.bg.bar",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "tabdocs.autohide-border-width",
+    "cssVar": "--mx-tabdocs-autohide-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "tabdocs.autohide-border-color",
+    "cssVar": "--mx-tabdocs-autohide-border-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "tabdocs.autohide-padding",
+    "cssVar": "--mx-tabdocs-autohide-padding",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.autohide-gap",
+    "cssVar": "--mx-tabdocs-autohide-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.autohide-group-gap",
+    "cssVar": "--mx-tabdocs-autohide-group-gap",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "tabdocs.autohide-size",
+    "cssVar": "--mx-tabdocs-autohide-size",
+    "type": "dimension",
+    "ref": "control.height.md",
+    "value": "2rem"
+  },
+  {
+    "name": "tabdocs.autohide-tab-padding",
+    "cssVar": "--mx-tabdocs-autohide-tab-padding",
+    "type": "dimension",
+    "ref": "control.padding.sm",
+    "value": "0.5rem"
+  },
+  {
+    "name": "tabdocs.autohide-tab-gap",
+    "cssVar": "--mx-tabdocs-autohide-tab-gap",
+    "type": "dimension",
+    "ref": "control.gap",
+    "value": "0.5rem"
+  },
+  {
+    "name": "tabdocs.autohide-tab-radius",
+    "cssVar": "--mx-tabdocs-autohide-tab-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.autohide-tab-font-size",
+    "cssVar": "--mx-tabdocs-autohide-tab-font-size",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
+    "name": "tabdocs.autohide-tab-line-height",
+    "cssVar": "--mx-tabdocs-autohide-tab-line-height",
+    "type": "dimension",
+    "ref": "font.line.body",
+    "value": "1.25rem"
+  },
+  {
+    "name": "tabdocs.autohide-tab-fg",
+    "cssVar": "--mx-tabdocs-autohide-tab-fg",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "tabdocs.autohide-tab-fg-hover",
+    "cssVar": "--mx-tabdocs-autohide-tab-fg-hover",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "tabdocs.autohide-tab-bg-hover",
+    "cssVar": "--mx-tabdocs-autohide-tab-bg-hover",
+    "type": "color",
+    "ref": "color.fill.subtle.secondary",
+    "value": "rgb(0 0 0 / 0.0373)"
+  },
+  {
+    "name": "tabdocs.autohide-tab-fg-open",
+    "cssVar": "--mx-tabdocs-autohide-tab-fg-open",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "tabdocs.autohide-tab-bg-open",
+    "cssVar": "--mx-tabdocs-autohide-tab-bg-open",
+    "type": "color",
+    "ref": "color.fill.subtle.tertiary",
+    "value": "rgb(0 0 0 / 0.0241)"
+  },
+  {
+    "name": "tabdocs.autohide-indicator-width",
+    "cssVar": "--mx-tabdocs-autohide-indicator-width",
+    "type": "dimension",
+    "ref": "border.width.2",
+    "value": "2px"
+  },
+  {
+    "name": "tabdocs.autohide-indicator-color",
+    "cssVar": "--mx-tabdocs-autohide-indicator-color",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "tabdocs.autohide-indicator-color-open",
+    "cssVar": "--mx-tabdocs-autohide-indicator-color-open",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "tabdocs.guide-size",
+    "cssVar": "--mx-tabdocs-guide-size",
+    "type": "dimension",
+    "ref": "control.height.lg",
+    "value": "2.5rem"
+  },
+  {
+    "name": "tabdocs.guide-icon-size",
+    "cssVar": "--mx-tabdocs-guide-icon-size",
+    "type": "dimension",
+    "ref": "icon.size.lg",
+    "value": "1.25rem"
+  },
+  {
+    "name": "tabdocs.guide-bg",
+    "cssVar": "--mx-tabdocs-guide-bg",
+    "type": "color",
+    "ref": "color.bg.surface",
+    "value": "#f8f7f3"
+  },
+  {
+    "name": "tabdocs.guide-fg",
+    "cssVar": "--mx-tabdocs-guide-fg",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "tabdocs.guide-border-width",
+    "cssVar": "--mx-tabdocs-guide-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "tabdocs.guide-border-color",
+    "cssVar": "--mx-tabdocs-guide-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.default",
+    "value": "rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "tabdocs.guide-radius",
+    "cssVar": "--mx-tabdocs-guide-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.guide-shadow",
+    "cssVar": "--mx-tabdocs-guide-shadow",
+    "type": "shadow",
+    "ref": "elevation.popup",
+    "value": "0px 8px 16px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "tabdocs.guide-bg-pointed",
+    "cssVar": "--mx-tabdocs-guide-bg-pointed",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "tabdocs.guide-fg-pointed",
+    "cssVar": "--mx-tabdocs-guide-fg-pointed",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "tabdocs.guide-border-color-pointed",
+    "cssVar": "--mx-tabdocs-guide-border-color-pointed",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
     "name": "tabdocs.focus-width",
     "cssVar": "--mx-tabdocs-focus-width",
     "type": "dimension",

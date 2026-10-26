@@ -2,6 +2,7 @@ import { untracked } from '@motifx/core';
 import { isChord } from '../../core/keyboard';
 import type { UiStrings } from '../../core/ui-strings';
 import type { SplitDirection } from './split-direction';
+import type { TabDockSide } from './tab-dock-side';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabDrag } from './TabDrag';
 import type { TabDragSubject } from './tab-drag-subject';
@@ -9,14 +10,29 @@ import type { TabDropPlace } from './tab-drop-place';
 import type { TabDropSide } from './tab-drop-side';
 import type { TabGroup } from './TabGroup';
 
-/** Where "Move to…" points: a group and a side of it, or (`group: null`) an edge of a manager's layout. */
+/**
+ * Where "Move to…" points: a group and a side of it, or (`group: null`) an edge of a manager's
+ * layout, one of its dock areas (`dock`), or a floating window of its own (`float`).
+ */
 interface Where {
   manager: TabDocumentManager;
   group: TabGroup | null;
   side: TabDropSide;
   /** Along an edge: the group it came from, where the opposite arrow goes back to. */
   from?: TabGroup;
+  dock?: TabDockSide;
+  float?: boolean;
 }
+
+const DOCK_OF: Record<SplitDirection, TabDockSide> = { left: 'left', right: 'right', up: 'top', down: 'bottom' };
+const DIRECTION_OF: Record<TabDockSide, SplitDirection> = { left: 'left', right: 'right', top: 'up', bottom: 'down' };
+
+const DOCK_TEXTS: Record<TabDockSide, keyof UiStrings> = {
+  left: 'tabDocsPlaceDockLeft',
+  right: 'tabDocsPlaceDockRight',
+  top: 'tabDocsPlaceDockTop',
+  bottom: 'tabDocsPlaceDockBottom',
+};
 
 const OPPOSITE: Record<SplitDirection, SplitDirection> = { left: 'right', right: 'left', up: 'down', down: 'up' };
 
@@ -38,9 +54,9 @@ const EDGE_TEXTS: Record<SplitDirection, keyof UiStrings> = {
 /**
  * "Move to…": a tab or a group moved from the keyboard, through the same drag session as the
  * pointer, with the same drop areas shown. The arrows pick a side of a group; an arrow towards the
- * side already chosen goes on to the next group that way, or to the edge of the layout, and the
- * other way back to the centre. Tab goes to the next group, Enter drops, Escape puts everything
- * back. Each place is announced.
+ * side already chosen goes on to the next group that way, then to the edge of the layout, the dock
+ * area of that side and a floating window of its own, and the other way back. Tab goes to the next
+ * group, Enter drops, Escape puts everything back. Each place is announced.
  */
 export class MoveByKeys {
   private where: Where | null = null;
@@ -116,10 +132,20 @@ export class MoveByKeys {
   private go(to: SplitDirection): void {
     const w = this.where;
     if (!w) return;
-    if (!w.group) {
-      // Along an edge: back in, to the group nearest that edge, or along another edge.
+    if (w.float) {
+      // Floating: the arrow back comes to the dock area it went out from.
+      if (w.dock && to === OPPOSITE[DIRECTION_OF[w.dock]]) this.where = { ...w, float: false };
+    } else if (w.dock) {
+      // In a dock area: on outwards, a floating window; back in, the edge of the layout; across, another area.
+      const out = DIRECTION_OF[w.dock];
+      if (to === out) this.where = { ...w, float: true };
+      else if (to === OPPOSITE[out]) this.where = { manager: w.manager, group: null, side: out, from: w.from };
+      else this.where = { ...w, side: to, dock: DOCK_OF[to] };
+    } else if (!w.group) {
+      // Along an edge: back in, to the group nearest that edge; on outwards, the dock area there; or along another edge.
       const back = w.from && w.manager.groups.includes(w.from) ? w.from : w.manager.edgeGroup(w.side as SplitDirection);
       if (to === OPPOSITE[w.side as SplitDirection]) this.where = { manager: w.manager, group: back, side: 'center' };
+      else if (to === w.side && w.manager === this.manager) this.where = { ...w, dock: DOCK_OF[to] };
       else this.where = { ...w, side: to };
     } else if (w.side === 'center' || (w.side !== to && w.side !== OPPOSITE[to])) {
       this.where = { ...w, side: to };
@@ -158,14 +184,22 @@ export class MoveByKeys {
     const subject = this.drag.subject;
     if (!w || !subject) return;
     const target = w.manager.layoutTarget;
-    const place: TabDropPlace | null = w.group ? target.groupPlace(w.group, w.side, subject) : target.edgePlace(w.side as SplitDirection, subject);
-    const ok = this.drag.aim(place, place ? target : null);
+    const dock = w.manager.dockDropTarget;
+    let place: TabDropPlace | null;
+    if (w.float) place = w.manager.floatPlace(subject);
+    else if (w.dock) place = dock.areaPlace(w.dock, subject);
+    else place = w.group ? target.groupPlace(w.group, w.side, subject) : target.edgePlace(w.side as SplitDirection, subject);
+    const ok = this.drag.aim(place, place ? (w.float || w.dock ? dock : target) : null);
     const m = this.manager;
     // Said as it looks: right to left, a group's start is on the right.
     const side = this.rtl() && (w.side === 'left' || w.side === 'right') ? OPPOSITE[w.side] : w.side;
-    const named = w.group
-      ? w.manager.textOf(PLACE_TEXTS[side], { n: w.manager.groups.indexOf(w.group) + 1 })
-      : w.manager.textOf(EDGE_TEXTS[side as SplitDirection]);
+    const named = w.float
+      ? m.textOf('tabDocsPlaceFloat')
+      : w.dock
+        ? w.manager.textOf(DOCK_TEXTS[w.dock])
+        : w.group
+          ? w.manager.textOf(PLACE_TEXTS[side], { n: w.manager.groups.indexOf(w.group) + 1 })
+          : w.manager.textOf(EDGE_TEXTS[side as SplitDirection]);
     const text = ok ? named : m.textOf('tabDocsPlaceRefused', { place: named });
     m.sayText(intro ? `${intro} ${text}` : text);
   }

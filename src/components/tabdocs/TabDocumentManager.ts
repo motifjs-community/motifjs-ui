@@ -71,6 +71,28 @@ import type { TabShowDescription } from './tab-show-description';
 import type { TabSize } from './tab-size';
 import { TabSplit } from './TabSplit';
 import type { TabToolbarItems } from './tab-toolbar-items';
+import { AutoHideStrip } from './AutoHideStrip';
+import { DockDropTarget } from './DockDropTarget';
+import { keepScroll } from './keep-scroll';
+import type { TabAutoHiddenEventArgs } from './tab-auto-hidden-event-args';
+import type { TabAutoHidingEventArgs } from './tab-auto-hiding-event-args';
+import { TabDockArea } from './TabDockArea';
+import type { TabDockGuideKind } from './tab-dock-guide-kind';
+import type { TabDockSide } from './tab-dock-side';
+import type { TabDockedEventArgs } from './tab-docked-event-args';
+import type { TabDockingEventArgs } from './tab-docking-event-args';
+import type { TabFloatedEventArgs } from './tab-floated-event-args';
+import type { TabFloatingEventArgs } from './tab-floating-event-args';
+import type { TabLayoutArea } from './tab-layout-area';
+import type { TabLayoutWindow } from './tab-layout-window';
+import type { TabRect } from './tab-rect';
+import type { TabSlideEventArgs } from './tab-slide-event-args';
+import { TabWindow } from './TabWindow';
+import type { TabWindowClosedEventArgs } from './tab-window-closed-event-args';
+import type { TabWindowClosingEventArgs } from './tab-window-closing-event-args';
+import { WindowByKeys } from './WindowByKeys';
+import { SplitSash } from './SplitSash';
+import type { SashOwner } from './sash-owner';
 
 const OWN = [
   'closeButton',
@@ -121,6 +143,20 @@ const OWN = [
   'dragGroup',
   'dragGhost',
   'dragAutoScroll',
+  'allowFloat',
+  'allowDock',
+  'dockSides',
+  'allowAutoHide',
+  'floatingWindowSize',
+  'keepFloatingInView',
+  'closeEmptyWindows',
+  'dockOnDoubleClick',
+  'dockAreaSize',
+  'dockAreaMinSize',
+  'autoHideHover',
+  'autoHideDelay',
+  'dockGuides',
+  'dockGuideKinds',
   'keyPreset',
   'keys',
   'texts',
@@ -136,6 +172,14 @@ const STRIP = ['tabSize', 'pinnedTabSize', 'pinnedTabsOnSeparateRow', 'wrapTabs'
 const NO_GROUPS: readonly TabGroup[] = [];
 const NO_DOCUMENTS: readonly TabDocument[] = [];
 const ALL_SIDES: readonly TabDropSide[] = ['center', 'left', 'right', 'up', 'down'];
+const DOCK_SIDES: readonly TabDockSide[] = ['left', 'right', 'top', 'bottom'];
+const GUIDE_KINDS: readonly TabDockGuideKind[] = ['group', 'edges'];
+const AREA_SIZES: Readonly<Record<TabDockSide, number | string>> = { left: 240, right: 240, top: 160, bottom: 200 };
+const NO_WINDOWS: readonly TabWindow[] = [];
+const NO_AREAS: readonly TabDockArea[] = [];
+
+/** What holds a layout tree: a floating window, a dock area, or the documents' area (`null`). */
+type Host = TabWindow | TabDockArea | null;
 
 /** Every manager on the page: a drag finds the managers of its `dragGroup` here. */
 const MANAGERS = new Set<TabDocumentManager>();
@@ -174,6 +218,31 @@ interface Parts {
   targets: TabDropTarget[];
   /** Where the last drop put the document (or the group's documents), for `onDropped`. */
   dropResult: { group: TabGroup | null; document: TabDocument | null } | null;
+  /** The dock areas by side, and the order they nest in (the outermost first). */
+  areas: Map<TabDockSide, TabDockArea>;
+  order: TabDockSide[];
+  /** The floating windows, in the order they were made. */
+  windows: TabWindow[];
+  dockTarget: DockDropTarget | null;
+  windowKeys: WindowByKeys | null;
+  /** Watches the manager's size: a dock area sized by a share follows it. */
+  sizeWatch: ResizeObserver | null;
+  /** The folded area slid out now: how it was opened, and what closes it. */
+  slide: { area: TabDockArea; hover: boolean; stop: () => void } | null;
+  /** Why the windows a change leaves empty go: they were docked. */
+  windowGone: 'docked' | null;
+  /** The windows `closeWindow` is closing the documents of. */
+  closingWindows: Set<TabWindow>;
+  floating: Emitter<TabFloatingEventArgs>;
+  floated: Emitter<TabFloatedEventArgs>;
+  docking: Emitter<TabDockingEventArgs>;
+  docked: Emitter<TabDockedEventArgs>;
+  autoHiding: Emitter<TabAutoHidingEventArgs>;
+  autoHidden: Emitter<TabAutoHiddenEventArgs>;
+  slideChanging: Emitter<TabSlideEventArgs>;
+  slideChanged: Emitter<TabSlideEventArgs>;
+  windowClosing: Emitter<TabWindowClosingEventArgs>;
+  windowClosed: Emitter<TabWindowClosedEventArgs>;
   opening: Emitter<DocumentOpeningEventArgs>;
   opened: Emitter<DocumentOpenedEventArgs>;
   closing: Emitter<DocumentClosingEventArgs>;
@@ -264,6 +333,16 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       ['onDropping', this.onDropping],
       ['onDropped', this.onDropped],
       ['onDragEnded', this.onDragEnded],
+      ['onFloating', this.onFloating],
+      ['onFloated', this.onFloated],
+      ['onDocking', this.onDocking],
+      ['onDocked', this.onDocked],
+      ['onAutoHiding', this.onAutoHiding],
+      ['onAutoHidden', this.onAutoHidden],
+      ['onSlideChanging', this.onSlideChanging],
+      ['onSlideChanged', this.onSlideChanged],
+      ['onWindowClosing', this.onWindowClosing],
+      ['onWindowClosed', this.onWindowClosed],
     ];
     for (const [name, subscribe] of events) if (own[name]) subscribe(own[name] as never);
 
@@ -286,8 +365,14 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     parts.menus = new TabMenus(this);
     parts.layoutTarget = new LayoutDropTarget(this);
     parts.targets.push(parts.layoutTarget);
+    parts.dockTarget = new DockDropTarget(this);
+    parts.targets.unshift(parts.dockTarget);
     parts.drag = new TabDrag(this);
     parts.moveKeys = new MoveByKeys(this, parts.drag);
+    parts.windowKeys = new WindowByKeys(this);
+    this.observeProperty('dockAreaSize', () => this.renderDock());
+    this.observeProperty('dockAreaMinSize', () => this.renderDock());
+    this.watchSize();
     MANAGERS.add(this);
     // Built later than made: core has just put the groups at the root, back into their splits.
     this.motif.on('x:built', () => untracked(() => this.renderTree()));
@@ -301,7 +386,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       stopTexts();
       MANAGERS.delete(this);
       parts.moveKeys?.end(false);
+      parts.windowKeys?.end(false);
       parts.drag?.cancel(true);
+      parts.slide?.stop();
+      parts.slide = null;
+      parts.sizeWatch?.disconnect();
+      parts.dockTarget?.dispose();
       for (const stop of parts.keyStops.splice(0)) stop();
       for (const [doc, tab] of parts.tabs) {
         doc.placeIn(null, null);
@@ -311,6 +401,17 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       parts.closed = [];
       parts.history = [];
       this.disposeSplits(parts.root);
+      for (const area of parts.areas.values()) {
+        this.disposeSplits(area.root);
+        area.strip?.dispose();
+        area.dispose();
+      }
+      for (const w of parts.windows) {
+        this.disposeSplits(w.root);
+        w.dispose();
+      }
+      parts.areas.clear();
+      parts.windows = [];
       parts.menus?.dispose();
       parts.openList?.dispose();
       parts.recentList?.dispose();
@@ -343,6 +444,16 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         parts.dropping,
         parts.dropped,
         parts.dragEnded,
+        parts.floating,
+        parts.floated,
+        parts.docking,
+        parts.docked,
+        parts.autoHiding,
+        parts.autoHidden,
+        parts.slideChanging,
+        parts.slideChanged,
+        parts.windowClosing,
+        parts.windowClosed,
       ]) {
         emitter.dispose();
       }
@@ -633,6 +744,91 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   set dragAutoScroll(value: Bind<boolean>) {
     this.assignProperty('dragAutoScroll', value, Boolean);
   }
+  get allowFloat(): boolean {
+    return this.getProperty<boolean | undefined>('allowFloat') ?? true;
+  }
+  set allowFloat(value: Bind<boolean>) {
+    this.assignProperty('allowFloat', value, Boolean);
+  }
+  get allowDock(): boolean {
+    return this.getProperty<boolean | undefined>('allowDock') ?? true;
+  }
+  set allowDock(value: Bind<boolean>) {
+    this.assignProperty('allowDock', value, Boolean);
+  }
+  get dockSides(): readonly TabDockSide[] {
+    return this.getProperty<readonly TabDockSide[] | undefined>('dockSides') ?? DOCK_SIDES;
+  }
+  set dockSides(value: Bind<readonly TabDockSide[]>) {
+    this.assignProperty('dockSides', value);
+  }
+  get allowAutoHide(): boolean {
+    return this.getProperty<boolean | undefined>('allowAutoHide') ?? true;
+  }
+  set allowAutoHide(value: Bind<boolean>) {
+    this.assignProperty('allowAutoHide', value, Boolean);
+  }
+  get floatingWindowSize(): { width: number; height: number } | null {
+    return this.getProperty<{ width: number; height: number } | null | undefined>('floatingWindowSize') ?? null;
+  }
+  set floatingWindowSize(value: Bind<{ width: number; height: number } | null>) {
+    this.assignProperty('floatingWindowSize', value);
+  }
+  get keepFloatingInView(): boolean {
+    return this.getProperty<boolean | undefined>('keepFloatingInView') ?? true;
+  }
+  set keepFloatingInView(value: Bind<boolean>) {
+    this.assignProperty('keepFloatingInView', value, Boolean);
+  }
+  get closeEmptyWindows(): boolean {
+    return this.getProperty<boolean | undefined>('closeEmptyWindows') ?? true;
+  }
+  set closeEmptyWindows(value: Bind<boolean>) {
+    this.assignProperty('closeEmptyWindows', value, Boolean);
+  }
+  get dockOnDoubleClick(): boolean {
+    return this.getProperty<boolean | undefined>('dockOnDoubleClick') ?? true;
+  }
+  set dockOnDoubleClick(value: Bind<boolean>) {
+    this.assignProperty('dockOnDoubleClick', value, Boolean);
+  }
+  /** The size a new dock area of each side starts with: pixels, or a share such as `'25%'`. */
+  get dockAreaSize(): Readonly<Record<TabDockSide, number | string>> {
+    return { ...AREA_SIZES, ...this.getProperty<Partial<Record<TabDockSide, number | string>> | undefined>('dockAreaSize') };
+  }
+  set dockAreaSize(value: Bind<Partial<Record<TabDockSide, number | string>>>) {
+    this.assignProperty('dockAreaSize', value);
+  }
+  get dockAreaMinSize(): number {
+    return this.getProperty<number | undefined>('dockAreaMinSize') ?? 120;
+  }
+  set dockAreaMinSize(value: Bind<number>) {
+    this.assignProperty('dockAreaMinSize', value, (v) => Math.max(0, Number(v) || 0));
+  }
+  get autoHideHover(): boolean {
+    return this.getProperty<boolean | undefined>('autoHideHover') ?? true;
+  }
+  set autoHideHover(value: Bind<boolean>) {
+    this.assignProperty('autoHideHover', value, Boolean);
+  }
+  get autoHideDelay(): number {
+    return this.getProperty<number | undefined>('autoHideDelay') ?? 500;
+  }
+  set autoHideDelay(value: Bind<number>) {
+    this.assignProperty('autoHideDelay', value, (v) => Math.max(0, Number(v) || 0));
+  }
+  get dockGuides(): boolean {
+    return this.getProperty<boolean | undefined>('dockGuides') ?? false;
+  }
+  set dockGuides(value: Bind<boolean>) {
+    this.assignProperty('dockGuides', value, Boolean);
+  }
+  get dockGuideKinds(): readonly TabDockGuideKind[] {
+    return this.getProperty<readonly TabDockGuideKind[] | undefined>('dockGuideKinds') ?? GUIDE_KINDS;
+  }
+  set dockGuideKinds(value: Bind<readonly TabDockGuideKind[]>) {
+    this.assignProperty('dockGuideKinds', value);
+  }
   get dropSides(): readonly TabDropSide[] {
     return this.getProperty<readonly TabDropSide[] | undefined>('dropSides') ?? ALL_SIDES;
   }
@@ -731,7 +927,19 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   get dragging(): TabDragSubject | null {
     return this.getProperty<TabDragSubject | null | undefined>('dragging') ?? null;
   }
-  /** The drop targets, asked in order; the built-in one (strips, groups, the layout's edges) is last. */
+  /** The floating windows, the one at the back first. Reactive. */
+  get floatingWindows(): readonly TabWindow[] {
+    return this.getProperty<readonly TabWindow[] | undefined>('floatingWindows') ?? NO_WINDOWS;
+  }
+  /** The dock areas, the outermost first. Reactive. */
+  get dockAreas(): readonly TabDockArea[] {
+    return this.getProperty<readonly TabDockArea[] | undefined>('dockAreas') ?? NO_AREAS;
+  }
+  /** The dock area of a side, `null` when nothing is docked there. Reactive. */
+  dockArea(side: TabDockSide): TabDockArea | null {
+    return this.dockAreas.find((a) => a.side === side) ?? null;
+  }
+  /** The drop targets, asked in order: the dock guides and floating first, the built-in one (strips, groups, the layout's edges) last. */
   get dropTargets(): readonly TabDropTarget[] {
     return this.parts.targets;
   }
@@ -842,6 +1050,43 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return this.parts.dragEnded.event;
   }
 
+  /** A document or a group is about to float in a window; `rect` may be changed; cancelable. */
+  get onFloating(): MotifEvent<TabFloatingEventArgs> {
+    return this.parts.floating.event;
+  }
+  get onFloated(): MotifEvent<TabFloatedEventArgs> {
+    return this.parts.floated.event;
+  }
+  /** A document, a group or a window is about to be docked; `side` and `size` may be changed; cancelable. */
+  get onDocking(): MotifEvent<TabDockingEventArgs> {
+    return this.parts.docking.event;
+  }
+  get onDocked(): MotifEvent<TabDockedEventArgs> {
+    return this.parts.docked.event;
+  }
+  /** A dock area is about to fold to its edge (`on`) or come back; cancelable. */
+  get onAutoHiding(): MotifEvent<TabAutoHidingEventArgs> {
+    return this.parts.autoHiding.event;
+  }
+  get onAutoHidden(): MotifEvent<TabAutoHiddenEventArgs> {
+    return this.parts.autoHidden.event;
+  }
+  /** A folded dock area is about to slide out (`open`) or back; cancelable. */
+  get onSlideChanging(): MotifEvent<TabSlideEventArgs> {
+    return this.parts.slideChanging.event;
+  }
+  get onSlideChanged(): MotifEvent<TabSlideEventArgs> {
+    return this.parts.slideChanged.event;
+  }
+  /** A floating window is about to close with its documents; cancelable. */
+  get onWindowClosing(): MotifEvent<TabWindowClosingEventArgs> {
+    return this.parts.windowClosing.event;
+  }
+  /** A floating window is gone: closed, docked, or left empty. */
+  get onWindowClosed(): MotifEvent<TabWindowClosedEventArgs> {
+    return this.parts.windowClosed.event;
+  }
+
   // Documents.
 
   /**
@@ -888,7 +1133,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   /** Makes a document its group's active one, and its group the active group. */
   activate(document: TabDocument, focus = false): boolean {
-    return untracked(() => this.activateDocument(document, focus, false));
+    return untracked(() => {
+      if (document.manager === this && document.dockArea?.autoHidden && this.parts.slide?.area !== document.dockArea) this.slideOut(document, false, false);
+      return this.activateDocument(document, focus, false);
+    });
   }
 
   /** Activates the next tab of a group (the active group by default), around the end. */
@@ -1099,8 +1347,115 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     list.splice(Math.max(0, Math.min(index, list.length - 1)), 0, target);
     return () => {
       const at = list.indexOf(target);
-      if (at >= 0 && target !== this.parts.layoutTarget) list.splice(at, 1);
+      if (at >= 0 && target !== this.parts.layoutTarget && target !== this.parts.dockTarget) list.splice(at, 1);
     };
+  }
+
+  // Floating windows and dock areas.
+
+  /**
+   * Moves a document, or a whole group, into a floating window of its own at `rect` (by default
+   * the size of the group it comes from, beside it). Returns the window, `null` when it may not
+   * float or `onFloating` cancels.
+   */
+  float(target: TabDocument | TabGroup, rect?: TabRect): TabWindow | null {
+    return untracked(() => {
+      const doc = target instanceof TabDocument ? target : null;
+      const group = doc ? doc.group : (target as TabGroup);
+      if (!group || (doc && doc.manager !== this)) return null;
+      return this.floatBy(doc, group, rect ?? null, false);
+    });
+  }
+
+  /**
+   * Docks a document, a group or a whole floating window into the dock area of `side` (made at
+   * `size`, else `dockAreaSize`, when there is none), or, without a side, puts it back where it was
+   * docked before it floated. A document not open yet opens there.
+   */
+  dock(target: TabDocument | TabGroup | TabWindow, side?: TabDockSide | null, size?: number | string): boolean {
+    return untracked(() => this.dockBy(target, side ?? null, size ?? null, false));
+  }
+
+  /** Folds a dock area (or a document's) to the manager's edge, where only its tab titles stay; `false` brings it back. */
+  autoHide(target: TabDockArea | TabDocument, on = true): boolean {
+    return untracked(() => {
+      const area = target instanceof TabDockArea ? target : target.dockArea;
+      return !!area && area.manager === this && this.autoHideBy(area, on, false);
+    });
+  }
+
+  /** Slides a folded dock area out over the documents, with `document` shown. */
+  showAutoHidden(document: TabDocument): boolean {
+    return untracked(() => this.slideOut(document, false, false));
+  }
+
+  /** Slides the folded area that is out back to its edge. */
+  hideAutoHidden(): boolean {
+    return untracked(() => this.slideBack(false));
+  }
+
+  /** Moves a floating window: `x` from the left of the viewport, `y` from the top. */
+  moveWindow(window: TabWindow, x: number, y: number): boolean {
+    return untracked(() => {
+      if (!this.parts.windows.includes(window) || !this.windowChanging('moveWindow', window, false)) return false;
+      const r = window.rect;
+      window.place({ ...r, x, y });
+      this.keepWindowInView(window);
+      this.windowChanged('moveWindow', window, false);
+      return true;
+    });
+  }
+
+  resizeWindow(window: TabWindow, width: number, height: number): boolean {
+    return untracked(() => {
+      if (!this.parts.windows.includes(window) || !this.windowChanging('resizeWindow', window, false)) return false;
+      const min = window.minSize();
+      window.place({ ...window.rect, width: Math.max(min.w, width), height: Math.max(min.h, height) });
+      this.keepWindowInView(window);
+      this.windowChanged('resizeWindow', window, false);
+      return true;
+    });
+  }
+
+  /** Gives a floating window the whole page; `restoreWindow` gives it its place back. */
+  maximizeWindow(window: TabWindow): boolean {
+    return untracked(() => this.maximizeWindowBy(window, true, false));
+  }
+
+  restoreWindow(window: TabWindow): boolean {
+    return untracked(() => this.maximizeWindowBy(window, false, false));
+  }
+
+  /** Closes a floating window with its documents (each one asks through `onClosing`); resolves `false` when one stays open. */
+  closeWindow(window: TabWindow): Promise<boolean> {
+    return untracked(() => this.closeWindowBy(window, false));
+  }
+
+  /** Brings a floating window to the front and focuses what had focus in it last. */
+  focusWindow(window: TabWindow): boolean {
+    return untracked(() => {
+      if (!this.parts.windows.includes(window)) return false;
+      window.bringToFront();
+      const group = this.parts.recentGroups.find((g) => g.window === window) ?? this.hostGroups(window)[0];
+      return !!group && this.focusGroup(group);
+    });
+  }
+
+  /** Sets a dock area's size: pixels, or a share of the manager such as `'25%'`. */
+  resizeDockArea(area: TabDockArea, size: number | string, byUser = false): boolean {
+    return untracked(() => {
+      if (!this.parts.areas.has(area.side) || this.parts.areas.get(area.side) !== area) return false;
+      if (!this.layoutChanging('resizeArea', null, byUser, null, area)) return false;
+      area.setSize(size);
+      this.renderDock();
+      this.layoutChanged('resizeArea', null, byUser, null, area);
+      return true;
+    });
+  }
+
+  /** Moves focus to the next part (`-1`: the previous one): the documents, each dock area that is not folded, each floating window. */
+  focusPart(by: 1 | -1 = 1): boolean {
+    return untracked(() => this.focusPartBy(by));
   }
 
   // Lists.
@@ -1149,12 +1504,31 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   saveLayout(): TabLayout {
     return untracked(() => {
       const groups = this.groups;
-      return {
-        version: 1,
+      const layout: TabLayout = {
+        version: 2,
         root: this.writeNode(this.parts.root!),
         activeGroup: Math.max(0, groups.indexOf(this.activeGroup!)),
         maximizedGroup: this.parts.maximized ? groups.indexOf(this.parts.maximized) : null,
       };
+      const areas = this.orderedAreas().filter((a) => a.root);
+      if (areas.length) {
+        layout.areas = areas.map((a) => {
+          const saved: TabLayoutArea = { side: a.side, size: a.size, root: this.writeNode(a.root!) };
+          if (a.autoHidden) saved.autoHide = true;
+          return saved;
+        });
+      }
+      const windows = this.floatingWindows.filter((w) => w.root);
+      if (windows.length) {
+        layout.windows = windows.map((w) => {
+          const saved: TabLayoutWindow = { rect: { ...w.rect }, root: this.writeNode(w.root!) };
+          if (w.isMaximized) saved.maximized = true;
+          const back = w.lastDock.group ? groups.indexOf(w.lastDock.group) : -1;
+          if (w.lastDock.side || back >= 0) saved.dock = { side: w.lastDock.side, group: back >= 0 ? back : null };
+          return saved;
+        });
+      }
+      return layout;
     });
   }
 
@@ -1169,6 +1543,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       if (!layout?.root || !this.layoutChanging('load', null, false)) return false;
       const parts = this.parts;
       if (parts.maximized) this.unmaximize();
+      this.stopSlide();
       for (const [doc, tab] of parts.tabs) {
         doc.placeIn(null, null);
         tab.dispose();
@@ -1176,10 +1551,39 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       parts.tabs.clear();
       const old = parts.root;
       const oldGroups = [...this.groups];
-      const root = this.readNode(layout.root, factory, new Map());
+      const oldAreas = [...parts.areas.values()];
+      const oldWindows = [...parts.windows];
+      parts.areas.clear();
+      parts.order = [];
+      parts.windows = [];
+      const made = new Map<string, TabDocument>();
+      const root = this.readNode(layout.root, factory, made);
       if (old) placeNode(this.element, root.element, old.element);
       this.setRoot(root);
       this.disposeSplits(old);
+      for (const saved of layout.areas ?? []) {
+        if (!saved?.root || !DOCK_SIDES.includes(saved.side) || parts.areas.has(saved.side)) continue;
+        const area = this.createArea(saved.side, saved.size ?? this.dockAreaSize[saved.side]);
+        this.setHostRoot(area, this.readNode(saved.root, factory, made));
+        if (saved.autoHide) area.markFolded(true);
+      }
+      const windows: [TabWindow, TabLayoutWindow][] = [];
+      for (const saved of layout.windows ?? []) {
+        if (!saved?.root) continue;
+        const w = this.createWindow(saved.rect ?? this.floatRect(null, null));
+        this.setHostRoot(w, this.readNode(saved.root, factory, made));
+        if (saved.maximized) w.markMaximized(true);
+        windows.push([w, saved]);
+      }
+      for (const area of oldAreas) {
+        this.disposeSplits(area.root);
+        area.strip?.dispose();
+        area.dispose();
+      }
+      for (const w of oldWindows) {
+        this.disposeSplits(w.root);
+        w.dispose();
+      }
       for (const group of oldGroups) this.controls.remove(group);
       parts.recentGroups = [];
       parts.history = [];
@@ -1188,7 +1592,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       this.renderHistory();
       this.setProperty('activeGroup', null);
       this.renderTree();
+      this.renderLists();
       const groups = this.groups;
+      for (const [w, saved] of windows) {
+        const side = saved.dock?.side;
+        w.lastDock = { side: side && DOCK_SIDES.includes(side) ? side : null, group: groups[saved.dock?.group ?? -1] ?? null };
+      }
       this.useGroup(groups[layout.activeGroup] ?? groups[0], false);
       const maximized = layout.maximizedGroup === null ? undefined : groups[layout.maximizedGroup];
       if (maximized) this.maximizeBy(maximized, false, true);
@@ -1317,9 +1726,13 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
   }
 
-  /** @internal A double click on the empty strip makes a new document there. */
+  /** @internal A double click on the empty strip makes a new document there; in a floating window it docks the window back. */
   stripDoubleClicked(group: TabGroup): void {
-    untracked(() => this.openNewBy(group, true));
+    untracked(() => {
+      const w = group.window;
+      if (w && this.dockOnDoubleClick) this.dockBy(w, null, null, true);
+      else this.openNewBy(group, true);
+    });
   }
 
   /** @internal */
@@ -1337,6 +1750,11 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return this.parts.layoutTarget!;
   }
 
+  /** @internal */
+  get dockDropTarget(): DockDropTarget {
+    return this.parts.dockTarget!;
+  }
+
   /** @internal The top of the layout tree. */
   get rootItem(): LayoutItem | null {
     return this.parts.root;
@@ -1349,6 +1767,20 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     const page = this.element.ownerDocument;
     const others = [...MANAGERS].filter((m) => m !== this && !m.isDisposed && m.element.isConnected && m.element.ownerDocument === page && untracked(() => m.dragGroup) === name);
     return [this, ...others];
+  }
+
+  /** @internal Whether a manager outside this one's `dragGroup` (or one of its windows) is under a point: a drop there is refused, it does not float. */
+  foreignAt(x: number, y: number): boolean {
+    const page = this.element.ownerDocument;
+    const peers = this.dragPeers();
+    return [...MANAGERS].some(
+      (m) =>
+        !peers.includes(m) &&
+        !m.isDisposed &&
+        m.element.isConnected &&
+        m.element.ownerDocument === page &&
+        (contains(m.element.getBoundingClientRect(), x, y) || m.parts.windows.some((w) => contains(w.element.getBoundingClientRect(), x, y))),
+    );
   }
 
   /** @internal Whether the user may drag a document: its own `allowDrag`, else the manager's. */
@@ -1449,15 +1881,82 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
    */
   dropAt(place: TabDropPlace, drag: TabDragSubject): boolean {
     return untracked(() => {
-      this.parts.dropResult = null;
+      const parts = this.parts;
+      parts.dropResult = null;
+      if (place.target === 'float') return this.dropFloat(place, drag);
+      if (place.target === 'dock-area') {
+        const target = drag.window ?? drag.document ?? drag.group;
+        const ok = !!place.dockSide && drag.manager === this && this.dockBy(target, place.dockSide, null, true);
+        if (ok) parts.dropResult = { group: this.activeGroup, document: drag.document };
+        return ok;
+      }
       const group = place.group && this.groups.includes(place.group) ? place.group : null;
       const side = place.side;
-      if (place.target === 'strip' && group) return this.dropInto(drag, group, place.index, true);
-      if (place.target === 'group' && group && side === 'center') return this.dropInto(drag, group, undefined, false);
-      const edge = place.target === 'edge';
-      if (!side || side === 'center' || (!edge && !(place.target === 'group' && group))) return false;
+      const kind = place.target === 'dock-guide' ? 'group' : place.target;
+      if (drag.window) return this.dropWindow(drag.window, group, kind === 'strip' ? place.index : undefined, kind === 'strip' ? 'center' : side, kind === 'edge');
+      if (kind === 'strip' && group) return this.dropInto(drag, group, place.index, true);
+      if (kind === 'group' && group && side === 'center') return this.dropInto(drag, group, undefined, false);
+      const edge = kind === 'edge';
+      if (!side || side === 'center' || (!edge && !(kind === 'group' && group))) return false;
       return this.dropBeside(drag, edge ? null : group, side);
     });
+  }
+
+  /** A drag let go away from every guide and strip: what was dragged floats there; a window moved stays where it is. */
+  private dropFloat(place: TabDropPlace, drag: TabDragSubject): boolean {
+    const parts = this.parts;
+    if (drag.window) {
+      this.windowChanged('moveWindow', drag.window, true);
+      parts.dropResult = { group: drag.group, document: null };
+      return true;
+    }
+    if (drag.manager !== this) return false;
+    const w = this.floatBy(drag.document, drag.group, place.rect ?? null, true);
+    if (w) parts.dropResult = { group: this.hostGroups(w)[0] ?? null, document: drag.document };
+    return !!w;
+  }
+
+  /**
+   * A whole window dropped on a strip or into a group (`center`: its documents join that group),
+   * beside a group, or along an edge of the documents' area (`edge`): docked there, it closes.
+   */
+  private dropWindow(w: TabWindow, group: TabGroup | null, index: number | undefined, side: TabDropSide | null, edge: boolean): boolean {
+    const parts = this.parts;
+    if (!parts.windows.includes(w) || !w.root || (!group && !edge) || !side || (edge && side === 'center')) return false;
+    if (group && group.window === w) return false;
+    const e: TabDockingEventArgs = { document: null, group: null, window: w, side: null, size: null, byUser: true, cancel: false, source: this };
+    parts.docking.fire(e);
+    if (e.cancel) return false;
+    const active = parts.recentGroups.find((g) => g.window === w)?.activeDocument ?? null;
+    let into: TabGroup;
+    parts.windowGone = 'docked';
+    try {
+      if (side === 'center' && group) {
+        let at = index ?? group.tabs.length;
+        for (const g of this.hostGroups(w)) {
+          for (const d of [...g.documents]) if (this.moveDocument(d, group, at, true)) at = group.documents.indexOf(d) + 1;
+        }
+        if (active?.group === group) this.activateDocument(active, false, true);
+        into = group;
+      } else {
+        const item = w.root;
+        into = (active?.group && active.group.window === w ? active.group : null) ?? groupsIn(item)[0];
+        this.restoreForChange();
+        this.takeOut(item);
+        if (group) this.insertBeside(group, item, side as SplitDirection);
+        else this.insertAtEdge(item, side as SplitDirection);
+        this.renderTree();
+      }
+      this.dropEmptyHosts(true);
+    } finally {
+      parts.windowGone = null;
+    }
+    this.useGroup(into, true);
+    parts.dropResult = { group: into, document: null };
+    parts.docked.fire({ document: null, group: into, area: into.dockArea, side: into.dockArea?.side ?? null, byUser: true, source: this });
+    this.layoutChanged('dock', into, true, null, into.dockArea);
+    this.say('tabDocsDockedBack', { title: this.textOf('tabDocsGroup', { n: this.groups.indexOf(into) + 1 }), n: this.groups.indexOf(into) + 1 });
+    return true;
   }
 
   /** @internal Moves a document into a group of another manager: its tab, panel and content go along, nothing is made again. */
@@ -1582,6 +2081,27 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         case 'unlock':
           this.lockBy(group, command === 'lock', true);
           break;
+        case 'float':
+          this.floatBy(doc, group, null, true);
+          break;
+        case 'dock':
+          this.dockBy(doc ?? group.window ?? group, null, null, true);
+          break;
+        case 'dockLeft':
+        case 'dockRight':
+        case 'dockTop':
+        case 'dockBottom':
+          this.dockBy(doc ?? group, command.slice(4).toLowerCase() as TabDockSide, null, true);
+          break;
+        case 'autoHide':
+          this.toggleAutoHideByUser(group);
+          break;
+        case 'maximizeWindow':
+          this.toggleWindowMaximizeByUser(group);
+          break;
+        case 'closeWindow':
+          this.closeWindowByUser(group);
+          break;
       }
     });
   }
@@ -1601,13 +2121,15 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   }
 
   /** @internal A splitter is about to move under the pointer or the keys. */
-  beginResize(): boolean {
-    return this.layoutChanging('resize', null, true);
+  beginResize(owner?: SashOwner): boolean {
+    return owner instanceof TabDockArea ? this.layoutChanging('resizeArea', null, true, null, owner) : this.layoutChanging('resize', null, true);
   }
 
   /** @internal */
-  endResize(moved: boolean): void {
-    if (moved) this.layoutChanged('resize', null, true);
+  endResize(moved: boolean, owner?: SashOwner): void {
+    if (!moved) return;
+    if (owner instanceof TabDockArea) this.layoutChanged('resizeArea', null, true, null, owner);
+    else this.layoutChanged('resize', null, true);
   }
 
   // Opening and closing.
@@ -1733,7 +2255,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     parts.closed_.fire({ document: doc, group, index, byUser, source: this });
     if (wasActive && next) this.fireActivated(next.document, doc, group, byUser);
     this.say('tabDocsClosed', { title: doc.title });
-    const removed = !group.tabs.length && this.closeEmptyGroups && this.groups.length > 1;
+    const removed = !group.tabs.length && this.removable(group);
     if (removed) {
       this.removeGroup(group);
       this.layoutChanged('closeGroup', group, byUser);
@@ -2054,12 +2576,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   /** A group the last document left closes when `closeEmptyGroups` says so (never the last group). */
   private closeIfEmpty(group: TabGroup, byUser: boolean): void {
-    if (this.closeEmptyGroups) this.closeMovedGroup(group, byUser);
+    if (!group.tabs.length && this.groups.includes(group) && this.removable(group)) this.closeMovedGroup(group, byUser);
   }
 
-  /** @internal A group whose documents all went elsewhere closes (never the last group). */
+  /** @internal A group whose documents all went elsewhere closes (never the documents' last group). */
   closeMovedGroup(group: TabGroup, byUser: boolean): void {
-    if (group.tabs.length || !this.groups.includes(group) || this.groups.length < 2) return;
+    if (group.tabs.length || !this.groups.includes(group) || !this.closable(group)) return;
     this.removeGroup(group);
     this.layoutChanged('closeGroup', group, byUser);
   }
@@ -2142,8 +2664,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   private targetGroup(): TabGroup {
     const parts = this.parts;
     const active = this.activeGroup;
-    if (active && !active.locked) return active;
-    return parts.recentGroups.find((g) => !g.locked) ?? this.groups.find((g) => !g.locked) ?? active ?? this.groups[0];
+    const open = (g: TabGroup) => !g.locked && !g.dockArea;
+    if (active && open(active)) return active;
+    return parts.recentGroups.find(open) ?? this.groups.find(open) ?? active ?? this.groups[0];
   }
 
   private insertIndex(group: TabGroup): number {
@@ -2205,7 +2728,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     for (const doc of [...group.documents]) {
       if (!(await this.closeDocument(doc, byUser))) return false;
     }
-    if (this.groups.includes(group) && this.groups.length > 1) {
+    if (this.groups.includes(group) && this.closable(group)) {
       untracked(() => {
         this.removeGroup(group);
         this.layoutChanged('closeGroup', group, byUser);
@@ -2214,10 +2737,11 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return true;
   }
 
-  /** Takes an empty group out of the layout. */
+  /** Takes an empty group out of the layout; a window or a dock area left without groups goes too. */
   private removeGroup(group: TabGroup): void {
     const parts = this.parts;
-    if (!group.parentSplit) return;
+    const host = this.hostOf(group);
+    if (host === undefined || (host === null && !group.parentSplit)) return;
     if (parts.maximized) this.unmaximize();
     const hadFocus = group.focusWithin;
     const gone = this.takeOut(group);
@@ -2226,13 +2750,15 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     this.controls.remove(group);
     this.renderTree();
     for (const split of gone) split.dispose();
+    this.dropEmptyHosts(false);
     if (this.activeGroup === group) {
       this.setProperty('activeGroup', null);
       const next = parts.recentGroups[0] ?? this.groups[0];
       if (next) this.useGroup(next, false);
     }
     if (hadFocus) this.activeGroup?.restoreFocus();
-    this.say('tabDocsGroupClosed');
+    // A window or a dock area that went with it says so itself.
+    if (!host || host.root) this.say('tabDocsGroupClosed');
   }
 
   /**
@@ -2241,7 +2767,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
    */
   private takeOut(item: LayoutItem): TabSplit[] {
     const parent = item.parentSplit;
-    if (!parent) return [];
+    if (!parent) {
+      this.detachRoot(item);
+      return [];
+    }
     parent.remove(item);
     if (parent.children.length !== 1) return [];
     const only = parent.children[0];
@@ -2292,11 +2821,61 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   /** Puts `next` where `node` is in the tree and on the page. */
   private replaceNode(node: LayoutItem, next: LayoutItem): void {
-    const host = node.element.parentElement;
-    if (host) placeNode(host, next.element, node.element);
+    const holder = node.element.parentElement;
+    if (holder) placeNode(holder, next.element, node.element);
     const parent = node.parentSplit;
     if (parent) parent.replace(node, next);
-    else this.setRoot(next);
+    else this.setHostRoot(this.hostOf(node) ?? null, next);
+  }
+
+  /** The top of a tree leaves its window or dock area, which is left empty; the documents' area gets an empty group in its place. */
+  private detachRoot(item: LayoutItem): void {
+    const host = this.hostOf(item);
+    if (host === undefined) return;
+    if (host) {
+      host.root = null;
+      return;
+    }
+    const fresh = this.createGroup();
+    this.setRoot(fresh);
+  }
+
+  /** What holds the tree `item` is in: a window, a dock area, the documents' area (`null`), or `undefined` when it is in none. */
+  private hostOf(item: LayoutItem): Host | undefined {
+    let top = item;
+    while (top.parentSplit) top = top.parentSplit;
+    const parts = this.parts;
+    if (top === parts.root) return null;
+    return parts.windows.find((w) => w.root === top) ?? [...parts.areas.values()].find((a) => a.root === top);
+  }
+
+  /** The groups of a window, a dock area or the documents' area (`null`), in layout order. */
+  private hostGroups(host: Host): TabGroup[] {
+    const root = host ? host.root : this.parts.root;
+    return root ? groupsIn(root) : [];
+  }
+
+  private setHostRoot(host: Host, item: LayoutItem): void {
+    if (!host) {
+      this.setRoot(item);
+      return;
+    }
+    host.root = item;
+    item.parentSplit = null;
+    placeRoot(host instanceof TabWindow ? host.body : host.element, item);
+  }
+
+  /** Puts `item` along an edge of a window or a dock area (`null`: the documents' area). */
+  private insertAtHostEdge(host: Host, item: LayoutItem, direction: SplitDirection): void {
+    const root = host ? host.root : this.parts.root;
+    if (!root) {
+      this.setHostRoot(host, item);
+      return;
+    }
+    const orientation = direction === 'left' || direction === 'right' ? 'horizontal' : 'vertical';
+    const after = direction === 'right' || direction === 'down';
+    if (root instanceof TabSplit && root.orientation === orientation) root.insert(item, after ? root.children.length : 0);
+    else this.insertBeside(root, item, direction);
   }
 
   private setRoot(item: LayoutItem): void {
@@ -2306,27 +2885,702 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     item.element.style.flex = '1 1 0px';
   }
 
-  /** Puts every split's children in place, and writes down the groups in layout order. */
+  /**
+   * Puts every split's children in place, and writes down the groups in layout order: the
+   * documents' first, then each dock area's, then each floating window's.
+   */
   private renderTree(): void {
     // A browser without moveBefore drops focus from what it moves: it goes back.
     const focus = deepActiveElement();
     const groups: TabGroup[] = [];
-    const visit = (item: LayoutItem) => {
+    const visit = (item: LayoutItem, host: Host, title: TabGroup | null) => {
       if (item instanceof TabSplit) {
         item.render();
-        item.children.forEach(visit);
+        item.children.forEach((child) => visit(child, host, title));
       } else {
         groups.push(item);
+        item.placeIn(host instanceof TabWindow ? host : null, host instanceof TabDockArea ? host : null, item === title);
       }
     };
-    const root = this.parts.root;
+    const parts = this.parts;
+    const root = parts.root;
     if (root) {
       placeNode(this.element, root.element, this.element.firstChild);
-      visit(root);
+      visit(root, null, null);
+    }
+    for (const area of this.orderedAreas()) {
+      if (!area.root) continue;
+      placeRoot(area.element, area.root);
+      visit(area.root, area, null);
+    }
+    for (const w of parts.windows) {
+      if (!w.root) continue;
+      placeRoot(w.body, w.root);
+      visit(w.root, w, titleGroup(w.root));
     }
     this.setProperty('groups', groups);
+    this.renderDock();
     this.renderTexts();
     if (focus && focus.isConnected && this.element.contains(focus) && deepActiveElement() !== focus) focus.focus({ preventScroll: true });
+  }
+
+  // Floating windows and dock areas.
+
+  private createWindow(rect: TabRect): TabWindow {
+    const w = new TabWindow(this, rect);
+    this.parts.windows.push(w);
+    this.element.append(w.element);
+    w.bringToFront();
+    this.keepWindowInView(w);
+    this.renderLists();
+    return w;
+  }
+
+  /** A window made for a move that did not happen goes without a word. */
+  private discardWindow(w: TabWindow): void {
+    const parts = this.parts;
+    for (const g of this.hostGroups(w)) {
+      parts.recentGroups = parts.recentGroups.filter((r) => r !== g);
+      this.controls.remove(g);
+    }
+    w.root = null;
+    parts.windows = parts.windows.filter((x) => x !== w);
+    w.dispose();
+    this.renderTree();
+    this.renderLists();
+  }
+
+  /** A window is gone: emptied, docked, or closed with its documents. */
+  private removeWindow(w: TabWindow, reason: TabWindowClosedEventArgs['reason'], byUser: boolean): void {
+    const parts = this.parts;
+    const at = parts.windows.indexOf(w);
+    if (at < 0) return;
+    const hadFocus = !!deepActiveElement() && w.element.contains(deepActiveElement());
+    if (parts.windowKeys?.window === w) parts.windowKeys.end(false);
+    parts.windows.splice(at, 1);
+    if (w.root) this.disposeSplits(w.root);
+    w.dispose();
+    this.renderLists();
+    parts.windowClosed.fire({ window: w, reason, byUser, source: this });
+    this.layoutChanged('closeWindow', null, byUser, w);
+    if (reason !== 'docked') this.say('tabDocsWindowClosed');
+    if (hadFocus) this.activeGroup?.restoreFocus();
+  }
+
+  private createArea(side: TabDockSide, size: number | string): TabDockArea {
+    const parts = this.parts;
+    const area = new TabDockArea(this, side, size);
+    parts.areas.set(side, area);
+    parts.order.push(side);
+    area.strip = new AutoHideStrip(this, area);
+    this.element.append(area.element, area.sash.element, area.strip.element);
+    this.renderLists();
+    return area;
+  }
+
+  private removeArea(area: TabDockArea): void {
+    const parts = this.parts;
+    if (parts.areas.get(area.side) !== area) return;
+    if (parts.slide?.area === area) this.stopSlide();
+    parts.areas.delete(area.side);
+    parts.order = parts.order.filter((s) => s !== area.side);
+    if (area.root) this.disposeSplits(area.root);
+    area.strip?.dispose();
+    area.dispose();
+    this.renderLists();
+    this.renderDock();
+  }
+
+  /** Windows and dock areas left without groups go. */
+  private dropEmptyHosts(byUser: boolean): void {
+    const parts = this.parts;
+    for (const w of [...parts.windows]) if (!w.root) this.removeWindow(w, parts.windowGone ?? (parts.closingWindows.has(w) ? 'closed' : 'empty'), byUser);
+    for (const area of [...parts.areas.values()]) if (!area.root) this.removeArea(area);
+  }
+
+  private orderedAreas(): TabDockArea[] {
+    const parts = this.parts;
+    return parts.order.map((side) => parts.areas.get(side)!).filter(Boolean);
+  }
+
+  /** The reactive lists: the dock areas in their order, the windows back to front. */
+  private renderLists(): void {
+    this.setProperty('dockAreas', this.orderedAreas());
+    this.setProperty('floatingWindows', [...this.parts.windows].sort((a, b) => zOf(a) - zOf(b)));
+  }
+
+  /** @internal A window came to the front. */
+  windowRaised(): void {
+    untracked(() => this.renderLists());
+  }
+
+  /**
+   * @internal Places the dock areas, their splitters and the strips of folded ones around the
+   * documents, the outermost first: each takes its side of the room the ones before it left.
+   */
+  renderDock(): void {
+    const parts = (this as unknown as { [PARTS]?: Parts })[PARTS];
+    if (!parts) return;
+    untracked(() => {
+      // Grid lines: column 4 and row 4 are the documents, 2 and 6 the areas, 3 and 5 their splitters, 1 and 7 the strips.
+      const r = { c0: 2, c1: 7, r0: 2, r1: 7 };
+      for (const area of this.orderedAreas()) {
+        const folded = area.autoHidden;
+        const px = Math.round(area.pixels());
+        const across = area.orientation === 'horizontal';
+        const style = area.element.style;
+        style.setProperty(across ? 'inline-size' : 'block-size', `${px}px`);
+        style.removeProperty(across ? 'block-size' : 'inline-size');
+        let box: number[];
+        let sash: number[] | null = null;
+        if (area.side === 'left') {
+          box = folded ? [r.r0, r.c0, r.r1, 5] : [r.r0, 2, r.r1, 3];
+          if (!folded) (sash = [r.r0, 3, r.r1, 4]), (r.c0 = 4);
+        } else if (area.side === 'right') {
+          box = folded ? [r.r0, 4, r.r1, r.c1] : [r.r0, 6, r.r1, 7];
+          if (!folded) (sash = [r.r0, 5, r.r1, 6]), (r.c1 = 5);
+        } else if (area.side === 'top') {
+          box = folded ? [r.r0, r.c0, 5, r.c1] : [2, r.c0, 3, r.c1];
+          if (!folded) (sash = [3, r.c0, 4, r.c1]), (r.r0 = 4);
+        } else {
+          box = folded ? [4, r.c0, r.r1, r.c1] : [6, r.c0, 7, r.c1];
+          if (!folded) (sash = [5, r.c0, 6, r.c1]), (r.r1 = 5);
+        }
+        style.gridArea = box.join(' / ');
+        const sashEl = area.sash.element;
+        sashEl.hidden = !sash;
+        if (sash) sashEl.style.gridArea = sash.join(' / ');
+        const room = area.room();
+        sashEl.setAttribute('aria-orientation', across ? 'vertical' : 'horizontal');
+        sashEl.setAttribute('aria-valuenow', String(room > 0 ? Math.round((px / room) * 100) : 0));
+        sashEl.setAttribute('aria-controls', area.element.id);
+        sashEl.setAttribute('aria-label', this.textOf('tabDocsResizeArea', { area: this.textOf(AREA_TEXTS[area.side]) }));
+        area.element.setAttribute('aria-label', this.textOf(AREA_TEXTS[area.side]));
+      }
+    });
+  }
+
+  /** @internal A dock area's size kept between its smallest and what leaves the documents their smallest. */
+  clampAreaSize(area: TabDockArea, px: number): number {
+    const min = this.dockAreaMinSize;
+    const room = area.room();
+    if (!(room > 0)) return Math.max(min, px);
+    const across = area.orientation === 'horizontal';
+    const others = this.orderedAreas()
+      .filter((a) => a !== area && !a.autoHidden && a.orientation === area.orientation)
+      .reduce((sum, a) => sum + Math.min(a.rawPixels(), room), 0);
+    const keep = across ? this.minGroupWidth : this.minGroupHeight;
+    return Math.max(min, Math.min(px, room - others - keep));
+  }
+
+  /** A dock area sized by a share follows the manager's size. */
+  private watchSize(): void {
+    const view = this.element.ownerDocument.defaultView;
+    if (!view || typeof view.ResizeObserver !== 'function') return;
+    const parts = this.parts;
+    let size = '';
+    parts.sizeWatch = new view.ResizeObserver(() => {
+      const box = this.element.getBoundingClientRect();
+      const now = `${Math.round(box.width)}x${Math.round(box.height)}`;
+      if (now === size) return;
+      size = now;
+      if (parts.areas.size) this.renderDock();
+    });
+    parts.sizeWatch.observe(this.element);
+  }
+
+  /** @internal A window kept inside the viewport (when `keepFloatingInView` is on), at least its strip in reach. */
+  keepWindowInView(w: TabWindow): void {
+    if (!this.keepFloatingInView || w.isMaximized) return;
+    const room = w.room();
+    if (!(room.w > 0 && room.h > 0)) return;
+    const r = w.rect;
+    const width = Math.min(r.width, room.w);
+    const height = Math.min(r.height, room.h);
+    const x = Math.min(Math.max(0, r.x), room.w - width);
+    const y = Math.min(Math.max(0, r.y), room.h - height);
+    if (x !== r.x || y !== r.y || width !== r.width || height !== r.height) w.place({ x, y, width, height });
+  }
+
+  /** Where a window floated from `group` opens: at `at` (the pointer), else beside the group; as large as the group, or `floatingWindowSize`. */
+  private floatRect(group: TabGroup | null, at: { x: number; y: number } | null): TabRect {
+    const box = group?.element.getBoundingClientRect();
+    const size = this.floatingWindowSize;
+    const width = size?.width ?? (box && box.width > 0 ? box.width : 480);
+    const height = size?.height ?? (box && box.height > 0 ? box.height : 320);
+    if (at) return { x: at.x - Math.min(48, width / 4), y: at.y - 16, width, height };
+    if (box && box.width > 0) return { x: box.x + 32, y: box.y + 32, width, height };
+    const view = this.element.ownerDocument.documentElement;
+    return { x: Math.max(0, (view.clientWidth - width) / 2), y: Math.max(0, (view.clientHeight - height) / 3), width, height };
+  }
+
+  /** Whether the user and the code may float a document: its own `allowFloat`, else the manager's. */
+  private mayFloat(doc: TabDocument): boolean {
+    return this.isEnabled && (doc.allowFloat ?? this.allowFloat);
+  }
+
+  /** Whether a document may go to a dock area (of `side`). */
+  private mayDock(doc: TabDocument, side: TabDockSide | null): boolean {
+    if (!(doc.allowDock ?? this.allowDock)) return false;
+    return !side || (doc.dockSides ?? this.dockSides).includes(side);
+  }
+
+  /** @internal Whether what is dragged may float, or (with `side`) go to that dock area. */
+  maySubject(drag: TabDragSubject, side: TabDockSide | 'float'): boolean {
+    return untracked(() => {
+      const docs = drag.window ? drag.window.documents : drag.document ? [drag.document] : drag.group.documents;
+      if (side === 'float') {
+        if (!this.isEnabled || drag.window) return false;
+        if (!drag.document && this.hostGroups(drag.group.window).length === 1 && drag.group.window) return false;
+        return docs.length ? docs.every((d) => this.mayFloat(d)) : this.allowFloat;
+      }
+      return docs.length ? docs.every((d) => this.mayDock(d, side)) : this.allowDock && this.dockSides.includes(side);
+    });
+  }
+
+  /** @internal Whether a dock area may fold: the manager's `allowAutoHide`, and none of its documents says no. */
+  mayAutoHide(area: TabDockArea): boolean {
+    return this.allowAutoHide && area.documents.every((d) => d.allowAutoHide !== false);
+  }
+
+  /** @internal Whether a group may be maximized: one of the documents' groups, when there are two or more. */
+  canMaximize(group: TabGroup): boolean {
+    return !group.window && !group.dockArea && this.groups.filter((g) => !g.window && !g.dockArea).length > 1;
+  }
+
+  /** Whether a group left without documents goes: never the documents' last one; a window's last one when `closeEmptyWindows` says so; a dock area's last one, with the area. */
+  private removable(group: TabGroup): boolean {
+    const host = this.hostOf(group);
+    if (host === undefined) return false;
+    const alone = this.hostGroups(host).length < 2;
+    if (host === null) return !alone && this.closeEmptyGroups;
+    if (host instanceof TabWindow) return alone ? this.closeEmptyWindows : this.closeEmptyGroups;
+    return alone || this.closeEmptyGroups;
+  }
+
+  /** Whether a group may close: any but the documents' last one. */
+  private closable(group: TabGroup): boolean {
+    const host = this.hostOf(group);
+    return host !== undefined && (host !== null || this.hostGroups(null).length > 1);
+  }
+
+  /** @internal The top group under a point of the viewport: in the front window there, the slid out area, then the rest. */
+  groupAt(x: number, y: number, skip: TabWindow | null = null): TabGroup | null {
+    for (const w of this.windowsFrontFirst()) {
+      if (w === skip || !contains(w.element.getBoundingClientRect(), x, y)) continue;
+      return this.hostGroups(w).find((g) => contains(g.element.getBoundingClientRect(), x, y)) ?? null;
+    }
+    const open = this.parts.slide?.area;
+    if (open && contains(open.element.getBoundingClientRect(), x, y)) {
+      return this.hostGroups(open).find((g) => contains(g.element.getBoundingClientRect(), x, y)) ?? null;
+    }
+    for (const g of this.groups) {
+      if (g.window || g.dockArea?.autoHidden || g.element.closest('[hidden]')) continue;
+      if (contains(g.element.getBoundingClientRect(), x, y)) return g;
+    }
+    return null;
+  }
+
+  /** @internal The windows, the front one first. */
+  windowsFrontFirst(): TabWindow[] {
+    return [...this.parts.windows].sort((a, b) => zOf(b) - zOf(a));
+  }
+
+  /** @internal Where a drag let go away from every guide and strip lands: a window at the pointer (for a window moved, where it is); `null` when it may not float. */
+  floatPlace(drag: TabDragSubject, x?: number, y?: number): TabDropPlace | null {
+    if (drag.window) return { target: 'float', manager: this, group: null, index: -1, side: null, rect: drag.window.rect };
+    if (drag.manager !== this || !this.maySubject(drag, 'float')) return null;
+    const at = x === undefined || y === undefined ? null : { x, y };
+    return { target: 'float', manager: this, group: null, index: -1, side: null, rect: this.floatRect(drag.group, at) };
+  }
+
+  /** @internal The room a document or group docked on `side` would take: the area there, or a band of its size. */
+  dockAreaBox(side: TabDockSide): DOMRect {
+    const area = this.parts.areas.get(side);
+    if (area && !area.autoHidden) return area.element.getBoundingClientRect();
+    const box = this.element.getBoundingClientRect();
+    const across = side === 'left' || side === 'right';
+    const raw = this.dockAreaSize[side];
+    const text = String(raw).trim();
+    const length = across ? box.width : box.height;
+    const px = Math.min(length / 2, text.endsWith('%') ? (length * parseFloat(text)) / 100 : Number(raw) || 0);
+    const start = (side === 'left') !== isRtl(this.element);
+    if (side === 'top') return new DOMRect(box.left, box.top, box.width, px);
+    if (side === 'bottom') return new DOMRect(box.left, box.bottom - px, box.width, px);
+    return start ? new DOMRect(box.left, box.top, px, box.height) : new DOMRect(box.right - px, box.top, px, box.height);
+  }
+
+  private floatBy(doc: TabDocument | null, group: TabGroup, rect: TabRect | null, byUser: boolean, at: { x: number; y: number } | null = null): TabWindow | null {
+    const parts = this.parts;
+    if (!this.groups.includes(group) || (doc && doc.group !== group)) return null;
+    if (!this.maySubject({ document: doc, group, manager: this, copy: false }, 'float')) return null;
+    const host = this.hostOf(group);
+    // A document alone in a window floats already.
+    if (doc && host instanceof TabWindow && group.documents.length === 1 && this.hostGroups(host).length === 1) return null;
+    const e: TabFloatingEventArgs = { document: doc, group, rect: rect ?? this.floatRect(group, at), byUser, cancel: false, source: this };
+    parts.floating.fire(e);
+    if (e.cancel || !this.groups.includes(group)) return null;
+    this.restoreForChange();
+    const w = this.createWindow(e.rect);
+    const back = host instanceof TabDockArea ? host.side : null;
+    let into: TabGroup;
+    if (doc) {
+      into = this.createGroup();
+      this.setHostRoot(w, into);
+      this.renderTree();
+      // It goes back into its group, or (once that is gone) beside where it was.
+      w.lastDock = { side: back, group };
+      if (!this.moveDocument(doc, into, 0, byUser)) {
+        this.discardWindow(w);
+        return null;
+      }
+    } else {
+      w.lastDock = { side: back, group: this.nearGroup(group) };
+      const gone = this.takeOut(group);
+      this.setHostRoot(w, group);
+      this.renderTree();
+      for (const split of gone) split.dispose();
+      this.dropEmptyHosts(byUser);
+      into = group;
+    }
+    if (w.lastDock.group === into) w.lastDock.group = null;
+    this.useGroup(into, byUser);
+    w.bringToFront();
+    parts.floated.fire({ document: doc, group: into, window: w, byUser, source: this });
+    this.layoutChanged('float', into, byUser, w);
+    this.say('tabDocsFloated', { title: doc ? doc.title : this.textOf('tabDocsGroup', { n: this.groups.indexOf(into) + 1 }) });
+    if (byUser) this.focusGroup(into);
+    return w;
+  }
+
+  /** A group near `group` that stays where it is: its neighbour, else the documents' active one. */
+  private nearGroup(group: TabGroup): TabGroup | null {
+    const host = this.hostOf(group);
+    const own = host === undefined ? [] : this.hostGroups(host).filter((g) => g !== group);
+    return own[0] ?? this.parts.recentGroups.find((g) => g !== group && !g.window && !g.dockArea) ?? null;
+  }
+
+  private dockBy(target: TabDocument | TabGroup | TabWindow, side: TabDockSide | null, size: number | string | null, byUser: boolean): boolean {
+    const parts = this.parts;
+    const doc = target instanceof TabDocument ? target : null;
+    const w = target instanceof TabWindow ? target : (doc ? doc.group : (target as TabGroup))?.window ?? null;
+    const group = target instanceof TabWindow ? null : doc ? doc.group : (target as TabGroup);
+    // A document not open yet opens in the dock area.
+    const fresh = !!doc && !doc.isOpen;
+    if (fresh ? !side : target instanceof TabWindow ? !parts.windows.includes(target) || !target.root : !group || !this.groups.includes(group) || (doc && doc.manager !== this)) return false;
+    if (!side && !w) return false;
+    const subject: TabDragSubject = { document: doc, group: group ?? this.hostGroups(w)[0], manager: this, copy: false, window: target instanceof TabWindow ? target : null };
+    if (side && !this.maySubject(subject, side)) return false;
+    if (side && group?.dockArea?.side === side && (!doc || group.documents.length === 1) && !w) return false;
+    const e: TabDockingEventArgs = { document: doc, group: target instanceof TabWindow ? null : group, window: w, side, size, byUser, cancel: false, source: this };
+    parts.docking.fire(e);
+    if (e.cancel) return false;
+    if (e.side && e.side !== side && !this.maySubject(subject, e.side)) return false;
+    this.restoreForChange();
+    parts.windowGone = 'docked';
+    let into: TabGroup | null;
+    try {
+      into = e.side ? this.dockInto(target, e.side, e.size, byUser) : this.dockBack(target, w!, byUser);
+      this.dropEmptyHosts(byUser);
+    } finally {
+      parts.windowGone = null;
+    }
+    if (!into) return false;
+    const area = into.dockArea;
+    this.useGroup(into, byUser);
+    parts.docked.fire({ document: doc, group: into, area, side: area?.side ?? null, byUser, source: this });
+    this.layoutChanged('dock', into, byUser, null, area);
+    const title = doc ? doc.title : this.textOf('tabDocsGroup', { n: this.groups.indexOf(into) + 1 });
+    if (area) this.say('tabDocsDocked', { title, area: this.textOf(AREA_TEXTS[area.side]) });
+    else this.say('tabDocsDockedBack', { title, n: this.groups.indexOf(into) + 1 });
+    if (byUser && !area?.autoHidden) this.focusGroup(into);
+    return true;
+  }
+
+  /** Into the dock area of `side`: a document joins its group used last, a group or a window's layout goes along its long side. */
+  private dockInto(target: TabDocument | TabGroup | TabWindow, side: TabDockSide, size: number | string | null, byUser: boolean): TabGroup | null {
+    const parts = this.parts;
+    let area = parts.areas.get(side) ?? null;
+    const made = !area;
+    if (!area) area = this.createArea(side, size ?? this.dockAreaSize[side]);
+    const along: SplitDirection = area.orientation === 'horizontal' ? 'down' : 'right';
+    if (target instanceof TabDocument) {
+      const existing = !made ? (parts.recentGroups.find((g) => g.dockArea === area) ?? this.hostGroups(area)[0]) : null;
+      let into = existing;
+      if (!into) {
+        into = this.createGroup();
+        this.setHostRoot(area, into);
+        this.renderTree();
+      }
+      const ok = target.manager === this ? this.moveDocument(target, into, undefined, byUser) : !!this.openDocument(target, { group: into }, byUser);
+      if (!ok) {
+        if (made) {
+          area.root = null;
+          this.controls.remove(into);
+          this.removeArea(area);
+        }
+        return null;
+      }
+      return into;
+    }
+    const item = target instanceof TabWindow ? target.root! : target;
+    const active = target instanceof TabWindow ? (parts.recentGroups.find((g) => g.window === target) ?? groupsIn(item)[0]) : target;
+    const gone = this.takeOut(item);
+    if (made) this.setHostRoot(area, item);
+    else this.insertAtHostEdge(area, item, along);
+    this.renderTree();
+    for (const split of gone) split.dispose();
+    return active;
+  }
+
+  /** Back where it was docked before it floated: into that group, else that dock area, else the documents' active group. */
+  private dockBack(target: TabDocument | TabGroup | TabWindow, w: TabWindow, byUser: boolean): TabGroup | null {
+    const back = w.lastDock;
+    const into = back.group && this.groups.includes(back.group) && back.group.window !== w ? back.group : null;
+    if (!into && back.side) return this.dockInto(target, back.side, null, byUser);
+    const to = into ?? this.targetGroupOutside(w);
+    if (!to) return null;
+    if (target instanceof TabDocument) return this.moveDocument(target, to, undefined, byUser) ? to : null;
+    const groups = target instanceof TabWindow ? this.hostGroups(w) : [target];
+    const active = target instanceof TabWindow ? this.parts.recentGroups.find((g) => g.window === w)?.activeDocument : target.activeDocument;
+    for (const g of groups) {
+      let at = to.tabs.length;
+      for (const d of [...g.documents]) if (this.moveDocument(d, to, at, byUser)) at = to.documents.indexOf(d) + 1;
+    }
+    if (active?.group === to) this.activateDocument(active, false, byUser);
+    return to;
+  }
+
+  /** The documents' group a window's documents go to: the one used last, not in a window or a dock area. */
+  private targetGroupOutside(w: TabWindow): TabGroup | null {
+    return this.parts.recentGroups.find((g) => !g.window && !g.dockArea && !g.locked) ?? this.hostGroups(null)[0] ?? null;
+  }
+
+  private autoHideBy(area: TabDockArea, on: boolean, byUser: boolean): boolean {
+    const parts = this.parts;
+    if (parts.areas.get(area.side) !== area) return false;
+    if (area.autoHidden === on) return true;
+    if (on && !this.mayAutoHide(area)) return false;
+    const e: TabAutoHidingEventArgs = { area, on, byUser, cancel: false, source: this };
+    parts.autoHiding.fire(e);
+    if (e.cancel) return false;
+    const focus = deepActiveElement();
+    const hadFocus = !!focus && area.element.contains(focus);
+    if (parts.slide?.area === area) this.stopSlide();
+    area.markFolded(on);
+    this.renderDock();
+    parts.autoHidden.fire({ area, on, byUser, source: this });
+    this.layoutChanged('autoHide', null, byUser, null, area);
+    this.say(on ? 'tabDocsAutoHidden' : 'tabDocsAutoHideShown', { area: this.textOf(AREA_TEXTS[area.side]) });
+    if (on && hadFocus) {
+      const next = parts.recentGroups.find((g) => g.dockArea !== area) ?? this.hostGroups(null)[0];
+      if (next) this.focusGroup(next);
+    } else if (!on && byUser) {
+      const group = parts.recentGroups.find((g) => g.dockArea === area) ?? this.hostGroups(area)[0];
+      if (group) this.focusGroup(group);
+    }
+    return true;
+  }
+
+  /** Slides a folded area out with `doc` shown; `hover`: the pointer rests on its title, focus stays. */
+  private slideOut(doc: TabDocument, byUser: boolean, hover: boolean): boolean {
+    const parts = this.parts;
+    const area = doc.manager === this ? doc.dockArea : null;
+    if (!area || !area.autoHidden) return false;
+    if (parts.slide?.area === area) {
+      if (!hover) parts.slide.hover = false;
+      if (doc.group?.activeDocument !== doc) this.activateDocument(doc, false, byUser);
+      if (byUser && !hover) this.parts.tabs.get(doc)?.focusContent();
+      return true;
+    }
+    const e: TabSlideEventArgs = { area, document: doc, open: true, byUser, cancel: false, source: this };
+    parts.slideChanging.fire(e);
+    if (e.cancel) return false;
+    this.stopSlide();
+    area.markOpen(true);
+    this.renderDock();
+    this.activateDocument(doc, false, byUser);
+    parts.slide = { area, hover, stop: this.watchSlide(area) };
+    parts.slideChanged.fire({ area, document: doc, open: true, byUser, cancel: false, source: this });
+    this.say('tabDocsSlidOut', { title: doc.title });
+    if (byUser && !hover) this.parts.tabs.get(doc)?.focusContent();
+    return true;
+  }
+
+  private slideBack(byUser: boolean, focusStrip = false): boolean {
+    const parts = this.parts;
+    const slide = parts.slide;
+    if (!slide) return false;
+    const area = slide.area;
+    const e: TabSlideEventArgs = { area, document: null, open: false, byUser, cancel: false, source: this };
+    parts.slideChanging.fire(e);
+    if (e.cancel) return false;
+    const focus = deepActiveElement();
+    const hadFocus = !!focus && area.element.contains(focus);
+    this.stopSlide();
+    parts.slideChanged.fire({ area, document: null, open: false, byUser, cancel: false, source: this });
+    if (hadFocus || focusStrip) {
+      if (!(focusStrip && area.strip?.focusActive())) {
+        const next = parts.recentGroups.find((g) => g.dockArea !== area) ?? this.hostGroups(null)[0];
+        next?.restoreFocus();
+      }
+    }
+    return true;
+  }
+
+  /** Closes the slid out area without asking (it is going away, or another one slides out). */
+  private stopSlide(): void {
+    const parts = this.parts;
+    const slide = parts.slide;
+    if (!slide) return;
+    parts.slide = null;
+    slide.stop();
+    slide.area.markOpen(false);
+    this.renderDock();
+  }
+
+  /**
+   * While an area is slid out: a press outside it, Escape in it, or focus leaving it closes it. A
+   * menu or a popup opened from it (the tab's menu, a list) counts as inside.
+   */
+  private watchSlide(area: TabDockArea): () => void {
+    const doc = this.element.ownerDocument;
+    const inside = (node: EventTarget | null) =>
+      node instanceof Node && (area.element.contains(node) || !!area.strip?.element.contains(node) || !!(node instanceof Element && node.closest('.mx-popup')));
+    const press = (e: Event) => {
+      if (!inside(e.target)) untracked(() => this.slideBack(true));
+    };
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || !inside(e.target)) return;
+      e.preventDefault();
+      untracked(() => this.slideBack(true, true));
+    };
+    const leave = (e: FocusEvent) => {
+      // Focus going to the page around, not to the area's own strip.
+      if (e.relatedTarget && !inside(e.relatedTarget)) untracked(() => this.slideBack(true));
+    };
+    doc.addEventListener('pointerdown', press, true);
+    area.element.addEventListener('keydown', key);
+    area.element.addEventListener('focusout', leave);
+    return () => {
+      doc.removeEventListener('pointerdown', press, true);
+      area.element.removeEventListener('keydown', key);
+      area.element.removeEventListener('focusout', leave);
+    };
+  }
+
+  /** @internal The pointer left a title and the area it slid out by resting on it: it slides back, unless focus went in. */
+  slideHoverEnded(area: TabDockArea): void {
+    untracked(() => {
+      const slide = this.parts.slide;
+      const focus = deepActiveElement();
+      if (slide?.area === area && slide.hover && !(focus && area.element.contains(focus))) this.slideBack(true);
+    });
+  }
+
+  /** @internal A title in a folded area's strip was chosen. */
+  slideByUser(doc: TabDocument, hover: boolean): void {
+    untracked(() => {
+      const slide = this.parts.slide;
+      // A click on the title of the document shown closes it again.
+      if (!hover && slide && !slide.hover && slide.area === doc.dockArea && doc.group?.activeDocument === doc) this.slideBack(true, true);
+      else this.slideOut(doc, true, hover);
+    });
+  }
+
+  /** @internal The area slid out now. */
+  get slidArea(): TabDockArea | null {
+    return this.parts.slide?.area ?? null;
+  }
+
+  private maximizeWindowBy(w: TabWindow, on: boolean, byUser: boolean): boolean {
+    if (!this.parts.windows.includes(w)) return false;
+    if (w.isMaximized === on) return true;
+    const change = on ? 'maximizeWindow' : 'restoreWindow';
+    if (!this.windowChanging(change, w, byUser)) return false;
+    w.markMaximized(on);
+    if (!on) this.keepWindowInView(w);
+    w.bringToFront();
+    this.windowChanged(change, w, byUser);
+    this.say(on ? 'tabDocsWindowMaximized' : 'tabDocsWindowRestored');
+    return true;
+  }
+
+  private async closeWindowBy(w: TabWindow, byUser: boolean): Promise<boolean> {
+    const parts = this.parts;
+    if (!parts.windows.includes(w)) return false;
+    const e: TabWindowClosingEventArgs = { window: w, byUser, cancel: false, source: this };
+    parts.windowClosing.fire(e);
+    if (e.cancel) return false;
+    parts.closingWindows.add(w);
+    try {
+      for (const doc of untracked(() => [...w.documents])) {
+        if (!(await untracked(() => this.closeDocument(doc, byUser)))) return false;
+      }
+    } finally {
+      parts.closingWindows.delete(w);
+    }
+    untracked(() => {
+      if (!parts.windows.includes(w)) return;
+      // Its empty groups (closeEmptyWindows off, or groups kept empty) go with it.
+      const groups = this.hostGroups(w);
+      w.root = null;
+      for (const g of groups) {
+        parts.recentGroups = parts.recentGroups.filter((r) => r !== g);
+        g.disposeTabs();
+        this.controls.remove(g);
+      }
+      this.renderTree();
+      if (this.activeGroup && groups.includes(this.activeGroup)) {
+        this.setProperty('activeGroup', null);
+        const next = parts.recentGroups[0] ?? this.groups[0];
+        if (next) this.useGroup(next, false);
+      }
+      this.removeWindow(w, 'closed', byUser);
+    });
+    return true;
+  }
+
+  private focusPartBy(by: 1 | -1): boolean {
+    const parts = this.parts;
+    const hosts: Host[] = [null, ...this.orderedAreas().filter((a) => a.root && !a.autoHidden), ...this.windowsFrontFirst().reverse().filter((w) => w.root)];
+    if (hosts.length < 2) return false;
+    const focus = deepActiveElement();
+    const current = this.activeGroup ? this.hostOf(this.activeGroup) : null;
+    let at = hosts.indexOf(current === undefined ? null : current);
+    if (focus && !this.element.contains(focus)) at = by === 1 ? -1 : 0;
+    const next = hosts[(at + by + hosts.length) % hosts.length];
+    if (next instanceof TabWindow) return this.focusWindow(next);
+    const group = parts.recentGroups.find((g) => this.hostOf(g) === next) ?? this.hostGroups(next)[0];
+    return !!group && this.focusGroup(group);
+  }
+
+  /** @internal The pin of a group in a dock area. */
+  toggleAutoHideByUser(group: TabGroup): void {
+    untracked(() => {
+      const area = group.dockArea;
+      if (area) this.autoHideBy(area, !area.autoHidden, true);
+    });
+  }
+
+  /** @internal */
+  toggleWindowMaximizeByUser(group: TabGroup): void {
+    untracked(() => {
+      const w = group.window;
+      if (w) this.maximizeWindowBy(w, !w.isMaximized, true);
+    });
+  }
+
+  /** @internal */
+  closeWindowByUser(group: TabGroup): void {
+    const w = untracked(() => group.window);
+    if (w) void this.closeWindowBy(w, true);
+  }
+
+  /** @internal "Move window…" from the keys. */
+  moveWindowByKeys(group: TabGroup | null): boolean {
+    const w = group?.window;
+    return !!w && !!this.parts.windowKeys?.start(w);
   }
 
   private disposeSplits(item: LayoutItem | null): void {
@@ -2352,7 +3606,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   private maximizeBy(group: TabGroup, byUser: boolean, quiet = false): boolean {
     const parts = this.parts;
-    if (!this.groups.includes(group) || this.groups.length < 2) return false;
+    if (!this.groups.includes(group) || !this.canMaximize(group)) return false;
     if (parts.maximized === group) return true;
     if (!quiet && !this.layoutChanging('maximize', group, byUser)) return false;
     if (parts.maximized) this.unmaximize();
@@ -2404,14 +3658,24 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     this.renderTree();
   }
 
-  private layoutChanging(change: TabLayoutChange, group: TabGroup | null, byUser: boolean): boolean {
-    const e: LayoutChangingEventArgs = { change, group, byUser, cancel: false, source: this };
+  private layoutChanging(change: TabLayoutChange, group: TabGroup | null, byUser: boolean, window: TabWindow | null = null, area: TabDockArea | null = null): boolean {
+    const e: LayoutChangingEventArgs = { change, group, window, area, byUser, cancel: false, source: this };
     this.parts.layoutChanging.fire(e);
     return !e.cancel;
   }
 
-  private layoutChanged(change: TabLayoutChange, group: TabGroup | null, byUser: boolean): void {
-    this.parts.layoutChanged.fire({ change, group, byUser, source: this });
+  private layoutChanged(change: TabLayoutChange, group: TabGroup | null, byUser: boolean, window: TabWindow | null = null, area: TabDockArea | null = null): void {
+    this.parts.layoutChanged.fire({ change, group, window, area, byUser, source: this });
+  }
+
+  /** @internal A floating window is about to move, be resized…: `onLayoutChanging` may stop it. */
+  windowChanging(change: TabLayoutChange, window: TabWindow, byUser: boolean): boolean {
+    return this.layoutChanging(change, null, byUser, window);
+  }
+
+  /** @internal */
+  windowChanged(change: TabLayoutChange, window: TabWindow, byUser: boolean): void {
+    this.layoutChanged(change, null, byUser, window);
   }
 
   // Layout as JSON.
@@ -2577,6 +3841,39 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       'moveTo',
       withTab((doc) => this.showMoveTo(doc)),
     );
+    each(
+      'float',
+      withTab((doc) => !!this.floatBy(doc, doc.group!, null, true)),
+    );
+    each(
+      'dock',
+      withTab((doc) => this.dockBy(doc, null, null, true)),
+    );
+    for (const side of ['Left', 'Right', 'Top', 'Bottom'] as const) {
+      each(
+        `dock${side}`,
+        withTab((doc) => this.dockBy(doc, side.toLowerCase() as TabDockSide, null, true)),
+      );
+    }
+    each(
+      'toggleAutoHide',
+      withTab((doc) => {
+        const area = doc.dockArea;
+        return !!area && this.autoHideBy(area, !area.autoHidden, true);
+      }),
+    );
+    each('nextPart', () => this.focusPartBy(1));
+    each('previousPart', () => this.focusPartBy(-1));
+    each('moveWindow', () => this.moveWindowByKeys(this.activeGroup));
+    each('maximizeWindow', () => {
+      const w = this.activeGroup?.window;
+      return !!w && (this.maximizeWindowBy(w, !w.isMaximized, true), true);
+    });
+    each('closeWindow', () => {
+      const w = this.activeGroup?.window;
+      if (w) void this.closeWindowBy(w, true);
+      return !!w;
+    });
     each('resizeSmaller', (e) => this.sashKey(e, -1));
     each('resizeLarger', (e) => this.sashKey(e, 1));
     each('resizeMin', (e) => this.sashKey(e, Number.NEGATIVE_INFINITY));
@@ -2631,28 +3928,16 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   private sashKey(e: KeyboardEvent, by: number): boolean {
     const target = e.target instanceof Element ? e.target.closest('.mx-tabdocs__sash') : null;
-    const split = target ? this.findSplit(target) : null;
-    if (!split || !target) return false;
-    const index = [...split.element.children].filter((el) => el.classList.contains('mx-tabdocs__sash')).indexOf(target);
-    if (!this.beginResize()) return true;
-    const rtl = split.orientation === 'horizontal' && split.rtl && (e.key === 'ArrowLeft' || e.key === 'ArrowRight');
-    const step = Number.isFinite(by) ? by * this.resizeStep : by;
-    split.resizeBy(index, rtl ? -step : step);
-    this.endResize(true);
+    const sash = SplitSash.of(target);
+    if (!sash) return false;
+    const owner = sash.split;
+    if (!this.beginResize(owner)) return true;
+    const rtl = owner.orientation === 'horizontal' && owner.rtl && (e.key === 'ArrowLeft' || e.key === 'ArrowRight');
+    // Home and End: as far as it goes, the same for a split and a dock area.
+    const step = Number.isFinite(by) ? by * this.resizeStep : by * 1e6;
+    owner.resizeBy(sash.index, rtl ? -step : step);
+    this.endResize(true, owner);
     return true;
-  }
-
-  private findSplit(sash: Element): TabSplit | null {
-    const look = (item: LayoutItem | null): TabSplit | null => {
-      if (!(item instanceof TabSplit)) return null;
-      if (sash.parentElement === item.element) return item;
-      for (const child of item.children) {
-        const found = look(child);
-        if (found) return found;
-      }
-      return null;
-    };
-    return look(this.parts.root);
   }
 
   // Rendering.
@@ -2665,6 +3950,11 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       item.children.forEach(each);
     };
     each(this.parts.root);
+    this.parts.windows.forEach((w, i) => {
+      w.element.setAttribute('aria-label', this.textOf('tabDocsWindow', { n: i + 1 }));
+      each(w.root);
+    });
+    for (const area of this.parts.areas.values()) each(area.root);
   }
 
   private renderMinSizes(): void {
@@ -2747,6 +4037,25 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       layoutTarget: null,
       targets: [],
       dropResult: null,
+      areas: new Map(),
+      order: [],
+      windows: [],
+      dockTarget: null,
+      windowKeys: null,
+      sizeWatch: null,
+      slide: null,
+      windowGone: null,
+      closingWindows: new Set(),
+      floating: new Emitter(),
+      floated: new Emitter(),
+      docking: new Emitter(),
+      docked: new Emitter(),
+      autoHiding: new Emitter(),
+      autoHidden: new Emitter(),
+      slideChanging: new Emitter(),
+      slideChanged: new Emitter(),
+      windowClosing: new Emitter(),
+      windowClosed: new Emitter(),
       opening: new Emitter(),
       opened: new Emitter(),
       closing: new Emitter(),
@@ -2784,6 +4093,40 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 function groupsIn(item: LayoutItem): TabGroup[] {
   return item instanceof TabSplit ? item.children.flatMap(groupsIn) : [item];
 }
+
+/** The group whose strip is a window's title: the one at its top end corner. */
+function titleGroup(item: LayoutItem): TabGroup {
+  if (item instanceof TabGroup) return item;
+  return titleGroup(item.orientation === 'horizontal' ? item.children[item.children.length - 1] : item.children[0]);
+}
+
+/** The top of a window's or a dock area's tree, filling what holds it. */
+function placeRoot(holder: HTMLElement, item: LayoutItem): void {
+  placeNode(holder, item.element, holder.firstChild);
+  item.element.style.flex = '1 1 0px';
+}
+
+/** A window's place in the page's window stack. */
+function zOf(w: TabWindow): number {
+  return Number(w.element.style.getPropertyValue('--_mx-z')) || 0;
+}
+
+function contains(box: DOMRect, x: number, y: number): boolean {
+  return x >= box.left && x < box.right && y >= box.top && y < box.bottom;
+}
+
+function isRtl(el: Element): boolean {
+  const view = el.ownerDocument.defaultView;
+  return !!view && view.getComputedStyle(el).direction === 'rtl';
+}
+
+/** The name of each side's dock area. */
+const AREA_TEXTS: Record<TabDockSide, keyof UiStrings> = {
+  left: 'tabDocsAreaLeft',
+  right: 'tabDocsAreaRight',
+  top: 'tabDocsAreaTop',
+  bottom: 'tabDocsAreaBottom',
+};
 
 /**
  * Dropped at `index` of a strip: whether the document lands among the pinned tabs (`true`), among
