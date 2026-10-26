@@ -2,9 +2,10 @@ import { Component, ComponentBase, effect } from '@motifx/core';
 import { chevronDown, chevronUp, filterMark, moreMark } from '../../../core/glyphs';
 import type { GridColumn } from '../grid-column';
 import type { HeaderCellContext } from '../header-cell-context';
-import { ACTIONS_FIELD, EXPAND_FIELD, SELECT_FIELD } from '../model/ColumnModel';
+import { ACTIONS_FIELD, ADAPTIVE_FIELD, EXPAND_FIELD, SELECT_FIELD } from '../model/ColumnModel';
 import { HEADER_ROW, type GridModel } from '../model/GridModel';
 import { createCheck, setCheck } from './check-mark';
+import { dropPlace } from './drop-place';
 import type { HeaderHost } from './header-host';
 import type { GhostTarget } from './ghost-target';
 import { placeInOrder } from './place-in-order';
@@ -12,7 +13,7 @@ import { placeInOrder } from './place-in-order';
 /**
  * The header row: a header per column with its title, sort mark, filter and menu buttons and resize
  * handle. A click sorts (Shift adds to the sort), dragging a header moves the column inside its
- * sticky zone (or, dropped on the group panel, groups by it), dragging the edge resizes it, a
+ * sticky zone and its band (or, dropped on the group panel, groups by it), dragging the edge resizes it, a
  * double-click on the edge fits it to its content. The
  * selection column's header is the "select all" check box. Each follows the grid's settings and the
  * column's own value live.
@@ -34,7 +35,12 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
 
   override onConfigured() {
     this.class.add('mx-data-grid__row mx-data-grid__row--header');
-    this.attr.add({ role: 'row', 'aria-rowindex': '1', 'data-active': () => (this.grid.state.activeRow === HEADER_ROW ? '' : null) });
+    // Under the bands' rows.
+    this.attr.add({
+      role: 'row',
+      'aria-rowindex': () => String(this.grid.columns.bandDepth() + 1),
+      'data-active': () => (this.grid.state.activeRow === HEADER_ROW && !this.grid.columns.isBand(this.grid.state.activeField) ? '' : null),
+    });
     this.motif.setDisposable(() => this.stopCheck?.());
   }
 
@@ -128,7 +134,16 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     const field = col.field;
     if (field === SELECT_FIELD) return this.selectCell();
     const internal = cols.isInternal(field);
-    const title = () => (field === ACTIONS_FIELD ? grid.text('gridActions') : field === EXPAND_FIELD ? grid.text('gridDetails') : internal ? grid.text('gridRowStatus') : cols.title(field));
+    const title = () =>
+      field === ACTIONS_FIELD
+        ? grid.text('gridActions')
+        : field === EXPAND_FIELD
+          ? grid.text('gridDetails')
+          : field === ADAPTIVE_FIELD
+            ? grid.text('gridAdaptive')
+            : internal
+              ? grid.text('gridRowStatus')
+              : cols.title(field);
     const sort = () => grid.sortOf(field);
     const ariaSort = () => {
       const s = sort();
@@ -248,8 +263,8 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
   }
 
   /**
-   * Drag a header to move the column within its zone, not across columns that cannot move; onto the
-   * group panel to group by it.
+   * Drag a header to move the column within its zone and its band, not across columns that cannot
+   * move; onto the group panel to group by it.
    */
   private pressHeader(col: GridColumn<T>, e: PointerEvent) {
     const { grid } = this;
@@ -264,11 +279,11 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     const source = this.cellElement(field)!;
     const startX = e.clientX;
     const startY = e.clientY;
-    const zone = cols.zone(cols.zoneOf(field));
+    const units = cols.siblings(field);
     // Captured at once: the pointer may leave the header before the drag threshold is reached.
     source.setPointerCapture?.(e.pointerId);
     let dragging = false;
-    const from = zone.indexOf(field);
+    const from = units.indexOf(field);
     let target = from;
     let place = -1;
     const indicator = this.indicator.element as HTMLElement;
@@ -294,24 +309,14 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
         indicator.hidden = true;
         return place >= 0 ? 'group' : 'none';
       }
-      // Target = number of zone columns whose centre lies before the pointer.
-      const rects = zone.map((f) => this.cellElement(f)!.getBoundingClientRect());
-      let count = 0;
-      for (const r of rects) {
-        const centre = r.left + r.width / 2;
-        if (rtl ? ev.clientX < centre : ev.clientX > centre) count++;
-      }
-      target = Math.max(lo, Math.min(hi, count > from ? count - 1 : count));
-      if (target === from) {
+      const drop = dropPlace(units.map((u) => this.unitRect(u)), from, lo, hi, ev.clientX, rtl);
+      target = drop.target;
+      if (drop.x === null) {
         indicator.hidden = true;
         return 'none';
       }
       // The mark sits on the boundary the column would land on.
-      const base = this.element.getBoundingClientRect();
-      const r = rects[target];
-      const after = target > from;
-      const x = rtl ? (after ? r.left : r.right) : after ? r.right : r.left;
-      indicator.style.left = `${x - base.left}px`;
+      indicator.style.left = `${drop.x - this.element.getBoundingClientRect().left}px`;
       indicator.hidden = false;
       return 'move';
     };
@@ -331,8 +336,8 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
         return;
       }
       if (cols.move(col.field, target)) {
-        const z = cols.zone(cols.zoneOf(col.field));
-        this.grid.announce(this.grid.text('gridMovedTo', { title: cols.title(col.field), position: z.indexOf(col.field) + 1, count: z.length }));
+        const beside = cols.siblings(col.field);
+        this.grid.announce(this.grid.text('gridMovedTo', { title: cols.title(col.field), position: beside.indexOf(col.field) + 1, count: beside.length }));
         this.grid.layoutChanged();
       }
     };
@@ -343,20 +348,34 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
 
   /**
    * Where a grouped column dragged back over the headers would land: its place among the visible
-   * columns of its zone; -1 when the point is not over the headers.
+   * columns of its zone and band; -1 when the point is not over the headers.
    */
   chipDropIndex(field: string, x: number, y?: number): number {
     if (Number.isNaN(x)) return -1;
     const box = this.element.getBoundingClientRect();
     if (y !== undefined && (y < box.top || y > box.bottom || x < box.left || x > box.right)) return -1;
-    const cols = this.grid.columns;
     const rtl = this.host.isRtl();
     let n = 0;
-    for (const f of cols.zone(cols.zoneOf(field))) {
-      const r = this.cellElement(f)?.getBoundingClientRect();
-      if (r && (rtl ? x < r.left + r.width / 2 : x > r.left + r.width / 2)) n++;
+    for (const u of this.grid.columns.siblings(field)) {
+      const r = this.unitRect(u);
+      if (r.right > r.left && (rtl ? x < (r.left + r.right) / 2 : x > (r.left + r.right) / 2)) n++;
     }
     return n;
+  }
+
+  /** Where a column, or a band's columns together, sit on the screen. */
+  unitRect(id: string): { left: number; right: number } {
+    const cols = this.grid.columns;
+    const fields = cols.isBand(id) ? cols.leavesIn(id, cols.visible()) : [id];
+    let left = Number.POSITIVE_INFINITY;
+    let right = Number.NEGATIVE_INFINITY;
+    for (const f of fields) {
+      const r = this.cellElement(f)?.getBoundingClientRect();
+      if (!r) continue;
+      left = Math.min(left, r.left);
+      right = Math.max(right, r.right);
+    }
+    return left <= right ? { left, right } : { left: 0, right: 0 };
   }
 
   /** Marks where a grouped column dragged over the headers lands; whether the point is over them (NaN hides the mark). */
@@ -368,12 +387,11 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       this.element.toggleAttribute('data-drop', false);
       return false;
     }
-    const cols = this.grid.columns;
-    const zone = cols.zone(cols.zoneOf(field));
+    const units = this.grid.columns.siblings(field);
     const rtl = this.host.isRtl();
     const base = this.element.getBoundingClientRect();
-    const before = this.cellElement(zone[at])?.getBoundingClientRect();
-    const after = this.cellElement(zone[at - 1])?.getBoundingClientRect();
+    const before = units[at] !== undefined ? this.unitRect(units[at]) : undefined;
+    const after = units[at - 1] !== undefined ? this.unitRect(units[at - 1]) : undefined;
     const edge = before ? (rtl ? before.right : before.left) : after ? (rtl ? after.left : after.right) : base.left;
     indicator.style.left = `${edge - base.left}px`;
     indicator.hidden = false;

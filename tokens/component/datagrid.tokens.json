@@ -155,6 +155,15 @@
     "filter-text-focus-color": { "$type": "color", "$value": "{focus.ring.color}" },
     "filter-text-focus-offset": { "$type": "dimension", "$value": "{focus.ring.offset}" },
     "filter-text-focus-halo": { "$type": "shadow", "$value": "{focus.ring.halo}" },
-    "filter-builder-buttons-gap": { "$type": "dimension", "$value": "{space.2}" }
+    "filter-builder-buttons-gap": { "$type": "dimension", "$value": "{space.2}" },
+    "band-line-color": { "$type": "color", "$value": "{color.stroke.divider}" },
+    "adaptive-color": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "adaptive-radius": { "$type": "dimension", "$value": "{radius.sm}" },
+    "adaptive-padding": { "$type": "dimension", "$value": "{space.3}" },
+    "adaptive-gap": { "$type": "dimension", "$value": "{space.2}" },
+    "adaptive-background": { "$type": "color", "$value": "{color.bg.surface}" },
+    "adaptive-label-color": { "$type": "color", "$value": "{color.fg.primary}" },
+    "adaptive-label-width": { "$type": "dimension", "$value": { "value": 8, "unit": "rem" } },
+    "adaptive-label-font-weight": { "$type": "fontWeight", "$value": "{font.weight.medium}" }
   }
 }

@@ -5,7 +5,7 @@ const escapeAttr = (v: string) => v.replace(/["\\]/g, '\\$&');
 
 /**
  * Per-column CSS of one grid: columns not shown, alignment and sticky offsets, written as rules keyed
- * by `data-field`. Changing a width or pinning a column rewrites this sheet only; no cell gets a
+ * by `data-field` (a pinned band's header by `data-band`, at the offset of its columns). Changing a width or pinning a column rewrites this sheet only; no cell gets a
  * binding of its own and no row is touched. A constructable stylesheet adopted by the document (or
  * shadow root) where there is one, which also works under a strict Content Security Policy; else a
  * `<style>` element inside the grid.
@@ -21,12 +21,12 @@ export class ColumnStyles<T> {
     private readonly gridId: string,
   ) {}
 
-  update(visible: string[], offsets: Map<string, StickyOffset>, align: Map<string, string>) {
+  update(visible: string[], offsets: Map<string, StickyOffset>, align: Map<string, string>, bands: readonly { id: string; first: number; count: number }[] = []) {
     const scope = `[data-grid-id="${this.gridId}"]`;
     const rules: string[] = [];
     const shown = new Set(visible);
     for (const field of this.columns.state.order) {
-      const sel = `${scope} [data-field="${escapeAttr(field)}"]`;
+      const sel = `${scope} .mx-data-grid__row > [data-field="${escapeAttr(field)}"]`;
       if (!shown.has(field)) {
         rules.push(`${sel}{display:none}`);
         continue;
@@ -41,6 +41,16 @@ export class ColumnStyles<T> {
         rules.push(`${sel}{position:sticky;inset-inline-${sticky.side}:${sticky.offset}px;z-index:var(--_z-sticky)}`);
         if (sticky.edge) rules.push(`${sel}{box-shadow:var(--_sticky-${sticky.side})}`);
       }
+    }
+    for (const band of bands) {
+      const first = offsets.get(visible[band.first]);
+      const last = offsets.get(visible[band.first + band.count - 1]);
+      if (!first || !last) continue;
+      const near = first.side === 'start' ? first : last;
+      const edge = first.side === 'start' ? last.edge : first.edge;
+      const sel = `${scope} .mx-data-grid__row > [data-band="${escapeAttr(band.id)}"]`;
+      rules.push(`${sel}{position:sticky;inset-inline-${near.side}:${near.offset}px;z-index:var(--_z-sticky)}`);
+      if (edge) rules.push(`${sel}{box-shadow:var(--_sticky-${near.side})}`);
     }
     this.css = rules.join('\n');
     this.apply();

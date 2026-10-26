@@ -258,4 +258,12 @@ export interface GridSettings extends ColumnFeatures {
   confirmDelete: boolean;
   /** The text of a cell is selected when its editor opens; off, the caret goes to its end. Default `true`. */
   selectTextOnEditStart: boolean;
+  /**
+   * Columns hide while the grid is narrower than they are, the last one first (with `hidingPriority`
+   * on some columns: only those, the lowest first), and a "…" column opens a row's adaptive detail
+   * with their values. Pinned and grouped columns never hide. Default `false`.
+   */
+  columnHidingEnabled: boolean;
+  /** Where a band's caption sits over its columns; a band's `align` wins. Default `'center'`. */
+  bandAlign: 'start' | 'center' | 'end';
 }

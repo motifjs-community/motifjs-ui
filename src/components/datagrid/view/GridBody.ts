@@ -1,4 +1,5 @@
 import { Component, untracked } from '@motifx/core';
+import { ADAPTIVE_FIELD } from '../model/ColumnModel';
 import { ExtraHeights } from '../model/ExtraHeights';
 import type { GridModel } from '../model/GridModel';
 import type { GroupNode } from '../model/group-node';
@@ -20,7 +21,9 @@ import { nextId } from '../../../core/next-id';
  * editor inside goes along), then by position (a loading row that gets its data). Group rows and
  * group footers have pools of their own and follow their group by its id. A row's details
  * (`masterDetail`) are not pooled: each belongs to its row, sits under it, and is as tall as it was
- * measured (`ExtraHeights` keeps the sums), so the scroll bar and `reveal` stay right.
+ * measured (`ExtraHeights` keeps the sums), so the scroll bar and `reveal` stay right. The adaptive
+ * detail of the one row that has it open (the columns the width hides) is a detail row too, right
+ * under its row and before its details.
  */
 export class GridBody<T> extends Component<HTMLDivElement> {
   /** Every row ever made; reused, never disposed before the grid. */
@@ -53,6 +56,8 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   /** The data the kept details were last checked against. */
   private checkedFor = '';
   private detailObserver: ResizeObserver | null = null;
+  /** The adaptive detail of the row that has it open, while it is laid out. */
+  private adaptive: DetailRow<T> | null = null;
   private layouts = 0;
   private readonly detailHost: DetailHost<T>;
 
@@ -63,7 +68,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     host: Omit<DetailHost<T>, 'owner'>,
   ) {
     super();
-    this.detailHost = { owner: this, grid: host.grid, collapse: (key) => host.collapse(key) };
+    this.detailHost = { owner: this, grid: host.grid, collapse: (key) => host.collapse(key), adaptiveContent: (rowId, row) => host.adaptiveContent(rowId, row) };
   }
 
   override onConfigured() {
@@ -76,9 +81,10 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       this.detailObserver?.disconnect();
       for (const detail of this.details.values()) detail.dispose();
       this.details.clear();
+      this.adaptive?.dispose();
     });
     this.grid.ariaRowIndex = (i) => this.ariaRowIndex(i);
-    this.grid.openDetailCount = () => untracked(() => this.openExtras()?.size ?? 0);
+    this.grid.openDetailCount = () => untracked(() => (this.openExtras()?.size ?? 0) + (this.adaptiveLocal() >= 0 ? 1 : 0));
     // Lookup keys came: only the cells that show them are drawn again.
     const resolved = this.grid.lookups.onChanged(({ items, keys }) => {
       for (const row of this.byIndex.values()) row.drawLookups(items, keys);
@@ -87,19 +93,44 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.motif.setDisposable(() => resolved.dispose());
   }
 
-  /** Geometry of the rows the body lays out (all rows, or one page); the edit form's row is as tall as the form, open details add their height. */
+  /** Geometry of the rows the body lays out (all rows, or one page); the edit form's row is as tall as the form, open details and the adaptive detail add their height. */
   geometry(): ScrollGeometry {
     const grid = this.grid;
     const rowHeight = grid.state.rowHeight;
     const at = this.formIndex();
     const local = at < 0 ? -1 : grid.mode === 'virtual' ? at : grid.localOf(at);
     const tall = local >= 0 && this.form ? { at: local, extra: Math.max(0, this.form.height - rowHeight) } : null;
-    return new ScrollGeometry(grid.reachable(), rowHeight, Math.max(rowHeight, grid.state.viewport), ScrollGeometry.MAX_HEIGHT, tall, this.openExtras());
+    const a = this.adaptiveLocal();
+    const adaptive = a >= 0 ? { at: a, height: this.adaptive?.id === grid.adaptive.state.rowId ? this.adaptive.height : 0 } : null;
+    return new ScrollGeometry(grid.reachable(), rowHeight, Math.max(rowHeight, grid.state.viewport), ScrollGeometry.MAX_HEIGHT, tall, this.openExtras(), adaptive);
   }
 
-  /** The details drawn now, in grid order. */
+  /** The details drawn now, the adaptive detail among them, in grid order (a row's adaptive detail before its details). */
   drawnDetails(): DetailRow<T>[] {
-    return [...this.detailsByIndex.entries()].sort((a, b) => a[0] - b[0]).map(([, d]) => d);
+    const all = [...this.detailsByIndex.values()];
+    if (this.adaptive?.shown && this.adaptive.index >= 0) all.push(this.adaptive);
+    return all.sort((a, b) => a.index - b.index || Number(a.kind === 'detail') - Number(b.kind === 'detail'));
+  }
+
+  /** The adaptive detail drawn under grid row `index`. */
+  adaptiveAt(index: number): DetailRow<T> | undefined {
+    const a = this.adaptive;
+    return a?.shown && a.index === index ? a : undefined;
+  }
+
+  /** The adaptive detail of the row that has it open, drawn or not. */
+  adaptiveDetail(): DetailRow<T> | null {
+    return this.adaptive;
+  }
+
+  /** What is drawn under grid row `index`: its adaptive detail, then its details. */
+  detailsUnder(index: number): DetailRow<T>[] {
+    const out: DetailRow<T>[] = [];
+    const a = this.adaptiveAt(index);
+    if (a) out.push(a);
+    const d = this.detailsByIndex.get(index);
+    if (d) out.push(d);
+    return out;
   }
 
   /** The details drawn under grid row `index`. */
@@ -161,14 +192,32 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.measureForm();
   }
 
-  /** `aria-rowindex` of grid row `i`: the open details above it count as rows. */
+  /** `aria-rowindex` of grid row `i`: the open details and the adaptive detail above it count as rows. */
   private ariaRowIndex(i: number): number {
     const grid = this.grid;
     const n = i + 1 + grid.headRows;
     const extras = this.extras;
-    if (!extras?.size) return n;
+    const a = this.adaptiveLocal();
+    if (!extras?.size && a < 0) return n;
     const local = grid.mode === 'virtual' ? i : grid.localOf(i);
-    return local < 0 ? n : n + extras.countBefore(local);
+    if (local < 0) return n;
+    return n + (extras?.size ? extras.countBefore(local) : 0) + (a >= 0 && a < local ? 1 : 0);
+  }
+
+  /** Grid index of the row whose adaptive detail is open, while columns are hidden; -1 for none. */
+  private adaptiveIndex(): number {
+    return untracked(() => {
+      const grid = this.grid;
+      const id = grid.adaptive.state.rowId;
+      if (id === null || !grid.columns.state.adaptive.length) return -1;
+      return grid.adaptiveIndex(this.adaptive?.index ?? -1);
+    });
+  }
+
+  /** Its place among the rows laid out (all rows, or the page); -1 for none. */
+  private adaptiveLocal(): number {
+    const i = this.adaptiveIndex();
+    return i < 0 ? -1 : this.grid.mode === 'virtual' ? i : this.grid.localOf(i);
   }
 
   /** The open details of the rows laid out (all rows, or one page), found again when the rows or the open ones change. */
@@ -226,6 +275,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     const height = detail.element.offsetHeight;
     if (height <= 0 || height === detail.height) return false;
     detail.height = height;
+    if (detail.kind === 'adaptive') return true;
     const extras = this.extras;
     if (extras) {
       const grid = this.grid;
@@ -433,10 +483,13 @@ export class GridBody<T> extends Component<HTMLDivElement> {
 
   /** Display order of the cells, after a column layout change. */
   arrange(visible: string[]) {
+    // The "…" column came or went: the rows show their "…" again.
+    const adaptive = visible.includes(ADAPTIVE_FIELD) !== this.visible.includes(ADAPTIVE_FIELD);
     this.visible = visible;
     for (const row of this.pool) row.arrange(visible);
     for (const row of this.groupPool) row.arrange(visible);
     for (const row of this.footerPool) row.arrange(visible);
+    if (adaptive) this.relayout(true);
   }
 
   /** Gives the spacer the height of the rows, before a scroll position is written too (a row added at the end makes the rows taller). */
@@ -503,7 +556,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     const formAt = this.formIndex();
     // Focus in a row's details keeps the row and its details drawn.
     const inDetail = this.detailOf(document.activeElement);
-    const detailRow = inDetail ? (inDetail.index >= 0 ? inDetail.index : grid.indexOfDetailKey(inDetail.key)) : -1;
+    const detailRow = !inDetail ? -1 : inDetail.index >= 0 ? inDetail.index : inDetail.kind === 'adaptive' ? grid.adaptiveIndex() : grid.indexOfDetailKey(inDetail.key);
     for (const i of new Set([active, focused, formAt, detailRow])) if (i >= 0 && localOf(i) >= 0 && !inWindow(i)) wanted.push(i);
     const pinned = formAt >= 0 ? formAt : active;
     data.pin(pinned >= 0 ? grid.dataIndex(pinned) : -1);
@@ -550,7 +603,13 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     });
     for (const row of free) row.release();
     this.byIndex = keep;
+    const adaptiveAt = this.adaptiveIndex();
+    const freshAdaptive = this.placeAdaptive(adaptiveAt, rows, top, localOf, g, vp);
     const fresh = this.placeDetails(formAt >= 0 ? [...rows, formAt] : rows, top, localOf, g, vp);
+    if (freshAdaptive) fresh.push(freshAdaptive);
+    const adaptiveOn = this.visible.includes(ADAPTIVE_FIELD);
+    const drawn = this.adaptiveAt(adaptiveAt);
+    for (const [i, row] of keep) row.drawAdaptive(adaptiveOn && row.row !== undefined, adaptiveOn && i === adaptiveAt, i === adaptiveAt && drawn ? drawn.element.id : null);
     // Rows stay where they are in the DOM: a moved row is styled again from scratch, on every
     // scroll. Assistive technology gets the reading order through aria-owns; a row's details
     // come right after it, and count as a row in `aria-rowindex`.
@@ -559,14 +618,18 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     if (this.form && formAt >= 0) all.push([formAt, this.form.element]);
     for (const [i, r] of this.groupsByIndex) all.push([i, r.element]);
     for (const [i, r] of this.footersByIndex) all.push([i, r.element]);
-    const detailsOn = this.detailsByIndex.size > 0;
+    const detailsOn = this.detailsByIndex.size > 0 || !!drawn;
+    if (drawn) all.push([adaptiveAt + 0.25, drawn.element]);
     for (const [i, d] of this.detailsByIndex) all.push([i + 0.5, d.element]);
     const shown = all.sort((a, b) => a[0] - b[0]).map(([, el]) => el.id);
     const owns = shown.join(' ');
     if (this.element.getAttribute('aria-owns') !== owns) this.element.setAttribute('aria-owns', owns);
     if (detailsOn || this.extras) {
       for (const [i, el] of all) {
-        const index = String(Number.isInteger(i) ? this.ariaRowIndex(i) : this.ariaRowIndex(i - 0.5) + 1);
+        // A row's adaptive detail comes right after it, its details after that.
+        const row = Math.floor(i);
+        const under = i - row === 0.5 && drawn && adaptiveAt === row ? 2 : 1;
+        const index = String(Number.isInteger(i) ? this.ariaRowIndex(i) : this.ariaRowIndex(row) + under);
         if (el.getAttribute('aria-rowindex') !== index) el.setAttribute('aria-rowindex', index);
       }
     }
@@ -601,7 +664,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
         const detail = this.details.get(id) ?? this.createDetail(id, row);
         const l = localOf(i);
         const was = detail.index;
-        detail.use(i, row, top(l) + g.rowHeightOf(l), vp.scrollLeft, vp.clientWidth, columns);
+        detail.use(i, row, top(l) + g.rowHeightOf(l) + g.adaptiveAt(l), vp.scrollLeft, vp.clientWidth, columns);
         detail.seen = this.layouts;
         shown.set(i, detail);
         if (was !== i) fresh.push(detail);
@@ -655,12 +718,63 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     for (const detail of kept.slice(0, kept.length - limit)) this.dropDetail(detail);
   }
 
+  /**
+   * The adaptive detail under grid row `at` while that row is drawn (made the first time, made again
+   * for another row or another row object), parked while it is not; gone once it is closed. Returns
+   * it when it is drawn now and was not before.
+   */
+  private placeAdaptive(at: number, rows: number[], top: (local: number) => number, localOf: (i: number) => number, g: ScrollGeometry, vp: HTMLElement): DetailRow<T> | null {
+    const grid = this.grid;
+    const id = grid.adaptive.state.rowId;
+    const row = at >= 0 ? grid.rowAt(at) : undefined;
+    let detail = this.adaptive;
+    if (detail && (id === null || detail.id !== id || !grid.columns.state.adaptive.length || (row !== undefined && detail.row !== row))) {
+      this.dropAdaptive();
+      detail = null;
+    }
+    if (at < 0 || id === null || row === undefined || !rows.includes(at)) {
+      detail?.park();
+      return null;
+    }
+    detail ??= this.createAdaptive(id, row);
+    const l = localOf(at);
+    const was = detail.index;
+    detail.use(at, row, top(l) + g.rowHeightOf(l), vp.scrollLeft, vp.clientWidth, this.visible.length);
+    return was !== at ? detail : null;
+  }
+
+  private createAdaptive(id: string, row: T): DetailRow<T> {
+    const grid = this.grid;
+    const adapter = grid.data.source.adapter;
+    const key = grid.isNew(id) || !adapter.keys.hasKey(row) ? undefined : adapter.keyOf(row);
+    const detail = new DetailRow<T>(grid, this.detailHost, id, key, row, nextId('grid-row'), 'adaptive', () => this.detailHost.adaptiveContent(id, row));
+    this.element.append(detail.element);
+    this.detailByElement.set(detail.element, detail);
+    this.observe(detail);
+    this.adaptive = detail;
+    return detail;
+  }
+
+  private dropAdaptive() {
+    const detail = this.adaptive;
+    if (!detail) return;
+    this.adaptive = null;
+    this.detailObserver?.unobserve(detail.element);
+    detail.dispose();
+  }
+
   private createDetail(id: string, row: T): DetailRow<T> {
     const adapter = this.grid.data.source.adapter;
     const detail = new DetailRow<T>(this.grid, this.detailHost, id, adapter.keyOf(row), row, nextId('grid-row'));
     this.element.append(detail.element);
     this.details.set(id, detail);
     this.detailByElement.set(detail.element, detail);
+    this.observe(detail);
+    return detail;
+  }
+
+  /** Measures a detail row again whenever its content changes size. */
+  private observe(detail: DetailRow<T>) {
     if (!this.detailObserver && typeof ResizeObserver !== 'undefined') {
       this.detailObserver = new ResizeObserver((entries) => {
         if (this.isDisposed) return;
@@ -673,7 +787,6 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       });
     }
     this.detailObserver?.observe(detail.element);
-    return detail;
   }
 
   /** The edit form's row: at its row's place, as wide as the viewport and kept in it while the rows scroll sideways. */

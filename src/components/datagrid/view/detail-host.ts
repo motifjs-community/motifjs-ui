@@ -8,4 +8,6 @@ export interface DetailHost<T> {
   readonly grid: DataGrid<T>;
   /** Closes a row's details by its key, as the user would. */
   collapse(key: unknown): boolean;
+  /** What a row's adaptive detail holds. */
+  adaptiveContent(rowId: string, row: T): ComponentBase;
 }

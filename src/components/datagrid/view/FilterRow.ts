@@ -21,7 +21,7 @@ export class FilterRow<T> extends Component<HTMLDivElement> {
     this.class.add('mx-data-grid__row mx-data-grid__row--filter');
     this.attr.add({
       role: 'row',
-      'aria-rowindex': '2',
+      'aria-rowindex': () => String(grid.columns.bandDepth() + 2),
       hidden: () => (grid.showsFilterRow() ? null : ''),
       'data-active': () => (grid.state.activeRow === FILTER_ROW ? '' : null),
     });

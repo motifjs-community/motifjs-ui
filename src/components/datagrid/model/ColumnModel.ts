@@ -1,11 +1,15 @@
 import { reactive, read } from '@motifx/core';
+import type { BandLayout } from '../band-layout';
 import type { ColumnFeatures } from '../column-features';
 import type { ColumnLayout } from '../column-layout';
 import type { ColumnResizeMode } from '../column-resize-mode';
+import type { GridBand } from '../grid-band';
 import type { GridColumn } from '../grid-column';
+import type { GridColumnItem } from '../grid-column-item';
 import type { GridLayout } from '../grid-layout';
 import type { GridSettings } from '../grid-settings';
 import type { StickySide } from '../sticky-side';
+import type { BandNode } from './band-node';
 import { COLUMN_FEATURES } from './column-feature-names';
 import type { ColumnZone } from './column-zone';
 import { DEFAULT_SETTINGS } from './default-settings';
@@ -23,6 +27,9 @@ export const SELECT_FIELD = 'mx:select';
 export const ACTIONS_FIELD = 'mx:actions';
 /** Field of the expand column of `masterDetail`: after the status and check box columns, pinned to the start. */
 export const EXPAND_FIELD = 'mx:expand';
+/** Field of the "…" column that opens a row's adaptive detail: last of the scrolling columns, while columns hide to fit the width. */
+export const ADAPTIVE_FIELD = 'mx:adaptive';
+const INTERNAL = [STATUS_FIELD, SELECT_FIELD, EXPAND_FIELD, ACTIONS_FIELD, ADAPTIVE_FIELD];
 const LOCKED: Partial<ColumnFeatures> = {
   editable: false,
   creatable: false,
@@ -34,27 +41,39 @@ const LOCKED: Partial<ColumnFeatures> = {
   menu: false,
 };
 
+const isBandItem = <T,>(item: GridColumnItem<T>): item is GridBand<T> => Array.isArray((item as GridBand<T>).columns) || (item as GridBand<T>).isBand === true;
+
 /**
  * Column layout state: order, widths, visibility and sticky sides, and what the user may change per
  * column. Reactive, so views that read `visible()`, `width()` or `can()` inside getters follow every
  * change. Display order is always start-sticky columns, then the free ones, then end-sticky ones,
- * each group in `order`.
+ * each group in `order`. Bands (`GridBand`) sit over their columns: a band's columns stay together
+ * in `order`, pinned, hidden and moved with it; they move only among themselves. Columns the width
+ * hides (`columnHidingEnabled`) are left out of `visible()` and still count as shown everywhere else.
  */
 export class ColumnModel<T> {
   readonly defs = new Map<string, GridColumn<T>>();
-  /** Each column's own feature switches; a value left unset follows the grid's settings. */
+  /** The bands by id. */
+  readonly bands = new Map<string, BandNode<T>>();
+  /** Each column's and band's own feature switches; a value left unset follows the grid's settings. */
   readonly features = new Map<string, Switches<ColumnFeatures>>();
   readonly state = reactive({
     order: [] as string[],
     width: {} as Record<string, number>,
     flex: {} as Record<string, number>,
+    /** By field, and by band id for bands. */
     hidden: {} as Record<string, boolean>,
+    /** By field; a band's by its id (its columns follow it). */
     sticky: {} as Record<string, StickySide | null>,
+    /** The columns the width hides now, in display order. */
+    adaptive: [] as string[],
     /** Grows when a column is added, removed or given another definition. */
     revision: 0,
   });
   /** The fields in the order the columns were given (and added), for `reset`. */
   private readonly given: string[] = [];
+  /** The band each column and band sits in, or `null` at the top. */
+  private readonly owners = new Map<string, string | null>();
   /** What the last layout applied said of columns the grid did not have; a column added later takes it. */
   private readonly waiting = new Map<string, ColumnLayout>();
 
@@ -72,9 +91,11 @@ export class ColumnModel<T> {
   expandWanted: () => boolean = () => false;
   /** The width of the expand column. */
   expandWidth: () => number = () => 36;
+  /** The width of the "…" column. */
+  adaptiveWidth: () => number = () => 36;
 
   constructor(
-    columns: GridColumn<T>[],
+    columns: readonly GridColumnItem<T>[],
     layout?: GridLayout,
     private readonly settings: Switches<GridSettings> = new Switches<GridSettings>(Object.keys(DEFAULT_SETTINGS) as (keyof GridSettings)[], DEFAULT_SETTINGS),
   ) {
@@ -82,14 +103,10 @@ export class ColumnModel<T> {
     this.defs.set(SELECT_FIELD, { field: SELECT_FIELD, title: '', align: 'center' });
     this.defs.set(ACTIONS_FIELD, { field: ACTIONS_FIELD, title: '' });
     this.defs.set(EXPAND_FIELD, { field: EXPAND_FIELD, title: '', align: 'center' });
-    for (const field of [STATUS_FIELD, SELECT_FIELD, EXPAND_FIELD, ACTIONS_FIELD]) this.features.set(field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, LOCKED));
-    for (const field of [STATUS_FIELD, SELECT_FIELD, EXPAND_FIELD, ACTIONS_FIELD]) this.given.push(field);
-    for (const c of columns) {
-      this.check(c);
-      this.defs.set(c.field, c);
-      this.features.set(c.field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, c));
-      this.given.push(c.field);
-    }
+    this.defs.set(ADAPTIVE_FIELD, { field: ADAPTIVE_FIELD, title: '', align: 'center' });
+    for (const field of INTERNAL) this.features.set(field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, LOCKED));
+    for (const field of INTERNAL) this.given.push(field);
+    this.take(columns, null);
     this.reset();
     if (layout) this.applyLayout(layout);
   }
@@ -101,49 +118,61 @@ export class ColumnModel<T> {
   }
 
   /**
-   * Adds a column at `index` among the data columns (default: last), with its own width, visibility
-   * and sticky side, or what the last layout applied said of it.
+   * Adds a column (or a band with its columns) at `index` among the data columns (default: last),
+   * with its own width, visibility and sticky side, or what the last layout applied said of it. A
+   * column with `ownerBand` goes into that band.
    */
-  add(column: GridColumn<T>, index = Number.MAX_SAFE_INTEGER) {
-    this.check(column);
-    const field = column.field;
-    this.defs.set(field, column);
-    this.features.set(field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, column));
+  add(column: GridColumnItem<T>, index = Number.MAX_SAFE_INTEGER) {
+    const before = new Set(this.given);
+    const owner = typeof column.ownerBand === 'string' && this.bands.has(column.ownerBand) ? column.ownerBand : null;
+    this.take([column], owner);
+    const fields = this.given.filter((f) => !before.has(f));
+    for (const f of fields) this.given.splice(this.given.indexOf(f), 1);
     const s = this.state;
     const data = s.order.filter((f) => !this.isInternal(f));
     const at = Math.max(0, Math.min(data.length, Math.floor(index)));
-    const before = data[at];
+    const next = data[at];
     const order = [...s.order];
-    order.splice(before === undefined ? order.length : order.indexOf(before), 0, field);
+    order.splice(next === undefined ? order.length : order.indexOf(next), 0, ...fields);
     const given = this.given.filter((f) => !this.isInternal(f));
-    const next = given[at];
-    this.given.splice(next === undefined ? this.given.length : this.given.indexOf(next), 0, field);
-    const kept = this.waiting.get(field);
-    this.waiting.delete(field);
-    if (column.width !== undefined || kept) s.width[field] = this.clampWidth(field, kept?.width ?? column.width!);
-    s.flex[field] = kept ? (kept.flex ?? 0) : (column.flex ?? 0);
-    s.hidden[field] = kept ? !!kept.hidden : !!column.hidden;
-    s.sticky[field] = kept ? (kept.sticky ?? null) : (column.sticky ?? null);
-    s.order = order;
+    const nextGiven = given[at];
+    this.given.splice(nextGiven === undefined ? this.given.length : this.given.indexOf(nextGiven), 0, ...fields);
+    for (const field of fields) {
+      const def = this.defs.get(field)!;
+      const kept = this.waiting.get(field);
+      this.waiting.delete(field);
+      if (def.width !== undefined || kept) s.width[field] = this.clampWidth(field, kept?.width ?? def.width!);
+      s.flex[field] = kept ? (kept.flex ?? 0) : (def.flex ?? 0);
+      s.hidden[field] = kept ? !!kept.hidden : !!def.hidden;
+      s.sticky[field] = kept ? (kept.sticky ?? null) : (def.sticky ?? null);
+    }
+    for (const [id, band] of this.bands) {
+      if (s.hidden[id] === undefined) s.hidden[id] = !!band.def.hidden;
+      if (s.sticky[id] === undefined) s.sticky[id] = band.def.sticky ?? null;
+    }
+    s.order = this.together(order);
     s.revision++;
   }
 
-  /** Takes a data column out, with its layout. */
+  /** Takes a data column out, with its layout; its band keeps its other columns. */
   remove(field: string) {
     if (this.isInternal(field) || !this.defs.has(field)) return;
     const s = this.state;
     this.defs.delete(field);
     this.features.delete(field);
     this.given.splice(this.given.indexOf(field), 1);
+    const band = this.owners.get(field);
+    if (band) {
+      const children = this.bands.get(band)!.children;
+      children.splice(children.indexOf(field), 1);
+    }
+    this.owners.delete(field);
     s.order = s.order.filter((f) => f !== field);
     delete s.width[field];
     delete s.flex[field];
     delete s.hidden[field];
     delete s.sticky[field];
-    if (this.visibleData().length === 0) {
-      const first = s.order.find((f) => !this.isInternal(f));
-      if (first) s.hidden[first] = false;
-    }
+    this.keepOneShown();
     s.revision++;
   }
 
@@ -155,9 +184,9 @@ export class ColumnModel<T> {
     this.state.revision++;
   }
 
-  /** Columns the grid adds itself: row status, selection, expand, actions. */
+  /** Columns the grid adds itself: row status, selection, expand, actions, the "…" column. */
   isInternal(field: string): boolean {
-    return field === STATUS_FIELD || field === SELECT_FIELD || field === EXPAND_FIELD || field === ACTIONS_FIELD;
+    return INTERNAL.includes(field);
   }
 
   /** The definition of a column. */
@@ -167,10 +196,19 @@ export class ColumnModel<T> {
     return def;
   }
 
-  /** The header text; nothing for a column that went (what showed it may still be going). */
+  isBand(id: string): boolean {
+    return this.bands.has(id);
+  }
+
+  /** Whether the columns have bands over them. */
+  get hasBands(): boolean {
+    return this.bands.size > 0;
+  }
+
+  /** The header text of a column or a band; nothing for a column that went (what showed it may still be going). */
   title(field: string): string {
     void this.state.revision;
-    const def = this.defs.get(field);
+    const def = this.defs.get(field) ?? this.bands.get(field)?.def;
     return def ? (read(def.title) ?? '') : '';
   }
 
@@ -181,7 +219,12 @@ export class ColumnModel<T> {
     return def.align ?? (def.type === 'number' ? 'end' : def.type === 'boolean' ? 'center' : 'start');
   }
 
-  /** Whether the user may use `feature` on this column: the column's own value, else the grid's. */
+  /** Where a band's caption sits: its own, else the `bandAlign` setting. */
+  bandAlign(id: string): 'start' | 'center' | 'end' {
+    return read(this.bands.get(id)?.def.align) ?? this.settings.get('bandAlign');
+  }
+
+  /** Whether the user may use `feature` on this column or band: its own value, else the grid's. */
   can(field: string, feature: keyof ColumnFeatures): boolean {
     const own = this.features.get(field)?.own(feature);
     return typeof own === 'boolean' ? own : this.settings.get(feature);
@@ -260,23 +303,30 @@ export class ColumnModel<T> {
     return this.settings.get('actionsColumn') && this.actionsWanted() && this.actionsInRow();
   }
 
-  /** The edge a column sticks to, or `null`. The grid's own columns take theirs from the settings. */
+  /** The edge a column or band sticks to, or `null`: a band's columns stick with the band at the top. The grid's own columns take theirs from the settings. */
   sideOf(field: string): StickySide | null {
     if (field === STATUS_FIELD || field === SELECT_FIELD || field === EXPAND_FIELD) return 'start';
     if (field === ACTIONS_FIELD) return this.settings.get('actionsSticky') ? this.settings.get('actionsPosition') : null;
-    return this.state.sticky[field] ?? null;
+    if (field === ADAPTIVE_FIELD) return null;
+    return this.state.sticky[this.topOf(field)] ?? null;
   }
 
-  /** Visible data columns (no internal ones), in display order. */
+  /** Visible data columns on the screen (no internal ones, none the width hides), in display order. */
   visibleData(): string[] {
     return this.visible().filter((f) => !this.isInternal(f));
+  }
+
+  /** Data columns the user has shown, those the width hides too, in display order. */
+  listedData(): string[] {
+    return this.arranged(false).filter((f) => !this.isInternal(f));
   }
 
   /** Back to the columns' own settings. */
   reset() {
     const s = this.state;
-    s.order = [...this.given];
-    s.order.sort((a, b) => Number(this.isInternal(b)) - Number(this.isInternal(a)));
+    const order = [...this.given];
+    order.sort((a, b) => Number(this.isInternal(b)) - Number(this.isInternal(a)));
+    s.order = this.together(order);
     const width: Record<string, number> = {};
     const flex: Record<string, number> = {};
     const hidden: Record<string, boolean> = {};
@@ -288,6 +338,10 @@ export class ColumnModel<T> {
       hidden[field] = !!def.hidden;
       sticky[field] = def.sticky ?? null;
     }
+    for (const [id, band] of this.bands) {
+      hidden[id] = !!band.def.hidden;
+      sticky[id] = band.def.sticky ?? null;
+    }
     s.width = width;
     s.flex = flex;
     s.hidden = hidden;
@@ -298,31 +352,79 @@ export class ColumnModel<T> {
     return this.sideOf(field) ?? 'free';
   }
 
-  /** Visible fields in display order: status, check boxes, expand, then the zones; the actions column first or last in its zone. */
+  /** Visible fields in display order: status, check boxes, expand, then the zones; the actions column first or last in its zone, the "…" column last of the scrolling ones. */
   visible(): string[] {
-    const start: string[] = [];
-    const free: string[] = [];
-    const end: string[] = [];
-    const { order, hidden } = this.state;
-    void this.state.revision;
-    const add = (f: string) => {
-      const side = this.sideOf(f);
-      (side === 'start' ? start : side === 'end' ? end : free).push(f);
-    };
-    if (this.showsStatus()) add(STATUS_FIELD);
-    if (this.showsSelect()) add(SELECT_FIELD);
-    if (this.expandWanted()) add(EXPAND_FIELD);
-    const actions = this.showsActions();
-    const first = this.settings.get('actionsPosition') === 'start';
-    if (actions && first) add(ACTIONS_FIELD);
-    for (const f of order) if (!this.isInternal(f) && !hidden[f] && !this.hiddenByGroup(f)) add(f);
-    if (actions && !first) add(ACTIONS_FIELD);
-    return [...start, ...free, ...end];
+    return this.arranged(true);
   }
 
   /** Visible fields of one zone, in display order. */
   zone(zone: ColumnZone): string[] {
     return this.visible().filter((f) => this.zoneOf(f) === zone);
+  }
+
+  /** The band a column or band sits in, or `null` at the top. */
+  bandOf(id: string): string | null {
+    return this.owners.get(id) ?? null;
+  }
+
+  /** The band at the top over a column or band, or the column itself. */
+  topOf(id: string): string {
+    let at = id;
+    for (let up = this.owners.get(at); up; up = this.owners.get(at)) at = up;
+    return at;
+  }
+
+  /** How deep a band sits: 1 at the top. */
+  depthOf(id: string): number {
+    let n = 0;
+    for (let at: string | null = id; at; at = this.owners.get(at) ?? null) if (this.bands.has(at)) n++;
+    return n;
+  }
+
+  /** Whether `field` sits under band `id` (at any depth). */
+  isUnder(field: string, id: string): boolean {
+    for (let up = this.owners.get(field); up; up = this.owners.get(up)) if (up === id) return true;
+    return false;
+  }
+
+  /** The visible columns under a band, from a list of visible fields. */
+  leavesIn(id: string, visible: readonly string[]): string[] {
+    return visible.filter((f) => this.isUnder(f, id));
+  }
+
+  /** The bands that show over `visible`, with the columns under each: a band shows while one of its columns does. */
+  shownBands(visible: readonly string[]): { id: string; depth: number; first: number; count: number }[] {
+    const out: { id: string; depth: number; first: number; count: number }[] = [];
+    for (const id of this.bands.keys()) {
+      let first = -1;
+      let count = 0;
+      visible.forEach((f, i) => {
+        if (!this.isUnder(f, id)) return;
+        if (first < 0) first = i;
+        count++;
+      });
+      if (count > 0) out.push({ id, depth: this.depthOf(id), first, count });
+    }
+    return out;
+  }
+
+  /** Header rows above the columns' own: as many as the deepest band shown. Reactive. */
+  bandDepth(): number {
+    if (!this.bands.size) return 0;
+    let depth = 0;
+    for (const b of this.shownBands(this.visible())) depth = Math.max(depth, b.depth);
+    return depth;
+  }
+
+  /** Whether a band or one above it was hidden itself (not by hiding its columns). */
+  inHiddenBand(id: string): boolean {
+    for (let at: string | null = id; at; at = this.owners.get(at) ?? null) if (this.bands.has(at) && this.state.hidden[at]) return true;
+    return false;
+  }
+
+  /** Whether a band shows: not hidden, and one of its columns shows. */
+  bandShown(id: string): boolean {
+    return this.bands.has(id) && this.visible().some((f) => this.isUnder(f, id));
   }
 
   width(field: string): number {
@@ -334,6 +436,7 @@ export class ColumnModel<T> {
     if (field === STATUS_FIELD) return Math.max(0, Math.round(this.settings.get('rowStatusWidth')));
     if (field === SELECT_FIELD) return Math.max(0, Math.round(this.settings.get('selectionColumnWidth')));
     if (field === EXPAND_FIELD) return Math.max(0, Math.round(this.expandWidth()));
+    if (field === ADAPTIVE_FIELD) return Math.max(0, Math.round(this.adaptiveWidth()));
     return this.state.width[field] ?? this.clampWidth(field, this.settings.get('columnWidth'));
   }
 
@@ -433,59 +536,105 @@ export class ColumnModel<T> {
   }
 
   /**
-   * Places a column can reach in its zone: up to, not across, the nearest columns that cannot move
-   * (they keep their place). `[from, from]` when the column itself cannot move.
+   * What a column or band moves among: the columns and bands shown beside it in its band (or at
+   * the top) and its zone, in display order. A band counts once, for all its columns.
    */
-  moveRange(field: string): [number, number] {
-    const zone = this.zone(this.zoneOf(field));
-    const from = zone.indexOf(field);
-    if (from < 0 || !this.can(field, 'movable')) return [from, from];
+  siblings(id: string): string[] {
+    const parent = this.bandOf(id);
+    const zone = this.zoneOf(id);
+    const out: string[] = [];
+    for (const f of this.visible()) {
+      if (this.zoneOf(f) !== zone) continue;
+      const unit = this.childOf(f, parent);
+      if (unit !== undefined && out[out.length - 1] !== unit) out.push(unit);
+    }
+    return out;
+  }
+
+  /** The data columns and bands shown beside a column or band in its band (or at the top), in every zone. */
+  shownBeside(id: string): string[] {
+    const parent = this.bandOf(id);
+    const out: string[] = [];
+    for (const f of this.visible()) {
+      if (this.isInternal(f)) continue;
+      const unit = this.childOf(f, parent);
+      if (unit !== undefined && !out.includes(unit)) out.push(unit);
+    }
+    return out;
+  }
+
+  /** The data columns and bands in a band (or at the top), in their order, the hidden ones too. */
+  childrenOf(parent: string | null): string[] {
+    const out: string[] = [];
+    for (const f of this.state.order) {
+      if (this.isInternal(f)) continue;
+      const unit = this.childOf(f, parent);
+      if (unit !== undefined && !out.includes(unit)) out.push(unit);
+    }
+    return out;
+  }
+
+  /**
+   * Places a column or band can reach among its `siblings`: up to, not across, the nearest that
+   * cannot move (they keep their place). `[from, from]` when it cannot move itself.
+   */
+  moveRange(id: string): [number, number] {
+    const units = this.siblings(id);
+    const from = units.indexOf(id);
+    if (from < 0 || !this.can(id, 'movable')) return [from, from];
     let lo = from;
-    while (lo > 0 && this.can(zone[lo - 1], 'movable')) lo--;
+    while (lo > 0 && this.can(units[lo - 1], 'movable')) lo--;
     let hi = from;
-    while (hi < zone.length - 1 && this.can(zone[hi + 1], 'movable')) hi++;
+    while (hi < units.length - 1 && this.can(units[hi + 1], 'movable')) hi++;
     return [lo, hi];
   }
 
-  /** Moves a column to `index` among the visible columns of its zone, within `moveRange`. Hidden columns keep their place. */
-  move(field: string, index: number): boolean {
-    const zone = this.zone(this.zoneOf(field));
-    const from = zone.indexOf(field);
+  /** Moves a column or band to `index` among its `siblings`, within `moveRange`; a band takes all its columns. Hidden columns keep their place. */
+  move(id: string, index: number): boolean {
+    const units = this.siblings(id);
+    const from = units.indexOf(id);
     if (from < 0) return false;
-    const [lo, hi] = this.moveRange(field);
+    const [lo, hi] = this.moveRange(id);
     const to = Math.max(lo, Math.min(hi, index));
     if (to === from) return false;
-    const next = zone.filter((f) => f !== field);
-    next.splice(to, 0, field);
-    const order = this.state.order.filter((f) => f !== field);
+    const next = units.filter((u) => u !== id);
+    next.splice(to, 0, id);
+    const inBlock = (f: string, unit: string) => f === unit || this.isUnder(f, unit);
+    const block = this.state.order.filter((f) => inBlock(f, id));
+    const order = this.state.order.filter((f) => !inBlock(f, id));
     // The grid's own columns are placed by the settings, not by the order.
-    const after = next.slice(to + 1).find((f) => !this.isInternal(f));
-    const before = next.slice(0, to).reverse().find((f) => !this.isInternal(f));
-    if (after !== undefined) order.splice(order.indexOf(after), 0, field);
-    else if (before !== undefined) order.splice(order.indexOf(before) + 1, 0, field);
-    else order.push(field);
+    const after = next.slice(to + 1).find((u) => !this.isInternal(u));
+    const before = next.slice(0, to).reverse().find((u) => !this.isInternal(u));
+    if (after !== undefined) order.splice(order.findIndex((f) => inBlock(f, after)), 0, ...block);
+    else if (before !== undefined) {
+      let last = -1;
+      order.forEach((f, i) => inBlock(f, before) && (last = i));
+      order.splice(last + 1, 0, ...block);
+    } else order.push(...block);
     this.state.order = order;
     return true;
   }
 
-  /** Moves by `delta` places within the zone. */
-  moveBy(field: string, delta: number): boolean {
-    const zone = this.zone(this.zoneOf(field));
-    return this.move(field, zone.indexOf(field) + delta);
+  /** Moves by `delta` places among its `siblings`. */
+  moveBy(id: string, delta: number): boolean {
+    return this.move(id, this.siblings(id).indexOf(id) + delta);
   }
 
-  /** Hides or shows a column. The last visible data column cannot be hidden. */
-  setHidden(field: string, hidden: boolean): boolean {
-    if (this.isInternal(field)) return false;
-    if (hidden && this.visibleData().length <= 1) return false;
-    if (!!this.state.hidden[field] === hidden) return false;
-    this.state.hidden[field] = hidden;
+  /** Hides or shows a column or band. The last visible data column cannot be hidden. */
+  setHidden(id: string, hidden: boolean): boolean {
+    if (this.isInternal(id) || (!this.defs.has(id) && !this.bands.has(id))) return false;
+    if (hidden && !this.listedData().some((f) => f !== id && !this.isUnder(f, id))) return false;
+    if (!!this.state.hidden[id] === hidden) return false;
+    this.state.hidden[id] = hidden;
     return true;
   }
 
-  setSticky(field: string, side: StickySide | null): boolean {
-    if (this.isInternal(field) || (this.state.sticky[field] ?? null) === side) return false;
-    this.state.sticky[field] = side;
+  /** Pins a column or band, or unpins it; a column in a band pins its band at the top. */
+  setSticky(id: string, side: StickySide | null): boolean {
+    if (this.isInternal(id)) return false;
+    const top = this.topOf(id);
+    if ((this.state.sticky[top] ?? null) === side) return false;
+    this.state.sticky[top] = side;
     return true;
   }
 
@@ -498,11 +647,17 @@ export class ColumnModel<T> {
         width: this.width(field),
         flex: s.flex[field] ?? 0,
         hidden: !!s.hidden[field],
-        sticky: s.sticky[field] ?? null,
+        sticky: this.bandOf(field) ? null : (s.sticky[field] ?? null),
       }));
   }
 
-  /** Applies a saved layout. Unknown fields are ignored; columns missing from it keep their settings and go last. */
+  /** The bands' own hidden and sticky state, for the layout. */
+  bandLayout(): BandLayout[] {
+    const s = this.state;
+    return [...this.bands.keys()].map((name) => ({ name, hidden: !!s.hidden[name], sticky: this.bandOf(name) ? null : (s.sticky[name] ?? null) }));
+  }
+
+  /** Applies a saved layout. Unknown fields are ignored; columns missing from it keep their settings and go last. A band's columns stay together. */
   applyLayout(layout: GridLayout) {
     const s = this.state;
     const known = layout.columns.filter((c) => this.defs.has(c.field) && !this.isInternal(c.field));
@@ -510,22 +665,182 @@ export class ColumnModel<T> {
     for (const c of layout.columns) if (!this.defs.has(c.field)) this.waiting.set(c.field, c);
     const listed = new Set(known.map((c) => c.field));
     const internal = s.order.filter((f) => this.isInternal(f));
-    s.order = [...internal, ...known.map((c) => c.field), ...s.order.filter((f) => !listed.has(f) && !this.isInternal(f))];
+    s.order = this.together([...internal, ...known.map((c) => c.field), ...s.order.filter((f) => !listed.has(f) && !this.isInternal(f))]);
     for (const c of known) {
       s.width[c.field] = this.clampWidth(c.field, c.width);
       s.flex[c.field] = c.flex ?? 0;
       s.hidden[c.field] = !!c.hidden;
-      s.sticky[c.field] = c.sticky ?? null;
+      if (!this.bandOf(c.field)) s.sticky[c.field] = c.sticky ?? null;
     }
-    if (this.visibleData().length === 0) {
-      const first = s.order.find((f) => !this.isInternal(f));
-      if (first) s.hidden[first] = false;
+    for (const b of layout.bands ?? []) {
+      if (!this.bands.has(b.name)) continue;
+      s.hidden[b.name] = !!b.hidden;
+      if (!this.bandOf(b.name)) s.sticky[b.name] = b.sticky ?? null;
     }
+    this.keepOneShown();
+  }
+
+  /**
+   * The columns the width hides: while the visible columns are wider than `width`, the lowest
+   * `hidingPriority` first (given on any column, only columns with one hide), else, with
+   * `columnHidingEnabled`, the last one first; the "…" column takes its place. Pinned and grouped
+   * columns stay, and so does one data column. Reads the widths kept, never the screen, so hiding
+   * cannot feed back into it.
+   */
+  fitWidth(width: number): string[] {
+    const priority = new Map<string, number>();
+    for (const f of this.state.order) {
+      if (this.isInternal(f)) continue;
+      const p = read(this.defs.get(f)?.hidingPriority);
+      if (typeof p === 'number' && Number.isFinite(p)) priority.set(f, p);
+    }
+    if ((!priority.size && !this.settings.get('columnHidingEnabled')) || width <= 0) return [];
+    const shown = this.arranged(false);
+    let total = 0;
+    for (const f of shown) total += this.width(f);
+    if (total <= width) return [];
+    total += this.width(ADAPTIVE_FIELD);
+    const data = shown.filter((f) => !this.isInternal(f) && !this.sideOf(f));
+    const candidates = priority.size ? data.filter((f) => priority.has(f)).sort((a, b) => priority.get(a)! - priority.get(b)!) : [...data].reverse();
+    let left = shown.filter((f) => !this.isInternal(f)).length;
+    const hidden = new Set<string>();
+    for (const f of candidates) {
+      if (total <= width || left <= 1) break;
+      hidden.add(f);
+      total -= this.width(f);
+      left--;
+    }
+    return shown.filter((f) => hidden.has(f));
+  }
+
+  /** Visible fields in display order; `adaptive` leaves out the columns the width hides and adds the "…" column. */
+  private arranged(adaptive: boolean): string[] {
+    const start: string[] = [];
+    const free: string[] = [];
+    const end: string[] = [];
+    const { order, hidden } = this.state;
+    void this.state.revision;
+    const byWidth = adaptive ? new Set(this.state.adaptive) : null;
+    const add = (f: string) => {
+      const side = this.sideOf(f);
+      (side === 'start' ? start : side === 'end' ? end : free).push(f);
+    };
+    if (this.showsStatus()) add(STATUS_FIELD);
+    if (this.showsSelect()) add(SELECT_FIELD);
+    if (this.expandWanted()) add(EXPAND_FIELD);
+    const actions = this.showsActions();
+    const first = this.settings.get('actionsPosition') === 'start';
+    if (actions && first) add(ACTIONS_FIELD);
+    for (const f of order) {
+      if (this.isInternal(f) || hidden[f] || this.hiddenByGroup(f) || byWidth?.has(f)) continue;
+      if (this.bands.size && this.inHiddenBand(f)) continue;
+      add(f);
+    }
+    if (actions && !first) add(ACTIONS_FIELD);
+    if (byWidth?.size) free.push(ADAPTIVE_FIELD);
+    return [...start, ...free, ...end];
+  }
+
+  /** The child of `parent` (a band, or `null` for the top) that holds `field`, or `undefined` when it is not under it. */
+  childOf(field: string, parent: string | null): string | undefined {
+    let at = field;
+    for (;;) {
+      const up = this.owners.get(at) ?? null;
+      if (up === parent) return at;
+      if (up === null) return undefined;
+      at = up;
+    }
+  }
+
+  /** Every band's columns together, where its first one is; inside a band, in the order they come. */
+  private together(order: string[]): string[] {
+    if (!this.bands.size) return order;
+    const rank = new Map<string, number>();
+    order.forEach((f, i) => {
+      for (let at: string | null = f; at !== null; at = this.owners.get(at) ?? null) if (!rank.has(at)) rank.set(at, i);
+    });
+    const out: string[] = [];
+    const place = (id: string) => {
+      const band = this.bands.get(id);
+      if (!band) {
+        out.push(id);
+        return;
+      }
+      band.children.filter((c) => rank.has(c)).sort((a, b) => rank.get(a)! - rank.get(b)!).forEach(place);
+    };
+    const tops = [...rank.keys()].filter((id) => (this.owners.get(id) ?? null) === null).sort((a, b) => rank.get(a)! - rank.get(b)!);
+    tops.forEach(place);
+    return out;
+  }
+
+  /** Takes columns and bands into the model, under `owner`; flat ones with `ownerBand` go under that band. */
+  private take(items: readonly GridColumnItem<T>[], owner: string | null) {
+    const placed: { id: string; item: GridColumnItem<T> }[] = [];
+    // A band without a name is named by its place: `band-2`, `band-2-0` …
+    const base = owner === null ? this.topCount() : this.bands.get(owner)!.children.length;
+    const walk = (list: readonly GridColumnItem<T>[], parent: string | null, path: string | null) => {
+      list.forEach((item, i) => {
+        const at = path !== null ? `${path}-${i}` : owner === null ? String(base + i) : `${owner}-${base + i}`;
+        if (isBandItem(item)) {
+          const id = item.name ?? `band-${at}`;
+          if (this.defs.has(id) || this.bands.has(id)) throw new Error(`[motifx-ui] DataGrid: duplicate band or column name "${id}"`);
+          this.bands.set(id, { id, def: item, children: [] });
+          this.features.set(id, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, item));
+          this.adopt(id, parent);
+          placed.push({ id, item });
+          walk(item.columns ?? [], id, at);
+          return;
+        }
+        this.check(item);
+        this.defs.set(item.field, item);
+        this.features.set(item.field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, item));
+        this.given.push(item.field);
+        this.adopt(item.field, parent);
+        placed.push({ id: item.field, item });
+      });
+    };
+    walk(items, owner, null);
+    // Given flat: `ownerBand` names a band, or its place in the list.
+    const list = placed.filter((p) => this.owners.get(p.id) === owner).map((p) => p.id);
+    for (const { id, item } of placed) {
+      const named = item.ownerBand;
+      if (named === undefined || this.owners.get(id) !== owner) continue;
+      const band = typeof named === 'number' ? list[named] : named;
+      if (band && band !== id && this.bands.has(band) && !this.isUnder(band, id)) this.adopt(id, band);
+    }
+  }
+
+  /** How many columns and bands sit at the top already, so a band added later gets a name of its own. */
+  private topCount(): number {
+    let n = 0;
+    for (const [id, up] of this.owners) if (up === null && (this.bands.has(id) || this.defs.has(id))) n++;
+    return n;
+  }
+
+  /** Puts a column or band under `parent` (taking it from where it was). */
+  private adopt(id: string, parent: string | null) {
+    const was = this.owners.get(id);
+    if (was) {
+      const children = this.bands.get(was)!.children;
+      children.splice(children.indexOf(id), 1);
+    }
+    this.owners.set(id, parent);
+    if (parent) this.bands.get(parent)!.children.push(id);
+  }
+
+  /** At least one data column stays shown. */
+  private keepOneShown() {
+    if (this.listedData().length > 0) return;
+    const s = this.state;
+    const first = s.order.find((f) => !this.isInternal(f));
+    if (!first) return;
+    s.hidden[first] = false;
+    for (let up = this.owners.get(first); up; up = this.owners.get(up)) s.hidden[up] = false;
   }
 
   private check(column: GridColumn<T>) {
     if (typeof column?.field !== 'string') throw new Error('[motifx-ui] DataGrid: a column needs a field');
-    if (this.defs.has(column.field)) throw new Error(`[motifx-ui] DataGrid: duplicate or reserved column field "${column.field}"`);
+    if (this.defs.has(column.field) || this.bands.has(column.field)) throw new Error(`[motifx-ui] DataGrid: duplicate or reserved column field "${column.field}"`);
   }
 
   /** The column's own `editable` or `creatable`: a value, a function of the row, or unset. */

@@ -1,3 +1,4 @@
+import type { GridBand } from './grid-band';
 import type { GridColumn } from './grid-column';
 
 /**
@@ -8,6 +9,8 @@ export interface GridExportCell<T = any> {
   readonly rowType: 'header' | 'group' | 'data' | 'groupFooter' | 'totalFooter';
   /** The cell's column; in a group row's first cell, the grouped column. */
   readonly column?: GridColumn<T>;
+  /** A header cell of a band's row: the band it shows (or lies under). */
+  readonly band?: GridBand<T>;
   /** The row object of a data cell. */
   readonly data?: T;
   /** The raw value: a data cell's value, a group's key, a summary item's value. */

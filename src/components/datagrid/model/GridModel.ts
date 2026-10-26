@@ -9,6 +9,7 @@ import type { GridAction } from '../grid-action';
 import type { GridActionItem } from '../grid-action-item';
 import type { GridBuiltInActions } from '../grid-built-in-actions';
 import type { GridColumn } from '../grid-column';
+import type { GridColumnItem } from '../grid-column-item';
 import type { GridFilters } from '../grid-filters';
 import type { GridLayout } from '../grid-layout';
 import type { GridMode } from '../grid-mode';
@@ -23,6 +24,7 @@ import { CellRules } from './CellRules';
 import { cellValue } from './cell-value';
 import { ColumnModel } from './ColumnModel';
 import { DEFAULT_SETTINGS } from './default-settings';
+import { AdaptiveRow } from './AdaptiveRow';
 import { DetailRows } from './DetailRows';
 import type { FilterValueState } from './filter-value-state';
 import { FilterModel } from './FilterModel';
@@ -81,6 +83,7 @@ export class GridModel<T> {
     pageSize: DEFAULT_PAGE_SIZE,
     rowHeight: DEFAULT_ROW_HEIGHT,
     viewport: 0,
+    width: 0,
     measured: false,
     activeRow: HEADER_ROW,
     activeField: '',
@@ -128,6 +131,8 @@ export class GridModel<T> {
   readonly summaries: GridSummaries<T>;
   /** Which rows have their details open (`masterDetail`), and its options. */
   readonly details: DetailRows<T>;
+  /** Which row has its adaptive detail open (`adaptiveDetail`), and its options. */
+  readonly adaptive: AdaptiveRow;
   /** `aria-rowindex` of grid row `i`; the body counts the open details above it in. */
   ariaRowIndex: (i: number) => number = (i) => i + 1 + this.headRows;
   /** How many rows laid out have their details open (the body tells). */
@@ -190,6 +195,8 @@ export class GridModel<T> {
     this.details = new DetailRows<T>(props.masterDetail);
     this.columns.expandWanted = () => this.details.enabled;
     this.columns.expandWidth = () => this.details.options.get('columnWidth');
+    this.adaptive = new AdaptiveRow(props.adaptiveDetail);
+    this.columns.adaptiveWidth = () => this.adaptive.options.get('columnWidth');
     this.filters = new FilterModel<T>(this.columns);
     this.filters.sync = () => this.syncsFilter();
     const filters = stored ? this.reviveDates(stored.filters) : props.filters;
@@ -244,6 +251,7 @@ export class GridModel<T> {
         if (JSON.stringify(filter) !== JSON.stringify(given.filter)) void given.setFilter(filter);
       } else this.baseFilter = null;
       for (const a of this.addedRows.splice(0)) this.lastSeen.delete(a.rowId);
+      this.adaptive.close();
       this.removing.clear();
       this.rules.forget();
       this.rowChecks.clear();
@@ -655,6 +663,15 @@ export class GridModel<T> {
     return id !== undefined && details.isOpen(id);
   }
 
+  /** Grid index of the row whose adaptive detail is open, while it is loaded (or at `hint`); -1 for none. */
+  adaptiveIndex(hint = -1): number {
+    const { rowId, key } = this.adaptive.state;
+    if (rowId === null) return -1;
+    if (hint >= 0 && this.rowIdAt(hint) === rowId) return hint;
+    const i = this.indexOfKey(rowId);
+    return i >= 0 || key === undefined ? i : this.indexOfDetailKey(key);
+  }
+
   /** The grid index of the loaded row with this key, or -1. */
   indexOfDetailKey(key: unknown): number {
     const row = this.data.rowByKey(key);
@@ -996,9 +1013,9 @@ export class GridModel<T> {
     return this.props.loadValues;
   }
 
-  /** Header rows: the header, and the filter row while it shows. Reactive. */
+  /** Header rows: the bands' rows, the header, and the filter row while it shows. Reactive. */
   get headRows(): number {
-    return this.showsFilterRow() ? 2 : 1;
+    return this.columns.bandDepth() + (this.showsFilterRow() ? 2 : 1);
   }
 
   /** The filter row shows while a visible column has a cell in it. */
@@ -1207,7 +1224,9 @@ export class GridModel<T> {
   }
 
   get layout(): GridLayout {
-    return { columns: this.columns.toLayout(), sort: this.state.sort.map((s) => ({ ...s })), group: this.groups.items.map((g) => ({ ...g })) };
+    const layout: GridLayout = { columns: this.columns.toLayout(), sort: this.state.sort.map((s) => ({ ...s })), group: this.groups.items.map((g) => ({ ...g })) };
+    if (this.columns.hasBands) layout.bands = this.columns.bandLayout();
+    return layout;
   }
 
   set layout(layout: GridLayout) {
@@ -1288,7 +1307,7 @@ export class GridModel<T> {
   /** Whether the user may group by a column now: the feature is on, and a data column still shows after it leaves. */
   canGroupNow(field: string): boolean {
     if (!this.groups.canGroup(field) || this.groups.isGrouped(field)) return false;
-    return this.columns.can(field, 'showWhenGrouped') || this.columns.visibleData().some((f) => f !== field);
+    return this.columns.can(field, 'showWhenGrouped') || this.columns.listedData().some((f) => f !== field);
   }
 
   /** Whether the user may open and close a group: its column's `allowCollapsing`, else the grid's. */
@@ -1313,14 +1332,22 @@ export class GridModel<T> {
 
   // Columns at run time.
 
-  /** Adds a column at `index` among the data columns (default: last); its `groupIndex` groups the rows by it. */
-  addColumn(column: GridColumn<T>, index?: number) {
+  /** Adds a column (or a band with its columns) at `index` among the data columns (default: last); a `groupIndex` groups the rows by it. Returns the fields added. */
+  addColumn(column: GridColumnItem<T>, index?: number): string[] {
+    const before = new Set(this.columnFields());
+    const bands = new Set(this.columns.bands.keys());
     this.columns.add(column, index);
-    this.tellFeatures(column.field);
-    this.startFilterValues(column);
-    const at = read(column.groupIndex);
-    if (typeof at === 'number' && at >= 0) this.groupBy(column.field, at);
+    for (const id of this.columns.bands.keys()) if (!bands.has(id)) this.tellFeatures(id);
+    const added = this.columnFields().filter((f) => !before.has(f));
+    for (const field of added) {
+      const col = this.columns.get(field);
+      this.tellFeatures(field);
+      this.startFilterValues(col);
+      const at = read(col.groupIndex);
+      if (typeof at === 'number' && at >= 0) this.groupBy(field, at);
+    }
     this.keepActiveFieldVisible();
+    return added;
   }
 
   /** A column is about to go: its sort, grouping and filter go first, without asking (the column is gone). */
@@ -1493,8 +1520,13 @@ export class GridModel<T> {
 
   /** After a column was hidden, moves the active cell to a visible column. */
   keepActiveFieldVisible() {
-    const visible = this.columns.visible();
-    if (!visible.includes(this.state.activeField)) this.state.activeField = this.columns.visibleData()[0] ?? visible[0] ?? '';
+    const cols = this.columns;
+    const visible = cols.visible();
+    const field = this.state.activeField;
+    if (visible.includes(field) || (cols.isBand(field) && cols.bandShown(field))) return;
+    // A band header left out: its first column shown, else the first data column.
+    const under = cols.isBand(field) ? cols.leavesIn(field, visible)[0] : undefined;
+    this.state.activeField = under ?? cols.visibleData()[0] ?? visible[0] ?? '';
   }
 
   /** Polite screen reader announcement; the same text twice is announced twice. */
@@ -1603,7 +1635,7 @@ export class GridModel<T> {
 
   /** The grid's checks of a row, as the tracker runs them before it is saved. */
   private checkRow(row: T, context: { isNew: boolean; changed: readonly string[] }): Record<string, string> {
-    const fields = this.columns.visibleData().filter((f) => this.columns.canFill(f, row, context.isNew));
+    const fields = this.columns.listedData().filter((f) => this.columns.canFill(f, row, context.isNew));
     const rowId = this.idOfChecked(row, context.isNew);
     const found: Record<string, string> = {};
     let waiting = false;

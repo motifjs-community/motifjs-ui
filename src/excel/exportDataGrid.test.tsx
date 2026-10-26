@@ -91,6 +91,20 @@ describe('exportDataGrid', () => {
     await grid.dispose();
   });
 
+  it('merges a band header over its columns and a column header down the band rows', async () => {
+    const banded = () => [{ title: 'Order', columns: [{ field: 'id', title: 'Id' }, { field: 'city', title: 'City' }] }, { field: 'amount', title: 'Amount' }];
+    const grid = await make({ columns: banded() as DataGridProps<Row>['columns'] });
+    const ws = sheet();
+    await exportDataGrid({ component: grid, worksheet: ws });
+    expect([ws.getCell('A1').value, ws.getCell('A2').value, ws.getCell('B2').value]).toEqual(['Order', 'Id', 'City']);
+    expect(ws.getCell('B1').master.address).toBe('A1');
+    expect(ws.getCell('C2').master.address).toBe('C1');
+    const flat = sheet();
+    await exportDataGrid({ component: grid, worksheet: flat, mergeHeaders: false });
+    expect(flat.getCell('B1').isMerged).toBe(false);
+    await grid.dispose();
+  });
+
   it('turns a column’s Intl format into the number format, and writes a format function’s text', async () => {
     const cols = columns().map((c) =>
       c.field === 'amount' ? { ...c, format: { style: 'currency', currency: 'EUR' } as Intl.NumberFormatOptions } : c.field === 'id' ? { ...c, format: (v: unknown) => `#${v}` } : c,

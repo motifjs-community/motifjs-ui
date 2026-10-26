@@ -747,6 +747,94 @@
     box-shadow: var(--mx-datagrid-cell-focus-halo);
   }
 
+  /* The adaptive detail: the hidden columns' titles and values under the row, on the rows' own
+     background; the "…" cell that opens it. */
+  .mx-data-grid__body > .mx-data-grid__adaptive-row {
+    background-color: var(--mx-datagrid-adaptive-background);
+  }
+
+  .mx-data-grid__adaptive-row > .mx-data-grid__detail-cell {
+    padding: var(--mx-datagrid-adaptive-padding);
+  }
+
+  .mx-data-grid__adaptive-cell {
+    display: grid;
+    place-items: center;
+    padding-inline: 0;
+  }
+
+  .mx-data-grid__adaptive-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--mx-datagrid-button-size);
+    block-size: var(--mx-datagrid-button-size);
+    color: var(--mx-datagrid-adaptive-color);
+    cursor: pointer;
+    border-radius: var(--mx-datagrid-adaptive-radius);
+  }
+
+  .mx-data-grid__adaptive-button[hidden] {
+    display: none;
+  }
+
+  .mx-data-grid__adaptive-button:hover,
+  .mx-data-grid__adaptive-button[aria-expanded='true'] {
+    background-color: var(--mx-datagrid-hover);
+  }
+
+  .mx-data-grid__adaptive-button > .mx-glyph {
+    inline-size: var(--mx-datagrid-icon-size);
+    block-size: var(--mx-datagrid-icon-size);
+  }
+
+  /* A text beside its title, in line with the editors' labels. */
+  .mx-data-grid__adaptive-item {
+    display: grid;
+    grid-template-columns: var(--mx-datagrid-adaptive-label-width) minmax(0, 1fr);
+    column-gap: var(--mx-datagrid-adaptive-gap);
+    align-items: baseline;
+    min-inline-size: 0;
+  }
+
+  .mx-data-grid__adaptive-item:is([data-label-mode='top'], [data-label-mode='floating']) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mx-data-grid__adaptive-label {
+    font-weight: var(--mx-datagrid-adaptive-label-font-weight);
+    color: var(--mx-datagrid-adaptive-label-color);
+  }
+
+  .mx-data-grid__adaptive-item[data-label-mode='hidden'] > .mx-data-grid__adaptive-label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .mx-data-grid__adaptive-value {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* Bands: a row of headers per level over the header row. A band's header draws its line under it
+     and at its end; the rows draw none, so a column without a band over it reads as one tall header. */
+  .mx-data-grid__row--band {
+    border-block-end: 0;
+  }
+
+  .mx-data-grid__header-cell.mx-data-grid__band {
+    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-band-line-color);
+    border-inline-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-band-line-color);
+  }
+
+  .mx-data-grid__band-filler {
+    background: inherit;
+  }
+
   /* The edit form in place of a row: one cell across the viewport, as tall as the form. */
   .mx-data-grid__body > .mx-data-grid__form-row {
     position: absolute;

@@ -10,6 +10,6 @@ export interface GridEditorPreparedEventArgs<T> {
   readonly editor: ComponentBase | null;
   /** The element that holds it. */
   readonly element: HTMLElement;
-  /** `'cell'`, or `'form'` for the edit form (`editMode` `'form'` and `'popup'`). */
-  readonly place: 'cell' | 'form';
+  /** `'cell'`, `'form'` for the edit form (`editMode` `'form'` and `'popup'`), or `'adaptive'` for a row's adaptive detail. */
+  readonly place: 'cell' | 'form' | 'adaptive';
 }

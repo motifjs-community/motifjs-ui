@@ -31,6 +31,7 @@ export class LayoutStore {
       const sort = value.sort.filter((s): s is StoredLayout['sort'][number] => isObject(s) && typeof s.field === 'string' && (s.dir === 'asc' || s.dir === 'desc'));
       const group = Array.isArray(value.group) ? value.group.filter((g): g is NonNullable<StoredLayout['group']>[number] => isObject(g) && typeof g.field === 'string' && (g.dir === 'asc' || g.dir === 'desc')) : undefined;
       const kept: StoredLayout = { columns, sort, group, filters: isObject(value.filters) ? (value.filters as StoredLayout['filters']) : {}, searchText: typeof value.searchText === 'string' ? value.searchText : '' };
+      if (Array.isArray(value.bands)) kept.bands = value.bands.filter((b): b is NonNullable<StoredLayout['bands']>[number] => isObject(b) && typeof b.name === 'string');
       if (typeof value.pageSize === 'number' && value.pageSize >= 0) kept.pageSize = value.pageSize;
       if (isObject(value.filterValue) && data.isFilterExpression(value.filterValue)) kept.filterValue = value.filterValue;
       if (typeof value.filterEnabled === 'boolean') kept.filterEnabled = value.filterEnabled;

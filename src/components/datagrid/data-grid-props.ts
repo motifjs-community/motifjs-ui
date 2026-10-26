@@ -50,7 +50,6 @@ import type { GridSummary } from './grid-summary';
 import type { GridSummaryChangedEventArgs } from './grid-summary-changed-event-args';
 import type { GridToolbarPreparingEventArgs } from './grid-toolbar-preparing-event-args';
 import type { LayoutStorage } from './layout-storage';
-import type { GridColumn } from './grid-column';
 import type { GridEditForm } from './grid-edit-form';
 import type { GridEditPopup } from './grid-edit-popup';
 import type { GridMasterDetail } from './grid-master-detail';
@@ -69,6 +68,11 @@ import type { GridGroupDroppingEventArgs } from './grid-group-dropping-event-arg
 import type { GridGroupingChangedEventArgs } from './grid-grouping-changed-event-args';
 import type { GridGroupingChangingEventArgs } from './grid-grouping-changing-event-args';
 import type { GridLayout } from './grid-layout';
+import type { GridAdaptiveDetail } from './grid-adaptive-detail';
+import type { GridAdaptiveDetailRowPreparingEventArgs } from './grid-adaptive-detail-row-preparing-event-args';
+import type { GridAdaptiveRowExpandedEventArgs } from './grid-adaptive-row-expanded-event-args';
+import type { GridAdaptiveRowExpandingEventArgs } from './grid-adaptive-row-expanding-event-args';
+import type { GridColumnItem } from './grid-column-item';
 import type { GroupCellContext } from './group-cell-context';
 import type { GridRowExpandedEventArgs } from './grid-row-expanded-event-args';
 import type { GridRowExpandingEventArgs } from './grid-row-expanding-event-args';
@@ -82,10 +86,13 @@ import type { GridValuesResult } from './grid-values-result';
 import type { NewRowOptions } from './new-row-options';
 import type { RowState } from './row-state';
 
-/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form`, `popup`, `filterBuilder`, `filterBuilderPopup` and `masterDetail` (whose fields are) and the callbacks is a value or a function that is followed. */
+/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form`, `popup`, `filterBuilder`, `filterBuilderPopup`, `masterDetail` and `adaptiveDetail` (whose fields are) and the callbacks is a value or a function that is followed. */
 export interface DataGridProps<T> extends ControlProps {
-  /** Column definitions, in their initial order. Columns come and go later with `addColumn` and `deleteColumn`. */
-  columns: GridColumn<T>[];
+  /**
+   * Column definitions, in their initial order, and bands over them (`{ title, columns: [...] }`).
+   * Columns come and go later with `addColumn` and `deleteColumn`.
+   */
+  columns: GridColumnItem<T>[];
   /**
    * Rows in memory. The grid puts them in a `DataSource` over an `ArrayAdapter` itself: `push`,
    * `splice` and a new array are followed, and saved edits, new rows and deletions go into the array.
@@ -139,6 +146,8 @@ export interface DataGridProps<T> extends ControlProps {
   popup?: GridEditPopup;
   /** Details under the rows: an expand column, and what `template` makes for each row in a row across the grid. Read and change it later through `grid.masterDetail`. */
   masterDetail?: GridMasterDetail<T>;
+  /** The adaptive detail of a row, while columns hide to fit the width (`settings.columnHidingEnabled`, a column's `hidingPriority`). Read and change it later through `grid.adaptiveDetail`. */
+  adaptiveDetail?: GridAdaptiveDetail;
   /** Checks a whole row before it is saved: a message per field, or one message for the row. */
   validateRow?: (
     row: T,
@@ -202,6 +211,14 @@ export interface DataGridProps<T> extends ControlProps {
   onRowCollapsing?: (e: GridRowExpandingEventArgs) => void;
   /** A group or a row's details closed. */
   onRowCollapsed?: (e: GridRowExpandedEventArgs) => void;
+  /** A row's adaptive detail is about to lay out its form: change `e.formOptions`. */
+  onAdaptiveDetailRowPreparing?: (e: GridAdaptiveDetailRowPreparingEventArgs<T>) => void;
+  /** A row's adaptive detail is about to open; `e.cancel` keeps it closed. */
+  onAdaptiveDetailRowExpanding?: (e: GridAdaptiveRowExpandingEventArgs<T>) => void;
+  onAdaptiveDetailRowExpanded?: (e: GridAdaptiveRowExpandedEventArgs<T>) => void;
+  /** A row's adaptive detail is about to close; `e.cancel` keeps it open. */
+  onAdaptiveDetailRowCollapsing?: (e: GridAdaptiveRowExpandingEventArgs<T>) => void;
+  onAdaptiveDetailRowCollapsed?: (e: GridAdaptiveRowExpandedEventArgs<T>) => void;
   /** The bar above the rows: which items, and whether it shows. */
   toolbar?: GridToolbar;
   /** What the toolbar's export button (`settings.exportButton`) offers: the formats, "Export selected rows", the texts. */

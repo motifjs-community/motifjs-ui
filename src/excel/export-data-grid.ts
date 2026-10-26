@@ -108,6 +108,10 @@ function write<T>(sheet: GridSheet<T>, worksheet: Worksheet, start: { row: numbe
     if (options.autoFilterEnabled && !worksheet.autoFilter && sheet.rows.length > 0) worksheet.autoFilter = { from: { row: start.row + sheet.headerRows - 1, column: start.column }, to: { ...range.to } };
   }
   if (Object.keys(view).length) worksheet.views = [view];
+  // A band's title over its columns, a column's title down the band rows above it.
+  if (options.mergeHeaders !== false) {
+    for (const m of sheet.merges ?? []) worksheet.mergeCells(start.row + m.row, start.column + m.column, start.row + m.row + m.rows - 1, start.column + m.column + m.columns - 1);
+  }
   return range;
 }
 

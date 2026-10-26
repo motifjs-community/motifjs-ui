@@ -12,6 +12,8 @@ export interface GridState extends DataState {
   rowHeight: number;
   /** Visible height of the body (viewport minus header). */
   viewport: number;
+  /** Inner width of the viewport, for the columns the width hides; 0 until measured. */
+  width: number;
   /** The body has been measured: the rows drawn are the ones on the screen (lookup cells ask for their keys from then on). */
   measured: boolean;
   activeRow: number;

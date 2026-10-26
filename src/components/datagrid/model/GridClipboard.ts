@@ -14,10 +14,10 @@ import type { PasteResult } from './paste-result';
 export class GridClipboard<T> {
   constructor(private readonly model: GridModel<T>) {}
 
-  /** Fields Ctrl+C copies, in display order. */
+  /** Fields Ctrl+C copies, in display order (those the width hides too). */
   fields(): string[] {
     const cols = this.model.columns;
-    return cols.visibleData().filter((f) => cols.can(f, 'copyable'));
+    return cols.listedData().filter((f) => cols.can(f, 'copyable'));
   }
 
   /** What Ctrl+C copies now; `'all'` when every row of a server's filter is selected (that is for an export), `null` when there is nothing. */

@@ -8,6 +8,8 @@ import type { DetailHost } from './detail-host';
  * the grid, holding what the template made for the row. It is not pooled: the content belongs to its
  * row, is made the first time the details show and is kept while the row is open, also out of view
  * (parked: laid out but not drawn, so the content keeps its scroll positions), until it is disposed.
+ * A row's adaptive detail (`kind: 'adaptive'`, the values of the columns the width hides) is one too,
+ * with content of its own (`make`).
  */
 export class DetailRow<T> {
   readonly element: HTMLDivElement;
@@ -32,9 +34,12 @@ export class DetailRow<T> {
     readonly key: unknown,
     public row: T,
     elementId: string,
+    readonly kind: 'detail' | 'adaptive' = 'detail',
+    /** Makes the content instead of `masterDetail.template`. */
+    private readonly make: ((ctx: DetailContext<T>) => unknown) | null = null,
   ) {
     const el = document.createElement('div');
-    el.className = 'mx-data-grid__detail-row';
+    el.className = kind === 'adaptive' ? 'mx-data-grid__detail-row mx-data-grid__adaptive-row' : 'mx-data-grid__detail-row';
     el.setAttribute('role', 'row');
     el.id = elementId;
     el.hidden = true;
@@ -51,6 +56,11 @@ export class DetailRow<T> {
     this.element = el;
     this.cell = cell;
     this.box = box;
+  }
+
+  /** What the content was made as, once it is: a component, or `null`. */
+  get component(): ComponentBase | null {
+    return this.content;
   }
 
   /** Whether it is drawn now. */
@@ -70,7 +80,7 @@ export class DetailRow<T> {
     el.hidden = false;
     el.style.inlineSize = `${width}px`;
     el.style.transform = `translate(${left}px, ${top}px)`;
-    const label = this.model.text('gridDetailsOf', { row: this.model.formatter.count(index + 1) });
+    const label = this.model.text(this.kind === 'adaptive' ? 'gridAdaptiveOf' : 'gridDetailsOf', { row: this.model.formatter.count(index + 1) });
     if (this.box.getAttribute('aria-label') !== label) this.box.setAttribute('aria-label', label);
     // Grouped, the grid is a tree: the details sit at the level of their row.
     const levels = this.model.groups.state.items.length;
@@ -79,7 +89,7 @@ export class DetailRow<T> {
     const span = String(Math.max(1, columns));
     if (this.cell.getAttribute('aria-colspan') !== span) this.cell.setAttribute('aria-colspan', span);
     // A height of its own: the content scrolls inside.
-    const fixed = this.model.details.options.get('height');
+    const fixed = this.kind === 'detail' ? this.model.details.options.get('height') : undefined;
     const height = typeof fixed === 'function' ? fixed(row) : fixed;
     const size = height === undefined ? '' : `${Math.max(0, height)}px`;
     if (this.cell.style.blockSize !== size) this.cell.style.blockSize = size;
@@ -105,7 +115,7 @@ export class DetailRow<T> {
   /** Makes the content from the template, once. */
   private build() {
     this.built = true;
-    const template = this.model.details.options.get('template');
+    const template = this.make ?? this.model.details.options.get('template');
     if (!template) return;
     const content = untracked(() => template(this.context()));
     if (content instanceof ComponentBase) {

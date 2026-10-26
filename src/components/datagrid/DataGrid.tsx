@@ -74,7 +74,14 @@ import type { GridChanges } from './grid-changes';
 import type { GridEditForm } from './grid-edit-form';
 import type { GridEditPopup } from './grid-edit-popup';
 import type { GridMasterDetail } from './grid-master-detail';
+import type { GridAdaptiveDetail } from './grid-adaptive-detail';
+import type { GridAdaptiveDetailRowPreparingEventArgs } from './grid-adaptive-detail-row-preparing-event-args';
+import type { GridAdaptiveRowExpandedEventArgs } from './grid-adaptive-row-expanded-event-args';
+import type { GridAdaptiveRowExpandingEventArgs } from './grid-adaptive-row-expanding-event-args';
+import type { GridColumnItem } from './grid-column-item';
 import type { DetailRow } from './view/DetailRow';
+import { AdaptiveForm } from './view/AdaptiveForm';
+import { BandRows } from './view/BandRows';
 import type { GridEditorPreparedEventArgs } from './grid-editor-prepared-event-args';
 import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
 import type { GridRowValidatingEventArgs } from './grid-row-validating-event-args';
@@ -100,7 +107,7 @@ import type { ActionTarget } from './model/action-target';
 import { ActionRunner } from './model/ActionRunner';
 import type { ClipboardContent } from './model/clipboard-content';
 import type { ExportTable } from './model/export-table';
-import { ACTIONS_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from './model/ColumnModel';
+import { ACTIONS_FIELD, ADAPTIVE_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from './model/ColumnModel';
 import { GridClipboard } from './model/GridClipboard';
 import { GridExport } from './model/GridExport';
 import { FILTER_ROW, GridModel, HEADER_ROW } from './model/GridModel';
@@ -184,6 +191,8 @@ const COLUMN_DATA = new Set<string>(['type', 'value', 'compare', 'sortField', 't
 export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>> {
   private readonly model: GridModel<T>;
   private readonly header: HeaderRow<T>;
+  /** The rows of band headers above the header. */
+  private readonly bands: BandRows<T>;
   private readonly filterRow: FilterRow<T>;
   private readonly body: GridBody<T>;
   private readonly totalRow: TotalRow<T>;
@@ -282,9 +291,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       focusActive: () => this.focusActive(false),
     };
     this.header = new HeaderRow<T>(model, host);
+    this.bands = new BandRows<T>(model, host, this.header, this);
+    this.motif.setDisposable(() => this.bands.dispose());
     this.filterRow = new FilterRow<T>(model);
     this.widths = new ActionWidths(() => this.measureEl);
-    this.body = new GridBody<T>(model, () => this.viewportEl, this.widths, { grid: this, collapse: (key) => this.collapseRow(key) });
+    this.body = new GridBody<T>(model, () => this.viewportEl, this.widths, {
+      grid: this,
+      collapse: (key) => this.collapseRow(key),
+      adaptiveContent: (rowId, row) => this.adaptiveForm(rowId, row),
+    });
     this.totalRow = new TotalRow<T>(model);
     this.pager = new GridPager<T>(model, {
       goTo: (page) => (this.page = page),
@@ -414,6 +429,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.exportSwitches = new Switches<ExportValues>(['formats', 'allowExportSelectedData', 'texts'], {}, own.export ?? {});
     this.exportSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `export.${name}`, value, previous }));
     model.details.options.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `masterDetail.${name}`, value, previous }));
+    model.adaptive.options.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `adaptiveDetail.${name}`, value, previous }));
     this.topBar = new GridToolbar<T>(
       model,
       this.toolbarSwitches,
@@ -486,7 +502,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    * @example grid.columnSettings('amount').movable = false;
    */
   columnSettings(field: string): Partial<ColumnFeatures> {
-    this.model.columns.get(field);
+    if (!this.model.columns.isBand(field)) this.model.columns.get(field);
     return this.model.columns.features.get(field)!.view;
   }
 
@@ -1058,8 +1074,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       element,
     }));
     // A row's details come right after it, with its index and key.
-    for (const d of this.body.drawnDetails()) rows.push({ rowIndex: d.index, rowType: 'detail', row: d.row, key: d.key, element: d.element });
-    return rows.sort((a, b) => a.rowIndex - b.rowIndex || Number(a.rowType === 'detail') - Number(b.rowType === 'detail'));
+    for (const d of this.body.drawnDetails()) rows.push({ rowIndex: d.index, rowType: d.kind === 'adaptive' ? 'detailAdaptive' : 'detail', row: d.row, key: d.key, element: d.element });
+    const order = (type: GridRowType) => (type === 'detailAdaptive' ? 1 : type === 'detail' ? 2 : 0);
+    return rows.sort((a, b) => a.rowIndex - b.rowIndex || order(a.rowType) - order(b.rowType));
   }
 
   /** The element of grid row `rowIndex` while it is drawn. */
@@ -1221,15 +1238,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /**
    * Adds a column, at `index` among the data columns (default: last), as the user would see it after
    * the ones given: its width, visibility and sticky side, or what the kept layout says of it; its
-   * `groupIndex` groups the rows by it. The layout and the kept layout follow.
+   * `groupIndex` groups the rows by it. A band comes with its columns; a column with `ownerBand`
+   * goes into that band. The layout and the kept layout follow.
    */
-  addColumn(column: GridColumn<T>, index?: number) {
+  addColumn(column: GridColumnItem<T>, index?: number) {
     const { model } = this;
     const previous = model.columnFields();
     this.dropForm();
-    model.addColumn(column, index);
-    this.placeColumn(column.field);
-    this.watchColumn(column);
+    for (const field of model.addColumn(column, index)) {
+      this.placeColumn(field);
+      this.watchColumn(model.columns.get(field));
+    }
     model.keepLayout();
     model.events.tell(model.events.optionChanged, () => ({ name: 'columns', value: model.columnFields(), previous }));
   }
@@ -1257,10 +1276,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.model.columnFields().length;
   }
 
-  /** The definitions of the data columns shown now, in display order. Reactive. */
+  /** The definitions of the data columns shown now, in display order, those the width hides too (`adaptiveHiddenColumns`). Reactive. */
   getVisibleColumns(): GridColumn<T>[] {
     const cols = this.model.columns;
-    return cols.visibleData().map((field) => cols.get(field));
+    return cols.listedData().map((field) => cols.get(field));
   }
 
   /**
@@ -1278,6 +1297,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   columnOption(field: string, name?: ColumnOptionName | Partial<Record<ColumnOptionName, unknown>>, value?: unknown): unknown {
     const { model } = this;
     const cols = model.columns;
+    if (cols.isBand(field)) return this.bandOption(field, name, value, arguments.length);
     const def = cols.get(field);
     if (cols.isInternal(field)) throw new Error(`[motifx-ui] DataGrid: "${field}" is the grid's own column`);
     const features = COLUMN_FEATURES as readonly string[];
@@ -1294,7 +1314,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         case 'sticky':
           return cols.state.sticky[field] ?? null;
         case 'visibleIndex':
-          return cols.visibleData().indexOf(field);
+          return cols.shownBeside(field).indexOf(field);
         case 'sortOrder':
           return model.state.sort.find((s) => s.field === field)?.dir ?? null;
         case 'sortIndex':
@@ -1345,8 +1365,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         cols.setSticky(field, (value as 'start' | 'end' | null) ?? null);
         break;
       case 'visibleIndex': {
-        const target = cols.visibleData()[Number(value)];
-        if (target !== undefined && cols.zoneOf(target) === cols.zoneOf(field)) cols.move(field, cols.zone(cols.zoneOf(field)).indexOf(target));
+        const target = cols.shownBeside(field)[Number(value)];
+        if (target !== undefined && cols.zoneOf(target) === cols.zoneOf(field)) cols.move(field, cols.siblings(field).indexOf(target));
         break;
       }
       case 'sortOrder':
@@ -1376,6 +1396,58 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     }
     model.keepLayout();
     model.events.tell(model.events.optionChanged, () => ({ name, field, value: read(name), previous }));
+  }
+
+  /** `columnOption` of a band: `visible` / `hidden`, `sticky`, `visibleIndex` among the columns and bands beside it, `title`, its feature switches. */
+  private bandOption(id: string, name: ColumnOptionName | Partial<Record<ColumnOptionName, unknown>> | undefined, value: unknown, given: number): unknown {
+    const { model } = this;
+    const cols = model.columns;
+    const features = COLUMN_FEATURES as readonly string[];
+    const def = cols.bands.get(id)!.def as unknown as Record<string, unknown>;
+    const read = (n: string): unknown => {
+      switch (n) {
+        case 'visible':
+          return !cols.state.hidden[id];
+        case 'hidden':
+          return !!cols.state.hidden[id];
+        case 'sticky':
+          return cols.sideOf(id);
+        case 'visibleIndex':
+          return cols.shownBeside(id).indexOf(id);
+        case 'title':
+          return cols.title(id);
+        default:
+          return features.includes(n) ? (cols.features.get(id)!.own(n as keyof ColumnFeatures) ?? model.settings.get(n as keyof ColumnFeatures)) : def[n];
+      }
+    };
+    if (name === undefined) return { ...def, ...Object.fromEntries(['visible', 'sticky', 'visibleIndex', 'title', 'movable', 'hideable', 'pinnable', 'menu'].map((n) => [n, read(n)])) };
+    if (typeof name === 'object') {
+      for (const [n, v] of Object.entries(name)) this.bandOption(id, n as ColumnOptionName, v, 3);
+      return;
+    }
+    if (given < 3) return read(name);
+    const previous = read(name);
+    switch (name) {
+      case 'visible':
+      case 'hidden':
+        cols.setHidden(id, name === 'visible' ? !value : !!value);
+        model.keepActiveFieldVisible();
+        break;
+      case 'sticky':
+        cols.setSticky(id, (value as 'start' | 'end' | null) ?? null);
+        break;
+      case 'visibleIndex': {
+        const target = cols.shownBeside(id)[Number(value)];
+        if (target !== undefined && cols.zoneOf(target) === cols.zoneOf(id)) cols.move(id, cols.siblings(id).indexOf(target));
+        break;
+      }
+      default:
+        if (!features.includes(name)) throw new Error(`[motifx-ui] DataGrid: a band has no option "${name}"`);
+        (this.columnSettings(id) as Record<string, unknown>)[name] = value;
+        return;
+    }
+    model.keepLayout();
+    model.events.tell(model.events.optionChanged, () => ({ name, field: id, value: read(name), previous }));
   }
 
   /** Other fields of a column's definition: the column is made again with them, its layout, sort and filter kept. */
@@ -1953,6 +2025,65 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.body.refreshDetails();
   }
 
+  // Adaptive columns.
+
+  /** The `adaptiveDetail` options, live: `grid.adaptiveDetail.colCount = 1`; a function is followed, `onOptionChanged` tells `adaptiveDetail.colCount` …. */
+  get adaptiveDetail(): GridAdaptiveDetail {
+    return this.model.adaptive.options.view as GridAdaptiveDetail;
+  }
+
+  /** The columns the width hides now (`settings.columnHidingEnabled`, a column's `hidingPriority`), by field, in display order. Reactive. */
+  get adaptiveHiddenColumns(): string[] {
+    return [...this.model.columns.state.adaptive];
+  }
+
+  /**
+   * Opens the adaptive detail of the row with this key, as its "…" does (the one open before
+   * closes; `onAdaptiveDetailRowExpanding` can keep it closed). Returns whether it opened: a row not
+   * loaded, or a grid with no column hidden, does not.
+   */
+  expandAdaptiveDetailRow(key: unknown): boolean {
+    const i = this.getRowIndexByKey(key);
+    return i >= 0 && this.toggleAdaptive(i, true);
+  }
+
+  /** Closes the adaptive detail that is open. Returns whether it closed. */
+  collapseAdaptiveDetailRow(): boolean {
+    return this.closeAdaptive();
+  }
+
+  /** Whether the row with this key has its adaptive detail open. Reactive. */
+  isAdaptiveDetailRowExpanded(key: unknown): boolean {
+    const { model } = this;
+    const id = model.adaptive.state.rowId;
+    if (id === null || !model.columns.state.adaptive.length) return false;
+    const row = model.data.rowByKey(key);
+    return row !== undefined && model.rowIdOf(row) === id;
+  }
+
+  /** Raised when a row's adaptive detail lays out its form: change `e.formOptions`. */
+  get onAdaptiveDetailRowPreparing(): MotifEvent<GridAdaptiveDetailRowPreparingEventArgs<T>> {
+    return this.on(this.model.events.adaptiveDetailRowPreparing);
+  }
+
+  /** Raised before a row's adaptive detail opens: `e.cancel` keeps it closed. */
+  get onAdaptiveDetailRowExpanding(): MotifEvent<GridAdaptiveRowExpandingEventArgs<T>> {
+    return this.on(this.model.events.adaptiveDetailRowExpanding);
+  }
+
+  get onAdaptiveDetailRowExpanded(): MotifEvent<GridAdaptiveRowExpandedEventArgs<T>> {
+    return this.on(this.model.events.adaptiveDetailRowExpanded);
+  }
+
+  /** Raised before a row's adaptive detail closes: `e.cancel` keeps it open. */
+  get onAdaptiveDetailRowCollapsing(): MotifEvent<GridAdaptiveRowExpandingEventArgs<T>> {
+    return this.on(this.model.events.adaptiveDetailRowCollapsing);
+  }
+
+  get onAdaptiveDetailRowCollapsed(): MotifEvent<GridAdaptiveRowExpandedEventArgs<T>> {
+    return this.on(this.model.events.adaptiveDetailRowCollapsed);
+  }
+
   // Summaries.
 
   /**
@@ -2356,6 +2487,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       const filterRow = model.showsFilterRow();
       untracked(() => {
         this.header.arrange(visible);
+        if (this.headEl) this.bands.arrange(visible, this.headEl, this.header.element);
         if (filterRow) this.filterRow.arrange(visible);
         this.body.arrange(visible);
         this.totalRow.arrange(visible);
@@ -2371,9 +2503,45 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       const offsets = model.columns.stickyOffsets(visible);
       const align = new Map<string, string>();
       for (const f of visible) align.set(f, model.columns.align(f));
+      const bands = model.columns.hasBands ? model.columns.shownBands(visible) : [];
       untracked(() => {
         this.viewportEl?.style.setProperty('--_columns', template);
-        this.styles.update(visible, offsets, align);
+        this.styles.update(visible, offsets, align, bands);
+      });
+    });
+
+    // The columns the width hides: worked out from the widths kept and the viewport's width only, so
+    // hiding them cannot feed back into it.
+    this.bindings.watch(() => {
+      const hidden = model.columns.fitWidth(model.state.width);
+      untracked(() => {
+        const cols = model.columns;
+        if (hidden.join('\n') !== cols.state.adaptive.join('\n')) cols.state.adaptive = hidden;
+      });
+    });
+
+    // No column hidden any more: the adaptive detail closes.
+    this.bindings.watch(() => {
+      const none = model.columns.state.adaptive.length === 0;
+      if (!none || model.adaptive.state.rowId === null) return;
+      untracked(() => {
+        this.leaveAdaptive();
+        model.adaptive.close();
+        this.body.relayout(true);
+      });
+    });
+
+    // An adaptive detail editing opened closes when the row is left.
+    this.bindings.watch(() => {
+      const session = model.state.session;
+      const a = model.adaptive.state;
+      if (!a.auto || a.rowId === null || session === a.rowId) return;
+      untracked(() => {
+        const i = model.adaptiveIndex();
+        if (i < 0 || !this.toggleAdaptive(i, false)) {
+          model.adaptive.close();
+          this.body.relayout(true);
+        }
       });
     });
 
@@ -2409,6 +2577,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     // Header cells and rows are built in definition order; put them in display order.
     const visible = this.model.columns.visible();
     this.header.arrange(visible);
+    if (this.headEl) this.bands.arrange(visible, this.headEl, this.header.element);
     if (this.model.showsFilterRow()) this.filterRow.arrange(visible);
     this.body.arrange(visible);
     this.totalRow.arrange(visible);
@@ -2474,6 +2643,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
             aria-label={() => this.text || t('gridLabel')}
             aria-rowcount={() => {
               void model.details.state.version;
+              void model.adaptive.state.rowId;
+              void model.columns.state.adaptive;
               return st.status === 'loading' ? -1 : model.count + model.headRows + (model.summaries.showsTotal() ? 1 : 0) + model.openDetailCount();
             }}
             aria-multiselectable={() => (settings.get('selection') === 'multiple' ? 'true' : null)}
@@ -2617,6 +2788,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.element.style.setProperty('--_head-height', `${head}px`);
     const viewport = Math.max(0, vp.clientHeight - head - foot);
     if (viewport !== state.viewport) state.viewport = viewport;
+    const width = vp.clientWidth;
+    if (width !== state.width) state.width = width;
     if (viewport > 0 && !state.measured) state.measured = true;
     const fixed = this.model.fixedRowHeight;
     const h = fixed ?? this.probeEl?.offsetHeight ?? 0;
@@ -2678,7 +2851,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       const cell = this.filterRow.cellElement(activeField);
       if (cell) return cell;
     }
-    return this.header.cellElement(activeField);
+    return this.headerCellOf(activeField);
+  }
+
+  /** The header of a column, or of a band. */
+  private headerCellOf(field: string): HTMLElement | undefined {
+    return this.model.columns.isBand(field) ? this.bands.cellElement(field) : this.header.cellElement(field);
   }
 
   /** Exactly one cell is in the tab order: the active one. */
@@ -2740,7 +2918,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private focusActive(reveal: boolean) {
     const { activeRow, activeField } = this.model.state;
     if (reveal && activeRow >= 0) this.body.reveal(activeRow);
-    if (reveal) this.revealColumn(activeField);
+    const cols = this.model.columns;
+    if (reveal) this.revealColumn(cols.isBand(activeField) ? (cols.leavesIn(activeField, cols.visible())[0] ?? activeField) : activeField);
     this.syncTabStop();
     const el = this.activeElement();
     if (!el) return;
@@ -2828,11 +3007,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (this.pendingInvalid === rowId) this.pendingInvalid = null;
     this.tip.hide();
     editor.focus();
+    this.openAdaptiveForEdit(i);
     return true;
   }
 
   /** `onEditorPrepared` for an editor just made. */
-  private editorPrepared(field: string, row: T, isNew: boolean, editor: CellEditor<T>, place: 'cell' | 'form') {
+  private editorPrepared(field: string, row: T, isNew: boolean, editor: CellEditor<T>, place: 'cell' | 'form' | 'adaptive') {
     const ev = this.model.events;
     ev.tell(ev.editorPrepared, () => ({ field, row: { ...row }, isNew, editor: editor.editor, element: editor.element, place }));
   }
@@ -2857,7 +3037,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const isNew = !!rec?.isNew;
     if (rec?.saving || rec?.removed) return false;
     if (this.formEdit?.rowId === rowId) return this.formEdit.form.focus(field);
-    if (!model.columns.visibleData().some((f) => model.columns.canFill(f, row, isNew))) return false;
+    if (!model.columns.listedData().some((f) => model.columns.canFill(f, row, isNew))) return false;
     if (this.formEdit && !this.cancelForm(false)) return false;
     const merged = { ...(row as object), ...(rec?.draft ?? {}) } as T;
     if (!model.events.ask(model.events.editingStart, () => ({ field: '', row: merged, rowIndex: i, isNew, cancel: false }))) return false;
@@ -3171,7 +3351,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    * chain opens the next new row; at the end of another row, to the next row; at the edge of the
    * grid, out of the grid. Leaving a row saves it as the mode says.
    */
-  private moveWithTab(dir: 1 | -1) {
+  private moveWithTab(dir: 1 | -1, fromAdaptive = false) {
     const { model } = this;
     const st = model.state;
     const i = st.activeRow;
@@ -3182,6 +3362,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.navigate(i, nextField, { edit: true });
       return;
     }
+    // The row's adaptive detail holds more of its cells: Tab goes on into it.
+    const form = dir > 0 && !fromAdaptive ? this.adaptiveFormAt(i) : null;
+    if (form && this.commitEditor() && form.focusFirst()) return;
     const rowId = model.rowIdAt(i);
     if (dir > 0 && rowId && model.isNew(rowId) && model.settings.get('addRows') && model.settings.get('tabChain')) {
       this.openNextNewRow(rowId);
@@ -3330,6 +3513,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private navigate(row: number, field: string, opts: GoToCellOptions = {}): boolean {
     const { model } = this;
     const st = model.state;
+    // A band has a header only: in the rows, its first column.
+    const cols = model.columns;
+    if (row !== HEADER_ROW && cols.isBand(field)) field = cols.leavesIn(field, cols.visible())[0] ?? cols.visibleData()[0] ?? field;
     if (st.busy || !this.canMoveTo(row, field)) return false;
     const target = row >= 0 ? model.rowIdAt(row) : undefined;
     if (this.formEdit) {
@@ -3414,6 +3600,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     }
     if (cell.classList.contains('mx-data-grid__header-cell')) {
       if (target !== cell) return;
+      const band = cell.dataset.band;
+      if (band) {
+        if (!this.canMoveTo(HEADER_ROW, band)) {
+          this.focusActive(false);
+          return;
+        }
+        this.leave();
+        this.setActive(HEADER_ROW, band);
+        this.syncTabStop();
+        return;
+      }
       if (!this.canMoveTo(HEADER_ROW, field)) {
         this.focusActive(false);
         return;
@@ -3602,9 +3799,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (!cell || !view || view.index < 0) return;
     const field = cell.dataset.field ?? '';
     if (!this.askClick(e, false, cell, view.element, view.index, field, null)) return;
-    // The expand cell opens and closes the row's details, and leaves the selection as it is.
+    // The expand cell opens and closes the row's details, and leaves the selection as it is; so does the "…" cell with the adaptive detail.
     if (field === EXPAND_FIELD) {
       if (this.model.details.enabled) this.toggleDetail(view.index, !this.model.isDetailOpen(view.index));
+      return;
+    }
+    if (field === ADAPTIVE_FIELD) {
+      this.toggleAdaptive(view.index, !this.model.adaptive.isOpen(view.rowId));
       return;
     }
     this.clickSelect(e, view, field);
@@ -3697,7 +3898,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       stops[0].focus();
     } else if (e.key === 'Tab' && !e.shiftKey && (onCell || stops[stops.length - 1] === target)) {
       e.preventDefault();
-      this.moveFocusOut(true);
+      this.tabOnFrom(detail);
     } else if (e.key === 'Enter' && onCell) {
       const first = stops[0] ?? focusableIn(detail.cell)[0];
       if (first) {
@@ -3705,6 +3906,29 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         first.focus();
       }
     }
+  }
+
+  /**
+   * Tab on the last stop of a row's adaptive detail or details: into the row's details after it;
+   * from an adaptive detail whose row is being edited, on to the next row's cells, as Tab goes in
+   * edit mode; else out of the grid.
+   */
+  private tabOnFrom(detail: DetailRow<T>) {
+    const { model } = this;
+    const under = this.body.detailsUnder(detail.index);
+    const next = under[under.indexOf(detail) + 1];
+    if (next) {
+      (tabbableIn(next.cell)[0] ?? next.cell).focus();
+      return;
+    }
+    const i = detail.index;
+    if (detail.kind === 'adaptive' && i >= 0 && model.state.session === model.rowIdAt(i)) {
+      const fields = this.editableFields(i);
+      this.setActive(i, fields[fields.length - 1] ?? model.state.activeField);
+      this.moveWithTab(1, true);
+      return;
+    }
+    this.moveFocusOut(true);
   }
 
   /** Focus back on grid row `i` (the active cell's column), from its details. */
@@ -3720,7 +3944,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** Tab with details in the body: into the details of the row it is on, else out of the grid (never into another row's details). */
   private tabFromRow(e: KeyboardEvent, row: number) {
     e.preventDefault();
-    const detail = row >= 0 && !e.shiftKey ? this.body.detailAt(row) : undefined;
+    const detail = row >= 0 && !e.shiftKey ? this.body.detailsUnder(row)[0] : undefined;
     if (detail) (tabbableIn(detail.cell)[0] ?? detail.cell).focus();
     else this.moveFocusOut(!e.shiftKey);
   }
@@ -3728,7 +3952,103 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** Focus in a row's details goes back to the row (before every detail closes). */
   private leaveDetails() {
     const detail = this.body.detailOf(document.activeElement);
-    if (detail) this.backToRow(detail.index);
+    if (detail?.kind === 'detail') this.backToRow(detail.index);
+  }
+
+  /** Focus in the adaptive detail goes back to its row (before it closes). */
+  private leaveAdaptive() {
+    const detail = this.body.detailOf(document.activeElement);
+    if (detail?.kind === 'adaptive') this.backToRow(detail.index >= 0 ? detail.index : this.model.adaptiveIndex());
+  }
+
+  /**
+   * Opens or closes the adaptive detail of grid row `i` (a data or new row, while columns are
+   * hidden), telling it before (it can be cancelled) and after. Another row's open one closes first.
+   */
+  private toggleAdaptive(i: number, open: boolean): boolean {
+    const { model } = this;
+    const a = model.adaptive;
+    const rowId = model.rowIdAt(i);
+    const row = model.rowAt(i);
+    if (rowId === undefined || row === undefined || model.groupAt(i) || model.footerAt(i) || a.isOpen(rowId) === open) return false;
+    if (open && (!model.columns.state.adaptive.length || !this.closeAdaptive())) return false;
+    const key = this.getKeyByRowIndex(i);
+    const ev = model.events;
+    if (!ev.ask(open ? ev.adaptiveDetailRowExpanding : ev.adaptiveDetailRowCollapsing, () => ({ row, key, rowIndex: i, cancel: false }))) return false;
+    if (!open && this.body.adaptiveAt(i)?.element.contains(document.activeElement)) this.backToRow(i);
+    if (open) a.open(rowId, key);
+    else a.close();
+    this.body.relayout(true);
+    ev.tell(open ? ev.adaptiveDetailRowExpanded : ev.adaptiveDetailRowCollapsed, () => ({ row, key, rowIndex: i }));
+    return true;
+  }
+
+  /** Closes the adaptive detail that is open (as the user would, when its row is there). */
+  private closeAdaptive(): boolean {
+    const { model } = this;
+    const id = model.adaptive.state.rowId;
+    if (id === null) return true;
+    const i = model.adaptiveIndex();
+    if (i >= 0) return this.toggleAdaptive(i, false);
+    model.adaptive.close();
+    this.body.relayout(true);
+    return true;
+  }
+
+  /** Keys on the "…" cell: `toggleKeys` open and close the adaptive detail. */
+  private onAdaptiveKey(e: KeyboardEvent, row: number): boolean {
+    const { model } = this;
+    if (e.ctrlKey || e.metaKey || e.altKey || !model.adaptive.options.get('toggleKeys').includes(e.key)) return false;
+    e.preventDefault();
+    this.toggleAdaptive(row, !model.adaptive.isOpen(model.rowIdAt(row)));
+    return true;
+  }
+
+  /** Editing a row whose hidden columns it can fill opens its adaptive detail (`expandOnEdit`, the `'row'` edit mode); leaving the row closes it. */
+  private openAdaptiveForEdit(i: number) {
+    const { model } = this;
+    const a = model.adaptive;
+    const rowId = model.rowIdAt(i);
+    const row = model.rowAt(i);
+    if (!rowId || row === undefined || a.isOpen(rowId) || model.editMode !== 'row' || !a.options.get('expandOnEdit') || !a.options.get('editors')) return;
+    const isNew = model.isNew(rowId);
+    if (!model.columns.state.adaptive.some((f) => model.columns.canFill(f, row, isNew))) return;
+    if (this.toggleAdaptive(i, true)) a.state.auto = true;
+  }
+
+  /** The adaptive detail's form under grid row `i`, while it is drawn. */
+  private adaptiveFormAt(i: number): AdaptiveForm<T> | null {
+    const content = this.body.adaptiveAt(i)?.component;
+    return content instanceof AdaptiveForm ? content : null;
+  }
+
+  /** What a row's adaptive detail holds: the hidden columns' values, editors where the row can be edited in its cells. */
+  private adaptiveForm(rowId: string, row: T): AdaptiveForm<T> {
+    const { model } = this;
+    return new AdaptiveForm<T>(model, rowId, row, {
+      save: () => undefined,
+      cancel: () => {
+        const i = model.adaptiveIndex();
+        if (i >= 0) this.backToRow(i);
+      },
+      prepare: (field, r, isNew, options) => {
+        const e: GridEditorPreparingEventArgs<T> = { field, row: { ...r }, isNew, options, cancel: false };
+        model.events.editorPreparing.fire(e);
+        return !e.cancel;
+      },
+      prepared: (field, r, isNew, editor) => this.editorPrepared(field, r, isNew, editor, 'adaptive'),
+      // Its editors edit the row as its cells do: the row becomes the one being edited.
+      begin: () => {
+        const st = model.state;
+        if (st.session === rowId || st.busy) return;
+        if (this.editor && !this.commitEditor()) this.closeEditor();
+        if (st.session) this.leave();
+        model.setSession(rowId, row);
+      },
+      kept: () => {
+        if (this.savesEachCell(rowId) && model.state.session === rowId) this.leaveRowThen(() => undefined);
+      },
+    });
   }
 
   /**
@@ -3777,13 +4097,70 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   private hasMenu(field: string): boolean {
-    return this.model.columns.defs.has(field) && this.model.columns.can(field, 'menu') && this.menu.hasEntries(field);
+    const cols = this.model.columns;
+    return (cols.defs.has(field) || cols.isBand(field)) && cols.can(field, 'menu') && this.menu.hasEntries(field);
   }
 
   private openMenu(field: string, anchor: HTMLElement) {
     this.setActive(HEADER_ROW, field);
     this.syncTabStop();
-    this.menu.open(field, anchor, this.header.cellElement(field)!, (items) => this.prepareMenu('header', field, HEADER_ROW, undefined, items));
+    this.menu.open(field, anchor, this.headerCellOf(field)!, (items) => this.prepareMenu('header', field, HEADER_ROW, undefined, items));
+  }
+
+  /**
+   * Keys on a band's header: Left and Right (Home, End) go along the bands of its row, Up to the band
+   * it is in, Down to the first column or band under it; Alt+Down and the context menu key open its
+   * menu.
+   */
+  private onBandKey(e: KeyboardEvent, id: string) {
+    const cols = this.model.columns;
+    const visible = cols.visible();
+    const row = cols
+      .shownBands(visible)
+      .filter((b) => b.depth === cols.depthOf(id))
+      .sort((a, b) => a.first - b.first)
+      .map((b) => b.id);
+    const at = row.indexOf(id);
+    let to: string | null | undefined;
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowLeft':
+        to = row[at + ((e.key === 'ArrowRight') !== this.isRtl() ? 1 : -1)];
+        break;
+      case 'Home':
+        to = row[0];
+        break;
+      case 'End':
+        to = row[row.length - 1];
+        break;
+      case 'ArrowUp':
+        to = cols.bandOf(id);
+        break;
+      case 'ArrowDown': {
+        if (e.altKey) {
+          e.preventDefault();
+          if (this.hasMenu(id)) this.openMenu(id, this.headerCellOf(id)!);
+          return;
+        }
+        const first = cols.leavesIn(id, visible)[0];
+        to = first === undefined ? undefined : cols.childOf(first, id);
+        break;
+      }
+      case 'ContextMenu':
+      case 'F10':
+        if (e.key === 'F10' && !e.shiftKey) return;
+        e.preventDefault();
+        if (this.hasMenu(id)) this.openMenu(id, this.headerCellOf(id)!);
+        return;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        return;
+      default:
+        return;
+    }
+    e.preventDefault();
+    if (to) this.navigate(HEADER_ROW, to);
   }
 
   /** Fits a column to its header and the rows shown now; in `'nextColumn'` mode the next column gives or takes the difference, unless `alone`. */
@@ -3856,8 +4233,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       const forward = (e.key === 'ArrowRight') !== this.isRtl();
       if (adjust.kind === 'move') {
         cols.moveBy(adjust.field, forward ? 1 : -1);
-        const zone = cols.zone(cols.zoneOf(adjust.field));
-        model.announce(model.text('gridMovedTo', { title, position: zone.indexOf(adjust.field) + 1, count: zone.length }));
+        const beside = cols.siblings(adjust.field);
+        model.announce(model.text('gridMovedTo', { title, position: beside.indexOf(adjust.field) + 1, count: beside.length }));
       } else {
         const step = model.settings.get(e.shiftKey ? 'resizeFineStep' : 'resizeStep');
         const px = cols.width(adjust.field) + (forward ? step : -step);
@@ -3960,6 +4337,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       if (this.onAdjustKey(e)) e.preventDefault();
       return;
     }
+    if (st.activeRow === HEADER_ROW && model.columns.isBand(st.activeField)) {
+      this.onBandKey(e, st.activeField);
+      return;
+    }
     const visible = model.columns.visible();
     if (!visible.length) return;
     const first = model.firstRow();
@@ -3977,6 +4358,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const group = onRow ? model.groupAt(row) : null;
     if (group && this.onGroupKey(e, row, group)) return;
     if (onRow && !group && field === EXPAND_FIELD && this.onExpandKey(e, row)) return;
+    if (onRow && !group && field === ADAPTIVE_FIELD && this.onAdaptiveKey(e, row)) return;
     // With details in the body, Tab goes into the row's own details or out of the grid, not into another row's.
     if (e.key === 'Tab' && !ctrl && !e.altKey && this.body.drawnDetails().length) {
       this.tabFromRow(e, row);
@@ -4041,6 +4423,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         row = row < 0 ? first : model.stepRow(row, 1);
         break;
       case 'ArrowUp':
+        // From a column's header up to its band's.
+        if (row === HEADER_ROW && model.columns.bandOf(field) && model.columns.bandShown(model.columns.bandOf(field)!)) {
+          e.preventDefault();
+          this.navigate(HEADER_ROW, model.columns.bandOf(field)!);
+          return;
+        }
         if (row === FILTER_ROW || row === HEADER_ROW) row = HEADER_ROW;
         else if (row === first) row = filters ? FILTER_ROW : HEADER_ROW;
         else row = model.stepRow(row, -1);

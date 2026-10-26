@@ -74,6 +74,7 @@ const SETTINGS = [
   ['editKeys, clearKeys', "`['Enter', 'F2']`, `['Delete']`", 'Keys that open the active cell’s editor, and that empty it (`KeyboardEvent.key` values).'],
   ['editOnKeyPress', '`true`', 'Typing a character on a cell opens its editor with it. A column can set its own.'],
   ['startEditAction', "`'dblClick'`", 'A double-click, or one `click` on the active cell, opens its editor. A column can set its own.'],
+  ['columnHidingEnabled, bandAlign', "`false`, `'center'`", 'Columns hide while the grid is narrower than they are, and a “…” column opens their values; where band captions sit. See [Bands and adaptive columns](/datagrid/bands#adaptive).'],
   ['editMode, confirmDelete, selectTextOnEditStart', "`'row'`, `true`, `true`", 'How rows are edited: in the cells (`row`, `cell`, `batch`) or in a form (`form`, `popup`); deleting asks first; an editor opens with its text selected. See [Edit forms and popups](/datagrid/forms#forms).'],
 ];
 

@@ -1,4 +1,5 @@
 import type { data } from '@motifx-community/data';
+import type { BandLayout } from './band-layout';
 import type { ColumnLayout } from './column-layout';
 
 /**
@@ -8,6 +9,8 @@ import type { ColumnLayout } from './column-layout';
 export interface GridLayout {
   /** Every column, in display order. */
   columns: ColumnLayout[];
+  /** Bands that are hidden or pinned; their place comes from their columns'. Left out: as the bands say. */
+  bands?: BandLayout[];
   sort: data.SortItem[];
   /** The grouped columns, in order, with the order of their groups. Left out: as the columns say (`groupIndex`). */
   group?: data.GroupItem[];

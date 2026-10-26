@@ -1,5 +1,8 @@
 import { DisposableStore, Emitter, type EventArgs, type IDisposable, type Event as MotifEvent } from '@motifx/core';
 import type { GridActionRanEventArgs } from '../grid-action-ran-event-args';
+import type { GridAdaptiveDetailRowPreparingEventArgs } from '../grid-adaptive-detail-row-preparing-event-args';
+import type { GridAdaptiveRowExpandedEventArgs } from '../grid-adaptive-row-expanded-event-args';
+import type { GridAdaptiveRowExpandingEventArgs } from '../grid-adaptive-row-expanding-event-args';
 import type { GridActionRunningEventArgs } from '../grid-action-running-event-args';
 import type { GridCellClickEventArgs } from '../grid-cell-click-event-args';
 import type { GridCellPreparedEventArgs } from '../grid-cell-prepared-event-args';
@@ -128,6 +131,11 @@ export class GridEvents<T> {
   readonly summaryChanged = new Emitter<GridSummaryChangedEventArgs>();
   readonly actionRunning = new Emitter<GridActionRunningEventArgs<T>>();
   readonly actionRan = new Emitter<GridActionRanEventArgs<T>>();
+  readonly adaptiveDetailRowPreparing = new Emitter<GridAdaptiveDetailRowPreparingEventArgs<T>>();
+  readonly adaptiveDetailRowExpanding = new Emitter<GridAdaptiveRowExpandingEventArgs<T>>();
+  readonly adaptiveDetailRowExpanded = new Emitter<GridAdaptiveRowExpandedEventArgs<T>>();
+  readonly adaptiveDetailRowCollapsing = new Emitter<GridAdaptiveRowExpandingEventArgs<T>>();
+  readonly adaptiveDetailRowCollapsed = new Emitter<GridAdaptiveRowExpandedEventArgs<T>>();
 
   private readonly counts = new Map<Emitter<any>, number>();
   private readonly events = new Map<Emitter<any>, MotifEvent<any>>();

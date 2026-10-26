@@ -2,7 +2,8 @@ import { ComponentBase, createSignal, effect, read, untracked } from '@motifx/co
 import type { CellContext } from '../cell-context';
 import type { GridAction } from '../grid-action';
 import type { GridColumn } from '../grid-column';
-import { ACTIONS_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from '../model/ColumnModel';
+import { moreMark } from '../../../core/glyphs';
+import { ACTIONS_FIELD, ADAPTIVE_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from '../model/ColumnModel';
 import { KeyedItems } from '../../../parts/data/KeyedItems';
 import type { GridModel } from '../model/GridModel';
 import type { RowState } from '../row-state';
@@ -52,6 +53,8 @@ export class GridRow<T> {
   private readonly stops: (() => void)[] = [];
   private readonly check: HTMLSpanElement;
   private readonly expand: HTMLSpanElement;
+  /** The "…" of the adaptive detail. */
+  private readonly more: HTMLSpanElement;
 
   constructor(
     private readonly model: GridModel<T>,
@@ -66,11 +69,15 @@ export class GridRow<T> {
     this.element = el;
     this.check = createCheck(model.text('gridSelectRow'));
     this.expand = createExpandButton(model.text('gridDetails'));
+    this.more = createExpandButton(model.text('gridAdaptive'));
+    this.more.className = 'mx-data-grid__adaptive-button';
+    this.more.replaceChildren(moreMark());
     for (const field of model.columns.state.order) {
       if (field === STATUS_FIELD) el.append(this.statusCell());
       else if (field === SELECT_FIELD) el.append(this.ownCell(field, 'mx-data-grid__select', this.check));
       else if (field === EXPAND_FIELD) el.append(this.ownCell(field, 'mx-data-grid__expand', this.expand));
       else if (field === ACTIONS_FIELD) el.append(this.ownCell(field, 'mx-data-grid__actions'));
+      else if (field === ADAPTIVE_FIELD) el.append(this.ownCell(field, 'mx-data-grid__adaptive-cell', this.more));
       else el.append(this.cell(model.columns.get(field)));
     }
     this.stops.push(
@@ -106,6 +113,11 @@ export class GridRow<T> {
     if (can && this.model.groups.any) el.setAttribute('aria-expanded', String(open));
     else el.removeAttribute('aria-expanded');
     el.toggleAttribute('data-expanded', can && open);
+  }
+
+  /** Shows whether the row's adaptive detail is open on its "…"; `controls` is the id of the detail's row while it is drawn. */
+  drawAdaptive(shown: boolean, open: boolean, controls: string | null) {
+    setExpandButton(this.more, shown, open, this.model.text('gridAdaptive'), controls);
   }
 
   /** Draws the row again as it is. */

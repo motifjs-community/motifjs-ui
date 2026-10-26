@@ -39,8 +39,16 @@ export interface GridColumn<T = any> {
   maxWidth?: number;
   /** Share of the free space this column takes when the grid is wider than its columns. */
   flex?: number;
-  /** Keep the column at the start or end edge while scrolling sideways. */
+  /** Keep the column at the start or end edge while scrolling sideways. A column in a band sticks with its band. */
   sticky?: StickySide;
+  /** The band this column sits in when the columns are given flat: the band's `name`, or its place in the grid's `columns` (`ownerBand`). */
+  ownerBand?: string | number;
+  /**
+   * When the grid is narrower than its columns, columns with a priority hide, the lowest first, and
+   * show in the row's adaptive detail (`columnHidingEnabled`). Given on any column, only columns
+   * with one hide. Pinned and grouped columns never hide. Followed when a function.
+   */
+  hidingPriority?: Bind<number | undefined>;
   /** Start hidden; the user can show it from the column menu. */
   hidden?: boolean;
   /** Horizontal alignment. Default: `end` for numbers, `center` for booleans, `start` otherwise. */

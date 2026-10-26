@@ -201,6 +201,48 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   shown for keyboard focus closed at once when focusing scrolled its field into view; it now follows
   the field while the page scrolls and closes only if the field is off the screen when scrolling ends.
 
+### DataGrid band headers and adaptive columns
+
+- Bands (band columns): a `GridBand` in `columns` (`title`, `columns` — columns and
+  bands to any depth —, `name`, `align`, `sticky`, `hidden`, `movable`, `hideable`, `pinnable`,
+  `menu`, `headerCell`), or given flat with `isBand` and a column's `ownerBand` (a band's `name` or
+  place). The header becomes a row per level of bands over the titles, each band's header over its
+  columns (`columnheader` with the `aria-colindex` of its first column and `aria-colspan`; the band
+  rows count in `aria-rowindex` / `aria-rowcount`). A column moves only inside its band (dragging,
+  “Move”, `visibleIndex`), a band among its neighbours with all its columns; a band is pinned, hidden
+  and moved as a whole (pinning a column in a band pins its band); a band header does not sort.
+  Hiding all its columns hides a band. A band's menu (its button, Alt+Down): pin, move, hide, the
+  column chooser, reset. Up from a column's header goes to its band's, Down back, Left / Right along
+  the bands of a row. With bands the column chooser is a `TreeView` with check boxes. The layout
+  keeps `bands` (each band's hidden state and side; its place comes from its columns) and puts a band
+  torn apart by a layout back together. `columnOption` and `columnSettings` take a band's name;
+  `addColumn` takes a band, or a column with `ownerBand`. CSV writes a line per band level above the
+  titles; `exportSheet()` gives the band rows as header rows and `merges` (the cells a band, or a
+  column down the band rows, spans). Setting `bandAlign` (`'center'`). Text `gridHideBand`, token
+  `datagrid.band-line-color`. Over a pinned column no band covers, an empty piece stays with the
+  column so the band rows scroll under it. Excel: the sheet carries the merges, the writer does not
+  apply them yet.
+- Adaptive columns: `settings.columnHidingEnabled` and a column's `hidingPriority` (Bind). While the
+  grid is narrower than its columns, they hide (the last one first; given a priority on any column,
+  only those, the lowest first; pinned and grouped columns never), worked out from the widths kept
+  and the viewport's width only, again on every resize. A “…” column at the end of the scrolling
+  columns opens a row's adaptive detail under the row (one at a time), before the row's master-detail:
+  the hidden columns' titles and values in the edit form's `FormLayout`, editors where the row can be
+  edited in its cells (they write into the row's draft; `'cell'` mode saves each). The detail rides on
+  the master-detail rows (measured, `aria-owns`, Tab in and out). `adaptiveDetail` (`colCount`,
+  `minColWidth`, `labelMode`, `editors`, `expandOnEdit`, `columnWidth`, `toggleKeys`; live through
+  `grid.adaptiveDetail`), `onAdaptiveDetailRowPreparing` (`formOptions`),
+  `onAdaptiveDetailRowExpanding/Expanded/Collapsing/Collapsed`, `expandAdaptiveDetailRow(key)`,
+  `collapseAdaptiveDetailRow()`, `isAdaptiveDetailRowExpanded(key)`, `adaptiveHiddenColumns`;
+  `getVisibleRows()` lists it as `rowType: 'detailAdaptive'`. Editing a row in `'row'` mode opens
+  its detail and leaving the row closes it (`expandOnEdit`). Hidden columns still count as shown:
+  `getVisibleColumns()`, the column chooser, copying and the export have them. Texts `gridAdaptive`,
+  `gridAdaptiveOf`; tokens `datagrid.adaptive-*`.
+- The per-grid column stylesheet now targets the cells of the grid's rows only, so the fields of an
+  edit form inside the grid no longer pick up the rules of hidden columns.
+- Docs: a new page “Bands and adaptive columns” (`/datagrid/bands`); `e2e/checks/42-datagrid-bands-adaptive.mjs`.
+- Excel export merges a band's header over its columns and a column's header down the band rows (`mergeHeaders`, default `true`).
+
 ### FilterBuilder, the DataGrid filter panel and the filter value
 
 - `FilterBuilder` (`src/components/filterbuilder/`): a tree of groups (`and`, `or`, `notAnd`,

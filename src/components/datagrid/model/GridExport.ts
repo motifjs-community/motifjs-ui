@@ -4,6 +4,7 @@ import type { GridExportCell } from '../grid-export-cell';
 import type { GridExportOptions } from '../grid-export-options';
 import type { GridSheet } from '../grid-sheet';
 import type { GridSheetCell } from '../grid-sheet-cell';
+import type { GridSheetMerge } from '../grid-sheet-merge';
 import type { GridSheetOptions } from '../grid-sheet-options';
 import type { GridSheetRow } from '../grid-sheet-row';
 import { writeDelimited } from './delimited-text';
@@ -27,14 +28,28 @@ type SheetRun = GridSheetOptions & { selected: boolean; rtl: boolean; widthOf: (
  * the data source (`loadRange`), so its own filter, search and sort apply. Cells read like the grid
  * shows them, unsaved edits included; new rows not saved yet are not data and stay out. Grouped,
  * the rows come in group order, every group open, and the CSV has a "Column: value" line per group.
- * The summaries come as the grid shows them: group footers after their rows, the totals last.
+ * The summaries come as the grid shows them: group footers after their rows, the totals last. With
+ * bands, their titles come in rows above the columns' titles. Columns the width hides are exported.
  */
 export class GridExport<T> {
   constructor(private readonly model: GridModel<T>) {}
 
   fields(): string[] {
     const cols = this.model.columns;
-    return cols.visibleData().filter((f) => cols.can(f, 'exportable'));
+    return cols.listedData().filter((f) => cols.can(f, 'exportable'));
+  }
+
+  /** The bands over the exported columns, a list per level from the top: each band and the columns it spans. */
+  bandRows(fields: readonly string[]): { id: string; title: string; first: number; count: number }[][] {
+    const cols = this.model.columns;
+    if (!cols.hasBands) return [];
+    const shown = cols.shownBands(fields);
+    let depth = 0;
+    for (const b of shown) depth = Math.max(depth, b.depth);
+    const rows: { id: string; title: string; first: number; count: number }[][] = Array.from({ length: depth }, () => []);
+    for (const b of shown) rows[b.depth - 1].push({ id: b.id, title: cols.title(b.id), first: b.first, count: b.count });
+    for (const row of rows) row.sort((a, b) => a.first - b.first);
+    return rows;
   }
 
   async table(options: GridExportOptions, signal: AbortSignal): Promise<ExportTable> {
@@ -88,9 +103,8 @@ export class GridExport<T> {
     const nodes = view?.allGroups() ?? [];
     const levels = view ? model.groups.fields().length : 0;
     const out: GridSheetRow<T>[] = [];
-    if (options.headers !== false) {
-      out.push({ rowType: 'header', level: 0, cells: cols.map((column, j) => ({ value: model.columns.title(fields[j]), text: model.columns.title(fields[j]), gridCell: { rowType: 'header', column } })) });
-    }
+    const merges: GridSheetMerge[] = [];
+    if (options.headers !== false) this.headerRows(fields, cols, out, merges);
     const summaryRows = (rowType: 'groupFooter' | 'totalFooter', level: number, lists: Entry[][]) => {
       // Several items under one column take a row each writes them.
       const count = Math.max(1, ...lists.map((list) => list.length));
@@ -141,7 +155,8 @@ export class GridExport<T> {
         dateFormat: column.type === 'date' && !column.lookup ? formatter.dateOptions(column) : undefined,
       })),
       rows: out,
-      headerRows: options.headers !== false ? 1 : 0,
+      headerRows: options.headers !== false ? this.bandRows(fields).length + 1 : 0,
+      merges,
       groupLevels: levels,
       locale: formatter.locale,
       rtl: options.rtl,
@@ -177,9 +192,43 @@ export class GridExport<T> {
     });
     closeGroups(Number.POSITIVE_INFINITY);
     if (table.total) lines.push(table.total.map(safe));
-    const head = options.headers !== false ? [table.fields.map((f) => model.columns.title(f))] : [];
+    // A band's title over the first of its columns, a line per level; then the columns' titles.
+    const bands = options.headers !== false ? this.bandRows(table.fields).map((row) => table.fields.map((_, j) => row.find((b) => b.first === j)?.title ?? '')) : [];
+    const head = options.headers !== false ? [...bands, table.fields.map((f) => model.columns.title(f))] : [];
     const separator = options.separator ?? listSeparator(formatter.locale);
     return `${options.bom !== false ? '﻿' : ''}${writeDelimited([...head, ...lines], separator)}\r\n`;
+  }
+
+  /**
+   * The header rows of a sheet's Excel export writes them: a row per level of bands,
+   * each band's title in the first cell it spans and merged over the rest; a column's title in the
+   * row under its deepest band, merged down to the last header row.
+   */
+  private headerRows(fields: readonly string[], cols: readonly GridColumn<T>[], out: GridSheetRow<T>[], merges: GridSheetMerge[]) {
+    const model = this.model;
+    const bands = this.bandRows(fields);
+    const depth = bands.length;
+    const bandOf = (row: number, j: number) => bands[row].find((b) => j >= b.first && j < b.first + b.count);
+    const levelOf = (j: number) => bands.filter((_, r) => bandOf(r, j)).length;
+    for (let r = 0; r <= depth; r++) {
+      const cells = cols.map((column, j): GridSheetCell<T> => {
+        const band = r < depth ? bandOf(r, j) : undefined;
+        if (band) {
+          const def = model.columns.bands.get(band.id)!.def;
+          const first = band.first === j;
+          return { value: first ? band.title : null, text: first ? band.title : '', gridCell: { rowType: 'header', band: def } };
+        }
+        const title = model.columns.title(fields[j]);
+        const own = r === levelOf(j);
+        return { value: own ? title : null, text: own ? title : '', gridCell: { rowType: 'header', column } };
+      });
+      out.push({ rowType: 'header', level: 0, cells });
+    }
+    for (const row of bands) for (const b of row) if (b.count > 1) merges.push({ row: model.columns.depthOf(b.id) - 1, column: b.first, rows: 1, columns: b.count });
+    fields.forEach((_, j) => {
+      const level = levelOf(j);
+      if (level < depth) merges.push({ row: level, column: j, rows: depth - level + 1, columns: 1 });
+    });
   }
 
   /** The summary lines of a table as objects by field, in the order they come: footers after their rows, the totals last. */

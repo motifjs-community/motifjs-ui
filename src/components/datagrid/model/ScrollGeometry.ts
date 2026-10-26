@@ -23,17 +23,19 @@ export class ScrollGeometry {
     readonly tall: { at: number; extra: number } | null = null,
     /** Heights added under rows (their open details), by position. */
     readonly details: ExtraHeights | null = null,
+    /** The row with its adaptive detail open, right under it (before its details): its position and the detail's height. */
+    readonly adaptive: { at: number; height: number } | null = null,
   ) {}
 
   /** Height of all rows. */
   get contentHeight(): number {
-    return this.total * this.rowHeight + this.extraHeight + (this.details ? this.details.before(this.total) : 0);
+    return this.total * this.rowHeight + this.extraHeight + this.adaptiveBefore(this.total) + (this.details ? this.details.before(this.total) : 0);
   }
 
   /** Top of row `index` in the full content. */
   offsetOf(index: number): number {
     const tall = this.tall;
-    return index * this.rowHeight + (tall && index > tall.at ? tall.extra : 0) + (this.details ? this.details.before(index) : 0);
+    return index * this.rowHeight + (tall && index > tall.at ? tall.extra : 0) + this.adaptiveBefore(index) + (this.details ? this.details.before(index) : 0);
   }
 
   /** Height of row `index` itself (the edit form when it stands for the row), without its details. */
@@ -41,15 +43,20 @@ export class ScrollGeometry {
     return this.rowHeight + (this.tall?.at === index ? this.tall.extra : 0);
   }
 
-  /** Height of row `index` with its details under it. */
+  /** Height of the adaptive detail under row `index` (0 when it has none open). */
+  adaptiveAt(index: number): number {
+    return this.adaptive?.at === index ? this.adaptive.height : 0;
+  }
+
+  /** Height of row `index` with its adaptive detail and its details under it. */
   heightOf(index: number): number {
-    return this.rowHeightOf(index) + (this.details ? this.details.heightAt(index) : 0);
+    return this.rowHeightOf(index) + this.adaptiveAt(index) + (this.details ? this.details.heightAt(index) : 0);
   }
 
   /** The row at an offset in the full content (a row's details count as the row). */
   indexAt(offset: number): number {
     const tall = this.tall;
-    if (this.details?.size) return this.search(offset);
+    if (this.details?.size || this.adaptive) return this.search(offset);
     if (!tall || offset < (tall.at + 1) * this.rowHeight) return Math.floor(offset / this.rowHeight);
     if (offset < (tall.at + 1) * this.rowHeight + tall.extra) return tall.at;
     return Math.floor((offset - tall.extra) / this.rowHeight);
@@ -66,6 +73,11 @@ export class ScrollGeometry {
       else hi = mid - 1;
     }
     return lo;
+  }
+
+  private adaptiveBefore(index: number): number {
+    const a = this.adaptive;
+    return a && a.at < index && a.at < this.total ? a.height : 0;
   }
 
   private get extraHeight(): number {

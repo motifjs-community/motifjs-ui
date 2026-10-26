@@ -27,6 +27,8 @@ export interface ExcelExportOptions<T = any> {
   headers?: boolean;
   /** The header row stays in view while the sheet scrolls. Default `true`. */
   frozenHeader?: boolean;
+  /** Band headers merge over their columns, and a column's header down the band rows above it. Default `true`. */
+  mergeHeaders?: boolean;
   /** While grouped: a row per group ("Column: value") before its rows. Default `true`. */
   groups?: boolean;
   /** Rows of a group can be folded in Excel: outline levels by group (at most 7, Excel's limit). Default `true`. */

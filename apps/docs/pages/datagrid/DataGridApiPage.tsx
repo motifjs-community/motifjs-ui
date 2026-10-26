@@ -3,7 +3,9 @@ import { withOrders } from './code';
 import Localization from './examples/Localization';
 
 const PROPS = [
-  ['columns', '`GridColumn<T>[]`', '—', 'The column definitions, in their first order. See Columns below.'],
+  ['columns', '`(GridColumn<T> | GridBand<T>)[]`', '—', 'The column definitions, in their first order, and bands over them (`{ title, columns }`). See Columns below and [Band headers](/datagrid/bands#bands).'],
+  ['adaptiveDetail', '`GridAdaptiveDetail`, each field a `Bind`', '`{ colCount: 2 }`', 'The row’s adaptive detail while columns hide to fit the width (`settings.columnHidingEnabled`, `hidingPriority`): `colCount`, `minColWidth`, `labelMode`, `editors`, `expandOnEdit`, `columnWidth`, `toggleKeys`. Live through `grid.adaptiveDetail`. See [Adaptive columns](/datagrid/bands#adaptive).'],
+  ['onAdaptiveDetailRowPreparing, onAdaptiveDetailRowExpanding / Expanded, onAdaptiveDetailRowCollapsing / Collapsed', '`(e) => void`', '—', 'A row’s adaptive detail lays out its form (`e.formOptions`); it is about to open or close (`e.cancel`), and did.'],
   ['rows', '`Bind<T[]>`', '—', 'Rows in memory. The grid puts them in a `DataSource` over an `ArrayAdapter`: `push`, `splice` and a new array are followed; saved edits, new rows and deletions go into the array.'],
   ['dataSource', '`Bind<DataSource | null>`', '—', 'Rows of the data layer, from any adapter. Loading by `blocks` makes a virtual list that asks only where it looks; by `page` a paged grid. Wins over `rows`.'],
   ['rowKey', '`string | (row) => unknown`', '—', 'The identity of `rows`. A data source uses its adapter’s key.'],
@@ -50,7 +52,8 @@ const COLUMN_FIELDS = [
   ['field, title', 'The value’s key (a dotted path reads a nested value) and the header text (`Bind<string>`).'],
   ['type', '`text`, `number`, `date`, `boolean`, `list`: alignment, format, sorting and the editor (`TextBox`, `NumberBox`, `DateBox`, `CheckBox`, `DropDown`).'],
   ['width, minWidth, maxWidth, flex', 'Pixels (default: the `columnWidth` and `columnMinWidth` settings); `flex` shares the free space until the user resizes.'],
-  ['sticky, hidden, align', 'Pinned to an edge; hidden at first; the alignment.'],
+  ['sticky, hidden, align', 'Pinned to an edge (a column in a band sticks with its band); hidden at first; the alignment.'],
+  ['ownerBand, hidingPriority', 'The band a column given flat sits in (its `name` or place); its place in the order columns hide in to fit the width, the lowest first.'],
   ['value, format, compare', 'Read the value another way; show it another way — `Intl` options for a number or date column (`{ style: \'currency\', currency: \'EUR\' }`, which an Excel export turns into the number format too) or a function that writes the text; sort it another way (rows in memory).'],
   ['cell', '`(ctx) => component`: content of your own, made once per pooled cell; read `ctx.row` and `ctx.value` in getters.'],
   ['editor', '`(ctx) => Field | component`: an editor of your own. A `Field` is read through its value; anything else calls `ctx.setValue`.'],
@@ -100,6 +103,7 @@ const PROPERTIES = [
   ['onRowExpanding, onRowExpanded, onRowCollapsing, onRowCollapsed, onGroupingChanging, onGroupingChanged, onGroupDropping', 'event', 'Subscribe with `grid.onRowExpanded((e) => …)`; the same as the props.'],
   ['form, popup', 'read/write, live', "`grid.form.colCount = 3`, `grid.popup.title = 'Order'`; a function is followed."],
   ['masterDetail', 'read/write, live', '`grid.masterDetail.enabled = true`; a function is followed.'],
+  ['adaptiveDetail, adaptiveHiddenColumns', 'read/write, live; read-only, reactive', '`grid.adaptiveDetail.colCount = 1`; the columns the width hides now.'],
   ['toolbar', 'read/write, live', '`grid.toolbar.items = [\'searchPanel\', { text: \'Refresh\', click }]`, `grid.toolbar.visible = false`; a function is followed.'],
   ['export', 'read/write, live', '`grid.export.formats = [\'xlsx\', \'csv\']`, `grid.export.allowExportSelectedData = true`; a function is followed.'],
   ['onSearchTextChanged', 'event', 'Subscribe with `grid.onSearchTextChanged((e) => …)`; the same as the prop.'],
@@ -133,6 +137,7 @@ const METHODS = [
   ['expandGroup(key) / collapseGroup(key) / isGroupExpanded(key)', '`boolean`', 'One group by its key, the values from the top level down (`[\'Ankara\', \'Draft\']`): whether it opened or closed, and whether it is open.'],
   ['expandRow(key) / collapseRow(key) / isRowExpanded(key)', '`boolean`', "A row's details by the row's key (`masterDetail`): whether they opened or closed (the row events come and can cancel), and whether they are open."],
   ['expandAllRows() / collapseAllRows()', '`void`', "Every row's details open or close at once, without row events."],
+  ['expandAdaptiveDetailRow(key) / collapseAdaptiveDetailRow() / isAdaptiveDetailRowExpanded(key)', '`boolean`', "A row's adaptive detail by the row's key: whether it opened (the one open closes first) or closed, and whether it is open."],
   ['clearGrouping()', '`void`', 'Takes every grouping away.'],
   ['groupBy(field, index?, dir?) / ungroup(field) / setGroupOrder(field, dir)', '`void`', 'Groups by a column at a place among the grouped ones (a grouped one moves); takes one out; sets the order of its groups.'],
   ['copy() / paste(text)', '`string` / `number`', 'What Ctrl+C and Ctrl+V do: copies the selected rows or the active cell (returns the text); pastes tab-separated text from the active cell (returns the cells written).'],
@@ -251,6 +256,8 @@ const TOKENS = [
   ['datagrid.search-mark-background, search-mark-color, search-mark-line', 'The text the search found: its tint, its text and the line under it.'],
   ['datagrid.group-indent, group-font-weight, group-background, group-count-color', 'Group rows: the step of each level, the text, the row and the count.'],
   ['datagrid.chip-gap, chip-radius, chip-background, chip-border-color, panel-empty-color, drop-target', 'The group panel, its chips, its empty text and the tint where something can be dropped.'],
+  ['datagrid.band-line-color', 'The lines under and beside a band’s header.'],
+  ['datagrid.adaptive-color, adaptive-radius, adaptive-padding, adaptive-gap, adaptive-background, adaptive-label-color, adaptive-label-font-weight', 'The “…” button and the adaptive detail: its room, its titles and values.'],
 ];
 
 export default function DataGridApiPage() {

@@ -1,6 +1,16 @@
 export { DataGrid } from './DataGrid';
 export type { DataGridProps } from './data-grid-props';
 export type { GridColumn } from './grid-column';
+export type { GridBand } from './grid-band';
+export type { GridColumnItem } from './grid-column-item';
+export type { BandCellContext } from './band-cell-context';
+export type { BandLayout } from './band-layout';
+export type { GridSheetMerge } from './grid-sheet-merge';
+export type { GridAdaptiveDetail } from './grid-adaptive-detail';
+export type { GridAdaptiveFormOptions } from './grid-adaptive-form-options';
+export type { GridAdaptiveDetailRowPreparingEventArgs } from './grid-adaptive-detail-row-preparing-event-args';
+export type { GridAdaptiveRowExpandingEventArgs } from './grid-adaptive-row-expanding-event-args';
+export type { GridAdaptiveRowExpandedEventArgs } from './grid-adaptive-row-expanded-event-args';
 export type { GridLookup } from './grid-lookup';
 export type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
 export type { GridEditorPreparedEventArgs } from './grid-editor-prepared-event-args';

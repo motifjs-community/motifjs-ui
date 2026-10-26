@@ -117,4 +117,6 @@ export const DEFAULT_SETTINGS: GridSettings = {
   editMode: 'row',
   confirmDelete: true,
   selectTextOnEditStart: true,
+  columnHidingEnabled: false,
+  bandAlign: 'center',
 };

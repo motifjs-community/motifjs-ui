@@ -26,6 +26,8 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
       role: 'row',
       'aria-rowindex': () => {
         void grid.details.state.version;
+        void grid.adaptive.state.rowId;
+        void grid.columns.state.adaptive;
         return String(grid.count + grid.headRows + 1 + grid.openDetailCount());
       },
       tabindex: () => (grid.settings.get('totalSummaryTabStop') && grid.summaries.showsTotal() ? '0' : null),
