@@ -383,6 +383,8 @@ describe('TreeView', () => {
     page(t);
     const search = t.element.querySelector<HTMLInputElement>('.mx-tree-view__search input')!;
     expect(search.getAttribute('aria-label') ?? search.labels?.[0]?.textContent).toBeTruthy();
+    // Turned on when it is made, the box still sits above the rows.
+    expect(t.element.querySelector('.mx-tree-view__search')!.nextElementSibling!.classList.contains('mx-tree-view__body')).toBe(true);
     search.value = 'util';
     search.dispatchEvent(new InputEvent('input', { bubbles: true }));
     await settle();

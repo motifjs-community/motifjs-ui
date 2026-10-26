@@ -153,6 +153,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       else parts.body.removeAttribute('aria-label');
     });
     this.observeProperty('searchEnabled', () => this.renderSearch());
+    this.motif.on('x:built', () => this.placeSearch());
     this.observeProperty<string | undefined>('searchValue', (text) => {
       if (parts.search && parts.search.value !== (text ?? '')) parts.search.value = text ?? '';
       if (parts.ready) this.redraw();
@@ -1304,8 +1305,14 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       untracked(() => this.focusRow(stop ? (parts.index.get(stop) ?? 0) : 0));
     });
     this.controls.add(search);
-    this.element.prepend(search.element);
     parts.search = search;
+    this.placeSearch();
+  }
+
+  /** The search box sits above the rows; building the tree places its controls again, so it is put back. */
+  private placeSearch(): void {
+    const parts = this.parts;
+    if (parts.search && parts.search.element.nextElementSibling !== parts.body) parts.body.before(parts.search.element);
   }
 
   private forget(el: Element): void {
