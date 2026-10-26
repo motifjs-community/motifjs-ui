@@ -2289,6 +2289,69 @@
     "value": "0.25rem"
   },
   {
+    "name": "datagrid.range-fill",
+    "cssVar": "--mx-datagrid-range-fill",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "datagrid.range-fill-opacity",
+    "cssVar": "--mx-datagrid-range-fill-opacity",
+    "type": "number",
+    "ref": null,
+    "value": 0.14
+  },
+  {
+    "name": "datagrid.range-selected-fill",
+    "cssVar": "--mx-datagrid-range-selected-fill",
+    "type": "color",
+    "ref": "color.accent.subtle",
+    "value": "#fbe6de"
+  },
+  {
+    "name": "datagrid.range-text",
+    "cssVar": "--mx-datagrid-range-text",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "datagrid.range-border-color",
+    "cssVar": "--mx-datagrid-range-border-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "datagrid.range-border-width",
+    "cssVar": "--mx-datagrid-range-border-width",
+    "type": "dimension",
+    "ref": "border.width.2",
+    "value": "2px"
+  },
+  {
+    "name": "datagrid.range-anchor-fill",
+    "cssVar": "--mx-datagrid-range-anchor-fill",
+    "type": "color",
+    "ref": "color.bg.surface",
+    "value": "#f8f7f3"
+  },
+  {
+    "name": "datagrid.row-run-border-color",
+    "cssVar": "--mx-datagrid-row-run-border-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "datagrid.row-run-border-width",
+    "cssVar": "--mx-datagrid-row-run-border-width",
+    "type": "dimension",
+    "ref": "border.width.2",
+    "value": "2px"
+  },
+  {
     "name": "datagrid.more-gap",
     "cssVar": "--mx-datagrid-more-gap",
     "type": "dimension",

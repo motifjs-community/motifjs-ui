@@ -6,10 +6,10 @@ import { htmlTable } from './html-table';
 import type { PasteResult } from './paste-result';
 
 /**
- * Copy and paste of the grid's cells. Copying takes the active cell, or the selected rows of a
- * multiple selection in the grid's order, with the copyable visible columns; pasting reads
- * tab-separated lines into the cells the user can fill, from the active cell rightwards and
- * downwards, through the rows' drafts and their checks.
+ * Copy and paste of the grid's cells. Copying takes the cell ranges, the active cell, or the
+ * selected rows of a multiple selection in the grid's order, with the copyable visible columns;
+ * pasting reads tab-separated lines into the cells the user can fill, from a cell rightwards and
+ * downwards (or one value into every cell of the ranges), through the rows' drafts and their checks.
  */
 export class GridClipboard<T> {
   constructor(private readonly model: GridModel<T>) {}
@@ -30,18 +30,68 @@ export class GridClipboard<T> {
     if (rows) {
       const lines = rows.map((row) => fields.map((f) => this.cellText(row, f)));
       const head = model.settings.get('copyHeaders') ? fields.map((f) => model.columns.title(f)) : null;
-      return { text: writeDelimited(head ? [head, ...lines] : lines, '\t'), html: htmlTable(head, lines), rows: rows.length };
+      return { text: writeDelimited(head ? [head, ...lines] : lines, '\t'), html: htmlTable(head, lines), rows: rows.length, cells: 0 };
     }
     const { activeRow, activeField } = model.state;
     const group = activeRow >= 0 ? model.groupAt(activeRow) : null;
     if (group) {
       const caption = model.groupCaption(group);
-      return { text: caption, html: htmlTable(null, [[caption]]), rows: 0 };
+      return { text: caption, html: htmlTable(null, [[caption]]), rows: 0, cells: 0 };
     }
     const row = activeRow >= 0 ? model.rowAt(activeRow) : undefined;
     if (row === undefined || !fields.includes(activeField)) return null;
     const text = this.cellText(row, activeField);
-    return { text, html: htmlTable(null, [[text]]), rows: 0 };
+    return { text, html: htmlTable(null, [[text]]), rows: 0, cells: 0 };
+  }
+
+  /**
+   * What Ctrl+C copies of the cell ranges: the rows and the copyable columns they cover, in the grid's
+   * order, a cell outside every range left empty. `'unloaded'` while a row of them is still loading
+   * (that is for an export), `null` when there is nothing.
+   */
+  copyRanges(): ClipboardContent | 'unloaded' | null {
+    const { model } = this;
+    const copyable = new Set(this.fields());
+    const rows: { index: number; fields: Set<string> }[] = [];
+    const used = new Set<string>();
+    let unloaded = false;
+    let cells = 0;
+    model.cellRanges.forEachRow((index, fields) => {
+      const taken = fields.filter((f) => copyable.has(f));
+      if (!taken.length) return;
+      if (model.rowAt(index) === undefined) unloaded = true;
+      rows.push({ index, fields: new Set(taken) });
+      for (const f of taken) used.add(f);
+      cells += taken.length;
+    });
+    if (unloaded) return 'unloaded';
+    if (!rows.length) return null;
+    const columns = model.cellRanges.axis().filter((f) => used.has(f));
+    const lines = rows.map(({ index, fields }) => {
+      const row = model.rowAt(index)!;
+      return columns.map((f) => (fields.has(f) ? this.cellText(row, f) : ''));
+    });
+    const head = model.settings.get('copyHeaders') ? columns.map((f) => model.columns.title(f)) : null;
+    return { text: writeDelimited(head ? [head, ...lines] : lines, '\t'), html: htmlTable(head, lines), rows: lines.length, cells };
+  }
+
+  /** Writes one pasted text into every cell of the ranges the user can fill (rows still loading are left out). */
+  fill(text: string): PasteResult {
+    const { model } = this;
+    const cols = model.columns;
+    const result: PasteResult = { rowIds: [], cells: 0, failed: 0 };
+    model.cellRanges.forEachRow((index, fields) => {
+      const row = model.rowAt(index);
+      const rowId = model.rowIdAt(index);
+      if (row === undefined || rowId === undefined) return;
+      const rec = model.edit(rowId);
+      if (rec?.saving || rec?.removed) return;
+      const fillable = fields.filter((f) => cols.canFill(f, row, !!rec?.isNew));
+      if (!fillable.length) return;
+      result.rowIds.push(rowId);
+      for (const f of fillable) this.write(rowId, row, f, text, index, result);
+    });
+    return result;
   }
 
   /**
@@ -84,22 +134,28 @@ export class GridClipboard<T> {
       line.forEach((cell, j) => {
         const f = fields[start + j];
         if (f === undefined || !cols.canFill(f, row, !!rec?.isNew)) return;
-        const col = cols.get(f);
-        const read = col.lookup ? this.lookupKey(rowId, row, f, cell) : model.formatter.parse(col, cell, model.value(rowId, row, col));
-        if (read instanceof Promise) {
-          // The source is asked for the text; the cell is busy until it answers.
-          model.writeLater(rowId, row, f, read, model.dataIndex(r));
-          result.cells++;
-        } else if (read.ok) {
-          model.writeCell(rowId, row, f, read.value, model.dataIndex(r));
-          result.cells++;
-        } else {
-          model.setError(row, f, read.message);
-          result.failed++;
-        }
+        this.write(rowId, row, f, cell, r, result);
       });
     }
     return result;
+  }
+
+  /** Reads a pasted text as the column's value into grid row `r`'s draft; a text that cannot be read leaves a message. */
+  private write(rowId: string, row: T, field: string, text: string, r: number, result: PasteResult) {
+    const { model } = this;
+    const col = model.columns.get(field);
+    const read = col.lookup ? this.lookupKey(rowId, row, field, text) : model.formatter.parse(col, text, model.value(rowId, row, col));
+    if (read instanceof Promise) {
+      // The source is asked for the text; the cell is busy until it answers.
+      model.writeLater(rowId, row, field, read, model.dataIndex(r));
+      result.cells++;
+    } else if (read.ok) {
+      model.writeCell(rowId, row, field, read.value, model.dataIndex(r));
+      result.cells++;
+    } else {
+      model.setError(row, field, read.message);
+      result.failed++;
+    }
   }
 
   /** The text of one cell as Ctrl+C copies it: what it shows, or its value (`copyValues`). */

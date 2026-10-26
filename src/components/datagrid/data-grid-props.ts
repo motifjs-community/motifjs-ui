@@ -83,6 +83,9 @@ import type { GridMoreRowsLoadingEventArgs } from './grid-more-rows-loading-even
 import type { GridSettingsProps } from './grid-settings-props';
 import type { GridSearchTextChangedEventArgs } from './grid-search-text-changed-event-args';
 import type { GridSelectionChangedEventArgs } from './grid-selection-changed-event-args';
+import type { GridCellRange } from './grid-cell-range';
+import type { GridCellSelectionChangedEventArgs } from './grid-cell-selection-changed-event-args';
+import type { GridCellSelectionChangingEventArgs } from './grid-cell-selection-changing-event-args';
 import type { GridToolbar } from './grid-toolbar';
 import type { GridValuesRequest } from './grid-values-request';
 import type { GridValuesResult } from './grid-values-result';
@@ -183,6 +186,11 @@ export interface DataGridProps<T> extends ControlProps {
   /** The selection is about to change; `e.cancel` keeps it. */
   onSelectionChanging?: (e: GridSelectionChangingEventArgs) => void;
   onSelectionChanged?: (e: GridSelectionChangedEventArgs) => void;
+  /** The cell ranges (`settings.cellSelection`); a function is followed. The user's changes come through `onCellSelectionChanged`. */
+  cellRanges?: Bind<readonly GridCellRange[]>;
+  /** The cell ranges are about to change; `e.cancel` keeps them. */
+  onCellSelectionChanging?: (e: GridCellSelectionChangingEventArgs) => void;
+  onCellSelectionChanged?: (e: GridCellSelectionChangedEventArgs) => void;
   /** Before an editor of a cell or of an edit form field is made: change its props (`e.options`), or `e.cancel` it. */
   onEditorPreparing?: (e: GridEditorPreparingEventArgs<T>) => void;
   /** An editor was made, in a cell or in the edit form. */

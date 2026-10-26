@@ -5,6 +5,8 @@ import type { GridAdaptiveRowExpandedEventArgs } from '../grid-adaptive-row-expa
 import type { GridAdaptiveRowExpandingEventArgs } from '../grid-adaptive-row-expanding-event-args';
 import type { GridActionRunningEventArgs } from '../grid-action-running-event-args';
 import type { GridCellClickEventArgs } from '../grid-cell-click-event-args';
+import type { GridCellSelectionChangedEventArgs } from '../grid-cell-selection-changed-event-args';
+import type { GridCellSelectionChangingEventArgs } from '../grid-cell-selection-changing-event-args';
 import type { GridCellPreparedEventArgs } from '../grid-cell-prepared-event-args';
 import type { GridContentReadyEventArgs } from '../grid-content-ready-event-args';
 import type { GridContextMenuPreparingEventArgs } from '../grid-context-menu-preparing-event-args';
@@ -72,6 +74,8 @@ import type { GridToolbarPreparingEventArgs } from '../grid-toolbar-preparing-ev
 export class GridEvents<T> {
   readonly selectionChanging = new Emitter<GridSelectionChangingEventArgs>();
   readonly selectionChanged = new Emitter<GridSelectionChangedEventArgs>();
+  readonly cellSelectionChanging = new Emitter<GridCellSelectionChangingEventArgs>();
+  readonly cellSelectionChanged = new Emitter<GridCellSelectionChangedEventArgs>();
   readonly editorPreparing = new Emitter<GridEditorPreparingEventArgs<T>>();
   readonly editorPrepared = new Emitter<GridEditorPreparedEventArgs<T>>();
   readonly rowValidating = new Emitter<GridRowValidatingEventArgs<T>>();

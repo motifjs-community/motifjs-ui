@@ -1,6 +1,9 @@
 import type { ColumnFeatures } from './column-features';
 import type { ColumnResizeMode } from './column-resize-mode';
 import type { GridActionLocation } from './grid-action-location';
+import type { GridCellExtendKeys } from './grid-cell-extend-keys';
+import type { GridCellSummaryItem } from './grid-cell-summary-item';
+import type { GridRowExtendKeys } from './grid-row-extend-keys';
 import type { GridDateInterval } from './grid-date-interval';
 
 /**
@@ -95,6 +98,53 @@ export interface GridSettings extends ColumnFeatures {
   selectAll: boolean;
   /** "N selected" in the bottom bar. Default `true`. */
   selectedCount: boolean;
+  /**
+   * Multiple selection: pressing on a row and dragging over others selects the rows passed, live
+   * (Ctrl/⌘ adds them to the selection, Shift goes from the anchor); dragging over the check boxes
+   * gives the rows passed the state the first one takes. Default `true`.
+   */
+  rowDragSelection: boolean;
+  /**
+   * Rectangles of cells, as in a spreadsheet: `'single'` one range at a time, `'multiple'` more with
+   * Ctrl/⌘. Pressing on a cell and dragging draws a range, Shift+click and Shift with the arrows
+   * extend it; Ctrl+C copies it, Ctrl+V fills it, Delete empties it. While it is on, clicks on the
+   * cells draw ranges and rows are selected from the check box column. Default `'none'`.
+   */
+  cellSelection: 'none' | 'single' | 'multiple';
+  /** Ranges are drawn by dragging over the cells (off: only Shift+click and the keys draw them). Default `true`. */
+  cellDragSelection: boolean;
+  /** Pixels the pointer moves after a press before a drag selection starts; a shorter move is a click. Default `5`. */
+  dragSelectionThreshold: number;
+  /** While rows or cells are selected by dragging, the rows scroll when the pointer is near or past an edge, down and sideways. Default `true`. */
+  dragSelectionAutoScroll: boolean;
+  /** Pixels a frame those rows scroll by at the edge (and past it), less on the way in. Default `30`. */
+  dragSelectionScrollSpeed: number;
+  /** How near an edge, in pixels, the scrolling starts. Default `60`. */
+  dragSelectionScrollSensitivity: number;
+  /** On a touch screen a drag scrolls the rows (`'scroll'`), or a long press starts a drag selection (`'longPress'`). Default `'scroll'`. */
+  dragSelectionTouch: 'scroll' | 'longPress';
+  /** Milliseconds a finger rests before a drag selection starts (`dragSelectionTouch: 'longPress'`). Default `500`. */
+  dragSelectionLongPress: number;
+  /** A drag selection may start on a cell the user can edit (a click on it still edits it). Default `true`. */
+  dragSelectionOnEditableCells: boolean;
+  /** Keys that select every cell (`cellSelection` on): the rows the user can reach, every selectable column. Default `['Mod+A']`. */
+  selectAllCellsKeys: readonly string[];
+  /** Keys that clear the cell ranges. Default `['Escape']`. */
+  clearCellSelectionKeys: readonly string[];
+  /**
+   * Keys that extend the last cell range from its far corner (no range: one from the active cell),
+   * focus going with the corner. Default: Shift with the arrows, PageUp / PageDown and Home / End;
+   * `Mod+Shift` with the arrows to the edges, with Home / End to the first and last cell.
+   */
+  extendCellsKeys: GridCellExtendKeys;
+  /** Multiple selection: keys that select or deselect the active row. Default `['Shift+Space']` (Space alone does on the check box column and on cells that cannot be edited). */
+  toggleRowSelectionKeys: readonly string[];
+  /** Multiple selection: keys that move the active row and extend the selection from the anchor. Default Shift with Up / Down and PageUp / PageDown. */
+  extendRowSelectionKeys: GridRowExtendKeys;
+  /** The count, sum and average of the selected cells in the bottom bar, while more than one cell is selected. Default `true`. */
+  cellSummary: boolean;
+  /** What that summary shows, in order. Default `['average', 'count', 'sum']`. */
+  cellSummaryItems: readonly GridCellSummaryItem[];
   /** Milliseconds between the last key typed in the filter row and the filter being applied. Default `300`. */
   filterDelay: number;
   /** What Ctrl+C copies: the text the cells show, or their values (numbers and dates in a neutral form). Default `'shown'`. */

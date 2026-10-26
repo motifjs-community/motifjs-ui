@@ -6,4 +6,6 @@ export interface ClipboardContent {
   html: string;
   /** Rows copied; 0 for the active cell. */
   rows: number;
+  /** Cells of the cell ranges copied; 0 for rows or the active cell. */
+  cells: number;
 }

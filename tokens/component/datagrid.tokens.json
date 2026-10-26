@@ -1,6 +1,6 @@
 {
   "datagrid": {
-    "$description": "DataGrid: rows sized by the density tokens, a bar header, row tints for hover, the active row, new rows and stripes, selected rows in the design language's selection look (fill, text, frame, effect and the start bar where the language has one), the marks of unsaved and invalid cells, the selection check boxes, the action buttons, the filter row, the header filter window (a list of values, or a tree of date parts), the text the search found, the group rows and the group panel's chips, the status marks, the pager (page sizes, a page number box), the load states, the export panel, the edit form in place of a row, the expand arrows and details of master-detail rows, the filter panel (its check box, the filter's text, Clear) with the filter builder's window, and row drag and drop (the drag icons, the row dragged, the line where it would land, the row it would go onto, its copy).",
+    "$description": "DataGrid: rows sized by the density tokens, a bar header, row tints for hover, the active row, new rows and stripes, selected rows in the design language's selection look (fill, text, frame, effect and the start bar where the language has one), the marks of unsaved and invalid cells, the selection check boxes, the action buttons, the filter row, the header filter window (a list of values, or a tree of date parts), the text the search found, the group rows and the group panel's chips, the status marks, the pager (page sizes, a page number box), the load states, the export panel, the edit form in place of a row, the expand arrows and details of master-detail rows, the filter panel (its check box, the filter's text, Clear) with the filter builder's window, row drag and drop (the drag icons, the row dragged, the line where it would land, the row it would go onto, its copy), and selection by dragging (the cell ranges' fill, text, frame and anchor cell, the frame around the rows a drag selects).",
     "row-height": { "$type": "dimension", "$value": "{control.height.md}" },
     "row-padding": { "$type": "dimension", "$value": "{space.1}" },
     "cell-padding": { "$type": "dimension", "$value": "{control.padding.sm}" },
@@ -173,6 +173,15 @@
     "row-drop-width": { "$type": "dimension", "$value": "{indicator.thickness}" },
     "row-drop-inside-width": { "$type": "dimension", "$value": "{border.width.2}" },
     "row-ghost-radius": { "$type": "dimension", "$value": "{radius.sm}" },
+    "range-fill": { "$type": "color", "$value": "{color.accent.solid}" },
+    "range-fill-opacity": { "$type": "number", "$value": 0.14 },
+    "range-selected-fill": { "$type": "color", "$value": "{color.accent.subtle}" },
+    "range-text": { "$type": "color", "$value": "{color.fg.primary}" },
+    "range-border-color": { "$type": "color", "$value": "{color.accent.solid}" },
+    "range-border-width": { "$type": "dimension", "$value": "{border.width.2}" },
+    "range-anchor-fill": { "$type": "color", "$value": "{color.bg.surface}" },
+    "row-run-border-color": { "$type": "color", "$value": "{color.accent.solid}" },
+    "row-run-border-width": { "$type": "dimension", "$value": "{border.width.2}" },
     "more-gap": { "$type": "dimension", "$value": "{space.2}" },
     "more-padding-block": { "$type": "dimension", "$value": "{space.1}" },
     "more-padding-inline": { "$type": "dimension", "$value": "{space.3}" },

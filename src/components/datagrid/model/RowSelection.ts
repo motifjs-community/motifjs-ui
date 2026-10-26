@@ -16,7 +16,10 @@ interface Snapshot {
  * through `state.version`.
  */
 export class RowSelection {
-  readonly state = reactive({ version: 0, all: false });
+  /** `run`: the grid rows a drag is selecting now (first and last), while it runs. */
+  readonly state = reactive({ version: 0, all: false, run: null as { top: number; bottom: number } | null });
+  /** The change being made comes from rows selected by dragging over them. */
+  byDrag = false;
   private keys = new Map<string, unknown>();
   private except = new Map<string, unknown>();
   private filter: data.FilterExpression | null = null;
@@ -92,14 +95,39 @@ export class RowSelection {
     this.base = null;
   }
 
-  /** The selection from before the anchor, plus `rows` (the range from the anchor). */
-  extend(rows: readonly [string, unknown][]) {
+  /** The selection from before the anchor, plus `rows` (the range from the anchor); `on` false takes them out of it. */
+  extend(rows: readonly [string, unknown][], on = true) {
+    const base = (this.base ??= { all: this.state.all, keys: new Map(this.keys), except: new Map(this.except) });
+    const keys = new Map(base.keys);
+    const except = new Map(base.except);
+    for (const [id, key] of rows) putIn(base.all ? except : keys, base.all, id, key, on);
+    // The same rows as before: nothing to tell.
+    if (base.all === this.state.all && sameIds(keys, this.keys) && sameIds(except, this.except)) return;
     this.remember();
-    this.base ??= { all: this.state.all, keys: new Map(this.keys), except: new Map(this.except) };
-    this.keys = new Map(this.base.keys);
-    this.except = new Map(this.base.except);
-    untracked(() => (this.state.all = this.base!.all));
-    for (const [id, key] of rows) this.put(id, key, true);
+    this.keys = keys;
+    this.except = except;
+    if (this.state.all !== base.all) untracked(() => (this.state.all = base.all));
+    this.changed();
+  }
+
+  /** Starts a run of rows from the anchor: added to the selection there is now (`keep`), or in place of it. */
+  startRun(keep: boolean) {
+    this.base = keep ? { all: this.state.all, keys: new Map(this.keys), except: new Map(this.except) } : { all: false, keys: new Map(), except: new Map() };
+  }
+
+  /** The selection as it is now, to put back with `restore`. */
+  save(): { all: boolean; keys: Map<string, unknown>; except: Map<string, unknown>; filter: data.FilterExpression | null; anchor: number } {
+    return { all: this.state.all, keys: new Map(this.keys), except: new Map(this.except), filter: this.filter, anchor: this.anchorIndex };
+  }
+
+  /** Puts back a selection `save` kept (a drag given up). */
+  restore(saved: ReturnType<RowSelection['save']>) {
+    this.remember();
+    this.keys = new Map(saved.keys);
+    this.except = new Map(saved.except);
+    this.filter = saved.filter;
+    untracked(() => (this.state.all = saved.all));
+    this.setAnchor(saved.anchor);
     this.changed();
   }
 
@@ -163,16 +191,7 @@ export class RowSelection {
   }
 
   private put(id: string, key: unknown, on: boolean): boolean {
-    if (this.state.all) {
-      if (on === !this.except.has(id)) return false;
-      if (on) this.except.delete(id);
-      else this.except.set(id, key);
-      return true;
-    }
-    if (on === this.keys.has(id)) return false;
-    if (on) this.keys.set(id, key);
-    else this.keys.delete(id);
-    return true;
+    return putIn(this.state.all ? this.except : this.keys, this.state.all, id, key, on);
   }
 
   /** Keeps the selection as it is now, so a change the guard refuses can be taken back. */
@@ -206,4 +225,19 @@ export class RowSelection {
     this.changedEmitter.fire(this.snapshot());
     return true;
   }
+}
+
+/** Selects a row or takes it out in `list`: the rows picked, or (`all`) the rows left out. Returns whether it changed. */
+function putIn(list: Map<string, unknown>, all: boolean, id: string, key: unknown, on: boolean): boolean {
+  const listed = on !== all;
+  if (listed === list.has(id)) return false;
+  if (listed) list.set(id, key);
+  else list.delete(id);
+  return true;
+}
+
+function sameIds(a: Map<string, unknown>, b: Map<string, unknown>): boolean {
+  if (a.size !== b.size) return false;
+  for (const id of a.keys()) if (!b.has(id)) return false;
+  return true;
 }

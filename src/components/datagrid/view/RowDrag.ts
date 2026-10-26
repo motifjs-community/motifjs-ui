@@ -8,6 +8,7 @@ import type { GridBody } from './GridBody';
 import type { RowDragHost } from './row-drag-host';
 import { rowDropPlace } from './row-drop-place';
 import { scrollStep } from '../../../parts/drag/scroll-step';
+import { nextFrame, stopFrame } from './next-frame';
 
 /** Every grid that drags rows, so a drag finds the grids of its group under the pointer. */
 const DRAGGERS = new Set<RowDrag<any>>();
@@ -64,17 +65,6 @@ function pressed(chords: readonly string[], e: KeyboardEvent): boolean {
     if (e.ctrlKey === chord.ctrl && e.altKey === chord.alt && e.shiftKey === chord.shift && e.metaKey === chord.meta && e.key.toLowerCase() === key) return true;
   }
   return false;
-}
-
-/** Runs `fn` at the next frame (a short timeout where there are no frames); returns what stops it. */
-function nextFrame(fn: () => void): number {
-  return typeof requestAnimationFrame === 'function' ? requestAnimationFrame(fn) : (setTimeout(fn, 16) as unknown as number);
-}
-
-function stopFrame(id: number) {
-  if (!id) return;
-  if (typeof requestAnimationFrame === 'function') cancelAnimationFrame(id);
-  else clearTimeout(id);
 }
 
 /** An element given as itself or as a CSS selector. */

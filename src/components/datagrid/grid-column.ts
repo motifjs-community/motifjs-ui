@@ -16,7 +16,7 @@ import type { StickySide } from './sticky-side';
 
 /**
  * Definition of one column. `editable`, `creatable`, `sortable`, `resizable`, `movable`, `hideable`,
- * `pinnable`, `menu`, `filterRow`, `headerFilter`, `filterBuilder`, `copyable`, `exportable`, `syncLookupFilterValues`, `searchable`, `groupable`, `showWhenGrouped`, `allowCollapsing`, `groupCount` and `groupMenu` override the grid's `settings` for this column; each is a value or a function
+ * `pinnable`, `menu`, `filterRow`, `headerFilter`, `filterBuilder`, `copyable`, `cellSelectable`, `exportable`, `syncLookupFilterValues`, `searchable`, `groupable`, `showWhenGrouped`, `allowCollapsing`, `groupCount` and `groupMenu` override the grid's `settings` for this column; each is a value or a function
  * that is followed (`editable` and `creatable` also take a function of the row, which decides per row).
  *
  * @example
@@ -92,6 +92,7 @@ export interface GridColumn<T = any> {
   headerFilter?: Bind<boolean>;
   filterBuilder?: Bind<boolean>;
   copyable?: Bind<boolean>;
+  cellSelectable?: Bind<boolean>;
   exportable?: Bind<boolean>;
   /** The conditions the filter row offers for this column, in order. Default: all of the column type's. */
   filterOperators?: readonly GridFilterOperator[];

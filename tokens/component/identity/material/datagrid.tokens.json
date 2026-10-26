@@ -1,6 +1,6 @@
 {
   "datagrid": {
-    "$description": "Material tables: on the lightest surface, with a quiet stripe; 2 corners on the check boxes.",
+    "$description": "Material tables: on the lightest surface (the anchor cell of a cell range too), with a quiet stripe; 2 corners on the check boxes.",
     "check-radius": {
       "$type": "dimension",
       "$value": {
@@ -19,6 +19,10 @@
     "stripe": {
       "$type": "color",
       "$value": "{color.bg.layer}"
+    },
+    "range-anchor-fill": {
+      "$type": "color",
+      "$value": "{color.bg.card}"
     }
   }
 }

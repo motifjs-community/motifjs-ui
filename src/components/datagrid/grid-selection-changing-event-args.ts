@@ -5,4 +5,6 @@ import type { GridSelection } from './grid-selection';
 export interface GridSelectionChangingEventArgs extends EventArgs {
   readonly selection: GridSelection;
   readonly previous: GridSelection;
+  /** The change comes from rows selected by dragging over them. */
+  readonly byDrag: boolean;
 }

@@ -47,6 +47,7 @@ import type { RowRun } from './row-run';
 import type { RowStatus } from './row-status';
 import type { StoredLayout } from './stored-layout';
 import { RowSelection } from './RowSelection';
+import { CellRanges } from './CellRanges';
 import { sameValue } from './same-value';
 import { Switches } from './Switches';
 
@@ -137,6 +138,8 @@ export class GridModel<T> {
   /** Id of the element that holds the active cell's message (`aria-describedby` of an invalid cell). */
   errorId = '';
   readonly selection = new RowSelection();
+  /** The cell ranges (`cellSelection`). */
+  readonly cellRanges: CellRanges<T> = new CellRanges<T>(this);
   readonly filters: FilterModel<T>;
   /** The search panel's text and filter. */
   readonly search: GridSearch<T>;
@@ -230,7 +233,11 @@ export class GridModel<T> {
     this.appliedFilters = this.filters.toFilters();
     this.selection.guard = {
       wanted: () => this.events.listened(this.events.selectionChanging),
-      allow: (next, previous) => this.events.ask(this.events.selectionChanging, () => ({ selection: next, previous, cancel: false })),
+      allow: (next, previous) => this.events.ask(this.events.selectionChanging, () => ({ selection: next, previous, byDrag: this.selection.byDrag, cancel: false })),
+    };
+    this.cellRanges.guard = {
+      wanted: () => this.events.listened(this.events.cellSelectionChanging),
+      allow: (ranges, previous) => this.events.ask(this.events.cellSelectionChanging, () => ({ ranges, previous, byDrag: this.cellRanges.byDrag, cancel: false })),
     };
     this.values = new FilterValues<T>(this);
     this.filters.conditionOf = (field) => this.values.conditionOf(field);
@@ -266,6 +273,7 @@ export class GridModel<T> {
       this.data?.dispose();
       clearTimeout(this.filterTimer);
       this.selection.clear();
+      this.cellRanges.reset();
       const own = this.filters.expression();
       this.appliedFilter = JSON.stringify(own);
       if (given) {
@@ -648,6 +656,8 @@ export class GridModel<T> {
     if (!events.ask(events.pageChanging, () => ({ page: p, previous, cancel: false }))) return false;
     this.state.page = p;
     this.data.setPage(p);
+    // A range belongs to the rows it was drawn over, which the page takes away.
+    this.cellRanges.reset();
     if (moveActive && this.state.activeRow >= 0) this.state.activeRow = this.firstRow();
     events.tell(events.pageChanged, () => ({ page: p, previous }));
     return true;
@@ -1486,12 +1496,15 @@ export class GridModel<T> {
   setGroupExpanded(node: GroupNode, open: boolean): boolean {
     let changed = false;
     this.keepActiveRow(() => (changed = this.groups.setExpanded(node, open)));
+    // Other rows between the corners of the cell ranges: they go.
+    if (changed) this.cellRanges.reset();
     return changed;
   }
 
   /** Opens or closes every group of a level, or of every level. */
   setAllExpanded(open: boolean, level?: number) {
     this.keepActiveRow(() => this.groups.setAll(open, level));
+    this.cellRanges.reset();
   }
 
   /** The group with these keys from the top level down, among the groups known now. */
@@ -1600,6 +1613,7 @@ export class GridModel<T> {
     this.summaries.dispose();
     this.lookups.dispose();
     this.selection.dispose();
+    this.cellRanges.dispose();
     this.data.dispose();
   }
 

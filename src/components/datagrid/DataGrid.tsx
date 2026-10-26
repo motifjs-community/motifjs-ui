@@ -112,7 +112,19 @@ import type { ClipboardContent } from './model/clipboard-content';
 import type { ExportTable } from './model/export-table';
 import { ACTIONS_FIELD, ADAPTIVE_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from './model/ColumnModel';
 import { RowDrag } from './view/RowDrag';
+import { DragSelect } from './view/DragSelect';
 import type { GridRowDragging } from './grid-row-dragging';
+import type { GridCellPoint } from './grid-cell-point';
+import type { GridCellRange } from './grid-cell-range';
+import type { GridCellSelectionChangedEventArgs } from './grid-cell-selection-changed-event-args';
+import type { GridCellSelectionChangingEventArgs } from './grid-cell-selection-changing-event-args';
+import type { GridCellSummary } from './grid-cell-summary';
+import type { GridCellValue } from './grid-cell-value';
+import type { GridCellExtendKeys } from './grid-cell-extend-keys';
+import type { GridRowExtendKeys } from './grid-row-extend-keys';
+import type { PasteResult } from './model/paste-result';
+import { readDelimited } from './model/delimited-text';
+import { isChord } from '../../core/keyboard';
 import { GridClipboard } from './model/GridClipboard';
 import { GridExport } from './model/GridExport';
 import { FILTER_ROW, GridModel, HEADER_ROW } from './model/GridModel';
@@ -168,6 +180,9 @@ interface GoToCellOptions {
 
 const hasKeys = (o: object) => Object.keys(o).length > 0;
 
+/** Keys that move the active cell; with Shift they extend the cell range. */
+const MOVE_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown']);
+
 /** Column options that are the grid's state, not fields of the column's definition. */
 const COLUMN_STATE = new Set<string>(['width', 'visible', 'hidden', 'flex', 'sticky', 'visibleIndex', 'sortOrder', 'sortIndex', 'groupIndex', 'filterValues', 'filterType']);
 /** Fields of a definition the rows are read, sorted, filtered or grouped by. */
@@ -202,6 +217,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private readonly body: GridBody<T>;
   /** Rows dragged to another place, or to another grid (`rowDragging`), and moved with the keys. */
   private readonly rowDrag: RowDrag<T>;
+  /** Rows and cell ranges selected by dragging over them. */
+  private readonly dragSelect: DragSelect<T>;
+  /** The active cell when the last press in the rows came, before it moved there: a Shift+click range starts from it. */
+  private pressFrom: { row: number; field: string } | null = null;
+  /** A row drag selection: the selection before it (Escape puts it back), and whether its rows are selected or taken out. */
+  private rowDragBefore: ReturnType<GridModel<T>['selection']['save']> | null = null;
+  private rowDragOn = true;
+  /** The selected cells' summary, and what it was worked out for. */
+  private cellSummaryCache: { key: string; value: { summary: GridCellSummary; column: string | null } } | null = null;
   private readonly totalRow: TotalRow<T>;
   private readonly pager: GridPager<T>;
   private readonly menu: ColumnMenu<T>;
@@ -328,7 +352,18 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       label: () => this.text || model.text('gridLabel'),
     });
     this.motif.setDisposable(() => this.rowDrag.dispose());
-    model.rowDrag.changed = (name, value, previous) => model.events.tell(model.events.optionChanged, () => ({ name: `rowDragging.${name}`, value, previous }));
+    this.dragSelect = new DragSelect<T>(model, this.body, {
+      root: () => this.element as HTMLElement,
+      viewport: () => this.viewportEl,
+      headerCell: (field) => this.header.cellElement(field),
+      isRtl: () => this.isRtl(),
+      columnsScrolled: () => this.columnsScrolled(),
+      begin: (kind, index, field, how) => (kind === 'rows' ? this.beginRowDrag(index, how) : this.beginCellDrag(index, field, how)),
+      reach: (kind, index, field) => (kind === 'rows' ? this.reachRows(index) : this.reachCells(index, field)),
+      finish: (kind, kept) => (kind === 'rows' ? this.finishRowDrag(kept) : this.finishCellDrag(kept)),
+    });
+    this.motif.setDisposable(() => this.dragSelect.dispose());
+    model.rowDrag.changed =(name, value, previous) => model.events.tell(model.events.optionChanged, () => ({ name: `rowDragging.${name}`, value, previous }));
     this.totalRow = new TotalRow<T>(model);
     this.pager = new GridPager<T>(model, {
       goTo: (page) => (this.page = page),
@@ -386,7 +421,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.bottomBar.visible = () => this.bottomShown();
     this.motif.setDisposable(() => bottomActions.dispose());
     const ev = model.events;
-    model.selection.onChanged((selection) => ev.selectionChanged.fire({ selection }));
+    model.selection.onChanged((selection) => ev.selectionChanged.fire({ selection, byDrag: model.selection.byDrag }));
+    model.cellRanges.onChanged((ranges) => ev.cellSelectionChanged.fire({ ranges, byDrag: model.cellRanges.byDrag }));
     this.tip = new CellTip(this, () => model.settings.get('tooltipDelay'));
     this.clipboard = new GridClipboard<T>(model);
     this.exporter = new GridExport<T>(model);
@@ -394,6 +430,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     model.onBeforeQueryChange = () => {
       this.dropForm();
       this.leave();
+      // Other rows between the corners: the ranges go.
+      model.cellRanges.reset();
     };
     model.onQueryChange = () => this.body.toStart();
     model.onLayoutChange = (layout) => ev.layoutChanged.fire(layout);
@@ -1795,6 +1833,72 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.selection.clear();
   }
 
+  // Cell ranges.
+
+  /**
+   * The cell ranges (`settings.cellSelection`), each from the cell it was started on to its far
+   * corner, by row key and field. Reactive. Assign to set them (`[]` clears them); a range whose
+   * corner names no row or column is left out.
+   */
+  get cellRanges(): GridCellRange[] {
+    void this.model.cellRanges.state.version;
+    return this.model.cellRanges.toPublic();
+  }
+  set cellRanges(ranges: readonly GridCellRange[]) {
+    const r = this.model.cellRanges;
+    const list = ranges.map((range) => r.fromPublic(range)).filter((e) => e !== null);
+    r.set(this.model.settings.get('cellSelection') === 'single' ? list.slice(-1) : list);
+  }
+
+  /** Raised before the cell ranges change (by the user or by code): `e.cancel` keeps them. */
+  get onCellSelectionChanging(): MotifEvent<GridCellSelectionChangingEventArgs> {
+    return this.on(this.model.events.cellSelectionChanging);
+  }
+
+  /** Raised whenever the cell ranges change; `e.byDrag` while one is drawn with the pointer. */
+  get onCellSelectionChanged(): MotifEvent<GridCellSelectionChangedEventArgs> {
+    return this.on(this.model.events.cellSelectionChanged);
+  }
+
+  /**
+   * Selects the cells from `from` to `to` (one cell when it is left out), in place of the ranges
+   * there are, or after them (`add`, with `cellSelection: 'multiple'`). Returns whether it shows.
+   */
+  selectCells(from: GridCellPoint, to: GridCellPoint = from, add = false): boolean {
+    const { model } = this;
+    const mode = model.settings.get('cellSelection');
+    if (mode === 'none') return false;
+    const entry = model.cellRanges.fromPublic({ from, to });
+    if (!entry) return false;
+    return model.cellRanges.set(add && mode === 'multiple' ? [...model.cellRanges.entries, entry] : [entry]);
+  }
+
+  clearCellSelection() {
+    this.model.cellRanges.clear();
+  }
+
+  /** The selected cells of the rows loaded, each once, row by row in the grid's order, with their values (unsaved edits included). */
+  getSelectedCellValues(): GridCellValue<T>[] {
+    const { model } = this;
+    const out: GridCellValue<T>[] = [];
+    model.cellRanges.forEachRow((rowIndex, fields) => {
+      const row = model.rowAt(rowIndex);
+      const rowId = model.rowIdAt(rowIndex);
+      if (row === undefined || rowId === undefined) return;
+      const key = this.getKeyByRowIndex(rowIndex);
+      for (const field of fields) out.push({ rowIndex, key, field, value: model.value(rowId, row, model.columns.get(field)), row });
+    });
+    return out;
+  }
+
+  /** The count, sum, average, smallest and largest of the selected cells (rows loaded only), as a spreadsheet's status bar. Reactive. */
+  get cellSelectionSummary(): GridCellSummary {
+    void this.model.cellRanges.state.version;
+    void this.model.state.edits;
+    void this.model.state.version;
+    return untracked(() => this.summarizeCells().summary);
+  }
+
   // Filters.
 
   /** The filters by field (filter row and header filter). Assign to replace them; `{}` clears them. */
@@ -2229,32 +2333,36 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   // Copy, paste, export.
 
   /**
-   * Copies as Ctrl+C does: the selected rows of a multiple selection, else the active cell, as
-   * tab-separated text and an HTML table, with the copyable visible columns. Returns the text;
-   * `''` when there was nothing to copy.
+   * Copies as Ctrl+C does: the cell ranges, else the selected rows of a multiple selection, else the
+   * active cell, as tab-separated text and an HTML table, with the copyable visible columns. Returns
+   * the text; `''` when there was nothing to copy.
    */
   copy(): string {
     const { model } = this;
-    const content = this.clipboard.copy();
+    const ranged = this.hasRanges();
+    const content = ranged ? this.clipboard.copyRanges() : this.clipboard.copy();
     if (content === 'all') model.announce(model.text('gridCopyUseExport'));
-    if (!content || content === 'all') return '';
+    if (content === 'unloaded') model.announce(model.text('gridCopyNotLoaded'));
+    if (!content || content === 'all' || content === 'unloaded') return '';
     const ev = model.events;
     if (ev.listened(ev.copying)) {
-      const e = { text: content.text, html: content.html, rows: content.rows, cancel: false };
+      const e = { text: content.text, html: content.html, rows: content.rows, ranges: ranged ? model.cellRanges.toPublic() : [], cancel: false };
       ev.copying.fire(e);
       if (e.cancel) return '';
       content.text = e.text;
       content.html = e.html;
     }
     this.writeClipboard(content);
-    model.announce(content.rows ? model.text('gridCopiedRows', { count: model.formatter.count(content.rows) }) : model.text('gridCopiedCell'));
+    const count = model.formatter.count(content.cells || content.rows);
+    model.announce(content.cells ? model.text('gridCopiedCells', { count }) : content.rows ? model.text('gridCopiedRows', { count }) : model.text('gridCopiedCell'));
     return content.text;
   }
 
   /**
    * Pastes as Ctrl+V does: tab-separated text into the cells the user can fill, from the active cell
-   * rightwards and downwards. Values go into the rows' drafts and are checked like typed ones; rows
-   * below the active one are saved as the save mode says. Returns the number of cells written.
+   * (with cell ranges: from the last range's first cell) rightwards and downwards; one value alone
+   * fills every cell of the ranges. Values go into the rows' drafts and are checked like typed ones;
+   * rows other than the active one are saved as the save mode says. Returns the number of cells written.
    */
   paste(text: string): number {
     const { model } = this;
@@ -2262,26 +2370,24 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (st.busy || !model.settings.get('paste') || st.activeRow < 0 || !this.commitEditor()) return 0;
     const activeId = model.rowIdAt(st.activeRow);
     if (activeId === undefined || (st.session && st.session !== activeId)) return 0;
+    let rowIndex = st.activeRow;
+    let field = st.activeField;
+    const box = this.hasRanges() ? model.cellRanges.boxes().at(-1) : undefined;
+    if (box) {
+      rowIndex = box.top;
+      field = model.cellRanges.axis().find((f) => box.fields.has(f)) ?? field;
+    }
     const ev = model.events;
     if (ev.listened(ev.pasting)) {
-      const e = { text, rowIndex: st.activeRow, field: st.activeField, cancel: false };
+      const e = { text, rowIndex, field, cancel: false };
       ev.pasting.fire(e);
       if (e.cancel) return 0;
       text = e.text;
     }
-    const result = this.clipboard.paste(text, st.activeRow, st.activeField);
-    const save = (rowId: string) => {
-      if (model.isUntouched(rowId)) model.discard(rowId);
-      else if (model.saveMode !== 'batch' && model.hasPending(rowId) && model.validate(rowId) === null) void model.commit(rowId);
-    };
-    for (const rowId of result.rowIds) {
-      if (rowId === activeId) continue;
-      // A pasted lookup text the source is asked about is written once it is a key.
-      const wait = model.whenSettled(rowId);
-      if (wait) void wait.then(() => !this.isDisposed && model.state.session !== rowId && save(rowId));
-      else save(rowId);
-    }
-    if (model.hasPending(activeId) || model.edit(activeId)?.isNew) model.setSession(activeId);
+    const lines = readDelimited(text, '\t');
+    const one = !!box && lines.length === 1 && lines[0].length === 1;
+    const result = one ? this.clipboard.fill(lines[0][0]) : this.clipboard.paste(text, rowIndex, field);
+    this.saveWritten(result, activeId);
     model.announce(result.cells ? model.text('gridPasted', { count: model.formatter.count(result.cells) }) : model.text('gridNothingPasted'));
     return result.cells;
   }
@@ -2433,6 +2539,22 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       if (keys === undefined) return;
       const list = [...keys];
       untracked(() => (this.selectedKeys = list));
+    });
+
+    // The cell ranges given by the app; another cell selection mode keeps what it allows.
+    this.bindings.watch(() => {
+      const ranges = read(this.props.cellRanges);
+      if (ranges === undefined) return;
+      const list = [...ranges];
+      untracked(() => (this.cellRanges = list));
+    });
+    this.bindings.watch(() => {
+      const mode = settings.get('cellSelection');
+      untracked(() => {
+        const r = model.cellRanges;
+        if (mode === 'none') r.reset();
+        else if (mode === 'single' && r.entries.length > 1) r.set(r.entries.slice(-1));
+      });
     });
 
     // The data props: other data, another mode or save mode starts again; another `pageSize` wins
@@ -2671,6 +2793,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       untracked(() => {
         if (this.updates > 0) this.relayoutWaiting = true;
         else this.layOut();
+        // Rows that were loading under a drag selection came.
+        this.dragSelect.refresh();
       });
     });
   }
@@ -2761,7 +2885,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
               // Infinite: unknown until the last part came.
               return st.status === 'loading' || !model.data.ended ? -1 : model.count + model.headRows + (model.summaries.showsTotal() ? 1 : 0) + model.openDetailCount();
             }}
-            aria-multiselectable={() => (settings.get('selection') === 'multiple' ? 'true' : null)}
+            aria-multiselectable={() => (settings.get('selection') === 'multiple' || settings.get('cellSelection') !== 'none' ? 'true' : null)}
             aria-colcount={() => model.columns.visible().length}
             aria-busy={() => (st.status === 'loading' || st.busy ? 'true' : null)}
             onscroll={() => {
@@ -2843,13 +2967,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
           <div class="mx-data-grid__measure" aria-hidden="true" ref={(c) => (this.measureEl = c.element as HTMLDivElement)} />
         </div>
         {this.filterPanel}
-        <div class="mx-data-grid__bar" x-display={() => settings.get('rowCount') || st.failedBlocks > 0 || model.showsPager() || showErrors() || showSelected() || this.bottomShown()}>
+        <div class="mx-data-grid__bar" x-display={() => settings.get('rowCount') || st.failedBlocks > 0 || model.showsPager() || showErrors() || showSelected() || this.bottomShown() || this.cellSummaryText() !== ''}>
           {this.bottomBar}
           <span class="mx-data-grid__count" x-display={() => settings.get('rowCount')}>
             {() => (st.status !== 'ready' ? '' : model.mode === 'infinite' && model.data.knownCount === undefined ? t('gridRecordsLoaded', { count: count(this.total) }) : t('gridRecords', { count: count(this.totalCount()) }))}
           </span>
           <span class="mx-data-grid__selected" x-display={showSelected}>
             {() => t('gridSelectedCount', { count: count(this.selectedCount) })}
+          </span>
+          <span class="mx-data-grid__cell-summary" x-display={() => this.cellSummaryText() !== ''}>
+            {() => this.cellSummaryText()}
           </span>
           <span class="mx-data-grid__note" data-tone="danger" role="status" x-display={() => st.failedBlocks > (model.moreState() === 'failed' ? 1 : 0)}>
             {() => t('gridSomeRowsFailed')}
@@ -3828,7 +3955,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** A press on a cell of another row: leave the current row first (it may block or wait). */
   private onPointerDown(e: PointerEvent) {
     if (e.button !== 0) return;
-    this.rowDrag.press(e);
+    const { activeRow, activeField } = this.model.state;
+    this.pressFrom = { row: activeRow, field: activeField };
+    // A row taken to be moved is not selected by dragging.
+    if (!this.rowDrag.press(e)) this.dragSelect.press(e);
     const target = e.target as HTMLElement;
     if (this.editor?.element.contains(target) || this.inForm(target) || this.body.detailOf(target)) return;
     const group = this.body.groupRowOf(target) ?? this.body.footerRowOf(target);
@@ -3985,7 +4115,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.toggleAdaptive(view.index, !this.model.adaptive.isOpen(view.rowId));
       return;
     }
-    this.clickSelect(e, view, field);
+    // With cell ranges, clicks on the cells draw them; rows are selected from the check box column.
+    if (this.cellMode() && field !== SELECT_FIELD) this.clickCells(e, view.index, field);
+    else this.clickSelect(e, view, field);
     const { model } = this;
     if (!model.columns.isInternal(field) && this.columnSetting(field, 'startEditAction') === 'click' && view.index === model.state.activeRow && field === model.state.activeField) this.startEdit();
   }
@@ -4548,6 +4680,19 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       return;
     }
 
+    const cellMode = this.cellMode();
+    const ranges = model.cellRanges;
+    if (cellMode && onRow && isChord(model.settings.get('selectAllCellsKeys'), e)) {
+      e.preventDefault();
+      this.selectAllCells();
+      return;
+    }
+    if (cellMode && !ranges.empty && isChord(model.settings.get('clearCellSelectionKeys'), e)) {
+      e.preventDefault();
+      ranges.clear();
+      model.announce(model.text('gridCellSelectionCleared'));
+      return;
+    }
     if (ctrl && !e.altKey && e.key.toLowerCase() === 'a' && mode === 'multiple' && model.settings.get('selectAll')) {
       e.preventDefault();
       this.selectAll();
@@ -4565,6 +4710,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       if (row === FILTER_ROW) {
         e.preventDefault();
         model.filters.clear(field, 'row');
+      } else if (cellMode && !ranges.empty) {
+        e.preventDefault();
+        this.clearRangeCells();
       } else if (this.writeActiveCell(() => null)) e.preventDefault();
       return;
     }
@@ -4573,6 +4721,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.startEdit();
       return;
     }
+    // The keys that extend the cell range (`extendCellsKeys`) move its far corner; a plain move starts over.
+    if (cellMode && onRow && this.extendCellsByKey(e)) return;
+    if (cellMode && MOVE_KEYS.has(e.key) && !e.altKey && !e.shiftKey && !ranges.empty) ranges.clear();
+    // Multiple selection: a row in or out, or the rows from the anchor as the active row moves.
+    if (onRow && mode !== 'none' && isChord(model.settings.get('toggleRowSelectionKeys'), e)) {
+      e.preventDefault();
+      this.toggleSelected(row);
+      return;
+    }
+    // While cells are selected, the rows are extended from the columns whose cells are not.
+    if (onRow && mode === 'multiple' && !(cellMode && ranges.axis().includes(field)) && this.extendRowsByKey(e, row)) return;
 
     switch (e.key) {
       case 'ArrowRight':
@@ -4676,7 +4835,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         if (row === HEADER_ROW && field === SELECT_FIELD && model.settings.get('selectAll')) this.toggleAll();
         if (row === FILTER_ROW) this.filterCell(field)?.focus();
         if (!onRow) return;
-        if (mode !== 'none' && (e.shiftKey || field === SELECT_FIELD || !this.canFillActive())) this.toggleSelected(row);
+        if (mode !== 'none' && !e.shiftKey && (field === SELECT_FIELD || !this.canFillActive())) this.toggleSelected(row);
         else if (model.columns.get(field).type === 'boolean') this.writeActiveCell((v) => !v);
         else if (this.columnSetting(field, 'editOnKeyPress')) this.startEdit(' ');
         return;
@@ -4692,8 +4851,6 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     col = Math.max(0, Math.min(visible.length - 1, col));
     const to = visible[col];
     if (to === ACTIONS_FIELD && to !== field) this.actionIndex = e.key === 'ArrowLeft' !== rtl ? Number.MAX_SAFE_INTEGER : 0;
-    const extend = e.shiftKey && mode === 'multiple' && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'PageDown' || e.key === 'PageUp');
-    if (extend && row >= 0 && st.activeRow >= 0) this.extendSelection(st.activeRow, row);
     this.navigate(row, to);
   }
 
@@ -4786,6 +4943,335 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     else if (mode === 'multiple' && e.shiftKey && this.model.selection.anchor >= 0) this.extendSelection(this.model.selection.anchor, i);
     else if (mode === 'multiple' && (e.ctrlKey || e.metaKey)) this.toggleSelected(i);
     else this.selectOnly(i);
+  }
+
+  // Selecting by dragging, cell ranges.
+
+  /** Cells can be selected in ranges. Reactive. */
+  private cellMode(): boolean {
+    return this.model.settings.get('cellSelection') !== 'none';
+  }
+
+  /** There are cell ranges, and cells can be selected. */
+  private hasRanges(): boolean {
+    return this.cellMode() && !this.model.cellRanges.empty;
+  }
+
+  /** A drag over the rows starts at grid row `index`: the run replaces the selection, joins it, goes from the anchor, or paints the check boxes. */
+  private beginRowDrag(index: number, how: 'replace' | 'add' | 'extend' | 'paint'): boolean {
+    const sel = this.model.selection;
+    this.tip.hide();
+    this.rowDragBefore = sel.save();
+    const entry = this.selectionEntry(index);
+    // Over the check boxes the rows passed take the state the first one takes.
+    this.rowDragOn = how !== 'paint' || !(entry && sel.isSelected(entry[0]));
+    if (how !== 'extend' || sel.anchor < 0) {
+      sel.setAnchor(index);
+      sel.startRun(how !== 'replace');
+    }
+    this.reachRows(index);
+    return true;
+  }
+
+  /** The pointer is over grid row `index`: the rows from the anchor to it are the run. */
+  private reachRows(index: number) {
+    const { model } = this;
+    const sel = model.selection;
+    const top = Math.min(sel.anchor, index);
+    const bottom = Math.max(sel.anchor, index);
+    const rows: [string, unknown][] = [];
+    for (let i = top; i <= bottom; i++) {
+      const entry = model.hasRow(i) ? this.selectionEntry(i) : null;
+      if (entry) rows.push(entry);
+    }
+    sel.byDrag = true;
+    try {
+      sel.extend(rows, this.rowDragOn);
+    } finally {
+      sel.byDrag = false;
+    }
+    const run = sel.state.run;
+    if (run?.top !== top || run.bottom !== bottom) sel.state.run = { top, bottom };
+  }
+
+  private finishRowDrag(kept: boolean) {
+    const { model } = this;
+    const sel = model.selection;
+    sel.state.run = null;
+    if (!kept && this.rowDragBefore) {
+      sel.byDrag = true;
+      sel.restore(this.rowDragBefore);
+      sel.byDrag = false;
+    }
+    this.rowDragBefore = null;
+    model.announce(kept ? model.text('gridRowsSelected', { count: model.formatter.count(this.selectedCount) }) : model.text('gridDragSelectCanceled'));
+  }
+
+  /** A drag over the cells starts at a cell: a range from it, alone or after the others, or the last range extended to it. */
+  private beginCellDrag(index: number, field: string, how: 'replace' | 'add' | 'extend' | 'paint'): boolean {
+    const r = this.model.cellRanges;
+    this.tip.hide();
+    r.byDrag = true;
+    try {
+      if (how === 'extend') return this.extendCellsTo(index, field);
+      return r.begin(r.corner(index, field), how === 'add');
+    } finally {
+      r.byDrag = false;
+    }
+  }
+
+  private reachCells(index: number, field: string) {
+    const r = this.model.cellRanges;
+    r.byDrag = true;
+    try {
+      r.extendTo(r.corner(index, field));
+    } finally {
+      r.byDrag = false;
+    }
+  }
+
+  private finishCellDrag(kept: boolean) {
+    const r = this.model.cellRanges;
+    if (!kept) {
+      r.byDrag = true;
+      r.dropLast();
+      r.byDrag = false;
+      this.model.announce(this.model.text('gridDragSelectCanceled'));
+      return;
+    }
+    this.announceCells();
+  }
+
+  /** The last range (or one from the cell active before the press) extended to a cell. Returns whether a range shows. */
+  private extendCellsTo(index: number, field: string): boolean {
+    const r = this.model.cellRanges;
+    if (r.empty) {
+      const from = this.pressFrom;
+      const start = from && from.row >= 0 && r.axis().includes(from.field) ? from : { row: index, field };
+      if (!r.begin(r.corner(start.row, start.field), false)) return false;
+    }
+    r.extendTo(r.corner(index, field));
+    return true;
+  }
+
+  /** A click on a cell while cells can be selected: Shift extends the last range, Ctrl/⌘ adds the cell as a range, else the ranges go. */
+  private clickCells(e: MouseEvent, index: number, field: string) {
+    const { model } = this;
+    const r = model.cellRanges;
+    const selectable = r.axis().includes(field);
+    if (selectable && e.shiftKey) {
+      this.extendCellsTo(index, field);
+      this.announceCells();
+    } else if (selectable && (e.ctrlKey || e.metaKey) && model.settings.get('cellSelection') === 'multiple') {
+      if (r.begin(r.corner(index, field), true)) this.announceCells();
+    } else r.clear();
+  }
+
+  /** A key of `extendCellsKeys`: the last range's far corner (or a range from the active cell) moves, and focus with it. Returns whether the key was taken. */
+  private extendCellsByKey(e: KeyboardEvent): boolean {
+    const { model } = this;
+    const st = model.state;
+    const r = model.cellRanges;
+    const keys = model.settings.get('extendCellsKeys');
+    const move = (Object.keys(keys) as (keyof GridCellExtendKeys)[]).find((name) => isChord(keys[name] ?? [], e));
+    const axis = r.axis();
+    if (!move || !axis.includes(st.activeField) || model.groupAt(st.activeRow) || model.footerAt(st.activeRow)) return false;
+    const last = r.last;
+    let row = last ? r.find(last.extent) : st.activeRow;
+    let col = Math.max(0, axis.indexOf(last ? last.extent.field : st.activeField));
+    // Left and right are the screen's: right to left, right goes back.
+    const rtl = this.isRtl();
+    const end = axis.length - 1;
+    switch (move) {
+      case 'down':
+        row = model.stepRow(row, 1);
+        break;
+      case 'up':
+        row = model.stepRow(row, -1);
+        break;
+      case 'bottom':
+        row = model.lastRow();
+        model.loadMore();
+        break;
+      case 'top':
+        row = model.firstRow();
+        break;
+      case 'left':
+      case 'right':
+        col += (move === 'right') !== rtl ? 1 : -1;
+        break;
+      case 'leftmost':
+      case 'rightmost':
+        col = (move === 'rightmost') !== rtl ? end : 0;
+        break;
+      case 'home':
+        col = 0;
+        break;
+      case 'end':
+        col = end;
+        break;
+      case 'first':
+        col = 0;
+        row = model.firstRow();
+        break;
+      case 'last':
+        col = end;
+        row = model.lastRow();
+        model.loadMore();
+        break;
+      case 'pageDown':
+        row = model.stepRow(row, this.body.pageRows());
+        break;
+      case 'pageUp':
+        row = model.stepRow(row, -this.body.pageRows());
+        break;
+    }
+    e.preventDefault();
+    if (row < 0) return true;
+    const field = axis[Math.max(0, Math.min(axis.length - 1, col))];
+    if (!last && !r.begin(r.corner(st.activeRow, st.activeField), false)) return true;
+    r.extendTo(r.corner(row, field));
+    this.navigate(row, field);
+    this.announceCells();
+    return true;
+  }
+
+  /** A key of `extendRowSelectionKeys` on grid row `row`: the active row moves and the rows from the anchor to it join the selection. Returns whether the key was taken. */
+  private extendRowsByKey(e: KeyboardEvent, row: number): boolean {
+    const { model } = this;
+    const keys = model.settings.get('extendRowSelectionKeys');
+    const move = (Object.keys(keys) as (keyof GridRowExtendKeys)[]).find((name) => isChord(keys[name] ?? [], e));
+    if (!move) return false;
+    e.preventDefault();
+    const page = this.body.pageRows();
+    const to = model.stepRow(row, move === 'down' ? 1 : move === 'up' ? -1 : move === 'pageDown' ? page : -page);
+    if (to < 0) return true;
+    this.extendSelection(row, to);
+    this.navigate(to, model.state.activeField);
+    return true;
+  }
+
+  /** Every cell of the rows the user can reach, in every selectable column. */
+  private selectAllCells() {
+    const { model } = this;
+    const r = model.cellRanges;
+    const axis = r.axis();
+    const first = model.firstRow();
+    const last = model.lastRow();
+    if (!axis.length || first < 0) return;
+    const entry = { anchor: r.corner(first, axis[0]), extent: r.corner(last, axis[axis.length - 1]), fields: axis };
+    if (r.set([entry])) this.announceCells();
+  }
+
+  /** Delete on cell ranges: every cell of them the user can fill is emptied, as typing would, and the rows are saved as the save mode says. */
+  private clearRangeCells() {
+    const { model } = this;
+    const st = model.state;
+    if (st.busy || model.editsInForm || !this.commitEditor()) return;
+    const activeId = st.activeRow >= 0 ? model.rowIdAt(st.activeRow) : undefined;
+    if (st.session && st.session !== activeId) return;
+    const result: PasteResult = { rowIds: [], cells: 0, failed: 0 };
+    model.cellRanges.forEachRow((index, fields) => {
+      const row = model.rowAt(index);
+      const rowId = model.rowIdAt(index);
+      if (row === undefined || rowId === undefined) return;
+      const rec = model.edit(rowId);
+      if (rec?.saving || rec?.removed) return;
+      const fillable = fields.filter((f) => model.columns.canFill(f, row, !!rec?.isNew));
+      if (!fillable.length) return;
+      result.rowIds.push(rowId);
+      for (const f of fillable) model.writeCell(rowId, row, f, null, model.dataIndex(index));
+      result.cells += fillable.length;
+    });
+    this.saveWritten(result, activeId);
+    model.announce(model.text('gridCellsCleared', { count: model.formatter.count(result.cells) }));
+  }
+
+  /** After cells were written (paste, Delete): rows other than the active one are saved as the save mode says, the active one stays in edit. */
+  private saveWritten(result: PasteResult, activeId: string | undefined) {
+    const { model } = this;
+    const save = (rowId: string) => {
+      if (model.isUntouched(rowId)) model.discard(rowId);
+      else if (model.saveMode !== 'batch' && model.hasPending(rowId) && model.validate(rowId) === null) void model.commit(rowId);
+    };
+    for (const rowId of result.rowIds) {
+      if (rowId === activeId) continue;
+      // A pasted lookup text the source is asked about is written once it is a key.
+      const wait = model.whenSettled(rowId);
+      if (wait) void wait.then(() => !this.isDisposed && model.state.session !== rowId && save(rowId));
+      else save(rowId);
+    }
+    if (activeId !== undefined && (model.hasPending(activeId) || model.edit(activeId)?.isNew)) model.setSession(activeId);
+  }
+
+  /** Says politely what the cell ranges hold: "3 × 5 cells selected", or the cells of several ranges. */
+  private announceCells() {
+    const { model } = this;
+    const r = model.cellRanges;
+    const n = r.entries.length;
+    const count = (v: number) => model.formatter.count(v);
+    if (!n) model.announce(model.text('gridCellSelectionCleared'));
+    else if (n === 1) {
+      const { rows, columns } = r.size();
+      model.announce(model.text('gridCellsSelected', { rows: count(rows), columns: count(columns) }));
+    } else model.announce(model.text('gridCellRangesSelected', { count: count(r.count()), ranges: count(n) }));
+  }
+
+  /** The summary of the selected cells, worked out once per change, and the column all its numbers come from (for their format). */
+  private summarizeCells(): { summary: GridCellSummary; column: string | null } {
+    const { model } = this;
+    const st = model.state;
+    const key = `${model.cellRanges.state.version}|${st.version}|${st.edits}|${st.added}`;
+    if (this.cellSummaryCache?.key === key) return this.cellSummaryCache.value;
+    const summary: GridCellSummary = { cells: 0, count: 0, numbers: 0, sum: 0, average: null, min: null, max: null };
+    let column: string | null | undefined;
+    untracked(() =>
+      model.cellRanges.forEachRow((index, fields) => {
+        summary.cells += fields.length;
+        const row = model.rowAt(index);
+        const rowId = model.rowIdAt(index);
+        if (row === undefined || rowId === undefined) return;
+        for (const field of fields) {
+          const v = model.value(rowId, row, model.columns.get(field));
+          if (data.isEmpty(v)) continue;
+          summary.count++;
+          if (typeof v !== 'number' || !Number.isFinite(v)) continue;
+          summary.numbers++;
+          summary.sum += v;
+          summary.min = summary.min === null ? v : Math.min(summary.min, v);
+          summary.max = summary.max === null ? v : Math.max(summary.max, v);
+          column = column === undefined || column === field ? field : null;
+        }
+      }),
+    );
+    if (summary.numbers) summary.average = summary.sum / summary.numbers;
+    const value = { summary, column: column ?? null };
+    this.cellSummaryCache = { key, value };
+    return value;
+  }
+
+  /** The summary in the bottom bar ("Avg: 12 · Count: 4 · Sum: 48"), `''` while it does not show. Reactive. */
+  private cellSummaryText(): string {
+    const { model } = this;
+    const settings = model.settings;
+    if (!this.cellMode() || !settings.get('cellSummary')) return '';
+    const items = settings.get('cellSummaryItems');
+    if (!items.length) return '';
+    const { summary, column } = this.summarizeCells();
+    if (summary.cells < 2) return '';
+    const col = column ? model.columns.get(column) : null;
+    // Numbers of one column keep its format (a currency); else plain numbers.
+    const number = (v: number | null) => (v === null ? '' : col && col.type === 'number' && typeof col.format !== 'function' ? model.formatter.text(col, {} as T, v) : model.formatter.count(v));
+    const parts: string[] = [];
+    for (const item of items) {
+      if (item === 'count') parts.push(model.text('gridSummaryCount', { 0: model.formatter.count(summary.count) }));
+      else if (!summary.numbers) continue;
+      else if (item === 'sum') parts.push(model.text('gridSummarySum', { 0: number(summary.sum) }));
+      else if (item === 'average') parts.push(model.text('gridSummaryAvg', { 0: number(summary.average) }));
+      else if (item === 'min') parts.push(model.text('gridSummaryMin', { 0: number(summary.min) }));
+      else if (item === 'max') parts.push(model.text('gridSummaryMax', { 0: number(summary.max) }));
+    }
+    return parts.join(model.text('gridSummarySeparator'));
   }
 
   // Actions.

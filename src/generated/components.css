@@ -7,6 +7,7 @@
     --mx-datagrid-page-number-width: 4rem;
     --mx-datagrid-page-size-width: 5.5rem;
     --mx-datagrid-adaptive-label-width: 8rem;
+    --mx-datagrid-range-fill-opacity: 0.14;
     --mx-date-box-times-width: 6rem;
     --mx-date-box-times-height: 18rem;
     --mx-field-width: 16rem;
@@ -260,6 +261,8 @@
     --mx-datagrid-row-drop-width: var(--mx-indicator-thickness);
     --mx-datagrid-row-drop-inside-width: var(--mx-border-width-2);
     --mx-datagrid-row-ghost-radius: var(--mx-radius-sm);
+    --mx-datagrid-range-border-width: var(--mx-border-width-2);
+    --mx-datagrid-row-run-border-width: var(--mx-border-width-2);
     --mx-datagrid-more-gap: var(--mx-space-2);
     --mx-datagrid-more-padding-block: var(--mx-space-1);
     --mx-datagrid-more-padding-inline: var(--mx-space-3);
@@ -874,6 +877,12 @@
     --mx-datagrid-adaptive-label-color: var(--mx-color-fg-primary);
     --mx-datagrid-drag-color: var(--mx-color-fg-secondary);
     --mx-datagrid-row-drop-color: var(--mx-color-accent-solid);
+    --mx-datagrid-range-fill: var(--mx-color-accent-solid);
+    --mx-datagrid-range-selected-fill: var(--mx-color-accent-subtle);
+    --mx-datagrid-range-text: var(--mx-color-fg-primary);
+    --mx-datagrid-range-border-color: var(--mx-color-accent-solid);
+    --mx-datagrid-range-anchor-fill: var(--mx-color-bg-surface);
+    --mx-datagrid-row-run-border-color: var(--mx-color-accent-solid);
     --mx-datagrid-more-color: var(--mx-color-fg-secondary);
     --mx-datagrid-more-danger-color: var(--mx-color-danger-fg);
     --mx-datagrid-more-background: var(--mx-color-bg-surface);
@@ -1307,6 +1316,7 @@
     --mx-datagrid-background: var(--mx-color-bg-card);
     --mx-datagrid-head-background: var(--mx-color-bg-card);
     --mx-datagrid-stripe: var(--mx-color-bg-layer);
+    --mx-datagrid-range-anchor-fill: var(--mx-color-bg-card);
     --mx-window-bar-background: var(--mx-color-bg-surface);
   }
 }

@@ -81,6 +81,7 @@ export class GridRow<T> {
     this.stops.push(
       effect(() => this.drawLook()),
       effect(() => this.drawCells()),
+      effect(() => this.drawRanges()),
     );
     if (model.columns.actionsWanted()) {
       this.actions = new RowActions<T>(this.cells.get(ACTIONS_FIELD)!, widths);
@@ -343,6 +344,42 @@ export class GridRow<T> {
     else delete statusCell.dataset.error;
   }
 
+  /**
+   * The cell ranges and the rows a drag selects, on the cells only: `data-range` with the edges of
+   * the ranges, `data-run` with the edges of the run, and `aria-selected` while cells can be
+   * selected. Only what changed is written; the cells' text is left alone.
+   */
+  private drawRanges() {
+    void this.shown.value;
+    void this.columnsShown.value;
+    const { index } = this;
+    const look = this.model.cellRanges.look;
+    const loaded = index >= 0 && this.row !== undefined;
+    const marks = loaded ? this.model.cellRanges.marksOf(index, look) : null;
+    const { run, first, last } = look;
+    const inRun = loaded && run !== null && index >= run.top && index <= run.bottom;
+    const selectable = look.on ? look.selectable : null;
+    for (const [field, cell] of this.cells) {
+      const mark = marks?.get(field);
+      setData(cell, 'range', mark);
+      let edges: string | undefined;
+      if (inRun) {
+        const parts: string[] = [];
+        if (index === run.top) parts.push('top');
+        if (index === run.bottom) parts.push('bottom');
+        if (field === first) parts.push('start');
+        if (field === last) parts.push('end');
+        edges = parts.join(' ');
+      }
+      setData(cell, 'run', edges);
+      const selected = selectable?.has(field) ? String(mark !== undefined) : null;
+      if (cell.getAttribute('aria-selected') !== selected) {
+        if (selected === null) cell.removeAttribute('aria-selected');
+        else cell.setAttribute('aria-selected', selected);
+      }
+    }
+  }
+
   private drawActions() {
     void this.shown.value;
     const model = this.model;
@@ -477,6 +514,13 @@ export class GridRow<T> {
     else delete cell.dataset.hint;
     busy(cell, look.state === 'loading' || model.isBusy(rowId, col.field));
   }
+}
+
+/** Writes `data-<name>` when it changed; `undefined` takes it away. */
+function setData(cell: HTMLElement, name: string, value: string | undefined) {
+  if (cell.dataset[name] === value) return;
+  if (value === undefined) delete cell.dataset[name];
+  else cell.dataset[name] = value;
 }
 
 function busy(cell: HTMLElement, on: boolean) {

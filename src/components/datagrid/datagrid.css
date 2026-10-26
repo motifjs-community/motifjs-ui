@@ -174,6 +174,82 @@
     box-shadow: var(--mx-datagrid-cell-focus-halo);
   }
 
+  /* Cell ranges (cellSelection) and the rows a drag selects: data-range on the cells of a range,
+     data-run on the cells of the run, each with the edges it draws (top, bottom, start, end) and
+     anchor on the cell the last range started on. Frame and fill are background layers over the
+     row's own look, so the pinned columns' edge and the focus ring stay as they are. */
+  .mx-data-grid__cell:is([data-range], [data-run]) {
+    --_edge: var(--mx-datagrid-range-border-color);
+    --_edge-width: var(--mx-datagrid-range-border-width);
+    --_line: linear-gradient(var(--_edge), var(--_edge));
+
+    background-image:
+      var(--_edge-top, none), var(--_edge-bottom, none), var(--_edge-start, none), var(--_edge-end, none), var(--_range, none),
+      linear-gradient(var(--_tint), var(--_tint));
+    background-repeat: no-repeat;
+    background-position: top, bottom, left, right, 0 0, 0 0;
+    background-size:
+      100% var(--_edge-width),
+      100% var(--_edge-width),
+      var(--_edge-width) 100%,
+      var(--_edge-width) 100%,
+      auto,
+      auto;
+  }
+
+  .mx-data-grid:dir(rtl) .mx-data-grid__cell:is([data-range], [data-run]) {
+    background-position: top, bottom, right, left, 0 0, 0 0;
+  }
+
+  .mx-data-grid__cell[data-range] {
+    --_fill: color-mix(in srgb, var(--mx-datagrid-range-fill) calc(var(--mx-datagrid-range-fill-opacity) * 100%), transparent);
+    --_range: linear-gradient(var(--_fill), var(--_fill));
+  }
+
+  /* Over a selected row the fill is whole, with its own text, so the text keeps its contrast. */
+  .mx-data-grid__row[data-selected] > .mx-data-grid__cell[data-range],
+  .mx-data-grid__cell[data-range~='anchor'] {
+    color: var(--mx-datagrid-range-text);
+  }
+
+  .mx-data-grid__row[data-selected] > .mx-data-grid__cell[data-range] {
+    --_fill: var(--mx-datagrid-range-selected-fill);
+  }
+
+  .mx-data-grid__cell[data-range~='anchor'] {
+    --_fill: var(--mx-datagrid-range-anchor-fill);
+  }
+
+  .mx-data-grid__cell[data-run] {
+    --_edge: var(--mx-datagrid-row-run-border-color);
+    --_edge-width: var(--mx-datagrid-row-run-border-width);
+  }
+
+  .mx-data-grid__cell:is([data-range~='top'], [data-run~='top']) {
+    --_edge-top: var(--_line);
+  }
+
+  .mx-data-grid__cell:is([data-range~='bottom'], [data-run~='bottom']) {
+    --_edge-bottom: var(--_line);
+  }
+
+  .mx-data-grid__cell:is([data-range~='start'], [data-run~='start']) {
+    --_edge-start: var(--_line);
+  }
+
+  .mx-data-grid__cell:is([data-range~='end'], [data-run~='end']) {
+    --_edge-end: var(--_line);
+  }
+
+  /* While a drag selects, no text is selected; over the cells the pointer is a spreadsheet's. */
+  .mx-data-grid[data-drag-selecting] {
+    user-select: none;
+  }
+
+  .mx-data-grid[data-drag-selecting='cells'] .mx-data-grid__body {
+    cursor: cell;
+  }
+
   /* An unsaved value: a corner mark. A message: a frame; the text shows on hover and focus. */
   .mx-data-grid__cell[data-changed]::before {
     content: '';
@@ -1576,6 +1652,16 @@
 
     .mx-data-grid__body > .mx-data-grid__row:is([data-drop-target], [data-drag-source='push']) {
       outline-color: Highlight;
+    }
+
+    /* The system colors drop the layers: each cell of a range is framed, the anchor dashed (the focus ring wins). */
+    .mx-data-grid__cell:where([data-range]) {
+      outline: var(--mx-datagrid-range-border-width) solid Highlight;
+      outline-offset: calc(var(--mx-datagrid-range-border-width) * -1);
+    }
+
+    .mx-data-grid__cell:where([data-range~='anchor']) {
+      outline-style: dashed;
     }
   }
 }

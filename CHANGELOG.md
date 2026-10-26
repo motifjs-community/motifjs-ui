@@ -1117,3 +1117,65 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   language (tokens `tabdocs.list-search-height`, `list-search-font-size`; Material 44 px instead of its
   56 px field). `MenuList.markBesideIcon` gives the mark its own column before the icons, and
   `MenuList.radioMark: 'dot' | 'check'` chooses how a chosen radio item is marked.
+
+### DataGrid selection by dragging
+
+- Rows: with `selection: 'multiple'`, pressing on a row and dragging over others selects the rows
+  passed, live, with a frame around them while the drag runs (`settings.rowDragSelection`, on by
+  default). A plain drag replaces the selection, Ctrl/⌘ adds the rows, Shift goes from the anchor;
+  over the check box column the rows passed take the state the first one takes. Group rows, group
+  footers, details and new rows are passed over (the rows of a closed group are not selected);
+  rows that load while the list scrolls under the drag are taken in. `onSelectionChanging` and
+  `onSelectionChanged` come once per row reached, with the new `byDrag`; Escape gives the drag up
+  and puts the selection back.
+- Cell ranges, as in a spreadsheet: `settings.cellSelection` (`'none'`, `'single'`, `'multiple'`).
+  Press on a cell and drag to draw a range (a frame, a fill over the row's own look, the anchor cell
+  left unfilled); Ctrl/⌘ starts another range, Shift+click extends the last one from its anchor, a
+  plain click starts over. Shift with the arrows, Home / End and PageUp / PageDown extend it from its
+  far corner (focus goes with the corner), `selectAllCellsKeys` (`['Mod+A']`) selects every cell,
+  `clearCellSelectionKeys` (`['Escape']`) clears, a plain move clears. The extending keys are options
+  too: `extendCellsKeys` (`GridCellExtendKeys`: a chord list per move — `up`, `down`, `left`, `right`,
+  `pageUp`, `pageDown`, `home`, `end` with Shift; `top`, `bottom`, `leftmost`, `rightmost` with
+  `Mod+Shift` and the arrows; `first`, `last` with `Mod+Shift+Home` / `End`), and for rows
+  `toggleRowSelectionKeys` (`['Shift+Space']`) and `extendRowSelectionKeys` (`GridRowExtendKeys`,
+  Shift with Up / Down and PageUp / PageDown). Ctrl+C copies the ranges as
+  tab-separated text and an HTML table (the rows and columns they cover, cells outside them empty;
+  `copyValues`, `copyHeaders`, `onCopying` with the new `ranges`); Ctrl+V pastes one value into every
+  cell of the ranges or a block from the last range's first cell; Delete (`clearKeys`) empties the
+  cells the user can edit, through the rows' drafts, the checks and the save mode
+  (`onRowUpdating`…). While cells can be selected, clicks on the cells draw ranges and rows are
+  selected from the check box column.
+- Ranges are kept by row key (a new row by its id) and field: they follow their rows when rows are
+  added above or loaded again and keep their columns when these move or hide; a sort, filter,
+  search, grouping, opening or closing a group, or another page takes them away. A column opts out
+  with `cellSelectable: false` (its own value wins over `settings.cellSelectable`).
+- API: `cellRanges` (read/write, reactive; also a prop, a function followed),
+  `selectCells(from, to?, add?)`, `clearCellSelection()`, `getSelectedCellValues()`,
+  `cellSelectionSummary` (`{ cells, count, numbers, sum, average, min, max }`),
+  `onCellSelectionChanging` (cancelable) and `onCellSelectionChanged` (`{ ranges, byDrag }`); types
+  `GridCellPoint`, `GridCellRange`, `GridCellValue`, `GridCellSummary`, `GridCellSummaryItem`,
+  `GridCellSelectionChangingEventArgs`, `GridCellSelectionChangedEventArgs`. The bottom bar shows the
+  summary while more than one cell is selected (`cellSummary`, `cellSummaryItems`:
+  `['average', 'count', 'sum']`).
+- Both: `cellDragSelection`, `dragSelectionThreshold` (`5`; a shorter move stays a click, so clicks
+  that select or start editing work as before), `dragSelectionAutoScroll`,
+  `dragSelectionScrollSpeed` (`30`) and `dragSelectionScrollSensitivity` (`60`) — the rows scroll
+  near or past an edge, down and sideways, frame by frame — `dragSelectionTouch` (`'scroll'`, or
+  `'longPress'` after `dragSelectionLongPress` ms) and `dragSelectionOnEditableCells`, all live. Row
+  drag and drop keeps its icon (and the whole row without icons); headers, the filter row, the group
+  panel, action buttons, master-detail and adaptive toggles, links, buttons and fields in cells keep
+  their presses; no text is selected while a drag runs, Alt+drag is left to the browser.
+- Accessibility: `aria-multiselectable` while cells can be selected, `aria-selected` on every
+  selectable cell; polite announcements `gridRowsSelected`, `gridCellsSelected`,
+  `gridCellRangesSelected`, `gridCellSelectionCleared`, `gridDragSelectCanceled`, `gridCopiedCells`,
+  `gridCopyNotLoaded`, `gridCellsCleared` (en/tr). Tokens `datagrid.range-fill`,
+  `range-fill-opacity`, `range-selected-fill`, `range-text`, `range-border-color`,
+  `range-border-width`, `range-anchor-fill` (Material: its card surface), `row-run-border-color`,
+  `row-run-border-width`; forced colors frame each cell of a range in `Highlight`.
+- The ranges are marks on the cells drawn now (pooled rows, columns in view), worked out once per
+  change for every row; a cell's text is never written again for them. Measured in Chrome drawing
+  a range over 100,000 rows × 60 virtual columns: 60 fps inside the rows, 59 fps while scrolling
+  past the bottom edge, no cell text written while only the range changed.
+- Docs: a new page “Selecting by dragging” (`/datagrid/drag-select`: rows in memory with grouping,
+  an editable sheet of orders, 100,000 rows × 60 virtual columns set from code), the API page's
+  rows and tokens; `e2e/checks/52-datagrid-drag-select.mjs`.
