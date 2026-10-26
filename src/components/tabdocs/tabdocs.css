@@ -479,9 +479,11 @@
     min-block-size: 0;
   }
 
+  /* Its own stacking: the content's z-index (a grid's sticky rows) never rises over a slid-out area, a window or the drop marks. */
   .mx-tabdocs__panel {
     position: absolute;
     inset: 0;
+    isolation: isolate;
     overflow: auto;
   }
 

@@ -1039,3 +1039,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   why reopening needs a click; what works there and the limits; the API); `e2e/checks/49-tabdocs-window.mjs`.
 - Popup: scrolling inside a popup (a menu taller than the window) no longer places it again, which took
   the scroll back to the top; the page scrolling still moves it along with its anchor.
+- TabDocumentManager: each tab panel stacks on its own (`isolation`), so a document's own z-index (a
+  DataGrid's sticky summary row) no longer rises over a slid-out dock area, a floating window or the drop
+  marks. Docs: a "A whole workspace" page; `e2e/checks/51-tabdocs-workspace.mjs`.
