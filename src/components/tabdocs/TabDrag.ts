@@ -102,6 +102,11 @@ export class TabDrag {
     };
   }
 
+  /** A touchmove in a bar: once a long press drags, the finger moves the tab, not the strip or the page. */
+  holdTouch(e: TouchEvent): void {
+    if (this.session && !this.session.byKeyboard && e.cancelable) e.preventDefault();
+  }
+
   /** What is being dragged now. */
   get subject(): TabDragSubject | null {
     return this.session?.subject ?? null;
@@ -235,16 +240,11 @@ export class TabDrag {
     const move = (ev: PointerEvent) => untracked(() => this.pointerMove(ev, view));
     const up = (ev: PointerEvent) => untracked(() => this.pointerUp(ev, view));
     const key = (ev: KeyboardEvent) => untracked(() => this.key(ev));
-    // Once a long press has started the drag the finger moves the tab, not the strip.
-    const touch = (ev: TouchEvent) => {
-      if (this.session && !this.session.byKeyboard) ev.preventDefault();
-    };
     view.addEventListener('pointermove', move);
     view.addEventListener('pointerup', up);
     view.addEventListener('pointercancel', up);
     view.addEventListener('keydown', key, true);
     view.addEventListener('keyup', key, true);
-    found.source.addEventListener('touchmove', touch, { passive: false });
     this.stops.push(() => {
       clearTimeout(press.timer);
       view.removeEventListener('pointermove', move);
@@ -252,7 +252,6 @@ export class TabDrag {
       view.removeEventListener('pointercancel', up);
       view.removeEventListener('keydown', key, true);
       view.removeEventListener('keyup', key, true);
-      found.source.removeEventListener('touchmove', touch);
     });
   }
 

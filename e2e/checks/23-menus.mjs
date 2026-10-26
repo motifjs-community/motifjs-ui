@@ -111,7 +111,8 @@ export default async function ({ page, base, check, axeSource, box }) {
   // A menu taller than a short window scrolls inside, and stays where the wheel took it.
   const size = page.viewportSize();
   await page.setViewportSize({ width: size.width, height: 260 });
-  await row.scrollIntoViewIfNeeded();
+  // In the middle of the window: the menu has room neither above nor below, wherever the page was.
+  await row.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
   await page.waitForTimeout(600);
   await row.click({ button: 'right', position: { x: 30, y: 8 } });
   const tall = page.locator('.mx-popup:popover-open');

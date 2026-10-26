@@ -467,6 +467,33 @@ describe('DataGrid: cell ranges', () => {
     expect(grid.cellRanges[0].fields).toEqual(['name', 'amount', 'city']);
   });
 
+  it('holds a touchmove listener on the rows from before a press, only for the long press, so a drag can stop the page scrolling', async () => {
+    // A phone decides when the finger lands whether the page may scroll at once: a listener added on the press is too late.
+    const add = EventTarget.prototype.addEventListener;
+    const remove = EventTarget.prototype.removeEventListener;
+    const added: { target: EventTarget; passive: unknown }[] = [];
+    const removed: EventTarget[] = [];
+    vi.spyOn(EventTarget.prototype, 'addEventListener').mockImplementation(function (this: EventTarget, type: string, fn: any, options?: any) {
+      if (type === 'touchmove') added.push({ target: this, passive: typeof options === 'object' ? options.passive : undefined });
+      return add.call(this, type, fn, options);
+    });
+    vi.spyOn(EventTarget.prototype, 'removeEventListener').mockImplementation(function (this: EventTarget, type: string, fn: any, options?: any) {
+      if (type === 'touchmove') removed.push(this);
+      return remove.call(this, type, fn, options);
+    });
+    const plain = await make({ rows: makeRows(5), settings: { cellSelection: 'multiple' } });
+    const plainVp = plain.element.querySelector('.mx-data-grid__viewport')!;
+    expect(added.some((a) => a.target === plainVp)).toBe(false);
+
+    const grid = await make({ rows: makeRows(5), settings: { cellSelection: 'multiple', dragSelectionTouch: 'longPress' } });
+    const vp = grid.element.querySelector('.mx-data-grid__viewport')!;
+    expect(added.some((a) => a.target === vp && a.passive === false)).toBe(true);
+    grid.settings.dragSelectionTouch = 'scroll';
+    await settle();
+    expect(removed).toContain(vp);
+    vi.restoreAllMocks();
+  });
+
   it('scrolls sideways near the edge while drawing a range', async () => {
     const grid = await make({ rows: makeRows(10), columns: [...columns, { field: 'e1', title: 'E1' }, { field: 'e2', title: 'E2' }, { field: 'e3', title: 'E3' }], settings: { cellSelection: 'single' } });
     const start = point(grid, 0, 'id');

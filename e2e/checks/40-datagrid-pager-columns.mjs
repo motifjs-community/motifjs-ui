@@ -51,13 +51,20 @@ export default async function ({ page, base, check, axeSource }) {
   // Adaptive: full in a grid wide enough for the full pager, compact in a narrower one.
   const look = (want) => page.waitForFunction(([sel, w]) => document.querySelector(sel)?.dataset.look === w, [`${pager} .mx-data-grid__pager`, want], { timeout: 3000 }).catch(() => {});
   await page.locator('section[aria-labelledby="pager"] button', { hasText: /^Adaptive$/ }).click();
-  await page.locator(pager).evaluate((el) => (el.style.inlineSize = '1100px'));
+  // Wider than the example's stage, which keeps its parts within it otherwise.
+  await page.locator(pager).evaluate((el) => {
+    el.style.inlineSize = '1100px';
+    el.style.maxInlineSize = 'none';
+  });
   await look('full');
   const wide = await nav.getAttribute('data-look');
   await page.locator(pager).evaluate((el) => (el.style.inlineSize = '22rem'));
   await look('compact');
   const narrow = await nav.getAttribute('data-look');
-  await page.locator(pager).evaluate((el) => (el.style.inlineSize = ''));
+  await page.locator(pager).evaluate((el) => {
+    el.style.inlineSize = '';
+    el.style.maxInlineSize = '';
+  });
   check('datagrid pager: adaptive is full in a wide grid and compact in a narrow one', narrow === 'compact' && wide === 'full', `${wide} → ${narrow} (compact pager ${fullWidth}px)`);
   await page.locator('section[aria-labelledby="pager"] button', { hasText: /^Full$/ }).click();
   await look('full');

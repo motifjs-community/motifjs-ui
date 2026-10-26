@@ -819,6 +819,9 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
         void manager.closeByUser(tab.document);
       }
     });
+    // A phone decides when the finger lands whether the page may scroll at once: the bar holds a
+    // touchmove listener from the start, so a tab dragged after a long press can stop the scroll.
+    bar.element.addEventListener('touchmove', (e) => manager.holdTouch(e), { passive: false });
     bar.element.addEventListener('mousedown', (e) => {
       // A press on the empty strip leaves focus where it is (the page around would take it).
       if (this.isStripSpace(e.target)) e.preventDefault();

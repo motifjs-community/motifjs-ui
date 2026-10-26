@@ -63,32 +63,34 @@ export default function TokensPage() {
           Source: <code>tokens/component/*.tokens.json</code>. Override one after <code>styles.css</code> to restyle
           every instance of that component; override the design-system token it references to restyle everything.
         </p>
-        <table class="token-table">
-          <thead>
-            <tr>
-              <th>Token</th>
-              <th>CSS variable</th>
-              <th>References</th>
-              <th>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {componentDocs.map((t) => (
-              <tr key={t.name}>
-                <td>
-                  <code>{t.name}</code>
-                </td>
-                <td>
-                  <code>{t.cssVar}</code>
-                </td>
-                <td>{t.ref ? <code>{`{${t.ref}}`}</code> : <span>—</span>}</td>
-                <td>
-                  <Value type={t.type} value={t.value} />
-                </td>
+        <div class="table-scroll" tabindex="0">
+          <table class="token-table">
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>CSS variable</th>
+                <th>References</th>
+                <th>Value</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {componentDocs.map((t) => (
+                <tr key={t.name}>
+                  <td>
+                    <code>{t.name}</code>
+                  </td>
+                  <td>
+                    <code>{t.cssVar}</code>
+                  </td>
+                  <td>{t.ref ? <code>{`{${t.ref}}`}</code> : <span>—</span>}</td>
+                  <td>
+                    <Value type={t.type} value={t.value} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Section>
 
       <Section anchor="semantic" title="Semantic ({semantic.length} per theme)">
@@ -97,38 +99,40 @@ export default function TokensPage() {
           Every text/background pair is checked in the design system's build: WCAG AA in light and dark, AAA in high
           contrast.
         </p>
-        <table class="token-table">
-          <thead>
-            <tr>
-              <th>Token</th>
-              <th>CSS variable</th>
-              <th>Light</th>
-              <th>Dark</th>
-              <th>High contrast</th>
-            </tr>
-          </thead>
-          <tbody>
-            {semantic.map(([name, t]) => (
-              <tr key={name}>
-                <td>
-                  <code>{name}</code>
-                </td>
-                <td>
-                  <code>{t.cssVar}</code>
-                </td>
-                <td>
-                  <Value type={t.type} value={t.value} />
-                </td>
-                <td>
-                  <Value type={t.type} value={dark[name].value} />
-                </td>
-                <td>
-                  <Value type={t.type} value={highContrast[name].value} />
-                </td>
+        <div class="table-scroll" tabindex="0">
+          <table class="token-table">
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>CSS variable</th>
+                <th>Light</th>
+                <th>Dark</th>
+                <th>High contrast</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {semantic.map(([name, t]) => (
+                <tr key={name}>
+                  <td>
+                    <code>{name}</code>
+                  </td>
+                  <td>
+                    <code>{t.cssVar}</code>
+                  </td>
+                  <td>
+                    <Value type={t.type} value={t.value} />
+                  </td>
+                  <td>
+                    <Value type={t.type} value={dark[name].value} />
+                  </td>
+                  <td>
+                    <Value type={t.type} value={highContrast[name].value} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Section>
 
       <Section anchor="density" title="Density ({density.length})">
@@ -136,34 +140,36 @@ export default function TokensPage() {
           Control heights, paddings, gaps, the pressable edge and the bar height; <code>data-density="compact"</code>{' '}
           swaps them all.
         </p>
-        <table class="token-table">
-          <thead>
-            <tr>
-              <th>Token</th>
-              <th>CSS variable</th>
-              <th>Comfortable</th>
-              <th>Compact</th>
-            </tr>
-          </thead>
-          <tbody>
-            {density.map(([name, t]) => (
-              <tr key={name}>
-                <td>
-                  <code>{name}</code>
-                </td>
-                <td>
-                  <code>{t.cssVar}</code>
-                </td>
-                <td>
-                  <code>{String(t.value)}</code>
-                </td>
-                <td>
-                  <code>{String(compact[name].value)}</code>
-                </td>
+        <div class="table-scroll" tabindex="0">
+          <table class="token-table">
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>CSS variable</th>
+                <th>Comfortable</th>
+                <th>Compact</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {density.map(([name, t]) => (
+                <tr key={name}>
+                  <td>
+                    <code>{name}</code>
+                  </td>
+                  <td>
+                    <code>{t.cssVar}</code>
+                  </td>
+                  <td>
+                    <code>{String(t.value)}</code>
+                  </td>
+                  <td>
+                    <code>{String(compact[name].value)}</code>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Section>
 
       <Section anchor="identity" title="Identity ({identity.length})">
@@ -171,62 +177,66 @@ export default function TokensPage() {
           What a design language brings of its own: corner radii, shadows, type and motion. The names are the same in
           every language; <code>data-identity</code> picks whose values apply. Tactile, shown here, is the default.
         </p>
-        <table class="token-table">
-          <thead>
-            <tr>
-              <th>Token</th>
-              <th>Type</th>
-              <th>CSS variable</th>
-              <th>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {identity.map(([name, t]) => (
-              <tr key={name}>
-                <td>
-                  <code>{name}</code>
-                </td>
-                <td>{t.type}</td>
-                <td>
-                  <code>{t.cssVar}</code>
-                </td>
-                <td>
-                  <Value type={t.type} value={t.value} />
-                </td>
+        <div class="table-scroll" tabindex="0">
+          <table class="token-table">
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>Type</th>
+                <th>CSS variable</th>
+                <th>Value</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {identity.map(([name, t]) => (
+                <tr key={name}>
+                  <td>
+                    <code>{name}</code>
+                  </td>
+                  <td>{t.type}</td>
+                  <td>
+                    <code>{t.cssVar}</code>
+                  </td>
+                  <td>
+                    <Value type={t.type} value={t.value} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Section>
 
       <Section anchor="primitive" title="Primitive ({primitive.length})">
         <p>The shared palette and scales, the same in every design language. Themes and components never hardcode these values; they reference them.</p>
-        <table class="token-table">
-          <thead>
-            <tr>
-              <th>Token</th>
-              <th>Type</th>
-              <th>CSS variable</th>
-              <th>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {primitive.map(([name, t]) => (
-              <tr key={name}>
-                <td>
-                  <code>{name}</code>
-                </td>
-                <td>{t.type}</td>
-                <td>
-                  <code>{t.cssVar}</code>
-                </td>
-                <td>
-                  <Value type={t.type} value={t.value} />
-                </td>
+        <div class="table-scroll" tabindex="0">
+          <table class="token-table">
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>Type</th>
+                <th>CSS variable</th>
+                <th>Value</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {primitive.map(([name, t]) => (
+                <tr key={name}>
+                  <td>
+                    <code>{name}</code>
+                  </td>
+                  <td>{t.type}</td>
+                  <td>
+                    <code>{t.cssVar}</code>
+                  </td>
+                  <td>
+                    <Value type={t.type} value={t.value} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Section>
 
       <Section anchor="ts" title="Using token names in TS">

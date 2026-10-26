@@ -1,4 +1,4 @@
-import { untracked } from '@motifx/core';
+import { effect, untracked } from '@motifx/core';
 import { scrollStep } from '../../../parts/drag/scroll-step';
 import { ACTIONS_FIELD, ADAPTIVE_FIELD, DRAG_FIELD, EXPAND_FIELD, SELECT_FIELD } from '../model/ColumnModel';
 import type { GridModel } from '../model/GridModel';
@@ -93,6 +93,30 @@ export class DragSelect<T> {
     return true;
   }
 
+  /**
+   * A phone decides when the finger lands whether the page may scroll at once, by whether the place
+   * has a touchmove listener that can stop it; one added on the press is too late. With the long press
+   * the rows hold one from the start, and it stops the scroll only while a selection is drawn.
+   * Returns what removes it.
+   */
+  holdTouch(rows: HTMLElement): () => void {
+    const touchMove = (e: TouchEvent) => {
+      if (this.pressed?.started && e.cancelable) e.preventDefault();
+    };
+    let held = false;
+    const stop = effect(() => {
+      const want = this.model.settings.get('dragSelectionTouch') === 'longPress';
+      if (want === held) return;
+      held = want;
+      if (want) rows.addEventListener('touchmove', touchMove, { passive: false });
+      else rows.removeEventListener('touchmove', touchMove);
+    });
+    return () => {
+      stop();
+      rows.removeEventListener('touchmove', touchMove);
+    };
+  }
+
   /** The rows changed while a drag runs (rows that were loading came): the selection is made again where the pointer is. */
   refresh() {
     const p = this.pressed;
@@ -132,7 +156,6 @@ export class DragSelect<T> {
     };
     // No text is selected and nothing is dragged by the browser from this press.
     const quiet = (e: Event) => e.preventDefault();
-    const touchMove = (e: TouchEvent) => this.pressed?.started && e.preventDefault();
     const menu = (e: Event) => this.pressed?.started && e.preventDefault();
     const blur = () => this.end(true);
     win.addEventListener('pointermove', move);
@@ -142,7 +165,6 @@ export class DragSelect<T> {
     win.addEventListener('blur', blur);
     doc.addEventListener('selectstart', quiet, true);
     doc.addEventListener('dragstart', quiet, true);
-    doc.addEventListener('touchmove', touchMove, { capture: true, passive: false });
     doc.addEventListener('contextmenu', menu, true);
     this.stops.push(() => {
       win.removeEventListener('pointermove', move);
@@ -152,7 +174,6 @@ export class DragSelect<T> {
       win.removeEventListener('blur', blur);
       doc.removeEventListener('selectstart', quiet, true);
       doc.removeEventListener('dragstart', quiet, true);
-      doc.removeEventListener('touchmove', touchMove, true);
       doc.removeEventListener('contextmenu', menu, true);
     });
   }

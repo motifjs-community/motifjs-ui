@@ -1179,3 +1179,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Docs: a new page “Selecting by dragging” (`/datagrid/drag-select`: rows in memory with grouping,
   an editable sheet of orders, 100,000 rows × 60 virtual columns set from code), the API page's
   rows and tokens; `e2e/checks/52-datagrid-drag-select.mjs`.
+- Touch on real phones (found on an Android phone, Chrome 155): a long press drag of a tab and the DataGrid's
+  long press selection did nothing, because the browser decides when the finger lands whether the page may
+  scroll at once, and the listener that can stop it was added only on the press. The group bars, and the
+  grid's rows while `dragSelectionTouch: 'longPress'`, now hold a touchmove listener from the start that
+  stops the scroll only while a drag runs; a plain swipe still scrolls. Docs: long page titles break on a
+  phone, the parts of an example stay within it, the token tables scroll in their own box.

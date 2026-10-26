@@ -2876,7 +2876,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
           <div
             class="mx-data-grid__viewport"
             role={() => (model.groups.any ? 'treegrid' : 'grid')}
-            ref={(c) => (this.viewportEl = c.element as HTMLDivElement)}
+            ref={(c) => {
+              this.viewportEl = c.element as HTMLDivElement;
+              this.motif.setDisposable(this.dragSelect.holdTouch(this.viewportEl));
+            }}
             aria-label={() => this.text || t('gridLabel')}
             aria-rowcount={() => {
               void model.details.state.version;

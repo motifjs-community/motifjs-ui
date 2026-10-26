@@ -441,6 +441,33 @@ describe('TabDocumentManager: dragging a tab', () => {
     expect(titles(m, 1)).toEqual(['C', 'A']);
   });
 
+  it('holds a touchmove listener on each bar from the start, so a finger drag can stop the page scrolling', async () => {
+    // A phone decides when the finger lands whether the page may scroll at once: a listener added on the press is too late.
+    const add = EventTarget.prototype.addEventListener;
+    const held = new Set<EventTarget>();
+    vi.spyOn(EventTarget.prototype, 'addEventListener').mockImplementation(function (this: EventTarget, type: string, fn: any, options?: any) {
+      if (type === 'touchmove' && typeof options === 'object' && options.passive === false) held.add(this);
+      return add.call(this, type, fn, options);
+    });
+    vi.useFakeTimers();
+    const m = managerWith([['A', 'B'], ['C']], { longPressDelay: 400 });
+    lay(m);
+    expect(m.groups.every((g) => held.has(g.barElement))).toBe(true);
+    const move = () => {
+      const e = new Event('touchmove', { bubbles: true, cancelable: true });
+      header(m, 'A').dispatchEvent(e);
+      return e.defaultPrevented;
+    };
+    // Without a drag the strip scrolls; once a long press drags, the finger moves the tab.
+    expect(move()).toBe(false);
+    pointer('pointerdown', header(m, 'A'), 40, 15, { pointerType: 'touch' });
+    vi.advanceTimersByTime(400);
+    expect(m.dragging?.document?.title).toBe('A');
+    expect(move()).toBe(true);
+    m.cancelDrag();
+    expect(move()).toBe(false);
+  });
+
   it('a long press let go where it started opens the tab menu there, and moves nothing', async () => {
     vi.useFakeTimers();
     const m = managerWith([['A', 'B']], { longPressDelay: 400 });

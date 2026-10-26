@@ -2002,6 +2002,11 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   // Called by the groups, tabs, lists and menus.
 
+  /** @internal A touchmove in a bar: stopped while a finger drags a tab or a group, so the page does not scroll. */
+  holdTouch(e: TouchEvent): void {
+    this.parts.drag?.holdTouch(e);
+  }
+
   /** @internal A text for this manager: `texts` first, then `uiLocale`. Reactive. */
   textOf(key: keyof UiStrings, values?: Record<string, unknown>): string {
     const t = this.texts[key] ?? uiLocale.strings[key];

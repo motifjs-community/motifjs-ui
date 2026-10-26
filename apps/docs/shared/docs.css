@@ -264,8 +264,12 @@
   margin-block-end: var(--mx-space-6);
 }
 
+/* A long name ("TabDocumentManager:") breaks on a phone instead of widening the page. */
 .docs-pagehead h1 {
+  min-inline-size: 0;
+  max-inline-size: 100%;
   margin: 0;
+  overflow-wrap: anywhere;
   font-size: var(--mx-font-size-title-large);
   line-height: var(--mx-font-line-title-large);
   font-weight: var(--mx-font-weight-semibold);
@@ -364,6 +368,12 @@
 .docs-example__stage--stack {
   flex-direction: column;
   align-items: flex-start;
+}
+
+/* Lined up at the start, a part would grow to its content: on a phone it stays as wide as the stage,
+   so a toolbar folds its buttons and a field shrinks. */
+.docs-example__stage > * {
+  max-inline-size: 100%;
 }
 
 .docs-example__code pre {
