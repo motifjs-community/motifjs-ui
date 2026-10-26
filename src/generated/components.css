@@ -53,6 +53,7 @@
     --mx-tabdocs-bar-button-gap: 0.125rem;
     --mx-tabdocs-bar-icon-size: 0.875rem;
     --mx-tabdocs-list-width: 18rem;
+    --mx-tabdocs-list-max-height: 20rem;
     --mx-tabdocs-list-dirty-size: 0.5rem;
     --mx-tabdocs-ghost-max-width: 24rem;
     --mx-tabdocs-window-min-width: 16rem;
@@ -399,6 +400,7 @@
     --mx-menu-item-font-size: var(--mx-font-size-body);
     --mx-menu-item-line-height: var(--mx-font-line-body);
     --mx-menu-shortcut-font-size: var(--mx-font-size-caption);
+    --mx-menu-description-font-size: var(--mx-font-size-caption);
     --mx-menu-separator-width: var(--mx-border-width-1);
     --mx-menubar-height: var(--mx-bar-height);
     --mx-menubar-padding: var(--mx-space-1);
@@ -550,7 +552,6 @@
     --mx-tabdocs-count-font-size: var(--mx-font-size-caption);
     --mx-tabdocs-count-font-weight: var(--mx-font-weight-semibold);
     --mx-tabdocs-bar-button-padding: var(--mx-space-1);
-    --mx-tabdocs-list-note-font-size: var(--mx-font-size-caption);
     --mx-tabdocs-list-gap: var(--mx-space-1);
     --mx-tabdocs-drag-source-opacity: var(--mx-opacity-disabled);
     --mx-tabdocs-ghost-border-width: var(--mx-border-width-1);
@@ -922,6 +923,7 @@
     --mx-menu-shortcut-color: var(--mx-color-fg-secondary);
     --mx-menu-item-fg: var(--mx-color-fg-primary);
     --mx-menu-item-fg-disabled: var(--mx-color-fg-disabled);
+    --mx-menu-description-color: var(--mx-color-fg-secondary);
     --mx-menu-item-accent-fg: var(--mx-color-accent-fg);
     --mx-menu-item-accent-fg-highlight: var(--mx-color-accent-fg);
     --mx-menu-item-accent-icon: var(--mx-color-accent-fg);
@@ -1032,7 +1034,6 @@
     --mx-tabdocs-scrollbar-thumb-color-hover: var(--mx-color-fg-secondary);
     --mx-tabdocs-title-fg: var(--mx-color-fg-secondary);
     --mx-tabdocs-title-fg-active: var(--mx-color-fg-primary);
-    --mx-tabdocs-list-note-fg: var(--mx-color-fg-secondary);
     --mx-tabdocs-list-dirty-color: var(--mx-color-fg-primary);
     --mx-tabdocs-ghost-bg: var(--mx-color-bg-card);
     --mx-tabdocs-ghost-shadow: var(--mx-elevation-popup);

@@ -119,6 +119,20 @@
     flex: 1 1 auto;
   }
 
+  /* A description follows the label, dimmer; the label then takes only its own room. */
+  .mx-menu__label:has(+ .mx-menu__description) {
+    flex: 0 1 auto;
+  }
+
+  .mx-menu__description {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--mx-menu-description-font-size);
+    color: var(--mx-menu-description-color);
+  }
+
   .mx-menu__shortcut {
     flex: none;
     padding-inline-start: var(--mx-menu-shortcut-gap);
@@ -126,7 +140,7 @@
     color: var(--mx-menu-shortcut-color);
   }
 
-  .mx-menu__item[aria-disabled='true'] .mx-menu__shortcut {
+  .mx-menu__item[aria-disabled='true'] :is(.mx-menu__shortcut, .mx-menu__description) {
     color: inherit;
   }
 

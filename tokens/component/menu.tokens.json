@@ -17,6 +17,8 @@
     "item-fg": { "$type": "color", "$value": "{color.fg.primary}" },
     "item-fg-disabled": { "$type": "color", "$value": "{color.fg.disabled}" },
     "shortcut-font-size": { "$type": "dimension", "$value": "{font.size.caption}" },
+    "description-font-size": { "$type": "dimension", "$value": "{font.size.caption}" },
+    "description-color": { "$type": "color", "$value": "{color.fg.secondary}" },
     "separator-width": { "$type": "dimension", "$value": "{border.width.1}" },
     "item-accent-fg": { "$type": "color", "$value": "{color.accent.fg}" },
     "item-accent-fg-highlight": { "$type": "color", "$value": "{color.accent.fg}" },

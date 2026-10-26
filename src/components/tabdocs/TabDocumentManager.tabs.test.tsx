@@ -52,12 +52,12 @@ const titles = (m: TabDocumentManager, g = 0) => m.groups[g].documents.map((d) =
 const headers = (m: TabDocumentManager, g = 0) => Array.from(m.groups[g].element.querySelectorAll<HTMLElement>('[role="tab"]'));
 const header = (m: TabDocumentManager, title: string) => Array.from(m.element.querySelectorAll<HTMLElement>('[role="tab"]')).find((h) => h.querySelector('.mx-tabdocs__title')!.textContent === title)!;
 const popups = (m: TabDocumentManager) => Array.from(m.element.querySelectorAll<HTMLElement>('.mx-popup')).filter((p) => !p.hidden);
-const menuNames = (m: TabDocumentManager) => Array.from(popups(m)[0].querySelectorAll<HTMLElement>('.mx-menu__item')).map((i) => i.querySelector('.mx-menu__label')!.textContent);
-const menuItem = (m: TabDocumentManager, name: string) =>
-  Array.from(popups(m)[0].querySelectorAll<HTMLButtonElement>('.mx-menu__item')).find((i) => i.querySelector('.mx-menu__label')!.textContent === name)!;
-const options = (m: TabDocumentManager) => Array.from(popups(m)[0].querySelectorAll<HTMLElement>('[role="option"]')).map((o) => o.querySelector('.mx-tabdocs__list-title')!.textContent);
+const commands = (m: TabDocumentManager) => Array.from(popups(m)[0].querySelectorAll<HTMLButtonElement>('.mx-menu:not(.mx-tabdocs__documents) > .mx-menu__item'));
+const menuNames = (m: TabDocumentManager) => commands(m).map((i) => i.querySelector('.mx-menu__label')!.textContent);
+const menuItem = (m: TabDocumentManager, name: string) => commands(m).find((i) => i.querySelector('.mx-menu__label')!.textContent === name)!;
+const documentItems = (m: TabDocumentManager) => Array.from(popups(m)[0].querySelectorAll<HTMLButtonElement>('.mx-tabdocs__documents > .mx-menu__item'));
+const options = (m: TabDocumentManager) => documentItems(m).map((o) => o.querySelector('.mx-menu__label')!.textContent);
 const live = (m: TabDocumentManager) => m.element.querySelector('.mx-tabdocs__live')!.textContent;
-const nameOf = (el: Element) => document.getElementById(el.getAttribute('aria-labelledby')!)!.textContent;
 
 describe('TabDocumentManager: preview tabs', () => {
   it('a preview takes the place of the group\'s preview tab, and is shown in italics', async () => {
@@ -387,7 +387,7 @@ describe('TabDocumentManager: menus', () => {
     await settle();
     expect(options(m)).toEqual(['Alpha', 'Beta', 'Gamma']);
     const popup = popups(m)[0];
-    expect(nameOf(popup.querySelector('[role="listbox"]')!)).toBe('Open documents');
+    expect(popup.querySelector('.mx-tabdocs__documents')!.getAttribute('aria-label')).toBe('Open documents');
     expect(popup.textContent).toContain('unsaved changes');
     const search = popup.querySelector<HTMLInputElement>('input')!;
     expect(document.activeElement).toBe(search);
@@ -395,7 +395,7 @@ describe('TabDocumentManager: menus', () => {
     search.dispatchEvent(new Event('input', { bubbles: true }));
     await settle();
     expect(options(m)).toEqual(['Gamma']);
-    popup.querySelector<HTMLElement>('[role="option"]')!.click();
+    documentItems(m)[0].click();
     await settle();
     expect(m.activeDocument?.title).toBe('Gamma');
     expect(popups(m)).toHaveLength(0);
@@ -445,9 +445,9 @@ describe('TabDocumentManager: recently used, history, reopening', () => {
     expect(press('e', { ctrlKey: true })).toBe(true);
     await settle();
     const popup = popups(m)[0];
-    expect(nameOf(popup.querySelector('[role="listbox"]')!)).toBe('Recently used documents');
+    expect(popup.querySelector('.mx-tabdocs__documents')!.getAttribute('aria-label')).toBe('Recently used documents');
     expect(options(m)).toEqual(['C', 'A', 'B']);
-    const active = () => popup.querySelector('#' + popup.querySelector('[role="listbox"]')!.getAttribute('aria-activedescendant'))!.textContent;
+    const active = () => document.activeElement!.closest('.mx-tabdocs__documents > .mx-menu__item')!.textContent;
     expect(active()).toContain('A');
     press('e', { ctrlKey: true });
     expect(active()).toContain('B');

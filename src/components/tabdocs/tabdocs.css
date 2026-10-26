@@ -1221,21 +1221,36 @@
     display: none;
   }
 
-  /* The lists of documents (the "…" button, the recently used list). */
+  /* The menus of documents (the "…" button, the recently used list): the documents are menu items
+     like the commands; only they scroll, under the search. */
   .mx-tabdocs__popup {
     min-inline-size: var(--mx-tabdocs-list-width);
   }
 
-  .mx-tabdocs__list-note {
-    font-size: var(--mx-tabdocs-list-note-font-size);
-    color: var(--mx-tabdocs-list-note-fg);
+  .mx-tabdocs__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mx-tabdocs-list-gap);
+  }
+
+  .mx-tabdocs__list[hidden] {
+    display: none;
+  }
+
+  .mx-tabdocs__search {
+    flex: none;
+  }
+
+  .mx-tabdocs__documents {
+    max-block-size: var(--mx-tabdocs-list-max-height);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .mx-tabdocs__list-dirty {
-    display: inline-block;
+    flex: none;
     inline-size: var(--mx-tabdocs-list-dirty-size);
     block-size: var(--mx-tabdocs-list-dirty-size);
-    margin-inline-start: var(--mx-tabdocs-list-gap);
     background: var(--mx-tabdocs-list-dirty-color);
     border-radius: var(--mx-tabdocs-dirty-radius);
   }

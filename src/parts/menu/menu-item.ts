@@ -23,6 +23,8 @@ export interface MenuItem {
   group?: Bind<string>;
   /** A key combination shown at the end of the item (`Ctrl+S`); only shown, the app registers the key itself. */
   shortcut?: Bind<string>;
+  /** A second, dimmer text after the label: what tells the item apart, such as a folder. It is part of the item's name. */
+  description?: Bind<string>;
   /** A submenu, opened at the side of the item. */
   items?: Bind<readonly MenuItem[]>;
   /** The colour of the item, by what it does (`danger` for a deletion). Default `'standard'`. */

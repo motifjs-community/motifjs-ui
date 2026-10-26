@@ -67,8 +67,10 @@ const buttons = (g: TabGroup) =>
 const moreOf = (g: TabGroup) =>
   Array.from(g.element.querySelectorAll<HTMLElement>('.mx-tabdocs__actions > .mx-button')).find((b) => /^Open documents/.test(b.getAttribute('title') ?? b.querySelector('[title]')?.getAttribute('title') ?? ''))!;
 const popup = (m: TabDocumentManager) => Array.from(m.element.querySelectorAll<HTMLElement>('.mx-tabdocs__popup')).find((p) => !p.hidden)!;
-const menuNames = (m: TabDocumentManager) => Array.from(popup(m).querySelectorAll<HTMLElement>('.mx-menu__item')).map((i) => i.querySelector('.mx-menu__label')!.textContent);
-const menuItem = (m: TabDocumentManager, name: string) => Array.from(popup(m).querySelectorAll<HTMLButtonElement>('.mx-menu__item')).find((i) => i.querySelector('.mx-menu__label')!.textContent === name)!;
+const commands = (m: TabDocumentManager) => Array.from(popup(m).querySelectorAll<HTMLButtonElement>('.mx-menu:not(.mx-tabdocs__documents) > .mx-menu__item'));
+const menuNames = (m: TabDocumentManager) => commands(m).map((i) => i.querySelector('.mx-menu__label')!.textContent);
+const menuItem = (m: TabDocumentManager, name: string) => commands(m).find((i) => i.querySelector('.mx-menu__label')!.textContent === name)!;
+const documentNames = (p: HTMLElement) => Array.from(p.querySelectorAll('.mx-tabdocs__documents > .mx-menu__item')).map((i) => i.querySelector('.mx-menu__label')!.textContent);
 const header = (g: TabGroup, title: string) => Array.from(g.element.querySelectorAll<HTMLElement>('[role="tab"]')).find((h) => h.querySelector('.mx-tabdocs__title')!.textContent === title)!;
 
 /** A manager with A, B among the documents, Tool in the left dock area and Note in a floating window. */
@@ -275,10 +277,15 @@ describe('TabDocumentManager: the single "…" menu', () => {
     await settle();
     expect(menuNames(m)).toEqual(['Split right', 'Close N2', 'Maximize window', 'Dock back', 'Close all', 'Close saved', 'Lock group']);
     const p = popup(m);
-    const menu = p.querySelector('.mx-menu')!;
+    const menu = p.querySelector('.mx-tabdocs__commands')!;
     const list = p.querySelector('.mx-tabdocs__list')!;
     expect(menu.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(Array.from(list.querySelectorAll('[role="option"]')).map((o) => o.textContent)).toEqual(['Note', 'N2']);
+    // One line between the commands and the documents.
+    expect(menu.nextElementSibling!.matches('.mx-menu__separator')).toBe(true);
+    expect(menu.nextElementSibling!.nextElementSibling).toBe(list);
+    expect(documentNames(p)).toEqual(['Note', 'N2']);
+    // The search heads the documents, and has focus.
+    expect(list.firstElementChild!.contains(document.activeElement)).toBe(true);
     menuItem(m, 'Maximize window').click();
     await settle();
     expect(floating.window!.isMaximized).toBe(true);
@@ -290,7 +297,8 @@ describe('TabDocumentManager: the single "…" menu', () => {
     await settle();
     expect(menuNames(m)).toEqual(['Close all', 'Close saved', 'Lock group']);
     const p = popup(m);
-    expect(p.querySelector('.mx-tabdocs__list')!.compareDocumentPosition(p.querySelector('.mx-menu')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(p.querySelector('.mx-tabdocs__list')!.compareDocumentPosition(p.querySelector('.mx-tabdocs__commands')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(p.querySelector('.mx-tabdocs__list')!.nextElementSibling!.matches('.mx-menu__separator')).toBe(true);
   });
 
   it('the app\'s buttons go into the menu unless they ask to stay; a chosen one runs', async () => {
@@ -328,7 +336,8 @@ describe('TabDocumentManager: the single "…" menu', () => {
     await settle();
     const p = popup(m);
     expect((p.querySelector('.mx-tabdocs__list') as HTMLElement).hidden).toBe(true);
-    expect(p.querySelector('.mx-menu')!.contains(document.activeElement)).toBe(true);
+    expect((p.querySelector(':scope > .mx-menu__separator') as HTMLElement).hidden).toBe(true);
+    expect(p.querySelector('.mx-tabdocs__commands')!.contains(document.activeElement)).toBe(true);
   });
 });
 

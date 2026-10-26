@@ -270,6 +270,42 @@ describe('MenuList submenus', () => {
     expect(tones()).toEqual([null, 'success', 'caution']);
   });
 
+  it('shows a description after the label, dim, apart from the shortcut, and follows a function', async () => {
+    const s = reactive({ folder: 'src' });
+    const list = new MenuList();
+    page(list);
+    list.setItems([{ text: 'index.ts', description: () => s.folder, shortcut: 'Ctrl+1' }, { text: 'Close all' }]);
+    const [file, close] = itemsOf(list.element);
+    const description = file.querySelector('.mx-menu__description')!;
+    expect(description.textContent).toBe('src');
+    expect(description.previousElementSibling).toBe(file.querySelector('.mx-menu__label'));
+    expect(file.querySelector('.mx-menu__label')!.textContent).toBe('index.ts');
+    expect(file.querySelector('.mx-menu__shortcut')!.textContent).toBe('Ctrl+1');
+    expect(file.hasAttribute('aria-keyshortcuts')).toBe(false);
+    expect(file.textContent).toBe('index.ts srcCtrl+1');
+    expect(close.querySelector('.mx-menu__description')).toBeNull();
+    s.folder = 'lib';
+    await settle();
+    expect(itemsOf(list.element)[0].querySelector('.mx-menu__description')!.textContent).toBe('lib');
+    // Typing goes by the label alone.
+    list.focusItem('last');
+    press('i');
+    expect(label(document.activeElement!)).toBe('index.ts');
+  });
+
+  it('keeps the column for marks and icons when asked, so its texts line up with a menu beside it', async () => {
+    const list = new MenuList();
+    page(list);
+    list.setItems([{ text: 'Close all' }]);
+    expect(list.element.hasAttribute('data-icons')).toBe(false);
+    list.markColumn = true;
+    list.setItems([{ text: 'Close all' }]);
+    expect(list.element.hasAttribute('data-icons')).toBe(true);
+    list.markColumn = false;
+    list.setItems([{ text: 'Close all' }]);
+    expect(list.element.hasAttribute('data-icons')).toBe(false);
+  });
+
   it('can focus the menu itself; Down then goes to the first item', async () => {
     const list = new MenuList();
     page(list);

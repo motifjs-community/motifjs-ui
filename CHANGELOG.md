@@ -1090,3 +1090,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `tabDocsShown` (en, tr). Docs: rows and a sentence on the Dock page, a "Small buttons" switch in the
   compact bars example; the Workspace example's "Show the activity" shows the hidden Activity again;
   `e2e/checks/50-tabdocs-compact.mjs` covers the close button, hidden tools and the small buttons.
+- TabDocumentManager, the document menus are one menu: the group's "…" menu (and a compact bar's single
+  "…" menu) draws its documents with the kit's `MenuList`, in the same popup as its commands and with a
+  line between them, instead of a `ListBox` with its own field frame and type; so commands and documents
+  share the language's menu height, padding, type, radius, hover and focus in every design language and
+  theme (measured: a command and a document both 14px / h32 / 11px / 4px in Fluent, 14px / h44 / 16px /
+  4px in Material, where the document rows were 12px / h40 and 14px / h56 / radius 9999px). The shown
+  document is a checked `menuitemradio` item; its description, and its group when the menu lists every
+  group, is the item's secondary text; the unsaved mark sits at the end of the item and its name still
+  says "unsaved changes"; the tooltip is the tab's. A search field (the kit's `TextBox` in search mode, the
+  size of the menu's items) heads the documents and filters them as you type; nothing found shows a dimmed
+  "No items". Up and Down go on from the search through the documents and the commands and around, Tab
+  goes from part to part (out of the menu from the last), typing on a document goes back to the search
+  with the letter, Enter in the search opens the first document. Only the documents scroll
+  (`tabdocs.list-max-height`, default 20rem). The recently used list (Ctrl+E) is the same menu of
+  documents, walked by focus while the modifier is held. Hooks `.mx-tabdocs__search`,
+  `.mx-tabdocs__documents`, `.mx-tabdocs__commands`; tokens `tabdocs.list-note-fg` and
+  `list-note-font-size` are gone (the menu's description tokens draw that text), `list-gap` is now the
+  gap under the search. Checks 46 and 50 read the menu.
+- `MenuItem.description` (`Bind<string>`): a second, dimmer text after the label (`.mx-menu__description`,
+  tokens `menu.description-font-size`, `menu.description-color`), part of the item's name, never a key
+  or `aria-keyshortcuts`; typing to an item goes by the label alone. `MenuList.markColumn` keeps the
+  column for a mark or an icon when no item has one, so the texts line up with a menu beside it.

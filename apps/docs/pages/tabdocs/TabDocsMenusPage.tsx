@@ -71,8 +71,8 @@ const KEYS = [
 
 const A11Y = [
   ['Context menus', 'The kit\'s `ContextMenu`: a `menu` opened by the right button, Shift+F10 or the Menu key on a tab, named after the document (or the group, on the strip); focus goes back to the tab when it closes.'],
-  ['The "…" list', 'A `Popup` with a searchable `ListBox` named “Open documents” (unsaved changes are said with each document) and a `menu` of commands under it.'],
-  ['The recently used list', 'A `ListBox` named “Recently used documents”, focused while it is open, so the highlighted document is read as it moves. It works without holding a key: the arrows move, Enter opens, Escape closes.'],
+  ['The "…" list', 'One menu: a search field, the documents as a `menu` named “Open documents” (`menuitemradio` items, the shown one checked; the description, the group and unsaved changes are said with each one) and the `menu` of commands. Up and Down go on from the search through the documents and the commands; typing on a document goes back to the search; Tab goes from part to part; Enter opens; Escape closes.'],
+  ['The recently used list', 'The same menu of documents, named “Recently used documents”, with focus on the highlighted document, so it is read as it moves. It works without holding a key: the arrows move, a letter goes to a title, Enter opens, Escape closes.'],
   ['Locked groups', 'A locked group is named “Group 1, locked”; its toolbar has an “Unlock group” button.'],
   ['Announcements', 'Locked and unlocked are said politely, like the other changes.'],
 ];

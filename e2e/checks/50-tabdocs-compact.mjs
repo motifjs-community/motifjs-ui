@@ -86,13 +86,13 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.waitForTimeout(250);
   const popup = page.locator('.mx-tabdocs__popup:popover-open').first();
   const menu = await popup.evaluate((p) => ({
-    items: [...p.querySelectorAll('.mx-menu__item')].filter((i) => i.offsetParent).map((i) => i.querySelector('.mx-menu__label').textContent),
-    menuFirst: !!(p.querySelector('.mx-menu').compareDocumentPosition(p.querySelector('.mx-tabdocs__list')) & Node.DOCUMENT_POSITION_FOLLOWING),
-    options: [...p.querySelectorAll('[role="option"]')].length,
+    items: [...p.querySelectorAll('.mx-tabdocs__commands > .mx-menu__item')].filter((i) => i.offsetParent).map((i) => i.querySelector('.mx-menu__label').textContent),
+    menuFirst: !!(p.querySelector('.mx-tabdocs__commands').compareDocumentPosition(p.querySelector('.mx-tabdocs__list')) & Node.DOCUMENT_POSITION_FOLLOWING),
+    options: [...p.querySelectorAll('.mx-tabdocs__documents > [role="menuitemradio"]')].length,
   }));
   const activeInWindow = (await wg.locator('[role="tab"][aria-selected="true"] .mx-tabdocs__title').textContent()).trim();
   check('the window\'s "…" menu: its buttons (the active document\'s close among them), Dock back and the commands above the list of documents', JSON.stringify(menu.items) === JSON.stringify(['Split right', `Close ${activeInWindow}`, 'Maximize window', 'Dock back', 'Close all', 'Close saved', 'Lock group']) && menu.menuFirst && menu.options === 3, JSON.stringify(menu));
-  check('…focus is in its search box', await page.evaluate(() => !!document.activeElement.closest('.mx-tabdocs__list')));
+  check('…focus is in its search box', await page.evaluate(() => !!document.activeElement.closest('.mx-tabdocs__search')));
   await page.keyboard.press('Shift+Tab');
   const reached = await page.evaluate(() => document.activeElement.closest('.mx-menu__item')?.textContent ?? document.activeElement.outerHTML.slice(0, 80));
   check('…Shift+Tab reaches the commands, at the last one', reached.includes('Lock group'), reached);

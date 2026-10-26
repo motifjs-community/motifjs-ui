@@ -18,6 +18,7 @@ interface ItemLook {
   radio: boolean;
   enabled: boolean;
   shortcut: string;
+  description: string;
   submenu: boolean;
   tone: string;
 }
@@ -58,6 +59,8 @@ export class MenuList extends Component<HTMLDivElement> {
   hoverDelay = 250;
   /** The menu this one is a submenu of. */
   parentList: MenuList | null = null;
+  /** Keeps the column for a mark or an icon when no item has one, so the texts line up with a menu beside it. */
+  markColumn = false;
 
   private entries: Entry[] = [];
   private releases: (() => void)[] = [];
@@ -107,6 +110,7 @@ export class MenuList extends Component<HTMLDivElement> {
           radio: !!group,
           enabled: read(item.enabled) !== false,
           shortcut: read(item.shortcut) ?? '',
+          description: read(item.description) ?? '',
           tone: read(item.tone) ?? 'standard',
           submenu: !!children && children.some((child) => read(child.visible) !== false),
         };
@@ -165,6 +169,13 @@ export class MenuList extends Component<HTMLDivElement> {
       label.className = 'mx-menu__label';
       renderAccessKey(label, parsed);
       element.querySelector('.mx-menu__icon')!.after(label);
+      if (look.description) {
+        const description = this.element.ownerDocument.createElement('span');
+        description.className = 'mx-menu__description';
+        description.textContent = look.description;
+        // The space keeps the two words apart in the item's name; a flex row does not draw it.
+        label.after(' ', description);
+      }
       this.element.append(element);
       this.entries.push({
         item: look.item,
@@ -178,7 +189,7 @@ export class MenuList extends Component<HTMLDivElement> {
       icons ||= !!element.querySelector('.mx-menu__icon > *');
     }
     this.element.toggleAttribute('data-checks', checks);
-    this.element.toggleAttribute('data-icons', icons);
+    this.element.toggleAttribute('data-icons', icons || this.markColumn);
     if (focused >= 0) this.entries[Math.min(focused, this.entries.length - 1)]?.element.focus();
     if (openItem) {
       // The open submenu stays with its item, or goes with it.

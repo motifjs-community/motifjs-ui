@@ -28,6 +28,7 @@ const ITEM = [
   ['text', '`Bind<string>`', 'The label; `&Copy` makes C choose it while the menu is open (Alt+C on a menu bar’s top item).'],
   ['icon, hint', '`Bind<…>`', 'An icon at the start, a tooltip.'],
   ['shortcut', '`Bind<string>`', 'A key combination shown at the end (`Ctrl+S`). Only shown: register the key with `addShortcut`.'],
+  ['description', '`Bind<string>`', 'A second, dimmer text after the label: what tells the item apart, such as a folder. Part of the item’s name, never a key.'],
   ['items', '`Bind<readonly MenuItem[]>`', 'A submenu, opened at the side.'],
   ['checked', '`Bind<boolean>`', 'A check item (`menuitemcheckbox`).'],
   ['group', '`Bind<string>`', 'With `checked`: one choice of a group (`menuitemradio`), shown with a dot.'],
@@ -83,7 +84,7 @@ const HOOKS = [
   ['.mx-menubar, .mx-menubar__bar, .mx-menubar__item', 'The menu bar, its row, a top item (`aria-expanded="true"` while open).'],
   ['.mx-context-menu, .mx-context-menu__anchor', 'The context menu (no box of its own) and the point it opens at.'],
   ['.mx-menu, .mx-menu__item, .mx-menu__separator', 'A menu (shared with Button), an item, a line.'],
-  ['.mx-menu__check, .mx-menu__icon, .mx-menu__label, .mx-menu__shortcut, .mx-menu__arrow', 'The parts of an item.'],
+  ['.mx-menu__check, .mx-menu__icon, .mx-menu__label, .mx-menu__description, .mx-menu__shortcut, .mx-menu__arrow', 'The parts of an item.'],
 ];
 
 const TOKENS = [
@@ -92,6 +93,7 @@ const TOKENS = [
   ['menubar.item-highlight, menubar.item-open, menubar.icon-size', 'Its hover and open fills, its icon.'],
   ['menu.item-*, menu.icon-size, menu.separator-*', 'Menu items (shared with Button’s menu).'],
   ['menu.shortcut-gap, menu.shortcut-color, menu.arrow-size', 'The shortcut text and the submenu arrow.'],
+  ['menu.description-font-size, menu.description-color', 'An item’s description.'],
 ];
 
 export default function MenusPage() {

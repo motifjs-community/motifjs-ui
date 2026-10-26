@@ -1771,8 +1771,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   // Lists.
 
   /**
-   * Opens a group's list of open documents (its "…" button): searchable, with commands under it.
-   * In a compact bar the commands come first: the buttons the bar does not show, then the list.
+   * Opens a group's menu of open documents (its "…" button): a search, the documents, and commands
+   * under them. In a compact bar the commands come first: the buttons the bar does not show, then the documents.
    */
   showOpenList(group?: TabGroup | null): boolean {
     return untracked(() => {
@@ -1800,7 +1800,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         commands.unshift(...folded);
         if (!folded.length) commands[0].beginGroup = false;
       }
-      list.open(anchor, docs, Math.max(0, docs.indexOf(target.activeDocument!)), commands, null, { commandsFirst: compact, list: !compact || this.openList });
+      list.open(anchor, docs, Math.max(0, docs.indexOf(target.activeDocument!)), commands, null, { commandsFirst: compact, list: !compact || this.openList, active: target.activeDocument });
       return true;
     });
   }
@@ -1815,7 +1815,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       if (!docs.length) return false;
       const list = (this.parts.recentList ??= new DocumentList(this, 'recent'));
       const start = docs.length < 2 ? 0 : by === 1 ? 1 : docs.length - 1;
-      list.open(group.listElement.parentElement!, docs, start, [], event);
+      list.open(group.listElement.parentElement!, docs, start, [], event, { active: group.activeDocument });
       return true;
     });
   }

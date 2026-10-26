@@ -3696,6 +3696,20 @@
     "value": "0.75rem"
   },
   {
+    "name": "menu.description-font-size",
+    "cssVar": "--mx-menu-description-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "menu.description-color",
+    "cssVar": "--mx-menu-description-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
     "name": "menu.separator-width",
     "cssVar": "--mx-menu-separator-width",
     "type": "dimension",
@@ -5789,18 +5803,11 @@
     "value": "18rem"
   },
   {
-    "name": "tabdocs.list-note-fg",
-    "cssVar": "--mx-tabdocs-list-note-fg",
-    "type": "color",
-    "ref": "color.fg.secondary",
-    "value": "#5e5c55"
-  },
-  {
-    "name": "tabdocs.list-note-font-size",
-    "cssVar": "--mx-tabdocs-list-note-font-size",
+    "name": "tabdocs.list-max-height",
+    "cssVar": "--mx-tabdocs-list-max-height",
     "type": "dimension",
-    "ref": "font.size.caption",
-    "value": "0.75rem"
+    "ref": null,
+    "value": "20rem"
   },
   {
     "name": "tabdocs.list-dirty-size",
