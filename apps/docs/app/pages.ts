@@ -90,6 +90,7 @@ export const GROUPS = [
       { id: 'tabdocs-drag', label: 'Drag and drop', title: 'TabDocumentManager: Drag and drop', path: '/tabdocs/drag', related: ['tabdocs', 'tabdocs-tabs', 'tabdocs-menus', 'tabdocs-dock'] },
       { id: 'tabdocs-dock', label: 'Dock and floating windows', title: 'TabDocumentManager: Dock and floating windows', path: '/tabdocs/dock', related: ['tabdocs', 'tabdocs-drag', 'tabdocs-windows', 'window'] },
       { id: 'tabdocs-windows', label: 'New windows', title: 'TabDocumentManager: New windows', path: '/tabdocs/windows', related: ['tabdocs', 'tabdocs-dock', 'tabdocs-drag'] },
+      { id: 'tabdocs-workspace', label: 'A whole workspace', title: 'TabDocumentManager: A whole workspace', path: '/tabdocs/workspace', related: ['tabdocs', 'tabdocs-dock', 'datagrid', 'menus'] },
     ],
   },
   {
