@@ -37,6 +37,7 @@ import type { PinnedTabSize } from './pinned-tab-size';
 import { placeNode } from './place-node';
 import type { SplitDirection } from './split-direction';
 import type { TabAfterClose } from './tab-after-close';
+import type { TabBarButton } from './tab-bar-button';
 import type { TabCloseButton } from './tab-close-button';
 import type { TabContentFactory } from './tab-content-factory';
 import type { TabContextMenuEventArgs } from './tab-context-menu-event-args';
@@ -133,6 +134,13 @@ const OWN = [
   'tabFixedWidth',
   'wrapTabs',
   'scrollButtons',
+  'singleTabTitle',
+  'barButtons',
+  'compactScrollButtons',
+  'compactTabSize',
+  'compactTabMinWidth',
+  'compactSingleTabTitle',
+  'compactBarButtons',
   'showDescription',
   'openList',
   'openListScope',
@@ -201,6 +209,8 @@ const AREA_SIZES: Readonly<Record<TabDockSide, number | string>> = { left: 240, 
 const NO_WINDOWS: readonly TabWindow[] = [];
 const NO_BROWSERS: readonly TabBrowserWindow[] = [];
 const NO_AREAS: readonly TabDockArea[] = [];
+/** A dock area keeps its pin, a floating window its close button (each shows only there). */
+const COMPACT_BUTTONS: readonly TabBarButton[] = ['autoHide', 'closeWindow'];
 
 /** What holds a layout tree: a floating window, a dock area, a new browser window, or the documents' area (`null`). */
 type Host = TabWindow | TabDockArea | TabBrowserWindow | null;
@@ -661,6 +671,48 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   }
   set scrollButtons(value: Bind<boolean>) {
     this.assignProperty('scrollButtons', value, Boolean);
+  }
+  get singleTabTitle(): boolean {
+    return this.getProperty<boolean | undefined>('singleTabTitle') ?? false;
+  }
+  set singleTabTitle(value: Bind<boolean>) {
+    this.assignProperty('singleTabTitle', value, Boolean);
+  }
+  get barButtons(): readonly TabBarButton[] | 'all' {
+    return this.getProperty<readonly TabBarButton[] | 'all' | undefined>('barButtons') ?? 'all';
+  }
+  set barButtons(value: Bind<readonly TabBarButton[] | 'all'>) {
+    this.assignProperty('barButtons', value);
+  }
+  get compactScrollButtons(): boolean {
+    return this.getProperty<boolean | undefined>('compactScrollButtons') ?? false;
+  }
+  set compactScrollButtons(value: Bind<boolean>) {
+    this.assignProperty('compactScrollButtons', value, Boolean);
+  }
+  get compactTabSize(): TabSize {
+    return this.getProperty<TabSize | undefined>('compactTabSize') ?? 'shrink';
+  }
+  set compactTabSize(value: Bind<TabSize>) {
+    this.assignProperty('compactTabSize', value);
+  }
+  get compactTabMinWidth(): number {
+    return this.getProperty<number | undefined>('compactTabMinWidth') ?? 64;
+  }
+  set compactTabMinWidth(value: Bind<number>) {
+    this.assignProperty('compactTabMinWidth', value, (v) => Math.max(0, Number(v) || 0));
+  }
+  get compactSingleTabTitle(): boolean {
+    return this.getProperty<boolean | undefined>('compactSingleTabTitle') ?? true;
+  }
+  set compactSingleTabTitle(value: Bind<boolean>) {
+    this.assignProperty('compactSingleTabTitle', value, Boolean);
+  }
+  get compactBarButtons(): readonly TabBarButton[] | 'all' {
+    return this.getProperty<readonly TabBarButton[] | 'all' | undefined>('compactBarButtons') ?? COMPACT_BUTTONS;
+  }
+  set compactBarButtons(value: Bind<readonly TabBarButton[] | 'all'>) {
+    this.assignProperty('compactBarButtons', value);
   }
   get showDescription(): TabShowDescription {
     return this.getProperty<TabShowDescription | undefined>('showDescription') ?? 'duplicates';
@@ -1626,7 +1678,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   // Lists.
 
-  /** Opens a group's list of open documents (its "…" button): searchable, with commands under it. */
+  /**
+   * Opens a group's list of open documents (its "…" button): searchable, with commands under it.
+   * In a compact bar the commands come first: the buttons the bar does not show, then the list.
+   */
   showOpenList(group?: TabGroup | null): boolean {
     return untracked(() => {
       const target = group ?? this.activeGroup;
@@ -1635,8 +1690,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       const docs = all ? this.documents : target.documents;
       const list = (this.parts.openList ??= new DocumentList(this, 'open'));
       const anchor = target.moreButton ?? target.listElement.parentElement!;
+      const compact = target.isCompact;
       const commands: MenuItem[] = [
-        { text: this.textOf('tabDocsCloseAll'), click: () => void this.closeMany([...target.documents], undefined, true) },
+        { text: this.textOf('tabDocsCloseAll'), beginGroup: compact, click: () => void this.closeMany([...target.documents], undefined, true) },
         { text: this.textOf('tabDocsCloseSaved'), click: () => void this.closeMany(target.documents.filter((d) => !d.dirty), undefined, true) },
         {
           text: this.textOf(target.locked ? 'tabDocsUnlock' : 'tabDocsLock'),
@@ -1644,7 +1700,13 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
           click: () => this.lockBy(target, !target.locked, true),
         },
       ];
-      list.open(anchor, docs, Math.max(0, docs.indexOf(target.activeDocument!)), commands);
+      if (compact) {
+        const folded = target.foldedItems();
+        if (target.window && this.menuItems.dock !== false) folded.push({ text: this.textOf('tabDocsDock'), beginGroup: folded.length > 0, click: () => this.runCommand('dock', target, null) });
+        commands.unshift(...folded);
+        if (!folded.length) commands[0].beginGroup = false;
+      }
+      list.open(anchor, docs, Math.max(0, docs.indexOf(target.activeDocument!)), commands, null, { commandsFirst: compact, list: !compact || this.openList });
       return true;
     });
   }
@@ -1681,6 +1743,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         layout.areas = areas.map((a) => {
           const saved: TabLayoutArea = { side: a.side, size: a.size, root: this.writeNode(a.root!) };
           if (a.autoHidden) saved.autoHide = true;
+          const bar = a.savedBar();
+          if (bar) saved.bar = bar;
           return saved;
         });
       }
@@ -1689,6 +1753,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         layout.windows = windows.map((w) => {
           const saved: TabLayoutWindow = { rect: { ...w.rect }, root: this.writeNode(w.root!) };
           if (w.isMaximized) saved.maximized = true;
+          const bar = w.savedBar();
+          if (bar) saved.bar = bar;
           const back = w.lastDock.group ? groups.indexOf(w.lastDock.group) : -1;
           if (w.lastDock.side || back >= 0) saved.dock = { side: w.lastDock.side, group: back >= 0 ? back : null };
           return saved;
@@ -1743,6 +1809,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       for (const saved of layout.areas ?? []) {
         if (!saved?.root || !DOCK_SIDES.includes(saved.side) || parts.areas.has(saved.side)) continue;
         const area = this.createArea(saved.side, saved.size ?? this.dockAreaSize[saved.side]);
+        area.restoreBar(saved.bar);
         this.setHostRoot(area, this.readNode(saved.root, factory, made));
         if (saved.autoHide) area.markFolded(true);
       }
@@ -1750,6 +1817,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       for (const saved of layout.windows ?? []) {
         if (!saved?.root) continue;
         const w = this.createWindow(saved.rect ?? this.floatRect(null, null));
+        w.restoreBar(saved.bar);
         this.setHostRoot(w, this.readNode(saved.root, factory, made));
         if (saved.maximized) w.markMaximized(true);
         windows.push([w, saved]);
@@ -4651,23 +4719,20 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     const max = this.peekProperty<number>('tabMaxWidth') ?? 0;
     style.setProperty('--_min-width', `${this.peekProperty<number>('minGroupWidth') ?? 160}px`);
     style.setProperty('--_min-height', `${this.peekProperty<number>('minGroupHeight') ?? 100}px`);
-    style.setProperty('--_tab-min', `${this.peekProperty<number>('tabMinWidth') ?? 80}px`);
     style.setProperty('--_tab-fixed', `${this.peekProperty<number>('tabFixedWidth') ?? 160}px`);
     if (max > 0) style.setProperty('--_tab-max', `${max}px`);
     else style.removeProperty('--_tab-max');
   }
 
-  /** The strip's look: how tabs are sized, where pinned ones go, wrapping and scroll buttons. */
+  /** The strip's look: where pinned ones go and wrapping. Each group writes how its tabs are sized and its scroll buttons. */
   private renderStrip(): void {
     // On the manager's element and on each new window's, which stands for it there.
     const parts = (this as unknown as { [PARTS]?: Parts })[PARTS];
     for (const el of [this.element, ...(parts?.browsers ?? []).map((w) => w.element)]) {
       const data = el.dataset;
-      data.tabSize = this.peekProperty<TabSize>('tabSize') ?? 'fit';
       data.pinnedSize = this.peekProperty<PinnedTabSize>('pinnedTabSize') ?? 'normal';
       el.toggleAttribute('data-pinned-row', !!this.peekProperty('pinnedTabsOnSeparateRow'));
       el.toggleAttribute('data-wrap', !!this.peekProperty('wrapTabs'));
-      el.toggleAttribute('data-scroll-buttons', this.peekProperty('scrollButtons') !== false);
     }
     for (const group of untracked(() => this.groups)) {
       this.sizeGroup(group);

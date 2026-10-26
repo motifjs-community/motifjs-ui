@@ -21,6 +21,7 @@ import type { LayoutChangedEventArgs } from './layout-changed-event-args';
 import type { LayoutChangingEventArgs } from './layout-changing-event-args';
 import type { PinnedTabSize } from './pinned-tab-size';
 import type { TabAfterClose } from './tab-after-close';
+import type { TabBarButton } from './tab-bar-button';
 import type { TabCloseButton } from './tab-close-button';
 import type { TabContentFactory } from './tab-content-factory';
 import type { TabDocumentKeys } from './tab-document-keys';
@@ -107,8 +108,31 @@ export interface TabDocumentManagerProps extends ControlProps {
   tabFixedWidth?: Bind<number>;
   /** Tabs that do not fit go on to more rows instead of scrolling. Default `false`. */
   wrapTabs?: Bind<boolean>;
-  /** Buttons at the end of a strip that scroll it when the tabs do not fit (the wheel scrolls it too). Default `true`. */
+  /**
+   * Buttons at the end of a strip that scroll it when the tabs do not fit (the wheel scrolls it
+   * too). Without them, a thin scrollbar shows while the pointer is over the strip, and the "…"
+   * button tells how many tabs are not in sight. For the documents' groups and new windows. Default `true`.
+   */
   scrollButtons?: Bind<boolean>;
+  /** A strip with a single document shows it as a title (icon, title, marks and close button), not as a tab. For the documents' groups and new windows. Default `false`. */
+  singleTabTitle?: Bind<boolean>;
+  /**
+   * The built-in buttons that stay in a group's toolbar; the others, and the app's buttons that may
+   * move (`overflow` not `'never'`), go into the "…" menu above its list of documents. `'all'`:
+   * every button, and a narrow toolbar folds them into a menu of its own. For the documents'
+   * groups and new windows. Default `'all'`.
+   */
+  barButtons?: Bind<readonly TabBarButton[] | 'all'>;
+  /** `scrollButtons` for the strips of dock areas and floating windows; an area's or a window's own `scrollButtons` wins. Default `false`. */
+  compactScrollButtons?: Bind<boolean>;
+  /** `tabSize` for dock areas and floating windows: tabs shrink to `compactTabMinWidth` before the strip scrolls. Default `'shrink'`. */
+  compactTabSize?: Bind<TabSize>;
+  /** `tabMinWidth` for dock areas and floating windows, in pixels. Default 64. */
+  compactTabMinWidth?: Bind<number>;
+  /** `singleTabTitle` for dock areas and floating windows. Default `true`. */
+  compactSingleTabTitle?: Bind<boolean>;
+  /** `barButtons` for dock areas and floating windows: an area keeps its pin, a window its close button. Default `['autoHide', 'closeWindow']`. */
+  compactBarButtons?: Bind<readonly TabBarButton[] | 'all'>;
   /** When a tab shows its document's description. Default `'duplicates'`. */
   showDescription?: Bind<TabShowDescription>;
   /** The "…" button that lists the group's documents. Default `true`. */

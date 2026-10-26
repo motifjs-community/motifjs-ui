@@ -55,6 +55,14 @@ export class DocumentList {
         e.item.click?.(e);
       });
       popup.controls.add(menu);
+      // The commands are a Tab stop: coming from the list below, the last one takes focus, else the first.
+      const el = menu.element;
+      el.tabIndex = 0;
+      el.addEventListener('focus', (e) => {
+        const from = e.relatedTarget as Node | null;
+        const below = !!from && !!(el.compareDocumentPosition(from) & Node.DOCUMENT_POSITION_FOLLOWING);
+        menu.focusItem(below ? 'last' : 'first');
+      });
     } else {
       popup.element.addEventListener('keydown', (e) => this.walkKey(e), true);
     }
@@ -67,9 +75,10 @@ export class DocumentList {
 
   /**
    * Opens next to `anchor` with `documents`, `start` highlighted. `held`: the modifiers that opened
-   * it; letting go of them opens the highlighted document.
+   * it; letting go of them opens the highlighted document. `commandsFirst`: the commands above the
+   * list; `list: false` shows only the commands.
    */
-  open(anchor: HTMLElement, documents: readonly TabDocument[], start: number, commands: MenuItem[] = [], held: KeyboardEvent | null = null): void {
+  open(anchor: HTMLElement, documents: readonly TabDocument[], start: number, commands: MenuItem[] = [], held: KeyboardEvent | null = null, options: { commandsFirst?: boolean; list?: boolean } = {}): void {
     const popup = this.popup;
     if (!popup.parent) this.manager.controls.add(popup);
     this.documents = documents;
@@ -77,10 +86,21 @@ export class DocumentList {
     this.returnFocus = anchor.ownerDocument.activeElement as HTMLElement | null;
     this.list.value = null;
     this.list.items = documents;
-    this.menu?.setItems(commands);
-    if (this.menu) this.menu.element.hidden = !commands.length;
+    const showList = options.list !== false;
+    this.list.element.hidden = !showList;
+    const menu = this.menu;
+    if (menu) {
+      menu.setItems(commands);
+      menu.element.hidden = !commands.length;
+      const list = this.list.element;
+      if (options.commandsFirst) list.before(menu.element);
+      else list.after(menu.element);
+      popup.element.toggleAttribute('data-commands-first', !!options.commandsFirst);
+    }
     popup.open(anchor, { returnFocus: this.returnFocus ?? undefined });
-    if (this.list.searchBox) {
+    if (!showList && menu) {
+      menu.focusItem('first');
+    } else if (this.list.searchBox) {
       this.list.searchBox.value = '';
       this.list.searchBox.focus();
     } else {

@@ -309,6 +309,11 @@ export interface UiStrings {
   tabDocsLock: string;
   tabDocsUnlock: string;
   tabDocsOpenList: string;
+  /** The "…" button with tabs out of sight: `{n}` is how many. */
+  tabDocsOpenListHidden: string;
+  /** The "…" button of a compact bar: the documents and the buttons that are not in the bar. */
+  tabDocsBarMenu: string;
+  tabDocsBarMenuHidden: string;
   tabDocsRecent: string;
   tabDocsPinState: string;
   tabDocsPreviewState: string;

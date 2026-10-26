@@ -7,6 +7,7 @@ import { resizeFrame } from '../../parts/window/resize-frame';
 import type { WindowBox } from '../../parts/window/window-box';
 import type { WindowEdge } from '../../parts/window/window-edge';
 import type { LayoutItem } from './layout-item';
+import { TabBarSettings } from './TabBarSettings';
 import type { TabDockSide } from './tab-dock-side';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
@@ -18,9 +19,10 @@ import type { TabRect } from './tab-rect';
  * does (split and resized the same way) and moves by the empty part of its strips. It resizes from
  * its edges and corners, comes to the front when pressed, and maximizes within the page. The
  * manager makes and closes windows (`float`, `closeWindow`); the methods here go through it, with
- * its events.
+ * its events. Its strips are compact by default (the manager's `compact…` props); its own
+ * settings (`scrollButtons`, `tabSize`, `tabMinWidth`, `singleTabTitle`, `barButtons`) win.
  */
-export class TabWindow {
+export class TabWindow extends TabBarSettings {
   readonly element: HTMLDivElement;
   /** @internal Where its layout goes. */
   readonly body: HTMLDivElement;
@@ -38,6 +40,7 @@ export class TabWindow {
     private readonly owner: TabDocumentManager,
     rect: TabRect,
   ) {
+    super();
     const doc = owner.element.ownerDocument;
     const el = (this.element = doc.createElement('div'));
     el.className = 'mx-tabdocs__window';

@@ -2,9 +2,11 @@
    a group's own size never comes from its content (`contain: size`), so the shares and the
    smallest sizes (`--_min-width`, `--_min-height`, written on each group from the props) decide. The look binds
    to the group's data-active / data-empty and the tab's aria-selected, data-dirty, data-close,
-   data-pinned, data-preview, data-tone. How tabs are sized and laid out comes from the root's
-   data-tab-size, data-pinned-size, data-pinned-row, data-wrap and the widths `--_tab-min`,
-   `--_tab-max`, `--_tab-fixed` (written on each group from the props). The root is a grid: the
+   data-pinned, data-preview, data-tone. How tabs are sized comes from each group's data-tab-size,
+   data-scroll-buttons and data-title (a single document shown as a title: its dock area's or
+   window's settings, else the manager's), how they are laid out from the root's data-pinned-size,
+   data-pinned-row and data-wrap, and the widths `--_tab-min`, `--_tab-max`, `--_tab-fixed` are
+   written on each group from the props. The root is a grid: the
    documents in the middle (row 4, column 4), the dock areas and their splitters around them in the
    order they nest (each writes its own grid-area), the strips of folded areas along the edges. */
 @layer mx.components {
@@ -69,6 +71,7 @@
      takes the room the toolbar leaves, never less than one tab: a narrow group folds the toolbar's
      buttons into its "…" menu first. */
   .mx-tabdocs__strip {
+    position: relative;
     display: flex;
     flex: 1 1 0px;
     min-inline-size: var(--_tab-min);
@@ -91,10 +94,6 @@
     min-inline-size: 0;
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-width: thin;
-  }
-
-  .mx-tabdocs[data-scroll-buttons] .mx-tabdocs__row {
     scrollbar-width: none;
   }
 
@@ -138,8 +137,46 @@
     user-select: none;
   }
 
-  .mx-tabdocs[data-scroll-buttons]:not([data-wrap]) .mx-tabdocs__strip[data-overflow] .mx-tabdocs__scroll {
+  .mx-tabdocs:not([data-wrap]) .mx-tabdocs__group[data-scroll-buttons] > .mx-tabdocs__bar > .mx-tabdocs__strip[data-overflow] > .mx-tabdocs__scroll {
     display: flex;
+  }
+
+  /* Without scroll buttons: a thin scrollbar over the foot of the tabs that scroll, while the
+     pointer is over the strip. It takes no room, so the bar keeps its height and the tabs stay. */
+  .mx-tabdocs__scrollbar {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline-start: var(--_track-start, 0);
+    display: none;
+    inline-size: var(--_track-size, 100%);
+    block-size: var(--mx-tabdocs-scrollbar-size);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-tabdocs:not([data-wrap]) .mx-tabdocs__group:not([data-scroll-buttons]) > .mx-tabdocs__bar > .mx-tabdocs__strip[data-overflow] > .mx-tabdocs__scrollbar {
+    display: block;
+  }
+
+  .mx-tabdocs__strip[data-overflow]:hover > .mx-tabdocs__scrollbar,
+  .mx-tabdocs__scrollbar[data-dragging] {
+    opacity: 1;
+  }
+
+  .mx-tabdocs__thumb {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: var(--_thumb-at, 0);
+    inline-size: var(--_thumb-size, 0);
+    background: var(--mx-tabdocs-scrollbar-thumb-color);
+    border-radius: var(--mx-tabdocs-scrollbar-radius);
+    pointer-events: auto;
+  }
+
+  .mx-tabdocs__thumb:hover,
+  .mx-tabdocs__scrollbar[data-dragging] > .mx-tabdocs__thumb {
+    background: var(--mx-tabdocs-scrollbar-thumb-color-hover);
   }
 
   .mx-tabdocs__scroll:hover:not([data-end]) {
@@ -181,6 +218,22 @@
 
   .mx-tabdocs__bar > .mx-tabdocs__actions:is([hidden], :empty) {
     display: none;
+  }
+
+  /* How many tabs are out of sight, in the place of the "…" mark: as large as the mark, whatever the count. */
+  .mx-tabdocs__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    block-size: 100%;
+    font-size: var(--mx-tabdocs-count-font-size);
+    font-weight: var(--mx-tabdocs-count-font-weight);
+    line-height: 1;
+    white-space: nowrap;
+    /* "+2" reads the same way right to left. */
+    direction: ltr;
+    unicode-bidi: isolate;
   }
 
   .mx-tabdocs__tab {
@@ -245,23 +298,61 @@
     background: var(--mx-tabdocs-indicator-color);
   }
 
+  /* A single document shown as a title: the tab without its box and indicator, as wide as its
+     text and cut by an ellipsis; the rest of the bar stays free to drag the group or the window. */
+  .mx-tabdocs__group[data-title] > .mx-tabdocs__bar :is(.mx-tabdocs__pinned, .mx-tabdocs__row) {
+    flex: 0 1 auto;
+    min-inline-size: 0;
+  }
+
+  .mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab {
+    flex: 0 1 auto;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    font-weight: var(--mx-tabdocs-title-font-weight);
+    color: var(--mx-tabdocs-title-fg);
+    background: transparent;
+    border-inline-end-color: transparent;
+  }
+
+  .mx-tabdocs__group[data-title][data-active] > .mx-tabdocs__bar .mx-tabdocs__tab {
+    color: var(--mx-tabdocs-title-fg-active);
+  }
+
+  .mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab::after {
+    background: transparent;
+  }
+
+  .mx-tabdocs__group[data-title] > .mx-tabdocs__bar :is(.mx-tabdocs__title, .mx-tabdocs__description) {
+    max-inline-size: none;
+  }
+
   /* Sizes: as wide as the text (fit), shrinking down to the smallest width, or all one width. */
   .mx-tabdocs__row > .mx-tabdocs__tab {
     max-inline-size: var(--_tab-max, none);
   }
 
-  .mx-tabdocs[data-tab-size='shrink'] .mx-tabdocs__row > .mx-tabdocs__tab {
+  /* Shrinking, a tab keeps its icon, its close button and a few letters of its title. */
+  .mx-tabdocs__group[data-tab-size='shrink'] > .mx-tabdocs__bar .mx-tabdocs__row > .mx-tabdocs__tab {
     flex: 0 1 auto;
-    min-inline-size: var(--_tab-min);
+    min-inline-size: max(var(--_tab-min), calc(2 * var(--mx-tabdocs-tab-padding) + var(--_icon-room, 0px) + var(--_close-room, 0px) + var(--mx-tabdocs-tab-title-min-width)));
   }
 
-  .mx-tabdocs[data-tab-size='fixed'] .mx-tabdocs__row > .mx-tabdocs__tab {
+  .mx-tabdocs__tab[data-icon] {
+    --_icon-room: calc(var(--mx-tabdocs-icon-size) + var(--mx-tabdocs-tab-gap));
+  }
+
+  .mx-tabdocs__tab:is([data-close], [data-dirty]) {
+    --_close-room: calc(var(--mx-tabdocs-close-size) + var(--mx-tabdocs-tab-gap));
+  }
+
+  .mx-tabdocs__group[data-tab-size='fixed'] > .mx-tabdocs__bar .mx-tabdocs__row > .mx-tabdocs__tab {
     flex: 0 1 var(--_tab-fixed);
     min-inline-size: var(--_tab-min);
     max-inline-size: none;
   }
 
-  .mx-tabdocs[data-tab-size='fixed'] .mx-tabdocs__row > .mx-tabdocs__tab > .mx-tabdocs__title {
+  .mx-tabdocs__group[data-tab-size='fixed'] > .mx-tabdocs__bar .mx-tabdocs__row > .mx-tabdocs__tab > .mx-tabdocs__title {
     flex: 1 1 auto;
   }
 
@@ -319,6 +410,24 @@
   .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__tab[data-pinned] :is(.mx-tabdocs__badge, .mx-tabdocs__pin),
   .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__tab[data-pinned]:not([data-dirty]) .mx-tabdocs__close {
     display: none;
+  }
+
+  /* A pinned document shown as a title keeps its title. */
+  .mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab[data-pinned] .mx-tabdocs__letter {
+    display: none;
+  }
+
+  .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab[data-pinned] :is(.mx-tabdocs__title, .mx-tabdocs__description) {
+    position: static;
+    inline-size: auto;
+    block-size: auto;
+    margin: 0;
+    overflow: hidden;
+    clip-path: none;
+  }
+
+  .mx-tabdocs[data-pinned-size='shrink'] .mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab[data-pinned] {
+    max-inline-size: 100%;
   }
 
   /* The pin mark of a pinned tab: it unpins. */
@@ -1093,8 +1202,13 @@
     .mx-tabdocs__tab[aria-selected='true']::after,
     .mx-tabdocs__dirty,
     .mx-tabdocs__list-dirty,
-    .mx-tabdocs__badge[data-dot] {
+    .mx-tabdocs__badge[data-dot],
+    .mx-tabdocs__thumb {
       background: CanvasText;
+    }
+
+    .mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab::after {
+      background: transparent;
     }
 
     .mx-tabdocs__sash::before {

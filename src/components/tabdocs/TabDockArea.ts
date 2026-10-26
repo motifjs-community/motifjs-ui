@@ -5,6 +5,7 @@ import type { AutoHideStrip } from './AutoHideStrip';
 import type { LayoutItem } from './layout-item';
 import type { SashOwner } from './sash-owner';
 import { SplitSash } from './SplitSash';
+import { TabBarSettings } from './TabBarSettings';
 import type { TabDockSide } from './tab-dock-side';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
@@ -15,9 +16,11 @@ import type { TabGroup } from './TabGroup';
  * (split and resized as the documents' groups are), a size, and a splitter against the documents.
  * Folded (`autoHide`), only its tab titles stay along the manager's edge and it slides out over the
  * documents when one is chosen. The manager makes the area when something is docked there, and
- * takes it away once it is empty.
+ * takes it away once it is empty. Its strips are compact by default (the manager's `compact…`
+ * props); its own settings (`scrollButtons`, `tabSize`, `tabMinWidth`, `singleTabTitle`,
+ * `barButtons`) win.
  */
-export class TabDockArea implements SashOwner {
+export class TabDockArea extends TabBarSettings implements SashOwner {
   readonly element: HTMLDivElement;
   /** @internal */
   readonly sash: SplitSash;
@@ -34,6 +37,7 @@ export class TabDockArea implements SashOwner {
     readonly side: TabDockSide,
     size: number | string,
   ) {
+    super();
     const el = (this.element = owner.element.ownerDocument.createElement('div'));
     el.className = 'mx-tabdocs__area';
     el.id = nextId('tabdocs-area');

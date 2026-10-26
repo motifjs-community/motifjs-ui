@@ -1,5 +1,6 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
+import CompactBars from './examples/CompactBars';
 import DockIde from './examples/DockIde';
 import DockOptions from './examples/DockOptions';
 import DockSaveRestore from './examples/DockSaveRestore';
@@ -32,6 +33,14 @@ const PROPS = [
   ['autoHideHover, autoHideDelay', '`Bind<boolean>`, `Bind<number>`', '`true`, `500`', 'Resting the pointer on a folded area\'s title slides it out after that many milliseconds, and away from it and the area slides it back.'],
 ];
 
+const BAR = [
+  ['scrollButtons / compactScrollButtons', '`Bind<boolean>`', '`true` / `false`', 'Buttons that scroll a strip whose tabs do not fit. Without them the wheel (a plain one scrolls sideways), touch and the keys scroll it, a thin scrollbar shows while the pointer is over it, and the "…" button shows how many tabs are not fully in sight ("+2", also in its name).'],
+  ['tabSize / compactTabSize', "`Bind<'fit' | 'shrink' | 'fixed'>`", "`'fit'` / `'shrink'`", 'Shrinking, tabs narrow down to the smallest width, the title cut by an ellipsis (the tooltip and the name keep it whole); only then does the strip scroll.'],
+  ['tabMinWidth / compactTabMinWidth', '`Bind<number>`', '`80` / `64`', 'The smallest width of a tab, in pixels; a tab keeps its icon, its close button and a few letters whatever it is.'],
+  ['singleTabTitle / compactSingleTabTitle', '`Bind<boolean>`', '`false` / `true`', 'A strip with one document shows it as a title: icon, title, unsaved mark, badge and its close button (`closeButton`, the document\'s `closable`). It is still the tab: its menu, keys, drag, double click and tooltip stay. A second document makes tabs again.'],
+  ['barButtons / compactBarButtons', "`Bind<readonly TabBarButton[] | 'all'>`", "`'all'` / `['autoHide', 'closeWindow']`", "The built-in buttons that stay in the toolbar (`'split'`, `'maximize'`, `'lock'`, `'autoHide'`, `'maximizeWindow'`, `'closeWindow'`). The others, the app's buttons (but those with `overflow: 'never'`), Dock back in a window and the group's commands go into one \"…\" menu, above its searchable list of documents. `'all'`: the whole toolbar, which folds into a menu of its own when narrow, and the list apart."],
+];
+
 const DOCUMENT = [
   ['allowFloat, allowDock, allowAutoHide', '`Bind<boolean | undefined>`', 'This document\'s own settings; `undefined` follows the manager.'],
   ['dockSides', '`Bind<readonly TabDockSide[] | undefined>`', 'The dock areas this document may go to.'],
@@ -56,12 +65,14 @@ const WINDOW = [
   ['rect, isMaximized, isActive', 'read-only, reactive', 'Where it is and how big (as it is restored), maximized, the front window of the page.'],
   ['groups, documents, index', 'read-only, reactive', 'Its groups (split as the documents\' are), their documents, its place in `floatingWindows`.'],
   ['move, resize, maximize, restore, close, dock(side?), focus', 'methods', 'The manager\'s methods for this window.'],
+  ['scrollButtons, tabSize, tabMinWidth, singleTabTitle, barButtons', '`Bind<… | null>`, reactive', 'Its strips\' own settings, a value or a function; `null` (the default) follows the manager\'s `compact…` props. Plain values are saved with the layout (`bar`).'],
 ];
 
 const AREA = [
   ['side, size, autoHidden, isOpen', 'read-only, reactive', 'Its side; its size as set (pixels or a share); folded to the edge; slid out now.'],
   ['groups, documents, index, rect', 'read-only', 'Its groups, their documents, its place in `dockAreas`, its box on the screen.'],
   ['resize(size), autoHide(on?), show(doc?)', 'methods', 'The manager\'s methods for this area.'],
+  ['scrollButtons, tabSize, tabMinWidth, singleTabTitle, barButtons', '`Bind<… | null>`, reactive', 'Its strips\' own settings (as on `TabWindow`); `null` follows the manager\'s `compact…` props.'],
 ];
 
 const EVENTS = [
@@ -98,6 +109,9 @@ const STYLING = [
   ['.mx-tabdocs__area', 'A dock area; `data-side`, `data-auto-hide`, `data-open` (slid out). `.mx-tabdocs__area-sash` is its splitter.'],
   ['.mx-tabdocs__autohide, .mx-tabdocs__autohide-tab', 'The titles of a folded area; a title has `data-open` while its document is slid out.'],
   ['.mx-tabdocs__guide', 'A dock guide: `data-kind` (`cross`, `edge`), `data-side`, `data-pointed`.'],
+  ['.mx-tabdocs__group[data-compact], [data-title], [data-scroll-buttons], [data-tab-size]', 'A group\'s bar: compact, one document as a title, with scroll buttons, how its tabs are sized.'],
+  ['.mx-tabdocs__scrollbar, .mx-tabdocs__thumb, .mx-tabdocs__count', 'The thin scrollbar of a strip without scroll buttons, and the count on its "…" button.'],
+  ['tabdocs.scrollbar-*, title-*, count-*, tab-title-min-width', 'Their tokens.'],
   ['tabdocs.window-*, area-*, panel-*, autohide-*, guide-*', 'Their tokens.'],
 ];
 
@@ -126,6 +140,16 @@ export default function TabDocsDockPage() {
         <Example files={code('FloatFromCode.tsx', 'files.tsx')} stack>
           <FloatFromCode />
         </Example>
+      </Section>
+
+      <Section anchor="compact" title="Compact bars">
+        <p>
+          <Rich text={"The bars of dock areas and floating windows are compact, so that the tabs keep the room: no scroll buttons (the wheel, touch and the keys scroll the strip, and the \"…\" button tells how many tabs are out of sight), tabs that shrink before they scroll, one document shown as a title with its close button, and only the pin of an area or the close button of a window beside one \"…\" menu, which holds the other buttons above the list of documents. Each part is a setting: the manager's `compact…` props for every area and window, the area's or the window's own (`area.scrollButtons = true`) over them. The documents' bar keeps its whole toolbar by default, and has the same settings without the prefix; new browser windows use it too, as they fill a window of their own."} />
+        </p>
+        <Example files={code('CompactBars.tsx', 'tools.tsx', 'files.tsx')} stack>
+          <CompactBars />
+        </Example>
+        <ApiTable head={['Prop (documents / compact)', 'Type', 'Default', 'Description']} rows={BAR} />
       </Section>
 
       <Section anchor="options" title="Settings">

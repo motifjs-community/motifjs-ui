@@ -1042,3 +1042,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - TabDocumentManager: each tab panel stacks on its own (`isolation`), so a document's own z-index (a
   DataGrid's sticky summary row) no longer rises over a slid-out dock area, a floating window or the drop
   marks. Docs: a "A whole workspace" page; `e2e/checks/51-tabdocs-workspace.mjs`.
+- TabDocumentManager, compact bars: the strips of dock areas and floating windows keep their room for
+  the tabs. No scroll buttons there (`compactScrollButtons`, default `false`): the wheel, touch and the
+  keys scroll the strip, a thin scrollbar shows over the foot of the tabs while the pointer is over it
+  (it takes no room and can be dragged), and the "…" button shows how many tabs are not fully in sight
+  in place of its mark ("+2", also in its name; `TabGroup.hiddenTabCount`). Tabs shrink before the strip
+  scrolls (`compactTabSize: 'shrink'`, `compactTabMinWidth: 64`); shrinking, a tab keeps its icon, its
+  close button and a few letters (`tabdocs.tab-title-min-width`). A strip with one document shows it as
+  a title, still the tab with its close button, menu, keys, drag and tooltip (`compactSingleTabTitle`,
+  default `true`). Only the pin of an area and the close button of a window stay in the toolbar
+  (`compactBarButtons`, default `['autoHide', 'closeWindow']`, a list of `TabBarButton`); the other
+  buttons, the app's toolbar items but those with `overflow: 'never'`, "Dock back" in a window and the
+  group's commands go into one "…" menu above its searchable list of documents (the commands are a Tab
+  stop there). Each dock area and floating window has its own `scrollButtons`, `tabSize`,
+  `tabMinWidth`, `singleTabTitle` and `barButtons` (`TabBarSettings`, a value or a function, `null`
+  follows the manager), saved with the layout as `bar` when they are plain values. The documents' bar
+  and new browser windows keep the whole bar by default and have `singleTabTitle` and `barButtons`
+  (`'all'`) of their own; how tabs are sized and the scroll buttons are now written on each group
+  (`data-tab-size`, `data-scroll-buttons`, `data-compact`, `data-title`). Texts `tabDocsOpenListHidden`,
+  `tabDocsBarMenu`, `tabDocsBarMenuHidden` (en, tr). Tokens `tabdocs.scrollbar-*`, `title-*`, `count-*`,
+  `tab-title-min-width`. Docs: a "Compact bars" section on the Dock page; `e2e/checks/50-tabdocs-compact.mjs`.

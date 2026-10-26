@@ -1,22 +1,26 @@
-import { Component, Transporter, untracked, type Bind } from '@motifx/core';
+import { Component, effect, read, Transporter, untracked, type Bind } from '@motifx/core';
 import { FocusContainer } from '../../core/container';
 import { deepActiveElement, isShown } from '../../core/focus';
 import { chevronDown, dismissMark, gripMark, lockMark, maximizeMark, moreMark, pinMark, restoreMark, splitMark } from '../../core/glyphs';
 import { nextId } from '../../core/next-id';
 import { isElement, isNode } from '../../core/node-kind';
 import { ResizeWatch } from '../../core/resize-watch';
+import type { MenuItem } from '../../parts/menu/menu-item';
+import { followPointer } from '../../parts/window/follow-pointer';
 import { Toolbar } from '../toolbar/Toolbar';
 import type { ToolbarItem } from '../toolbar/toolbar-item';
 import type { DocumentTab } from './DocumentTab';
 import { keepScroll } from './keep-scroll';
 import { placeNode } from './place-node';
 import type { SplitDirection } from './split-direction';
+import type { TabBarButton } from './tab-bar-button';
 import type { TabBrowserWindow } from './TabBrowserWindow';
 import type { TabDockArea } from './TabDockArea';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabDropSide } from './tab-drop-side';
 import type { TabOpenOptions } from './tab-open-options';
+import type { TabSize } from './tab-size';
 import type { TabToolbarItems } from './tab-toolbar-items';
 import type { TabSplit } from './TabSplit';
 import type { TabWindow } from './TabWindow';
@@ -32,12 +36,17 @@ interface Parts {
   row: HTMLDivElement;
   back: HTMLSpanElement;
   forward: HTMLSpanElement;
+  /** Without scroll buttons: a thin scrollbar over the tabs while the pointer is over the strip. */
+  scrollbar: HTMLDivElement;
+  thumb: HTMLDivElement;
   panels: Component<HTMLDivElement>;
   tips: Component<HTMLDivElement>;
   empty: HTMLDivElement;
   actions: Toolbar;
   /** The built-in toolbar buttons: split, maximize, the lock mark, "…", auto hide, and a window's maximize and close. */
   own: ToolbarItem[];
+  /** The built-in buttons by name, but "…", which always stays. */
+  named: [TabBarButton, ToolbarItem][];
   /** The auto hide button of a group in a dock area. */
   autoHide: ToolbarItem;
   /** The handle the group is dragged by (and moved with the keys), first in the toolbar. */
@@ -61,6 +70,15 @@ const NONE: readonly TabDocument[] = [];
 
 const ALL_SIDES: readonly TabDropSide[] = ['center', 'left', 'right', 'up', 'down'];
 
+/** What a group's bar follows: its dock area's or window's own settings, else the manager's. */
+interface BarLook {
+  scrollButtons: boolean;
+  tabSize: TabSize;
+  tabMinWidth: number;
+  singleTabTitle: boolean;
+  buttons: readonly TabBarButton[] | 'all';
+}
+
 /**
  * A group of a `TabDocumentManager`: a strip of tabs and the active document's content under it.
  * The manager makes and closes groups (`split`, `closeGroup`); a group is a container, so focus
@@ -72,9 +90,22 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     super('div', {});
     const self = this as unknown as { [PARTS]?: Parts };
     const parts = (self[PARTS] = this.createParts(manager));
-    // The items read the group, so they come once its parts are in place.
-    parts.actions.items = () => [parts.grip, ...this.appItems(), ...(this.activeDocument?.actions ?? []), ...parts.own];
+    // The items read the group, so they come once its parts are in place. A compact bar keeps the
+    // buttons it names and the app's that ask to stay; the others are in the "…" menu.
+    parts.actions.items = () => {
+      const app = [...this.appItems(), ...(this.activeDocument?.actions ?? [])];
+      const kept = this.look().buttons;
+      if (kept === 'all') return [parts.grip, ...app, ...parts.own];
+      const named = new Map(parts.named.map(([name, item]) => [item, name]));
+      return [parts.grip, ...app.filter(staysOut), ...parts.own.filter((item) => !named.has(item) || kept.includes(named.get(item)!))];
+    };
     this.listen();
+    const stopLook = effect(() => {
+      const look = this.look();
+      const title = look.singleTabTitle && this.documents.length === 1;
+      untracked(() => this.renderLook(look, title));
+    });
+    this.motif.setDisposable(stopLook);
     this.observeProperty('locked', () =>
       untracked(() => {
         const n = manager.groups.indexOf(this);
@@ -152,6 +183,10 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   /** Its place in the manager's `groups`, from 0. Reactive. */
   get index(): number {
     return this.manager.groups.indexOf(this);
+  }
+  /** How many of its tabs are not fully in sight in the strip now. Reactive. */
+  get hiddenTabCount(): number {
+    return this.getProperty<number | undefined>('hiddenTabs') ?? 0;
   }
 
   open(document: TabDocument, options: Omit<TabOpenOptions, 'group'> = {}): TabDocument | null {
@@ -234,6 +269,25 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   get panelsElement(): HTMLDivElement {
     return this.parts.panels.element;
   }
+  /** @internal Whether its bar keeps only some buttons and has one "…" menu for the rest and the documents. Reactive. */
+  get isCompact(): boolean {
+    return this.look().buttons !== 'all';
+  }
+
+  /** @internal In a compact bar: the buttons not in the toolbar, as items of the "…" menu; the built-in ones first. */
+  foldedItems(): MenuItem[] {
+    const parts = this.parts;
+    return untracked(() => {
+      const kept = this.look().buttons;
+      if (kept === 'all') return [];
+      // The lock mark has its command in the menu already.
+      const own = parts.named.filter(([name]) => name !== 'lock' && !kept.includes(name)).map(([, item]) => item);
+      const app = [...this.appItems(), ...(this.activeDocument?.actions ?? [])].filter((item) => !staysOut(item));
+      const line: ToolbarItem[] = own.length && app.length ? [{ type: 'separator' }] : [];
+      return menuItemsOf([...own, ...line, ...app], parts.actions);
+    });
+  }
+
   /** @internal Whether drops are allowed now. */
   get acceptsDrop(): boolean {
     return untracked(() => this.allowDrop);
@@ -385,7 +439,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   /** @internal Whether `target` is the strip's empty room: in the bar, not on a tab or a toolbar button. */
   isStripSpace(target: EventTarget | null): boolean {
     const parts = this.parts;
-    if (!isElement(target) || !parts.bar.element.contains(target) || this.tabOf(target)) return false;
+    if (!isElement(target) || !parts.bar.element.contains(target) || this.tabOf(target) || parts.scrollbar.contains(target)) return false;
     return !parts.actions.element.contains(target) || target === parts.actions.element;
   }
 
@@ -440,10 +494,84 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     const { row, strip, back, forward } = this.parts;
     const needed = row.scrollWidth;
     const room = row.clientWidth;
-    strip.toggleAttribute('data-overflow', needed > room + 1);
+    const over = needed > room + 1;
+    strip.toggleAttribute('data-overflow', over);
     const position = Math.abs(row.scrollLeft);
     back.toggleAttribute('data-end', position <= 1);
     forward.toggleAttribute('data-end', position + room >= needed - 1);
+    let hidden = 0;
+    if (over) {
+      const box = row.getBoundingClientRect();
+      for (const header of Array.from(row.children)) {
+        const b = header.getBoundingClientRect();
+        if (b.left < box.left - 1 || b.right > box.right + 1) hidden++;
+      }
+      this.placeThumb(box, needed, room, position);
+    }
+    if (hidden !== untracked(() => this.hiddenTabCount)) untracked(() => this.setProperty('hiddenTabs', hidden));
+  }
+
+  /** The thin scrollbar: along the tabs that scroll, its thumb as long as the share in sight. */
+  private placeThumb(box: DOMRect, needed: number, room: number, position: number): void {
+    const { strip, scrollbar } = this.parts;
+    const outer = strip.getBoundingClientRect();
+    const size = Math.min(1, room / needed);
+    const style = scrollbar.style;
+    style.setProperty('--_track-start', `${Math.round(isRtl(strip) ? outer.right - box.right : box.left - outer.left)}px`);
+    style.setProperty('--_track-size', `${Math.round(box.width)}px`);
+    style.setProperty('--_thumb-size', `${(size * 100).toFixed(2)}%`);
+    style.setProperty('--_thumb-at', `${((Math.min(position, needed - room) / (needed - room)) * (1 - size) * 100).toFixed(2)}%`);
+  }
+
+  /** The thumb is dragged: the strip follows, as far as the tabs go for each pixel of the track. */
+  private dragThumb(e: PointerEvent): void {
+    const { row, scrollbar, thumb } = this.parts;
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const start = row.scrollLeft;
+    const ratio = row.scrollWidth / Math.max(1, row.clientWidth);
+    scrollbar.toggleAttribute('data-dragging', true);
+    followPointer(
+      thumb,
+      e,
+      (dx) => (row.scrollLeft = start + dx * ratio),
+      () => scrollbar.removeAttribute('data-dragging'),
+    );
+  }
+
+  /** What its bar follows now: its dock area's or window's own settings, else the manager's (`compact…` there). Reactive. */
+  private look(): BarLook {
+    const m = this.manager;
+    const own = this.dockArea ?? this.window;
+    if (!own) return { scrollButtons: m.scrollButtons, tabSize: m.tabSize, tabMinWidth: m.tabMinWidth, singleTabTitle: m.singleTabTitle, buttons: m.barButtons };
+    return {
+      scrollButtons: own.scrollButtons ?? m.compactScrollButtons,
+      tabSize: own.tabSize ?? m.compactTabSize,
+      tabMinWidth: own.tabMinWidth ?? m.compactTabMinWidth,
+      singleTabTitle: own.singleTabTitle ?? m.compactSingleTabTitle,
+      buttons: own.barButtons ?? m.compactBarButtons,
+    };
+  }
+
+  private renderLook(look: BarLook, title: boolean): void {
+    const el = this.element;
+    el.dataset.tabSize = look.tabSize;
+    el.style.setProperty('--_tab-min', `${look.tabMinWidth}px`);
+    el.toggleAttribute('data-scroll-buttons', look.scrollButtons);
+    el.toggleAttribute('data-compact', look.buttons !== 'all');
+    el.toggleAttribute('data-title', title);
+    this.queueOverflow();
+  }
+
+  /** The name of the "…" button: the documents, or the documents and the commands, and how many tabs are out of sight. */
+  private moreText(): string {
+    const m = this.manager;
+    const look = this.look();
+    const hidden = look.scrollButtons ? 0 : this.hiddenTabCount;
+    if (look.buttons === 'all') return hidden ? m.textOf('tabDocsOpenListHidden', { n: hidden }) : m.textOf('tabDocsOpenList');
+    if (!m.openList) return m.textOf('moreOptions');
+    return hidden ? m.textOf('tabDocsBarMenuHidden', { n: hidden }) : m.textOf('tabDocsBarMenu');
   }
 
   private scrollBy(direction: 1 | -1): void {
@@ -507,8 +635,12 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     list.append(pinnedRow, row);
     const back = scrollButton(doc, 'back');
     const forward = scrollButton(doc, 'forward');
+    const scrollbar = div(doc, 'mx-tabdocs__scrollbar');
+    scrollbar.setAttribute('aria-hidden', 'true');
+    const thumb = div(doc, 'mx-tabdocs__thumb');
+    scrollbar.append(thumb);
     // Both scroll buttons after the tabs: the pinned ones, which never scroll, stay at the start.
-    strip.append(list, back, forward);
+    strip.append(list, back, forward, scrollbar);
     bar.element.append(strip);
 
     const split: ToolbarItem = {
@@ -551,13 +683,28 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       visible: () => this.locked,
       click: () => manager.unlockByUser(this),
     };
+    // Without scroll buttons it shows how many tabs are out of sight, in place of its mark (its size
+    // stays: the room for the tabs does not change with the count). In a compact bar it also holds
+    // the other buttons.
     const more: ToolbarItem = {
-      icon: () => moreMark(),
-      hint: () => manager.textOf('tabDocsOpenList'),
-      visible: () => manager.groupActions && manager.openList,
+      icon: () => {
+        const hidden = this.look().scrollButtons ? 0 : this.hiddenTabCount;
+        return hidden ? countMark(this.element.ownerDocument, hidden) : moreMark();
+      },
+      hint: () => this.moreText(),
+      overflow: () => (this.isCompact ? 'never' : 'auto'),
+      visible: () => manager.groupActions && (manager.openList || this.isCompact),
       click: () => manager.showOpenList(this),
     };
     const own = [split, maximize, lock, more, autoHide, windowMaximize, windowClose];
+    const named: [TabBarButton, ToolbarItem][] = [
+      ['split', split],
+      ['maximize', maximize],
+      ['lock', lock],
+      ['autoHide', autoHide],
+      ['maximizeWindow', windowMaximize],
+      ['closeWindow', windowClose],
+    ];
     // Its click starts "Move group to…"; it never folds into the toolbar's menu.
     const grip: ToolbarItem = {
       icon: () => gripMark(),
@@ -591,11 +738,14 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       row,
       back,
       forward,
+      scrollbar,
+      thumb,
       panels,
       tips,
       empty,
       actions,
       own,
+      named,
       autoHide,
       grip,
       app: { make: null, items: [] },
@@ -658,6 +808,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       { passive: false },
     );
     row.addEventListener('scroll', () => this.renderOverflow());
+    parts.thumb.addEventListener('pointerdown', (e) => this.dragThumb(e));
     for (const button of [parts.back, parts.forward]) {
       button.addEventListener('mousedown', (e) => e.preventDefault());
       button.addEventListener('click', () => this.scrollBy(button === parts.forward ? 1 : -1));
@@ -706,6 +857,53 @@ function div(doc: Document, className: string): HTMLDivElement {
   const el = doc.createElement('div');
   el.className = className;
   return el;
+}
+
+function isRtl(el: Element): boolean {
+  const view = el.ownerDocument.defaultView;
+  return !!view && view.getComputedStyle(el).direction === 'rtl';
+}
+
+/** An app's button that asks to stay in the toolbar. */
+function staysOut(item: ToolbarItem): boolean {
+  return read(item.overflow) === 'never';
+}
+
+/** Toolbar buttons as menu items: their names, icons, states and menus; a separator starts a group. */
+function menuItemsOf(items: readonly ToolbarItem[], toolbar: Toolbar): MenuItem[] {
+  const out: MenuItem[] = [];
+  let group = false;
+  for (const item of items) {
+    const type = read(item.type) ?? 'button';
+    if (type === 'separator') {
+      group = out.length > 0;
+      continue;
+    }
+    const entry: MenuItem = {
+      text: () => read(item.text) || read(item.hint) || '',
+      icon: item.icon,
+      hint: item.hint,
+      tone: item.tone,
+      enabled: item.enabled,
+      visible: item.visible,
+      beginGroup: group,
+      data: item.data,
+    };
+    if (type === 'menu') entry.items = item.menu ?? [];
+    else entry.click = (e) => item.click?.({ item, source: toolbar, event: e.event });
+    if (type === 'toggle') entry.checked = () => !!read(item.pressed);
+    out.push(entry);
+    group = false;
+  }
+  return out;
+}
+
+/** How many tabs are out of sight, as `+2`. */
+function countMark(doc: Document, count: number): HTMLSpanElement {
+  const mark = doc.createElement('span');
+  mark.className = 'mx-tabdocs__count';
+  mark.textContent = `+${count}`;
+  return mark;
 }
 
 function scrollButton(doc: Document, direction: 'back' | 'forward'): HTMLSpanElement {

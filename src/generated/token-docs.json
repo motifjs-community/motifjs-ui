@@ -5264,6 +5264,13 @@
     "value": "16rem"
   },
   {
+    "name": "tabdocs.tab-title-min-width",
+    "cssVar": "--mx-tabdocs-tab-title-min-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "2.5rem"
+  },
+  {
     "name": "tabdocs.tab-separator-width",
     "cssVar": "--mx-tabdocs-tab-separator-width",
     "type": "dimension",
@@ -5682,6 +5689,69 @@
     "type": "color",
     "ref": "color.fg.disabled",
     "value": "#a2a098"
+  },
+  {
+    "name": "tabdocs.scrollbar-size",
+    "cssVar": "--mx-tabdocs-scrollbar-size",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.scrollbar-radius",
+    "cssVar": "--mx-tabdocs-scrollbar-radius",
+    "type": "dimension",
+    "ref": "radius.full",
+    "value": "9999px"
+  },
+  {
+    "name": "tabdocs.scrollbar-thumb-color",
+    "cssVar": "--mx-tabdocs-scrollbar-thumb-color",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "tabdocs.scrollbar-thumb-color-hover",
+    "cssVar": "--mx-tabdocs-scrollbar-thumb-color-hover",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "tabdocs.title-fg",
+    "cssVar": "--mx-tabdocs-title-fg",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "tabdocs.title-fg-active",
+    "cssVar": "--mx-tabdocs-title-fg-active",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "tabdocs.title-font-weight",
+    "cssVar": "--mx-tabdocs-title-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "tabdocs.count-font-size",
+    "cssVar": "--mx-tabdocs-count-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "tabdocs.count-font-weight",
+    "cssVar": "--mx-tabdocs-count-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
   },
   {
     "name": "tabdocs.list-width",

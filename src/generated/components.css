@@ -46,6 +46,7 @@
     --mx-switch-track-height-md: 1.25rem;
     --mx-switch-track-height-lg: 1.5rem;
     --mx-tabdocs-tab-title-max-width: 16rem;
+    --mx-tabdocs-tab-title-min-width: 2.5rem;
     --mx-tabdocs-dirty-size: 0.5rem;
     --mx-tabdocs-badge-dot-size: 0.5rem;
     --mx-tabdocs-list-width: 18rem;
@@ -539,6 +540,12 @@
     --mx-tabdocs-scroll-size: var(--mx-control-height-sm);
     --mx-tabdocs-scroll-radius: var(--mx-radius-sm);
     --mx-tabdocs-scroll-bg-hover: var(--mx-color-fill-subtle-secondary);
+    --mx-tabdocs-scrollbar-size: var(--mx-space-1);
+    --mx-tabdocs-scrollbar-radius: var(--mx-radius-full);
+    --mx-tabdocs-scrollbar-thumb-color: var(--mx-color-stroke-control-strong);
+    --mx-tabdocs-title-font-weight: var(--mx-font-weight-semibold);
+    --mx-tabdocs-count-font-size: var(--mx-font-size-caption);
+    --mx-tabdocs-count-font-weight: var(--mx-font-weight-semibold);
     --mx-tabdocs-list-note-font-size: var(--mx-font-size-caption);
     --mx-tabdocs-list-gap: var(--mx-space-1);
     --mx-tabdocs-drag-source-opacity: var(--mx-opacity-disabled);
@@ -1017,6 +1024,9 @@
     --mx-tabdocs-scroll-fg: var(--mx-color-fg-secondary);
     --mx-tabdocs-scroll-fg-hover: var(--mx-color-fg-primary);
     --mx-tabdocs-scroll-fg-disabled: var(--mx-color-fg-disabled);
+    --mx-tabdocs-scrollbar-thumb-color-hover: var(--mx-color-fg-secondary);
+    --mx-tabdocs-title-fg: var(--mx-color-fg-secondary);
+    --mx-tabdocs-title-fg-active: var(--mx-color-fg-primary);
     --mx-tabdocs-list-note-fg: var(--mx-color-fg-secondary);
     --mx-tabdocs-list-dirty-color: var(--mx-color-fg-primary);
     --mx-tabdocs-ghost-bg: var(--mx-color-bg-card);

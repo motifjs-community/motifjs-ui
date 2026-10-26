@@ -223,18 +223,20 @@ describe('TabDocumentManager: pinning', () => {
 });
 
 describe('TabDocumentManager: the strip', () => {
-  it('writes how tabs are sized, where pinned tabs go and whether they wrap', () => {
+  it('writes how tabs are sized, where pinned tabs go and whether they wrap', async () => {
     const m = manager({ tabSize: 'fixed', tabFixedWidth: 120, tabMinWidth: 60, pinnedTabSize: 'compact', pinnedTabsOnSeparateRow: true });
     const el = m.element;
     // The widths go on each group: the root's inline style is the app's.
     el.style.cssText = 'block-size: 20rem';
-    const group = m.groups[0].element.style;
-    expect([el.dataset.tabSize, el.dataset.pinnedSize, el.hasAttribute('data-pinned-row'), el.hasAttribute('data-wrap')]).toEqual(['fixed', 'compact', true, false]);
+    const g = m.groups[0].element;
+    const group = g.style;
+    expect([g.dataset.tabSize, el.dataset.pinnedSize, el.hasAttribute('data-pinned-row'), el.hasAttribute('data-wrap')]).toEqual(['fixed', 'compact', true, false]);
     expect([group.getPropertyValue('--_tab-fixed'), group.getPropertyValue('--_tab-min'), group.getPropertyValue('--_tab-max')]).toEqual(['120px', '60px', '']);
     m.wrapTabs = true;
     m.tabMaxWidth = 200;
     m.scrollButtons = false;
-    expect([el.hasAttribute('data-wrap'), group.getPropertyValue('--_tab-max'), el.hasAttribute('data-scroll-buttons')]).toEqual([true, '200px', false]);
+    await settle();
+    expect([el.hasAttribute('data-wrap'), group.getPropertyValue('--_tab-max'), g.hasAttribute('data-scroll-buttons')]).toEqual([true, '200px', false]);
     const made = m.split(m.groups[0], 'right')!.element.style;
     expect([made.getPropertyValue('--_tab-min'), made.getPropertyValue('--_tab-max'), made.getPropertyValue('--_min-width')]).toEqual(['60px', '200px', '160px']);
   });
