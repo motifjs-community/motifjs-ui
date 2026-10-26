@@ -1,7 +1,10 @@
 /* TabDocumentManager. Splits are flex boxes whose children grow by their share (written inline);
    a group's own size never comes from its content (`contain: size`), so the shares and the
    smallest sizes (`--_min-width`, `--_min-height`, written from the props) decide. The look binds
-   to the group's data-active / data-empty and the tab's aria-selected, data-dirty, data-close. */
+   to the group's data-active / data-empty and the tab's aria-selected, data-dirty, data-close,
+   data-pinned, data-preview, data-tone. How tabs are sized and laid out comes from the root's
+   data-tab-size, data-pinned-size, data-pinned-row, data-wrap and the widths `--_tab-min`,
+   `--_tab-max`, `--_tab-fixed` (written from the props). */
 @layer mx.components {
   .mx-tabdocs {
     position: relative;
@@ -54,7 +57,25 @@
     border-block-end: var(--mx-tabdocs-bar-border-width) solid var(--mx-tabdocs-bar-border-color);
   }
 
+  /* The tab list between its scroll buttons: pinned tabs first, then the others, which scroll. */
+  .mx-tabdocs__strip {
+    display: flex;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
   .mx-tabdocs__tabs {
+    display: flex;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  .mx-tabdocs__pinned {
+    display: flex;
+    flex: none;
+  }
+
+  .mx-tabdocs__row {
     display: flex;
     flex: 1 1 auto;
     min-inline-size: 0;
@@ -63,19 +84,91 @@
     scrollbar-width: thin;
   }
 
-  .mx-tabdocs__tabs[hidden] {
+  .mx-tabdocs[data-scroll-buttons] .mx-tabdocs__row {
+    scrollbar-width: none;
+  }
+
+  :is(.mx-tabdocs__tabs, .mx-tabdocs__pinned)[hidden] {
     display: none;
+  }
+
+  .mx-tabdocs[data-pinned-row] .mx-tabdocs__tabs {
+    flex-direction: column;
+  }
+
+  .mx-tabdocs[data-pinned-row] .mx-tabdocs__pinned {
+    flex-wrap: wrap;
+    border-block-end: var(--mx-tabdocs-pinned-row-border-width) solid var(--mx-tabdocs-pinned-row-border-color);
+  }
+
+  .mx-tabdocs[data-wrap] .mx-tabdocs__row {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .mx-tabdocs[data-wrap]:not([data-pinned-row]) .mx-tabdocs__tabs {
+    flex-wrap: wrap;
+  }
+
+  .mx-tabdocs[data-wrap]:not([data-pinned-row]) :is(.mx-tabdocs__pinned, .mx-tabdocs__row) {
+    display: contents;
+  }
+
+  .mx-tabdocs__scroll {
+    display: none;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    min-inline-size: var(--mx-tabdocs-scroll-size);
+    min-block-size: var(--mx-tabdocs-scroll-size);
+    color: var(--mx-tabdocs-scroll-fg);
+    border-radius: var(--mx-tabdocs-scroll-radius);
+    cursor: default;
+    user-select: none;
+  }
+
+  .mx-tabdocs[data-scroll-buttons]:not([data-wrap]) .mx-tabdocs__strip[data-overflow] .mx-tabdocs__scroll {
+    display: flex;
+  }
+
+  .mx-tabdocs__scroll:hover:not([data-end]) {
+    color: var(--mx-tabdocs-scroll-fg-hover);
+    background: var(--mx-tabdocs-scroll-bg-hover);
+  }
+
+  .mx-tabdocs__scroll[data-end] {
+    color: var(--mx-tabdocs-scroll-fg-disabled);
+  }
+
+  /* The glyph is a down arrow: turned to point along the strip. */
+  .mx-tabdocs__scroll[data-direction='back'] > svg {
+    rotate: 90deg;
+  }
+
+  .mx-tabdocs__scroll[data-direction='forward'] > svg {
+    rotate: -90deg;
+  }
+
+  .mx-tabdocs__scroll[data-direction='back']:dir(rtl) > svg {
+    rotate: -90deg;
+  }
+
+  .mx-tabdocs__scroll[data-direction='forward']:dir(rtl) > svg {
+    rotate: 90deg;
   }
 
   .mx-tabdocs__bar > .mx-tabdocs__actions {
     flex: none;
+    align-self: flex-start;
+    block-size: var(--mx-tabdocs-tab-height);
     min-block-size: 0;
     padding-block: 0;
     padding-inline: var(--mx-tabdocs-actions-padding);
     background: transparent;
   }
 
-  .mx-tabdocs__bar > .mx-tabdocs__actions[hidden] {
+  .mx-tabdocs__bar > .mx-tabdocs__actions:is([hidden], :empty) {
     display: none;
   }
 
@@ -141,11 +234,101 @@
     background: var(--mx-tabdocs-indicator-color);
   }
 
+  /* Sizes: as wide as the text (fit), shrinking down to the smallest width, or all one width. */
+  .mx-tabdocs__row > .mx-tabdocs__tab {
+    max-inline-size: var(--_tab-max, none);
+  }
+
+  .mx-tabdocs[data-tab-size='shrink'] .mx-tabdocs__row > .mx-tabdocs__tab {
+    flex: 0 1 auto;
+    min-inline-size: var(--_tab-min);
+  }
+
+  .mx-tabdocs[data-tab-size='fixed'] .mx-tabdocs__row > .mx-tabdocs__tab {
+    flex: 0 1 var(--_tab-fixed);
+    min-inline-size: var(--_tab-min);
+    max-inline-size: none;
+  }
+
+  .mx-tabdocs[data-tab-size='fixed'] .mx-tabdocs__row > .mx-tabdocs__tab > .mx-tabdocs__title {
+    flex: 1 1 auto;
+  }
+
+  .mx-tabdocs[data-pinned-size='shrink'] .mx-tabdocs__tab[data-pinned] {
+    max-inline-size: var(--_tab-min);
+  }
+
   .mx-tabdocs__title {
     min-inline-size: 0;
     max-inline-size: var(--mx-tabdocs-tab-title-max-width);
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .mx-tabdocs__tab[data-preview] .mx-tabdocs__title {
+    font-style: italic;
+  }
+
+  .mx-tabdocs__tab[data-tone='warning'] .mx-tabdocs__title {
+    color: var(--mx-tabdocs-tone-warning-fg);
+  }
+
+  .mx-tabdocs__tab[data-tone='danger'] .mx-tabdocs__title {
+    color: var(--mx-tabdocs-tone-danger-fg);
+  }
+
+  .mx-tabdocs__tab[data-tone='success'] .mx-tabdocs__title {
+    color: var(--mx-tabdocs-tone-success-fg);
+  }
+
+  .mx-tabdocs__tab[data-tone='accent'] .mx-tabdocs__title {
+    color: var(--mx-tabdocs-tone-accent-fg);
+  }
+
+  /* A compact pinned tab shows its icon, or its first letter; the title stays for screen readers. */
+  .mx-tabdocs__letter {
+    display: none;
+    font-weight: var(--mx-tabdocs-letter-font-weight);
+  }
+
+  .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__tab[data-pinned]:not([data-icon]) .mx-tabdocs__letter {
+    display: inline;
+  }
+
+  .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__tab[data-pinned] :is(.mx-tabdocs__title, .mx-tabdocs__description) {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__tab[data-pinned] :is(.mx-tabdocs__badge, .mx-tabdocs__pin),
+  .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__tab[data-pinned]:not([data-dirty]) .mx-tabdocs__close {
+    display: none;
+  }
+
+  /* The pin mark of a pinned tab: it unpins. */
+  .mx-tabdocs__pin {
+    display: none;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--mx-tabdocs-pin-size);
+    block-size: var(--mx-tabdocs-pin-size);
+    color: var(--mx-tabdocs-pin-fg);
+    border-radius: var(--mx-tabdocs-pin-radius);
+  }
+
+  .mx-tabdocs__tab[data-pinned] .mx-tabdocs__pin {
+    display: inline-flex;
+  }
+
+  .mx-tabdocs__pin:hover {
+    color: var(--mx-tabdocs-pin-fg-hover);
+    background: var(--mx-tabdocs-pin-bg-hover);
   }
 
   .mx-tabdocs__description {
@@ -182,6 +365,50 @@
     color: var(--mx-tabdocs-badge-fg);
     background: var(--mx-tabdocs-badge-bg);
     border-radius: var(--mx-tabdocs-badge-radius);
+  }
+
+  .mx-tabdocs__badge[data-dot] {
+    min-inline-size: 0;
+    inline-size: var(--mx-tabdocs-badge-dot-size);
+    block-size: var(--mx-tabdocs-badge-dot-size);
+    padding: 0;
+    background: var(--mx-tabdocs-badge-dot-color);
+  }
+
+  .mx-tabdocs__tab[data-tone='warning'] .mx-tabdocs__badge {
+    color: var(--mx-tabdocs-tone-warning-fg);
+    background: var(--mx-tabdocs-tone-warning-badge-bg);
+  }
+
+  .mx-tabdocs__tab[data-tone='danger'] .mx-tabdocs__badge {
+    color: var(--mx-tabdocs-tone-danger-fg);
+    background: var(--mx-tabdocs-tone-danger-badge-bg);
+  }
+
+  .mx-tabdocs__tab[data-tone='success'] .mx-tabdocs__badge {
+    color: var(--mx-tabdocs-tone-success-fg);
+    background: var(--mx-tabdocs-tone-success-badge-bg);
+  }
+
+  .mx-tabdocs__tab[data-tone='accent'] .mx-tabdocs__badge {
+    color: var(--mx-tabdocs-tone-accent-fg);
+    background: var(--mx-tabdocs-tone-accent-badge-bg);
+  }
+
+  .mx-tabdocs__tab[data-tone='warning'] .mx-tabdocs__badge[data-dot] {
+    background: var(--mx-tabdocs-tone-warning-fg);
+  }
+
+  .mx-tabdocs__tab[data-tone='danger'] .mx-tabdocs__badge[data-dot] {
+    background: var(--mx-tabdocs-tone-danger-fg);
+  }
+
+  .mx-tabdocs__tab[data-tone='success'] .mx-tabdocs__badge[data-dot] {
+    background: var(--mx-tabdocs-tone-success-fg);
+  }
+
+  .mx-tabdocs__tab[data-tone='accent'] .mx-tabdocs__badge[data-dot] {
+    background: var(--mx-tabdocs-tone-accent-fg);
   }
 
   /* The close button, or the dot of unsaved changes in its place (the button again under the pointer). */
@@ -343,13 +570,34 @@
     display: contents;
   }
 
+  /* The lists of documents (the "…" button, the recently used list). */
+  .mx-tabdocs__popup {
+    min-inline-size: var(--mx-tabdocs-list-width);
+  }
+
+  .mx-tabdocs__list-note {
+    font-size: var(--mx-tabdocs-list-note-font-size);
+    color: var(--mx-tabdocs-list-note-fg);
+  }
+
+  .mx-tabdocs__list-dirty {
+    display: inline-block;
+    inline-size: var(--mx-tabdocs-list-dirty-size);
+    block-size: var(--mx-tabdocs-list-dirty-size);
+    margin-inline-start: var(--mx-tabdocs-list-gap);
+    background: var(--mx-tabdocs-list-dirty-color);
+    border-radius: var(--mx-tabdocs-dirty-radius);
+  }
+
   @media (forced-colors: active) {
     .mx-tabdocs__group[data-active] .mx-tabdocs__tab[aria-selected='true']::after {
       background: Highlight;
     }
 
     .mx-tabdocs__tab[aria-selected='true']::after,
-    .mx-tabdocs__dirty {
+    .mx-tabdocs__dirty,
+    .mx-tabdocs__list-dirty,
+    .mx-tabdocs__badge[data-dot] {
       background: CanvasText;
     }
 

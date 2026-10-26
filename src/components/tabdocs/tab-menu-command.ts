@@ -1,0 +1,22 @@
+/** The built-in items of the tab and strip context menus; each one is in `menuItems` and in the items' `data`. */
+export type TabMenuCommand =
+  | 'close'
+  | 'closeOthers'
+  | 'closeRight'
+  | 'closeLeft'
+  | 'closeSaved'
+  | 'closeAll'
+  | 'keepOpen'
+  | 'pin'
+  | 'unpin'
+  | 'splitUp'
+  | 'splitDown'
+  | 'splitLeft'
+  | 'splitRight'
+  | 'moveNext'
+  | 'movePrevious'
+  | 'copyTitle'
+  | 'newDocument'
+  | 'reopenClosed'
+  | 'lock'
+  | 'unlock';

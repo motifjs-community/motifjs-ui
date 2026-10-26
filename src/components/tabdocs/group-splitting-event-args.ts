@@ -10,6 +10,8 @@ export interface GroupSplittingEventArgs extends EventArgs {
   direction: SplitDirection;
   /** The document that goes into the new group, if any. */
   document: TabDocument | null;
+  /** The document is copied into the new group (`splitCopies`), not moved. */
+  copy: boolean;
   byUser: boolean;
   source: TabDocumentManager;
 }

@@ -220,13 +220,12 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     }
     for (const [item, old] of parts.made) if (made.get(item) !== old) this.controls.remove(old.control);
     parts.made = made;
-    // The items come first, in their order, before the JSX children.
-    let before: ChildNode | null = this.element.firstChild;
+    // The items come first, in their order, before the JSX children. Core places them (a hidden
+    // one as its placeholder), and only once the toolbar is built.
     let index = 0;
     for (const { control } of made.values()) {
       if (!this.controls.items.includes(control)) this.controls.add(index, control);
-      if (control.element !== before) this.element.insertBefore(control.element, before);
-      before = control.element.nextSibling;
+      else if (this.controls.items.indexOf(control) !== index) this.controls.moveToIndex(control, index);
       index++;
     }
     this.queueRefresh();
@@ -235,7 +234,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
 
   private make(item: ToolbarItem, type: ToolbarItemType): Control {
     if (type === 'separator') return new ToolbarSeparator({ visible: item.visible });
-    const props: ButtonProps = { text: item.text, icon: item.icon, hint: item.hint, enabled: item.enabled, visible: item.visible };
+    const props: ButtonProps = { text: item.text, icon: item.icon, hint: item.hint, tone: item.tone, enabled: item.enabled, visible: item.visible };
     if (type === 'toggle') {
       props.toggle = true;
       props.pressed = item.pressed;

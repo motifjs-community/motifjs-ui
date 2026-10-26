@@ -100,3 +100,9 @@ export const columnsMark = (): SVGSVGElement => glyph('M2.5 3.5h11v9h-11zM6.25 3
 
 /** Look for something. */
 export const searchMark = (): SVGSVGElement => glyph('M7 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM10 10l3.5 3.5');
+
+/** A pushpin: a tab kept at the start. */
+export const pinMark = (): SVGSVGElement => glyph('M6 2.5h4M7 2.5v4l-2.5 2.5h7l-2.5-2.5v-4M8 9v4.5');
+
+/** A padlock: closed to new things. */
+export const lockMark = (): SVGSVGElement => glyph('M4 7.5h8v6h-8zM5.75 7.5v-2a2.25 2.25 0 0 1 4.5 0v2');

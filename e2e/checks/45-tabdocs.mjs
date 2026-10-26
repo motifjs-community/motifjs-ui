@@ -40,14 +40,14 @@ export default async function ({ page, base, check, axeSource, box }) {
 
   // Keys.
   await docs.getByRole('tab', { name: 'Page 2' }).click();
-  await page.keyboard.press('Control+2');
-  check('Ctrl+2 focuses the second group', await groups.nth(1).evaluate((g) => g.contains(document.activeElement)));
-  await page.keyboard.press('Control+1');
-  check('Ctrl+1 goes back to the first, where focus was', await docs.getByRole('tab', { name: 'Page 2' }).evaluate((t) => document.activeElement === t));
+  await page.keyboard.press('Control+Alt+2');
+  check('Ctrl+Alt+2 focuses the second group', await groups.nth(1).evaluate((g) => g.contains(document.activeElement)));
+  await page.keyboard.press('Control+Alt+1');
+  check('Ctrl+Alt+1 goes back to the first, where focus was', await docs.getByRole('tab', { name: 'Page 2' }).evaluate((t) => document.activeElement === t));
   await code.getByRole('button', { name: 'Open', exact: true }).click();
   await docs.getByRole('tab', { name: 'Page 4' }).click();
-  await page.keyboard.press('Control+PageDown');
-  check('Ctrl+PageDown goes round to the first tab', JSON.stringify(await selected(groups.nth(0))) === '["Page 2"]');
+  await page.keyboard.press('Alt+PageDown');
+  check('Alt+PageDown goes round to the first tab', JSON.stringify(await selected(groups.nth(0))) === '["Page 2"]');
   await page.keyboard.press('ArrowRight');
   check('Right moves along the strip and activates', JSON.stringify(await selected(groups.nth(0))) === '["Page 4"]' && (await docs.getByRole('tab', { name: 'Page 4' }).evaluate((t) => document.activeElement === t)));
   await page.keyboard.press('Control+\\');
@@ -78,11 +78,13 @@ export default async function ({ page, base, check, axeSource, box }) {
   const after = await box(ovGroup);
   check('dragging the splitter resizes the groups', Math.abs(before.width - after.width - 60) <= 2, `${before.width} → ${after.width}`);
   check('a grid in a tab fills its panel', (await box(overview.locator('.mx-data-grid'))).height > 300);
-  const strip = overview.locator('[role="tablist"]').first();
+  const strip = overview.locator('.mx-tabdocs__row').first();
+  await page.waitForTimeout(100); // the strip follows its new size on the next frame
   const fits = await strip.evaluate((list) => {
     const room = list.getBoundingClientRect();
     const tab = list.querySelector('[aria-selected="true"]').getBoundingClientRect();
-    return { overflow: list.scrollWidth > list.clientWidth, inSight: tab.left >= room.left - 1 && tab.right <= room.right + 1 };
+    // A tab wider than the room shows its start.
+    return { overflow: list.scrollWidth > list.clientWidth, inSight: tab.left >= room.left - 1 && (tab.right <= room.right + 1 || tab.width > room.width) };
   });
   check('tabs that do not fit scroll, the active one in sight', fits.overflow && fits.inSight, JSON.stringify(fits));
   await overview.getByRole('tab', { name: 'Orders' }).hover();

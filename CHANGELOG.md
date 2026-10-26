@@ -814,3 +814,53 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Docs: a TabDocumentManager group with an overview page (documents and splits with a form, a grid
   and text; live options; a panel driving the API with an event log; unsaved changes asked with
   `confirm`; saving and restoring the layout); `e2e/checks/45-tabdocs.mjs`.
+- Milestone 2, the tabs at an editor's level. Preview tabs: `open(doc, { preview: true })` opens a tab
+  in italics that the next preview in the group replaces; it stays after a double click, unsaved
+  changes, `keep(doc)`, the menu or a move (`onKeeping` / `onKept`, `previewTabs` turns it off).
+- Pinned tabs: `pin(doc)` / `unpin(doc)` (`onPinning`, `onPinned`, `onUnpinning`, `onUnpinned`), first
+  in pin order and never moved past the others, a pin mark that unpins, no close button unless
+  `closeButtonOnPinned`, `pinnedTabSize` (`normal`, `compact`: the icon or first letter, `shrink`),
+  `pinnedTabsOnSeparateRow`; close all, others, to the right or left and close saved leave them
+  (`keepPinned`); saved and restored.
+- Sizes and overflow: `tabSize` (`fit`, `shrink`, `fixed`) with `tabMinWidth`, `tabMaxWidth`,
+  `tabFixedWidth`; `wrapTabs`; scroll buttons (`scrollButtons`) and the wheel. A tab wider than the
+  strip shows its start; the active tab stays in sight when a late font changes its width.
+- The look: `badge` may be `true` (a dot), `tone` (`warning`, `danger`, `success`, `accent`) colours the
+  title and the badge, the description shows as `showDescription` says (`duplicates` by default: only
+  when two open documents share a title).
+- Menus and lists: a context menu on every tab and on the empty strip (the kit `ContextMenu`;
+  close, close others, to the right, to the left, saved, all, copy the title, keep open, pin or
+  unpin, split up, down, left or right, move to the next or previous group; new document, reopen
+  closed, lock; `contextMenu`, `menuItems`, `onContextMenuOpening`). The group toolbar's "…" button
+  opens a searchable list of the group's (or every group's, `openListScope`) documents with close
+  all, close saved and lock under it (`Popup`, `ListBox`, `MenuList`; `showOpenList`). The app's own
+  buttons: `toolbarItems` per group, a document's `actions` while it is active, with icons and tones.
+  `newDocument` makes a document for a double click on the empty strip (`openNew`).
+- Recently used, history, reopening: `showRecentList` (Ctrl+E in a browser tab, Ctrl+Tab installed;
+  again to walk, Shift back, letting go of Ctrl opens; arrows, Enter and Escape alone work too;
+  `recentListScope`), `goBack` / `goForward` over the documents activated in every group
+  (`canGoBack`, `canGoForward`, `historySize`), `reopenClosed` (`closedDocuments`,
+  `closedHistorySize`), `recentDocuments`, `moveToGroup`, `copyTitle`, `closeOthers`, `closeToRight`,
+  `closeToLeft`, `closeSaved`.
+- Locked groups: `lock(group)` / `unlock(group)` (`onLocking`, `onLocked`, `onUnlocking`, `onUnlocked`,
+  `group.lock()`), `open` without a group goes elsewhere (a new group when all are locked, the only
+  group still takes it), an "Unlock group" mark in the toolbar, “Group 1, locked” for screen readers.
+- One document in two groups: `allowDuplicate` (a document's own wins) opens a copy with content of
+  its own (`clone`, a `content` function or the `factory`) that shares the title, the unsaved changes
+  and the state (`original`, `onClosing`'s `lastCopy`); splitting copies it (`splitCopies`, the split
+  events' `copy`), or moves it as before. A layout saved with a copy brings it back as one.
+- Keys: a browser tab never gets Ctrl+W, Ctrl+Tab, Ctrl+Shift+T, Ctrl+Page Up / Down and often
+  Ctrl+1…9, so the default keys are ones it does get, chosen as the editor's web version does (Ctrl+Alt
+  for a Ctrl the browser keeps), the desktop key kept beside them: `TabDocumentManager.browserKeys` and
+  `TabDocumentManager.desktopKeys` (replacing `defaultKeys`), `keyPreset` (`auto` takes the desktop
+  keys in an installed app). New keys: `closeAllTabs`, `closeSavedTabs`, `recentNext`,
+  `recentPrevious`, `goBack`, `goForward`, `reopenClosed`, `keepOpen`, `togglePin`, `showOpenList`.
+  Polite announcements for pinned, unpinned, kept, locked and unlocked; new `tabDocs…` texts (en, tr).
+- Focus stays where it was when a group's element moves in a browser without `moveBefore`.
+- Kit: `addShortcut` takes two chords in a row (`'Ctrl+K W'`); a Ctrl+Alt chord leaves a key that AltGr
+  typed a character with (`{` on a German keyboard). `Toolbar` places the controls of its items
+  through `controls.moveToIndex`: an item hidden (`visible: false`) before the toolbar was built
+  showed, at the front. `ToolbarItem.tone`. Glyphs `pinMark`, `lockMark`.
+- Docs: two more pages, Tabs (preview, pinned tabs, sizes, badges and tones, copies) and Menus and
+  keys (context menus, the list, toolbar buttons, recently used, locked groups, the key table);
+  `e2e/checks/46-tabdocs-tabs.mjs`; 45 presses the browser keys.

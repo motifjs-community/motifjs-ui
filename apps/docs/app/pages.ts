@@ -84,7 +84,9 @@ export const GROUPS = [
     title: 'TabDocumentManager',
     section: 'Components',
     pages: [
-      { id: 'tabdocs', label: 'Overview', title: 'TabDocumentManager', path: '/tabdocs', related: ['tabs', 'layout', 'window'] },
+      { id: 'tabdocs', label: 'Overview', title: 'TabDocumentManager', path: '/tabdocs', related: ['tabdocs-tabs', 'tabdocs-menus', 'tabs'] },
+      { id: 'tabdocs-tabs', label: 'Tabs', title: 'TabDocumentManager: Tabs', path: '/tabdocs/tabs', related: ['tabdocs', 'tabdocs-menus', 'tabs'] },
+      { id: 'tabdocs-menus', label: 'Menus and keys', title: 'TabDocumentManager: Menus and keys', path: '/tabdocs/menus', related: ['tabdocs', 'tabdocs-tabs', 'menus'] },
     ],
   },
   {

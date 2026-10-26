@@ -309,4 +309,24 @@ describe('Toolbar', () => {
     expect(faces(t).map((f) => f.textContent)).toEqual(['Z', 'A']);
     expect(t.controlOf(a)).toBe(t.controlOf(s.items[1]));
   });
+
+  it('keeps an item hidden from the start out of sight, made with new and added later, in its place when shown', async () => {
+    const s = reactive({ shown: false });
+    const t = new Toolbar({ items: [{ text: 'A' }, { text: 'B', visible: () => s.shown }, { text: 'C' }] });
+    await settle();
+    page(t);
+    await settle();
+    expect(faces(t).map((f) => f.textContent)).toEqual(['A', 'C']);
+    s.shown = true;
+    await settle();
+    expect(faces(t).map((f) => f.textContent)).toEqual(['A', 'B', 'C']);
+    s.shown = false;
+    await settle();
+    expect(faces(t).map((f) => f.textContent)).toEqual(['A', 'C']);
+
+    const built = new Toolbar({ items: [{ text: 'X', visible: false }, { text: 'Y' }] });
+    page(built);
+    await settle();
+    expect(faces(built).map((f) => f.textContent)).toEqual(['Y']);
+  });
 });

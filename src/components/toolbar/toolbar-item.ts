@@ -1,5 +1,6 @@
 import type { Bind } from '@motifx/core';
 import type { IconSource } from '../../core/icon-source';
+import type { ButtonTone } from '../button/button-tone';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import type { ToolbarItemClickEventArgs } from './toolbar-item-click-event-args';
 import type { ToolbarItemOverflow } from './toolbar-item-overflow';
@@ -17,6 +18,8 @@ export interface ToolbarItem {
   icon?: Bind<IconSource | null | undefined>;
   /** A tooltip; the name of a button that only has an icon. */
   hint?: Bind<string>;
+  /** The colour of the button, by what it does. Default `'standard'`. */
+  tone?: Bind<ButtonTone>;
   /** A toggle's state. Given as a function, the item follows it: `click` changes what it reads. */
   pressed?: Bind<boolean>;
   /** `false` dims the item; it cannot be pressed. Default `true`. */

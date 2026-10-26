@@ -133,7 +133,7 @@ describe('TabDocumentManager: documents', () => {
 
   it('shows title, description, icon, badge, dirty dot and close button, all followed', async () => {
     const s = reactive({ dirty: false, title: 'Report' });
-    const m = manager();
+    const m = manager({ showDescription: 'always' });
     const d = m.open(doc('R', { title: () => s.title, description: 'src/a', icon: '/i.svg', badge: 3, dirty: () => s.dirty }))!;
     const h = headers(m)[0];
     expect(h.querySelector('.mx-tabdocs__title')!.textContent).toBe('Report');
@@ -659,7 +659,8 @@ describe('TabDocumentManager: keys', () => {
     press('x', { altKey: true });
     await settle();
     expect(titles(m)).toEqual([]);
-    expect(TabDocumentManager.defaultKeys.closeTab).toEqual(['Ctrl+W']);
+    expect(TabDocumentManager.desktopKeys.closeTab).toEqual(['Ctrl+W', 'Ctrl+F4']);
+    expect(TabDocumentManager.browserKeys.closeTab).toEqual(['Ctrl+Alt+W', 'Ctrl+W']);
   });
 
   it('keys do nothing outside the manager', () => {

@@ -1,13 +1,36 @@
 import { createSignal, read, type Bind, type ComponentBase, type Signal } from '@motifx/core';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
+import type { ToolbarItem } from '../toolbar/toolbar-item';
 import type { ContentLifetime } from './content-lifetime';
+import type { TabContentClone } from './tab-content-clone';
 import type { TabDocumentContent } from './tab-document-content';
 import type { TabDocumentOptions } from './tab-document-options';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
+import type { TabTone } from './tab-tone';
 
-const FIELDS = ['title', 'description', 'icon', 'tooltip', 'badge', 'dirty', 'pinned', 'preview', 'closable', 'contentLifetime', 'state'] as const;
+const FIELDS = [
+  'title',
+  'description',
+  'icon',
+  'tooltip',
+  'badge',
+  'tone',
+  'dirty',
+  'pinned',
+  'preview',
+  'closable',
+  'contentLifetime',
+  'allowDuplicate',
+  'actions',
+  'state',
+] as const;
+
+/** What a copy has of its own; it shares the rest with the document it was copied from. */
+const OWN_IN_COPY = new Set<string>(['pinned', 'preview', 'contentLifetime']);
+
+const NO_ACTIONS: readonly ToolbarItem[] = [];
 
 /**
  * A document of a `TabDocumentManager`: a tab and its content, which can be any component. Every
@@ -23,13 +46,18 @@ export class TabDocument {
   readonly type: string;
   /** What `contentComponent` is made from. */
   content: TabDocumentContent | null;
+  /** Makes the content of a copy in another group. */
+  clone: TabContentClone | null;
   private readonly values = new Map<string, Signal<unknown>>();
   private readonly where = createSignal<{ manager: TabDocumentManager; group: TabGroup } | null>(null);
+  private readonly from: TabDocument | null;
 
-  constructor(options: TabDocumentOptions = {}) {
+  constructor(options: TabDocumentOptions = {}, from: TabDocument | null = null) {
     this.id = options.id ?? nextId('doc');
     this.type = options.type ?? '';
     this.content = options.content ?? null;
+    this.clone = options.clone ?? null;
+    this.from = from;
     for (const name of FIELDS) if (options[name] !== undefined) this.slot(name).value = options[name];
   }
 
@@ -57,11 +85,18 @@ export class TabDocument {
   set tooltip(value: Bind<string>) {
     this.slot('tooltip').value = value;
   }
-  get badge(): string | number | null {
-    return this.get<string | number | null>('badge') ?? null;
+  /** A text, a number, or `true` for a dot. */
+  get badge(): string | number | boolean | null {
+    return this.get<string | number | boolean | null>('badge') ?? null;
   }
-  set badge(value: Bind<string | number | null | undefined>) {
+  set badge(value: Bind<string | number | boolean | null | undefined>) {
     this.slot('badge').value = value;
+  }
+  get tone(): TabTone | null {
+    return this.get<TabTone | null>('tone') ?? null;
+  }
+  set tone(value: Bind<TabTone | null | undefined>) {
+    this.slot('tone').value = value;
   }
   get dirty(): boolean {
     return !!this.get<boolean>('dirty');
@@ -69,12 +104,14 @@ export class TabDocument {
   set dirty(value: Bind<boolean>) {
     this.slot('dirty').value = value;
   }
+  /** Set it through the manager's `pin` and `unpin` to be asked and told. */
   get pinned(): boolean {
     return !!this.get<boolean>('pinned');
   }
   set pinned(value: Bind<boolean>) {
     this.slot('pinned').value = value;
   }
+  /** Set it to `false` through the manager's `keep` to be asked and told. */
   get preview(): boolean {
     return !!this.get<boolean>('preview');
   }
@@ -94,6 +131,19 @@ export class TabDocument {
   set contentLifetime(value: Bind<ContentLifetime | undefined>) {
     this.slot('contentLifetime').value = value;
   }
+  /** The document's own setting; `undefined` follows the manager. */
+  get allowDuplicate(): boolean | undefined {
+    return this.get<boolean>('allowDuplicate') ?? undefined;
+  }
+  set allowDuplicate(value: Bind<boolean | undefined>) {
+    this.slot('allowDuplicate').value = value;
+  }
+  get actions(): readonly ToolbarItem[] {
+    return this.get<readonly ToolbarItem[]>('actions') ?? NO_ACTIONS;
+  }
+  set actions(value: Bind<readonly ToolbarItem[]>) {
+    this.slot('actions').value = value;
+  }
   get state(): unknown {
     return this.get<unknown>('state');
   }
@@ -101,6 +151,10 @@ export class TabDocument {
     this.slot('state').value = value;
   }
 
+  /** The document this one is a copy of (open in another group), `null` for the document itself. */
+  get original(): TabDocument | null {
+    return this.from;
+  }
   /** The manager it is open in. Reactive. */
   get manager(): TabDocumentManager | null {
     return this.where.value?.manager ?? null;
@@ -130,6 +184,22 @@ export class TabDocument {
   /** Closes it as its close button does: `onClosing` may keep it. */
   close(): Promise<boolean> {
     return this.manager?.close(this) ?? Promise.resolve(false);
+  }
+
+  /** Whether a copy of it can get content of its own: from `clone`, from `content` given as a function, or from the manager's factory. */
+  canCopy(factory: boolean): boolean {
+    const root = this.from ?? this;
+    return !!root.clone || typeof root.content === 'function' || (!root.content && factory);
+  }
+
+  /** @internal A copy for another group: the same id and type, sharing every field but `pinned`, `preview` and `contentLifetime`. */
+  makeCopy(): TabDocument {
+    const root = this.from ?? this;
+    const clone = root.clone;
+    const content = clone ? (copy: TabDocument) => clone(copy) : typeof root.content === 'function' ? root.content : null;
+    const copy = new TabDocument({ id: root.id, type: root.type, content: content ?? undefined }, root);
+    for (const name of FIELDS) if (!OWN_IN_COPY.has(name)) copy.values.set(name, root.slot(name));
+    return copy;
   }
 
   /** @internal Where the manager put it. */

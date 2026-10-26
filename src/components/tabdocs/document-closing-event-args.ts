@@ -12,6 +12,8 @@ export interface DocumentClosingEventArgs extends EventArgs {
   group: TabGroup;
   index: number;
   byUser: boolean;
+  /** No other copy of the document stays open (see `allowDuplicate`): ask about unsaved changes only then. */
+  lastCopy: boolean;
   promise?: Promise<boolean>;
   source: TabDocumentManager;
 }

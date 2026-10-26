@@ -36,6 +36,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   tagbox: () => import('../pages/tagbox/TagBoxPage'),
   filterbuilder: () => import('../pages/filterbuilder/FilterBuilderPage'),
   tabdocs: () => import('../pages/tabdocs/TabDocsPage'),
+  'tabdocs-tabs': () => import('../pages/tabdocs/TabDocsTabsPage'),
+  'tabdocs-menus': () => import('../pages/tabdocs/TabDocsMenusPage'),
   datagrid: () => import('../pages/datagrid/DataGridPage'),
   'datagrid-editing': () => import('../pages/datagrid/DataGridEditingPage'),
   'datagrid-forms': () => import('../pages/datagrid/DataGridFormsPage'),

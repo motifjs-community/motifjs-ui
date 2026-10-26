@@ -8,6 +8,8 @@ export interface GroupSplitEventArgs {
   newGroup: TabGroup;
   direction: SplitDirection;
   document: TabDocument | null;
+  /** The copy of `document` opened in the new group, when it was copied. */
+  copy: TabDocument | null;
   byUser: boolean;
   source: TabDocumentManager;
 }

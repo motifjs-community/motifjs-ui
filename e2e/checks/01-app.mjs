@@ -44,7 +44,8 @@ export default async function ({ page, base, check }) {
   await toggleCard.getByRole('button', { name: 'Show code' }).click();
   check('…and Show code opens it', (await toggleCard.locator('pre').isVisible()) && (await toggleCard.getByRole('button', { name: 'Hide code' }).count()) === 1);
   await page.locator('.docs-filter input').fill('key');
-  check('the filter keeps the matching pages', (await page.locator('.docs-sidebar li:visible').allTextContents()).join() === 'Keyboard and focus');
+  const keyPages = await page.locator('.docs-sidebar li:visible').allTextContents();
+  check('the filter keeps the matching pages', keyPages.includes('Keyboard and focus') && keyPages.every((t) => /key/i.test(t)), keyPages.join());
   await page.locator('.docs-filter input').fill('grid');
   const gridPages = await page.locator('.docs-sidebar li:visible').allTextContents();
   check('…and finds pages by their group and title too', gridPages.includes('Overview') && gridPages.includes('Editing') && gridPages.includes('API reference'), gridPages.join());

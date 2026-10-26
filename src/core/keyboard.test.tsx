@@ -3,7 +3,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../tests/helpers';
 import { TestButton, TestWindow } from '../../tests/controls';
 import { Control } from './control';
-import { addShortcut, parseChord } from './keyboard';
+import { addShortcut, parseChord, parseShortcut } from './keyboard';
 import { parseAccessKey } from './access-key';
 
 beforeAll(() => {
@@ -148,6 +148,40 @@ describe('addShortcut', () => {
     host.element.append(panel.element); // even if the element were still around
     press('j', { ctrlKey: true });
     expect(hits).toBe(1);
+  });
+
+  it('runs two chords in a row, in a text field too, and takes the key that ends nothing', async () => {
+    const calls: string[] = [];
+    removers.push(addShortcut('Ctrl+K W', () => void calls.push('close all')));
+    removers.push(addShortcut('Ctrl+K Ctrl+P', () => void calls.push('list')));
+    removers.push(addShortcut('Ctrl+K Shift+Enter', () => void calls.push('pin')));
+    expect(parseShortcut('Ctrl + S')).toHaveLength(1);
+    expect(parseShortcut('Ctrl+K Ctrl+W')).toHaveLength(2);
+    page(<input name="field" />);
+    document.querySelector<HTMLInputElement>('[name=field]')!.focus();
+    expect(press('k', { ctrlKey: true })).toBe(true);
+    expect(press('Control', { ctrlKey: true })).toBe(false); // a modifier alone keeps it waiting
+    expect(press('w')).toBe(true);
+    press('k', { ctrlKey: true });
+    press('p', { ctrlKey: true });
+    press('k', { ctrlKey: true });
+    press('Enter', { shiftKey: true });
+    expect(calls).toEqual(['close all', 'list', 'pin']);
+    press('k', { ctrlKey: true });
+    expect(press('x')).toBe(true);
+    expect(press('w')).toBe(false); // a plain key alone starts nothing in a text field
+    expect(calls).toHaveLength(3);
+  });
+
+  it('leaves a Ctrl+Alt chord alone when AltGr typed a character with it', () => {
+    let hits = 0;
+    removers.push(addShortcut('Ctrl+Alt+7', () => void hits++));
+    removers.push(addShortcut('Ctrl+Alt+W', () => void hits++));
+    press('7', { ctrlKey: true, altKey: true, code: 'Digit7' });
+    press('{', { ctrlKey: true, altKey: true, code: 'Digit7' });
+    press('w', { ctrlKey: true, altKey: true, code: 'KeyW' });
+    press('ц', { ctrlKey: true, altKey: true, code: 'KeyW' });
+    expect(hits).toBe(3);
   });
 });
 

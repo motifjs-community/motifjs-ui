@@ -14,6 +14,8 @@ import { windowStack } from './window-stack';
 //   1. shortcuts: the most specific scope that holds focus first, app-wide last;
 //   2. access keys (Alt + letter; Control + Option + letter on Apple
 //      platforms) of the active window, else of the page.
+// A shortcut may be two chords in a row (`Ctrl+K W`): the first one waits for
+// the second, and the key after it is taken either way.
 
 /** What `addShortcut` takes besides the chord and the handler. */
 export interface ShortcutOptions {
@@ -43,7 +45,8 @@ interface Chord {
 }
 
 interface Registration {
-  chord: Chord;
+  /** One chord, or the chords pressed one after the other. */
+  chords: Chord[];
   handler: ShortcutHandler;
   scope: ComponentBase | null;
   inEditable: boolean;
@@ -51,6 +54,8 @@ interface Registration {
 
 const registrations = new Set<Registration>();
 let installed = false;
+/** The shortcuts whose first chords were pressed, waiting for the next one. */
+let pending: { regs: Registration[]; step: number } | null = null;
 
 const KEY_ALIASES: Record<string, string> = {
   esc: 'escape',
@@ -91,6 +96,14 @@ export function parseChord(text: string): Chord {
   return chord;
 }
 
+/** Parses one chord or chords one after the other, split by spaces: `'Ctrl+K W'`. */
+export function parseShortcut(text: string): Chord[] {
+  return text
+    .trim()
+    .split(/(?<!\+)\s+(?!\+)/)
+    .map(parseChord);
+}
+
 function keyMatches(chord: Chord, e: KeyboardEvent): boolean {
   return e.key.toLowerCase() === chord.key || physicalKeyMatches(chord.key, e);
 }
@@ -112,8 +125,19 @@ function matches(chord: Chord, e: KeyboardEvent): boolean {
     e.altKey === chord.alt &&
     e.shiftKey === chord.shift &&
     e.metaKey === chord.meta &&
-    keyMatches(chord, e)
+    keyMatches(chord, e) &&
+    !typesWithAltGr(chord, e)
   );
+}
+
+/**
+ * Elsewhere than on Apple platforms Ctrl+Alt is AltGr, which types characters (`{`, `@`, `ą`) on
+ * many keyboards: a Ctrl+Alt chord does not take a key that typed something other than its own.
+ */
+function typesWithAltGr(chord: Chord, e: KeyboardEvent): boolean {
+  if (!chord.ctrl || !chord.alt || isApplePlatform()) return false;
+  if (e.key.length !== 1 || e.key.toLowerCase() === chord.key) return false;
+  return !/\p{L}/u.test(e.key) || !!e.getModifierState?.('AltGraph');
 }
 
 /**
@@ -121,15 +145,17 @@ function matches(chord: Chord, e: KeyboardEvent): boolean {
  * form is open, and except plain keys while focus is in a window); with
  * `scope`, only while focus is inside that component. Returns the function
  * that removes it. `Control.addShortcut` does the same and removes it when the
- * control is disposed.
+ * control is disposed. Two chords split by a space are pressed one after the
+ * other (`'Ctrl+K W'`).
  *
  * @example
  * const remove = addShortcut('Ctrl+S', () => model.save());
  * addShortcut('Delete', () => grid.deleteSelected(), { scope: grid });
+ * addShortcut('Ctrl+K Ctrl+W', () => docs.closeAll());
  */
 export function addShortcut(chord: string, handler: ShortcutHandler, options: ShortcutOptions = {}): () => void {
   installKeyboard();
-  const reg: Registration = { chord: parseChord(chord), handler, scope: options.scope ?? null, inEditable: !!options.inEditable };
+  const reg: Registration = { chords: parseShortcut(chord), handler, scope: options.scope ?? null, inEditable: !!options.inEditable };
   registrations.add(reg);
   return () => void registrations.delete(reg);
 }
@@ -194,6 +220,13 @@ function onKeyDown(e: KeyboardEvent): void {
   if (e.defaultPrevented || e.isComposing) return;
   const focus = deepActiveElement();
   const win = activeWindow(focus);
+  if (pending) {
+    if (MODIFIERS.has(e.key)) return;
+    continueShortcut(e, focus, win);
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
   if (runShortcuts(e, focus, win) || runAccessKey(e, focus, win)) {
     e.preventDefault();
     e.stopPropagation();
@@ -221,6 +254,7 @@ function showAccessKeys(): void {
 }
 
 function hideAccessKeys(): void {
+  pending = null;
   altLatched = false;
   document.documentElement.removeAttribute('data-mx-alt');
 }
@@ -231,13 +265,42 @@ function pageHasAccessKeys(): boolean {
   return !!scope.querySelector('[aria-keyshortcuts*="Alt+" i]');
 }
 
+const MODIFIERS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph']);
+
 function runShortcuts(e: KeyboardEvent, focus: HTMLElement | null, win: Element | null): boolean {
+  const candidates = findShortcuts(registrations, 0, e, focus, win);
+  const waiting = candidates.filter((reg) => reg.chords.length > 1);
+  if (waiting.length) {
+    pending = { regs: waiting, step: 1 };
+    return true;
+  }
+  for (const reg of candidates) if (reg.handler(e) !== false) return true;
+  return false;
+}
+
+/** The key after the first chords of some shortcuts: the one it ends runs, a longer one waits again. */
+function continueShortcut(e: KeyboardEvent, focus: HTMLElement | null, win: Element | null): void {
+  const { regs, step } = pending!;
+  pending = null;
+  const candidates = findShortcuts(regs, step, e, focus, win);
+  const waiting = candidates.filter((reg) => reg.chords.length > step + 1);
+  if (waiting.length) {
+    pending = { regs: waiting, step: step + 1 };
+    return;
+  }
+  for (const reg of candidates) if (reg.handler(e) !== false) return;
+}
+
+/** The shortcuts whose chord at `step` the key is and that may run here, the most specific scope first. */
+function findShortcuts(regs: Iterable<Registration>, step: number, e: KeyboardEvent, focus: HTMLElement | null, win: Element | null): Registration[] {
   const plain = !e.ctrlKey && !e.altKey && !e.metaKey;
   const fKey = /^F\d{1,2}$/.test(e.key);
   const candidates: { reg: Registration; depth: number }[] = [];
-  for (const reg of registrations) {
-    if (!matches(reg.chord, e)) continue;
-    if (plain && !fKey && !reg.inEditable && isEditable(focus)) continue;
+  for (const reg of regs) {
+    const chord = reg.chords[step];
+    if (!chord || !matches(chord, e)) continue;
+    // A plain key ends a shortcut in a text field too; it does not start one there.
+    if (step === 0 && plain && !fKey && !reg.inEditable && isEditable(focus)) continue;
     if (reg.scope) {
       const el = reg.scope.element as Element | null;
       if (reg.scope.isDisposed || !el?.isConnected || !focus || !el.contains(focus)) continue;
@@ -248,13 +311,12 @@ function runShortcuts(e: KeyboardEvent, focus: HTMLElement | null, win: Element 
     } else {
       // App-wide: never across a modal form; plain keys belong to a focused window.
       if (win && topModal() === win) continue;
-      if (win && plain && !fKey) continue;
+      if (step === 0 && win && plain && !fKey) continue;
       candidates.push({ reg, depth: -1 });
     }
   }
   candidates.sort((a, b) => b.depth - a.depth);
-  for (const { reg } of candidates) if (reg.handler(e) !== false) return true;
-  return false;
+  return candidates.map((c) => c.reg);
 }
 
 function depthOf(el: Element): number {

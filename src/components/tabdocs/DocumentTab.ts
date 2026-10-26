@@ -1,7 +1,7 @@
 import { Component, effect, untracked, type ComponentBase } from '@motifx/core';
 import { setAccessKeyAttribute } from '../../core/access-key';
 import { focusableIn, isFocusable } from '../../core/focus';
-import { dismissMark } from '../../core/glyphs';
+import { dismissMark, pinMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
@@ -22,8 +22,11 @@ export class DocumentTab {
   /** What had focus last in the panel. */
   lastFocus: HTMLElement | null = null;
   private readonly label: HTMLSpanElement;
+  private readonly letter: HTMLSpanElement;
   private readonly close: HTMLSpanElement;
+  private readonly pin: HTMLSpanElement;
   private readonly unsaved: HTMLSpanElement;
+  private readonly status: HTMLSpanElement;
   private description: HTMLSpanElement | null = null;
   private icon: HTMLSpanElement | null = null;
   private releaseIcon: () => void = () => {};
@@ -47,9 +50,17 @@ export class DocumentTab {
     header.tabIndex = -1;
     header.setAttribute('role', 'tab');
     header.setAttribute('aria-selected', 'false');
+    this.letter = append(header, 'mx-tabdocs__letter');
+    this.letter.setAttribute('aria-hidden', 'true');
     this.label = append(header, 'mx-tabdocs__title');
     this.unsaved = append(header, 'mx-tabdocs__hidden');
     this.unsaved.hidden = true;
+    this.status = append(header, 'mx-tabdocs__hidden');
+    this.status.hidden = true;
+    // The pin mark unpins under the pointer; the keyboard has the menu and a key for it.
+    this.pin = append(header, 'mx-tabdocs__pin');
+    this.pin.setAttribute('aria-hidden', 'true');
+    this.pin.append(pinMark());
     this.close = append(header, 'mx-tabdocs__close');
     this.close.setAttribute('aria-hidden', 'true');
     this.close.append(dismissMark());
@@ -163,12 +174,43 @@ export class DocumentTab {
       const title = doc.title;
       untracked(() => {
         this.label.textContent = title;
+        this.letter.textContent = Array.from(title.trim())[0]?.toLocaleUpperCase() ?? '';
         this.manager.tabChanged(this);
       });
     });
     this.watch(() => {
-      const text = doc.description;
+      const text = this.manager.showsDescription(doc) ? doc.description : '';
       untracked(() => this.renderDescription(text));
+    });
+    this.watch(() => {
+      const tone = doc.tone;
+      untracked(() => {
+        if (tone) this.header.dataset.tone = tone;
+        else this.header.removeAttribute('data-tone');
+      });
+    });
+    this.watch(() => {
+      const pinned = doc.pinned;
+      const preview = doc.preview;
+      const text = pinned ? this.manager.textOf('tabDocsPinState') : preview ? this.manager.textOf('tabDocsPreviewState') : '';
+      const unpin = this.manager.textOf('tabDocsUnpin');
+      untracked(() => {
+        const header = this.header;
+        const was = header.hasAttribute('data-pinned');
+        header.toggleAttribute('data-pinned', pinned);
+        header.toggleAttribute('data-preview', preview);
+        this.status.textContent = text ? `, ${text}` : '';
+        this.status.hidden = !text;
+        this.pin.title = unpin;
+        if (was !== pinned) this.manager.pinChanged(this);
+        this.manager.tabChanged(this);
+      });
+    });
+    this.watch(() => {
+      const dirty = doc.dirty;
+      untracked(() => {
+        if (dirty && doc.preview) this.manager.keepByChange(doc);
+      });
     });
     this.watch(() => {
       const icon = doc.icon;
@@ -180,7 +222,7 @@ export class DocumentTab {
     });
     this.watch(() => {
       const dirty = doc.dirty;
-      const closable = doc.closable;
+      const closable = doc.closable && (!doc.pinned || this.manager.closeButtonOnPinned);
       const mode = this.manager.closeButton;
       const text = this.manager.textOf('tabDocsUnsaved');
       const closeHint = this.manager.textOf('close');
@@ -255,20 +297,25 @@ export class DocumentTab {
       this.icon.replaceChildren(shown.node);
       this.releaseIcon = shown.release;
     }
+    this.header.toggleAttribute('data-icon', !!icon);
     this.manager.tabChanged(this);
   }
 
-  private renderBadge(badge: string | number | null): void {
-    const text = badge === null || badge === undefined ? '' : String(badge);
-    if (text && !this.badge) {
+  private renderBadge(badge: string | number | boolean | null): void {
+    const dot = badge === true;
+    const text = badge === null || badge === undefined || badge === false || dot ? '' : String(badge);
+    if ((text || dot) && !this.badge) {
       this.badge = this.header.ownerDocument.createElement('span');
       this.badge.className = 'mx-tabdocs__badge';
       this.unsaved.before(this.badge);
-    } else if (!text && this.badge) {
+    } else if (!text && !dot && this.badge) {
       this.badge.remove();
       this.badge = null;
     }
-    if (this.badge) this.badge.textContent = text;
+    if (this.badge) {
+      this.badge.textContent = text;
+      this.badge.toggleAttribute('data-dot', dot);
+    }
     this.manager.tabChanged(this);
   }
 }

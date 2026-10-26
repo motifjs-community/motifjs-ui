@@ -18,9 +18,10 @@ const PROPS = [
   ['activation', "`Bind<'auto' | 'manual'>`", "`'auto'`", '`auto`: the arrow keys in a strip activate the tab they reach. `manual`: Enter or Space does.'],
   ['minGroupWidth, minGroupHeight', '`Bind<number>`', '`160`, `100`', 'The smallest size of a group, in pixels; a splitter stops there.'],
   ['resizeStep', '`Bind<number>`', '`10`', 'How far a splitter key moves a splitter, in pixels.'],
-  ['groupActions', '`Bind<boolean>`', '`true`', 'The split and maximize buttons at the end of each strip.'],
-  ['maximizeOnDoubleClick', '`Bind<boolean>`', '`true`', 'A double click on a tab maximizes its group, or restores the groups.'],
-  ['keys', '`Bind<Partial<TabDocumentKeys>>`', 'see Keyboard', 'Changes some keys; the others keep `TabDocumentManager.defaultKeys`. An empty list turns a key off.'],
+  ['groupActions', '`Bind<boolean>`', '`true`', 'The split, maximize and "…" buttons at the end of each strip.'],
+  ['maximizeOnDoubleClick', '`Bind<boolean>`', '`true`', 'A double click on a tab maximizes its group, or restores the groups (a preview tab is kept open instead).'],
+  ['keyPreset', "`Bind<'auto' | 'browser' | 'desktop'>`", "`'auto'`", 'The keys a manager starts with: keys a browser tab lets through, or a desktop editor\'s; `auto` takes the desktop keys in an installed app.'],
+  ['keys', '`Bind<Partial<TabDocumentKeys>>`', 'see Keyboard', 'Changes some keys; the others keep the preset\'s. An empty list turns a key off.'],
   ['factory', '`Bind<(doc) => ComponentBase | null>`', '`null`', 'Makes the content of a document that brings none, usually by its `type`.'],
   ['texts', '`Bind<Partial<UiStrings>>`', '`{}`', 'Texts for this manager only, over `uiLocale.strings`.'],
   ['announce', '`Bind<boolean>`', '`true`', 'Opened, closed, moved, split, maximized: said politely to screen readers.'],
@@ -35,7 +36,8 @@ const DOCUMENT = [
   ['tooltip', '`Bind<string>`', 'Shown when the pointer rests on the tab or the tab has focus. Default: the title and the description.'],
   ['dirty', '`Bind<boolean>`', 'Unsaved changes: a dot takes the close button\'s place (the button comes back under the pointer), and screen readers hear “unsaved changes”.'],
   ['closable', '`Bind<boolean>`', 'Default `true`. `false`: no close button, and the user cannot close it (code still can).'],
-  ['pinned, preview', '`Bind<boolean>`', 'Saved with the layout; how they look and behave comes in the next milestone.'],
+  ['pinned, preview', '`Bind<boolean>`', 'A pinned tab stays at the start; a preview tab gives its place to the next preview. Saved with the layout. See [Tabs](/tabdocs/tabs).'],
+  ['badge, tone, actions, clone, allowDuplicate', '', 'A count or a dot, a colour, toolbar buttons while active, a copy\'s content. See [Tabs](/tabdocs/tabs) and [Menus and keys](/tabdocs/menus).'],
   ['contentLifetime', "`Bind<ContentLifetime | undefined>`", 'This document\'s own lifetime; `undefined` follows the manager.'],
   ['content', '`ComponentBase | (doc) => ComponentBase`', 'The content: a component, or a function that makes it (and makes it again after `dispose`).'],
   ['state', '`Bind<unknown>`', 'The app\'s own data for the document, saved with the layout.'],
@@ -49,14 +51,16 @@ const PROPERTIES = [
   ['documents', 'read-only, reactive', 'Every open document, group by group.'],
   ['activeGroup, activeDocument', 'read-only, reactive', 'The group that has focus or had it last, and its active document.'],
   ['maximizedGroup', 'read-only, reactive', 'The maximized group, `null` when none is.'],
-  ['TabDocumentManager.defaultKeys', 'static', 'The keys a manager starts with.'],
+  ['recentDocuments, closedDocuments, canGoBack, canGoForward', 'read-only, reactive', 'The documents used last, the ones `reopenClosed` can open, and the history. See [Menus and keys](/tabdocs/menus).'],
+  ['TabDocumentManager.browserKeys, TabDocumentManager.desktopKeys', 'static', 'The two key presets.'],
 ];
 
 const GROUP = [
   ['documents, activeDocument, recentDocuments', 'read-only, reactive', 'In strip order; the active one; the one used last first.'],
   ['index, isActive, isMaximized, isEmpty', 'read-only, reactive', 'Its place in `groups`, from 0, and its state.'],
-  ['locked', 'read/write', 'A locked group takes no document opened without naming the group.'],
-  ['open(doc, options?), activate(doc), closeAll(), close(), split(direction, doc?), maximize(), focus()', '', 'The manager\'s methods for this group.'],
+  ['locked', 'read/write, reactive', 'A locked group takes no document opened without naming the group. `lock()` and `unlock()` ask first and announce it.'],
+  ['previewDocument', 'read-only, reactive', 'The group\'s preview tab\'s document, if it has one.'],
+  ['open(doc, options?), activate(doc), closeAll(), close(), split(direction, doc?), maximize(), lock(), unlock(), focus()', '', 'The manager\'s methods for this group.'],
 ];
 
 const METHODS = [
@@ -93,10 +97,10 @@ const LIFETIME = [
 ];
 
 const KEYS = [
-  ['Ctrl + Page Down / Page Up', 'The next / previous tab of the active group, around the ends (`nextTab`, `previousTab`).'],
-  ['Ctrl + W', 'Closes the active document (`closeTab`). Browsers keep Ctrl + W for themselves; it reaches the page in an installed app window.'],
-  ['Ctrl + 1 … 9', 'Focuses group 1 to 9 (`focusGroup`, written `Ctrl+{n}`).'],
-  ['Ctrl + \\', 'Splits the active group to the right; the active document goes along when it is not the only one (`splitRight`).'],
+  ['Alt + Page Down / Page Up (Ctrl + Page Down / Up)', 'The next / previous tab of the active group, around the ends (`nextTab`, `previousTab`).'],
+  ['Ctrl + Alt + W (Ctrl + W)', 'Closes the active document (`closeTab`).'],
+  ['Ctrl + Alt + 1 … 9 (Ctrl + 1 … 9)', 'Focuses group 1 to 9 (`focusGroup`, written `Ctrl+Alt+{n}`).'],
+  ['Ctrl + \\', 'Splits the active group to the right; the active document goes along when it is not the only one, or a copy of it (`splitRight`).'],
   ['Right / Left, Home / End (on a tab)', 'The next / previous, first / last tab; it is activated too unless `activation` is manual (`stripNext`, `stripPrevious`, `stripFirst`, `stripLast`).'],
   ['Enter, Space (on a tab)', 'Activates it.'],
   ['Delete (on a tab)', 'Closes it (`closeFocusedTab`).'],
@@ -113,13 +117,14 @@ const A11Y = [
 ];
 
 const HOOKS = [
-  ['.mx-tabdocs', 'The root; `data-maximized` while a group is maximized, `data-resizing` while a splitter is dragged.'],
+  ['.mx-tabdocs', 'The root; `data-maximized` while a group is maximized, `data-resizing` while a splitter is dragged; `data-tab-size`, `data-pinned-size`, `data-pinned-row`, `data-wrap`, `data-scroll-buttons` from the props.'],
   ['.mx-tabdocs__split', 'A split; `data-orientation`.'],
   ['.mx-tabdocs__sash', 'A splitter (`role="separator"`).'],
-  ['.mx-tabdocs__group', 'A group; `data-active`, `data-empty`, `data-maximized`.'],
-  ['.mx-tabdocs__bar, __tabs, __actions', 'The strip row, the `tablist`, the kit Toolbar with the group buttons.'],
-  ['.mx-tabdocs__tab', 'A tab; `aria-selected`, `data-dirty`, `data-close` (`always`, `active`).'],
-  ['.mx-tabdocs__icon, __title, __description, __badge, __close, __dirty', 'The parts of a tab.'],
+  ['.mx-tabdocs__group', 'A group; `data-active`, `data-empty`, `data-maximized`, `data-locked`.'],
+  ['.mx-tabdocs__bar, __strip, __tabs, __pinned, __row, __scroll, __actions', 'The strip row; the tab list with its scroll buttons; the `tablist`, its pinned row and the row of the others; the kit Toolbar with the group buttons.'],
+  ['.mx-tabdocs__tab', 'A tab; `aria-selected`, `data-dirty`, `data-close` (`always`, `active`), `data-pinned`, `data-preview`, `data-tone`, `data-icon`.'],
+  ['.mx-tabdocs__icon, __letter, __title, __description, __badge, __pin, __close, __dirty', 'The parts of a tab; a badge that is a dot has `data-dot`.'],
+  ['.mx-tabdocs__popup, __list-title, __list-note, __list-dirty', 'The "…" and recently used lists.'],
   ['.mx-tabdocs__panels, __panel, __empty', 'The content area, a document\'s `tabpanel`, the empty group\'s text.'],
 ];
 
@@ -128,7 +133,11 @@ const TOKENS = [
   ['tabdocs.tab-*', 'A tab: height, padding, gap, type, the line between tabs, the colors at rest, under the pointer and active.'],
   ['tabdocs.indicator-width, -color, -color-inactive', 'The bar on the active tab: the accent in the active group.'],
   ['tabdocs.close-*, tabdocs.dirty-*', 'The close button and the dot of unsaved changes.'],
-  ['tabdocs.badge-*, tabdocs.icon-size, tabdocs.description-*', 'The other parts of a tab.'],
+  ['tabdocs.badge-*, tabdocs.icon-size, tabdocs.description-*', 'The other parts of a tab; `badge-dot-*` for a badge that is a dot.'],
+  ['tabdocs.tone-warning-*, -danger-*, -success-*, -accent-*', 'The title and badge colours of a tone.'],
+  ['tabdocs.pin-*, tabdocs.letter-font-weight, tabdocs.pinned-row-*', 'The pin mark, the first letter of a compact pinned tab, the line under the pinned row.'],
+  ['tabdocs.scroll-*', 'The scroll buttons of a strip that does not fit.'],
+  ['tabdocs.list-*', 'The lists of documents: their width, the note after a title, the dot of unsaved changes.'],
   ['tabdocs.sash-*', 'The splitter: its size, its line at rest and under the pointer.'],
   ['tabdocs.empty-*', 'The text of an empty group.'],
   ['tabdocs.focus-width, -color, -halo', 'The keyboard focus ring of tabs, panels and splitters.'],
@@ -140,7 +149,9 @@ export default function TabDocsPage() {
       <p class="lead">
         A document manager in the way code editors arrange files: documents in tabs, tabs in groups, groups split side by side and one under the
         other. A document's content is any component, a form, a grid or plain text, and it is moved, never made again, when its tab goes to another
-        group. Everything the user does is a method too, asks first and reports after; the whole layout saves to JSON and comes back.
+        group. Everything the user does is a method too, asks first and reports after; the whole layout saves to JSON and comes back. Preview and
+        pinned tabs, sizes and copies are on <a rel="router" href="/tabdocs/tabs">Tabs</a>; context menus, lists and keys on{' '}
+        <a rel="router" href="/tabdocs/menus">Menus and keys</a>.
       </p>
 
       <Section anchor="import" title="Import">
@@ -205,7 +216,7 @@ import { TabDocument, TabDocumentManager } from '@motifx-community/ui';
 
       <Section anchor="keyboard" title="Keyboard">
         <p>
-          <Rich text="The keys work while focus is inside the manager; each is a list of chords in `keys`, so any of them can be changed or turned off." />
+          <Rich text="The keys work while focus is inside the manager; each is a list of chords in `keys`, so any of them can be changed or turned off. A browser tab keeps Ctrl+W, Ctrl+Tab, Ctrl+Page Up / Down and often Ctrl+1…9 for itself, so the keys a manager starts with are ones a browser tab lets through, and the desktop key in brackets works too where it can (an installed app takes the desktop keys, `keyPreset`). The recently used list, back and forward, reopening and the other keys are on [Menus and keys](/tabdocs/menus#keyboard)." />
         </p>
         <ApiTable head={['Key', 'What it does']} rows={KEYS} />
       </Section>
