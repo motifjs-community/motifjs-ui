@@ -60,6 +60,17 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   private adaptive: DetailRow<T> | null = null;
   private layouts = 0;
   private readonly detailHost: DetailHost<T>;
+  /** While a row is dragged with `'push'`: how far each row moves to make room, by grid index. */
+  private shiftOf: ((index: number) => number) | null = null;
+  private shifted = new Map<HTMLElement, number>();
+  /** Where each drawn row was laid out, from the top of the rows. */
+  private readonly laidTop = new WeakMap<HTMLElement, number>();
+  private dragSource = -1;
+  private dragPush = false;
+  /** The line where a dragged row would land (`'indicate'`), made the first time. */
+  private dropLine: HTMLDivElement | null = null;
+  /** The row a dragged row would be dropped onto. */
+  private dropTarget: HTMLElement | null = null;
 
   constructor(
     private readonly grid: GridModel<T>,
@@ -460,6 +471,73 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     return out.sort((a, b) => a.index - b.index);
   }
 
+  /** The rows drawn now, top to bottom, where they are laid out on the screen (the room made for a dragged row, moving or not, left out). */
+  placed(): { index: number; element: HTMLElement; top: number; bottom: number }[] {
+    const base = this.element.getBoundingClientRect().top;
+    return this.drawn().map(({ index, element }) => {
+      const laid = this.laidTop.get(element);
+      const r = element.getBoundingClientRect();
+      const top = laid === undefined ? r.top - (this.shifted.get(element) ?? 0) : base + laid;
+      return { index, element, top, bottom: top + (element.offsetHeight || r.height) };
+    });
+  }
+
+  /**
+   * The look of a row drag: rows moved by what `shift` gives for their index (the room made for the
+   * row, `'push'`), now and as they scroll, until it is `null`; grid row `source` marked as the one
+   * dragged (-1: none), as a gap with `push`.
+   */
+  setDragLook(shift: ((index: number) => number) | null, source: number, push: boolean) {
+    this.shiftOf = shift;
+    this.dragSource = source;
+    this.dragPush = push;
+    this.applyShift();
+  }
+
+  private applyShift() {
+    const shift = this.shiftOf;
+    const want = new Map<HTMLElement, number>();
+    for (const { index, element } of this.drawn()) {
+      const px = shift ? Math.round(shift(index)) : 0;
+      if (px) want.set(element, px);
+      const look = index === this.dragSource ? (this.dragPush ? 'push' : 'indicate') : null;
+      if (element.dataset.dragSource !== (look ?? undefined)) {
+        if (look) element.dataset.dragSource = look;
+        else delete element.dataset.dragSource;
+      }
+    }
+    for (const el of this.shifted.keys()) if (!want.has(el)) el.style.translate = '';
+    for (const [el, px] of want) if (this.shifted.get(el) !== px) el.style.translate = `0 ${px}px`;
+    this.shifted = want;
+    // Rows gone back to the pool keep no mark.
+    for (const row of this.pool) if (row.index < 0) delete row.element.dataset.dragSource;
+  }
+
+  /** The line where a dragged row would land, `y` pixels from the top of the rows; `null` hides it. */
+  showDropLine(y: number | null) {
+    if (y === null) {
+      if (this.dropLine) this.dropLine.hidden = true;
+      return;
+    }
+    if (!this.dropLine) {
+      const line = document.createElement('div');
+      line.className = 'mx-data-grid__row-drop';
+      line.setAttribute('aria-hidden', 'true');
+      this.element.append(line);
+      this.dropLine = line;
+    }
+    this.dropLine.style.transform = `translateY(${Math.round(y)}px)`;
+    this.dropLine.hidden = false;
+  }
+
+  /** Marks the row a dragged row would be dropped onto, or none. */
+  markDropTarget(el: HTMLElement | null) {
+    if (this.dropTarget === el) return;
+    this.dropTarget?.removeAttribute('data-drop-target');
+    this.dropTarget = el;
+    el?.setAttribute('data-drop-target', '');
+  }
+
   /** Draws every row in use again. */
   repaint() {
     for (const row of this.byIndex.values()) row.redraw();
@@ -598,7 +676,9 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     const keep = new Map<number, GridRow<T>>();
     rows.forEach((i, n) => {
       const row = assigned[n] ?? free.pop() ?? this.createRow();
-      row.use(i, grid.rowAt(i), idOf[n], top(localOf(i)));
+      const at = top(localOf(i));
+      row.use(i, grid.rowAt(i), idOf[n], at);
+      this.laidTop.set(row.element, at);
       keep.set(i, row);
     });
     for (const row of free) row.release();
@@ -610,6 +690,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     const adaptiveOn = this.visible.includes(ADAPTIVE_FIELD);
     const drawn = this.adaptiveAt(adaptiveAt);
     for (const [i, row] of keep) row.drawAdaptive(adaptiveOn && row.row !== undefined, adaptiveOn && i === adaptiveAt, i === adaptiveAt && drawn ? drawn.element.id : null);
+    if (this.shiftOf || this.shifted.size || this.dragSource >= 0) this.applyShift();
     // Rows stay where they are in the DOM: a moved row is styled again from scratch, on every
     // scroll. Assistive technology gets the reading order through aria-owns; a row's details
     // come right after it, and count as a row in `aria-rowindex`.
@@ -815,7 +896,9 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     }
     for (const [i, node] of groups) {
       const row = keep.get(i) ?? free.pop() ?? this.createGroupRow();
-      row.use(i, node, top(localOf(i)));
+      const at = top(localOf(i));
+      row.use(i, node, at);
+      this.laidTop.set(row.element, at);
       keep.set(i, row);
     }
     for (const row of free) row.release();
@@ -835,7 +918,9 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     }
     for (const [i, node] of footers) {
       const row = keep.get(i) ?? free.pop() ?? this.createFooterRow();
-      row.use(i, node, top(localOf(i)));
+      const at = top(localOf(i));
+      row.use(i, node, at);
+      this.laidTop.set(row.element, at);
       keep.set(i, row);
     }
     for (const row of free) row.release();

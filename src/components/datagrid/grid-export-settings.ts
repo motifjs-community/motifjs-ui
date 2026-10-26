@@ -5,7 +5,7 @@ import type { GridExportTexts } from './grid-export-texts';
  * The `export` prop: what the toolbar's export button (`settings.exportButton`) offers. With one
  * command the button runs it; with more it opens a menu of them. `'csv'` is written by the grid;
  * any other format raises `onExporting` with that `format`, where you write the file
- * (`exportDataGrid` for `'xlsx'`). Every field is a value or a function that is followed; read and
+ * (`exportDataGrid` of `@motifx-community/ui/excel` for `'xlsx'`, of `/pdf` for `'pdf'`). Every field is a value or a function that is followed; read and
  * change it later through `grid.export`.
  *
  * @example

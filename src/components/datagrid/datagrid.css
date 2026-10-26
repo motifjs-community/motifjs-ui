@@ -711,6 +711,97 @@
     rotate: 90deg;
   }
 
+  /* Row drag and drop: the drag icon of a row that can be dragged, the row dragged (dimmed, or a gap
+     with 'push'), the rows making room, the line where it would land, the row it would go onto, and
+     its copy under the pointer. */
+  .mx-data-grid__drag {
+    display: grid;
+    place-items: center;
+    padding-inline: 0;
+  }
+
+  .mx-data-grid__drag-handle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--mx-datagrid-button-size);
+    block-size: var(--mx-datagrid-button-size);
+    color: var(--mx-datagrid-drag-color);
+    border-radius: var(--mx-datagrid-drag-radius);
+  }
+
+  .mx-data-grid__row[data-draggable] > .mx-data-grid__drag {
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .mx-data-grid__row[data-draggable] .mx-data-grid__drag-handle {
+    display: inline-flex;
+  }
+
+  .mx-data-grid__row[data-draggable] .mx-data-grid__drag-handle:hover {
+    background-color: var(--mx-datagrid-hover);
+  }
+
+  .mx-data-grid__drag-handle > .mx-glyph {
+    inline-size: var(--mx-datagrid-icon-size);
+    block-size: var(--mx-datagrid-icon-size);
+  }
+
+  .mx-data-grid[data-row-dragging] {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  .mx-data-grid[data-row-dragging] .mx-data-grid__body > :is(.mx-data-grid__row, .mx-data-grid__group-row, .mx-data-grid__group-footer) {
+    transition: translate var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-data-grid__body > .mx-data-grid__row[data-drag-source='indicate'] {
+    opacity: var(--mx-datagrid-row-drag-opacity);
+  }
+
+  .mx-data-grid__body > .mx-data-grid__row[data-drag-source='push'] {
+    background-color: var(--mx-datagrid-row-drag-placeholder);
+    background-image: none;
+    outline: var(--mx-datagrid-row-drop-inside-width) dashed var(--mx-datagrid-row-drop-color);
+    outline-offset: calc(var(--mx-datagrid-row-drop-inside-width) * -1);
+  }
+
+  .mx-data-grid__body > .mx-data-grid__row[data-drag-source='push'] > * {
+    visibility: hidden;
+  }
+
+  .mx-data-grid__body > .mx-data-grid__row[data-drop-target] {
+    outline: var(--mx-datagrid-row-drop-inside-width) solid var(--mx-datagrid-row-drop-color);
+    outline-offset: calc(var(--mx-datagrid-row-drop-inside-width) * -1);
+  }
+
+  .mx-data-grid__row-drop {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: var(--_z-drop);
+    block-size: var(--mx-datagrid-row-drop-width);
+    margin-block-start: calc(var(--mx-datagrid-row-drop-width) / -2);
+    background-color: var(--mx-datagrid-row-drop-color);
+    pointer-events: none;
+  }
+
+  .mx-data-grid__row-drop[hidden] {
+    display: none;
+  }
+
+  .mx-data-grid__ghost[data-kind='row'] {
+    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-ghost-border-color);
+    border-radius: var(--mx-datagrid-row-ghost-radius);
+  }
+
+  .mx-data-grid__ghost-rows {
+    overflow: hidden;
+    background-color: var(--mx-datagrid-background);
+  }
+
   /* A row's details: one cell across the viewport under the row, kept in view while the rows scroll
      sideways. Out of view they stay laid out but are not drawn, so their content keeps its state. */
   .mx-data-grid__body > .mx-data-grid__detail-row {
@@ -1449,6 +1540,14 @@
     .mx-data-grid__mark {
       color: MarkText;
       background-color: Mark;
+    }
+
+    .mx-data-grid__row-drop {
+      background-color: Highlight;
+    }
+
+    .mx-data-grid__body > .mx-data-grid__row:is([data-drop-target], [data-drag-source='push']) {
+      outline-color: Highlight;
     }
   }
 }

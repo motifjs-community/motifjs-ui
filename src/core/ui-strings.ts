@@ -207,6 +207,14 @@ export interface UiStrings {
   gridDetails: string;
   gridDetailsOf: string;
   gridAdaptive: string;
+  gridDragColumn: string;
+  gridDragRow: string;
+  gridRowMoved: string;
+  gridRowMovedTo: string;
+  gridRowDroppedOnto: string;
+  gridRowMoveFirst: string;
+  gridRowMoveLast: string;
+  gridRowDragCanceled: string;
   gridHideBand: string;
   gridAdaptiveOf: string;
   gridSummarySum: string;

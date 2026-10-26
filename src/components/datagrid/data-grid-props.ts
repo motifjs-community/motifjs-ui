@@ -74,6 +74,7 @@ import type { GridAdaptiveRowExpandedEventArgs } from './grid-adaptive-row-expan
 import type { GridAdaptiveRowExpandingEventArgs } from './grid-adaptive-row-expanding-event-args';
 import type { GridColumnItem } from './grid-column-item';
 import type { GroupCellContext } from './group-cell-context';
+import type { GridRowDragging } from './grid-row-dragging';
 import type { GridRowExpandedEventArgs } from './grid-row-expanded-event-args';
 import type { GridRowExpandingEventArgs } from './grid-row-expanding-event-args';
 import type { GridMode } from './grid-mode';
@@ -86,7 +87,7 @@ import type { GridValuesResult } from './grid-values-result';
 import type { NewRowOptions } from './new-row-options';
 import type { RowState } from './row-state';
 
-/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form`, `popup`, `filterBuilder`, `filterBuilderPopup`, `masterDetail` and `adaptiveDetail` (whose fields are) and the callbacks is a value or a function that is followed. */
+/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form`, `popup`, `filterBuilder`, `filterBuilderPopup`, `masterDetail`, `adaptiveDetail` and `rowDragging` (whose fields are) and the callbacks is a value or a function that is followed. */
 export interface DataGridProps<T> extends ControlProps {
   /**
    * Column definitions, in their initial order, and bands over them (`{ title, columns: [...] }`).
@@ -148,6 +149,12 @@ export interface DataGridProps<T> extends ControlProps {
   masterDetail?: GridMasterDetail<T>;
   /** The adaptive detail of a row, while columns hide to fit the width (`settings.columnHidingEnabled`, a column's `hidingPriority`). Read and change it later through `grid.adaptiveDetail`. */
   adaptiveDetail?: GridAdaptiveDetail;
+  /**
+   * Rows moved by dragging (a column of drag icons, or the whole row) and with the keyboard: within
+   * the grid, onto a row, or to another grid of the same `group`. The handlers move the data. Read and
+   * change it later through `grid.rowDragging`.
+   */
+  rowDragging?: GridRowDragging<T>;
   /** Checks a whole row before it is saved: a message per field, or one message for the row. */
   validateRow?: (
     row: T,

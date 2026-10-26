@@ -3,12 +3,13 @@ import type { CellContext } from '../cell-context';
 import type { GridAction } from '../grid-action';
 import type { GridColumn } from '../grid-column';
 import { moreMark } from '../../../core/glyphs';
-import { ACTIONS_FIELD, ADAPTIVE_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from '../model/ColumnModel';
+import { ACTIONS_FIELD, ADAPTIVE_FIELD, DRAG_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from '../model/ColumnModel';
 import { KeyedItems } from '../../../parts/data/KeyedItems';
 import type { GridModel } from '../model/GridModel';
 import type { RowState } from '../row-state';
 import type { ActionWidths } from './ActionWidths';
 import { createCheck, setCheck } from './check-mark';
+import { createDragHandle } from './drag-handle';
 import { createExpandButton, setExpandButton } from './expand-button';
 import { placeInOrder } from './place-in-order';
 import type { ResolvedAction } from './resolved-action';
@@ -74,6 +75,7 @@ export class GridRow<T> {
     this.more.replaceChildren(moreMark());
     for (const field of model.columns.state.order) {
       if (field === STATUS_FIELD) el.append(this.statusCell());
+      else if (field === DRAG_FIELD) el.append(this.ownCell(field, 'mx-data-grid__drag', createDragHandle()));
       else if (field === SELECT_FIELD) el.append(this.ownCell(field, 'mx-data-grid__select', this.check));
       else if (field === EXPAND_FIELD) el.append(this.ownCell(field, 'mx-data-grid__expand', this.expand));
       else if (field === ACTIONS_FIELD) el.append(this.ownCell(field, 'mx-data-grid__actions'));
@@ -283,6 +285,22 @@ export class GridRow<T> {
     const status = model.status(rowId);
     if (status) el.dataset.status = status;
     else delete el.dataset.status;
+
+    // A loaded data row can be dragged; its drag cell says how, also by the keys.
+    const drag = model.rowDrag;
+    const draggable = drag.enabled && this.row !== undefined && rowId !== undefined && !model.isNew(rowId);
+    el.toggleAttribute('data-draggable', draggable);
+    const dragCell = this.cells.get(DRAG_FIELD)!;
+    if (draggable && drag.showsIcons) {
+      dragCell.setAttribute('aria-label', model.text('gridDragRow'));
+      // `aria-keyshortcuts` names the keys as `KeyboardEvent` does: Control, Meta.
+      const keys = drag.get('keyboard') ? [...drag.get('moveUpKeys'), ...drag.get('moveDownKeys')].map((k) => k.replace(/\bctrl\b/gi, 'Control').replace(/\b(cmd|mod)\b/gi, 'Meta')).join(' ') : '';
+      if (keys) dragCell.setAttribute('aria-keyshortcuts', keys);
+      else dragCell.removeAttribute('aria-keyshortcuts');
+    } else {
+      dragCell.removeAttribute('aria-label');
+      dragCell.removeAttribute('aria-keyshortcuts');
+    }
 
     // Selection: new rows and rows still loading have no key to select by.
     const mode = model.settings.get('selection');

@@ -29,7 +29,9 @@ export const ACTIONS_FIELD = 'mx:actions';
 export const EXPAND_FIELD = 'mx:expand';
 /** Field of the "…" column that opens a row's adaptive detail: last of the scrolling columns, while columns hide to fit the width. */
 export const ADAPTIVE_FIELD = 'mx:adaptive';
-const INTERNAL = [STATUS_FIELD, SELECT_FIELD, EXPAND_FIELD, ACTIONS_FIELD, ADAPTIVE_FIELD];
+/** Field of the drag icon column of `rowDragging`: after the status column, pinned to the start. */
+export const DRAG_FIELD = 'mx:drag';
+const INTERNAL = [STATUS_FIELD, DRAG_FIELD, SELECT_FIELD, EXPAND_FIELD, ACTIONS_FIELD, ADAPTIVE_FIELD];
 const LOCKED: Partial<ColumnFeatures> = {
   editable: false,
   creatable: false,
@@ -93,6 +95,10 @@ export class ColumnModel<T> {
   expandWidth: () => number = () => 36;
   /** The width of the "…" column. */
   adaptiveWidth: () => number = () => 36;
+  /** Whether the drag icon column of `rowDragging` shows. */
+  dragWanted: () => boolean = () => false;
+  /** The width of the drag icon column. */
+  dragWidth: () => number = () => 36;
 
   constructor(
     columns: readonly GridColumnItem<T>[],
@@ -100,6 +106,7 @@ export class ColumnModel<T> {
     private readonly settings: Switches<GridSettings> = new Switches<GridSettings>(Object.keys(DEFAULT_SETTINGS) as (keyof GridSettings)[], DEFAULT_SETTINGS),
   ) {
     this.defs.set(STATUS_FIELD, { field: STATUS_FIELD, title: '', sticky: 'start', align: 'center' });
+    this.defs.set(DRAG_FIELD, { field: DRAG_FIELD, title: '', align: 'center' });
     this.defs.set(SELECT_FIELD, { field: SELECT_FIELD, title: '', align: 'center' });
     this.defs.set(ACTIONS_FIELD, { field: ACTIONS_FIELD, title: '' });
     this.defs.set(EXPAND_FIELD, { field: EXPAND_FIELD, title: '', align: 'center' });
@@ -305,7 +312,7 @@ export class ColumnModel<T> {
 
   /** The edge a column or band sticks to, or `null`: a band's columns stick with the band at the top. The grid's own columns take theirs from the settings. */
   sideOf(field: string): StickySide | null {
-    if (field === STATUS_FIELD || field === SELECT_FIELD || field === EXPAND_FIELD) return 'start';
+    if (field === STATUS_FIELD || field === DRAG_FIELD || field === SELECT_FIELD || field === EXPAND_FIELD) return 'start';
     if (field === ACTIONS_FIELD) return this.settings.get('actionsSticky') ? this.settings.get('actionsPosition') : null;
     if (field === ADAPTIVE_FIELD) return null;
     return this.state.sticky[this.topOf(field)] ?? null;
@@ -437,6 +444,7 @@ export class ColumnModel<T> {
     if (field === SELECT_FIELD) return Math.max(0, Math.round(this.settings.get('selectionColumnWidth')));
     if (field === EXPAND_FIELD) return Math.max(0, Math.round(this.expandWidth()));
     if (field === ADAPTIVE_FIELD) return Math.max(0, Math.round(this.adaptiveWidth()));
+    if (field === DRAG_FIELD) return Math.max(0, Math.round(this.dragWidth()));
     return this.state.width[field] ?? this.clampWidth(field, this.settings.get('columnWidth'));
   }
 
@@ -726,6 +734,7 @@ export class ColumnModel<T> {
       (side === 'start' ? start : side === 'end' ? end : free).push(f);
     };
     if (this.showsStatus()) add(STATUS_FIELD);
+    if (this.dragWanted()) add(DRAG_FIELD);
     if (this.showsSelect()) add(SELECT_FIELD);
     if (this.expandWanted()) add(EXPAND_FIELD);
     const actions = this.showsActions();

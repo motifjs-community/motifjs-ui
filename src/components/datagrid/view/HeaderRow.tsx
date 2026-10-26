@@ -2,7 +2,7 @@ import { Component, ComponentBase, effect } from '@motifx/core';
 import { chevronDown, chevronUp, filterMark, moreMark } from '../../../core/glyphs';
 import type { GridColumn } from '../grid-column';
 import type { HeaderCellContext } from '../header-cell-context';
-import { ACTIONS_FIELD, ADAPTIVE_FIELD, EXPAND_FIELD, SELECT_FIELD } from '../model/ColumnModel';
+import { ACTIONS_FIELD, ADAPTIVE_FIELD, DRAG_FIELD, EXPAND_FIELD, SELECT_FIELD } from '../model/ColumnModel';
 import { HEADER_ROW, type GridModel } from '../model/GridModel';
 import { createCheck, setCheck } from './check-mark';
 import { dropPlace } from './drop-place';
@@ -141,7 +141,9 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
           ? grid.text('gridDetails')
           : field === ADAPTIVE_FIELD
             ? grid.text('gridAdaptive')
-            : internal
+            : field === DRAG_FIELD
+              ? grid.text('gridDragColumn')
+              : internal
               ? grid.text('gridRowStatus')
               : cols.title(field);
     const sort = () => grid.sortOf(field);

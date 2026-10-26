@@ -11,7 +11,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rolldown } from 'rolldown';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const entries = ['index', 'tokens/index', 'excel/index'];
+const entries = ['index', 'tokens/index', 'excel/index', 'pdf/index'];
 
 const work = mkdtempSync(join(tmpdir(), 'ui-sizes-'));
 const rows = [];

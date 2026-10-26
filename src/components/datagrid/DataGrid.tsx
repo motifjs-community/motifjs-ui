@@ -108,6 +108,8 @@ import { ActionRunner } from './model/ActionRunner';
 import type { ClipboardContent } from './model/clipboard-content';
 import type { ExportTable } from './model/export-table';
 import { ACTIONS_FIELD, ADAPTIVE_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from './model/ColumnModel';
+import { RowDrag } from './view/RowDrag';
+import type { GridRowDragging } from './grid-row-dragging';
 import { GridClipboard } from './model/GridClipboard';
 import { GridExport } from './model/GridExport';
 import { FILTER_ROW, GridModel, HEADER_ROW } from './model/GridModel';
@@ -195,6 +197,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private readonly bands: BandRows<T>;
   private readonly filterRow: FilterRow<T>;
   private readonly body: GridBody<T>;
+  /** Rows dragged to another place, or to another grid (`rowDragging`), and moved with the keys. */
+  private readonly rowDrag: RowDrag<T>;
   private readonly totalRow: TotalRow<T>;
   private readonly pager: GridPager<T>;
   private readonly menu: ColumnMenu<T>;
@@ -300,6 +304,24 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       collapse: (key) => this.collapseRow(key),
       adaptiveContent: (rowId, row) => this.adaptiveForm(rowId, row),
     });
+    this.rowDrag = new RowDrag<T>(model, this.body, {
+      grid: this,
+      ghost,
+      root: () => this.element as HTMLElement,
+      viewport: () => this.viewportEl,
+      focusRow: (i) => {
+        const field = model.state.activeField;
+        if (this.focusWithin) this.navigate(i, field);
+        else if (this.canMoveTo(i, field)) {
+          this.setActive(i, field);
+          this.body.reveal(i);
+          this.syncTabStop();
+        }
+      },
+      label: () => this.text || model.text('gridLabel'),
+    });
+    this.motif.setDisposable(() => this.rowDrag.dispose());
+    model.rowDrag.changed = (name, value, previous) => model.events.tell(model.events.optionChanged, () => ({ name: `rowDragging.${name}`, value, previous }));
     this.totalRow = new TotalRow<T>(model);
     this.pager = new GridPager<T>(model, {
       goTo: (page) => (this.page = page),
@@ -2025,6 +2047,25 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.body.refreshDetails();
   }
 
+  // Row drag and drop.
+
+  /**
+   * The `rowDragging` options, live: `grid.rowDragging.allowReordering = true`; a function is
+   * followed, handlers can be set too, `onOptionChanged` tells `rowDragging.allowReordering` ….
+   */
+  get rowDragging(): GridRowDragging<T> {
+    return this.model.rowDrag.view;
+  }
+
+  /**
+   * Moves grid row `fromIndex` to `toIndex` as dropping it there would (the keys that move a row do
+   * this): `onDragStart`, `onDragChange` and `onDragEnd` of `rowDragging`, any of which can cancel it,
+   * then `onReorder`, whose handler moves the data. Resolves to whether `onReorder` was raised.
+   */
+  moveRow(fromIndex: number, toIndex: number): Promise<boolean> {
+    return this.rowDrag.move(fromIndex, toIndex);
+  }
+
   // Adaptive columns.
 
   /** The `adaptiveDetail` options, live: `grid.adaptiveDetail.colCount = 1`; a function is followed, `onOptionChanged` tells `adaptiveDetail.colCount` …. */
@@ -2226,7 +2267,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /**
    * What a command of the toolbar's export button does: `'csv'` runs `exportCsv`; any other format
    * raises `onExporting` with that `format` and `selectedRowsOnly`, and the app writes the file
-   * there (`exportDataGrid` for `'xlsx'`).
+   * there (`exportDataGrid` of the `excel` entry for `'xlsx'`, of the `pdf` entry for `'pdf'`).
    */
   async exportTo(format: string, options: GridExportOptions = {}): Promise<void> {
     if (format === 'csv') {
@@ -2236,7 +2277,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const ev = this.model.events;
     this.selectedNext = !!options.selected;
     if (!ev.listened(ev.exporting)) {
-      console.warn(`DataGrid: nothing writes '${format}' files. Write them in onExporting (exportDataGrid from @motifx-community/ui/excel for 'xlsx').`);
+      console.warn(`DataGrid: nothing writes '${format}' files. Write them in onExporting (exportDataGrid from @motifx-community/ui/excel for 'xlsx', from @motifx-community/ui/pdf for 'pdf').`);
       return;
     }
     const e: GridExportingEventArgs = { format, component: this, selectedRowsOnly: !!options.selected, options: { ...options }, cancel: false };
@@ -3652,6 +3693,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** A press on a cell of another row: leave the current row first (it may block or wait). */
   private onPointerDown(e: PointerEvent) {
     if (e.button !== 0) return;
+    this.rowDrag.press(e);
     const target = e.target as HTMLElement;
     if (this.editor?.element.contains(target) || this.inForm(target) || this.body.detailOf(target)) return;
     const group = this.body.groupRowOf(target) ?? this.body.footerRowOf(target);
@@ -4357,6 +4399,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
     const group = onRow ? model.groupAt(row) : null;
     if (group && this.onGroupKey(e, row, group)) return;
+    if (onRow && !group && this.rowDrag.onKey(e, row)) return;
     if (onRow && !group && field === EXPAND_FIELD && this.onExpandKey(e, row)) return;
     if (onRow && !group && field === ADAPTIVE_FIELD && this.onAdaptiveKey(e, row)) return;
     // With details in the body, Tab goes into the row's own details or out of the grid, not into another row's.
@@ -4900,6 +4943,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const controller = new AbortController();
     const stop = () => controller.abort();
     options.signal?.addEventListener('abort', stop, { once: true });
+    if (options.signal?.aborted) stop();
     this.exports.add(controller);
     model.state.exporting = true;
     model.announce(model.text('gridExporting'));
@@ -4908,6 +4952,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const tracked: GridExportOptions = panel ? { ...options, onProgress: (loaded, total) => (this.showProgress(loaded, total), told?.(loaded, total)) } : options;
     try {
       const result = await collect(tracked, controller.signal);
+      // Rows in memory come at once: a stop asked for meanwhile still stops it.
+      controller.signal.throwIfAborted();
       const count = 'fields' in result ? result.rows.length : result.rows.filter((r) => r.rowType === 'data').length;
       model.announce(model.text('gridExported', { count: model.formatter.count(count) }));
       return { result, options };

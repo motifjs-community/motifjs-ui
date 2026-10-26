@@ -21,6 +21,7 @@ export default defineConfig({
       { find: '@motifx-community/ui/styles.css', replacement: here('../../src/styles/index.css') },
       { find: '@motifx-community/ui/tokens', replacement: here('../../src/tokens/index.ts') },
       { find: '@motifx-community/ui/excel', replacement: here('../../src/excel/index.ts') },
+      { find: '@motifx-community/ui/pdf', replacement: here('../../src/pdf/index.ts') },
       { find: '@motifx-community/ui', replacement: here('../../src/index.ts') },
     ],
     // One @motifx/core only.

@@ -201,6 +201,44 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   shown for keyboard focus closed at once when focusing scrolled its field into view; it now follows
   the field while the page scrolls and closes only if the field is off the screen when scrolling ends.
 
+### DataGrid PDF export and row drag and drop
+
+- A new entry, `@motifx-community/ui/pdf`, with `exportDataGrid({ jsPDFDocument, component, … })`
+  (`pdfExporter.exportDataGrid`): jsPDF is an optional peer dependency, the entry draws
+  the grid's `exportSheet()` on the document with jsPDF's own calls (no table plugin): the header rows
+  with bands merged over their columns, the data rows with the grid's texts and alignment, the group
+  rows across the row, group footers, the totals; the grid's widths narrowed to the page; rows that do
+  not fit go on to the next page under the header rows again; right to left from the right edge.
+  Options: `topLeft`, `columnWidths`, `margin` (40 pt), `indent`, `repeatHeaders` (`true`),
+  `selectedRowsOnly`, `loadPanel` (with Stop), `customizeCell({ gridCell, pdfCell })`,
+  `customDrawCell({ doc, rect, gridCell, pdfCell, cancel })`, `onRowExporting({ rowCells, rowHeight })`;
+  ours: `fitColumns` (`'shrink'` / `'fill'` / `'none'`), `wordWrapEnabled`, `fontSize`, `headers`,
+  `groups`, `summaries`, `pageSize`, `onProgress`, `signal`. It resolves with where the table ends
+  (`{ page, y }`). Types `PdfExportOptions`, `PdfCell`, `PdfCustomizeCellArgs`, `PdfCustomDrawCellArgs`,
+  `PdfRowExportingArgs`, `PdfExportResult`, `PdfMargin`. `'pdf'` in `export.formats` puts “Export all
+  data to PDF” in the toolbar's menu (`onExporting` with `format: 'pdf'`).
+- An export given a signal that is already stopped, or stopped while rows in memory are collected,
+  now rejects with the `AbortError` instead of going on.
+- Row drag and drop (`rowDragging`): the `rowDragging` prop and the live
+  `grid.rowDragging` — `allowReordering`, `allowDropInsideItem`, `dropFeedbackMode` (`'indicate'`: a
+  line; `'push'`: the rows make room), `showDragIcons` (a drag icon column pinned to the start; off:
+  the whole row), `handle`, `group` (drag between grids), `data`, `dragDirection`, `boundary`,
+  `container`, `cursorOffset`, `dragTemplate`, `autoScroll` / `scrollSpeed` / `scrollSensitivity`;
+  ours: `keyboard`, `moveUpKeys` / `moveDownKeys` (`Ctrl+Shift+ArrowUp` / `Down`), `columnWidth`. A
+  copy of the row follows the pointer (`settings.dragGhost`, `dragThreshold`); the rows scroll near
+  the edges, also over pooled rows of the virtual list. Handlers `onDragStart`, `onDragMove`,
+  `onDragChange`, `onDragEnd` (cancelable, `GridRowDragEventArgs`) and `onReorder`, `onAdd`,
+  `onRemove` (`GridRowDropEventArgs`, with `promise`), with `fromIndex`, `toIndex`, `itemData`,
+  `itemKey`, `toItemData`, `dropInsideItem`, `fromComponent`, `toComponent`, `fromData`, `toData`.
+  `moveRow(fromIndex, toIndex)`; Escape cancels a drag; moves are announced. Texts `gridDragColumn`,
+  `gridDragRow`, `gridRowMoved`, `gridRowMovedTo`, `gridRowDroppedOnto`, `gridRowMoveFirst`,
+  `gridRowMoveLast`, `gridRowDragCanceled` (en/tr); tokens `datagrid.drag-color`, `drag-radius`,
+  `row-drag-opacity`, `row-drag-placeholder`, `row-drop-color`, `row-drop-width`,
+  `row-drop-inside-width`, `row-ghost-radius`.
+- Docs: “Export to PDF” on the Selection and export page; a new page “Row drag and drop”
+  (`/datagrid/drag`: reorder in memory, on a server with an order field, between two grids);
+  `e2e/checks/43-datagrid-pdf-drag.mjs`.
+
 ### DataGrid band headers and adaptive columns
 
 - Bands (band columns): a `GridBand` in `columns` (`title`, `columns` — columns and

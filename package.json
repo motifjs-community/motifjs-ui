@@ -36,6 +36,10 @@
       "types": "./dist/excel/index.d.ts",
       "import": "./dist/excel/index.js"
     },
+    "./pdf": {
+      "types": "./dist/pdf/index.d.ts",
+      "import": "./dist/pdf/index.js"
+    },
     "./styles.css": "./dist/styles.css",
     "./package.json": "./package.json"
   },
@@ -63,10 +67,14 @@
     "@motifx-community/data": "0.x",
     "@motifx-community/design-system": "0.x",
     "@motifx/core": "^1.2.0-rc.21",
-    "exceljs": "^4.4.0"
+    "exceljs": "^4.4.0",
+    "jspdf": "^4.2.1"
   },
   "peerDependenciesMeta": {
     "exceljs": {
+      "optional": true
+    },
+    "jspdf": {
       "optional": true
     }
   },
@@ -79,6 +87,7 @@
     "axe-core": "^4.11.0",
     "exceljs": "^4.4.0",
     "jsdom": "^30.1.2",
+    "jspdf": "^4.2.1",
     "style-dictionary": "^5.6.1",
     "stylelint": "^17.16.0",
     "stylelint-declaration-strict-value": "^1.12.1",

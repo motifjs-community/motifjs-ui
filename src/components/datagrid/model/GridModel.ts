@@ -26,6 +26,7 @@ import { ColumnModel } from './ColumnModel';
 import { DEFAULT_SETTINGS } from './default-settings';
 import { AdaptiveRow } from './AdaptiveRow';
 import { DetailRows } from './DetailRows';
+import { RowDragOptions } from './RowDragOptions';
 import type { FilterValueState } from './filter-value-state';
 import { FilterModel } from './FilterModel';
 import { FilterValues } from './FilterValues';
@@ -133,6 +134,8 @@ export class GridModel<T> {
   readonly details: DetailRows<T>;
   /** Which row has its adaptive detail open (`adaptiveDetail`), and its options. */
   readonly adaptive: AdaptiveRow;
+  /** The `rowDragging` options. */
+  readonly rowDrag: RowDragOptions<T>;
   /** `aria-rowindex` of grid row `i`; the body counts the open details above it in. */
   ariaRowIndex: (i: number) => number = (i) => i + 1 + this.headRows;
   /** How many rows laid out have their details open (the body tells). */
@@ -197,6 +200,9 @@ export class GridModel<T> {
     this.columns.expandWidth = () => this.details.options.get('columnWidth');
     this.adaptive = new AdaptiveRow(props.adaptiveDetail);
     this.columns.adaptiveWidth = () => this.adaptive.options.get('columnWidth');
+    this.rowDrag = new RowDragOptions<T>(props.rowDragging);
+    this.columns.dragWanted = () => this.rowDrag.showsIcons;
+    this.columns.dragWidth = () => this.rowDrag.get('columnWidth');
     this.filters = new FilterModel<T>(this.columns);
     this.filters.sync = () => this.syncsFilter();
     const filters = stored ? this.reviveDates(stored.filters) : props.filters;

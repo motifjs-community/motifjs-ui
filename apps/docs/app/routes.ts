@@ -44,6 +44,7 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   'datagrid-master-detail': () => import('../pages/datagrid/DataGridMasterDetailPage'),
   'datagrid-bands': () => import('../pages/datagrid/DataGridBandsPage'),
   'datagrid-selection': () => import('../pages/datagrid/DataGridSelectionPage'),
+  'datagrid-drag': () => import('../pages/datagrid/DataGridDragPage'),
   'datagrid-layout': () => import('../pages/datagrid/DataGridLayoutPage'),
   'datagrid-api': () => import('../pages/datagrid/DataGridApiPage'),
 };
