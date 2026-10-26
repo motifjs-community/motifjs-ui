@@ -7,6 +7,8 @@ export interface TabDocumentKeys {
   nextTab: string[];
   previousTab: string[];
   closeTab: string[];
+  /** Hides the active document; `show`, or "Show hidden" in the menus, brings it back. */
+  hide: string[];
   /** Closes the active group's documents (pinned ones stay while `keepPinned` is on). */
   closeAllTabs: string[];
   /** Closes the active group's documents that have no unsaved changes. */

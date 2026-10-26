@@ -1,5 +1,6 @@
 import { createSignal, read, type Bind } from '@motifx/core';
 import type { TabBarButton } from './tab-bar-button';
+import type { TabBarButtonSize } from './tab-bar-button-size';
 import type { TabLayoutBar } from './tab-layout-bar';
 import type { TabSize } from './tab-size';
 
@@ -14,7 +15,8 @@ export class TabBarSettings {
     tabSize: createSignal<Bind<TabSize | null>>(null),
     tabMinWidth: createSignal<Bind<number | null>>(null),
     singleTabTitle: createSignal<Bind<boolean | null>>(null),
-    barButtons: createSignal<Bind<readonly TabBarButton[] | 'all' | null>>(null),
+    barButtons: createSignal<Bind<readonly TabBarButton[] | 'all' | 'auto' | null>>(null),
+    barButtonSize: createSignal<Bind<TabBarButtonSize | null>>(null),
   };
 
   /** Buttons that scroll its strips when the tabs do not fit. Reactive. */
@@ -45,12 +47,19 @@ export class TabBarSettings {
   set singleTabTitle(value: Bind<boolean | null>) {
     this.own.singleTabTitle.value = value;
   }
-  /** The built-in buttons that stay in its toolbars; the others go into the "…" menu. `'all'`: every button, as among the documents. Reactive. */
-  get barButtons(): readonly TabBarButton[] | 'all' | null {
+  /** The built-in buttons that stay in its toolbars; the others go into the "…" menu. `'all'`: every button, as among the documents; `'auto'`: as the manager's `compactBarButtons` says it. Reactive. */
+  get barButtons(): readonly TabBarButton[] | 'all' | 'auto' | null {
     return read(this.own.barButtons.value);
   }
-  set barButtons(value: Bind<readonly TabBarButton[] | 'all' | null>) {
+  set barButtons(value: Bind<readonly TabBarButton[] | 'all' | 'auto' | null>) {
     this.own.barButtons.value = value;
+  }
+  /** How large the buttons of its toolbars are. Reactive. */
+  get barButtonSize(): TabBarButtonSize | null {
+    return read(this.own.barButtonSize.value);
+  }
+  set barButtonSize(value: Bind<TabBarButtonSize | null>) {
+    this.own.barButtonSize.value = value;
   }
 
   /** @internal The settings given as plain values, for `saveLayout`; a function is the app's to give again. */

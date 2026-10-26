@@ -1,4 +1,4 @@
-import { ComponentBase, effect, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, ComponentBase, effect, Emitter, Transporter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { FocusContainer } from '../../core/container';
 import { deepActiveElement } from '../../core/focus';
 import { fillTemplate } from '../../core/fill-template';
@@ -22,6 +22,8 @@ import type { DocumentMovedEventArgs } from './document-moved-event-args';
 import type { DocumentMovingEventArgs } from './document-moving-event-args';
 import type { DocumentOpenedEventArgs } from './document-opened-event-args';
 import type { DocumentOpeningEventArgs } from './document-opening-event-args';
+import type { DocumentShowingEventArgs } from './document-showing-event-args';
+import type { DocumentShownEventArgs } from './document-shown-event-args';
 import { DocumentTab } from './DocumentTab';
 import { DropMarks } from './DropMarks';
 import type { GroupLockedEventArgs } from './group-locked-event-args';
@@ -38,6 +40,7 @@ import { placeNode } from './place-node';
 import type { SplitDirection } from './split-direction';
 import type { TabAfterClose } from './tab-after-close';
 import type { TabBarButton } from './tab-bar-button';
+import type { TabBarButtonSize } from './tab-bar-button-size';
 import type { TabCloseButton } from './tab-close-button';
 import type { TabContentFactory } from './tab-content-factory';
 import type { TabContextMenuEventArgs } from './tab-context-menu-event-args';
@@ -63,6 +66,7 @@ import type { TabLayoutChange } from './tab-layout-change';
 import type { TabLayoutDocument } from './tab-layout-document';
 import type { TabLayoutFactory } from './tab-layout-factory';
 import type { TabLayoutGroup } from './tab-layout-group';
+import type { TabLayoutHidden } from './tab-layout-hidden';
 import type { TabLayoutNode } from './tab-layout-node';
 import type { TabListScope } from './tab-list-scope';
 import type { TabMenuCommand } from './tab-menu-command';
@@ -71,6 +75,7 @@ import type { TabNewDocument } from './tab-new-document';
 import type { TabOpenOptions } from './tab-open-options';
 import type { TabOpenPosition } from './tab-open-position';
 import type { TabShowDescription } from './tab-show-description';
+import type { TabShowOptions } from './tab-show-options';
 import type { TabSize } from './tab-size';
 import { TabSplit } from './TabSplit';
 import type { TabToolbarItems } from './tab-toolbar-items';
@@ -136,11 +141,13 @@ const OWN = [
   'scrollButtons',
   'singleTabTitle',
   'barButtons',
+  'barButtonSize',
   'compactScrollButtons',
   'compactTabSize',
   'compactTabMinWidth',
   'compactSingleTabTitle',
   'compactBarButtons',
+  'compactBarButtonSize',
   'showDescription',
   'openList',
   'openListScope',
@@ -171,6 +178,7 @@ const OWN = [
   'allowDock',
   'dockSides',
   'allowAutoHide',
+  'allowHide',
   'floatingWindowSize',
   'keepFloatingInView',
   'closeEmptyWindows',
@@ -209,8 +217,6 @@ const AREA_SIZES: Readonly<Record<TabDockSide, number | string>> = { left: 240, 
 const NO_WINDOWS: readonly TabWindow[] = [];
 const NO_BROWSERS: readonly TabBrowserWindow[] = [];
 const NO_AREAS: readonly TabDockArea[] = [];
-/** A dock area keeps its pin, a floating window its close button (each shows only there). */
-const COMPACT_BUTTONS: readonly TabBarButton[] = ['autoHide', 'closeWindow'];
 
 /** What holds a layout tree: a floating window, a dock area, a new browser window, or the documents' area (`null`). */
 type Host = TabWindow | TabDockArea | TabBrowserWindow | null;
@@ -232,6 +238,20 @@ interface Closed {
   index: number;
 }
 
+/** A hidden document: its tab and content, kept, and where `show` puts it back. */
+interface Hidden {
+  document: TabDocument;
+  tab: DocumentTab;
+  group: TabGroup | null;
+  index: number;
+  /** The dock area it was in: its side, its size and whether it was folded (to make it again). */
+  side: TabDockSide | null;
+  size: number | string | null;
+  autoHide: boolean;
+  /** The floating window it was in. */
+  rect: TabRect | null;
+}
+
 interface Parts {
   root: LayoutItem | null;
   tabs: Map<TabDocument, DocumentTab>;
@@ -248,6 +268,9 @@ interface Parts {
   /** Going back or forward: the activation is not a new step. */
   travelling: boolean;
   closed: Closed[];
+  /** The hidden documents, in the order they were hidden, and where their panels wait. */
+  hiddenDocs: Hidden[];
+  stash: Component<HTMLDivElement> | null;
   menus: TabMenus | null;
   openList: DocumentList | null;
   recentList: DocumentList | null;
@@ -294,6 +317,10 @@ interface Parts {
   docked: Emitter<TabDockedEventArgs>;
   autoHiding: Emitter<TabAutoHidingEventArgs>;
   autoHidden: Emitter<TabAutoHiddenEventArgs>;
+  hiding: Emitter<DocumentChangingEventArgs>;
+  hidden_: Emitter<DocumentChangedEventArgs>;
+  showing: Emitter<DocumentShowingEventArgs>;
+  shown: Emitter<DocumentShownEventArgs>;
   slideChanging: Emitter<TabSlideEventArgs>;
   slideChanged: Emitter<TabSlideEventArgs>;
   windowClosing: Emitter<TabWindowClosingEventArgs>;
@@ -395,6 +422,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       ['onDocked', this.onDocked],
       ['onAutoHiding', this.onAutoHiding],
       ['onAutoHidden', this.onAutoHidden],
+      ['onHiding', this.onHiding],
+      ['onHidden', this.onHidden],
+      ['onShowing', this.onShowing],
+      ['onShown', this.onShown],
       ['onSlideChanging', this.onSlideChanging],
       ['onSlideChanged', this.onSlideChanged],
       ['onWindowClosing', this.onWindowClosing],
@@ -459,6 +490,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       }
       parts.tabs.clear();
       parts.closed = [];
+      parts.hiddenDocs = [];
       parts.history = [];
       this.disposeSplits(parts.root);
       for (const area of parts.areas.values()) {
@@ -513,6 +545,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         parts.docked,
         parts.autoHiding,
         parts.autoHidden,
+        parts.hiding,
+        parts.hidden_,
+        parts.showing,
+        parts.shown,
         parts.slideChanging,
         parts.slideChanged,
         parts.windowClosing,
@@ -684,6 +720,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   set barButtons(value: Bind<readonly TabBarButton[] | 'all'>) {
     this.assignProperty('barButtons', value);
   }
+  get barButtonSize(): TabBarButtonSize {
+    return this.getProperty<TabBarButtonSize | undefined>('barButtonSize') ?? 'normal';
+  }
+  set barButtonSize(value: Bind<TabBarButtonSize>) {
+    this.assignProperty('barButtonSize', value);
+  }
   get compactScrollButtons(): boolean {
     return this.getProperty<boolean | undefined>('compactScrollButtons') ?? false;
   }
@@ -708,11 +750,17 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   set compactSingleTabTitle(value: Bind<boolean>) {
     this.assignProperty('compactSingleTabTitle', value, Boolean);
   }
-  get compactBarButtons(): readonly TabBarButton[] | 'all' {
-    return this.getProperty<readonly TabBarButton[] | 'all' | undefined>('compactBarButtons') ?? COMPACT_BUTTONS;
+  get compactBarButtons(): readonly TabBarButton[] | 'all' | 'auto' {
+    return this.getProperty<readonly TabBarButton[] | 'all' | 'auto' | undefined>('compactBarButtons') ?? 'auto';
   }
-  set compactBarButtons(value: Bind<readonly TabBarButton[] | 'all'>) {
+  set compactBarButtons(value: Bind<readonly TabBarButton[] | 'all' | 'auto'>) {
     this.assignProperty('compactBarButtons', value);
+  }
+  get compactBarButtonSize(): TabBarButtonSize {
+    return this.getProperty<TabBarButtonSize | undefined>('compactBarButtonSize') ?? 'small';
+  }
+  set compactBarButtonSize(value: Bind<TabBarButtonSize>) {
+    this.assignProperty('compactBarButtonSize', value);
   }
   get showDescription(): TabShowDescription {
     return this.getProperty<TabShowDescription | undefined>('showDescription') ?? 'duplicates';
@@ -875,6 +923,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   }
   set allowAutoHide(value: Bind<boolean>) {
     this.assignProperty('allowAutoHide', value, Boolean);
+  }
+  get allowHide(): boolean {
+    return this.getProperty<boolean | undefined>('allowHide') ?? true;
+  }
+  set allowHide(value: Bind<boolean>) {
+    this.assignProperty('allowHide', value, Boolean);
   }
   get floatingWindowSize(): { width: number; height: number } | null {
     return this.getProperty<{ width: number; height: number } | null | undefined>('floatingWindowSize') ?? null;
@@ -1073,6 +1127,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   get recentDocuments(): readonly TabDocument[] {
     return this.getProperty<readonly TabDocument[] | undefined>('recentDocuments') ?? NO_DOCUMENTS;
   }
+  /** The hidden documents `show` can put back, in the order they were hidden. Reactive. */
+  get hiddenDocuments(): readonly TabDocument[] {
+    return this.getProperty<readonly TabDocument[] | undefined>('hiddenDocuments') ?? NO_DOCUMENTS;
+  }
   /** The closed documents `reopenClosed` can open again, the one closed last first. Reactive. */
   get closedDocuments(): readonly TabDocument[] {
     return this.getProperty<readonly TabDocument[] | undefined>('closedDocuments') ?? NO_DOCUMENTS;
@@ -1237,6 +1295,21 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   get onAutoHidden(): MotifEvent<TabAutoHiddenEventArgs> {
     return this.parts.autoHidden.event;
   }
+  /** A document is about to be hidden; cancelable. */
+  get onHiding(): MotifEvent<DocumentChangingEventArgs> {
+    return this.parts.hiding.event;
+  }
+  /** A document was hidden; `group` is the one it left. */
+  get onHidden(): MotifEvent<DocumentChangedEventArgs> {
+    return this.parts.hidden_.event;
+  }
+  /** A hidden document is about to be shown again; `group` and `index` may be changed; cancelable. */
+  get onShowing(): MotifEvent<DocumentShowingEventArgs> {
+    return this.parts.showing.event;
+  }
+  get onShown(): MotifEvent<DocumentShownEventArgs> {
+    return this.parts.shown.event;
+  }
   /** A folded dock area is about to slide out (`open`) or back; cancelable. */
   get onSlideChanging(): MotifEvent<TabSlideEventArgs> {
     return this.parts.slideChanging.event;
@@ -1306,6 +1379,24 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   /** Closes the documents of a group (or of every group) that have no unsaved changes. */
   closeSaved(group?: TabGroup): Promise<boolean> {
     return this.closeMany(untracked(() => (group ? group.documents : this.documents).filter((d) => !d.dirty)), undefined, false);
+  }
+
+  /**
+   * Takes a document out of its group without closing it: its tab goes, its content is kept as its
+   * `contentLifetime` says, and `show` puts it back where it was. A group, a dock area or a window
+   * it leaves empty goes. `false` when it may not be hidden (`allowHide`) or `onHiding` cancels.
+   */
+  hide(document: TabDocument): boolean {
+    return untracked(() => document.manager === this && this.hideBy(document, false));
+  }
+
+  /**
+   * Puts a hidden document back: into the group it was hidden from, else into its dock area (made
+   * again at its size), else into a floating window where its window was, else among the documents.
+   * `options` may name a group or a dock area instead.
+   */
+  show(document: TabDocument, options: TabShowOptions = {}): boolean {
+    return untracked(() => this.showBy(document, options, false));
   }
 
   /** Makes a document its group's active one, and its group the active group. */
@@ -1389,8 +1480,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     }
   }
 
+  /** A document of this manager by its id: an open one first, else a hidden one. */
   findDocument(id: string): TabDocument | null {
-    return untracked(() => this.documents.find((d) => d.id === id && !d.original) ?? this.documents.find((d) => d.id === id) ?? null);
+    return untracked(() => this.documents.find((d) => d.id === id && !d.original) ?? this.documents.find((d) => d.id === id) ?? this.hiddenDocuments.find((d) => d.id === id) ?? null);
   }
 
   /** The content made for a document, `null` while it is not built. */
@@ -1700,6 +1792,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
           click: () => this.lockBy(target, !target.locked, true),
         },
       ];
+      const hidden = this.hiddenItems();
+      if (hidden.length && this.menuItems.showHidden !== false) commands.push({ text: this.textOf('tabDocsShowHidden'), beginGroup: true, items: hidden, data: 'showHidden' });
       if (compact) {
         const folded = target.foldedItems();
         if (target.window && this.menuItems.dock !== false) folded.push({ text: this.textOf('tabDocsDock'), beginGroup: folded.length > 0, click: () => this.runCommand('dock', target, null) });
@@ -1738,6 +1832,24 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         activeGroup: Math.max(0, groups.indexOf(this.activeGroup!)),
         maximizedGroup: this.parts.maximized ? groups.indexOf(this.parts.maximized) : null,
       };
+      const hidden = this.parts.hiddenDocs;
+      if (hidden.length) {
+        layout.hidden = hidden.map((h) => {
+          const saved: TabLayoutHidden = { document: this.writeDocument(h.document) };
+          const at = h.group ? groups.indexOf(h.group) : -1;
+          if (at >= 0) {
+            saved.group = at;
+            saved.index = h.index;
+          }
+          if (h.side) {
+            saved.side = h.side;
+            if (h.size !== null) saved.size = h.size;
+            if (h.autoHide) saved.autoHide = true;
+          }
+          if (h.rect) saved.rect = { ...h.rect };
+          return saved;
+        });
+      }
       const areas = this.orderedAreas().filter((a) => a.root);
       if (areas.length) {
         layout.areas = areas.map((a) => {
@@ -1791,6 +1903,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         tab.dispose();
       }
       parts.tabs.clear();
+      parts.hiddenDocs = [];
       const old = parts.root;
       const oldGroups = [...this.groups];
       const oldAreas = [...parts.areas.values()];
@@ -1864,6 +1977,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         w.lastDock = { side: null, group: groups[saved.home ?? -1] ?? null };
         if (mode === 'reopen' && saved.rect) parts.reopen.push({ window: w, rect: saved.rect });
       }
+      for (const saved of layout.hidden ?? []) this.readHidden(saved, groups, factory, made);
+      this.renderHidden();
       this.useGroup(groups[layout.activeGroup] ?? groups[0], false);
       const maximized = layout.maximizedGroup === null ? undefined : groups[layout.maximizedGroup];
       if (maximized) this.maximizeBy(maximized, false, true);
@@ -2385,6 +2500,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         case 'close':
           if (doc) void this.closeDocument(doc, true);
           break;
+        case 'hide':
+          if (doc) this.hideBy(doc, true);
+          break;
         case 'closeOthers':
           if (doc) void this.closeMany(group.documents.filter((d) => d !== doc), undefined, true);
           break;
@@ -2504,6 +2622,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     this.ensureRoot();
     let doc = source instanceof TabDocument ? source : new TabDocument(source);
     const named = options.group && this.groups.includes(options.group) ? options.group : null;
+    // A hidden document comes back.
+    if (doc.manager === this && doc.isHidden) return this.showBy(doc, { group: named ?? undefined, index: options.index, active: options.active, focus: options.focus }, byUser) ? doc : null;
     if (doc.manager === this) {
       const where = named ?? this.targetGroup();
       const root = doc.original ?? doc;
@@ -2634,6 +2754,168 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       else target?.restoreFocus();
     }
     return true;
+  }
+
+  /** A window's close button: a document that may only be hidden is hidden, as a tool is; the others close. */
+  private closeOrHide(doc: TabDocument, byUser: boolean): Promise<boolean> {
+    if (byUser && !doc.closable) return Promise.resolve(this.hideBy(doc, true));
+    return this.closeDocument(doc, byUser);
+  }
+
+  /** Whether a document may be hidden: its own `allowHide`, else the manager's. */
+  private mayHide(doc: TabDocument): boolean {
+    return this.isEnabled && (doc.allowHide ?? this.allowHide);
+  }
+
+  /** @internal Whether the close button of a dock area can do something with a document: close it, or hide it. Reactive. */
+  mayCloseOrHide(doc: TabDocument): boolean {
+    return this.isEnabled && (doc.closable || (doc.allowHide ?? this.allowHide));
+  }
+
+  /** @internal The close button of a dock area's (or a window's) bar: the active document closes, or hides when it may not close. */
+  closeActiveByUser(group: TabGroup): void {
+    untracked(() => {
+      const doc = group.activeDocument;
+      if (!doc) return;
+      if (doc.closable) void this.closeDocument(doc, true);
+      else this.hideBy(doc, true);
+    });
+  }
+
+  /** @internal "Show hidden": an item for each hidden document, which brings it back. */
+  hiddenItems(): MenuItem[] {
+    return this.parts.hiddenDocs.map(({ document }) => ({
+      text: () => document.title,
+      icon: () => document.icon,
+      data: document,
+      click: () => untracked(() => this.showBy(document, { focus: true }, true)),
+    }));
+  }
+
+  private hideBy(doc: TabDocument, byUser: boolean): boolean {
+    const parts = this.parts;
+    const tab = parts.tabs.get(doc);
+    const group = tab?.group;
+    if (!tab || !group || !this.mayHide(doc)) return false;
+    const e: DocumentChangingEventArgs = { document: doc, group, byUser, cancel: false, source: this };
+    parts.hiding.fire(e);
+    if (e.cancel || tab.group !== group) return false;
+    const area = group.dockArea;
+    const w = group.window;
+    const index = group.tabs.indexOf(tab);
+    const focus = deepActiveElement(tab.header);
+    const focusOnTab = !!focus && tab.header.contains(focus);
+    const hadFocus = focusOnTab || (!!focus && tab.panel.element.contains(focus));
+    const wasActive = group.activeTab === tab;
+    const next = wasActive ? this.nextAfterClose(group, tab) : null;
+    group.removeTab(tab);
+    tab.show(false);
+    this.stashPanel(tab);
+    doc.markHidden(this);
+    parts.hiddenDocs.push({ document: doc, tab, group, index, side: area?.side ?? null, size: area?.size ?? null, autoHide: !!area?.autoHidden, rect: w ? { ...w.rect } : null });
+    this.forget(doc);
+    this.renderHidden();
+    if (wasActive) group.showTab(next);
+    parts.hidden_.fire({ document: doc, group, byUser, source: this });
+    if (wasActive && next) this.fireActivated(next.document, doc, group, byUser);
+    this.say('tabDocsHidden', { title: doc.title });
+    const removed = !group.tabs.length && this.removable(group);
+    if (removed) {
+      this.removeGroup(group);
+      this.layoutChanged('closeGroup', group, byUser);
+    }
+    // The window or the area it was in, unless it went with the group.
+    const inWindow = w && parts.windows.includes(w) ? w : null;
+    const inArea = area && parts.areas.get(area.side) === area ? area : null;
+    this.layoutChanged('hide', removed ? null : group, byUser, inWindow, inArea);
+    if (hadFocus) {
+      const target = removed ? this.activeGroup : group;
+      const active = target?.activeTab;
+      if (active && focusOnTab && !removed) active.header.focus();
+      else if (active) active.focusContent();
+      else target?.restoreFocus();
+    }
+    return true;
+  }
+
+  private showBy(doc: TabDocument, options: TabShowOptions, byUser: boolean): boolean {
+    const parts = this.parts;
+    const hidden = parts.hiddenDocs.find((h) => h.document === doc);
+    if (!hidden || (byUser && !this.isEnabled)) return false;
+    const place = this.showPlace(hidden, options);
+    if (!place) return false;
+    const e: DocumentShowingEventArgs = { document: doc, group: place.group, side: place.side, index: place.index, byUser, cancel: false, source: this };
+    parts.showing.fire(e);
+    if (e.cancel || !parts.hiddenDocs.includes(hidden)) return false;
+    this.restoreForChange();
+    const chosen = e.group && this.groups.includes(e.group) ? e.group : null;
+    const group = chosen ?? this.makeHome(place);
+    const tab = hidden.tab;
+    parts.hiddenDocs.splice(parts.hiddenDocs.indexOf(hidden), 1);
+    group.addTab(tab, Math.max(0, Math.min(e.index, group.tabs.length)));
+    doc.placeIn(this, group);
+    this.renderHidden();
+    const active = options.active ?? true;
+    if (active && group.dockArea?.autoHidden) this.slideOut(doc, byUser, false);
+    else if (active || !group.activeTab) this.activateDocument(doc, !!options.focus, byUser);
+    if (options.focus && group.dockArea?.autoHidden) tab.focusContent();
+    parts.shown.fire({ document: doc, group, index: group.tabs.indexOf(tab), byUser, source: this });
+    this.layoutChanged('show', group, byUser, group.window, group.dockArea);
+    this.say('tabDocsShown', { title: doc.title });
+    return true;
+  }
+
+  /** Where a hidden document goes back: the group named, the dock area named, its own group, its dock area, its window's place, or the documents. */
+  private showPlace(hidden: Hidden, options: TabShowOptions): { group: TabGroup | null; side: TabDockSide | null; index: number; size: number | string | null; autoHide: boolean; rect: TabRect | null } | null {
+    const parts = this.parts;
+    const at = (group: TabGroup, index: number) => ({ group, side: group.dockArea?.side ?? null, index: options.index ?? index, size: null, autoHide: false, rect: null });
+    const inArea = (side: TabDockSide, size: number | string | null, autoHide: boolean) => {
+      const area = parts.areas.get(side);
+      const group = area ? (parts.recentGroups.find((g) => g.dockArea === area) ?? this.hostGroups(area)[0]) : null;
+      return group ? at(group, this.insertIndex(group)) : { group: null, side, index: 0, size, autoHide, rect: null };
+    };
+    if (options.group && this.groups.includes(options.group)) return at(options.group, this.insertIndex(options.group));
+    if (options.side) return DOCK_SIDES.includes(options.side) && this.mayDock(hidden.document, options.side) ? inArea(options.side, null, false) : null;
+    if (hidden.group && this.groups.includes(hidden.group)) return at(hidden.group, hidden.index);
+    if (hidden.side) return inArea(hidden.side, hidden.size, hidden.autoHide);
+    if (hidden.rect) return { group: null, side: null, index: 0, size: null, autoHide: false, rect: hidden.rect };
+    const group = this.targetGroupOutside() ?? this.targetGroup();
+    return at(group, this.insertIndex(group));
+  }
+
+  /** The group a hidden document goes back into when there is none: in a dock area made again, or a floating window, or the documents' group. */
+  private makeHome(place: { group: TabGroup | null; side: TabDockSide | null; size: number | string | null; autoHide: boolean; rect: TabRect | null }): TabGroup {
+    if (place.group && this.groups.includes(place.group)) return place.group;
+    if (!place.side && !place.rect) return this.targetGroupOutside() ?? this.targetGroup();
+    const host = place.side ? (this.parts.areas.get(place.side) ?? this.createArea(place.side, place.size ?? this.dockAreaSize[place.side])) : this.createWindow({ ...place.rect! });
+    const existing = this.hostGroups(host)[0];
+    if (existing) return existing;
+    const group = this.createGroup();
+    this.setHostRoot(host, group);
+    this.renderTree();
+    if (host instanceof TabDockArea && place.autoHide) host.markFolded(true);
+    return group;
+  }
+
+  /** The panel of a hidden document waits in the manager, out of sight. */
+  private stashPanel(tab: DocumentTab): void {
+    const parts = this.parts;
+    if (!parts.stash) {
+      const stash = (parts.stash = new Component<HTMLDivElement>('div'));
+      stash.element.className = 'mx-tabdocs__stash';
+      stash.element.hidden = true;
+      this.controls.add(stash);
+    }
+    const stash = parts.stash;
+    if (tab.panel.parent) keepScroll(tab.panel.element, () => Transporter.transport(tab.panel, stash));
+    else stash.controls.add(tab.panel);
+  }
+
+  private renderHidden(): void {
+    this.setProperty(
+      'hiddenDocuments',
+      this.parts.hiddenDocs.map((h) => h.document),
+    );
   }
 
   /** A document left this manager: it leaves the history and the recently used list. */
@@ -3639,7 +3921,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     parts.closingWindows.add(w);
     try {
       for (const doc of untracked(() => [...w.documents])) {
-        if (!(await untracked(() => this.closeDocument(doc, byUser)))) return false;
+        if (!(await untracked(() => this.closeOrHide(doc, byUser)))) return false;
       }
     } finally {
       parts.closingWindows.delete(w);
@@ -4249,7 +4531,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     parts.closingWindows.add(w);
     try {
       for (const doc of untracked(() => [...w.documents])) {
-        if (!(await untracked(() => this.closeDocument(doc, byUser)))) return false;
+        if (!(await untracked(() => this.closeOrHide(doc, byUser)))) return false;
       }
     } finally {
       parts.closingWindows.delete(w);
@@ -4422,19 +4704,35 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       return { kind: 'split', orientation: item.orientation, sizes: [...item.sizes], children: item.children.map((c) => this.writeNode(c)) };
     }
     const tabs = item.tabs;
-    const documents = tabs.map((t): TabLayoutDocument => {
-      const doc = t.document;
-      const saved: TabLayoutDocument = { id: doc.id, type: doc.type, title: doc.title };
-      if (doc.state !== undefined) saved.state = doc.state;
-      if (doc.pinned) saved.pinned = true;
-      if (doc.preview) saved.preview = true;
-      return saved;
-    });
+    const documents = tabs.map((t) => this.writeDocument(t.document));
     const group: TabLayoutGroup = { kind: 'group', documents, active: item.activeTab ? tabs.indexOf(item.activeTab) : -1, recent: item.recentTabs.map((t) => tabs.indexOf(t)) };
     if (item.locked) group.locked = true;
     if (!item.allowDrop) group.allowDrop = false;
     if (item.dropSides) group.dropSides = [...item.dropSides];
     return group;
+  }
+
+  private writeDocument(doc: TabDocument): TabLayoutDocument {
+    const saved: TabLayoutDocument = { id: doc.id, type: doc.type, title: doc.title };
+    if (doc.state !== undefined) saved.state = doc.state;
+    if (doc.pinned) saved.pinned = true;
+    if (doc.preview) saved.preview = true;
+    return saved;
+  }
+
+  /** A hidden document `saveLayout` wrote: made again, its content kept aside as its lifetime says, and where it goes back to. */
+  private readHidden(saved: TabLayoutHidden, groups: readonly TabGroup[], factory: TabLayoutFactory | undefined, made: Map<string, TabDocument>): void {
+    if (!saved?.document || made.has(saved.document.id)) return;
+    const doc = this.restoreDocument(saved.document, factory);
+    if (!doc || doc.isOpen) return;
+    made.set(doc.id, doc);
+    const tab = new DocumentTab(doc, this);
+    this.parts.tabs.set(doc, tab);
+    doc.markHidden(this);
+    this.stashPanel(tab);
+    tab.prepare();
+    const side = saved.side && DOCK_SIDES.includes(saved.side) ? saved.side : null;
+    this.parts.hiddenDocs.push({ document: doc, tab, group: groups[saved.group ?? -1] ?? null, index: saved.index ?? 0, side, size: side ? (saved.size ?? null) : null, autoHide: !!side && !!saved.autoHide, rect: saved.rect ?? null });
   }
 
   private readNode(node: TabLayoutNode, factory: TabLayoutFactory | undefined, made: Map<string, TabDocument>): LayoutItem {
@@ -4552,6 +4850,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       const doc = this.tabAt(e.target)?.document ?? this.activeDocument;
       return !!doc && doc.manager === this && (run(doc), true);
     };
+    each(
+      'hide',
+      withTab((doc) => this.hideBy(doc, true)),
+    );
     each(
       'moveTabLeft',
       withTab((doc) => this.moveInGroupBy(doc, -1, true)),
@@ -4779,6 +5081,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       at: -1,
       travelling: false,
       closed: [],
+      hiddenDocs: [],
+      stash: null,
       menus: null,
       openList: null,
       recentList: null,
@@ -4812,6 +5116,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       docked: new Emitter(),
       autoHiding: new Emitter(),
       autoHidden: new Emitter(),
+      hiding: new Emitter(),
+      hidden_: new Emitter(),
+      showing: new Emitter(),
+      shown: new Emitter(),
       slideChanging: new Emitter(),
       slideChanged: new Emitter(),
       windowClosing: new Emitter(),

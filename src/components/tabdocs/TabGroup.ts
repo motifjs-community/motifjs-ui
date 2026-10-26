@@ -14,6 +14,7 @@ import { keepScroll } from './keep-scroll';
 import { placeNode } from './place-node';
 import type { SplitDirection } from './split-direction';
 import type { TabBarButton } from './tab-bar-button';
+import type { TabBarButtonSize } from './tab-bar-button-size';
 import type { TabBrowserWindow } from './TabBrowserWindow';
 import type { TabDockArea } from './TabDockArea';
 import type { TabDocument } from './TabDocument';
@@ -43,12 +44,14 @@ interface Parts {
   tips: Component<HTMLDivElement>;
   empty: HTMLDivElement;
   actions: Toolbar;
-  /** The built-in toolbar buttons: split, maximize, the lock mark, "…", auto hide, and a window's maximize and close. */
+  /** The built-in toolbar buttons: split, maximize, the lock mark, "…", auto hide, close, and a window's maximize and close. */
   own: ToolbarItem[];
   /** The built-in buttons by name, but "…", which always stays. */
   named: [TabBarButton, ToolbarItem][];
   /** The auto hide button of a group in a dock area. */
   autoHide: ToolbarItem;
+  /** The close button of a dock area's (or a window's) active document. */
+  close: ToolbarItem;
   /** The handle the group is dragged by (and moved with the keys), first in the toolbar. */
   grip: ToolbarItem;
   /** The app's buttons for this group, made once by the manager's `toolbarItems`. */
@@ -70,6 +73,10 @@ const NONE: readonly TabDocument[] = [];
 
 const ALL_SIDES: readonly TabDropSide[] = ['center', 'left', 'right', 'up', 'down'];
 
+/** What `'auto'` keeps: a dock area its pin and close button, a floating window its own close button. */
+const AREA_BUTTONS: readonly TabBarButton[] = ['autoHide', 'close'];
+const WINDOW_BUTTONS: readonly TabBarButton[] = ['closeWindow'];
+
 /** What a group's bar follows: its dock area's or window's own settings, else the manager's. */
 interface BarLook {
   scrollButtons: boolean;
@@ -77,6 +84,7 @@ interface BarLook {
   tabMinWidth: number;
   singleTabTitle: boolean;
   buttons: readonly TabBarButton[] | 'all';
+  buttonSize: TabBarButtonSize;
 }
 
 /**
@@ -103,7 +111,8 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     const stopLook = effect(() => {
       const look = this.look();
       const title = look.singleTabTitle && this.documents.length === 1;
-      untracked(() => this.renderLook(look, title));
+      const close = manager.groupActions && (!!this.dockArea || !!this.window) && (look.buttons === 'all' || look.buttons.includes('close'));
+      untracked(() => this.renderLook(look, title, close));
     });
     this.motif.setDisposable(stopLook);
     this.observeProperty('locked', () =>
@@ -421,6 +430,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     this.parts.list.setAttribute('aria-label', manager.textOf('tabDocsTabs', { n: number }));
     this.parts.actions.controlOf(this.parts.grip)?.element.classList.add('mx-tabdocs__grip');
     this.parts.actions.controlOf(this.parts.autoHide)?.element.classList.add('mx-tabdocs__auto-hide');
+    this.parts.actions.controlOf(this.parts.close)?.element.classList.add('mx-tabdocs__bar-close');
     this.parts.empty.textContent = manager.textOf('tabDocsEmpty');
   }
 
@@ -544,23 +554,28 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   private look(): BarLook {
     const m = this.manager;
     const own = this.dockArea ?? this.window;
-    if (!own) return { scrollButtons: m.scrollButtons, tabSize: m.tabSize, tabMinWidth: m.tabMinWidth, singleTabTitle: m.singleTabTitle, buttons: m.barButtons };
+    if (!own) return { scrollButtons: m.scrollButtons, tabSize: m.tabSize, tabMinWidth: m.tabMinWidth, singleTabTitle: m.singleTabTitle, buttons: m.barButtons, buttonSize: m.barButtonSize };
+    const buttons = own.barButtons ?? m.compactBarButtons;
     return {
       scrollButtons: own.scrollButtons ?? m.compactScrollButtons,
       tabSize: own.tabSize ?? m.compactTabSize,
       tabMinWidth: own.tabMinWidth ?? m.compactTabMinWidth,
       singleTabTitle: own.singleTabTitle ?? m.compactSingleTabTitle,
-      buttons: own.barButtons ?? m.compactBarButtons,
+      buttons: buttons === 'auto' ? (this.dockArea ? AREA_BUTTONS : WINDOW_BUTTONS) : buttons,
+      buttonSize: own.barButtonSize ?? m.compactBarButtonSize,
     };
   }
 
-  private renderLook(look: BarLook, title: boolean): void {
+  /** `close`: the bar has a close button of its own, so a title shows none. */
+  private renderLook(look: BarLook, title: boolean, close: boolean): void {
     const el = this.element;
     el.dataset.tabSize = look.tabSize;
     el.style.setProperty('--_tab-min', `${look.tabMinWidth}px`);
     el.toggleAttribute('data-scroll-buttons', look.scrollButtons);
     el.toggleAttribute('data-compact', look.buttons !== 'all');
     el.toggleAttribute('data-title', title);
+    el.toggleAttribute('data-bar-close', close);
+    el.dataset.barSize = look.buttonSize;
     this.queueOverflow();
   }
 
@@ -664,6 +679,18 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       visible: () => manager.groupActions && !!this.dockArea && manager.mayAutoHide(this.dockArea),
       click: () => manager.toggleAutoHideByUser(this),
     };
+    // In a dock area: the active document closes, or hides when it may not close. It stays in sight next to the pin.
+    const close: ToolbarItem = {
+      overflow: 'never',
+      icon: () => dismissMark(),
+      hint: () => {
+        const doc = this.activeDocument;
+        return doc ? manager.textOf(doc.closable ? 'tabDocsCloseActive' : 'tabDocsHideActive', { title: doc.title }) : manager.textOf('close');
+      },
+      enabled: () => !!this.activeDocument && manager.mayCloseOrHide(this.activeDocument),
+      visible: () => manager.groupActions && (!!this.dockArea || !!this.window),
+      click: () => manager.closeActiveByUser(this),
+    };
     // The window's own buttons, in the group whose strip is its title.
     const windowMaximize: ToolbarItem = {
       icon: () => (this.window?.isMaximized ? restoreMark() : maximizeMark()),
@@ -696,12 +723,13 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       visible: () => manager.groupActions && (manager.openList || this.isCompact),
       click: () => manager.showOpenList(this),
     };
-    const own = [split, maximize, lock, more, autoHide, windowMaximize, windowClose];
+    const own = [split, maximize, lock, more, autoHide, close, windowMaximize, windowClose];
     const named: [TabBarButton, ToolbarItem][] = [
       ['split', split],
       ['maximize', maximize],
       ['lock', lock],
       ['autoHide', autoHide],
+      ['close', close],
       ['maximizeWindow', windowMaximize],
       ['closeWindow', windowClose],
     ];
@@ -747,6 +775,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       own,
       named,
       autoHide,
+      close,
       grip,
       app: { make: null, items: [] },
       more,
@@ -767,7 +796,9 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       const tab = this.tabOf(e.target);
       if (!tab) return;
       const target = e.target as Element;
-      if (target.closest('.mx-tabdocs__close')) {
+      // A title whose bar has the close button shows none of its own.
+      const own = !this.element.matches('[data-title][data-bar-close]');
+      if (own && target.closest('.mx-tabdocs__close')) {
         e.stopPropagation();
         void manager.closeByUser(tab.document);
       } else if (target.closest('.mx-tabdocs__pin')) {

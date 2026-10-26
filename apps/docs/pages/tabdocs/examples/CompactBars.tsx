@@ -5,16 +5,18 @@ import { explorer, outline, output, problems, toolDocument } from './tools';
 
 /**
  * The bars of dock areas and floating windows are compact: tabs shrink before the strip scrolls, a
- * single document shows as a title, and only the pin (or a window's close button) stays beside one
- * "…" menu. Each part is a setting for every area and window, and an area may have its own.
+ * single document shows as a title, and only the pin and the close button (a window's own close
+ * button) stay beside one "…" menu. Each part is a setting for every area and window, and an area
+ * may have its own.
  */
 export default function CompactBars() {
-  const s = reactive({ compact: true, scroll: false, title: true, shrink: true, leftScroll: false });
+  const s = reactive({ compact: true, small: true, scroll: false, title: true, shrink: true, leftScroll: false });
   const docs = new TabDocumentManager({
     label: 'Files with compact tool bars',
     minGroupWidth: 120,
     dockAreaSize: { left: 230, bottom: 130 },
-    compactBarButtons: () => (s.compact ? ['autoHide', 'closeWindow'] : 'all'),
+    compactBarButtons: () => (s.compact ? 'auto' : 'all'),
+    compactBarButtonSize: () => (s.small ? 'small' : 'normal'),
     compactScrollButtons: () => s.scroll,
     compactSingleTabTitle: () => s.title,
     compactTabSize: () => (s.shrink ? 'shrink' : 'fit'),
@@ -41,6 +43,7 @@ export default function CompactBars() {
     <>
       <Stack orientation="horizontal" wrap align="center" gap="lg">
         <Switch label="Compact bars" x-model={() => s.compact} />
+        <Switch label="Small buttons" x-model={() => s.small} />
         <Switch label="Scroll buttons" x-model={() => s.scroll} />
         <Switch label="One document as a title" x-model={() => s.title} />
         <Switch label="Tabs shrink" x-model={() => s.shrink} />

@@ -5754,6 +5754,34 @@
     "value": "600"
   },
   {
+    "name": "tabdocs.bar-button-size",
+    "cssVar": "--mx-tabdocs-bar-button-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "1.5rem"
+  },
+  {
+    "name": "tabdocs.bar-button-padding",
+    "cssVar": "--mx-tabdocs-bar-button-padding",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.bar-button-gap",
+    "cssVar": "--mx-tabdocs-bar-button-gap",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.125rem"
+  },
+  {
+    "name": "tabdocs.bar-icon-size",
+    "cssVar": "--mx-tabdocs-bar-icon-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.875rem"
+  },
+  {
     "name": "tabdocs.list-width",
     "cssVar": "--mx-tabdocs-list-width",
     "type": "dimension",
@@ -6228,6 +6256,13 @@
     "type": "dimension",
     "ref": "focus.ring.width",
     "value": "2px"
+  },
+  {
+    "name": "tabdocs.focus-offset",
+    "cssVar": "--mx-tabdocs-focus-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
   },
   {
     "name": "tabdocs.focus-color",

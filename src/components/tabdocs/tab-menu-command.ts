@@ -1,6 +1,8 @@
 /** The built-in items of the tab and strip context menus; each one is in `menuItems` and in the items' `data`. */
 export type TabMenuCommand =
   | 'close'
+  | 'hide'
+  | 'showHidden'
   | 'closeOthers'
   | 'closeRight'
   | 'closeLeft'

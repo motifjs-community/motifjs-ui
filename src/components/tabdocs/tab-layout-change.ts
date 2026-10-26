@@ -18,4 +18,6 @@ export type TabLayoutChange =
   | 'restoreWindow'
   | 'closeWindow'
   | 'newWindow'
-  | 'mainWindow';
+  | 'mainWindow'
+  | 'hide'
+  | 'show';

@@ -387,4 +387,10 @@ export interface UiStrings {
   tabDocsDocuments: string;
   tabDocsPlaceNewWindow: string;
   tabDocsPlaceInWindow: string;
+  tabDocsHide: string;
+  tabDocsShowHidden: string;
+  tabDocsCloseActive: string;
+  tabDocsHideActive: string;
+  tabDocsHidden: string;
+  tabDocsShown: string;
 }

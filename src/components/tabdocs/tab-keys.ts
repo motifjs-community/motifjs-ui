@@ -8,6 +8,7 @@ const LOCAL: Pick<
   | 'stripFirst'
   | 'stripLast'
   | 'closeFocusedTab'
+  | 'hide'
   | 'resizeSmaller'
   | 'resizeLarger'
   | 'resizeMin'
@@ -59,6 +60,7 @@ const LOCAL: Pick<
   stripFirst: ['Home'],
   stripLast: ['End'],
   closeFocusedTab: ['Delete'],
+  hide: ['Ctrl+K X'],
   resizeSmaller: ['ArrowLeft', 'ArrowUp'],
   resizeLarger: ['ArrowRight', 'ArrowDown'],
   resizeMin: ['Home'],

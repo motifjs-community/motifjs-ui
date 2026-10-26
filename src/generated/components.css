@@ -49,6 +49,9 @@
     --mx-tabdocs-tab-title-min-width: 2.5rem;
     --mx-tabdocs-dirty-size: 0.5rem;
     --mx-tabdocs-badge-dot-size: 0.5rem;
+    --mx-tabdocs-bar-button-size: 1.5rem;
+    --mx-tabdocs-bar-button-gap: 0.125rem;
+    --mx-tabdocs-bar-icon-size: 0.875rem;
     --mx-tabdocs-list-width: 18rem;
     --mx-tabdocs-list-dirty-size: 0.5rem;
     --mx-tabdocs-ghost-max-width: 24rem;
@@ -546,6 +549,7 @@
     --mx-tabdocs-title-font-weight: var(--mx-font-weight-semibold);
     --mx-tabdocs-count-font-size: var(--mx-font-size-caption);
     --mx-tabdocs-count-font-weight: var(--mx-font-weight-semibold);
+    --mx-tabdocs-bar-button-padding: var(--mx-space-1);
     --mx-tabdocs-list-note-font-size: var(--mx-font-size-caption);
     --mx-tabdocs-list-gap: var(--mx-space-1);
     --mx-tabdocs-drag-source-opacity: var(--mx-opacity-disabled);
@@ -584,6 +588,7 @@
     --mx-tabdocs-guide-border-width: var(--mx-border-width-1);
     --mx-tabdocs-guide-border-color: var(--mx-color-stroke-control-default);
     --mx-tabdocs-guide-radius: var(--mx-radius-sm);
+    --mx-tabdocs-focus-offset: var(--mx-focus-ring-offset);
     --mx-tabdocs-focus-halo: var(--mx-focus-ring-halo-inset);
     --mx-tabs-gap: var(--mx-control-gap);
     --mx-tabs-tab-gap: var(--mx-space-1);

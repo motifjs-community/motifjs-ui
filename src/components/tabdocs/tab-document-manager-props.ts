@@ -13,6 +13,8 @@ import type { DocumentMovedEventArgs } from './document-moved-event-args';
 import type { DocumentMovingEventArgs } from './document-moving-event-args';
 import type { DocumentOpenedEventArgs } from './document-opened-event-args';
 import type { DocumentOpeningEventArgs } from './document-opening-event-args';
+import type { DocumentShowingEventArgs } from './document-showing-event-args';
+import type { DocumentShownEventArgs } from './document-shown-event-args';
 import type { GroupLockedEventArgs } from './group-locked-event-args';
 import type { GroupLockingEventArgs } from './group-locking-event-args';
 import type { GroupSplitEventArgs } from './group-split-event-args';
@@ -22,6 +24,7 @@ import type { LayoutChangingEventArgs } from './layout-changing-event-args';
 import type { PinnedTabSize } from './pinned-tab-size';
 import type { TabAfterClose } from './tab-after-close';
 import type { TabBarButton } from './tab-bar-button';
+import type { TabBarButtonSize } from './tab-bar-button-size';
 import type { TabCloseButton } from './tab-close-button';
 import type { TabContentFactory } from './tab-content-factory';
 import type { TabDocumentKeys } from './tab-document-keys';
@@ -123,6 +126,8 @@ export interface TabDocumentManagerProps extends ControlProps {
    * groups and new windows. Default `'all'`.
    */
   barButtons?: Bind<readonly TabBarButton[] | 'all'>;
+  /** How large the buttons of a group's toolbar are: `'small'` makes the built-in ones small squares (about 24 pixels). For the documents' groups and new windows. Default `'normal'`. */
+  barButtonSize?: Bind<TabBarButtonSize>;
   /** `scrollButtons` for the strips of dock areas and floating windows; an area's or a window's own `scrollButtons` wins. Default `false`. */
   compactScrollButtons?: Bind<boolean>;
   /** `tabSize` for dock areas and floating windows: tabs shrink to `compactTabMinWidth` before the strip scrolls. Default `'shrink'`. */
@@ -131,8 +136,15 @@ export interface TabDocumentManagerProps extends ControlProps {
   compactTabMinWidth?: Bind<number>;
   /** `singleTabTitle` for dock areas and floating windows. Default `true`. */
   compactSingleTabTitle?: Bind<boolean>;
-  /** `barButtons` for dock areas and floating windows: an area keeps its pin, a window its close button. Default `['autoHide', 'closeWindow']`. */
-  compactBarButtons?: Bind<readonly TabBarButton[] | 'all'>;
+  /**
+   * `barButtons` for dock areas and floating windows. `'auto'`: a dock area keeps its pin and the
+   * close button of its active document (`['autoHide', 'close']`), a floating window its own close
+   * button (`['closeWindow']`), which closes its documents and hides those that may only be hidden.
+   * A list is followed as it is in both. Default `'auto'`.
+   */
+  compactBarButtons?: Bind<readonly TabBarButton[] | 'all' | 'auto'>;
+  /** `barButtonSize` for dock areas and floating windows; an area's or a window's own `barButtonSize` wins. Default `'small'`. */
+  compactBarButtonSize?: Bind<TabBarButtonSize>;
   /** When a tab shows its document's description. Default `'duplicates'`. */
   showDescription?: Bind<TabShowDescription>;
   /** The "…" button that lists the group's documents. Default `true`. */
@@ -195,6 +207,12 @@ export interface TabDocumentManagerProps extends ControlProps {
   dockSides?: Bind<readonly TabDockSide[]>;
   /** Dock areas can fold to the manager's edge (a document's own `allowAutoHide: false` keeps its area open). Default `true`. */
   allowAutoHide?: Bind<boolean>;
+  /**
+   * Documents can be hidden (`hide`, the "Hide" command, and the close button of a dock area for a
+   * document that cannot close) and shown again where they were; a document's own `allowHide` wins.
+   * Default `true`.
+   */
+  allowHide?: Bind<boolean>;
   /** The size a floating window opens at; `null`: the size of the group it comes from. Default `null`. */
   floatingWindowSize?: Bind<{ width: number; height: number } | null>;
   /** Floating windows stay inside the viewport when moved, resized, or the page gets smaller. Default `true`. */
@@ -277,6 +295,10 @@ export interface TabDocumentManagerProps extends ControlProps {
   onDocked?: (e: TabDockedEventArgs) => void;
   onAutoHiding?: (e: TabAutoHidingEventArgs) => void;
   onAutoHidden?: (e: TabAutoHiddenEventArgs) => void;
+  onHiding?: (e: DocumentChangingEventArgs) => void;
+  onHidden?: (e: DocumentChangedEventArgs) => void;
+  onShowing?: (e: DocumentShowingEventArgs) => void;
+  onShown?: (e: DocumentShownEventArgs) => void;
   onSlideChanging?: (e: TabSlideEventArgs) => void;
   onSlideChanged?: (e: TabSlideEventArgs) => void;
   onWindowClosing?: (e: TabWindowClosingEventArgs) => void;

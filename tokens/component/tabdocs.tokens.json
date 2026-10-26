@@ -83,6 +83,10 @@
     "title-font-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" },
     "count-font-size": { "$type": "dimension", "$value": "{font.size.caption}" },
     "count-font-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" },
+    "bar-button-size": { "$type": "dimension", "$value": { "value": 1.5, "unit": "rem" } },
+    "bar-button-padding": { "$type": "dimension", "$value": "{space.1}" },
+    "bar-button-gap": { "$type": "dimension", "$value": { "value": 0.125, "unit": "rem" } },
+    "bar-icon-size": { "$type": "dimension", "$value": { "value": 0.875, "unit": "rem" } },
     "list-width": { "$type": "dimension", "$value": { "value": 18, "unit": "rem" } },
     "list-note-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
     "list-note-font-size": { "$type": "dimension", "$value": "{font.size.caption}" },
@@ -151,6 +155,7 @@
     "guide-fg-pointed": { "$type": "color", "$value": "{color.accent.on-solid}" },
     "guide-border-color-pointed": { "$type": "color", "$value": "{color.accent.solid}" },
     "focus-width": { "$type": "dimension", "$value": "{focus.ring.width}" },
+    "focus-offset": { "$type": "dimension", "$value": "{focus.ring.offset}" },
     "focus-color": { "$type": "color", "$value": "{focus.ring.color}" },
     "focus-halo": { "$type": "shadow", "$value": "{focus.ring.halo-inset}" }
   }

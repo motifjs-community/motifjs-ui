@@ -105,8 +105,8 @@ describe('TabDocumentManager: compact bars', () => {
       expect([g.element.hasAttribute('data-compact'), g.element.hasAttribute('data-scroll-buttons'), g.element.dataset.tabSize]).toEqual([true, false, 'shrink']);
       expect(g.element.style.getPropertyValue('--_tab-min')).toBe('64px');
     }
-    // An area keeps its pin, a window its close button, both with "…".
-    expect(buttons(side)).toEqual(['Open documents and commands', 'Auto hide']);
+    // An area keeps its pin and the close button of its document, a window its own close button, both with "…".
+    expect(buttons(side)).toEqual(['Open documents and commands', 'Auto hide', 'Close Tool']);
     expect(buttons(floating)).toEqual(['Open documents and commands', 'Close window']);
   });
 
@@ -132,7 +132,7 @@ describe('TabDocumentManager: compact bars', () => {
     expect(side.element.hasAttribute('data-title')).toBe(false);
     s.buttons = 'all';
     await settle();
-    expect(buttons(floating)).toEqual(['Split right', 'Open documents', 'Maximize window', 'Close window']);
+    expect(buttons(floating)).toEqual(['Split right', 'Open documents', 'Close Note', 'Maximize window', 'Close window']);
     expect(floating.element.hasAttribute('data-compact')).toBe(false);
     expect(main.element.hasAttribute('data-compact')).toBe(false);
   });
@@ -161,6 +161,23 @@ describe('TabDocumentManager: compact bars', () => {
     m.dock(floating, 'left');
     await settle();
     expect(floating.element.style.getPropertyValue('--_tab-min')).toBe('100px');
+  });
+
+  it('the buttons of compact bars are small; each level of the setting is live, and the area\'s or the window\'s own value wins', async () => {
+    const s = reactive({ size: 'small' as 'small' | 'normal' });
+    const { m, main, side, floating, area, w } = await places({ compactBarButtonSize: () => s.size });
+    expect([main.element.dataset.barSize, side.element.dataset.barSize, floating.element.dataset.barSize]).toEqual(['normal', 'small', 'small']);
+    s.size = 'normal';
+    m.barButtonSize = 'small';
+    area.barButtonSize = () => 'small';
+    await settle();
+    expect([main.element.dataset.barSize, side.element.dataset.barSize, floating.element.dataset.barSize]).toEqual(['small', 'small', 'normal']);
+    w.barButtonSize = 'small';
+    area.barButtonSize = null;
+    await settle();
+    expect([side.element.dataset.barSize, floating.element.dataset.barSize]).toEqual(['normal', 'small']);
+    // A plain value goes with the layout.
+    expect(m.saveLayout().windows![0].bar).toEqual({ barButtonSize: 'small' });
   });
 
   it('the documents\' bar can be compact too, and its single document a title', async () => {
@@ -256,7 +273,7 @@ describe('TabDocumentManager: the single "…" menu', () => {
     await settle();
     expect(m.showOpenList(floating)).toBe(true);
     await settle();
-    expect(menuNames(m)).toEqual(['Split right', 'Maximize window', 'Dock back', 'Close all', 'Close saved', 'Lock group']);
+    expect(menuNames(m)).toEqual(['Split right', 'Close N2', 'Maximize window', 'Dock back', 'Close all', 'Close saved', 'Lock group']);
     const p = popup(m);
     const menu = p.querySelector('.mx-menu')!;
     const list = p.querySelector('.mx-tabdocs__list')!;
@@ -286,7 +303,7 @@ describe('TabDocumentManager: the single "…" menu', () => {
         { text: 'Run', overflow: 'never', click: () => void log.push('run') },
       ],
     });
-    expect(buttons(side)).toEqual(['Run', 'Open documents and commands', 'Auto hide']);
+    expect(buttons(side)).toEqual(['Run', 'Open documents and commands', 'Auto hide', 'Close Tool']);
     m.showOpenList(side);
     await settle();
     expect(menuNames(m)).toEqual(['Refresh', 'Filter', 'Close all', 'Close saved', 'Lock group']);
@@ -301,12 +318,12 @@ describe('TabDocumentManager: the single "…" menu', () => {
     await settle();
     m.showOpenList(floating);
     await settle();
-    expect(menuNames(m)).toEqual(['Dock back', 'Close all', 'Close saved', 'Lock group']);
+    expect(menuNames(m)).toEqual(['Close Note', 'Dock back', 'Close all', 'Close saved', 'Lock group']);
   });
 
   it('with no list of documents the menu has the commands only, and focus goes to them', async () => {
     const { m, side } = await places({ openList: false });
-    expect(buttons(side)).toEqual(['More options', 'Auto hide']);
+    expect(buttons(side)).toEqual(['More options', 'Auto hide', 'Close Tool']);
     m.showOpenList(side);
     await settle();
     const p = popup(m);
@@ -371,9 +388,16 @@ describe('TabDocumentManager: a single document as a title', () => {
     expect(m.floatingWindows.length).toBe(0);
   });
 
-  it('a click on its close button closes the document', async () => {
-    const { m, side } = await places();
+  it('a click on its close button closes the document; in a dock area the bar\'s close button does, and the title shows none', async () => {
+    const { m, side, floating } = await places();
+    expect([side.element.hasAttribute('data-bar-close'), floating.element.hasAttribute('data-bar-close')]).toEqual([true, false]);
+    header(floating, 'Note').querySelector<HTMLElement>('.mx-tabdocs__close')!.click();
+    await settle();
+    expect(m.findDocument('note')).toBeNull();
     header(side, 'Tool').querySelector<HTMLElement>('.mx-tabdocs__close')!.click();
+    await settle();
+    expect(m.findDocument('tool')!.isOpen).toBe(true);
+    side.element.querySelector<HTMLElement>('.mx-tabdocs__bar-close .mx-button__main, .mx-tabdocs__bar-close')!.click();
     await settle();
     expect(m.findDocument('tool')).toBeNull();
   });

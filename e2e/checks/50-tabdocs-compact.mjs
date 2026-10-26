@@ -1,4 +1,4 @@
-/** Real-browser checks of the compact bars of dock areas and floating windows (the Dock page): room for the tabs, the count, the thin scrollbar, the title, the one "…" menu. */
+/** Real-browser checks of the compact bars of dock areas and floating windows (the Dock page): room for the tabs, the count, the thin scrollbar, the title, the one "…" menu, the close button of an area and hidden tools. */
 export default async function ({ page, base, check, axeSource, box }) {
   /** The room for the tabs of a group, what takes the rest, and the tabs fully in sight. */
   const measure = (g) =>
@@ -32,6 +32,12 @@ export default async function ({ page, base, check, axeSource, box }) {
     await page.evaluate(() => document.documentElement.removeAttribute('data-theme'));
   };
   const section = (anchor) => page.locator(`section[aria-labelledby="${anchor}"]`);
+  /** The name of a toolbar button. */
+  const nameOf = (loc) => loc.evaluate((el) => {
+    const b = el.matches('button') ? el : el.querySelector('button');
+    return b.getAttribute('aria-label') || b.title;
+  });
+  const exactly = (text) => new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
   /** Waits for the page to stop scrolling (the docs scroll smoothly). */
   const still = async (loc) => {
     let a = await box(loc);
@@ -84,7 +90,8 @@ export default async function ({ page, base, check, axeSource, box }) {
     menuFirst: !!(p.querySelector('.mx-menu').compareDocumentPosition(p.querySelector('.mx-tabdocs__list')) & Node.DOCUMENT_POSITION_FOLLOWING),
     options: [...p.querySelectorAll('[role="option"]')].length,
   }));
-  check('the window\'s "…" menu: its buttons, Dock back and the commands above the list of documents', JSON.stringify(menu.items) === '["Split right","Maximize window","Dock back","Close all","Close saved","Lock group"]' && menu.menuFirst && menu.options === 3, JSON.stringify(menu));
+  const activeInWindow = (await wg.locator('[role="tab"][aria-selected="true"] .mx-tabdocs__title').textContent()).trim();
+  check('the window\'s "…" menu: its buttons (the active document\'s close among them), Dock back and the commands above the list of documents', JSON.stringify(menu.items) === JSON.stringify(['Split right', `Close ${activeInWindow}`, 'Maximize window', 'Dock back', 'Close all', 'Close saved', 'Lock group']) && menu.menuFirst && menu.options === 3, JSON.stringify(menu));
   check('…focus is in its search box', await page.evaluate(() => !!document.activeElement.closest('.mx-tabdocs__list')));
   await page.keyboard.press('Shift+Tab');
   const reached = await page.evaluate(() => document.activeElement.closest('.mx-menu__item')?.textContent ?? document.activeElement.outerHTML.slice(0, 80));
@@ -103,10 +110,57 @@ export default async function ({ page, base, check, axeSource, box }) {
   const panel = ide.locator('.mx-tabdocs__area[data-auto-hide] .mx-tabdocs__group').first();
   const slid = await measure(panel);
   console.log('panel', JSON.stringify(slid));
-  check('the slid out area keeps more of its bar for the tabs (91 px before)', slid.room >= 130 && slid.scrolls === 0, JSON.stringify(slid));
+  check('the slid out area keeps more of its bar for the tabs (91 px before), with its close button', slid.room >= 130 && slid.scrolls === 0, JSON.stringify(slid));
   check('…both tabs in sight (one cut before)', slid.tabs === 2 && slid.seen === 2, JSON.stringify(slid));
-  check('…beside "…" and the pin only', JSON.stringify(slid.buttons) === '["Open documents and commands","Stop auto hiding"]', JSON.stringify(slid.buttons));
+  // Small buttons in compact bars, the documents' bar as it was.
+  const sizes = await page.evaluate(() => {
+    const size = (b) => `${Math.round(b.getBoundingClientRect().width)}x${Math.round(b.getBoundingClientRect().height)}`;
+    const faces = (g) => [...g.querySelectorAll('.mx-tabdocs__actions .mx-button__face')].filter((f) => f.offsetParent).map(size);
+    const ide = document.querySelector('section[aria-labelledby="ide"]');
+    return { area: faces(ide.querySelector('.mx-tabdocs__area[data-auto-hide] .mx-tabdocs__group')), documents: faces(ide.querySelector('.mx-tabdocs__group:not([data-dock]):not([data-floating])')) };
+  });
+  check('…its buttons are small squares of 24 pixels; the documents\' bar keeps its size', sizes.area.length === 3 && sizes.area.every((s) => s === '24x24') && sizes.documents.every((s) => s !== '24x24'), JSON.stringify(sizes));
+  check('…beside "…", the pin and the close button only', JSON.stringify(slid.buttons.map((b) => b.replace(/, \d not in sight$/, ''))) === '["Open documents and commands","Stop auto hiding","Hide Explorer"]', JSON.stringify(slid.buttons));
   await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+
+  // The close button of an area: a document that may close closes, a tool is hidden, "Show hidden" brings it back.
+  const mainGroup = ide.locator('.mx-tabdocs__group:not([data-dock]):not([data-floating])').first();
+  const file = (await mainGroup.locator('[role="tab"] .mx-tabdocs__title').first().textContent()).trim();
+  await mainGroup.getByRole('tab', { name: exactly(file) }).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Dock at the bottom' }).click();
+  await page.waitForTimeout(300);
+  const bottomArea = ide.locator('.mx-tabdocs__area[data-side="bottom"]');
+  const bottomGroup = bottomArea.locator('.mx-tabdocs__group').first();
+  const close = bottomGroup.locator('.mx-tabdocs__bar-close');
+  const pinBox = await box(bottomGroup.locator('.mx-tabdocs__auto-hide'));
+  const closeBox = await box(close);
+  check('an area\'s close button stands next to the pin, as large', Math.abs(closeBox.left - pinBox.right) < 8 && closeBox.width === pinBox.width && closeBox.height === pinBox.height, `${JSON.stringify(pinBox)} / ${JSON.stringify(closeBox)}`);
+  check('…named after what it does to the active document', (await nameOf(close)) === `Close ${file}`, await nameOf(close));
+  await close.click();
+  await page.waitForTimeout(300);
+  check('…it closes a document that may close', (await ide.getByRole('tab', { name: exactly(file) }).count()) === 0);
+  const tool = (await bottomGroup.locator('[role="tab"][aria-selected="true"] .mx-tabdocs__title').textContent()).trim();
+  check('…for a tool it says Hide', (await nameOf(close)) === `Hide ${tool}`, await nameOf(close));
+  await close.click();
+  await page.waitForTimeout(300);
+  check('…and hides it: its tab goes, the area stays with the other tool', (await ide.getByRole('tab', { name: exactly(tool) }).count()) === 0 && (await bottomArea.count()) === 1);
+  const other = (await bottomGroup.locator('[role="tab"] .mx-tabdocs__title').first().textContent()).trim();
+  await close.click();
+  await page.waitForTimeout(300);
+  check('…hiding the last tool takes the area away', (await bottomArea.count()) === 0);
+  await mainGroup.getByRole('button', { name: /^Open documents/ }).click();
+  await page.waitForTimeout(250);
+  const listPopup = page.locator('.mx-tabdocs__popup:popover-open').first();
+  await listPopup.getByRole('menuitem', { name: 'Show hidden' }).click();
+  await page.waitForTimeout(300);
+  const hiddenNames = await page.evaluate(() => [...document.querySelectorAll('.mx-popup:popover-open .mx-menu__item')].map((i) => i.querySelector('.mx-menu__label').textContent));
+  check('the "…" menu lists the hidden tools under Show hidden', hiddenNames.includes(tool) && hiddenNames.includes(other), JSON.stringify(hiddenNames));
+  await page.getByRole('menuitem', { name: tool, exact: true }).click();
+  await page.waitForTimeout(400);
+  const shownAgain = await bottomArea.evaluate((a) => ({ tabs: [...a.querySelectorAll('[role="tab"] .mx-tabdocs__title')].map((t) => t.textContent), content: !!a.querySelector('.mx-tabdocs__panel:not([hidden])')?.textContent.trim() }));
+  check('…and one chosen comes back into its area, made again, with its content', JSON.stringify(shownAgain.tabs) === JSON.stringify([tool]) && shownAgain.content, JSON.stringify(shownAgain));
+  await axe('with an area\'s close button and a tool shown again');
 
   // The compact bars example: three tools in a narrow area, one alone at the bottom.
   const ex = section('compact');
@@ -119,6 +173,14 @@ export default async function ({ page, base, check, axeSource, box }) {
     name: [...g.querySelectorAll('.mx-tabdocs__actions button')].map((b) => b.title).find((t) => t.startsWith('Open documents')),
   }));
   check('tabs out of sight are counted on the "…" button, also in its name', count.over && /^\+\d$/.test(count.count) && count.name === `Open documents and commands, ${count.count.slice(1)} not in sight`, JSON.stringify(count));
+  const countFits = await left.evaluate((g) => {
+    const c = g.querySelector('.mx-tabdocs__count');
+    const face = c.closest('.mx-button__face');
+    const r = c.getBoundingClientRect();
+    const f = face.getBoundingClientRect();
+    return { inside: r.left >= f.left && r.right <= f.right, font: getComputedStyle(c).fontSize, face: Math.round(f.width) };
+  });
+  check('…the count fits its small button, at the size of the captions', countFits.inside && parseFloat(countFits.font) >= 11, JSON.stringify(countFits));
   const strip = left.locator('.mx-tabdocs__strip');
   const look = () =>
     left.evaluate((g) => ({
@@ -173,6 +235,13 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.waitForTimeout(250);
   const full = await measure(left);
   check('compact bars off: the whole toolbar again', full.buttons.some((b) => /^Open documents(,|$)/.test(b)) && !(await bottom.evaluate((g) => g.hasAttribute('data-title'))), JSON.stringify(full.buttons));
+  const faceSize = () => left.evaluate((g) => [...g.querySelectorAll('.mx-tabdocs__actions .mx-button__face')].filter((f) => f.offsetParent).map((f) => Math.round(f.getBoundingClientRect().width)));
+  const small = await faceSize();
+  await ex.getByRole('switch', { name: 'Small buttons' }).click();
+  await page.waitForTimeout(250);
+  const normal = await faceSize();
+  check('small buttons are a live setting', small.every((w) => w === 24) && normal.every((w) => w > 24), `${small} → ${normal}`);
+  await ex.getByRole('switch', { name: 'Small buttons' }).click();
   await ex.getByRole('switch', { name: 'Left area: scroll buttons' }).click();
   await page.waitForTimeout(250);
   check('an area\'s own setting wins: scroll buttons in the left area only', (await left.evaluate((g) => g.hasAttribute('data-scroll-buttons'))) && !(await bottom.evaluate((g) => g.hasAttribute('data-scroll-buttons'))));

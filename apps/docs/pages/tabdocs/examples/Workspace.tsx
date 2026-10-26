@@ -150,6 +150,7 @@ export default function Workspace() {
   docs.onMoved((e) => write(`moved ${e.document.title}`));
   docs.onFloated((e) => write(`${e.document?.title ?? 'a group'} floats`));
   docs.onDocked((e) => write(`${e.document?.title ?? 'a group'} docked${e.side ? ` on the ${e.side}` : ''}`));
+  docs.onHidden((e) => write(`${e.document.title} hidden`));
 
   const active = () => docs.activeDocument;
   const menu: MenuItem[] = [
@@ -190,7 +191,12 @@ export default function Workspace() {
         { text: 'Float the active tab', enabled: () => !!active() && !active()!.window, click: () => active() && docs.float(active()!) },
         { text: 'Move into a new window', enabled: () => !!active() && !active()!.browserWindow, click: () => active() && docs.moveToNewWindow(active()!) },
         { text: 'Dock back', enabled: () => !!active()?.window, click: () => active() && docs.dock(active()!) },
-        { text: 'Show the activity', beginGroup: true, click: () => (activity.dockArea?.autoHidden ? docs.showAutoHidden(activity) : docs.activate(activity, true)) },
+        {
+          text: 'Show the activity',
+          beginGroup: true,
+          // The close button of its area hides it (it cannot close): shown again, it goes back where it was.
+          click: () => (activity.isHidden ? docs.show(activity, { focus: true }) : activity.dockArea?.autoHidden ? docs.showAutoHidden(activity) : docs.activate(activity, true)),
+        },
       ],
     },
   ];

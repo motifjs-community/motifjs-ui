@@ -1,5 +1,6 @@
 import type { TabLayoutArea } from './tab-layout-area';
 import type { TabLayoutBrowserWindow } from './tab-layout-browser-window';
+import type { TabLayoutHidden } from './tab-layout-hidden';
 import type { TabLayoutNode } from './tab-layout-node';
 import type { TabLayoutWindow } from './tab-layout-window';
 
@@ -18,4 +19,6 @@ export interface TabLayout {
   windows?: TabLayoutWindow[];
   /** The new browser windows, the one used last at the end. */
   browserWindows?: TabLayoutBrowserWindow[];
+  /** The hidden documents, in the order they were hidden. */
+  hidden?: TabLayoutHidden[];
 }

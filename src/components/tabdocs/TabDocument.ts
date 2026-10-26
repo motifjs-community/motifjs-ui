@@ -11,6 +11,7 @@ import type { TabDocumentOptions } from './tab-document-options';
 import type { TabDockArea } from './TabDockArea';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
+import type { TabShowOptions } from './tab-show-options';
 import type { TabTone } from './tab-tone';
 import type { TabWindow } from './TabWindow';
 
@@ -32,6 +33,7 @@ const FIELDS = [
   'allowDock',
   'dockSides',
   'allowAutoHide',
+  'allowHide',
   'allowNewWindow',
   'actions',
   'state',
@@ -59,7 +61,8 @@ export class TabDocument {
   /** Makes the content of a copy in another group. */
   clone: TabContentClone | null;
   private readonly values = new Map<string, Signal<unknown>>();
-  private readonly where = createSignal<{ manager: TabDocumentManager; group: TabGroup } | null>(null);
+  /** The manager it is open in, and its group (`null` while it is hidden). */
+  private readonly where = createSignal<{ manager: TabDocumentManager; group: TabGroup | null } | null>(null);
   private readonly from: TabDocument | null;
 
   constructor(options: TabDocumentOptions = {}, from: TabDocument | null = null) {
@@ -183,6 +186,13 @@ export class TabDocument {
   set allowAutoHide(value: Bind<boolean | undefined>) {
     this.slot('allowAutoHide').value = value;
   }
+  /** The document's own setting; `undefined` follows the manager's `allowHide`. */
+  get allowHide(): boolean | undefined {
+    return this.get<boolean>('allowHide') ?? undefined;
+  }
+  set allowHide(value: Bind<boolean | undefined>) {
+    this.slot('allowHide').value = value;
+  }
   /** The document's own setting; `undefined` follows the manager's `allowNewWindow`. */
   get allowNewWindow(): boolean | undefined {
     return this.get<boolean>('allowNewWindow') ?? undefined;
@@ -215,8 +225,14 @@ export class TabDocument {
   get group(): TabGroup | null {
     return this.where.value?.group ?? null;
   }
+  /** In a manager: in one of its groups, or hidden there. */
   get isOpen(): boolean {
     return !!this.where.value;
+  }
+  /** Hidden by its manager: in no group, its content kept as its `contentLifetime` says, until `show`. Reactive. */
+  get isHidden(): boolean {
+    const where = this.where.value;
+    return !!where && !where.group;
   }
   /** Whether it is its group's active tab. Reactive. */
   get isActive(): boolean {
@@ -251,6 +267,16 @@ export class TabDocument {
     return this.manager?.close(this) ?? Promise.resolve(false);
   }
 
+  /** Takes it out of its group, kept for `show`. */
+  hide(): boolean {
+    return this.manager?.hide(this) ?? false;
+  }
+
+  /** Puts it back after `hide`: where it was, unless `options` say where. */
+  show(options?: TabShowOptions): boolean {
+    return this.manager?.show(this, options) ?? false;
+  }
+
   /** Whether a copy of it can get content of its own: from `clone`, from `content` given as a function, or from the manager's factory. */
   canCopy(factory: boolean): boolean {
     const root = this.from ?? this;
@@ -270,6 +296,11 @@ export class TabDocument {
   /** @internal Where the manager put it. */
   placeIn(manager: TabDocumentManager | null, group: TabGroup | null): void {
     this.where.value = manager && group ? { manager, group } : null;
+  }
+
+  /** @internal Hidden: still the manager's, in no group. */
+  markHidden(manager: TabDocumentManager): void {
+    this.where.value = { manager, group: null };
   }
 
   private get<T>(name: string): T | undefined {

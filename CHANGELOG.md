@@ -1062,3 +1062,31 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   (`data-tab-size`, `data-scroll-buttons`, `data-compact`, `data-title`). Texts `tabDocsOpenListHidden`,
   `tabDocsBarMenu`, `tabDocsBarMenuHidden` (en, tr). Tokens `tabdocs.scrollbar-*`, `title-*`, `count-*`,
   `tab-title-min-width`. Docs: a "Compact bars" section on the Dock page; `e2e/checks/50-tabdocs-compact.mjs`.
+- TabDocumentManager, a close button in every dock area, hidden documents and small bar buttons:
+  every dock area's bar has a close button next to the pin for its group's active document
+  (`TabBarButton` `'close'`, `.mx-tabdocs__bar-close`, named "Close Notes" or "Hide Explorer"). A
+  document that may close closes through `onClosing` / `onClosed` (a dirty one can still ask); one that
+  may not (`closable: false`, the tools) is hidden. A single document shown as a title in that bar shows
+  no close button of its own (`data-bar-close`). `compactBarButtons` is now `'auto'` by default: an area
+  keeps `['autoHide', 'close']`, a floating window `['closeWindow']`; a list is followed as it is in both,
+  and an area's or a window's `barButtons` takes `'auto'` too. A floating window's close button now hides
+  the documents that cannot close instead of leaving the window open (`closeWindow` from code still
+  closes them all). Hidden documents: `hide(doc)` and `show(doc, { group, side, index, active, focus })`
+  (also `TabDocument.hide()` / `show()`, and `open(doc)` shows a hidden one) put it back into the group
+  it was hidden from, else its dock area (made again at its size, folded if it was), else a floating
+  window where its window was, else among the documents; `hiddenDocuments` (reactive),
+  `TabDocument.isHidden` (`isOpen` stays `true`), `findDocument` finds them; `allowHide` on the manager
+  and per document (default `true`); cancelable `onHiding` / `onShowing`, then `onHidden` / `onShown`,
+  and `onLayoutChanged` with `'hide'` / `'show'`. The content is kept as `contentLifetime` says. Menus:
+  "Hide" on the tab menu of a document that cannot close, "Show hidden" (a submenu of the hidden
+  documents) in the strip's menu and the "…" menu (`TabMenuCommand` `'hide'`, `'showHidden'`); key
+  `hide` (Ctrl+K X). `saveLayout` writes `hidden` (`TabLayoutHidden`: the document and where it goes
+  back), still version 3; older layouts load. The buttons of compact bars are small squares of 24 pixels
+  with a smaller mark and tight gaps (`barButtonSize` for the documents' bar, default `'normal'`;
+  `compactBarButtonSize`, default `'small'`; an area's or a window's own `barButtonSize` wins); the "+2"
+  count fits them, and the ends of the toolbar leave room for the focus ring. Tokens
+  `tabdocs.bar-button-size`, `bar-button-padding`, `bar-button-gap`, `bar-icon-size`, `focus-offset`.
+  Texts `tabDocsHide`, `tabDocsShowHidden`, `tabDocsCloseActive`, `tabDocsHideActive`, `tabDocsHidden`,
+  `tabDocsShown` (en, tr). Docs: rows and a sentence on the Dock page, a "Small buttons" switch in the
+  compact bars example; the Workspace example's "Show the activity" shows the hidden Activity again;
+  `e2e/checks/50-tabdocs-compact.mjs` covers the close button, hidden tools and the small buttons.

@@ -383,6 +383,12 @@ export const enStrings: UiStrings = {
   tabDocsDocuments: 'Documents',
   tabDocsPlaceNewWindow: 'Into a new window',
   tabDocsPlaceInWindow: '{place}, in window {n}',
+  tabDocsHide: 'Hide',
+  tabDocsShowHidden: 'Show hidden',
+  tabDocsCloseActive: 'Close {title}',
+  tabDocsHideActive: 'Hide {title}',
+  tabDocsHidden: '{title} hidden',
+  tabDocsShown: '{title} shown again',
 };
 
 export const trStrings: UiStrings = {
@@ -767,6 +773,12 @@ export const trStrings: UiStrings = {
   tabDocsDocuments: 'Belgeler',
   tabDocsPlaceNewWindow: 'Yeni pencereye',
   tabDocsPlaceInWindow: '{place}, {n}. pencerede',
+  tabDocsHide: 'Gizle',
+  tabDocsShowHidden: 'Gizlileri göster',
+  tabDocsCloseActive: 'Kapat: {title}',
+  tabDocsHideActive: 'Gizle: {title}',
+  tabDocsHidden: '{title} gizlendi',
+  tabDocsShown: '{title} yeniden gösteriliyor',
 };
 
 function stringsOf(lang: string): UiStrings {

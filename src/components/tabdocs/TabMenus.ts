@@ -13,6 +13,8 @@ import type { UiStrings } from '../../core/ui-strings';
 
 const TEXTS: Record<TabMenuCommand, keyof UiStrings> = {
   close: 'close',
+  hide: 'tabDocsHide',
+  showHidden: 'tabDocsShowHidden',
   closeOthers: 'tabDocsCloseOthers',
   closeRight: 'tabDocsCloseRight',
   closeLeft: 'tabDocsCloseLeft',
@@ -100,6 +102,8 @@ export class TabMenus {
       [
         [
           ['close', doc.closable, keys.closeTab[0]],
+          // A document that cannot close may be hidden.
+          doc.closable ? null : ['hide', m.mayCloseOrHide(doc), keys.hide[0]],
           ['closeOthers', tabs.some((d) => d !== doc && closable(d))],
           ['closeRight', tabs.slice(at + 1).some(closable)],
           ['closeLeft', tabs.slice(0, at).some(closable)],
@@ -154,7 +158,7 @@ export class TabMenus {
           ['closeAll', tabs.some(closable), keys.closeAllTabs[0]],
           ['closeSaved', tabs.some((d) => !d.dirty && closable(d)), keys.closeSavedTabs[0]],
         ],
-        [[group.locked ? 'unlock' : 'lock']],
+        [[group.locked ? 'unlock' : 'lock'], m.hiddenDocuments.length ? ['showHidden'] : null],
         [['splitRight', true, keys.splitRight[0]], ['splitDown'], ['moveGroupTo', m.allowDragGroups && m.dragPeers().some((p) => p.groups.some((g) => g !== group))]],
         this.dockEntries({ document: null, group, manager: m, copy: false }),
         group.window
@@ -181,14 +185,17 @@ export class TabMenus {
     for (const section of sections) {
       const entries = section.filter((entry): entry is Entry => !!entry && shown[entry[0]] !== false);
       entries.forEach(([command, enabled, shortcut, text], i) => {
-        items.push({
+        const item: MenuItem = {
           text: m.textOf(text ?? TEXTS[command]),
           enabled: enabled ?? true,
           shortcut: shortcut ?? '',
           beginGroup: i === 0 && items.length > 0,
           data: command,
-          click: () => m.runCommand(command, group, doc),
-        });
+        };
+        // "Show hidden" opens a list of the hidden documents.
+        if (command === 'showHidden') item.items = m.hiddenItems();
+        else item.click = () => m.runCommand(command, group, doc);
+        items.push(item);
       });
     }
     return items;

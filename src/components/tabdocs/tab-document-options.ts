@@ -28,7 +28,7 @@ export interface TabDocumentOptions {
   pinned?: Bind<boolean>;
   /** A preview tab: the next preview opened in its group takes its place, until it is kept. */
   preview?: Bind<boolean>;
-  /** `false`: no close button, and the user cannot close it. Default `true`. */
+  /** `false`: no close button, and the user cannot close it; the close button of a dock area hides it instead (`allowHide`). Default `true`. */
   closable?: Bind<boolean>;
   /** This document's own setting; left out, the manager's. */
   contentLifetime?: Bind<ContentLifetime | undefined>;
@@ -44,6 +44,8 @@ export interface TabDocumentOptions {
   dockSides?: Bind<readonly TabDockSide[] | undefined>;
   /** This document's own setting; left out, the manager's `allowAutoHide`. */
   allowAutoHide?: Bind<boolean | undefined>;
+  /** This document's own setting; left out, the manager's `allowHide`. */
+  allowHide?: Bind<boolean | undefined>;
   /** This document's own setting; left out, the manager's `allowNewWindow`. */
   allowNewWindow?: Bind<boolean | undefined>;
   /** Buttons for the group's toolbar while this document is the active one. */

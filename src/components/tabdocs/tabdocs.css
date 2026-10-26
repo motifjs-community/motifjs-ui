@@ -220,6 +220,34 @@
     display: none;
   }
 
+  /* Small buttons (`barButtonSize: 'small'`): about the size of a pointer target, a smaller mark, tight gaps. */
+  /* The ends leave room for a button's focus ring: the toolbar clips what goes past them. */
+  .mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions {
+    gap: var(--mx-tabdocs-bar-button-gap);
+    padding-inline: max(var(--mx-tabdocs-actions-padding), calc(var(--mx-tabdocs-focus-width) + var(--mx-tabdocs-focus-offset)));
+  }
+
+  .mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions .mx-button__face {
+    min-inline-size: var(--mx-tabdocs-bar-button-size);
+    min-block-size: var(--mx-tabdocs-bar-button-size);
+    padding-inline: var(--mx-tabdocs-bar-button-padding);
+  }
+
+  .mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions .mx-button__icon {
+    inline-size: var(--mx-tabdocs-bar-icon-size);
+    block-size: var(--mx-tabdocs-bar-icon-size);
+  }
+
+  /* The "+2" of the "…" button fills the square, which keeps its size. */
+  .mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions .mx-button__face:has(.mx-tabdocs__count) {
+    padding-inline: 0;
+  }
+
+  .mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions .mx-button__icon:has(> .mx-tabdocs__count) {
+    inline-size: auto;
+    min-inline-size: var(--mx-tabdocs-bar-icon-size);
+  }
+
   /* How many tabs are out of sight, in the place of the "…" mark: as large as the mark, whatever the count. */
   .mx-tabdocs__count {
     display: inline-flex;
@@ -325,6 +353,19 @@
 
   .mx-tabdocs__group[data-title] > .mx-tabdocs__bar :is(.mx-tabdocs__title, .mx-tabdocs__description) {
     max-inline-size: none;
+  }
+
+  /* A title whose bar has a close button of its own keeps only the dot of unsaved changes. */
+  .mx-tabdocs__group[data-title][data-bar-close] > .mx-tabdocs__bar .mx-tabdocs__tab:not([data-dirty]) .mx-tabdocs__close {
+    display: none;
+  }
+
+  .mx-tabdocs__group[data-title][data-bar-close] > .mx-tabdocs__bar .mx-tabdocs__tab[data-dirty] .mx-tabdocs__close > svg {
+    display: none;
+  }
+
+  .mx-tabdocs__group[data-title][data-bar-close] > .mx-tabdocs__bar .mx-tabdocs__tab[data-dirty] .mx-tabdocs__dirty {
+    display: block;
   }
 
   /* Sizes: as wide as the text (fit), shrinking down to the smallest width, or all one width. */
@@ -1173,6 +1214,11 @@
 
   .mx-tabdocs__tips {
     display: contents;
+  }
+
+  /* Where the content of hidden documents waits. */
+  .mx-tabdocs__stash {
+    display: none;
   }
 
   /* The lists of documents (the "…" button, the recently used list). */
