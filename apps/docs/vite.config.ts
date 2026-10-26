@@ -27,6 +27,14 @@ export default defineConfig({
     // One @motifx/core only.
     dedupe: ['@motifx/core'],
   },
+  // The dependency scan turns pages with `import.meta.glob` into plain JS. With the compiler's
+  // default (`jsx: 'preserve'`) their JSX stays in and the scan fails; the scan only reads
+  // imports, so any JSX form that needs no import of its own will do. The compiler adds the
+  // devtools import itself, where the scan cannot see it.
+  optimizeDeps: {
+    include: ['@motifx/core/devtools'],
+    rolldownOptions: { transform: { jsx: { runtime: 'classic', pragma: 'h', pragmaFrag: 'Fragment' } } },
+  },
   server: {
     fs: { allow: [searchForWorkspaceRoot(here('.')), designSystem, dataLayer] },
   },
