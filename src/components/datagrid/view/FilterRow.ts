@@ -25,15 +25,7 @@ export class FilterRow<T> extends Component<HTMLDivElement> {
       hidden: () => (grid.showsFilterRow() ? null : ''),
       'data-active': () => (grid.state.activeRow === FILTER_ROW ? '' : null),
     });
-    for (const field of grid.columns.state.order) {
-      const cell = document.createElement('div');
-      cell.className = 'mx-data-grid__filter-cell';
-      cell.setAttribute('role', 'gridcell');
-      cell.tabIndex = -1;
-      cell.dataset.field = field;
-      this.cellEls.set(field, cell);
-      this.element.append(cell);
-    }
+    for (const field of grid.columns.state.order) this.makeCell(field);
     this.motif.setDisposable(() => {
       for (const c of this.filterCells.values()) c.dispose();
     });
@@ -69,6 +61,30 @@ export class FilterRow<T> extends Component<HTMLDivElement> {
         this.filterCells.set(field, new FilterCell<T>(grid, field, this.cellEls.get(field)!, this));
       }
     });
+  }
+
+  /** A column's cell (one added at run time too; placed by the next `arrange`). */
+  addColumn(field: string) {
+    if (this.isConfigured) this.makeCell(field);
+  }
+
+  private makeCell(field: string) {
+    if (this.cellEls.has(field)) return;
+    const cell = document.createElement('div');
+    cell.className = 'mx-data-grid__filter-cell';
+    cell.setAttribute('role', 'gridcell');
+    cell.tabIndex = -1;
+    cell.dataset.field = field;
+    this.cellEls.set(field, cell);
+    this.element.append(cell);
+  }
+
+  /** A column taken out, or made again: its cell and editors go. */
+  removeColumn(field: string) {
+    this.filterCells.get(field)?.dispose();
+    this.filterCells.delete(field);
+    this.cellEls.get(field)?.remove();
+    this.cellEls.delete(field);
   }
 
   cellElement(field: string): HTMLElement | undefined {

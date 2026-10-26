@@ -28,7 +28,6 @@ export class GridData<T> {
   readonly source: data.DataSource<T, unknown>;
   readonly tracker: data.ChangeTracker<T, unknown>;
   readonly paged: boolean;
-  readonly pageSize: number;
   private readonly state: DataState;
   private readonly owned: boolean;
   private readonly expanded: (node: GroupNode) => boolean;
@@ -36,6 +35,8 @@ export class GridData<T> {
   private readonly groupSummary: () => readonly data.SummaryItem[] | null;
   private readonly locale: () => string | undefined;
   private readonly subscriptions: IDisposable[] = [];
+  /** Rows of a page; 0: every row on one page. */
+  private size: number;
   /** `'all'`: the rows without the saved new rows, and those rows' keys; dropped when either side changes. */
   private shownRows: readonly T[] | null = null;
   private savedKeys: Set<string> | null = null;
@@ -75,7 +76,10 @@ export class GridData<T> {
     this.locale = options.locale;
     this.loadSize = Math.max(0, Math.floor(options.groupLoadPageSize));
     this.paged = source.loadMode === 'page' || options.paged;
-    this.pageSize = source.loadMode === 'all' ? Math.max(1, Math.floor(options.pageSize)) : source.pageSize;
+    const chosen = options.chosenPageSize ?? null;
+    this.size = source.loadMode === 'all' || (chosen !== null && source.loadMode === 'page') ? Math.max(0, Math.floor(chosen ?? options.pageSize)) : chosen ?? source.pageSize;
+    // Before the first load a source that loads pages only keeps the size.
+    if (source.loadMode === 'page' && source.pageSize !== this.size) void source.setPageSize(this.size);
     this.userSort = [...options.sort];
     this.tracker = new data.ChangeTracker<T, unknown>({
       source,
@@ -105,6 +109,17 @@ export class GridData<T> {
     if (options.group.length) this.setGrouping(options.group, { remote: options.remoteGrouping, loadSize: options.groupLoadPageSize });
     else if (!sameSort(source.sort, this.userSort)) void source.setSort(this.userSort);
     if (source.status === 'idle') void source.load();
+  }
+
+  /** Rows of a page in paged mode; 0: every row on one page. */
+  get pageSize(): number {
+    return this.size;
+  }
+
+  /** Another page size; a source that loads pages drops its rows and loads its first page in it. */
+  setPageSize(size: number) {
+    this.size = Math.max(0, Math.floor(size));
+    if (this.source.loadMode === 'page') void this.source.setPageSize(this.size);
   }
 
   /** The page the source is on (`'page'`). */
@@ -148,8 +163,9 @@ export class GridData<T> {
     if (s.loadMode === 'blocks') return s.rowAt(index);
     if (s.loadMode === 'page') {
       const page = s.loadedPageIndex;
-      if (page < 0 || Math.floor(index / s.pageSize) !== page) return undefined;
-      return s.rows[index - page * s.pageSize];
+      const size = s.pageSize;
+      if (page < 0 || (size > 0 && Math.floor(index / size) !== page)) return undefined;
+      return s.rows[index - page * size];
     }
     return this.rows()[index];
   }

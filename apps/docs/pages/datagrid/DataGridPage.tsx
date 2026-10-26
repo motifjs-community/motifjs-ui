@@ -2,6 +2,7 @@ import { Code, Example, Rich, Section } from '../../shared/doc';
 import { slowAdapterFile } from '../../shared/slow-adapter-file';
 import { withOrders } from './code';
 import FromCode from './examples/FromCode';
+import Pager from './examples/Pager';
 import Pages from './examples/Pages';
 import Virtual from './examples/Virtual';
 
@@ -48,6 +49,15 @@ import { data } from '@motifx-community/data';
         </p>
         <Example files={[...withOrders('Pages.tsx', 'paged-orders.ts'), slowAdapterFile]} stack>
           <Pages />
+        </Example>
+      </Section>
+
+      <Section anchor="pager" title="Pager">
+        <p>
+          <Rich text="The pager under the rows shows the page sizes (`pageSizeSelector`, the sizes of `allowedPageSizes`, `all` for one page with every row), “Page 3 of 12 (250 items)” (`pagerInfo`, `pagerInfoText` with `{0}`, `{1}`, `{2}`), the first, previous, next and last buttons (`pagerNavigation`) and the pages around the current one (`pagerNeighbors`). `pagerDisplayMode` picks its look: `full` with page buttons and the sizes as buttons, `compact` with a box for the page number and a drop-down of the sizes, `adaptive` (the default) full while it fits in the grid's width. The rows per page change from code with `pageSize(n)` too; either way `onPageSizeChanging` can keep the old size, the grid goes back to the first page, and with `layoutKey` the size is kept with the layout. PageUp and PageDown turn the page (`pageKeys`)." />
+        </p>
+        <Example files={withOrders('Pager.tsx')} stack>
+          <Pager />
         </Example>
       </Section>
     </>

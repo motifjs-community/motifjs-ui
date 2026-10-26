@@ -10,6 +10,12 @@ export interface ColumnFilter {
   value?: unknown;
   /** The upper end of `between`. */
   value2?: unknown;
-  /** Values of the header filter; `null` stands for empty values. */
+  /**
+   * Values of the header filter; `null` stands for empty values. A value can also be the start of an
+   * interval (`headerFilterInterval`), a date part (`2024`, `'2024/3'`) or an item's own value
+   * (`headerFilterItems`, a filter expression too).
+   */
   values?: readonly unknown[];
+  /** `'exclude'`: the rows with `values` are left out instead of kept. Default `'include'`. */
+  filterType?: 'include' | 'exclude';
 }

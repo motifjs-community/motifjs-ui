@@ -201,6 +201,52 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   shown for keyboard focus closed at once when focusing scrolled its field into view; it now follows
   the field while the page scrolls and closes only if the field is off the screen when scrolling ends.
 
+### DataGrid pager, columns at run time, header filter ranges and entries
+
+- The pager is a part of its own (`nav`, named by `pagerLabel` or “Pages: <grid>”): the page sizes
+  (`pageSizeSelector`, default `false`; `allowedPageSizes`, numbers and `'all'`, default `'auto'`:
+  half, once and twice the page size), the text (`pagerInfo`; `pagerInfoText` with `{0}` / `{page}`,
+  `{1}` / `{count}`, `{2}` / `{total}`; the default `gridPageOf` now reads “Page 3 of 12 (250
+  items)”), the steps (`pagerNavigation`) and the pages (`pagerNeighbors`, each named “Page 3”, the
+  current one `aria-current="page"`). `pagerDisplayMode`: `'full'` (page buttons, the sizes as
+  pressed-state buttons), `'compact'` (a page number box and a drop-down of the sizes, the text
+  hidden), `'adaptive'` (default: full while it fits in the bar, measured on resize). `pager: 'auto'`
+  shows it only while there is more than one page (default stays `true`). The pager's buttons keep
+  their element while they stay, so focus stays on a pressed page button.
+- Page size: `pageSize(n?)` (0: every row on one page), `pageIndex(n?)`, `totalCount()`;
+  `onPageSizeChanging` (cancelable) / `onPageSizeChanged` (`{ pageSize, previous }`); the grid goes
+  back to the first page (`onPageChanged` tells it). A source that loads by page gets the new size
+  through the data layer's `DataSource.setPageSize`; a source of blocks pages by ranges. The size the
+  user chose is kept with the layout (`layoutKey`) and in `state()` (`pageSize`); a new `pageSize`
+  prop wins over it. `pageKeys` (default `'page'`): PageUp / PageDown turn the page in paged mode
+  (`'rows'`: a screen of rows, as before).
+- Columns at run time: `addColumn(column, index?)` (what the kept layout says of a column added later
+  applies), `deleteColumn(field)` (its sort, grouping and filter go with it, without `…Changing`
+  events), `columnCount()`, `getVisibleColumns()`. `columnOption(field, name, value)` now writes any
+  field of the definition too (`title` follows where it shows; anything else makes the column's cells
+  again in every row, the header, the filter row, the group rows and footers and the totals, its
+  layout, sort and filter kept; a field the rows are read by — `type`, `value`, `lookup` … — queries
+  them again), plus `hidden`, `flex`, `filterValues`, `filterType`; `columnOption(field, options)`
+  sets several. `onOptionChanged` tells each, and `name: 'columns'` with the fields for a column added
+  or taken out. Rows in memory compare a column's type from its definition on every query.
+- Header filter: a column's `headerFilterInterval` (`Bind`) groups its values — a number column in
+  ranges of that size (“0 – 100”, several sizes a tree), a date column in a tree of years → quarters
+  or months → days → hours → minutes → seconds down to the part it names; dates are a tree by default
+  (`headerFilterDateInterval`, default `'day'`; `null` lists the dates). The tree is the kit's
+  `TreeView` with check boxes and a “Select all” `CheckBox`; a node is kept as its path (`2026`,
+  `'2026/3'`, `'2026/3/15'`) and filters with `>=` its start and `<` its end, on a
+  server too. Counts are worked out in the browser from the distinct values (memory, an adapter that
+  groups, or `loadValues`). `headerFilterItems`: entries of its own, `{ text, value }` (a value may be
+  a filter expression), or a function of `{ column, filter, signal, values() }`. `filterValues` and
+  `filterType` (`'include'` / `'exclude'`, both `Bind`) on the column, `filterType` in `grid.filters`;
+  in the list, choosing every value and then taking some away leaves those out.
+- Texts (en, tr): `gridPage`, `gridPageCount`, `gridPageNumber`, `gridPageButton`, `gridPageSize`,
+  `gridPageSizeAll`, `gridValueRange`, `gridQuarter`; `gridPageOf` gained `{total}`. Tokens
+  `datagrid.page-number-width`, `page-size-width`, `values-row-height`.
+- Docs: “Pager” (Overview), “Columns at run time” (Layout and events), “Ranges, dates and entries”
+  (Filtering), the settings, events, columns and methods tables. Tests: 23 new in the datagrid
+  (pager, runtime columns, intervals); `e2e/checks/40-datagrid-pager-columns.mjs`.
+
 ### DataGrid selection look, menu tones, deletions in one save
 
 - Selected rows wear the design language's selection look, as the lists and the tree do: tokens

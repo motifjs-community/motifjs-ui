@@ -7,6 +7,8 @@ export interface GridState extends DataState {
   sort: data.SortItem[];
   /** The page shown (paged mode), 0-based. */
   page: number;
+  /** Rows per page (paged mode); 0: every row on one page. */
+  pageSize: number;
   rowHeight: number;
   /** Visible height of the body (viewport minus header). */
   viewport: number;

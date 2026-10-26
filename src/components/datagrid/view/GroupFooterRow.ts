@@ -24,16 +24,26 @@ export class GroupFooterRow<T> {
     el.setAttribute('role', 'row');
     el.tabIndex = -1;
     el.hidden = true;
-    for (const field of model.columns.state.order) {
-      const cell = document.createElement('div');
-      cell.className = 'mx-data-grid__cell mx-data-grid__summary-cell';
-      cell.setAttribute('role', 'gridcell');
-      cell.dataset.field = field;
-      this.cells.set(field, cell);
-      el.append(cell);
-    }
     this.element = el;
+    for (const field of model.columns.state.order) this.addColumn(field);
     this.stop = effect(() => this.draw());
+  }
+
+  /** A column's cell (one added at run time too; placed by the next `arrange`). */
+  addColumn(field: string) {
+    if (this.cells.has(field)) return;
+    const cell = document.createElement('div');
+    cell.className = 'mx-data-grid__cell mx-data-grid__summary-cell';
+    cell.setAttribute('role', 'gridcell');
+    cell.dataset.field = field;
+    this.cells.set(field, cell);
+    this.element.append(cell);
+    this.redraw();
+  }
+
+  removeColumn(field: string) {
+    this.cells.get(field)?.remove();
+    this.cells.delete(field);
   }
 
   /** Shows the footer of the group at grid row `index`, at `top`. */

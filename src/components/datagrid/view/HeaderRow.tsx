@@ -19,6 +19,8 @@ import { placeInOrder } from './place-in-order';
  */
 export class HeaderRow<T> extends Component<HTMLDivElement> {
   readonly cells = new Map<string, ComponentBase>();
+  /** The columns' own header contents (`headerCell`) that are components, by field. */
+  private readonly titles = new Map<string, ComponentBase>();
   private indicator!: ComponentBase;
   private suppressClick = false;
   private stopCheck: (() => void) | null = null;
@@ -90,12 +92,34 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     if (content instanceof ComponentBase) {
       this.controls.add(content);
       span.append(content.element as Node);
+      this.titles.set(col.field, content);
     } else if (content instanceof Node) span.append(content);
     else if (content !== undefined && content !== null) span.append(String(content));
   }
 
   cellElement(field: string): HTMLElement | undefined {
     return this.cells.get(field)?.element as HTMLElement | undefined;
+  }
+
+  /** A column added at run time gets its header (placed by the next `arrange`). */
+  addColumn(field: string) {
+    if (this.cells.has(field) || !this.indicator) return;
+    const col = this.grid.columns.get(field);
+    const cell = this.cell(col);
+    this.controls.add(cell);
+    this.element.insertBefore(cell.element as Node, this.indicator.element as Node);
+    const span = col.headerCell ? (cell.element as HTMLElement).querySelector<HTMLElement>('.mx-data-grid__title') : null;
+    if (span) this.ownTitle(col, span);
+  }
+
+  /** A column taken out loses its header, and its own header content. */
+  removeColumn(field: string) {
+    const cell = this.cells.get(field);
+    this.cells.delete(field);
+    const own = this.titles.get(field);
+    this.titles.delete(field);
+    if (own && !own.isDisposed) void own.dispose({ skipLeaveTransition: true });
+    if (cell && !cell.isDisposed) void cell.dispose({ skipLeaveTransition: true });
   }
 
   private cell(col: GridColumn<T>): ComponentBase {

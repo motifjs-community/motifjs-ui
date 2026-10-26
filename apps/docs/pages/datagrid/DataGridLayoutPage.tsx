@@ -2,6 +2,7 @@ import { ApiTable, Example, Rich, Section } from '../../shared/doc';
 import { withOrders } from './code';
 import Events from './examples/Events';
 import KeepLayout from './examples/KeepLayout';
+import RuntimeColumns from './examples/RuntimeColumns';
 import Switches from './examples/Switches';
 import Toolbar from './examples/Toolbar';
 
@@ -18,7 +19,8 @@ const SETTINGS = [
   ['headerButtons', "`'hover'`", 'The menu button shows on hover and focus (always on touch screens), or `always`.'],
   ['columnChooser, layoutReset', '`true`', 'The column list and “Reset layout” in the column menu.'],
   ['columnChooserButton', '`false`', 'A toolbar button that opens the column list (while `columnChooser` is on).'],
-  ['tooltips, striped, rowCount, pager', '`true`, `false`, `true`, `true`', 'Full text of a clipped cell; stripes; the row count; the pager.'],
+  ['tooltips, striped, rowCount', '`true`, `false`, `true`', 'Full text of a clipped cell; stripes; the row count.'],
+  ['pager', '`true`', 'The pager in paged mode; `auto` only while there is more than one page.'],
   ['actionsColumn, actionsPosition, actionsSticky, actionsWidth', "`true`, `'end'`, `true`, `140`", 'The actions column, at the start or the end, pinned to its edge or scrolling with the rows, and its width.'],
   ['actionsLocation, actionsTarget, actionsDisplay', "`'row'`, `'auto'`, `'auto'`", 'Where the actions show (the row, the toolbar, the bottom bar), which rows the bars act on, and buttons or a menu only: see [Row actions](/datagrid/editing#actions).'],
   ['actionsMultipleEnabled, actionsShowCount, actionsStopOnError', "`'all'`, `true`, `false`", 'Actions on several rows: enabled for all or any, the count after the text, a failed row stops the rest.'],
@@ -59,8 +61,13 @@ const SETTINGS = [
   ['resizeStep, resizeFineStep', '`10`, `1`', 'Pixels one arrow key resizes a column by (“Width” in the column menu), and with Shift.'],
   ['tooltipDelay', '`500`', 'Milliseconds the pointer rests on a cell before its tooltip shows (keyboard focus shows it at once).'],
   ['extraRows', '`4`', 'Rows drawn above and below the visible ones, so a quick scroll shows no gap; more costs more per scroll.'],
-  ['pagerNeighbors, pagerNavigation, pagerInfo', '`1`, `true`, `true`', 'Page buttons on each side of the current page; the first, previous, next and last buttons; “Page 3 of 12”.'],
-  ['headerFilterPageSize, headerFilterRows', '`100`, `8`', 'Values the header filter loads per request; the height of its list in rows.'],
+  ['pagerNeighbors, pagerNavigation, pagerInfo', '`1`, `true`, `true`', 'Page buttons on each side of the current page; the first, previous, next and last buttons; “Page 3 of 12 (250 items)”.'],
+  ['pagerInfoText, pagerLabel', '`uiLocale` texts', 'The pager’s text (`{0}` or `{page}`, `{1}` or `{count}`, `{2}` or `{total}`) and its accessible name.'],
+  ['pagerDisplayMode', "`'adaptive'`", '`full`: page buttons, and the page sizes as buttons; `compact`: a page number box and a drop-down of the sizes; `adaptive`: full while it fits in the bar.'],
+  ['pageSizeSelector, allowedPageSizes', "`false`, `'auto'`", 'The page sizes in the pager; the sizes it offers (numbers and `all`; `auto` is half, once and twice the page size).'],
+  ['pageKeys', "`'page'`", 'In paged mode PageUp and PageDown go to the previous and next page, or move a screen of rows (`rows`).'],
+  ['headerFilterPageSize, headerFilterRows', '`100`, `8`', 'Values the header filter loads per request; the height of its list (or tree) in rows.'],
+  ['headerFilterDateInterval', "`'day'`", 'The deepest part of the year → month → day tree a date column’s header filter lists; `null` lists every date. A column’s `headerFilterInterval` wins.'],
   ['exportPageSize', '`1000`', 'Rows an export asks a server for per request; `exportCsv({ pageSize })` wins.'],
   ['trueTexts, falseTexts', "`['true', '1', 'x', '✓', '✔']`, `['false', '0', '']`", 'Pasted texts read as yes and as no in a yes/no column, besides the `yes` and `no` texts; a column can give its own.'],
   ['editKeys, clearKeys', "`['Enter', 'F2']`, `['Delete']`", 'Keys that open the active cell’s editor, and that empty it (`KeyboardEvent.key` values).'],
@@ -88,11 +95,12 @@ const EVENTS = [
   ['onFocusedCellChanging / onFocusedCellChanged', '`{ rowIndex, field, previousRowIndex, previousField, row }`', 'yes / —', 'The active cell moves (keys, a click, code); -1 is the header, -2 the filter row.'],
   ['onFocusedRowChanging / onFocusedRowChanged', '`{ rowIndex, previousRowIndex, row }` / `{ rowIndex, row, key }`', 'yes / —', 'The active row changes.'],
   ['onKeyHandling', '`{ event, rowIndex, field }`', 'yes', 'A key went down in the rows, an editor, the filter row or a group chip, before the grid handles it; cancel and handle it yourself. the standard calls it `onKeyDown`, a DOM event name in JSX.'],
-  ['onOptionChanged', '`{ name, field?, value, previous }`', '', 'A setting was assigned: `grid.settings`, `columnSettings(field)` (with `field`), `toolbar` (`toolbar.visible`, `toolbar.items`), `columnOption`.'],
+  ['onOptionChanged', '`{ name, field?, value, previous }`', '', 'A setting was assigned: `grid.settings`, `columnSettings(field)` (with `field`), `toolbar` (`toolbar.visible`, `toolbar.items`), `columnOption` (with `field`); a column was added or taken out (`name: \'columns\'`, the fields).'],
   ['onSortChanging / onSortChanged', '`{ sort, previous, byUser }`', 'yes / —', 'The sort is about to change, by the user or from code.'],
   ['onFilterChanging / onFilterChanged', '`{ filters, previous }` / `{ filters, filter }`', 'yes / —', 'The filter row and header filters are about to apply; cancel puts the ones before back in the cells.'],
   ['onSearchTextChanging / onSearchTextChanged', '`{ text, previous }` / `{ text }`', 'yes / —', 'The search text is about to change; cancel keeps the one before in the box.'],
   ['onPageChanging / onPageChanged', '`{ page, previous }`', 'yes / —', 'Another page is about to show.'],
+  ['onPageSizeChanging / onPageSizeChanged', '`{ pageSize, previous }`', 'yes / —', 'The rows per page are about to change (0: all); the grid goes back to the first page.'],
   ['onSelectionChanging / onSelectionChanged', '`{ selection, previous }` / `{ selection }`', 'yes / —', 'The selection is about to change, by the user or from code.'],
   ['onLayoutChanging / onLayoutChange', '`{ layout, previous }` / `layout`', 'yes / —', 'The user resized, moved, hid, pinned, sorted or reset; cancel puts the layout before back.'],
   ['onGroupingChanging / onGroupingChanged, onGroupDropping', 'see [Grouping](/datagrid/grouping#grouping)', 'yes', 'The grouping; a dropped header or chip.'],
@@ -128,6 +136,15 @@ export default function DataGridLayoutPage() {
             ['click', '`(e) => void` with `{ item, grid, event }`; on a grid item it replaces what the item does.'],
           ]}
         />
+      </Section>
+
+      <Section anchor="columns" title="Columns at run time">
+        <p>
+          <Rich text="`addColumn(column, index?)` adds a column at a place among the data columns, with its own width, visibility and sticky side (or what the kept layout says of it); `deleteColumn(field)` takes one out, and its sort, grouping and filter go with it. `columnOption(field, name, value)` changes one option of a column while it shows — its layout (`width`, `visible`, `sticky`, `visibleIndex`), sort, grouping, header filter values, a feature switch, or any field of its definition (`title`, `format`, `lookup`, `cell`, `type` …), the column drawn again with it — and `columnOption(field, { … })` several at once. The layout, `layoutKey` and `onLayoutChange` follow; `onOptionChanged` tells each change (`name: 'columns'` for a column added or taken out). `columnCount()` and `getVisibleColumns()` read them." />
+        </p>
+        <Example files={withOrders('RuntimeColumns.tsx')} stack>
+          <RuntimeColumns />
+        </Example>
       </Section>
 
       <Section anchor="layout" title="Keeping the layout">

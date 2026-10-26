@@ -6,6 +6,8 @@ import type { EditorContext } from './editor-context';
 import type { GroupCellContext } from './group-cell-context';
 import type { HeaderCellContext } from './header-cell-context';
 import type { GridFilterOperator } from './grid-filter-operator';
+import type { GridHeaderFilterInterval } from './grid-header-filter-interval';
+import type { GridHeaderFilterItems } from './grid-header-filter-items';
 import type { GridColumnFormItem } from './grid-column-form-item';
 import type { GridLookup } from './grid-lookup';
 import type { GridValidationRule } from './grid-validation-rule';
@@ -81,6 +83,19 @@ export interface GridColumn<T = any> {
   filterOperators?: readonly GridFilterOperator[];
   /** The condition the filter row starts with. Default: the first of `filterOperators`, else by type. */
   filterOperator?: GridFilterOperator;
+  /**
+   * How the header filter groups the values: a range size for a number column (`100`: "0 – 100",
+   * "100 – 200"; `[1000, 100]` a tree of ranges), the deepest part of the year → month → day … tree
+   * for a date column (`'month'`), `null` for one entry per value. Default: none for numbers, the
+   * grid's `headerFilterDateInterval` for dates.
+   */
+  headerFilterInterval?: Bind<GridHeaderFilterInterval>;
+  /** The header filter's entries instead of the column's values: `{ text, value }` items (a value may be a filter expression), or a function that gives them. */
+  headerFilterItems?: GridHeaderFilterItems<T>;
+  /** The values chosen in the header filter, followed when a function. The grid's `filters` hold them as the column's `values`. */
+  filterValues?: Bind<readonly unknown[] | undefined>;
+  /** `'exclude'`: the rows with `filterValues` are left out instead of kept. Followed when a function. Default `'include'`. */
+  filterType?: Bind<'include' | 'exclude'>;
   /** An empty value stops the row from being saved. */
   required?: boolean;
   /** Checks a value; return the message to show, or nothing. `row` has the unsaved edits applied. */

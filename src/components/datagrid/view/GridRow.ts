@@ -43,6 +43,8 @@ export class GridRow<T> {
   readonly actions: RowActions<T> | null = null;
   private readonly shown = createSignal(0);
   private readonly texts = new Map<string, Text>();
+  /** Components of the columns' own cell contents, by field. */
+  private readonly contents = new Map<string, ComponentBase>();
   /** The nodes after a cell's text node that mark what the search found, and what they were drawn for. */
   private readonly marked = new Map<string, { nodes: ChildNode[]; key: string }>();
   /** Whether the search marks cells now (read when the cells are drawn). */
@@ -153,6 +155,24 @@ export class GridRow<T> {
     }
   }
 
+  /** A column added at run time gets its cell (placed by the next `arrange`). */
+  addColumn(field: string) {
+    if (this.cells.has(field)) return;
+    this.element.append(this.cell(this.model.columns.get(field)));
+    this.redraw();
+  }
+
+  /** A column taken out loses its cell, and its own content goes. */
+  removeColumn(field: string) {
+    this.cells.get(field)?.remove();
+    this.cells.delete(field);
+    this.texts.delete(field);
+    this.marked.delete(field);
+    const content = this.contents.get(field);
+    this.contents.delete(field);
+    if (content && !content.isDisposed) void content.dispose({ skipLeaveTransition: true });
+  }
+
   dispose() {
     for (const stop of this.stops) stop();
     this.model.actionSets.markRow(this, false, false);
@@ -170,6 +190,7 @@ export class GridRow<T> {
       if (content instanceof ComponentBase) {
         this.host.controls.add(content);
         cell.append(content.element as Node);
+        this.contents.set(col.field, content);
       } else if (content instanceof Node) cell.append(content);
       else if (content !== undefined && content !== null) cell.append(String(content));
     } else {

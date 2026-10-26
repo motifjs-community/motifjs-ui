@@ -63,6 +63,12 @@ export interface UiStrings {
   gridNextPage: string;
   gridLastPage: string;
   gridPageOf: string;
+  gridPage: string;
+  gridPageCount: string;
+  gridPageNumber: string;
+  gridPageButton: string;
+  gridPageSize: string;
+  gridPageSizeAll: string;
   gridColumnMenu: string;
   gridSortAscending: string;
   gridSortDescending: string;
@@ -99,6 +105,8 @@ export interface UiStrings {
   gridStatusFailed: string;
   gridInvalidNumber: string;
   gridEmptyOption: string;
+  gridValueRange: string;
+  gridQuarter: string;
   gridRowAdded: string;
   gridRowSaved: string;
   gridRowRemoved: string;

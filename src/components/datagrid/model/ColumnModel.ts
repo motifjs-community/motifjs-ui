@@ -50,7 +50,13 @@ export class ColumnModel<T> {
     flex: {} as Record<string, number>,
     hidden: {} as Record<string, boolean>,
     sticky: {} as Record<string, StickySide | null>,
+    /** Grows when a column is added, removed or given another definition. */
+    revision: 0,
   });
+  /** The fields in the order the columns were given (and added), for `reset`. */
+  private readonly given: string[] = [];
+  /** What the last layout applied said of columns the grid did not have; a column added later takes it. */
+  private readonly waiting = new Map<string, ColumnLayout>();
 
   /** Whether something besides editing needs the status column (unsaved changes made in code). */
   statusWanted: () => boolean = () => false;
@@ -77,13 +83,76 @@ export class ColumnModel<T> {
     this.defs.set(ACTIONS_FIELD, { field: ACTIONS_FIELD, title: '' });
     this.defs.set(EXPAND_FIELD, { field: EXPAND_FIELD, title: '', align: 'center' });
     for (const field of [STATUS_FIELD, SELECT_FIELD, EXPAND_FIELD, ACTIONS_FIELD]) this.features.set(field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, LOCKED));
+    for (const field of [STATUS_FIELD, SELECT_FIELD, EXPAND_FIELD, ACTIONS_FIELD]) this.given.push(field);
     for (const c of columns) {
-      if (this.defs.has(c.field)) throw new Error(`[motifx-ui] DataGrid: duplicate or reserved column field "${c.field}"`);
+      this.check(c);
       this.defs.set(c.field, c);
       this.features.set(c.field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, c));
+      this.given.push(c.field);
     }
     this.reset();
     if (layout) this.applyLayout(layout);
+  }
+
+  /** The data columns' definitions, in the order they were given and added. */
+  definitions(): GridColumn<T>[] {
+    void this.state.revision;
+    return this.given.filter((f) => !this.isInternal(f)).map((f) => this.defs.get(f)!);
+  }
+
+  /**
+   * Adds a column at `index` among the data columns (default: last), with its own width, visibility
+   * and sticky side, or what the last layout applied said of it.
+   */
+  add(column: GridColumn<T>, index = Number.MAX_SAFE_INTEGER) {
+    this.check(column);
+    const field = column.field;
+    this.defs.set(field, column);
+    this.features.set(field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, column));
+    const s = this.state;
+    const data = s.order.filter((f) => !this.isInternal(f));
+    const at = Math.max(0, Math.min(data.length, Math.floor(index)));
+    const before = data[at];
+    const order = [...s.order];
+    order.splice(before === undefined ? order.length : order.indexOf(before), 0, field);
+    const given = this.given.filter((f) => !this.isInternal(f));
+    const next = given[at];
+    this.given.splice(next === undefined ? this.given.length : this.given.indexOf(next), 0, field);
+    const kept = this.waiting.get(field);
+    this.waiting.delete(field);
+    if (column.width !== undefined || kept) s.width[field] = this.clampWidth(field, kept?.width ?? column.width!);
+    s.flex[field] = kept ? (kept.flex ?? 0) : (column.flex ?? 0);
+    s.hidden[field] = kept ? !!kept.hidden : !!column.hidden;
+    s.sticky[field] = kept ? (kept.sticky ?? null) : (column.sticky ?? null);
+    s.order = order;
+    s.revision++;
+  }
+
+  /** Takes a data column out, with its layout. */
+  remove(field: string) {
+    if (this.isInternal(field) || !this.defs.has(field)) return;
+    const s = this.state;
+    this.defs.delete(field);
+    this.features.delete(field);
+    this.given.splice(this.given.indexOf(field), 1);
+    s.order = s.order.filter((f) => f !== field);
+    delete s.width[field];
+    delete s.flex[field];
+    delete s.hidden[field];
+    delete s.sticky[field];
+    if (this.visibleData().length === 0) {
+      const first = s.order.find((f) => !this.isInternal(f));
+      if (first) s.hidden[first] = false;
+    }
+    s.revision++;
+  }
+
+  /** Another definition for a column; its layout and feature switches stay. */
+  replace(column: GridColumn<T>) {
+    const field = column.field;
+    if (this.isInternal(field) || !this.defs.has(field)) throw new Error(`[motifx-ui] DataGrid: unknown column "${field}"`);
+    this.defs.set(field, column);
+    this.state.revision++;
   }
 
   /** Columns the grid adds itself: row status, selection, expand, actions. */
@@ -98,12 +167,16 @@ export class ColumnModel<T> {
     return def;
   }
 
+  /** The header text; nothing for a column that went (what showed it may still be going). */
   title(field: string): string {
-    return read(this.get(field).title) ?? '';
+    void this.state.revision;
+    const def = this.defs.get(field);
+    return def ? (read(def.title) ?? '') : '';
   }
 
   /** Alignment of the column's cells: its own, else by type. */
   align(field: string): 'start' | 'center' | 'end' {
+    void this.state.revision;
     const def = this.get(field);
     return def.align ?? (def.type === 'number' ? 'end' : def.type === 'boolean' ? 'center' : 'start');
   }
@@ -202,7 +275,7 @@ export class ColumnModel<T> {
   /** Back to the columns' own settings. */
   reset() {
     const s = this.state;
-    s.order = [...this.defs.keys()];
+    s.order = [...this.given];
     s.order.sort((a, b) => Number(this.isInternal(b)) - Number(this.isInternal(a)));
     const width: Record<string, number> = {};
     const flex: Record<string, number> = {};
@@ -231,6 +304,7 @@ export class ColumnModel<T> {
     const free: string[] = [];
     const end: string[] = [];
     const { order, hidden } = this.state;
+    void this.state.revision;
     const add = (f: string) => {
       const side = this.sideOf(f);
       (side === 'start' ? start : side === 'end' ? end : free).push(f);
@@ -432,6 +506,8 @@ export class ColumnModel<T> {
   applyLayout(layout: GridLayout) {
     const s = this.state;
     const known = layout.columns.filter((c) => this.defs.has(c.field) && !this.isInternal(c.field));
+    this.waiting.clear();
+    for (const c of layout.columns) if (!this.defs.has(c.field)) this.waiting.set(c.field, c);
     const listed = new Set(known.map((c) => c.field));
     const internal = s.order.filter((f) => this.isInternal(f));
     s.order = [...internal, ...known.map((c) => c.field), ...s.order.filter((f) => !listed.has(f) && !this.isInternal(f))];
@@ -445,6 +521,11 @@ export class ColumnModel<T> {
       const first = s.order.find((f) => !this.isInternal(f));
       if (first) s.hidden[first] = false;
     }
+  }
+
+  private check(column: GridColumn<T>) {
+    if (typeof column?.field !== 'string') throw new Error('[motifx-ui] DataGrid: a column needs a field');
+    if (this.defs.has(column.field)) throw new Error(`[motifx-ui] DataGrid: duplicate or reserved column field "${column.field}"`);
   }
 
   /** The column's own `editable` or `creatable`: a value, a function of the row, or unset. */

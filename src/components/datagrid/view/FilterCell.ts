@@ -27,6 +27,8 @@ export class FilterCell<T> {
   readonly condition: HTMLButtonElement | null;
   readonly editors: Field<any>[] = [];
   private readonly stops: (() => void)[] = [];
+  /** Holds the editors; it goes with the cell. */
+  private readonly holder: Component<HTMLDivElement>;
 
   constructor(
     private readonly model: GridModel<T>,
@@ -37,6 +39,7 @@ export class FilterCell<T> {
     const col = model.columns.get(field);
     // The editors live in a component of their own, so showing and hiding them keeps their place.
     const holder = new Component<HTMLDivElement>('div');
+    this.holder = holder;
     owner.controls.add(holder);
     const box = holder.element;
     box.className = 'mx-data-grid__filter';
@@ -150,6 +153,7 @@ export class FilterCell<T> {
 
   dispose() {
     for (const stop of this.stops) stop();
+    if (!this.holder.isDisposed) void this.holder.dispose({ skipLeaveTransition: true });
   }
 
   /**

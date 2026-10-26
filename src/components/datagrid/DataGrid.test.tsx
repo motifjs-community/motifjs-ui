@@ -319,7 +319,7 @@ describe('DataGrid', () => {
     await settle();
     expect(adapter.requests.map((r) => r.skip ?? 0)).toEqual([0, 1200]);
     expect(cellText(rowEls(grid)[0], 'id')).toBe('1201');
-    expect(grid.element.querySelector('.mx-data-grid__page-info')!.textContent).toBe('Page 25 of 25');
+    expect(grid.element.querySelector('.mx-data-grid__page-info')!.textContent).toBe('Page 25 of 25 (1,234 items)');
     const current = grid.element.querySelector('.mx-data-grid__page[aria-current="page"]')!;
     expect(current.textContent).toBe('25');
     await grid.dispose();

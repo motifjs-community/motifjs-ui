@@ -418,6 +418,19 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.relayout(true);
   }
 
+  /** A column added at run time: every pooled row gets its cell. */
+  addColumn(field: string) {
+    for (const row of this.pool) row.addColumn(field);
+    for (const row of this.footerPool) row.addColumn(field);
+  }
+
+  /** A column taken out, or made again: its cells go from every pooled row. */
+  removeColumn(field: string) {
+    for (const row of this.pool) row.removeColumn(field);
+    for (const row of this.groupPool) row.removeColumn(field);
+    for (const row of this.footerPool) row.removeColumn(field);
+  }
+
   /** Display order of the cells, after a column layout change. */
   arrange(visible: string[]) {
     this.visible = visible;
@@ -473,7 +486,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       end = g.total;
       top = (local) => g.offsetOf(local);
       const range = grid.dataRange();
-      data.ensure(range.first, loading ? range.first + grid.pageSize : Math.max(range.end, range.first + 1), true);
+      data.ensure(range.first, loading ? range.first + Math.max(1, grid.pageSize) : Math.max(range.end, range.first + 1), true);
     }
     const viewAt = (local: number) => (grid.mode === 'virtual' ? local : grid.viewAt(local));
     const localOf = (i: number) => (grid.mode === 'virtual' ? (i < g.total ? i : -1) : grid.localOf(i));

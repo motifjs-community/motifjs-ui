@@ -974,6 +974,26 @@
     inline-size: 100%;
   }
 
+  /* The tree of date parts or ranges: "Select all" above it, as many rows tall as the list. */
+  .mx-data-grid__values-list {
+    display: grid;
+    gap: var(--mx-datagrid-values-gap);
+  }
+
+  .mx-data-grid__values-tree .mx-tree-view__body {
+    max-block-size: calc(var(--_rows) * var(--mx-datagrid-values-row-height));
+  }
+
+  .mx-data-grid__values-tree .mx-tree-view__text {
+    display: flex;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  .mx-data-grid__values-note {
+    color: var(--mx-datagrid-state-color);
+  }
+
   .mx-data-grid__values-bar {
     display: flex;
     justify-content: flex-end;
@@ -1153,6 +1173,8 @@
     gap: var(--mx-datagrid-note-gap);
   }
 
+  /* The pager: the page sizes, the text, the steps and the pages (full), or a page number box and a
+     drop-down of the sizes (compact, data-look). */
   .mx-data-grid__pager {
     display: flex;
     align-items: center;
@@ -1160,12 +1182,46 @@
     margin-inline-start: auto;
   }
 
+  .mx-data-grid__pager[hidden] {
+    display: none;
+  }
+
+  .mx-data-grid__pages,
+  .mx-data-grid__page-sizes,
+  .mx-data-grid__page-jump {
+    display: flex;
+    align-items: center;
+    gap: var(--mx-datagrid-gap);
+  }
+
+  .mx-data-grid__page-sizes,
+  .mx-data-grid__page-size-list {
+    margin-inline-end: var(--mx-datagrid-page-info-gap);
+  }
+
   .mx-data-grid__page-gap {
     padding-inline: var(--mx-datagrid-gap);
   }
 
   .mx-data-grid__page-info {
-    margin-inline-start: var(--mx-datagrid-page-info-gap);
+    margin-inline-end: var(--mx-datagrid-page-info-gap);
+    white-space: nowrap;
+  }
+
+  .mx-data-grid__page-jump {
+    white-space: nowrap;
+  }
+
+  .mx-data-grid__page-number {
+    inline-size: var(--mx-datagrid-page-number-width);
+  }
+
+  .mx-data-grid__page-size-list {
+    inline-size: var(--mx-datagrid-page-size-width);
+  }
+
+  .mx-field[data-in-pager] .mx-field__foot {
+    display: none;
   }
 
   .mx-data-grid__step-icon {

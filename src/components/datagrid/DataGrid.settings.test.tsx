@@ -187,9 +187,9 @@ describe('settings', () => {
     const grid = make({ rows: makeRows(5), settings: { headerFilter: true } });
     await settle();
     const values = (grid as any).model.values;
-    expect(values.source('name').pageSize).toBe(100);
+    expect(values.list('name').source.pageSize).toBe(100);
     grid.settings.headerFilterPageSize = 25;
-    expect(values.source('name').pageSize).toBe(25);
+    expect(values.list('name').source.pageSize).toBe(25);
     grid.settings.headerFilterRows = 5;
     (grid as any).openHeaderFilter('name', header(grid, 'name'));
     expect((grid as any).headerFilter.list.props.height).toBe(5);

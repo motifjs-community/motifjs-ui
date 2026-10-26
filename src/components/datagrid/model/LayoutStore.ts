@@ -6,7 +6,7 @@ const PREFIX = 'motifx-ui:data-grid:';
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /**
- * A grid's layout, filters and search text in `localStorage` (or the storage given) under its `layoutKey`.
+ * A grid's layout, filters, search text and page size in `localStorage` (or the storage given) under its `layoutKey`.
  * Storage can be missing, full or blocked (a private window, a sandbox): then nothing is kept and nothing fails.
  */
 export class LayoutStore {
@@ -29,7 +29,9 @@ export class LayoutStore {
       const columns = value.columns.filter((c): c is StoredLayout['columns'][number] => isObject(c) && typeof c.field === 'string' && typeof c.width === 'number');
       const sort = value.sort.filter((s): s is StoredLayout['sort'][number] => isObject(s) && typeof s.field === 'string' && (s.dir === 'asc' || s.dir === 'desc'));
       const group = Array.isArray(value.group) ? value.group.filter((g): g is NonNullable<StoredLayout['group']>[number] => isObject(g) && typeof g.field === 'string' && (g.dir === 'asc' || g.dir === 'desc')) : undefined;
-      return { columns, sort, group, filters: isObject(value.filters) ? (value.filters as StoredLayout['filters']) : {}, searchText: typeof value.searchText === 'string' ? value.searchText : '' };
+      const kept: StoredLayout = { columns, sort, group, filters: isObject(value.filters) ? (value.filters as StoredLayout['filters']) : {}, searchText: typeof value.searchText === 'string' ? value.searchText : '' };
+      if (typeof value.pageSize === 'number' && value.pageSize >= 0) kept.pageSize = value.pageSize;
+      return kept;
     } catch {
       return null;
     }

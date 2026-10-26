@@ -11,6 +11,8 @@ export interface GridDataOptions<T> {
   paged: boolean;
   /** Rows per page when the grid pages rows it holds itself. */
   pageSize: number;
+  /** Rows per page the user chose (the pager's page sizes), over the source's own; `null` for none. 0: every row on one page. */
+  chosenPageSize?: number | null;
   /** The sort the rows start with (as the source names the fields). */
   sort: readonly data.SortItem[];
   /** The levels the rows start grouped by; none for plain rows. */

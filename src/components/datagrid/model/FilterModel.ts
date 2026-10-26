@@ -23,6 +23,8 @@ export class FilterModel<T> {
   readonly state = reactive({ columns: {} as Record<string, ColumnFilter>, search: 0 });
   /** The last change came from typing: wait `filterDelay` before applying it. */
   typed = false;
+  /** How a column's header filter value filters when not by being equal (a range, an expression); the grid gives it. */
+  conditionOf: (field: string) => ((value: unknown) => data.FilterExpression | null) | null = () => null;
   private searchPart: data.FilterExpression | null = null;
 
   constructor(private readonly columns: ColumnModel<T>) {}
@@ -47,6 +49,15 @@ export class FilterModel<T> {
     if (part === 'all') this.state.columns[field] = f.op ? { op: f.op } : {};
     else if (part === 'row') this.update(field, { value: undefined, value2: undefined });
     else this.update(field, { values: undefined });
+  }
+
+  /** Forgets a column's filter, its condition too (the column went away). */
+  drop(field: string) {
+    if (!(field in untracked(() => this.state.columns))) return;
+    this.typed = false;
+    const next = { ...untracked(() => this.state.columns) };
+    delete next[field];
+    this.state.columns = next;
   }
 
   clearAll() {
@@ -106,8 +117,9 @@ export class FilterModel<T> {
 
   /** The conditions the filter row offers for a column; none for a check box column and a lookup column (always `=`). */
   operators(field: string): readonly GridFilterOperator[] {
-    const col = this.columns.get(field);
-    if (col.lookup) return [];
+    // A column that went has none (its editors may still be going).
+    const col = this.columns.defs.get(field);
+    if (!col || col.lookup) return [];
     const own = col.filterOperators?.length ? col.filterOperators : null;
     switch (col.type) {
       case 'boolean':
@@ -127,8 +139,8 @@ export class FilterModel<T> {
     const ops = this.operators(field);
     const set = this.state.columns[field]?.op;
     if (set && ops.includes(set)) return set;
-    const col = this.columns.get(field);
-    return col.filterOperator && ops.includes(col.filterOperator) ? col.filterOperator : (ops[0] ?? '=');
+    const own = this.columns.defs.get(field)?.filterOperator;
+    return own && ops.includes(own) ? own : (ops[0] ?? '=');
   }
 
   /**
@@ -163,10 +175,20 @@ export class FilterModel<T> {
     return data.where(field, op, f.value);
   }
 
+  /** The header filter's part: any of the values (`in`, ranges, expressions, empty), or none of them with `filterType: 'exclude'`. */
   private valuesPart(field: string, f: ColumnFilter): data.FilterExpression | null {
     if (!f.values?.length || !this.columns.can(field, 'headerFilter')) return null;
-    const values = f.values.filter((v) => !empty(v));
-    const blank = values.length < f.values.length;
-    return data.or(values.length ? data.where(field, 'in', values) : null, blank ? data.where(field, 'isblank') : null);
+    const own = this.conditionOf(field);
+    const plain: unknown[] = [];
+    const parts: data.FilterExpression[] = [];
+    let blank = false;
+    for (const v of f.values) {
+      const condition = empty(v) ? null : own?.(v);
+      if (empty(v)) blank = true;
+      else if (condition) parts.push(condition);
+      else plain.push(v);
+    }
+    const any = data.or(plain.length ? data.where(field, 'in', plain) : null, ...parts, blank ? data.where(field, 'isblank') : null);
+    return any && f.filterType === 'exclude' ? data.not(any) : any;
   }
 }

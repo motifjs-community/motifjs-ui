@@ -29,6 +29,8 @@ import type { GridLayoutChangingEventArgs } from './grid-layout-changing-event-a
 import type { GridOptionChangedEventArgs } from './grid-option-changed-event-args';
 import type { GridPageChangedEventArgs } from './grid-page-changed-event-args';
 import type { GridPageChangingEventArgs } from './grid-page-changing-event-args';
+import type { GridPageSizeChangedEventArgs } from './grid-page-size-changed-event-args';
+import type { GridPageSizeChangingEventArgs } from './grid-page-size-changing-event-args';
 import type { GridPastingEventArgs } from './grid-pasting-event-args';
 import type { GridRowClickEventArgs } from './grid-row-click-event-args';
 import type { GridRowInsertedEventArgs } from './grid-row-inserted-event-args';
@@ -75,7 +77,7 @@ import type { RowState } from './row-state';
 
 /** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form`, `popup` and `masterDetail` (whose fields are) and the callbacks is a value or a function that is followed. */
 export interface DataGridProps<T> extends ControlProps {
-  /** Column definitions, in their initial order. */
+  /** Column definitions, in their initial order. Columns come and go later with `addColumn` and `deleteColumn`. */
   columns: GridColumn<T>[];
   /**
    * Rows in memory. The grid puts them in a `DataSource` over an `ArrayAdapter` itself: `push`,
@@ -88,7 +90,11 @@ export interface DataGridProps<T> extends ControlProps {
   rowKey?: string | ((row: T) => unknown);
   /** `'virtual'` (default) or `'paged'`. A `dataSource` that loads by `'page'` is always paged. */
   mode?: Bind<GridMode>;
-  /** Rows per page in paged mode, for rows in memory. A `dataSource` that loads pages or blocks uses its own `pageSize`. Default 100. */
+  /**
+   * Rows per page in paged mode (0: every row on one page), for rows in memory. A `dataSource` that
+   * loads pages or blocks uses its own `pageSize`. The user can change it from the pager's page sizes
+   * (`settings.pageSizeSelector`). Default 100.
+   */
   pageSize?: Bind<number>;
   /** Row height in pixels. Default: read from the grid's CSS, which follows the density. */
   rowHeight?: Bind<number>;
@@ -245,7 +251,7 @@ export interface DataGridProps<T> extends ControlProps {
   onFocusedRowChanged?: (e: GridFocusedRowChangedEventArgs<T>) => void;
   /** A key is about to be handled by the grid (`onKeyDown`); `e.cancel` stops the grid's handling. */
   onKeyHandling?: (e: GridKeyHandlingEventArgs) => void;
-  /** A setting of the grid, a column or the toolbar was assigned. */
+  /** A setting of the grid, a column or the toolbar was assigned, or a column was added or taken out (`name: 'columns'`). */
   onOptionChanged?: (e: GridOptionChangedEventArgs) => void;
   /** An export is about to start; change `e.options`, or `e.cancel`. */
   onExporting?: (e: GridExportingEventArgs) => void;
@@ -263,6 +269,9 @@ export interface DataGridProps<T> extends ControlProps {
   /** Another page is about to show; `e.cancel` stays. */
   onPageChanging?: (e: GridPageChangingEventArgs) => void;
   onPageChanged?: (e: GridPageChangedEventArgs) => void;
+  /** The rows per page are about to change (the pager's page sizes, `pageSize(n)`); `e.cancel` keeps them. */
+  onPageSizeChanging?: (e: GridPageSizeChangingEventArgs) => void;
+  onPageSizeChanged?: (e: GridPageSizeChangedEventArgs) => void;
   /** Cells are about to be copied; change `e.text` / `e.html`, or `e.cancel`. */
   onCopying?: (e: GridCopyingEventArgs) => void;
   /** Text is about to be pasted; change `e.text`, or `e.cancel`. */

@@ -30,6 +30,8 @@ import type { GridLayoutChangingEventArgs } from '../grid-layout-changing-event-
 import type { GridOptionChangedEventArgs } from '../grid-option-changed-event-args';
 import type { GridPageChangedEventArgs } from '../grid-page-changed-event-args';
 import type { GridPageChangingEventArgs } from '../grid-page-changing-event-args';
+import type { GridPageSizeChangedEventArgs } from '../grid-page-size-changed-event-args';
+import type { GridPageSizeChangingEventArgs } from '../grid-page-size-changing-event-args';
 import type { GridPastingEventArgs } from '../grid-pasting-event-args';
 import type { GridRowClickEventArgs } from '../grid-row-click-event-args';
 import type { GridRowExpandedEventArgs } from '../grid-row-expanded-event-args';
@@ -109,6 +111,8 @@ export class GridEvents<T> {
   readonly filterChanged = new Emitter<GridFilterChangedEventArgs>();
   readonly pageChanging = new Emitter<GridPageChangingEventArgs>();
   readonly pageChanged = new Emitter<GridPageChangedEventArgs>();
+  readonly pageSizeChanging = new Emitter<GridPageSizeChangingEventArgs>();
+  readonly pageSizeChanged = new Emitter<GridPageSizeChangedEventArgs>();
   readonly layoutChanging = new Emitter<GridLayoutChangingEventArgs>();
   readonly layoutChanged = new Emitter<GridLayout>();
   readonly copying = new Emitter<GridCopyingEventArgs>();

@@ -40,6 +40,7 @@ import { LookupTexts } from './LookupTexts';
 import type { GridState } from './grid-state';
 import type { RowRun } from './row-run';
 import type { RowStatus } from './row-status';
+import type { StoredLayout } from './stored-layout';
 import { RowSelection } from './RowSelection';
 import { sameValue } from './same-value';
 import { Switches } from './Switches';
@@ -76,6 +77,7 @@ export class GridModel<T> {
   readonly state: GridState = reactive({
     sort: [],
     page: 0,
+    pageSize: DEFAULT_PAGE_SIZE,
     rowHeight: DEFAULT_ROW_HEIGHT,
     viewport: 0,
     measured: false,
@@ -151,6 +153,8 @@ export class GridModel<T> {
   private readonly busyCells = new Map<string, Set<string>>();
   /** The filters the rows have now, to put back when `onFilterChanging` cancels new ones. */
   private appliedFilters: GridFilters = {};
+  /** The rows per page the user chose (the pager, `pageSize(n)`, a kept layout), over the props and the source; `null` for none. */
+  chosenPageSize: number | null = null;
   /** The layout before the user's last change, to put back when `onLayoutChanging` cancels one. */
   private lastLayout: GridLayout | null = null;
   /** What a new row starts with while it is being made (`onInitNewRow` may change it). */
@@ -171,9 +175,7 @@ export class GridModel<T> {
     const stored = this.settings.get('saveLayout') ? this.store?.read() : null;
     const layout = stored ?? props.layout;
     this.columns = new ColumnModel(props.columns, layout, this.settings);
-    for (const [field, switches] of this.columns.features) {
-      switches.changed = (name, value, previous) => this.events.tell(this.events.optionChanged, () => ({ name, field, value, previous }));
-    }
+    for (const field of this.columns.features.keys()) this.tellFeatures(field);
     this.groups = new GridGroups<T>(this.columns, this.settings);
     this.groups.set(layout?.group ?? this.columnGroups());
     this.columns.hiddenByGroup = (field) => this.groups.isGrouped(field) && !this.columns.can(field, 'showWhenGrouped');
@@ -188,17 +190,21 @@ export class GridModel<T> {
     this.filters = new FilterModel<T>(this.columns);
     const filters = stored ? this.reviveDates(stored.filters) : props.filters;
     if (filters) this.filters.replace(filters);
+    // A kept layout holds the user's filters; else a column's own `filterValues` start its header filter.
+    if (!stored) for (const col of this.columns.definitions()) this.startFilterValues(col);
     this.appliedFilters = this.filters.toFilters();
     this.selection.guard = {
       wanted: () => this.events.listened(this.events.selectionChanging),
       allow: (next, previous) => this.events.ask(this.events.selectionChanging, () => ({ selection: next, previous, cancel: false })),
     };
     this.values = new FilterValues<T>(this);
+    this.filters.conditionOf = (field) => this.values.conditionOf(field);
     this.lookups = new LookupTexts<T>(() => this.formatter.locale, { missing: () => this.text('gridLookupMissing') });
     this.search = new GridSearch<T>(this);
     this.summaries = new GridSummaries<T>(this, props.summary);
     const searchText = stored ? stored.searchText : read(props.searchText);
     if (searchText) this.search.start(searchText);
+    if (stored?.pageSize !== undefined) this.chosenPageSize = stored.pageSize;
     this.connect();
     this.state.activeField = this.columns.visibleData()[0] ?? '';
     this.lastLayout = this.layout;
@@ -241,6 +247,7 @@ export class GridModel<T> {
         owned: !given,
         paged: read(props.mode) === 'paged',
         pageSize: read(props.pageSize) ?? DEFAULT_PAGE_SIZE,
+        chosenPageSize: this.chosenPageSize,
         sort: this.sourceSort(st.sort),
         group: this.groups.levels(),
         remoteGrouping: this.settings.get('remoteGrouping'),
@@ -256,6 +263,7 @@ export class GridModel<T> {
         edited: (change) => this.edited(change),
       });
       st.page = this.data.sourcePage;
+      st.pageSize = this.data.pageSize;
       st.connection++;
       this.listenToData();
       this.summaries.connect(this.data);
@@ -336,9 +344,9 @@ export class GridModel<T> {
     return mode === 'form' || mode === 'popup';
   }
 
+  /** Rows per page in paged mode; 0: every row on one page. Reactive. */
   get pageSize(): number {
-    void this.state.connection;
-    return this.data.pageSize;
+    return this.state.pageSize;
   }
 
   get newRowPosition(): 'top' | 'bottom' {
@@ -461,15 +469,17 @@ export class GridModel<T> {
 
   /** Page count in paged mode (at least 1). */
   pageCount(): number {
-    return Math.max(1, Math.ceil(this.data.total / this.pageSize));
+    const size = this.pageSize;
+    return size > 0 ? Math.max(1, Math.ceil(this.data.total / size)) : 1;
   }
 
   /** Data rows of the current page (paged mode), or all of them. */
   dataRange(): { first: number; end: number } {
     const total = this.data.total;
-    if (this.mode === 'virtual') return { first: 0, end: total };
-    const first = Math.min(this.state.page, this.pageCount() - 1) * this.pageSize;
-    return { first, end: Math.min(total, first + this.pageSize) };
+    const size = this.pageSize;
+    if (this.mode === 'virtual' || size <= 0) return { first: 0, end: total };
+    const first = Math.min(this.state.page, this.pageCount() - 1) * size;
+    return { first, end: Math.min(total, first + size) };
   }
 
   /** The grid rows the user can reach now, as runs in display order. */
@@ -541,7 +551,7 @@ export class GridModel<T> {
   /** The page grid row `i` is on (paged mode). */
   pageOf(i: number): number {
     const d = this.dataIndex(i);
-    if (d >= 0) return Math.floor(d / this.pageSize);
+    if (d >= 0) return this.pageSize > 0 ? Math.floor(d / this.pageSize) : 0;
     return this.newRowPosition === 'top' ? this.state.page : this.pageCount() - 1;
   }
 
@@ -557,6 +567,49 @@ export class GridModel<T> {
     if (moveActive && this.state.activeRow >= 0) this.state.activeRow = this.firstRow();
     events.tell(events.pageChanged, () => ({ page: p, previous }));
     return true;
+  }
+
+  /**
+   * Rows per page (0: every row on one page), as the pager's page sizes and `pageSize(n)` set it:
+   * `onPageSizeChanging` may keep the old one. The grid goes back to the first page, and the size is
+   * kept with the layout.
+   */
+  setPageSize(size: number): boolean {
+    const next = Math.max(0, Math.floor(size));
+    const previous = this.pageSize;
+    if (!Number.isFinite(next) || next === previous) return false;
+    const { events } = this;
+    if (!events.ask(events.pageSizeChanging, () => ({ pageSize: next, previous, cancel: false }))) return false;
+    this.onBeforeQueryChange?.();
+    const page = this.state.page;
+    this.chosenPageSize = next;
+    this.data.setPageSize(next);
+    this.state.pageSize = next;
+    this.state.page = 0;
+    this.generation++;
+    if (this.state.activeRow >= 0) this.state.activeRow = this.firstRow();
+    this.onQueryChange?.();
+    if (page !== 0) events.tell(events.pageChanged, () => ({ page: 0, previous: page }));
+    events.tell(events.pageSizeChanged, () => ({ pageSize: next, previous }));
+    this.keepLayout();
+    return true;
+  }
+
+  /** The page sizes the pager offers (`allowedPageSizes`), 0 for every row on one page. Reactive. */
+  pageSizes(): number[] {
+    const given = this.settings.get('allowedPageSizes');
+    const size = this.pageSize;
+    const list = given === 'auto' ? (size > 0 ? [Math.floor(size / 2), size, size * 2] : []) : given.map((s) => (s === 'all' ? 0 : Math.floor(Number(s))));
+    const out: number[] = [];
+    for (const n of list) if (Number.isFinite(n) && (n > 0 || (n === 0 && given !== 'auto')) && !out.includes(n)) out.push(n);
+    return out;
+  }
+
+  /** Whether the pager shows: paged mode with `pager` on, or with `'auto'` while there is more than one page. Reactive. */
+  showsPager(): boolean {
+    if (this.mode !== 'paged') return false;
+    const pager = this.settings.get('pager');
+    return pager === 'auto' ? this.pageCount() > 1 : !!pager;
   }
 
   // Details (`masterDetail`).
@@ -936,7 +989,7 @@ export class GridModel<T> {
 
   /** Whether a column's header filter can be used: the feature is on and its values can be had. */
   hasHeaderFilter(field: string): boolean {
-    return !this.columns.isInternal(field) && this.columns.can(field, 'headerFilter') && this.values.available(field);
+    return this.columns.defs.has(field) && !this.columns.isInternal(field) && this.columns.can(field, 'headerFilter') && this.values.available(field);
   }
 
   /** The id the selection keeps a row under: its key as text; `undefined` for a row without a key (a new one). */
@@ -1077,13 +1130,13 @@ export class GridModel<T> {
     this.announce(dir ? this.text(dir === 'asc' ? 'gridSortedAscending' : 'gridSortedDescending', { title }) : this.text('gridSortCleared'));
   }
 
-  /** Replaces the sort order. `byUser` reports a layout change. Returns whether it changed (`onSortChanging` may keep it). */
-  setSort(sort: readonly data.SortItem[], byUser = false): boolean {
+  /** Replaces the sort order. `byUser` reports a layout change. Returns whether it changed (`onSortChanging` may keep it, unless `ask` is off). */
+  setSort(sort: readonly data.SortItem[], byUser = false, ask = true): boolean {
     const next = sort.filter((s) => this.columns.defs.has(s.field) && !this.groups.isGrouped(s.field)).map((s) => ({ ...s }));
     if (this.sameSort(next, this.state.sort)) return false;
     const { events } = this;
     const previous = this.state.sort.map((s) => ({ ...s }));
-    if (!events.ask(events.sortChanging, () => ({ sort: next, previous, byUser, cancel: false }))) return false;
+    if (ask && !events.ask(events.sortChanging, () => ({ sort: next, previous, byUser, cancel: false }))) return false;
     this.onBeforeQueryChange?.();
     this.state.sort = next;
     this.state.page = 0;
@@ -1129,7 +1182,7 @@ export class GridModel<T> {
   /** The grouping the columns give: those with a `groupIndex`, in its order. */
   columnGroups(): data.GroupItem[] {
     const out: { field: string; at: number }[] = [];
-    for (const col of this.props.columns) {
+    for (const col of this.columns.definitions()) {
       const at = read(col.groupIndex);
       if (typeof at === 'number' && at >= 0) out.push({ field: col.field, at });
     }
@@ -1142,11 +1195,11 @@ export class GridModel<T> {
    * Groups the rows by these levels, in order (none: not grouped). A column grouped now leaves the
    * sort, its direction the order of its groups. `byUser` reports a layout change.
    */
-  setGroup(items: readonly data.GroupItem[], byUser = false) {
+  setGroup(items: readonly data.GroupItem[], byUser = false, ask = true) {
     const next = this.groups.normalize(items.map((g) => ({ field: g.field, dir: g.dir ?? this.state.sort.find((s) => s.field === g.field)?.dir ?? 'asc' })));
     if (this.groups.same(next)) return;
     const previous = this.groups.items.map((g) => ({ ...g }));
-    if (this.onGroupingChanging && !this.onGroupingChanging(next, previous, byUser)) return;
+    if (ask && this.onGroupingChanging && !this.onGroupingChanging(next, previous, byUser)) return;
     const before = this.groups.fields();
     this.onBeforeQueryChange?.();
     this.groups.set(next);
@@ -1207,6 +1260,65 @@ export class GridModel<T> {
   /** Whether a drop may change the grouping: the app is told first and can cancel it. */
   groupDropAllowed(field: string, from: 'header' | 'chip', to: 'panel' | 'headers', index: number): boolean {
     return this.onGroupDropping?.({ field, from, to, index }) ?? true;
+  }
+
+  // Columns at run time.
+
+  /** Adds a column at `index` among the data columns (default: last); its `groupIndex` groups the rows by it. */
+  addColumn(column: GridColumn<T>, index?: number) {
+    this.columns.add(column, index);
+    this.tellFeatures(column.field);
+    this.startFilterValues(column);
+    const at = read(column.groupIndex);
+    if (typeof at === 'number' && at >= 0) this.groupBy(column.field, at);
+    this.keepActiveFieldVisible();
+  }
+
+  /** A column is about to go: its sort, grouping and filter go first, without asking (the column is gone). */
+  forgetColumn(field: string) {
+    const st = this.state;
+    const sort = st.sort.filter((s) => s.field !== field);
+    if (sort.length !== st.sort.length) this.setSort(sort, false, false);
+    if (this.groups.isGrouped(field)) this.setGroup(this.groups.without(field), false, false);
+    this.filters.drop(field);
+  }
+
+  /** Takes a column out, after `forgetColumn` and after its cells went. */
+  removeColumn(field: string) {
+    this.columns.remove(field);
+    this.keepActiveFieldVisible();
+  }
+
+  /** A column reads its rows another way now (`type`, `value`, `lookup` …): its texts and the rows are asked for again. */
+  columnReadChanged(field: string) {
+    const col = this.columns.get(field);
+    if (col.lookup) this.lookups.refresh([col]);
+    this.regroupWithSettings();
+    this.data.refresh();
+  }
+
+  /** The header filter's values of a column and whether they keep or leave out rows; none takes that part of its filter away. */
+  setFilterValues(field: string, values: readonly unknown[] | undefined, type: 'include' | 'exclude' = 'include') {
+    this.filters.update(field, { values: values?.length ? [...values] : undefined, filterType: type === 'exclude' ? 'exclude' : undefined });
+  }
+
+  /** A column's own `filterValues` and `filterType`, where the filters say nothing of its values. */
+  private startFilterValues(col: GridColumn<T>) {
+    const values = read(col.filterValues);
+    const type = read(col.filterType);
+    if ((values === undefined && type === undefined) || this.filters.get(col.field)?.values) return;
+    this.setFilterValues(col.field, values, type);
+  }
+
+  /** The fields of the data columns, in the order they were given and added. */
+  columnFields(): string[] {
+    return this.columns.definitions().map((c) => c.field);
+  }
+
+  /** Column switches assigned later are told through `onOptionChanged`, with the column's field. */
+  private tellFeatures(field: string) {
+    const switches = this.columns.features.get(field);
+    if (switches) switches.changed = (name, value, previous) => this.events.tell(this.events.optionChanged, () => ({ name, field, value, previous }));
   }
 
   /** Groups again with what the grouping depends on now (`remoteGrouping`, `groupLoadPageSize`). */
@@ -1315,7 +1427,13 @@ export class GridModel<T> {
   keepLayout() {
     this.lastLayout = this.layout;
     const store = this.store;
-    if (store) untracked(() => this.settings.get('saveLayout') && store.write({ ...this.layout, filters: this.filters.toFilters(), searchText: this.search.state.applied }));
+    if (!store) return;
+    untracked(() => {
+      if (!this.settings.get('saveLayout')) return;
+      const kept: StoredLayout = { ...this.layout, filters: this.filters.toFilters(), searchText: this.search.state.applied };
+      if (this.chosenPageSize !== null) kept.pageSize = this.chosenPageSize;
+      store.write(kept);
+    });
   }
 
   /** After a column was hidden, moves the active cell to a visible column. */
@@ -1380,17 +1498,23 @@ export class GridModel<T> {
   /** The grid makes a source for rows in memory: all of them at once, sorted in memory by the columns. */
   private ownSource(): data.DataSource<T, unknown> {
     const props = this.props;
-    const fields: Record<string, data.FieldType> = {};
-    for (const col of props.columns) if (col.type && FIELD_TYPES[col.type] && !col.value) fields[col.field] = FIELD_TYPES[col.type];
+    // The types follow the columns, those added later too.
+    const fields = () =>
+      untracked(() => {
+        const out: Record<string, data.FieldType> = {};
+        for (const col of this.columns.definitions()) if (col.type && FIELD_TYPES[col.type] && !col.value) out[col.field] = FIELD_TYPES[col.type];
+        return out;
+      });
     const column = (field: string) => (this.columns.defs.get(field) ?? { field, title: '' }) as GridColumn<T>;
     const adapter = new GridRowsAdapter<T & object>(
-      { data: () => (read(props.rows) ?? []) as (T & object)[], key: props.rowKey as data.KeyExpr<T & object>, fields, locale: this.formatter.locale },
+      { data: () => (read(props.rows) ?? []) as (T & object)[], key: props.rowKey as data.KeyExpr<T & object>, locale: this.formatter.locale },
       column as (field: string) => GridColumn<T & object>,
       {
         sortValue: (field) => this.lookups.sortValue(column(field)) as ((row: T & object) => unknown) | undefined,
         // Sorting by a lookup's text needs the text of every key of the rows first.
         beforeSort: (sort, rows) => this.lookups.load(sort.map((s) => column(s.field)).filter((c) => this.lookups.sortsByText(c)), rows as unknown as T[]),
       },
+      fields,
     );
     return new data.DataSource<T, unknown>({ adapter: adapter as unknown as data.DataAdapter<T, unknown>, loadMode: 'all', sort: this.state.sort, filter: this.filters.expression() });
   }

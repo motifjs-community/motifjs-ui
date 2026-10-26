@@ -28,8 +28,9 @@ export class GroupRow<T> {
   /** Cells of the items aligned by column, by field; made when first needed. */
   private readonly aligned = new Map<string, HTMLDivElement>();
   private visible: string[] = [];
-  /** Columns' own contents, by field. */
+  /** Columns' own contents, by field, and those that are components. */
   private readonly own = new Map<string, HTMLElement>();
+  private readonly contents = new Map<string, ComponentBase>();
   private readonly stops: (() => void)[] = [];
 
   constructor(
@@ -108,6 +109,18 @@ export class GroupRow<T> {
   /** Lookup keys came: the text is drawn again when it shows one. */
   drawLookup() {
     if (this.node && this.model.columns.defs.get(this.node.field)?.lookup) this.shown.value = this.shown.peek() + 1;
+  }
+
+  /** A column taken out, or made again: its aligned cell and its own content go. */
+  removeColumn(field: string) {
+    this.aligned.get(field)?.remove();
+    this.aligned.delete(field);
+    this.own.get(field)?.remove();
+    this.own.delete(field);
+    const content = this.contents.get(field);
+    this.contents.delete(field);
+    if (content && !content.isDisposed) void content.dispose({ skipLeaveTransition: true });
+    this.redraw();
   }
 
   dispose() {
@@ -211,6 +224,7 @@ export class GroupRow<T> {
     if (content instanceof ComponentBase) {
       this.host.controls.add(content);
       el.append(content.element as Node);
+      this.contents.set(field, content);
     } else if (content instanceof Node) el.append(content);
     else if (content !== undefined && content !== null) el.append(String(content));
     this.text.before(el);

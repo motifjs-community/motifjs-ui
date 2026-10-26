@@ -6,4 +6,6 @@ export interface StoredLayout extends GridLayout {
   filters: GridFilters;
   /** The search panel's text. */
   searchText?: string;
+  /** The rows per page the user chose. */
+  pageSize?: number;
 }

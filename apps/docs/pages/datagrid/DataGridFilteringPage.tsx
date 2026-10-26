@@ -2,6 +2,7 @@ import { Example, Rich, Section } from '../../shared/doc';
 import { slowAdapterFile } from '../../shared/slow-adapter-file';
 import { code, withOrders } from './code';
 import Filters from './examples/Filters';
+import HeaderFilterIntervals from './examples/HeaderFilterIntervals';
 import Search from './examples/Search';
 
 export default function DataGridFilteringPage() {
@@ -13,6 +14,18 @@ export default function DataGridFilteringPage() {
         </p>
         <Example files={[...withOrders('Filters.tsx'), slowAdapterFile]} stack>
           <Filters />
+        </Example>
+      </Section>
+
+      <Section anchor="intervals" title="Ranges, dates and entries">
+        <p>
+          <Rich text="A column's `headerFilterInterval` groups its header filter: a number column in ranges of that size (“0 – 250”, “250 – 500”; several sizes, `[1000, 100]`, make a tree), a date column in a tree of years, months and days — down to the part it names (`'year'`, `'quarter'`, `'month'`, `'day'`, `'hour'`, `'minute'`, `'second'`; `null` lists the dates one by one). Dates are a tree by default, down to the day (`headerFilterDateInterval`). The tree is the kit's `TreeView` with check boxes and “Select all”; a month checked keeps the month (`'2026/3'`), a year `2026`, and filters with `>=` its first moment and `<` the next one's, so a server runs it too. The counts are worked out in the browser from the column's distinct values: counted in memory, grouped by an adapter that groups, or from `loadValues`." />
+        </p>
+        <p>
+          <Rich text="`headerFilterItems` gives the header filter entries of its own, `{ text, value }`, where a value is a value or a filter expression (`data.where('city', 'in', […])`); a function gets the other filters and `values()`, the entries it would list, to add to. `filterValues` and `filterType` (both may be functions that are followed) set what the header filter holds: `'exclude'` leaves those values out, so values that come later show. In the list, choosing every value and then taking some away leaves those out the same way." />
+        </p>
+        <Example files={withOrders('HeaderFilterIntervals.tsx')} stack>
+          <HeaderFilterIntervals />
         </Example>
       </Section>
 

@@ -1,6 +1,7 @@
 import type { ColumnFeatures } from './column-features';
 import type { ColumnResizeMode } from './column-resize-mode';
 import type { GridActionLocation } from './grid-action-location';
+import type { GridDateInterval } from './grid-date-interval';
 
 /**
  * Everything in the grid that can be turned on or off. Give some of them through the `settings`
@@ -44,8 +45,11 @@ export interface GridSettings extends ColumnFeatures {
   striped: boolean;
   /** Row count in the bottom bar. Default `true`. */
   rowCount: boolean;
-  /** The pager in paged mode. Turn it off to page from your own controls (`grid.page`). Default `true`. */
-  pager: boolean;
+  /**
+   * The pager in paged mode; `'auto'` shows it only while there is more than one page. Turn it off
+   * to page from your own controls (`grid.page`). Default `true`.
+   */
+  pager: boolean | 'auto';
   /** The actions column, while the `actions` prop gives actions. Default `true`. */
   actionsColumn: boolean;
   /** Where the actions column sits. Default `'end'`. */
@@ -183,12 +187,39 @@ export interface GridSettings extends ColumnFeatures {
   pagerNeighbors: number;
   /** The pager's first, previous, next and last buttons. Default `true`. */
   pagerNavigation: boolean;
-  /** "Page 3 of 12" in the pager. Default `true`. */
+  /** "Page 3 of 12 (250 items)" in the pager. Default `true`. */
   pagerInfo: boolean;
+  /**
+   * The pager's text: `{0}` (or `{page}`) is the page, `{1}` (`{count}`) the page count, `{2}`
+   * (`{total}`) the rows. Default: the `gridPageOf` text of `uiLocale`.
+   */
+  pagerInfoText: string;
+  /** The accessible name of the pager. Default: the `gridPager` text of `uiLocale` and the grid's name. */
+  pagerLabel: string;
+  /**
+   * `'full'`: page buttons, and the page sizes as buttons; `'compact'`: a box for the page number and
+   * a drop-down of the page sizes, without the text; `'adaptive'`: full while it fits in the grid's
+   * width, else compact. Default `'adaptive'`.
+   */
+  pagerDisplayMode: 'adaptive' | 'compact' | 'full';
+  /** The page sizes in the pager, to change how many rows a page shows. Default `false`. */
+  pageSizeSelector: boolean;
+  /**
+   * The page sizes it offers: numbers, and `'all'` for one page with every row; `'auto'` is half,
+   * once and twice the page size. Default `'auto'`.
+   */
+  allowedPageSizes: readonly (number | 'all')[] | 'auto';
+  /** In paged mode PageUp and PageDown go to the previous and next page, or move a screen of rows (`'rows'`). Default `'page'`. */
+  pageKeys: 'page' | 'rows';
   /** Values the header filter loads per request while its list scrolls. Default `100`. */
   headerFilterPageSize: number;
   /** Height of the header filter's list, in rows. Default `8`. */
   headerFilterRows: number;
+  /**
+   * The deepest part of the year → month → day … tree the header filter lists a date column by;
+   * `null` lists the dates one by one. A column's `headerFilterInterval` wins. Default `'day'`.
+   */
+  headerFilterDateInterval: GridDateInterval | null;
   /** Rows an export asks a server for per request; `exportCsv({ pageSize })` wins. Default `1000`. */
   exportPageSize: number;
   /** Pasted texts read as "yes" in a yes/no column, besides the `yes` text of `uiLocale` (any case). Default `['true', '1', 'x', '✓', '✔']`. */

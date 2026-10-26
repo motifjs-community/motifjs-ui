@@ -2,7 +2,7 @@ import { effect, Emitter, reactive, read, untracked, type Bind, type Event as Mo
 import { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
 import { focusableIn, nextTabbable, tabbableIn } from '../../core/focus';
-import { checkMark, chevronDown, dismissMark, pencilMark, trashMark, undoMark } from '../../core/glyphs';
+import { checkMark, dismissMark, pencilMark, trashMark, undoMark } from '../../core/glyphs';
 import { fillTemplate } from '../../core/fill-template';
 import { nextId } from '../../core/next-id';
 import type { MenuItem } from '../../parts/menu/menu-item';
@@ -17,6 +17,7 @@ import { Toolbar } from '../toolbar/Toolbar';
 import type { ColumnFeatures } from './column-features';
 import type { ColumnOptionName } from './column-option-name';
 import type { GridCellClickEventArgs } from './grid-cell-click-event-args';
+import type { GridColumn } from './grid-column';
 import type { GridCellPreparedEventArgs } from './grid-cell-prepared-event-args';
 import type { GridContentReadyEventArgs } from './grid-content-ready-event-args';
 import type { GridContextMenuPreparingEventArgs } from './grid-context-menu-preparing-event-args';
@@ -40,6 +41,8 @@ import type { GridLayoutChangingEventArgs } from './grid-layout-changing-event-a
 import type { GridOptionChangedEventArgs } from './grid-option-changed-event-args';
 import type { GridPageChangedEventArgs } from './grid-page-changed-event-args';
 import type { GridPageChangingEventArgs } from './grid-page-changing-event-args';
+import type { GridPageSizeChangedEventArgs } from './grid-page-size-changed-event-args';
+import type { GridPageSizeChangingEventArgs } from './grid-page-size-changing-event-args';
 import type { GridPastingEventArgs } from './grid-pasting-event-args';
 import type { GridRowClickEventArgs } from './grid-row-click-event-args';
 import type { GridRowInsertedEventArgs } from './grid-row-inserted-event-args';
@@ -119,6 +122,7 @@ import { EditForm } from './view/EditForm';
 import type { FormValues } from './view/form-values';
 import type { PopupValues } from './view/popup-values';
 import { GroupPanel } from './view/GroupPanel';
+import { GridPager } from './view/GridPager';
 import type { GridRow } from './view/GridRow';
 import { HeaderFilter } from './view/HeaderFilter';
 import { HeaderRow } from './view/HeaderRow';
@@ -131,8 +135,6 @@ import { TotalRow } from './view/TotalRow';
 import { OPERATOR_TEXTS } from './view/operator-texts';
 import { COLUMN_FEATURES } from './model/column-feature-names';
 
-type PagerItem = { key: string; page: number; gap: boolean; current: boolean };
-
 /** How a move ends: on the target cell, optionally with its editor open. */
 interface GoToCellOptions {
   /** Open the editor; a string is the character typed to start editing. */
@@ -142,6 +144,11 @@ interface GoToCellOptions {
 }
 
 const hasKeys = (o: object) => Object.keys(o).length > 0;
+
+/** Column options that are the grid's state, not fields of the column's definition. */
+const COLUMN_STATE = new Set<string>(['width', 'visible', 'hidden', 'flex', 'sticky', 'visibleIndex', 'sortOrder', 'sortIndex', 'groupIndex', 'filterValues', 'filterType']);
+/** Fields of a definition the rows are read, sorted, filtered or grouped by. */
+const COLUMN_DATA = new Set<string>(['type', 'value', 'compare', 'sortField', 'textFrom', 'lookup', 'calculateGroupValue', 'groupCompare']);
 
 /**
  * A data grid: rows in memory or from the data layer (any adapter), shown as one virtual list or in
@@ -169,6 +176,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private readonly filterRow: FilterRow<T>;
   private readonly body: GridBody<T>;
   private readonly totalRow: TotalRow<T>;
+  private readonly pager: GridPager<T>;
   private readonly menu: ColumnMenu<T>;
   private readonly headerFilter: HeaderFilter<T>;
   private readonly moreMenu: MenuPopup;
@@ -220,6 +228,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private readonly popupSwitches: Switches<PopupValues>;
   /** The ready `remove` was confirmed for the rows it runs on: `deleteRow` does not ask again. */
   private deleteConfirmed = false;
+  /** What follows the functions of a column (`groupIndex`, `filterValues`, `filterType`), by field. */
+  private readonly columnWatches = new Map<string, (() => void)[]>();
   /** `beginUpdate()` calls not ended yet, and whether the body waits to be laid out. */
   private updates = 0;
   private relayoutWaiting = false;
@@ -255,6 +265,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.widths = new ActionWidths(() => this.measureEl);
     this.body = new GridBody<T>(model, () => this.viewportEl, this.widths, { grid: this, collapse: (key) => this.collapseRow(key) });
     this.totalRow = new TotalRow<T>(model);
+    this.pager = new GridPager<T>(model, {
+      goTo: (page) => (this.page = page),
+      setPageSize: (size) => this.pageSize(size),
+      gridLabel: () => this.text || model.text('gridLabel'),
+      total: () => this.total,
+    });
     model.summaries.component = this;
     this.menu = new ColumnMenu<T>(model, host, this);
     this.headerFilter = new HeaderFilter<T>(model, this);
@@ -472,8 +488,35 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.setPage(page);
   }
 
+  /** Pages in paged mode (at least 1). Reactive. */
   get pageCount(): number {
     return this.model.pageCount();
+  }
+
+  /** The page shown, 0-based; with a number, goes there (as `page` does). */
+  pageIndex(): number;
+  pageIndex(page: number): void;
+  pageIndex(page?: number): number | void {
+    if (page === undefined) return this.page;
+    this.page = page;
+  }
+
+  /**
+   * Rows per page in paged mode, 0 for every row on one page; with a number, shows that many, as the
+   * pager's page sizes do (`onPageSizeChanging` may keep the old size): back to the first page, and
+   * the size is kept with the layout (`layoutKey`).
+   */
+  pageSize(): number;
+  pageSize(size: number): void;
+  pageSize(size?: number): number | void {
+    if (size === undefined) return this.model.pageSize;
+    if (Math.max(0, Math.floor(size)) === this.model.pageSize) return;
+    this.model.setPageSize(size);
+  }
+
+  /** Data rows of every page, saved new rows included: the same as `total`. Reactive. */
+  totalCount(): number {
+    return this.total;
   }
 
   /** Column order, widths, visibility, sticky sides and sort. Store it and assign it back later, or give the grid a `layoutKey`. */
@@ -879,6 +922,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.on(this.model.events.pageChanged);
   }
 
+  /** Raised before the rows per page change (the pager's page sizes, `pageSize(n)`): `e.cancel` keeps them. */
+  get onPageSizeChanging(): MotifEvent<GridPageSizeChangingEventArgs> {
+    return this.on(this.model.events.pageSizeChanging);
+  }
+
+  get onPageSizeChanged(): MotifEvent<GridPageSizeChangedEventArgs> {
+    return this.on(this.model.events.pageSizeChanged);
+  }
+
   /** Raised before a layout change by the user is kept: `e.cancel` puts the one before back. */
   get onLayoutChanging(): MotifEvent<GridLayoutChangingEventArgs> {
     return this.on(this.model.events.layoutChanging);
@@ -1122,24 +1174,81 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.model.filter;
   }
 
+  // Columns at run time.
+
   /**
-   * One option of a column, read or written: its layout (`width`, `visible`, `sticky`, `visibleIndex`
-   * among the visible columns), sort (`sortOrder`, `sortIndex`), `groupIndex`, or a feature switch
-   * (`sortable`, `resizable` …, as `columnSettings` has them). Without a name: all of them.
+   * Adds a column, at `index` among the data columns (default: last), as the user would see it after
+   * the ones given: its width, visibility and sticky side, or what the kept layout says of it; its
+   * `groupIndex` groups the rows by it. The layout and the kept layout follow.
    */
-  columnOption(field: string): Record<ColumnOptionName, unknown>;
-  columnOption(field: string, name: ColumnOptionName): unknown;
-  columnOption(field: string, name: ColumnOptionName, value: unknown): void;
-  columnOption(field: string, name?: ColumnOptionName, value?: unknown): unknown {
+  addColumn(column: GridColumn<T>, index?: number) {
+    const { model } = this;
+    const previous = model.columnFields();
+    this.dropForm();
+    model.addColumn(column, index);
+    this.placeColumn(column.field);
+    this.watchColumn(column);
+    model.keepLayout();
+    model.events.tell(model.events.optionChanged, () => ({ name: 'columns', value: model.columnFields(), previous }));
+  }
+
+  /** Takes a column out: its sort, grouping and filter go with it (without `…Changing` events), and the layout follows. */
+  deleteColumn(field: string) {
     const { model } = this;
     const cols = model.columns;
-    cols.get(field);
+    if (!cols.defs.has(field) || cols.isInternal(field)) return;
+    const previous = model.columnFields();
+    this.dropForm();
+    if (this.editTarget?.field === field) this.closeEditor();
+    if (this.headerFilter.opened) this.headerFilter.close();
+    if (this.menu.opened) this.menu.close();
+    this.stopWatching(field);
+    model.forgetColumn(field);
+    this.removeCells(field);
+    model.removeColumn(field);
+    model.keepLayout();
+    model.events.tell(model.events.optionChanged, () => ({ name: 'columns', value: model.columnFields(), previous }));
+  }
+
+  /** The data columns, the hidden ones too. */
+  columnCount(): number {
+    return this.model.columnFields().length;
+  }
+
+  /** The definitions of the data columns shown now, in display order. Reactive. */
+  getVisibleColumns(): GridColumn<T>[] {
+    const cols = this.model.columns;
+    return cols.visibleData().map((field) => cols.get(field));
+  }
+
+  /**
+   * An option of a column, read or written: its layout (`width`, `visible` or `hidden`, `flex`,
+   * `sticky`, `visibleIndex` among the visible columns), sort (`sortOrder`, `sortIndex`),
+   * `groupIndex`, its header filter (`filterValues`, `filterType`), a feature switch (`sortable`,
+   * `resizable` …, as `columnSettings` has them) or any other field of its definition (`title`,
+   * `format`, `lookup`, `cell` …; the column is drawn again with it). Without a name: all of them.
+   * An object sets several at once.
+   */
+  columnOption(field: string): Record<string, unknown>;
+  columnOption(field: string, name: ColumnOptionName): unknown;
+  columnOption(field: string, name: ColumnOptionName, value: unknown): void;
+  columnOption(field: string, options: Partial<Record<ColumnOptionName, unknown>>): void;
+  columnOption(field: string, name?: ColumnOptionName | Partial<Record<ColumnOptionName, unknown>>, value?: unknown): unknown {
+    const { model } = this;
+    const cols = model.columns;
+    const def = cols.get(field);
+    if (cols.isInternal(field)) throw new Error(`[motifx-ui] DataGrid: "${field}" is the grid's own column`);
+    const features = COLUMN_FEATURES as readonly string[];
     const read = (n: ColumnOptionName): unknown => {
       switch (n) {
         case 'width':
           return cols.width(field);
         case 'visible':
           return !cols.state.hidden[field];
+        case 'hidden':
+          return !!cols.state.hidden[field];
+        case 'flex':
+          return cols.state.flex[field] ?? 0;
         case 'sticky':
           return cols.state.sticky[field] ?? null;
         case 'visibleIndex':
@@ -1150,23 +1259,45 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
           return model.state.sort.findIndex((s) => s.field === field);
         case 'groupIndex':
           return model.groups.fields().indexOf(field);
+        case 'filterValues':
+          return model.filters.get(field)?.values;
+        case 'filterType':
+          return model.filters.get(field)?.filterType ?? 'include';
+        case 'title':
+          return cols.title(field);
         default:
-          return cols.features.get(field)!.own(n) ?? model.settings.get(n);
+          if (features.includes(n)) return cols.features.get(field)!.own(n as keyof ColumnFeatures) ?? model.settings.get(n as keyof ColumnFeatures);
+          return (cols.get(field) as unknown as Record<string, unknown>)[n];
       }
     };
     if (name === undefined) {
-      const names: ColumnOptionName[] = ['width', 'visible', 'sticky', 'visibleIndex', 'sortOrder', 'sortIndex', 'groupIndex', ...COLUMN_FEATURES];
-      return Object.fromEntries(names.map((n) => [n, read(n)])) as Record<ColumnOptionName, unknown>;
+      const names: ColumnOptionName[] = ['width', 'visible', 'flex', 'sticky', 'visibleIndex', 'sortOrder', 'sortIndex', 'groupIndex', 'filterValues', 'filterType', 'title', ...COLUMN_FEATURES];
+      return { ...(def as unknown as Record<string, unknown>), ...Object.fromEntries(names.map((n) => [n, read(n)])) };
+    }
+    if (typeof name === 'object') {
+      // The definition first, in one go; then the rest in the order given.
+      const own = Object.entries(name).filter(([n]) => !COLUMN_STATE.has(n) && !features.includes(n));
+      if (own.length) this.changeDefinition(field, Object.fromEntries(own));
+      for (const [n, v] of Object.entries(name)) if (COLUMN_STATE.has(n) || features.includes(n)) this.columnOption(field, n as ColumnOptionName, v);
+      return;
     }
     if (arguments.length < 3) return read(name);
+    if (!COLUMN_STATE.has(name) && !features.includes(name)) {
+      this.changeDefinition(field, { [name]: value });
+      return;
+    }
     const previous = read(name);
     switch (name) {
       case 'width':
         cols.resize(field, Number(value));
         break;
       case 'visible':
-        cols.setHidden(field, !value);
+      case 'hidden':
+        cols.setHidden(field, name === 'visible' ? !value : !!value);
         model.keepActiveFieldVisible();
+        break;
+      case 'flex':
+        cols.state.flex[field] = Math.max(0, Number(value) || 0);
         break;
       case 'sticky':
         cols.setSticky(field, (value as 'start' | 'end' | null) ?? null);
@@ -1191,6 +1322,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         if (typeof value === 'number' && value >= 0) model.groupBy(field, value);
         else model.ungroup(field);
         break;
+      case 'filterValues':
+        model.setFilterValues(field, (value as readonly unknown[] | null | undefined) ?? undefined, model.filters.get(field)?.filterType);
+        break;
+      case 'filterType':
+        model.setFilterValues(field, model.filters.get(field)?.values, value === 'exclude' ? 'exclude' : 'include');
+        break;
       default:
         (this.columnSettings(field) as Record<string, unknown>)[name] = value;
         return;
@@ -1199,13 +1336,96 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     model.events.tell(model.events.optionChanged, () => ({ name, field, value: read(name), previous }));
   }
 
-  /** What the user set up: the layout (columns, sort, grouping), filters, search text, page, selection and active row. */
+  /** Other fields of a column's definition: the column is made again with them, its layout, sort and filter kept. */
+  private changeDefinition(field: string, change: Record<string, unknown>) {
+    const { model } = this;
+    const cols = model.columns;
+    if ('field' in change && change.field !== field) throw new Error(`[motifx-ui] DataGrid: the field of column "${field}" cannot change`);
+    const before = cols.get(field) as unknown as Record<string, unknown>;
+    const previous = Object.fromEntries(Object.keys(change).map((n) => [n, n === 'title' ? cols.title(field) : before[n]]));
+    this.dropForm();
+    if (this.editTarget?.field === field) this.closeEditor();
+    const next = { ...before, ...change } as unknown as GridColumn<T>;
+    cols.replace(next);
+    // Only the title is followed where it shows; anything else makes the column's cells again.
+    if (Object.keys(change).some((n) => n !== 'title')) {
+      this.removeCells(field);
+      this.placeColumn(field);
+      if (cols.state.width[field] !== undefined) cols.state.width[field] = cols.clampWidth(field, cols.state.width[field]);
+      if (Object.keys(change).some((n) => COLUMN_DATA.has(n))) model.columnReadChanged(field);
+      this.body.repaint();
+    }
+    this.stopWatching(field);
+    this.watchColumn(next);
+    for (const n of Object.keys(change)) model.events.tell(model.events.optionChanged, () => ({ name: n, field, value: n === 'title' ? cols.title(field) : change[n], previous: previous[n] }));
+  }
+
+  /** A column's cells in every row, header and bar. */
+  private placeColumn(field: string) {
+    this.header.addColumn(field);
+    this.filterRow.addColumn(field);
+    this.body.addColumn(field);
+    this.totalRow.addColumn(field);
+  }
+
+  private removeCells(field: string) {
+    this.header.removeColumn(field);
+    this.filterRow.removeColumn(field);
+    this.body.removeColumn(field);
+    this.totalRow.removeColumn(field);
+  }
+
+  /**
+   * Follows a column's own functions: a new `groupIndex` moves the column in the grouping, none
+   * ungroups it; new `filterValues` or `filterType` filter it again.
+   */
+  private watchColumn(col: GridColumn<T>) {
+    const { model } = this;
+    const stops: (() => void)[] = [];
+    const follow = <V,>(get: () => V, apply: (value: V) => void) => {
+      let first = true;
+      stops.push(
+        effect(() => {
+          const value = get();
+          if (first) {
+            first = false;
+            return;
+          }
+          untracked(() => apply(value));
+        }),
+      );
+    };
+    const index = col.groupIndex;
+    if (typeof index === 'function') {
+      follow(index, (at) => {
+        if (typeof at === 'number' && at >= 0) model.groupBy(col.field, at);
+        else model.ungroup(col.field);
+      });
+    }
+    if (typeof col.filterValues === 'function' || typeof col.filterType === 'function') {
+      follow(
+        () => {
+          const values = read(col.filterValues);
+          return { values: values ? [...values] : undefined, type: read(col.filterType) };
+        },
+        ({ values, type }) => model.setFilterValues(col.field, values, type),
+      );
+    }
+    if (stops.length) this.columnWatches.set(col.field, stops);
+  }
+
+  private stopWatching(field: string) {
+    for (const stop of this.columnWatches.get(field) ?? []) stop();
+    this.columnWatches.delete(field);
+  }
+
+  /** What the user set up: the layout (columns, sort, grouping), filters, search text, page and page size, selection and active row. */
   state(): GridStateValue;
   /** Puts a state back (parts left out stay as they are). */
   state(value: Partial<GridStateValue>): void;
   state(value?: Partial<GridStateValue>): GridStateValue | void {
     if (value === undefined) {
-      return { ...this.layout, filters: this.filters, searchText: this.searchText, page: this.page, selectedKeys: this.selectedKeys, focusedRowKey: this.focusedRowKey };
+      return { ...this.layout, filters: this.filters, searchText: this.searchText, page: this.page, pageSize: this.pageSize(), selectedKeys: this.selectedKeys, focusedRowKey: this.focusedRowKey };
     }
     if (value.columns) this.layout = { columns: value.columns, sort: value.sort ?? this.sort, group: value.group };
     else {
@@ -1215,6 +1435,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (value.filters) this.filters = value.filters;
     if (value.searchText !== undefined) this.searchByText(value.searchText);
     if (value.selectedKeys) this.selectedKeys = value.selectedKeys;
+    if (value.pageSize !== undefined) this.pageSize(value.pageSize);
     if (value.page !== undefined) this.page = value.page;
     if (value.focusedRowKey !== undefined) void this.navigateToRow(value.focusedRowKey);
   }
@@ -1814,19 +2035,23 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       untracked(() => (this.selectedKeys = list));
     });
 
-    // The data props: other data, another mode or save mode starts again.
+    // The data props: other data, another mode or save mode starts again; another `pageSize` wins
+    // over the size the user chose.
     let first = true;
+    let lastPageSize = read(this.props.pageSize);
     this.bindings.watch(() => {
       const props = this.props;
       void read(props.dataSource);
       void read(props.mode);
-      void read(props.pageSize);
+      const pageSize = read(props.pageSize);
       void read(props.saveMode);
       if (first) {
         first = false;
         return;
       }
       untracked(() => {
+        if (pageSize !== lastPageSize) model.chosenPageSize = null;
+        lastPageSize = pageSize;
         this.closeForm(false);
         this.closeEditor();
         this.pendingInvalid = null;
@@ -1890,23 +2115,11 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       untracked(() => model.regroupWithSettings());
     });
 
-    // A column's groupIndex the app follows: a new value moves the column there, none ungroups it.
-    for (const col of this.props.columns ?? []) {
-      if (typeof col.groupIndex !== 'function') continue;
-      const index = col.groupIndex;
-      let firstIndex = true;
-      this.bindings.watch(() => {
-        const at = index();
-        if (firstIndex) {
-          firstIndex = false;
-          return;
-        }
-        untracked(() => {
-          if (typeof at === 'number' && at >= 0) model.groupBy(col.field, at);
-          else model.ungroup(col.field);
-        });
-      });
-    }
+    // The functions of the columns the app follows (`groupIndex`, `filterValues`, `filterType`).
+    for (const col of model.columns.definitions()) this.watchColumn(col);
+    this.motif.setDisposable(() => {
+      for (const field of [...this.columnWatches.keys()]) this.stopWatching(field);
+    });
 
     // Summaries: other items or other ways to work them out start again; group items a server
     // cannot compute group the rows in memory; footer rows come and go with their items.
@@ -1999,7 +2212,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       });
     });
 
-    // Rows arrived, the total changed, rows were added, sizes or the page changed: lay the body out again.
+    // Rows arrived, the total changed, rows were added, sizes, the page or the page size changed: lay the body out again.
     this.bindings.watch(() => {
       const st = model.state;
       void st.version;
@@ -2009,6 +2222,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       void st.rowHeight;
       void st.viewport;
       void st.page;
+      void st.pageSize;
       untracked(() => {
         if (this.updates > 0) this.relayoutWaiting = true;
         else this.layOut();
@@ -2172,7 +2386,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
           <div class="mx-data-grid__probe" aria-hidden="true" ref={(c) => (this.probeEl = c.element as HTMLDivElement)} />
           <div class="mx-data-grid__measure" aria-hidden="true" ref={(c) => (this.measureEl = c.element as HTMLDivElement)} />
         </div>
-        <div class="mx-data-grid__bar" x-display={() => settings.get('rowCount') || st.failedBlocks > 0 || this.showsPager() || showErrors() || showSelected() || this.bottomShown()}>
+        <div class="mx-data-grid__bar" x-display={() => settings.get('rowCount') || st.failedBlocks > 0 || model.showsPager() || showErrors() || showSelected() || this.bottomShown()}>
           {this.bottomBar}
           <span class="mx-data-grid__count" x-display={() => settings.get('rowCount')}>
             {() => (st.status === 'ready' ? t('gridRecords', { count: count(this.total) }) : '')}
@@ -2188,72 +2402,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
             {() => t('gridSaveErrors', { count: count(model.stats.failed) })}
             <Button text={() => t('gridNextError')} size="sm" variant="ghost" on:pointerdown={keepFocus} onclick={() => this.goToNextError()} />
           </span>
-          {/* Named after the grid too: two paged grids on a page are two landmarks. */}
-          <nav class="mx-data-grid__pager" aria-label={() => `${t('gridPager')}: ${this.text || t('gridLabel')}`} x-wait={() => !this.showsPager()}>
-            <Button
-              class="mx-data-grid__page-step"
-              visible={() => settings.get('pagerNavigation')}
-              data-step="first"
-              icon={() => this.stepIcon(true)}
-              hint={() => t('gridFirstPage')}
-              size="sm"
-              variant="ghost"
-              enabled={() => st.page > 0}
-              onclick={() => (this.page = 0)}
-            />
-            <Button
-              class="mx-data-grid__page-step"
-              visible={() => settings.get('pagerNavigation')}
-              data-step="previous"
-              icon={() => this.stepIcon(false)}
-              hint={() => t('gridPreviousPage')}
-              size="sm"
-              variant="ghost"
-              enabled={() => st.page > 0}
-              onclick={() => (this.page = st.page - 1)}
-            />
-            {this.pagerItems().map((p) =>
-              p.gap ? (
-                <span key={p.key} class="mx-data-grid__page-gap" aria-hidden="true">
-                  …
-                </span>
-              ) : (
-                <Button
-                  key={p.key}
-                  class="mx-data-grid__page"
-                  text={count(p.page + 1)}
-                  size="sm"
-                  variant={p.current ? 'solid' : 'ghost'}
-                  tone={p.current ? 'accent' : 'standard'}
-                  aria-current={p.current ? 'page' : null}
-                  onclick={() => (this.page = p.page)}
-                />
-              ),
-            )}
-            <Button
-              class="mx-data-grid__page-step"
-              visible={() => settings.get('pagerNavigation')}
-              data-step="next"
-              icon={() => this.stepIcon(false)}
-              hint={() => t('gridNextPage')}
-              size="sm"
-              variant="ghost"
-              enabled={() => st.page < model.pageCount() - 1}
-              onclick={() => (this.page = st.page + 1)}
-            />
-            <Button
-              class="mx-data-grid__page-step"
-              visible={() => settings.get('pagerNavigation')}
-              data-step="last"
-              icon={() => this.stepIcon(true)}
-              hint={() => t('gridLastPage')}
-              size="sm"
-              variant="ghost"
-              enabled={() => st.page < model.pageCount() - 1}
-              onclick={() => (this.page = model.pageCount() - 1)}
-            />
-            <span class="mx-data-grid__page-info" x-display={() => settings.get('pagerInfo')}>{() => t('gridPageOf', { page: count(st.page + 1), count: count(model.pageCount()) })}</span>
-          </nav>
+          {this.pager}
         </div>
         <div class="mx-data-grid__live" aria-live="polite">
           {() => st.announcement}
@@ -2280,21 +2429,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return sets.canShowIn('toolbar') && this.topBar.shown() && sets.barEntries('toolbar').length > 0;
   }
 
-  private showsPager(): boolean {
-    return this.model.mode === 'paged' && this.model.settings.get('pager');
-  }
-
   private isRtl(): boolean {
     return typeof getComputedStyle === 'function' && getComputedStyle(this.element).direction === 'rtl';
-  }
-
-  /** The arrow of a pager step; CSS turns it to point the way it goes. */
-  private stepIcon(twice: boolean): Node {
-    const icon = document.createElement('span');
-    icon.className = 'mx-data-grid__step-icon';
-    icon.append(chevronDown());
-    if (twice) icon.append(chevronDown());
-    return icon;
   }
 
   /** New rows that are saved (they count as data rows). */
@@ -2323,27 +2459,6 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.widths.clear();
       state.rowHeight = h;
     }
-  }
-
-  /** Page buttons: first, last, `pagerNeighbors` on each side of the current one, with gaps. */
-  private pagerItems(): PagerItem[] {
-    const count = this.model.pageCount();
-    const current = Math.min(this.model.state.page, count - 1);
-    const n = Math.max(0, Math.floor(this.model.settings.get('pagerNeighbors')));
-    const pages = new Set<number>([0, count - 1]);
-    for (let p = current - n; p <= current + n; p++) pages.add(p);
-    // Near an end, as many pages show as around a page in the middle.
-    if (current <= n + 1) for (let p = 1; p <= 2 * n + 1; p++) pages.add(p);
-    if (current >= count - n - 2) for (let p = count - 2; p >= count - 2 * n - 2; p--) pages.add(p);
-    const sorted = [...pages].filter((p) => p >= 0 && p < count).sort((a, b) => a - b);
-    const items: PagerItem[] = [];
-    let prev = -1;
-    for (const p of sorted) {
-      if (p - prev > 1) items.push({ key: `gap${p}`, page: -1, gap: true, current: false });
-      items.push({ key: `p${p}`, page: p, gap: false, current: p === current });
-      prev = p;
-    }
-    return items;
   }
 
   /**
@@ -3496,7 +3611,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   private hasMenu(field: string): boolean {
-    return this.model.columns.can(field, 'menu') && this.menu.hasEntries(field);
+    return this.model.columns.defs.has(field) && this.model.columns.can(field, 'menu') && this.menu.hasEntries(field);
   }
 
   private openMenu(field: string, anchor: HTMLElement) {
@@ -3774,13 +3889,20 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         if (ctrl && hasRows) row = last;
         break;
       case 'PageDown':
-        if (!hasRows) break;
-        row = row < 0 ? first : model.stepRow(row, this.body.pageRows());
+      case 'PageUp': {
+        const down = e.key === 'PageDown';
+        // Paged, the keys turn the page (`pageKeys`); on the last or first page they move a screen of rows.
+        const turn = model.mode === 'paged' && model.settings.get('pageKeys') === 'page' && (down ? st.page < model.pageCount() - 1 : st.page > 0);
+        if (turn && row >= 0) {
+          e.preventDefault();
+          this.page = st.page + (down ? 1 : -1);
+          this.focusActive(true);
+          return;
+        }
+        if (down ? !hasRows : row < 0) break;
+        row = down ? (row < 0 ? first : model.stepRow(row, this.body.pageRows())) : model.stepRow(row, -this.body.pageRows());
         break;
-      case 'PageUp':
-        if (row < 0) break;
-        row = model.stepRow(row, -this.body.pageRows());
-        break;
+      }
       case 'Enter':
       case 'F2':
         if (row === HEADER_ROW) {

@@ -1,4 +1,4 @@
-import { Component, untracked } from '@motifx/core';
+import { Component, createSignal, untracked } from '@motifx/core';
 import type { GridModel } from '../model/GridModel';
 import { fillSummaryCell } from './summary-cell';
 import { placeInOrder } from './place-in-order';
@@ -12,6 +12,8 @@ import { placeInOrder } from './place-in-order';
 export class TotalRow<T> extends Component<HTMLDivElement> {
   /** Cell elements by field. */
   readonly cells = new Map<string, HTMLDivElement>();
+  /** Grows when a cell is added, so the items are written into it. */
+  private readonly version = createSignal(0);
 
   constructor(private readonly grid: GridModel<T>) {
     super();
@@ -30,15 +32,29 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
       'aria-busy': () => (grid.summaries.state.status === 'loading' ? 'true' : null),
       'data-state': () => (grid.summaries.state.status === 'ready' ? null : grid.summaries.state.status),
     });
-    for (const field of grid.columns.state.order) {
-      const cell = document.createElement('div');
-      cell.className = 'mx-data-grid__cell mx-data-grid__summary-cell';
-      cell.setAttribute('role', 'gridcell');
-      cell.dataset.field = field;
-      this.cells.set(field, cell);
-      this.element.append(cell);
-    }
+    for (const field of grid.columns.state.order) this.makeCell(field);
     this.bindings.watch(() => this.draw());
+  }
+
+  /** A column's cell (one added at run time too; placed by the next `arrange`). */
+  addColumn(field: string) {
+    if (this.isConfigured) this.makeCell(field);
+  }
+
+  private makeCell(field: string) {
+    if (this.cells.has(field)) return;
+    const cell = document.createElement('div');
+    cell.className = 'mx-data-grid__cell mx-data-grid__summary-cell';
+    cell.setAttribute('role', 'gridcell');
+    cell.dataset.field = field;
+    this.cells.set(field, cell);
+    this.element.append(cell);
+    this.version.value++;
+  }
+
+  removeColumn(field: string) {
+    this.cells.get(field)?.remove();
+    this.cells.delete(field);
   }
 
   /** Puts the cells in display order and numbers the visible ones. */
@@ -60,6 +76,7 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
   }
 
   private draw() {
+    void this.version.value;
     const { grid } = this;
     const s = grid.summaries;
     const parts = s.partsByColumn(s.totalItems(), s.total);
