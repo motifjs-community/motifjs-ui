@@ -1,0 +1,9 @@
+{
+  "drop-down": {
+    "$description": "DropDown: the chosen item's text in the box, the arrow, and the popup with the search box over the list.",
+    "placeholder": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "chevron-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "chevron-fg-disabled": { "$type": "color", "$value": "{color.fg.disabled}" },
+    "popup-gap": { "$type": "dimension", "$value": "{space.1}" }
+  }
+}

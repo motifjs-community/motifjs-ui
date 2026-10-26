@@ -1,0 +1,10 @@
+{
+  "glyph": {
+    "$description": "The kit's own small glyphs (a chevron, a check mark), drawn in the text color.",
+    "size": { "$type": "dimension", "$value": "{icon.size.sm}" }
+  },
+  "disabled": {
+    "$description": "Elements a disabled control covers without a native disabled state (links, focusable parts).",
+    "fg": { "$type": "color", "$value": "{color.fg.disabled}" }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "tooltip": {
+    "$description": "Lilac tooltips: 6 by 12 inner space, 8 corners.",
+    "padding-block": {
+      "$type": "dimension",
+      "$value": {
+        "value": 6,
+        "unit": "px"
+      }
+    },
+    "padding-inline": {
+      "$type": "dimension",
+      "$value": "{space.3}"
+    },
+    "radius": {
+      "$type": "dimension",
+      "$value": "{radius.sm}"
+    }
+  }
+}

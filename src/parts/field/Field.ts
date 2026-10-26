@@ -120,6 +120,16 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     parts.label.addEventListener('click', () => {
       if (!labelable(parts.control)) this.focus();
     });
+    // A press anywhere in the box, outside the editor and its buttons, puts focus in the editor.
+    parts.box.addEventListener('mousedown', (e) => {
+      const target = e.target as Element;
+      if (e.button !== 0 || parts.control.contains(target)) return;
+      // Only what sits inside the box counts: a page container around the field may have a tabindex too.
+      const own = target.closest('button, a[href], input, textarea, select, [tabindex]');
+      if (own && parts.box.contains(own)) return;
+      e.preventDefault();
+      this.focus();
+    });
     // Follows the help text, the error and `uiLocale`.
     parts.stopMessage = effect(() => {
       const text = this.validationMessage || (this.getProperty<string | undefined>('helpText') ?? '');

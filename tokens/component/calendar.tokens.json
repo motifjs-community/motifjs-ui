@@ -11,6 +11,22 @@
     "today-width": { "$type": "dimension", "$value": "{border.width.1}" },
     "selected-background": { "$type": "color", "$value": "{color.accent.solid}" },
     "selected-color": { "$type": "color", "$value": "{color.accent.on-solid}" },
-    "today-color": { "$type": "color", "$value": "{color.accent.fg}" }
+    "today-color": { "$type": "color", "$value": "{color.accent.fg}" },
+    "fg": { "$type": "color", "$value": "{color.fg.primary}" },
+    "fg-disabled": { "$type": "color", "$value": "{color.fg.disabled}" },
+    "header-gap": { "$type": "dimension", "$value": "{space.1}" },
+    "title-padding": { "$type": "dimension", "$value": "{space.2}" },
+    "nav-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "nav-fg-disabled": { "$type": "color", "$value": "{color.fg.disabled}" },
+    "button-bg-hover": { "$type": "color", "$value": "{color.fill.subtle.secondary}" },
+    "head-font-weight": { "$type": "fontWeight", "$value": "{font.weight.regular}" },
+    "head-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "cell-bg-hover": { "$type": "color", "$value": "{color.fill.subtle.secondary}" },
+    "outside-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "cell-fg-disabled": { "$type": "color", "$value": "{color.fg.disabled}" },
+    "week-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "today-padding-block": { "$type": "dimension", "$value": "{space.1}" },
+    "today-padding-inline": { "$type": "dimension", "$value": "{space.3}" },
+    "today-button-fg": { "$type": "color", "$value": "{color.accent.fg}" }
   }
 }

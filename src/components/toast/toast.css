@@ -37,16 +37,16 @@
 
   .mx-toast {
     --_slide: var(--mx-toast-slide);
-    --_tint: var(--mx-color-fg-secondary);
+    --_tint: var(--mx-toast-icon-fg);
 
     display: flex;
     gap: var(--mx-toast-content-gap);
     align-items: flex-start;
     box-sizing: border-box;
     padding: var(--mx-toast-padding);
-    font-size: var(--mx-font-size-body);
-    line-height: var(--mx-font-line-body);
-    color: var(--mx-color-fg-primary);
+    font-size: var(--mx-toast-font-size);
+    line-height: var(--mx-toast-line-height);
+    color: var(--mx-toast-fg);
     background: var(--mx-toast-background);
     border: var(--mx-toast-border-width) solid var(--mx-toast-border-color);
     border-radius: var(--mx-toast-radius);
@@ -71,22 +71,22 @@
   }
 
   .mx-toast[data-tone='success'] {
-    --_tint: var(--mx-color-success-fg);
+    --_tint: var(--mx-toast-success-icon-fg);
   }
 
   .mx-toast[data-tone='caution'] {
-    --_tint: var(--mx-color-caution-fg);
+    --_tint: var(--mx-toast-caution-icon-fg);
   }
 
   .mx-toast[data-tone='danger'] {
-    --_tint: var(--mx-color-danger-fg);
+    --_tint: var(--mx-toast-danger-icon-fg);
   }
 
   .mx-toast__icon {
     display: inline-flex;
     flex: none;
     align-items: center;
-    block-size: var(--mx-font-line-body);
+    block-size: var(--mx-toast-line-height);
     color: var(--_tint);
   }
 

@@ -23,7 +23,7 @@
 
   .mx-number-box__spin[data-layout='stacked'] .mx-glyph {
     block-size: 100%;
-    max-block-size: var(--mx-icon-size-sm);
+    max-block-size: var(--mx-number-box-glyph-size);
   }
 
   .mx-number-box[data-readonly] .mx-number-box__spin {

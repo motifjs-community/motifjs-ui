@@ -13,6 +13,14 @@
     "tag-bg": { "$type": "color", "$value": "{color.fill.subtle.secondary}" },
     "tag-bg-hover": { "$type": "color", "$value": "{color.fill.subtle.tertiary}" },
     "tag-border": { "$type": "color", "$value": "{color.stroke.control.default}" },
-    "remove-size": { "$type": "dimension", "$value": "{icon.size.md}" }
+    "remove-size": { "$type": "dimension", "$value": "{icon.size.md}" },
+    "tag-fg": { "$type": "color", "$value": "{color.fg.primary}" },
+    "tag-fg-disabled": { "$type": "color", "$value": "{color.fg.disabled}" },
+    "loading-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "more-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "remove-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "remove-fg-hover": { "$type": "color", "$value": "{color.fg.primary}" },
+    "remove-bg-hover": { "$type": "color", "$value": "{color.fill.subtle.tertiary}" },
+    "remove-radius": { "$type": "dimension", "$value": "{radius.full}" }
   }
 }

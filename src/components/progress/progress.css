@@ -5,28 +5,28 @@
 @layer mx.components {
   .mx-progress,
   .mx-spinner {
-    --_tone: var(--mx-color-accent-solid);
-    --_tone-subtle: var(--mx-color-accent-subtle);
+    --_tone: var(--mx-progress-accent);
+    --_tone-subtle: var(--mx-progress-accent-subtle);
   }
 
   :is(.mx-progress, .mx-spinner)[data-tone='neutral'] {
-    --_tone: var(--mx-color-fg-secondary);
-    --_tone-subtle: var(--mx-color-fill-subtle-secondary);
+    --_tone: var(--mx-progress-neutral);
+    --_tone-subtle: var(--mx-progress-neutral-subtle);
   }
 
   :is(.mx-progress, .mx-spinner)[data-tone='success'] {
-    --_tone: var(--mx-color-success-fg);
-    --_tone-subtle: var(--mx-color-success-subtle);
+    --_tone: var(--mx-progress-success);
+    --_tone-subtle: var(--mx-progress-success-subtle);
   }
 
   :is(.mx-progress, .mx-spinner)[data-tone='caution'] {
-    --_tone: var(--mx-color-caution-fg);
-    --_tone-subtle: var(--mx-color-caution-subtle);
+    --_tone: var(--mx-progress-caution);
+    --_tone-subtle: var(--mx-progress-caution-subtle);
   }
 
   :is(.mx-progress, .mx-spinner)[data-tone='danger'] {
-    --_tone: var(--mx-color-danger-solid);
-    --_tone-subtle: var(--mx-color-danger-subtle);
+    --_tone: var(--mx-progress-danger);
+    --_tone-subtle: var(--mx-progress-danger-subtle);
   }
 
   /* ProgressBar. */
@@ -38,7 +38,7 @@
     inline-size: var(--mx-progress-width);
     max-inline-size: 100%;
     vertical-align: middle;
-    color: var(--mx-color-fg-primary);
+    color: var(--mx-progress-fg);
 
     --_thickness: var(--mx-progress-thickness-md);
   }
@@ -79,14 +79,14 @@
     margin-inline-start: auto;
     font-size: var(--mx-progress-value-font-size);
     font-variant-numeric: tabular-nums;
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-progress-value-fg);
   }
 
   .mx-progress__track {
     position: relative;
     overflow: hidden;
     block-size: var(--_thickness);
-    background: var(--mx-color-stroke-control-default);
+    background: var(--mx-progress-track-color);
     border-radius: var(--mx-progress-radius);
     forced-color-adjust: none;
   }
@@ -162,7 +162,7 @@
     align-items: center;
     gap: var(--mx-spinner-gap);
     vertical-align: middle;
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-spinner-fg);
     transition: opacity var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
 
     --_size: var(--mx-spinner-size-md);
@@ -192,9 +192,9 @@
     flex: none;
     inline-size: var(--_size);
     block-size: var(--_size);
-    border: var(--_ring) solid var(--mx-color-stroke-control-default);
+    border: var(--_ring) solid var(--mx-spinner-track-color);
     border-block-start-color: var(--_tone);
-    border-radius: var(--mx-radius-full);
+    border-radius: var(--mx-spinner-radius);
     forced-color-adjust: none;
     animation: mx-spinner-turn calc(var(--mx-motion-duration-slow) * 3) linear infinite;
   }
@@ -220,12 +220,15 @@
     display: flex;
     justify-content: center;
     padding: var(--mx-spinner-cover-padding);
-    color: var(--mx-color-fg-primary);
+    color: var(--mx-spinner-cover-fg);
     background: var(--mx-spinner-cover-background);
     border-radius: inherit;
   }
 
+  /* The cover fills its container: its ring is drawn inside it. */
   .mx-spinner[data-cover]:focus-visible {
-    outline-offset: calc(-1 * var(--mx-focus-ring-width));
+    outline: var(--mx-spinner-focus-width) solid var(--mx-spinner-focus-color);
+    outline-offset: calc(-1 * var(--mx-spinner-focus-width));
+    box-shadow: var(--mx-spinner-focus-halo);
   }
 }

@@ -39,14 +39,14 @@
     block-size: auto;
     margin: 0;
     font-size: var(--_text-size);
-    font-weight: var(--mx-font-weight-regular);
-    color: var(--mx-color-fg-primary);
+    font-weight: var(--mx-checkbox-label-font-weight);
+    color: var(--mx-checkbox-label-fg);
     pointer-events: auto;
     transition: none;
   }
 
   .mx-toggle-field.mx-field[data-disabled]:not([data-label-mode='hidden']) > .mx-field__label {
-    color: var(--mx-color-fg-disabled);
+    color: var(--mx-checkbox-label-fg-disabled);
   }
 
   /* The box holds the control and what is drawn over it, in one cell. */
@@ -83,14 +83,14 @@
 
   .mx-check-box {
     --_gap: var(--mx-checkbox-gap);
-    --_fill: var(--mx-color-fill-control-default);
-    --_fill-hover: var(--mx-color-fill-control-secondary);
-    --_fill-active: var(--mx-color-fill-control-tertiary);
-    --_stroke: var(--mx-color-stroke-control-strong);
-    --_stroke-edge: var(--mx-color-stroke-control-edge);
+    --_fill: var(--mx-checkbox-bg);
+    --_fill-hover: var(--mx-checkbox-bg-hover);
+    --_fill-active: var(--mx-checkbox-bg-active);
+    --_stroke: var(--mx-checkbox-border);
+    --_stroke-edge: var(--mx-checkbox-edge);
     /* The depth sits under the box, not in its bottom border: the outline stays whole on any background. */
-    --_glow: inset 0 var(--mx-checkbox-border-width) 0 var(--mx-color-highlight-control), 0 var(--mx-checkbox-border-width) 0 var(--_stroke-edge);
-    --_press: var(--mx-control-press-offset);
+    --_glow: var(--mx-checkbox-shadow), 0 var(--mx-checkbox-edge-width) 0 var(--_stroke-edge);
+    --_press: var(--mx-checkbox-press-offset);
   }
 
   .mx-check-box[data-size='sm'] {
@@ -115,16 +115,16 @@
   }
 
   .mx-check-box:is([data-state='checked'], [data-state='mixed']) {
-    --_fill: var(--mx-color-accent-solid);
-    --_fill-hover: var(--mx-color-accent-solid-hover);
-    --_fill-active: var(--mx-color-accent-solid-pressed);
-    --_stroke: var(--mx-color-accent-solid);
-    --_stroke-edge: var(--mx-color-stroke-on-accent-bottom);
+    --_fill: var(--mx-checkbox-checked-bg);
+    --_fill-hover: var(--mx-checkbox-checked-bg-hover);
+    --_fill-active: var(--mx-checkbox-checked-bg-active);
+    --_stroke: var(--mx-checkbox-checked-border);
+    --_stroke-edge: var(--mx-checkbox-checked-edge);
   }
 
   .mx-check-box[data-invalid]:not([data-state='checked']) {
-    --_stroke: var(--mx-color-danger-solid);
-    --_stroke-edge: var(--mx-color-danger-solid);
+    --_stroke: var(--mx-checkbox-invalid-border);
+    --_stroke-edge: var(--mx-checkbox-invalid-border);
   }
 
   .mx-check-box[data-readonly] {
@@ -163,21 +163,23 @@
     box-shadow: none;
   }
 
-  /* The focus ring's inner ring is a box-shadow too: keep both. */
+  /* The focus halo is a box-shadow too: keep both. */
   .mx-check-box__input:focus-visible {
+    outline: var(--mx-checkbox-focus-width) solid var(--mx-checkbox-focus-color);
+    outline-offset: var(--mx-checkbox-focus-offset);
     box-shadow:
-      0 0 0 var(--mx-focus-ring-offset) var(--mx-focus-ring-inner),
+      var(--mx-checkbox-focus-halo),
       var(--_glow);
   }
 
   .mx-check-box__input:disabled {
-    background: var(--mx-color-fill-control-disabled);
-    border-color: var(--mx-color-stroke-control-default);
+    background: var(--mx-checkbox-disabled-bg);
+    border-color: var(--mx-checkbox-disabled-border);
     box-shadow: none;
   }
 
   .mx-check-box:is([data-state='checked'], [data-state='mixed']) .mx-check-box__input:disabled {
-    background: var(--mx-color-fill-accent-disabled);
+    background: var(--mx-checkbox-checked-bg-disabled);
     border-color: transparent;
   }
 
@@ -190,13 +192,13 @@
     inline-size: var(--_box);
     block-size: var(--_box);
     margin: 0;
-    color: var(--mx-color-accent-on-solid);
+    color: var(--mx-checkbox-mark-fg);
     pointer-events: none;
     transition: translate var(--mx-motion-duration-instant) var(--mx-motion-easing-standard);
   }
 
   .mx-check-box[data-disabled] .mx-check-box__mark {
-    color: var(--mx-color-fg-on-accent-disabled);
+    color: var(--mx-checkbox-mark-fg-disabled);
   }
 
   .mx-check-box__mark > .mx-glyph {

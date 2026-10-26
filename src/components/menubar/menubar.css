@@ -26,10 +26,10 @@
     padding-block: 0;
     padding-inline: var(--mx-menubar-item-padding);
     font: inherit;
-    font-size: var(--mx-font-size-body);
-    line-height: var(--mx-font-line-body);
+    font-size: var(--mx-menubar-item-font-size);
+    line-height: var(--mx-menubar-item-line-height);
     white-space: nowrap;
-    color: var(--mx-color-fg-primary);
+    color: var(--mx-menubar-item-fg);
     background: transparent;
     border: 0;
     border-radius: var(--mx-menubar-item-radius);
@@ -47,7 +47,7 @@
   }
 
   .mx-menubar__item:is(:disabled, [aria-disabled='true']) {
-    color: var(--mx-color-fg-disabled);
+    color: var(--mx-menubar-item-fg-disabled);
   }
 
   .mx-menubar__icon {

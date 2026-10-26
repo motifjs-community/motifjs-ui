@@ -1,0 +1,28 @@
+{
+  "slider": {
+    "$description": "Fluent sliders: SliderTrackThemeHeight 4, SliderHorizontalThumbWidth 18.",
+    "thumb-size": {
+      "sm": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1,
+          "unit": "rem"
+        }
+      },
+      "md": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.125,
+          "unit": "rem"
+        }
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.25,
+          "unit": "rem"
+        }
+      }
+    }
+  }
+}

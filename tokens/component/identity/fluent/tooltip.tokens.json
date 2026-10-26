@@ -1,0 +1,19 @@
+{
+  "tooltip": {
+    "$description": "Fluent tooltips: ToolTipBorderPadding 9,6,9,8.",
+    "padding-block": {
+      "$type": "dimension",
+      "$value": {
+        "value": 6,
+        "unit": "px"
+      }
+    },
+    "padding-inline": {
+      "$type": "dimension",
+      "$value": {
+        "value": 9,
+        "unit": "px"
+      }
+    }
+  }
+}

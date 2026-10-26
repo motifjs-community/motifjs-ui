@@ -1,0 +1,9 @@
+{
+  "list": {
+    "$description": "Fluent list items: ListViewItemMinHeight 40.",
+    "item-height": {
+      "$type": "dimension",
+      "$value": "{control.height.lg}"
+    }
+  }
+}

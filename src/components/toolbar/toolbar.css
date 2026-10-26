@@ -32,7 +32,6 @@
 
   .mx-toolbar[data-overflow='scroll'] {
     overflow: auto;
-    scrollbar-width: thin;
   }
 
   .mx-toolbar > :is([data-overflowed], [data-idle]) {

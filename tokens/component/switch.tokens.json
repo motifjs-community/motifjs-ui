@@ -29,6 +29,28 @@
       "sm": { "$value": "{font.size.caption}" },
       "md": { "$value": "{font.size.body}" },
       "lg": { "$value": "{font.size.body-large}" }
-    }
+    },
+    "track-radius": { "$type": "dimension", "$value": "{radius.full}" },
+    "thumb-radius": { "$type": "dimension", "$value": "{radius.full}" },
+    "bg": { "$type": "color", "$value": "{color.fill.control.default}" },
+    "bg-hover": { "$type": "color", "$value": "{color.fill.control.secondary}" },
+    "border": { "$type": "color", "$value": "{color.stroke.control.strong}" },
+    "thumb": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "text-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "checked-bg": { "$type": "color", "$value": "{color.accent.solid}" },
+    "checked-bg-hover": { "$type": "color", "$value": "{color.accent.solid-hover}" },
+    "checked-border": { "$type": "color", "$value": "{color.accent.solid}" },
+    "checked-thumb": { "$type": "color", "$value": "{color.accent.on-solid}" },
+    "checked-text-fg": { "$type": "color", "$value": "{color.accent.on-solid}" },
+    "invalid-border": { "$type": "color", "$value": "{color.danger.solid}" },
+    "disabled-bg": { "$type": "color", "$value": "{color.fill.control.disabled}" },
+    "disabled-border": { "$type": "color", "$value": "{color.stroke.control.default}" },
+    "disabled-thumb": { "$type": "color", "$value": "{color.fg.disabled}" },
+    "disabled-text-fg": { "$type": "color", "$value": "{color.fg.disabled}" },
+    "checked-bg-disabled": { "$type": "color", "$value": "{color.fill.accent-disabled}" },
+    "checked-thumb-disabled": { "$type": "color", "$value": "{color.fg.on-accent-disabled}" },
+    "checked-text-fg-disabled": { "$type": "color", "$value": "{color.fg.on-accent-disabled}" },
+    "label-fg": { "$type": "color", "$value": "{color.fg.primary}" },
+    "label-fg-disabled": { "$type": "color", "$value": "{color.fg.disabled}" }
   }
 }

@@ -12,6 +12,10 @@
     "item-radius": { "$type": "dimension", "$value": "{radius.sm}" },
     "item-highlight": { "$type": "color", "$value": "{color.fill.subtle.secondary}" },
     "item-open": { "$type": "color", "$value": "{color.fill.subtle.tertiary}" },
-    "icon-size": { "$type": "dimension", "$value": "{icon.size.md}" }
+    "icon-size": { "$type": "dimension", "$value": "{icon.size.md}" },
+    "item-font-size": { "$type": "dimension", "$value": "{font.size.body}" },
+    "item-line-height": { "$type": "dimension", "$value": "{font.line.body}" },
+    "item-fg": { "$type": "color", "$value": "{color.fg.primary}" },
+    "item-fg-disabled": { "$type": "color", "$value": "{color.fg.disabled}" }
   }
 }

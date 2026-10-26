@@ -1,0 +1,32 @@
+{
+  "checkbox": {
+    "$description": "Lilac check boxes: 18 px at the medium size, a little more room before the caption.",
+    "gap": {
+      "$type": "dimension",
+      "$value": "{space.3}"
+    },
+    "size": {
+      "sm": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1,
+          "unit": "rem"
+        }
+      },
+      "md": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.125,
+          "unit": "rem"
+        }
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.25,
+          "unit": "rem"
+        }
+      }
+    }
+  }
+}

@@ -60,6 +60,8 @@
     "lint:css": "stylelint \"src/**/*.css\" \"apps/docs/**/*.css\"",
     "sizes": "node scripts/sizes.mjs",
     "e2e": "node e2e/docs-smoke.mjs",
+    "fingerprint": "node e2e/fingerprint.mjs",
+    "fingerprint:compare": "node e2e/fingerprint-compare.mjs",
     "check": "npm run typecheck && npm run lint:jsx && npm run lint:css && npm test && npm run build && npm run docs:build",
     "prepublishOnly": "npm run check"
   },

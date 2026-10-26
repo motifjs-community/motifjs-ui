@@ -18,12 +18,12 @@
 
   .mx-lookup__header {
     flex: none;
-    padding-block: var(--mx-space-1);
+    padding-block: var(--mx-lookup-header-padding);
     padding-inline: var(--mx-list-item-padding);
     font-size: var(--mx-lookup-header-font-size);
     font-weight: var(--mx-lookup-header-font-weight);
-    color: var(--mx-color-fg-secondary);
-    border-block-end: var(--mx-border-width-1) solid var(--mx-color-stroke-divider);
+    color: var(--mx-lookup-header-fg);
+    border-block-end: var(--mx-lookup-header-border-width) solid var(--mx-lookup-header-border);
   }
 
   .mx-lookup__header[hidden] {

@@ -1,0 +1,13 @@
+{
+  "menubar": {
+    "$description": "Material horizontal menus: 12 side space and 12 corners on the items.",
+    "item-padding": {
+      "$type": "dimension",
+      "$value": "{space.3}"
+    },
+    "item-radius": {
+      "$type": "dimension",
+      "$value": "{radius.md}"
+    }
+  }
+}

@@ -6,7 +6,7 @@
      [tabindex], …) get aria-disabled; they look disabled like the rest. */
   [data-disabled] [aria-disabled='true'],
   [data-disabled][aria-disabled='true'] {
-    color: var(--mx-color-fg-disabled);
+    color: var(--mx-disabled-fg);
     cursor: default;
   }
 
@@ -23,7 +23,7 @@
   /* The kit's own small glyphs (a chevron, a check mark), drawn in the text color. */
   .mx-glyph {
     flex: none;
-    inline-size: var(--mx-icon-size-sm);
-    block-size: var(--mx-icon-size-sm);
+    inline-size: var(--mx-glyph-size);
+    block-size: var(--mx-glyph-size);
   }
 }

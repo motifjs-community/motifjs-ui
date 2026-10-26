@@ -1,0 +1,20 @@
+{
+  "tabs": {
+    "$description": "Lilac tabs: a 3 px indicator, more room between pill tabs and in the panel.",
+    "indicator-width": {
+      "$type": "dimension",
+      "$value": {
+        "value": 3,
+        "unit": "px"
+      }
+    },
+    "tab-gap": {
+      "$type": "dimension",
+      "$value": "{space.2}"
+    },
+    "panel-padding": {
+      "$type": "dimension",
+      "$value": "{space.5}"
+    }
+  }
+}

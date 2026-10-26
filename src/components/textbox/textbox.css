@@ -11,6 +11,6 @@
   }
 
   .mx-text-box__reveal[aria-pressed='true'] {
-    color: var(--mx-color-fg-primary);
+    color: var(--mx-text-box-reveal-fg-pressed);
   }
 }

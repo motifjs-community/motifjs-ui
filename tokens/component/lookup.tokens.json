@@ -4,6 +4,10 @@
     "popup-width": { "$type": "dimension", "$value": { "value": 28, "unit": "rem" } },
     "column-gap": { "$type": "dimension", "$value": "{space.3}" },
     "header-font-size": { "$type": "dimension", "$value": "{font.size.caption}" },
-    "header-font-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" }
+    "header-font-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" },
+    "header-padding": { "$type": "dimension", "$value": "{space.1}" },
+    "header-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "header-border-width": { "$type": "dimension", "$value": "{border.width.1}" },
+    "header-border": { "$type": "color", "$value": "{color.stroke.divider}" }
   }
 }

@@ -43,7 +43,7 @@
     block-size: var(--_tag-height);
     padding-inline: var(--mx-tagbox-tag-padding) var(--mx-tagbox-inset);
     font-size: var(--mx-tagbox-tag-font-size);
-    color: var(--mx-color-fg-primary);
+    color: var(--mx-tagbox-tag-fg);
     background: var(--mx-tagbox-tag-bg);
     border: var(--mx-tagbox-tag-border-width) solid var(--mx-tagbox-tag-border);
     border-radius: var(--mx-tagbox-tag-radius);
@@ -56,12 +56,12 @@
   }
 
   .mx-tag-box__tag[data-loading] {
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-tagbox-loading-fg);
   }
 
   .mx-tag-box__more {
     padding-inline-end: var(--mx-tagbox-tag-padding);
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-tagbox-more-fg);
   }
 
   .mx-tag-box__tag-text {
@@ -81,16 +81,16 @@
     block-size: var(--mx-tagbox-remove-size);
     margin: 0;
     padding: 0;
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-tagbox-remove-fg);
     background: transparent;
     border: 0;
-    border-radius: var(--mx-radius-full);
+    border-radius: var(--mx-tagbox-remove-radius);
     cursor: default;
   }
 
   .mx-tag-box__remove:hover {
-    color: var(--mx-color-fg-primary);
-    background: var(--mx-color-fill-subtle-tertiary);
+    color: var(--mx-tagbox-remove-fg-hover);
+    background: var(--mx-tagbox-remove-bg-hover);
   }
 
   .mx-tag-box:is([data-readonly], [data-disabled]) .mx-tag-box__remove {
@@ -98,7 +98,7 @@
   }
 
   .mx-tag-box[data-disabled] .mx-tag-box__tag {
-    color: var(--mx-color-fg-disabled);
+    color: var(--mx-tagbox-tag-fg-disabled);
   }
 
   .mx-tag-box:is(:not([data-filled]), [data-readonly], [data-disabled]) .mx-tag-box__clear {

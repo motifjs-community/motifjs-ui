@@ -34,6 +34,30 @@
       "sm": { "$value": { "value": 0.375, "unit": "rem" } },
       "md": { "$value": { "value": 0.5, "unit": "rem" } },
       "lg": { "$value": { "value": 0.625, "unit": "rem" } }
-    }
+    },
+    "rail-color": { "$type": "color", "$value": "{color.stroke.control.strong}" },
+    "fill-color": { "$type": "color", "$value": "{color.accent.solid}" },
+    "readonly-fill-color": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "disabled-rail-color": { "$type": "color", "$value": "{color.stroke.control.default}" },
+    "disabled-fill-color": { "$type": "color", "$value": "{color.fg.disabled}" },
+    "thumb-radius": { "$type": "dimension", "$value": "{radius.full}" },
+    "thumb-bg": { "$type": "color", "$value": "{color.fill.control.default}" },
+    "thumb-border": { "$type": "color", "$value": "{color.stroke.control.default}" },
+    "thumb-edge": { "$type": "color", "$value": "{color.stroke.control.edge}" },
+    "thumb-shadow": { "$type": "shadow", "$value": "{effect.control}" },
+    "thumb-bg-disabled": { "$type": "color", "$value": "{color.fill.control.disabled}" },
+    "thumb-border-disabled": { "$type": "color", "$value": "{color.stroke.control.default}" },
+    "dot-radius": { "$type": "dimension", "$value": "{radius.full}" },
+    "bubble-line-height": { "$type": "dimension", "$value": "{font.line.caption}" },
+    "bubble-fg": { "$type": "color", "$value": "{color.accent.on-solid}" },
+    "bubble-bg": { "$type": "color", "$value": "{color.accent.solid}" },
+    "tick-color": { "$type": "color", "$value": "{color.stroke.control.strong}" },
+    "tick-line-height": { "$type": "dimension", "$value": "{font.line.caption}" },
+    "tick-label-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "tick-label-fg-disabled": { "$type": "color", "$value": "{color.fg.disabled}" },
+    "focus-width": { "$type": "dimension", "$value": "{focus.ring.width}" },
+    "focus-offset": { "$type": "dimension", "$value": "{focus.ring.offset}" },
+    "focus-color": { "$type": "color", "$value": "{focus.ring.color}" },
+    "focus-halo": { "$type": "shadow", "$value": "{focus.ring.halo}" }
   }
 }

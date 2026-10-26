@@ -1,0 +1,12 @@
+/* Lilac: what its tokens cannot draw. A framed field shows keyboard and pointer focus as a lilac
+   ring all around (its frame plus an inner line), where the other languages thicken the bottom
+   line only. Fields drawn without a frame (check boxes, switches, radios, sliders, editors in a
+   grid cell) and the underline variant keep their own look. Every rule is scoped to Lilac. */
+@layer mx.components {
+  [data-identity='lilac']
+    .mx-field:not([data-variant='underline'], .mx-toggle-field, .mx-radio-group, .mx-slider, [data-in-cell])
+    .mx-field__box:focus-within {
+    border-color: var(--_edge-focus);
+    box-shadow: inset 0 0 0 calc(var(--mx-field-focus-width) - var(--mx-field-border-width)) var(--_edge-focus);
+  }
+}

@@ -4,14 +4,14 @@
    the field's state attributes; --_columns and --_rows are written with columns. */
 @layer mx.components {
   .mx-radio-group {
-    --_fill: var(--mx-color-fill-control-default);
-    --_fill-hover: var(--mx-color-fill-control-secondary);
-    --_fill-active: var(--mx-color-fill-control-tertiary);
-    --_stroke: var(--mx-color-stroke-control-strong);
-    --_stroke-edge: var(--mx-color-stroke-control-edge);
+    --_fill: var(--mx-radiogroup-bg);
+    --_fill-hover: var(--mx-radiogroup-bg-hover);
+    --_fill-active: var(--mx-radiogroup-bg-active);
+    --_stroke: var(--mx-radiogroup-border);
+    --_stroke-edge: var(--mx-radiogroup-edge);
     /* The depth sits under the circle, not in its bottom border: the outline stays whole on any background. */
-    --_glow: inset 0 var(--mx-radiogroup-border-width) 0 var(--mx-color-highlight-control), 0 var(--mx-radiogroup-border-width) 0 var(--_stroke-edge);
-    --_press: var(--mx-control-press-offset);
+    --_glow: var(--mx-radiogroup-shadow), 0 var(--mx-radiogroup-edge-width) 0 var(--_stroke-edge);
+    --_press: var(--mx-radiogroup-press-offset);
   }
 
   .mx-radio-group.mx-field:not([data-stretch]) {
@@ -40,8 +40,8 @@
   }
 
   .mx-radio-group[data-invalid] {
-    --_stroke: var(--mx-color-danger-solid);
-    --_stroke-edge: var(--mx-color-danger-solid);
+    --_stroke: var(--mx-radiogroup-invalid-border);
+    --_stroke-edge: var(--mx-radiogroup-invalid-border);
   }
 
   .mx-radio-group[data-readonly] {
@@ -116,12 +116,12 @@
 
   .mx-radio-group__help {
     display: block;
-    margin-block-start: calc(var(--mx-space-1) * -1);
-    padding-block-end: var(--mx-space-1);
+    margin-block-start: calc(var(--mx-radiogroup-help-gap) * -1);
+    padding-block-end: var(--mx-radiogroup-help-gap);
     padding-inline-start: calc(var(--_box) + var(--mx-radiogroup-gap));
     font-size: var(--mx-radiogroup-help-font-size);
     line-height: var(--mx-radiogroup-help-line);
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-radiogroup-help-fg);
   }
 
   .mx-radio-group__input {
@@ -133,7 +133,7 @@
     margin: 0;
     background: var(--_fill);
     border: var(--mx-radiogroup-border-width) solid var(--_stroke);
-    border-radius: var(--mx-radius-full);
+    border-radius: var(--mx-radiogroup-radius);
     box-shadow: var(--_glow);
     cursor: default;
     transition:
@@ -155,34 +155,37 @@
 
   /* Chosen: a thick accent ring around a dot of the on-accent color. */
   .mx-radio-group__input:checked {
-    background: var(--mx-color-accent-on-solid);
+    background: var(--mx-radiogroup-checked-dot);
     border-width: calc((var(--_box) - var(--_dot)) / 2);
-    border-color: var(--mx-color-accent-solid);
+    border-color: var(--mx-radiogroup-checked-border);
   }
 
   .mx-radio-group:not([data-readonly]) .mx-radio-group__input:checked:hover {
-    border-color: var(--mx-color-accent-solid-hover);
+    border-color: var(--mx-radiogroup-checked-border-hover);
   }
 
+  /* The focus halo is a box-shadow too: keep both. */
   .mx-radio-group__input:focus-visible {
+    outline: var(--mx-radiogroup-focus-width) solid var(--mx-radiogroup-focus-color);
+    outline-offset: var(--mx-radiogroup-focus-offset);
     box-shadow:
-      0 0 0 var(--mx-focus-ring-offset) var(--mx-focus-ring-inner),
+      var(--mx-radiogroup-focus-halo),
       var(--_glow);
   }
 
   .mx-radio-group__input:disabled {
-    background: var(--mx-color-fill-control-disabled);
-    border-color: var(--mx-color-stroke-control-default);
+    background: var(--mx-radiogroup-disabled-bg);
+    border-color: var(--mx-radiogroup-disabled-border);
     box-shadow: none;
   }
 
   .mx-radio-group__input:checked:disabled {
-    background: var(--mx-color-fg-on-accent-disabled);
-    border-color: var(--mx-color-fill-accent-disabled);
+    background: var(--mx-radiogroup-checked-dot-disabled);
+    border-color: var(--mx-radiogroup-checked-border-disabled);
   }
 
   /* The help line of a disabled option keeps its color: it is a description, it must stay readable. */
   .mx-radio-group__input:disabled + .mx-radio-group__text {
-    color: var(--mx-color-fg-disabled);
+    color: var(--mx-radiogroup-text-fg-disabled);
   }
 }

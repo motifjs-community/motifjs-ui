@@ -1,0 +1,33 @@
+{
+  "accordion": {
+    "$description": "Material expandable lists: items 56 tall with 16 side space.",
+    "height": {
+      "sm": {
+        "$type": "dimension",
+        "$value": "{control.height.md}"
+      },
+      "md": {
+        "$type": "dimension",
+        "$value": "{control.height.lg}"
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": "{control.height.lg}"
+      }
+    },
+    "padding": {
+      "sm": {
+        "$type": "dimension",
+        "$value": "{space.3}"
+      },
+      "md": {
+        "$type": "dimension",
+        "$value": "{space.4}"
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": "{space.4}"
+      }
+    }
+  }
+}

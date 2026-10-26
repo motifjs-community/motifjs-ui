@@ -27,6 +27,32 @@
       "sm": { "$value": "{font.size.caption}" },
       "md": { "$value": "{font.size.body}" },
       "lg": { "$value": "{font.size.body-large}" }
-    }
+    },
+    "edge-width": { "$type": "dimension", "$value": "{border.width.1}" },
+    "press-offset": { "$type": "dimension", "$value": "{control.press.offset}" },
+    "shadow": { "$type": "shadow", "$value": "{effect.control}" },
+    "bg": { "$type": "color", "$value": "{color.fill.control.default}" },
+    "bg-hover": { "$type": "color", "$value": "{color.fill.control.secondary}" },
+    "bg-active": { "$type": "color", "$value": "{color.fill.control.tertiary}" },
+    "border": { "$type": "color", "$value": "{color.stroke.control.strong}" },
+    "edge": { "$type": "color", "$value": "{color.stroke.control.edge}" },
+    "checked-bg": { "$type": "color", "$value": "{color.accent.solid}" },
+    "checked-bg-hover": { "$type": "color", "$value": "{color.accent.solid-hover}" },
+    "checked-bg-active": { "$type": "color", "$value": "{color.accent.solid-pressed}" },
+    "checked-border": { "$type": "color", "$value": "{color.accent.solid}" },
+    "checked-edge": { "$type": "color", "$value": "{color.stroke.on-accent-bottom}" },
+    "invalid-border": { "$type": "color", "$value": "{color.danger.solid}" },
+    "disabled-bg": { "$type": "color", "$value": "{color.fill.control.disabled}" },
+    "disabled-border": { "$type": "color", "$value": "{color.stroke.control.default}" },
+    "checked-bg-disabled": { "$type": "color", "$value": "{color.fill.accent-disabled}" },
+    "mark-fg": { "$type": "color", "$value": "{color.accent.on-solid}" },
+    "mark-fg-disabled": { "$type": "color", "$value": "{color.fg.on-accent-disabled}" },
+    "label-font-weight": { "$type": "fontWeight", "$value": "{font.weight.regular}" },
+    "label-fg": { "$type": "color", "$value": "{color.fg.primary}" },
+    "label-fg-disabled": { "$type": "color", "$value": "{color.fg.disabled}" },
+    "focus-width": { "$type": "dimension", "$value": "{focus.ring.width}" },
+    "focus-offset": { "$type": "dimension", "$value": "{focus.ring.offset}" },
+    "focus-color": { "$type": "color", "$value": "{focus.ring.color}" },
+    "focus-halo": { "$type": "shadow", "$value": "{focus.ring.halo}" }
   }
 }

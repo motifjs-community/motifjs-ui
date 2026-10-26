@@ -16,11 +16,11 @@
     padding: 0;
     margin: auto;
     overflow: hidden;
-    font-family: var(--mx-font-family-sans);
-    font-size: var(--mx-font-size-body);
-    font-weight: var(--mx-font-weight-regular);
-    line-height: var(--mx-font-line-body);
-    color: var(--mx-color-fg-primary);
+    font-family: var(--mx-window-font-family);
+    font-size: var(--mx-window-font-size);
+    font-weight: var(--mx-window-font-weight);
+    line-height: var(--mx-window-line-height);
+    color: var(--mx-window-fg);
     text-align: start;
     background: var(--mx-window-background);
     border: var(--mx-window-border-width) solid var(--mx-window-border-color);
@@ -130,8 +130,8 @@
     gap: var(--mx-window-bar-gap);
     align-items: center;
     min-block-size: var(--mx-window-bar-height);
-    padding-inline: var(--mx-window-bar-padding) var(--mx-space-1);
-    color: var(--mx-color-fg-secondary);
+    padding-inline: var(--mx-window-bar-padding) var(--mx-window-bar-tools-padding);
+    color: var(--mx-window-bar-fg);
     user-select: none;
     background: var(--mx-window-bar-background);
     border-block-end: var(--mx-window-border-width) solid var(--mx-window-bar-border-color);
@@ -140,7 +140,7 @@
 
   .mx-form[data-active] .mx-form__bar,
   .mx-form[data-modal] .mx-form__bar {
-    color: var(--mx-color-fg-primary);
+    color: var(--mx-window-bar-fg-active);
   }
 
   .mx-form[data-movable]:not([data-state='maximized']) .mx-form__bar {
@@ -169,7 +169,7 @@
     overflow: hidden;
     font-size: var(--mx-window-title-font-size);
     font-weight: var(--mx-window-title-font-weight);
-    line-height: var(--mx-font-line-body);
+    line-height: var(--mx-window-title-line-height);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -177,7 +177,7 @@
   .mx-form__tools {
     display: flex;
     flex: none;
-    gap: var(--mx-space-1);
+    gap: var(--mx-window-tools-gap);
     align-items: center;
     margin-inline-start: auto;
     cursor: default;
@@ -290,8 +290,8 @@
     display: inline-flex;
     flex: none;
     align-items: center;
-    block-size: var(--mx-font-line-body);
-    color: var(--mx-color-accent-fg);
+    block-size: var(--mx-window-line-height);
+    color: var(--mx-window-message-icon-fg);
   }
 
   .mx-message-box__icon > * {
@@ -300,15 +300,15 @@
   }
 
   .mx-message-box[data-tone='success'] .mx-message-box__icon {
-    color: var(--mx-color-success-fg);
+    color: var(--mx-window-message-success-fg);
   }
 
   .mx-message-box[data-tone='caution'] .mx-message-box__icon {
-    color: var(--mx-color-caution-fg);
+    color: var(--mx-window-message-caution-fg);
   }
 
   .mx-message-box[data-tone='danger'] .mx-message-box__icon {
-    color: var(--mx-color-danger-fg);
+    color: var(--mx-window-message-danger-fg);
   }
 
   .mx-message-box__text {

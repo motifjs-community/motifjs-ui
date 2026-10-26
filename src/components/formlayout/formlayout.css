@@ -37,12 +37,12 @@
     min-inline-size: 0;
     margin: 0;
     padding: var(--mx-form-layout-group-padding);
-    border: var(--mx-border-width-1) solid var(--mx-color-stroke-divider);
+    border: var(--mx-form-layout-group-border-width) solid var(--mx-form-layout-group-border);
     border-radius: var(--mx-form-layout-group-radius);
   }
 
   .mx-form-layout__caption {
-    padding-inline: var(--mx-space-1);
+    padding-inline: var(--mx-form-layout-caption-padding);
     font-weight: var(--mx-form-layout-caption-weight);
   }
 }

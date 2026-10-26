@@ -1,0 +1,53 @@
+{
+  "window": {
+    "$description": "Material dialogs: 28 corners, no outline and no dividers, 24 padding, a 56 header on the dialog surface with a regular-weight headline.",
+    "radius": {
+      "$type": "dimension",
+      "$value": "{radius.xl}"
+    },
+    "padding": {
+      "$type": "dimension",
+      "$value": "{space.6}"
+    },
+    "bar-height": {
+      "$type": "dimension",
+      "$value": "{control.height.lg}"
+    },
+    "title-font-size": {
+      "$type": "dimension",
+      "$value": "{font.size.subtitle}"
+    },
+    "title-font-weight": {
+      "$type": "fontWeight",
+      "$value": "{font.weight.regular}"
+    },
+    "border-color": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0,
+          0,
+          0
+        ],
+        "alpha": 0
+      }
+    },
+    "bar-border-color": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0,
+          0,
+          0
+        ],
+        "alpha": 0
+      }
+    },
+    "bar-background": {
+      "$type": "color",
+      "$value": "{color.bg.surface}"
+    }
+  }
+}

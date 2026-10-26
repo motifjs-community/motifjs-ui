@@ -1,0 +1,12 @@
+{
+  "treeview": {
+    "$description": "Material check boxes: 2 corners.",
+    "check-radius": {
+      "$type": "dimension",
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      }
+    }
+  }
+}

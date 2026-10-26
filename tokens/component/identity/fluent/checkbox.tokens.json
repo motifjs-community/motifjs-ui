@@ -1,0 +1,28 @@
+{
+  "checkbox": {
+    "$description": "Fluent check boxes: CheckBoxSize 20.",
+    "size": {
+      "sm": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1,
+          "unit": "rem"
+        }
+      },
+      "md": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.25,
+          "unit": "rem"
+        }
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.5,
+          "unit": "rem"
+        }
+      }
+    }
+  }
+}

@@ -10,7 +10,7 @@
     gap: var(--mx-treeview-search-gap);
     min-inline-size: 0;
     min-block-size: 0;
-    color: var(--mx-color-fg-primary);
+    color: var(--mx-treeview-fg);
     font-size: var(--_font-size);
     line-height: var(--_line-height);
   }
@@ -20,7 +20,7 @@
     --_padding: var(--mx-treeview-padding-sm);
     --_indent: var(--mx-treeview-indent-sm);
     --_font-size: var(--mx-treeview-font-size-sm);
-    --_line-height: var(--mx-font-line-caption);
+    --_line-height: var(--mx-treeview-line-height-sm);
   }
 
   .mx-tree-view[data-size='md'] {
@@ -28,7 +28,7 @@
     --_padding: var(--mx-treeview-padding-md);
     --_indent: var(--mx-treeview-indent-md);
     --_font-size: var(--mx-treeview-font-size-md);
-    --_line-height: var(--mx-font-line-body);
+    --_line-height: var(--mx-treeview-line-height-md);
   }
 
   .mx-tree-view[data-size='lg'] {
@@ -36,7 +36,7 @@
     --_padding: var(--mx-treeview-padding-lg);
     --_indent: var(--mx-treeview-indent-lg);
     --_font-size: var(--mx-treeview-font-size-lg);
-    --_line-height: var(--mx-font-line-body-large);
+    --_line-height: var(--mx-treeview-line-height-lg);
   }
 
   .mx-tree-view__search {
@@ -56,7 +56,7 @@
 
   .mx-tree-view__empty {
     padding: var(--_padding);
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-treeview-empty-fg);
   }
 
   .mx-tree-view__space {
@@ -93,32 +93,37 @@
     block-size: var(--_row);
   }
 
-  .mx-tree-view__item:not([data-disabled]) > .mx-tree-view__row:hover {
+  /* A selected row keeps the language's selection look under the pointer. */
+  .mx-tree-view__item:not([data-disabled], [data-selected]) > .mx-tree-view__row:hover {
     background: var(--mx-treeview-hover);
   }
 
   .mx-tree-view__item[data-selected] > .mx-tree-view__row {
+    color: var(--mx-treeview-selected-text);
     background: var(--mx-treeview-selected);
+    box-shadow:
+      inset 0 0 0 var(--mx-treeview-selected-border-width) var(--mx-treeview-selected-border),
+      var(--mx-treeview-selected-effect);
   }
 
   .mx-tree-view__item[data-selected] > .mx-tree-view__row::before {
     content: '';
     position: absolute;
-    inset-block: 25%;
+    inset-block: calc(50% - var(--mx-treeview-indicator-length) / 2);
     inset-inline-start: 0;
     inline-size: var(--mx-treeview-indicator-width);
     background: var(--mx-treeview-indicator-color);
-    border-radius: var(--mx-radius-full);
+    border-radius: var(--mx-treeview-indicator-radius);
   }
 
   .mx-tree-view__item:focus-visible > .mx-tree-view__row {
-    outline: var(--mx-focus-ring-width) solid var(--mx-focus-ring-color);
-    outline-offset: calc(var(--mx-focus-ring-width) * -1);
-    box-shadow: inset 0 0 0 calc(var(--mx-focus-ring-width) + var(--mx-focus-ring-offset)) var(--mx-focus-ring-inner);
+    outline: var(--mx-treeview-focus-width) solid var(--mx-treeview-focus-color);
+    outline-offset: calc(var(--mx-treeview-focus-width) * -1);
+    box-shadow: var(--mx-treeview-focus-halo);
   }
 
   .mx-tree-view__item[data-disabled] > .mx-tree-view__row {
-    color: var(--mx-color-fg-disabled);
+    color: var(--mx-treeview-row-fg-disabled);
   }
 
   /* Lines under each parent's arrow, one per level above the row. */
@@ -152,7 +157,7 @@
     place-items: center;
     inline-size: var(--mx-treeview-expander-size);
     block-size: var(--mx-treeview-expander-size);
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-treeview-expander-fg);
   }
 
   .mx-tree-view__expander > * {
@@ -183,11 +188,11 @@
   .mx-tree-view__item[data-loading] > .mx-tree-view__row > .mx-tree-view__expander::after {
     content: '';
     grid-area: 1 / 1;
-    inline-size: var(--mx-icon-size-sm);
-    block-size: var(--mx-icon-size-sm);
-    border: var(--mx-border-width-2) solid currentColor;
+    inline-size: var(--mx-treeview-spinner-size);
+    block-size: var(--mx-treeview-spinner-size);
+    border: var(--mx-treeview-spinner-width) solid currentColor;
     border-inline-end-color: transparent;
-    border-radius: var(--mx-radius-full);
+    border-radius: var(--mx-treeview-spinner-radius);
     animation: mx-tree-view-spin calc(var(--mx-motion-duration-slow) * 3) linear infinite;
   }
 
@@ -200,23 +205,23 @@
   /* The check box. */
 
   .mx-tree-view__check {
-    --_fill: var(--mx-color-fill-control-default);
-    --_fill-hover: var(--mx-color-fill-control-secondary);
-    --_stroke: var(--mx-color-stroke-control-strong);
-    --_stroke-edge: var(--mx-color-stroke-control-edge);
+    --_fill: var(--mx-treeview-check-bg);
+    --_fill-hover: var(--mx-treeview-check-bg-hover);
+    --_stroke: var(--mx-treeview-check-border);
+    --_stroke-edge: var(--mx-treeview-check-edge);
 
     display: inline-grid;
     flex: none;
     place-items: center;
     inline-size: var(--mx-treeview-check-size);
     block-size: var(--mx-treeview-check-size);
-    color: var(--mx-color-accent-on-solid);
+    color: var(--mx-treeview-check-mark);
     background: var(--_fill);
-    border: var(--mx-border-width-1) solid var(--_stroke);
+    border: var(--mx-treeview-check-border-width) solid var(--_stroke);
     border-radius: var(--mx-treeview-check-radius);
     box-shadow:
-      inset 0 var(--mx-border-width-1) 0 var(--mx-color-highlight-control),
-      0 var(--mx-border-width-1) 0 var(--_stroke-edge);
+      var(--mx-treeview-check-shadow),
+      0 var(--mx-treeview-check-edge-width) 0 var(--_stroke-edge);
     transition:
       background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
@@ -227,24 +232,24 @@
   }
 
   .mx-tree-view__item:is([data-state='checked'], [data-state='mixed']) > .mx-tree-view__row > .mx-tree-view__check {
-    --_fill: var(--mx-color-accent-solid);
-    --_fill-hover: var(--mx-color-accent-solid-hover);
-    --_stroke: var(--mx-color-accent-solid);
-    --_stroke-edge: var(--mx-color-stroke-on-accent-bottom);
+    --_fill: var(--mx-treeview-checked-bg);
+    --_fill-hover: var(--mx-treeview-checked-bg-hover);
+    --_stroke: var(--mx-treeview-checked-border);
+    --_stroke-edge: var(--mx-treeview-checked-edge);
   }
 
   .mx-tree-view__item[data-disabled] > .mx-tree-view__row > .mx-tree-view__check {
-    --_fill: var(--mx-color-fill-control-disabled);
+    --_fill: var(--mx-treeview-check-bg-disabled);
     --_fill-hover: var(--_fill);
-    --_stroke: var(--mx-color-stroke-control-default);
+    --_stroke: var(--mx-treeview-check-border-disabled);
     --_stroke-edge: var(--_stroke);
 
-    color: var(--mx-color-fg-on-accent-disabled);
+    color: var(--mx-treeview-check-mark-disabled);
     box-shadow: none;
   }
 
   .mx-tree-view__item[data-disabled]:is([data-state='checked'], [data-state='mixed']) > .mx-tree-view__row > .mx-tree-view__check {
-    --_fill: var(--mx-color-fill-accent-disabled);
+    --_fill: var(--mx-treeview-checked-bg-disabled);
     --_stroke: transparent;
   }
 
@@ -288,21 +293,21 @@
     flex: none;
     align-items: center;
     gap: var(--mx-treeview-gap);
-    font-size: var(--mx-font-size-caption);
-    color: var(--mx-color-danger-fg);
+    font-size: var(--mx-treeview-error-font-size);
+    color: var(--mx-treeview-error-fg);
   }
 
   .mx-tree-view__retry {
     appearance: none;
     margin: 0;
     padding-block: 0;
-    padding-inline: var(--mx-space-1);
+    padding-inline: var(--mx-treeview-retry-padding);
     font: inherit;
-    color: var(--mx-color-accent-fg);
+    color: var(--mx-treeview-retry-fg);
     text-decoration: underline;
     background: none;
     border: 0;
-    border-radius: var(--mx-radius-sm);
+    border-radius: var(--mx-treeview-retry-radius);
     cursor: pointer;
   }
 }

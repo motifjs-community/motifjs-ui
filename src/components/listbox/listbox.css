@@ -28,9 +28,9 @@
     background: transparent;
   }
 
-  .mx-list-box .mx-list:focus-visible .mx-list__item[data-active] {
-    outline: var(--mx-focus-ring-width) solid var(--mx-focus-ring-color);
-    outline-offset: calc(-1 * var(--mx-focus-ring-width));
+  .mx-list-box .mx-list:is(:focus-visible, [data-keys]:focus) .mx-list__item[data-active] {
+    outline: var(--mx-listbox-focus-width) solid var(--mx-listbox-focus-color);
+    outline-offset: calc(-1 * var(--mx-listbox-focus-width));
   }
 
   .mx-list-box[data-check-boxes] .mx-list__check {
@@ -40,31 +40,31 @@
     block-size: var(--mx-listbox-check-size);
     color: transparent;
     visibility: visible;
-    background: var(--mx-color-fill-control-default);
-    border: var(--mx-listbox-check-border-width) solid var(--mx-color-stroke-control-strong);
+    background: var(--mx-listbox-check-bg);
+    border: var(--mx-listbox-check-border-width) solid var(--mx-listbox-check-border);
     border-radius: var(--mx-listbox-check-radius);
   }
 
   .mx-list-box[data-check-boxes] .mx-list__item[data-selected] .mx-list__check {
-    color: var(--mx-color-accent-on-solid);
-    background: var(--mx-color-accent-solid);
-    border-color: var(--mx-color-accent-solid);
+    color: var(--mx-listbox-checked-mark);
+    background: var(--mx-listbox-checked-bg);
+    border-color: var(--mx-listbox-checked-border);
   }
 
   .mx-list-box[data-check-boxes] .mx-list__item[aria-disabled='true'] .mx-list__check {
-    background: var(--mx-color-fill-control-disabled);
-    border-color: var(--mx-color-stroke-control-default);
+    background: var(--mx-listbox-check-bg-disabled);
+    border-color: var(--mx-listbox-check-border-disabled);
   }
 
   .mx-list-box[data-disabled][data-check-boxes] .mx-list__item[data-selected] .mx-list__check {
-    color: var(--mx-color-fg-on-accent-disabled);
-    background: var(--mx-color-fill-accent-disabled);
+    color: var(--mx-listbox-checked-mark-disabled);
+    background: var(--mx-listbox-checked-bg-disabled);
     border-color: transparent;
   }
 
   /* A line under "Select all", drawn over the row so every row keeps one height. */
   .mx-list__item[data-select-all] {
-    font-weight: var(--mx-font-weight-medium);
+    font-weight: var(--mx-listbox-select-all-font-weight);
   }
 
   .mx-list__item[data-select-all]::after {
@@ -73,7 +73,7 @@
     inset-inline: 0;
     inset-block-end: 0;
     block-size: var(--mx-listbox-divider-width);
-    background: var(--mx-color-stroke-divider);
+    background: var(--mx-listbox-divider);
   }
 
   .mx-list-box__search {

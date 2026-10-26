@@ -155,6 +155,37 @@ describe('TextBox', () => {
     expect(press(input(b), 'Escape')).toBe(false);
   });
 
+  it('takes focus from a press anywhere in its box, not only on the text line', async () => {
+    let b!: TextBox;
+    page(<TextBox ref={(x: TextBox) => (b = x)} prefix="€" clearButton value="12" />);
+    await settle();
+    const box = b.element.querySelector<HTMLElement>('.mx-field__box')!;
+    const down = (target: Element) => {
+      const e = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 });
+      target.dispatchEvent(e);
+      return e.defaultPrevented;
+    };
+    expect(down(box)).toBe(true);
+    expect(document.activeElement).toBe(input(b));
+    input(b).blur();
+    expect(down(b.element.querySelector('.mx-field__prefix')!)).toBe(true);
+    expect(document.activeElement).toBe(input(b));
+    // The input itself and the buttons keep their own behavior.
+    input(b).blur();
+    expect(down(input(b))).toBe(false);
+    expect(down(b.element.querySelector('.mx-text-box__clear')!)).toBe(true);
+    expect(b.element.querySelector('.mx-text-box__clear')!.closest('button')).not.toBeNull();
+    // A focusable page container around the field (a main with tabindex="-1") does not stop it.
+    document.body.setAttribute('tabindex', '-1');
+    try {
+      input(b).blur();
+      expect(down(box)).toBe(true);
+      expect(document.activeElement).toBe(input(b));
+    } finally {
+      document.body.removeAttribute('tabindex');
+    }
+  });
+
   it('shows a password on request, named from uiLocale', async () => {
     let b!: TextBox;
     page(<TextBox ref={(x: TextBox) => (b = x)} type="password" value="s3cret" />);

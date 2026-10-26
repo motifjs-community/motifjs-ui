@@ -1,5 +1,5 @@
 /* Menu: a column of commands. The focused item is the highlight, for the pointer and the keys
-   alike; the check and icon columns appear only when an item uses them. A shortcut and the arrow
+   alike; the leading column for a mark or an icon appears only when an item uses one. A shortcut and the arrow
    of a submenu sit at the end of the item. */
 @layer mx.components {
   .mx-menu {
@@ -17,11 +17,11 @@
     padding-block: 0;
     padding-inline: var(--mx-menu-item-padding);
     font: inherit;
-    font-size: var(--mx-font-size-body);
-    line-height: var(--mx-font-line-body);
+    font-size: var(--mx-menu-item-font-size);
+    line-height: var(--mx-menu-item-line-height);
     text-align: start;
     white-space: nowrap;
-    color: var(--mx-color-fg-primary);
+    color: var(--mx-menu-item-fg);
     background: transparent;
     border: 0;
     border-radius: var(--mx-menu-item-radius);
@@ -39,7 +39,53 @@
   }
 
   .mx-menu__item[aria-disabled='true'] {
-    color: var(--mx-color-fg-disabled);
+    color: var(--mx-menu-item-fg-disabled);
+  }
+
+  /* A tone (data-tone, written for an item that is not standard): its text and icon, at rest and
+     highlighted. A disabled item keeps the disabled look. */
+  .mx-menu__item[data-tone='accent'] {
+    --_tone-fg: var(--mx-menu-item-accent-fg);
+    --_tone-fg-highlight: var(--mx-menu-item-accent-fg-highlight);
+    --_tone-icon: var(--mx-menu-item-accent-icon);
+    --_tone-icon-highlight: var(--mx-menu-item-accent-icon-highlight);
+  }
+
+  .mx-menu__item[data-tone='success'] {
+    --_tone-fg: var(--mx-menu-item-success-fg);
+    --_tone-fg-highlight: var(--mx-menu-item-success-fg-highlight);
+    --_tone-icon: var(--mx-menu-item-success-icon);
+    --_tone-icon-highlight: var(--mx-menu-item-success-icon-highlight);
+  }
+
+  .mx-menu__item[data-tone='caution'] {
+    --_tone-fg: var(--mx-menu-item-caution-fg);
+    --_tone-fg-highlight: var(--mx-menu-item-caution-fg-highlight);
+    --_tone-icon: var(--mx-menu-item-caution-icon);
+    --_tone-icon-highlight: var(--mx-menu-item-caution-icon-highlight);
+  }
+
+  .mx-menu__item[data-tone='danger'] {
+    --_tone-fg: var(--mx-menu-item-danger-fg);
+    --_tone-fg-highlight: var(--mx-menu-item-danger-fg-highlight);
+    --_tone-icon: var(--mx-menu-item-danger-icon);
+    --_tone-icon-highlight: var(--mx-menu-item-danger-icon-highlight);
+  }
+
+  .mx-menu__item[data-tone]:not([aria-disabled='true']) {
+    color: var(--_tone-fg);
+  }
+
+  .mx-menu__item[data-tone]:not([aria-disabled='true']) > .mx-menu__icon {
+    color: var(--_tone-icon);
+  }
+
+  .mx-menu__item[data-tone]:not([aria-disabled='true']):is(:focus, [aria-expanded='true']) {
+    color: var(--_tone-fg-highlight);
+  }
+
+  .mx-menu__item[data-tone]:not([aria-disabled='true']):is(:focus, [aria-expanded='true']) > .mx-menu__icon {
+    color: var(--_tone-icon-highlight);
   }
 
   .mx-menu__check,
@@ -52,9 +98,15 @@
     block-size: var(--mx-menu-icon-size);
   }
 
-  .mx-menu[data-checks] .mx-menu__check,
-  .mx-menu[data-icons] .mx-menu__icon {
+  /* One leading column for the mark and the icon: an item never shows both. A checked item shows
+     its mark, any other item its icon or the empty place, so the texts stay in line. */
+  .mx-menu:is([data-checks], [data-icons]) .mx-menu__icon,
+  .mx-menu__check:has(> *) {
     display: inline-flex;
+  }
+
+  .mx-menu__item:has(> .mx-menu__check > *) > .mx-menu__icon {
+    display: none;
   }
 
   .mx-menu__check > svg,
@@ -70,7 +122,7 @@
   .mx-menu__shortcut {
     flex: none;
     padding-inline-start: var(--mx-menu-shortcut-gap);
-    font-size: var(--mx-font-size-caption);
+    font-size: var(--mx-menu-shortcut-font-size);
     color: var(--mx-menu-shortcut-color);
   }
 
@@ -95,7 +147,7 @@
   }
 
   .mx-menu__separator {
-    block-size: var(--mx-border-width-1);
+    block-size: var(--mx-menu-separator-width);
     margin-block: var(--mx-menu-separator-gap);
     background: var(--mx-menu-separator-color);
   }

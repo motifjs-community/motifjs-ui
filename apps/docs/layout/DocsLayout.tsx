@@ -16,6 +16,9 @@ const THEMES: { id: ThemeChoice; label: string }[] = [
 const STYLES: { id: IdentityName | 'default'; label: string }[] = [
   { id: 'default', label: 'Tactile' },
   { id: 'lounge', label: 'Lounge' },
+  { id: 'material', label: 'Material' },
+  { id: 'fluent', label: 'Fluent' },
+  { id: 'lilac', label: 'Lilac' },
 ];
 
 /** How far below the top bar a section heading may be and still count as the one being read. */

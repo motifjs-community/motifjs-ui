@@ -194,6 +194,7 @@
 }
 
 .docs-sidebar li a {
+  position: relative;
   display: block;
   padding: var(--mx-space-2) var(--mx-space-3);
   padding-inline-start: var(--mx-space-8);
@@ -201,7 +202,7 @@
   line-height: var(--mx-font-line-body);
   color: var(--mx-color-fg-secondary);
   text-decoration: none;
-  border-radius: var(--mx-radius-md);
+  border-radius: var(--mx-item-radius);
 }
 
 .docs-sidebar li a:hover {
@@ -211,13 +212,23 @@
 
 .docs-sidebar li a[aria-current='page'] {
   font-weight: var(--mx-font-weight-semibold);
-  color: var(--mx-color-fg-primary);
-  background: var(--mx-color-fill-subtle-tertiary);
-  box-shadow: inset var(--mx-border-width-2) 0 0 var(--mx-color-accent-fg);
+  color: var(--mx-color-selection-fg);
+  background: var(--mx-color-selection-bg);
+  box-shadow:
+    inset 0 0 0 var(--mx-selection-border-width) var(--mx-color-selection-border),
+    var(--mx-effect-selection);
 }
 
-:root[dir='rtl'] .docs-sidebar li a[aria-current='page'] {
-  box-shadow: inset calc(-1 * var(--mx-border-width-2)) 0 0 var(--mx-color-accent-fg);
+/* The current page's mark: the design language's indicator, a bar of its own at the start,
+   centered, so it stays straight whatever the item's corners are (none where thickness is 0). */
+.docs-sidebar li a[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  inset-block: calc(50% - var(--mx-indicator-length) / 2);
+  inset-inline-start: 0;
+  inline-size: var(--mx-indicator-thickness);
+  background: var(--mx-color-selection-indicator);
+  border-radius: var(--mx-indicator-radius);
 }
 
 .docs-sidebar__empty {
@@ -341,10 +352,11 @@
   margin-inline-start: auto;
 }
 
+/* Bottom edges line up, so a button next to a labelled field sits level with the field's box. */
 .docs-example__stage {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   gap: var(--mx-space-3);
   padding: var(--mx-space-5) var(--mx-space-1);
 }

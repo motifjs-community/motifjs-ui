@@ -12,7 +12,20 @@
       "sm": { "$value": { "value": 0.125, "unit": "rem" } },
       "md": { "$value": { "value": 0.25, "unit": "rem" } },
       "lg": { "$value": { "value": 0.5, "unit": "rem" } }
-    }
+    },
+    "fg": { "$type": "color", "$value": "{color.fg.primary}" },
+    "value-fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "track-color": { "$type": "color", "$value": "{color.stroke.control.default}" },
+    "accent": { "$type": "color", "$value": "{color.accent.solid}" },
+    "accent-subtle": { "$type": "color", "$value": "{color.accent.subtle}" },
+    "neutral": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "neutral-subtle": { "$type": "color", "$value": "{color.fill.subtle.secondary}" },
+    "success": { "$type": "color", "$value": "{color.success.fg}" },
+    "success-subtle": { "$type": "color", "$value": "{color.success.subtle}" },
+    "caution": { "$type": "color", "$value": "{color.caution.fg}" },
+    "caution-subtle": { "$type": "color", "$value": "{color.caution.subtle}" },
+    "danger": { "$type": "color", "$value": "{color.danger.solid}" },
+    "danger-subtle": { "$type": "color", "$value": "{color.danger.subtle}" }
   },
   "spinner": {
     "$description": "Spinner: the turning ring, its label, and the layer it covers a container with.",
@@ -30,6 +43,14 @@
       "sm": { "$value": "{border.width.2}" },
       "md": { "$value": { "value": 0.1875, "unit": "rem" } },
       "lg": { "$value": { "value": 0.25, "unit": "rem" } }
-    }
+    },
+    "fg": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "track-color": { "$type": "color", "$value": "{color.stroke.control.default}" },
+    "radius": { "$type": "dimension", "$value": "{radius.full}" },
+    "cover-fg": { "$type": "color", "$value": "{color.fg.primary}" },
+    "focus-width": { "$type": "dimension", "$value": "{focus.ring.width}" },
+    "focus-offset": { "$type": "dimension", "$value": "{focus.ring.offset}" },
+    "focus-color": { "$type": "color", "$value": "{focus.ring.color}" },
+    "focus-halo": { "$type": "shadow", "$value": "{focus.ring.halo}" }
   }
 }

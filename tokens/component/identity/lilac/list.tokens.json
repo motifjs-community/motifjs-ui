@@ -1,0 +1,9 @@
+{
+  "list": {
+    "$description": "Lilac lists: group headers a little further from their items.",
+    "header-padding": {
+      "$type": "dimension",
+      "$value": "{space.2}"
+    }
+  }
+}

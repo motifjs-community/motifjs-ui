@@ -1,0 +1,13 @@
+{
+  "accordion": {
+    "$description": "Lilac accordions: more room in a section and between separated cards.",
+    "content-padding": {
+      "$type": "dimension",
+      "$value": "{space.5}"
+    },
+    "card-gap": {
+      "$type": "dimension",
+      "$value": "{space.3}"
+    }
+  }
+}

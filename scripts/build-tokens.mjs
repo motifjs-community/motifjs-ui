@@ -5,12 +5,19 @@
 //     → src/generated/tokens.ts       typed component token names
 //     → src/generated/token-docs.json name, variable, type, reference and resolved value, for the docs site
 //
+//   tokens/component/identity/<language>/*.tokens.json   what a design language maps differently
+//     → the same names under [data-identity="<language>"] in src/generated/components.css
+//
 // The design system's own source is *included*, so a reference to a token
 // that does not exist, or a `$type` that differs from the referenced token's,
 // fails the build; only the component tokens are written. The primitive,
 // language, semantic and density layers themselves come from
 // `@motifx-community/design-system/styles.css`, never from here.
-import { mkdirSync, writeFileSync } from 'node:fs';
+//
+// The tokens are declared again on every theme, language and density scope:
+// a custom property holding var() is resolved where it is declared, so tokens
+// declared on :root alone would keep the root's values inside a nested scope.
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -25,6 +32,18 @@ const ds = slash(dirname(createRequire(import.meta.url).resolve('@motifx-communi
 export const LAYER = 'mx.components';
 export const PREFIX = 'mx';
 export const SOURCE = `${root}/tokens/component/*.tokens.json`;
+/** Per design language: the component tokens it maps differently. */
+export const IDENTITY_SOURCE = (language) => `${root}/tokens/component/identity/${language}/*.tokens.json`;
+/** Every scope where the design system's values can change. */
+export const SCOPES = ':root, [data-theme], [data-identity], [data-density]';
+/** A language's scope, and theme and density scopes inside it. */
+export const identityScope = (language) => `[data-identity="${language}"], :where([data-identity="${language}"]) :is([data-theme], [data-density])`;
+
+/** The design languages that map some component tokens differently. */
+export function identities() {
+  const dir = `${root}/tokens/component/identity`;
+  return existsSync(dir) ? readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort() : [];
+}
 /** The design-system layers references resolve against: the default language, light theme, comfortable density (names are the same in every language and theme). */
 export const INCLUDE = [
   `${ds}/tokens/primitive/*.json`,
@@ -94,10 +113,11 @@ const indent = (text, by) => text.split('\n').map((l) => (l ? by + l : l)).join(
 const tsString = (s) => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 
 const FORMATS = {
-  'mx/components-css': ({ dictionary }) => {
-    if (!dictionary.allTokens.length) return HEADER;
+  'mx/components-css': ({ dictionary, options }) => {
+    const header = options?.selector ? '' : HEADER;
+    if (!dictionary.allTokens.length) return header;
     const vars = formattedVariables({ format: 'css', dictionary, outputReferences: true, formatting: { indentation: '' }, usesDtcg: true });
-    return `${HEADER}@layer ${LAYER} {\n  :root {\n${indent(vars, '    ')}\n  }\n}\n`;
+    return `${header}@layer ${LAYER} {\n  ${options?.selector ?? SCOPES} {\n${indent(vars, '    ')}\n  }\n}\n`;
   },
 
   'mx/components-ts': ({ dictionary }) => {
@@ -132,12 +152,13 @@ for (const [name, format] of Object.entries(FORMATS)) StyleDictionary.registerFo
  * One dictionary: the design system's tokens included, the component tokens
  * as source. Broken references throw. The "filtered reference" warning is off
  * because every reference points at an included token on purpose: it stays a
- * var() that the design system's stylesheet defines.
+ * var() that the design system's stylesheet defines. With a `language`, the
+ * component tokens are included too and that language's mapping is the source.
  */
-export function createDictionary(files) {
+export function createDictionary(files, language) {
   return new StyleDictionary({
-    include: INCLUDE,
-    source: [SOURCE],
+    include: language ? [...INCLUDE, SOURCE] : INCLUDE,
+    source: [language ? IDENTITY_SOURCE(language) : SOURCE],
     log: { verbosity: process.env.MX_TOKENS_VERBOSE ? 'verbose' : 'silent', warnings: 'error', errors: { brokenReferences: 'throw' } },
     platforms: {
       components: {
@@ -150,11 +171,21 @@ export function createDictionary(files) {
   });
 }
 
-/** The transformed component tokens; throws when a token's `$type` differs from the token it references. */
-export async function componentTokens() {
-  const all = (await createDictionary([]).getPlatformTokens('components')).allTokens;
+/**
+ * The transformed component tokens, or with a `language` the ones it maps
+ * differently; throws when a token's `$type` differs from the token it
+ * references, or when a language maps a name that is not a component token.
+ */
+export async function componentTokens(language) {
+  const all = (await createDictionary([], language).getPlatformTokens('components')).allTokens;
   const byPath = new Map(all.map((t) => [t.path.join('.'), t]));
   const source = all.filter((t) => t.isSource);
+  if (language) {
+    const known = new Set((await componentTokens()).map((t) => t.path.join('.')));
+    for (const t of source) {
+      if (!known.has(t.path.join('.'))) throw new Error(`${language}: ${t.path.join('.')} is not a component token`);
+    }
+  }
   for (const t of source) {
     const ref = referenceOf(t);
     const target = ref ? byPath.get(ref) : undefined;
@@ -174,11 +205,25 @@ export async function render(format) {
   return output === undefined ? FORMATS[format]({ dictionary: { allTokens: [] } }) : String(output);
 }
 
+/** The component tokens a language maps differently, as one block under its scope. */
+export async function renderIdentity(language) {
+  const sd = createDictionary([{ destination: 'out', format: 'mx/components-css', options: { selector: identityScope(language) } }], language);
+  return String((await sd.formatPlatform('components'))[0]?.output ?? '');
+}
+
+/** The whole stylesheet: every component token on every scope, then each language's mapping. */
+export async function renderCss() {
+  const blocks = [await render('mx/components-css')];
+  for (const language of identities()) blocks.push(await renderIdentity(language));
+  return blocks.join('\n');
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const tokens = await componentTokens();
+  for (const language of identities()) await componentTokens(language);
   const outDir = join(root, 'src', 'generated');
   mkdirSync(outDir, { recursive: true });
-  writeFileSync(join(outDir, 'components.css'), await render('mx/components-css'));
+  writeFileSync(join(outDir, 'components.css'), await renderCss());
   writeFileSync(join(outDir, 'tokens.ts'), await render('mx/components-ts'));
   writeFileSync(join(outDir, 'token-docs.json'), await render('mx/components-json'));
   console.log(`tokens: ${tokens.length} component tokens → src/generated/ (design system at ${ds})`);

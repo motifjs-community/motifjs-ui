@@ -13,9 +13,9 @@
     padding-inline: var(--mx-tooltip-padding-inline);
     overflow: visible;
     font-size: var(--mx-tooltip-font-size);
-    font-weight: var(--mx-font-weight-regular);
-    line-height: var(--mx-font-line-caption);
-    color: var(--mx-color-fg-primary);
+    font-weight: var(--mx-tooltip-font-weight);
+    line-height: var(--mx-tooltip-line-height);
+    color: var(--mx-tooltip-fg);
     text-align: start;
     overflow-wrap: break-word;
     white-space: normal;

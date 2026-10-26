@@ -1,0 +1,37 @@
+{
+  "spinner": {
+    "$description": "Material circular progress: 40 with a 4 track; thick 52 with an 8 track.",
+    "size": {
+      "md": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2.5,
+          "unit": "rem"
+        }
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": {
+          "value": 3.25,
+          "unit": "rem"
+        }
+      }
+    },
+    "ring-width": {
+      "md": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.25,
+          "unit": "rem"
+        }
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.5,
+          "unit": "rem"
+        }
+      }
+    }
+  }
+}

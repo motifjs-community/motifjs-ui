@@ -1,0 +1,9 @@
+{
+  "toast": {
+    "$description": "Material snackbars: 4 corners (the elevation, level 3, is the language's toast elevation).",
+    "radius": {
+      "$type": "dimension",
+      "$value": "{radius.xs}"
+    }
+  }
+}

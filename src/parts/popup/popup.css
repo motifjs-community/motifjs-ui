@@ -10,7 +10,7 @@
     padding: var(--mx-popup-padding);
     overflow: auto;
     overscroll-behavior: contain;
-    color: var(--mx-color-fg-primary);
+    color: var(--mx-popup-fg);
     background: var(--mx-popup-background);
     border: var(--mx-popup-border-width) solid var(--mx-popup-border-color);
     border-radius: var(--mx-popup-radius);

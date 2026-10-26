@@ -7,8 +7,8 @@
     flex-direction: column;
     inline-size: 100%;
     min-inline-size: 0;
-    color: var(--mx-color-fg-primary);
-    --_divider: var(--mx-tabs-divider-width) solid var(--mx-color-stroke-divider);
+    color: var(--mx-tabs-fg);
+    --_divider: var(--mx-tabs-divider-width) solid var(--mx-tabs-divider);
   }
 
   .mx-tabs[data-placement='bottom'] {
@@ -27,21 +27,21 @@
     --_height: var(--mx-tabs-height-sm);
     --_padding: var(--mx-tabs-padding-sm);
     --_font-size: var(--mx-tabs-font-size-sm);
-    --_line: var(--mx-font-line-caption);
+    --_line: var(--mx-tabs-line-height-sm);
   }
 
   .mx-tabs[data-size='md'] {
     --_height: var(--mx-tabs-height-md);
     --_padding: var(--mx-tabs-padding-md);
     --_font-size: var(--mx-tabs-font-size-md);
-    --_line: var(--mx-font-line-body);
+    --_line: var(--mx-tabs-line-height-md);
   }
 
   .mx-tabs[data-size='lg'] {
     --_height: var(--mx-tabs-height-lg);
     --_padding: var(--mx-tabs-padding-lg);
     --_font-size: var(--mx-tabs-font-size-lg);
-    --_line: var(--mx-font-line-body-large);
+    --_line: var(--mx-tabs-line-height-lg);
   }
 
   /* The strip. */
@@ -64,7 +64,6 @@
     min-inline-size: 0;
     min-block-size: 0;
     overflow: auto;
-    scrollbar-width: thin;
   }
 
   .mx-tabs[data-scroll-buttons] .mx-tabs__list {
@@ -82,7 +81,7 @@
     justify-content: center;
     min-inline-size: var(--mx-tabs-scroll-size);
     min-block-size: var(--mx-tabs-scroll-size);
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-tabs-scroll-fg);
     border-radius: var(--mx-tabs-radius);
     cursor: default;
     user-select: none;
@@ -93,12 +92,12 @@
   }
 
   .mx-tabs__scroll:hover:not([data-end]) {
-    color: var(--mx-color-fg-primary);
-    background: var(--mx-color-fill-subtle-secondary);
+    color: var(--mx-tabs-scroll-fg-hover);
+    background: var(--mx-tabs-scroll-bg-hover);
   }
 
   .mx-tabs__scroll[data-end] {
-    color: var(--mx-color-fg-disabled);
+    color: var(--mx-tabs-scroll-fg-disabled);
   }
 
   /* The glyph is a down arrow: turned to point along the strip. */
@@ -145,7 +144,7 @@
     font-weight: var(--mx-tabs-font-weight);
     line-height: var(--_line);
     white-space: nowrap;
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-tabs-tab-fg);
     background: transparent;
     border: 0;
     border-radius: var(--mx-tabs-radius);
@@ -157,21 +156,22 @@
   }
 
   .mx-tabs__tab:hover:not([aria-selected='true'], :disabled, [aria-disabled='true']) {
-    color: var(--mx-color-fg-primary);
-    background: var(--mx-color-fill-subtle-secondary);
+    color: var(--mx-tabs-tab-fg-hover);
+    background: var(--mx-tabs-tab-bg-hover);
   }
 
   .mx-tabs__tab[aria-selected='true'] {
-    color: var(--mx-color-fg-primary);
+    color: var(--mx-tabs-tab-fg-selected);
   }
 
   .mx-tabs__tab:is(:disabled, [aria-disabled='true']) {
-    color: var(--mx-color-fg-disabled);
+    color: var(--mx-tabs-tab-fg-disabled);
   }
 
   .mx-tabs__tab:focus-visible {
-    outline-offset: calc(var(--mx-focus-ring-width) * -1);
-    box-shadow: inset 0 0 0 calc(var(--mx-focus-ring-width) + var(--mx-focus-ring-offset)) var(--mx-focus-ring-inner);
+    outline: var(--mx-tabs-focus-width) solid var(--mx-tabs-focus-color);
+    outline-offset: calc(var(--mx-tabs-focus-width) * -1);
+    box-shadow: var(--mx-tabs-focus-halo);
   }
 
   .mx-tabs[data-stretch]:is([data-placement='top'], [data-placement='bottom']) .mx-tabs__tab {
@@ -209,9 +209,9 @@
     padding-inline: var(--mx-tabs-badge-padding);
     font-size: var(--mx-tabs-badge-font-size);
     line-height: 1;
-    color: var(--mx-color-fg-primary);
-    background: var(--mx-color-fill-subtle-tertiary);
-    border-radius: var(--mx-radius-full);
+    color: var(--mx-tabs-badge-fg);
+    background: var(--mx-tabs-badge-bg);
+    border-radius: var(--mx-tabs-badge-radius);
   }
 
   .mx-tabs__close {
@@ -222,13 +222,13 @@
     inline-size: var(--mx-tabs-close-size);
     block-size: var(--mx-tabs-close-size);
     margin-inline-end: calc(var(--_padding) / -2);
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-tabs-close-fg);
     border-radius: var(--mx-tabs-close-radius);
   }
 
   .mx-tabs__close:hover {
-    color: var(--mx-color-fg-primary);
-    background: var(--mx-color-fill-subtle-tertiary);
+    color: var(--mx-tabs-close-fg-hover);
+    background: var(--mx-tabs-close-bg-hover);
   }
 
   .mx-tabs__tab:is(:disabled, [aria-disabled='true']) .mx-tabs__close {
@@ -265,7 +265,7 @@
     inset-block-end: 0;
     block-size: var(--mx-tabs-indicator-width);
     background: transparent;
-    border-radius: var(--mx-radius-full);
+    border-radius: var(--mx-tabs-indicator-radius);
     transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
@@ -285,17 +285,17 @@
   }
 
   .mx-tabs[data-variant='line'] .mx-tabs__tab[aria-selected='true']::after {
-    background: var(--mx-color-accent-solid);
+    background: var(--mx-tabs-indicator-color);
   }
 
   .mx-tabs[data-variant='line'] .mx-tabs__tab[aria-selected='true']:is(:disabled, [aria-disabled='true'])::after {
-    background: var(--mx-color-fg-disabled);
+    background: var(--mx-tabs-indicator-color-disabled);
   }
 
   /* Pill: the tabs sit on a tray, the selected one is a raised control. */
 
   .mx-tabs[data-variant='pill'] > .mx-tabs__strip {
-    background: var(--mx-color-fill-subtle-secondary);
+    background: var(--mx-tabs-tray-bg);
     border-radius: var(--mx-tabs-radius);
   }
 
@@ -310,23 +310,23 @@
   }
 
   .mx-tabs[data-variant='pill'] .mx-tabs__tab:hover:not([aria-selected='true'], :disabled, [aria-disabled='true']) {
-    background: var(--mx-color-fill-subtle-tertiary);
+    background: var(--mx-tabs-pill-bg-hover);
   }
 
   .mx-tabs[data-variant='pill'] .mx-tabs__tab[aria-selected='true'] {
-    background: var(--mx-color-fill-control-default);
+    background: var(--mx-tabs-pill-selected-bg);
     box-shadow:
-      inset 0 0 0 var(--mx-tabs-divider-width) var(--mx-color-stroke-control-default),
-      inset 0 calc(var(--mx-control-edge-width) * -1) 0 var(--mx-color-stroke-control-edge);
+      inset 0 0 0 var(--mx-tabs-divider-width) var(--mx-tabs-pill-selected-border),
+      inset 0 calc(var(--mx-tabs-pill-selected-edge-width) * -1) 0 var(--mx-tabs-pill-selected-edge);
   }
 
   .mx-tabs[data-variant='pill'] .mx-tabs__tab[aria-selected='true']:focus-visible {
-    box-shadow: inset 0 0 0 calc(var(--mx-focus-ring-width) + var(--mx-focus-ring-offset)) var(--mx-focus-ring-inner);
+    box-shadow: var(--mx-tabs-focus-halo);
   }
 
   .mx-tabs[data-variant='pill'] .mx-tabs__tab[aria-selected='true'] .mx-tabs__badge {
-    color: var(--mx-color-accent-on-solid);
-    background: var(--mx-color-accent-solid);
+    color: var(--mx-tabs-pill-selected-badge-fg);
+    background: var(--mx-tabs-pill-selected-badge-bg);
   }
 
   /* Panels. */

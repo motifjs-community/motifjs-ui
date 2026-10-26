@@ -1,0 +1,17 @@
+{
+  "layout": {
+    "$description": "Material cards: 12 corners.",
+    "panel": {
+      "radius": {
+        "$type": "dimension",
+        "$value": "{radius.md}"
+      }
+    },
+    "group-box": {
+      "radius": {
+        "$type": "dimension",
+        "$value": "{radius.md}"
+      }
+    }
+  }
+}

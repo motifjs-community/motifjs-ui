@@ -147,15 +147,15 @@
   }
 
   .mx-panel[data-variant='outline'] {
-    border: var(--mx-layout-panel-border-width) solid var(--mx-color-stroke-card);
+    border: var(--mx-layout-panel-border-width) solid var(--mx-layout-panel-border);
     border-radius: var(--mx-layout-panel-radius);
   }
 
   .mx-panel[data-variant='card'] {
-    background: var(--mx-color-bg-card);
-    border: var(--mx-layout-panel-border-width) solid var(--mx-color-stroke-card);
+    background: var(--mx-layout-panel-bg);
+    border: var(--mx-layout-panel-border-width) solid var(--mx-layout-panel-border);
     border-radius: var(--mx-layout-panel-radius);
-    box-shadow: var(--mx-shadow-2);
+    box-shadow: var(--mx-layout-panel-shadow);
   }
 
   .mx-panel[data-scroll='both'] {
@@ -182,8 +182,8 @@
     min-inline-size: 0;
     margin: 0;
     padding: var(--mx-layout-group-box-padding);
-    color: var(--mx-color-fg-primary);
-    border: var(--mx-layout-group-box-border-width) solid var(--mx-color-stroke-card);
+    color: var(--mx-layout-group-box-fg);
+    border: var(--mx-layout-group-box-border-width) solid var(--mx-layout-group-box-border);
     border-radius: var(--mx-layout-group-box-radius);
   }
 
@@ -197,7 +197,7 @@
     padding-inline: var(--mx-layout-group-box-legend-padding);
     font-size: var(--mx-layout-group-box-font-size);
     font-weight: var(--mx-layout-group-box-font-weight);
-    line-height: var(--mx-font-line-body);
+    line-height: var(--mx-layout-group-box-line-height);
   }
 
   .mx-group-box[data-variant='plain'] > .mx-group-box__legend {
@@ -206,14 +206,14 @@
   }
 
   .mx-group-box[data-disabled] > .mx-group-box__legend {
-    color: var(--mx-color-fg-disabled);
+    color: var(--mx-layout-group-box-legend-fg-disabled);
   }
 
   .mx-group-box__toggle {
     appearance: none;
     display: inline-flex;
     align-items: center;
-    gap: var(--mx-control-gap);
+    gap: var(--mx-layout-group-box-toggle-gap);
     margin: 0;
     padding-block: 0;
     padding-inline: var(--mx-layout-group-box-legend-padding);
@@ -222,21 +222,21 @@
     color: inherit;
     background: transparent;
     border: 0;
-    border-radius: var(--mx-radius-sm);
+    border-radius: var(--mx-layout-group-box-toggle-radius);
     cursor: default;
     transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
   .mx-group-box__toggle:hover:not(:disabled) {
-    background: var(--mx-color-fill-subtle-secondary);
+    background: var(--mx-layout-group-box-toggle-bg-hover);
   }
 
   .mx-group-box__toggle:active:not(:disabled) {
-    background: var(--mx-color-fill-subtle-tertiary);
+    background: var(--mx-layout-group-box-toggle-bg-active);
   }
 
   .mx-group-box__chevron {
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-layout-group-box-chevron-fg);
     transition: rotate var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
   }
 
@@ -336,8 +336,8 @@
     justify-content: center;
     touch-action: none;
     --_line: var(--mx-layout-splitter-line-width);
-    --_line-color: var(--mx-color-stroke-divider);
-    --_grip-color: var(--mx-color-stroke-control-strong);
+    --_line-color: var(--mx-layout-splitter-line-color);
+    --_grip-color: var(--mx-layout-splitter-grip-color);
   }
 
   .mx-split-container__splitter::before {
@@ -353,7 +353,7 @@
     content: '';
     position: relative;
     background: var(--_grip-color);
-    border-radius: var(--mx-radius-full);
+    border-radius: var(--mx-layout-splitter-grip-radius);
     transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
@@ -386,13 +386,13 @@
   .mx-split-container[data-resizable]:not([data-disabled]) > .mx-split-container__splitter:hover,
   .mx-split-container[data-dragging] > .mx-split-container__splitter {
     --_line: var(--mx-layout-splitter-active-width);
-    --_line-color: var(--mx-color-accent-solid);
-    --_grip-color: var(--mx-color-accent-solid);
+    --_line-color: var(--mx-layout-splitter-active-color);
+    --_grip-color: var(--mx-layout-splitter-active-color);
   }
 
   .mx-split-container:not([data-resizable]) > .mx-split-container__splitter::after,
   .mx-split-container[data-disabled] > .mx-split-container__splitter::after {
-    background: var(--mx-color-stroke-control-default);
+    background: var(--mx-layout-splitter-grip-color-disabled);
   }
 
   .mx-split-container[data-disabled] > .mx-split-container__splitter {

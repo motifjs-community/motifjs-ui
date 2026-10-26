@@ -8,14 +8,14 @@
     inline-size: var(--mx-field-width);
     max-inline-size: 100%;
     vertical-align: top;
-    color: var(--mx-color-fg-primary);
+    color: var(--mx-field-fg);
 
-    --_bg: var(--mx-color-fill-control-default);
-    --_bg-hover: var(--mx-color-fill-control-secondary);
-    --_bg-focus: var(--mx-color-bg-surface);
-    --_border: var(--mx-color-stroke-control-default);
-    --_edge: var(--mx-color-stroke-control-strong);
-    --_edge-focus: var(--mx-color-accent-solid);
+    --_bg: var(--mx-field-bg);
+    --_bg-hover: var(--mx-field-bg-hover);
+    --_bg-focus: var(--mx-field-bg-focus);
+    --_border: var(--mx-field-border);
+    --_edge: var(--mx-field-edge);
+    --_edge-focus: var(--mx-field-edge-focus);
   }
 
   .mx-field[data-stretch] {
@@ -42,8 +42,8 @@
   }
 
   .mx-field[data-variant='filled'] {
-    --_bg: var(--mx-color-fill-subtle-secondary);
-    --_bg-hover: var(--mx-color-fill-subtle-tertiary);
+    --_bg: var(--mx-field-filled-bg);
+    --_bg-hover: var(--mx-field-filled-bg-hover);
     --_border: transparent;
   }
 
@@ -55,19 +55,19 @@
   }
 
   .mx-field[data-invalid] {
-    --_edge: var(--mx-color-danger-solid);
-    --_edge-focus: var(--mx-color-danger-solid);
+    --_edge: var(--mx-field-invalid-border);
+    --_edge-focus: var(--mx-field-invalid-border);
   }
 
   .mx-field[data-invalid]:not([data-variant='underline']) {
-    --_border: var(--mx-color-danger-solid);
+    --_border: var(--mx-field-invalid-border);
   }
 
   .mx-field[data-readonly] {
     --_bg-hover: var(--_bg);
     --_bg-focus: var(--_bg);
-    --_edge: var(--mx-color-stroke-control-default);
-    --_edge-focus: var(--mx-color-stroke-control-strong);
+    --_edge: var(--mx-field-readonly-edge);
+    --_edge-focus: var(--mx-field-readonly-edge-focus);
   }
 
   /* Label. */
@@ -83,8 +83,8 @@
   }
 
   .mx-field__required {
-    margin-inline-start: var(--mx-space-1);
-    color: var(--mx-color-danger-fg);
+    margin-inline-start: var(--mx-field-required-gap);
+    color: var(--mx-field-required-fg);
   }
 
   .mx-field[data-label-mode='hidden'] .mx-field__label {
@@ -125,7 +125,7 @@
   .mx-field[data-label-mode='floating'] .mx-field__box {
     min-block-size: var(--mx-field-floating-height);
     align-items: flex-end;
-    padding-block-end: var(--mx-space-2);
+    padding-block-end: var(--mx-field-floating-padding);
   }
 
   .mx-field[data-label-mode='floating'] .mx-field__label {
@@ -137,8 +137,8 @@
     align-items: center;
     block-size: var(--mx-field-floating-height);
     font-size: var(--_font-size);
-    font-weight: var(--mx-font-weight-regular);
-    color: var(--mx-color-fg-secondary);
+    font-weight: var(--mx-field-floating-label-font-weight);
+    color: var(--mx-field-floating-label-fg);
     pointer-events: none;
     transition:
       block-size var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
@@ -186,20 +186,30 @@
   }
 
   .mx-field[data-disabled] .mx-field__box {
-    color: var(--mx-color-fg-disabled);
-    background: var(--mx-color-fill-control-disabled);
-    border-color: var(--mx-color-stroke-control-default);
+    color: var(--mx-field-disabled-fg);
+    background: var(--mx-field-disabled-bg);
+    border-color: var(--mx-field-disabled-border);
     box-shadow: none;
     cursor: default;
   }
 
   .mx-field[data-disabled] .mx-field__label {
-    color: var(--mx-color-fg-disabled);
+    color: var(--mx-field-disabled-fg);
   }
 
   .mx-field__control {
     flex: 1 1 auto;
     min-inline-size: 0;
+  }
+
+  /* A one-line text input fills the box's height, so a press anywhere on it lands in the input and
+     puts the caret where it was pressed; the input still centers its text. A floating label owns
+     the top of the box, so there the input keeps its own height; check boxes, radios and the other
+     inputs that are not text keep theirs too. */
+  .mx-field:not([data-label-mode='floating'])
+    .mx-field__box
+    > input.mx-field__control:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file']) {
+    align-self: stretch;
   }
 
   .mx-field__input {
@@ -220,7 +230,7 @@
   }
 
   .mx-field__input::placeholder {
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-field-placeholder);
     opacity: 1;
   }
 
@@ -237,7 +247,7 @@
     flex: none;
     inline-size: var(--mx-field-icon-size);
     block-size: var(--mx-field-icon-size);
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-field-icon-fg);
   }
 
   .mx-field__icon > :is(img, svg) {
@@ -248,7 +258,7 @@
   .mx-field__prefix,
   .mx-field__suffix {
     flex: none;
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-field-affix-fg);
     white-space: nowrap;
   }
 
@@ -259,7 +269,7 @@
     display: inline-flex;
     flex: none;
     align-items: center;
-    gap: var(--mx-space-1);
+    gap: var(--mx-field-tools-gap);
   }
 
   /* Buttons at the edge sit close to it. */
@@ -278,14 +288,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--mx-space-1);
+    gap: var(--mx-field-button-gap);
     min-inline-size: calc(var(--_height) - 2 * var(--mx-field-button-inset));
     block-size: calc(var(--_height) - 2 * var(--mx-field-button-inset));
     margin: 0;
     padding-block: 0;
-    padding-inline: var(--mx-space-1);
+    padding-inline: var(--mx-field-button-padding);
     font: inherit;
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-field-button-fg);
     background: transparent;
     border: 0;
     border-radius: var(--mx-field-button-radius);
@@ -297,16 +307,16 @@
   }
 
   .mx-field__button:hover:not(:disabled) {
-    color: var(--mx-color-fg-primary);
-    background: var(--mx-color-fill-subtle-secondary);
+    color: var(--mx-field-button-fg-hover);
+    background: var(--mx-field-button-bg-hover);
   }
 
   .mx-field__button:active:not(:disabled) {
-    background: var(--mx-color-fill-subtle-tertiary);
+    background: var(--mx-field-button-bg-active);
   }
 
   .mx-field__button:disabled {
-    color: var(--mx-color-fg-disabled);
+    color: var(--mx-field-button-fg-disabled);
   }
 
   .mx-field__button-icon {
@@ -327,7 +337,7 @@
     gap: var(--mx-field-gap);
     font-size: var(--mx-field-message-font-size);
     line-height: var(--mx-field-message-line);
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-field-message-fg);
   }
 
   /* The message is a live region: it stays in the page, empty, so a new error is read out. */
@@ -341,7 +351,7 @@
   }
 
   .mx-field[data-invalid] .mx-field__message {
-    color: var(--mx-color-danger-fg);
+    color: var(--mx-field-error-fg);
   }
 
   .mx-field__counter {

@@ -14,7 +14,10 @@
     "gap": { "$type": "dimension", "$value": "{space.2}" },
     "panel": {
       "radius": { "$type": "dimension", "$value": "{radius.lg}" },
-      "border-width": { "$type": "dimension", "$value": "{border.width.1}" }
+      "border-width": { "$type": "dimension", "$value": "{border.width.1}" },
+      "border": { "$type": "color", "$value": "{color.stroke.card}" },
+      "bg": { "$type": "color", "$value": "{color.bg.card}" },
+      "shadow": { "$type": "shadow", "$value": "{elevation.card}" }
     },
     "group-box": {
       "radius": { "$type": "dimension", "$value": "{radius.lg}" },
@@ -23,14 +26,28 @@
       "gap": { "$type": "dimension", "$value": "{space.3}" },
       "legend-padding": { "$type": "dimension", "$value": "{space.1}" },
       "font-size": { "$type": "dimension", "$value": "{font.size.body}" },
-      "font-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" }
+      "font-weight": { "$type": "fontWeight", "$value": "{font.weight.semibold}" },
+      "fg": { "$type": "color", "$value": "{color.fg.primary}" },
+      "border": { "$type": "color", "$value": "{color.stroke.card}" },
+      "line-height": { "$type": "dimension", "$value": "{font.line.body}" },
+      "legend-fg-disabled": { "$type": "color", "$value": "{color.fg.disabled}" },
+      "toggle-gap": { "$type": "dimension", "$value": "{control.gap}" },
+      "toggle-radius": { "$type": "dimension", "$value": "{radius.sm}" },
+      "toggle-bg-hover": { "$type": "color", "$value": "{color.fill.subtle.secondary}" },
+      "toggle-bg-active": { "$type": "color", "$value": "{color.fill.subtle.tertiary}" },
+      "chevron-fg": { "$type": "color", "$value": "{color.fg.secondary}" }
     },
     "splitter": {
       "size": { "$type": "dimension", "$value": "{space.2}" },
       "line-width": { "$type": "dimension", "$value": "{border.width.1}" },
       "active-width": { "$type": "dimension", "$value": "{border.width.2}" },
       "grip-length": { "$type": "dimension", "$value": "{space.6}" },
-      "grip-thickness": { "$type": "dimension", "$value": "{space.1}" }
+      "grip-thickness": { "$type": "dimension", "$value": "{space.1}" },
+      "line-color": { "$type": "color", "$value": "{color.stroke.divider}" },
+      "grip-color": { "$type": "color", "$value": "{color.stroke.control.strong}" },
+      "grip-radius": { "$type": "dimension", "$value": "{radius.full}" },
+      "active-color": { "$type": "color", "$value": "{color.accent.solid}" },
+      "grip-color-disabled": { "$type": "color", "$value": "{color.stroke.control.default}" }
     }
   }
 }

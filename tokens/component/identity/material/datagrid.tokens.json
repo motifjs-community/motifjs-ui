@@ -1,0 +1,24 @@
+{
+  "datagrid": {
+    "$description": "Material tables: on the lightest surface, with a quiet stripe; 2 corners on the check boxes.",
+    "check-radius": {
+      "$type": "dimension",
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      }
+    },
+    "background": {
+      "$type": "color",
+      "$value": "{color.bg.card}"
+    },
+    "head-background": {
+      "$type": "color",
+      "$value": "{color.bg.card}"
+    },
+    "stripe": {
+      "$type": "color",
+      "$value": "{color.bg.layer}"
+    }
+  }
+}

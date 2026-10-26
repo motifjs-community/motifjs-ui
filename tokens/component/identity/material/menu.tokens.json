@@ -1,0 +1,28 @@
+{
+  "menu": {
+    "$description": "Material menu items: 44 tall, 16 side space, 12 between, 20 icons, 4 corners.",
+    "item-height": {
+      "$type": "dimension",
+      "$value": {
+        "value": 2.75,
+        "unit": "rem"
+      }
+    },
+    "item-padding": {
+      "$type": "dimension",
+      "$value": "{space.4}"
+    },
+    "item-gap": {
+      "$type": "dimension",
+      "$value": "{space.3}"
+    },
+    "item-radius": {
+      "$type": "dimension",
+      "$value": "{radius.xs}"
+    },
+    "icon-size": {
+      "$type": "dimension",
+      "$value": "{icon.size.lg}"
+    }
+  }
+}

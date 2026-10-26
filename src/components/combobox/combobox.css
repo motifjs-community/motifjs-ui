@@ -29,6 +29,6 @@
   }
 
   .mx-list__item[data-loading] {
-    color: var(--mx-color-fg-secondary);
+    color: var(--mx-combo-box-loading-fg);
   }
 }

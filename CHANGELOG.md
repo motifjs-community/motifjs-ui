@@ -6,6 +6,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Design languages
+
+- Material and Fluent in the docs Style menu next to Tactile and Lounge, with per-language component
+  mappings in `tokens/component/identity/material/` (from the Material 3 component specs) and
+  `tokens/component/identity/fluent/` (from the Fluent theme resources).
+- Every kit stylesheet paints only with its own component tokens, one per role: fills and text per
+  state, frame and edge per side, the raised face (`<c>.shadow`), the marks (tab indicator,
+  selection bar, check mark) and keyboard focus (`<c>.focus-width|offset|color|halo`). A language can
+  change any of them for one component. `tests/tokens.test.ts` enforces it, and the focus rule
+  too. New: `tokens/component/{textbox,dropdown,combobox,base}.tokens.json` (`--mx-glyph-size`,
+  `--mx-disabled-fg`). Surfaces read the design system's `elevation.*` (Material's toast is level 3
+  there now). Every look in every language and theme is unchanged, measured.
+- Lilac in the Style menu, with its own spacing in `tokens/component/identity/lilac/` (more room
+  between a label and its field, between form rows and columns, in popups, tooltips, toasts, dialogs,
+  tabs, accordions and calendars; 18 px check boxes and radios; a 3 px tab indicator) and its first
+  language stylesheet, `src/styles/identity/lilac.css`: a framed field shows focus as a lilac ring all
+  around. `e2e/checks/37-design-languages.mjs` measures it too.
+- A split button's focus ring is drawn whole: the focused part sits above the arrow next to it.
+- Material: pill tabs and the tab scroll buttons are fully round (the segmented button shape).
+- Tools: `npm run fingerprint` / `fingerprint:compare` (the computed look of every element on every
+  docs page, in every language, theme and state, compared), `e2e/state-sheet.mjs` (every part in
+  every state and language on one page) and `e2e/checks/37-design-languages.mjs` (each language
+  measured against its source).
+
 ### Check boxes and radios
 
 - The check box, the radio circle and the check boxes of DataGrid, ListBox and TreeView draw one

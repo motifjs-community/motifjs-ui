@@ -1,0 +1,13 @@
+{
+  "calendar": {
+    "$description": "Lilac calendars: more room around the grid.",
+    "padding": {
+      "$type": "dimension",
+      "$value": "{space.3}"
+    },
+    "gap": {
+      "$type": "dimension",
+      "$value": "{space.3}"
+    }
+  }
+}
