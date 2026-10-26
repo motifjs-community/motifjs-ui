@@ -125,6 +125,17 @@ import { GroupPanel } from './view/GroupPanel';
 import { GridPager } from './view/GridPager';
 import type { GridRow } from './view/GridRow';
 import { HeaderFilter } from './view/HeaderFilter';
+import type { FilterBuilder } from '../filterbuilder/FilterBuilder';
+import { FilterBuilderWindow } from './view/FilterBuilderWindow';
+import { FilterPanel } from './view/FilterPanel';
+import { builderFields } from './model/builder-fields';
+import { filterText } from '../filterbuilder/filter-text';
+import type { GridFilterBuilderClosedEventArgs } from './grid-filter-builder-closed-event-args';
+import type { GridFilterBuilderClosingEventArgs } from './grid-filter-builder-closing-event-args';
+import type { GridFilterBuilderOpenedEventArgs } from './grid-filter-builder-opened-event-args';
+import type { GridFilterBuilderOpeningEventArgs } from './grid-filter-builder-opening-event-args';
+import type { GridFilterBuilderOptions } from './grid-filter-builder-options';
+import type { GridFilterBuilderPopup } from './grid-filter-builder-popup';
 import { HeaderRow } from './view/HeaderRow';
 import type { HeaderHost } from './view/header-host';
 import type { ExportCommand } from './view/export-command';
@@ -226,6 +237,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private formEdit: { mode: 'form' | 'popup'; rowId: string; row: T; form: EditForm<T>; window: MxForm | null } | null = null;
   private readonly formSwitches: Switches<FormValues>;
   private readonly popupSwitches: Switches<PopupValues>;
+  /** The filter panel under the rows, the filter builder's window and its options. */
+  private readonly filterPanel: FilterPanel<T>;
+  private readonly builderWindow: FilterBuilderWindow<T>;
+  private readonly builderOptions: GridFilterBuilderOptions;
+  private readonly builderPopupSwitches: Switches<PopupValues>;
+  /** Bumped when texts of lookup keys arrive: the panel's text reads them. */
+  private readonly lookupTexts = reactive({ n: 0 });
+  /** Stops following a `filterValue` or a `filterEnabled` function. */
+  private stopFilterValueBinding: (() => void) | null = null;
+  private stopFilterEnabledBinding: (() => void) | null = null;
   /** The ready `remove` was confirmed for the rows it runs on: `deleteRow` does not ask again. */
   private deleteConfirmed = false;
   /** What follows the functions of a column (`groupIndex`, `filterValues`, `filterType`), by field. */
@@ -369,6 +390,27 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       own.popup ?? {},
     );
     this.popupSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `popup.${name}`, value, previous }));
+    this.builderPopupSwitches = new Switches<PopupValues>(
+      ['title', 'showTitle', 'width', 'height', 'resizable', 'movable', 'showCloseButton', 'showMaximize', 'fullScreen'],
+      { showTitle: true, resizable: true, movable: true, showCloseButton: true, showMaximize: false, fullScreen: false },
+      own.filterBuilderPopup ?? {},
+    );
+    this.builderPopupSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `filterBuilderPopup.${name}`, value, previous }));
+    this.builderOptions = reactive({ ...(own.filterBuilder ?? {}) }) as GridFilterBuilderOptions;
+    this.builderWindow = new FilterBuilderWindow<T>(model, {
+      owner: this,
+      options: this.builderOptions,
+      popup: this.builderPopupSwitches,
+      returnFocus: () => this.filterPanel.textButton?.focus(),
+    });
+    this.filterPanel = new FilterPanel<T>(model, {
+      text: () => this.filterText,
+      openBuilder: () => this.openFilterBuilder(),
+      clear: () => this.clearFilterValue(),
+      setEnabled: (on) => (this.filterEnabled = on),
+    });
+    const lookupTexts = model.lookups.onChanged(() => this.lookupTexts.n++);
+    this.motif.setDisposable(() => lookupTexts.dispose());
     this.exportSwitches = new Switches<ExportValues>(['formats', 'allowExportSelectedData', 'texts'], {}, own.export ?? {});
     this.exportSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `export.${name}`, value, previous }));
     model.details.options.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `masterDetail.${name}`, value, previous }));
@@ -1425,7 +1467,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   state(value: Partial<GridStateValue>): void;
   state(value?: Partial<GridStateValue>): GridStateValue | void {
     if (value === undefined) {
-      return { ...this.layout, filters: this.filters, searchText: this.searchText, page: this.page, pageSize: this.pageSize(), selectedKeys: this.selectedKeys, focusedRowKey: this.focusedRowKey };
+      return {
+        ...this.layout,
+        filters: this.filters,
+        filterValue: this.filterValue,
+        filterEnabled: this.filterEnabled,
+        searchText: this.searchText,
+        page: this.page,
+        pageSize: this.pageSize(),
+        selectedKeys: this.selectedKeys,
+        focusedRowKey: this.focusedRowKey,
+      };
     }
     if (value.columns) this.layout = { columns: value.columns, sort: value.sort ?? this.sort, group: value.group };
     else {
@@ -1433,6 +1485,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       if (value.group) this.group = value.group;
     }
     if (value.filters) this.filters = value.filters;
+    if (value.filterValue !== undefined) this.filterValue = value.filterValue;
+    if (value.filterEnabled !== undefined) this.filterEnabled = value.filterEnabled;
     if (value.searchText !== undefined) this.searchByText(value.searchText);
     if (value.selectedKeys) this.selectedKeys = value.selectedKeys;
     if (value.pageSize !== undefined) this.pageSize(value.pageSize);
@@ -1599,10 +1653,115 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.model.filter;
   }
 
-  /** Takes every filter away, and the search text (the conditions chosen in the filter row stay). */
+  /** Takes every filter away: the filter row's and header filters', the filter value, the search text (the conditions chosen in the filter row stay). */
   clearFilters() {
     this.model.filters.clearAll();
     if (this.model.search.state.text) this.model.search.setText('');
+  }
+
+  /**
+   * The filter value, as the data layer has it: the filter builder's conditions, and with
+   * `settings.filterSyncEnabled` the filter row's and header filters' too. Reactive. Assigning
+   * gives the conditions the filter row and header filters can show to them (with sync); a
+   * function is followed.
+   */
+  get filterValue(): data.FilterExpression | null {
+    return this.model.filters.filterValue();
+  }
+  set filterValue(value: Bind<data.FilterExpression | null>) {
+    this.stopFilterValueBinding?.();
+    this.stopFilterValueBinding = null;
+    if (typeof value !== 'function') {
+      untracked(() => this.takeFilterValue(value));
+      return;
+    }
+    const stop = effect(() => {
+      const next = value();
+      untracked(() => this.takeFilterValue(next));
+    });
+    this.stopFilterValueBinding = stop;
+    this.motif.setDisposable(stop);
+  }
+
+  /** Whether the filter value applies (the filter panel's check box). Reactive; a function is followed. */
+  get filterEnabled(): boolean {
+    return this.model.filters.enabled;
+  }
+  set filterEnabled(value: Bind<boolean>) {
+    this.stopFilterEnabledBinding?.();
+    this.stopFilterEnabledBinding = null;
+    if (typeof value !== 'function') {
+      this.model.filters.enabled = value !== false;
+      return;
+    }
+    const stop = effect(() => {
+      const on = value() !== false;
+      untracked(() => on !== this.model.filters.enabled && (this.model.filters.enabled = on));
+    });
+    this.stopFilterEnabledBinding = stop;
+    this.motif.setDisposable(stop);
+  }
+
+  /** The filter value as the filter panel writes it: `[City] Equals 'Ankara' And …` with the columns' titles and texts. Reactive. */
+  get filterText(): string {
+    const { model } = this;
+    void this.lookupTexts.n;
+    const value = model.filters.filterValue();
+    if (!value) return '';
+    const customOperations = this.builderWindow.customOperations();
+    const text = filterText(value, { fields: builderFields(model, customOperations), customOperations, texts: model.texts, locale: model.formatter.locale });
+    return this.props.filterPanelText ? this.props.filterPanelText({ text, filterValue: value }) : text;
+  }
+
+  /** The filter builder the filter panel opens, live: `grid.filterBuilder.maxGroupLevel = 1`; a function is followed. */
+  get filterBuilder(): GridFilterBuilderOptions {
+    return this.builderOptions;
+  }
+
+  /** The window the filter builder opens in, live: `grid.filterBuilderPopup.width = '50rem'`; a function is followed. */
+  get filterBuilderPopup(): GridFilterBuilderPopup {
+    return this.builderPopupSwitches.view as GridFilterBuilderPopup;
+  }
+
+  /** Opens the filter builder on the filter value, in its window; `false` when `onFilterBuilderOpening` kept it closed. */
+  openFilterBuilder(): boolean {
+    return untracked(() => this.builderWindow.open());
+  }
+
+  /** Closes the filter builder's window: with `apply`, as OK. `false` when it is not open or `onFilterBuilderClosing` kept it. */
+  closeFilterBuilder(apply = false): boolean {
+    return untracked(() => this.builderWindow.close(apply));
+  }
+
+  /** The filter builder while its window is open. */
+  get filterBuilderInstance(): FilterBuilder | null {
+    return this.builderWindow.builder;
+  }
+
+  /** Takes the filter value away (the panel's Clear); with sync, the filter row's and header filters' filters too. The search stays. */
+  clearFilterValue() {
+    untracked(() => this.model.filters.clearValue());
+  }
+
+  /** Raised before the filter builder opens: `e.cancel` keeps it closed. */
+  get onFilterBuilderOpening(): MotifEvent<GridFilterBuilderOpeningEventArgs> {
+    return this.on(this.model.events.filterBuilderOpening);
+  }
+  get onFilterBuilderOpened(): MotifEvent<GridFilterBuilderOpenedEventArgs> {
+    return this.on(this.model.events.filterBuilderOpened);
+  }
+  /** Raised before the filter builder closes, with OK (`e.apply`) or not: `e.cancel` keeps it open. */
+  get onFilterBuilderClosing(): MotifEvent<GridFilterBuilderClosingEventArgs> {
+    return this.on(this.model.events.filterBuilderClosing);
+  }
+  get onFilterBuilderClosed(): MotifEvent<GridFilterBuilderClosedEventArgs> {
+    return this.on(this.model.events.filterBuilderClosed);
+  }
+
+  private takeFilterValue(value: data.FilterExpression | null | undefined) {
+    const filters = this.model.filters;
+    if (JSON.stringify(value ?? null) === JSON.stringify(filters.filterValue())) return;
+    filters.setFilterValue(value ?? null);
   }
 
   // Search.
@@ -2001,12 +2160,18 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     // Filters: applied at once, or after a typing pause; a feature switched off takes its filter out.
     this.bindings.watch(() => {
       void model.filters.expression();
+      void model.filters.filterValue();
+      void model.filters.enabled;
       untracked(() => model.queueFilter());
     });
 
-    // The search text the app follows; the columns searched changed: search again.
+    // The search text and the filter value the app follows; the columns searched changed: search again.
     const searchProp = this.props.searchText;
     if (typeof searchProp === 'function') this.searchText = searchProp;
+    const filterValueProp = this.props.filterValue;
+    if (typeof filterValueProp === 'function') this.filterValue = filterValueProp;
+    const filterEnabledProp = this.props.filterEnabled;
+    if (typeof filterEnabledProp === 'function') this.filterEnabled = filterEnabledProp;
     let firstFields = true;
     this.bindings.watch(() => {
       void model.search.fields().join('\n');
@@ -2386,6 +2551,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
           <div class="mx-data-grid__probe" aria-hidden="true" ref={(c) => (this.probeEl = c.element as HTMLDivElement)} />
           <div class="mx-data-grid__measure" aria-hidden="true" ref={(c) => (this.measureEl = c.element as HTMLDivElement)} />
         </div>
+        {this.filterPanel}
         <div class="mx-data-grid__bar" x-display={() => settings.get('rowCount') || st.failedBlocks > 0 || model.showsPager() || showErrors() || showSelected() || this.bottomShown()}>
           {this.bottomBar}
           <span class="mx-data-grid__count" x-display={() => settings.get('rowCount')}>

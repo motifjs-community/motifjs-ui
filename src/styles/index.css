@@ -39,4 +39,5 @@
 @import '../components/layout/layout.css';
 @import '../components/listbox/listbox.css';
 @import '../components/tagbox/tagbox.css';
+@import '../components/filterbuilder/filterbuilder.css';
 @import '../components/datagrid/datagrid.css';

@@ -1,3 +1,4 @@
+import { data } from '@motifx-community/data';
 import type { LayoutStorage } from '../layout-storage';
 import type { StoredLayout } from './stored-layout';
 
@@ -31,6 +32,8 @@ export class LayoutStore {
       const group = Array.isArray(value.group) ? value.group.filter((g): g is NonNullable<StoredLayout['group']>[number] => isObject(g) && typeof g.field === 'string' && (g.dir === 'asc' || g.dir === 'desc')) : undefined;
       const kept: StoredLayout = { columns, sort, group, filters: isObject(value.filters) ? (value.filters as StoredLayout['filters']) : {}, searchText: typeof value.searchText === 'string' ? value.searchText : '' };
       if (typeof value.pageSize === 'number' && value.pageSize >= 0) kept.pageSize = value.pageSize;
+      if (isObject(value.filterValue) && data.isFilterExpression(value.filterValue)) kept.filterValue = value.filterValue;
+      if (typeof value.filterEnabled === 'boolean') kept.filterEnabled = value.filterEnabled;
       return kept;
     } catch {
       return null;

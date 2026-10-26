@@ -34,6 +34,7 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   treeview: () => import('../pages/treeview/TreeViewPage'),
   listbox: () => import('../pages/listbox/ListBoxPage'),
   tagbox: () => import('../pages/tagbox/TagBoxPage'),
+  filterbuilder: () => import('../pages/filterbuilder/FilterBuilderPage'),
   datagrid: () => import('../pages/datagrid/DataGridPage'),
   'datagrid-editing': () => import('../pages/datagrid/DataGridEditingPage'),
   'datagrid-forms': () => import('../pages/datagrid/DataGridFormsPage'),

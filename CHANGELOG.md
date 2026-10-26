@@ -201,6 +201,51 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   shown for keyboard focus closed at once when focusing scrolled its field into view; it now follows
   the field while the page scrolls and closes only if the field is off the screen when scrolling ends.
 
+### FilterBuilder, the DataGrid filter panel and the filter value
+
+- `FilterBuilder` (`src/components/filterbuilder/`): a tree of groups (`and`, `or`, `notAnd`,
+  `notOr`) and conditions (field, operation, value) whose `value` is the data layer's
+  `data.FilterExpression`, two-way with `x-model`; a condition without its value stays out of it.
+  `fields` (`dataField`, `caption`, `dataType`, `format`, `lookup`, `filterOperations`,
+  `defaultOperation`, `editor`, `editorOptions`, `customizeText`, `trueText` / `falseText`; Bind
+  fields), `customOperations` (`name`, `caption`, `dataTypes`, `hasValue`, `editor`,
+  `customizeText`, `calculateFilterExpression`, `readFilterExpression`), `groupOperations`,
+  `maxGroupLevel`, `allowHierarchicalFields` (dotted fields as submenus), `texts`, `locale`, `label`,
+  `size`, `addKeys` (`Insert`), `removeKeys` (`Delete`). Operations are the data layer's (`in` /
+  `notin` read the standard `anyof` / `noneof`); per type as the (`defaultOperations()`).
+  Values are edited in place with the kit's TextBox, NumberBox, DateBox, DropDown (yes/no, lookups),
+  TagBox (`in` / `notin`), two boxes for `between`, none for `isblank` / `isnotblank`.
+- Every change is a method and asks first: `addCondition`, `addGroup`, `removeItem`, `setField`,
+  `setOperation`, `setConditionValue`, `setGroupOperation`, `clear`, `openEditor` / `closeEditor`,
+  `focusItem`; `onItemAdding/Added`, `onItemRemoving/Removed`, `onItemChanging/Changed` (cancelable,
+  `e.value` changeable), `onValueChanged`, `onEditorPreparing` (`options`, an `editor` of your own, or
+  `cancel`) / `onEditorPrepared`. `filterText` (property) and the `filterText(value, options)`
+  function write a filter as `[City] Equals 'Ankara' And [Amount] Is greater than '100'`;
+  `FilterBuilderModel` is the logic without the view.
+- Keyboard and ARIA: a `treegrid` (rows with `aria-level`, `aria-posinset`, `aria-setsize`, a kit
+  Button per `gridcell`, named “Field: City”, “Operation: Equals”…), one Tab stop with roving focus;
+  arrows, Home / End, Ctrl + Home / End, Alt + Down opens a menu on its chosen item, F2 / Enter the
+  value editor (Enter keeps, Escape gives up, Tab keeps and goes on, from “from” to “to” first).
+  Texts `filterBuilder…` / `filterOp…` (en, tr). Tokens `filterbuilder.*`
+  (`tokens/component/filterbuilder.tokens.json`): the rows indent per level with a line along each group.
+- DataGrid: `settings.filterPanel` (a panel under the rows: the check box, the filter's text that
+  opens the builder, “Create Filter”, “Clear”), `settings.filterSyncEnabled` (`'auto'`: while the
+  panel shows; the filter row and header filters are part of the filter value both ways, conditions
+  they cannot show stay in it), the column feature `filterBuilder` (default `true`), the props and
+  properties `filterValue` and `filterEnabled` (Bind, followed), `filterPanelText`, `filterBuilder`
+  (the builder's props, live) and `filterBuilderPopup` (the `MxForm` window: `title`, `showTitle`,
+  `width`, `height`, `resizable`, `movable`, `showCloseButton`, `showMaximize`, `fullScreen`), the
+  methods `openFilterBuilder()`, `closeFilterBuilder(apply?)`, `clearFilterValue()`, the property
+  `filterText`, the events `onFilterBuilderOpening/Opened/Closing/Closed`; `onFilterChanging` /
+  `onFilterChanged` carry `filterValue` and `filterEnabled` (and the previous ones) and run for the
+  panel and the builder too. A date condition chosen as a day stays a day in the filter value and
+  goes to the data source by the day. The kept layout and `state()` keep `filterValue` and
+  `filterEnabled`. `clearFilters()` takes the filter value away too. Texts `gridFilterPanel…`,
+  `gridFilterBuilderTitle`; tokens `datagrid.filter-panel-*`, `datagrid.filter-text-*`,
+  `datagrid.filter-icon-size`, `datagrid.filter-builder-buttons-gap`.
+- Docs: a FilterBuilder page (Data group) and “Filter panel and builder” on DataGrid: Filtering
+  (the 100,000-row server grid of “Filters” moved there, with the panel); `e2e/checks/41-filterbuilder.mjs`.
+
 ### DataGrid pager, columns at run time, header filter ranges and entries
 
 - The pager is a part of its own (`nav`, named by `pagerLabel` or “Pages: <grid>”): the page sizes

@@ -1,6 +1,6 @@
 {
   "datagrid": {
-    "$description": "DataGrid: rows sized by the density tokens, a bar header, row tints for hover, the active row, new rows and stripes, selected rows in the design language's selection look (fill, text, frame, effect and the start bar where the language has one), the marks of unsaved and invalid cells, the selection check boxes, the action buttons, the filter row, the header filter window (a list of values, or a tree of date parts), the text the search found, the group rows and the group panel's chips, the status marks, the pager (page sizes, a page number box), the load states, the export panel, the edit form in place of a row, and the expand arrows and details of master-detail rows.",
+    "$description": "DataGrid: rows sized by the density tokens, a bar header, row tints for hover, the active row, new rows and stripes, selected rows in the design language's selection look (fill, text, frame, effect and the start bar where the language has one), the marks of unsaved and invalid cells, the selection check boxes, the action buttons, the filter row, the header filter window (a list of values, or a tree of date parts), the text the search found, the group rows and the group panel's chips, the status marks, the pager (page sizes, a page number box), the load states, the export panel, the edit form in place of a row, the expand arrows and details of master-detail rows, and the filter panel (its check box, the filter's text, Clear) with the filter builder's window.",
     "row-height": { "$type": "dimension", "$value": "{control.height.md}" },
     "row-padding": { "$type": "dimension", "$value": "{space.1}" },
     "cell-padding": { "$type": "dimension", "$value": "{control.padding.sm}" },
@@ -138,6 +138,23 @@
     "expand-color": { "$type": "color", "$value": "{color.fg.secondary}" },
     "expand-radius": { "$type": "dimension", "$value": "{radius.sm}" },
     "detail-padding": { "$type": "dimension", "$value": "{space.3}" },
-    "detail-background": { "$type": "color", "$value": "{color.bg.bar}" }
+    "detail-background": { "$type": "color", "$value": "{color.bg.bar}" },
+    "filter-panel-gap": { "$type": "dimension", "$value": "{space.2}" },
+    "filter-panel-padding": { "$type": "dimension", "$value": "{space.2}" },
+    "filter-panel-font-size": { "$type": "dimension", "$value": "{font.size.caption}" },
+    "filter-panel-color": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "filter-panel-background": { "$type": "color", "$value": "{color.bg.bar}" },
+    "filter-icon-size": { "$type": "dimension", "$value": "{icon.size.sm}" },
+    "filter-text-color": { "$type": "color", "$value": "{color.accent.fg}" },
+    "filter-text-off-color": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "filter-text-padding": { "$type": "dimension", "$value": "{space.1}" },
+    "filter-text-radius": { "$type": "dimension", "$value": "{radius.sm}" },
+    "filter-text-underline-width": { "$type": "dimension", "$value": "{border.width.1}" },
+    "filter-text-underline-offset": { "$type": "dimension", "$value": "{space.1}" },
+    "filter-text-focus-width": { "$type": "dimension", "$value": "{focus.ring.width}" },
+    "filter-text-focus-color": { "$type": "color", "$value": "{focus.ring.color}" },
+    "filter-text-focus-offset": { "$type": "dimension", "$value": "{focus.ring.offset}" },
+    "filter-text-focus-halo": { "$type": "shadow", "$value": "{focus.ring.halo}" },
+    "filter-builder-buttons-gap": { "$type": "dimension", "$value": "{space.2}" }
   }
 }

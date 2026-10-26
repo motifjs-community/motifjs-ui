@@ -19,6 +19,7 @@ export * from './components/toast';
 export * from './components/tabs';
 export * from './components/accordion';
 export * from './components/datagrid';
+export * from './components/filterbuilder';
 export * from './components/listbox';
 export * from './components/tagbox';
 export * from './components/form';

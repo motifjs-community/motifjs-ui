@@ -123,6 +123,17 @@ export interface GridSettings extends ColumnFeatures {
   highlightCaseSensitive: boolean;
   /** The search looks only in the visible columns. Default `false`: hidden columns too. */
   searchVisibleColumnsOnly: boolean;
+  /**
+   * The filter panel under the rows: a check box that turns the filter value on and off, its text
+   * (which opens the filter builder) or "Create Filter", and "Clear". Default `false`.
+   */
+  filterPanel: boolean;
+  /**
+   * The filter row and the header filters are part of the filter value, both ways: what the builder
+   * sets shows in them where they can show it, what they set shows in the panel and the builder.
+   * `'auto'`: while the filter panel shows. Default `'auto'`.
+   */
+  filterSyncEnabled: boolean | 'auto';
   /** The group panel at the start of the toolbar: the grouped columns as chips, and where headers are dropped to group by them. Default `false`. */
   groupPanel: boolean;
   /** Headers can be dragged to the group panel and chips back to the headers or along the panel. Off, the panel only shows the grouping. Default `true`. */

@@ -24,6 +24,7 @@ import { cellValue } from './cell-value';
 import { ColumnModel } from './ColumnModel';
 import { DEFAULT_SETTINGS } from './default-settings';
 import { DetailRows } from './DetailRows';
+import type { FilterValueState } from './filter-value-state';
 import { FilterModel } from './FilterModel';
 import { FilterValues } from './FilterValues';
 import { GridData } from './GridData';
@@ -153,6 +154,8 @@ export class GridModel<T> {
   private readonly busyCells = new Map<string, Set<string>>();
   /** The filters the rows have now, to put back when `onFilterChanging` cancels new ones. */
   private appliedFilters: GridFilters = {};
+  /** The filter value, its own conditions and whether it applied, as the rows have them now. */
+  private appliedValue: FilterValueState = { value: null, extra: null, enabled: true, key: '' };
   /** The rows per page the user chose (the pager, `pageSize(n)`, a kept layout), over the props and the source; `null` for none. */
   chosenPageSize: number | null = null;
   /** The layout before the user's last change, to put back when `onLayoutChanging` cancels one. */
@@ -188,6 +191,7 @@ export class GridModel<T> {
     this.columns.expandWanted = () => this.details.enabled;
     this.columns.expandWidth = () => this.details.options.get('columnWidth');
     this.filters = new FilterModel<T>(this.columns);
+    this.filters.sync = () => this.syncsFilter();
     const filters = stored ? this.reviveDates(stored.filters) : props.filters;
     if (filters) this.filters.replace(filters);
     // A kept layout holds the user's filters; else a column's own `filterValues` start its header filter.
@@ -199,6 +203,16 @@ export class GridModel<T> {
     };
     this.values = new FilterValues<T>(this);
     this.filters.conditionOf = (field) => this.values.conditionOf(field);
+    // The filter value given (or kept) after the columns' own: with sync it is shared out to them.
+    const filterValue = stored ? this.reviveExpression(stored.filterValue ?? null) : read(props.filterValue);
+    if (filterValue) {
+      untracked(() => this.filters.filterValue());
+      this.filters.setFilterValue(filterValue);
+      this.appliedFilters = this.filters.toFilters();
+    }
+    const filterEnabled = stored?.filterEnabled ?? read(props.filterEnabled);
+    if (filterEnabled === false) this.filters.enabled = false;
+    this.appliedValue = this.valueState();
     this.lookups = new LookupTexts<T>(() => this.formatter.locale, { missing: () => this.text('gridLookupMissing') });
     this.search = new GridSearch<T>(this);
     this.summaries = new GridSummaries<T>(this, props.summary);
@@ -360,6 +374,11 @@ export class GridModel<T> {
   }
 
   /** A text of `uiLocale`, or of the grid's own `texts`; `{name}` parts filled from `values`. */
+  /** The grid's own texts (`texts`), over `uiLocale.strings`. Reactive. */
+  get texts(): Partial<UiStrings> {
+    return read(this.props.texts) ?? {};
+  }
+
   text(key: keyof UiStrings, values?: Record<string, unknown>): string {
     const t = read(this.props.texts)?.[key] ?? uiLocale.strings[key];
     return values ? fillTemplate(t, values) : t;
@@ -1041,13 +1060,28 @@ export class GridModel<T> {
     return out;
   }
 
+  /** Whether the filter row and the header filters are part of the filter value (`filterSyncEnabled`; `'auto'`: while the filter panel shows). */
+  syncsFilter(): boolean {
+    const sync = this.settings.get('filterSyncEnabled');
+    return sync === 'auto' ? !!this.settings.get('filterPanel') : !!sync;
+  }
+
+  /** The filter value as it is now, to compare and to put back. */
+  private valueState(): FilterValueState {
+    return untracked(() => {
+      const value = this.filters.filterValue();
+      const enabled = this.filters.enabled;
+      return { value, extra: this.filters.extra(), enabled, key: JSON.stringify([value, enabled]) };
+    });
+  }
+
   /** The filters changed: apply them at once, or after `filterDelay` when they were typed. The same filter again does nothing. */
   queueFilter() {
     const own = this.filters.expression();
     const key = JSON.stringify(own);
     clearTimeout(this.filterTimer);
     this.filterTimer = undefined;
-    if (key === this.appliedFilter) return;
+    if (key === this.appliedFilter && this.valueState().key === this.appliedValue.key) return;
     const delay = this.filters.typed ? Math.max(0, this.settings.get('filterDelay')) : 0;
     if (delay === 0) this.applyFilter(own, key);
     else this.filterTimer = setTimeout(() => this.applyFilter(own, key), delay);
@@ -1060,7 +1094,7 @@ export class GridModel<T> {
     this.filterTimer = undefined;
     const own = this.filters.expression();
     const key = JSON.stringify(own);
-    if (key !== this.appliedFilter) this.applyFilter(own, key);
+    if (key !== this.appliedFilter || this.valueState().key !== this.appliedValue.key) this.applyFilter(own, key);
   }
 
   /** Whether a filter or the search leaves rows out. Reactive. */
@@ -1078,23 +1112,38 @@ export class GridModel<T> {
     this.filterTimer = undefined;
     const { events } = this;
     const filters = this.filters.toFilters();
+    const value = this.valueState();
+    const before = this.appliedValue;
     // The search changes the filter too; it has events of its own.
-    const changed = JSON.stringify(filters) !== JSON.stringify(this.appliedFilters);
-    if (changed && !events.ask(events.filterChanging, () => ({ filters, previous: this.appliedFilters, cancel: false }))) {
-      // Back to the filters the rows have: the cells show them again, nothing loads.
+    const changed = JSON.stringify(filters) !== JSON.stringify(this.appliedFilters) || value.key !== before.key;
+    const asked = () => ({
+      filters,
+      previous: this.appliedFilters,
+      filterValue: value.value,
+      previousFilterValue: before.value,
+      filterEnabled: value.enabled,
+      previousFilterEnabled: before.enabled,
+      cancel: false,
+    });
+    if (changed && !events.ask(events.filterChanging, asked)) {
+      // Back to the filters the rows have: the cells and the panel show them again, nothing loads.
       this.filters.replace(this.appliedFilters);
+      this.filters.restoreValue(before.extra, before.enabled);
       return;
     }
     this.appliedFilters = filters;
-    this.onBeforeQueryChange?.();
-    this.appliedFilter = key;
-    this.state.page = 0;
-    this.generation++;
-    this.selection.filterChanged();
-    this.data.setFilter(data.and(this.baseFilter, own));
-    this.onQueryChange?.();
+    this.appliedValue = value;
+    if (key !== this.appliedFilter) {
+      this.onBeforeQueryChange?.();
+      this.appliedFilter = key;
+      this.state.page = 0;
+      this.generation++;
+      this.selection.filterChanged();
+      this.data.setFilter(data.and(this.baseFilter, own));
+      this.onQueryChange?.();
+    }
     this.keepLayout();
-    if (changed) events.tell(events.filterChanged, () => ({ filters, filter: this.data.source.filter }));
+    if (changed) events.tell(events.filterChanged, () => ({ filters, filter: this.data.source.filter, filterValue: value.value, filterEnabled: value.enabled }));
   }
 
   // Sort, layout.
@@ -1430,7 +1479,13 @@ export class GridModel<T> {
     if (!store) return;
     untracked(() => {
       if (!this.settings.get('saveLayout')) return;
-      const kept: StoredLayout = { ...this.layout, filters: this.filters.toFilters(), searchText: this.search.state.applied };
+      const kept: StoredLayout = {
+        ...this.layout,
+        filters: this.filters.toFilters(),
+        filterValue: this.filters.filterValue(),
+        filterEnabled: this.filters.enabled,
+        searchText: this.search.state.applied,
+      };
       if (this.chosenPageSize !== null) kept.pageSize = this.chosenPageSize;
       store.write(kept);
     });
@@ -1457,6 +1512,19 @@ export class GridModel<T> {
     this.lookups.dispose();
     this.selection.dispose();
     this.data.dispose();
+  }
+
+  /** Dates of a filter value's conditions on date columns come back from storage as text. */
+  reviveExpression(e: data.FilterExpression | null): data.FilterExpression | null {
+    if (!e) return null;
+    const revive = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) ? new Date(v) : v);
+    if (data.isCondition(e)) {
+      if (this.columns.defs.get(e.field)?.type !== 'date') return e;
+      return { ...e, value: Array.isArray(e.value) ? e.value.map(revive) : revive(e.value) };
+    }
+    if ('and' in e) return { and: e.and.map((x) => this.reviveExpression(x)!) };
+    if ('or' in e) return { or: e.or.map((x) => this.reviveExpression(x)!) };
+    return { not: this.reviveExpression(e.not)! };
   }
 
   /** Dates of a date column's filter come back from storage as text. */

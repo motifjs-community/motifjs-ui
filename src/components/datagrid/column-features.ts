@@ -29,6 +29,8 @@ export interface ColumnFeatures {
   filterRow: boolean;
   /** The header filter: a button in the header (and an entry in the column menu) that opens the column's values to choose from. Default `false`. */
   headerFilter: boolean;
+  /** The column is a field of the filter builder (and its conditions read with its title in the filter panel). Default `true`. */
+  filterBuilder: boolean;
   /** The column's cells go into what Ctrl+C copies. Default `true`. */
   copyable: boolean;
   /** The column goes into `exportCsv()` and `exportRows()`. Default `true`. */

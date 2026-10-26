@@ -58,6 +58,13 @@ import type { GridEditorPreparedEventArgs } from './grid-editor-prepared-event-a
 import type { GridEditorPreparingEventArgs } from './grid-editor-preparing-event-args';
 import type { GridRowValidatingEventArgs } from './grid-row-validating-event-args';
 import type { GridFilters } from './grid-filters';
+import type { GridFilterBuilderClosedEventArgs } from './grid-filter-builder-closed-event-args';
+import type { GridFilterBuilderClosingEventArgs } from './grid-filter-builder-closing-event-args';
+import type { GridFilterBuilderOpenedEventArgs } from './grid-filter-builder-opened-event-args';
+import type { GridFilterBuilderOpeningEventArgs } from './grid-filter-builder-opening-event-args';
+import type { GridFilterBuilderOptions } from './grid-filter-builder-options';
+import type { GridFilterBuilderPopup } from './grid-filter-builder-popup';
+import type { GridFilterPanelTextInfo } from './grid-filter-panel-text-info';
 import type { GridGroupDroppingEventArgs } from './grid-group-dropping-event-args';
 import type { GridGroupingChangedEventArgs } from './grid-grouping-changed-event-args';
 import type { GridGroupingChangingEventArgs } from './grid-grouping-changing-event-args';
@@ -75,7 +82,7 @@ import type { GridValuesResult } from './grid-values-result';
 import type { NewRowOptions } from './new-row-options';
 import type { RowState } from './row-state';
 
-/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form`, `popup` and `masterDetail` (whose fields are) and the callbacks is a value or a function that is followed. */
+/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form`, `popup`, `filterBuilder`, `filterBuilderPopup` and `masterDetail` (whose fields are) and the callbacks is a value or a function that is followed. */
 export interface DataGridProps<T> extends ControlProps {
   /** Column definitions, in their initial order. Columns come and go later with `addColumn` and `deleteColumn`. */
   columns: GridColumn<T>[];
@@ -201,6 +208,26 @@ export interface DataGridProps<T> extends ControlProps {
   export?: GridExportSettings;
   /** Initial filters, by field. Read and change them later through `grid.filters`. */
   filters?: GridFilters;
+  /**
+   * The filter value, as the data layer has it: the filter builder's conditions, and with
+   * `settings.filterSyncEnabled` the filter row's and header filters' too (those they can show go
+   * to them). A function is followed; the user's changes come through `onFilterChanged` (`e.filterValue`).
+   */
+  filterValue?: Bind<data.FilterExpression | null>;
+  /** Whether the filter value applies: the filter panel's check box. A function is followed. Default `true`. */
+  filterEnabled?: Bind<boolean>;
+  /** The text of the filter panel, from the one it would show. */
+  filterPanelText?: (e: GridFilterPanelTextInfo) => string;
+  /** The filter builder the filter panel opens (any prop of `FilterBuilder` but `value` and `fields`). Read and change it later through `grid.filterBuilder`. */
+  filterBuilder?: GridFilterBuilderOptions;
+  /** The window the filter builder opens in. Read and change it later through `grid.filterBuilderPopup`. */
+  filterBuilderPopup?: GridFilterBuilderPopup;
+  /** The filter builder is about to open; `e.cancel` keeps it closed. */
+  onFilterBuilderOpening?: (e: GridFilterBuilderOpeningEventArgs) => void;
+  onFilterBuilderOpened?: (e: GridFilterBuilderOpenedEventArgs) => void;
+  /** The filter builder is about to close, with OK (`e.apply`) or not; `e.cancel` keeps it open. */
+  onFilterBuilderClosing?: (e: GridFilterBuilderClosingEventArgs) => void;
+  onFilterBuilderClosed?: (e: GridFilterBuilderClosedEventArgs) => void;
   /**
    * The values of a column's header filter, when the data comes from a server that cannot group:
    * a part of the distinct values that honor the other filters. Without it, rows in memory and

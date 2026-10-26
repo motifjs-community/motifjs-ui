@@ -1,0 +1,13 @@
+{
+  "filterbuilder": {
+    "$description": "FilterBuilder: a tree of groups and conditions, each row of kit buttons, indented per level with a line along each group.",
+    "gap": { "$type": "dimension", "$value": "{space.1}" },
+    "row-gap": { "$type": "dimension", "$value": "{space.1}" },
+    "indent": { "$type": "dimension", "$value": "{space.6}" },
+    "line-width": { "$type": "dimension", "$value": "{border.width.1}" },
+    "line-color": { "$type": "color", "$value": "{color.stroke.divider}" },
+    "editor-width": { "$type": "dimension", "$value": { "value": 12, "unit": "rem" } },
+    "fg": { "$type": "color", "$value": "{color.fg.primary}" },
+    "font-size": { "$type": "dimension", "$value": "{font.size.body}" }
+  }
+}

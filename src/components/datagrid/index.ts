@@ -114,6 +114,13 @@ export type { GridSortChangingEventArgs } from './grid-sort-changing-event-args'
 export type { GridSortChangedEventArgs } from './grid-sort-changed-event-args';
 export type { GridFilterChangingEventArgs } from './grid-filter-changing-event-args';
 export type { GridFilterChangedEventArgs } from './grid-filter-changed-event-args';
+export type { GridFilterBuilderOptions } from './grid-filter-builder-options';
+export type { GridFilterBuilderPopup } from './grid-filter-builder-popup';
+export type { GridFilterPanelTextInfo } from './grid-filter-panel-text-info';
+export type { GridFilterBuilderOpeningEventArgs } from './grid-filter-builder-opening-event-args';
+export type { GridFilterBuilderOpenedEventArgs } from './grid-filter-builder-opened-event-args';
+export type { GridFilterBuilderClosingEventArgs } from './grid-filter-builder-closing-event-args';
+export type { GridFilterBuilderClosedEventArgs } from './grid-filter-builder-closed-event-args';
 export type { GridPageChangingEventArgs } from './grid-page-changing-event-args';
 export type { GridPageChangedEventArgs } from './grid-page-changed-event-args';
 export type { GridPageSizeChangingEventArgs } from './grid-page-size-changing-event-args';

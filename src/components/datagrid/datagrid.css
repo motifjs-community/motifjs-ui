@@ -1152,6 +1152,77 @@
     text-underline-offset: var(--mx-datagrid-invalid-width);
   }
 
+  /* The filter panel under the rows: the check box, the filter as text (it opens the builder), Clear. */
+  .mx-data-grid__filter-panel {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--mx-datagrid-filter-panel-gap);
+    min-block-size: var(--_row-height);
+    padding-inline: var(--mx-datagrid-filter-panel-padding);
+    font-size: var(--mx-datagrid-filter-panel-font-size);
+    color: var(--mx-datagrid-filter-panel-color);
+    background-color: var(--mx-datagrid-filter-panel-background);
+    border-block-start: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
+  }
+
+  .mx-data-grid__filter-panel[hidden] {
+    display: none;
+  }
+
+  .mx-data-grid__filter-icon {
+    display: inline-flex;
+    flex: none;
+    inline-size: var(--mx-datagrid-filter-icon-size);
+    block-size: var(--mx-datagrid-filter-icon-size);
+  }
+
+  .mx-data-grid__filter-icon > svg {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .mx-data-grid__filter-text {
+    flex: 0 1 auto;
+    min-inline-size: 0;
+    padding: var(--mx-datagrid-filter-text-padding);
+    font: inherit;
+    color: var(--mx-datagrid-filter-text-color);
+    text-align: start;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    border-radius: var(--mx-datagrid-filter-text-radius);
+  }
+
+  .mx-data-grid__filter-text:hover {
+    text-decoration-line: underline;
+    text-decoration-thickness: var(--mx-datagrid-filter-text-underline-width);
+    text-underline-offset: var(--mx-datagrid-filter-text-underline-offset);
+  }
+
+  .mx-data-grid__filter-text:focus-visible {
+    outline: var(--mx-datagrid-filter-text-focus-width) solid var(--mx-datagrid-filter-text-focus-color);
+    outline-offset: var(--mx-datagrid-filter-text-focus-offset);
+    box-shadow: var(--mx-datagrid-filter-text-focus-halo);
+  }
+
+  /* The filter value turned off: its text stays, struck through. */
+  .mx-data-grid__filter-panel[data-off] .mx-data-grid__filter-text:not([data-empty]) {
+    color: var(--mx-datagrid-filter-text-off-color);
+    text-decoration-line: line-through;
+  }
+
+  .mx-data-grid__filter-clear {
+    margin-inline-start: auto;
+  }
+
+  .mx-data-grid__filter-builder-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--mx-datagrid-filter-builder-buttons-gap);
+  }
+
   /* The bar: the row count, the selected count, errors, the pager. */
   .mx-data-grid__bar {
     display: flex;

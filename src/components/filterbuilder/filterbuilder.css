@@ -1,0 +1,55 @@
+@layer mx.components {
+  .mx-filter-builder {
+    color: var(--mx-filterbuilder-fg);
+    font-size: var(--mx-filterbuilder-font-size);
+  }
+
+  .mx-filter-builder__tree {
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--mx-filterbuilder-row-gap);
+  }
+
+  /* Rows sit flat (the tree is in aria-level); each level moves in, with a line for every group it is in. */
+  .mx-filter-builder__row {
+    --_half: calc(var(--mx-filterbuilder-indent) / 2);
+    --_lines: repeating-linear-gradient(
+      var(--_towards, to right),
+      transparent 0 var(--_half),
+      var(--mx-filterbuilder-line-color) var(--_half) calc(var(--_half) + var(--mx-filterbuilder-line-width)),
+      transparent calc(var(--_half) + var(--mx-filterbuilder-line-width)) var(--mx-filterbuilder-indent)
+    );
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--mx-filterbuilder-gap);
+    padding-inline-start: calc(var(--_level, 0) * var(--mx-filterbuilder-indent));
+    background-image: var(--_lines);
+    background-position: left top;
+    background-repeat: no-repeat;
+    background-size: calc(var(--_level, 0) * var(--mx-filterbuilder-indent)) 100%;
+  }
+
+  .mx-filter-builder__row:dir(rtl) {
+    --_towards: to left;
+
+    background-position: right top;
+  }
+
+  .mx-filter-builder__cell {
+    display: flex;
+    align-items: center;
+  }
+
+  .mx-filter-builder__editor {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--mx-filterbuilder-gap);
+  }
+
+  .mx-filter-builder__editor > * {
+    min-inline-size: var(--mx-filterbuilder-editor-width);
+  }
+}

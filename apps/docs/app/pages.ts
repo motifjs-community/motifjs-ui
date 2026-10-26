@@ -77,6 +77,7 @@ export const GROUPS = [
       { id: 'treeview', label: 'TreeView', title: 'TreeView', path: '/treeview', related: ['dropdown', 'checkbox'] },
       { id: 'listbox', label: 'ListBox', title: 'ListBox', path: '/listbox', related: ['tagbox', 'combobox'] },
       { id: 'tagbox', label: 'TagBox', title: 'TagBox', path: '/tagbox', related: ['listbox', 'combobox'] },
+      { id: 'filterbuilder', label: 'FilterBuilder', title: 'FilterBuilder', path: '/filterbuilder', related: ['datagrid-filtering', 'tagbox', 'treeview'] },
     ],
   },
   {
