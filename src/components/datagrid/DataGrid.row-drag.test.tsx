@@ -7,7 +7,7 @@ import type { GridColumn } from './grid-column';
 import type { GridRowDragEventArgs } from './grid-row-drag-event-args';
 import type { GridRowDropEventArgs } from './grid-row-drop-event-args';
 import { rowDropPlace } from './view/row-drop-place';
-import { scrollStep } from './view/scroll-step';
+import { scrollStep } from '../../parts/drag/scroll-step';
 
 type Row = { id: number; name: string };
 

@@ -33,6 +33,8 @@ export interface TabDocumentOptions {
   contentLifetime?: Bind<ContentLifetime | undefined>;
   /** This document's own setting; left out, the manager's `allowDuplicate`. */
   allowDuplicate?: Bind<boolean | undefined>;
+  /** This document's own setting; left out, the manager's `allowDrag`. */
+  allowDrag?: Bind<boolean | undefined>;
   /** Buttons for the group's toolbar while this document is the active one. */
   actions?: Bind<readonly ToolbarItem[]>;
   content?: TabDocumentContent;

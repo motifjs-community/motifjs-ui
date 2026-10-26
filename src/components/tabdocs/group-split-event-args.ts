@@ -4,7 +4,8 @@ import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 
 export interface GroupSplitEventArgs {
-  group: TabGroup;
+  /** The group split; `null` when the new group went along an edge of the whole layout. */
+  group: TabGroup | null;
   newGroup: TabGroup;
   direction: SplitDirection;
   document: TabDocument | null;

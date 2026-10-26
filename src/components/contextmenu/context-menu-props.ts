@@ -16,7 +16,7 @@ export interface ContextMenuProps extends ControlProps {
   target?: Bind<ContextMenuTarget | null | undefined>;
   /** The Menu key and Shift+F10 open the menu at the focused element. Default `true`. */
   keyboard?: Bind<boolean>;
-  /** Scrolling the page closes the menu. Default `true`. */
+  /** Scrolling that takes the element the menu opened on out of sight closes the menu (until then it goes along). Default `true`. */
   closeOnScroll?: Bind<boolean>;
   /** Pointing at an item opens its submenu. Default `true`. */
   openOnHover?: Bind<boolean>;

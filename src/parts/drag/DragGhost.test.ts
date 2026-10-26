@@ -19,8 +19,8 @@ describe('DragGhost', () => {
   };
 
   it('shows a copy of the header next to the pointer, follows it with what a drop would do, and goes away', () => {
-    const ghost = new DragGhost(() => root, () => true);
-    ghost.show(header(), 100, 50);
+    const ghost = new DragGhost(() => root, () => true, 'mx-data-grid__ghost');
+    ghost.show(header(), 100, 50, 'header');
     const el = root.querySelector<HTMLElement>('.mx-data-grid__ghost')!;
     const copy = el.querySelector<HTMLElement>('.mx-data-grid__header-cell')!;
     expect(el.dataset.kind).toBe('header');
@@ -39,12 +39,12 @@ describe('DragGhost', () => {
 
   it('shows nothing while it is turned off', () => {
     let on = false;
-    const ghost = new DragGhost(() => root, () => on);
-    ghost.show(header(), 0, 0);
+    const ghost = new DragGhost(() => root, () => on, 'mx-data-grid__ghost');
+    ghost.show(header(), 0, 0, 'header');
     ghost.move(10, 10, 'move');
     expect(root.querySelector('.mx-data-grid__ghost')).toBeNull();
     on = true;
-    ghost.show(header(), 0, 0);
+    ghost.show(header(), 0, 0, 'header');
     expect(root.querySelector('.mx-data-grid__ghost')).not.toBeNull();
   });
 });

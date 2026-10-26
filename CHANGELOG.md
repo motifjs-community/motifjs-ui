@@ -864,3 +864,57 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Docs: two more pages, Tabs (preview, pinned tabs, sizes, badges and tones, copies) and Menus and
   keys (context menus, the list, toolbar buttons, recently used, locked groups, the key table);
   `e2e/checks/46-tabdocs-tabs.mjs`; 45 presses the browser keys.
+- Milestone 3, drag and drop. A tab is dragged along its strip (across the border between pinned and
+  other tabs it is pinned or unpinned, `pinOnDrag`), onto another strip at the place under the pointer
+  or at its end, into a group (the middle of its content), beside a group (an edge of its content: a
+  split that way, `dropEdgeSize`), or along an edge of the whole layout (`layoutEdgeDrop`,
+  `layoutEdgeSize`, `split(null, side, doc)`). The last tab out closes its group (`closeEmptyGroups`).
+  Ctrl (Option on Apple platforms, `copyModifier`) opens a copy when the document may be open twice.
+  A whole group is dragged by the empty part of its bar or by a handle at the start of its toolbar
+  (`groupDragHandle`; a click on it starts "Move group to…"): beside another group, along an edge of
+  the layout, or into another group, whose documents it joins (`moveGroup(group, target, side)`,
+  `onLayoutChanging` / `onLayoutChanged` with `'move'`).
+- What a drag shows: a copy of the tab under the pointer (`dragGhost`), a mark between tabs, a
+  translucent area over the half or the whole of the group a drop would take that glides between
+  places (the motion tokens, so reduced motion makes it jump), the cursor (`data-dragging`: `move`,
+  `copy`, `none`), the dragged tab or group dimmed. A strip scrolls near its ends (`dragAutoScroll`);
+  resting on a tab of another group activates it (`dragHoverActivate`, `dragHoverDelay`). Escape
+  cancels and puts back what hovering activated and what the strips scrolled.
+- Touch and pen: a long press starts the drag (`longPressDelay`), so a swipe still scrolls the strip;
+  held still and let go, it opens the tab's menu. `dragThreshold` for the mouse.
+- Settings: `allowDrag` on the manager and per document, `allowDragGroups`, `dropSides` on the
+  manager and per group, `allowDrop` per group (both saved with the layout).
+- Events: `onDragStarting` (cancelable), `onDragOver` (change the place, or cancel to refuse it; outside
+  every manager it comes with `target: 'outside'`, refused), `onDropping` (cancelable, the place may
+  change), `onDropped`, `onDragEnded`; each with the document (or `null` for a group), the group it
+  comes from, the target, manager, group, index and side, `copy` and `byKeyboard`. `onMoving` /
+  `onMoved`, `onSplitting` / `onSplit`, `onOpening` / `onOpened`, `onPinning` / `onPinned` still fire
+  for what a drop does. `onSplitting`'s `group` is `null` for a split of the whole layout. `dragging`
+  (reactive) says what is being dragged; `cancelDrag()`.
+- Between managers: managers with the same `dragGroup` take each other's tabs and groups; the tab, its
+  panel and its content move over (the other manager asks through its `onOpening`, after `onMoving`
+  here) and follow that manager's settings from then on.
+- Drop targets are a list the manager asks (`dropTargets`, `addDropTarget(target)`: `placeAt`, `marks`,
+  `drop`); the built-in one covers the strips, the groups and the layout's edges, so the dock guides
+  and floating windows of milestone 4 can be added as targets.
+- Keys: the active tab a place along its strip (`moveTabLeft`, `moveTabRight`: Alt + Shift + Page Up /
+  Down in a browser tab, Ctrl + Shift + Page Up / Down installed; `moveInGroup(doc, by)`), to the next
+  or previous group (`moveToNextGroup`, `moveToPreviousGroup`: Ctrl + Alt + Right / Left), to the group
+  on a side or a new one there (`moveToGroupLeft`, `…Right`, `…Up`, `…Down`: Ctrl + K, Shift + an
+  arrow; `moveToGroup(doc, 'left' | 'right' | 'up' | 'down')`). "Move to…" (`moveTo`, Ctrl + K M; the
+  tab's and the strip's menus, `moveTo` and `moveGroupTo` commands; `showMoveTo(doc | group)`): the
+  arrows pick a side of a group, again that way the next group or the layout's edge, Tab the next
+  group, Enter moves, Escape cancels (`targetLeft` … `targetCancel`), with the same areas shown and
+  each place announced. Moved, copied, split and canceled are announced; new `tabDocs…` texts (en, tr).
+- Narrow groups: the strip keeps at least one tab's room (`tabMinWidth`) and the group's toolbar folds
+  its buttons into its "…" menu first (the kit Toolbar's `overflow: 'menu'`). The sizes the props give
+  (`--_min-width`, `--_tab-min`, …) are written on each group, not on the root, whose inline style the
+  app may replace (`style.cssText` dropped them, and the groups' smallest sizes with them).
+- Kit: `ContextMenu` no longer closes on any scroll. It goes along with the element it opened on and
+  closes once that element is out of sight (off the screen, or out of the box that scrolls it); the
+  late scroll a press makes when it moves focus kept closing the menu of a tab. `closeOnScroll: false`
+  keeps it open even then. `DragGhost` and `scrollStep` moved from the DataGrid to `src/parts/drag/`
+  (exported) and the DataGrid uses them from there; a copy is now `inert`. `isChord(chords, e)` in
+  `core/keyboard.ts`, for keys a component reads itself. Glyph `gripMark`.
+- Docs: a Drag and drop page (dragging, settings, two managers side by side, the keys, changing a
+  drop, the API); `e2e/checks/47-tabdocs-drag.mjs`; 46 chooses menu items with real clicks again.

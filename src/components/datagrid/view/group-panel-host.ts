@@ -1,4 +1,4 @@
-import type { DragGhost } from './DragGhost';
+import type { DragGhost } from '../../../parts/drag/DragGhost';
 
 /** What the group panel asks the grid: the headers it drops chips on, and where focus goes. */
 export interface GroupPanelHost {

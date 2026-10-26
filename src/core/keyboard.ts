@@ -160,6 +160,21 @@ export function addShortcut(chord: string, handler: ShortcutHandler, options: Sh
   return () => void registrations.delete(reg);
 }
 
+/**
+ * Whether a key event is one of the chords (`'Shift+Tab'`, `'Ctrl+Alt+ArrowLeft'`), as a shortcut
+ * would match it. For keys a component reads itself while a mode of its own is on.
+ */
+export function isChord(chords: readonly string[], e: KeyboardEvent): boolean {
+  for (const text of chords) {
+    try {
+      if (matches(parseChord(text), e)) return true;
+    } catch {
+      // A chord without a key matches nothing.
+    }
+  }
+  return false;
+}
+
 /** @internal Installs the document listener (once). Access keys call it when they first appear. */
 export function installKeyboard(): void {
   if (installed || typeof document === 'undefined') return;

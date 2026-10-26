@@ -82,5 +82,5 @@ export default async function ({ page, base, check, axeSource, box }) {
     return { bar: el.getBoundingClientRect().width, track: el.parentElement.getBoundingClientRect().width, part: after.width };
   });
   check('reduced motion: the unknown bar rests as a tinted track', calm.bar === calm.track && calm.part === '0px', JSON.stringify(calm));
-  await page.emulateMedia({ reducedMotion: null });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
 }

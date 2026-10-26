@@ -28,6 +28,12 @@ import type { TabKeyPreset } from './tab-key-preset';
 import type { TabListScope } from './tab-list-scope';
 import type { TabMenuCommand } from './tab-menu-command';
 import type { TabContextMenuEventArgs } from './tab-context-menu-event-args';
+import type { TabCopyModifier } from './tab-copy-modifier';
+import type { TabDragEndedEventArgs } from './tab-drag-ended-event-args';
+import type { TabDragStartingEventArgs } from './tab-drag-starting-event-args';
+import type { TabDropEventArgs } from './tab-drop-event-args';
+import type { TabDropSide } from './tab-drop-side';
+import type { TabDroppedEventArgs } from './tab-dropped-event-args';
 import type { TabNewDocument } from './tab-new-document';
 import type { TabOpenPosition } from './tab-open-position';
 import type { TabShowDescription } from './tab-show-description';
@@ -106,6 +112,38 @@ export interface TabDocumentManagerProps extends ControlProps {
   allowDuplicate?: Bind<boolean>;
   /** Splitting with a document copies it into the new group when it may be open twice; otherwise it moves. Default `true`. */
   splitCopies?: Bind<boolean>;
+  /** Tabs can be dragged (a document's own `allowDrag` wins). Default `true`. */
+  allowDrag?: Bind<boolean>;
+  /** Whole groups can be dragged by the empty part of their bar. Default `true`. */
+  allowDragGroups?: Bind<boolean>;
+  /** A handle at the start of each group's toolbar to drag the group by, also when its tabs fill the bar; a click on it starts "Move group to…". Default `false`. */
+  groupDragHandle?: Bind<boolean>;
+  /** Where a drop on a group's content may go: into it (`center`) or beside it; a group's own `dropSides` wins. Default all five. */
+  dropSides?: Bind<readonly TabDropSide[]>;
+  /** How deep the edge zones of a group's content are: pixels, or a share such as `'25%'`. Default `'33%'`. */
+  dropEdgeSize?: Bind<number | string>;
+  /** A drop at an edge of the whole layout opens a new group along that edge. Default `true`. */
+  layoutEdgeDrop?: Bind<boolean>;
+  /** How deep the band along the layout's edges is, in pixels. Default 16. */
+  layoutEdgeSize?: Bind<number>;
+  /** How far the pointer moves, in pixels, before a press becomes a drag. Default 5. */
+  dragThreshold?: Bind<number>;
+  /** How long a finger or a pen rests on a tab, in milliseconds, before it drags it (a swipe before that scrolls the strip). Default 500. */
+  longPressDelay?: Bind<number>;
+  /** Resting on a tab of another group while dragging activates it. Default `true`. */
+  dragHoverActivate?: Bind<boolean>;
+  /** How long, in milliseconds. Default 750. */
+  dragHoverDelay?: Bind<number>;
+  /** A tab dropped among the pinned ones is pinned, and one dropped among the others unpinned; `false` keeps each on its side. Default `true`. */
+  pinOnDrag?: Bind<boolean>;
+  /** The key held while dropping that opens a copy (when the document may be open twice). Default `'auto'`: Ctrl, Option on Apple platforms. */
+  copyModifier?: Bind<TabCopyModifier>;
+  /** Managers with the same name take each other's documents and groups by drag. Default `null`: only this one. */
+  dragGroup?: Bind<string | null>;
+  /** A copy of the tab follows the pointer. Default `true`. */
+  dragGhost?: Bind<boolean>;
+  /** A strip scrolls while a drag is near its ends. Default `true`. */
+  dragAutoScroll?: Bind<boolean>;
   /** Which keys the manager starts with. Default `'auto'`. */
   keyPreset?: Bind<TabKeyPreset>;
   /** Changes some keys; the rest keep the preset's. */
@@ -139,4 +177,9 @@ export interface TabDocumentManagerProps extends ControlProps {
   onUnlocking?: (e: GroupLockingEventArgs) => void;
   onUnlocked?: (e: GroupLockedEventArgs) => void;
   onContextMenuOpening?: (e: TabContextMenuEventArgs) => void;
+  onDragStarting?: (e: TabDragStartingEventArgs) => void;
+  onDragOver?: (e: TabDropEventArgs) => void;
+  onDropping?: (e: TabDropEventArgs) => void;
+  onDropped?: (e: TabDroppedEventArgs) => void;
+  onDragEnded?: (e: TabDragEndedEventArgs) => void;
 }

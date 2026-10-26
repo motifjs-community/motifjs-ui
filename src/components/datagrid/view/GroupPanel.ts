@@ -218,7 +218,7 @@ export class GroupPanel<T> {
         if (Math.max(Math.abs(ev.clientX - startX), Math.abs(ev.clientY - startY)) < model.settings.get('dragThreshold')) return;
         dragging = true;
         chip.toggleAttribute('data-dragging', true);
-        this.host.ghost.show(chip, ev.clientX, ev.clientY);
+        this.host.ghost.show(chip, ev.clientX, ev.clientY, 'chip');
       }
       place = this.dropIndexAt(ev.clientX, ev.clientY);
       this.showDrop(place);

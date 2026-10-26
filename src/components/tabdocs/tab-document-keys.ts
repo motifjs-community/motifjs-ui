@@ -35,6 +35,28 @@ export interface TabDocumentKeys {
   stripLast: string[];
   /** On a tab: closes it. */
   closeFocusedTab: string[];
+  /** Moves the active tab a place to the start or the end of its strip (not past the pinned or the other tabs). */
+  moveTabLeft: string[];
+  moveTabRight: string[];
+  /** Moves the active document to the next or previous group (a new one when there is none). */
+  moveToNextGroup: string[];
+  moveToPreviousGroup: string[];
+  /** Moves the active document to the group on that side, or into a new group there. */
+  moveToGroupLeft: string[];
+  moveToGroupRight: string[];
+  moveToGroupUp: string[];
+  moveToGroupDown: string[];
+  /** Starts "Move to…" for the active document. */
+  moveTo: string[];
+  /** In "Move to…": a side of the group, or the next group that way; the next and previous group; move there; leave it. */
+  targetLeft: string[];
+  targetRight: string[];
+  targetUp: string[];
+  targetDown: string[];
+  targetNextGroup: string[];
+  targetPreviousGroup: string[];
+  targetDrop: string[];
+  targetCancel: string[];
   /** On a splitter: makes the group before it smaller or larger, as small or as large as it can be. */
   resizeSmaller: string[];
   resizeLarger: string[];

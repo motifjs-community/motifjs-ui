@@ -303,7 +303,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
         dragging = true;
         source.toggleAttribute('data-dragging', true);
         panel?.showReady(true);
-        ghost.show(source, ev.clientX, ev.clientY);
+        ghost.show(source, ev.clientX, ev.clientY, 'header');
       }
       ghost.move(ev.clientX, ev.clientY, aim(ev));
     };

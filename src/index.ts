@@ -77,6 +77,8 @@ export type { PopupPlacement } from './parts/popup/popup-placement';
 export { MenuList } from './parts/menu/MenuList';
 export type { MenuItem } from './parts/menu/menu-item';
 export type { MenuItemClickEventArgs } from './parts/menu/menu-item-click-event-args';
+export { DragGhost } from './parts/drag/DragGhost';
+export { scrollStep } from './parts/drag/scroll-step';
 export { Control, type ControlProps } from './core/control';
 export { FocusContainer } from './core/container';
 export { addShortcut, type ShortcutHandler, type ShortcutOptions } from './core/keyboard';

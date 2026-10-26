@@ -26,6 +26,8 @@ interface Parts {
   attached: Element | null;
   /** When a key last opened the menu: the `contextmenu` event the same key may send is not a second opening. */
   keyOpenedAt: number;
+  /** The element the menu opened on, and where the anchor sits from its corner: the menu goes along when it scrolls. */
+  follow: { element: Element; x: number; y: number } | null;
   /** Listens on the target and, while open, on the window. */
   listener: (e: Event) => void;
   opening: Emitter<ContextMenuOpeningEventArgs>;
@@ -39,8 +41,9 @@ const PARTS = Symbol('mx.contextmenu');
  * A menu that opens on an element's right-click (or long press), at the pointer, and from the
  * keyboard with the Menu key or Shift+F10, at the focused element. `onOpening` builds the items
  * for the element it opened on (a row of a list) or cancels. It closes on Escape, a press outside
- * it, focus leaving it, and scrolling. The items are `MenuItem`s: submenus, check and radio items,
- * shortcuts.
+ * it and focus leaving it; when the page scrolls it goes along with the element it opened on, and
+ * closes once that element is out of sight. The items are `MenuItem`s: submenus, check and radio
+ * items, shortcuts.
  *
  * @example
  * <ContextMenu target={() => this.list} items={[{ text: '&Copy', click: () => this.copy() }]} />
@@ -193,6 +196,7 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
       stopTarget: null,
       attached: null,
       keyOpenedAt: -Infinity,
+      follow: null,
       listener: (e) => this.handle(e),
       opening: new Emitter(),
       itemClick: new Emitter(),
@@ -231,6 +235,7 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     if (e.type === 'contextmenu') this.onContextMenu(e as MouseEvent);
     else if (e.type === 'keydown') this.onKeyDown(e as KeyboardEvent);
     else if (e.type === 'scroll') this.onScroll(e);
+    else if (e.type === 'scrollend') this.closeOutOfSight();
     else this.close();
   }
 
@@ -280,6 +285,8 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     list.setItems(args.items);
     parts.anchor.style.left = `${point.x}px`;
     parts.anchor.style.top = `${point.y}px`;
+    const box = target.getBoundingClientRect();
+    parts.follow = { element: target, x: point.x - box.left, y: point.y - box.top };
     popup.open(parts.anchor, { toggle: parts.anchor, returnFocus: returnFocus ?? undefined });
     this.setProperty('targetElement', target);
     this.setProperty('opened', true);
@@ -328,22 +335,59 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   private startClosing(): void {
     const listener = this.parts.listener;
     window.addEventListener('scroll', listener, true);
+    window.addEventListener('scrollend', listener, true);
     window.addEventListener('resize', listener);
     window.addEventListener('blur', listener);
   }
 
   private stopClosing(): void {
     const listener = this.parts.listener;
+    this.parts.follow = null;
     window.removeEventListener('scroll', listener, true);
+    window.removeEventListener('scrollend', listener, true);
     window.removeEventListener('resize', listener);
     window.removeEventListener('blur', listener);
   }
 
+  /**
+   * A press that moves focus can make the browser scroll a moment later, and the reader may scroll
+   * too: the menu goes along with the element it opened on, and closes only once it is out of sight.
+   */
   private onScroll(e: Event): void {
-    const popup = this.parts.popup;
-    if (this.peekProperty('closeOnScroll') === false || (e.target instanceof Node && popup?.element.contains(e.target))) return;
-    this.close();
+    const parts = this.parts;
+    const follow = parts.follow;
+    const scrolled = e.target;
+    if (!follow || (scrolled instanceof Node && parts.popup?.element.contains(scrolled))) return;
+    if (scrolled instanceof Element && !scrolled.contains(follow.element)) return;
+    const box = follow.element.getBoundingClientRect();
+    parts.anchor.style.left = `${box.left + follow.x}px`;
+    parts.anchor.style.top = `${box.top + follow.y}px`;
+    if (!('onscrollend' in window)) this.closeOutOfSight();
   }
+
+  private closeOutOfSight(): void {
+    const follow = this.parts.follow;
+    if (!follow || this.peekProperty('closeOnScroll') === false) return;
+    if (!follow.element.isConnected || !inSight(follow.element)) this.close();
+  }
+}
+
+/** Whether some of the element is on the screen and inside every box around it that clips it. */
+function inSight(element: Element): boolean {
+  const box = element.getBoundingClientRect();
+  let left = Math.max(box.left, 0);
+  let top = Math.max(box.top, 0);
+  let right = Math.min(box.right, window.innerWidth);
+  let bottom = Math.min(box.bottom, window.innerHeight);
+  for (let el = element.parentElement; el && el !== document.body && el !== document.documentElement; el = el.parentElement) {
+    if (!/auto|scroll|hidden|clip/.test(getComputedStyle(el).overflow)) continue;
+    const clip = el.getBoundingClientRect();
+    left = Math.max(left, clip.left);
+    top = Math.max(top, clip.top);
+    right = Math.min(right, clip.right);
+    bottom = Math.min(bottom, clip.bottom);
+  }
+  return right > left && bottom > top;
 }
 
 /** Where a menu opened at an element starts: its start corner, below it (inside the viewport). */

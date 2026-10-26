@@ -15,6 +15,8 @@ export default async function ({ page, base, check, axeSource }) {
   // A click on the arrow: the details open under the row, across the grid, with the customer's own orders.
   await rowOf(master, 1).locator('.mx-data-grid__expand-button').click();
   await page.waitForSelector(`${detailRows(master)} .dg-orders .mx-data-grid__body > .mx-data-grid__row:not([hidden])`);
+  // The count is written once the load ends, which can be a moment after the rows show.
+  await page.waitForFunction((d) => document.querySelector(`${d} .dg-orders .mx-data-grid__count`)?.textContent, detailRows(master), { timeout: 3000 }).catch(() => {});
   const opened = await page.evaluate(
     ([g, d]) => {
       const detail = document.querySelector(d);

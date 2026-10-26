@@ -6,7 +6,7 @@ import type { GridModel } from '../model/GridModel';
 import type { GridBody } from './GridBody';
 import type { RowDragHost } from './row-drag-host';
 import { rowDropPlace } from './row-drop-place';
-import { scrollStep } from './scroll-step';
+import { scrollStep } from '../../../parts/drag/scroll-step';
 
 /** Every grid that drags rows, so a drag finds the grids of its group under the pointer. */
 const DRAGGERS = new Set<RowDrag<any>>();

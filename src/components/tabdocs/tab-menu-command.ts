@@ -15,6 +15,8 @@ export type TabMenuCommand =
   | 'splitRight'
   | 'moveNext'
   | 'movePrevious'
+  | 'moveTo'
+  | 'moveGroupTo'
   | 'copyTitle'
   | 'newDocument'
   | 'reopenClosed'

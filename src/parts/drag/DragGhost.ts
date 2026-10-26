@@ -1,5 +1,3 @@
-import type { GhostTarget } from './ghost-target';
-
 // Below and after the pointer, so it never covers what is under it.
 const OFFSET = 14;
 
@@ -7,19 +5,20 @@ const OFFSET = 14;
 interface Follow {
   /** Where its top left corner sits from the pointer. */
   offset: { x: number; y: number };
-  /** The axis it may move along (`dragDirection`). */
+  /** The axis it may move along. */
   direction: 'both' | 'vertical' | 'horizontal';
-  /** Kept inside this box (`boundary`). */
+  /** Kept inside this box. */
   bounds: DOMRect | null;
   /** Where it started, for the axis it may not move along. */
   start: { left: number; top: number };
 }
 
 /**
- * The picture of a dragged header, chip or row: a copy of it, as wide as it is, next to the pointer
- * while it moves, marked with what a drop would do there. It lives inside the grid (or the element
- * a row drag names), so it shows above a modal window the grid sits in; its place is measured from
- * where it starts, so a moved or scaled window around the grid does not throw it off.
+ * The picture of something dragged (a header, a chip, a row, a tab): a copy of it next to the
+ * pointer while it moves, marked with what a drop would do there (`data-target`). It lives inside
+ * the element `root` gives, so it shows above a modal window that element sits in; its place is
+ * measured from where it starts, so a moved or scaled window around it does not throw it off. The
+ * component styles it through `className` and `data-kind`.
  */
 export class DragGhost {
   private el: HTMLDivElement | null = null;
@@ -29,17 +28,23 @@ export class DragGhost {
   constructor(
     private readonly root: () => HTMLElement,
     private readonly enabled: () => boolean,
+    private readonly className: string,
   ) {}
 
-  /** Starts showing a copy of `source` (a header cell or a chip) under the pointer. */
-  show(source: HTMLElement, x: number, y: number): void {
-    this.open(this.copyOf(source), source.classList.contains('mx-data-grid__chip') ? 'chip' : 'header', this.root());
+  /** Whether a copy is shown. */
+  get shown(): boolean {
+    return !!this.el;
+  }
+
+  /** Starts showing a copy of `source`, as wide and as tall as it is, after the pointer. */
+  show(source: HTMLElement, x: number, y: number, kind: string): void {
+    this.open(this.copyOf(source), kind, this.root());
     this.move(x, y, 'none');
   }
 
   /**
-   * Starts showing `content` (a copy of a row, or a drag template) with its top left corner at
-   * `offset` from the pointer, in `root`; it moves along `direction` only and stays in `bounds`.
+   * Starts showing `content` (a copy, or a drag template) with its top left corner at `offset`
+   * from the pointer, in `root`; it moves along `direction` only and stays in `bounds`.
    */
   showAt(content: Node, kind: string, x: number, y: number, options: { offset: { x: number; y: number }; root?: HTMLElement | null; direction?: Follow['direction']; bounds?: DOMRect | null }): void {
     this.open(content, kind, options.root ?? this.root());
@@ -49,7 +54,7 @@ export class DragGhost {
   }
 
   /** Follows the pointer; `target` says what dropping here would do. */
-  move(x: number, y: number, target: GhostTarget): void {
+  move(x: number, y: number, target: string): void {
     const el = this.el;
     if (!el) return;
     let left = x + OFFSET;
@@ -92,10 +97,12 @@ export class DragGhost {
   private open(content: Node, kind: string, root: HTMLElement) {
     this.hide();
     if (!this.enabled()) return;
-    const el = document.createElement('div');
-    el.className = 'mx-data-grid__ghost';
+    const el = root.ownerDocument.createElement('div');
+    el.className = this.className;
     el.dataset.kind = kind;
     el.setAttribute('aria-hidden', 'true');
+    // A copy of a button is still a button: nothing in it takes focus.
+    el.inert = true;
     el.append(content);
     root.append(el);
     const r = el.getBoundingClientRect();

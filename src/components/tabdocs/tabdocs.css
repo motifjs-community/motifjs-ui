@@ -1,10 +1,10 @@
 /* TabDocumentManager. Splits are flex boxes whose children grow by their share (written inline);
    a group's own size never comes from its content (`contain: size`), so the shares and the
-   smallest sizes (`--_min-width`, `--_min-height`, written from the props) decide. The look binds
+   smallest sizes (`--_min-width`, `--_min-height`, written on each group from the props) decide. The look binds
    to the group's data-active / data-empty and the tab's aria-selected, data-dirty, data-close,
    data-pinned, data-preview, data-tone. How tabs are sized and laid out comes from the root's
    data-tab-size, data-pinned-size, data-pinned-row, data-wrap and the widths `--_tab-min`,
-   `--_tab-max`, `--_tab-fixed` (written from the props). */
+   `--_tab-max`, `--_tab-fixed` (written on each group from the props). */
 @layer mx.components {
   .mx-tabdocs {
     position: relative;
@@ -57,11 +57,13 @@
     border-block-end: var(--mx-tabdocs-bar-border-width) solid var(--mx-tabdocs-bar-border-color);
   }
 
-  /* The tab list between its scroll buttons: pinned tabs first, then the others, which scroll. */
+  /* The tab list between its scroll buttons: pinned tabs first, then the others, which scroll. It
+     takes the room the toolbar leaves, never less than one tab: a narrow group folds the toolbar's
+     buttons into its "…" menu first. */
   .mx-tabdocs__strip {
     display: flex;
-    flex: 1 1 auto;
-    min-inline-size: 0;
+    flex: 1 1 0px;
+    min-inline-size: var(--_tab-min);
   }
 
   .mx-tabdocs__tabs {
@@ -159,7 +161,8 @@
   }
 
   .mx-tabdocs__bar > .mx-tabdocs__actions {
-    flex: none;
+    flex: 0 1 auto;
+    min-inline-size: 0;
     align-self: flex-start;
     block-size: var(--mx-tabdocs-tab-height);
     min-block-size: 0;
@@ -550,6 +553,108 @@
     cursor: default;
   }
 
+  /* Drag and drop: the tab or group dragged, the copy under the pointer, the area a drop would take
+     (it glides from place to place), the mark between two tabs. The root's data-dragging says what
+     a drop would do now: move, copy, or none. */
+  .mx-tabdocs[data-dragging] {
+    user-select: none;
+    --_z-drop: 3;
+  }
+
+  :is(.mx-tabdocs[data-dragging='move'], .mx-tabdocs[data-dragging='move'] *) {
+    cursor: grabbing;
+  }
+
+  :is(.mx-tabdocs[data-dragging='copy'], .mx-tabdocs[data-dragging='copy'] *) {
+    cursor: copy;
+  }
+
+  :is(.mx-tabdocs[data-dragging='none'], .mx-tabdocs[data-dragging='none'] *) {
+    cursor: no-drop;
+  }
+
+  .mx-tabdocs__tab[data-dragging],
+  .mx-tabdocs__group[data-dragging] > .mx-tabdocs__bar {
+    opacity: var(--mx-tabdocs-drag-source-opacity);
+  }
+
+  .mx-tabdocs__tab {
+    -webkit-touch-callout: none;
+  }
+
+  .mx-tabdocs__grip {
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .mx-tabdocs__ghost {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: var(--mx-z-overlay);
+    display: flex;
+    max-inline-size: var(--mx-tabdocs-ghost-max-width);
+    overflow: hidden;
+    pointer-events: none;
+    color: var(--mx-tabdocs-tab-fg-active);
+    background: var(--mx-tabdocs-ghost-bg);
+    border: var(--mx-tabdocs-ghost-border-width) solid var(--mx-tabdocs-ghost-border-color);
+    border-radius: var(--mx-tabdocs-ghost-radius);
+    box-shadow: var(--mx-tabdocs-ghost-shadow);
+  }
+
+  .mx-tabdocs__ghost > * {
+    flex: none;
+    max-inline-size: none;
+  }
+
+  .mx-tabdocs__ghost[data-target='copy'] {
+    outline: var(--mx-tabdocs-ghost-copy-width) solid var(--mx-tabdocs-ghost-copy-color);
+  }
+
+  .mx-tabdocs__ghost[data-target='none'] {
+    opacity: var(--mx-tabdocs-ghost-refused-opacity);
+  }
+
+  /* The frame at full strength, the fill under it translucent. */
+  .mx-tabdocs__drop {
+    position: absolute;
+    z-index: var(--_z-drop);
+    box-sizing: border-box;
+    pointer-events: none;
+    border: var(--mx-tabdocs-drop-area-border-width) solid var(--mx-tabdocs-drop-area-border-color);
+    border-radius: var(--mx-tabdocs-drop-area-radius);
+    transition-property: left, top, width, height;
+    transition-duration: var(--mx-motion-duration-fast);
+    transition-timing-function: var(--mx-motion-easing-standard);
+  }
+
+  .mx-tabdocs__drop::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--mx-tabdocs-drop-area-bg);
+    opacity: var(--mx-tabdocs-drop-area-opacity);
+  }
+
+  .mx-tabdocs__insert {
+    position: absolute;
+    z-index: var(--_z-drop);
+    inline-size: var(--mx-tabdocs-drop-mark-width);
+    pointer-events: none;
+    background: var(--mx-tabdocs-drop-mark-color);
+    translate: -50% 0;
+  }
+
+  .mx-tabdocs__drop[data-instant] {
+    transition: none;
+  }
+
+  :is(.mx-tabdocs__drop, .mx-tabdocs__insert)[hidden] {
+    display: none;
+  }
+
   /* Read by screen readers only. */
   .mx-tabdocs__live,
   .mx-tabdocs__hidden {
@@ -603,6 +708,26 @@
 
     .mx-tabdocs__sash::before {
       background: CanvasText;
+    }
+
+    .mx-tabdocs__drop {
+      border-color: Highlight;
+    }
+
+    .mx-tabdocs__drop::before {
+      background: Highlight;
+    }
+
+    .mx-tabdocs__insert {
+      background: Highlight;
+    }
+
+    .mx-tabdocs__ghost {
+      border-color: CanvasText;
+    }
+
+    .mx-tabdocs__ghost[data-target='copy'] {
+      outline-color: Highlight;
     }
   }
 }

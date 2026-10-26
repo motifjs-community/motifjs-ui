@@ -1,0 +1,14 @@
+import type { TabDocument } from './TabDocument';
+import type { TabDocumentManager } from './TabDocumentManager';
+import type { TabDropPlace } from './tab-drop-place';
+import type { TabGroup } from './TabGroup';
+
+/** A drop was made: `group` is where the document (or the group's documents) ended up. */
+export interface TabDroppedEventArgs extends TabDropPlace {
+  /** The document dropped (the copy, when one was opened); `null` for a group. */
+  document: TabDocument | null;
+  from: TabGroup;
+  copy: boolean;
+  byKeyboard: boolean;
+  source: TabDocumentManager;
+}

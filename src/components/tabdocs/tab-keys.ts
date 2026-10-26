@@ -1,9 +1,32 @@
 import type { TabDocumentKeys } from './tab-document-keys';
 
-/** The keys of the strip and the splitters, the same everywhere. */
+/** The keys of the strip, the splitters and "Move to…", and the moves no browser keeps: the same everywhere. */
 const LOCAL: Pick<
   TabDocumentKeys,
-  'stripNext' | 'stripPrevious' | 'stripFirst' | 'stripLast' | 'closeFocusedTab' | 'resizeSmaller' | 'resizeLarger' | 'resizeMin' | 'resizeMax'
+  | 'stripNext'
+  | 'stripPrevious'
+  | 'stripFirst'
+  | 'stripLast'
+  | 'closeFocusedTab'
+  | 'resizeSmaller'
+  | 'resizeLarger'
+  | 'resizeMin'
+  | 'resizeMax'
+  | 'moveToNextGroup'
+  | 'moveToPreviousGroup'
+  | 'moveToGroupLeft'
+  | 'moveToGroupRight'
+  | 'moveToGroupUp'
+  | 'moveToGroupDown'
+  | 'moveTo'
+  | 'targetLeft'
+  | 'targetRight'
+  | 'targetUp'
+  | 'targetDown'
+  | 'targetNextGroup'
+  | 'targetPreviousGroup'
+  | 'targetDrop'
+  | 'targetCancel'
 > = {
   stripNext: ['ArrowRight'],
   stripPrevious: ['ArrowLeft'],
@@ -14,6 +37,21 @@ const LOCAL: Pick<
   resizeLarger: ['ArrowRight', 'ArrowDown'],
   resizeMin: ['Home'],
   resizeMax: ['End'],
+  moveToNextGroup: ['Ctrl+Alt+ArrowRight'],
+  moveToPreviousGroup: ['Ctrl+Alt+ArrowLeft'],
+  moveToGroupLeft: ['Ctrl+K Shift+ArrowLeft'],
+  moveToGroupRight: ['Ctrl+K Shift+ArrowRight'],
+  moveToGroupUp: ['Ctrl+K Shift+ArrowUp'],
+  moveToGroupDown: ['Ctrl+K Shift+ArrowDown'],
+  moveTo: ['Ctrl+K M'],
+  targetLeft: ['ArrowLeft'],
+  targetRight: ['ArrowRight'],
+  targetUp: ['ArrowUp'],
+  targetDown: ['ArrowDown'],
+  targetNextGroup: ['Tab'],
+  targetPreviousGroup: ['Shift+Tab'],
+  targetDrop: ['Enter'],
+  targetCancel: ['Escape'],
 };
 
 /**
@@ -36,6 +74,8 @@ export const DESKTOP_KEYS: Readonly<TabDocumentKeys> = {
   keepOpen: ['Ctrl+K Enter'],
   togglePin: ['Ctrl+K Shift+Enter'],
   showOpenList: ['Ctrl+K Ctrl+P'],
+  moveTabLeft: ['Ctrl+Shift+PageUp'],
+  moveTabRight: ['Ctrl+Shift+PageDown'],
   ...LOCAL,
 };
 
@@ -60,5 +100,7 @@ export const BROWSER_KEYS: Readonly<TabDocumentKeys> = {
   keepOpen: ['Ctrl+K Enter'],
   togglePin: ['Ctrl+K Shift+Enter'],
   showOpenList: ['Ctrl+K Ctrl+P'],
+  moveTabLeft: ['Alt+Shift+PageUp', 'Ctrl+Shift+PageUp'],
+  moveTabRight: ['Alt+Shift+PageDown', 'Ctrl+Shift+PageDown'],
   ...LOCAL,
 };

@@ -70,7 +70,7 @@ const METHODS = [
   ['activate(doc, focus?)', '`boolean`', 'Makes it its group\'s active tab and its group the active group; `focus` moves focus into the content.'],
   ['activateNext(group?, focus?), activatePrevious(group?, focus?)', '`boolean`', 'The next or previous tab, around the ends (Ctrl + Page Down / Up).'],
   ['move(doc, group, index?)', '`boolean`', 'To another place in its group, or to another group. The content goes along as it is.'],
-  ['split(group, direction, doc?)', '`TabGroup | null`', "A new group on the `'left'`, `'right'`, `'up'` or `'down'` side; `doc` moves into it."],
+  ['split(group, direction, doc?)', '`TabGroup | null`', "A new group on the `'left'`, `'right'`, `'up'` or `'down'` side; `doc` moves into it. `group` `null`: along that edge of the whole layout."],
   ['closeGroup(group)', '`Promise<boolean>`', 'Closes its documents, then the group. The last group stays, empty.'],
   ['focusGroup(group | index)', '`boolean`', 'Makes it active and focuses what had focus in it last.'],
   ['maximizeGroup(group), restoreGroups()', '`boolean`', 'One group takes all the room; the others wait, out of sight, as they were.'],
@@ -86,8 +86,8 @@ const EVENTS = [
   ['onClosing(e), onClosed(e)', '`{ document, group, index, byUser }`; `closing` is cancelable, or sets `e.promise` (`Promise<boolean>`) to ask first.'],
   ['onDocumentActivating(e), onDocumentActivated(e)', '`{ document, previous, group, byUser }`; `activating` (a tab is selected) is cancelable; `activated` also runs when another group becomes active.'],
   ['onMoving(e), onMoved(e)', '`{ document, from, fromIndex, to, toIndex, byUser }`; `moving` is cancelable.'],
-  ['onSplitting(e), onSplit(e)', '`{ group, direction, document, byUser }` (and `newGroup` after); `splitting` is cancelable.'],
-  ['onLayoutChanging(e), onLayoutChanged(e)', "`{ change, group, byUser }`, `change` one of `'split'`, `'closeGroup'`, `'resize'`, `'evenSizes'`, `'maximize'`, `'restore'`, `'load'`; `changing` is cancelable (a split asks through `onSplitting`)."],
+  ['onSplitting(e), onSplit(e)', '`{ group, direction, document, byUser }` (and `newGroup` after); `splitting` is cancelable. `group` is `null` when the new group goes along an edge of the whole layout.'],
+  ['onLayoutChanging(e), onLayoutChanged(e)', "`{ change, group, byUser }`, `change` one of `'split'`, `'closeGroup'`, `'resize'`, `'evenSizes'`, `'maximize'`, `'restore'`, `'move'` (a whole group moved or merged), `'load'`; `changing` is cancelable (a split asks through `onSplitting`)."],
 ];
 
 const LIFETIME = [

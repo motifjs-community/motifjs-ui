@@ -71,7 +71,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   const rows = context.locator('li');
   const row = rows.nth(1);
   await context.scrollIntoViewIfNeeded();
-  // The page may scroll smoothly: a scroll closes the menu, so let it end first.
+  // The page may scroll smoothly: let it end before measuring the row.
   await page.waitForTimeout(600);
   const at = await box(row);
   await row.click({ button: 'right', position: { x: 30, y: 8 } });
@@ -80,9 +80,15 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('a right-click opens the menu at the pointer', Math.abs(place.left - (at.left + 30)) < 3 && place.top >= at.top + 8 && place.top < at.top + 20, `${place.left},${place.top} vs ${at.left + 30},${at.top + 8}`);
   const rename = page.getByRole('menuitem', { name: 'Rename' });
   check('onOpening builds the items for the row (a locked file cannot be renamed)', (await rename.getAttribute('aria-disabled')) === 'true');
+  const rowTop = (await box(row)).top;
   await page.mouse.wheel(0, 40);
   await page.waitForTimeout(150);
-  check('scrolling closes it', (await openMenus()) === 0);
+  const moved = (await box(row)).top - rowTop;
+  const followed = (await box(menu)).top - place.top;
+  check('scrolling takes the menu along with its row', (await openMenus()) === 1 && moved < -10 && Math.abs(followed - moved) < 2, `row ${moved}, menu ${followed}`);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.waitForTimeout(300);
+  check('…and closes it once the row is out of sight', (await openMenus()) === 0);
 
   await rows.first().focus();
   await page.keyboard.press('Shift+F10');

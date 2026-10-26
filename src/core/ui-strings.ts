@@ -319,4 +319,21 @@ export interface UiStrings {
   tabDocsKept: string;
   tabDocsLocked: string;
   tabDocsUnlocked: string;
+  tabDocsMoveTo: string;
+  tabDocsMoveGroupTo: string;
+  tabDocsCopied: string;
+  tabDocsGroupMoved: string;
+  tabDocsDragCanceled: string;
+  tabDocsMoveStart: string;
+  tabDocsMoveGroupStart: string;
+  tabDocsPlaceInto: string;
+  tabDocsPlaceLeft: string;
+  tabDocsPlaceRight: string;
+  tabDocsPlaceUp: string;
+  tabDocsPlaceDown: string;
+  tabDocsEdgeLeft: string;
+  tabDocsEdgeRight: string;
+  tabDocsEdgeUp: string;
+  tabDocsEdgeDown: string;
+  tabDocsPlaceRefused: string;
 }

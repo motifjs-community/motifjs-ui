@@ -19,7 +19,7 @@ const MENU_PROPS = [
   ['target', '`Bind<Element | Component | null>`', 'its parent', 'Whose menu it is. Without it, the element the `ContextMenu` is placed in.'],
   ['label', '`Bind<string>`', "`''`", 'Names the menu for screen readers.'],
   ['keyboard', '`Bind<boolean>`', '`true`', 'The Menu key and Shift+F10 open it at the focused element.'],
-  ['closeOnScroll', '`Bind<boolean>`', '`true`', 'Scrolling the page closes it.'],
+  ['closeOnScroll', '`Bind<boolean>`', '`true`', 'Scrolling that takes the element it opened on out of sight closes it; until then the menu goes along with that element.'],
   ['openOnHover', '`Bind<boolean>`', '`true`', 'Pointing at an item opens its submenu.'],
   ['enabled', '`Bind<boolean>`', '`true`', '`false`: the browser shows its own menu.'],
 ];
@@ -128,7 +128,7 @@ import { MenuBar, ContextMenu, attachContextMenu, type MenuItem } from '@motifx-
 
       <Section anchor="context" title="ContextMenu">
         <p>
-          <Rich text="A `ContextMenu` opens on its target’s right-click at the pointer, and with the Menu key or Shift+F10 at the focused element. `onOpening` gets the element (`e.target`) and builds the items for it, here for the row of a list; `e.cancel = true` leaves the browser its own menu. It closes on Escape, a press outside, and when the page scrolls." />
+          <Rich text="A `ContextMenu` opens on its target’s right-click at the pointer, and with the Menu key or Shift+F10 at the focused element. `onOpening` gets the element (`e.target`) and builds the items for it, here for the row of a list; `e.cancel = true` leaves the browser its own menu. It closes on Escape and a press outside; when the page scrolls it goes along with the element it opened on, and closes once that element is out of sight." />
         </p>
         <Example files={code('FileList.tsx')} stack>
           <FileList />

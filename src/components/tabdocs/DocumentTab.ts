@@ -40,7 +40,7 @@ export class DocumentTab {
 
   constructor(
     readonly document: TabDocument,
-    private readonly manager: TabDocumentManager,
+    private manager: TabDocumentManager,
   ) {
     const owner = manager.element.ownerDocument;
     const header = (this.header = owner.createElement('button'));
@@ -126,6 +126,13 @@ export class DocumentTab {
     void this.tooltip?.dispose();
     this.tooltip = null;
     this.renderTooltip(untracked(() => this.tooltipText()));
+  }
+
+  /** The tab goes to another manager (dragged there): from now on it follows that manager's settings. */
+  moveTo(manager: TabDocumentManager): void {
+    for (const stop of this.stops.splice(0)) stop();
+    this.manager = manager;
+    this.render();
   }
 
   dispose(): void {

@@ -106,3 +106,9 @@ export const pinMark = (): SVGSVGElement => glyph('M6 2.5h4M7 2.5v4l-2.5 2.5h7l-
 
 /** A padlock: closed to new things. */
 export const lockMark = (): SVGSVGElement => glyph('M4 7.5h8v6h-8zM5.75 7.5v-2a2.25 2.25 0 0 1 4.5 0v2');
+
+/** Two columns of dots: something to take hold of and drag. */
+export const gripMark = (): SVGSVGElement =>
+  glyph(
+    'M5.25 4a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM9.25 4a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM5.25 8a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM9.25 8a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM5.25 12a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM9.25 12a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0z',
+  );

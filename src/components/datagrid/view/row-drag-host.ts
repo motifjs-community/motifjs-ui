@@ -1,5 +1,5 @@
 import type { DataGrid } from '../DataGrid';
-import type { DragGhost } from './DragGhost';
+import type { DragGhost } from '../../../parts/drag/DragGhost';
 
 /** What row dragging asks of the grid it works in. */
 export interface RowDragHost<T> {

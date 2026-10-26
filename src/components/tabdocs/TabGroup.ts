@@ -1,7 +1,7 @@
 import { Component, Transporter, untracked, type Bind } from '@motifx/core';
 import { FocusContainer } from '../../core/container';
-import { deepActiveElement } from '../../core/focus';
-import { chevronDown, lockMark, maximizeMark, moreMark, restoreMark, splitMark } from '../../core/glyphs';
+import { deepActiveElement, isShown } from '../../core/focus';
+import { chevronDown, gripMark, lockMark, maximizeMark, moreMark, restoreMark, splitMark } from '../../core/glyphs';
 import { nextId } from '../../core/next-id';
 import { Toolbar } from '../toolbar/Toolbar';
 import type { ToolbarItem } from '../toolbar/toolbar-item';
@@ -10,6 +10,7 @@ import { placeNode } from './place-node';
 import type { SplitDirection } from './split-direction';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
+import type { TabDropSide } from './tab-drop-side';
 import type { TabOpenOptions } from './tab-open-options';
 import type { TabToolbarItems } from './tab-toolbar-items';
 import type { TabSplit } from './TabSplit';
@@ -31,6 +32,8 @@ interface Parts {
   actions: Toolbar;
   /** The built-in toolbar buttons: split, maximize, the lock mark, "…". */
   own: ToolbarItem[];
+  /** The handle the group is dragged by (and moved with the keys), first in the toolbar. */
+  grip: ToolbarItem;
   /** The app's buttons for this group, made once by the manager's `toolbarItems`. */
   app: { make: TabToolbarItems | null; items: readonly ToolbarItem[] };
   more: ToolbarItem;
@@ -48,6 +51,8 @@ const PARTS = Symbol('mx.tab-group');
 
 const NONE: readonly TabDocument[] = [];
 
+const ALL_SIDES: readonly TabDropSide[] = ['center', 'left', 'right', 'up', 'down'];
+
 /**
  * A group of a `TabDocumentManager`: a strip of tabs and the active document's content under it.
  * The manager makes and closes groups (`split`, `closeGroup`); a group is a container, so focus
@@ -60,7 +65,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     const self = this as unknown as { [PARTS]?: Parts };
     const parts = (self[PARTS] = this.createParts(manager));
     // The items read the group, so they come once its parts are in place.
-    parts.actions.items = () => [...this.appItems(), ...(this.activeDocument?.actions ?? []), ...parts.own];
+    parts.actions.items = () => [parts.grip, ...this.appItems(), ...(this.activeDocument?.actions ?? []), ...parts.own];
     this.listen();
     this.observeProperty('locked', () =>
       untracked(() => {
@@ -98,6 +103,20 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   }
   set locked(value: Bind<boolean>) {
     this.assignProperty('locked', value, Boolean);
+  }
+  /** Dragged documents and groups may be dropped into it and beside it. Default `true`. Reactive. */
+  get allowDrop(): boolean {
+    return this.getProperty<boolean | undefined>('allowDrop') !== false;
+  }
+  set allowDrop(value: Bind<boolean>) {
+    this.assignProperty('allowDrop', value, Boolean);
+  }
+  /** Where a drop on its content may go, over the manager's `dropSides`; `null` follows the manager. Reactive. */
+  get dropSides(): readonly TabDropSide[] | null {
+    return this.getProperty<readonly TabDropSide[] | null | undefined>('dropSides') ?? null;
+  }
+  set dropSides(value: Bind<readonly TabDropSide[] | null>) {
+    this.assignProperty('dropSides', value);
   }
   /** Whether it is the manager's active group. Reactive. */
   get isActive(): boolean {
@@ -183,10 +202,30 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   get listElement(): HTMLDivElement {
     return this.parts.list;
   }
-  /** @internal The "…" button, while it is shown. */
+  /** @internal The strip and the toolbar. */
+  get barElement(): HTMLDivElement {
+    return this.parts.bar.element;
+  }
+  /** @internal The row of the tabs that are not pinned: it scrolls. */
+  get rowElement(): HTMLDivElement {
+    return this.parts.row;
+  }
+  /** @internal Where the content shows. */
+  get panelsElement(): HTMLDivElement {
+    return this.parts.panels.element;
+  }
+  /** @internal Whether drops are allowed now. */
+  get acceptsDrop(): boolean {
+    return untracked(() => this.allowDrop);
+  }
+  /** @internal The sides a drop on the content may take now: the group's own, else the manager's. */
+  get dropSidesNow(): readonly TabDropSide[] {
+    return untracked(() => this.dropSides ?? this.manager.dropSides ?? ALL_SIDES);
+  }
+  /** @internal The "…" button, while it is shown (not folded into the toolbar's menu). */
   get moreButton(): HTMLElement | null {
     const control = this.parts.actions.controlOf(this.parts.more);
-    return control?.element.isConnected ? control.element : null;
+    return control?.element.isConnected && isShown(control.element) ? control.element : null;
   }
 
   /** @internal Puts a tab (and its panel) in at `index`; pinned tabs stay first. */
@@ -292,6 +331,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     this.element.toggleAttribute('data-locked', locked);
     this.element.setAttribute('aria-label', manager.textOf(locked ? 'tabDocsLockState' : 'tabDocsGroup', { n: number }));
     this.parts.list.setAttribute('aria-label', manager.textOf('tabDocsTabs', { n: number }));
+    this.parts.actions.controlOf(this.parts.grip)?.element.classList.add('mx-tabdocs__grip');
     this.parts.empty.textContent = manager.textOf('tabDocsEmpty');
   }
 
@@ -299,6 +339,12 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   tabOf(target: EventTarget | null): DocumentTab | undefined {
     const header = target instanceof Element ? target.closest('.mx-tabdocs__tab') : null;
     return header ? this.parts.tabs.find((t) => t.header === header) : undefined;
+  }
+
+  /** @internal Whether `target` is on the group's drag handle. */
+  isGrip(target: EventTarget | null): boolean {
+    const control = this.parts.actions.controlOf(this.parts.grip);
+    return target instanceof Node && !!control?.element.contains(target);
   }
 
   /** @internal Whether `target` is the strip's empty room: in the bar, not on a tab or a toolbar button. */
@@ -455,9 +501,18 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       click: () => manager.showOpenList(this),
     };
     const own = [split, maximize, lock, more];
+    // Its click starts "Move group to…"; it never folds into the toolbar's menu.
+    const grip: ToolbarItem = {
+      icon: () => gripMark(),
+      hint: () => manager.textOf('tabDocsMoveGroupTo'),
+      visible: () => manager.groupDragHandle && manager.allowDragGroups,
+      overflow: 'never',
+      click: () => manager.showMoveTo(this),
+    };
+    // A narrow group folds its buttons into the toolbar's "…" menu before it squeezes the tabs.
     const actions = new Toolbar({
       size: 'sm',
-      overflow: 'scroll',
+      overflow: 'menu',
       label: () => manager.textOf('tabDocsGroupActions'),
     });
     actions.element.classList.add('mx-tabdocs__actions');
@@ -484,6 +539,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       empty,
       actions,
       own,
+      grip,
       app: { make: null, items: [] },
       more,
       tabs: [],
@@ -570,7 +626,19 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
         this.renderOverflow();
       }));
       observer.observe(row);
-      this.motif.setDisposable(() => observer.disconnect());
+      // A toolbar with folded buttons keeps its size when the group grows: it unfolds them here.
+      let width = -1;
+      const bar = new view.ResizeObserver(() => {
+        const now = parts.bar.element.clientWidth;
+        if (now === width) return;
+        width = now;
+        parts.actions.updateOverflow();
+      });
+      bar.observe(parts.bar.element);
+      this.motif.setDisposable(() => {
+        observer.disconnect();
+        bar.disconnect();
+      });
     }
   }
 }

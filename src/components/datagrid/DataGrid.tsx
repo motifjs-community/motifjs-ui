@@ -128,7 +128,7 @@ import type { FilterCell } from './view/FilterCell';
 import { FilterRow } from './view/FilterRow';
 import { GridBody } from './view/GridBody';
 import { GridToolbar } from './view/GridToolbar';
-import { DragGhost } from './view/DragGhost';
+import { DragGhost } from '../../parts/drag/DragGhost';
 import { EditForm } from './view/EditForm';
 import type { FormValues } from './view/form-values';
 import type { PopupValues } from './view/popup-values';
@@ -283,6 +283,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const ghost = new DragGhost(
       () => this.element as HTMLElement,
       () => model.settings.get('dragGhost'),
+      'mx-data-grid__ghost',
     );
     this.motif.setDisposable(() => ghost.hide());
     const host: HeaderHost = {

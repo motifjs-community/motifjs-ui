@@ -5,8 +5,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   const popup = page.locator('.mx-popup:popover-open');
   // An item's name ends with its key, when it has one.
   const menuItem = (name) => popup.getByRole('menuitem', { name: new RegExp(`^${name}( |$)`) });
-  // Chosen where it is: scrolling the page to it would close the menu, as scrolling does.
-  const choose = (name) => menuItem(name).evaluate((item) => item.click());
+  const choose = (name) => menuItem(name).click();
   const axe = async (label) => {
     for (const theme of ['light', 'dark']) {
       await page.evaluate((t) => (document.documentElement.dataset.theme = t), theme);

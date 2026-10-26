@@ -23,6 +23,7 @@ const FIELDS = [
   'closable',
   'contentLifetime',
   'allowDuplicate',
+  'allowDrag',
   'actions',
   'state',
 ] as const;
@@ -137,6 +138,13 @@ export class TabDocument {
   }
   set allowDuplicate(value: Bind<boolean | undefined>) {
     this.slot('allowDuplicate').value = value;
+  }
+  /** The document's own setting; `undefined` follows the manager's `allowDrag`. */
+  get allowDrag(): boolean | undefined {
+    return this.get<boolean>('allowDrag') ?? undefined;
+  }
+  set allowDrag(value: Bind<boolean | undefined>) {
+    this.slot('allowDrag').value = value;
   }
   get actions(): readonly ToolbarItem[] {
     return this.get<readonly ToolbarItem[]>('actions') ?? NO_ACTIONS;

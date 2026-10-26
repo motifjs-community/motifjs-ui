@@ -21,6 +21,7 @@ import type { DocumentMovingEventArgs } from './document-moving-event-args';
 import type { DocumentOpenedEventArgs } from './document-opened-event-args';
 import type { DocumentOpeningEventArgs } from './document-opening-event-args';
 import { DocumentTab } from './DocumentTab';
+import { DropMarks } from './DropMarks';
 import type { GroupLockedEventArgs } from './group-locked-event-args';
 import type { GroupLockingEventArgs } from './group-locking-event-args';
 import type { GroupSplitEventArgs } from './group-split-event-args';
@@ -28,6 +29,8 @@ import type { GroupSplittingEventArgs } from './group-splitting-event-args';
 import type { LayoutChangedEventArgs } from './layout-changed-event-args';
 import type { LayoutChangingEventArgs } from './layout-changing-event-args';
 import type { LayoutItem } from './layout-item';
+import { LayoutDropTarget } from './LayoutDropTarget';
+import { MoveByKeys } from './MoveByKeys';
 import type { PinnedTabSize } from './pinned-tab-size';
 import { placeNode } from './place-node';
 import type { SplitDirection } from './split-direction';
@@ -35,10 +38,20 @@ import type { TabAfterClose } from './tab-after-close';
 import type { TabCloseButton } from './tab-close-button';
 import type { TabContentFactory } from './tab-content-factory';
 import type { TabContextMenuEventArgs } from './tab-context-menu-event-args';
+import type { TabCopyModifier } from './tab-copy-modifier';
 import { TabDocument } from './TabDocument';
 import type { TabDocumentKeys } from './tab-document-keys';
 import type { TabDocumentManagerProps } from './tab-document-manager-props';
 import type { TabDocumentOptions } from './tab-document-options';
+import { TabDrag } from './TabDrag';
+import type { TabDragEndedEventArgs } from './tab-drag-ended-event-args';
+import type { TabDragStartingEventArgs } from './tab-drag-starting-event-args';
+import type { TabDragSubject } from './tab-drag-subject';
+import type { TabDropEventArgs } from './tab-drop-event-args';
+import type { TabDropPlace } from './tab-drop-place';
+import type { TabDropSide } from './tab-drop-side';
+import type { TabDropTarget } from './tab-drop-target';
+import type { TabDroppedEventArgs } from './tab-dropped-event-args';
 import { TabGroup } from './TabGroup';
 import { BROWSER_KEYS, DESKTOP_KEYS } from './tab-keys';
 import type { TabKeyPreset } from './tab-key-preset';
@@ -46,6 +59,7 @@ import type { TabLayout } from './tab-layout';
 import type { TabLayoutChange } from './tab-layout-change';
 import type { TabLayoutDocument } from './tab-layout-document';
 import type { TabLayoutFactory } from './tab-layout-factory';
+import type { TabLayoutGroup } from './tab-layout-group';
 import type { TabLayoutNode } from './tab-layout-node';
 import type { TabListScope } from './tab-list-scope';
 import type { TabMenuCommand } from './tab-menu-command';
@@ -91,6 +105,22 @@ const OWN = [
   'menuItems',
   'allowDuplicate',
   'splitCopies',
+  'allowDrag',
+  'allowDragGroups',
+  'groupDragHandle',
+  'dropSides',
+  'dropEdgeSize',
+  'layoutEdgeDrop',
+  'layoutEdgeSize',
+  'dragThreshold',
+  'longPressDelay',
+  'dragHoverActivate',
+  'dragHoverDelay',
+  'pinOnDrag',
+  'copyModifier',
+  'dragGroup',
+  'dragGhost',
+  'dragAutoScroll',
   'keyPreset',
   'keys',
   'texts',
@@ -105,6 +135,10 @@ const STRIP = ['tabSize', 'pinnedTabSize', 'pinnedTabsOnSeparateRow', 'wrapTabs'
 
 const NO_GROUPS: readonly TabGroup[] = [];
 const NO_DOCUMENTS: readonly TabDocument[] = [];
+const ALL_SIDES: readonly TabDropSide[] = ['center', 'left', 'right', 'up', 'down'];
+
+/** Every manager on the page: a drag finds the managers of its `dragGroup` here. */
+const MANAGERS = new Set<TabDocumentManager>();
 
 /** A closed document `reopenClosed` can open again, and where it was. */
 interface Closed {
@@ -132,6 +166,14 @@ interface Parts {
   menus: TabMenus | null;
   openList: DocumentList | null;
   recentList: DocumentList | null;
+  drag: TabDrag | null;
+  moveKeys: MoveByKeys | null;
+  marks: DropMarks;
+  layoutTarget: LayoutDropTarget | null;
+  /** Asked in order, the first answer wins; the layout's own target is last. */
+  targets: TabDropTarget[];
+  /** Where the last drop put the document (or the group's documents), for `onDropped`. */
+  dropResult: { group: TabGroup | null; document: TabDocument | null } | null;
   opening: Emitter<DocumentOpeningEventArgs>;
   opened: Emitter<DocumentOpenedEventArgs>;
   closing: Emitter<DocumentClosingEventArgs>;
@@ -155,6 +197,11 @@ interface Parts {
   unlocking: Emitter<GroupLockingEventArgs>;
   unlocked: Emitter<GroupLockedEventArgs>;
   menuOpening: Emitter<TabContextMenuEventArgs>;
+  dragStarting: Emitter<TabDragStartingEventArgs>;
+  dragOver: Emitter<TabDropEventArgs>;
+  dropping: Emitter<TabDropEventArgs>;
+  dropped: Emitter<TabDroppedEventArgs>;
+  dragEnded: Emitter<TabDragEndedEventArgs>;
 }
 
 const PARTS = Symbol('mx.tab-document-manager');
@@ -212,6 +259,11 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       ['onUnlocking', this.onUnlocking],
       ['onUnlocked', this.onUnlocked],
       ['onContextMenuOpening', this.onContextMenuOpening],
+      ['onDragStarting', this.onDragStarting],
+      ['onDragOver', this.onDragOver],
+      ['onDropping', this.onDropping],
+      ['onDropped', this.onDropped],
+      ['onDragEnded', this.onDragEnded],
     ];
     for (const [name, subscribe] of events) if (own[name]) subscribe(own[name] as never);
 
@@ -232,6 +284,11 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
     this.ensureRoot();
     parts.menus = new TabMenus(this);
+    parts.layoutTarget = new LayoutDropTarget(this);
+    parts.targets.push(parts.layoutTarget);
+    parts.drag = new TabDrag(this);
+    parts.moveKeys = new MoveByKeys(this, parts.drag);
+    MANAGERS.add(this);
     // Built later than made: core has just put the groups at the root, back into their splits.
     this.motif.on('x:built', () => untracked(() => this.renderTree()));
     const stopTexts = effect(() => {
@@ -242,6 +299,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
     this.motif.setDisposable(() => {
       stopTexts();
+      MANAGERS.delete(this);
+      parts.moveKeys?.end(false);
+      parts.drag?.cancel(true);
       for (const stop of parts.keyStops.splice(0)) stop();
       for (const [doc, tab] of parts.tabs) {
         doc.placeIn(null, null);
@@ -278,6 +338,11 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         parts.unlocking,
         parts.unlocked,
         parts.menuOpening,
+        parts.dragStarting,
+        parts.dragOver,
+        parts.dropping,
+        parts.dropped,
+        parts.dragEnded,
       ]) {
         emitter.dispose();
       }
@@ -496,6 +561,102 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   set splitCopies(value: Bind<boolean>) {
     this.assignProperty('splitCopies', value, Boolean);
   }
+  get allowDrag(): boolean {
+    return this.getProperty<boolean | undefined>('allowDrag') ?? true;
+  }
+  set allowDrag(value: Bind<boolean>) {
+    this.assignProperty('allowDrag', value, Boolean);
+  }
+  get allowDragGroups(): boolean {
+    return this.getProperty<boolean | undefined>('allowDragGroups') ?? true;
+  }
+  set allowDragGroups(value: Bind<boolean>) {
+    this.assignProperty('allowDragGroups', value, Boolean);
+  }
+  get groupDragHandle(): boolean {
+    return this.getProperty<boolean | undefined>('groupDragHandle') ?? false;
+  }
+  set groupDragHandle(value: Bind<boolean>) {
+    this.assignProperty('groupDragHandle', value, Boolean);
+  }
+  get layoutEdgeDrop(): boolean {
+    return this.getProperty<boolean | undefined>('layoutEdgeDrop') ?? true;
+  }
+  set layoutEdgeDrop(value: Bind<boolean>) {
+    this.assignProperty('layoutEdgeDrop', value, Boolean);
+  }
+  get layoutEdgeSize(): number {
+    return this.getProperty<number | undefined>('layoutEdgeSize') ?? 16;
+  }
+  set layoutEdgeSize(value: Bind<number>) {
+    this.assignProperty('layoutEdgeSize', value, (v) => Math.max(0, Number(v) || 0));
+  }
+  get dragThreshold(): number {
+    return this.getProperty<number | undefined>('dragThreshold') ?? 5;
+  }
+  set dragThreshold(value: Bind<number>) {
+    this.assignProperty('dragThreshold', value, (v) => Math.max(0, Number(v) || 0));
+  }
+  get longPressDelay(): number {
+    return this.getProperty<number | undefined>('longPressDelay') ?? 500;
+  }
+  set longPressDelay(value: Bind<number>) {
+    this.assignProperty('longPressDelay', value, (v) => Math.max(0, Number(v) || 0));
+  }
+  get dragHoverActivate(): boolean {
+    return this.getProperty<boolean | undefined>('dragHoverActivate') ?? true;
+  }
+  set dragHoverActivate(value: Bind<boolean>) {
+    this.assignProperty('dragHoverActivate', value, Boolean);
+  }
+  get dragHoverDelay(): number {
+    return this.getProperty<number | undefined>('dragHoverDelay') ?? 750;
+  }
+  set dragHoverDelay(value: Bind<number>) {
+    this.assignProperty('dragHoverDelay', value, (v) => Math.max(0, Number(v) || 0));
+  }
+  get pinOnDrag(): boolean {
+    return this.getProperty<boolean | undefined>('pinOnDrag') ?? true;
+  }
+  set pinOnDrag(value: Bind<boolean>) {
+    this.assignProperty('pinOnDrag', value, Boolean);
+  }
+  get dragGhost(): boolean {
+    return this.getProperty<boolean | undefined>('dragGhost') ?? true;
+  }
+  set dragGhost(value: Bind<boolean>) {
+    this.assignProperty('dragGhost', value, Boolean);
+  }
+  get dragAutoScroll(): boolean {
+    return this.getProperty<boolean | undefined>('dragAutoScroll') ?? true;
+  }
+  set dragAutoScroll(value: Bind<boolean>) {
+    this.assignProperty('dragAutoScroll', value, Boolean);
+  }
+  get dropSides(): readonly TabDropSide[] {
+    return this.getProperty<readonly TabDropSide[] | undefined>('dropSides') ?? ALL_SIDES;
+  }
+  set dropSides(value: Bind<readonly TabDropSide[]>) {
+    this.assignProperty('dropSides', value);
+  }
+  get dropEdgeSize(): number | string {
+    return this.getProperty<number | string | undefined>('dropEdgeSize') ?? '33%';
+  }
+  set dropEdgeSize(value: Bind<number | string>) {
+    this.assignProperty('dropEdgeSize', value);
+  }
+  get copyModifier(): TabCopyModifier {
+    return this.getProperty<TabCopyModifier | undefined>('copyModifier') ?? 'auto';
+  }
+  set copyModifier(value: Bind<TabCopyModifier>) {
+    this.assignProperty('copyModifier', value);
+  }
+  get dragGroup(): string | null {
+    return this.getProperty<string | null | undefined>('dragGroup') ?? null;
+  }
+  set dragGroup(value: Bind<string | null>) {
+    this.assignProperty('dragGroup', value);
+  }
   get keyPreset(): TabKeyPreset {
     return this.getProperty<TabKeyPreset | undefined>('keyPreset') ?? 'auto';
   }
@@ -565,6 +726,14 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   /** Reactive. */
   get canGoForward(): boolean {
     return !!this.getProperty<boolean>('canGoForward');
+  }
+  /** What is being dragged now (or moved with "Move to…"), `null` when nothing is. Reactive. */
+  get dragging(): TabDragSubject | null {
+    return this.getProperty<TabDragSubject | null | undefined>('dragging') ?? null;
+  }
+  /** The drop targets, asked in order; the built-in one (strips, groups, the layout's edges) is last. */
+  get dropTargets(): readonly TabDropTarget[] {
+    return this.parts.targets;
   }
 
   // Events.
@@ -652,6 +821,26 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   get onContextMenuOpening(): MotifEvent<TabContextMenuEventArgs> {
     return this.parts.menuOpening.event;
   }
+  /** A tab or a group is about to be dragged, or moved with "Move to…"; cancelable. */
+  get onDragStarting(): MotifEvent<TabDragStartingEventArgs> {
+    return this.parts.dragStarting.event;
+  }
+  /** The drag is over a place: change the place, or `cancel` to refuse it. Outside every manager it comes refused. */
+  get onDragOver(): MotifEvent<TabDropEventArgs> {
+    return this.parts.dragOver.event;
+  }
+  /** The drag is about to drop; change the place, or cancel to keep everything where it is. */
+  get onDropping(): MotifEvent<TabDropEventArgs> {
+    return this.parts.dropping.event;
+  }
+  /** A drop was made (after the `moved`, `split`… events of what it did). */
+  get onDropped(): MotifEvent<TabDroppedEventArgs> {
+    return this.parts.dropped.event;
+  }
+  /** A drag is over, dropped or not. */
+  get onDragEnded(): MotifEvent<TabDragEndedEventArgs> {
+    return this.parts.dragEnded.event;
+  }
 
   // Documents.
 
@@ -716,9 +905,17 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return untracked(() => this.moveDocument(document, group, index, false));
   }
 
-  /** Moves a document to the next or previous group, splitting its group when there is none that way. */
-  moveToGroup(document: TabDocument, which: 'next' | 'previous'): boolean {
+  /**
+   * Moves a document to the next or previous group, or to the group on that side of its own; its
+   * group splits that way when there is none.
+   */
+  moveToGroup(document: TabDocument, which: 'next' | 'previous' | SplitDirection): boolean {
     return untracked(() => this.moveToGroupBy(document, which, false));
+  }
+
+  /** Moves a document a place along its strip (`-1` towards the start), not past the pinned or the other tabs. */
+  moveInGroup(document: TabDocument, by: number): boolean {
+    return untracked(() => this.moveInGroupBy(document, by, false));
   }
 
   /** Makes a preview tab stay open. */
@@ -779,11 +976,21 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   // Groups.
 
   /**
-   * Opens a new group beside `group`; `document` moves into it, or a copy of it opens there when it
-   * may be open twice and `splitCopies` is on. Returns the new group, `null` when `onSplitting` cancels.
+   * Opens a new group beside `group`, or along that edge of the whole layout when `group` is `null`;
+   * `document` moves into it, or a copy of it opens there when it may be open twice and `splitCopies`
+   * is on. Returns the new group, `null` when `onSplitting` cancels.
    */
-  split(group: TabGroup, direction: SplitDirection, document?: TabDocument): TabGroup | null {
+  split(group: TabGroup | null, direction: SplitDirection, document?: TabDocument): TabGroup | null {
     return untracked(() => this.splitGroup(group, direction, document ?? null, false));
+  }
+
+  /**
+   * Moves a whole group with its documents: beside another group (`left`, `right`, `up`, `down`),
+   * into it (`center`: its documents join that group), or along an edge of the layout (`target`
+   * `null`). Nothing is made again.
+   */
+  moveGroup(group: TabGroup, target: TabGroup | null, side: TabDropSide): boolean {
+    return untracked(() => this.moveGroupBy(group, target, side, false));
   }
 
   /** Closes the documents of a group, then the group (the last group stays, empty). */
@@ -849,6 +1056,51 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       this.layoutChanged('resize', group, false);
       return true;
     });
+  }
+
+  // Drag and drop.
+
+  /**
+   * "Move to…": the keys choose where a document (or a whole group) goes, with the drop areas of a
+   * drag shown and each place announced; Enter moves it there, Escape leaves it.
+   */
+  showMoveTo(target: TabDocument | TabGroup): boolean {
+    return untracked(() => {
+      const keys = this.parts.moveKeys;
+      if (!keys || keys.isOn || this.dragging || !this.isEnabled) return false;
+      let subject: TabDragSubject | null = null;
+      if (target instanceof TabGroup) {
+        if (this.groups.includes(target) && this.allowDragGroups) subject = { document: null, group: target, manager: this, copy: false };
+      } else if (target.manager === this && target.group && this.mayDrag(target)) {
+        subject = { document: target, group: target.group, manager: this, copy: false };
+      }
+      const tab = subject?.document ? this.parts.tabs.get(subject.document) : null;
+      return !!subject && keys.start(subject, tab?.header ?? null);
+    });
+  }
+
+  /** Stops a drag or "Move to…" under way; everything goes back where it was. */
+  cancelDrag(): boolean {
+    return untracked(() => {
+      const parts = this.parts;
+      if (parts.moveKeys?.isOn) {
+        parts.moveKeys.end(false);
+        return true;
+      }
+      if (!parts.drag?.subject) return false;
+      parts.drag.cancel();
+      return true;
+    });
+  }
+
+  /** Adds a drop target, asked before the built-in one (at `index` of `dropTargets`). Returns the function that removes it. */
+  addDropTarget(target: TabDropTarget, index = 0): () => void {
+    const list = this.parts.targets;
+    list.splice(Math.max(0, Math.min(index, list.length - 1)), 0, target);
+    return () => {
+      const at = list.indexOf(target);
+      if (at >= 0 && target !== this.parts.layoutTarget) list.splice(at, 1);
+    };
   }
 
   // Lists.
@@ -1075,6 +1327,197 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     this.parts.menuOpening.fire(e);
   }
 
+  /** @internal */
+  get dropMarks(): DropMarks {
+    return this.parts.marks;
+  }
+
+  /** @internal */
+  get layoutTarget(): LayoutDropTarget {
+    return this.parts.layoutTarget!;
+  }
+
+  /** @internal The top of the layout tree. */
+  get rootItem(): LayoutItem | null {
+    return this.parts.root;
+  }
+
+  /** @internal This manager and the others of its `dragGroup` on the same page: where its drags may drop. */
+  dragPeers(): TabDocumentManager[] {
+    const name = untracked(() => this.dragGroup);
+    if (!name) return [this];
+    const page = this.element.ownerDocument;
+    const others = [...MANAGERS].filter((m) => m !== this && !m.isDisposed && m.element.isConnected && m.element.ownerDocument === page && untracked(() => m.dragGroup) === name);
+    return [this, ...others];
+  }
+
+  /** @internal Whether the user may drag a document: its own `allowDrag`, else the manager's. */
+  mayDrag(document: TabDocument): boolean {
+    return untracked(() => this.isEnabled && (document.allowDrag ?? this.allowDrag));
+  }
+
+  /** @internal Whether a drop with the copy key may open a copy of the document. */
+  mayCopyDocument(document: TabDocument | null): boolean {
+    return !!document && untracked(() => this.mayCopy(document));
+  }
+
+  /** @internal Where a document dropped into a group (not among its tabs) goes. */
+  insertIndexFor(group: TabGroup): number {
+    return untracked(() => this.insertIndex(group));
+  }
+
+  /** @internal */
+  dragStarting(e: TabDragStartingEventArgs): void {
+    this.parts.dragStarting.fire(e);
+  }
+
+  /** @internal */
+  dragStarted(subject: TabDragSubject): void {
+    this.setProperty('dragging', subject);
+  }
+
+  /** @internal */
+  dragOver(e: TabDropEventArgs): void {
+    this.parts.dragOver.fire(e);
+  }
+
+  /** @internal */
+  dropping(e: TabDropEventArgs): void {
+    this.parts.dropping.fire(e);
+  }
+
+  /** @internal The drop was made: `onDropped`, with where it ended up. */
+  dropped(place: TabDropPlace, subject: TabDragSubject, byKeyboard: boolean): void {
+    const owner = place.manager ?? this;
+    const result = owner.parts.dropResult;
+    owner.parts.dropResult = null;
+    const doc = result ? result.document : subject.document;
+    const group = result?.group ?? place.group;
+    const index = doc && group ? group.documents.indexOf(doc) : place.index;
+    this.parts.dropped.fire({ ...place, group, index, document: doc, from: subject.group, copy: subject.copy, byKeyboard, source: this });
+  }
+
+  /** @internal */
+  dragEnded(e: TabDragEndedEventArgs): void {
+    this.setProperty('dragging', null);
+    this.parts.dragEnded.fire(e);
+  }
+
+  /** @internal */
+  announceCanceled(): void {
+    this.say('tabDocsDragCanceled');
+  }
+
+  /** @internal Resting on a tab while dragging activates it. */
+  activateFromDrag(document: TabDocument): void {
+    untracked(() => this.activateDocument(document, false, true));
+  }
+
+  /** @internal A canceled drag gives the active group back. */
+  useGroupFromDrag(group: TabGroup): void {
+    untracked(() => this.groups.includes(group) && this.useGroup(group, true));
+  }
+
+  /** @internal A long press let go without moving: the tab's menu at that point. */
+  openContextMenuAt(source: HTMLElement, x: number, y: number): void {
+    this.parts.menus?.menu.open({ x, y }, source);
+  }
+
+  /** @internal The group next to `group` on that side, `null` when it is at that edge of the layout. */
+  neighbourOf(group: TabGroup, direction: SplitDirection): TabGroup | null {
+    const orientation = direction === 'left' || direction === 'right' ? 'horizontal' : 'vertical';
+    const step = direction === 'right' || direction === 'down' ? 1 : -1;
+    for (let node: LayoutItem = group; node.parentSplit; node = node.parentSplit) {
+      const split: TabSplit = node.parentSplit;
+      if (split.orientation !== orientation) continue;
+      const next = split.children[split.children.indexOf(node) + step];
+      if (next) return this.nearestGroup(next, direction);
+    }
+    return null;
+  }
+
+  /** @internal The group at an edge of the layout (the one used last, when several are). */
+  edgeGroup(side: SplitDirection): TabGroup | null {
+    const root = this.parts.root;
+    const back: Record<SplitDirection, SplitDirection> = { left: 'right', right: 'left', up: 'down', down: 'up' };
+    return root ? this.nearestGroup(root, back[side]) : null;
+  }
+
+  /**
+   * @internal Makes a drop the built-in target found, through the methods of what it does (and
+   * their events): a move or a copy into a strip or a group, a split, a group moved or merged.
+   */
+  dropAt(place: TabDropPlace, drag: TabDragSubject): boolean {
+    return untracked(() => {
+      this.parts.dropResult = null;
+      const group = place.group && this.groups.includes(place.group) ? place.group : null;
+      const side = place.side;
+      if (place.target === 'strip' && group) return this.dropInto(drag, group, place.index, true);
+      if (place.target === 'group' && group && side === 'center') return this.dropInto(drag, group, undefined, false);
+      const edge = place.target === 'edge';
+      if (!side || side === 'center' || (!edge && !(place.target === 'group' && group))) return false;
+      return this.dropBeside(drag, edge ? null : group, side);
+    });
+  }
+
+  /** @internal Moves a document into a group of another manager: its tab, panel and content go along, nothing is made again. */
+  moveAcross(doc: TabDocument, group: TabGroup, index: number | undefined, byUser: boolean): boolean {
+    const parts = this.parts;
+    const tab = parts.tabs.get(doc);
+    const from = tab?.group;
+    const target = group.manager;
+    if (!tab || !from || target === this || !target.groups.includes(group)) return false;
+    const fromIndex = from.tabs.indexOf(tab);
+    const toIndex = Math.max(0, Math.min(index ?? target.insertIndexFor(group), group.tabs.length));
+    const e: DocumentMovingEventArgs = { document: doc, from, fromIndex, to: group, toIndex, byUser, cancel: false, source: this };
+    parts.moving.fire(e);
+    if (e.cancel) return false;
+    const opening = target.receiving(doc, target.groups.includes(e.to) ? e.to : group, e.toIndex, byUser);
+    if (!opening) return false;
+    const focus = deepActiveElement();
+    const hadFocus = !!focus && (tab.header.contains(focus) || tab.panel.element.contains(focus));
+    this.restoreForChange();
+    const wasActive = from.activeTab === tab;
+    const next = wasActive ? this.nextAfterClose(from, tab) : null;
+    from.removeTab(tab);
+    parts.tabs.delete(doc);
+    this.forget(doc);
+    if (wasActive) {
+      from.showTab(next);
+      if (next) this.fireActivated(next.document, doc, from, byUser);
+    }
+    target.receive(tab, opening, hadFocus);
+    parts.moved.fire({ document: doc, from, fromIndex, to: opening.group, toIndex: opening.group.tabs.indexOf(tab), byUser, source: this });
+    this.closeIfEmpty(from, byUser);
+    return true;
+  }
+
+  /** @internal Another manager is about to give this one a document: `onOpening` here may refuse it, or place it elsewhere. */
+  receiving(doc: TabDocument, group: TabGroup, index: number, byUser: boolean): DocumentOpeningEventArgs | null {
+    const e: DocumentOpeningEventArgs = { document: doc, group, index, active: true, byUser, cancel: false, source: this };
+    this.parts.opening.fire(e);
+    if (e.cancel) return null;
+    if (!this.groups.includes(e.group)) e.group = group;
+    return e;
+  }
+
+  /** @internal Takes in the tab another manager let go of. */
+  receive(tab: DocumentTab, e: DocumentOpeningEventArgs, focus: boolean): void {
+    const doc = tab.document;
+    const group = e.group;
+    this.restoreForChange();
+    tab.moveTo(this);
+    this.parts.tabs.set(doc, tab);
+    group.addTab(tab, e.index);
+    doc.placeIn(this, group);
+    this.parts.opened.fire({ document: doc, group, index: group.tabs.indexOf(tab), byUser: e.byUser, source: this });
+    if (e.active || !group.activeTab) this.activateDocument(doc, false, e.byUser);
+    else tab.show(false);
+    if (doc.preview) this.keepBy(doc, e.byUser);
+    this.say('tabDocsMoved', { title: doc.title, n: this.groups.indexOf(group) + 1 });
+    if (focus) tab.header.focus();
+  }
+
   /** @internal What a context menu item does, as the user. */
   runCommand(command: TabMenuCommand, group: TabGroup, document: TabDocument | null): void {
     untracked(() => {
@@ -1119,6 +1562,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         case 'moveNext':
         case 'movePrevious':
           if (doc) this.moveToGroupBy(doc, command === 'moveNext' ? 'next' : 'previous', true);
+          break;
+        case 'moveTo':
+          if (doc) this.showMoveTo(doc);
+          break;
+        case 'moveGroupTo':
+          this.showMoveTo(group);
           break;
         case 'copyTitle':
           if (doc) void this.copyTitle(doc);
@@ -1299,8 +1748,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return true;
   }
 
-  /** A closed document leaves the history, and is kept for `reopenClosed` when its content can be made again. */
-  private remember(doc: TabDocument, group: TabGroup, index: number): void {
+  /** A document left this manager: it leaves the history and the recently used list. */
+  private forget(doc: TabDocument): void {
     const parts = this.parts;
     const before = parts.history.slice(0, parts.at + 1).filter((d) => d !== doc).length;
     parts.history = parts.history.filter((d) => d !== doc);
@@ -1309,6 +1758,13 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       'recentDocuments',
       this.recentDocuments.filter((d) => d !== doc),
     );
+    this.renderHistory();
+  }
+
+  /** A closed document leaves the history, and is kept for `reopenClosed` when its content can be made again. */
+  private remember(doc: TabDocument, group: TabGroup, index: number): void {
+    const parts = this.parts;
+    this.forget(doc);
     const size = this.closedHistorySize;
     if (size > 0 && (this.canRemake(doc) || !!doc.original)) {
       if (doc.preview) doc.preview = false;
@@ -1441,10 +1897,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       group.showTab(tab);
       this.useGroup(group, byUser, false);
       this.fireActivated(doc, before, group, byUser);
-      if (!from.tabs.length && this.closeEmptyGroups && this.groups.length > 1) {
-        this.removeGroup(from);
-        this.layoutChanged('closeGroup', from, byUser);
-      }
+      this.closeIfEmpty(from, byUser);
     }
     parts.moved.fire({ document: doc, from, fromIndex, to: group, toIndex: group.tabs.indexOf(tab), byUser, source: this });
     if (from !== group) this.say('tabDocsMoved', { title: doc.title, n: this.groups.indexOf(group) + 1 });
@@ -1453,19 +1906,173 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return true;
   }
 
-  private moveToGroupBy(doc: TabDocument, which: 'next' | 'previous', byUser: boolean): boolean {
+  private moveToGroupBy(doc: TabDocument, which: 'next' | 'previous' | SplitDirection, byUser: boolean): boolean {
     const from = doc.group;
     if (!from || doc.manager !== this) return false;
     const groups = this.groups;
-    const target = groups[groups.indexOf(from) + (which === 'next' ? 1 : -1)];
+    const inOrder = which === 'next' || which === 'previous';
+    const target = inOrder ? groups[groups.indexOf(from) + (which === 'next' ? 1 : -1)] : this.neighbourOf(from, which);
     if (target) {
       const ok = this.moveDocument(doc, target, undefined, byUser);
       if (ok && byUser) this.focusGroup(target);
       return ok;
     }
-    const made = this.splitGroup(from, which === 'next' ? 'right' : 'left', doc, byUser, false);
+    const side: SplitDirection = which === 'next' ? 'right' : which === 'previous' ? 'left' : which;
+    const made = this.splitGroup(from, side, doc, byUser, false);
     if (made && byUser) this.focusGroup(made);
     return !!made;
+  }
+
+  private moveInGroupBy(doc: TabDocument, by: number, byUser: boolean): boolean {
+    const group = doc.group;
+    if (!group || doc.manager !== this || !by) return false;
+    const docs = group.documents;
+    const at = docs.indexOf(doc);
+    const pinned = docs.filter((d) => d.pinned).length;
+    const [low, high] = doc.pinned ? [0, pinned - 1] : [pinned, docs.length - 1];
+    const to = Math.max(low, Math.min(high, at + by));
+    return to !== at && this.moveDocument(doc, group, to, byUser);
+  }
+
+  /** A drop into a group: among its tabs at `index` (`strip`), or where `openPosition` says. */
+  private dropInto(drag: TabDragSubject, group: TabGroup, index: number | undefined, strip: boolean): boolean {
+    const source = drag.manager;
+    const doc = drag.document;
+    if (!doc) {
+      // A whole group: its documents join this one.
+      const moved = source === this ? this.mergeGroup(drag.group, group, index, true) : this.takeGroup(drag.group, group, index);
+      if (moved) this.parts.dropResult = { group, document: null };
+      return moved;
+    }
+    const copy = drag.copy && source.mayCopyDocument(doc);
+    const pin = strip && index !== undefined && this.pinOnDrag ? pinAt(group, doc, index) : null;
+    const root = doc.original ?? doc;
+    const had = group.documents.find((d) => (d.original ?? d) === root);
+    let result: TabDocument | null;
+    if (copy) {
+      result = this.openDocument(source === this ? doc : doc.makeCopy(), { group, index }, true);
+    } else if (source === this) {
+      if (pin !== null && doc.pinned !== pin) this.pinBy(doc, pin, true);
+      result = this.moveDocument(doc, group, index, true) ? doc : null;
+    } else {
+      result = source.moveAcross(doc, group, index, true) ? doc : null;
+    }
+    if (!result) return false;
+    if (pin !== null && result.pinned !== pin && result.group === group) {
+      this.pinBy(result, pin, true);
+      if (index !== undefined) this.moveDocument(result, group, index, true);
+    }
+    if (copy && !had) this.say('tabDocsCopied', { title: result.title, n: this.groups.indexOf(group) + 1 });
+    this.parts.dropResult = { group: result.group, document: result };
+    return true;
+  }
+
+  /** A drop beside a group, or along an edge of the layout (`group` `null`): a new group there. */
+  private dropBeside(drag: TabDragSubject, group: TabGroup | null, side: SplitDirection): boolean {
+    const source = drag.manager;
+    const doc = drag.document;
+    if (source === this && !doc) {
+      const moved = this.moveGroupBy(drag.group, group, side, true);
+      if (moved) this.parts.dropResult = { group: drag.group, document: null };
+      return moved;
+    }
+    const copy = !!doc && drag.copy && source.mayCopyDocument(doc);
+    if (source === this && doc) {
+      const made = this.splitGroup(group, side, doc, true, copy);
+      if (!made) return false;
+      const result = made.documents[0] ?? null;
+      if (copy && result && result !== doc) this.say('tabDocsCopied', { title: result.title, n: this.groups.indexOf(made) + 1 });
+      this.parts.dropResult = { group: made, document: result };
+      return true;
+    }
+    // From another manager: a new group here, then the document (or the group's documents) into it.
+    const made = this.splitGroup(group, side, null, true);
+    if (!made) return false;
+    let result: TabDocument | null = null;
+    let moved: boolean;
+    if (!doc) moved = this.takeGroup(drag.group, made, undefined);
+    else {
+      result = copy ? this.openDocument(doc.makeCopy(), { group: made }, true) : source.moveAcross(doc, made, 0, true) ? doc : null;
+      moved = !!result;
+      if (copy && result) this.say('tabDocsCopied', { title: result.title, n: this.groups.indexOf(made) + 1 });
+    }
+    if (!moved) {
+      this.closeMovedGroup(made, true);
+      return false;
+    }
+    this.parts.dropResult = { group: made, document: result };
+    return true;
+  }
+
+  /** A group of another manager dropped into one of this: its documents come over, its active one stays active. */
+  private takeGroup(group: TabGroup, into: TabGroup, index: number | undefined): boolean {
+    const source = group.manager;
+    const active = group.activeDocument;
+    let at = index ?? into.tabs.length;
+    let moved = false;
+    for (const doc of [...group.documents]) {
+      if (!source.moveAcross(doc, into, at, true)) continue;
+      moved = true;
+      at = into.documents.indexOf(doc) + 1;
+    }
+    if (active?.group === into) this.activateDocument(active, false, true);
+    if (source.groups.includes(group)) source.closeMovedGroup(group, true);
+    return moved;
+  }
+
+  /** A group's documents join another group of this manager, and it closes. */
+  private mergeGroup(group: TabGroup, into: TabGroup, index: number | undefined, byUser: boolean): boolean {
+    if (group === into || !this.groups.includes(group) || !this.groups.includes(into)) return false;
+    if (!this.layoutChanging('move', group, byUser)) return false;
+    const active = group.activeDocument;
+    let at = index ?? into.tabs.length;
+    for (const doc of [...group.documents]) {
+      if (this.moveDocument(doc, into, at, byUser)) at = into.documents.indexOf(doc) + 1;
+    }
+    if (active?.group === into) this.activateDocument(active, false, byUser);
+    this.closeMovedGroup(group, byUser);
+    this.layoutChanged('move', into, byUser);
+    this.say('tabDocsGroupMoved', { n: this.groups.indexOf(into) + 1 });
+    return true;
+  }
+
+  private moveGroupBy(group: TabGroup, target: TabGroup | null, side: TabDropSide, byUser: boolean): boolean {
+    if (!this.groups.includes(group) || target === group || (target && !this.groups.includes(target))) return false;
+    if (side === 'center') return !!target && this.mergeGroup(group, target, undefined, byUser);
+    if (this.groups.length < 2 || !this.layoutChanging('move', group, byUser)) return false;
+    this.restoreForChange();
+    const gone = this.takeOut(group);
+    if (target) this.insertBeside(target, group, side);
+    else this.insertAtEdge(group, side);
+    this.renderTree();
+    for (const split of gone) split.dispose();
+    this.useGroup(group, byUser);
+    this.layoutChanged('move', group, byUser);
+    this.say('tabDocsGroupMoved', { n: this.groups.indexOf(group) + 1 });
+    return true;
+  }
+
+  /** A group the last document left closes when `closeEmptyGroups` says so (never the last group). */
+  private closeIfEmpty(group: TabGroup, byUser: boolean): void {
+    if (this.closeEmptyGroups) this.closeMovedGroup(group, byUser);
+  }
+
+  /** @internal A group whose documents all went elsewhere closes (never the last group). */
+  closeMovedGroup(group: TabGroup, byUser: boolean): void {
+    if (group.tabs.length || !this.groups.includes(group) || this.groups.length < 2) return;
+    this.removeGroup(group);
+    this.layoutChanged('closeGroup', group, byUser);
+  }
+
+  /** The group of `item` nearest to where one comes from going `direction`; across that way, the one used last. */
+  private nearestGroup(item: LayoutItem, direction: SplitDirection): TabGroup {
+    if (item instanceof TabGroup) return item;
+    const along = item.orientation === (direction === 'left' || direction === 'right' ? 'horizontal' : 'vertical');
+    if (along) return this.nearestGroup(direction === 'right' || direction === 'down' ? item.children[0] : item.children[item.children.length - 1], direction);
+    const recent = this.parts.recentGroups;
+    const rank = (child: LayoutItem) => Math.min(...groupsIn(child).map((g) => (recent.includes(g) ? recent.indexOf(g) : Infinity)));
+    const pick = [...item.children].sort((a, b) => rank(a) - rank(b))[0];
+    return this.nearestGroup(pick, direction);
   }
 
   private keepBy(doc: TabDocument, byUser: boolean): boolean {
@@ -1559,37 +2166,26 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   private createGroup(): TabGroup {
     const group = new TabGroup(this);
+    this.sizeGroup(group);
     this.controls.add(group);
     return group;
   }
 
-  /** `copy`: a copy of the document opens in the new group (when it can be copied); else it moves there. */
-  private splitGroup(group: TabGroup, direction: SplitDirection, doc: TabDocument | null, byUser: boolean, copy = !!doc && this.copiesOnSplit(doc)): TabGroup | null {
+  /**
+   * A new group beside `group`, or along an edge of the whole layout (`null`). `copy`: a copy of the
+   * document opens in it (when it can be copied); else the document moves there.
+   */
+  private splitGroup(group: TabGroup | null, direction: SplitDirection, doc: TabDocument | null, byUser: boolean, copy = !!doc && this.copiesOnSplit(doc)): TabGroup | null {
     const parts = this.parts;
-    if (!this.groups.includes(group)) return null;
+    if (group && !this.groups.includes(group)) return null;
     const document = doc && parts.tabs.has(doc) ? doc : null;
     const e: GroupSplittingEventArgs = { group, direction, document, copy: !!document && copy, byUser, cancel: false, source: this };
     parts.splitting.fire(e);
     if (e.cancel) return null;
     this.restoreForChange();
-    const orientation = direction === 'left' || direction === 'right' ? 'horizontal' : 'vertical';
-    const after = direction === 'right' || direction === 'down';
     const made = this.createGroup();
-    const parent = group.parentSplit;
-    if (parent && parent.orientation === orientation) {
-      const at = parent.children.indexOf(group);
-      const half = parent.sizes[at] / 2;
-      parent.sizes[at] = half;
-      parent.children.splice(after ? at + 1 : at, 0, made);
-      parent.sizes.splice(after ? at + 1 : at, 0, half);
-      made.parentSplit = parent;
-    } else {
-      const branch = new TabSplit(this, orientation);
-      this.replaceNode(group, branch);
-      branch.children = after ? [group, made] : [made, group];
-      branch.sizes = [0.5, 0.5];
-      group.parentSplit = made.parentSplit = branch;
-    }
+    if (group) this.insertBeside(group, made, direction);
+    else this.insertAtEdge(made, direction);
     this.renderTree();
     let copied: TabDocument | null = null;
     if (document && e.copy && document.canCopy(!!this.factory)) {
@@ -1618,37 +2214,18 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return true;
   }
 
-  /** Takes an empty group out of the layout; a split left with one child gives its place to it. */
+  /** Takes an empty group out of the layout. */
   private removeGroup(group: TabGroup): void {
     const parts = this.parts;
-    const parent = group.parentSplit;
-    if (!parent) return;
+    if (!group.parentSplit) return;
     if (parts.maximized) this.unmaximize();
     const hadFocus = group.focusWithin;
-    parent.remove(group);
-    if (parent.children.length === 1) {
-      const only = parent.children[0];
-      const outer = parent.parentSplit;
-      if (outer && only instanceof TabSplit && only.orientation === outer.orientation) {
-        // Same direction as the split around it: its children join that split.
-        const at = outer.children.indexOf(parent);
-        const share = outer.sizes[at];
-        outer.children.splice(at, 1, ...only.children);
-        outer.sizes.splice(at, 1, ...only.sizes.map((s) => s * share));
-        for (const child of only.children) child.parentSplit = outer;
-        this.renderTree();
-        only.dispose();
-        parent.dispose();
-      } else {
-        parent.remove(only);
-        this.replaceNode(parent, only);
-        parent.dispose();
-      }
-    }
+    const gone = this.takeOut(group);
     parts.recentGroups = parts.recentGroups.filter((g) => g !== group);
     group.disposeTabs();
     this.controls.remove(group);
     this.renderTree();
+    for (const split of gone) split.dispose();
     if (this.activeGroup === group) {
       this.setProperty('activeGroup', null);
       const next = parts.recentGroups[0] ?? this.groups[0];
@@ -1656,6 +2233,61 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     }
     if (hadFocus) this.activeGroup?.restoreFocus();
     this.say('tabDocsGroupClosed');
+  }
+
+  /**
+   * Takes an item out of the tree; a split left with one child gives its place to it. Returns the
+   * splits that are gone, to dispose once the tree is in place again (what they held moves out first).
+   */
+  private takeOut(item: LayoutItem): TabSplit[] {
+    const parent = item.parentSplit;
+    if (!parent) return [];
+    parent.remove(item);
+    if (parent.children.length !== 1) return [];
+    const only = parent.children[0];
+    const outer = parent.parentSplit;
+    if (outer && only instanceof TabSplit && only.orientation === outer.orientation) {
+      // Same direction as the split around it: its children join that split.
+      const at = outer.children.indexOf(parent);
+      const share = outer.sizes[at];
+      outer.children.splice(at, 1, ...only.children);
+      outer.sizes.splice(at, 1, ...only.sizes.map((s) => s * share));
+      for (const child of only.children) child.parentSplit = outer;
+      return [only, parent];
+    }
+    parent.remove(only);
+    this.replaceNode(parent, only);
+    return [parent];
+  }
+
+  /** Puts `item` beside `target` in the tree, on the `direction` side; they share `target`'s room. */
+  private insertBeside(target: LayoutItem, item: LayoutItem, direction: SplitDirection): void {
+    const orientation = direction === 'left' || direction === 'right' ? 'horizontal' : 'vertical';
+    const after = direction === 'right' || direction === 'down';
+    const parent = target.parentSplit;
+    if (parent && parent.orientation === orientation) {
+      const at = parent.children.indexOf(target);
+      const half = parent.sizes[at] / 2;
+      parent.sizes[at] = half;
+      parent.children.splice(after ? at + 1 : at, 0, item);
+      parent.sizes.splice(after ? at + 1 : at, 0, half);
+      item.parentSplit = parent;
+    } else {
+      const branch = new TabSplit(this, orientation);
+      this.replaceNode(target, branch);
+      branch.children = after ? [target, item] : [item, target];
+      branch.sizes = [0.5, 0.5];
+      target.parentSplit = item.parentSplit = branch;
+    }
+  }
+
+  /** Puts `item` along an edge of the whole layout. */
+  private insertAtEdge(item: LayoutItem, direction: SplitDirection): void {
+    const root = this.parts.root!;
+    const orientation = direction === 'left' || direction === 'right' ? 'horizontal' : 'vertical';
+    const after = direction === 'right' || direction === 'down';
+    if (root instanceof TabSplit && root.orientation === orientation) root.insert(item, after ? root.children.length : 0);
+    else this.insertBeside(root, item, direction);
   }
 
   /** Puts `next` where `node` is in the tree and on the page. */
@@ -1797,8 +2429,11 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       if (doc.preview) saved.preview = true;
       return saved;
     });
-    const group = { kind: 'group' as const, documents, active: item.activeTab ? tabs.indexOf(item.activeTab) : -1, recent: item.recentTabs.map((t) => tabs.indexOf(t)) };
-    return item.locked ? { ...group, locked: true } : group;
+    const group: TabLayoutGroup = { kind: 'group', documents, active: item.activeTab ? tabs.indexOf(item.activeTab) : -1, recent: item.recentTabs.map((t) => tabs.indexOf(t)) };
+    if (item.locked) group.locked = true;
+    if (!item.allowDrop) group.allowDrop = false;
+    if (item.dropSides) group.dropSides = [...item.dropSides];
+    return group;
   }
 
   private readNode(node: TabLayoutNode, factory: TabLayoutFactory | undefined, made: Map<string, TabDocument>): LayoutItem {
@@ -1821,6 +2456,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     }
     const group = this.createGroup();
     if (node.locked) group.locked = true;
+    if (node.allowDrop === false) group.allowDrop = false;
+    if (node.dropSides) group.dropSides = node.dropSides;
     for (const saved of node.documents ?? []) {
       const first = made.get(saved.id);
       const doc = first && first.canCopy(!!this.factory) ? first.makeCopy() : this.restoreDocument(saved, factory);
@@ -1910,6 +2547,36 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       void this.closeDocument(tab.document, true);
       return true;
     });
+    const withTab = (run: (doc: TabDocument) => boolean) => (e: KeyboardEvent) => {
+      const doc = this.tabAt(e.target)?.document ?? this.activeDocument;
+      return !!doc && doc.manager === this && (run(doc), true);
+    };
+    each(
+      'moveTabLeft',
+      withTab((doc) => this.moveInGroupBy(doc, -1, true)),
+    );
+    each(
+      'moveTabRight',
+      withTab((doc) => this.moveInGroupBy(doc, 1, true)),
+    );
+    each(
+      'moveToNextGroup',
+      withTab((doc) => this.moveToGroupBy(doc, 'next', true)),
+    );
+    each(
+      'moveToPreviousGroup',
+      withTab((doc) => this.moveToGroupBy(doc, 'previous', true)),
+    );
+    for (const side of ['Left', 'Right', 'Up', 'Down'] as const) {
+      each(
+        `moveToGroup${side}`,
+        withTab((doc) => this.moveToGroupBy(doc, side.toLowerCase() as SplitDirection, true)),
+      );
+    }
+    each(
+      'moveTo',
+      withTab((doc) => this.showMoveTo(doc)),
+    );
     each('resizeSmaller', (e) => this.sashKey(e, -1));
     each('resizeLarger', (e) => this.sashKey(e, 1));
     each('resizeMin', (e) => this.sashKey(e, Number.NEGATIVE_INFINITY));
@@ -2001,9 +2668,22 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   }
 
   private renderMinSizes(): void {
-    const style = this.element.style;
+    for (const group of untracked(() => this.groups)) this.sizeGroup(group);
+  }
+
+  /**
+   * The sizes the props give a group and its tabs. Written on each group, not on the root, whose
+   * inline style is the app's to set (`style.cssText`).
+   */
+  private sizeGroup(group: TabGroup): void {
+    const style = group.element.style;
+    const max = this.peekProperty<number>('tabMaxWidth') ?? 0;
     style.setProperty('--_min-width', `${this.peekProperty<number>('minGroupWidth') ?? 160}px`);
     style.setProperty('--_min-height', `${this.peekProperty<number>('minGroupHeight') ?? 100}px`);
+    style.setProperty('--_tab-min', `${this.peekProperty<number>('tabMinWidth') ?? 80}px`);
+    style.setProperty('--_tab-fixed', `${this.peekProperty<number>('tabFixedWidth') ?? 160}px`);
+    if (max > 0) style.setProperty('--_tab-max', `${max}px`);
+    else style.removeProperty('--_tab-max');
   }
 
   /** The strip's look: how tabs are sized, where pinned ones go, wrapping and scroll buttons. */
@@ -2015,19 +2695,21 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     el.toggleAttribute('data-pinned-row', !!this.peekProperty('pinnedTabsOnSeparateRow'));
     el.toggleAttribute('data-wrap', !!this.peekProperty('wrapTabs'));
     el.toggleAttribute('data-scroll-buttons', this.peekProperty('scrollButtons') !== false);
-    const max = this.peekProperty<number>('tabMaxWidth') ?? 0;
-    el.style.setProperty('--_tab-min', `${this.peekProperty<number>('tabMinWidth') ?? 80}px`);
-    el.style.setProperty('--_tab-fixed', `${this.peekProperty<number>('tabFixedWidth') ?? 160}px`);
-    if (max > 0) el.style.setProperty('--_tab-max', `${max}px`);
-    else el.style.removeProperty('--_tab-max');
-    for (const group of untracked(() => this.groups)) group.queueOverflow();
+    for (const group of untracked(() => this.groups)) {
+      this.sizeGroup(group);
+      group.queueOverflow();
+    }
   }
 
   /** A polite announcement for screen readers. */
   private say(key: keyof UiStrings, values?: Record<string, unknown>): void {
+    this.sayText(this.textOf(key, values));
+  }
+
+  /** @internal */
+  sayText(text: string): void {
     if (!this.announce) return;
     const live = this.parts.live;
-    const text = this.textOf(key, values);
     live.textContent = '';
     queueMicrotask(() => (live.textContent = text));
   }
@@ -2059,6 +2741,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       menus: null,
       openList: null,
       recentList: null,
+      drag: null,
+      moveKeys: null,
+      marks: new DropMarks(el),
+      layoutTarget: null,
+      targets: [],
+      dropResult: null,
       opening: new Emitter(),
       opened: new Emitter(),
       closing: new Emitter(),
@@ -2082,9 +2770,28 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       unlocking: new Emitter(),
       unlocked: new Emitter(),
       menuOpening: new Emitter(),
+      dragStarting: new Emitter(),
+      dragOver: new Emitter(),
+      dropping: new Emitter(),
+      dropped: new Emitter(),
+      dragEnded: new Emitter(),
     };
     return parts;
   }
+}
+
+/** The groups of a branch of the layout, in order. */
+function groupsIn(item: LayoutItem): TabGroup[] {
+  return item instanceof TabSplit ? item.children.flatMap(groupsIn) : [item];
+}
+
+/**
+ * Dropped at `index` of a strip: whether the document lands among the pinned tabs (`true`), among
+ * the others (`false`), or on the border between them (`null`: it stays as it is).
+ */
+function pinAt(group: TabGroup, doc: TabDocument, index: number): boolean | null {
+  const pinned = group.tabs.filter((t) => t.document !== doc && t.document.pinned).length;
+  return index < pinned ? true : index > pinned ? false : null;
 }
 
 /** Whether the page runs as an installed app, where the browser leaves the editor keys to it. */

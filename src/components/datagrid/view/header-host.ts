@@ -1,4 +1,4 @@
-import type { DragGhost } from './DragGhost';
+import type { DragGhost } from '../../../parts/drag/DragGhost';
 import type { GroupPanel } from './GroupPanel';
 
 /** What the header and the column menu ask the grid to do; the grid owns menus, focus and measuring. */

@@ -226,12 +226,17 @@ describe('TabDocumentManager: the strip', () => {
   it('writes how tabs are sized, where pinned tabs go and whether they wrap', () => {
     const m = manager({ tabSize: 'fixed', tabFixedWidth: 120, tabMinWidth: 60, pinnedTabSize: 'compact', pinnedTabsOnSeparateRow: true });
     const el = m.element;
+    // The widths go on each group: the root's inline style is the app's.
+    el.style.cssText = 'block-size: 20rem';
+    const group = m.groups[0].element.style;
     expect([el.dataset.tabSize, el.dataset.pinnedSize, el.hasAttribute('data-pinned-row'), el.hasAttribute('data-wrap')]).toEqual(['fixed', 'compact', true, false]);
-    expect([el.style.getPropertyValue('--_tab-fixed'), el.style.getPropertyValue('--_tab-min'), el.style.getPropertyValue('--_tab-max')]).toEqual(['120px', '60px', '']);
+    expect([group.getPropertyValue('--_tab-fixed'), group.getPropertyValue('--_tab-min'), group.getPropertyValue('--_tab-max')]).toEqual(['120px', '60px', '']);
     m.wrapTabs = true;
     m.tabMaxWidth = 200;
     m.scrollButtons = false;
-    expect([el.hasAttribute('data-wrap'), el.style.getPropertyValue('--_tab-max'), el.hasAttribute('data-scroll-buttons')]).toEqual([true, '200px', false]);
+    expect([el.hasAttribute('data-wrap'), group.getPropertyValue('--_tab-max'), el.hasAttribute('data-scroll-buttons')]).toEqual([true, '200px', false]);
+    const made = m.split(m.groups[0], 'right')!.element.style;
+    expect([made.getPropertyValue('--_tab-min'), made.getPropertyValue('--_tab-max'), made.getPropertyValue('--_min-width')]).toEqual(['60px', '200px', '160px']);
   });
 
   it('a compact pinned tab keeps its title for screen readers and shows its first letter', async () => {
@@ -289,6 +294,7 @@ describe('TabDocumentManager: menus', () => {
       'Split right',
       'Move to the next group',
       'Move to the previous group',
+      'Move to…',
     ]);
     menuItem(m, 'Pin').click();
     expect(b.pinned).toBe(true);
@@ -338,7 +344,7 @@ describe('TabDocumentManager: menus', () => {
     const m = manager({ newDocument: () => ({ title: `Untitled-${++made}`, content: () => text('new') }) });
     const strip = m.groups[0].element.querySelector<HTMLElement>('.mx-tabdocs__strip')!;
     rightClick(strip);
-    expect(menuNames(m)).toEqual(['New document', 'Reopen closed', 'Close all', 'Close saved', 'Lock group', 'Split right', 'Split down']);
+    expect(menuNames(m)).toEqual(['New document', 'Reopen closed', 'Close all', 'Close saved', 'Lock group', 'Split right', 'Split down', 'Move group to…']);
     expect(menuItem(m, 'Reopen closed').getAttribute('aria-disabled')).toBe('true');
     menuItem(m, 'New document').click();
     expect(titles(m)).toEqual(['Untitled-1']);

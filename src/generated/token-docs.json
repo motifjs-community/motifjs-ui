@@ -5726,6 +5726,125 @@
     "value": "0.25rem"
   },
   {
+    "name": "tabdocs.drag-source-opacity",
+    "cssVar": "--mx-tabdocs-drag-source-opacity",
+    "type": "number",
+    "ref": "opacity.disabled",
+    "value": 0.5
+  },
+  {
+    "name": "tabdocs.ghost-bg",
+    "cssVar": "--mx-tabdocs-ghost-bg",
+    "type": "color",
+    "ref": "color.bg.card",
+    "value": "#f5f4f0"
+  },
+  {
+    "name": "tabdocs.ghost-border-width",
+    "cssVar": "--mx-tabdocs-ghost-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "tabdocs.ghost-border-color",
+    "cssVar": "--mx-tabdocs-ghost-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.default",
+    "value": "rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "tabdocs.ghost-radius",
+    "cssVar": "--mx-tabdocs-ghost-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.ghost-shadow",
+    "cssVar": "--mx-tabdocs-ghost-shadow",
+    "type": "shadow",
+    "ref": "elevation.popup",
+    "value": "0px 8px 16px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "tabdocs.ghost-max-width",
+    "cssVar": "--mx-tabdocs-ghost-max-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "24rem"
+  },
+  {
+    "name": "tabdocs.ghost-copy-width",
+    "cssVar": "--mx-tabdocs-ghost-copy-width",
+    "type": "dimension",
+    "ref": "border.width.2",
+    "value": "2px"
+  },
+  {
+    "name": "tabdocs.ghost-copy-color",
+    "cssVar": "--mx-tabdocs-ghost-copy-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "tabdocs.ghost-refused-opacity",
+    "cssVar": "--mx-tabdocs-ghost-refused-opacity",
+    "type": "number",
+    "ref": "opacity.disabled",
+    "value": 0.5
+  },
+  {
+    "name": "tabdocs.drop-area-bg",
+    "cssVar": "--mx-tabdocs-drop-area-bg",
+    "type": "color",
+    "ref": "color.accent.subtle",
+    "value": "#fbe6de"
+  },
+  {
+    "name": "tabdocs.drop-area-opacity",
+    "cssVar": "--mx-tabdocs-drop-area-opacity",
+    "type": "number",
+    "ref": "opacity.disabled",
+    "value": 0.5
+  },
+  {
+    "name": "tabdocs.drop-area-border-width",
+    "cssVar": "--mx-tabdocs-drop-area-border-width",
+    "type": "dimension",
+    "ref": "border.width.2",
+    "value": "2px"
+  },
+  {
+    "name": "tabdocs.drop-area-border-color",
+    "cssVar": "--mx-tabdocs-drop-area-border-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "tabdocs.drop-area-radius",
+    "cssVar": "--mx-tabdocs-drop-area-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.drop-mark-width",
+    "cssVar": "--mx-tabdocs-drop-mark-width",
+    "type": "dimension",
+    "ref": "border.width.2",
+    "value": "2px"
+  },
+  {
+    "name": "tabdocs.drop-mark-color",
+    "cssVar": "--mx-tabdocs-drop-mark-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
     "name": "tabdocs.focus-width",
     "cssVar": "--mx-tabdocs-focus-width",
     "type": "dimension",

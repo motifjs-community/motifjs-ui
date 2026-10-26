@@ -147,7 +147,7 @@ describe('ContextMenu', () => {
     expect(shown(menu)).toBe(true);
   });
 
-  it('closes on a press outside, on scrolling (unless told not to) and on choosing', async () => {
+  it('closes on a press outside; scrolling the menu itself never closes it', async () => {
     const menu = new ContextMenu({ items: [{ text: 'One' }] });
     page(<div class="zone" />, menu);
     menu.target = document.querySelector('.zone')!;
@@ -157,16 +157,76 @@ describe('ContextMenu', () => {
     expect(shown(menu)).toBe(false);
 
     rightClick(menu.target!);
-    document.dispatchEvent(new Event('scroll'));
-    expect(shown(menu)).toBe(false);
-    menu.closeOnScroll = false;
-    rightClick(menu.target!);
-    document.dispatchEvent(new Event('scroll'));
-    expect(shown(menu)).toBe(true);
-    // Scrolling the menu itself never closes it.
-    menu.closeOnScroll = true;
     popupOf(menu)!.dispatchEvent(new Event('scroll'));
     expect(shown(menu)).toBe(true);
+  });
+
+  it('follows the element it opened on while the page scrolls, and closes once that element is off the screen', async () => {
+    const menu = new ContextMenu({ items: [{ text: 'One' }] });
+    page(<div class="zone" />, menu);
+    const zone = document.querySelector<HTMLElement>('.zone')!;
+    menu.target = zone;
+    await settle();
+    let top = 50;
+    zone.getBoundingClientRect = () => new DOMRect(10, top, 200, 40);
+    const anchor = menu.element.querySelector<HTMLElement>('.mx-context-menu__anchor')!;
+    const scroll = (by: number) => {
+      top -= by;
+      document.dispatchEvent(new Event('scroll'));
+      document.dispatchEvent(new Event('scrollend'));
+    };
+
+    // The late scroll a press makes when it moves focus: the menu goes along.
+    rightClick(zone, 40, 60);
+    scroll(30);
+    expect(shown(menu)).toBe(true);
+    expect([anchor.style.left, anchor.style.top]).toEqual(['40px', '30px']);
+    // Another element scrolled: nothing moves.
+    const other = document.createElement('div');
+    document.body.append(other);
+    top -= 5;
+    other.dispatchEvent(new Event('scroll'));
+    expect([shown(menu), anchor.style.top]).toEqual([true, '30px']);
+    top += 5;
+
+    scroll(200);
+    expect(shown(menu)).toBe(false);
+
+    // Told not to close on scrolling: it stays even then.
+    top = 50;
+    menu.closeOnScroll = false;
+    rightClick(zone, 40, 60);
+    scroll(200);
+    expect(shown(menu)).toBe(true);
+  });
+
+  it('closes once the element it opened on is scrolled out of the box that holds it', async () => {
+    const menu = new ContextMenu({ items: [{ text: 'One' }] });
+    page(
+      <div class="box">
+        <div class="row" />
+      </div>,
+      menu,
+    );
+    const box = document.querySelector<HTMLElement>('.box')!;
+    const row = document.querySelector<HTMLElement>('.row')!;
+    box.style.overflow = 'auto';
+    menu.target = box;
+    await settle();
+    let top = 120;
+    box.getBoundingClientRect = () => new DOMRect(0, 100, 300, 200);
+    row.getBoundingClientRect = () => new DOMRect(0, top, 300, 30);
+    rightClick(row, 20, 130);
+    const scroll = (to: number) => {
+      top = to;
+      box.dispatchEvent(new Event('scroll'));
+      box.dispatchEvent(new Event('scrollend'));
+    };
+    scroll(85);
+    expect(shown(menu)).toBe(true);
+    // Still on the screen, but out of the box's sight.
+    scroll(60);
+    expect(shown(menu)).toBe(false);
   });
 
   it('leaves the browser its own menu while disabled or empty, and follows a target that changes', async () => {

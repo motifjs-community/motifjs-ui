@@ -15,6 +15,8 @@ const MENU = [
   ['pin, unpin', 'Pin / Unpin', 'Whichever applies.'],
   ['splitUp, splitDown, splitLeft, splitRight', 'Split up / down / left / right', 'A new group on that side with the document (or a copy, see `splitCopies`).'],
   ['moveNext, movePrevious', 'Move to the next / previous group', 'Splits when there is no group that way.'],
+  ['moveTo', 'Move to…', 'Chooses where the tab goes with the keys ([Drag and drop](/tabdocs/drag#keys)).'],
+  ['moveGroupTo', 'Move group to… (empty strip)', 'The same for the whole group.'],
   ['newDocument', 'New document (empty strip)', 'Only with `newDocument`.'],
   ['reopenClosed', 'Reopen closed (empty strip)', 'Dimmed while nothing can be reopened.'],
   ['lock, unlock', 'Lock group / Unlock group (empty strip)', ''],
@@ -42,7 +44,7 @@ const METHODS = [
   ['reopenClosed()', '`TabDocument | null`', 'Opens the document closed last again, in its group and place. `closedDocuments` lists them (reactive).'],
   ['lock(group), unlock(group)', '`boolean`', 'Also `group.lock()`, `group.unlock()`; `group.locked` reads it.'],
   ['openNew(group?)', '`TabDocument | null`', 'Makes a document with `newDocument` and opens it.'],
-  ['moveToGroup(doc, which)', '`boolean`', "`'next'` or `'previous'`; splits when there is no group that way."],
+  ['moveToGroup(doc, which)', '`boolean`', "`'next'`, `'previous'`, or the group on a side (`'left'`, `'right'`, `'up'`, `'down'`); splits when there is no group that way."],
   ['copyTitle(doc)', '`Promise<boolean>`', 'Writes the title to the clipboard.'],
   ['recentDocuments', 'read-only, reactive', 'The open documents of every group, the one activated last first.'],
 ];

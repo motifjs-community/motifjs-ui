@@ -197,7 +197,7 @@ export class BandRows<T> {
         if (Math.abs(ev.clientX - startX) < grid.settings.get('dragThreshold')) return;
         dragging = true;
         source.toggleAttribute('data-dragging', true);
-        ghost.show(source, ev.clientX, ev.clientY);
+        ghost.show(source, ev.clientX, ev.clientY, 'header');
       }
       const drop = dropPlace(
         units.map((u) => this.header.unitRect(u)),
