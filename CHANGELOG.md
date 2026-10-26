@@ -1037,3 +1037,5 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Docs: a "New windows" page (moving a tab, a group and back with a form, a DropDown and a DataGrid
   keeping their state; closing, blocked windows and the events; saving and restoring with windows and
   why reopening needs a click; what works there and the limits; the API); `e2e/checks/49-tabdocs-window.mjs`.
+- Popup: scrolling inside a popup (a menu taller than the window) no longer places it again, which took
+  the scroll back to the top; the page scrolling still moves it along with its anchor.

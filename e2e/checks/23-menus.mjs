@@ -107,4 +107,21 @@ export default async function ({ page, base, check, axeSource, box }) {
   await zone.click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Say where' }).click();
   check('attachContextMenu builds its items from the opening', (await zone.textContent()).includes('with the pointer'));
+
+  // A menu taller than a short window scrolls inside, and stays where the wheel took it.
+  const size = page.viewportSize();
+  await page.setViewportSize({ width: size.width, height: 260 });
+  await row.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(600);
+  await row.click({ button: 'right', position: { x: 30, y: 8 } });
+  const tall = page.locator('.mx-popup:popover-open');
+  const tallBox = await box(tall);
+  const room = await tall.evaluate((el) => el.scrollHeight - el.clientHeight);
+  await page.mouse.move(tallBox.left + tallBox.width / 2, tallBox.top + tallBox.height / 2);
+  await page.mouse.wheel(0, 60);
+  await page.waitForTimeout(300);
+  const kept = await tall.evaluate((el) => el.scrollTop);
+  check('a menu taller than the window scrolls inside and keeps its scroll', room > 0 && kept > 0 && (await openMenus()) === 1, `room ${room}, scrollTop ${kept}`);
+  await page.keyboard.press('Escape');
+  await page.setViewportSize(size);
 }

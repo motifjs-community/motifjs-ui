@@ -1,5 +1,6 @@
 import { Component, Emitter, type Event as MotifEvent } from '@motifx/core';
 import { deepActiveElement } from '../../core/focus';
+import { isNode } from '../../core/node-kind';
 import { placePopup } from './place-popup';
 import type { PopupCloseReason } from './popup-close-reason';
 import type { PopupOpenOptions } from './popup-open-options';
@@ -73,7 +74,7 @@ export class Popup extends Component<HTMLDivElement> {
       this.watched = doc;
       const view = doc.defaultView;
       doc.addEventListener('pointerdown', this.onPointerDown, true);
-      view?.addEventListener('scroll', this.schedule, true);
+      view?.addEventListener('scroll', this.onScroll, true);
       view?.addEventListener('resize', this.schedule);
     }
     this.place();
@@ -117,7 +118,7 @@ export class Popup extends Component<HTMLDivElement> {
     const view = doc.defaultView;
     doc.removeEventListener('pointerdown', this.onPointerDown, true);
     view?.cancelAnimationFrame?.(this.frame);
-    view?.removeEventListener('scroll', this.schedule, true);
+    view?.removeEventListener('scroll', this.onScroll, true);
     view?.removeEventListener('resize', this.schedule);
   }
 
@@ -129,6 +130,12 @@ export class Popup extends Component<HTMLDivElement> {
     }
     view.cancelAnimationFrame(this.frame);
     this.frame = view.requestAnimationFrame(() => this.place());
+  };
+
+  // Its own content scrolling moves nothing; placing it again would take that scroll back to the top.
+  private readonly onScroll = (e: Event) => {
+    if (isNode(e.target) && this.element.contains(e.target)) return;
+    this.schedule();
   };
 
   private readonly onPointerDown = (e: PointerEvent) => {
