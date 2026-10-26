@@ -153,7 +153,9 @@ describe('DataGrid row drag and drop', () => {
     expect(ghost(grid)?.dataset.target).toBe('move');
     drop(10, yOf(grid, 4, 0.75));
     expect(seen.slice(-1)).toEqual(['end 4']);
-    expect(reorder).toMatchObject({ fromIndex: 1, toIndex: 4, dropInsideItem: false, itemKey: 2, fromComponent: grid, toComponent: grid, component: grid });
+    expect(reorder).toMatchObject({ fromIndex: 1, toIndex: 4, dropInsideItem: false, itemKey: 2 });
+    // By identity: matching the grids field by field walks their whole object graph.
+    expect([reorder!.fromComponent, reorder!.toComponent, reorder!.component].every((c) => c === grid)).toBe(true);
     expect(reorder!.toItemData?.id).toBe(5);
     expect([ghost(grid), line(grid)?.hidden, rowEl(grid, 1).dataset.dragSource]).toEqual([null, true, undefined]);
     await settle();
