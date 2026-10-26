@@ -491,7 +491,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     el.addEventListener('mousedown', (e) => {
       if (e.button !== 0 || !this.enabled) return;
       el.removeAttribute('data-keys');
-      if (document.activeElement !== el) el.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
+      if (el.ownerDocument.activeElement !== el) el.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
     });
     // Keys after a press bring the ring back (`data-keys`); the browser would not.
     el.addEventListener('keydown', (e) => {
@@ -578,8 +578,8 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     const event = e.event;
     if (!this.isMultiple()) {
       this.chooseAt(e.index, event, 'add');
-    } else if (event instanceof KeyboardEvent) {
-      this.chooseAt(e.index, event, 'toggle');
+    } else if ('key' in event) {
+      this.chooseAt(e.index, event as KeyboardEvent, 'toggle');
     } else {
       const mouse = event as MouseEvent;
       const parts = this.listParts;

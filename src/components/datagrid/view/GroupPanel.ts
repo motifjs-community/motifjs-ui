@@ -118,7 +118,7 @@ export class GroupPanel<T> {
     untracked(() => {
       const el = this.element;
       // Moving a chip in the page blurs it: focus comes back to it.
-      const focused = document.activeElement as HTMLElement | null;
+      const focused = el.ownerDocument.activeElement as HTMLElement | null;
       el.setAttribute('aria-label', label);
       el.toggleAttribute('data-locked', !dragging);
       this.empty.textContent = empty;
@@ -139,7 +139,7 @@ export class GroupPanel<T> {
         if (chip !== before) el.insertBefore(chip, before);
         before = chip.nextSibling;
       });
-      if (focused && el.contains(focused) && document.activeElement !== focused) focused.focus();
+      if (focused && el.contains(focused) && el.ownerDocument.activeElement !== focused) focused.focus();
     });
   }
 

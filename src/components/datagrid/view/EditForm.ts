@@ -278,7 +278,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
       if (!p.editor) continue;
       const now = model.value(rowId, row, model.columns.get(field));
       if (sameValue(now, p.value)) continue;
-      const focused = p.holder.element.contains(document.activeElement);
+      const focused = p.holder.element.contains(p.holder.element.ownerDocument.activeElement);
       this.make(field);
       if (focused) p.editor?.focus();
     }

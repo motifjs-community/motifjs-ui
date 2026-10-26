@@ -665,6 +665,12 @@
   /* Floating windows: fixed in the viewport, stacked in the order of the page's window stack; the
      place and size come from --_x, --_y, --_w, --_h (the manager writes them). A group's strip is
      the title the window moves by. */
+  /* A new browser window: the manager's look, filling it. */
+  .mx-tabdocs__page {
+    position: fixed;
+    inset: 0;
+  }
+
   .mx-tabdocs__window {
     position: fixed;
     /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- the window stack adds its order to the token */

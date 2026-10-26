@@ -1,3 +1,6 @@
+import { documentOf, isHtmlElement } from './node-kind';
+import { lastFocusedDocument, pageDocuments } from './page-documents';
+
 const FOCUSABLE = [
   'a[href]',
   'area[href]',
@@ -12,12 +15,27 @@ const FOCUSABLE = [
 
 /**
  * The element that really has focus, descending through open shadow roots
- * (inside a shadow tree `document.activeElement` is only the host).
+ * (inside a shadow tree `document.activeElement` is only the host). In the
+ * document of `near` when given; else in the page's document, or in the
+ * connected window (see `connectDocument`) focus went to last.
  */
-export function deepActiveElement(): HTMLElement | null {
-  let el: Element | null = document.activeElement;
+export function deepActiveElement(near?: Node | null): HTMLElement | null {
+  const doc = near ? documentOf(near) : focusedDocument();
+  if (!doc) return null;
+  let el: Element | null = doc.activeElement;
   while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
-  return el instanceof HTMLElement && el !== document.body ? el : null;
+  return isHtmlElement(el) && el !== doc.body ? el : null;
+}
+
+/** The document that has focus, among the page's own and the connected ones: the one focus went to last. */
+function focusedDocument(): Document | null {
+  const docs = pageDocuments();
+  if (docs.length < 2) return docs[0] ?? null;
+  // Focus inside a frame makes the frame the active element of the page around it.
+  const holds = (d: Document) => !!d.activeElement && d.activeElement !== d.body && d.activeElement.localName !== 'iframe';
+  const last = lastFocusedDocument();
+  if (last && holds(last)) return last;
+  return docs.find((d) => d.hasFocus() && holds(d)) ?? docs.find(holds) ?? docs[0];
 }
 
 /** Rendered and not hidden by CSS (`display`, `visibility`, `content-visibility`); true where the API is missing. */

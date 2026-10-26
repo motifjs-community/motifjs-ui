@@ -1,5 +1,6 @@
 import { ComponentBase, effect, read, untracked } from '@motifx/core';
 import { columnsMark, downloadMark, plusMark, saveMark, searchMark, undoMark } from '../../../core/glyphs';
+import { isHtmlElement, isNode } from '../../../core/node-kind';
 import { Button } from '../../button/Button';
 import { TextBox } from '../../textbox/TextBox';
 import { Toolbar } from '../../toolbar/Toolbar';
@@ -307,10 +308,10 @@ export class GridToolbar<T> {
     const control = content instanceof ComponentBase ? content : null;
     let element: HTMLElement;
     if (control) element = control.element as HTMLElement;
-    else if (content instanceof HTMLElement) element = content;
+    else if (isHtmlElement(content)) element = content;
     else {
       element = document.createElement('span');
-      if (content instanceof Node) element.append(content);
+      if (isNode(content)) element.append(content);
       else if (content !== undefined && content !== null) element.textContent = String(content);
     }
     const visible = effect(() => {

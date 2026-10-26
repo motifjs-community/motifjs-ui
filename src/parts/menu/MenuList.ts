@@ -2,6 +2,7 @@ import { Component, effect, Emitter, read, untracked, type Bind, type ComponentB
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { checkMark, chevronEnd, radioMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
+import { isNode } from '../../core/node-kind';
 import { Popup } from '../popup/Popup';
 import type { MenuItem } from './menu-item';
 import type { MenuItemClickEventArgs } from './menu-item-click-event-args';
@@ -144,7 +145,7 @@ export class MenuList extends Component<HTMLDivElement> {
 
   private draw(looks: readonly ItemLook[]): void {
     // The focused item keeps its place when the items are drawn again.
-    const focused = this.entries.findIndex((entry) => entry.element === document.activeElement);
+    const focused = this.entries.findIndex((entry) => entry.element === this.element.ownerDocument.activeElement);
     const openItem = this.sub?.entry?.item;
     this.cancelHover();
     this.clear();
@@ -153,14 +154,14 @@ export class MenuList extends Component<HTMLDivElement> {
     for (const look of looks) {
       if (!look.visible) continue;
       if (look.beginGroup && this.entries.length) {
-        const line = document.createElement('div');
+        const line = this.element.ownerDocument.createElement('div');
         line.className = 'mx-menu__separator';
         line.setAttribute('role', 'separator');
         this.element.append(line);
       }
       const parsed = parseAccessKey(look.text);
       const element = this.itemElement(look);
-      const label = document.createElement('span');
+      const label = this.element.ownerDocument.createElement('span');
       label.className = 'mx-menu__label';
       renderAccessKey(label, parsed);
       element.querySelector('.mx-menu__icon')!.after(label);
@@ -188,7 +189,7 @@ export class MenuList extends Component<HTMLDivElement> {
   }
 
   private itemElement(look: ItemLook): HTMLButtonElement {
-    const element = document.createElement('button');
+    const element = this.element.ownerDocument.createElement('button');
     element.type = 'button';
     element.tabIndex = -1;
     element.className = 'mx-menu__item';
@@ -203,10 +204,10 @@ export class MenuList extends Component<HTMLDivElement> {
       element.setAttribute('aria-expanded', 'false');
     }
 
-    const check = element.appendChild(document.createElement('span'));
+    const check = element.appendChild(this.element.ownerDocument.createElement('span'));
     check.className = 'mx-menu__check';
     if (look.checked) check.append(look.radio ? radioMark() : checkMark());
-    const icon = element.appendChild(document.createElement('span'));
+    const icon = element.appendChild(this.element.ownerDocument.createElement('span'));
     icon.className = 'mx-menu__icon';
     const source = look.item.icon === undefined ? null : read(look.item.icon);
     if (source) {
@@ -215,12 +216,12 @@ export class MenuList extends Component<HTMLDivElement> {
       this.releases.push(shown.release);
     }
     if (look.shortcut) {
-      const shortcut = element.appendChild(document.createElement('span'));
+      const shortcut = element.appendChild(this.element.ownerDocument.createElement('span'));
       shortcut.className = 'mx-menu__shortcut';
       shortcut.textContent = look.shortcut;
     }
     if (look.submenu) {
-      const arrow = element.appendChild(document.createElement('span'));
+      const arrow = element.appendChild(this.element.ownerDocument.createElement('span'));
       arrow.className = 'mx-menu__arrow';
       arrow.append(chevronEnd());
     }
@@ -234,7 +235,7 @@ export class MenuList extends Component<HTMLDivElement> {
   }
 
   private entryOf(target: EventTarget | null): Entry | undefined {
-    return target instanceof Node ? this.entries.find((e) => e.element.contains(target)) : undefined;
+    return isNode(target) ? this.entries.find((e) => e.element.contains(target)) : undefined;
   }
 
   private onClick(e: MouseEvent): void {
@@ -314,7 +315,7 @@ export class MenuList extends Component<HTMLDivElement> {
   private onPointerMove(e: PointerEvent): void {
     const entry = this.entryOf(e.target);
     if (!entry) return;
-    if (entry.element !== document.activeElement) {
+    if (entry.element !== this.element.ownerDocument.activeElement) {
       this.pointerFocus = true;
       entry.element.focus({ preventScroll: true });
       this.pointerFocus = false;
@@ -345,9 +346,9 @@ export class MenuList extends Component<HTMLDivElement> {
 
   private onKeyDown(e: KeyboardEvent): void {
     if (!this.entries.length || e.ctrlKey || e.metaKey || e.altKey) return;
-    const at = this.entries.findIndex((entry) => entry.element === document.activeElement);
+    const at = this.entries.findIndex((entry) => entry.element === this.element.ownerDocument.activeElement);
     const go = (index: number) => this.entries[(index + this.entries.length) % this.entries.length].element.focus();
-    const rtl = getComputedStyle(this.element).direction === 'rtl';
+    const rtl = (this.element.ownerDocument.defaultView ?? window).getComputedStyle(this.element).direction === 'rtl';
     switch (e.key) {
       case 'ArrowDown':
         go(at + 1);

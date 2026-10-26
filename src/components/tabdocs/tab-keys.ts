@@ -41,6 +41,8 @@ const LOCAL: Pick<
   | 'moveWindow'
   | 'maximizeWindow'
   | 'closeWindow'
+  | 'moveToNewWindow'
+  | 'moveToMainWindow'
   | 'windowLeft'
   | 'windowRight'
   | 'windowUp'
@@ -90,6 +92,8 @@ const LOCAL: Pick<
   moveWindow: ['Ctrl+K Space'],
   maximizeWindow: ['Ctrl+K Shift+M'],
   closeWindow: ['Ctrl+K Shift+W'],
+  moveToNewWindow: ['Ctrl+K Shift+O'],
+  moveToMainWindow: ['Ctrl+K Shift+D'],
   windowLeft: ['ArrowLeft'],
   windowRight: ['ArrowRight'],
   windowUp: ['ArrowUp'],

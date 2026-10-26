@@ -1,3 +1,4 @@
+import { isElement } from '../../core/node-kind';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { ContextMenu } from './ContextMenu';
 import type { ContextMenuOpeningEventArgs } from './context-menu-opening-event-args';
@@ -22,6 +23,6 @@ export function attachContextMenu(
     menu.target = null;
     void menu.dispose();
   };
-  if (!(target instanceof Element)) target.motif.setDisposable(remove);
+  if (!isElement(target)) target.motif.setDisposable(remove);
   return remove;
 }

@@ -30,4 +30,6 @@ export type TabMenuCommand =
   | 'dockBottom'
   | 'autoHide'
   | 'maximizeWindow'
-  | 'closeWindow';
+  | 'closeWindow'
+  | 'newWindow'
+  | 'mainWindow';

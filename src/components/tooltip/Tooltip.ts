@@ -2,6 +2,7 @@ import { Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type 
 import { Control } from '../../core/control';
 import { focusableIn, isFocusable } from '../../core/focus';
 import { nextId } from '../../core/next-id';
+import { isElement } from '../../core/node-kind';
 import { placePopup } from '../../parts/popup/place-popup';
 import type { PopupPlacement } from '../../parts/popup/popup-placement';
 import { hideTooltip, isTooltipShown, linkTooltip, showTooltip, tooltipTiming, unlinkTooltip } from './tooltip-hub';
@@ -33,8 +34,8 @@ const PARTS = Symbol('mx.tooltip');
 
 function elementOf(target: TooltipTarget | null | undefined): Element | null {
   if (!target) return null;
-  if (target instanceof Element) return target;
-  return target.element instanceof Element ? target.element : null;
+  if (isElement(target)) return target;
+  return isElement(target.element) ? target.element : null;
 }
 
 const HOLDS_FLOW = 'div, section, main, article, aside, nav, header, footer, form, dialog, fieldset, li, dd, td, th, body';
@@ -49,7 +50,7 @@ function homeOf(anchor: Element): Element {
   for (let el = anchor.parentElement; el; el = el.parentElement) {
     if (el.matches(HOLDS_FLOW) && !el.closest(NAMED_BY_CONTENT)) return el;
   }
-  return document.body;
+  return anchor.ownerDocument.body;
 }
 
 function addToken(el: Element, name: string, token: string): void {
@@ -261,7 +262,7 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
     if (!anchor) return;
     linkTooltip(anchor, this);
     // Created from code for a component: it goes with the component.
-    if (target && !(target instanceof Element)) {
+    if (target && !isElement(target)) {
       target.motif.setDisposable(() => {
         if (!this.parent && this.peekProperty('target') === target) void this.dispose();
       });
@@ -272,7 +273,7 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
     const parts = this.parts;
     if (!parts.label) {
       if (!text) return;
-      parts.label = document.createElement('span');
+      parts.label = this.element.ownerDocument.createElement('span');
       parts.label.className = 'mx-tooltip__text';
       this.element.prepend(parts.label);
     }

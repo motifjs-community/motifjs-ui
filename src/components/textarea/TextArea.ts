@@ -1,5 +1,6 @@
 import { effect, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 
+import { ResizeWatch } from '../../core/resize-watch';
 import { uiLocale } from '../../core/ui-locale';
 import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
 import { Field } from '../../parts/field/Field';
@@ -32,7 +33,7 @@ const PARTS = Symbol('mx.textarea');
 
 interface Parts {
   /** Follows the width while `autoGrow` is on: a narrower box wraps into more lines. */
-  watcher: ResizeObserver | null;
+  watcher: ResizeWatch | null;
   width: number;
   /** The text was selected on focus: the mouseup of the same click must not undo it. */
   keepSelection: boolean;
@@ -309,7 +310,7 @@ export class TextArea extends Field<string, TextAreaProps> {
     this.element.dataset.resize = grow ? 'none' : (this.peekProperty<TextAreaResize>('resize') ?? 'vertical');
     this.element.toggleAttribute('data-auto-grow', grow);
     if (grow && !parts.watcher && typeof ResizeObserver !== 'undefined') {
-      parts.watcher = new ResizeObserver((entries) => {
+      parts.watcher = new ResizeWatch((entries) => {
         const width = entries[entries.length - 1].contentRect.width;
         if (width === parts.width) return;
         parts.width = width;

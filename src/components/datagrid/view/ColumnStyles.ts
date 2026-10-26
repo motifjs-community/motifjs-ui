@@ -1,3 +1,4 @@
+import { watchDocument } from '../../../core/document-watch';
 import type { ColumnModel } from '../model/ColumnModel';
 import type { StickyOffset } from '../model/sticky-offset';
 
@@ -15,6 +16,7 @@ export class ColumnStyles<T> {
   private sheet: CSSStyleSheet | null = null;
   private root: Document | ShadowRoot | null = null;
   private styleEl: HTMLStyleElement | null = null;
+  private stopWatch: (() => void) | null = null;
 
   constructor(
     private readonly columns: ColumnModel<T>,
@@ -61,10 +63,12 @@ export class ColumnStyles<T> {
 
   attach(host: HTMLElement) {
     const root = host.getRootNode() as Document | ShadowRoot;
-    const canAdopt = 'adoptedStyleSheets' in root && typeof CSSStyleSheet === 'function' && typeof CSSStyleSheet.prototype.replaceSync === 'function';
+    // A sheet is adopted only by documents of the window that made it.
+    const Sheet = host.ownerDocument.defaultView?.CSSStyleSheet;
+    const canAdopt = 'adoptedStyleSheets' in root && typeof Sheet === 'function' && typeof Sheet.prototype.replaceSync === 'function';
     if (canAdopt) {
       try {
-        this.sheet = new CSSStyleSheet();
+        this.sheet = new Sheet();
         root.adoptedStyleSheets = [...root.adoptedStyleSheets, this.sheet];
         this.root = root;
       } catch {
@@ -72,13 +76,25 @@ export class ColumnStyles<T> {
       }
     }
     if (!this.sheet) {
-      this.styleEl = document.createElement('style');
+      this.styleEl = host.ownerDocument.createElement('style');
       host.appendChild(this.styleEl);
     }
     this.apply();
+    // The grid moved into a window the app opened, or back: the sheet goes along.
+    this.stopWatch?.();
+    this.stopWatch = watchDocument(host, () => {
+      this.drop();
+      this.attach(host);
+    });
   }
 
   detach() {
+    this.stopWatch?.();
+    this.stopWatch = null;
+    this.drop();
+  }
+
+  private drop() {
     if (this.sheet && this.root) this.root.adoptedStyleSheets = this.root.adoptedStyleSheets.filter((s) => s !== this.sheet);
     this.styleEl?.remove();
     this.sheet = null;

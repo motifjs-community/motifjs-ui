@@ -4,6 +4,7 @@ import { focusableIn, isFocusable } from '../../core/focus';
 import { dismissMark, pinMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
+import { letMount } from '../../core/let-mount';
 import { nextId } from '../../core/next-id';
 import { Tooltip } from '../tooltip/Tooltip';
 import type { ContentLifetime } from './content-lifetime';
@@ -36,6 +37,10 @@ export class DocumentTab {
   private closeKey: string | null = null;
   private content: ComponentBase | null = null;
   private shown = false;
+  /** What scrolled in the panel: a hidden element tells no scroll, and a move into another window loses it. */
+  private readonly scrolls = new Map<Element, [number, number]>();
+  /** The document the panel was in when it was hidden. */
+  private hiddenIn: Document | null = null;
   private readonly stops: (() => void)[] = [];
 
   constructor(
@@ -74,6 +79,7 @@ export class DocumentTab {
     el.setAttribute('role', 'tabpanel');
     el.setAttribute('aria-labelledby', header.id);
     header.setAttribute('aria-controls', el.id);
+    el.addEventListener('scroll', (e) => this.noteScroll(e.target), { capture: true, passive: true });
     this.render();
   }
 
@@ -84,10 +90,15 @@ export class DocumentTab {
 
   /** Shows or hides the panel; the content is built or let go as its lifetime says. */
   show(on: boolean): void {
+    const el = this.panel.element;
+    if (!on && !el.hidden) this.hiddenIn = el.ownerDocument;
     this.shown = on;
     this.header.setAttribute('aria-selected', String(on));
-    this.panel.element.hidden = !on;
+    el.hidden = !on;
     if (on) {
+      // Moved into another window while hidden: what scrolled in it scrolls back.
+      if (this.hiddenIn && this.hiddenIn !== el.ownerDocument) this.restoreScrolls();
+      this.hiddenIn = null;
       this.build();
       this.updatePanelFocus();
     } else if (this.lifetime() === 'dispose') {
@@ -144,6 +155,25 @@ export class DocumentTab {
     this.content = null;
   }
 
+  private noteScroll(target: EventTarget | null): void {
+    const el = target as Element | null;
+    if (!el || typeof el.scrollTop !== 'number') return;
+    if (el.scrollTop || el.scrollLeft) this.scrolls.set(el, [el.scrollTop, el.scrollLeft]);
+    else this.scrolls.delete(el);
+  }
+
+  private restoreScrolls(): void {
+    const panel = this.panel.element;
+    for (const [el, [top, left]] of this.scrolls) {
+      if (!panel.contains(el)) {
+        this.scrolls.delete(el);
+        continue;
+      }
+      el.scrollTop = top;
+      el.scrollLeft = left;
+    }
+  }
+
   private lifetime(): ContentLifetime {
     return untracked(() => this.document.contentLifetime ?? this.manager.contentLifetime);
   }
@@ -154,6 +184,9 @@ export class DocumentTab {
     if (!made) return;
     this.content = made;
     this.panel.controls.add(made);
+    // Made right into a new browser window: core's onMounted waits for the page's document (CORE-REPORTS R30).
+    const panel = this.panel.element;
+    if (panel.ownerDocument !== this.manager.element.ownerDocument) letMount(panel);
   }
 
   private release(): void {
@@ -300,7 +333,7 @@ export class DocumentTab {
         this.icon.setAttribute('aria-hidden', 'true');
         this.header.prepend(this.icon);
       }
-      const shown = iconNode(icon);
+      const shown = iconNode(icon, this.header.ownerDocument);
       this.icon.replaceChildren(shown.node);
       this.releaseIcon = shown.release;
     }

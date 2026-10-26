@@ -3,6 +3,7 @@ import { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
 import { dismissMark, plusMark } from '../../core/glyphs';
+import { isHtmlElement, isNode } from '../../core/node-kind';
 import type { UiStrings } from '../../core/ui-strings';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Button } from '../button/Button';
@@ -734,7 +735,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
   }
 
   private cellAt(target: EventTarget | null): Cell | undefined {
-    if (!(target instanceof HTMLElement)) return undefined;
+    if (!isHtmlElement(target)) return undefined;
     for (const row of this.parts.rows) for (const c of row.cells) if (faceOf(c.button) === target) return c;
     return undefined;
   }
@@ -885,7 +886,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     if (editor instanceof Control) {
       if (editor.focus()) return;
     }
-    const target = editor.element instanceof HTMLElement ? editor.element.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]') : null;
+    const target = isHtmlElement(editor.element) ? editor.element.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]') : null;
     target?.focus();
   }
 
@@ -980,7 +981,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
       e.preventDefault();
       this.stopEditor(true, true);
     } else if (e.key === 'Tab') {
-      const at = editing.editors.findIndex((ed) => ed.element instanceof Node && ed.element.contains(e.target as Node));
+      const at = editing.editors.findIndex((ed) => isNode(ed.element) && ed.element.contains(e.target as Node));
       const next = editing.editors[at + (e.shiftKey ? -1 : 1)];
       if (next) {
         e.preventDefault();

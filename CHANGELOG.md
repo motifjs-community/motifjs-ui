@@ -974,3 +974,66 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Docs: a "Dock and floating windows" page (an editor with tool areas, floating by code, the settings,
   saving the whole layout, the keys, the API); `e2e/checks/48-tabdocs-dock.mjs`; 45 reads layout
   version 2; the drag and drop page says what a drop outside the manager does now.
+- Milestone 5, new browser windows. `moveToNewWindow(doc | group | floatingWindow, { rect, url })` opens
+  a window of the page's origin (`window.open`, or the app's `openWindow` for an application shell, a host page or a
+  test) at the size of what moves, beside it (`newWindowSize`), and moves the document, the group or the
+  floating window's whole layout into it; the content is not made again. The window (`TabBrowserWindow`:
+  `window`, `element`, `rect`, `groups`, `documents`, `activeGroup`, `activeDocument`, `moveToMainWindow()`,
+  `close()`, `focus()`; `browserWindows`, reactive) holds groups as the documents' area does: tabs, pins,
+  previews, the lists, splitting, the splitters, the menus, the keys and dragging work there. Its title
+  follows its active document (`newWindowTitle`: `'{title} – {page}'` or a function).
+- Back: `moveToMainWindow(doc | group | window)` (into the group it came from, else the main window's
+  active one), "Move back to main window" on the tab and strip menus, Ctrl + K Shift + D
+  (`moveToMainWindow` key); "Move into new window" on the tab menu, the strip menu and a floating
+  window's strip ("Move window into new window"), Ctrl + K Shift + O (`moveToNewWindow` key). `move`,
+  `split`, `dock` and `float` take groups of any window; "Move to…" goes through the groups of every
+  window and, past floating, to a new window.
+- Dragging: inside a new window as in the page (strips, a group's zones or guides, the edges of its
+  layout: an `'edge'` place carries `browserWindow`). The pointer stays with a drag that leaves its
+  window; the window under it there, found by its place on the screen, takes the drop. Let go past
+  every window: from the page into a new window there (`'new-window'` place, with `rect`), from a new
+  window back to the main window (`'main-window'`); `dragOutToNewWindow` turns it off.
+- Closing: when the user closes a new window its documents come back, or close
+  (`newWindowCloseAction: 'back' | 'close'`, `onWindowClosing`'s `then`); each one closing asks through
+  `onClosing` as usual, back in the main window. `closeWindow(window)` and `window.close()` by code (a
+  closing cancel keeps it). When the page goes away its new windows close. `onWindowClosing` /
+  `onWindowClosed` carry `kind` (`'floating' | 'browser'`) and `then`; `reason` `'moved'` for a floating
+  window that went into a new window; `then: 'back'` docks a floating window back instead of closing.
+- Blocked: no window from the browser fires `onError` (`windowBlocked`; `windowNotUsable` for a page of
+  another origin) and opens a floating window instead (`newWindowFallback: 'float' | 'none'`, changeable
+  in the event). `allowNewWindow` on the manager and per document (the document's own wins).
+  `onWindowOpening` (cancelable; `rect`, `url` may change) / `onWindowOpened`. `onLayoutChanging` /
+  `onLayoutChanged` also for `'newWindow'` and `'mainWindow'`.
+- The layout saves the new windows (place on the screen, layout, the group they came from):
+  `TabLayout.version` 3, `browserWindows`; versions 1 and 2 still load. `loadLayout` puts them back as
+  floating windows (`restoreWindows: 'float'`), among the main window's documents (`'main'`) or as
+  windows again (`'reopen'`): a browser opens windows only on a click or a key, so `loadLayout` called
+  from one opens them and `reopenWindows()` opens later what was blocked.
+- The look: the page's style sheets (links, `<style>`, constructed sheets) and the attributes of `<html>`
+  and `<body>` are copied into the new window and followed (a sheet added or changed later, the theme,
+  the design language, `dir`, `lang`). Announced: moved into a new window, back to the main window,
+  window closed, the browser did not open the window (en, tr).
+- Kit, for other documents: `connectDocument(doc)` / `disconnectDocument(doc)` / `pageDocuments()`: the
+  kit's document-wide listeners (shortcuts and access keys, tooltips, the focus guard, the press
+  tracking of `afterPress`) work in another same-origin document too and leave it when its window
+  closes. `deepActiveElement(node?)` reads the document of `node`, else the one focus went to last.
+  `Popup`, `ContextMenu` and `Tooltip` open in the document of the element they open at (its own top
+  layer, viewport and window events); `MenuList`, `ListBox`, `Button`, `Field`, `MxForm`, `FocusContainer`,
+  the `enabled` cascade, `Control.focused` / `focusWithin` use their element's document and window; the
+  window stack keeps one stack per document (`windowStack.top(doc)`); a scoped shortcut holds for parts
+  of its component moved into another window. Checks that work for nodes and events of any window
+  (`instanceof Element` and `instanceof KeyboardEvent` fail across windows; Chrome also remakes a
+  collected node's wrapper with its new window's classes, so a DropDown in a new window stopped
+  choosing after a while): `OptionList`, `Tabs`, `TreeView`, `MenuBar`, `FilterBuilder`, `Toaster` and the
+  DataGrid's cell contents use them. `ResizeWatch` (exported):
+  a `ResizeObserver` that follows its elements into another window, used by the DataGrid, its pager and
+  rows, `Tabs`, `TextArea`, `Toolbar` and the manager's groups. `mirrorPage(source, target)` (exported).
+  The DataGrid's focus, copy and paste, row drag and column sheet follow it into another window.
+  `iconNode(source, doc?)`.
+- Core: an element that first reaches another window's document gets no `onMounted`, and a router
+  link clicked there would load its page into that window (CORE-REPORTS R30): content made in a new
+  window stands for a moment in the page (`core/let-mount.ts`), and a router link clicked there is
+  clicked again in the page.
+- Docs: a "New windows" page (moving a tab, a group and back with a form, a DropDown and a DataGrid
+  keeping their state; closing, blocked windows and the events; saving and restoring with windows and
+  why reopening needs a click; what works there and the limits; the API); `e2e/checks/49-tabdocs-window.mjs`.

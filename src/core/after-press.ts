@@ -1,3 +1,5 @@
+import { eachDocument } from './page-documents';
+
 let down = false;
 let installed = false;
 let waiting: (() => void)[] = [];
@@ -5,7 +7,7 @@ let waiting: (() => void)[] = [];
 function install(): void {
   if (installed || typeof document === 'undefined') return;
   installed = true;
-  document.addEventListener('pointerdown', () => (down = true), true);
+  const press = () => (down = true);
   const release = () => {
     if (!down) return;
     down = false;
@@ -14,8 +16,16 @@ function install(): void {
       for (const run of waiting.splice(0)) run();
     });
   };
-  document.addEventListener('pointerup', release, true);
-  document.addEventListener('pointercancel', release, true);
+  eachDocument((doc) => {
+    doc.addEventListener('pointerdown', press, true);
+    doc.addEventListener('pointerup', release, true);
+    doc.addEventListener('pointercancel', release, true);
+    return () => {
+      doc.removeEventListener('pointerdown', press, true);
+      doc.removeEventListener('pointerup', release, true);
+      doc.removeEventListener('pointercancel', release, true);
+    };
+  });
 }
 
 /**

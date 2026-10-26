@@ -1,4 +1,5 @@
 import { deepActiveElement, nextTabbable } from './focus';
+import { isElement } from './node-kind';
 
 // `enabled = false` on a container disables everything inside it, controls
 // and plain elements alike (as a disabled <fieldset> does for form fields),
@@ -80,7 +81,7 @@ function restore(el: Element, name: string, value: string | null): void {
 
 /** The disableable elements of `node`'s subtree, `node` included. */
 function disableables(node: Node): Element[] {
-  if (!(node instanceof Element)) return [];
+  if (!isElement(node)) return [];
   const found = Array.from(node.querySelectorAll(DISABLEABLE));
   if (node.matches(DISABLEABLE)) found.unshift(node);
   return found;
@@ -172,6 +173,6 @@ export function disableSubtree(root: HTMLElement): () => void {
 export function rescueTarget(area: Element): HTMLElement | null {
   const active = deepActiveElement();
   if (!active || !area.contains(active)) return null;
-  const scope = area.parentElement?.closest<HTMLElement>('dialog') ?? document.body;
+  const scope = area.parentElement?.closest<HTMLElement>('dialog') ?? area.ownerDocument.body;
   return nextTabbable(area, scope) ?? nextTabbable(area, scope, false);
 }

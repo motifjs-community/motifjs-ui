@@ -3,6 +3,7 @@ import { checkMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
+import { isElement } from '../../core/node-kind';
 import { uiLocale } from '../../core/ui-locale';
 import type { ItemSource } from './item-source';
 import type { ListMove } from './list-move';
@@ -419,7 +420,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   }
 
   private indexOf(target: EventTarget | null): number {
-    const el = target instanceof Element ? target.closest<HTMLElement>('[role="option"]') : null;
+    const el = isElement(target) ? target.closest<HTMLElement>('[role="option"]') : null;
     return el && this.element.contains(el) ? Number(el.dataset.index) : -1;
   }
 

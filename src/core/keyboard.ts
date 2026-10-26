@@ -1,14 +1,17 @@
 import type { ComponentBase } from '@motifx/core';
 import { accessKeyModifiers } from './access-key';
-import { controlOf } from './control-map';
+import { closestControl, controlOf } from './control-map';
 import { deepActiveElement, isShown } from './focus';
+import { documentOf, isNode } from './node-kind';
+import { eachDocument, pageDocuments } from './page-documents';
 import { isApplePlatform } from './platform';
 import { windowStack } from './window-stack';
 
 // One capture-phase keydown listener on the document serves every shortcut
 // and every access key of the app. Capture, because windows stop key events
 // at their root; one listener, so controls pay nothing per instance. It is
-// installed the first time a shortcut or an access key is registered.
+// installed the first time a shortcut or an access key is registered, in the
+// page's document and in each one connected to it (`connectDocument`).
 //
 // Order: an explicit chord wins over an implicit access key.
 //   1. shortcuts: the most specific scope that holds focus first, app-wide last;
@@ -179,10 +182,25 @@ export function isChord(chords: readonly string[], e: KeyboardEvent): boolean {
 export function installKeyboard(): void {
   if (installed || typeof document === 'undefined') return;
   installed = true;
-  document.addEventListener('keydown', onKeyDown, true);
-  document.addEventListener('keyup', onKeyUp, true);
-  document.addEventListener('pointerdown', hideAccessKeys, true);
-  window.addEventListener('blur', hideAccessKeys);
+  eachDocument((doc) => {
+    const view = doc.defaultView;
+    doc.addEventListener('keydown', onKeyDown, true);
+    doc.addEventListener('keyup', onKeyUp, true);
+    doc.addEventListener('pointerdown', hideAccessKeys, true);
+    view?.addEventListener('blur', hideAccessKeys);
+    return () => {
+      doc.removeEventListener('keydown', onKeyDown, true);
+      doc.removeEventListener('keyup', onKeyUp, true);
+      doc.removeEventListener('pointerdown', hideAccessKeys, true);
+      view?.removeEventListener('blur', hideAccessKeys);
+    };
+  });
+}
+
+/** The document a key event came from: the listener sits on it. */
+function eventDocument(e: Event): Document {
+  const at = e.currentTarget;
+  return isNode(at) ? documentOf(at) : document;
 }
 
 function isEditable(el: Element | null): boolean {
@@ -193,13 +211,13 @@ function isEditable(el: Element | null): boolean {
 }
 
 /** The window keys go to: the modal one when there is one, else the one holding focus. */
-function activeWindow(focus: Element | null): Element | null {
-  return topModal() ?? focus?.closest('dialog') ?? null;
+function activeWindow(focus: Element | null, doc: Document): Element | null {
+  return topModal(doc) ?? focus?.closest('dialog') ?? null;
 }
 
-/** The front-most modal window: the window stack knows it (and jsdom has no `:modal`). */
-function topModal(): Element | null {
-  const top = windowStack.top();
+/** The front-most modal window of a document: the window stack knows it (and jsdom has no `:modal`). */
+function topModal(doc: Document): Element | null {
+  const top = windowStack.top(doc);
   return top?.modal ? top.element : null;
 }
 
@@ -217,24 +235,25 @@ let altChord = false;
 let altLatched = false;
 
 function onKeyDown(e: KeyboardEvent): void {
+  const doc = eventDocument(e);
   if (isApplePlatform()) {
     if (e.key === 'Alt' || e.key === 'Control') {
-      if (e.ctrlKey && e.altKey && !e.metaKey) showAccessKeys();
+      if (e.ctrlKey && e.altKey && !e.metaKey) showAccessKeys(doc);
       return;
     }
   } else if (e.key === 'Alt') {
     if (e.ctrlKey || e.metaKey) return; // AltGr and friends
     if (!altDown) altChord = false;
     altDown = true;
-    showAccessKeys();
-    if (pageHasAccessKeys()) e.preventDefault();
+    showAccessKeys(doc);
+    if (pageHasAccessKeys(doc)) e.preventDefault();
     return;
   }
   if (altDown) altChord = true;
   else if (altLatched) hideAccessKeys();
   if (e.defaultPrevented || e.isComposing) return;
-  const focus = deepActiveElement();
-  const win = activeWindow(focus);
+  const focus = deepActiveElement(doc);
+  const win = activeWindow(focus, doc);
   if (pending) {
     if (MODIFIERS.has(e.key)) return;
     continueShortcut(e, focus, win);
@@ -242,7 +261,7 @@ function onKeyDown(e: KeyboardEvent): void {
     e.stopPropagation();
     return;
   }
-  if (runShortcuts(e, focus, win) || runAccessKey(e, focus, win)) {
+  if (runShortcuts(e, focus, win) || runAccessKey(e, focus, win, doc)) {
     e.preventDefault();
     e.stopPropagation();
   }
@@ -256,7 +275,7 @@ function onKeyUp(e: KeyboardEvent): void {
   if (e.key !== 'Alt') return;
   const tap = altDown && !altChord;
   altDown = false;
-  if (tap && pageHasAccessKeys()) e.preventDefault();
+  if (tap && pageHasAccessKeys(eventDocument(e))) e.preventDefault();
   if (tap && !altLatched) {
     altLatched = true; // stays shown
     return;
@@ -264,19 +283,19 @@ function onKeyUp(e: KeyboardEvent): void {
   hideAccessKeys();
 }
 
-function showAccessKeys(): void {
-  document.documentElement.setAttribute('data-mx-alt', '');
+function showAccessKeys(doc: Document): void {
+  doc.documentElement.setAttribute('data-mx-alt', '');
 }
 
 function hideAccessKeys(): void {
   pending = null;
   altLatched = false;
-  document.documentElement.removeAttribute('data-mx-alt');
+  for (const doc of pageDocuments()) doc.documentElement.removeAttribute('data-mx-alt');
 }
 
 /** Whether the keys would reach anything: an access key in the active window or the page. */
-function pageHasAccessKeys(): boolean {
-  const scope = activeWindow(deepActiveElement()) ?? document.body;
+function pageHasAccessKeys(doc: Document): boolean {
+  const scope = activeWindow(deepActiveElement(doc), doc) ?? doc.body;
   return !!scope.querySelector('[aria-keyshortcuts*="Alt+" i]');
 }
 
@@ -318,20 +337,31 @@ function findShortcuts(regs: Iterable<Registration>, step: number, e: KeyboardEv
     if (step === 0 && plain && !fKey && !reg.inEditable && isEditable(focus)) continue;
     if (reg.scope) {
       const el = reg.scope.element as Element | null;
-      if (reg.scope.isDisposed || !el?.isConnected || !focus || !el.contains(focus)) continue;
+      if (reg.scope.isDisposed || !el?.isConnected || !focus || !holds(reg.scope, el, focus)) continue;
       if (win && !win.contains(el)) continue;
       const control = controlOf(el);
       if (control && !control.isEnabled) continue;
       candidates.push({ reg, depth: depthOf(el) });
     } else {
       // App-wide: never across a modal form; plain keys belong to a focused window.
-      if (win && topModal() === win) continue;
+      if (win && topModal(win.ownerDocument) === win) continue;
       if (step === 0 && win && plain && !fKey) continue;
       candidates.push({ reg, depth: -1 });
     }
   }
   candidates.sort((a, b) => b.depth - a.depth);
   return candidates.map((c) => c.reg);
+}
+
+/**
+ * Whether focus is inside a scope: in its element, or, for a part of it moved into another window
+ * (a group of documents, say), in one of its components.
+ */
+function holds(scope: ComponentBase, el: Element, focus: Element): boolean {
+  if (el.contains(focus)) return true;
+  if (el.ownerDocument === focus.ownerDocument) return false;
+  for (let c: ComponentBase | null | undefined = closestControl(focus); c; c = c.parent) if (c === scope) return true;
+  return false;
 }
 
 function depthOf(el: Element): number {
@@ -342,10 +372,10 @@ function depthOf(el: Element): number {
 
 // Access keys.
 
-function runAccessKey(e: KeyboardEvent, focus: HTMLElement | null, win: Element | null): boolean {
+function runAccessKey(e: KeyboardEvent, focus: HTMLElement | null, win: Element | null, doc: Document): boolean {
   if (!isAccessKeyPress(e)) return false;
   const modifiers = accessKeyModifiers().toLowerCase();
-  const scope = win ?? document.body;
+  const scope = win ?? doc.body;
   const targets = Array.from(scope.querySelectorAll<HTMLElement>('[aria-keyshortcuts]')).filter(
     (el) => hasAccessKey(el, modifiers, e) && usable(el) && (win ? true : !el.closest('dialog')),
   );
@@ -400,8 +430,9 @@ function activate(el: HTMLElement): void {
     control.onAccessKey();
     return;
   }
-  if (el instanceof HTMLLabelElement && el.control) {
-    el.control.focus();
+  const label = el as HTMLLabelElement;
+  if (el.localName === 'label' && label.control) {
+    label.control.focus();
     return;
   }
   el.focus();

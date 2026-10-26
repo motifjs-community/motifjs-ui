@@ -1,4 +1,5 @@
 import { untracked } from '@motifx/core';
+import { isElement } from '../../core/node-kind';
 import { isApplePlatform } from '../../core/platform';
 import { DragGhost } from '../../parts/drag/DragGhost';
 import { scrollStep } from '../../parts/drag/scroll-step';
@@ -11,6 +12,7 @@ import type { TabDropPlace } from './tab-drop-place';
 import type { TabDropTarget } from './tab-drop-target';
 import type { TabGroup } from './TabGroup';
 import type { TabRect } from './tab-rect';
+import { inViewport, noteOffset, offsetOf } from './screen-offsets';
 
 /** A press on a tab or on a group's empty bar that may become a drag. */
 interface Press {
@@ -18,6 +20,8 @@ interface Press {
   pointerType: string;
   x: number;
   y: number;
+  /** The document pressed in: the main window's, or a new window's. */
+  space: Document;
   subject: TabDragSubject;
   source: HTMLElement;
   /** Touch and pen: the long press that starts the drag. */
@@ -31,15 +35,20 @@ interface Session {
   pointerId: number;
   pointerType: string;
   byKeyboard: boolean;
+  /** The pointer, in the viewport of the window the drag started in (`space`). */
   x: number;
   y: number;
+  space: Document;
+  /** Where it aims: a point of the viewport of `space` (another window's when the pointer went past the edge into it). */
+  aim: { space: Document; x: number; y: number };
   start: { x: number; y: number };
   /** The pointer went past the threshold since the drag started (a long press may not). */
   moved: boolean;
   place: TabDropPlace | null;
   target: TabDropTarget | null;
-  /** The manager showing the marks now. */
+  /** The manager showing the marks now, and in which window. */
   shownIn: TabDocumentManager | null;
+  shownSpace: Document | null;
   hover: { tab: DocumentTab; timer: ReturnType<typeof setTimeout> } | null;
   /** What was active in the groups hovering changed, and the active group: Escape puts them back. */
   was: Map<TabGroup, TabDocument | null>;
@@ -59,7 +68,9 @@ const OUTSIDE: TabDropPlace = { target: 'outside', manager: null, group: null, i
  * Dragging in a manager: a tab, or a whole group by its empty bar, with the mouse, or after a long
  * press on a touch screen or with a pen. A copy of the tab follows the pointer; the manager under it
  * (this one, or one of the same `dragGroup`) shows where a drop would land. "Move to…" uses the same
- * session from the keyboard.
+ * session from the keyboard. Inside a new browser window it works the same; the pointer stays with
+ * a drag that leaves its window, and the window under it there (its place on the screen says which)
+ * takes the drop, or past every window a new one opens there.
  */
 export class TabDrag {
   private press: Press | null = null;
@@ -68,21 +79,27 @@ export class TabDrag {
   private readonly stops: (() => void)[] = [];
 
   constructor(private readonly manager: TabDocumentManager) {
-    this.ghost = new DragGhost(() => manager.element, () => manager.dragGhost, 'mx-tabdocs__ghost');
-    const el = manager.element;
-    el.addEventListener('pointerdown', (e) => untracked(() => this.pointerDown(e)));
+    this.ghost = new DragGhost(() => manager.hostElementIn(this.session?.space ?? manager.element.ownerDocument), () => manager.dragGhost, 'mx-tabdocs__ghost');
+    this.listen(manager.element);
+  }
+
+  /** Drags start from the strips under `root`: the manager's element, or a new window's. Returns the function that stops it. */
+  listen(root: HTMLElement): () => void {
+    const down = (e: PointerEvent) => untracked(() => this.pointerDown(e));
     // A long press on a touch screen drags; the context menu opens when it is let go unmoved.
-    el.addEventListener(
-      'contextmenu',
-      (e) => {
-        const s = this.session;
-        if ((this.press && this.press.pointerType !== 'mouse') || (s && !s.byKeyboard)) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-        }
-      },
-      true,
-    );
+    const menu = (e: Event) => {
+      const s = this.session;
+      if ((this.press && this.press.pointerType !== 'mouse') || (s && !s.byKeyboard)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    };
+    root.addEventListener('pointerdown', down);
+    root.addEventListener('contextmenu', menu, true);
+    return () => {
+      root.removeEventListener('pointerdown', down);
+      root.removeEventListener('contextmenu', menu, true);
+    };
   }
 
   /** What is being dragged now. */
@@ -93,7 +110,7 @@ export class TabDrag {
   // The session, for the pointer and the keys.
 
   /** Starts a drag: `onDragStarting` may cancel it. */
-  begin(subject: TabDragSubject, pointerType: string, source: HTMLElement | null, x = 0, y = 0, pointerId = -1): boolean {
+  begin(subject: TabDragSubject, pointerType: string, source: HTMLElement | null, x = 0, y = 0, pointerId = -1, space: Document = (source ?? this.manager.element).ownerDocument): boolean {
     const m = this.manager;
     if (this.session) return false;
     const byKeyboard = pointerType === 'keyboard';
@@ -110,11 +127,14 @@ export class TabDrag {
       byKeyboard,
       x,
       y,
+      space,
+      aim: { space, x, y },
       start: { x, y },
       moved: false,
       place: null,
       target: null,
       shownIn: null,
+      shownSpace: null,
       hover: null,
       was: new Map(),
       wasGroup: m.activeGroup,
@@ -163,11 +183,14 @@ export class TabDrag {
     clearTimeout(s.hover?.timer);
     cancelFrame(m, s.frame);
     this.ghost.hide();
-    s.shownIn?.dropMarks.hide();
+    if (s.shownIn && s.shownSpace) s.shownIn.marksIn(s.shownSpace).hide();
     for (const peer of s.followed) for (const t of peer.dropTargets) t.follow?.(null, s.subject);
     s.subject.window?.markMoving(false);
     (s.subject.document ? s.source : s.subject.group.element)?.removeAttribute('data-dragging');
-    for (const peer of m.dragPeers()) delete peer.element.dataset.dragging;
+    for (const peer of m.dragPeers()) {
+      for (const el of peer.hostElements()) delete el.dataset.dragging;
+      peer.dragSpace = null;
+    }
     let dropped = false;
     if (drop && s.place && s.target) {
       const e = this.args(s.place, false, s);
@@ -202,12 +225,15 @@ export class TabDrag {
     if ((pointerType === 'mouse' && e.button !== 0) || e.isPrimary === false) return;
     const found = this.subjectAt(e.target);
     if (!found) return;
-    const press: Press = { pointerId: e.pointerId, pointerType, x: e.clientX, y: e.clientY, subject: found.subject, source: found.source, timer: undefined };
+    // The window pressed in: a new window has its own events.
+    const space = found.source.ownerDocument;
+    const view = space.defaultView ?? window;
+    noteOffset(view, e);
+    const press: Press = { pointerId: e.pointerId, pointerType, x: e.clientX, y: e.clientY, space, subject: found.subject, source: found.source, timer: undefined };
     this.press = press;
     if (pointerType !== 'mouse') press.timer = setTimeout(() => untracked(() => this.longPress(press)), m.longPressDelay);
-    const view = m.element.ownerDocument.defaultView ?? window;
-    const move = (ev: PointerEvent) => untracked(() => this.pointerMove(ev));
-    const up = (ev: PointerEvent) => untracked(() => this.pointerUp(ev));
+    const move = (ev: PointerEvent) => untracked(() => this.pointerMove(ev, view));
+    const up = (ev: PointerEvent) => untracked(() => this.pointerUp(ev, view));
     const key = (ev: KeyboardEvent) => untracked(() => this.key(ev));
     // Once a long press has started the drag the finger moves the tab, not the strip.
     const touch = (ev: TouchEvent) => {
@@ -233,7 +259,7 @@ export class TabDrag {
   /** The document of a tab, or the group of an empty bar, that a press there would drag. */
   private subjectAt(target: EventTarget | null): { subject: TabDragSubject; source: HTMLElement } | null {
     const m = this.manager;
-    const el = target instanceof Element ? target : null;
+    const el = isElement(target) ? target : null;
     if (!el || el.closest('.mx-tabdocs__close, .mx-tabdocs__pin, .mx-tabdocs__scroll')) return null;
     const holder = el.closest('.mx-tabdocs__group');
     const group = m.groups.find((g) => g.element === holder);
@@ -255,7 +281,7 @@ export class TabDrag {
   private start(press: Press, e: PointerEvent | null): void {
     this.press = null;
     clearTimeout(press.timer);
-    if (!this.begin(press.subject, press.pointerType, press.source, press.x, press.y, press.pointerId)) {
+    if (!this.begin(press.subject, press.pointerType, press.source, press.x, press.y, press.pointerId, press.space)) {
       this.release();
       return;
     }
@@ -279,7 +305,8 @@ export class TabDrag {
     this.track();
   }
 
-  private pointerMove(e: PointerEvent): void {
+  private pointerMove(e: PointerEvent, view: Window): void {
+    noteOffset(view, e);
     const s = this.session;
     if (s) {
       if (s.byKeyboard || e.pointerId !== s.pointerId) return;
@@ -302,7 +329,8 @@ export class TabDrag {
     this.start(press, e);
   }
 
-  private pointerUp(e: PointerEvent): void {
+  private pointerUp(e: PointerEvent, view: Window): void {
+    noteOffset(view, e);
     const s = this.session;
     if (s && !s.byKeyboard) {
       if (e.pointerId !== s.pointerId) return;
@@ -374,11 +402,30 @@ export class TabDrag {
 
   /**
    * The place under the pointer: the targets of the manager it is over (or of the manager of the
-   * floating window it is over: windows lie above everything), else floating, else outside.
+   * floating window it is over: windows lie above everything), else floating, else outside. Past
+   * the edge of its window, the point is looked for in the other windows, by its place on the
+   * screen; past every one, it is a new window there (or, from a new window, the main window).
    */
-  private find(x: number, y: number): { place: TabDropPlace | null; target: TabDropTarget | null } {
+  private find(px: number, py: number): { place: TabDropPlace | null; target: TabDropTarget | null } {
     const s = this.session!;
-    const over = this.managerAt(x, y);
+    const m = this.manager;
+    let space = s.space;
+    let x = px;
+    let y = py;
+    const view = space.defaultView;
+    if (view && !s.byKeyboard && !s.subject.window && !inViewport(view, x, y)) {
+      const at = offsetOf(view);
+      const other = this.windowAt(x + at.x, y + at.y, space);
+      if (other) ({ space, x, y } = other);
+      else {
+        s.aim = { space, x, y };
+        const out = this.outPlace(x + at.x, y + at.y);
+        if (out) return { place: out, target: this.targetFor(out) };
+      }
+    }
+    s.aim = { space, x, y };
+    for (const peer of this.peers()) peer.dragSpace = space;
+    const over = this.managerAt(x, y, space);
     for (const peer of this.peers()) {
       if (peer !== over && !s.followed.has(peer)) continue;
       for (const t of peer.dropTargets) t.follow?.(peer === over ? { x, y } : null, s.subject);
@@ -392,8 +439,35 @@ export class TabDrag {
       }
       return { place: null, target: null };
     }
-    const float = this.manager.foreignAt(x, y) ? null : this.manager.floatPlace(s.subject, x, y);
+    const main = space === m.element.ownerDocument;
+    const float = !main || m.foreignAt(x, y) ? null : m.floatPlace(s.subject, x, y);
     return float ? { place: float, target: this.targetFor(float) } : { place: OUTSIDE, target: null };
+  }
+
+  /** The window whose viewport holds a point of the screen (the one focused last, where they lie on each other), and the point in it. */
+  private windowAt(sx: number, sy: number, except: Document): { space: Document; x: number; y: number } | null {
+    for (const { doc } of this.manager.spaces()) {
+      const view = doc.defaultView;
+      if (doc === except || !view || view.closed) continue;
+      const at = offsetOf(view);
+      if (inViewport(view, sx - at.x, sy - at.y)) return { space: doc, x: sx - at.x, y: sy - at.y };
+    }
+    return null;
+  }
+
+  /** Past the edge of every window: into a new window there, or from a new window back to the main window. */
+  private outPlace(sx: number, sy: number): TabDropPlace | null {
+    const s = this.session!;
+    const m = this.manager;
+    if (!untracked(() => m.dragOutToNewWindow) || s.subject.manager !== m) return null;
+    const base = { manager: m, group: null, index: -1, side: null } as const;
+    if (s.space !== m.element.ownerDocument) return { ...base, target: 'main-window' };
+    if (!m.mayNewWindow(s.subject)) return null;
+    const box = s.subject.group.element.getBoundingClientRect();
+    const size = untracked(() => m.newWindowSize);
+    const width = Math.round(size?.width ?? (box.width > 0 ? box.width : 640));
+    const height = Math.round(size?.height ?? (box.height > 0 ? box.height : 480));
+    return { ...base, target: 'new-window', rect: { x: Math.round(sx - Math.min(48, width / 4)), y: Math.round(sy - 16), width, height } };
   }
 
   /** The managers a drag may drop in: those of its `dragGroup`; a window moved stays with its own. */
@@ -401,10 +475,11 @@ export class TabDrag {
     return this.session?.subject.window ? [this.manager] : this.manager.dragPeers();
   }
 
-  /** The manager under a point: the one of the front window there, else the one whose box holds it. */
-  private managerAt(x: number, y: number): TabDocumentManager | null {
+  /** The manager under a point: the one of the front window there, else the one whose box holds it; in a new window, its manager. */
+  private managerAt(x: number, y: number, space: Document): TabDocumentManager | null {
     const s = this.session!;
     const peers = this.peers();
+    if (space !== this.manager.element.ownerDocument) return peers.find((m) => m.hostElementIn(space) !== m.element) ?? null;
     const windows = peers.flatMap((m) => m.windowsFrontFirst()).filter((w) => w !== s.subject.window);
     windows.sort((a, b) => Number(b.element.style.getPropertyValue('--_mx-z')) - Number(a.element.style.getPropertyValue('--_mx-z')));
     const front = windows.find((w) => contains(w.element.getBoundingClientRect(), x, y));
@@ -427,12 +502,17 @@ export class TabDrag {
     const place = s.place;
     const owner = place?.manager ?? null;
     const marks = place && s.target ? s.target.marks(place, s.subject) : null;
-    if (s.shownIn && s.shownIn !== owner) s.shownIn.dropMarks.hide();
-    if (owner) owner.dropMarks.show(marks?.area ?? null, marks?.mark ?? null);
+    // The marks show in the window the place is in.
+    const space = place?.group ? place.group.element.ownerDocument : place?.browserWindow ? place.browserWindow.element.ownerDocument : s.aim.space;
+    if (s.shownIn && s.shownSpace && (s.shownIn !== owner || s.shownSpace !== space)) s.shownIn.marksIn(s.shownSpace).hide();
+    if (owner) owner.marksIn(space).show(marks?.area ?? null, marks?.mark ?? null);
     s.shownIn = owner;
+    s.shownSpace = owner ? space : null;
     // The cursor says it over every manager the drag can reach.
     const state = !place ? 'none' : s.subject.copy ? 'copy' : 'move';
-    if (!s.byKeyboard) for (const peer of this.manager.dragPeers()) if (peer.element.dataset.dragging !== state) peer.element.dataset.dragging = state;
+    if (!s.byKeyboard) {
+      for (const peer of this.manager.dragPeers()) for (const el of peer.hostElements()) if (el.dataset.dragging !== state) el.dataset.dragging = state;
+    }
     this.ghost.move(s.x, s.y, state);
   }
 
@@ -442,7 +522,8 @@ export class TabDrag {
     const place = s.place;
     let tab: DocumentTab | null = null;
     if (place?.target === 'strip' && place.group && place.group !== s.subject.group && place.group.manager.dragHoverActivate) {
-      tab = place.group.tabs.find((t) => t !== place.group!.activeTab && t.document !== s.subject.document && contains(t.header.getBoundingClientRect(), s.x, s.y)) ?? null;
+      const { x, y } = s.aim;
+      tab = place.group.tabs.find((t) => t !== place.group!.activeTab && t.document !== s.subject.document && contains(t.header.getBoundingClientRect(), x, y)) ?? null;
     }
     if (s.hover?.tab === tab) return;
     clearTimeout(s.hover?.timer);
@@ -471,13 +552,13 @@ export class TabDrag {
     const m = this.manager;
     cancelFrame(m, s.frame);
     if (!m.dragAutoScroll) return;
-    const row = this.rowAt(s.x, s.y);
+    const row = this.rowAt(s.aim.x, s.aim.y);
     if (!row || row.scrollWidth <= row.clientWidth) return;
     const box = row.getBoundingClientRect();
-    const step = scrollStep(s.x, box.left, box.right, Math.min(48, box.width / 4), 12);
+    const step = scrollStep(s.aim.x, box.left, box.right, Math.min(48, box.width / 4), 12);
     if (!step) return;
     if (!s.scrolls.has(row)) s.scrolls.set(row, row.scrollLeft);
-    const view = m.element.ownerDocument.defaultView;
+    const view = row.ownerDocument.defaultView;
     if (!view) return;
     s.frame = view.requestAnimationFrame(() =>
       untracked(() => {
@@ -525,7 +606,7 @@ export class TabDrag {
 
   /** The click that follows a drop is not a click on the tab; the next press is a press again. */
   private swallowClick(): void {
-    const view = this.manager.element.ownerDocument.defaultView;
+    const view = (this.session?.space ?? this.manager.element.ownerDocument).defaultView;
     if (!view) return;
     const stop = () => {
       view.removeEventListener('click', swallow, true);
@@ -551,5 +632,7 @@ function contains(box: DOMRect, x: number, y: number): boolean {
 }
 
 function cancelFrame(manager: TabDocumentManager, frame: number): void {
-  if (frame) manager.element.ownerDocument.defaultView?.cancelAnimationFrame(frame);
+  if (!frame) return;
+  // The frame may be another window's: asking a window to cancel a frame it never gave is harmless.
+  for (const el of manager.hostElements()) el.ownerDocument.defaultView?.cancelAnimationFrame(frame);
 }

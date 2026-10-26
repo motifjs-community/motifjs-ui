@@ -1,6 +1,7 @@
 import { Component, reactive, untracked } from '@motifx/core';
 import { chevronDown } from '../../../core/glyphs';
 import { fillTemplate } from '../../../core/fill-template';
+import { ResizeWatch } from '../../../core/resize-watch';
 import { Button } from '../../button/Button';
 import { DropDown } from '../../dropdown/DropDown';
 import { NumberBox } from '../../numberbox/NumberBox';
@@ -65,7 +66,7 @@ export class GridPager<T> extends Component<HTMLElement> {
 
   override onMounted() {
     if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => this.fit());
+    const observer = new ResizeWatch(() => this.fit());
     observer.observe(this.element.parentElement ?? this.element);
     this.motif.setDisposable(() => observer.disconnect());
   }

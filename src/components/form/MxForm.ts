@@ -8,6 +8,7 @@ import { dismissMark, maximizeMark, minimizeMark, restoreMark } from '../../core
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
+import { isHtmlElement } from '../../core/node-kind';
 import { uiLocale } from '../../core/ui-locale';
 import { windowStack, type StackedWindow } from '../../core/window-stack';
 import { followPointer } from '../../parts/window/follow-pointer';
@@ -88,6 +89,8 @@ const FIELDS = `${ENTER_FIELDS}, textarea, [contenteditable]:not([contenteditabl
 
 /** The parts and the running state of a form. On one object made on first use: the base constructor already renders. */
 interface Parts {
+  /** The window it keeps in view of while it is open. */
+  view: Window | null;
   bar: HTMLDivElement;
   icon: HTMLSpanElement;
   releaseIcon: () => void;
@@ -140,9 +143,11 @@ function lengthOf(value: number | string | null | undefined): string | null {
   return typeof value === 'number' ? `${value}px` : value;
 }
 
-function viewport(): { w: number; h: number } {
-  const root = document.documentElement;
-  return { w: root.clientWidth || window.innerWidth, h: root.clientHeight || window.innerHeight };
+/** The viewport of the window `el` is in (a window the app opened has its own). */
+function viewport(el: Element): { w: number; h: number } {
+  const root = el.ownerDocument.documentElement;
+  const view = el.ownerDocument.defaultView;
+  return { w: root.clientWidth || view?.innerWidth || 0, h: root.clientHeight || view?.innerHeight || 0 };
 }
 
 /**
@@ -584,6 +589,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
       activate: new Emitter(),
       deactivate: new Emitter(),
       closingEmitter: new Emitter(),
+      view: null,
       closed: new Emitter(),
     };
     return parts;
@@ -834,7 +840,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     });
     chip.element.classList.add('mx-form-chip');
     chip.element.addEventListener('click', () => this.restore());
-    if (target instanceof HTMLElement) {
+    if (isHtmlElement(target)) {
       chip.build();
       target.append(chip.element);
     } else {
@@ -909,7 +915,8 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     this.syncProperty('value', true);
     if (this.startPosition === 'manual') this.placeAtProps();
     else this.center();
-    window.addEventListener('resize', this.keepInView);
+    parts.view = el.ownerDocument.defaultView;
+    parts.view?.addEventListener('resize', this.keepInView);
     this.renderState(true);
     if (this.windowState !== 'minimized' || !this.minimizeTarget) this.focusFirst();
     parts.shown.fire({ source: this });
@@ -967,12 +974,13 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
 
   private finishClose(result: FormResult, reason: FormCloseReason): void {
     const parts = this.parts;
-    const active = deepActiveElement();
+    const active = deepActiveElement(this.element);
     const focusInside = !active || this.element.contains(active) || !!parts.chip?.element.contains(active);
     parts.open = false;
     this.removeChip();
     windowStack.remove(parts.entry);
-    window.removeEventListener('resize', this.keepInView);
+    parts.view?.removeEventListener('resize', this.keepInView);
+    parts.view = null;
     if (this.element.open) this.element.close(result);
     this.setProperty('result', result);
     this.setProperty('open', false);
@@ -993,7 +1001,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
       opener.focus();
       if (deepActiveElement() === opener) return;
     }
-    const top = windowStack.top();
+    const top = windowStack.top(this.element.ownerDocument);
     const below = top ? controlOf(top.element) : null;
     if (below instanceof FocusContainer) below.restoreFocus();
   }
@@ -1069,12 +1077,12 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   /** Where the form is, from the start edge of the viewport. */
   private box(): WindowBox {
     const r = this.element.getBoundingClientRect();
-    const x = this.rtl ? viewport().w - r.right : r.left;
+    const x = this.rtl ? viewport(this.element).w - r.right : r.left;
     return { x, y: r.top, w: r.width, h: r.height };
   }
 
   private placeAt(x: number, y: number, w?: number, h?: number): void {
-    const view = viewport();
+    const view = viewport(this.element);
     const size = this.box();
     const width = w ?? size.w;
     const height = h ?? size.h;
@@ -1123,7 +1131,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     const sign = this.rtl ? -1 : 1;
     this.placeAt(start.x, start.y);
     this.drag(handle, e, (dx, dy) => {
-      const { x, y, w, h } = resizeBox(edge, start, sign * dx, dy, { w: minW, h: minH }, viewport());
+      const { x, y, w, h } = resizeBox(edge, start, sign * dx, dy, { w: minW, h: minH }, viewport(this.element));
       const style = this.element.style;
       style.setProperty('--_mx-w', `${Math.round(w)}px`);
       style.setProperty('--_mx-h', `${Math.round(h)}px`);

@@ -2,6 +2,7 @@ import { ComponentBase, createSignal, untracked } from '@motifx/core';
 import type { DetailContext } from '../detail-context';
 import type { GridModel } from '../model/GridModel';
 import type { DetailHost } from './detail-host';
+import { isNode } from '../../../core/node-kind';
 
 /**
  * The details of one row (`masterDetail`): a row element under its master row with one cell across
@@ -122,7 +123,7 @@ export class DetailRow<T> {
       this.host.owner.controls.add(content);
       this.box.append(content.element as Node);
       this.content = content;
-    } else if (content instanceof Node) this.box.append(content);
+    } else if (isNode(content)) this.box.append(content);
     else if (content !== undefined && content !== null) this.box.append(String(content));
   }
 

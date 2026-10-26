@@ -85,6 +85,10 @@ export interface TabDocumentKeys {
   maximizeWindow: string[];
   /** In a floating window: closes it with its documents. */
   closeWindow: string[];
+  /** Moves the active document into a new browser window of its own. */
+  moveToNewWindow: string[];
+  /** In a new browser window: moves the active document back to the main window. */
+  moveToMainWindow: string[];
   /** While moving a window by keys: moves it, makes it narrower, wider, shorter, taller; keeps it there; puts it back. */
   windowLeft: string[];
   windowRight: string[];

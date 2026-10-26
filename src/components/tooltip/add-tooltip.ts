@@ -1,3 +1,4 @@
+import { isElement } from '../../core/node-kind';
 import { Tooltip } from './Tooltip';
 import { linkTooltip, unlinkTooltip } from './tooltip-hub';
 import type { TooltipProps } from './tooltip-props';
@@ -12,7 +13,7 @@ import type { TooltipTarget } from './tooltip-target';
  * const remove = addTooltip(this.help, { text: 'Opens the guide', placement: 'end' });
  */
 export function addTooltip(target: TooltipTarget, options: string | Omit<TooltipProps, 'target'>): () => void {
-  const element = target instanceof Element ? target : (target.element as Element);
+  const element = isElement(target) ? target : (target.element as Element);
   const props = typeof options === 'string' ? { text: options } : options;
   let tooltip: Tooltip | null = null;
   let removed = false;
@@ -27,6 +28,6 @@ export function addTooltip(target: TooltipTarget, options: string | Omit<Tooltip
     made?.close();
     void made?.dispose();
   };
-  if (!(target instanceof Element)) target.motif.setDisposable(remove);
+  if (!isElement(target)) target.motif.setDisposable(remove);
   return remove;
 }

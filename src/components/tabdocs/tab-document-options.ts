@@ -44,6 +44,8 @@ export interface TabDocumentOptions {
   dockSides?: Bind<readonly TabDockSide[] | undefined>;
   /** This document's own setting; left out, the manager's `allowAutoHide`. */
   allowAutoHide?: Bind<boolean | undefined>;
+  /** This document's own setting; left out, the manager's `allowNewWindow`. */
+  allowNewWindow?: Bind<boolean | undefined>;
   /** Buttons for the group's toolbar while this document is the active one. */
   actions?: Bind<readonly ToolbarItem[]>;
   content?: TabDocumentContent;

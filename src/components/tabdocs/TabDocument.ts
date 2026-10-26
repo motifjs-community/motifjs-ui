@@ -3,6 +3,7 @@ import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
 import type { ToolbarItem } from '../toolbar/toolbar-item';
 import type { ContentLifetime } from './content-lifetime';
+import type { TabBrowserWindow } from './TabBrowserWindow';
 import type { TabContentClone } from './tab-content-clone';
 import type { TabDockSide } from './tab-dock-side';
 import type { TabDocumentContent } from './tab-document-content';
@@ -31,6 +32,7 @@ const FIELDS = [
   'allowDock',
   'dockSides',
   'allowAutoHide',
+  'allowNewWindow',
   'actions',
   'state',
 ] as const;
@@ -181,6 +183,13 @@ export class TabDocument {
   set allowAutoHide(value: Bind<boolean | undefined>) {
     this.slot('allowAutoHide').value = value;
   }
+  /** The document's own setting; `undefined` follows the manager's `allowNewWindow`. */
+  get allowNewWindow(): boolean | undefined {
+    return this.get<boolean>('allowNewWindow') ?? undefined;
+  }
+  set allowNewWindow(value: Bind<boolean | undefined>) {
+    this.slot('allowNewWindow').value = value;
+  }
   get actions(): readonly ToolbarItem[] {
     return this.get<readonly ToolbarItem[]>('actions') ?? NO_ACTIONS;
   }
@@ -226,6 +235,10 @@ export class TabDocument {
   /** The dock area it is in, `null` elsewhere. Reactive. */
   get dockArea(): TabDockArea | null {
     return this.group?.dockArea ?? null;
+  }
+  /** The new browser window it is in, `null` in the main window. Reactive. */
+  get browserWindow(): TabBrowserWindow | null {
+    return this.group?.browserWindow ?? null;
   }
 
   /** Makes it its group's active tab. */

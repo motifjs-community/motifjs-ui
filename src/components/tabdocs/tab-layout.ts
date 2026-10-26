@@ -1,10 +1,11 @@
 import type { TabLayoutArea } from './tab-layout-area';
+import type { TabLayoutBrowserWindow } from './tab-layout-browser-window';
 import type { TabLayoutNode } from './tab-layout-node';
 import type { TabLayoutWindow } from './tab-layout-window';
 
-/** The layout as `saveLayout` writes it: plain JSON. A version 1 layout (no dock areas, no windows) still loads. */
+/** The layout as `saveLayout` writes it: plain JSON. Layouts of versions 1 (no dock areas, no windows) and 2 (no new windows) still load. */
 export interface TabLayout {
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   /** The documents' area. */
   root: TabLayoutNode;
   /** The index of the active group, in the order of `groups`. */
@@ -15,4 +16,6 @@ export interface TabLayout {
   areas?: TabLayoutArea[];
   /** The floating windows, the one at the back first. */
   windows?: TabLayoutWindow[];
+  /** The new browser windows, the one used last at the end. */
+  browserWindows?: TabLayoutBrowserWindow[];
 }

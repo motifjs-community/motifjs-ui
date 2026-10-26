@@ -123,7 +123,7 @@ export class FocusContainer<TElement extends HTMLElement = HTMLElement, TProps e
     } else if (!target) {
       // Leaving the container: from the container as a whole, not from the
       // focused element (which may sit anywhere inside in DOM terms).
-      const outside = nextTabbable(this.element, this.element.closest('dialog') ?? document.body, !back);
+      const outside = nextTabbable(this.element, this.element.closest('dialog') ?? this.element.ownerDocument.body, !back);
       if (!outside) return;
       target = outside;
     } else if (!custom) {
@@ -175,7 +175,7 @@ function radioStops(elements: HTMLElement[]): HTMLElement[] {
   // A group is a name within one form (or outside any form).
   const groups = new Map<HTMLFormElement | null, Map<string, HTMLInputElement[]>>();
   for (const el of elements) {
-    if (el instanceof HTMLInputElement && el.type === 'radio' && el.name) {
+    if (isRadio(el)) {
       const byName = groups.get(el.form) ?? new Map<string, HTMLInputElement[]>();
       groups.set(el.form, byName);
       byName.set(el.name, [...(byName.get(el.name) ?? []), el]);
@@ -184,5 +184,10 @@ function radioStops(elements: HTMLElement[]): HTMLElement[] {
   if (!groups.size) return elements;
   const keep = new Set<HTMLElement>();
   for (const byName of groups.values()) for (const radios of byName.values()) keep.add(radios.find((r) => r.checked) ?? radios[0]);
-  return elements.filter((el) => !(el instanceof HTMLInputElement && el.type === 'radio' && el.name) || keep.has(el));
+  return elements.filter((el) => !isRadio(el) || keep.has(el));
+}
+
+/** A named radio button (of any window: an element moved into another one is not its `HTMLInputElement`). */
+function isRadio(el: HTMLElement): el is HTMLInputElement {
+  return el.localName === 'input' && (el as HTMLInputElement).type === 'radio' && !!(el as HTMLInputElement).name;
 }

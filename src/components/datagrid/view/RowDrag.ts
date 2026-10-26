@@ -1,5 +1,6 @@
 import { ComponentBase, untracked } from '@motifx/core';
 import { parseChord } from '../../../core/keyboard';
+import { isNode } from '../../../core/node-kind';
 import type { GridRowDragEventArgs } from '../grid-row-drag-event-args';
 import type { GridRowDropEventArgs } from '../grid-row-drop-event-args';
 import type { GridModel } from '../model/GridModel';
@@ -168,15 +169,17 @@ export class RowDrag<T> {
         this.model.announce(this.model.text('gridRowDragCanceled'));
       }
     };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-    window.addEventListener('pointercancel', up);
-    window.addEventListener('keydown', key, true);
+    // The window the grid is in (a window the app opened has its own events).
+    const win = target.ownerDocument.defaultView ?? window;
+    win.addEventListener('pointermove', move);
+    win.addEventListener('pointerup', up);
+    win.addEventListener('pointercancel', up);
+    win.addEventListener('keydown', key, true);
     this.stops.push(() => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-      window.removeEventListener('pointercancel', up);
-      window.removeEventListener('keydown', key, true);
+      win.removeEventListener('pointermove', move);
+      win.removeEventListener('pointerup', up);
+      win.removeEventListener('pointercancel', up);
+      win.removeEventListener('keydown', key, true);
     });
     // The drag icon does not select text or start the browser's own drag.
     if (target.closest('.mx-data-grid__drag')) e.preventDefault();
@@ -249,8 +252,9 @@ export class RowDrag<T> {
       ev.stopPropagation();
       ev.preventDefault();
     };
-    window.addEventListener('click', swallow, true);
-    setTimeout(() => window.removeEventListener('click', swallow, true), 0);
+    const view = (e.target as Node | null)?.ownerDocument?.defaultView ?? window;
+    view.addEventListener('click', swallow, true);
+    setTimeout(() => view.removeEventListener('click', swallow, true), 0);
     this.end(e, e.type === 'pointerup');
   }
 
@@ -531,7 +535,7 @@ export class RowDrag<T> {
         this.grid.controls.add(made);
         s.content = made;
         content = made.element as Node;
-      } else content = made instanceof Node ? made : document.createTextNode(String(made ?? ''));
+      } else content = isNode(made) ? made : document.createTextNode(String(made ?? ''));
     } else {
       const rows = document.createElement('div');
       rows.className = 'mx-data-grid__ghost-rows';

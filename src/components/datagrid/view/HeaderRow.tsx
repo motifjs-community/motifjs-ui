@@ -1,5 +1,6 @@
 import { Component, ComponentBase, effect } from '@motifx/core';
 import { chevronDown, chevronUp, filterMark, moreMark } from '../../../core/glyphs';
+import { isNode } from '../../../core/node-kind';
 import type { GridColumn } from '../grid-column';
 import type { HeaderCellContext } from '../header-cell-context';
 import { ACTIONS_FIELD, ADAPTIVE_FIELD, DRAG_FIELD, EXPAND_FIELD, SELECT_FIELD } from '../model/ColumnModel';
@@ -104,7 +105,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
       this.controls.add(content);
       span.append(content.element as Node);
       this.titles.set(col.field, content);
-    } else if (content instanceof Node) span.append(content);
+    } else if (isNode(content)) span.append(content);
     else if (content !== undefined && content !== null) span.append(String(content));
   }
 

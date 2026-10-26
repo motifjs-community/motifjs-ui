@@ -6,6 +6,8 @@ import type { ControlSize } from '../../core/control-size';
 import type { IconSource } from '../../core/icon-source';
 import { deepActiveElement, focusableIn, isShown } from '../../core/focus';
 import { moreMark } from '../../core/glyphs';
+import { isNode } from '../../core/node-kind';
+import { ResizeWatch } from '../../core/resize-watch';
 import { uiLocale } from '../../core/ui-locale';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Button } from '../button/Button';
@@ -467,7 +469,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       this.motif.setDisposable(() => observer.disconnect());
     }
     if (typeof ResizeObserver === 'function') {
-      const observer = new ResizeObserver(() => {
+      const observer = new ResizeWatch(() => {
         const vertical = this.peekProperty<ToolbarOrientation>('orientation') === 'vertical';
         const size = vertical ? this.element.clientHeight : this.element.clientWidth;
         if (size !== parts.laidOut) this.layout();
@@ -524,7 +526,7 @@ function keepsArrows(el: HTMLElement): boolean {
 /** The menu shows a copy: the node of an icon stays in its button. */
 function iconCopy(icon: IconSource | null): IconSource | null {
   if (!icon || typeof icon === 'string') return icon;
-  const node = icon instanceof Node ? icon : (icon.element as Node | undefined);
+  const node = isNode(icon) ? icon : (icon.element as Node | undefined);
   return node ? node.cloneNode(true) : null;
 }
 

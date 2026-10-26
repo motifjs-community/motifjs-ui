@@ -11,6 +11,7 @@ import { GridRow } from './GridRow';
 import { GroupFooterRow } from './GroupFooterRow';
 import { GroupRow } from './GroupRow';
 import { nextId } from '../../../core/next-id';
+import { ResizeWatch } from '../../../core/resize-watch';
 
 /**
  * The body: a spacer as tall as the rows (capped, see `ScrollGeometry`) holding a small pool of
@@ -44,7 +45,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   private again = false;
   private visible: string[] = [];
   /** The edit form shown in place of a row (`editMode: 'form'`), and the height it was measured at. */
-  private form: { rowId: string; row: T; index: number; element: HTMLDivElement; height: number; observer: ResizeObserver | null } | null = null;
+  private form: { rowId: string; row: T; index: number; element: HTMLDivElement; height: number; observer: ResizeWatch | null } | null = null;
   /** Rows' details by key text: made when first shown, kept while open (and closed, with `keepDetails`) up to `keepLimit` out of view. */
   private readonly details = new Map<string, DetailRow<T>>();
   private readonly detailByElement = new WeakMap<Element, DetailRow<T>>();
@@ -55,7 +56,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   private extrasFor = '';
   /** The data the kept details were last checked against. */
   private checkedFor = '';
-  private detailObserver: ResizeObserver | null = null;
+  private detailObserver: ResizeWatch | null = null;
   /** The adaptive detail of the row that has it open, while it is laid out. */
   private adaptive: DetailRow<T> | null = null;
   private layouts = 0;
@@ -197,7 +198,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     const form: NonNullable<GridBody<T>['form']> = { rowId, row, index, element: el, height: 0, observer: null };
     this.form = form;
     if (typeof ResizeObserver !== 'undefined') {
-      form.observer = new ResizeObserver(() => this.measureForm());
+      form.observer = new ResizeWatch(() => this.measureForm());
       form.observer.observe(el);
     }
     this.relayout(true);
@@ -635,10 +636,10 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       return l >= start && l < end;
     };
     const active = grid.state.activeRow;
-    const focused = this.rowOf(document.activeElement)?.index ?? -1;
+    const focused = this.rowOf(this.element.ownerDocument.activeElement)?.index ?? -1;
     const formAt = this.formIndex();
     // Focus in a row's details keeps the row and its details drawn.
-    const inDetail = this.detailOf(document.activeElement);
+    const inDetail = this.detailOf(this.element.ownerDocument.activeElement);
     const detailRow = !inDetail ? -1 : inDetail.index >= 0 ? inDetail.index : inDetail.kind === 'adaptive' ? grid.adaptiveIndex() : grid.indexOfDetailKey(inDetail.key);
     for (const i of new Set([active, focused, formAt, detailRow])) if (i >= 0 && localOf(i) >= 0 && !inWindow(i)) wanted.push(i);
     const pinned = formAt >= 0 ? formAt : active;
@@ -862,7 +863,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   /** Measures a detail row again whenever its content changes size. */
   private observe(detail: DetailRow<T>) {
     if (!this.detailObserver && typeof ResizeObserver !== 'undefined') {
-      this.detailObserver = new ResizeObserver((entries) => {
+      this.detailObserver = new ResizeWatch((entries) => {
         if (this.isDisposed) return;
         const measured: DetailRow<T>[] = [];
         for (const entry of entries) {

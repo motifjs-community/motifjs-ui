@@ -49,7 +49,7 @@ export function renderAccessKey(host: Element, parsed: ParsedAccessKey): void {
     host.textContent = parsed.text;
     return;
   }
-  const mark = document.createElement('span');
+  const mark = host.ownerDocument.createElement('span');
   mark.className = 'mx-access-key';
   mark.textContent = parsed.text[parsed.index];
   host.replaceChildren(parsed.text.slice(0, parsed.index), mark, parsed.text.slice(parsed.index + 1));

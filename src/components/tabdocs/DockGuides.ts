@@ -11,27 +11,34 @@ const EDGES: readonly TabDockSide[] = ['left', 'right', 'top', 'bottom'];
 /**
  * The dock guides a drag shows: a cross over the group under the pointer (its middle and four
  * sides) and one guide in the middle of each of the manager's edges. They sit above everything,
- * never take the pointer, and the one pointed at shows it.
+ * never take the pointer, and the one pointed at shows it. In a new browser window they show in it.
  */
 export class DockGuides {
   private readonly cross = new Map<TabDropSide, HTMLDivElement>();
   private readonly edges = new Map<TabDockSide, HTMLDivElement>();
   /** Each shown guide's box, and what it stands for. */
   private shown: { el: HTMLDivElement; box: DOMRect; hit: DockGuideHit }[] = [];
+  /** Where they show: the manager's element, or a new window's. */
+  private root: HTMLElement;
 
-  constructor(private readonly manager: TabDocumentManager) {}
+  constructor(private readonly manager: TabDocumentManager) {
+    this.root = manager.element;
+  }
 
   /**
    * Shows the cross over `group` with the sides it may take, and the edge guides of `docks`. The
    * edge guides stay put; over a short or narrow manager the cross moves off them.
    */
-  show(group: TabGroup | null, sides: readonly TabDropSide[], docks: readonly TabDockSide[]): void {
-    const m = this.manager;
+  show(group: TabGroup | null, sides: readonly TabDropSide[], docks: readonly TabDockSide[], root: HTMLElement = this.manager.element): void {
+    if (root !== this.root) {
+      this.hide();
+      this.root = root;
+    }
     const size = this.size();
     const gap = Math.round(size / 4);
-    const rtl = isRtl(m.element);
+    const rtl = isRtl(root);
     this.shown = [];
-    const outer = m.element.getBoundingClientRect();
+    const outer = root.getBoundingClientRect();
     const mx = outer.left + outer.width / 2 - size / 2;
     const my = outer.top + outer.height / 2 - size / 2;
     const edgeAt: Record<TabDockSide, [number, number]> = {
@@ -121,7 +128,7 @@ export class DockGuides {
   private guide<K extends string>(map: Map<K, HTMLDivElement>, key: K, mark: TabDropSide, kind: string): HTMLDivElement {
     let el = map.get(key);
     if (!el) {
-      el = this.manager.element.ownerDocument.createElement('div');
+      el = this.root.ownerDocument.createElement('div');
       el.className = 'mx-tabdocs__guide';
       el.dataset.kind = kind;
       el.dataset.side = key;
@@ -130,14 +137,14 @@ export class DockGuides {
       el.append(dockGuideMark(mark));
       map.set(key, el);
     }
-    if (!el.isConnected) this.manager.element.append(el);
+    if (el.parentElement !== this.root) this.root.append(el);
     return el;
   }
 
   /** How big a guide is: its style's, 32 pixels where nothing is laid out. */
   private size(): number {
     const probe = this.cross.get('center') ?? this.guide(this.cross, 'center', 'center', 'cross');
-    const view = this.manager.element.ownerDocument.defaultView;
+    const view = this.root.ownerDocument.defaultView;
     const width = view ? parseFloat(view.getComputedStyle(probe).inlineSize || view.getComputedStyle(probe).width) : NaN;
     return width > 0 ? width : 32;
   }

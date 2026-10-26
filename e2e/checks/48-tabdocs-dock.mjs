@@ -289,7 +289,7 @@ export default async function ({ page, base, check, axeSource, box }) {
     await section.getByRole('button', { name: 'Float Notes' }).click();
     await section.getByRole('button', { name: 'Save layout' }).click();
     const json = JSON.parse(await section.locator('.td-json').textContent());
-    check('the saved layout has the areas and the window', json.version === 2 && json.areas?.length === 2 && json.windows?.length === 1 && json.windows[0].rect.width === 380, JSON.stringify({ areas: json.areas?.map((a) => a.side), windows: json.windows?.map((w) => w.rect) }));
+    check('the saved layout has the areas and the window', json.version === 3 && json.areas?.length === 2 && json.windows?.length === 1 && json.windows[0].rect.width === 380, JSON.stringify({ areas: json.areas?.map((a) => a.side), windows: json.windows?.map((w) => w.rect) }));
     const before = await layout(m);
     // Change it: the window docks back, the right area folds.
     await page.locator('.mx-tabdocs__window').evaluate(() => {});

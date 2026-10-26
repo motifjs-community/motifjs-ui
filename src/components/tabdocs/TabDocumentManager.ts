@@ -4,6 +4,8 @@ import { deepActiveElement } from '../../core/focus';
 import { fillTemplate } from '../../core/fill-template';
 import { functionValue } from '../../core/function-value';
 import { addShortcut } from '../../core/keyboard';
+import { nextId } from '../../core/next-id';
+import { isElement, isNode } from '../../core/node-kind';
 import { uiLocale } from '../../core/ui-locale';
 import type { UiStrings } from '../../core/ui-strings';
 import type { MenuItem } from '../../parts/menu/menu-item';
@@ -93,6 +95,20 @@ import type { TabWindowClosingEventArgs } from './tab-window-closing-event-args'
 import { WindowByKeys } from './WindowByKeys';
 import { SplitSash } from './SplitSash';
 import type { SashOwner } from './sash-owner';
+import { NewWindowDropTarget } from './NewWindowDropTarget';
+import { noteOffset, offsetOf } from './screen-offsets';
+import { TabBrowserWindow } from './TabBrowserWindow';
+import type { TabErrorEventArgs } from './tab-error-event-args';
+import type { TabLayoutBrowserWindow } from './tab-layout-browser-window';
+import type { TabNewWindowCloseAction } from './tab-new-window-close-action';
+import type { TabNewWindowFallback } from './tab-new-window-fallback';
+import type { TabNewWindowOptions } from './tab-new-window-options';
+import type { TabNewWindowTitle } from './tab-new-window-title';
+import type { TabOpenWindow } from './tab-open-window';
+import type { TabRestoreWindows } from './tab-restore-windows';
+import type { TabWindowOpenedEventArgs } from './tab-window-opened-event-args';
+import type { TabWindowOpeningEventArgs } from './tab-window-opening-event-args';
+import type { TabWindowRequest } from './tab-window-request';
 
 const OWN = [
   'closeButton',
@@ -157,6 +173,13 @@ const OWN = [
   'autoHideDelay',
   'dockGuides',
   'dockGuideKinds',
+  'allowNewWindow',
+  'newWindowUrl',
+  'newWindowSize',
+  'newWindowFallback',
+  'newWindowCloseAction',
+  'restoreWindows',
+  'dragOutToNewWindow',
   'keyPreset',
   'keys',
   'texts',
@@ -164,7 +187,7 @@ const OWN = [
 ] as const;
 
 /** Callbacks: stored as they are given. */
-const CALLBACKS = ['newDocument', 'toolbarItems'] as const;
+const CALLBACKS = ['newDocument', 'toolbarItems', 'openWindow'] as const;
 
 /** Props the strip's look follows. */
 const STRIP = ['tabSize', 'pinnedTabSize', 'pinnedTabsOnSeparateRow', 'wrapTabs', 'scrollButtons', 'tabMinWidth', 'tabMaxWidth', 'tabFixedWidth'] as const;
@@ -176,10 +199,18 @@ const DOCK_SIDES: readonly TabDockSide[] = ['left', 'right', 'top', 'bottom'];
 const GUIDE_KINDS: readonly TabDockGuideKind[] = ['group', 'edges'];
 const AREA_SIZES: Readonly<Record<TabDockSide, number | string>> = { left: 240, right: 240, top: 160, bottom: 200 };
 const NO_WINDOWS: readonly TabWindow[] = [];
+const NO_BROWSERS: readonly TabBrowserWindow[] = [];
 const NO_AREAS: readonly TabDockArea[] = [];
 
-/** What holds a layout tree: a floating window, a dock area, or the documents' area (`null`). */
-type Host = TabWindow | TabDockArea | null;
+/** What holds a layout tree: a floating window, a dock area, a new browser window, or the documents' area (`null`). */
+type Host = TabWindow | TabDockArea | TabBrowserWindow | null;
+
+/** Where a move into the main window comes from, and why its window goes. */
+interface BackOptions {
+  /** Nothing may refuse it: the window is gone. */
+  force?: boolean;
+  reason?: 'closed' | 'docked';
+}
 
 /** Every manager on the page: a drag finds the managers of its `dragGroup` here. */
 const MANAGERS = new Set<TabDocumentManager>();
@@ -229,10 +260,24 @@ interface Parts {
   sizeWatch: ResizeObserver | null;
   /** The folded area slid out now: how it was opened, and what closes it. */
   slide: { area: TabDockArea; hover: boolean; stop: () => void } | null;
-  /** Why the windows a change leaves empty go: they were docked. */
-  windowGone: 'docked' | null;
+  /** Why the windows a change leaves empty go: they were docked, or moved into a new window. */
+  windowGone: 'docked' | 'moved' | 'closed' | null;
+  /** The new browser windows, in the order they were opened, and what each one undoes when it goes. */
+  browsers: TabBrowserWindow[];
+  browserStops: Map<TabBrowserWindow, () => void>;
+  /** Floating windows `loadLayout` made of saved new windows, to open again (`reopenWindows`). */
+  reopen: { window: TabWindow; rect: TabRect }[];
+  /** While a drag aims: the document whose viewport its point is in. */
+  space: Document | null;
+  /** When the main window last had focus (the new windows note theirs). */
+  mainFocusedAt: number;
+  /** What watches the main window while new windows are open. */
+  pageStop: (() => void) | null;
+  windowOpening: Emitter<TabWindowOpeningEventArgs>;
+  windowOpened: Emitter<TabWindowOpenedEventArgs>;
+  error: Emitter<TabErrorEventArgs>;
   /** The windows `closeWindow` is closing the documents of. */
-  closingWindows: Set<TabWindow>;
+  closingWindows: Set<TabWindow | TabBrowserWindow>;
   floating: Emitter<TabFloatingEventArgs>;
   floated: Emitter<TabFloatedEventArgs>;
   docking: Emitter<TabDockingEventArgs>;
@@ -302,6 +347,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     const parts = this.parts;
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.factory !== undefined) this.bindProperty('factory', functionValue(own.factory));
+    if (own.newWindowTitle !== undefined) this.bindProperty('newWindowTitle', functionValue(own.newWindowTitle));
     for (const name of CALLBACKS) if (own[name] !== undefined) this.setProperty(name, own[name]);
     if (own.label !== undefined) this.bindProperty('text', own.label);
     const events: [keyof TabDocumentManagerProps, (handler: never) => unknown][] = [
@@ -343,6 +389,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       ['onSlideChanged', this.onSlideChanged],
       ['onWindowClosing', this.onWindowClosing],
       ['onWindowClosed', this.onWindowClosed],
+      ['onWindowOpening', this.onWindowOpening],
+      ['onWindowOpened', this.onWindowOpened],
+      ['onError', this.onError],
     ];
     for (const [name, subscribe] of events) if (own[name]) subscribe(own[name] as never);
 
@@ -367,6 +416,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     parts.targets.push(parts.layoutTarget);
     parts.dockTarget = new DockDropTarget(this);
     parts.targets.unshift(parts.dockTarget);
+    parts.targets.push(new NewWindowDropTarget(this));
     parts.drag = new TabDrag(this);
     parts.moveKeys = new MoveByKeys(this, parts.drag);
     parts.windowKeys = new WindowByKeys(this);
@@ -410,6 +460,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         this.disposeSplits(w.root);
         w.dispose();
       }
+      for (const w of parts.browsers) this.disposeBrowserWindow(w);
+      parts.browsers = [];
+      parts.pageStop?.();
       parts.areas.clear();
       parts.windows = [];
       parts.menus?.dispose();
@@ -454,6 +507,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         parts.slideChanged,
         parts.windowClosing,
         parts.windowClosed,
+        parts.windowOpening,
+        parts.windowOpened,
+        parts.error,
       ]) {
         emitter.dispose();
       }
@@ -853,6 +909,60 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   set dragGroup(value: Bind<string | null>) {
     this.assignProperty('dragGroup', value);
   }
+  get allowNewWindow(): boolean {
+    return this.getProperty<boolean | undefined>('allowNewWindow') ?? true;
+  }
+  set allowNewWindow(value: Bind<boolean>) {
+    this.assignProperty('allowNewWindow', value, Boolean);
+  }
+  get newWindowUrl(): string {
+    return this.getProperty<string | undefined>('newWindowUrl') || 'about:blank';
+  }
+  set newWindowUrl(value: Bind<string>) {
+    this.assignProperty('newWindowUrl', value);
+  }
+  get newWindowTitle(): TabNewWindowTitle {
+    return this.getProperty<TabNewWindowTitle | undefined>('newWindowTitle') ?? '{title} – {page}';
+  }
+  set newWindowTitle(value: Bind<TabNewWindowTitle>) {
+    this.assignProperty('newWindowTitle', functionValue(value));
+  }
+  get newWindowSize(): { width: number; height: number } | null {
+    return this.getProperty<{ width: number; height: number } | null | undefined>('newWindowSize') ?? null;
+  }
+  set newWindowSize(value: Bind<{ width: number; height: number } | null>) {
+    this.assignProperty('newWindowSize', value);
+  }
+  get newWindowFallback(): TabNewWindowFallback {
+    return this.getProperty<TabNewWindowFallback | undefined>('newWindowFallback') ?? 'float';
+  }
+  set newWindowFallback(value: Bind<TabNewWindowFallback>) {
+    this.assignProperty('newWindowFallback', value);
+  }
+  get newWindowCloseAction(): TabNewWindowCloseAction {
+    return this.getProperty<TabNewWindowCloseAction | undefined>('newWindowCloseAction') ?? 'back';
+  }
+  set newWindowCloseAction(value: Bind<TabNewWindowCloseAction>) {
+    this.assignProperty('newWindowCloseAction', value);
+  }
+  get restoreWindows(): TabRestoreWindows {
+    return this.getProperty<TabRestoreWindows | undefined>('restoreWindows') ?? 'float';
+  }
+  set restoreWindows(value: Bind<TabRestoreWindows>) {
+    this.assignProperty('restoreWindows', value);
+  }
+  get openWindow(): TabOpenWindow | null {
+    return this.getProperty<TabOpenWindow | null | undefined>('openWindow') ?? null;
+  }
+  set openWindow(value: TabOpenWindow | null) {
+    this.setProperty('openWindow', value);
+  }
+  get dragOutToNewWindow(): boolean {
+    return this.getProperty<boolean | undefined>('dragOutToNewWindow') ?? true;
+  }
+  set dragOutToNewWindow(value: Bind<boolean>) {
+    this.assignProperty('dragOutToNewWindow', value, Boolean);
+  }
   get keyPreset(): TabKeyPreset {
     return this.getProperty<TabKeyPreset | undefined>('keyPreset') ?? 'auto';
   }
@@ -930,6 +1040,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   /** The floating windows, the one at the back first. Reactive. */
   get floatingWindows(): readonly TabWindow[] {
     return this.getProperty<readonly TabWindow[] | undefined>('floatingWindows') ?? NO_WINDOWS;
+  }
+  /** The new browser windows, the one used last at the end. Reactive. */
+  get browserWindows(): readonly TabBrowserWindow[] {
+    return this.getProperty<readonly TabBrowserWindow[] | undefined>('browserWindows') ?? NO_BROWSERS;
   }
   /** The dock areas, the outermost first. Reactive. */
   get dockAreas(): readonly TabDockArea[] {
@@ -1078,13 +1192,24 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   get onSlideChanged(): MotifEvent<TabSlideEventArgs> {
     return this.parts.slideChanged.event;
   }
-  /** A floating window is about to close with its documents; cancelable. */
+  /** A floating window or a new browser window is about to close; `then` may be changed; cancelable (not a new window the user closed). */
   get onWindowClosing(): MotifEvent<TabWindowClosingEventArgs> {
     return this.parts.windowClosing.event;
   }
-  /** A floating window is gone: closed, docked, or left empty. */
+  /** A floating window or a new browser window is gone: closed, docked, left empty, or moved into a new window. */
   get onWindowClosed(): MotifEvent<TabWindowClosedEventArgs> {
     return this.parts.windowClosed.event;
+  }
+  /** A document, a group or a floating window is about to move into a new browser window; `rect` and `url` may be changed; cancelable. */
+  get onWindowOpening(): MotifEvent<TabWindowOpeningEventArgs> {
+    return this.parts.windowOpening.event;
+  }
+  get onWindowOpened(): MotifEvent<TabWindowOpenedEventArgs> {
+    return this.parts.windowOpened.event;
+  }
+  /** The browser opened no new window, or one of another origin; `fallback` may be changed. */
+  get onError(): MotifEvent<TabErrorEventArgs> {
+    return this.parts.error.event;
   }
 
   // Documents.
@@ -1426,17 +1551,27 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return untracked(() => this.maximizeWindowBy(window, false, false));
   }
 
-  /** Closes a floating window with its documents (each one asks through `onClosing`); resolves `false` when one stays open. */
-  closeWindow(window: TabWindow): Promise<boolean> {
-    return untracked(() => this.closeWindowBy(window, false));
+  /**
+   * Closes a floating window with its documents (each one asks through `onClosing`), or a new
+   * browser window: its documents go back to the main window, or close, as
+   * `newWindowCloseAction` says. Resolves `false` when it stays open.
+   */
+  closeWindow(window: TabWindow | TabBrowserWindow): Promise<boolean> {
+    return untracked(() => (window instanceof TabBrowserWindow ? this.closeBrowserBy(window, false) : this.closeWindowBy(window, false)));
   }
 
-  /** Brings a floating window to the front and focuses what had focus in it last. */
-  focusWindow(window: TabWindow): boolean {
+  /** Brings a floating window or a new browser window to the front and focuses what had focus in it last. */
+  focusWindow(window: TabWindow | TabBrowserWindow): boolean {
     return untracked(() => {
-      if (!this.parts.windows.includes(window)) return false;
-      window.bringToFront();
-      const group = this.parts.recentGroups.find((g) => g.window === window) ?? this.hostGroups(window)[0];
+      const parts = this.parts;
+      if (window instanceof TabBrowserWindow) {
+        if (!parts.browsers.includes(window)) return false;
+        bringUp(window.window);
+      } else {
+        if (!parts.windows.includes(window)) return false;
+        window.bringToFront();
+      }
+      const group = parts.recentGroups.find((g) => g.window === window || g.browserWindow === window) ?? this.hostGroups(window)[0];
       return !!group && this.focusGroup(group);
     });
   }
@@ -1456,6 +1591,37 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   /** Moves focus to the next part (`-1`: the previous one): the documents, each dock area that is not folded, each floating window. */
   focusPart(by: 1 | -1 = 1): boolean {
     return untracked(() => this.focusPartBy(by));
+  }
+
+  // New browser windows.
+
+  /**
+   * Moves a document, a whole group or a floating window with all it holds into a new browser
+   * window (`window.open`, or `openWindow`), at `options.rect` on the screen (by default as large
+   * as what moves, beside it). The content moves, it is not made again. Returns the window, `null`
+   * when it may not move, `onWindowOpening` cancels, or the browser opens none (`onError` tells,
+   * and `newWindowFallback` may float it instead). A page given in `newWindowUrl` is waited for:
+   * the move is made once it has loaded (`onWindowOpened`), and this returns `null`.
+   */
+  moveToNewWindow(target: TabDocument | TabGroup | TabWindow, options: TabNewWindowOptions = {}): TabBrowserWindow | null {
+    return untracked(() => {
+      const made = this.newWindowBy(target, options, false);
+      return made instanceof TabBrowserWindow ? made : null;
+    });
+  }
+
+  /** Brings a document, a group or everything in a new window back to the main window, into the group it came from. */
+  moveToMainWindow(target: TabDocument | TabGroup | TabBrowserWindow): boolean {
+    return untracked(() => this.mainWindowBy(target, false));
+  }
+
+  /**
+   * Opens again the new windows a layout saved (`restoreWindows: 'reopen'`) that are floating
+   * because the browser did not let `loadLayout` open them. A browser lets a page open windows only
+   * on a click or a key: call it from one. Returns how many opened.
+   */
+  reopenWindows(): number {
+    return untracked(() => this.reopenWindowsBy());
   }
 
   // Lists.
@@ -1505,7 +1671,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return untracked(() => {
       const groups = this.groups;
       const layout: TabLayout = {
-        version: 2,
+        version: 3,
         root: this.writeNode(this.parts.root!),
         activeGroup: Math.max(0, groups.indexOf(this.activeGroup!)),
         maximizedGroup: this.parts.maximized ? groups.indexOf(this.parts.maximized) : null,
@@ -1528,15 +1694,25 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
           return saved;
         });
       }
+      const browsers = this.browserWindows.filter((w) => w.root);
+      if (browsers.length) {
+        layout.browserWindows = browsers.map((w) => {
+          const saved: TabLayoutBrowserWindow = { rect: w.rect, root: this.writeNode(w.root!) };
+          const home = w.home ? groups.indexOf(w.home) : -1;
+          if (home >= 0) saved.home = home;
+          return saved;
+        });
+      }
       return layout;
     });
   }
 
   /**
-   * Puts a saved layout back in place of the current one, whose documents close without asking.
-   * `factory` makes each document again (by its `type`); without it a document is made from what
-   * was saved and its content comes from the manager's `factory`. A document saved twice comes
-   * back as a copy of the first one.
+   * Puts a saved layout back in place of the current one, whose documents close without asking
+   * (and whose new windows close). `factory` makes each document again (by its `type`); without it
+   * a document is made from what was saved and its content comes from the manager's `factory`. A
+   * document saved twice comes back as a copy of the first one. Saved new windows come back as
+   * `restoreWindows` says.
    */
   loadLayout(layout: TabLayout, factory?: TabLayoutFactory): boolean {
     return untracked(() => {
@@ -1553,9 +1729,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       const oldGroups = [...this.groups];
       const oldAreas = [...parts.areas.values()];
       const oldWindows = [...parts.windows];
+      const oldBrowsers = [...parts.browsers];
       parts.areas.clear();
       parts.order = [];
       parts.windows = [];
+      parts.browsers = [];
+      parts.reopen = [];
       const made = new Map<string, TabDocument>();
       const root = this.readNode(layout.root, factory, made);
       if (old) placeNode(this.element, root.element, old.element);
@@ -1575,6 +1754,20 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         if (saved.maximized) w.markMaximized(true);
         windows.push([w, saved]);
       }
+      // New windows: floating ones for now (also to be opened again), or among the documents.
+      const mode = this.restoreWindows;
+      const browsers: [TabWindow, TabLayoutBrowserWindow][] = [];
+      for (const saved of layout.browserWindows ?? []) {
+        if (!saved?.root) continue;
+        const item = this.readNode(saved.root, factory, made);
+        if (mode === 'main') {
+          this.insertAtHostEdge(null, item, 'right');
+          continue;
+        }
+        const w = this.createWindow(this.viewportRect(saved.rect));
+        this.setHostRoot(w, item);
+        browsers.push([w, saved]);
+      }
       for (const area of oldAreas) {
         this.disposeSplits(area.root);
         area.strip?.dispose();
@@ -1584,6 +1777,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         this.disposeSplits(w.root);
         w.dispose();
       }
+      for (const w of oldBrowsers) this.disposeBrowserWindow(w);
       for (const group of oldGroups) this.controls.remove(group);
       parts.recentGroups = [];
       parts.history = [];
@@ -1598,10 +1792,16 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         const side = saved.dock?.side;
         w.lastDock = { side: side && DOCK_SIDES.includes(side) ? side : null, group: groups[saved.dock?.group ?? -1] ?? null };
       }
+      for (const [w, saved] of browsers) {
+        w.lastDock = { side: null, group: groups[saved.home ?? -1] ?? null };
+        if (mode === 'reopen' && saved.rect) parts.reopen.push({ window: w, rect: saved.rect });
+      }
       this.useGroup(groups[layout.activeGroup] ?? groups[0], false);
       const maximized = layout.maximizedGroup === null ? undefined : groups[layout.maximizedGroup];
       if (maximized) this.maximizeBy(maximized, false, true);
       this.layoutChanged('load', null, false);
+      // Called from a click, the browser lets them open now.
+      if (parts.reopen.length) this.reopenWindowsBy();
       return true;
     });
   }
@@ -1723,6 +1923,81 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     untracked(() => {
       if (document.preview) this.keepBy(document, true);
       else if (this.maximizeOnDoubleClick) this.toggleMaximizeByUser(group);
+    });
+  }
+
+  /** @internal The drop marks shown in a document: the main window's, or a new window's. */
+  marksIn(doc: Document): DropMarks {
+    return this.parts.browsers.find((w) => w.element.ownerDocument === doc)?.marks ?? this.parts.marks;
+  }
+
+  /** @internal Where the manager's things go in a document (drag pictures, guides): its element, or a new window's. */
+  hostElementIn(doc: Document): HTMLElement {
+    return this.parts.browsers.find((w) => w.element.ownerDocument === doc)?.element ?? this.element;
+  }
+
+  /** @internal The manager's element and the element of each new window: what the strip's look and a drag's cursor are written on. */
+  hostElements(): HTMLElement[] {
+    return [this.element, ...this.parts.browsers.map((w) => w.element)];
+  }
+
+  /** @internal Whether a node is in the manager: in its element, or in one of its new windows. */
+  owns(node: Node | null): boolean {
+    return !!node && (this.element.contains(node) || this.parts.browsers.some((w) => w.element.contains(node)));
+  }
+
+  /** @internal While a drag aims, the document whose viewport its point is in (the main one by default). */
+  get dragSpace(): Document {
+    return this.parts.space ?? this.element.ownerDocument;
+  }
+  set dragSpace(doc: Document | null) {
+    this.parts.space = doc;
+  }
+
+  /** @internal The new windows, the one focused last first, and the main window's document with when it had focus. */
+  spaces(): { doc: Document; at: number }[] {
+    const parts = this.parts;
+    return [...parts.browsers.map((w) => ({ doc: w.element.ownerDocument, at: w.focusedAt })), { doc: this.element.ownerDocument, at: parts.mainFocusedAt }].sort((a, b) => b.at - a.at);
+  }
+
+  /** @internal A new window's title, as `newWindowTitle` makes it. Reactive. */
+  windowTitleOf(w: TabBrowserWindow): string {
+    const doc = w.activeDocument;
+    const format = this.newWindowTitle;
+    if (typeof format === 'function') return format(doc, w);
+    const title = doc?.title ?? '';
+    const page = this.element.ownerDocument.title;
+    // A part left empty takes its dash with it.
+    return fillTemplate(format, { title, page })
+      .replace(/^\s*[–—-]\s+|\s+[–—-]\s*$/g, '')
+      .trim();
+  }
+
+  /** @internal Whether what is dragged (or named) may move into a new browser window: its own documents' `allowNewWindow`, else the manager's. */
+  mayNewWindow(subject: TabDragSubject): boolean {
+    return untracked(() => {
+      const view = this.element.ownerDocument.defaultView;
+      if (!this.isEnabled || (!this.openWindow && typeof view?.open !== 'function')) return false;
+      const w = subject.group.browserWindow;
+      // Alone in a new window already.
+      if (w && !subject.window && this.hostGroups(w).length === 1 && (!subject.document || subject.group.documents.length === 1)) return false;
+      const docs = subject.window ? subject.window.documents : subject.document ? [subject.document] : subject.group.documents;
+      return docs.length ? docs.every((d) => d.allowNewWindow ?? this.allowNewWindow) : this.allowNewWindow;
+    });
+  }
+
+  /** @internal The user closed a new window, or it went to another page: its documents come back (and close, when `then` says so). */
+  browserWindowClosed(w: TabBrowserWindow): void {
+    untracked(() => {
+      const parts = this.parts;
+      if (!parts.browsers.includes(w)) return;
+      const e: TabWindowClosingEventArgs = { window: w, kind: 'browser', then: this.newWindowCloseAction, byUser: true, cancel: false, source: this };
+      parts.windowClosing.fire(e);
+      const docs = [...w.documents];
+      this.mainWindowBy(w, true, { force: true, reason: 'closed' });
+      this.say('tabDocsNewWindowClosed');
+      // Each one asks; a dirty one is asked about here, in the main window.
+      if (e.then === 'close') for (const doc of docs) void this.closeDocument(doc, true);
     });
   }
 
@@ -1884,6 +2159,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       const parts = this.parts;
       parts.dropResult = null;
       if (place.target === 'float') return this.dropFloat(place, drag);
+      if (place.target === 'new-window' || place.target === 'main-window') return this.dropToWindow(place, drag);
       if (place.target === 'dock-area') {
         const target = drag.window ?? drag.document ?? drag.group;
         const ok = !!place.dockSide && drag.manager === this && this.dockBy(target, place.dockSide, null, true);
@@ -1898,8 +2174,24 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       if (kind === 'group' && group && side === 'center') return this.dropInto(drag, group, undefined, false);
       const edge = kind === 'edge';
       if (!side || side === 'center' || (!edge && !(kind === 'group' && group))) return false;
-      return this.dropBeside(drag, edge ? null : group, side);
+      const host = edge && place.browserWindow && parts.browsers.includes(place.browserWindow) ? place.browserWindow : null;
+      return this.dropBeside(drag, edge ? null : group, side, host);
     });
+  }
+
+  /** A drag let go past the edge of its window: into a new window there, or back to the main window. */
+  private dropToWindow(place: TabDropPlace, drag: TabDragSubject): boolean {
+    const parts = this.parts;
+    if (drag.manager !== this || drag.window) return false;
+    const target = drag.document ?? drag.group;
+    if (place.target === 'main-window') {
+      const ok = this.mainWindowBy(target, true);
+      if (ok) parts.dropResult = { group: this.activeGroup, document: drag.document };
+      return ok;
+    }
+    const made = this.newWindowBy(target, { rect: place.rect ?? undefined }, true);
+    if (made) parts.dropResult = { group: this.activeGroup, document: drag.document };
+    return !!made;
   }
 
   /** A drag let go away from every guide and strip: what was dragged floats there; a window moved stays where it is. */
@@ -1973,7 +2265,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     if (e.cancel) return false;
     const opening = target.receiving(doc, target.groups.includes(e.to) ? e.to : group, e.toIndex, byUser);
     if (!opening) return false;
-    const focus = deepActiveElement();
+    const focus = deepActiveElement(tab.header);
     const hadFocus = !!focus && (tab.header.contains(focus) || tab.panel.element.contains(focus));
     this.restoreForChange();
     const wasActive = from.activeTab === tab;
@@ -2101,6 +2393,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
           break;
         case 'closeWindow':
           this.closeWindowByUser(group);
+          break;
+        case 'newWindow':
+          this.newWindowBy(doc ?? group.window ?? group, {}, true);
+          break;
+        case 'mainWindow':
+          this.mainWindowBy(doc ?? group, true);
           break;
       }
     });
@@ -2241,7 +2539,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     const group = tab?.group;
     if (!tab || !group) return false;
     const index = group.tabs.indexOf(tab);
-    const focus = deepActiveElement();
+    const focus = deepActiveElement(tab.header);
     const focusOnTab = !!focus && tab.header.contains(focus);
     const hadFocus = focusOnTab || (!!focus && tab.panel.element.contains(focus));
     const wasActive = group.activeTab === tab;
@@ -2391,7 +2689,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return this.activateDocument(next.document, focus, byUser);
   }
 
-  private moveDocument(doc: TabDocument, group: TabGroup, index: number | undefined, byUser: boolean): boolean {
+  /** `force`: the window it is in is gone, nothing may keep it there. */
+  private moveDocument(doc: TabDocument, group: TabGroup, index: number | undefined, byUser: boolean, force = false): boolean {
     const parts = this.parts;
     const tab = parts.tabs.get(doc);
     const from = tab?.group;
@@ -2402,8 +2701,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     if (from === group && toIndex === fromIndex) return true;
     const e: DocumentMovingEventArgs = { document: doc, from, fromIndex, to: group, toIndex, byUser, cancel: false, source: this };
     parts.moving.fire(e);
-    if (e.cancel) return false;
-    const focus = deepActiveElement();
+    if (e.cancel && !force) return false;
+    if (force) e.to = group;
+    const focus = deepActiveElement(tab.header);
     const hadFocus = !!focus && (tab.header.contains(focus) || tab.panel.element.contains(focus));
     if (from === group) {
       group.moveTab(tab, Math.max(0, Math.min(e.toIndex, last)));
@@ -2489,18 +2789,18 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return true;
   }
 
-  /** A drop beside a group, or along an edge of the layout (`group` `null`): a new group there. */
-  private dropBeside(drag: TabDragSubject, group: TabGroup | null, side: SplitDirection): boolean {
+  /** A drop beside a group, or along an edge of the layout (`group` `null`; of a new window's, `host`): a new group there. */
+  private dropBeside(drag: TabDragSubject, group: TabGroup | null, side: SplitDirection, host: TabBrowserWindow | null = null): boolean {
     const source = drag.manager;
     const doc = drag.document;
     if (source === this && !doc) {
-      const moved = this.moveGroupBy(drag.group, group, side, true);
+      const moved = this.moveGroupBy(drag.group, group, side, true, host);
       if (moved) this.parts.dropResult = { group: drag.group, document: null };
       return moved;
     }
     const copy = !!doc && drag.copy && source.mayCopyDocument(doc);
     if (source === this && doc) {
-      const made = this.splitGroup(group, side, doc, true, copy);
+      const made = this.splitGroup(group, side, doc, true, copy, host);
       if (!made) return false;
       const result = made.documents[0] ?? null;
       if (copy && result && result !== doc) this.say('tabDocsCopied', { title: result.title, n: this.groups.indexOf(made) + 1 });
@@ -2508,7 +2808,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       return true;
     }
     // From another manager: a new group here, then the document (or the group's documents) into it.
-    const made = this.splitGroup(group, side, null, true);
+    const made = this.splitGroup(group, side, null, true, undefined, host);
     if (!made) return false;
     let result: TabDocument | null = null;
     let moved: boolean;
@@ -2558,16 +2858,17 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return true;
   }
 
-  private moveGroupBy(group: TabGroup, target: TabGroup | null, side: TabDropSide, byUser: boolean): boolean {
+  private moveGroupBy(group: TabGroup, target: TabGroup | null, side: TabDropSide, byUser: boolean, host: TabBrowserWindow | null = null): boolean {
     if (!this.groups.includes(group) || target === group || (target && !this.groups.includes(target))) return false;
     if (side === 'center') return !!target && this.mergeGroup(group, target, undefined, byUser);
     if (this.groups.length < 2 || !this.layoutChanging('move', group, byUser)) return false;
     this.restoreForChange();
     const gone = this.takeOut(group);
     if (target) this.insertBeside(target, group, side);
-    else this.insertAtEdge(group, side);
+    else this.insertAtHostEdge(host && host.root ? host : null, group, side);
     this.renderTree();
     for (const split of gone) split.dispose();
+    this.dropEmptyHosts(byUser);
     this.useGroup(group, byUser);
     this.layoutChanged('move', group, byUser);
     this.say('tabDocsGroupMoved', { n: this.groups.indexOf(group) + 1 });
@@ -2698,7 +2999,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
    * A new group beside `group`, or along an edge of the whole layout (`null`). `copy`: a copy of the
    * document opens in it (when it can be copied); else the document moves there.
    */
-  private splitGroup(group: TabGroup | null, direction: SplitDirection, doc: TabDocument | null, byUser: boolean, copy = !!doc && this.copiesOnSplit(doc)): TabGroup | null {
+  private splitGroup(group: TabGroup | null, direction: SplitDirection, doc: TabDocument | null, byUser: boolean, copy = !!doc && this.copiesOnSplit(doc), host: TabBrowserWindow | null = null): TabGroup | null {
     const parts = this.parts;
     if (group && !this.groups.includes(group)) return null;
     const document = doc && parts.tabs.has(doc) ? doc : null;
@@ -2708,7 +3009,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     this.restoreForChange();
     const made = this.createGroup();
     if (group) this.insertBeside(group, made, direction);
-    else this.insertAtEdge(made, direction);
+    else this.insertAtHostEdge(host && host.root ? host : null, made, direction);
     this.renderTree();
     let copied: TabDocument | null = null;
     if (document && e.copy && document.canCopy(!!this.factory)) {
@@ -2846,7 +3147,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     while (top.parentSplit) top = top.parentSplit;
     const parts = this.parts;
     if (top === parts.root) return null;
-    return parts.windows.find((w) => w.root === top) ?? [...parts.areas.values()].find((a) => a.root === top);
+    return parts.windows.find((w) => w.root === top) ?? [...parts.areas.values()].find((a) => a.root === top) ?? parts.browsers.find((w) => w.root === top);
   }
 
   /** The groups of a window, a dock area or the documents' area (`null`), in layout order. */
@@ -2890,7 +3191,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
    * documents' first, then each dock area's, then each floating window's.
    */
   private renderTree(): void {
-    // A browser without moveBefore drops focus from what it moves: it goes back.
+    // A browser without moveBefore, or a move into another window, drops focus from what it moves: it goes back.
     const focus = deepActiveElement();
     const groups: TabGroup[] = [];
     const visit = (item: LayoutItem, host: Host, title: TabGroup | null) => {
@@ -2899,7 +3200,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         item.children.forEach((child) => visit(child, host, title));
       } else {
         groups.push(item);
-        item.placeIn(host instanceof TabWindow ? host : null, host instanceof TabDockArea ? host : null, item === title);
+        item.placeIn(host instanceof TabWindow ? host : null, host instanceof TabDockArea ? host : null, item === title, host instanceof TabBrowserWindow ? host : null);
       }
     };
     const parts = this.parts;
@@ -2918,10 +3219,15 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       placeRoot(w.body, w.root);
       visit(w.root, w, titleGroup(w.root));
     }
+    for (const w of parts.browsers) {
+      if (!w.root) continue;
+      placeRoot(w.element, w.root);
+      visit(w.root, w, null);
+    }
     this.setProperty('groups', groups);
     this.renderDock();
     this.renderTexts();
-    if (focus && focus.isConnected && this.element.contains(focus) && deepActiveElement() !== focus) focus.focus({ preventScroll: true });
+    if (focus && focus.isConnected && this.owns(focus) && deepActiveElement(focus) !== focus) focus.focus({ preventScroll: true });
   }
 
   // Floating windows and dock areas.
@@ -2961,10 +3267,352 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     if (w.root) this.disposeSplits(w.root);
     w.dispose();
     this.renderLists();
-    parts.windowClosed.fire({ window: w, reason, byUser, source: this });
+    parts.windowClosed.fire({ window: w, kind: 'floating', reason, byUser, source: this });
     this.layoutChanged('closeWindow', null, byUser, w);
-    if (reason !== 'docked') this.say('tabDocsWindowClosed');
+    if (reason !== 'docked' && reason !== 'moved') this.say('tabDocsWindowClosed');
     if (hadFocus) this.activeGroup?.restoreFocus();
+  }
+
+  // New browser windows.
+
+  /**
+   * Moves what is named into a new browser window. Returns the window; the floating window that
+   * opened in its place when the browser opened none; `null` when nothing moved (or the page it
+   * opens is still loading: the move comes once it has).
+   */
+  private newWindowBy(target: TabDocument | TabGroup | TabWindow, options: TabNewWindowOptions, byUser: boolean): TabBrowserWindow | TabWindow | null {
+    const parts = this.parts;
+    const floating = target instanceof TabWindow ? target : null;
+    const doc = target instanceof TabDocument ? target : null;
+    const group = floating ? (parts.recentGroups.find((g) => g.window === floating) ?? this.hostGroups(floating)[0]) : doc ? doc.group : (target as TabGroup);
+    if (!group || !this.groups.includes(group) || (doc && doc.manager !== this)) return null;
+    if (floating && (!parts.windows.includes(floating) || !floating.root)) return null;
+    if (!this.mayNewWindow({ document: doc, group, manager: this, copy: false, window: floating })) return null;
+    const e: TabWindowOpeningEventArgs = {
+      document: doc,
+      group,
+      window: floating,
+      rect: options.rect ?? this.newWindowRect(floating ?? group),
+      url: options.url ?? this.newWindowUrl,
+      byUser,
+      cancel: false,
+      source: this,
+    };
+    parts.windowOpening.fire(e);
+    if (e.cancel) return null;
+    const view = this.openView(e);
+    if (!view) return this.windowRefused('windowBlocked', doc, group, floating, e.rect, byUser);
+    const move = () => untracked(() => this.moveInto(view, doc, group, floating, byUser));
+    const state = readiness(view, e.url);
+    if (state === 'ready') return move();
+    if (state === 'foreign') {
+      view.close();
+      return this.windowRefused('windowNotUsable', doc, group, floating, e.rect, byUser);
+    }
+    // A page of its own: the move waits until it has loaded.
+    const started = Date.now();
+    const timer = setInterval(() => {
+      const now = readiness(view, e.url);
+      if (now === 'loading' && !view.closed && Date.now() - started < 15000) return;
+      clearInterval(timer);
+      if (now === 'ready' && this.groups.includes(group)) move();
+      else if (!view.closed) {
+        view.close();
+        untracked(() => this.windowRefused('windowNotUsable', doc, group, floating, e.rect, byUser));
+      }
+    }, 50);
+    return null;
+  }
+
+  /** `window.open`, or the app's `openWindow`; `null` when the browser opened nothing. */
+  private openView(e: TabWindowOpeningEventArgs): Window | null {
+    const r = e.rect;
+    const features = `popup,width=${Math.round(r.width)},height=${Math.round(r.height)},left=${Math.round(r.x)},top=${Math.round(r.y)}`;
+    const request: TabWindowRequest = { url: e.url, name: nextId('tabdocs-window'), features, rect: { ...r } };
+    const page = this.element.ownerDocument.defaultView;
+    try {
+      return (this.openWindow ? this.openWindow(request) : page?.open(request.url, request.name, request.features)) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** The browser opened no window (or one that cannot be used): `onError`, then a floating window when `fallback` says so. */
+  private windowRefused(error: TabErrorEventArgs['error'], doc: TabDocument | null, group: TabGroup, floating: TabWindow | null, rect: TabRect, byUser: boolean): TabWindow | null {
+    const e: TabErrorEventArgs = { error, document: doc, group, fallback: this.newWindowFallback, byUser, source: this };
+    this.parts.error.fire(e);
+    this.say('tabDocsWindowBlocked');
+    // A floating window stays one.
+    if (floating || e.fallback !== 'float' || !this.groups.includes(group)) return floating;
+    if (doc && doc.group !== group) return null;
+    return this.floatBy(doc, group, this.viewportRect(rect), byUser);
+  }
+
+  /** Where a new window opens: beside what moves into it, as large (or `newWindowSize`), on the screen. */
+  private newWindowRect(from: TabGroup | TabWindow): TabRect {
+    const el = from.element;
+    const view = el.ownerDocument.defaultView;
+    const box = el.getBoundingClientRect();
+    const size = this.newWindowSize;
+    const width = Math.round(size?.width ?? (box.width > 0 ? box.width : 640));
+    const height = Math.round(size?.height ?? (box.height > 0 ? box.height : 480));
+    const at = view ? offsetOf(view) : { x: 0, y: 0 };
+    return { x: Math.round(at.x + box.left + 32), y: Math.round(at.y + box.top + 32), width, height };
+  }
+
+  /** A place on the screen as a place in the page's viewport. */
+  private viewportRect(rect: TabRect): TabRect {
+    const view = this.element.ownerDocument.defaultView;
+    const at = view ? offsetOf(view) : { x: 0, y: 0 };
+    return { ...rect, x: rect.x - at.x, y: rect.y - at.y };
+  }
+
+  /** The new window is open and ready: the document, the group or the floating window's layout moves into it. */
+  private moveInto(view: Window, doc: TabDocument | null, group: TabGroup, floating: TabWindow | null, byUser: boolean): TabBrowserWindow | null {
+    const parts = this.parts;
+    if (floating ? !parts.windows.includes(floating) || !floating.root : !this.groups.includes(group) || (doc && doc.group !== group)) {
+      view.close();
+      return null;
+    }
+    this.restoreForChange();
+    const w = this.createBrowserWindow(view);
+    let into: TabGroup;
+    if (doc) {
+      into = this.createGroup();
+      this.setHostRoot(w, into);
+      this.renderTree();
+      // Its documents go back into this group, or (once it is gone) the main window's active one.
+      w.home = group;
+      if (!this.moveDocument(doc, into, 0, byUser)) {
+        this.discardBrowserWindow(w);
+        return null;
+      }
+    } else if (floating) {
+      const item = floating.root!;
+      w.home = floating.lastDock.group;
+      into = parts.recentGroups.find((g) => g.window === floating) ?? groupsIn(item)[0];
+      parts.windowGone = 'moved';
+      try {
+        const gone = this.takeOut(item);
+        this.setHostRoot(w, item);
+        this.renderTree();
+        for (const split of gone) split.dispose();
+        this.dropEmptyHosts(byUser);
+      } finally {
+        parts.windowGone = null;
+      }
+    } else {
+      w.home = this.nearGroup(group);
+      const gone = this.takeOut(group);
+      this.setHostRoot(w, group);
+      this.renderTree();
+      for (const split of gone) split.dispose();
+      this.dropEmptyHosts(byUser);
+      into = group;
+    }
+    if (w.home && (w.home === into || !inMain(w.home))) w.home = null;
+    this.useGroup(into, byUser);
+    parts.windowOpened.fire({ window: w, document: doc, group: into, byUser, source: this });
+    this.layoutChanged('newWindow', into, byUser, w);
+    if (byUser) {
+      bringUp(view);
+      this.focusGroup(into);
+    }
+    this.say('tabDocsMovedToNewWindow', { title: doc ? doc.title : this.textOf('tabDocsGroup', { n: this.groups.indexOf(into) + 1 }) });
+    return w;
+  }
+
+  private createBrowserWindow(view: Window): TabBrowserWindow {
+    const parts = this.parts;
+    const w = new TabBrowserWindow(this, view);
+    parts.browsers.push(w);
+    // The app's own token values on the manager's element go along.
+    const style = this.element.style;
+    for (let i = 0; i < style.length; i++) {
+      const name = style[i];
+      if (name.startsWith('--')) w.element.style.setProperty(name, style.getPropertyValue(name));
+    }
+    const stops = [parts.menus!.attach(w.element), parts.drag!.listen(w.element)];
+    parts.browserStops.set(w, () => stops.forEach((stop) => stop()));
+    this.watchPage();
+    this.renderStrip();
+    this.renderLists();
+    return w;
+  }
+
+  /** A window made for a move that did not happen goes without a word. */
+  private discardBrowserWindow(w: TabBrowserWindow): void {
+    const parts = this.parts;
+    for (const g of this.hostGroups(w)) {
+      parts.recentGroups = parts.recentGroups.filter((r) => r !== g);
+      this.controls.remove(g);
+    }
+    w.root = null;
+    parts.browsers = parts.browsers.filter((x) => x !== w);
+    this.disposeBrowserWindow(w);
+    this.renderTree();
+    this.renderLists();
+  }
+
+  /** A new window is gone: emptied, its documents back in the main window, or closed. */
+  private removeBrowserWindow(w: TabBrowserWindow, reason: TabWindowClosedEventArgs['reason'], byUser: boolean): void {
+    const parts = this.parts;
+    const at = parts.browsers.indexOf(w);
+    if (at < 0) return;
+    parts.browsers.splice(at, 1);
+    this.disposeBrowserWindow(w);
+    this.renderLists();
+    parts.windowClosed.fire({ window: w, kind: 'browser', reason, byUser, source: this });
+    this.layoutChanged('closeWindow', null, byUser, w);
+  }
+
+  /** Takes off what a new window has from the manager, and closes it. */
+  private disposeBrowserWindow(w: TabBrowserWindow): void {
+    const parts = this.parts;
+    parts.browserStops.get(w)?.();
+    parts.browserStops.delete(w);
+    if (w.root) this.disposeSplits(w.root);
+    w.dispose();
+    if (!parts.browsers.length) {
+      parts.pageStop?.();
+      parts.pageStop = null;
+    }
+  }
+
+  /** While new windows are open: the main window's place on the screen and its focus, and its going away (they close with it). */
+  private watchPage(): void {
+    const parts = this.parts;
+    const view = this.element.ownerDocument.defaultView;
+    if (parts.pageStop || !view) return;
+    const doc = view.document;
+    const note = (e: PointerEvent) => noteOffset(view, e);
+    const focus = () => (parts.mainFocusedAt = performance.now());
+    const gone = () =>
+      untracked(() => {
+        for (const w of [...parts.browsers]) this.disposeBrowserWindow(w);
+        parts.browsers = [];
+        this.renderLists();
+      });
+    doc.addEventListener('pointermove', note, { capture: true, passive: true });
+    doc.addEventListener('pointerdown', note, { capture: true, passive: true });
+    view.addEventListener('focus', focus);
+    view.addEventListener('pagehide', gone);
+    parts.pageStop = () => {
+      doc.removeEventListener('pointermove', note, true);
+      doc.removeEventListener('pointerdown', note, true);
+      view.removeEventListener('focus', focus);
+      view.removeEventListener('pagehide', gone);
+    };
+  }
+
+  /**
+   * Back to the main window: a document into the group it came from (its window's `home`), else
+   * the main window's active group; a group's or a whole window's documents the same way, the
+   * active one staying active. A window left empty closes.
+   */
+  private mainWindowBy(target: TabDocument | TabGroup | TabBrowserWindow, byUser: boolean, options: BackOptions = {}): boolean {
+    const parts = this.parts;
+    const whole = target instanceof TabBrowserWindow ? target : null;
+    const doc = target instanceof TabDocument ? target : null;
+    const group = whole ? null : doc ? doc.group : (target as TabGroup);
+    const w = whole ?? group?.browserWindow ?? null;
+    if (!w || !parts.browsers.includes(w) || (doc && doc.manager !== this) || (group && !this.groups.includes(group))) return false;
+    if (!options.force && !this.layoutChanging('mainWindow', group, byUser, w)) return false;
+    const home = w.home && this.groups.includes(w.home) && inMain(w.home) ? w.home : null;
+    const into = home ?? this.targetGroupOutside()!;
+    const docs = doc ? [doc] : this.hostGroups(whole ?? group!.browserWindow).filter((g) => whole || g === group).flatMap((g) => [...g.documents]);
+    const active = doc ?? (whole ? w.activeDocument : group!.activeDocument);
+    this.restoreForChange();
+    parts.windowGone = options.reason ?? 'docked';
+    let moved = 0;
+    try {
+      let at = into.tabs.length;
+      for (const d of docs) {
+        if (!this.moveDocument(d, into, doc ? undefined : at, byUser, options.force)) continue;
+        moved++;
+        at = into.documents.indexOf(d) + 1;
+      }
+      // All of it: what is left (empty groups kept by `closeEmptyGroups`) goes with the window.
+      if ((whole || options.force) && parts.browsers.includes(w) && this.hostGroups(w).every((g) => !g.tabs.length)) {
+        for (const g of this.hostGroups(w)) {
+          parts.recentGroups = parts.recentGroups.filter((r) => r !== g);
+          g.disposeTabs();
+          this.controls.remove(g);
+        }
+        if (w.root) this.disposeSplits(w.root);
+        w.root = null;
+        this.renderTree();
+      }
+      this.dropEmptyHosts(byUser);
+    } finally {
+      parts.windowGone = null;
+    }
+    if (docs.length && !moved) return false;
+    if (active?.group === into) this.activateDocument(active, false, byUser);
+    this.useGroup(into, byUser);
+    this.layoutChanged('mainWindow', into, byUser, w);
+    if (byUser && !options.force) {
+      const page = this.element.ownerDocument.defaultView;
+      if (page) bringUp(page);
+      this.focusGroup(into);
+    }
+    if (options.reason !== 'closed') this.say('tabDocsMovedToMainWindow', { title: doc ? doc.title : this.textOf('tabDocsGroup', { n: this.groups.indexOf(into) + 1 }) });
+    return true;
+  }
+
+  /** Closes a new window from code or a menu: its documents go back, or close (those that stay keep it open). */
+  private async closeBrowserBy(w: TabBrowserWindow, byUser: boolean): Promise<boolean> {
+    const parts = this.parts;
+    if (!parts.browsers.includes(w)) return false;
+    const e: TabWindowClosingEventArgs = { window: w, kind: 'browser', then: this.newWindowCloseAction, byUser, cancel: false, source: this };
+    parts.windowClosing.fire(e);
+    if (e.cancel) return false;
+    if (e.then === 'back') return untracked(() => this.mainWindowBy(w, byUser, { force: true, reason: 'closed' }));
+    parts.closingWindows.add(w);
+    try {
+      for (const doc of untracked(() => [...w.documents])) {
+        if (!(await untracked(() => this.closeDocument(doc, byUser)))) return false;
+      }
+    } finally {
+      parts.closingWindows.delete(w);
+    }
+    untracked(() => {
+      if (!parts.browsers.includes(w)) return;
+      const groups = this.hostGroups(w);
+      w.root = null;
+      for (const g of groups) {
+        parts.recentGroups = parts.recentGroups.filter((r) => r !== g);
+        g.disposeTabs();
+        this.controls.remove(g);
+      }
+      this.renderTree();
+      if (this.activeGroup && groups.includes(this.activeGroup)) {
+        this.setProperty('activeGroup', null);
+        const next = parts.recentGroups[0] ?? this.groups[0];
+        if (next) this.useGroup(next, false);
+      }
+      this.removeBrowserWindow(w, 'closed', byUser);
+      this.say('tabDocsWindowClosed');
+    });
+    return true;
+  }
+
+  /** The floating windows a layout saved as new windows: each one opens as a new window again, if the browser lets it. */
+  private reopenWindowsBy(): number {
+    const parts = this.parts;
+    let opened = 0;
+    for (const entry of [...parts.reopen]) {
+      if (!parts.windows.includes(entry.window) || !entry.window.root) {
+        parts.reopen = parts.reopen.filter((r) => r !== entry);
+        continue;
+      }
+      const made = this.newWindowBy(entry.window, { rect: entry.rect }, false);
+      if (made instanceof TabBrowserWindow) {
+        opened++;
+        parts.reopen = parts.reopen.filter((r) => r !== entry);
+      }
+    }
+    return opened;
   }
 
   private createArea(side: TabDockSide, size: number | string): TabDockArea {
@@ -2996,6 +3644,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     const parts = this.parts;
     for (const w of [...parts.windows]) if (!w.root) this.removeWindow(w, parts.windowGone ?? (parts.closingWindows.has(w) ? 'closed' : 'empty'), byUser);
     for (const area of [...parts.areas.values()]) if (!area.root) this.removeArea(area);
+    for (const w of [...parts.browsers]) {
+      if (!w.root) this.removeBrowserWindow(w, parts.windowGone === 'moved' ? 'empty' : (parts.windowGone ?? (parts.closingWindows.has(w) ? 'closed' : 'empty')), byUser);
+    }
   }
 
   private orderedAreas(): TabDockArea[] {
@@ -3007,6 +3658,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   private renderLists(): void {
     this.setProperty('dockAreas', this.orderedAreas());
     this.setProperty('floatingWindows', [...this.parts.windows].sort((a, b) => zOf(a) - zOf(b)));
+    this.setProperty('browserWindows', [...this.parts.browsers].sort((a, b) => a.focusedAt - b.focusedAt));
   }
 
   /** @internal A window came to the front. */
@@ -3105,6 +3757,14 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   /** Where a window floated from `group` opens: at `at` (the pointer), else beside the group; as large as the group, or `floatingWindowSize`. */
   private floatRect(group: TabGroup | null, at: { x: number; y: number } | null): TabRect {
     const box = group?.element.getBoundingClientRect();
+    if (box && group?.browserWindow) {
+      // A group in a new window: as large, in the middle of the page.
+      const size = this.floatingWindowSize;
+      const width = size?.width ?? (box.width > 0 ? box.width : 480);
+      const height = size?.height ?? (box.height > 0 ? box.height : 320);
+      const page = this.element.ownerDocument.documentElement;
+      return { x: Math.max(0, (page.clientWidth - width) / 2), y: Math.max(0, (page.clientHeight - height) / 3), width, height };
+    }
     const size = this.floatingWindowSize;
     const width = size?.width ?? (box && box.width > 0 ? box.width : 480);
     const height = size?.height ?? (box && box.height > 0 ? box.height : 320);
@@ -3143,9 +3803,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return this.allowAutoHide && area.documents.every((d) => d.allowAutoHide !== false);
   }
 
-  /** @internal Whether a group may be maximized: one of the documents' groups, when there are two or more. */
+  /** @internal Whether a group may be maximized: one of the main window's documents' groups, when there are two or more. */
   canMaximize(group: TabGroup): boolean {
-    return !group.window && !group.dockArea && this.groups.filter((g) => !g.window && !g.dockArea).length > 1;
+    return inMain(group) && this.groups.filter(inMain).length > 1;
   }
 
   /** Whether a group left without documents goes: never the documents' last one; a window's last one when `closeEmptyWindows` says so; a dock area's last one, with the area. */
@@ -3154,7 +3814,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     if (host === undefined) return false;
     const alone = this.hostGroups(host).length < 2;
     if (host === null) return !alone && this.closeEmptyGroups;
-    if (host instanceof TabWindow) return alone ? this.closeEmptyWindows : this.closeEmptyGroups;
+    if (host instanceof TabWindow || host instanceof TabBrowserWindow) return alone ? this.closeEmptyWindows : this.closeEmptyGroups;
     return alone || this.closeEmptyGroups;
   }
 
@@ -3166,16 +3826,19 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   /** @internal The top group under a point of the viewport: in the front window there, the slid out area, then the rest. */
   groupAt(x: number, y: number, skip: TabWindow | null = null): TabGroup | null {
-    for (const w of this.windowsFrontFirst()) {
+    // A point of a new window's viewport: only its groups are there.
+    const space = this.dragSpace;
+    const main = space === this.element.ownerDocument;
+    for (const w of main ? this.windowsFrontFirst() : []) {
       if (w === skip || !contains(w.element.getBoundingClientRect(), x, y)) continue;
       return this.hostGroups(w).find((g) => contains(g.element.getBoundingClientRect(), x, y)) ?? null;
     }
-    const open = this.parts.slide?.area;
+    const open = main ? this.parts.slide?.area : null;
     if (open && contains(open.element.getBoundingClientRect(), x, y)) {
       return this.hostGroups(open).find((g) => contains(g.element.getBoundingClientRect(), x, y)) ?? null;
     }
     for (const g of this.groups) {
-      if (g.window || g.dockArea?.autoHidden || g.element.closest('[hidden]')) continue;
+      if (g.element.ownerDocument !== space || g.window || g.dockArea?.autoHidden || g.element.closest('[hidden]')) continue;
       if (contains(g.element.getBoundingClientRect(), x, y)) return g;
     }
     return null;
@@ -3189,7 +3852,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   /** @internal Where a drag let go away from every guide and strip lands: a window at the pointer (for a window moved, where it is); `null` when it may not float. */
   floatPlace(drag: TabDragSubject, x?: number, y?: number): TabDropPlace | null {
     if (drag.window) return { target: 'float', manager: this, group: null, index: -1, side: null, rect: drag.window.rect };
-    if (drag.manager !== this || !this.maySubject(drag, 'float')) return null;
+    // Floating windows are the main window's: in a new window a drop away from the strips is no place.
+    if (drag.manager !== this || !this.maySubject(drag, 'float') || (x !== undefined && this.dragSpace !== this.element.ownerDocument)) return null;
     const at = x === undefined || y === undefined ? null : { x, y };
     return { target: 'float', manager: this, group: null, index: -1, side: null, rect: this.floatRect(drag.group, at) };
   }
@@ -3257,7 +3921,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   private nearGroup(group: TabGroup): TabGroup | null {
     const host = this.hostOf(group);
     const own = host === undefined ? [] : this.hostGroups(host).filter((g) => g !== group);
-    return own[0] ?? this.parts.recentGroups.find((g) => g !== group && !g.window && !g.dockArea) ?? null;
+    return own[0] ?? this.parts.recentGroups.find((g) => g !== group && inMain(g)) ?? null;
   }
 
   private dockBy(target: TabDocument | TabGroup | TabWindow, side: TabDockSide | null, size: number | string | null, byUser: boolean): boolean {
@@ -3338,7 +4002,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     const back = w.lastDock;
     const into = back.group && this.groups.includes(back.group) && back.group.window !== w ? back.group : null;
     if (!into && back.side) return this.dockInto(target, back.side, null, byUser);
-    const to = into ?? this.targetGroupOutside(w);
+    const to = into ?? this.targetGroupOutside();
     if (!to) return null;
     if (target instanceof TabDocument) return this.moveDocument(target, to, undefined, byUser) ? to : null;
     const groups = target instanceof TabWindow ? this.hostGroups(w) : [target];
@@ -3352,8 +4016,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   }
 
   /** The documents' group a window's documents go to: the one used last, not in a window or a dock area. */
-  private targetGroupOutside(w: TabWindow): TabGroup | null {
-    return this.parts.recentGroups.find((g) => !g.window && !g.dockArea && !g.locked) ?? this.hostGroups(null)[0] ?? null;
+  private targetGroupOutside(): TabGroup | null {
+    return this.parts.recentGroups.find((g) => inMain(g) && !g.locked) ?? this.hostGroups(null)[0] ?? null;
   }
 
   private autoHideBy(area: TabDockArea, on: boolean, byUser: boolean): boolean {
@@ -3446,7 +4110,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   private watchSlide(area: TabDockArea): () => void {
     const doc = this.element.ownerDocument;
     const inside = (node: EventTarget | null) =>
-      node instanceof Node && (area.element.contains(node) || !!area.strip?.element.contains(node) || !!(node instanceof Element && node.closest('.mx-popup')));
+      isNode(node) && (area.element.contains(node) || !!area.strip?.element.contains(node) || !!(isElement(node) && node.closest('.mx-popup')));
     const press = (e: Event) => {
       if (!inside(e.target)) untracked(() => this.slideBack(true));
     };
@@ -3509,9 +4173,11 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   private async closeWindowBy(w: TabWindow, byUser: boolean): Promise<boolean> {
     const parts = this.parts;
     if (!parts.windows.includes(w)) return false;
-    const e: TabWindowClosingEventArgs = { window: w, byUser, cancel: false, source: this };
+    const e: TabWindowClosingEventArgs = { window: w, kind: 'floating', then: 'close', byUser, cancel: false, source: this };
     parts.windowClosing.fire(e);
     if (e.cancel) return false;
+    // Its documents go back where it was docked instead.
+    if (e.then === 'back') return untracked(() => this.dockBy(w, null, null, byUser));
     parts.closingWindows.add(w);
     try {
       for (const doc of untracked(() => [...w.documents])) {
@@ -3543,6 +4209,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   private focusPartBy(by: 1 | -1): boolean {
     const parts = this.parts;
+    // A new window is a part of its own: the parts are the main window's.
+    if (this.activeGroup?.browserWindow) return false;
     const hosts: Host[] = [null, ...this.orderedAreas().filter((a) => a.root && !a.autoHidden), ...this.windowsFrontFirst().reverse().filter((w) => w.root)];
     if (hosts.length < 2) return false;
     const focus = deepActiveElement();
@@ -3598,6 +4266,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     const before = previous?.activeDocument ?? null;
     previous?.markActive(false);
     group.markActive(true);
+    group.browserWindow?.markActive(group);
     parts.recentGroups = [group, ...parts.recentGroups.filter((g) => g !== group)];
     this.setProperty('activeGroup', group);
     const now = group.activeDocument;
@@ -3658,13 +4327,13 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     this.renderTree();
   }
 
-  private layoutChanging(change: TabLayoutChange, group: TabGroup | null, byUser: boolean, window: TabWindow | null = null, area: TabDockArea | null = null): boolean {
+  private layoutChanging(change: TabLayoutChange, group: TabGroup | null, byUser: boolean, window: TabWindow | TabBrowserWindow | null = null, area: TabDockArea | null = null): boolean {
     const e: LayoutChangingEventArgs = { change, group, window, area, byUser, cancel: false, source: this };
     this.parts.layoutChanging.fire(e);
     return !e.cancel;
   }
 
-  private layoutChanged(change: TabLayoutChange, group: TabGroup | null, byUser: boolean, window: TabWindow | null = null, area: TabDockArea | null = null): void {
+  private layoutChanged(change: TabLayoutChange, group: TabGroup | null, byUser: boolean, window: TabWindow | TabBrowserWindow | null = null, area: TabDockArea | null = null): void {
     this.parts.layoutChanged.fire({ change, group, window, area, byUser, source: this });
   }
 
@@ -3874,6 +4543,14 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       if (w) void this.closeWindowBy(w, true);
       return !!w;
     });
+    each(
+      'moveToNewWindow',
+      withTab((doc) => !!this.newWindowBy(doc, {}, true)),
+    );
+    each(
+      'moveToMainWindow',
+      withTab((doc) => this.mainWindowBy(doc, true)),
+    );
     each('resizeSmaller', (e) => this.sashKey(e, -1));
     each('resizeLarger', (e) => this.sashKey(e, 1));
     each('resizeMin', (e) => this.sashKey(e, Number.NEGATIVE_INFINITY));
@@ -3892,7 +4569,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   /** The tab of this manager (not of one inside it) whose header is `target`. */
   private tabAt(target: EventTarget | null): DocumentTab | undefined {
-    const header = target instanceof Element ? target.closest('.mx-tabdocs__tab') : null;
+    const header = isElement(target) ? target.closest('.mx-tabdocs__tab') : null;
     if (!header) return undefined;
     for (const tab of this.parts.tabs.values()) if (tab.header === header) return tab;
     return undefined;
@@ -3927,7 +4604,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   }
 
   private sashKey(e: KeyboardEvent, by: number): boolean {
-    const target = e.target instanceof Element ? e.target.closest('.mx-tabdocs__sash') : null;
+    const target = isElement(e.target) ? e.target.closest('.mx-tabdocs__sash') : null;
     const sash = SplitSash.of(target);
     if (!sash) return false;
     const owner = sash.split;
@@ -3955,6 +4632,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       each(w.root);
     });
     for (const area of this.parts.areas.values()) each(area.root);
+    for (const w of this.parts.browsers) {
+      w.element.setAttribute('aria-label', this.label || this.textOf('tabDocsDocuments'));
+      each(w.root);
+    }
   }
 
   private renderMinSizes(): void {
@@ -3978,13 +4659,16 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   /** The strip's look: how tabs are sized, where pinned ones go, wrapping and scroll buttons. */
   private renderStrip(): void {
-    const el = this.element;
-    const data = el.dataset;
-    data.tabSize = this.peekProperty<TabSize>('tabSize') ?? 'fit';
-    data.pinnedSize = this.peekProperty<PinnedTabSize>('pinnedTabSize') ?? 'normal';
-    el.toggleAttribute('data-pinned-row', !!this.peekProperty('pinnedTabsOnSeparateRow'));
-    el.toggleAttribute('data-wrap', !!this.peekProperty('wrapTabs'));
-    el.toggleAttribute('data-scroll-buttons', this.peekProperty('scrollButtons') !== false);
+    // On the manager's element and on each new window's, which stands for it there.
+    const parts = (this as unknown as { [PARTS]?: Parts })[PARTS];
+    for (const el of [this.element, ...(parts?.browsers ?? []).map((w) => w.element)]) {
+      const data = el.dataset;
+      data.tabSize = this.peekProperty<TabSize>('tabSize') ?? 'fit';
+      data.pinnedSize = this.peekProperty<PinnedTabSize>('pinnedTabSize') ?? 'normal';
+      el.toggleAttribute('data-pinned-row', !!this.peekProperty('pinnedTabsOnSeparateRow'));
+      el.toggleAttribute('data-wrap', !!this.peekProperty('wrapTabs'));
+      el.toggleAttribute('data-scroll-buttons', this.peekProperty('scrollButtons') !== false);
+    }
     for (const group of untracked(() => this.groups)) {
       this.sizeGroup(group);
       group.queueOverflow();
@@ -3996,10 +4680,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     this.sayText(this.textOf(key, values));
   }
 
-  /** @internal */
+  /** @internal Said in the window that has focus: a screen reader reads the live regions of the window it is in. */
   sayText(text: string): void {
     if (!this.announce) return;
-    const live = this.parts.live;
+    const parts = this.parts;
+    const focus = parts.browsers.length ? deepActiveElement() : null;
+    const live = (focus && parts.browsers.find((w) => w.element.ownerDocument === focus.ownerDocument)?.live) || parts.live;
     live.textContent = '';
     queueMicrotask(() => (live.textContent = text));
   }
@@ -4045,6 +4731,15 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       sizeWatch: null,
       slide: null,
       windowGone: null,
+      browsers: [],
+      browserStops: new Map(),
+      reopen: [],
+      space: null,
+      mainFocusedAt: 0,
+      pageStop: null,
+      windowOpening: new Emitter(),
+      windowOpened: new Emitter(),
+      error: new Emitter(),
       closingWindows: new Set(),
       floating: new Emitter(),
       floated: new Emitter(),
@@ -4092,6 +4787,33 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 /** The groups of a branch of the layout, in order. */
 function groupsIn(item: LayoutItem): TabGroup[] {
   return item instanceof TabSplit ? item.children.flatMap(groupsIn) : [item];
+}
+
+/** Brings a window to the front, unless it has focus already. */
+function bringUp(view: Window): void {
+  if (!view.document.hasFocus()) view.focus();
+}
+
+/** Whether a group is among the main window's documents: not in a floating window, a dock area or a new window. */
+function inMain(group: TabGroup): boolean {
+  return !group.window && !group.dockArea && !group.browserWindow;
+}
+
+/**
+ * Whether the page in a window just opened can take the content: `ready` (an empty page, or the
+ * one asked for, loaded), `loading`, or `foreign` (another origin: its document cannot be reached).
+ */
+function readiness(view: Window, url: string): 'ready' | 'loading' | 'foreign' {
+  try {
+    const doc = view.document;
+    if (!doc) return 'loading';
+    const blank = !url || url === 'about:blank';
+    if (blank) return 'ready';
+    const href = view.location.href;
+    return href !== 'about:blank' && doc.readyState === 'complete' ? 'ready' : 'loading';
+  } catch {
+    return 'foreign';
+  }
 }
 
 /** The group whose strip is a window's title: the one at its top end corner. */

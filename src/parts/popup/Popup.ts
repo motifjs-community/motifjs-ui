@@ -13,6 +13,7 @@ const hasPopover = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prot
  * other side when there is no room, and closes on Escape, on a press outside it and its toggle,
  * and when focus leaves both. Focus inside goes back to the toggle when it closes. Its content is
  * whatever is added to its `controls`; presses inside do not reach the component that hosts it.
+ * Opened next to an anchor in another document (a window the app opened), it goes there.
  */
 export class Popup extends Component<HTMLDivElement> {
   static override elementTag = 'div';
@@ -22,6 +23,8 @@ export class Popup extends Component<HTMLDivElement> {
   matchWidth = true;
 
   private anchor: HTMLElement | null = null;
+  /** The document it follows its anchor in while it is open. */
+  private watched: Document | null = null;
   private toggle: Element | null = null;
   private returnFocus: HTMLElement | null = null;
   private frame = 0;
@@ -53,23 +56,35 @@ export class Popup extends Component<HTMLDivElement> {
     this.anchor = anchor;
     this.toggle = options.toggle ?? anchor;
     this.returnFocus = options.returnFocus ?? (this.toggle as HTMLElement);
-    if (opening) {
+    const doc = anchor.ownerDocument;
+    let show = opening;
+    if (this.element.ownerDocument !== doc) {
+      // A popup shows in the top layer of the document it is in: it goes to its anchor's.
+      this.stopListening();
+      if (!opening) this.hideSurface();
+      doc.body.append(this.element);
+      show = true;
+    }
+    if (show) {
       if (hasPopover) this.element.showPopover();
       else this.element.hidden = false;
-      document.addEventListener('pointerdown', this.onPointerDown, true);
-      window.addEventListener('scroll', this.schedule, true);
-      window.addEventListener('resize', this.schedule);
+    }
+    if (!this.watched) {
+      this.watched = doc;
+      const view = doc.defaultView;
+      doc.addEventListener('pointerdown', this.onPointerDown, true);
+      view?.addEventListener('scroll', this.schedule, true);
+      view?.addEventListener('resize', this.schedule);
     }
     this.place();
   }
 
   close(reason: PopupCloseReason = 'code'): void {
     if (!this.anchor) return;
-    const focusInside = this.element.contains(deepActiveElement());
+    const focusInside = this.element.contains(deepActiveElement(this.element));
     const returnFocus = this.returnFocus;
     this.stopFollowing();
-    if (hasPopover && this.element.matches(':popover-open')) this.element.hidePopover();
-    else this.element.hidden = true;
+    this.hideSurface();
     // Focus that leaves on its own (Tab, a click elsewhere) goes where it was going.
     if (focusInside && reason !== 'focus') returnFocus?.focus();
     this.closedEmitter.fire(reason);
@@ -87,15 +102,33 @@ export class Popup extends Component<HTMLDivElement> {
 
   private stopFollowing(): void {
     this.anchor = this.toggle = this.returnFocus = null;
-    cancelAnimationFrame(this.frame);
-    document.removeEventListener('pointerdown', this.onPointerDown, true);
-    window.removeEventListener('scroll', this.schedule, true);
-    window.removeEventListener('resize', this.schedule);
+    this.stopListening();
+  }
+
+  private hideSurface(): void {
+    if (hasPopover && this.element.matches(':popover-open')) this.element.hidePopover();
+    else this.element.hidden = true;
+  }
+
+  private stopListening(): void {
+    const doc = this.watched;
+    this.watched = null;
+    if (!doc) return;
+    const view = doc.defaultView;
+    doc.removeEventListener('pointerdown', this.onPointerDown, true);
+    view?.cancelAnimationFrame?.(this.frame);
+    view?.removeEventListener('scroll', this.schedule, true);
+    view?.removeEventListener('resize', this.schedule);
   }
 
   private readonly schedule = () => {
-    cancelAnimationFrame(this.frame);
-    this.frame = requestAnimationFrame(() => this.place());
+    const view = this.watched?.defaultView;
+    if (typeof view?.requestAnimationFrame !== 'function') {
+      this.place();
+      return;
+    }
+    view.cancelAnimationFrame(this.frame);
+    this.frame = view.requestAnimationFrame(() => this.place());
   };
 
   private readonly onPointerDown = (e: PointerEvent) => {

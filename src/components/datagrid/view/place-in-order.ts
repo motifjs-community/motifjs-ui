@@ -4,7 +4,7 @@
  * their place after the listed ones.
  */
 export function placeInOrder(parent: Element, desired: readonly Element[]) {
-  const focused = typeof document === 'undefined' ? null : document.activeElement;
+  const focused = parent.ownerDocument.activeElement;
   const kids = parent.children;
   for (let k = 0; k < desired.length; k++) {
     const want = desired[k];

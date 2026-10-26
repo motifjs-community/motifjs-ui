@@ -50,6 +50,14 @@ import type { TabOpenPosition } from './tab-open-position';
 import type { TabShowDescription } from './tab-show-description';
 import type { TabSize } from './tab-size';
 import type { TabToolbarItems } from './tab-toolbar-items';
+import type { TabErrorEventArgs } from './tab-error-event-args';
+import type { TabNewWindowCloseAction } from './tab-new-window-close-action';
+import type { TabNewWindowFallback } from './tab-new-window-fallback';
+import type { TabNewWindowTitle } from './tab-new-window-title';
+import type { TabOpenWindow } from './tab-open-window';
+import type { TabRestoreWindows } from './tab-restore-windows';
+import type { TabWindowOpenedEventArgs } from './tab-window-opened-event-args';
+import type { TabWindowOpeningEventArgs } from './tab-window-opening-event-args';
 
 /** Props of `TabDocumentManager`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
 export interface TabDocumentManagerProps extends ControlProps {
@@ -183,6 +191,24 @@ export interface TabDocumentManagerProps extends ControlProps {
   dockGuides?: Bind<boolean>;
   /** Which dock guides show. Default both: `['group', 'edges']`. */
   dockGuideKinds?: Bind<readonly TabDockGuideKind[]>;
+  /** Documents, groups and floating windows can move into new browser windows (a document's own `allowNewWindow` wins). Default `true`. */
+  allowNewWindow?: Bind<boolean>;
+  /** The page a new window opens, on the page's own origin. Default `'about:blank'`. */
+  newWindowUrl?: Bind<string>;
+  /** A new window's title: `{title}` is its active document's title, `{page}` the page's title; or a function. Default `'{title} – {page}'`. */
+  newWindowTitle?: Bind<TabNewWindowTitle>;
+  /** The size a new window opens at; `null`: the size of what moves into it. Default `null`. */
+  newWindowSize?: Bind<{ width: number; height: number } | null>;
+  /** When the browser blocks a new window: `'float'` opens a floating window instead, `'none'` leaves it. Default `'float'`. */
+  newWindowFallback?: Bind<TabNewWindowFallback>;
+  /** What the documents of a new window do when it closes: `'back'` to the main window, or `'close'`. `onWindowClosing` may change it. Default `'back'`. */
+  newWindowCloseAction?: Bind<TabNewWindowCloseAction>;
+  /** What `loadLayout` does with the new windows a layout saved. Default `'float'`. */
+  restoreWindows?: Bind<TabRestoreWindows>;
+  /** Opens the browser window a document moves into. Default: `window.open`. */
+  openWindow?: TabOpenWindow | null;
+  /** A drag let go past the edge of the browser window opens a new window there; past the edge of a new window, it goes back to the main window. Default `true`. */
+  dragOutToNewWindow?: Bind<boolean>;
   /** Which keys the manager starts with. Default `'auto'`. */
   keyPreset?: Bind<TabKeyPreset>;
   /** Changes some keys; the rest keep the preset's. */
@@ -231,4 +257,7 @@ export interface TabDocumentManagerProps extends ControlProps {
   onSlideChanged?: (e: TabSlideEventArgs) => void;
   onWindowClosing?: (e: TabWindowClosingEventArgs) => void;
   onWindowClosed?: (e: TabWindowClosedEventArgs) => void;
+  onWindowOpening?: (e: TabWindowOpeningEventArgs) => void;
+  onWindowOpened?: (e: TabWindowOpenedEventArgs) => void;
+  onError?: (e: TabErrorEventArgs) => void;
 }

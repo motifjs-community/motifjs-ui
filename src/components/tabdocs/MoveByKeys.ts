@@ -22,6 +22,8 @@ interface Where {
   from?: TabGroup;
   dock?: TabDockSide;
   float?: boolean;
+  /** Past floating: a new browser window of its own. */
+  newWindow?: boolean;
 }
 
 const DOCK_OF: Record<SplitDirection, TabDockSide> = { left: 'left', right: 'right', up: 'top', down: 'bottom' };
@@ -75,7 +77,8 @@ export class MoveByKeys {
   start(subject: TabDragSubject, source: HTMLElement | null): boolean {
     const m = this.manager;
     if (this.stop || !this.drag.begin(subject, 'keyboard', source)) return false;
-    const view = m.element.ownerDocument.defaultView ?? window;
+    // The keys come to the window the move started in: the main one, or a new window.
+    const view = (source ?? subject.group.element).ownerDocument.defaultView ?? window;
     const key = (e: KeyboardEvent) => untracked(() => this.key(e));
     // A press anywhere, or the window losing focus, ends it.
     const away = () => untracked(() => this.end(false));
@@ -132,9 +135,13 @@ export class MoveByKeys {
   private go(to: SplitDirection): void {
     const w = this.where;
     if (!w) return;
-    if (w.float) {
-      // Floating: the arrow back comes to the dock area it went out from.
-      if (w.dock && to === OPPOSITE[DIRECTION_OF[w.dock]]) this.where = { ...w, float: false };
+    if (w.newWindow) {
+      // A new window: the arrow back comes to floating.
+      if (w.dock && to === OPPOSITE[DIRECTION_OF[w.dock]]) this.where = { ...w, newWindow: false };
+    } else if (w.float) {
+      // Floating: on outwards, a new window; the arrow back comes to the dock area it went out from.
+      if (w.dock && to === DIRECTION_OF[w.dock]) this.where = { ...w, newWindow: true };
+      else if (w.dock && to === OPPOSITE[DIRECTION_OF[w.dock]]) this.where = { ...w, float: false };
     } else if (w.dock) {
       // In a dock area: on outwards, a floating window; back in, the edge of the layout; across, another area.
       const out = DIRECTION_OF[w.dock];
@@ -186,20 +193,30 @@ export class MoveByKeys {
     const target = w.manager.layoutTarget;
     const dock = w.manager.dockDropTarget;
     let place: TabDropPlace | null;
-    if (w.float) place = w.manager.floatPlace(subject);
+    const windows = w.manager.dropTargets.find((t) => t.kinds.includes('new-window')) ?? null;
+    if (w.newWindow) place = w.manager === subject.manager && w.manager.mayNewWindow(subject) ? { target: 'new-window', manager: w.manager, group: null, index: -1, side: null } : null;
+    else if (w.float) place = w.manager.floatPlace(subject);
     else if (w.dock) place = dock.areaPlace(w.dock, subject);
     else place = w.group ? target.groupPlace(w.group, w.side, subject) : target.edgePlace(w.side as SplitDirection, subject);
-    const ok = this.drag.aim(place, place ? (w.float || w.dock ? dock : target) : null);
+    const ok = this.drag.aim(place, place ? (w.newWindow ? windows : w.float || w.dock ? dock : target) : null);
     const m = this.manager;
     // Said as it looks: right to left, a group's start is on the right.
     const side = this.rtl() && (w.side === 'left' || w.side === 'right') ? OPPOSITE[w.side] : w.side;
-    const named = w.float
-      ? m.textOf('tabDocsPlaceFloat')
-      : w.dock
-        ? w.manager.textOf(DOCK_TEXTS[w.dock])
-        : w.group
-          ? w.manager.textOf(PLACE_TEXTS[side], { n: w.manager.groups.indexOf(w.group) + 1 })
-          : w.manager.textOf(EDGE_TEXTS[side as SplitDirection]);
+    const inGroup = (group: TabGroup) => {
+      const text = w.manager.textOf(PLACE_TEXTS[side], { n: w.manager.groups.indexOf(group) + 1 });
+      // A group in a new window says which window.
+      const browser = group.browserWindow;
+      return browser ? w.manager.textOf('tabDocsPlaceInWindow', { place: text, n: browser.index + 1 }) : text;
+    };
+    const named = w.newWindow
+      ? m.textOf('tabDocsPlaceNewWindow')
+      : w.float
+        ? m.textOf('tabDocsPlaceFloat')
+        : w.dock
+          ? w.manager.textOf(DOCK_TEXTS[w.dock])
+          : w.group
+            ? inGroup(w.group)
+            : w.manager.textOf(EDGE_TEXTS[side as SplitDirection]);
     const text = ok ? named : m.textOf('tabDocsPlaceRefused', { place: named });
     m.sayText(intro ? `${intro} ${text}` : text);
   }

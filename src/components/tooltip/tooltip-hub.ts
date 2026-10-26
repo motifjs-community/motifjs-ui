@@ -1,7 +1,9 @@
+import { isElement, isNode } from '../../core/node-kind';
+import { eachDocument } from '../../core/page-documents';
 import type { Tooltip } from './Tooltip';
 
-// One set of document listeners serves every tooltip on the page, and only one tooltip is open
-// at a time. Targets are found by walking up from the event target; `addTooltip` registers a
+// One set of document listeners serves every tooltip on the page (and in each document connected
+// to it), and only one tooltip is open at a time. Targets are found by walking up from the event target; `addTooltip` registers a
 // function that makes its tooltip on first use.
 
 type Source = Tooltip | (() => Tooltip);
@@ -13,6 +15,8 @@ let installed = false;
 let current: Tooltip | null = null;
 let currentAnchor: Element | null = null;
 let currentCause: Cause = 'code';
+/** While one is open: the listeners on its anchor's document and window, to take off. */
+let following: (() => void) | null = null;
 let pending: Tooltip | null = null;
 let showTimer: ReturnType<typeof setTimeout> | undefined;
 let hideTimer: ReturnType<typeof setTimeout> | undefined;
@@ -44,10 +48,7 @@ export function showTooltip(tooltip: Tooltip, anchor: Element, cause: Cause, des
   currentAnchor = anchor;
   currentCause = cause;
   if (!opening) return;
-  document.addEventListener('keydown', onKeyDown, true);
-  window.addEventListener('scroll', onScroll, true);
-  window.addEventListener('scrollend', onScrollEnd, true);
-  window.addEventListener('resize', onResize);
+  following = follow(anchor.ownerDocument);
   tooltip.present(anchor, described);
 }
 
@@ -57,25 +58,47 @@ export function hideTooltip(tooltip: Tooltip): void {
   clearTimeout(hideTimer);
   current = currentAnchor = null;
   closedAt = performance.now();
-  document.removeEventListener('keydown', onKeyDown, true);
-  window.removeEventListener('scroll', onScroll, true);
-  window.removeEventListener('scrollend', onScrollEnd, true);
-  window.removeEventListener('resize', onResize);
+  following?.();
+  following = null;
   tooltip.dismiss();
 }
+
+const WATCHED = [
+  ['pointerover', onPointerOver],
+  ['pointerout', onPointerOut],
+  ['pointerdown', onPointerDown],
+  ['focusin', onFocusIn],
+  ['focusout', onFocusOut],
+] as [string, EventListener][];
 
 function install(): void {
   if (installed || typeof document === 'undefined') return;
   installed = true;
-  document.addEventListener('pointerover', onPointerOver, true);
-  document.addEventListener('pointerout', onPointerOut, true);
-  document.addEventListener('pointerdown', onPointerDown, true);
-  document.addEventListener('focusin', onFocusIn, true);
-  document.addEventListener('focusout', onFocusOut, true);
+  eachDocument((doc) => {
+    for (const [type, listener] of WATCHED) doc.addEventListener(type, listener, true);
+    return () => {
+      for (const [type, listener] of WATCHED) doc.removeEventListener(type, listener, true);
+    };
+  });
+}
+
+/** What closes or moves the open tooltip, in the document of its anchor. */
+function follow(doc: Document): () => void {
+  const view = doc.defaultView;
+  doc.addEventListener('keydown', onKeyDown, true);
+  view?.addEventListener('scroll', onScroll, true);
+  view?.addEventListener('scrollend', onScrollEnd, true);
+  view?.addEventListener('resize', onResize);
+  return () => {
+    doc.removeEventListener('keydown', onKeyDown, true);
+    view?.removeEventListener('scroll', onScroll, true);
+    view?.removeEventListener('scrollend', onScrollEnd, true);
+    view?.removeEventListener('resize', onResize);
+  };
 }
 
 function find(node: EventTarget | null): { anchor: Element; tooltip: Tooltip } | null {
-  for (let el = node instanceof Element ? node : null; el; el = el.parentElement) {
+  for (let el = isElement(node) ? node : null; el; el = el.parentElement) {
     const source = sources.get(el);
     if (source) return { anchor: el, tooltip: typeof source === 'function' ? source() : source };
   }
@@ -181,7 +204,7 @@ function onKeyDown(e: KeyboardEvent): void {
 function onScroll(e: Event): void {
   const scrolled = e.target;
   if (!current || !currentAnchor) return;
-  if (scrolled !== document && !(scrolled instanceof Node && scrolled.contains(currentAnchor))) return;
+  if (scrolled !== currentAnchor.ownerDocument && !(isNode(scrolled) && scrolled.contains(currentAnchor))) return;
   // Focus scrolls a field into view (smoothly, too), and the one reading still needs its tooltip:
   // it follows the field, and closes only if the field is off the screen once scrolling ends.
   if (current.showOn === 'manual' || currentCause === 'focus') current.place();
@@ -194,7 +217,8 @@ function onScrollEnd(): void {
 
 function onScreen(el: Element): boolean {
   const r = el.getBoundingClientRect();
-  return r.bottom > 0 && r.right > 0 && r.top < window.innerHeight && r.left < window.innerWidth;
+  const view = el.ownerDocument.defaultView;
+  return !!view && r.bottom > 0 && r.right > 0 && r.top < view.innerHeight && r.left < view.innerWidth;
 }
 
 function onResize(): void {

@@ -370,6 +370,16 @@ export const enStrings: UiStrings = {
   tabDocsPlaceDockTop: 'Into the top dock area',
   tabDocsPlaceDockBottom: 'Into the bottom dock area',
   tabDocsPlaceFloat: 'Into a floating window of its own',
+  tabDocsNewWindow: 'Move into new window',
+  tabDocsWindowToNewWindow: 'Move window into new window',
+  tabDocsMainWindow: 'Move back to main window',
+  tabDocsMovedToNewWindow: '{title} moved into a new window',
+  tabDocsMovedToMainWindow: '{title} moved back to the main window',
+  tabDocsNewWindowClosed: 'Window closed, its documents are back in the main window',
+  tabDocsWindowBlocked: 'The browser did not open the new window',
+  tabDocsDocuments: 'Documents',
+  tabDocsPlaceNewWindow: 'Into a new window',
+  tabDocsPlaceInWindow: '{place}, in window {n}',
 };
 
 export const trStrings: UiStrings = {
@@ -741,6 +751,16 @@ export const trStrings: UiStrings = {
   tabDocsPlaceDockTop: 'Üst yerleştirme alanına',
   tabDocsPlaceDockBottom: 'Alt yerleştirme alanına',
   tabDocsPlaceFloat: 'Kendi kayan penceresine',
+  tabDocsNewWindow: 'Yeni pencereye taşı',
+  tabDocsWindowToNewWindow: 'Pencereyi yeni pencereye taşı',
+  tabDocsMainWindow: 'Ana pencereye geri taşı',
+  tabDocsMovedToNewWindow: '{title} yeni pencereye taşındı',
+  tabDocsMovedToMainWindow: '{title} ana pencereye geri taşındı',
+  tabDocsNewWindowClosed: 'Pencere kapandı, belgeleri ana pencereye döndü',
+  tabDocsWindowBlocked: 'Tarayıcı yeni pencereyi açmadı',
+  tabDocsDocuments: 'Belgeler',
+  tabDocsPlaceNewWindow: 'Yeni pencereye',
+  tabDocsPlaceInWindow: '{place}, {n}. pencerede',
 };
 
 function stringsOf(lang: string): UiStrings {

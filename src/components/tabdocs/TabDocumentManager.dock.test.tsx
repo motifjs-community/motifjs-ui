@@ -382,6 +382,7 @@ describe('TabDocumentManager: floating windows', () => {
       'Dock right',
       'Dock at the top',
       'Dock at the bottom',
+      'Move window into new window',
       'Maximize window',
       'Close window',
     ]);
@@ -842,7 +843,7 @@ describe('TabDocumentManager: dock and float from the keyboard', () => {
     m.dock(m.findDocument('a')!, 'left');
     rightClick(header(m, 'A'));
     const names = menuNames(m);
-    expect(names.slice(-6)).toEqual(['Float in a window', 'Dock left', 'Dock right', 'Dock at the top', 'Dock at the bottom', 'Auto hide']);
+    expect(names.slice(-7)).toEqual(['Float in a window', 'Dock left', 'Dock right', 'Dock at the top', 'Dock at the bottom', 'Auto hide', 'Move into new window']);
     expect(menuItem(m, 'Dock left').getAttribute('aria-disabled')).toBe('true');
     menuItem(m, 'Float in a window').click();
     expect(m.findDocument('a')!.window).not.toBeNull();
@@ -868,7 +869,7 @@ describe('TabDocumentManager: layout with windows and dock areas', () => {
     w2.maximize();
     w1.focus();
     const saved: TabLayout = JSON.parse(JSON.stringify(m.saveLayout()));
-    expect(saved.version).toBe(2);
+    expect(saved.version).toBe(3);
     expect(saved.areas!.map((a) => [a.side, a.size, !!a.autoHide])).toEqual([
       ['left', 260, false],
       ['bottom', '30%', true],

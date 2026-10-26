@@ -2,6 +2,7 @@ import { effect, untracked } from '@motifx/core';
 import { iconNode } from '../../core/icon-node';
 import { isChord } from '../../core/keyboard';
 import { nextId } from '../../core/next-id';
+import { isElement } from '../../core/node-kind';
 import type { UiStrings } from '../../core/ui-strings';
 import type { TabDockArea } from './TabDockArea';
 import type { TabDocument } from './TabDocument';
@@ -143,7 +144,7 @@ export class AutoHideStrip {
   }
 
   private documentAt(target: EventTarget | null): TabDocument | null {
-    const button = target instanceof Element ? target.closest('.mx-tabdocs__autohide-tab') : null;
+    const button = isElement(target) ? target.closest('.mx-tabdocs__autohide-tab') : null;
     for (const [doc, b] of this.buttons) if (b === button) return doc;
     return null;
   }

@@ -3,12 +3,15 @@ import { FocusContainer } from '../../core/container';
 import { deepActiveElement, isShown } from '../../core/focus';
 import { chevronDown, dismissMark, gripMark, lockMark, maximizeMark, moreMark, pinMark, restoreMark, splitMark } from '../../core/glyphs';
 import { nextId } from '../../core/next-id';
+import { isElement, isNode } from '../../core/node-kind';
+import { ResizeWatch } from '../../core/resize-watch';
 import { Toolbar } from '../toolbar/Toolbar';
 import type { ToolbarItem } from '../toolbar/toolbar-item';
 import type { DocumentTab } from './DocumentTab';
 import { keepScroll } from './keep-scroll';
 import { placeNode } from './place-node';
 import type { SplitDirection } from './split-direction';
+import type { TabBrowserWindow } from './TabBrowserWindow';
 import type { TabDockArea } from './TabDockArea';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
@@ -49,7 +52,7 @@ interface Parts {
   split: TabSplit | null;
   overflowQueued: boolean;
   /** Watches the strip and the active tab (a late font changes its width): the active tab stays in sight. */
-  resize: ResizeObserver | null;
+  resize: ResizeWatch | null;
 }
 
 const PARTS = Symbol('mx.tab-group');
@@ -141,6 +144,10 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   /** The dock area it is in, `null` elsewhere. Reactive. */
   get dockArea(): TabDockArea | null {
     return this.getProperty<TabDockArea | null | undefined>('dockArea') ?? null;
+  }
+  /** The new browser window it is in, `null` in the main window. Reactive. */
+  get browserWindow(): TabBrowserWindow | null {
+    return this.getProperty<TabBrowserWindow | null | undefined>('browserWindow') ?? null;
   }
   /** Its place in the manager's `groups`, from 0. Reactive. */
   get index(): number {
@@ -290,7 +297,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     untracked(() => {
       const pinned = parts.tabs.filter((t) => t.document.pinned);
       parts.tabs.splice(0, parts.tabs.length, ...pinned, ...parts.tabs.filter((t) => !t.document.pinned));
-      const focus = deepActiveElement();
+      const focus = deepActiveElement(this.element);
       const had = parts.tabs.find((t) => t.header === focus);
       syncChildren(
         parts.pinnedRow,
@@ -301,7 +308,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
         parts.tabs.filter((t) => !pinned.includes(t)).map((t) => t.header),
       );
       parts.pinnedRow.hidden = !pinned.length;
-      if (had && deepActiveElement() !== had.header) had.header.focus({ preventScroll: true });
+      if (had && deepActiveElement(this.element) !== had.header) had.header.focus({ preventScroll: true });
     });
     this.changed();
     this.queueOverflow();
@@ -326,11 +333,12 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     if (tab) this.reveal(tab);
   }
 
-  /** @internal Where the manager has put it: a floating window, a dock area, or among the documents; `title`: its strip is the window's title. */
-  placeIn(window: TabWindow | null, area: TabDockArea | null, title: boolean): void {
+  /** @internal Where the manager has put it: a floating window, a dock area, a new window, or among the documents; `title`: its strip is the floating window's title. */
+  placeIn(window: TabWindow | null, area: TabDockArea | null, title: boolean, browser: TabBrowserWindow | null = null): void {
     untracked(() => {
       if (this.window !== window) this.setProperty('window', window);
       if (this.dockArea !== area) this.setProperty('dockArea', area);
+      if (this.browserWindow !== browser) this.setProperty('browserWindow', browser);
       if (!!this.getProperty('windowTitle') !== title) this.setProperty('windowTitle', title);
     });
     this.element.toggleAttribute('data-floating', !!window);
@@ -364,20 +372,20 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
 
   /** @internal The tab whose header holds `target`. */
   tabOf(target: EventTarget | null): DocumentTab | undefined {
-    const header = target instanceof Element ? target.closest('.mx-tabdocs__tab') : null;
+    const header = isElement(target) ? target.closest('.mx-tabdocs__tab') : null;
     return header ? this.parts.tabs.find((t) => t.header === header) : undefined;
   }
 
   /** @internal Whether `target` is on the group's drag handle. */
   isGrip(target: EventTarget | null): boolean {
     const control = this.parts.actions.controlOf(this.parts.grip);
-    return target instanceof Node && !!control?.element.contains(target);
+    return isNode(target) && !!control?.element.contains(target);
   }
 
   /** @internal Whether `target` is the strip's empty room: in the bar, not on a tab or a toolbar button. */
   isStripSpace(target: EventTarget | null): boolean {
     const parts = this.parts;
-    if (!(target instanceof Element) || !parts.bar.element.contains(target) || this.tabOf(target)) return false;
+    if (!isElement(target) || !parts.bar.element.contains(target) || this.tabOf(target)) return false;
     return !parts.actions.element.contains(target) || target === parts.actions.element;
   }
 
@@ -671,14 +679,15 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       this.motif.setDisposable(() => observer.disconnect());
     }
     if (view && typeof view.ResizeObserver === 'function') {
-      const observer = (parts.resize = new view.ResizeObserver(() => {
+      // Watches that follow the group into a new browser window.
+      const observer = (parts.resize = new ResizeWatch(() => {
         if (parts.active) this.reveal(parts.active);
         this.renderOverflow();
       }));
       observer.observe(row);
       // A toolbar with folded buttons keeps its size when the group grows: it unfolds them here.
       let width = -1;
-      const bar = new view.ResizeObserver(() => {
+      const bar = new ResizeWatch(() => {
         const now = parts.bar.element.clientWidth;
         if (now === width) return;
         width = now;

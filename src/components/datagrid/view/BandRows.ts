@@ -1,5 +1,6 @@
 import { ComponentBase, effect, untracked } from '@motifx/core';
 import { moreMark } from '../../../core/glyphs';
+import { isNode } from '../../../core/node-kind';
 import type { BandCellContext } from '../band-cell-context';
 import type { GridModel } from '../model/GridModel';
 import { dropPlace } from './drop-place';
@@ -154,7 +155,7 @@ export class BandRows<T> {
       if (content instanceof ComponentBase) {
         this.owner.controls.add(content);
         title.append(content.element as Node);
-      } else if (content instanceof Node) title.append(content);
+      } else if (isNode(content)) title.append(content);
       else if (content !== undefined && content !== null) title.append(String(content));
     }
     this.stops.push(

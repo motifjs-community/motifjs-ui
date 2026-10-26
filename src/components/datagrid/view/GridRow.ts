@@ -3,6 +3,7 @@ import type { CellContext } from '../cell-context';
 import type { GridAction } from '../grid-action';
 import type { GridColumn } from '../grid-column';
 import { moreMark } from '../../../core/glyphs';
+import { isNode } from '../../../core/node-kind';
 import { ACTIONS_FIELD, ADAPTIVE_FIELD, DRAG_FIELD, EXPAND_FIELD, SELECT_FIELD, STATUS_FIELD } from '../model/ColumnModel';
 import { KeyedItems } from '../../../parts/data/KeyedItems';
 import type { GridModel } from '../model/GridModel';
@@ -218,7 +219,7 @@ export class GridRow<T> {
         this.host.controls.add(content);
         cell.append(content.element as Node);
         this.contents.set(col.field, content);
-      } else if (content instanceof Node) cell.append(content);
+      } else if (isNode(content)) cell.append(content);
       else if (content !== undefined && content !== null) cell.append(String(content));
     } else {
       const text = document.createTextNode('');

@@ -300,6 +300,7 @@ describe('TabDocumentManager: menus', () => {
       'Dock right',
       'Dock at the top',
       'Dock at the bottom',
+      'Move into new window',
     ]);
     menuItem(m, 'Pin').click();
     expect(b.pinned).toBe(true);
@@ -363,6 +364,7 @@ describe('TabDocumentManager: menus', () => {
       'Dock right',
       'Dock at the top',
       'Dock at the bottom',
+      'Move into new window',
     ]);
     expect(menuItem(m, 'Reopen closed').getAttribute('aria-disabled')).toBe('true');
     menuItem(m, 'New document').click();

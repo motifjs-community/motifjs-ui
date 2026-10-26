@@ -372,4 +372,14 @@ export interface UiStrings {
   tabDocsPlaceDockTop: string;
   tabDocsPlaceDockBottom: string;
   tabDocsPlaceFloat: string;
+  tabDocsNewWindow: string;
+  tabDocsWindowToNewWindow: string;
+  tabDocsMainWindow: string;
+  tabDocsMovedToNewWindow: string;
+  tabDocsMovedToMainWindow: string;
+  tabDocsNewWindowClosed: string;
+  tabDocsWindowBlocked: string;
+  tabDocsDocuments: string;
+  tabDocsPlaceNewWindow: string;
+  tabDocsPlaceInWindow: string;
 }

@@ -208,12 +208,12 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
 
   /** Whether this control's focus element has focus. Not reactive (a DOM query). */
   get focused(): boolean {
-    return deepActiveElement() === this.focusElement;
+    return deepActiveElement(this.element) === this.focusElement;
   }
 
   /** Whether focus is on this control or anything inside it (CSS `:focus-within`). Not reactive. */
   get focusWithin(): boolean {
-    const active = deepActiveElement();
+    const active = deepActiveElement(this.element);
     return !!active && this.element.contains(active);
   }
 

@@ -4,6 +4,8 @@ import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
 import { deepActiveElement, nextTabbable } from '../../core/focus';
 import { chevronDown } from '../../core/glyphs';
+import { isElement } from '../../core/node-kind';
+import { ResizeWatch } from '../../core/resize-watch';
 import { Tab } from './Tab';
 import type { TabCloseEventArgs } from './tab-close-event-args';
 import type { TabSelectingEventArgs } from './tab-selecting-event-args';
@@ -436,7 +438,7 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
   }
 
   private tabOf(target: EventTarget | null): Tab | undefined {
-    const header = target instanceof Element ? target.closest('.mx-tabs__tab') : null;
+    const header = isElement(target) ? target.closest('.mx-tabs__tab') : null;
     return header ? this.tabsNow().find((t) => t.headerElement === header) : undefined;
   }
 
@@ -467,7 +469,7 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
       button.addEventListener('click', () => this.scrollBy(button === parts.forward ? 1 : -1));
     }
     if (typeof ResizeObserver === 'function') {
-      const observer = new ResizeObserver(() => this.checkOverflow());
+      const observer = new ResizeWatch(() => this.checkOverflow());
       observer.observe(list);
       this.motif.setDisposable(() => observer.disconnect());
     }

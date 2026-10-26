@@ -3,6 +3,7 @@ import { accessKeyToken, parseAccessKey, renderAccessKey, setAccessKeyAttribute 
 import { Control } from '../../core/control';
 import { iconNode } from '../../core/icon-node';
 import { addShortcut, installKeyboard } from '../../core/keyboard';
+import { isNode } from '../../core/node-kind';
 import { MenuList } from '../../parts/menu/MenuList';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
@@ -318,7 +319,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
   // Pointer and keys.
 
   private entryOf(target: EventTarget | null): Entry | undefined {
-    return target instanceof Node ? this.parts.entries.find((e) => e.element.contains(target)) : undefined;
+    return isNode(target) ? this.parts.entries.find((e) => e.element.contains(target)) : undefined;
   }
 
   private listen(): void {

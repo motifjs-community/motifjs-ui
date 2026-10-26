@@ -1,5 +1,6 @@
 import { ComponentBase, createSignal, effect, untracked } from '@motifx/core';
 import { chevronEnd } from '../../../core/glyphs';
+import { isNode } from '../../../core/node-kind';
 import type { GroupCellContext } from '../group-cell-context';
 import type { GridModel } from '../model/GridModel';
 import type { GroupNode } from '../model/group-node';
@@ -226,7 +227,7 @@ export class GroupRow<T> {
       this.host.controls.add(content);
       el.append(content.element as Node);
       this.contents.set(field, content);
-    } else if (content instanceof Node) el.append(content);
+    } else if (isNode(content)) el.append(content);
     else if (content !== undefined && content !== null) el.append(String(content));
     this.text.before(el);
     this.own.set(field, el);

@@ -5,6 +5,7 @@ import { focusableIn, nextTabbable, tabbableIn } from '../../core/focus';
 import { checkMark, dismissMark, pencilMark, trashMark, undoMark } from '../../core/glyphs';
 import { fillTemplate } from '../../core/fill-template';
 import { nextId } from '../../core/next-id';
+import { ResizeWatch } from '../../core/resize-watch';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Button } from '../button/Button';
 import { confirm } from '../form/confirm';
@@ -2709,7 +2710,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     });
     this.measure();
     if (typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(() => this.measure());
+      const ro = new ResizeWatch(() => this.measure());
       ro.observe(vp);
       if (this.headEl) ro.observe(this.headEl);
       if (this.footEl) ro.observe(this.footEl);
@@ -3125,9 +3126,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private moveFocusOut(forward: boolean) {
     const vp = this.viewportEl;
     if (!vp) return;
-    const target = nextTabbable(vp, document.body, forward);
+    const target = nextTabbable(vp, vp.ownerDocument.body, forward);
     if (target) target.focus();
-    else (document.activeElement as HTMLElement | null)?.blur?.();
+    else (this.element.ownerDocument.activeElement as HTMLElement | null)?.blur?.();
   }
 
   // Editing.
@@ -3365,7 +3366,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const fe = this.formEdit;
     if (!fe) return;
     this.formEdit = null;
-    const hadFocus = fe.form.element.contains(document.activeElement);
+    const hadFocus = fe.form.element.contains(this.element.ownerDocument.activeElement);
     if (fe.window) {
       if (!closing && fe.window.isOpen) fe.window.close();
     } else this.body.hideForm();
@@ -3399,7 +3400,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const ed = this.editor;
     if (!ed) return;
     const cell = ed.element.parentElement;
-    const hadFocus = ed.element.contains(document.activeElement);
+    const hadFocus = ed.element.contains(this.element.ownerDocument.activeElement);
     this.editor = null;
     this.editTarget = null;
     this.model.state.editing = null;
@@ -3818,9 +3819,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (this.formEdit) return;
     // Leaving the rows ends the edit; focus that only moved inside the grid's own work comes back at
     // once, and switching windows keeps everything as it is.
-    if (!next && typeof document.hasFocus === 'function' && !document.hasFocus()) return;
+    if (!next && typeof this.element.ownerDocument.hasFocus === 'function' && !this.element.ownerDocument.hasFocus()) return;
     queueMicrotask(() => {
-      if (!this.isDisposed && !vp?.contains(document.activeElement)) this.leave();
+      if (!this.isDisposed && !vp?.contains(this.element.ownerDocument.activeElement)) this.leave();
     });
   }
 
@@ -4013,7 +4014,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     (open ? ev.rowExpanding : ev.rowCollapsing).fire(e);
     if (e.cancel) return false;
     // Focus in the details goes back to their row before they close.
-    if (!open && this.body.detailAt(i)?.element.contains(document.activeElement)) this.backToRow(i);
+    if (!open && this.body.detailAt(i)?.element.contains(this.element.ownerDocument.activeElement)) this.backToRow(i);
     model.details.setOpen(id, key, open);
     this.body.relayout(true);
     (open ? ev.rowExpanded : ev.rowCollapsed).fire({ kind: 'detail', key, row });
@@ -4127,13 +4128,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /** Focus in a row's details goes back to the row (before every detail closes). */
   private leaveDetails() {
-    const detail = this.body.detailOf(document.activeElement);
+    const detail = this.body.detailOf(this.element.ownerDocument.activeElement);
     if (detail?.kind === 'detail') this.backToRow(detail.index);
   }
 
   /** Focus in the adaptive detail goes back to its row (before it closes). */
   private leaveAdaptive() {
-    const detail = this.body.detailOf(document.activeElement);
+    const detail = this.body.detailOf(this.element.ownerDocument.activeElement);
     if (detail?.kind === 'adaptive') this.backToRow(detail.index >= 0 ? detail.index : this.model.adaptiveIndex());
   }
 
@@ -4151,7 +4152,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const key = this.getKeyByRowIndex(i);
     const ev = model.events;
     if (!ev.ask(open ? ev.adaptiveDetailRowExpanding : ev.adaptiveDetailRowCollapsing, () => ({ row, key, rowIndex: i, cancel: false }))) return false;
-    if (!open && this.body.adaptiveAt(i)?.element.contains(document.activeElement)) this.backToRow(i);
+    if (!open && this.body.adaptiveAt(i)?.element.contains(this.element.ownerDocument.activeElement)) this.backToRow(i);
     if (open) a.open(rowId, key);
     else a.close();
     this.body.relayout(true);
@@ -5027,30 +5028,32 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       e.preventDefault();
       written = true;
     };
-    document.addEventListener('copy', fill, true);
+    const doc = this.element.ownerDocument;
+    doc.addEventListener('copy', fill, true);
     try {
-      if (typeof document.execCommand === 'function') document.execCommand('copy');
+      if (typeof doc.execCommand === 'function') doc.execCommand('copy');
     } catch {
       // Not allowed here: the clipboard API below.
     } finally {
-      document.removeEventListener('copy', fill, true);
+      doc.removeEventListener('copy', fill, true);
     }
     if (!written) void navigator.clipboard?.writeText?.(content.text).catch(() => undefined);
   }
 
   /** Ctrl+V on a cell: the browser raises `paste` next, at the page when no field has focus; take that one event. */
   private armPaste() {
+    const doc = this.element.ownerDocument;
     const take = (e: ClipboardEvent) => {
-      document.removeEventListener('paste', take, true);
+      doc.removeEventListener('paste', take, true);
       this.onPaste(e);
     };
-    document.addEventListener('paste', take, true);
-    setTimeout(() => document.removeEventListener('paste', take, true), 0);
+    doc.addEventListener('paste', take, true);
+    setTimeout(() => doc.removeEventListener('paste', take, true), 0);
   }
 
   /** A paste while a cell (not a field) has focus. */
   private onPaste(e: ClipboardEvent) {
-    const focus = document.activeElement as HTMLElement | null;
+    const focus = this.element.ownerDocument.activeElement as HTMLElement | null;
     if (e.defaultPrevented || !this.model.settings.get('paste') || !focus || !this.viewportEl?.contains(focus) || !focus.classList.contains('mx-data-grid__cell') || this.body.detailOf(focus)) return;
     const text = e.clipboardData?.getData('text/plain');
     if (!text) return;
@@ -5297,8 +5300,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
 /** Natural width of an element's content (text and inline children), not its clipped width. */
 function textWidth(el: HTMLElement): number {
-  if (typeof document.createRange !== 'function') return el.scrollWidth;
-  const range = document.createRange();
+  const doc = el.ownerDocument;
+  if (typeof doc.createRange !== 'function') return el.scrollWidth;
+  const range = doc.createRange();
   range.selectNodeContents(el);
   const w = range.getBoundingClientRect?.().width ?? 0;
   return w || el.scrollWidth;

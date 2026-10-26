@@ -43,6 +43,8 @@ const TEXTS: Record<TabMenuCommand, keyof UiStrings> = {
   autoHide: 'tabDocsAutoHide',
   maximizeWindow: 'tabDocsMaximizeWindow',
   closeWindow: 'tabDocsCloseWindow',
+  newWindow: 'tabDocsNewWindow',
+  mainWindow: 'tabDocsMainWindow',
 };
 
 const SIDES = ['Left', 'Right', 'Top', 'Bottom'] as const;
@@ -52,15 +54,38 @@ type Entry = [TabMenuCommand, boolean?, string?, (keyof UiStrings)?];
 
 /**
  * The context menus of a manager: one for a tab, one for the empty strip. Built each time one
- * opens, for that document and group; the manager's `onContextMenuOpening` may change them.
+ * opens, for that document and group; the manager's `onContextMenuOpening` may change them. A new
+ * browser window has a menu of its own: its events do not reach the manager's element.
  */
 export class TabMenus {
   readonly menu: ContextMenu;
+  private readonly others = new Map<Element, ContextMenu>();
 
   constructor(private readonly manager: TabDocumentManager) {
-    this.menu = new ContextMenu({ target: manager.element });
-    this.menu.onOpening((e) => untracked(() => this.opening(e)));
-    manager.controls.add(this.menu);
+    this.menu = this.create(manager.element);
+  }
+
+  /** Gives the strips under `root` (a new window's) the menus; returns the function that takes them off. */
+  attach(root: HTMLElement): () => void {
+    const menu = this.create(root);
+    this.others.set(root, menu);
+    return () => {
+      this.others.delete(root);
+      if (!menu.isDisposed) void menu.dispose();
+    };
+  }
+
+  /** The menu that opens on `el`. */
+  menuFor(el: Element): ContextMenu {
+    for (const [root, menu] of this.others) if (root.contains(el)) return menu;
+    return this.menu;
+  }
+
+  private create(target: HTMLElement): ContextMenu {
+    const menu = new ContextMenu({ target });
+    menu.onOpening((e) => untracked(() => this.opening(e, menu)));
+    this.manager.controls.add(menu);
+    return menu;
   }
 
   /** The items of a tab's menu. */
@@ -108,6 +133,9 @@ export class TabMenus {
         return [`dock${name}`, m.maySubject(subject, side) && !(alone && area?.side === side), doc ? keys[`dock${name}`][0] : undefined];
       }),
       area ? ['autoHide', m.mayAutoHide(area), keys.toggleAutoHide[0], area.autoHidden ? 'tabDocsAutoHideOff' : 'tabDocsAutoHide'] : null,
+      // In a floating window, the strip's command moves the whole window.
+      ['newWindow', m.mayNewWindow(subject), doc ? keys.moveToNewWindow[0] : undefined, !doc && w ? 'tabDocsWindowToNewWindow' : undefined],
+      group.browserWindow ? ['mainWindow', true, doc ? keys.moveToMainWindow[0] : undefined] : null,
     ];
     return entries;
   }
@@ -142,7 +170,8 @@ export class TabMenus {
   }
 
   dispose(): void {
-    if (!this.menu.isDisposed) void this.menu.dispose();
+    for (const menu of [this.menu, ...this.others.values()]) if (!menu.isDisposed) void menu.dispose();
+    this.others.clear();
   }
 
   private build(sections: (Entry | null)[][], group: TabGroup, doc: TabDocument | null): MenuItem[] {
@@ -165,7 +194,7 @@ export class TabMenus {
     return items;
   }
 
-  private opening(e: ContextMenuOpeningEventArgs): void {
+  private opening(e: ContextMenuOpeningEventArgs, menu: ContextMenu): void {
     const m = this.manager;
     const target = e.target;
     const group = m.groups.find((g) => g.element.contains(target));
@@ -183,7 +212,7 @@ export class TabMenus {
       source: m,
     };
     m.contextMenuOpening(args);
-    this.menu.label = doc ? doc.title : m.textOf('tabDocsGroup', { n: m.groups.indexOf(group) + 1 });
+    menu.label = doc ? doc.title : m.textOf('tabDocsGroup', { n: m.groups.indexOf(group) + 1 });
     e.items = args.items;
     e.cancel = args.cancel;
   }

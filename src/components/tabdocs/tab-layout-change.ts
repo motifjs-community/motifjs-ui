@@ -16,4 +16,6 @@ export type TabLayoutChange =
   | 'resizeWindow'
   | 'maximizeWindow'
   | 'restoreWindow'
-  | 'closeWindow';
+  | 'closeWindow'
+  | 'newWindow'
+  | 'mainWindow';

@@ -1,3 +1,4 @@
+import type { TabBrowserWindow } from './TabBrowserWindow';
 import type { TabDockSide } from './tab-dock-side';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabDropSide } from './tab-drop-side';
@@ -18,6 +19,8 @@ export interface TabDropPlace {
   side: TabDropSide | null;
   /** The dock area of a `dock-area` place. */
   dockSide?: TabDockSide | null;
-  /** The window of a `float` place. */
+  /** The window of a `float` place; for `new-window`, its place on the screen. */
   rect?: TabRect | null;
+  /** The new browser window an `edge` place is along (`null`: the main window's documents). */
+  browserWindow?: TabBrowserWindow | null;
 }

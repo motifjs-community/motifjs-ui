@@ -1,5 +1,7 @@
 import { closestControl } from './control-map';
 import { isShown, nextTabbable, tabbableIn } from './focus';
+import { isHtmlElement } from './node-kind';
+import { eachDocument } from './page-documents';
 
 // Focus must never fall to <body> because a control went away: disposed,
 // removed by a list or a branch, hidden by CSS. Browsers fire `focusout`
@@ -15,23 +17,27 @@ type Trail = { node: Node; next: Node | null; parent: Node | null }[];
 
 let installed = false;
 
-/** Installs the guard once per document; every Control calls this, only the first one does anything. */
+/** Installs the guard in every document of the page; every Control calls this, only the first one does anything. */
 export function installFocusGuard(): void {
   if (installed || typeof document === 'undefined') return;
   installed = true;
-  document.addEventListener('focusout', onFocusOut, true);
+  eachDocument((doc) => {
+    doc.addEventListener('focusout', onFocusOut, true);
+    return () => doc.removeEventListener('focusout', onFocusOut, true);
+  });
 }
 
 function onFocusOut(e: FocusEvent): void {
   if (e.relatedTarget) return; // focus moves somewhere: nothing is lost
   const el = e.target;
-  if (!(el instanceof HTMLElement) || !closestControl(el)) return;
+  if (!isHtmlElement(el) || !closestControl(el)) return;
+  const doc = el.ownerDocument;
   const trail: Trail = [];
-  for (let n: Node | null = el; n && n !== document.body; n = n.parentNode) {
+  for (let n: Node | null = el; n && n !== doc.body; n = n.parentNode) {
     trail.push({ node: n, next: n.nextSibling, parent: n.parentNode });
   }
   queueMicrotask(() => {
-    if (document.activeElement && document.activeElement !== document.body) return;
+    if (doc.activeElement && doc.activeElement !== doc.body) return;
     if (el.isConnected && isShown(el)) return; // a click on an empty spot, not a loss
     rescueFrom(el, trail)?.focus({ preventScroll: true });
   });
@@ -41,7 +47,7 @@ function onFocusOut(e: FocusEvent): void {
 function rescueFrom(el: HTMLElement, trail: Trail): HTMLElement | null {
   // Still in the document (hidden by CSS): search around the element itself.
   if (el.isConnected) {
-    const scope = el.closest('dialog') ?? document.body;
+    const scope = el.closest('dialog') ?? el.ownerDocument.body;
     return nextTabbable(el, scope) ?? nextTabbable(el, scope, false);
   }
   // Removed: the topmost removed ancestor's parent and old next sibling mark the spot.
@@ -53,6 +59,6 @@ function rescueFrom(el: HTMLElement, trail: Trail): HTMLElement | null {
     next
       ? t === next || !!(next.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING)
       : !parent.contains(t) && !!(parent.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING);
-  const all = tabbableIn(parent.closest('dialog') ?? document.body);
+  const all = tabbableIn(parent.closest('dialog') ?? parent.ownerDocument.body);
   return all.find(isAfter) ?? all.filter((t) => !isAfter(t)).pop() ?? null;
 }

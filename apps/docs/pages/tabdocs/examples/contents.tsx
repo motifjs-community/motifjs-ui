@@ -1,5 +1,5 @@
 import type { ComponentBase } from '@motifx/core';
-import { DataGrid, FormLayout, type FormItem, type GridColumn } from '@motifx-community/ui';
+import { Button, confirm, DataGrid, FormLayout, type FormItem, type GridColumn } from '@motifx-community/ui';
 import { makeOrders, type Order } from './orders';
 
 const columns: GridColumn<Order>[] = [
@@ -42,6 +42,28 @@ export function notes(title: string): ComponentBase {
       <h3 style="margin-block-start: 0">{title}</h3>
       <p>Any component can be a document: a form, a grid, a chart or plain text like this.</p>
       <p>Drag the line between two groups, or focus it with Tab and use the arrow keys. A double click on it gives the groups the same size.</p>
+    </div>
+  );
+}
+
+const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
+
+/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+export function customerCard(customer: Customer): ComponentBase {
+  const items: FormItem[] = [
+    { field: 'name', label: 'Name', required: true },
+    { field: 'email', label: 'Email', editor: 'email' },
+    { field: 'city', label: 'City', editor: 'dropdown', editorProps: { items: CITIES } },
+  ];
+  let card: ComponentBase | null = null;
+  // The dialog opens where the card is: in a new window, there.
+  const clear = async () => {
+    if (await confirm('Clear the customer card?', { title: 'Clear', host: card! })) Object.assign(customer, { name: '', email: '', city: '' });
+  };
+  return (
+    <div ref={(c: ComponentBase) => (card = c)} style="padding: var(--mx-space-4); max-inline-size: 32rem">
+      <FormLayout data={customer} items={items} />
+      <Button text="Clear…" variant="outline" onclick={clear} />
     </div>
   );
 }

@@ -25,9 +25,11 @@ export function placePopup(popup: HTMLElement, anchor: Element, placement: Popup
   style.top = style.bottom = style.left = style.right = '';
 
   const size = popup.getBoundingClientRect();
-  const viewWidth = document.documentElement.clientWidth;
-  const viewHeight = document.documentElement.clientHeight;
-  const rtl = getComputedStyle(anchor).direction === 'rtl';
+  // The viewport of the popup's own window (a window the app opened has its own).
+  const root = popup.ownerDocument.documentElement;
+  const viewWidth = root.clientWidth;
+  const viewHeight = root.clientHeight;
+  const rtl = (anchor.ownerDocument.defaultView ?? window).getComputedStyle(anchor).direction === 'rtl';
 
   if (!across) {
     const below = viewHeight - box.bottom;

@@ -1,18 +1,20 @@
 import type { ComponentBase } from '@motifx/core';
 import type { IconSource } from './icon-source';
+import { isNode } from './node-kind';
 
 /**
  * The node that shows an icon: an `<img>` for an address, the element itself, or the built element
- * of a component. `release` disposes a component when the icon goes away.
+ * of a component. `release` disposes a component when the icon goes away. `doc`: the document
+ * the `<img>` is made in, the page's by default.
  */
-export function iconNode(source: IconSource): { node: Node; release: () => void } {
+export function iconNode(source: IconSource, doc: Document = document): { node: Node; release: () => void } {
   if (typeof source === 'string') {
-    const img = document.createElement('img');
+    const img = doc.createElement('img');
     img.src = source;
     img.alt = '';
     return { node: img, release: () => {} };
   }
-  if (source instanceof Node) return { node: source, release: () => {} };
+  if (isNode(source)) return { node: source, release: () => {} };
   const component = source as ComponentBase;
   if (!component.isBuilt) component.build();
   return { node: component.element as Node, release: () => void component.dispose() };

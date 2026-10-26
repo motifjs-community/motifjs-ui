@@ -8,18 +8,24 @@ export interface StackedWindow {
 
 const stack: StackedWindow[] = [];
 
-function renumber(): void {
-  stack.forEach((w, i) => {
+/** The windows of one document, back to front: each document (the page, a window it opened) stacks its own. */
+function inDocument(doc: Document): StackedWindow[] {
+  return stack.filter((w) => w.element.ownerDocument === doc);
+}
+
+function renumber(doc: Document): void {
+  const own = inDocument(doc);
+  own.forEach((w, i) => {
     // z-index itself comes from CSS: calc(var(--mx-z-overlay) + var(--_mx-z)).
     w.element.style.setProperty('--_mx-z', String(i));
-    w.setActive(i === stack.length - 1);
+    w.setActive(i === own.length - 1);
   });
 }
 
 /**
- * The page-wide order of shown windows. The last one is
- * on top and active. Modal windows also sit here so "which window is active"
- * has one answer, even though the browser's top layer stacks them itself.
+ * The order of shown windows, one stack per document. The last one is on top and active. Modal
+ * windows also sit here so "which window is active" has one answer, even though the browser's top
+ * layer stacks them itself.
  */
 export const windowStack = {
   /** Adds the window on top, or moves it there. */
@@ -28,18 +34,20 @@ export const windowStack = {
     if (i === stack.length - 1 && i !== -1) return;
     if (i !== -1) stack.splice(i, 1);
     stack.push(w);
-    renumber();
+    renumber(w.element.ownerDocument);
   },
   remove(w: StackedWindow): void {
     const i = stack.indexOf(w);
     if (i === -1) return;
     stack.splice(i, 1);
     w.setActive(false);
-    renumber();
+    renumber(w.element.ownerDocument);
   },
-  /** The active (top) window, or `undefined`. */
-  top(): StackedWindow | undefined {
-    return stack[stack.length - 1];
+  /** The active (top) window of a document (the page's by default), or `undefined`. */
+  top(doc: Document | null = typeof document === 'undefined' ? null : document): StackedWindow | undefined {
+    if (!doc) return stack[stack.length - 1];
+    const own = inDocument(doc);
+    return own[own.length - 1];
   },
   /** Number of windows currently shown; for tests and diagnostics. */
   get size(): number {

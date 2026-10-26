@@ -7,6 +7,7 @@ import { checkMark, chevronEnd, dashMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
+import { isElement } from '../../core/node-kind';
 import { uiLocale } from '../../core/ui-locale';
 import type { ItemField } from '../../parts/list/item-field';
 import { readItemField } from '../../parts/list/read-item-field';
@@ -883,7 +884,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     } else {
       const anchor = parts.anchorKey === NONE ? undefined : parts.model.node(parts.anchorKey);
       const from = (anchor && parts.index.get(anchor)) ?? parts.index.get(node) ?? 0;
-      const extend = event instanceof MouseEvent && (event.ctrlKey || event.metaKey);
+      const extend = !!event && !('key' in event) && ((event as MouseEvent).ctrlKey || (event as MouseEvent).metaKey);
       this.selectRange(from, parts.index.get(node) ?? 0, event, extend);
     }
   }
@@ -1379,7 +1380,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
   }
 
   private nodeOf(target: EventTarget | null): TreeNode<T> | undefined {
-    const el = target instanceof Element ? target.closest('.mx-tree-view__item') : null;
+    const el = isElement(target) ? target.closest('.mx-tree-view__item') : null;
     return el ? this.parts.nodes.get(el) : undefined;
   }
 

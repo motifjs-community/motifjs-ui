@@ -78,7 +78,7 @@ interface Parts {
 }
 
 function labelable(el: HTMLElement): boolean {
-  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || el instanceof HTMLButtonElement;
+  return ['input', 'textarea', 'select', 'button'].includes(el.localName);
 }
 
 function emptyLike(value: unknown): boolean {
@@ -516,7 +516,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     const parts = this.parts;
     if (this.peekProperty('validateOn') !== 'manual' && this.peekProperty('validateOn') !== 'input' && (parts.dirty || parts.shown)) {
       afterPress(() => {
-        if (!this.isDisposed && !this.element.contains(document.activeElement)) void this.validate();
+        if (!this.isDisposed && !this.element.contains(this.element.ownerDocument.activeElement)) void this.validate();
       });
     }
   }

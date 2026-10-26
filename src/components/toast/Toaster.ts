@@ -3,6 +3,7 @@ import { Control } from '../../core/control';
 import { controlOf } from '../../core/control-map';
 import { deepActiveElement } from '../../core/focus';
 import { addShortcut } from '../../core/keyboard';
+import { isHtmlElement } from '../../core/node-kind';
 import { uiLocale } from '../../core/ui-locale';
 import { Toast } from './Toast';
 import type { ToastPosition } from './toast-position';
@@ -240,7 +241,7 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
     parts.lines.delete(toast);
     const el = toast.element;
     if (el.contains(deepActiveElement())) {
-      const next = [el.nextElementSibling, el.previousElementSibling].find((n) => n instanceof HTMLElement && n.dataset.state !== 'leaving');
+      const next = [el.nextElementSibling, el.previousElementSibling].find((n) => isHtmlElement(n) && n.dataset.state !== 'leaving');
       const target = (next as HTMLElement | undefined) ?? (parts.returnFocus?.isConnected ? parts.returnFocus : null);
       target?.focus();
     }

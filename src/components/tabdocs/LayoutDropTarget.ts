@@ -1,4 +1,5 @@
 import type { SplitDirection } from './split-direction';
+import type { TabBrowserWindow } from './TabBrowserWindow';
 import { TabSplit } from './TabSplit';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabDragSubject } from './tab-drag-subject';
@@ -13,7 +14,8 @@ const EDGES: readonly SplitDirection[] = ['left', 'right', 'up', 'down'];
 /**
  * The drop target every manager has: a group's strip (among its tabs, or at the end), a group's
  * content (its centre, or one of its edges for a new group there), and the edges of the whole
- * layout (a thin band along the manager's sides, for a new group along that side).
+ * layout (a thin band along the manager's sides, for a new group along that side); in a new
+ * browser window, the edges of its layout.
  */
 export class LayoutDropTarget implements TabDropTarget {
   readonly kinds = ['strip', 'group', 'edge'];
@@ -30,7 +32,7 @@ export class LayoutDropTarget implements TabDropTarget {
     if (m.dockGuides || drag.window) return null;
     const content = group.panelsElement.getBoundingClientRect();
     const edge = !group.window && !group.dockArea ? this.layoutEdgeAt(group, content, x, y) : null;
-    const along = edge ? this.edgePlace(edge, drag) : null;
+    const along = edge ? this.edgePlace(edge, drag, group.browserWindow) : null;
     if (along) return along;
     const side = this.sideAt(group, content, x, y);
     return side ? this.groupPlace(group, side, drag) : null;
@@ -42,7 +44,7 @@ export class LayoutDropTarget implements TabDropTarget {
     if (place.target === 'group' && group && place.side) {
       return { area: half(group.panelsElement.getBoundingClientRect(), onScreen(place.side, group.element), 0.5), mark: null };
     }
-    if (place.target === 'edge' && place.side && place.side !== 'center') return { area: this.edgeArea(place.side), mark: null };
+    if (place.target === 'edge' && place.side && place.side !== 'center') return { area: this.edgeArea(place.side, place.browserWindow ?? null), mark: null };
     return { area: null, mark: null };
   }
 
@@ -69,14 +71,14 @@ export class LayoutDropTarget implements TabDropTarget {
     return { target: 'group', manager: this.manager, group, index: -1, side };
   }
 
-  /** A new group along an edge of the layout; `null` when nothing would change. */
-  edgePlace(side: SplitDirection, drag: TabDragSubject): TabDropPlace | null {
+  /** A new group along an edge of the layout (of a new window's, `host`); `null` when nothing would change. */
+  edgePlace(side: SplitDirection, drag: TabDragSubject, host: TabBrowserWindow | null = null): TabDropPlace | null {
     const m = this.manager;
     if (!m.layoutEdgeDrop) return null;
-    const groups = m.groups.filter((g) => !g.window && !g.dockArea);
+    const groups = m.groups.filter((g) => !g.window && !g.dockArea && g.browserWindow === host);
     const only = groups.length === 1 && drag.manager === m && groups[0] === drag.group;
     if (only && (!drag.document || (!drag.copy && groups[0].documents.length < 2))) return null;
-    return { target: 'edge', manager: m, group: null, index: -1, side };
+    return { target: 'edge', manager: m, group: null, index: -1, side, browserWindow: host };
   }
 
   /** The place in a group's strip under the pointer: before the first tab whose middle is past it. */
@@ -144,7 +146,8 @@ export class LayoutDropTarget implements TabDropTarget {
   private layoutEdgeAt(group: TabGroup, content: DOMRect, x: number, y: number): SplitDirection | null {
     const m = this.manager;
     const band = m.layoutEdgeSize;
-    const root = m.rootItem;
+    const host = group.browserWindow;
+    const root = host ? host.root : m.rootItem;
     if (!m.layoutEdgeDrop || band <= 0 || !root) return null;
     const outer = root.element.getBoundingClientRect();
     const box = group.element.getBoundingClientRect();
@@ -155,18 +158,18 @@ export class LayoutDropTarget implements TabDropTarget {
       down: outer.bottom - box.bottom < 2 && content.bottom - y < band,
     };
     const edge = EDGES.find((e) => near[e]);
-    return edge ? (onScreen(edge, m.element) as SplitDirection) : null;
+    return edge ? (onScreen(edge, host ? host.element : m.element) as SplitDirection) : null;
   }
 
-  /** The room a new group along an edge of the layout would get. */
-  private edgeArea(side: SplitDirection): DOMRect | null {
-    const root = this.manager.rootItem;
+  /** The room a new group along an edge of the layout (of a new window's, `host`) would get. */
+  private edgeArea(side: SplitDirection, host: TabBrowserWindow | null): DOMRect | null {
+    const root = host ? host.root : this.manager.rootItem;
     if (!root) return null;
     const box = root.element.getBoundingClientRect();
     const horizontal = side === 'left' || side === 'right';
     const lined = root instanceof TabSplit && root.orientation === (horizontal ? 'horizontal' : 'vertical');
     const share = lined ? 1 / (root.children.length + 1) : 0.5;
-    return half(box, onScreen(side, this.manager.element), share);
+    return half(box, onScreen(side, host ? host.element : this.manager.element), share);
   }
 }
 

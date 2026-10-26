@@ -5,6 +5,7 @@ import { registerControl } from '../../core/control-map';
 import { focusInitial, isFocusable } from '../../core/focus';
 import { chevronDown } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
+import { isHtmlElement } from '../../core/node-kind';
 import type { IconSource } from '../../core/icon-source';
 import { uiLocale } from '../../core/ui-locale';
 import { MenuList } from '../../parts/menu/MenuList';
@@ -268,7 +269,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     this.element.classList.add('mx-button');
     let face = this.element as HTMLButtonElement;
     if (this.hasMenu) {
-      face = document.createElement('button');
+      face = this.element.ownerDocument.createElement('button');
       face.classList.add('mx-button__main');
       this.element.prepend(face);
       registerControl(face, this);
@@ -352,12 +353,12 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     this.setAccessKey(parsed.key);
     const parts = this.parts;
     if (parsed.index >= 0) {
-      const span = parts.caption instanceof HTMLSpanElement ? parts.caption : this.placeCaption(document.createElement('span'));
+      const span = isHtmlElement(parts.caption) && parts.caption.localName === 'span' ? parts.caption : this.placeCaption(this.element.ownerDocument.createElement('span'));
       renderAccessKey(span, parsed);
-    } else if (parts.caption instanceof Text) {
-      parts.caption.data = parsed.text;
+    } else if (parts.caption?.nodeType === 3) {
+      (parts.caption as Text).data = parsed.text;
     } else if (parsed.text || parts.caption) {
-      this.placeCaption(document.createTextNode(parsed.text));
+      this.placeCaption(this.element.ownerDocument.createTextNode(parsed.text));
     }
     if (parts.popup && parts.content) parts.popup.element.setAttribute('aria-label', parsed.text);
   }
@@ -383,7 +384,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
       return;
     }
     if (!parts.icon) {
-      parts.icon = document.createElement('span');
+      parts.icon = this.element.ownerDocument.createElement('span');
       parts.icon.className = 'mx-button__icon';
       parts.icon.setAttribute('aria-hidden', 'true');
       parts.face.prepend(parts.icon);
@@ -399,7 +400,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     if (busy) parts.face.setAttribute('aria-busy', 'true');
     else parts.face.removeAttribute('aria-busy');
     if (busy && !parts.spinner) {
-      parts.spinner = document.createElement('span');
+      parts.spinner = this.element.ownerDocument.createElement('span');
       parts.spinner.className = 'mx-button__spinner';
       parts.spinner.setAttribute('aria-hidden', 'true');
       parts.face.append(parts.spinner);
@@ -455,7 +456,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     const split = !!this.peekProperty('split');
     this.element.dataset.mode = split ? 'split' : 'menu';
     if (split && !parts.arrow) {
-      const arrow = document.createElement('button');
+      const arrow = this.element.ownerDocument.createElement('button');
       arrow.type = 'button';
       arrow.className = 'mx-button__face mx-button__arrow';
       arrow.toggleAttribute('data-mx-focusable-disabled', !!this.peekProperty('focusableWhenDisabled'));
