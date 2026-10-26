@@ -25,11 +25,13 @@ export class ScrollGeometry {
     readonly details: ExtraHeights | null = null,
     /** The row with its adaptive detail open, right under it (before its details): its position and the detail's height. */
     readonly adaptive: { at: number; height: number } | null = null,
+    /** Room after the last row (the loading indicator of infinite mode). */
+    readonly tail = 0,
   ) {}
 
-  /** Height of all rows. */
+  /** Height of all rows, and the room after them. */
   get contentHeight(): number {
-    return this.total * this.rowHeight + this.extraHeight + this.adaptiveBefore(this.total) + (this.details ? this.details.before(this.total) : 0);
+    return this.total * this.rowHeight + this.extraHeight + this.adaptiveBefore(this.total) + (this.details ? this.details.before(this.total) : 0) + this.tail;
   }
 
   /** Top of row `index` in the full content. */

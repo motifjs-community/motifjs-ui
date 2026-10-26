@@ -44,6 +44,8 @@ export class GridRow<T> {
   /** The buttons of the actions cell, while the grid has actions. */
   readonly actions: RowActions<T> | null = null;
   private readonly shown = createSignal(0);
+  /** Grows when cells come or go while columns are virtual: the cells are drawn again. */
+  private readonly columnsShown = createSignal(0);
   private readonly texts = new Map<string, Text>();
   /** Components of the columns' own cell contents, by field. */
   private readonly contents = new Map<string, ComponentBase>();
@@ -73,15 +75,8 @@ export class GridRow<T> {
     this.more = createExpandButton(model.text('gridAdaptive'));
     this.more.className = 'mx-data-grid__adaptive-button';
     this.more.replaceChildren(moreMark());
-    for (const field of model.columns.state.order) {
-      if (field === STATUS_FIELD) el.append(this.statusCell());
-      else if (field === DRAG_FIELD) el.append(this.ownCell(field, 'mx-data-grid__drag', createDragHandle()));
-      else if (field === SELECT_FIELD) el.append(this.ownCell(field, 'mx-data-grid__select', this.check));
-      else if (field === EXPAND_FIELD) el.append(this.ownCell(field, 'mx-data-grid__expand', this.expand));
-      else if (field === ACTIONS_FIELD) el.append(this.ownCell(field, 'mx-data-grid__actions'));
-      else if (field === ADAPTIVE_FIELD) el.append(this.ownCell(field, 'mx-data-grid__adaptive-cell', this.more));
-      else el.append(this.cell(model.columns.get(field)));
-    }
+    // The grid's own columns always have their cells; a virtual column gets them while it is drawn.
+    for (const field of model.columns.state.order) if (model.columns.isInternal(field) || model.columnWindow.has(field)) el.append(this.makeCell(field));
     this.stops.push(
       effect(() => this.drawLook()),
       effect(() => this.drawCells()),
@@ -138,22 +133,30 @@ export class GridRow<T> {
     this.element.hidden = true;
   }
 
-  /** Puts the cells in display order and numbers the visible ones. */
+  /** Puts the cells in display order and numbers the visible ones; while columns are virtual, only the columns drawn have their cells in the row. */
   arrange(visible: string[]) {
+    const drawn = this.model.columnWindow;
     const shown = new Set(visible);
     const desired: HTMLElement[] = [];
+    let made = false;
     visible.forEach((field, i) => {
-      const cell = this.cells.get(field);
-      if (!cell) return;
+      if (!drawn.has(field)) return;
+      let cell = this.cells.get(field);
+      if (!cell) {
+        cell = this.makeCell(field);
+        made = true;
+      }
       desired.push(cell);
       cell.setAttribute('aria-colindex', String(i + 1));
     });
     for (const [field, cell] of this.cells) {
-      if (shown.has(field)) continue;
-      desired.push(cell);
+      if (shown.has(field) && drawn.has(field)) continue;
       cell.removeAttribute('aria-colindex');
+      if (drawn.all) desired.push(cell);
+      else cell.remove();
     }
     placeInOrder(this.element, desired);
+    if (made || !drawn.all) this.columnsShown.value = this.columnsShown.peek() + 1;
   }
 
   /** Keys of a lookup source came: the lookup cells that show one of them are drawn again (all of them for `null`). */
@@ -171,7 +174,7 @@ export class GridRow<T> {
 
   /** A column added at run time gets its cell (placed by the next `arrange`). */
   addColumn(field: string) {
-    if (this.cells.has(field)) return;
+    if (this.cells.has(field) || !this.model.columnWindow.has(field)) return;
     this.element.append(this.cell(this.model.columns.get(field)));
     this.redraw();
   }
@@ -190,6 +193,16 @@ export class GridRow<T> {
   dispose() {
     for (const stop of this.stops) stop();
     this.model.actionSets.markRow(this, false, false);
+  }
+
+  private makeCell(field: string): HTMLDivElement {
+    if (field === STATUS_FIELD) return this.statusCell();
+    if (field === DRAG_FIELD) return this.ownCell(field, 'mx-data-grid__drag', createDragHandle());
+    if (field === SELECT_FIELD) return this.ownCell(field, 'mx-data-grid__select', this.check);
+    if (field === EXPAND_FIELD) return this.ownCell(field, 'mx-data-grid__expand', this.expand);
+    if (field === ACTIONS_FIELD) return this.ownCell(field, 'mx-data-grid__actions');
+    if (field === ADAPTIVE_FIELD) return this.ownCell(field, 'mx-data-grid__adaptive-cell', this.more);
+    return this.cell(this.model.columns.get(field));
   }
 
   private cell(col: GridColumn<T>): HTMLDivElement {
@@ -366,6 +379,7 @@ export class GridRow<T> {
 
   private drawCells() {
     void this.shown.value;
+    void this.columnsShown.value;
     const model = this.model;
     void model.state.edits;
     void model.state.version;
@@ -373,8 +387,9 @@ export class GridRow<T> {
     const formatter = model.formatter;
     // Read once per row: while nothing is searched no cell asks for marks.
     this.searching = model.search.marking();
+    const some = !model.columnWindow.all;
     for (const [field, cell] of this.cells) {
-      if (model.columns.isInternal(field)) continue;
+      if (model.columns.isInternal(field) || (some && cell.parentElement !== this.element)) continue;
       const col = model.columns.get(field);
       const text = this.texts.get(field);
       if (text && col.lookup) this.drawLookup(cell, text, col);
@@ -405,7 +420,9 @@ export class GridRow<T> {
     const ev = model.events;
     const isNew = model.isNew(rowId);
     if (ev.listened(ev.cellPrepared)) {
+      const some = !model.columnWindow.all;
       for (const [field, element] of this.cells) {
+        if (some && element.parentElement !== this.element) continue;
         const value = model.columns.isInternal(field) ? undefined : model.value(rowId, row, model.columns.get(field));
         ev.cellPrepared.fire({ field, row, rowIndex: index, value, isNew, element });
       }

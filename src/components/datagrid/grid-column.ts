@@ -71,6 +71,11 @@ export interface GridColumn<T = any> {
   resizable?: Bind<boolean>;
   /** How this column's edge is dragged; overrides the grid's `resizeMode`. */
   resizeMode?: Bind<ColumnResizeMode>;
+  /**
+   * `'virtual'`: the column gets cells only while it is in view; `'standard'`: always (a cell content
+   * with a state of its own). Overrides the grid's `columnRenderingMode`.
+   */
+  columnRenderingMode?: Bind<'standard' | 'virtual'>;
   /** Typing a character on a cell opens its editor. Overrides the grid's `editOnKeyPress`. */
   editOnKeyPress?: Bind<boolean>;
   /** A double-click or one click opens a cell's editor. Overrides the grid's `startEditAction`. */

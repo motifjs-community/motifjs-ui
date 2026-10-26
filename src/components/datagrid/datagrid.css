@@ -926,6 +926,11 @@
     background: inherit;
   }
 
+  /* Bands and the pieces over pinned columns are placed by track, in any order: all on the one line. */
+  .mx-data-grid__row--band > * {
+    grid-row: 1;
+  }
+
   /* The edit form in place of a row: one cell across the viewport, as tall as the form. */
   .mx-data-grid__body > .mx-data-grid__form-row {
     position: absolute;
@@ -1267,6 +1272,29 @@
 
   .mx-data-grid__note[data-tone='danger'] {
     color: var(--mx-datagrid-note-danger-color);
+  }
+
+  /* Infinite mode: the mark over the last rows while the next part loads, or with Retry when it failed. */
+  .mx-data-grid__load-more {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: var(--_more-bottom, 0);
+    z-index: var(--_z-head);
+    display: flex;
+    align-items: center;
+    gap: var(--mx-datagrid-more-gap);
+    inline-size: fit-content;
+    margin: 0 auto var(--mx-datagrid-more-offset);
+    padding: var(--mx-datagrid-more-padding-block) var(--mx-datagrid-more-padding-inline);
+    color: var(--mx-datagrid-more-color);
+    background: var(--mx-datagrid-more-background);
+    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
+    border-radius: var(--mx-datagrid-more-radius);
+    box-shadow: var(--mx-datagrid-more-shadow);
+  }
+
+  .mx-data-grid__load-more[data-state='failed'] {
+    color: var(--mx-datagrid-more-danger-color);
   }
 
   /* An export with its load panel: progress and a stop button over the rows. */

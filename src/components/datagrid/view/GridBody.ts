@@ -109,11 +109,12 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     const grid = this.grid;
     const rowHeight = grid.state.rowHeight;
     const at = this.formIndex();
-    const local = at < 0 ? -1 : grid.mode === 'virtual' ? at : grid.localOf(at);
+    const local = at < 0 ? -1 : grid.mode !== 'paged' ? at : grid.localOf(at);
     const tall = local >= 0 && this.form ? { at: local, extra: Math.max(0, this.form.height - rowHeight) } : null;
     const a = this.adaptiveLocal();
     const adaptive = a >= 0 ? { at: a, height: this.adaptive?.id === grid.adaptive.state.rowId ? this.adaptive.height : 0 } : null;
-    return new ScrollGeometry(grid.reachable(), rowHeight, Math.max(rowHeight, grid.state.viewport), ScrollGeometry.MAX_HEIGHT, tall, this.openExtras(), adaptive);
+    const tail = grid.moreState() ? rowHeight : 0;
+    return new ScrollGeometry(grid.reachable(), rowHeight, Math.max(rowHeight, grid.state.viewport), ScrollGeometry.MAX_HEIGHT, tall, this.openExtras(), adaptive, tail);
   }
 
   /** The details drawn now, the adaptive detail among them, in grid order (a row's adaptive detail before its details). */
@@ -210,7 +211,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     const extras = this.extras;
     const a = this.adaptiveLocal();
     if (!extras?.size && a < 0) return n;
-    const local = grid.mode === 'virtual' ? i : grid.localOf(i);
+    const local = grid.mode !== 'paged' ? i : grid.localOf(i);
     if (local < 0) return n;
     return n + (extras?.size ? extras.countBefore(local) : 0) + (a >= 0 && a < local ? 1 : 0);
   }
@@ -228,7 +229,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   /** Its place among the rows laid out (all rows, or the page); -1 for none. */
   private adaptiveLocal(): number {
     const i = this.adaptiveIndex();
-    return i < 0 ? -1 : this.grid.mode === 'virtual' ? i : this.grid.localOf(i);
+    return i < 0 ? -1 : this.grid.mode !== 'paged' ? i : this.grid.localOf(i);
   }
 
   /** The open details of the rows laid out (all rows, or one page), found again when the rows or the open ones change. */
@@ -249,7 +250,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   private findExtras(): ExtraHeights {
     const grid = this.grid;
     const details = grid.details;
-    const virtual = grid.mode === 'virtual';
+    const virtual = grid.mode !== 'paged';
     const at: number[] = [];
     if (details.allOpen) {
       const n = grid.reachable();
@@ -290,7 +291,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     const extras = this.extras;
     if (extras) {
       const grid = this.grid;
-      const slot = extras.slotOf(grid.mode === 'virtual' ? detail.index : grid.localOf(detail.index));
+      const slot = extras.slotOf(grid.mode !== 'paged' ? detail.index : grid.localOf(detail.index));
       if (slot >= 0) {
         extras.set(slot, height);
         extras.estimate = extras.average ?? Math.max(0, grid.details.options.get('estimatedHeight'));
@@ -355,7 +356,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   /** Wheel input while the scroll bar is scaled: moves by the real amount in the full content, so a notch still moves a few rows. */
   onWheel(e: WheelEvent): boolean {
     const vp = this.viewport();
-    if (!vp || this.grid.mode !== 'virtual') return false;
+    if (!vp || this.grid.mode === 'paged') return false;
     const g = this.geometry();
     if (!g.scaled) return false;
     let dy = e.deltaY;
@@ -572,7 +573,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
 
   /** Gives the spacer the height of the rows, before a scroll position is written too (a row added at the end makes the rows taller). */
   private sizeSpacer(g: ScrollGeometry) {
-    this.element.style.height = `${this.grid.mode === 'virtual' ? g.spacerHeight : g.contentHeight}px`;
+    this.element.style.height = `${this.grid.mode !== 'paged' ? g.spacerHeight : g.contentHeight}px`;
   }
 
   private setVirtualTop(vp: HTMLElement, g: ScrollGeometry, v: number, immediate: boolean) {
@@ -595,7 +596,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     let top: (local: number) => number;
 
     this.sizeSpacer(g);
-    if (grid.mode === 'virtual') {
+    if (grid.mode !== 'paged') {
       // Our own writes keep the exact virtual offset; anything else (bar drag, touch, focus) is mapped back.
       if (this.expectedScrollTop < 0 || Math.abs(scrollTop - this.expectedScrollTop) > 1) this.virtualTop = g.virtualFromScroll(scrollTop);
       this.expectedScrollTop = -1;
@@ -610,8 +611,12 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       // The data counts its own places only: map the window to them.
       const offset = grid.newRowPosition === 'top' ? grid.state.added : 0;
       const dataOf = (i: number) => Math.max(0, Math.min(data.total, i - offset));
+      // `preloadEnabled`: a part more on each side, so scrolling seldom waits.
+      const pre = grid.settings.get('preloadEnabled') ? Math.max(0, data.pageSize) : 0;
       if (loading) data.ensure(0, need, true);
-      else if (end > start && dataOf(end) > dataOf(start)) data.ensure(dataOf(start), dataOf(end), immediate);
+      else if (end > start && dataOf(end) > dataOf(start)) data.ensure(Math.max(0, dataOf(start) - pre), dataOf(end) + pre, immediate);
+      // Infinite: near the end of the rows shown, the next part loads.
+      if (grid.mode === 'infinite' && !loading && data.total - dataOf(vis.end) <= Math.max(0, grid.settings.get('loadMoreDistance')) + pre) grid.loadMore();
     } else {
       start = 0;
       end = g.total;
@@ -619,8 +624,8 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       const range = grid.dataRange();
       data.ensure(range.first, loading ? range.first + Math.max(1, grid.pageSize) : Math.max(range.end, range.first + 1), true);
     }
-    const viewAt = (local: number) => (grid.mode === 'virtual' ? local : grid.viewAt(local));
-    const localOf = (i: number) => (grid.mode === 'virtual' ? (i < g.total ? i : -1) : grid.localOf(i));
+    const viewAt = (local: number) => (grid.mode !== 'paged' ? local : grid.viewAt(local));
+    const localOf = (i: number) => (grid.mode !== 'paged' ? (i < g.total ? i : -1) : grid.localOf(i));
 
     // Rows to show: the window, plus the active row and the focused row wherever they are.
     const wanted: number[] = [];

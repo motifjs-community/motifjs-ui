@@ -94,6 +94,7 @@ export const GROUPS = [
       { id: 'datagrid-bands', label: 'Bands and adaptive columns', title: 'DataGrid: Bands and adaptive columns', path: '/datagrid/bands', related: ['datagrid-layout', 'datagrid-master-detail', 'layout'] },
       { id: 'datagrid-selection', label: 'Selection and export', title: 'DataGrid: Selection and export', path: '/datagrid/selection', related: ['datagrid-editing', 'datagrid-grouping', 'datagrid-layout'] },
       { id: 'datagrid-drag', label: 'Row drag and drop', title: 'DataGrid: Row drag and drop', path: '/datagrid/drag', related: ['datagrid-selection', 'datagrid-editing', 'datagrid-layout'] },
+      { id: 'datagrid-scrolling', label: 'Scrolling', title: 'DataGrid: Scrolling', path: '/datagrid/scrolling', related: ['datagrid', 'datagrid-bands', 'datagrid-grouping'] },
       { id: 'datagrid-layout', label: 'Layout and events', title: 'DataGrid: Layout and events', path: '/datagrid/layout', related: ['datagrid-api', 'datagrid-filtering', 'toolbar'] },
       { id: 'datagrid-api', label: 'API reference', title: 'DataGrid: API reference', path: '/datagrid/api', related: ['datagrid', 'datagrid-layout', 'control'] },
     ],

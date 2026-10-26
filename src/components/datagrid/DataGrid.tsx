@@ -39,6 +39,8 @@ import type { GridInitNewRowEventArgs } from './grid-init-new-row-event-args';
 import type { GridKeyHandlingEventArgs } from './grid-key-handling-event-args';
 import type { GridLayoutChangingEventArgs } from './grid-layout-changing-event-args';
 import type { GridOptionChangedEventArgs } from './grid-option-changed-event-args';
+import type { GridMoreRowsLoadedEventArgs } from './grid-more-rows-loaded-event-args';
+import type { GridMoreRowsLoadingEventArgs } from './grid-more-rows-loading-event-args';
 import type { GridPageChangedEventArgs } from './grid-page-changed-event-args';
 import type { GridPageChangingEventArgs } from './grid-page-changing-event-args';
 import type { GridPageSizeChangedEventArgs } from './grid-page-size-changed-event-args';
@@ -267,6 +269,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** `beginUpdate()` calls not ended yet, and whether the body waits to be laid out. */
   private updates = 0;
   private relayoutWaiting = false;
+  /** While columns are virtual: how long drawing the columns that came into view took last (ms), and the wait for the sideways scrolling to stop. */
+  private columnsTook = 0;
+  private columnsTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(props: IBaseProp<DataGridProps<T>>) {
     super(props);
@@ -476,6 +481,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       },
       this,
     );
+    untracked(() => model.columnWindow.update(model.columns.visible(), 0, 0, [model.state.activeField]));
   }
 
   // Public API.
@@ -558,19 +564,51 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.setSort(sort);
   }
 
-  /** The page shown (paged mode), 0-based. */
+  /** The page shown (paged mode), 0-based. Infinite mode: the last part shown; assigning loads the parts up to that one and scrolls to its first row. */
   get page(): number {
-    return this.model.state.page;
+    const { model } = this;
+    if (model.mode !== 'infinite') return model.state.page;
+    const size = model.pageSize;
+    return size > 0 ? Math.max(0, Math.ceil(model.data.total / size) - 1) : 0;
   }
   set page(page: number) {
+    const { model } = this;
+    if (model.mode === 'infinite') {
+      const size = model.pageSize;
+      const first = Math.max(0, Math.floor(page)) * size;
+      void model.loadTo(first + Math.max(1, size)).then(() => {
+        if (!this.isDisposed && first < model.data.total) this.scrollToIndex(model.viewOfData(first), 'start');
+      });
+      return;
+    }
     this.dropForm();
     this.leave();
-    this.model.setPage(page);
+    model.setPage(page);
   }
 
-  /** Pages in paged mode (at least 1). Reactive. */
+  /** Pages in paged mode (at least 1); in infinite mode the parts of every row once their count is known, else the parts shown. Reactive. */
   get pageCount(): number {
     return this.model.pageCount();
+  }
+
+  /**
+   * Infinite mode: shows the next part of the rows (`pageSize` more), after `onMoreRowsLoading`;
+   * `false` while the rows load, a part is loading or failed (`retry()`), or every row shows.
+   */
+  loadMore(): boolean {
+    return this.model.loadMore();
+  }
+
+  /** Infinite mode: a part of the rows is loading. Reactive. */
+  get loadingMore(): boolean {
+    void this.model.state.connection;
+    return this.model.data.loadingMore;
+  }
+
+  /** Every row shows: always outside infinite mode, there once the last part came. Reactive. */
+  get endReached(): boolean {
+    void this.model.state.connection;
+    return this.model.data.ended;
   }
 
   /** The page shown, 0-based; with a number, goes there (as `page` does). */
@@ -594,9 +632,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.setPageSize(size);
   }
 
-  /** Data rows of every page, saved new rows included: the same as `total`. Reactive. */
+  /** Data rows of every page, saved new rows included: the same as `total`. Infinite mode: every matching row once known (counted, or the end reached), -1 until then. Reactive. */
   totalCount(): number {
-    return this.total;
+    const { model } = this;
+    if (model.mode !== 'infinite') return this.total;
+    const known = model.data.knownCount;
+    return known === undefined ? -1 : known + this.savedAdded();
   }
 
   /** Column order, widths, visibility, sticky sides and sort. Store it and assign it back later, or give the grid a `layoutKey`. */
@@ -656,9 +697,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.on(this.model.events.editorPreparing);
   }
 
-  /** Loads what failed to load again. */
+  /** Loads what failed to load again; in infinite mode a part that failed, after `onMoreRowsLoading`. */
   retry() {
-    this.model.data.retry();
+    const { model } = this;
+    const data = model.data;
+    const ev = model.events;
+    if (data.moreFailed && !ev.ask(ev.moreRowsLoading, () => ({ skip: data.total, take: data.pageSize, cancel: false }))) return;
+    data.retry();
   }
 
   /** Scrolls row `index` into view (in paged mode, goes to its page). New rows count as rows. */
@@ -669,9 +714,15 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /** Fits every visible, resizable column to its header and the rows shown. */
   autoSizeColumns() {
+    // Virtual columns: every column gets its cells while they are measured.
+    const drawn = this.model.columnWindow;
+    drawn.everything = true;
+    this.updateColumns();
     for (const field of this.model.columns.visible()) {
       if (this.model.columns.can(field, 'resizable')) this.autoSize(field, true);
     }
+    drawn.everything = false;
+    this.updateColumns();
     this.model.keepLayout();
   }
 
@@ -1009,6 +1060,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   get onPageSizeChanged(): MotifEvent<GridPageSizeChangedEventArgs> {
     return this.on(this.model.events.pageSizeChanged);
+  }
+
+  /** Infinite mode: raised before the next part of the rows loads (the view nears the end, `loadMore()`, Ctrl+End): `e.cancel` keeps the rows as they are. */
+  get onMoreRowsLoading(): MotifEvent<GridMoreRowsLoadingEventArgs> {
+    return this.on(this.model.events.moreRowsLoading);
+  }
+
+  /** Infinite mode: raised when a part of the rows came. */
+  get onMoreRowsLoaded(): MotifEvent<GridMoreRowsLoadedEventArgs> {
+    return this.on(this.model.events.moreRowsLoaded);
   }
 
   /** Raised before a layout change by the user is kept: `e.cancel` puts the one before back. */
@@ -2527,14 +2588,21 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       const visible = model.columns.visible();
       const filterRow = model.showsFilterRow();
       untracked(() => {
-        this.header.arrange(visible);
-        if (this.headEl) this.bands.arrange(visible, this.headEl, this.header.element);
-        if (filterRow) this.filterRow.arrange(visible);
-        this.body.arrange(visible);
-        this.totalRow.arrange(visible);
+        this.findColumns(visible);
+        this.arrangeColumns(visible, filterRow);
         model.keepActiveFieldVisible();
         this.syncTabStop();
       });
+    });
+
+    // Virtual columns: other widths, another width of the viewport or other settings draw other columns.
+    this.bindings.watch(() => {
+      const visible = model.columns.visible();
+      void model.columns.template(visible);
+      void model.columns.anyVirtual(visible);
+      void settings.get('extraColumns');
+      void model.state.width;
+      untracked(() => this.updateColumns());
     });
 
     // Sizes and sticky offsets: CSS only, no row is touched.
@@ -2545,9 +2613,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       const align = new Map<string, string>();
       for (const f of visible) align.set(f, model.columns.align(f));
       const bands = model.columns.hasBands ? model.columns.shownBands(visible) : [];
+      const placed = model.columns.anyVirtual(visible);
       untracked(() => {
         this.viewportEl?.style.setProperty('--_columns', template);
-        this.styles.update(visible, offsets, align, bands);
+        this.styles.update(visible, offsets, align, bands, placed);
       });
     });
 
@@ -2652,6 +2721,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   override onDisposing() {
+    clearTimeout(this.columnsTimer);
     for (const controller of this.exports) controller.abort();
     this.runner.dispose();
     this.editor = null;
@@ -2686,12 +2756,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
               void model.details.state.version;
               void model.adaptive.state.rowId;
               void model.columns.state.adaptive;
-              return st.status === 'loading' ? -1 : model.count + model.headRows + (model.summaries.showsTotal() ? 1 : 0) + model.openDetailCount();
+              // Infinite: unknown until the last part came.
+              return st.status === 'loading' || !model.data.ended ? -1 : model.count + model.headRows + (model.summaries.showsTotal() ? 1 : 0) + model.openDetailCount();
             }}
             aria-multiselectable={() => (settings.get('selection') === 'multiple' ? 'true' : null)}
             aria-colcount={() => model.columns.visible().length}
             aria-busy={() => (st.status === 'loading' || st.busy ? 'true' : null)}
             onscroll={() => {
+              this.columnsScrolled();
               this.body.onScroll();
               this.tip.hide();
               this.syncTabStop();
@@ -2738,6 +2810,11 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
               <Button text={() => t('retry')} size="sm" variant="outline" onclick={() => this.retry()} />
             </div>
           </div>
+          <div class="mx-data-grid__load-more" role="status" data-state={() => model.moreState()} x-display={() => model.moreState() !== null}>
+            <Spinner size="sm" label={() => t('gridLoadingMore')} visible={() => model.moreState() === 'loading'} />
+            <span x-display={() => model.moreState() === 'failed'}>{() => t('gridLoadMoreFailed')}</span>
+            <Button text={() => t('retry')} size="sm" variant="outline" visible={() => model.moreState() === 'failed'} onclick={() => this.retry()} />
+          </div>
           <div class="mx-data-grid__export-panel" x-display={() => this.exportPanel.shown}>
             <ProgressBar
               class="mx-data-grid__export-progress"
@@ -2767,12 +2844,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         <div class="mx-data-grid__bar" x-display={() => settings.get('rowCount') || st.failedBlocks > 0 || model.showsPager() || showErrors() || showSelected() || this.bottomShown()}>
           {this.bottomBar}
           <span class="mx-data-grid__count" x-display={() => settings.get('rowCount')}>
-            {() => (st.status === 'ready' ? t('gridRecords', { count: count(this.total) }) : '')}
+            {() => (st.status !== 'ready' ? '' : model.mode === 'infinite' && model.data.knownCount === undefined ? t('gridRecordsLoaded', { count: count(this.total) }) : t('gridRecords', { count: count(this.totalCount()) }))}
           </span>
           <span class="mx-data-grid__selected" x-display={showSelected}>
             {() => t('gridSelectedCount', { count: count(this.selectedCount) })}
           </span>
-          <span class="mx-data-grid__note" data-tone="danger" role="status" x-display={() => st.failedBlocks > 0}>
+          <span class="mx-data-grid__note" data-tone="danger" role="status" x-display={() => st.failedBlocks > (model.moreState() === 'failed' ? 1 : 0)}>
             {() => t('gridSomeRowsFailed')}
             <Button text={() => t('retry')} size="sm" variant="ghost" onclick={() => this.retry()} />
           </span>
@@ -2827,6 +2904,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const head = this.headEl?.offsetHeight ?? 0;
     const foot = this.footEl?.offsetHeight ?? 0;
     this.element.style.setProperty('--_head-height', `${head}px`);
+    // The mark of infinite mode sits over the last rows, above the totals and the scroll bar.
+    this.element.style.setProperty('--_more-bottom', `${vp.offsetHeight - vp.clientHeight + foot}px`);
     const viewport = Math.max(0, vp.clientHeight - head - foot);
     if (viewport !== state.viewport) state.viewport = viewport;
     const width = vp.clientWidth;
@@ -2862,7 +2941,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (st.status !== 'ready') return;
     if (st.activeRow >= 0 && !model.hasRow(st.activeRow)) {
       const last = model.lastRow();
-      st.activeRow = last < 0 ? HEADER_ROW : model.mode === 'virtual' ? Math.min(st.activeRow, last) : model.firstRow();
+      st.activeRow = last < 0 ? HEADER_ROW : model.mode !== 'paged' ? Math.min(st.activeRow, last) : model.firstRow();
     }
     if (this.formEdit?.mode === 'form' && this.body.formIndex() < 0) this.closeForm(false);
     // The editor belongs to its row; if that row is no longer where the editor is, finish it.
@@ -2902,6 +2981,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /** Exactly one cell is in the tab order: the active one. */
   private syncTabStop() {
+    // A virtual column the active cell moved to gets its cells first.
+    const active = this.keptColumn();
+    if (active && !this.model.columnWindow.has(active)) this.updateColumns();
     const el = this.activeElement();
     if (!el) return;
     const index = this.tabStop ? '0' : '-1';
@@ -2957,6 +3039,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   private focusActive(reveal: boolean) {
+    this.updateColumns();
     const { activeRow, activeField } = this.model.state;
     if (reveal && activeRow >= 0) this.body.reveal(activeRow);
     const cols = this.model.columns;
@@ -2966,6 +3049,54 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (!el) return;
     el.focus({ preventScroll: true });
     if (this.model.settings.get('tooltips')) this.tip.focus(el);
+  }
+
+  /** The column the active cell is in (a band's first one), drawn even while it is out of view. */
+  private keptColumn(): string {
+    const cols = this.model.columns;
+    const field = this.model.state.activeField;
+    return cols.isBand(field) ? (cols.leavesIn(field, cols.visible())[0] ?? '') : field;
+  }
+
+  /** Works out the columns that get cells (virtual columns); whether that changed. */
+  private findColumns(visible: readonly string[]): boolean {
+    const vp = this.viewportEl;
+    const { model } = this;
+    const keep = [this.keptColumn()];
+    if (this.editTarget) keep.push(this.editTarget.field);
+    return model.columnWindow.update(visible, vp ? Math.abs(vp.scrollLeft) : 0, vp?.clientWidth || model.state.width, keep);
+  }
+
+  /** Puts the cells of the header, the filter row, the rows and the totals in display order, with the columns drawn. */
+  private arrangeColumns(visible: string[], filterRow = this.model.showsFilterRow()) {
+    this.header.arrange(visible);
+    if (this.headEl) this.bands.arrange(visible, this.headEl, this.header.element);
+    if (filterRow) this.filterRow.arrange(visible);
+    this.body.arrange(visible);
+    this.totalRow.arrange(visible);
+  }
+
+  /** While columns are virtual, the columns that came into view get their cells. */
+  private updateColumns() {
+    const visible = untracked(() => this.model.columns.visible());
+    if (!untracked(() => this.findColumns(visible))) return;
+    const started = performance.now();
+    untracked(() => this.arrangeColumns(visible));
+    this.columnsTook = performance.now() - started;
+  }
+
+  /** The rows scrolled: virtual columns follow at once, or once the scrolling stops (`renderAsync`). */
+  private columnsScrolled() {
+    const { model } = this;
+    const settings = model.settings;
+    if (model.columnWindow.all) return;
+    const async = settings.get('renderAsync');
+    clearTimeout(this.columnsTimer);
+    if (async === true || (async === 'auto' && this.columnsTook > settings.get('columnRenderingThreshold'))) {
+      this.columnsTimer = setTimeout(() => {
+        if (!this.isDisposed) this.updateColumns();
+      }, Math.max(0, settings.get('columnRenderingDelay')));
+    } else this.updateColumns();
   }
 
   /** Scrolls sideways so the column is not under the sticky columns. */
@@ -2979,8 +3110,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     }
     const visible = this.model.columns.visible();
     const pinned = this.model.columns.stickyWidths(visible);
-    const left = cell.offsetLeft;
-    const right = left + cell.offsetWidth;
+    // Virtual columns: from the widths given (the cells may have just been made).
+    const placed = !this.model.columnWindow.all;
+    const left = placed ? this.model.columnWindow.offsetOf(field, visible) : cell.offsetLeft;
+    const right = left + (placed ? this.model.columns.width(field) : cell.offsetWidth);
     const from = vp.scrollLeft + pinned.start;
     const to = vp.scrollLeft + vp.clientWidth - pinned.end;
     if (left < from) vp.scrollLeft = left - pinned.start;
@@ -4484,6 +4617,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       case 'End':
         col = visible.length - 1;
         if (ctrl && hasRows) row = last;
+        // Infinite: the last row shown, and the next part.
+        if (ctrl && hasRows) model.loadMore();
         break;
       case 'PageDown':
       case 'PageUp': {

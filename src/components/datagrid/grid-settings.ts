@@ -182,6 +182,42 @@ export interface GridSettings extends ColumnFeatures {
   tooltipDelay: number;
   /** Rows drawn above and below the visible ones, so a quick scroll shows no gap. More costs more per scroll. Default `4`. */
   extraRows: number;
+  /**
+   * Infinite mode (`mode: 'infinite'`): rows left below the view when the next part starts to load;
+   * 0 loads it when the last row comes into view. Default `0`.
+   */
+  loadMoreDistance: number;
+  /**
+   * The rows next to the ones in view load before they are needed, so scrolling seldom waits: in
+   * virtual mode a part (`pageSize` rows) on each side, in infinite mode the next part one part
+   * earlier. Default `false`.
+   */
+  preloadEnabled: boolean;
+  /** Infinite mode: a "Loading more rows" mark at the bottom of the rows while a part loads, with Retry when it fails. Default `true`. */
+  loadMoreIndicator: boolean;
+  /**
+   * `'virtual'`: only the scrolling columns in view (and `extraColumns` on each side) get cells, in
+   * every row, the header and the filter, group and summary rows; pinned columns, the active column
+   * and the columns that set `columnRenderingMode: 'standard'` always do. `'standard'`: every
+   * column gets its cells. A column's own value wins. Default `'standard'`.
+   */
+  columnRenderingMode: 'standard' | 'virtual';
+  /** Columns drawn beyond the ones in view on each side while columns are virtual, so a quick sideways scroll shows no gap. Default `2`. */
+  extraColumns: number;
+  /**
+   * While columns are virtual: milliseconds that drawing the columns coming into view may take
+   * before the next ones are drawn only once the sideways scrolling stops (`renderAsync: 'auto'`).
+   * Default `300`.
+   */
+  columnRenderingThreshold: number;
+  /**
+   * While columns are virtual, the columns coming into view are drawn: as the rows scroll sideways
+   * (`false`), once the scrolling stops (`true`), or `'auto'`: once it stops while drawing them takes
+   * longer than `columnRenderingThreshold`. Default `'auto'`.
+   */
+  renderAsync: boolean | 'auto';
+  /** Milliseconds without sideways scrolling before the columns that waited are drawn (`renderAsync`). Default `300`. */
+  columnRenderingDelay: number;
   /** Width of a column that gives none, in pixels. Default `140`. */
   columnWidth: number;
   /** Smallest width the user can resize a column to, for columns that give no `minWidth`. Default `48`. */

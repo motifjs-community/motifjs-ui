@@ -138,6 +138,8 @@ export type { GridPageChangingEventArgs } from './grid-page-changing-event-args'
 export type { GridPageChangedEventArgs } from './grid-page-changed-event-args';
 export type { GridPageSizeChangingEventArgs } from './grid-page-size-changing-event-args';
 export type { GridPageSizeChangedEventArgs } from './grid-page-size-changed-event-args';
+export type { GridMoreRowsLoadingEventArgs } from './grid-more-rows-loading-event-args';
+export type { GridMoreRowsLoadedEventArgs } from './grid-more-rows-loaded-event-args';
 export type { GridLayoutChangingEventArgs } from './grid-layout-changing-event-args';
 export type { GridSearchTextChangingEventArgs } from './grid-search-text-changing-event-args';
 export type { GridCopyingEventArgs } from './grid-copying-event-args';

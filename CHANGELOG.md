@@ -239,6 +239,46 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   (`/datagrid/drag`: reorder in memory, on a server with an order field, between two grids);
   `e2e/checks/43-datagrid-pdf-drag.mjs`.
 
+### DataGrid infinite scrolling and virtual columns
+
+- Infinite scrolling (`scrolling.mode: 'infinite'`): `mode: 'infinite'` next to
+  `'virtual'` and `'paged'`. The rows show part by part (`pageSize` for rows in memory, the block size
+  of a source that loads by blocks), the next part loading as the view nears the end; the scroll bar
+  grows with the rows that came, and the rows stay pooled and in the source's block cache. No total is
+  needed: over a source with `count: false` a part that comes back short ends the rows. While a part
+  loads a “Loading more rows…” mark shows over the last rows, with Retry when it fails (the bottom
+  bar does with the mark off; Retry asks `onMoreRowsLoading` first); the pager is hidden; Ctrl+End goes
+  to the last row shown and loads the next part; a sort, filter, search or grouping starts again from
+  the first part. Grouped rows, details, the selection, the row in edit and the focused row keep
+  working; “select all” and the export take every row. Settings `loadMoreDistance` (`0`),
+  `preloadEnabled` (`false`; in virtual mode it loads a part on each side of the view),
+  `loadMoreIndicator` (`true`). `loadMore()`, `loadingMore`, `endReached`,
+  `onMoreRowsLoading` (cancelable, `{ skip, take }`) and `onMoreRowsLoaded` (`{ skip, count, ended }`);
+  in infinite mode `pageIndex()` is the last part shown and `pageIndex(n)` loads up to it, `pageCount`
+  counts the parts, `totalCount()` is −1 until the end is known, `aria-rowcount` −1 too. Texts
+  `gridLoadingMore`, `gridLoadMoreFailed`, `gridRecordsLoaded` (en/tr); tokens `datagrid.more-gap`,
+  `more-padding-block`, `more-padding-inline`, `more-offset`, `more-radius`, `more-color`,
+  `more-danger-color`, `more-background`, `more-shadow`.
+- Virtual columns (`columnRenderingMode: 'virtual'`): `settings.columnRenderingMode`
+  (`'standard'`) and a column's own `columnRenderingMode`, which wins. Only the scrolling columns in
+  view and `extraColumns` (`2`) on each side get cells, in the header, the filter row, the rows, the
+  group rows' items under their columns, the group footers and the totals; pinned columns, the active
+  column, the column in edit and the columns that stay `'standard'` always do. Cells keep their track
+  (the per-grid sheet places them by number), `aria-colindex` and `aria-colcount` stay the real ones; a
+  band header spans its columns drawn only and keeps its real `aria-colindex` / `aria-colspan`.
+  Resizing, moving (over columns without cells too), pinning and “Fit all columns” work as before; the
+  keyboard moves into a column without cells, which gets them and scrolls into view; CSV, Excel and
+  PDF write every column. `renderAsync` (`'auto'`), `columnRenderingThreshold` (`300` ms) and
+  `columnRenderingDelay` (`300` ms) decide whether new columns are drawn as the rows scroll or once the
+  scrolling stops. Measured in Chrome on 200 columns × 100,000 rows: 4,776 cells in the page before,
+  154 after (206 at most while scrolling sideways); scrolling down 26–27 fps before, 48–51 after;
+  sideways about 60 fps both ways.
+- The band header rows keep every band and the pieces over pinned columns on one line (a piece over a
+  pinned column could fall to a line of its own, with no height).
+- Docs: a new page “Scrolling” (`/datagrid/scrolling`: the modes, infinite scrolling over a slow
+  server without a count, rows in memory grouped part by part, 200 virtual columns);
+  `e2e/checks/44-datagrid-infinite-columns.mjs`.
+
 ### DataGrid band headers and adaptive columns
 
 - Bands (band columns): a `GridBand` in `columns` (`title`, `columns` — columns and

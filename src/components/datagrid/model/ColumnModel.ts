@@ -514,6 +514,17 @@ export class ColumnModel<T> {
     return read(this.get(field).resizeMode) ?? this.settings.get('resizeMode');
   }
 
+  /** Whether a column gets cells only while it is in view: its own `columnRenderingMode`, else the grid's. The grid's own columns always have theirs. Reactive. */
+  isVirtual(field: string): boolean {
+    if (this.isInternal(field)) return false;
+    return (read(this.get(field).columnRenderingMode) ?? this.settings.get('columnRenderingMode')) === 'virtual';
+  }
+
+  /** Whether some visible column is virtual. Reactive. */
+  anyVirtual(visible: readonly string[]): boolean {
+    return visible.some((f) => this.isVirtual(f));
+  }
+
   /**
    * The column that gives or takes the width when `field` is resized in `'nextColumn'` mode: the
    * next visible one in its zone, if it can be resized. Without one the column changes alone.

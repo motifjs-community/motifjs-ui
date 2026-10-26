@@ -78,6 +78,8 @@ import type { GridRowDragging } from './grid-row-dragging';
 import type { GridRowExpandedEventArgs } from './grid-row-expanded-event-args';
 import type { GridRowExpandingEventArgs } from './grid-row-expanding-event-args';
 import type { GridMode } from './grid-mode';
+import type { GridMoreRowsLoadedEventArgs } from './grid-more-rows-loaded-event-args';
+import type { GridMoreRowsLoadingEventArgs } from './grid-more-rows-loading-event-args';
 import type { GridSettingsProps } from './grid-settings-props';
 import type { GridSearchTextChangedEventArgs } from './grid-search-text-changed-event-args';
 import type { GridSelectionChangedEventArgs } from './grid-selection-changed-event-args';
@@ -103,10 +105,15 @@ export interface DataGridProps<T> extends ControlProps {
   dataSource?: Bind<data.DataSource<T, any> | null>;
   /** The row's identity for `rows`: a field name or a function. A `dataSource` uses its adapter's key. */
   rowKey?: string | ((row: T) => unknown);
-  /** `'virtual'` (default) or `'paged'`. A `dataSource` that loads by `'page'` is always paged. */
+  /**
+   * `'virtual'` (default): one long list, loaded and drawn where the view is. `'paged'`: pages with a
+   * pager. `'infinite'`: the rows show part by part (`pageSize` each), the next part loading as the
+   * view nears the end; no total is needed (a source with `count: false` finds the end from a short
+   * part). A `dataSource` that loads by `'page'` is always paged.
+   */
   mode?: Bind<GridMode>;
   /**
-   * Rows per page in paged mode (0: every row on one page), for rows in memory. A `dataSource` that
+   * Rows per page in paged mode (0: every row on one page), and of a part in infinite mode, for rows in memory. A `dataSource` that
    * loads pages or blocks uses its own `pageSize`. The user can change it from the pager's page sizes
    * (`settings.pageSizeSelector`). Default 100.
    */
@@ -323,6 +330,10 @@ export interface DataGridProps<T> extends ControlProps {
   /** The rows per page are about to change (the pager's page sizes, `pageSize(n)`); `e.cancel` keeps them. */
   onPageSizeChanging?: (e: GridPageSizeChangingEventArgs) => void;
   onPageSizeChanged?: (e: GridPageSizeChangedEventArgs) => void;
+  /** Infinite mode: the next part of the rows is about to load; `e.cancel` keeps the rows as they are. */
+  onMoreRowsLoading?: (e: GridMoreRowsLoadingEventArgs) => void;
+  /** Infinite mode: a part of the rows came. */
+  onMoreRowsLoaded?: (e: GridMoreRowsLoadedEventArgs) => void;
   /** Cells are about to be copied; change `e.text` / `e.html`, or `e.cancel`. */
   onCopying?: (e: GridCopyingEventArgs) => void;
   /** Text is about to be pasted; change `e.text`, or `e.cancel`. */

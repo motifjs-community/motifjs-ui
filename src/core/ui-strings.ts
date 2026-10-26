@@ -57,6 +57,9 @@ export interface UiStrings {
   gridNoRows: string;
   gridSomeRowsFailed: string;
   gridRecords: string;
+  gridRecordsLoaded: string;
+  gridLoadingMore: string;
+  gridLoadMoreFailed: string;
   gridPager: string;
   gridFirstPage: string;
   gridPreviousPage: string;

@@ -9,7 +9,8 @@ const PROPS = [
   ['rows', '`Bind<T[]>`', '—', 'Rows in memory. The grid puts them in a `DataSource` over an `ArrayAdapter`: `push`, `splice` and a new array are followed; saved edits, new rows and deletions go into the array.'],
   ['dataSource', '`Bind<DataSource | null>`', '—', 'Rows of the data layer, from any adapter. Loading by `blocks` makes a virtual list that asks only where it looks; by `page` a paged grid. Wins over `rows`.'],
   ['rowKey', '`string | (row) => unknown`', '—', 'The identity of `rows`. A data source uses its adapter’s key.'],
-  ['mode', "`Bind<'virtual' | 'paged'>`", "`'virtual'`", 'One long list, or pages with a pager; never both. A source that loads by page is always paged.'],
+  ['mode', "`Bind<'virtual' | 'paged' | 'infinite'>`", "`'virtual'`", 'One long list, pages with a pager, or parts that load as the list nears its end (see [Scrolling](/datagrid/scrolling#modes)). A source that loads by page is always paged.'],
+  ['onMoreRowsLoading / onMoreRowsLoaded', '`(e) => void`', '—', 'Infinite mode: before the next part of the rows loads (`{ skip, take }`, `e.cancel` keeps the rows as they are), and when it came (`{ skip, count, ended }`).'],
   ['pageSize', '`Bind<number>`', '`100`', 'Rows per page for rows in memory (0: every row on one page); a source that loads pages or blocks uses its own. The pager’s page sizes (`pageSizeSelector`) and `pageSize(n)` change it; the size the user chose is kept with the layout.'],
   ['onPageSizeChanging / onPageSizeChanged', '`(e) => void`', '—', 'Before and after the rows per page change: `{ pageSize, previous }` (0: all); `e.cancel = true` keeps them.'],
   ['saveMode', "`Bind<'wait' | 'background' | 'batch'>`", "`'wait'`", 'When changes are sent: see [Save modes](/datagrid/editing#editing). Changing it starts again with the data (unsaved changes go).'],
@@ -69,6 +70,7 @@ const COLUMN_FIELDS = [
   ['setCellValue', '`(values, value, row) => void | Promise`: called when the user commits a value (editor, paste, Delete), before it is written. `values` starts as `{ [field]: value }`; add fields to write them too. A promise keeps the cell busy until it settles.'],
   ['editable, creatable, sortable, resizable, movable, hideable, pinnable, menu, filterRow, headerFilter, filterBuilder, copyable, exportable, syncLookupFilterValues, searchable', 'Switch a feature for this column; wins over `settings`.'],
   ['resizeMode', 'How this column’s edge is dragged (`widget` or `nextColumn`); wins over `settings`.'],
+  ['columnRenderingMode', '`standard`: the column keeps its cells out of view; `virtual`: it gets them only in view (see [Virtual columns](/datagrid/scrolling#virtual-columns)); wins over `settings`.'],
   ['headerCell', '`(ctx) => component | Node | string`: content of your own in the header in place of the title text, made once; `ctx.title`, `ctx.sort`, `ctx.column` in getters. The title stays the header’s accessible name.'],
   ['editOnKeyPress, startEditAction', 'How the user opens this column’s editor; wins over `settings`.'],
   ['trueTexts, falseTexts', 'A yes/no column: the pasted texts read as yes and as no; wins over `settings`.'],
@@ -162,14 +164,15 @@ const METHODS = [
   ['columnOption(field, name?, value?) / columnOption(field, options)', '`unknown`', 'Reads or writes a column’s `width`, `visible` (`hidden`), `flex`, `sticky`, `visibleIndex`, `sortOrder`, `sortIndex`, `groupIndex`, `filterValues`, `filterType`, a feature switch or any field of its definition (`title`, `format`, `lookup`, `cell`, `type` …: the column is drawn again, its layout, sort and filter kept); without a name, all of them; an object sets several. Each change is told through `onOptionChanged` with the column’s `field`.'],
   ['addColumn(column, index?) / deleteColumn(field)', '`void`', 'A column at run time, at a place among the data columns (default: last; what the kept layout says of it applies), or taken out with its sort, grouping and filter. The layout and the kept layout follow; `onOptionChanged` tells `name: \'columns\'` with the fields before and after.'],
   ['columnCount() / getVisibleColumns()', '`number` / `GridColumn[]`', 'The data columns, the hidden ones too; the definitions of those shown now, in display order.'],
-  ['pageIndex(n?) / pageSize(n?) / totalCount()', '`number` / `void`', 'The page shown (with `n`: go there, as `page`); the rows per page, 0 for all (with `n`: as the pager’s page sizes, back to the first page, `onPageSizeChanging` first); the rows of every page.'],
+  ['pageIndex(n?) / pageSize(n?) / totalCount()', '`number` / `void`', 'The page shown (with `n`: go there, as `page`; infinite: the last part shown, with `n` the parts up to it load); the rows per page, 0 for all (with `n`: as the pager’s page sizes, back to the first page, `onPageSizeChanging` first); the rows of every page (infinite: −1 until known).'],
+  ['loadMore() / loadingMore / endReached', '`boolean`', 'Infinite mode: loads the next part (`onMoreRowsLoading` first); a part is loading; every row shows.'],
   ['getCombinedFilter()', '`FilterExpression | null`', 'The whole filter of the rows: the source’s own, the filter row, the header filters and the search.'],
   ['state() / state(value)', '`GridStateValue` / `void`', 'What the user set up — columns, sort, grouping, filters, search text, page and page size, selected keys, active row — and putting it back.'],
 ];
 
 const KEYS = [
   ['Arrow keys', 'Move between cells, the headers included. In a right-to-left page Left and Right swap.'],
-  ['Home / End, Ctrl + Home / End', 'The first data column / the last column; the first / the last row (only that block is loaded).'],
+  ['Home / End, Ctrl + Home / End', 'The first data column / the last column; the first / the last row (only that block is loaded; infinite: the last row shown, and the next part loads).'],
   ['PageUp / PageDown', 'In paged mode the previous / next page (`pageKeys`; on the first and last page, a screen); in a virtual list a screen up or down.'],
   ['Tab in the pager', 'Its buttons one by one: the page sizes, first, previous, the pages, next, last; compact, the page number box (Enter goes there) and the page size list.'],
   ['Enter (header), Shift + Enter', 'Sort; add the column to the sort.'],
@@ -258,6 +261,7 @@ const TOKENS = [
   ['datagrid.chip-gap, chip-radius, chip-background, chip-border-color, panel-empty-color, drop-target', 'The group panel, its chips, its empty text and the tint where something can be dropped.'],
   ['datagrid.band-line-color', 'The lines under and beside a band’s header.'],
   ['datagrid.adaptive-color, adaptive-radius, adaptive-padding, adaptive-gap, adaptive-background, adaptive-label-color, adaptive-label-font-weight', 'The “…” button and the adaptive detail: its room, its titles and values.'],
+  ['datagrid.more-gap, more-padding-block, more-padding-inline, more-offset, more-radius, more-color, more-danger-color, more-background, more-shadow', 'Infinite mode: the “Loading more rows…” mark over the last rows, and its failed look with Retry.'],
 ];
 
 export default function DataGridApiPage() {

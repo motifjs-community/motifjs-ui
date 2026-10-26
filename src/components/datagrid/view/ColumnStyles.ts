@@ -21,16 +21,19 @@ export class ColumnStyles<T> {
     private readonly gridId: string,
   ) {}
 
-  update(visible: string[], offsets: Map<string, StickyOffset>, align: Map<string, string>, bands: readonly { id: string; first: number; count: number }[] = []) {
+  /** `placed`: every column's cells get their track by number, so a row may leave out the cells of columns not drawn (virtual columns). */
+  update(visible: string[], offsets: Map<string, StickyOffset>, align: Map<string, string>, bands: readonly { id: string; first: number; count: number }[] = [], placed = false) {
     const scope = `[data-grid-id="${this.gridId}"]`;
     const rules: string[] = [];
     const shown = new Set(visible);
+    const track = new Map(visible.map((f, i) => [f, i + 1]));
     for (const field of this.columns.state.order) {
       const sel = `${scope} .mx-data-grid__row > [data-field="${escapeAttr(field)}"]`;
       if (!shown.has(field)) {
         rules.push(`${sel}{display:none}`);
         continue;
       }
+      if (placed) rules.push(`${sel}{grid-column:${track.get(field)};grid-row:1}`);
       const a = align.get(field);
       if (a && a !== 'start') {
         rules.push(`${sel}.mx-data-grid__cell{text-align:${a}}`);

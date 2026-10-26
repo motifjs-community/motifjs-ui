@@ -187,7 +187,8 @@ export class GroupRow<T> {
         this.aligned.set(field, cell);
       }
       const at = visible.indexOf(field);
-      cell.hidden = false;
+      // While columns are virtual, an item under a column without cells waits for it.
+      cell.hidden = !model.columnWindow.has(field);
       cell.style.gridColumn = String(at + 1);
       cell.setAttribute('aria-colindex', String(at + 1));
       fillSummaryCell(cell, parts, separator);

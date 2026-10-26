@@ -61,10 +61,20 @@ export class BandRows<T> {
     });
     if (this.indicator.parentElement !== head) head.append(this.indicator);
     const placed = new Set<string>();
+    const drawn = this.grid.columnWindow;
     for (const b of shown) {
+      // While columns are virtual a band spans only its columns drawn, and goes with the last of them.
+      let from = -1;
+      let to = -1;
+      for (let i = b.first; i < b.first + b.count; i++) {
+        if (!drawn.has(visible[i])) continue;
+        if (from < 0) from = i;
+        to = i;
+      }
+      if (from < 0) continue;
       const cell = this.cells.get(b.id) ?? this.makeCell(b.id);
       const span = String(b.count);
-      cell.style.gridColumn = `${b.first + 1} / span ${span}`;
+      cell.style.gridColumn = `${from + 1} / span ${to - from + 1}`;
       cell.setAttribute('aria-colindex', String(b.first + 1));
       cell.setAttribute('aria-colspan', span);
       const row = this.rows[b.depth - 1];

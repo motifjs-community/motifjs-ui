@@ -47,7 +47,8 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
   // Headers are direct children of the row (no fragment in between), so `arrange` can move them.
   override initializeComponent() {
     const cells: ComponentBase[] = [];
-    for (const field of this.grid.columns.state.order) cells.push(this.cell(this.grid.columns.get(field)));
+    // While columns are virtual a header is made when its column is first drawn.
+    for (const field of this.grid.columns.state.order) if (this.grid.columnWindow.has(field)) cells.push(this.cell(this.grid.columns.get(field)));
     this.indicator = (<div class="mx-data-grid__drop" aria-hidden="true" hidden />) as unknown as ComponentBase;
     this.controls.add(...cells, this.indicator);
   }
@@ -61,22 +62,26 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     }
   }
 
-  /** Puts the headers in display order and numbers the visible ones. */
+  /** Puts the headers in display order and numbers the visible ones; while columns are virtual, only the columns drawn have their header in the row. */
   arrange(visible: string[]) {
     if (!this.indicator) return;
+    const drawn = this.grid.columnWindow;
     const shown = new Set(visible);
     const desired: Element[] = [];
     visible.forEach((field, i) => {
+      if (!drawn.has(field)) return;
+      if (!this.cells.has(field)) this.addColumn(field);
       const el = this.cellElement(field);
       if (!el) return;
       desired.push(el);
       el.setAttribute('aria-colindex', String(i + 1));
     });
     for (const [field] of this.cells) {
-      if (shown.has(field)) continue;
+      if (shown.has(field) && drawn.has(field)) continue;
       const el = this.cellElement(field)!;
-      desired.push(el);
       el.removeAttribute('aria-colindex');
+      if (drawn.all) desired.push(el);
+      else el.remove();
     }
     placeInOrder(this.element, [...desired, this.indicator.element as Element]);
   }
@@ -109,7 +114,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
 
   /** A column added at run time gets its header (placed by the next `arrange`). */
   addColumn(field: string) {
-    if (this.cells.has(field) || !this.indicator) return;
+    if (this.cells.has(field) || !this.indicator || !this.grid.columnWindow.has(field)) return;
     const col = this.grid.columns.get(field);
     const cell = this.cell(col);
     this.controls.add(cell);
@@ -372,12 +377,25 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     let left = Number.POSITIVE_INFINITY;
     let right = Number.NEGATIVE_INFINITY;
     for (const f of fields) {
-      const r = this.cellElement(f)?.getBoundingClientRect();
+      const r = this.placeOf(f);
       if (!r) continue;
       left = Math.min(left, r.left);
       right = Math.max(right, r.right);
     }
     return left <= right ? { left, right } : { left: 0, right: 0 };
+  }
+
+  /** Where a column's header sits on the screen; a column without cells (virtual, out of view) by the widths. */
+  private placeOf(field: string): { left: number; right: number } | null {
+    const el = this.cellElement(field);
+    if (el?.isConnected) return el.getBoundingClientRect();
+    const cols = this.grid.columns;
+    const visible = cols.visible();
+    if (!visible.includes(field)) return null;
+    const row = this.element.getBoundingClientRect();
+    const start = this.grid.columnWindow.offsetOf(field, visible);
+    const width = cols.width(field);
+    return this.host.isRtl() ? { left: row.right - start - width, right: row.right - start } : { left: row.left + start, right: row.left + start + width };
   }
 
   /** Marks where a grouped column dragged over the headers lands; whether the point is over them (NaN hides the mark). */

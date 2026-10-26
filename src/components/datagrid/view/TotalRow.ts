@@ -34,7 +34,7 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
       'aria-busy': () => (grid.summaries.state.status === 'loading' ? 'true' : null),
       'data-state': () => (grid.summaries.state.status === 'ready' ? null : grid.summaries.state.status),
     });
-    for (const field of grid.columns.state.order) this.makeCell(field);
+    for (const field of grid.columns.state.order) if (grid.columnWindow.has(field)) this.makeCell(field);
     this.bindings.watch(() => this.draw());
   }
 
@@ -59,22 +59,27 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
     this.cells.delete(field);
   }
 
-  /** Puts the cells in display order and numbers the visible ones. */
+  /** Puts the cells in display order and numbers the visible ones; while columns are virtual, only the columns drawn have their cell in the row. */
   arrange(visible: string[]) {
+    if (!this.isConfigured) return;
+    const drawn = this.grid.columnWindow;
     const shown = new Set(visible);
     const desired: HTMLElement[] = [];
     visible.forEach((field, i) => {
-      const cell = this.cells.get(field);
-      if (!cell) return;
+      if (!drawn.has(field)) return;
+      this.makeCell(field);
+      const cell = this.cells.get(field)!;
       desired.push(cell);
       cell.setAttribute('aria-colindex', String(i + 1));
     });
     for (const [field, cell] of this.cells) {
-      if (shown.has(field)) continue;
-      desired.push(cell);
+      if (shown.has(field) && drawn.has(field)) continue;
       cell.removeAttribute('aria-colindex');
+      if (drawn.all) desired.push(cell);
+      else cell.remove();
     }
     placeInOrder(this.element, desired);
+    if (!drawn.all) this.version.value++;
   }
 
   private draw() {
@@ -82,7 +87,8 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
     const { grid } = this;
     const s = grid.summaries;
     const parts = s.partsByColumn(s.totalItems(), s.total);
-    for (const [field, cell] of this.cells) fillSummaryCell(cell, parts.get(field) ?? [], null);
+    const some = !grid.columnWindow.all;
+    for (const [field, cell] of this.cells) if (!some || cell.parentElement === this.element) fillSummaryCell(cell, parts.get(field) ?? [], null);
     const ev = grid.events;
     if (ev.listened(ev.rowPrepared)) untracked(() => ev.rowPrepared.fire({ row: undefined, rowIndex: grid.count, rowType: 'totalFooter', isSelected: false, element: this.element }));
   }

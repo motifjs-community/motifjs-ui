@@ -172,6 +172,15 @@
     "row-drop-color": { "$type": "color", "$value": "{color.accent.solid}" },
     "row-drop-width": { "$type": "dimension", "$value": "{indicator.thickness}" },
     "row-drop-inside-width": { "$type": "dimension", "$value": "{border.width.2}" },
-    "row-ghost-radius": { "$type": "dimension", "$value": "{radius.sm}" }
+    "row-ghost-radius": { "$type": "dimension", "$value": "{radius.sm}" },
+    "more-gap": { "$type": "dimension", "$value": "{space.2}" },
+    "more-padding-block": { "$type": "dimension", "$value": "{space.1}" },
+    "more-padding-inline": { "$type": "dimension", "$value": "{space.3}" },
+    "more-offset": { "$type": "dimension", "$value": "{space.2}" },
+    "more-radius": { "$type": "dimension", "$value": "{radius.sm}" },
+    "more-color": { "$type": "color", "$value": "{color.fg.secondary}" },
+    "more-danger-color": { "$type": "color", "$value": "{color.danger.fg}" },
+    "more-background": { "$type": "color", "$value": "{color.bg.surface}" },
+    "more-shadow": { "$type": "shadow", "$value": "{elevation.popup}" }
   }
 }

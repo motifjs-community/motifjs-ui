@@ -31,7 +31,7 @@ export class GroupFooterRow<T> {
 
   /** A column's cell (one added at run time too; placed by the next `arrange`). */
   addColumn(field: string) {
-    if (this.cells.has(field)) return;
+    if (this.cells.has(field) || !this.model.columnWindow.has(field)) return;
     const cell = document.createElement('div');
     cell.className = 'mx-data-grid__cell mx-data-grid__summary-cell';
     cell.setAttribute('role', 'gridcell');
@@ -71,22 +71,26 @@ export class GroupFooterRow<T> {
     this.element.hidden = true;
   }
 
-  /** Puts the cells in display order and numbers the visible ones. */
+  /** Puts the cells in display order and numbers the visible ones; while columns are virtual, only the columns drawn have their cell in the row. */
   arrange(visible: string[]) {
+    const drawn = this.model.columnWindow;
     const shown = new Set(visible);
     const desired: HTMLElement[] = [];
     visible.forEach((field, i) => {
-      const cell = this.cells.get(field);
-      if (!cell) return;
+      if (!drawn.has(field)) return;
+      this.addColumn(field);
+      const cell = this.cells.get(field)!;
       desired.push(cell);
       cell.setAttribute('aria-colindex', String(i + 1));
     });
     for (const [field, cell] of this.cells) {
-      if (shown.has(field)) continue;
-      desired.push(cell);
+      if (shown.has(field) && drawn.has(field)) continue;
       cell.removeAttribute('aria-colindex');
+      if (drawn.all) desired.push(cell);
+      else cell.remove();
     }
     placeInOrder(this.element, desired);
+    if (!drawn.all) this.redraw();
   }
 
   dispose() {
@@ -108,7 +112,8 @@ export class GroupFooterRow<T> {
     const items = s.groupItems().filter((i) => i.footer);
     const parts = s.partsByColumn(items, s.groupValues(node));
     const separator = model.text('gridSummarySeparator');
-    for (const [field, cell] of this.cells) fillSummaryCell(cell, parts.get(field) ?? [], separator);
+    const some = !model.columnWindow.all;
+    for (const [field, cell] of this.cells) if (!some || cell.parentElement === element) fillSummaryCell(cell, parts.get(field) ?? [], separator);
     const ev = model.events;
     if (ev.listened(ev.rowPrepared)) untracked(() => ev.rowPrepared.fire({ row: undefined, rowIndex: index, rowType: 'groupFooter', groupKey: [...node.path], isSelected: false, element }));
   }

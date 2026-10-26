@@ -34,6 +34,8 @@ import type { GridInitNewRowEventArgs } from '../grid-init-new-row-event-args';
 import type { GridKeyHandlingEventArgs } from '../grid-key-handling-event-args';
 import type { GridLayout } from '../grid-layout';
 import type { GridLayoutChangingEventArgs } from '../grid-layout-changing-event-args';
+import type { GridMoreRowsLoadedEventArgs } from '../grid-more-rows-loaded-event-args';
+import type { GridMoreRowsLoadingEventArgs } from '../grid-more-rows-loading-event-args';
 import type { GridOptionChangedEventArgs } from '../grid-option-changed-event-args';
 import type { GridPageChangedEventArgs } from '../grid-page-changed-event-args';
 import type { GridPageChangingEventArgs } from '../grid-page-changing-event-args';
@@ -124,6 +126,8 @@ export class GridEvents<T> {
   readonly pageChanged = new Emitter<GridPageChangedEventArgs>();
   readonly pageSizeChanging = new Emitter<GridPageSizeChangingEventArgs>();
   readonly pageSizeChanged = new Emitter<GridPageSizeChangedEventArgs>();
+  readonly moreRowsLoading = new Emitter<GridMoreRowsLoadingEventArgs>();
+  readonly moreRowsLoaded = new Emitter<GridMoreRowsLoadedEventArgs>();
   readonly layoutChanging = new Emitter<GridLayoutChangingEventArgs>();
   readonly layoutChanged = new Emitter<GridLayout>();
   readonly copying = new Emitter<GridCopyingEventArgs>();

@@ -9,6 +9,10 @@ export interface GridDataOptions<T> {
   /** The grid made the source (for its `rows`) and disposes it. */
   owned: boolean;
   paged: boolean;
+  /** The rows show part by part, the next one as the view nears the end (a source that loads by page stays paged). */
+  infinite?: boolean;
+  /** Infinite: a part came, `count` rows from `skip`. */
+  partLoaded?: (skip: number, count: number) => void;
   /** Rows per page when the grid pages rows it holds itself. */
   pageSize: number;
   /** Rows per page the user chose (the pager's page sizes), over the source's own; `null` for none. 0: every row on one page. */

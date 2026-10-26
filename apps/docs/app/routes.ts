@@ -45,6 +45,7 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   'datagrid-bands': () => import('../pages/datagrid/DataGridBandsPage'),
   'datagrid-selection': () => import('../pages/datagrid/DataGridSelectionPage'),
   'datagrid-drag': () => import('../pages/datagrid/DataGridDragPage'),
+  'datagrid-scrolling': () => import('../pages/datagrid/DataGridScrollingPage'),
   'datagrid-layout': () => import('../pages/datagrid/DataGridLayoutPage'),
   'datagrid-api': () => import('../pages/datagrid/DataGridApiPage'),
 };

@@ -1,4 +1,4 @@
-import { reactive, read, untracked, type IDisposable } from '@motifx/core';
+import { effect, reactive, read, untracked, type IDisposable } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { fillTemplate } from '../../../core/fill-template';
 import { pageLocale } from '../../../core/page-locale';
@@ -23,6 +23,7 @@ import { CellFormatter } from './CellFormatter';
 import { CellRules } from './CellRules';
 import { cellValue } from './cell-value';
 import { ColumnModel } from './ColumnModel';
+import { ColumnWindow } from './ColumnWindow';
 import { DEFAULT_SETTINGS } from './default-settings';
 import { AdaptiveRow } from './AdaptiveRow';
 import { DetailRows } from './DetailRows';
@@ -61,6 +62,20 @@ const FIELD_TYPES: Record<string, data.FieldType> = { number: 'number', date: 'd
 
 const hasKeys = (o: object) => Object.keys(o).length > 0;
 
+/** Resolves once `done` (reactive) reads true. */
+function settled(done: () => boolean): Promise<void> {
+  return new Promise((resolve) => {
+    let stop: (() => void) | null = null;
+    let over = false;
+    stop = effect(() => {
+      if (over || !done()) return;
+      over = true;
+      queueMicrotask(() => stop?.());
+      resolve();
+    });
+  });
+}
+
 /** The filter a given source had before the grid added its own, by source. */
 const BASE_FILTERS = new WeakMap<object, data.FilterExpression | null>();
 
@@ -75,6 +90,8 @@ const BASE_FILTERS = new WeakMap<object, data.FilterExpression | null>();
  */
 export class GridModel<T> {
   readonly columns: ColumnModel<T>;
+  /** The columns that get cells now, while some are virtual. */
+  readonly columnWindow: ColumnWindow<T>;
   readonly settings: Switches<GridSettings>;
   /** Every event of the grid. */
   readonly events = new GridEvents<T>();
@@ -186,6 +203,7 @@ export class GridModel<T> {
     const stored = this.settings.get('saveLayout') ? this.store?.read() : null;
     const layout = stored ?? props.layout;
     this.columns = new ColumnModel(props.columns, layout, this.settings);
+    this.columnWindow = new ColumnWindow(this.columns, this.settings);
     for (const field of this.columns.features.keys()) this.tellFeatures(field);
     this.groups = new GridGroups<T>(this.columns, this.settings);
     this.groups.set(layout?.group ?? this.columnGroups());
@@ -274,6 +292,8 @@ export class GridModel<T> {
         source,
         owned: !given,
         paged: read(props.mode) === 'paged',
+        infinite: read(props.mode) === 'infinite',
+        partLoaded: (skip, count) => this.events.tell(this.events.moreRowsLoaded, () => ({ skip, count, ended: this.data.ended })),
         pageSize: read(props.pageSize) ?? DEFAULT_PAGE_SIZE,
         chosenPageSize: this.chosenPageSize,
         sort: this.sourceSort(st.sort),
@@ -348,7 +368,37 @@ export class GridModel<T> {
 
   get mode(): GridMode {
     void this.state.connection;
-    return this.data.paged ? 'paged' : 'virtual';
+    return this.data.paged ? 'paged' : this.data.infinite ? 'infinite' : 'virtual';
+  }
+
+  /**
+   * Infinite mode: shows the next part of the rows, after `onMoreRowsLoading`; `false` while the rows
+   * load, a part is loading or failed, or every row shows.
+   */
+  loadMore(): boolean {
+    const data = this.data;
+    if (this.mode !== 'infinite' || this.state.status !== 'ready' || data.loadingMore || data.moreFailed || data.ended) return false;
+    const { events } = this;
+    if (!events.ask(events.moreRowsLoading, () => ({ skip: data.total, take: data.pageSize, cancel: false }))) return false;
+    return data.loadMore();
+  }
+
+  /** Infinite mode: loads part after part until `rows` rows show (or every row does); whether they do. */
+  async loadTo(rows: number): Promise<boolean> {
+    const data = this.data;
+    const connection = this.state.connection;
+    const same = () => this.state.connection === connection;
+    while (same() && data.total < rows && !data.ended && !data.moreFailed) {
+      if (this.state.status === 'loading' || data.loadingMore) await settled(() => !same() || (this.state.status !== 'loading' && !data.loadingMore));
+      else if (!this.loadMore()) break;
+    }
+    return same() && data.total >= Math.min(rows, data.knownCount ?? rows);
+  }
+
+  /** Infinite mode: what the indicator under the rows shows (`loadMoreIndicator`): a part loading, a part that failed, or nothing. Reactive. */
+  moreState(): 'loading' | 'failed' | null {
+    if (this.mode !== 'infinite' || !this.settings.get('loadMoreIndicator')) return null;
+    return this.data.moreFailed && this.state.status === 'ready' ? 'failed' : this.data.loadingMore ? 'loading' : null;
   }
 
   get saveMode(): data.SaveMode {
@@ -500,17 +550,18 @@ export class GridModel<T> {
     return d >= 0 ? this.viewOfData(d) : -1;
   }
 
-  /** Page count in paged mode (at least 1). */
+  /** Page count in paged mode (at least 1); infinite, the parts of every row once that is known, else those shown. */
   pageCount(): number {
     const size = this.pageSize;
-    return size > 0 ? Math.max(1, Math.ceil(this.data.total / size)) : 1;
+    const rows = this.mode === 'infinite' ? (this.data.knownCount ?? this.data.total) : this.data.total;
+    return size > 0 ? Math.max(1, Math.ceil(rows / size)) : 1;
   }
 
   /** Data rows of the current page (paged mode), or all of them. */
   dataRange(): { first: number; end: number } {
     const total = this.data.total;
     const size = this.pageSize;
-    if (this.mode === 'virtual' || size <= 0) return { first: 0, end: total };
+    if (this.mode !== 'paged' || size <= 0) return { first: 0, end: total };
     const first = Math.min(this.state.page, this.pageCount() - 1) * size;
     return { first, end: Math.min(total, first + size) };
   }
@@ -519,7 +570,7 @@ export class GridModel<T> {
   runs(): RowRun[] {
     const n = this.state.added;
     const total = this.data.total;
-    if (this.mode === 'virtual') return n + total > 0 ? [[0, n + total]] : [];
+    if (this.mode !== 'paged') return n + total > 0 ? [[0, n + total]] : [];
     const { first, end } = this.dataRange();
     if (this.newRowPosition === 'top') {
       const out: RowRun[] = [];

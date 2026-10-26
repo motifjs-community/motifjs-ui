@@ -25,27 +25,30 @@ export class FilterRow<T> extends Component<HTMLDivElement> {
       hidden: () => (grid.showsFilterRow() ? null : ''),
       'data-active': () => (grid.state.activeRow === FILTER_ROW ? '' : null),
     });
-    for (const field of grid.columns.state.order) this.makeCell(field);
+    for (const field of grid.columns.state.order) if (grid.columnWindow.has(field)) this.makeCell(field);
     this.motif.setDisposable(() => {
       for (const c of this.filterCells.values()) c.dispose();
     });
   }
 
-  /** Puts the cells in display order, numbers the visible ones and makes the editors the row needs now. */
+  /** Puts the cells in display order, numbers the visible ones and makes the editors the row needs now; while columns are virtual, only the columns drawn have their cell in the row. */
   arrange(visible: string[]) {
-    if (!this.cellEls.size) return;
+    if (!this.isConfigured) return;
+    const drawn = this.grid.columnWindow;
     const shown = new Set(visible);
     const desired: HTMLElement[] = [];
     visible.forEach((field, i) => {
-      const cell = this.cellEls.get(field);
-      if (!cell) return;
+      if (!drawn.has(field)) return;
+      this.makeCell(field);
+      const cell = this.cellEls.get(field)!;
       desired.push(cell);
       cell.setAttribute('aria-colindex', String(i + 1));
     });
     for (const [field, cell] of this.cellEls) {
-      if (shown.has(field)) continue;
-      desired.push(cell);
+      if (shown.has(field) && drawn.has(field)) continue;
       cell.removeAttribute('aria-colindex');
+      if (drawn.all) desired.push(cell);
+      else cell.remove();
     }
     placeInOrder(this.element, desired);
     this.makeCells(visible);
@@ -57,7 +60,7 @@ export class FilterRow<T> extends Component<HTMLDivElement> {
       const grid = this.grid;
       if (!grid.showsFilterRow()) return;
       for (const field of visible) {
-        if (grid.columns.isInternal(field) || this.filterCells.has(field) || !grid.columns.can(field, 'filterRow')) continue;
+        if (grid.columns.isInternal(field) || this.filterCells.has(field) || !grid.columns.can(field, 'filterRow') || !this.cellEls.has(field)) continue;
         this.filterCells.set(field, new FilterCell<T>(grid, field, this.cellEls.get(field)!, this));
       }
     });
