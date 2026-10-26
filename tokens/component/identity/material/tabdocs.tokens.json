@@ -1,0 +1,12 @@
+{
+  "tabdocs": {
+    "$description": "Material document tabs: the 3 px indicator of the language's tabs.",
+    "indicator-width": {
+      "$type": "dimension",
+      "$value": {
+        "value": 3,
+        "unit": "px"
+      }
+    }
+  }
+}

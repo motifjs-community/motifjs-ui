@@ -81,6 +81,13 @@ export const GROUPS = [
     ],
   },
   {
+    title: 'TabDocumentManager',
+    section: 'Components',
+    pages: [
+      { id: 'tabdocs', label: 'Overview', title: 'TabDocumentManager', path: '/tabdocs', related: ['tabs', 'layout', 'window'] },
+    ],
+  },
+  {
     title: 'DataGrid',
     section: 'Components',
     pages: [

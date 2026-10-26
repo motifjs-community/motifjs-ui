@@ -1,0 +1,360 @@
+/* TabDocumentManager. Splits are flex boxes whose children grow by their share (written inline);
+   a group's own size never comes from its content (`contain: size`), so the shares and the
+   smallest sizes (`--_min-width`, `--_min-height`, written from the props) decide. The look binds
+   to the group's data-active / data-empty and the tab's aria-selected, data-dirty, data-close. */
+@layer mx.components {
+  .mx-tabdocs {
+    position: relative;
+    display: flex;
+    min-inline-size: 0;
+    min-block-size: 0;
+    overflow: hidden;
+    color: var(--mx-tabdocs-tab-fg-active);
+    background: var(--mx-tabdocs-bg);
+  }
+
+  .mx-tabdocs[data-resizing] {
+    user-select: none;
+  }
+
+  .mx-tabdocs__split {
+    display: flex;
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  .mx-tabdocs__split[data-orientation='vertical'] {
+    flex-direction: column;
+  }
+
+  .mx-tabdocs__group {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: var(--_min-width);
+    min-block-size: var(--_min-height);
+    overflow: hidden;
+    contain: size;
+    background: var(--mx-tabdocs-group-bg);
+  }
+
+  :is(.mx-tabdocs__group, .mx-tabdocs__split, .mx-tabdocs__sash)[hidden] {
+    display: none;
+  }
+
+  /* The strip. */
+
+  .mx-tabdocs__bar {
+    display: flex;
+    flex: none;
+    align-items: stretch;
+    justify-content: space-between;
+    min-inline-size: 0;
+    min-block-size: var(--mx-tabdocs-tab-height);
+    background: var(--mx-tabdocs-bar-bg);
+    border-block-end: var(--mx-tabdocs-bar-border-width) solid var(--mx-tabdocs-bar-border-color);
+  }
+
+  .mx-tabdocs__tabs {
+    display: flex;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+  }
+
+  .mx-tabdocs__tabs[hidden] {
+    display: none;
+  }
+
+  .mx-tabdocs__bar > .mx-tabdocs__actions {
+    flex: none;
+    min-block-size: 0;
+    padding-block: 0;
+    padding-inline: var(--mx-tabdocs-actions-padding);
+    background: transparent;
+  }
+
+  .mx-tabdocs__bar > .mx-tabdocs__actions[hidden] {
+    display: none;
+  }
+
+  .mx-tabdocs__tab {
+    appearance: none;
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--mx-tabdocs-tab-gap);
+    min-block-size: var(--mx-tabdocs-tab-height);
+    margin: 0;
+    padding-block: 0;
+    padding-inline: var(--mx-tabdocs-tab-padding);
+    font: inherit;
+    font-size: var(--mx-tabdocs-tab-font-size);
+    font-weight: var(--mx-tabdocs-tab-font-weight);
+    line-height: var(--mx-tabdocs-tab-line-height);
+    white-space: nowrap;
+    color: var(--mx-tabdocs-tab-fg);
+    background: transparent;
+    border: 0;
+    border-inline-end: var(--mx-tabdocs-tab-separator-width) solid var(--mx-tabdocs-tab-separator-color);
+    border-radius: 0;
+    cursor: default;
+    user-select: none;
+    transition:
+      background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-tabdocs__tab:hover:not([aria-selected='true']) {
+    color: var(--mx-tabdocs-tab-fg-hover);
+    background: var(--mx-tabdocs-tab-bg-hover);
+  }
+
+  .mx-tabdocs__tab[aria-selected='true'] {
+    color: var(--mx-tabdocs-tab-fg-active);
+    background: var(--mx-tabdocs-tab-bg-active);
+  }
+
+  .mx-tabdocs__tab:focus-visible {
+    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
+    outline-offset: calc(var(--mx-tabdocs-focus-width) * -1);
+    box-shadow: var(--mx-tabdocs-focus-halo);
+  }
+
+  /* The bar along the top of the active tab: the accent in the active group. */
+  .mx-tabdocs__tab::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    block-size: var(--mx-tabdocs-indicator-width);
+    background: transparent;
+  }
+
+  .mx-tabdocs__tab[aria-selected='true']::after {
+    background: var(--mx-tabdocs-indicator-color-inactive);
+  }
+
+  .mx-tabdocs__group[data-active] .mx-tabdocs__tab[aria-selected='true']::after {
+    background: var(--mx-tabdocs-indicator-color);
+  }
+
+  .mx-tabdocs__title {
+    min-inline-size: 0;
+    max-inline-size: var(--mx-tabdocs-tab-title-max-width);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mx-tabdocs__description {
+    min-inline-size: 0;
+    max-inline-size: var(--mx-tabdocs-tab-title-max-width);
+    overflow: hidden;
+    font-size: var(--mx-tabdocs-description-font-size);
+    text-overflow: ellipsis;
+    color: var(--mx-tabdocs-description-fg);
+  }
+
+  .mx-tabdocs__icon {
+    display: inline-flex;
+    flex: none;
+    inline-size: var(--mx-tabdocs-icon-size);
+    block-size: var(--mx-tabdocs-icon-size);
+  }
+
+  .mx-tabdocs__icon > :is(img, svg) {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .mx-tabdocs__badge {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: var(--mx-tabdocs-badge-height);
+    block-size: var(--mx-tabdocs-badge-height);
+    padding-inline: var(--mx-tabdocs-badge-padding);
+    font-size: var(--mx-tabdocs-badge-font-size);
+    line-height: 1;
+    color: var(--mx-tabdocs-badge-fg);
+    background: var(--mx-tabdocs-badge-bg);
+    border-radius: var(--mx-tabdocs-badge-radius);
+  }
+
+  /* The close button, or the dot of unsaved changes in its place (the button again under the pointer). */
+  .mx-tabdocs__close {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--mx-tabdocs-close-size);
+    block-size: var(--mx-tabdocs-close-size);
+    color: var(--mx-tabdocs-close-fg);
+    border-radius: var(--mx-tabdocs-close-radius);
+  }
+
+  .mx-tabdocs__tab[data-close] .mx-tabdocs__close:hover {
+    color: var(--mx-tabdocs-close-fg-hover);
+    background: var(--mx-tabdocs-close-bg-hover);
+  }
+
+  .mx-tabdocs__tab:not([data-close], [data-dirty]) .mx-tabdocs__close {
+    display: none;
+  }
+
+  .mx-tabdocs__tab[data-close='active']:not([data-dirty], [aria-selected='true'], :hover, :focus-visible) .mx-tabdocs__close {
+    visibility: hidden;
+  }
+
+  .mx-tabdocs__dirty {
+    display: none;
+    inline-size: var(--mx-tabdocs-dirty-size);
+    block-size: var(--mx-tabdocs-dirty-size);
+    background: var(--mx-tabdocs-dirty-color);
+    border-radius: var(--mx-tabdocs-dirty-radius);
+  }
+
+  .mx-tabdocs__tab[data-dirty] .mx-tabdocs__close > svg {
+    display: none;
+  }
+
+  .mx-tabdocs__tab[data-dirty] .mx-tabdocs__dirty {
+    display: block;
+  }
+
+  .mx-tabdocs__tab[data-dirty][data-close]:is(:hover, :focus-visible) .mx-tabdocs__close > svg {
+    display: block;
+  }
+
+  .mx-tabdocs__tab[data-dirty][data-close]:is(:hover, :focus-visible) .mx-tabdocs__dirty {
+    display: none;
+  }
+
+  /* The content. */
+
+  .mx-tabdocs__panels {
+    position: relative;
+    flex: 1 1 0px;
+    min-block-size: 0;
+  }
+
+  .mx-tabdocs__panel {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+  }
+
+  .mx-tabdocs__panel[hidden] {
+    display: none;
+  }
+
+  .mx-tabdocs__panel:focus-visible {
+    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
+    outline-offset: calc(var(--mx-tabdocs-focus-width) * -1);
+    box-shadow: var(--mx-tabdocs-focus-halo);
+  }
+
+  .mx-tabdocs__empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--mx-tabdocs-empty-padding);
+    font-size: var(--mx-tabdocs-empty-font-size);
+    text-align: center;
+    color: var(--mx-tabdocs-empty-fg);
+  }
+
+  .mx-tabdocs__empty[hidden] {
+    display: none;
+  }
+
+  /* The splitters: a line, thicker in the accent under the pointer, while dragged or focused. */
+
+  .mx-tabdocs__sash {
+    position: relative;
+    flex: none;
+    inline-size: var(--mx-tabdocs-sash-size);
+    touch-action: none;
+    cursor: col-resize;
+    --_line: var(--mx-tabdocs-sash-line-width);
+    --_line-color: var(--mx-tabdocs-sash-line-color);
+  }
+
+  .mx-tabdocs__split[data-orientation='vertical'] > .mx-tabdocs__sash {
+    inline-size: auto;
+    block-size: var(--mx-tabdocs-sash-size);
+    cursor: row-resize;
+  }
+
+  .mx-tabdocs__sash::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    inline-size: var(--_line);
+    margin: auto;
+    background: var(--_line-color);
+    transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-tabdocs__split[data-orientation='vertical'] > .mx-tabdocs__sash::before {
+    inline-size: auto;
+    block-size: var(--_line);
+  }
+
+  .mx-tabdocs__sash:hover,
+  .mx-tabdocs__sash:focus-visible,
+  .mx-tabdocs[data-resizing] .mx-tabdocs__sash:focus {
+    --_line: var(--mx-tabdocs-sash-active-width);
+    --_line-color: var(--mx-tabdocs-sash-active-color);
+  }
+
+  .mx-tabdocs__sash:focus-visible {
+    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
+    outline-offset: calc(var(--mx-tabdocs-focus-width) * -1);
+    box-shadow: var(--mx-tabdocs-focus-halo);
+  }
+
+  .mx-tabdocs[data-disabled] .mx-tabdocs__sash {
+    cursor: default;
+  }
+
+  /* Read by screen readers only. */
+  .mx-tabdocs__live,
+  .mx-tabdocs__hidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .mx-tabdocs__hidden[hidden] {
+    display: none;
+  }
+
+  .mx-tabdocs__tips {
+    display: contents;
+  }
+
+  @media (forced-colors: active) {
+    .mx-tabdocs__group[data-active] .mx-tabdocs__tab[aria-selected='true']::after {
+      background: Highlight;
+    }
+
+    .mx-tabdocs__tab[aria-selected='true']::after,
+    .mx-tabdocs__dirty {
+      background: CanvasText;
+    }
+
+    .mx-tabdocs__sash::before {
+      background: CanvasText;
+    }
+  }
+}

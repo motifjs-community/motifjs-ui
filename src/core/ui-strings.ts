@@ -273,4 +273,21 @@ export interface UiStrings {
   gridFilterPanelEnable: string;
   gridFilterPanelEdit: string;
   gridFilterBuilderTitle: string;
+  /** TabDocumentManager. `{n}` is a group's number, `{title}` a document's title. */
+  tabDocsGroup: string;
+  tabDocsTabs: string;
+  tabDocsEmpty: string;
+  tabDocsUnsaved: string;
+  tabDocsSplitRight: string;
+  tabDocsMaximize: string;
+  tabDocsRestore: string;
+  tabDocsGroupActions: string;
+  tabDocsResize: string;
+  tabDocsOpened: string;
+  tabDocsClosed: string;
+  tabDocsMoved: string;
+  tabDocsSplit: string;
+  tabDocsGroupClosed: string;
+  tabDocsMaximized: string;
+  tabDocsRestored: string;
 }

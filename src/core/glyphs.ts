@@ -71,6 +71,9 @@ export const maximizeMark = (): SVGSVGElement => glyph('M3.5 3.5h9v9h-9z');
 /** A window back to its own size. */
 export const restoreMark = (): SVGSVGElement => glyph('M3.5 5.5h7v7h-7zM5.5 5.5v-2h7v7h-2');
 
+/** A frame cut in two side by side: split. */
+export const splitMark = (): SVGSVGElement => glyph('M2.5 3.5h11v9h-11zM8 3.5v9');
+
 /** A window folded away. */
 export const minimizeMark = (): SVGSVGElement => glyph('M4 8.5h8');
 

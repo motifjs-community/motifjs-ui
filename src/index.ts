@@ -17,6 +17,7 @@ export * from './components/progress';
 export * from './components/tooltip';
 export * from './components/toast';
 export * from './components/tabs';
+export * from './components/tabdocs';
 export * from './components/accordion';
 export * from './components/datagrid';
 export * from './components/filterbuilder';

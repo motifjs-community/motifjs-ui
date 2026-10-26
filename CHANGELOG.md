@@ -777,3 +777,40 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   search, lookup columns, grouping and summaries, selection and export, layout and events, API
   reference), at most five live grids each, so no page is slow to open; a pointer to a section on
   another page is a link (`[text](/page#anchor)` in a table cell's text).
+
+### TabDocumentManager
+
+- `TabDocumentManager` (`src/components/tabdocs/`):
+  documents in tabs, tabs in groups, groups in a layout tree of n-ary horizontal and vertical splits
+  with a share per child. A document's content is any component; moving a tab or splitting a group
+  moves the same component, never makes it again. `TabDocument` (`id`, `type`, `title`, `description`,
+  `icon`, `tooltip`, `badge`, `dirty`, `pinned`, `preview`, `closable`, `contentLifetime`, `content`,
+  `state`; Bind fields, reactive) and `TabGroup` (`documents`, `activeDocument`, `recentDocuments`,
+  `locked`, `index`, `isActive`, `isMaximized`).
+- The strip: icon, title, description, badge, the dirty dot in the close button's place (the button
+  under the pointer), the close button (`closeButton`: `always`, `active`, `never`; a document's
+  `closable`), the kit Tooltip, sideways scrolling with the wheel, the active tab kept in sight, a
+  middle click closes, a double click maximizes (`maximizeOnDoubleClick`); the kit Toolbar at the end
+  with Split right and Maximize / Restore (`groupActions`). An empty group says so.
+- Splitters (`role="separator"`, value, orientation): the pointer, the keys (`resizeStep`), the
+  smallest group size (`minGroupWidth`, `minGroupHeight`), a double click evens the sizes. A group left
+  empty closes (`closeEmptyGroups`), a split left with one child gives its place to it.
+- Methods: `open(doc, { group, index, active, focus })`, `close` (`onClosing` may set `e.promise`),
+  `closeAll`, `activate`, `activateNext`, `activatePrevious`, `move`, `split(group, direction, doc)`,
+  `closeGroup`, `focusGroup`, `maximizeGroup`, `restoreGroups`, `evenSizes`, `resizeGroup`,
+  `findDocument`, `contentOf`, `saveLayout()` (plain JSON: the tree with the shares, each document's
+  `id`, `type`, `title`, `state`, `pinned`, `preview`, the active and recently used tabs, the active and
+  maximized group) and `loadLayout(json, factory)`. Properties `documents`, `groups`, `activeGroup`,
+  `activeDocument`, `maximizedGroup`. Events: `onOpening`, `onClosing`, `onDocumentActivating`,
+  `onMoving`, `onSplitting`, `onLayoutChanging` (cancelable) and `onOpened`, `onClosed`,
+  `onDocumentActivated`, `onMoved`, `onSplit`, `onLayoutChanged`.
+- Options: `contentLifetime` (`keep`, `lazy`, `dispose`; a document's own wins), `openPosition`,
+  `afterClose` (`recent`, `left`, `right`), `activation`, `factory`, `keys` (every key, over
+  `TabDocumentManager.defaultKeys`: Ctrl + Page Down / Up, Ctrl + W, Ctrl + 1…9, Ctrl + \, arrows,
+  Home, End and Delete on a tab, arrows, Home, End on a splitter), `texts`, `announce` (a polite live
+  region), `label` (a `region` landmark). Texts `tabDocs…` (en, tr); tokens `tabdocs.*`, with Material
+  and Lilac's 3 px indicator.
+- `core/glyphs.ts`: `splitMark`, the split button's glyph.
+- Docs: a TabDocumentManager group with an overview page (documents and splits with a form, a grid
+  and text; live options; a panel driving the API with an event log; unsaved changes asked with
+  `confirm`; saving and restoring the layout); `e2e/checks/45-tabdocs.mjs`.
