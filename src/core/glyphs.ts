@@ -65,6 +65,9 @@ export const moreMark = (): SVGSVGElement => glyph('M2.75 8a.75 .75 0 1 0 1.5 0a
 /** The arrow of a branch that opens towards the end (mirrored right to left by CSS). */
 export const chevronEnd = (): SVGSVGElement => glyph('M6 4l4 4-4 4');
 
+/** The arrow towards the start: back, earlier (mirrored right to left by CSS). */
+export const chevronStart = (): SVGSVGElement => glyph('M10 4l-4 4 4 4');
+
 /** A window filling the screen. */
 export const maximizeMark = (): SVGSVGElement => glyph('M3.5 3.5h9v9h-9z');
 

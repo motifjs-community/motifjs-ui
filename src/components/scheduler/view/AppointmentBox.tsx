@@ -1,0 +1,110 @@
+import type { StripPiece } from '../model/strip-piece';
+import type { TimedPiece } from '../model/timed-piece';
+import type { SchedulerHost } from './scheduler-host';
+
+interface Props<T> {
+  host: SchedulerHost<T>;
+  piece: TimedPiece<T> | StripPiece<T>;
+}
+
+const isTimed = <T,>(piece: TimedPiece<T> | StripPiece<T>): piece is TimedPiece<T> => 'top' in piece;
+
+/**
+ * One appointment, or the part of it on one day or one week: placed by its piece's fields (bound,
+ * so a change in the layout moves it without building it again), coloured by the appointment's
+ * own colour, its content the template's or its text and time.
+ */
+export function AppointmentBox<T>(props: Props<T>) {
+  const { host, piece } = props;
+  const record = () => piece.item as Record<string, unknown>;
+  const text = () => {
+    const value = record()?.[host.fields().text];
+    return value === undefined || value === null || value === '' ? host.text('schedulerNoTitle') : String(value);
+  };
+  const allDay = () => !isTimed(piece) && !piece.timed;
+  const time = () => {
+    if (allDay()) return '';
+    if (!isTimed(piece)) return host.format.time(piece.start);
+    return host.format.timeRange(piece.start, piece.end);
+  };
+  /** Read after the text: the day (and the whole time of a part), which the box itself does not write. */
+  const details = () => {
+    const when = allDay()
+      ? host.format.range('day', piece.start, piece.end)
+      : `${host.format.fullDate(piece.start)} ${host.format.timeRange(piece.start, piece.end)}`;
+    const more = piece.before || piece.after ? `, ${host.text('schedulerContinues')}` : '';
+    return `, ${when}${more}`;
+  };
+  const style = () => {
+    const color = record()?.[host.fields().color];
+    const own = typeof color === 'string' && color ? { '--_color': color } : { '--_color': '' };
+    if (isTimed(piece)) {
+      return {
+        ...own,
+        '--_day': String(piece.day),
+        '--_left': String(piece.left),
+        '--_width': String(piece.width),
+        insetBlockStart: `${piece.top * 100}%`,
+        blockSize: `${piece.height * 100}%`,
+      };
+    }
+    return {
+      ...own,
+      gridColumn: `${piece.first + 1} / span ${piece.span}`,
+      gridRow: String(piece.lane + 1),
+    };
+  };
+  const context = () => ({
+    appointment: piece.item,
+    start: piece.start,
+    end: piece.end,
+    text: text(),
+    time: time(),
+    allDay: allDay(),
+    view: host.model.view.type,
+  });
+  const keydown = (e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      host.appointmentDblClick(piece, e);
+    } else if (e.key === ' ') {
+      e.preventDefault();
+      host.appointmentClick(piece, e);
+    }
+  };
+  return (
+    <div
+      class="mx-scheduler__appointment"
+      role="button"
+      tabindex="0"
+      data-kind={isTimed(piece) ? 'timed' : piece.timed ? 'chip' : 'bar'}
+      data-before={() => piece.before || null}
+      data-after={() => piece.after || null}
+      data-short={() => (isTimed(piece) && piece.end.getTime() - piece.start.getTime() <= 30 * 60_000) || null}
+      data-past={() => (host.dimPast() && piece.end.getTime() <= host.model.state.now) || null}
+      data-disabled={() => !!record()?.[host.fields().disabled] || null}
+      aria-disabled={() => (record()?.[host.fields().disabled] ? 'true' : null)}
+      style={style}
+      x-display={() => isTimed(piece) || !piece.hidden}
+      onpointerdown={(e: PointerEvent) => e.stopPropagation()}
+      onclick={(e: MouseEvent) => host.appointmentClick(piece, e)}
+      ondblclick={(e: MouseEvent) => host.appointmentDblClick(piece, e)}
+      onkeydown={keydown}
+    >
+      {host.template() ? (
+        <div class="mx-scheduler__appointment-content">
+          {host.template()!(context())}
+          <span class="mx-scheduler__hidden">{details}</span>
+        </div>
+      ) : (
+        <div class="mx-scheduler__appointment-content">
+          <span class="mx-scheduler__appointment-time" x-display={() => time() !== ''}>
+            {time}
+          </span>
+          <span class="mx-scheduler__appointment-text">{text}</span>
+          <span class="mx-scheduler__hidden">{details}</span>
+        </div>
+      )}
+    </div>
+  );
+}

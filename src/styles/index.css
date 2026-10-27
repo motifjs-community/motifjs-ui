@@ -45,4 +45,5 @@
 @import '../components/tagbox/tagbox.css';
 @import '../components/filterbuilder/filterbuilder.css';
 @import '../components/datagrid/datagrid.css';
+@import '../components/scheduler/scheduler.css';
 @import './identity/lilac.css';

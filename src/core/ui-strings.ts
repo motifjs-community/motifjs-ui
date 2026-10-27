@@ -422,4 +422,25 @@ export interface UiStrings {
   tabDocsPhoneList: string;
   tabDocsPhoneSearch: string;
   tabDocsPhoneTools: string;
+  /** Scheduler. `{count}`, `{date}`, `{text}`, `{time}`, `{range}` and `{view}` are filled in. */
+  schedulerLabel: string;
+  schedulerPrevious: string;
+  schedulerNext: string;
+  schedulerViews: string;
+  schedulerDay: string;
+  schedulerWeek: string;
+  schedulerWorkWeek: string;
+  schedulerMonth: string;
+  schedulerAllDay: string;
+  schedulerTimes: string;
+  schedulerAppointments: string;
+  schedulerMore: string;
+  schedulerMoreLabel: string;
+  schedulerNoTitle: string;
+  schedulerAppointment: string;
+  schedulerContinues: string;
+  schedulerNow: string;
+  schedulerShown: string;
+  schedulerViewShown: string;
+  schedulerNoAppointments: string;
 }

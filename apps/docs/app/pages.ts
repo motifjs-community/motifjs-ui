@@ -98,6 +98,13 @@ export const GROUPS = [
     ],
   },
   {
+    title: 'Scheduler',
+    section: 'Components',
+    pages: [
+      { id: 'scheduler', label: 'Overview', title: 'Scheduler', path: '/scheduler', related: ['calendar', 'datebox', 'tabdocs'] },
+    ],
+  },
+  {
     title: 'DataGrid',
     section: 'Components',
     pages: [

@@ -1302,3 +1302,31 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   slid out content does not scroll the page (`focusContent(still)`). Before, a bottom area scrolled the manager
   (or the page) by its own height and back, so the documents above it jumped. `e2e/checks/48-tabdocs-dock.mjs`
   checks it frame by frame for the left and the bottom area.
+
+### Scheduler, milestone 1: the views, the layout, moving, the keys
+
+- `Scheduler` (`src/components/scheduler/`), written with MotifJS alone: every part is a component of its tree (JSX,
+  `.map` lists, `x-display`, a `switch` between the day views and the month); nothing is built or placed by hand.
+  `SchedulerModel` is the scheduler without its DOM: the days and times shown, where each appointment goes and the
+  selection, filled in place (a day, a time row and an appointment's piece stay the same objects while they stay on
+  screen, so a change moves the same box).
+- Views `day`, `week`, `workWeek` and `month`, and views of their own (`views`: a name, a caption, `intervalCount`,
+  the hours, `cellDuration`, `allDayPanel`, `maxAppointmentsPerCell`, winning over the scheduler's settings).
+- Appointments from `appointments` (a reactive array is followed) or a `DataSource` (`remoteFiltering`: the days shown
+  only, asked again when the view moves; loading and a retry), the fields named by `fields`.
+- Appointments at the same time side by side (`overlapMode: 'columns' | 'cascade'`), over midnight on each day,
+  all-day and multi-day ones as bars in the all-day panel (`allDayLines`), timed ones in the month as chips, "+N more"
+  where a day is full (`maxAppointmentsPerCell`, or as many as fit) with the day's list in a popup.
+- Work days and hours shaded, today, holidays (`isHoliday`), the current time line, ended appointments quieter
+  (`dimPast`), its own colour per appointment as a tint and a stripe, `appointmentTemplate`.
+- The bar: today, previous, next, the date (it opens the kit's `Calendar`) and the views (`toolbar`). Keys: arrows over
+  the cells (Shift selects; past the first or last day the view moves on), Home / End, Page Up / Page Down, Enter and
+  Space, Escape; `T`, `N` / `J`, `P` / `K`, `D`, `W`, `X`, `M` (`keys`). Focus keeps its date when the view or the
+  date changes.
+- API: `goToday`, `next`, `previous`, `showDate`, `showView`, `scrollToTime`, `selectCells`, `appointmentsIn`,
+  `findAppointment`, `visibleRange`, `resolvedView`, `selectedCells`, `shownAppointments`; events `viewChanging` /
+  `viewChanged`, `dateChanging` / `dateChanged`, `cellClick` / `cellDblClick`, `appointmentClick` /
+  `appointmentDblClick`, `selectionChanged`, `contentReady`, `moreOpening`.
+- Texts in `uiLocale` (en, tr) and `texts`; dates and times by `Intl` in `locale`. Component tokens
+  `tokens/component/scheduler.tokens.json`; `chevronStart` in the glyphs.
+- Docs page `/scheduler`; `e2e/checks/57-scheduler.mjs` (32 checks, axe in every view in light and dark).

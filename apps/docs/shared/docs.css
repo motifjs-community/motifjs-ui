@@ -786,3 +786,32 @@ ul.docs-list {
   block-size: 24rem;
   padding-block-start: var(--mx-space-3);
 }
+
+/* Scheduler page. */
+
+.sched-demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-3);
+  inline-size: 100%;
+}
+
+.sched-log {
+  min-block-size: var(--mx-font-line-body);
+  margin: 0;
+  color: var(--mx-color-fg-secondary);
+}
+
+.sched-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-1);
+}
+
+.sched-tag {
+  align-self: flex-start;
+  padding-inline: var(--mx-space-1);
+  font-size: var(--mx-font-size-caption);
+  border: var(--mx-border-width-1) solid currentcolor;
+  border-radius: var(--mx-radius-sm);
+}

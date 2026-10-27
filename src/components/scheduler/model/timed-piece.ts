@@ -1,0 +1,18 @@
+/** The part of an appointment shown in one day column, placed by the overlap layout. Kept while it stays on screen. */
+export interface TimedPiece<T> {
+  id: string;
+  item: T;
+  /** The column's day index. */
+  day: number;
+  /** The part's own time, within the day. */
+  start: Date;
+  end: Date;
+  /** Fractions of the column (0–1). */
+  top: number;
+  height: number;
+  left: number;
+  width: number;
+  /** It began on an earlier day, or goes on after this one. */
+  before: boolean;
+  after: boolean;
+}

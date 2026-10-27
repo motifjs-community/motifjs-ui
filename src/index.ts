@@ -20,6 +20,7 @@ export * from './components/tabs';
 export * from './components/tabdocs';
 export * from './components/accordion';
 export * from './components/datagrid';
+export * from './components/scheduler';
 export * from './components/filterbuilder';
 export * from './components/listbox';
 export * from './components/tagbox';
