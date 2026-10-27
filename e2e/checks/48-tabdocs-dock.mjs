@@ -237,6 +237,40 @@ export default async function ({ page, base, check, axeSource, box }) {
     await m.locator('.mx-tabdocs__area[data-side="bottom"] .mx-tabdocs__auto-hide').first().click();
     await page.waitForTimeout(200);
     check('the pin of the bottom area folds it to its edge', await m.locator('.mx-tabdocs__autohide[data-side="bottom"]').evaluate((s) => !s.hidden));
+    await page.mouse.move(5, 5);
+    // Frame by frame while an area slides out and back: it comes from under its strip, and nothing else moves.
+    for (const side of ['left', 'bottom']) {
+      const watch = () =>
+        m.evaluate(
+          (el, side) =>
+            new Promise((done) => {
+              const strip = el.querySelector(`.mx-tabdocs__autohide[data-side="${side}"]`);
+              const main = [...el.querySelectorAll('.mx-tabdocs__group')].find((g) => !g.closest('.mx-tabdocs__area'));
+              const seen = { under: true, mainY: new Set(), scroll: new Set() };
+              const start = performance.now();
+              const frame = () => {
+                const s = strip.getBoundingClientRect();
+                seen.under &&= !!document.elementFromPoint(s.x + s.width / 2, s.y + s.height / 2)?.closest('.mx-tabdocs__autohide');
+                seen.mainY.add(Math.round(main.getBoundingClientRect().y));
+                seen.scroll.add(`${el.scrollTop},${el.scrollLeft},${document.scrollingElement.scrollTop}`);
+                if (performance.now() - start < 500) requestAnimationFrame(frame);
+                else done({ under: seen.under, mainY: [...seen.mainY], scroll: [...seen.scroll] });
+              };
+              requestAnimationFrame(frame);
+            }),
+          side,
+        );
+      const title = m.locator(`.mx-tabdocs__autohide[data-side="${side}"] .mx-tabdocs__autohide-tab`).first();
+      const out = watch();
+      await title.click();
+      await page.mouse.move(5, 5);
+      const o = await out;
+      const back = watch();
+      await page.keyboard.press('Escape');
+      const b = await back;
+      const ok = (r) => r.under && r.mainY.length === 1 && r.scroll.length === 1;
+      check(`the ${side} area slides out and back from under its strip, the documents and the page stay still`, ok(o) && ok(b), JSON.stringify({ o, b }));
+    }
   }
 
   // The keys.

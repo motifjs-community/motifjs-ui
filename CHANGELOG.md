@@ -1294,3 +1294,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - onMounted now fires only under the app's `run()` host or a built `new Component(existingElement)` root, never for
   a raw `appendChild`: the no-app message box and a Toaster in no component tree place themselves under a root of
   their own in the page; the tests' `mount()` helper does the same.
+
+### TabDocumentManager: folded areas slide from under their strip
+
+- A folded area slides out from under its strip and back into it, never over it (the strip lies above the area).
+- Nothing else moves while it slides: the manager clips instead of being a scroll box, and the focus given to the
+  slid out content does not scroll the page (`focusContent(still)`). Before, a bottom area scrolled the manager
+  (or the page) by its own height and back, so the documents above it jumped. `e2e/checks/48-tabdocs-dock.mjs`
+  checks it frame by frame for the left and the bottom area.

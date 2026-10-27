@@ -3081,7 +3081,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     const active = options.active ?? true;
     if (active && group.dockArea?.autoHidden) this.slideOut(doc, byUser, false);
     else if (active || !group.activeTab) this.activateDocument(doc, !!options.focus, byUser);
-    if (options.focus && group.dockArea?.autoHidden) tab.focusContent();
+    if (options.focus && group.dockArea?.autoHidden) tab.focusContent(true);
     parts.shown.fire({ document: doc, group, index: group.tabs.indexOf(tab), byUser, source: this });
     this.layoutChanged('show', group, byUser, group.window, group.dockArea);
     this.say('tabDocsShown', { title: doc.title });
@@ -4686,7 +4686,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     if (parts.slide?.area === area) {
       if (!hover) parts.slide.hover = false;
       if (doc.group?.activeDocument !== doc) this.activateDocument(doc, false, byUser);
-      if (byUser && !hover) this.parts.tabs.get(doc)?.focusContent();
+      if (byUser && !hover) this.parts.tabs.get(doc)?.focusContent(true);
       return true;
     }
     const e: TabSlideEventArgs = { area, document: doc, open: true, byUser, cancel: false, source: this };
@@ -4699,7 +4699,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     parts.slide = { area, hover, stop: this.watchSlide(area) };
     parts.slideChanged.fire({ area, document: doc, open: true, byUser, cancel: false, source: this });
     this.say('tabDocsSlidOut', { title: doc.title });
-    if (byUser && !hover) this.parts.tabs.get(doc)?.focusContent();
+    if (byUser && !hover) this.parts.tabs.get(doc)?.focusContent(true);
     return true;
   }
 

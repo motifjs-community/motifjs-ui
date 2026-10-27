@@ -17,9 +17,11 @@
     grid-template-rows: auto auto auto minmax(0, 1fr) auto auto auto;
     min-inline-size: 0;
     min-block-size: 0;
-    overflow: hidden;
+    /* Clipped, not a scroll box: focus going into a sliding area never scrolls the manager. */
+    overflow: clip;
     color: var(--mx-tabdocs-tab-fg-active);
     background: var(--mx-tabdocs-bg);
+    --_z-panel: 2;
   }
 
   .mx-tabdocs[data-resizing] {
@@ -973,7 +975,6 @@
     transition:
       translate var(--mx-motion-duration-normal) var(--mx-motion-easing-out),
       display var(--mx-motion-duration-normal) allow-discrete;
-    --_z-panel: 2;
   }
 
   .mx-tabdocs__area[data-auto-hide][data-open] {
@@ -1048,8 +1049,10 @@
     rotate: 90deg;
   }
 
-  /* The strip of a folded area: its documents' titles along the manager's edge. */
+  /* The strip of a folded area: its documents' titles along the manager's edge, over the area sliding out from under it. */
   .mx-tabdocs__autohide {
+    position: relative;
+    z-index: calc(var(--_z-panel) + 1);
     display: flex;
     gap: var(--mx-tabdocs-autohide-gap);
     min-inline-size: 0;

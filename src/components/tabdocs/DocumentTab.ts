@@ -110,15 +110,16 @@ export class DocumentTab {
     if (this.lifetime() === 'keep') this.build();
   }
 
-  /** Moves focus into the panel: where it was last, else the first control, else the tab. */
-  focusContent(): boolean {
+  /** Moves focus into the panel: where it was last, else the first control, else the tab. `still`: the page does not scroll to it (an area sliding out). */
+  focusContent(still = false): boolean {
+    const options = { preventScroll: still };
     const last = this.lastFocus;
     if (last && this.panel.element.contains(last) && isFocusable(last)) {
-      last.focus();
+      last.focus(options);
       return true;
     }
     const target = focusableIn(this.panel.element)[0] ?? (isFocusable(this.panel.element) ? this.panel.element : null);
-    (target ?? this.header).focus();
+    (target ?? this.header).focus(options);
     return true;
   }
 
