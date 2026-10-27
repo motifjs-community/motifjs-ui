@@ -47,7 +47,8 @@ describe('Toast', () => {
     const t = toast.show({ title: 'Saved', text: 'All changes are saved.' });
     const reason = vi.fn();
     void t.closed.then(reason);
-    expect(region().parentElement).toBe(document.body);
+    // In a holder of its own in the page, under a root of the component tree.
+    expect(region().parentElement?.parentElement).toBe(document.body);
     expect(region().tagName).toBe('SECTION');
     expect(region().getAttribute('role')).toBe('region');
     expect(region().getAttribute('aria-label')).toBe('Notifications');
@@ -266,5 +267,17 @@ describe('Toast', () => {
     expect(closed).toHaveBeenCalledTimes(1);
     expect(closed).toHaveBeenCalledWith('code');
     expect(t.isDisposed).toBe(true);
+  });
+  it('in no component tree, places itself under a root of its own in the page, and takes it away when disposed', async () => {
+    const toaster = new Toaster();
+    toaster.show({ title: 'Saved', duration: 0 });
+    const holder = toaster.element.parentElement!;
+    expect(holder.parentElement).toBe(document.body);
+    expect(toaster.parent?.element).toBe(holder);
+    const el = toaster.element;
+    expect(el.isConnected).toBe(true);
+    await toaster.dispose();
+    expect(el.isConnected).toBe(false);
+    expect(holder.isConnected).toBe(false);
   });
 });

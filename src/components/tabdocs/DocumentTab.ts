@@ -4,7 +4,6 @@ import { focusableIn, isFocusable } from '../../core/focus';
 import { dismissMark, pinMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
-import { letMount } from '../../core/let-mount';
 import { nextId } from '../../core/next-id';
 import { Tooltip } from '../tooltip/Tooltip';
 import type { ContentLifetime } from './content-lifetime';
@@ -184,9 +183,6 @@ export class DocumentTab {
     if (!made) return;
     this.content = made;
     this.panel.controls.add(made);
-    // Made right into a new browser window: core's onMounted waits for the page's document (CORE-REPORTS R30).
-    const panel = this.panel.element;
-    if (panel.ownerDocument !== this.manager.element.ownerDocument) letMount(panel);
   }
 
   private release(): void {

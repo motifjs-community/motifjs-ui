@@ -1,4 +1,4 @@
-import { createSignal, effect, untracked } from '@motifx/core';
+import { Application, createSignal, effect, untracked } from '@motifx/core';
 import { registerControl } from '../../core/control-map';
 import { mirrorPage } from '../../core/mirror-page';
 import { nextId } from '../../core/next-id';
@@ -46,7 +46,9 @@ export class TabBrowserWindow {
     if (!doc.head) doc.documentElement.prepend(doc.createElement('head'));
     if (!doc.body) doc.documentElement.append(doc.createElement('body'));
     const page = owner.element.ownerDocument;
-    this.stops.push(mirrorPage(page, doc), connectDocument(doc));
+    // The app's window manager mirrors the page's styles and says when the window closes; without an app the kit does both.
+    const handle = attachTo(view, () => untracked(() => this.closedByBrowser()));
+    this.stops.push(connectDocument(doc), handle ? () => {} : mirrorPage(page, doc));
     const el = (this.element = doc.createElement('div'));
     el.className = 'mx-tabdocs mx-tabdocs__page';
     el.id = nextId('tabdocs-page');
@@ -63,16 +65,13 @@ export class TabBrowserWindow {
     front();
     const gone = () => untracked(() => this.closedByBrowser());
     const note = (e: PointerEvent) => noteOffset(view, e);
-    const link = (e: MouseEvent) => forwardRouterLink(e, page);
     view.addEventListener('focus', front);
-    view.addEventListener('pagehide', gone);
-    doc.addEventListener('click', link);
+    if (!handle) view.addEventListener('pagehide', gone);
     doc.addEventListener('pointermove', note, { capture: true, passive: true });
     doc.addEventListener('pointerdown', note, { capture: true, passive: true });
     this.stops.push(() => {
       view.removeEventListener('focus', front);
       view.removeEventListener('pagehide', gone);
-      doc.removeEventListener('click', link);
       doc.removeEventListener('pointermove', note, true);
       doc.removeEventListener('pointerdown', note, true);
     });
@@ -162,28 +161,11 @@ export class TabBrowserWindow {
   }
 }
 
-/**
- * A router link clicked in the new window goes to the page's router. Core's router listens for
- * link clicks on the page's own `document` only (CORE-REPORTS R30): left alone, the link would load
- * its page into this window. A copy of it is clicked in the page, where the router takes it; what
- * the router leaves is stopped, so the page never loads it either.
- */
-function forwardRouterLink(e: MouseEvent, page: Document): void {
-  const a = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
-  if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-  const rel = (a.getAttribute('rel') ?? '').toLowerCase().split(/\s+/);
-  if (!rel.includes('router') && !a.hasAttribute('data-router-link') && a.getAttribute('x-command') !== 'router') return;
-  if (a.target && a.target !== '_self') return;
-  e.preventDefault();
-  const view = page.defaultView;
-  if (!view) return;
-  const copy = page.createElement('a');
-  for (const name of a.getAttributeNames()) copy.setAttribute(name, a.getAttribute(name)!);
-  copy.hidden = true;
-  page.body.append(copy);
-  const stop = (ev: Event) => ev.preventDefault();
-  view.addEventListener('click', stop);
-  copy.dispatchEvent(new view.MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
-  view.removeEventListener('click', stop);
-  copy.remove();
+/** Gives the window to the app's window manager; `null` when there is no app or it refuses the window. */
+function attachTo(view: Window, closing: () => void): object | null {
+  try {
+    return Application.main?.windows.attach(view, { styles: 'live', closeWhenEmpty: false, onClosing: (e) => e.reason !== 'page' && closing() }) ?? null;
+  } catch {
+    return null;
+  }
 }

@@ -1,4 +1,4 @@
-import { effect, type Bind, type IBaseProp } from '@motifx/core';
+import { Component, effect, type Bind, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
 import { controlOf } from '../../core/control-map';
 import { deepActiveElement } from '../../core/focus';
@@ -27,6 +27,8 @@ interface Parts {
   returnFocus: HTMLElement | null;
   removeHotkey: (() => void) | null;
   placedItself: boolean;
+  /** The page element it placed itself in, when it is in no component tree. */
+  holder: HTMLElement | null;
   /** Made by `Toaster.default` itself, not by the app. */
   made: boolean;
 }
@@ -115,7 +117,10 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
       parts.removeHotkey?.();
       for (const t of parts.waiting.splice(0)) void t.dispose();
       parts.shown.length = 0;
-      if (parts.placedItself) el.remove();
+      if (parts.placedItself) {
+        el.remove();
+        parts.holder?.remove();
+      }
       if (defaultToaster === this) defaultToaster = null;
     });
   }
@@ -286,14 +291,19 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
       returnFocus: null,
       removeHotkey: null,
       placedItself: false,
+      holder: null,
       made: false,
     };
   }
 
   private placeInPage(): void {
     if (this.element.isConnected) return;
-    if (!this.isBuilt) this.build();
-    document.body.append(this.element);
+    // In no component tree: under a root of its own in the page, so what its toasts show mounts.
+    const holder = document.body.appendChild(document.createElement('div'));
+    const root = new Component<HTMLDivElement>(holder);
+    root.build();
+    root.controls.add(this);
+    this.parts.holder = holder;
     this.parts.placedItself = true;
   }
 

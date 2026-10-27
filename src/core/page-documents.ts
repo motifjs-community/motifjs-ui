@@ -1,3 +1,4 @@
+import { Application } from '@motifx/core';
 // The documents the kit works in: the page's own, and each one connected (a window the app opened
 // on the same origin, with some of the page's controls moved into it). What listens on a whole
 // document (the keys, the tooltips, the focus guard) sets itself up in each of them through
@@ -57,12 +58,15 @@ export function connectDocument(doc: Document): () => void {
   connected.add(doc);
   doc.addEventListener('focusin', noteFocus, true);
   for (const [setup, done] of setups) done.set(doc, setup(doc));
+  // Core's own: router links, swipes and mounting in that document.
+  const core = Application.main?.connectDocument(doc) ?? (() => {});
   const view = doc.defaultView;
-  if (view) {
-    const gone = () => disconnectDocument(doc);
-    view.addEventListener('pagehide', gone);
-    unload.set(doc, () => view.removeEventListener('pagehide', gone));
-  }
+  const gone = () => disconnectDocument(doc);
+  view?.addEventListener('pagehide', gone);
+  unload.set(doc, () => {
+    view?.removeEventListener('pagehide', gone);
+    core();
+  });
   return () => disconnectDocument(doc);
 }
 

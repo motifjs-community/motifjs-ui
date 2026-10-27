@@ -1281,3 +1281,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   its width in a resizable frame, the settings and events, the list, the back button, API); the Preview
   and "Between managers" examples, narrow beside their logs, are shown as on a desktop.
   `e2e/checks/53-tabdocs-mobile.mjs` (a phone of 390 × 844 and a tablet of 820 × 1180, both with touch).
+
+### MotifJS 1.2.0-rc.22
+
+- Needs `@motifx/core` 1.2.0-rc.22 (peer `^1.2.0-rc.22`): other documents (R30) and the window manager with
+  `onClosing` / `returnOnClose` (R31) are in core now.
+- TabDocumentManager's new browser windows are given to the app's window manager
+  (`app.windows.attach(view, { styles: 'live', onClosing })`): core mirrors the page's styles and root attributes,
+  connects the document (router links, mounting) and says when the window closes. Without an app the kit's own
+  mirroring and `pagehide` handling still do it. The kit's workarounds are gone: `core/let-mount.ts` and the
+  router-link relay.
+- onMounted now fires only under the app's `run()` host or a built `new Component(existingElement)` root, never for
+  a raw `appendChild`: the no-app message box and a Toaster in no component tree place themselves under a root of
+  their own in the page; the tests' `mount()` helper does the same.

@@ -82,15 +82,19 @@ export function messageBox(options: MessageBoxOptions): Promise<FormResult> {
   let host: FormHost | null = options.host ?? Application.main ?? null;
   let holder: ComponentBase | null = null;
   if (!host) {
-    holder = new Component<HTMLDivElement>('div');
+    // No app: a root of its own in the page, so the form mounts and takes focus.
+    holder = new Component<HTMLDivElement>(document.body.appendChild(document.createElement('div')));
     holder.build();
-    document.body.append(holder.element as HTMLElement);
     host = holder;
   }
   const done = form.showDialog(host);
   if (holder) {
     const own = holder;
-    void done.then(() => own.dispose());
+    const place = own.element as HTMLElement;
+    void done.then(async () => {
+      await own.dispose();
+      place.remove();
+    });
   }
   return done;
 }

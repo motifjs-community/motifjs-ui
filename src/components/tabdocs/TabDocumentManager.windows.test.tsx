@@ -1,4 +1,4 @@
-import { Component } from '@motifx/core';
+import { Application, Component } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { pageDocuments } from '../../core/page-documents';
@@ -419,32 +419,39 @@ describe('TabDocumentManager: new browser windows', () => {
     expect(titles(w.groups[0])).toEqual(['C', 'A']);
   });
 
-  it('a router link clicked in a new window goes to the page, where the router listens', async () => {
-    const m = managerWith([['A', 'B']]);
-    const w = m.moveToNewWindow(m.findDocument('a')!)!;
-    const view = m.views[0];
-    const link = view.document.createElement('a');
-    link.href = '/orders';
-    link.rel = 'router';
-    w.element.append(link);
-    const seen: string[] = [];
-    const router = (e: Event) => {
-      seen.push((e.target as Element).getAttribute('href')!);
-      e.preventDefault();
-    };
-    document.addEventListener('click', router);
-    const click = new view.MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
-    link.dispatchEvent(click);
-    document.removeEventListener('click', router);
-    expect(seen).toEqual(['/orders']);
-    expect(click.defaultPrevented).toBe(true);
-    // A link that is not the router's is the window's own.
-    const plain = view.document.createElement('a');
-    plain.href = '#top';
-    w.element.append(plain);
-    const other = new view.MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
-    plain.dispatchEvent(other);
-    expect(other.defaultPrevented).toBe(false);
+  it('gives a new window to the app: its router links go to the page router, and the app says when it closes', async () => {
+    class Page extends Component<HTMLDivElement> {
+      static override elementTag = 'div';
+    }
+    const host = document.body.appendChild(document.createElement('div'));
+    history.replaceState(null, '', '/');
+    const app = Application.CreateBuilder().build();
+    app.useRouter({ routes: [{ path: '/', component: Page }, { path: '/orders', component: Page }] as never, mode: 'history' });
+    app.run(host);
+    const attach = vi.spyOn(app.windows, 'attach');
+    try {
+      const m = managerWith([['A', 'B']]);
+      const w = m.moveToNewWindow(m.findDocument('a')!)!;
+      const view = m.views[0];
+      expect(attach).toHaveBeenCalledWith(view, expect.objectContaining({ styles: 'live' }));
+      const link = view.document.createElement('a');
+      link.href = '/orders';
+      link.rel = 'router';
+      w.element.append(link);
+      const click = new view.MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+      link.dispatchEvent(click);
+      await settle();
+      expect({ path: location.pathname, prevented: click.defaultPrevented }).toEqual({ path: '/orders', prevented: true });
+      // The user closes the window: the app's onClosing brings its documents back.
+      view.dispatchEvent(new view.Event('pagehide'));
+      await settle();
+      expect(m.browserWindows).toHaveLength(0);
+      expect(titles(m.groups[0])).toEqual(['B', 'A']);
+    } finally {
+      await app.dispose();
+      host.remove();
+      history.replaceState(null, '', '/');
+    }
   });
 
   it('says it in Turkish too', async () => {

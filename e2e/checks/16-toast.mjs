@@ -8,7 +8,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   const showButton = ways.getByRole('button', { name: 'Show a toast' });
   await showButton.click();
   await page.waitForTimeout(400);
-  check('a toast shows in a Notifications region at the end of the page', (await region.count()) === 1 && (await corner.count()) === 1 && (await region.evaluate((el) => el.parentElement === document.body && !el.nextElementSibling)));
+  check('a toast shows in a Notifications region at the end of the page', (await region.count()) === 1 && (await corner.count()) === 1 && (await region.evaluate((el) => el.parentElement?.parentElement === document.body && !el.parentElement.nextElementSibling)));
   check('it does not take focus', await showButton.evaluate((el) => document.activeElement === el));
   const [toastBox, view] = [await box(corner), await page.evaluate(() => ({ w: document.documentElement.clientWidth, h: document.documentElement.clientHeight }))];
   check('bottom-end sits in the bottom right corner', view.w - toastBox.right < 40 && view.h - toastBox.bottom < 40 && view.w - toastBox.right > 4, JSON.stringify(toastBox));

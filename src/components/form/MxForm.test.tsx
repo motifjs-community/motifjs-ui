@@ -551,7 +551,11 @@ describe('messageBox and confirm', () => {
     await settle();
     const dialog = document.querySelector('dialog.mx-form')!;
     expect(dialog.hasAttribute('open')).toBe(true);
-    (dialog.querySelector('.mx-form__footer button') as HTMLButtonElement).click();
+    // Under a root of its own the form mounts, and focus starts on its button.
+    await new Promise((r) => setTimeout(r, 30));
+    const ok = dialog.querySelector('.mx-form__footer button') as HTMLButtonElement;
+    expect(document.activeElement).toBe(ok);
+    ok.click();
     expect(await done).toBe('ok');
     await settle();
     expect(document.querySelector('dialog.mx-form')).toBeNull();

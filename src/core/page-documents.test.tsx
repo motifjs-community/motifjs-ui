@@ -12,7 +12,6 @@ import { watchDocument } from './document-watch';
 import { deepActiveElement } from './focus';
 import { installFocusGuard } from './focus-guard';
 import { addShortcut } from './keyboard';
-import { letMount } from './let-mount';
 import { mirrorPage } from './mirror-page';
 import { isElement, isHtmlElement, isNode } from './node-kind';
 import { connectDocument, disconnectDocument, pageDocuments } from './page-documents';
@@ -352,27 +351,5 @@ describe('kit: other documents', () => {
     added.remove();
     document.documentElement.removeAttribute('data-theme');
     document.body.className = '';
-  });
-
-  it('letMount lets a component placed in another window run onMounted', async () => {
-    const doc = other();
-    let mounted = 0;
-    class Probe extends Component<HTMLDivElement> {
-      override onMounted() {
-        mounted++;
-      }
-    }
-    const holder = doc.createElement('div');
-    doc.body.append(holder);
-    const probe = new Probe('div');
-    probe.build();
-    holder.append(probe.element);
-    await settle();
-    expect(mounted).toBe(0);
-    letMount(probe.element);
-    await settle();
-    expect(mounted).toBe(1);
-    expect(probe.element.parentElement).toBe(holder);
-    await probe.dispose();
   });
 });
