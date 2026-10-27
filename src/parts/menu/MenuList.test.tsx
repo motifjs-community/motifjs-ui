@@ -61,7 +61,7 @@ describe('MenuList submenus', () => {
     const recent = itemsOf(root)[1];
     expect(recent.getAttribute('aria-haspopup')).toBe('menu');
     expect(recent.getAttribute('aria-expanded')).toBe('false');
-    expect(recent.querySelector('.mx-menu__arrow svg')).not.toBeNull();
+    expect(recent.querySelector('.mx-menu__arrow .mx-glyph')).not.toBeNull();
     expect(itemsOf(root)[0].querySelector('.mx-menu__shortcut')!.textContent).toBe('Ctrl+N');
 
     press('ArrowDown');
@@ -208,14 +208,14 @@ describe('MenuList submenus', () => {
       ['menuitemradio', 'true'],
       ['menuitemradio', 'false'],
     ]);
-    expect(items()[1].querySelector('.mx-menu__check svg')).not.toBeNull();
+    expect(items()[1].querySelector('.mx-menu__check .mx-glyph')).not.toBeNull();
     expect(menus(b.element)[0].hasAttribute('data-checks')).toBe(true);
 
     s.align = 'right';
     s.wrap = false;
     await settle();
     expect(items().map((i) => i.getAttribute('aria-checked'))).toEqual(['false', 'false', 'true']);
-    expect(items()[2].querySelector('.mx-menu__check svg')).not.toBeNull();
+    expect(items()[2].querySelector('.mx-menu__check .mx-glyph')).not.toBeNull();
   });
 
   it('follows a submenu given as a function, and a shortcut that changes', async () => {
@@ -316,7 +316,7 @@ describe('MenuList submenus', () => {
       { text: 'app.ts', icon, group: 'doc', checked: false },
     ];
     list.setItems(items);
-    const mark = () => itemsOf(list.element)[0].querySelector('.mx-menu__check svg path')!.getAttribute('d');
+    const mark = () => itemsOf(list.element)[0].querySelector<HTMLElement>('.mx-menu__check .mx-glyph')!.dataset.icon;
     const dot = mark();
     expect(list.element.hasAttribute('data-marks-apart')).toBe(false);
 
@@ -326,7 +326,7 @@ describe('MenuList submenus', () => {
     expect(list.element.hasAttribute('data-marks-apart')).toBe(true);
     expect(itemsOf(list.element)[0].querySelector('.mx-menu__icon svg')).not.toBeNull();
     expect(mark()).not.toBe(dot);
-    expect(mark()).toBe(checkMark().querySelector('path')!.getAttribute('d'));
+    expect(mark()).toBe(checkMark().dataset.icon);
     expect(itemsOf(list.element)[0].getAttribute('role')).toBe('menuitemradio');
   });
 

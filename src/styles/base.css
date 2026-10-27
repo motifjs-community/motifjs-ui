@@ -20,10 +20,15 @@
     text-decoration: underline;
   }
 
-  /* The kit's own small glyphs (a chevron, a check mark), drawn in the text color. */
+  /* The kit's glyphs, drawn in the text color: a mask of the icon of their name (`--_icon`, from the design
+     language's set, src/generated/icons.css). Forced colors keep the text color the system gives. */
   .mx-glyph {
+    display: inline-block;
     flex: none;
     inline-size: var(--mx-glyph-size);
     block-size: var(--mx-glyph-size);
+    forced-color-adjust: none;
+    background-color: currentcolor;
+    mask: var(--_icon) center / contain no-repeat;
   }
 }

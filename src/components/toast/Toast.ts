@@ -15,7 +15,7 @@ import type { Toaster } from './Toaster';
 
 const OWN = ['title', 'tone', 'icon', 'duration', 'action', 'closeButton', 'position'] as const;
 
-const GLYPHS: Record<ToastTone, () => SVGSVGElement> = {
+const GLYPHS: Record<ToastTone, () => HTMLSpanElement> = {
   info: infoMark,
   success: successMark,
   caution: cautionMark,

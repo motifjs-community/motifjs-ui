@@ -57,7 +57,7 @@
     block-size: var(--mx-menubar-icon-size);
   }
 
-  .mx-menubar__icon > :is(img, svg) {
+  .mx-menubar__icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }

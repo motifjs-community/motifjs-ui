@@ -80,8 +80,8 @@ describe('TabDocumentManager: the "…" menu of documents', () => {
       ['menuitemradio', 'true'],
       ['menuitemradio', 'false'],
     ]);
-    expect(app.querySelector('.mx-menu__check svg')).not.toBeNull();
-    expect(index.querySelector('.mx-menu__check svg')).toBeNull();
+    expect(app.querySelector('.mx-menu__check .mx-glyph')).not.toBeNull();
+    expect(index.querySelector('.mx-menu__check .mx-glyph')).toBeNull();
     expect(index.querySelector('.mx-menu__description')!.textContent).toBe('src');
     expect(notes.querySelector('.mx-menu__description')).toBeNull();
     expect(index.hasAttribute('aria-keyshortcuts')).toBe(false);

@@ -72,7 +72,7 @@
     block-size: var(--mx-list-icon-size);
   }
 
-  .mx-list__icon > :is(img, svg) {
+  .mx-list__icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }

@@ -510,7 +510,7 @@
     color: var(--mx-datagrid-chip-sort-color);
   }
 
-  .mx-data-grid__chip-sort > svg {
+  .mx-data-grid__chip-sort > .mx-glyph {
     inline-size: var(--mx-datagrid-icon-size);
     block-size: var(--mx-datagrid-icon-size);
   }
@@ -1111,7 +1111,7 @@
     color: var(--mx-datagrid-sort-color);
   }
 
-  .mx-data-grid__sort > svg {
+  .mx-data-grid__sort > .mx-glyph {
     display: none;
     inline-size: var(--mx-datagrid-icon-size);
     block-size: var(--mx-datagrid-icon-size);
@@ -1460,7 +1460,7 @@
     block-size: var(--mx-datagrid-filter-icon-size);
   }
 
-  .mx-data-grid__filter-icon > svg {
+  .mx-data-grid__filter-icon > .mx-glyph {
     inline-size: 100%;
     block-size: 100%;
   }
@@ -1582,15 +1582,15 @@
     display: inline-flex;
   }
 
-  .mx-data-grid__step-icon > svg + svg {
+  .mx-data-grid__step-icon > .mx-glyph + .mx-glyph {
     margin-inline-start: calc(var(--mx-datagrid-icon-size) / -2);
   }
 
-  .mx-data-grid__page-step:is([data-step='first'], [data-step='previous']) .mx-data-grid__step-icon > svg {
+  .mx-data-grid__page-step:is([data-step='first'], [data-step='previous']) .mx-data-grid__step-icon > .mx-glyph {
     rotate: 90deg;
   }
 
-  .mx-data-grid__page-step:is([data-step='next'], [data-step='last']) .mx-data-grid__step-icon > svg {
+  .mx-data-grid__page-step:is([data-step='next'], [data-step='last']) .mx-data-grid__step-icon > .mx-glyph {
     rotate: -90deg;
   }
 

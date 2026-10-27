@@ -250,7 +250,7 @@
     color: var(--mx-field-icon-fg);
   }
 
-  .mx-field__icon > :is(img, svg) {
+  .mx-field__icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }
@@ -325,7 +325,7 @@
     block-size: var(--mx-field-icon-size);
   }
 
-  .mx-field__button-icon > :is(img, svg) {
+  .mx-field__button-icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }

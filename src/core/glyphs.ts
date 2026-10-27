@@ -1,128 +1,106 @@
-const SVG = 'http://www.w3.org/2000/svg';
-
-function glyph(path: string): SVGSVGElement {
-  const svg = document.createElementNS(SVG, 'svg');
-  svg.setAttribute('viewBox', '0 0 16 16');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('focusable', 'false');
-  svg.setAttribute('class', 'mx-glyph');
-  const line = document.createElementNS(SVG, 'path');
-  line.setAttribute('d', path);
-  line.setAttribute('fill', 'none');
-  line.setAttribute('stroke', 'currentColor');
-  line.setAttribute('stroke-width', '1.5');
-  line.setAttribute('stroke-linecap', 'round');
-  line.setAttribute('stroke-linejoin', 'round');
-  svg.append(line);
-  return svg;
+/**
+ * The kit's glyphs, by name: each is a `span.mx-glyph` that CSS draws (a mask of `--mx-icon-<name>`
+ * in the text colour). A design language brings its own set as tokens (`tokens/icons/<language>.icons.json`)
+ * and nothing here changes; the names and the kit's own drawings are in `tokens/icons/kit.icons.json`.
+ */
+export function glyph(name: string): HTMLSpanElement {
+  const mark = document.createElement('span');
+  mark.className = 'mx-glyph';
+  mark.dataset.icon = name;
+  mark.setAttribute('aria-hidden', 'true');
+  return mark;
 }
 
 /** The arrow of a control that opens something below it. */
-export const chevronDown = (): SVGSVGElement => glyph('M4 6l4 4 4-4');
+export const chevronDown = (): HTMLSpanElement => glyph('chevron-down');
 
 /** The mark of a checked item. */
-export const checkMark = (): SVGSVGElement => glyph('M3.5 8.5l3 3 6-7');
+export const checkMark = (): HTMLSpanElement => glyph('check');
 
-export const chevronUp = (): SVGSVGElement => glyph('M4 10l4-4 4 4');
+export const chevronUp = (): HTMLSpanElement => glyph('chevron-up');
 
-export const dismissMark = (): SVGSVGElement => glyph('M4.5 4.5l7 7M11.5 4.5l-7 7');
+export const dismissMark = (): HTMLSpanElement => glyph('dismiss');
 
-const EYE = 'M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8zM8 6a2 2 0 1 0 0 4a2 2 0 1 0 0-4z';
+export const eyeOpen = (): HTMLSpanElement => glyph('eye-open');
 
-export const eyeOpen = (): SVGSVGElement => glyph(EYE);
+export const eyeClosed = (): HTMLSpanElement => glyph('eye-closed');
 
-export const eyeClosed = (): SVGSVGElement => glyph(`${EYE}M2.5 2.5l11 11`);
+export const infoMark = (): HTMLSpanElement => glyph('info');
 
-const RING = 'M8 1.75a6.25 6.25 0 1 0 0 12.5a6.25 6.25 0 1 0 0-12.5z';
+export const successMark = (): HTMLSpanElement => glyph('success');
 
-export const infoMark = (): SVGSVGElement => glyph(`${RING}M8 7.25v4M8 4.9v.1`);
+export const cautionMark = (): HTMLSpanElement => glyph('caution');
 
-export const successMark = (): SVGSVGElement => glyph(`${RING}M5.25 8.25l1.875 1.875L10.75 6.25`);
-
-export const cautionMark = (): SVGSVGElement => glyph('M8 2L14.5 13.5H1.5zM8 6.5v3.25M8 11.65v.1');
-
-export const dangerMark = (): SVGSVGElement => glyph(`${RING}M6 6l4 4M10 6l-4 4`);
+export const dangerMark = (): HTMLSpanElement => glyph('danger');
 
 /** The mark of a checkbox that is neither checked nor unchecked. */
-export const dashMark = (): SVGSVGElement => glyph('M4 8h8');
+export const dashMark = (): HTMLSpanElement => glyph('dash');
 
-export const plusMark = (): SVGSVGElement => glyph('M8 4v8M4 8h8');
+export const plusMark = (): HTMLSpanElement => glyph('plus');
 
-export const calendarMark = (): SVGSVGElement => glyph('M3 4.5h10v8.5h-10zM3 7h10M5.5 3v3M10.5 3v3');
+export const calendarMark = (): HTMLSpanElement => glyph('calendar');
 
-export const clockMark = (): SVGSVGElement => glyph('M8 2.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11zM8 5v3l2 1.5');
+export const clockMark = (): HTMLSpanElement => glyph('clock');
 
 /** The mark of the chosen item of a group. */
-export const radioMark = (): SVGSVGElement => {
-  const svg = glyph('M6 8a2 2 0 1 0 4 0a2 2 0 1 0-4 0z');
-  svg.firstElementChild!.setAttribute('fill', 'currentColor');
-  return svg;
-};
+export const radioMark = (): HTMLSpanElement => glyph('radio');
 
 /** Three dots: more commands. */
-export const moreMark = (): SVGSVGElement => glyph('M2.75 8a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM7.25 8a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM11.75 8a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0z');
+export const moreMark = (): HTMLSpanElement => glyph('more');
 
 /** The arrow of a branch that opens towards the end (mirrored right to left by CSS). */
-export const chevronEnd = (): SVGSVGElement => glyph('M6 4l4 4-4 4');
+export const chevronEnd = (): HTMLSpanElement => glyph('chevron-end');
 
 /** The arrow towards the start: back, earlier (mirrored right to left by CSS). */
-export const chevronStart = (): SVGSVGElement => glyph('M10 4l-4 4 4 4');
+export const chevronStart = (): HTMLSpanElement => glyph('chevron-start');
 
 /** A window filling the screen. */
-export const maximizeMark = (): SVGSVGElement => glyph('M3.5 3.5h9v9h-9z');
+export const maximizeMark = (): HTMLSpanElement => glyph('maximize');
 
 /** A window back to its own size. */
-export const restoreMark = (): SVGSVGElement => glyph('M3.5 5.5h7v7h-7zM5.5 5.5v-2h7v7h-2');
+export const restoreMark = (): HTMLSpanElement => glyph('restore');
 
 /** A frame cut in two side by side: split. */
-export const splitMark = (): SVGSVGElement => glyph('M2.5 3.5h11v9h-11zM8 3.5v9');
+export const splitMark = (): HTMLSpanElement => glyph('split');
 
 /** A window folded away. */
-export const minimizeMark = (): SVGSVGElement => glyph('M4 8.5h8');
+export const minimizeMark = (): HTMLSpanElement => glyph('minimize');
 
 /** A funnel: filter by values. */
-export const filterMark = (): SVGSVGElement => glyph('M2.5 3.5h11l-4.25 5v4.25l-2.5 1.25v-5.5z');
+export const filterMark = (): HTMLSpanElement => glyph('filter');
 
 /** Edit. */
-export const pencilMark = (): SVGSVGElement => glyph('M10.5 2.75l2.75 2.75-7.5 7.5h-2.75v-2.75zM9 4.25l2.75 2.75');
+export const pencilMark = (): HTMLSpanElement => glyph('pencil');
 
 /** Delete. */
-export const trashMark = (): SVGSVGElement => glyph('M3 4.5h10M6.5 4.5v-1.5h3v1.5M4.5 4.5l.75 9h5.5l.75-9M7 7v4M9 7v4');
+export const trashMark = (): HTMLSpanElement => glyph('trash');
 
 /** Take back. */
-export const undoMark = (): SVGSVGElement => glyph('M5.5 3.5l-2.5 2.5 2.5 2.5M3 6h6.5a3.5 3.5 0 0 1 0 7h-3');
+export const undoMark = (): HTMLSpanElement => glyph('undo');
 
 /** Save to a file. */
-export const downloadMark = (): SVGSVGElement => glyph('M8 2.5v7.5M4.75 6.75L8 10l3.25-3.25M3 12.5v1h10v-1');
+export const downloadMark = (): HTMLSpanElement => glyph('download');
 
 /** Keep the changes (a disk). */
-export const saveMark = (): SVGSVGElement => glyph('M3 3h8l2 2v8h-10zM5.5 3v3h4.5v-3M5.5 13v-4h5v4');
+export const saveMark = (): HTMLSpanElement => glyph('save');
 
 /** The list of columns. */
-export const columnsMark = (): SVGSVGElement => glyph('M2.5 3.5h11v9h-11zM6.25 3.5v9M9.75 3.5v9');
+export const columnsMark = (): HTMLSpanElement => glyph('columns');
 
 /** Look for something. */
-export const searchMark = (): SVGSVGElement => glyph('M7 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM10 10l3.5 3.5');
+export const searchMark = (): HTMLSpanElement => glyph('search');
 
 /** A pushpin: a tab kept at the start. */
-export const pinMark = (): SVGSVGElement => glyph('M6 2.5h4M7 2.5v4l-2.5 2.5h7l-2.5-2.5v-4M8 9v4.5');
+export const pinMark = (): HTMLSpanElement => glyph('pin');
 
 /** A padlock: closed to new things. */
-export const lockMark = (): SVGSVGElement => glyph('M4 7.5h8v6h-8zM5.75 7.5v-2a2.25 2.25 0 0 1 4.5 0v2');
+export const lockMark = (): HTMLSpanElement => glyph('lock');
 
 /** Two columns of dots: something to take hold of and drag. */
-export const gripMark = (): SVGSVGElement =>
-  glyph(
-    'M5.25 4a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM9.25 4a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM5.25 8a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM9.25 8a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM5.25 12a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0zM9.25 12a.75 .75 0 1 0 1.5 0a.75 .75 0 1 0-1.5 0z',
-  );
-
-const GUIDES: Record<'center' | 'left' | 'right' | 'up' | 'down', string> = {
-  center: 'M5.5 5.5h5v5h-5z',
-  left: 'M6.5 2.5v11',
-  right: 'M9.5 2.5v11',
-  up: 'M2.5 6.5h11',
-  down: 'M2.5 9.5h11',
-};
+export const gripMark = (): HTMLSpanElement => glyph('grip');
 
 /** A dock guide: a window with the part a drop there would take marked. */
-export const dockGuideMark = (side: 'center' | 'left' | 'right' | 'up' | 'down'): SVGSVGElement => glyph(`M2.5 2.5h11v11h-11z${GUIDES[side]}`);
+export const dockGuideMark = (side: 'center' | 'left' | 'right' | 'up' | 'down'): HTMLSpanElement => glyph(`dock-guide-${side}`);
+
+/** Two columns of three dots: a row to take hold of and drag. */
+export const dragDots = (): HTMLSpanElement => glyph('drag-dots');

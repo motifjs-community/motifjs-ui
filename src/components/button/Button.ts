@@ -47,7 +47,7 @@ interface Parts {
   icon: HTMLSpanElement | null;
   releaseIcon: () => void;
   spinner: HTMLSpanElement | null;
-  chevron: SVGSVGElement | null;
+  chevron: HTMLSpanElement | null;
   popup: Popup | null;
   list: MenuList | null;
   content: ComponentBase | null;

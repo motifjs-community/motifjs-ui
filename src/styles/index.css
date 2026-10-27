@@ -7,6 +7,7 @@
    it is, for the app's bundler to resolve. */
 @import '@motifx-community/design-system/styles.css';
 @import '../generated/components.css';
+@import '../generated/icons.css';
 @import './base.css';
 @import '../parts/popup/popup.css';
 @import '../parts/menu/menu.css';

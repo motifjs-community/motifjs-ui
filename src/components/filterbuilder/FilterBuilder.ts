@@ -689,7 +689,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
   private addCell(
     row: Row,
     part: Part,
-    look: { text?: string; icon?: () => SVGSVGElement; label: string; tone?: 'accent'; enabled?: boolean; menu?: MenuItem[]; click?: () => void },
+    look: { text?: string; icon?: () => HTMLSpanElement; label: string; tone?: 'accent'; enabled?: boolean; menu?: MenuItem[]; click?: () => void },
   ): Cell {
     const component = new Component<HTMLDivElement>('div');
     component.element.className = 'mx-filter-builder__cell';

@@ -60,7 +60,7 @@ describe('Toast', () => {
     expect(t.element.tabIndex).toBe(0);
     expect(t.element.querySelector('.mx-toast__title')!.textContent).toBe('Saved');
     expect(t.element.getAttribute('aria-labelledby')!.split(' ')).toHaveLength(2);
-    expect(t.element.querySelector('.mx-toast__icon svg')).not.toBeNull();
+    expect(t.element.querySelector('.mx-toast__icon .mx-glyph')).not.toBeNull();
     expect(closeButton(t)!.getAttribute('aria-label')).toBe('Close');
     expect(document.activeElement).toBe(document.body);
 

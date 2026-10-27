@@ -1,3 +1,4 @@
+import { onLookChanged } from '../../core/look-watch';
 import { effect, Emitter, reactive, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
@@ -330,6 +331,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.motif.setDisposable(() => this.bands.dispose());
     this.filterRow = new FilterRow<T>(model);
     this.widths = new ActionWidths(() => this.measureEl);
+    // Another design language, theme or density: the action buttons are measured again.
+    this.motif.setDisposable(
+      onLookChanged(() => {
+        this.widths.clear();
+        this.measure();
+      }),
+    );
     this.body = new GridBody<T>(model, () => this.viewportEl, this.widths, {
       grid: this,
       collapse: (key) => this.collapseRow(key),

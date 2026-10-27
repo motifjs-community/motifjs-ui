@@ -37,7 +37,7 @@
     margin-inline-start: auto;
   }
 
-  .mx-scheduler__step svg:dir(rtl) {
+  .mx-scheduler__step .mx-glyph:dir(rtl) {
     scale: -1 1;
   }
 

@@ -1,3 +1,4 @@
+import { onLookChanged } from '../../core/look-watch';
 import { createSignal, effect, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp, type Signal } from '@motifx/core';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
@@ -173,6 +174,13 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
         if (parts.ready) this.redraw();
       });
     }
+    // Another design language, theme or density: the rows have another height.
+    this.motif.setDisposable(
+      onLookChanged(() => {
+        parts.rowHeight = 0;
+        if (parts.ready) this.redraw();
+      }),
+    );
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     for (const name of FUNCTIONS) if (own[name] !== undefined) this.bindProperty(name, functionValue(own[name]));
     if (own.onExpanding) this.onExpanding(own.onExpanding);

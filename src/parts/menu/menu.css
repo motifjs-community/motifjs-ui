@@ -123,8 +123,8 @@
     display: none;
   }
 
-  .mx-menu__check > svg,
-  .mx-menu__icon > :is(img, svg) {
+  .mx-menu__check > .mx-glyph,
+  .mx-menu__icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }
@@ -165,12 +165,12 @@
     block-size: var(--mx-menu-arrow-size);
   }
 
-  .mx-menu__arrow > svg {
+  .mx-menu__arrow > .mx-glyph {
     inline-size: 100%;
     block-size: 100%;
   }
 
-  .mx-menu__arrow > svg:dir(rtl) {
+  .mx-menu__arrow > .mx-glyph:dir(rtl) {
     scale: -1 1;
   }
 

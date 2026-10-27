@@ -1,3 +1,4 @@
+import { onLookChanged } from '../../core/look-watch';
 import { effect, Emitter, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
@@ -468,6 +469,8 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       observer.observe(this.element, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'hidden', 'tabindex', 'aria-disabled'] });
       this.motif.setDisposable(() => observer.disconnect());
     }
+    // Another design language, theme or density: the controls have other sizes.
+    this.motif.setDisposable(onLookChanged(() => this.queueLayout()));
     if (typeof ResizeObserver === 'function') {
       const observer = new ResizeWatch(() => {
         const vertical = this.peekProperty<ToolbarOrientation>('orientation') === 'vertical';

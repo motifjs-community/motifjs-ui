@@ -1,3 +1,4 @@
+import { onLookChanged } from '../../core/look-watch';
 import { effect, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 
 import { ResizeWatch } from '../../core/resize-watch';
@@ -241,6 +242,8 @@ export class TextArea extends Field<string, TextAreaProps> {
 
   private listen(): void {
     const area = this.textAreaElement;
+    // Another design language, theme or density: the lines have another height.
+    this.motif.setDisposable(onLookChanged(() => this.fit()));
     area.addEventListener('input', (e) => {
       this.renderCounter();
       this.fit();

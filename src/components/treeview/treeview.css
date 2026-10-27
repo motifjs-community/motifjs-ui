@@ -275,7 +275,7 @@
     block-size: var(--mx-treeview-icon-size);
   }
 
-  .mx-tree-view__icon > :is(img, svg) {
+  .mx-tree-view__icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }

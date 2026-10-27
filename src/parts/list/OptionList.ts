@@ -1,3 +1,4 @@
+import { onLookChanged } from '../../core/look-watch';
 import { Component, effect, Emitter, type Event as MotifEvent } from '@motifx/core';
 import { checkMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
@@ -77,7 +78,13 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
       this.frame = requestAnimationFrame(() => this.drawWindow());
     });
     const stopEmpty = effect(() => (this.empty.textContent = this.emptyText?.() ?? uiLocale.strings.noItems));
+    // Another design language, theme or density: the rows have another height.
+    const stopLook = onLookChanged(() => {
+      this.rowHeight = 0;
+      if (this.windowed) this.drawWindow();
+    });
     this.motif.setDisposable(() => {
+      stopLook();
       stopEmpty();
       cancelAnimationFrame(this.frame);
       this.release();

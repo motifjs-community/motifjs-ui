@@ -233,7 +233,7 @@ export class ActionSheet extends BottomSheet {
 const BACK = Symbol('back');
 
 /** The way back out of a submenu: an arrow pointing to the start. */
-function backMark(): SVGSVGElement {
+function backMark(): HTMLSpanElement {
   const mark = chevronDown();
   mark.classList.add('mx-action-sheet__back');
   return mark;

@@ -1330,3 +1330,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Texts in `uiLocale` (en, tr) and `texts`; dates and times by `Intl` in `locale`. Component tokens
   `tokens/component/scheduler.tokens.json`; `chevronStart` in the glyphs.
 - Docs page `/scheduler`; `e2e/checks/57-scheduler.mjs` (32 checks, axe in every view in light and dark).
+
+### Design languages, step 1: what lets a language change everything
+
+Any design system, or a new version of one, is added as files only and looks like its source.
+
+- Glyphs are names: `core/glyphs.ts` returns `span.mx-glyph[data-icon]` (the same helpers), drawn by CSS as a mask
+  of `--mx-icon-<name>` in the text colour. The kit's set is `tokens/icons/kit.icons.json`; a language brings its own
+  in `tokens/icons/<language>.icons.json`, built by `scripts/build-icons.mjs` (part of `npm run tokens`) into
+  `src/generated/icons.css`. The datagrid's drag handle uses the set too (`dragDots`).
+- `core/press-origin.ts`: a part with `data-mx-press` gets `data-pressed` and `--_press-x` / `--_press-y` while it
+  is pressed (keys press from its middle), for a language's state layer or ripple.
+- `core/look-watch.ts` `onLookChanged`: a design language, theme or density changed anywhere. Toolbar (its overflow),
+  the option lists, TreeView, TextArea and DataGrid's action widths measure again; a toolbar switched to Material at
+  run time now moves what does not fit into its menu.
+- DataGrid's per-column rules (hidden columns, alignment, sticky offsets and edges) are in `@layer mx.components`,
+  so a language's stylesheet can change their look.
+- stylelint: the files of a component made ready for any language take no literal length (`LOSSLESS` in
+  `stylelint.config.mjs`).
+- `e2e/language-diff.mjs`: from a fingerprint, how much of each component is the same in every language.

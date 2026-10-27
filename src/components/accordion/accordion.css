@@ -120,7 +120,7 @@
     block-size: var(--mx-accordion-icon-size);
   }
 
-  .mx-accordion__icon > :is(img, svg) {
+  .mx-accordion__icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }

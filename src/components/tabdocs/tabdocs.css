@@ -192,19 +192,19 @@
   }
 
   /* The glyph is a down arrow: turned to point along the strip. */
-  .mx-tabdocs__scroll[data-direction='back'] > svg {
+  .mx-tabdocs__scroll[data-direction='back'] > .mx-glyph {
     rotate: 90deg;
   }
 
-  .mx-tabdocs__scroll[data-direction='forward'] > svg {
+  .mx-tabdocs__scroll[data-direction='forward'] > .mx-glyph {
     rotate: -90deg;
   }
 
-  .mx-tabdocs__scroll[data-direction='back']:dir(rtl) > svg {
+  .mx-tabdocs__scroll[data-direction='back']:dir(rtl) > .mx-glyph {
     rotate: -90deg;
   }
 
-  .mx-tabdocs__scroll[data-direction='forward']:dir(rtl) > svg {
+  .mx-tabdocs__scroll[data-direction='forward']:dir(rtl) > .mx-glyph {
     rotate: 90deg;
   }
 
@@ -363,7 +363,7 @@
     display: none;
   }
 
-  .mx-tabdocs__group[data-title][data-bar-close] > .mx-tabdocs__bar .mx-tabdocs__tab[data-dirty] .mx-tabdocs__close > svg {
+  .mx-tabdocs__group[data-title][data-bar-close] > .mx-tabdocs__bar .mx-tabdocs__tab[data-dirty] .mx-tabdocs__close > .mx-glyph {
     display: none;
   }
 
@@ -513,7 +513,7 @@
     block-size: var(--mx-tabdocs-icon-size);
   }
 
-  .mx-tabdocs__icon > :is(img, svg) {
+  .mx-tabdocs__icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }
@@ -610,7 +610,7 @@
     border-radius: var(--mx-tabdocs-dirty-radius);
   }
 
-  .mx-tabdocs__tab[data-dirty] .mx-tabdocs__close > svg {
+  .mx-tabdocs__tab[data-dirty] .mx-tabdocs__close > .mx-glyph {
     display: none;
   }
 
@@ -618,7 +618,7 @@
     display: block;
   }
 
-  .mx-tabdocs__tab[data-dirty][data-close]:is(:hover, :focus-visible) .mx-tabdocs__close > svg {
+  .mx-tabdocs__tab[data-dirty][data-close]:is(:hover, :focus-visible) .mx-tabdocs__close > .mx-glyph {
     display: block;
   }
 
@@ -1046,7 +1046,7 @@
   }
 
   /* The pin of a dock area's group stands while the area is docked, and lies down while it is folded. */
-  .mx-tabdocs__area[data-auto-hide] .mx-tabdocs__auto-hide svg {
+  .mx-tabdocs__area[data-auto-hide] .mx-tabdocs__auto-hide .mx-glyph {
     rotate: 90deg;
   }
 
@@ -1191,7 +1191,7 @@
     display: none;
   }
 
-  .mx-tabdocs__guide > svg {
+  .mx-tabdocs__guide > .mx-glyph {
     inline-size: var(--mx-tabdocs-guide-icon-size);
     block-size: var(--mx-tabdocs-guide-icon-size);
   }
@@ -1524,7 +1524,7 @@
     font-weight: var(--mx-tabdocs-letter-font-weight);
   }
 
-  .mx-tabdocs__phone-tool-icon > :is(svg, img) {
+  .mx-tabdocs__phone-tool-icon > :is(svg, img, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }

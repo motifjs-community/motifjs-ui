@@ -57,7 +57,8 @@ export class ColumnStyles<T> {
       rules.push(`${sel}{position:sticky;inset-inline-${near.side}:${near.offset}px;z-index:var(--_z-sticky)}`);
       if (edge) rules.push(`${sel}{box-shadow:var(--_sticky-${near.side})}`);
     }
-    this.css = rules.join('\n');
+    // In the kit's layer, so a design language's stylesheet can change the look (the sticky edge) like any other rule.
+    this.css = rules.length ? `@layer mx.components {\n${rules.join('\n')}\n}` : '';
     this.apply();
   }
 

@@ -101,27 +101,27 @@
   }
 
   /* The glyph is a down arrow: turned to point along the strip. */
-  .mx-tabs__scroll[data-direction='back'] > svg {
+  .mx-tabs__scroll[data-direction='back'] > .mx-glyph {
     rotate: 90deg;
   }
 
-  .mx-tabs__scroll[data-direction='forward'] > svg {
+  .mx-tabs__scroll[data-direction='forward'] > .mx-glyph {
     rotate: -90deg;
   }
 
-  .mx-tabs__scroll[data-direction='back']:dir(rtl) > svg {
+  .mx-tabs__scroll[data-direction='back']:dir(rtl) > .mx-glyph {
     rotate: -90deg;
   }
 
-  .mx-tabs__scroll[data-direction='forward']:dir(rtl) > svg {
+  .mx-tabs__scroll[data-direction='forward']:dir(rtl) > .mx-glyph {
     rotate: 90deg;
   }
 
-  .mx-tabs:is([data-placement='start'], [data-placement='end']) .mx-tabs__scroll[data-direction='back'] > svg {
+  .mx-tabs:is([data-placement='start'], [data-placement='end']) .mx-tabs__scroll[data-direction='back'] > .mx-glyph {
     rotate: 180deg;
   }
 
-  .mx-tabs:is([data-placement='start'], [data-placement='end']) .mx-tabs__scroll[data-direction='forward'] > svg {
+  .mx-tabs:is([data-placement='start'], [data-placement='end']) .mx-tabs__scroll[data-direction='forward'] > .mx-glyph {
     rotate: none;
   }
 
@@ -194,7 +194,7 @@
     block-size: var(--mx-tabs-icon-size);
   }
 
-  .mx-tabs__icon > :is(img, svg) {
+  .mx-tabs__icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }

@@ -10,7 +10,7 @@ import type { MessageBoxOptions } from './message-box-options';
 import type { MessageBoxTone } from './message-box-tone';
 import { MxForm } from './MxForm';
 
-const GLYPHS: Partial<Record<MessageBoxTone, () => SVGSVGElement>> = {
+const GLYPHS: Partial<Record<MessageBoxTone, () => HTMLSpanElement>> = {
   info: infoMark,
   success: successMark,
   caution: cautionMark,
