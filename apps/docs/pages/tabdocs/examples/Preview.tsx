@@ -8,7 +8,8 @@ import { FILES, fileDocument } from './files';
  */
 export default function Preview() {
   const s = reactive({ previewTabs: true, kept: [] as string[] });
-  const docs = new TabDocumentManager({ label: 'Files in preview', previewTabs: () => s.previewTabs });
+  // Narrow beside its log, it still shows as on a desktop (see the Tablet and phone page).
+  const docs = new TabDocumentManager({ label: 'Files in preview', previewTabs: () => s.previewTabs, presentation: 'desktop' });
   docs.element.style.cssText = 'block-size: 28rem; flex: 1 1 0px; min-inline-size: 0';
   docs.onKept((e) => s.kept.unshift(e.document.title));
 

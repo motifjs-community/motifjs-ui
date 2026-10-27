@@ -1,4 +1,4 @@
-import { createSignal } from '@motifx/core';
+import { createSignal, read, type Bind } from '@motifx/core';
 import { nextId } from '../../core/next-id';
 import type { LayoutOrientation } from '../layout/layout-orientation';
 import type { AutoHideStrip } from './AutoHideStrip';
@@ -6,6 +6,7 @@ import type { LayoutItem } from './layout-item';
 import type { SashOwner } from './sash-owner';
 import { SplitSash } from './SplitSash';
 import { TabBarSettings } from './TabBarSettings';
+import type { TabDockPresentation } from './tab-dock-presentation';
 import type { TabDockSide } from './tab-dock-side';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
@@ -31,6 +32,8 @@ export class TabDockArea extends TabBarSettings implements SashOwner {
   private readonly sizeSignal = createSignal<number | string>(0);
   private readonly folded = createSignal(false);
   private readonly openSignal = createSignal(false);
+  private readonly phoneMode = createSignal<Bind<TabDockPresentation | null>>(null);
+  private readonly tabletMode = createSignal<Bind<TabDockPresentation | null>>(null);
 
   constructor(
     private readonly owner: TabDocumentManager,
@@ -67,6 +70,22 @@ export class TabDockArea extends TabBarSettings implements SashOwner {
   /** Its groups, in layout order. Reactive. */
   get groups(): readonly TabGroup[] {
     return this.owner.groups.filter((g) => g.dockArea === this);
+  }
+  /** How it shows on a phone (a sheet, a drawer, or not at all), over the manager's `phoneDockMode`; `null` follows the manager. Reactive. */
+  get phoneDockMode(): TabDockPresentation | null {
+    return read(this.phoneMode.value);
+  }
+  set phoneDockMode(value: Bind<TabDockPresentation | null>) {
+    this.phoneMode.value = value;
+    this.owner.presentationSettingChanged();
+  }
+  /** How it shows on a tablet, over the manager's `tabletDockMode`; `null` follows the manager. Reactive. */
+  get tabletDockMode(): TabDockPresentation | null {
+    return read(this.tabletMode.value);
+  }
+  set tabletDockMode(value: Bind<TabDockPresentation | null>) {
+    this.tabletMode.value = value;
+    this.owner.presentationSettingChanged();
   }
   /** Reactive. */
   get documents(): readonly TabDocument[] {

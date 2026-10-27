@@ -8,11 +8,14 @@ import type { MenuItem } from '../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
 import { Popup } from '../../parts/popup/Popup';
 import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
+import { ActionSheet } from '../actionsheet/ActionSheet';
+import type { OverlayCloseReason } from '../../parts/overlay/overlay-close-reason';
 import type { ContextMenuOpeningEventArgs } from './context-menu-opening-event-args';
+import type { ContextMenuPresentation } from './context-menu-presentation';
 import type { ContextMenuProps } from './context-menu-props';
 import type { ContextMenuTarget } from './context-menu-target';
 
-const OWN = ['items', 'keyboard', 'closeOnScroll', 'openOnHover'] as const;
+const OWN = ['items', 'keyboard', 'closeOnScroll', 'openOnHover', 'presentation'] as const;
 
 const NO_ITEMS: readonly MenuItem[] = [];
 
@@ -21,6 +24,8 @@ interface Parts {
   anchor: HTMLDivElement;
   popup: Popup | null;
   list: MenuList | null;
+  /** The action sheet it shows its items in on a touch screen. */
+  sheet: ActionSheet | null;
   /** The target as given; `undefined`: the element the menu is placed in. */
   source: Bind<ContextMenuTarget | null | undefined> | undefined;
   stopTarget: (() => void) | null;
@@ -131,6 +136,12 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   set openOnHover(value: Bind<boolean>) {
     this.assignProperty('openOnHover', value, Boolean);
   }
+  get presentation(): ContextMenuPresentation {
+    return this.getProperty<ContextMenuPresentation | undefined>('presentation') ?? 'menu';
+  }
+  set presentation(value: Bind<ContextMenuPresentation>) {
+    this.assignProperty('presentation', value);
+  }
 
   /** Whether the menu is open. Reactive. */
   get opened(): boolean {
@@ -168,6 +179,12 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
 
   close(): void {
     this.parts.popup?.close('code');
+    this.parts.sheet?.close();
+  }
+
+  /** The action sheet it shows its items in, once it has shown them there. */
+  get actionSheet(): ActionSheet | null {
+    return this.parts.sheet;
   }
 
   override onAccessKey(): boolean {
@@ -196,6 +213,7 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
       anchor,
       popup: null,
       list: null,
+      sheet: null,
       source: undefined,
       stopTarget: null,
       attached: null,
@@ -284,6 +302,7 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     event.preventDefault();
     event.stopPropagation();
     this.host(target.ownerDocument);
+    if (this.inSheet(event, byKeyboard)) return this.showSheet(args.items, target, byKeyboard);
     const popup = (parts.popup ??= this.createPopup());
     const list = parts.list!;
     list.closeSubmenu();
@@ -299,6 +318,41 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     if (byKeyboard) list.focusItem('first');
     else list.focusList();
     return true;
+  }
+
+  /** Whether the items go into an action sheet this time. */
+  private inSheet(event: Event, byKeyboard: boolean): boolean {
+    const presentation = untracked(() => this.presentation);
+    if (presentation !== 'auto') return presentation === 'sheet';
+    if (byKeyboard) return false;
+    const kind = (event as PointerEvent).pointerType;
+    if (kind) return kind === 'touch';
+    const view = this.element.ownerDocument.defaultView;
+    return !!view?.matchMedia?.('(hover: none) and (pointer: coarse)').matches;
+  }
+
+  private showSheet(items: readonly MenuItem[], target: Element, byKeyboard: boolean): boolean {
+    const parts = this.parts;
+    parts.popup?.close('code');
+    const sheet = (parts.sheet ??= this.createSheet());
+    sheet.label = parseAccessKey(this.peekProperty<string>('text') ?? '').text;
+    sheet.items = items;
+    if (!sheet.open(byKeyboard)) return false;
+    this.setProperty('targetElement', target);
+    this.setProperty('opened', true);
+    return true;
+  }
+
+  private createSheet(): ActionSheet {
+    const parts = this.parts;
+    const sheet = new ActionSheet();
+    this.controls.add(sheet);
+    sheet.onItemClick((e) => parts.itemClick.fire({ ...e, source: this }));
+    sheet.onClosed((e) => {
+      this.setProperty('opened', false);
+      parts.closed.fire(SHEET_REASONS[e.reason]);
+    });
+    return sheet;
   }
 
   /** Made with `new` and never placed, it opens from the end of the page; on an element in another window, from the end of that one. */
@@ -390,6 +444,17 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     if (!follow.element.isConnected || !inSight(follow.element)) this.close();
   }
 }
+
+/** How the sheet's closing reads as a menu's. */
+const SHEET_REASONS: Record<OverlayCloseReason, PopupCloseReason> = {
+  code: 'code',
+  escape: 'escape',
+  scrim: 'outside',
+  swipe: 'outside',
+  back: 'escape',
+  button: 'escape',
+  owner: 'code',
+};
 
 /** Whether some of the element is on the screen and inside every box around it that clips it. */
 function inSight(element: Element): boolean {

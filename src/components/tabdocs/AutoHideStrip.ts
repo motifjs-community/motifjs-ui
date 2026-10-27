@@ -50,7 +50,9 @@ export class AutoHideStrip {
     area.element.addEventListener('pointerleave', () => untracked(() => this.hoverOff()));
     this.stops.push(
       effect(() => {
-        const folded = area.autoHidden;
+        // On a tablet every dock area shows this way, in a drawer or a sheet; on a phone none does.
+        const presentation = manager.currentPresentation;
+        const folded = presentation === 'tablet' ? manager.toolStripShown(area) : presentation === 'desktop' && area.autoHidden;
         const groups = area.groups.map((g) => ({ docs: g.documents, active: g.activeDocument }));
         const open = area.isOpen;
         const label = manager.textOf(AREA_TEXTS[area.side]);

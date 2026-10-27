@@ -1185,3 +1185,99 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   grid's rows while `dragSelectionTouch: 'longPress'`, now hold a touchmove listener from the start that
   stops the scroll only while a drag runs; a plain swipe still scrolls. Docs: long page titles break on a
   phone, the parts of an example stay within it, the token tables scroll in their own box.
+
+### BottomSheet, Drawer and ActionSheet
+
+- `BottomSheet`: a panel that comes up from the bottom of the page (the top layer) or of a `container`
+  and stops at `detents` (`'peek'`, `'half'`, `'full'`, `'fit'`, pixels, or a share such as `'40%'`;
+  default `['half', 'full']`), `detent` the one it is at (written back when the user moves it). The
+  handle and the title follow the finger and the mouse; let go, it snaps to the nearest height, a flick
+  faster than `flickSpeed` goes on to the next, past the tallest it gives a little, and dragged or
+  flicked down below the lowest it closes (`swipeToClose`). The content takes the sheet along when it
+  cannot scroll that way (`dragContent`): down from its top, up while the sheet is not at its tallest; a
+  sideways swipe and a scroll stay the content's. A tap on the handle goes to the next height. The
+  handle is a vertical `slider` for the keys (Up/Right/Page Up, Down/Left/Page Down, Home, End; its value
+  the share of the full height, read as "Half height"…). `showHandle`, `draggable`, `topGap` (`0`: a
+  full-screen sheet, its corners square off at the top), `snapTo()`, `expand()`, `collapse()`, `height`;
+  `onDetentChanging` (cancelable, `to` can be changed) / `onDetentChanged`. It stands on the on-screen
+  keyboard over the page (the visual viewport), and keeps clear of the safe areas.
+- `Drawer`: a panel from an edge of the page or of a `container` (`side`: `start`, `end` — they follow the
+  reading direction —, `left`, `right`, `top`, `bottom`), over the content or pushing `pushTarget` aside
+  (`mode: 'push'`, not modal unless asked), `size` (else `drawer.size`, never more than 85%). A finger
+  swiping in from the edge opens it, following the finger (`edgeSwipe`, `edgeSize`); swiped back towards
+  the edge it closes (`swipeToClose`); a flick decides however far it went (`flickSpeed`).
+- `ActionSheet`: the kit's `MenuItem`s in a bottom sheet (as tall as its items), large enough for a
+  finger, with a title, a `message` and a cancel button apart (`showCancel`, `cancelText`). A submenu
+  opens in place with "Back" first; `choose(items?, host?)` resolves with the item chosen or `null`;
+  `open(byKeyboard)` puts focus on the first item or on the list; `onItemClick`, `chosenItem`, `menu`.
+- What they share is `OverlayPanel` (`parts/overlay`, public): `value` (`x-model`), `modal` (what is
+  around it is made `inert` inside its container or on the page, Tab stays inside, the window stack knows
+  it), `scrim`, `container` (a value or a function read when it opens), `title` / `label`, `content`,
+  `footer`, `showClose`, `closeOnEscape`, `closeOnScrim`, `focusOnOpen` (a finger opening it does not
+  bring the on-screen keyboard up: no field first on a coarse pointer), `returnFocus`, `disposeOnClose`,
+  `open()`, `close(reason)`, `toggle()`, `show(host)`, `onOpening` / `onOpened` / `onClosing` /
+  `onClosed` (`reason`: `code`, `escape`, `scrim`, `swipe`, `back`, `button`, `owner`). Content that
+  scrolls with nothing to focus in it takes focus itself. `closeOnBack` (default `true`): the browser's
+  back, Android's back button and back gesture close it through the session history, holding one entry
+  while open and taking it back when it closes otherwise (`holdBackButton(view, onBack, layer)` in core:
+  the holder of the highest layer, the last held or raised among equals, closes first; the state the
+  page's router keeps in the entry stays). `SwipeTracker` measures a finger's speed.
+- `ContextMenu.presentation`: `'menu'` (default), `'sheet'` (its items in an `ActionSheet`) or `'auto'` (a
+  sheet when a finger opened it — a long press — or on a screen with only a coarse pointer when not
+  opened by a key); `actionSheet`. `MenuList.openSubmenus` (`false` reports a submenu item as chosen, for
+  an owner that shows the submenu itself).
+- Texts (en, tr): `sheetLabel`, `sheetHandle`, `sheetPeek`, `sheetHalf`, `sheetFull`, `sheetFit`,
+  `sheetHeight`, `drawerLabel`, `actionSheetLabel`, `back`. Tokens `sheet.*`, `drawer.*`,
+  `actionsheet.*`; Material maps the sheet's outline away and a 32 high handle area, its drawer to 16
+  corners, 360 wide, no outline; Lilac more room and rounder drawers; Fluent 8 corners on the drawer.
+- Docs: BottomSheet, Drawer and ActionSheet pages; `e2e/checks/54-bottomsheet.mjs`,
+  `55-drawer.mjs`, `56-actionsheet.mjs`.
+
+### TabDocumentManager on a tablet and a phone
+
+- The layout stays the same and saves the same at every size; only where things show changes, and the
+  content is moved, never made again. `presentation: 'auto' | 'desktop' | 'tablet' | 'phone'` (default
+  `'auto'`: under `phoneWidth` (560) of the manager's own width as on a phone, whatever the pointer;
+  under `tabletWidth` (1024) as on a tablet when the screen's pointer is a finger, `(pointer: coarse)`,
+  followed live; with a mouse a narrow manager stays a desktop; `tabletWhen: 'width'` lets the width
+  alone decide). 560: phones are 360–430 pixels wide, a manager of about 590 beside a desktop page's
+  side column stays a desktop; apps change both limits. `currentPresentation` (reactive);
+  `onPresentationChanging` (cancelable: `from`, `to`, `width`) / `onPresentationChanged`. A manager
+  on a desktop with a mouse is as before.
+- On a tablet or a phone the documents' groups take the compact bars as the dock areas do (no scroll
+  buttons, shrinking tabs, small buttons, a single document as a title; `compactBarButtons: 'auto'` keeps
+  only the "…" menu there), through the same `compact…` props; `narrowBars: 'documents'` keeps the
+  desktop bar. A narrow tab gives up its description before the letters of its title.
+- Tablet: at most two groups side by side (the first branch of the layout and the rest, each showing the
+  group used last); the groups that do not fit fold their tabs into the strip of the group beside them
+  (a tap activates the tab's own group there; the arrow keys go along the strip as it shows). Dock
+  areas go into drawers from their edge, the bottom one into a sheet, opened from their titles along the
+  edges or by a finger from the edge (`edgeSwipe`); a floating window is a large sheet.
+- Phone: one document, full screen, under a bar with its title (a swipe left or right, or the arrow keys,
+  go to the document beside; a tap opens its commands in an action sheet), its close button and the
+  number of open documents, which opens a full-screen list: groups (and floating windows) as sections,
+  pinned first, a search, a tap to show, a swipe sideways to close, a long press to lift a row and drag
+  it within its group or into another, a long press let go to open its commands; Up, Down, Enter,
+  Delete, Alt+Up/Down, the Menu key. The tools of the dock areas are buttons in a bar at the bottom: a
+  tap opens a sheet above it (peek, half, full by its handle; swipe down closes) or a drawer for an area
+  that asks for one. A floating window is a full-screen sheet; new browser windows are off; the tab menu
+  is an action sheet ("Move to…" and "Move into new window" are left out there). The browser's back
+  closes what is open on top, then goes back through the documents (`backButton`), past the tools used
+  in between; of several managers the one used last.
+- Settings: `phoneDockMode` (`'sheet'`), `tabletDockMode` (`'auto'`: drawers for the sides, a sheet for
+  the bottom) and the area's own `TabDockArea.phoneDockMode` / `tabletDockMode` (`'sheet'`, `'drawer'`,
+  `'hidden'`; its own wins), `edgeSwipe`, `backButton`, `menuPresentation`. Methods
+  `tabletWhen`, `narrowBars`, `showDocumentList()`, `hideDocumentList()`, `documentListOpen`, `showTool(doc)`, `hideTool(area)`;
+  `activate()` of a tool or of a document in a window opens its drawer or sheet. `split`, `move`,
+  `float`, `dock` keep working and are shown the way the presentation allows; `moveToNewWindow` returns
+  `null` on a phone.
+- On a coarse pointer the tabs, their close buttons and the folded areas' titles are taller in every
+  presentation (`tabdocs.touch-tab-height`, `touch-close-size`). Tokens for the phone's bar, tools and
+  list (`tabdocs.phone-*`, `tool-*`, `phone-list-*`, `divider-*`); the shown document and the open tool
+  are marked as the design language marks a selection. Texts (en, tr) `tabDocsPresentation`,
+  `tabDocsDesktop`, `tabDocsTablet`, `tabDocsPhone`, `tabDocsPhoneTitle`, `tabDocsPhoneCount`,
+  `tabDocsPhoneList`, `tabDocsPhoneSearch`, `tabDocsPhoneTools`.
+- Docs: a "Tablet and phone" page (one layout shown four ways and saved the same, a manager that follows
+  its width in a resizable frame, the settings and events, the list, the back button, API); the Preview
+  and "Between managers" examples, narrow beside their logs, are shown as on a desktop.
+  `e2e/checks/53-tabdocs-mobile.mjs` (a phone of 390 × 844 and a tablet of 820 × 1180, both with touch).

@@ -1,0 +1,9 @@
+{
+  "drawer": {
+    "$description": "Fluent panes and flyouts: 8 corners on the open side (OverlayCornerRadius).",
+    "radius": {
+      "$type": "dimension",
+      "$value": "{radius.lg}"
+    }
+  }
+}

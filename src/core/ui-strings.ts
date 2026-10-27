@@ -401,4 +401,25 @@ export interface UiStrings {
   tabDocsHideActive: string;
   tabDocsHidden: string;
   tabDocsShown: string;
+  back: string;
+  /** BottomSheet, ActionSheet and Drawer: their names when they have no title, the sheet's handle and its heights. `{height}` is filled in. */
+  sheetLabel: string;
+  sheetHandle: string;
+  sheetPeek: string;
+  sheetHalf: string;
+  sheetFull: string;
+  sheetFit: string;
+  sheetHeight: string;
+  drawerLabel: string;
+  actionSheetLabel: string;
+  /** TabDocumentManager on a tablet and a phone. `{kind}`, `{title}` and `{n}` are filled in. */
+  tabDocsPresentation: string;
+  tabDocsDesktop: string;
+  tabDocsTablet: string;
+  tabDocsPhone: string;
+  tabDocsPhoneTitle: string;
+  tabDocsPhoneCount: string;
+  tabDocsPhoneList: string;
+  tabDocsPhoneSearch: string;
+  tabDocsPhoneTools: string;
 }

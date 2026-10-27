@@ -115,6 +115,15 @@ import type { TabRestoreWindows } from './tab-restore-windows';
 import type { TabWindowOpenedEventArgs } from './tab-window-opened-event-args';
 import type { TabWindowOpeningEventArgs } from './tab-window-opening-event-args';
 import type { TabWindowRequest } from './tab-window-request';
+import type { ContextMenuPresentation } from '../contextmenu/context-menu-presentation';
+import type { PresentationChangedEventArgs } from './presentation-changed-event-args';
+import type { PresentationChangingEventArgs } from './presentation-changing-event-args';
+import type { TabDockPresentation } from './tab-dock-presentation';
+import type { TabPresentation } from './tab-presentation';
+import type { TabPresentationKind } from './tab-presentation-kind';
+import { TabPresenter } from './TabPresenter';
+import type { TabNarrowBars } from './tab-narrow-bars';
+import type { TabTabletWhen } from './tab-tablet-when';
 
 const OWN = [
   'closeButton',
@@ -200,6 +209,16 @@ const OWN = [
   'keys',
   'texts',
   'announce',
+  'presentation',
+  'tabletWidth',
+  'phoneWidth',
+  'tabletWhen',
+  'narrowBars',
+  'phoneDockMode',
+  'tabletDockMode',
+  'edgeSwipe',
+  'backButton',
+  'menuPresentation',
 ] as const;
 
 /** Callbacks: stored as they are given. */
@@ -353,6 +372,12 @@ interface Parts {
   dropping: Emitter<TabDropEventArgs>;
   dropped: Emitter<TabDroppedEventArgs>;
   dragEnded: Emitter<TabDragEndedEventArgs>;
+  /** How the layout is shown on a tablet and a phone. */
+  presenter: TabPresenter;
+  /** The manager's width as last measured; 0 before it is on the page. */
+  width: number;
+  presentationChanging: Emitter<PresentationChangingEventArgs>;
+  presentationChanged: Emitter<PresentationChangedEventArgs>;
 }
 
 const PARTS = Symbol('mx.tab-document-manager');
@@ -433,6 +458,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       ['onWindowOpening', this.onWindowOpening],
       ['onWindowOpened', this.onWindowOpened],
       ['onError', this.onError],
+      ['onPresentationChanging', this.onPresentationChanging],
+      ['onPresentationChanged', this.onPresentationChanged],
     ];
     for (const [name, subscribe] of events) if (own[name]) subscribe(own[name] as never);
 
@@ -463,7 +490,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     parts.windowKeys = new WindowByKeys(this);
     this.observeProperty('dockAreaSize', () => this.renderDock());
     this.observeProperty('dockAreaMinSize', () => this.renderDock());
+    for (const name of ['presentation', 'tabletWidth', 'phoneWidth', 'tabletWhen'] as const) this.observeProperty(name, () => this.resolvePresentation());
+    for (const name of ['phoneDockMode', 'tabletDockMode', 'backButton'] as const) this.observeProperty(name, () => untracked(() => this.parts.presenter.render()));
     this.watchSize();
+    this.watchPointer();
     MANAGERS.add(this);
     // Built later than made: core has just put the groups at the root, back into their splits.
     this.motif.on('x:built', () => untracked(() => this.renderTree()));
@@ -475,6 +505,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
     this.motif.setDisposable(() => {
       stopTexts();
+      parts.presenter.dispose();
       MANAGERS.delete(this);
       parts.moveKeys?.end(false);
       parts.windowKeys?.end(false);
@@ -556,6 +587,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         parts.windowOpening,
         parts.windowOpened,
         parts.error,
+        parts.presentationChanging,
+        parts.presentationChanged,
       ]) {
         emitter.dispose();
       }
@@ -1102,6 +1135,77 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   set factory(value: Bind<TabContentFactory | null>) {
     this.assignProperty('factory', functionValue(value));
   }
+  get presentation(): TabPresentation {
+    return this.getProperty<TabPresentation | undefined>('presentation') ?? 'auto';
+  }
+  set presentation(value: Bind<TabPresentation>) {
+    this.assignProperty('presentation', value);
+  }
+  get tabletWidth(): number {
+    return this.getProperty<number | undefined>('tabletWidth') ?? 1024;
+  }
+  set tabletWidth(value: Bind<number>) {
+    this.assignProperty('tabletWidth', value, Number);
+  }
+  get phoneWidth(): number {
+    return this.getProperty<number | undefined>('phoneWidth') ?? 560;
+  }
+  set phoneWidth(value: Bind<number>) {
+    this.assignProperty('phoneWidth', value, Number);
+  }
+  /** When `'auto'` shows the tablet layout: on a touch screen under `tabletWidth`, or under it whatever the pointer. */
+  get tabletWhen(): TabTabletWhen {
+    return this.getProperty<TabTabletWhen | undefined>('tabletWhen') ?? 'touch';
+  }
+  set tabletWhen(value: Bind<TabTabletWhen>) {
+    this.assignProperty('tabletWhen', value);
+  }
+  /** How the bars of the documents' groups look on a tablet or a phone: compact, or as on a desktop. */
+  get narrowBars(): TabNarrowBars {
+    return this.getProperty<TabNarrowBars | undefined>('narrowBars') ?? 'compact';
+  }
+  set narrowBars(value: Bind<TabNarrowBars>) {
+    this.assignProperty('narrowBars', value);
+  }
+  get phoneDockMode(): TabDockPresentation {
+    return this.getProperty<TabDockPresentation | undefined>('phoneDockMode') ?? 'sheet';
+  }
+  set phoneDockMode(value: Bind<TabDockPresentation>) {
+    this.assignProperty('phoneDockMode', value);
+  }
+  get tabletDockMode(): TabDockPresentation {
+    return this.getProperty<TabDockPresentation | undefined>('tabletDockMode') ?? 'auto';
+  }
+  set tabletDockMode(value: Bind<TabDockPresentation>) {
+    this.assignProperty('tabletDockMode', value);
+  }
+  get edgeSwipe(): boolean {
+    return this.getProperty<boolean | undefined>('edgeSwipe') !== false;
+  }
+  set edgeSwipe(value: Bind<boolean>) {
+    this.assignProperty('edgeSwipe', value, Boolean);
+  }
+  get backButton(): boolean {
+    return this.getProperty<boolean | undefined>('backButton') !== false;
+  }
+  set backButton(value: Bind<boolean>) {
+    this.assignProperty('backButton', value, Boolean);
+  }
+  /** How the tab menus show, as set; `null` follows the presentation. */
+  get menuPresentation(): ContextMenuPresentation | null {
+    return this.getProperty<ContextMenuPresentation | null | undefined>('menuPresentation') ?? null;
+  }
+  set menuPresentation(value: Bind<ContextMenuPresentation | null>) {
+    this.assignProperty('menuPresentation', value);
+  }
+  /** How the layout is shown now: `presentation`, or by the manager's width when it is `'auto'`. Reactive. */
+  get currentPresentation(): TabPresentationKind {
+    return this.getProperty<TabPresentationKind | undefined>('currentPresentation') ?? 'desktop';
+  }
+  /** Whether the phone's list of documents is open. Reactive. */
+  get documentListOpen(): boolean {
+    return !!this.getProperty<boolean>('documentListOpen');
+  }
 
   /** The groups, in layout order (left to right, top to bottom). Reactive. */
   get groups(): readonly TabGroup[] {
@@ -1336,6 +1440,34 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   get onError(): MotifEvent<TabErrorEventArgs> {
     return this.parts.error.event;
   }
+  /** The layout is about to be shown another way (desktop, tablet, phone); cancelable. */
+  get onPresentationChanging(): MotifEvent<PresentationChangingEventArgs> {
+    return this.parts.presentationChanging.event;
+  }
+  get onPresentationChanged(): MotifEvent<PresentationChangedEventArgs> {
+    return this.parts.presentationChanged.event;
+  }
+
+  // Tablet and phone.
+
+  /** On a phone: opens the full-screen list of open documents. `false` in another presentation. */
+  showDocumentList(): boolean {
+    return untracked(() => this.parts.presenter.showList());
+  }
+
+  hideDocumentList(): boolean {
+    return untracked(() => this.parts.presenter.hideList());
+  }
+
+  /** On a tablet or a phone: opens the dock area of `document` (its drawer or sheet) with it shown. */
+  showTool(document: TabDocument): boolean {
+    return untracked(() => this.parts.presenter.showTool(document));
+  }
+
+  /** On a tablet or a phone: closes a dock area's drawer or sheet. */
+  hideTool(area: TabDockArea): boolean {
+    return untracked(() => this.parts.presenter.hideTool(area));
+  }
 
   // Documents.
 
@@ -1402,8 +1534,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   /** Makes a document its group's active one, and its group the active group. */
   activate(document: TabDocument, focus = false): boolean {
     return untracked(() => {
-      if (document.manager === this && document.dockArea?.autoHidden && this.parts.slide?.area !== document.dockArea) this.slideOut(document, false, false);
-      return this.activateDocument(document, focus, false);
+      const presenter = this.parts.presenter;
+      if (document.manager === this && presenter.kind === 'desktop' && document.dockArea?.autoHidden && this.parts.slide?.area !== document.dockArea) this.slideOut(document, false, false);
+      // On a tablet or a phone, the drawer, the sheet or the window it is in comes up.
+      return this.activateDocument(document, focus, false) && (presenter.reveal(document), true);
     });
   }
 
@@ -1655,7 +1789,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   /** Slides a folded dock area out over the documents, with `document` shown. */
   showAutoHidden(document: TabDocument): boolean {
-    return untracked(() => this.slideOut(document, false, false));
+    return untracked(() => (this.parts.presenter.kind === 'desktop' ? this.slideOut(document, false, false) : this.parts.presenter.showTool(document)));
   }
 
   /** Slides the folded area that is out back to its edge. */
@@ -2046,6 +2180,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     const group = tab.group;
     if (group?.activeTab) group.reveal(group.activeTab);
     group?.queueOverflow();
+    // A phone's bar and list show the title, the marks and the icon too.
+    (this as unknown as { [PARTS]?: Parts })[PARTS]?.presenter.renderSoon();
   }
 
   /** @internal A tab's document was pinned or unpinned: its tab moves to its side of the strip. */
@@ -2068,12 +2204,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   /** @internal */
   activateByUser(document: TabDocument): void {
-    untracked(() => this.activateDocument(document, false, true));
+    untracked(() => this.activateDocument(document, false, true) && this.parts.presenter.reveal(document));
   }
 
   /** @internal A document chosen in a list: activated and focused. */
   activateFromList(document: TabDocument): void {
-    if (document.manager === this) this.activateDocument(document, true, true);
+    if (document.manager === this && this.activateDocument(document, true, true)) this.parts.presenter.reveal(document);
   }
 
   /** @internal */
@@ -2165,6 +2301,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   mayNewWindow(subject: TabDragSubject): boolean {
     return untracked(() => {
       const view = this.element.ownerDocument.defaultView;
+      // A phone has no windows beside the page.
+      if (this.parts.presenter.kind === 'phone') return false;
       if (!this.isEnabled || (!this.openWindow && typeof view?.open !== 'function')) return false;
       const w = subject.group.browserWindow;
       // Alone in a new window already.
@@ -2248,7 +2386,87 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   /** @internal Whether the user may drag a document: its own `allowDrag`, else the manager's. */
   mayDrag(document: TabDocument): boolean {
+    // On a phone the list moves documents, not the strips.
+    return untracked(() => this.isEnabled && (document.allowDrag ?? this.allowDrag) && this.parts.presenter.kind !== 'phone');
+  }
+
+  /** @internal The top of the documents' layout. */
+  get mainRoot(): LayoutItem | null {
+    return this.parts.root;
+  }
+
+  /** @internal The groups, the one used last first. */
+  recentGroupsNow(): readonly TabGroup[] {
+    return this.parts.recentGroups;
+  }
+
+  /** @internal The headers a group's strip shows besides its own (the groups folded into it on a tablet). */
+  guestHeaders(group: TabGroup): { before: HTMLElement[]; after: HTMLElement[] } | null {
+    const parts = (this as unknown as { [PARTS]?: Parts })[PARTS];
+    return parts?.presenter.guestsOf(group) ?? null;
+  }
+
+  /** @internal Whether a group's strip shows the tabs of groups folded into it on a tablet. Reactive. */
+  groupHasGuests(group: TabGroup): boolean {
+    const parts = (this as unknown as { [PARTS]?: Parts })[PARTS];
+    return !!parts?.presenter.hasGuests(group);
+  }
+
+  /** @internal Whether a group is folded into another on a tablet: its tabs show in that group's strip. */
+  groupFolded(group: TabGroup): boolean {
+    const parts = (this as unknown as { [PARTS]?: Parts })[PARTS];
+    return !!parts?.presenter.isFolded(group);
+  }
+
+  /** @internal The tab whose header holds `target`, whichever group it is in. */
+  tabOfHeader(target: EventTarget | null): DocumentTab | undefined {
+    return this.tabAt(target);
+  }
+
+  /** @internal How the tab menus show now: `menuPresentation`, else a sheet on a phone, a sheet for a finger on a tablet, a menu on a desktop. Reactive. */
+  get menuPresentationNow(): ContextMenuPresentation {
+    const own = this.menuPresentation;
+    if (own) return own;
+    const kind = this.currentPresentation;
+    return kind === 'phone' ? 'sheet' : kind === 'tablet' ? 'auto' : 'menu';
+  }
+
+  /** @internal A document's commands in an action sheet (the phone's title, a row of its list). */
+  openDocumentSheet(doc: TabDocument, group: TabGroup, byKeyboard: boolean, returnFocus: HTMLElement | null): void {
+    untracked(() => this.parts.menus?.openSheet(doc, group, byKeyboard, returnFocus));
+  }
+
+  /** @internal The phone's list closes a document (or hides one that may only be hidden). */
+  closeOrHideFromList(doc: TabDocument): Promise<boolean> {
+    return untracked(() => this.closeOrHide(doc, true));
+  }
+
+  /** @internal Whether the phone's list may move a document: its own `allowDrag`, else the manager's. */
+  mayMoveFromList(document: TabDocument): boolean {
     return untracked(() => this.isEnabled && (document.allowDrag ?? this.allowDrag));
+  }
+
+  /** @internal The phone's list moves a document to `index` of `group`. */
+  moveFromList(doc: TabDocument, group: TabGroup, index: number): boolean {
+    return untracked(() => this.moveDocument(doc, group, index, true));
+  }
+
+  /** @internal A dock area's own tablet or phone setting changed. */
+  presentationSettingChanged(): void {
+    const parts = (this as unknown as { [PARTS]?: Parts })[PARTS];
+    parts?.presenter.renderSoon();
+  }
+
+  /** @internal Whether a dock area's titles show along its edge on a tablet: not when it is hidden there. Reactive. */
+  toolStripShown(area: TabDockArea): boolean {
+    void this.tabletDockMode;
+    void area.tabletDockMode;
+    return untracked(() => this.parts.presenter.dockModeFor(area, 'tablet')) !== 'hidden';
+  }
+
+  /** @internal The phone's list opened or closed. */
+  listShown(open: boolean): void {
+    this.setProperty('documentListOpen', open);
   }
 
   /** @internal Whether a drop with the copy key may open a copy of the document. */
@@ -2985,6 +3203,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     }
     this.useGroup(group, byUser, false);
     if (previous !== tab || before !== doc) this.fireActivated(doc, previous !== tab ? (previous?.document ?? null) : before, group, byUser);
+    this.parts.presenter.render();
     if (focus) tab.focusContent();
     return true;
   }
@@ -3020,6 +3239,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     } finally {
       parts.travelling = false;
     }
+    parts.presenter.reveal(doc);
     parts.at = to;
     this.renderHistory();
     return true;
@@ -3582,6 +3802,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     this.setProperty('groups', groups);
     this.renderDock();
     this.renderTexts();
+    parts.presenter.render();
     if (focus && focus.isConnected && this.owns(focus) && deepActiveElement(focus) !== focus) focus.focus({ preventScroll: true });
   }
 
@@ -3622,6 +3843,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     if (w.root) this.disposeSplits(w.root);
     w.dispose();
     this.renderLists();
+    parts.presenter.render();
     parts.windowClosed.fire({ window: w, kind: 'floating', reason, byUser, source: this });
     this.layoutChanged('closeWindow', null, byUser, w);
     if (reason !== 'docked' && reason !== 'moved') this.say('tabDocsWindowClosed');
@@ -3978,6 +4200,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     area.strip = new AutoHideStrip(this, area);
     this.element.append(area.element, area.sash.element, area.strip.element);
     this.renderLists();
+    parts.presenter.render();
     return area;
   }
 
@@ -4031,7 +4254,15 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     untracked(() => {
       // Grid lines: column 4 and row 4 are the documents, 2 and 6 the areas, 3 and 5 their splitters, 1 and 7 the strips.
       const r = { c0: 2, c1: 7, r0: 2, r1: 7 };
+      const presented = parts.presenter.kind !== 'desktop';
       for (const area of this.orderedAreas()) {
+        if (presented) {
+          // In a drawer or a sheet: no size and no place of its own here, and no splitter.
+          for (const name of ['inline-size', 'block-size', 'grid-area']) area.element.style.removeProperty(name);
+          area.sash.element.hidden = true;
+          area.element.setAttribute('aria-label', this.textOf(AREA_TEXTS[area.side]));
+          continue;
+        }
         const folded = area.autoHidden;
         const px = Math.round(area.pixels());
         const across = area.orientation === 'horizontal';
@@ -4064,6 +4295,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
         sashEl.setAttribute('aria-label', this.textOf('tabDocsResizeArea', { area: this.textOf(AREA_TEXTS[area.side]) }));
         area.element.setAttribute('aria-label', this.textOf(AREA_TEXTS[area.side]));
       }
+      if (presented) parts.presenter.render();
     });
   }
 
@@ -4080,6 +4312,46 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return Math.max(min, Math.min(px, room - others - keep));
   }
 
+  /** Shows the layout as `presentation` says, or by the manager's width; asks `onPresentationChanging` first. */
+  private resolvePresentation(): void {
+    const parts = (this as unknown as { [PARTS]?: Parts })[PARTS];
+    if (!parts) return;
+    untracked(() => {
+      const set = this.presentation;
+      const width = parts.width || this.element.getBoundingClientRect().width;
+      let to: TabPresentationKind;
+      if (set !== 'auto') to = set;
+      else if (!(width > 0)) return;
+      else if (width < this.phoneWidth) to = 'phone';
+      // A tablet is a narrow manager on a touch screen; with a mouse it stays a desktop (unless `tabletWhen` says width alone).
+      else to = width < this.tabletWidth && (this.tabletWhen === 'width' || coarsePointer(this.element)) ? 'tablet' : 'desktop';
+      const from = parts.presenter.kind;
+      if (to === from) return;
+      const e: PresentationChangingEventArgs = { from, to, width: Math.round(width), cancel: false, source: this };
+      parts.presentationChanging.fire(e);
+      if (e.cancel) return;
+      parts.drag?.cancel(true);
+      parts.moveKeys?.end(false);
+      parts.windowKeys?.end(false);
+      if (parts.slide) this.stopSlide();
+      parts.presenter.apply(to);
+      this.setProperty('currentPresentation', to);
+      this.renderDock();
+      for (const group of this.groups) group.queueOverflow();
+      parts.presentationChanged.fire({ from, to, width: e.width, source: this });
+      this.say('tabDocsPresentation', { kind: this.textOf(to === 'phone' ? 'tabDocsPhone' : to === 'tablet' ? 'tabDocsTablet' : 'tabDocsDesktop') });
+    });
+  }
+
+  /** A screen that gets or loses its touch (a tablet with a keyboard and a mouse) may change the presentation. */
+  private watchPointer(): void {
+    const media = this.element.ownerDocument.defaultView?.matchMedia?.('(pointer: coarse)');
+    if (!media?.addEventListener) return;
+    const changed = () => this.resolvePresentation();
+    media.addEventListener('change', changed);
+    this.motif.setDisposable(() => media.removeEventListener('change', changed));
+  }
+
   /** A dock area sized by a share follows the manager's size. */
   private watchSize(): void {
     const view = this.element.ownerDocument.defaultView;
@@ -4091,7 +4363,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       const now = `${Math.round(box.width)}x${Math.round(box.height)}`;
       if (now === size) return;
       size = now;
+      parts.width = box.width;
+      untracked(() => this.resolvePresentation());
       if (parts.areas.size) this.renderDock();
+      else untracked(() => parts.presenter.render());
     });
     parts.sizeWatch.observe(this.element);
   }
@@ -4268,6 +4543,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     parts.floated.fire({ document: doc, group: into, window: w, byUser, source: this });
     this.layoutChanged('float', into, byUser, w);
     this.say('tabDocsFloated', { title: doc ? doc.title : this.textOf('tabDocsGroup', { n: this.groups.indexOf(into) + 1 }) });
+    // On a tablet or a phone, a window the user floats comes up in its sheet.
+    if (byUser && into.activeDocument) parts.presenter.reveal(into.activeDocument);
     if (byUser) this.focusGroup(into);
     return w;
   }
@@ -4500,6 +4777,15 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   /** @internal A title in a folded area's strip was chosen. */
   slideByUser(doc: TabDocument, hover: boolean): void {
     untracked(() => {
+      const presenter = this.parts.presenter;
+      const area = doc.dockArea;
+      if (presenter.kind !== 'desktop') {
+        // On a tablet: its drawer or sheet, opened or closed again by the title of the tool it shows.
+        if (hover) return;
+        if (area && presenter.isToolOpen(area) && doc.group?.activeDocument === doc) presenter.hideTool(area);
+        else presenter.showTool(doc);
+        return;
+      }
       const slide = this.parts.slide;
       // A click on the title of the document shown closes it again.
       if (!hover && slide && !slide.hover && slide.area === doc.dockArea && doc.group?.activeDocument === doc) this.slideBack(true, true);
@@ -4626,6 +4912,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     this.setProperty('activeGroup', group);
     const now = group.activeDocument;
     if (report && now !== before) this.fireActivated(now, before, group, byUser);
+    parts.presenter.render();
   }
 
   private maximizeBy(group: TabGroup, byUser: boolean, quiet = false): boolean {
@@ -4963,7 +5250,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     const tab = this.tabAt(e.target);
     const group = tab?.group;
     if (!tab || !group) return false;
-    const tabs = group.tabs;
+    // On a tablet a strip may show the tabs of the groups folded into it.
+    const tabs = this.parts.presenter.stripOrder(tab);
     const at = tabs.indexOf(tab);
     let by = to;
     // Right to left, the arrows point the other way.
@@ -5157,6 +5445,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       dropping: new Emitter(),
       dropped: new Emitter(),
       dragEnded: new Emitter(),
+      presenter: new TabPresenter(this),
+      width: 0,
+      presentationChanging: new Emitter(),
+      presentationChanged: new Emitter(),
     };
     return parts;
   }
@@ -5235,6 +5527,11 @@ const AREA_TEXTS: Record<TabDockSide, keyof UiStrings> = {
 function pinAt(group: TabGroup, doc: TabDocument, index: number): boolean | null {
   const pinned = group.tabs.filter((t) => t.document !== doc && t.document.pinned).length;
   return index < pinned ? true : index > pinned ? false : null;
+}
+
+/** Whether the screen's main pointer is a finger (a touch screen). */
+function coarsePointer(el: Element): boolean {
+  return !!el.ownerDocument.defaultView?.matchMedia?.('(pointer: coarse)').matches;
 }
 
 /** Whether the page runs as an installed app, where the browser leaves the editor keys to it. */

@@ -4,6 +4,7 @@ import type { MenuItem } from '../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
 import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
 import type { ContextMenuOpeningEventArgs } from './context-menu-opening-event-args';
+import type { ContextMenuPresentation } from './context-menu-presentation';
 import type { ContextMenuTarget } from './context-menu-target';
 
 /** Props of `ContextMenu`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
@@ -20,6 +21,8 @@ export interface ContextMenuProps extends ControlProps {
   closeOnScroll?: Bind<boolean>;
   /** Pointing at an item opens its submenu. Default `true`. */
   openOnHover?: Bind<boolean>;
+  /** A menu at the pointer, an `ActionSheet` from the bottom, or (`'auto'`) a sheet when a finger opened it, or on a screen with only a coarse pointer when not opened by a key. Default `'menu'`. */
+  presentation?: Bind<ContextMenuPresentation>;
   /** The menu is about to open; set `e.items` for `e.target`, or cancel. */
   onOpening?: (e: ContextMenuOpeningEventArgs) => void;
   /** An item was chosen, after the item's own `click`. */

@@ -210,6 +210,125 @@
     "value": "inset 0px 0px 0px 3px rgb(255 255 255 / 0.7)"
   },
   {
+    "name": "actionsheet.item-height",
+    "cssVar": "--mx-actionsheet-item-height",
+    "type": "dimension",
+    "ref": "control.height.lg",
+    "value": "2.5rem"
+  },
+  {
+    "name": "actionsheet.item-padding",
+    "cssVar": "--mx-actionsheet-item-padding",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "actionsheet.item-gap",
+    "cssVar": "--mx-actionsheet-item-gap",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "actionsheet.item-font-size",
+    "cssVar": "--mx-actionsheet-item-font-size",
+    "type": "dimension",
+    "ref": "font.size.body-large",
+    "value": "1.125rem"
+  },
+  {
+    "name": "actionsheet.item-line-height",
+    "cssVar": "--mx-actionsheet-item-line-height",
+    "type": "dimension",
+    "ref": "font.line.body-large",
+    "value": "1.5rem"
+  },
+  {
+    "name": "actionsheet.item-radius",
+    "cssVar": "--mx-actionsheet-item-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "actionsheet.message-fg",
+    "cssVar": "--mx-actionsheet-message-fg",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "actionsheet.message-font-size",
+    "cssVar": "--mx-actionsheet-message-font-size",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
+    "name": "actionsheet.message-line-height",
+    "cssVar": "--mx-actionsheet-message-line-height",
+    "type": "dimension",
+    "ref": "font.line.body",
+    "value": "1.25rem"
+  },
+  {
+    "name": "actionsheet.message-padding",
+    "cssVar": "--mx-actionsheet-message-padding",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "actionsheet.list-padding",
+    "cssVar": "--mx-actionsheet-list-padding",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "actionsheet.cancel-padding",
+    "cssVar": "--mx-actionsheet-cancel-padding",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "actionsheet.cancel-border-width",
+    "cssVar": "--mx-actionsheet-cancel-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "actionsheet.cancel-border-color",
+    "cssVar": "--mx-actionsheet-cancel-border-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "actionsheet.cancel-height",
+    "cssVar": "--mx-actionsheet-cancel-height",
+    "type": "dimension",
+    "ref": "control.height.lg",
+    "value": "2.5rem"
+  },
+  {
+    "name": "actionsheet.cancel-font-size",
+    "cssVar": "--mx-actionsheet-cancel-font-size",
+    "type": "dimension",
+    "ref": "font.size.body-large",
+    "value": "1.125rem"
+  },
+  {
+    "name": "actionsheet.cancel-font-weight",
+    "cssVar": "--mx-actionsheet-cancel-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
     "name": "glyph.size",
     "cssVar": "--mx-glyph-size",
     "type": "dimension",
@@ -2485,6 +2604,174 @@
     "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
   },
   {
+    "name": "drawer.background",
+    "cssVar": "--mx-drawer-background",
+    "type": "color",
+    "ref": "color.bg.surface",
+    "value": "#f8f7f3"
+  },
+  {
+    "name": "drawer.fg",
+    "cssVar": "--mx-drawer-fg",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "drawer.border-width",
+    "cssVar": "--mx-drawer-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "drawer.border-color",
+    "cssVar": "--mx-drawer-border-color",
+    "type": "color",
+    "ref": "color.stroke.surface",
+    "value": "rgb(117 117 117 / 0.4)"
+  },
+  {
+    "name": "drawer.radius",
+    "cssVar": "--mx-drawer-radius",
+    "type": "dimension",
+    "ref": "radius.none",
+    "value": "0px"
+  },
+  {
+    "name": "drawer.shadow",
+    "cssVar": "--mx-drawer-shadow",
+    "type": "shadow",
+    "ref": "elevation.dialog",
+    "value": "0px 32px 64px 0px rgb(0 0 0 / 0.24), 0px 0px 8px 0px rgb(0 0 0 / 0.2)"
+  },
+  {
+    "name": "drawer.shadow-push",
+    "cssVar": "--mx-drawer-shadow-push",
+    "type": "shadow",
+    "ref": "elevation.card",
+    "value": "0px 1px 2px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "drawer.scrim",
+    "cssVar": "--mx-drawer-scrim",
+    "type": "color",
+    "ref": "color.bg.smoke",
+    "value": "rgb(0 0 0 / 0.3)"
+  },
+  {
+    "name": "drawer.size",
+    "cssVar": "--mx-drawer-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "20rem"
+  },
+  {
+    "name": "drawer.padding",
+    "cssVar": "--mx-drawer-padding",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "drawer.header-gap",
+    "cssVar": "--mx-drawer-header-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "drawer.header-padding",
+    "cssVar": "--mx-drawer-header-padding",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "drawer.header-border-color",
+    "cssVar": "--mx-drawer-header-border-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "drawer.footer-padding",
+    "cssVar": "--mx-drawer-footer-padding",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "drawer.footer-gap",
+    "cssVar": "--mx-drawer-footer-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "drawer.footer-border-color",
+    "cssVar": "--mx-drawer-footer-border-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "drawer.font-family",
+    "cssVar": "--mx-drawer-font-family",
+    "type": "fontFamily",
+    "ref": "font.family.sans",
+    "value": "Archivo, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+  },
+  {
+    "name": "drawer.font-size",
+    "cssVar": "--mx-drawer-font-size",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
+    "name": "drawer.line-height",
+    "cssVar": "--mx-drawer-line-height",
+    "type": "dimension",
+    "ref": "font.line.body",
+    "value": "1.25rem"
+  },
+  {
+    "name": "drawer.title-font-size",
+    "cssVar": "--mx-drawer-title-font-size",
+    "type": "dimension",
+    "ref": "font.size.subtitle",
+    "value": "1.25rem"
+  },
+  {
+    "name": "drawer.title-font-weight",
+    "cssVar": "--mx-drawer-title-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "drawer.title-line-height",
+    "cssVar": "--mx-drawer-title-line-height",
+    "type": "dimension",
+    "ref": "font.line.subtitle",
+    "value": "1.75rem"
+  },
+  {
+    "name": "drawer.focus-width",
+    "cssVar": "--mx-drawer-focus-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "drawer.focus-color",
+    "cssVar": "--mx-drawer-focus-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
     "name": "drop-down.placeholder",
     "cssVar": "--mx-drop-down-placeholder",
     "type": "color",
@@ -4641,6 +4928,230 @@
     "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
   },
   {
+    "name": "sheet.background",
+    "cssVar": "--mx-sheet-background",
+    "type": "color",
+    "ref": "color.bg.surface",
+    "value": "#f8f7f3"
+  },
+  {
+    "name": "sheet.fg",
+    "cssVar": "--mx-sheet-fg",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "sheet.border-width",
+    "cssVar": "--mx-sheet-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "sheet.border-color",
+    "cssVar": "--mx-sheet-border-color",
+    "type": "color",
+    "ref": "color.stroke.surface",
+    "value": "rgb(117 117 117 / 0.4)"
+  },
+  {
+    "name": "sheet.radius",
+    "cssVar": "--mx-sheet-radius",
+    "type": "dimension",
+    "ref": "radius.xl",
+    "value": "0.875rem"
+  },
+  {
+    "name": "sheet.shadow",
+    "cssVar": "--mx-sheet-shadow",
+    "type": "shadow",
+    "ref": "elevation.dialog",
+    "value": "0px 32px 64px 0px rgb(0 0 0 / 0.24), 0px 0px 8px 0px rgb(0 0 0 / 0.2)"
+  },
+  {
+    "name": "sheet.scrim",
+    "cssVar": "--mx-sheet-scrim",
+    "type": "color",
+    "ref": "color.bg.smoke",
+    "value": "rgb(0 0 0 / 0.3)"
+  },
+  {
+    "name": "sheet.max-width",
+    "cssVar": "--mx-sheet-max-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "40rem"
+  },
+  {
+    "name": "sheet.top-gap",
+    "cssVar": "--mx-sheet-top-gap",
+    "type": "dimension",
+    "ref": "space.10",
+    "value": "2.5rem"
+  },
+  {
+    "name": "sheet.peek-height",
+    "cssVar": "--mx-sheet-peek-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "6rem"
+  },
+  {
+    "name": "sheet.padding",
+    "cssVar": "--mx-sheet-padding",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "sheet.header-gap",
+    "cssVar": "--mx-sheet-header-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "sheet.header-padding",
+    "cssVar": "--mx-sheet-header-padding",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "sheet.footer-padding",
+    "cssVar": "--mx-sheet-footer-padding",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "sheet.footer-gap",
+    "cssVar": "--mx-sheet-footer-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "sheet.footer-border-color",
+    "cssVar": "--mx-sheet-footer-border-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "sheet.handle-area",
+    "cssVar": "--mx-sheet-handle-area",
+    "type": "dimension",
+    "ref": "space.6",
+    "value": "1.5rem"
+  },
+  {
+    "name": "sheet.grip-width",
+    "cssVar": "--mx-sheet-grip-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "2rem"
+  },
+  {
+    "name": "sheet.grip-height",
+    "cssVar": "--mx-sheet-grip-height",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "sheet.grip-radius",
+    "cssVar": "--mx-sheet-grip-radius",
+    "type": "dimension",
+    "ref": "radius.full",
+    "value": "9999px"
+  },
+  {
+    "name": "sheet.grip-color",
+    "cssVar": "--mx-sheet-grip-color",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "sheet.handle-radius",
+    "cssVar": "--mx-sheet-handle-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "sheet.font-family",
+    "cssVar": "--mx-sheet-font-family",
+    "type": "fontFamily",
+    "ref": "font.family.sans",
+    "value": "Archivo, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+  },
+  {
+    "name": "sheet.font-size",
+    "cssVar": "--mx-sheet-font-size",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
+    "name": "sheet.line-height",
+    "cssVar": "--mx-sheet-line-height",
+    "type": "dimension",
+    "ref": "font.line.body",
+    "value": "1.25rem"
+  },
+  {
+    "name": "sheet.title-font-size",
+    "cssVar": "--mx-sheet-title-font-size",
+    "type": "dimension",
+    "ref": "font.size.subtitle",
+    "value": "1.25rem"
+  },
+  {
+    "name": "sheet.title-font-weight",
+    "cssVar": "--mx-sheet-title-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "sheet.title-line-height",
+    "cssVar": "--mx-sheet-title-line-height",
+    "type": "dimension",
+    "ref": "font.line.subtitle",
+    "value": "1.75rem"
+  },
+  {
+    "name": "sheet.focus-width",
+    "cssVar": "--mx-sheet-focus-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "sheet.focus-offset",
+    "cssVar": "--mx-sheet-focus-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "sheet.focus-color",
+    "cssVar": "--mx-sheet-focus-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "sheet.focus-halo",
+    "cssVar": "--mx-sheet-focus-halo",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
     "name": "slider.hit-size",
     "cssVar": "--mx-slider-hit-size",
     "type": "dimension",
@@ -6361,6 +6872,503 @@
     "type": "shadow",
     "ref": "focus.ring.halo-inset",
     "value": "inset 0px 0px 0px 3px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "tabdocs.touch-tab-height",
+    "cssVar": "--mx-tabdocs-touch-tab-height",
+    "type": "dimension",
+    "ref": "control.height.lg",
+    "value": "2.5rem"
+  },
+  {
+    "name": "tabdocs.touch-close-size",
+    "cssVar": "--mx-tabdocs-touch-close-size",
+    "type": "dimension",
+    "ref": "control.height.sm",
+    "value": "1.5rem"
+  },
+  {
+    "name": "tabdocs.touch-bar-button-size",
+    "cssVar": "--mx-tabdocs-touch-bar-button-size",
+    "type": "dimension",
+    "ref": "control.height.lg",
+    "value": "2.5rem"
+  },
+  {
+    "name": "tabdocs.divider-width",
+    "cssVar": "--mx-tabdocs-divider-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "tabdocs.divider-color",
+    "cssVar": "--mx-tabdocs-divider-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "tabdocs.phone-bar-height",
+    "cssVar": "--mx-tabdocs-phone-bar-height",
+    "type": "dimension",
+    "ref": "control.height.lg",
+    "value": "2.5rem"
+  },
+  {
+    "name": "tabdocs.phone-bar-padding",
+    "cssVar": "--mx-tabdocs-phone-bar-padding",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "tabdocs.phone-bar-gap",
+    "cssVar": "--mx-tabdocs-phone-bar-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.phone-bar-bg",
+    "cssVar": "--mx-tabdocs-phone-bar-bg",
+    "type": "color",
+    "ref": "color.bg.bar",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "tabdocs.phone-bar-border-width",
+    "cssVar": "--mx-tabdocs-phone-bar-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "tabdocs.phone-bar-border-color",
+    "cssVar": "--mx-tabdocs-phone-bar-border-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "tabdocs.phone-title-font-size",
+    "cssVar": "--mx-tabdocs-phone-title-font-size",
+    "type": "dimension",
+    "ref": "font.size.body-large",
+    "value": "1.125rem"
+  },
+  {
+    "name": "tabdocs.phone-title-line-height",
+    "cssVar": "--mx-tabdocs-phone-title-line-height",
+    "type": "dimension",
+    "ref": "font.line.body-large",
+    "value": "1.5rem"
+  },
+  {
+    "name": "tabdocs.phone-title-font-weight",
+    "cssVar": "--mx-tabdocs-phone-title-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "tabdocs.phone-title-fg",
+    "cssVar": "--mx-tabdocs-phone-title-fg",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "tabdocs.phone-title-padding",
+    "cssVar": "--mx-tabdocs-phone-title-padding",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "tabdocs.phone-title-gap",
+    "cssVar": "--mx-tabdocs-phone-title-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "tabdocs.phone-title-radius",
+    "cssVar": "--mx-tabdocs-phone-title-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "tabdocs.phone-title-bg-hover",
+    "cssVar": "--mx-tabdocs-phone-title-bg-hover",
+    "type": "color",
+    "ref": "color.fill.subtle.secondary",
+    "value": "rgb(0 0 0 / 0.0373)"
+  },
+  {
+    "name": "tabdocs.phone-dirty-size",
+    "cssVar": "--mx-tabdocs-phone-dirty-size",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "tabdocs.phone-dirty-color",
+    "cssVar": "--mx-tabdocs-phone-dirty-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "tabdocs.tools-bg",
+    "cssVar": "--mx-tabdocs-tools-bg",
+    "type": "color",
+    "ref": "color.bg.bar",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "tabdocs.tools-border-width",
+    "cssVar": "--mx-tabdocs-tools-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "tabdocs.tools-border-color",
+    "cssVar": "--mx-tabdocs-tools-border-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "tabdocs.tools-padding",
+    "cssVar": "--mx-tabdocs-tools-padding",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.tools-gap",
+    "cssVar": "--mx-tabdocs-tools-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.tool-min-height",
+    "cssVar": "--mx-tabdocs-tool-min-height",
+    "type": "dimension",
+    "ref": "control.height.lg",
+    "value": "2.5rem"
+  },
+  {
+    "name": "tabdocs.tool-min-width",
+    "cssVar": "--mx-tabdocs-tool-min-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "4rem"
+  },
+  {
+    "name": "tabdocs.tool-padding",
+    "cssVar": "--mx-tabdocs-tool-padding",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.tool-gap",
+    "cssVar": "--mx-tabdocs-tool-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "tabdocs.tool-radius",
+    "cssVar": "--mx-tabdocs-tool-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "tabdocs.tool-font-size",
+    "cssVar": "--mx-tabdocs-tool-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "tabdocs.tool-line-height",
+    "cssVar": "--mx-tabdocs-tool-line-height",
+    "type": "dimension",
+    "ref": "font.line.caption",
+    "value": "1rem"
+  },
+  {
+    "name": "tabdocs.tool-icon-size",
+    "cssVar": "--mx-tabdocs-tool-icon-size",
+    "type": "dimension",
+    "ref": "icon.size.md",
+    "value": "1rem"
+  },
+  {
+    "name": "tabdocs.tool-fg",
+    "cssVar": "--mx-tabdocs-tool-fg",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "tabdocs.tool-fg-hover",
+    "cssVar": "--mx-tabdocs-tool-fg-hover",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "tabdocs.tool-bg-hover",
+    "cssVar": "--mx-tabdocs-tool-bg-hover",
+    "type": "color",
+    "ref": "color.fill.subtle.secondary",
+    "value": "rgb(0 0 0 / 0.0373)"
+  },
+  {
+    "name": "tabdocs.tool-fg-open",
+    "cssVar": "--mx-tabdocs-tool-fg-open",
+    "type": "color",
+    "ref": "color.selection.fg",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "tabdocs.tool-bg-open",
+    "cssVar": "--mx-tabdocs-tool-bg-open",
+    "type": "color",
+    "ref": "color.selection.bg",
+    "value": "#f5f4f0"
+  },
+  {
+    "name": "tabdocs.tool-border-open",
+    "cssVar": "--mx-tabdocs-tool-border-open",
+    "type": "color",
+    "ref": "color.selection.border",
+    "value": "rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "tabdocs.tool-border-width-open",
+    "cssVar": "--mx-tabdocs-tool-border-width-open",
+    "type": "dimension",
+    "ref": "selection.border-width",
+    "value": "1px"
+  },
+  {
+    "name": "tabdocs.tool-shadow-open",
+    "cssVar": "--mx-tabdocs-tool-shadow-open",
+    "type": "shadow",
+    "ref": "effect.selection",
+    "value": "inset 0px 1px 0px 0px rgb(255 255 255 / 0.7), 0px 1px 0px 0px rgb(0 0 0 / 0.3)"
+  },
+  {
+    "name": "tabdocs.phone-list-row-height",
+    "cssVar": "--mx-tabdocs-phone-list-row-height",
+    "type": "dimension",
+    "ref": "control.height.lg",
+    "value": "2.5rem"
+  },
+  {
+    "name": "tabdocs.phone-list-row-padding",
+    "cssVar": "--mx-tabdocs-phone-list-row-padding",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "tabdocs.phone-list-row-gap",
+    "cssVar": "--mx-tabdocs-phone-list-row-gap",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "tabdocs.phone-list-row-radius",
+    "cssVar": "--mx-tabdocs-phone-list-row-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "tabdocs.phone-list-row-bg",
+    "cssVar": "--mx-tabdocs-phone-list-row-bg",
+    "type": "color",
+    "ref": "color.bg.surface",
+    "value": "#f8f7f3"
+  },
+  {
+    "name": "tabdocs.phone-list-row-bg-hover",
+    "cssVar": "--mx-tabdocs-phone-list-row-bg-hover",
+    "type": "color",
+    "ref": "color.fill.subtle.secondary",
+    "value": "rgb(0 0 0 / 0.0373)"
+  },
+  {
+    "name": "tabdocs.phone-list-row-bg-current",
+    "cssVar": "--mx-tabdocs-phone-list-row-bg-current",
+    "type": "color",
+    "ref": "color.selection.bg",
+    "value": "#f5f4f0"
+  },
+  {
+    "name": "tabdocs.phone-list-row-fg-current",
+    "cssVar": "--mx-tabdocs-phone-list-row-fg-current",
+    "type": "color",
+    "ref": "color.selection.fg",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "tabdocs.phone-list-row-border-current",
+    "cssVar": "--mx-tabdocs-phone-list-row-border-current",
+    "type": "color",
+    "ref": "color.selection.border",
+    "value": "rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "tabdocs.phone-list-row-border-width-current",
+    "cssVar": "--mx-tabdocs-phone-list-row-border-width-current",
+    "type": "dimension",
+    "ref": "selection.border-width",
+    "value": "1px"
+  },
+  {
+    "name": "tabdocs.phone-list-row-shadow-current",
+    "cssVar": "--mx-tabdocs-phone-list-row-shadow-current",
+    "type": "shadow",
+    "ref": "effect.selection",
+    "value": "inset 0px 1px 0px 0px rgb(255 255 255 / 0.7), 0px 1px 0px 0px rgb(0 0 0 / 0.3)"
+  },
+  {
+    "name": "tabdocs.phone-list-row-font-size",
+    "cssVar": "--mx-tabdocs-phone-list-row-font-size",
+    "type": "dimension",
+    "ref": "font.size.body-large",
+    "value": "1.125rem"
+  },
+  {
+    "name": "tabdocs.phone-list-row-line-height",
+    "cssVar": "--mx-tabdocs-phone-list-row-line-height",
+    "type": "dimension",
+    "ref": "font.line.body-large",
+    "value": "1.5rem"
+  },
+  {
+    "name": "tabdocs.phone-list-description-fg",
+    "cssVar": "--mx-tabdocs-phone-list-description-fg",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "tabdocs.phone-list-description-font-size",
+    "cssVar": "--mx-tabdocs-phone-list-description-font-size",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
+    "name": "tabdocs.phone-list-head-fg",
+    "cssVar": "--mx-tabdocs-phone-list-head-fg",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "tabdocs.phone-list-head-font-size",
+    "cssVar": "--mx-tabdocs-phone-list-head-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "tabdocs.phone-list-head-font-weight",
+    "cssVar": "--mx-tabdocs-phone-list-head-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "tabdocs.phone-list-head-padding",
+    "cssVar": "--mx-tabdocs-phone-list-head-padding",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "tabdocs.phone-list-gap",
+    "cssVar": "--mx-tabdocs-phone-list-gap",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "tabdocs.phone-list-close-size",
+    "cssVar": "--mx-tabdocs-phone-list-close-size",
+    "type": "dimension",
+    "ref": "control.height.lg",
+    "value": "2.5rem"
+  },
+  {
+    "name": "tabdocs.phone-list-close-radius",
+    "cssVar": "--mx-tabdocs-phone-list-close-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "tabdocs.phone-list-close-fg",
+    "cssVar": "--mx-tabdocs-phone-list-close-fg",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "tabdocs.phone-list-close-bg-hover",
+    "cssVar": "--mx-tabdocs-phone-list-close-bg-hover",
+    "type": "color",
+    "ref": "color.fill.subtle.secondary",
+    "value": "rgb(0 0 0 / 0.0373)"
+  },
+  {
+    "name": "tabdocs.phone-list-lifted-shadow",
+    "cssVar": "--mx-tabdocs-phone-list-lifted-shadow",
+    "type": "shadow",
+    "ref": "elevation.popup",
+    "value": "0px 8px 16px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "tabdocs.phone-list-swipe-bg",
+    "cssVar": "--mx-tabdocs-phone-list-swipe-bg",
+    "type": "color",
+    "ref": "color.danger.subtle",
+    "value": "#fde7e9"
+  },
+  {
+    "name": "tabdocs.phone-list-dirty-size",
+    "cssVar": "--mx-tabdocs-phone-list-dirty-size",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "tabdocs.phone-list-dirty-color",
+    "cssVar": "--mx-tabdocs-phone-list-dirty-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "tabdocs.phone-list-empty-fg",
+    "cssVar": "--mx-tabdocs-phone-list-empty-fg",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
   },
   {
     "name": "tabs.gap",

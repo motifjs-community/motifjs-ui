@@ -65,6 +65,8 @@ export class MenuList extends Component<HTMLDivElement> {
   markBesideIcon = false;
   /** How a chosen radio item is marked: a dot, or a check (when a dot means something else in the menu). */
   radioMark: 'dot' | 'check' = 'dot';
+  /** An item with `items` opens its submenu at its side; `false` reports it as chosen instead, for an owner that shows the submenu itself. */
+  openSubmenus = true;
 
   private entries: Entry[] = [];
   private releases: (() => void)[] = [];
@@ -258,13 +260,13 @@ export class MenuList extends Component<HTMLDivElement> {
     const entry = this.entryOf(e.target);
     if (!entry) return;
     // A click from the keyboard (Enter, Space) moves into the submenu; one from the pointer leaves focus where it is.
-    if (entry.submenu) this.openSubmenu(entry, e.detail === 0 ? 'first' : null);
+    if (entry.submenu && this.openSubmenus) this.openSubmenu(entry, e.detail === 0 ? 'first' : null);
     else this.choose(entry, e);
   }
 
   private choose(entry: Entry, event: Event): void {
     if (!entry.enabled) return;
-    if (entry.submenu) {
+    if (entry.submenu && this.openSubmenus) {
       this.openSubmenu(entry, 'first');
       return;
     }
@@ -274,7 +276,7 @@ export class MenuList extends Component<HTMLDivElement> {
   // Submenus.
 
   private openSubmenu(entry: Entry, focus: 'first' | 'last' | null): void {
-    if (!entry.submenu || !entry.enabled) return;
+    if (!entry.submenu || !entry.enabled || !this.openSubmenus) return;
     this.cancelHover();
     const sub = (this.sub ??= this.createSubmenu());
     if (sub.entry !== entry) {
@@ -384,7 +386,8 @@ export class MenuList extends Component<HTMLDivElement> {
         if ((e.key === 'ArrowRight') !== rtl) {
           const entry = this.entries[at];
           if (!entry?.submenu || !entry.enabled) return;
-          this.openSubmenu(entry, 'first');
+          if (this.openSubmenus) this.openSubmenu(entry, 'first');
+          else this.choose(entry, e);
         } else {
           if (!this.parentList) return;
           this.parentList.closeSubmenu();

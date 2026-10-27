@@ -9,8 +9,9 @@ import { FILES, fileDocument } from './files';
 export default function BetweenManagers() {
   const s = reactive({ last: 'Drag a tab from one manager to the other.' });
   const style = 'block-size: 28rem; flex: 1 1 0px; min-inline-size: 0';
-  const left = new TabDocumentManager({ label: 'Project files', dragGroup: 'files' });
-  const right = new TabDocumentManager({ label: 'Pinned files', dragGroup: 'files' });
+  // Narrow side by side, they still show as on a desktop (see the Tablet and phone page).
+  const left = new TabDocumentManager({ label: 'Project files', dragGroup: 'files', presentation: 'desktop' });
+  const right = new TabDocumentManager({ label: 'Pinned files', dragGroup: 'files', presentation: 'desktop' });
   left.element.style.cssText = style;
   right.element.style.cssText = style;
   for (const file of FILES.slice(0, 5)) left.open(fileDocument(file.path), { index: 99 });

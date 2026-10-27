@@ -492,7 +492,9 @@
     background: var(--mx-tabdocs-pin-bg-hover);
   }
 
+  /* A narrow tab gives up its description before the letters of its title. */
   .mx-tabdocs__description {
+    flex: 0 1000 auto;
     min-inline-size: 0;
     max-inline-size: var(--mx-tabdocs-tab-title-max-width);
     overflow: hidden;
@@ -1259,6 +1261,451 @@
     block-size: var(--mx-tabdocs-list-dirty-size);
     background: var(--mx-tabdocs-list-dirty-color);
     border-radius: var(--mx-tabdocs-dirty-radius);
+  }
+
+  /* Tablet and phone (data-presentation on the root): the documents' layout keeps its splits, but
+     they draw no box (display: contents) and the groups take their places in the root's own grid.
+     A tablet shows at most two groups side by side (data-slot 1 and 2, or solo), the others folded
+     as tabs into the one beside them (their headers carry data-guest there); a phone shows one,
+     under its bar of the shown document, over its bar of tools. Dock areas and floating windows
+     are in drawers and sheets (data-presented); the titles of the dock areas stay along the edges
+     on a tablet. */
+  .mx-tabdocs[data-presentation='tablet'] {
+    grid-template-columns: auto minmax(0, var(--_share-a, 1fr)) minmax(0, var(--_share-b, 1fr)) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .mx-tabdocs[data-presentation='phone'] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .mx-tabdocs[data-presentation] > .mx-tabdocs__split,
+  .mx-tabdocs[data-presentation] > .mx-tabdocs__split .mx-tabdocs__split {
+    display: contents;
+  }
+
+  .mx-tabdocs[data-presentation] > .mx-tabdocs__split .mx-tabdocs__sash,
+  .mx-tabdocs[data-presentation] > :is(.mx-tabdocs__area, .mx-tabdocs__area-sash, .mx-tabdocs__window) {
+    display: none;
+  }
+
+  .mx-tabdocs[data-presentation] .mx-tabdocs__group[data-slot] {
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  .mx-tabdocs[data-presentation] .mx-tabdocs__group[data-slot='none'] {
+    display: none;
+  }
+
+  .mx-tabdocs[data-presentation='tablet'] .mx-tabdocs__group[data-slot='solo'] {
+    grid-area: 2 / 2 / 3 / 4;
+  }
+
+  .mx-tabdocs[data-presentation='tablet'] .mx-tabdocs__group[data-slot='1'] {
+    grid-area: 2 / 2 / 3 / 3;
+  }
+
+  .mx-tabdocs[data-presentation='tablet'] .mx-tabdocs__group[data-slot='2'] {
+    grid-area: 2 / 3 / 3 / 4;
+    border-inline-start: var(--mx-tabdocs-divider-width) solid var(--mx-tabdocs-divider-color);
+  }
+
+  .mx-tabdocs[data-presentation='tablet'] > .mx-tabdocs__autohide[data-side='left'] {
+    grid-area: 1 / 1 / 4 / 2;
+  }
+
+  .mx-tabdocs[data-presentation='tablet'] > .mx-tabdocs__autohide[data-side='right'] {
+    grid-area: 1 / 4 / 4 / 5;
+  }
+
+  .mx-tabdocs[data-presentation='tablet'] > .mx-tabdocs__autohide[data-side='top'] {
+    grid-area: 1 / 2 / 2 / 4;
+  }
+
+  .mx-tabdocs[data-presentation='tablet'] > .mx-tabdocs__autohide[data-side='bottom'] {
+    grid-area: 3 / 2 / 4 / 4;
+  }
+
+  .mx-tabdocs[data-presentation='phone'] > .mx-tabdocs__autohide {
+    display: none;
+  }
+
+  .mx-tabdocs[data-presentation='phone'] .mx-tabdocs__group[data-slot='solo'] {
+    grid-area: 2 / 1 / 3 / 2;
+  }
+
+  /* On a phone the bar above the document stands for its strip. */
+  .mx-tabdocs[data-presentation='phone'] .mx-tabdocs__group[data-slot] > .mx-tabdocs__bar {
+    display: none;
+  }
+
+  /* A dock area or a window in its drawer or sheet fills it. */
+  .mx-tabdocs .mx-tabdocs__area[data-presented][data-side] {
+    position: static;
+    display: flex;
+    flex: 1 1 auto;
+    inline-size: auto;
+    block-size: auto;
+    min-block-size: 0;
+    border: 0;
+    box-shadow: none;
+    translate: none;
+  }
+
+  .mx-tabdocs__window-body[data-presented] {
+    flex: 1 1 auto;
+    min-block-size: 0;
+  }
+
+  .mx-tabdocs[data-presentation='phone'] > .mx-tabdocs__tool-panel.mx-bottom-sheet {
+    inset-block-end: var(--_tools-height, 0px);
+  }
+
+  :is(.mx-tabdocs__tool-panel, .mx-tabdocs__window-sheet) :is(.mx-bottom-sheet__body, .mx-drawer__body) {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* The phone's bar: the shown document's title, its close button, how many are open. */
+  .mx-tabdocs__phone-bar {
+    display: flex;
+    grid-area: 1 / 1 / 2 / 2;
+    align-items: center;
+    gap: var(--mx-tabdocs-phone-bar-gap);
+    min-inline-size: 0;
+    min-block-size: var(--mx-tabdocs-phone-bar-height);
+    padding-inline: var(--mx-tabdocs-phone-bar-padding);
+    background: var(--mx-tabdocs-phone-bar-bg);
+    border-block-end: var(--mx-tabdocs-phone-bar-border-width) solid var(--mx-tabdocs-phone-bar-border-color);
+  }
+
+  .mx-tabdocs__phone-title {
+    appearance: none;
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: var(--mx-tabdocs-phone-title-gap);
+    min-inline-size: 0;
+    min-block-size: var(--mx-tabdocs-phone-bar-height);
+    margin: 0;
+    padding-inline: var(--mx-tabdocs-phone-title-padding);
+    font: inherit;
+    font-size: var(--mx-tabdocs-phone-title-font-size);
+    font-weight: var(--mx-tabdocs-phone-title-font-weight);
+    line-height: var(--mx-tabdocs-phone-title-line-height);
+    text-align: start;
+    color: var(--mx-tabdocs-phone-title-fg);
+    background: transparent;
+    border: 0;
+    border-radius: var(--mx-tabdocs-phone-title-radius);
+    overflow: hidden;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .mx-tabdocs__phone-title:hover:not(:disabled) {
+    background: var(--mx-tabdocs-phone-title-bg-hover);
+  }
+
+  .mx-tabdocs__phone-title:focus-visible {
+    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
+    outline-offset: var(--mx-tabdocs-focus-offset);
+    box-shadow: var(--mx-tabdocs-focus-halo);
+  }
+
+  .mx-tabdocs__phone-label {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: translate var(--mx-motion-duration-fast) var(--mx-motion-easing-out);
+  }
+
+  .mx-tabdocs__phone-title[data-swiping] > .mx-tabdocs__phone-label {
+    transition: none;
+  }
+
+  .mx-tabdocs__phone-dirty {
+    flex: none;
+    inline-size: var(--mx-tabdocs-phone-dirty-size);
+    block-size: var(--mx-tabdocs-phone-dirty-size);
+    background: var(--mx-tabdocs-phone-dirty-color);
+    border-radius: var(--mx-tabdocs-dirty-radius);
+  }
+
+  .mx-tabdocs__phone-dirty[hidden] {
+    display: none;
+  }
+
+  .mx-tabdocs__phone-close,
+  .mx-tabdocs__phone-count {
+    flex: none;
+  }
+
+  .mx-tabdocs__phone-close[hidden] {
+    display: none;
+  }
+
+  /* The phone's tools: a button for each tool of the dock areas. */
+  .mx-tabdocs__phone-tools {
+    display: flex;
+    grid-area: 3 / 1 / 4 / 2;
+    gap: var(--mx-tabdocs-tools-gap);
+    min-inline-size: 0;
+    padding: var(--mx-tabdocs-tools-padding);
+    padding-block-end: max(var(--mx-tabdocs-tools-padding), env(safe-area-inset-bottom));
+    overflow-x: auto;
+    background: var(--mx-tabdocs-tools-bg);
+    border-block-start: var(--mx-tabdocs-tools-border-width) solid var(--mx-tabdocs-tools-border-color);
+    scrollbar-width: none;
+  }
+
+  .mx-tabdocs__phone-tools[hidden] {
+    display: none;
+  }
+
+  .mx-tabdocs__phone-tool {
+    appearance: none;
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--mx-tabdocs-tool-gap);
+    min-inline-size: var(--mx-tabdocs-tool-min-width);
+    min-block-size: var(--mx-tabdocs-tool-min-height);
+    margin: 0;
+    padding: var(--mx-tabdocs-tool-padding);
+    font: inherit;
+    font-size: var(--mx-tabdocs-tool-font-size);
+    line-height: var(--mx-tabdocs-tool-line-height);
+    color: var(--mx-tabdocs-tool-fg);
+    background: transparent;
+    border: 0;
+    border-radius: var(--mx-tabdocs-tool-radius);
+  }
+
+  .mx-tabdocs__phone-tool:hover:not([data-open]) {
+    color: var(--mx-tabdocs-tool-fg-hover);
+    background: var(--mx-tabdocs-tool-bg-hover);
+  }
+
+  /* The open tool and the shown document look as the design language marks a selection: its fill,
+     text, frame and surface effect. */
+  .mx-tabdocs__phone-tool[data-open] {
+    color: var(--mx-tabdocs-tool-fg-open);
+    background: var(--mx-tabdocs-tool-bg-open);
+    box-shadow:
+      inset 0 0 0 var(--mx-tabdocs-tool-border-width-open) var(--mx-tabdocs-tool-border-open),
+      var(--mx-tabdocs-tool-shadow-open);
+  }
+
+  .mx-tabdocs__phone-tool:focus-visible {
+    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
+    outline-offset: var(--mx-tabdocs-focus-offset);
+    box-shadow: var(--mx-tabdocs-focus-halo);
+  }
+
+  .mx-tabdocs__phone-tool-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--mx-tabdocs-tool-icon-size);
+    block-size: var(--mx-tabdocs-tool-icon-size);
+    font-weight: var(--mx-tabdocs-letter-font-weight);
+  }
+
+  .mx-tabdocs__phone-tool-icon > :is(svg, img) {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .mx-tabdocs__phone-tool-label {
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The phone's list of documents, in its sheet. */
+  .mx-tabdocs__list-search {
+    margin-block-end: var(--mx-tabdocs-phone-list-gap);
+  }
+
+  .mx-tabdocs__list-sections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mx-tabdocs-phone-list-gap);
+  }
+
+  .mx-tabdocs__list-section[hidden],
+  .mx-tabdocs__list-head[hidden],
+  .mx-tabdocs__list-row[hidden],
+  .mx-tabdocs__list-empty[hidden] {
+    display: none;
+  }
+
+  .mx-tabdocs__list-head {
+    padding-inline: var(--mx-tabdocs-phone-list-head-padding);
+    font-size: var(--mx-tabdocs-phone-list-head-font-size);
+    font-weight: var(--mx-tabdocs-phone-list-head-font-weight);
+    color: var(--mx-tabdocs-phone-list-head-fg);
+  }
+
+  .mx-tabdocs__list-rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .mx-tabdocs__list-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--mx-tabdocs-phone-list-row-bg);
+    border-radius: var(--mx-tabdocs-phone-list-row-radius);
+    transition: translate var(--mx-motion-duration-fast) var(--mx-motion-easing-out);
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .mx-tabdocs__list-row[data-swiping] {
+    background: var(--mx-tabdocs-phone-list-swipe-bg);
+    transition: none;
+  }
+
+  .mx-tabdocs__list-row[data-lifted] {
+    z-index: var(--mx-z-sticky);
+    box-shadow: var(--mx-tabdocs-phone-list-lifted-shadow);
+    transition: none;
+  }
+
+  .mx-tabdocs__list-sections[data-dragging] {
+    touch-action: none;
+    user-select: none;
+  }
+
+  .mx-tabdocs__list-open {
+    appearance: none;
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: var(--mx-tabdocs-phone-list-row-gap);
+    min-inline-size: 0;
+    min-block-size: var(--mx-tabdocs-phone-list-row-height);
+    margin: 0;
+    padding-inline: var(--mx-tabdocs-phone-list-row-padding);
+    font: inherit;
+    font-size: var(--mx-tabdocs-phone-list-row-font-size);
+    line-height: var(--mx-tabdocs-phone-list-row-line-height);
+    text-align: start;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-radius: var(--mx-tabdocs-phone-list-row-radius);
+  }
+
+  .mx-tabdocs__list-open:hover {
+    background: var(--mx-tabdocs-phone-list-row-bg-hover);
+  }
+
+  .mx-tabdocs__list-row[aria-current='true'] > .mx-tabdocs__list-open {
+    color: var(--mx-tabdocs-phone-list-row-fg-current);
+    background: var(--mx-tabdocs-phone-list-row-bg-current);
+    box-shadow:
+      inset 0 0 0 var(--mx-tabdocs-phone-list-row-border-width-current) var(--mx-tabdocs-phone-list-row-border-current),
+      var(--mx-tabdocs-phone-list-row-shadow-current);
+  }
+
+  .mx-tabdocs__list-open:focus-visible,
+  .mx-tabdocs__list-close:focus-visible {
+    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
+    outline-offset: var(--mx-tabdocs-focus-offset);
+    box-shadow: var(--mx-tabdocs-focus-halo);
+  }
+
+  .mx-tabdocs__list-text {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mx-tabdocs__list-row[data-preview] .mx-tabdocs__list-title {
+    font-style: italic;
+  }
+
+  .mx-tabdocs__list-description {
+    font-size: var(--mx-tabdocs-phone-list-description-font-size);
+    color: var(--mx-tabdocs-phone-list-description-fg);
+  }
+
+  .mx-tabdocs__list-pin {
+    display: inline-flex;
+    flex: none;
+    inline-size: var(--mx-tabdocs-pin-size);
+    block-size: var(--mx-tabdocs-pin-size);
+  }
+
+  .mx-tabdocs__list-dirty {
+    flex: none;
+    inline-size: var(--mx-tabdocs-phone-list-dirty-size);
+    block-size: var(--mx-tabdocs-phone-list-dirty-size);
+    background: var(--mx-tabdocs-phone-list-dirty-color);
+    border-radius: var(--mx-tabdocs-dirty-radius);
+  }
+
+  .mx-tabdocs__list-close {
+    appearance: none;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--mx-tabdocs-phone-list-close-size);
+    block-size: var(--mx-tabdocs-phone-list-close-size);
+    margin: 0;
+    padding: 0;
+    color: var(--mx-tabdocs-phone-list-close-fg);
+    background: transparent;
+    border: 0;
+    border-radius: var(--mx-tabdocs-phone-list-close-radius);
+  }
+
+  .mx-tabdocs__list-close:hover:not(:disabled) {
+    background: var(--mx-tabdocs-phone-list-close-bg-hover);
+  }
+
+  .mx-tabdocs__list-close:disabled {
+    visibility: hidden;
+  }
+
+  .mx-tabdocs__list-empty {
+    padding: var(--mx-tabdocs-phone-list-head-padding);
+    color: var(--mx-tabdocs-phone-list-empty-fg);
+  }
+
+  /* A coarse pointer (a finger): larger tabs, close buttons and bar buttons, in every presentation. */
+  @media (pointer: coarse) {
+    .mx-tabdocs__tab {
+      min-block-size: var(--mx-tabdocs-touch-tab-height);
+    }
+
+    .mx-tabdocs__close,
+    .mx-tabdocs__pin {
+      inline-size: var(--mx-tabdocs-touch-close-size);
+      block-size: var(--mx-tabdocs-touch-close-size);
+    }
+
+    .mx-tabdocs__autohide-tab {
+      min-block-size: var(--mx-tabdocs-touch-tab-height);
+    }
   }
 
   @media (forced-colors: active) {

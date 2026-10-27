@@ -1,0 +1,17 @@
+{
+  "sheet": {
+    "$description": "Material bottom sheets: 28 top corners, no outline, the 32 x 4 drag handle in a 32 high area.",
+    "border-color": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [0, 0, 0],
+        "alpha": 0
+      }
+    },
+    "handle-area": {
+      "$type": "dimension",
+      "$value": "{space.8}"
+    }
+  }
+}

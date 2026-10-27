@@ -62,6 +62,13 @@ import type { TabOpenWindow } from './tab-open-window';
 import type { TabRestoreWindows } from './tab-restore-windows';
 import type { TabWindowOpenedEventArgs } from './tab-window-opened-event-args';
 import type { TabWindowOpeningEventArgs } from './tab-window-opening-event-args';
+import type { ContextMenuPresentation } from '../contextmenu/context-menu-presentation';
+import type { PresentationChangedEventArgs } from './presentation-changed-event-args';
+import type { PresentationChangingEventArgs } from './presentation-changing-event-args';
+import type { TabDockPresentation } from './tab-dock-presentation';
+import type { TabPresentation } from './tab-presentation';
+import type { TabNarrowBars } from './tab-narrow-bars';
+import type { TabTabletWhen } from './tab-tablet-when';
 
 /** Props of `TabDocumentManager`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
 export interface TabDocumentManagerProps extends ControlProps {
@@ -261,6 +268,34 @@ export interface TabDocumentManagerProps extends ControlProps {
   announce?: Bind<boolean>;
   /** Makes the content of documents that bring none. */
   factory?: Bind<TabContentFactory | null>;
+  /**
+   * How the layout shows: `'auto'` by the manager's own width (under `phoneWidth` as on a phone,
+   * under `tabletWidth` as on a tablet, else as on a desktop), or always one way. The layout itself
+   * stays the same and saves the same; only where things show changes. Default `'auto'`.
+   */
+  presentation?: Bind<TabPresentation>;
+  /** Under this width, in pixels of the manager, `'auto'` shows the layout as on a tablet (on a touch screen, see `tabletWhen`). Default 1024. */
+  tabletWidth?: Bind<number>;
+  /**
+   * Under this width, in pixels of the manager, `'auto'` shows the layout as on a phone, whatever the
+   * pointer. Default 560: phones are 360–430 pixels wide, a manager of about 590 beside a desktop page's
+   * side column stays a desktop.
+   */
+  phoneWidth?: Bind<number>;
+  /** When `'auto'` shows the layout as on a tablet: `'touch'`, under `tabletWidth` on a screen whose pointer is a finger (with a mouse it stays a desktop); `'width'`, under `tabletWidth` whatever the pointer. Default `'touch'`. */
+  tabletWhen?: Bind<TabTabletWhen>;
+  /** How the bars of the documents' groups look on a tablet or a phone: `'compact'` (the `compact…` settings, as in dock areas) or `'documents'` (as on a desktop). Default `'compact'`. */
+  narrowBars?: Bind<TabNarrowBars>;
+  /** How dock areas show on a phone: in a bottom sheet, a drawer from their edge, or not at all; an area's own `phoneDockMode` wins. Default `'sheet'`. */
+  phoneDockMode?: Bind<TabDockPresentation>;
+  /** How dock areas show on a tablet; `'auto'`: the sides and the top in drawers, the bottom in a sheet. An area's own `tabletDockMode` wins. Default `'auto'`. */
+  tabletDockMode?: Bind<TabDockPresentation>;
+  /** On a tablet or a phone, a finger swiping in from an edge opens the dock area in a drawer there. Default `true`. */
+  edgeSwipe?: Bind<boolean>;
+  /** On a phone, the browser's back (Android's back button, the back gesture) goes back through the documents once no sheet or list is open. Default `true`. */
+  backButton?: Bind<boolean>;
+  /** How the tab menus show; `null`: an action sheet on a phone, a sheet for a finger on a tablet, a menu on a desktop. Default `null`. */
+  menuPresentation?: Bind<ContextMenuPresentation | null>;
   onOpening?: (e: DocumentOpeningEventArgs) => void;
   onOpened?: (e: DocumentOpenedEventArgs) => void;
   onClosing?: (e: DocumentClosingEventArgs) => void;
@@ -306,4 +341,6 @@ export interface TabDocumentManagerProps extends ControlProps {
   onWindowOpening?: (e: TabWindowOpeningEventArgs) => void;
   onWindowOpened?: (e: TabWindowOpenedEventArgs) => void;
   onError?: (e: TabErrorEventArgs) => void;
+  onPresentationChanging?: (e: PresentationChangingEventArgs) => void;
+  onPresentationChanged?: (e: PresentationChangedEventArgs) => void;
 }

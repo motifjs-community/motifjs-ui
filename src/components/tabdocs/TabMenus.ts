@@ -1,5 +1,6 @@
 import { untracked } from '@motifx/core';
 import type { MenuItem } from '../../parts/menu/menu-item';
+import { ActionSheet } from '../actionsheet/ActionSheet';
 import { ContextMenu } from '../contextmenu/ContextMenu';
 import type { ContextMenuOpeningEventArgs } from '../contextmenu/context-menu-opening-event-args';
 import type { TabContextMenuEventArgs } from './tab-context-menu-event-args';
@@ -62,6 +63,8 @@ type Entry = [TabMenuCommand, boolean?, string?, (keyof UiStrings)?];
 export class TabMenus {
   readonly menu: ContextMenu;
   private readonly others = new Map<Element, ContextMenu>();
+  /** The action sheet a phone shows a document's commands in (from its title, or its row in the list). */
+  private sheet: ActionSheet | null = null;
 
   constructor(private readonly manager: TabDocumentManager) {
     this.menu = this.create(manager.element);
@@ -84,7 +87,8 @@ export class TabMenus {
   }
 
   private create(target: HTMLElement): ContextMenu {
-    const menu = new ContextMenu({ target });
+    // A sheet on a phone, a sheet for a finger on a tablet, a menu on a desktop (or as `menuPresentation` says).
+    const menu = new ContextMenu({ target, presentation: () => this.manager.menuPresentationNow });
     menu.onOpening((e) => untracked(() => this.opening(e, menu)));
     this.manager.controls.add(menu);
     return menu;
@@ -113,7 +117,8 @@ export class TabMenus {
         [['copyTitle']],
         [doc.preview ? ['keepOpen', true, keys.keepOpen[0]] : null, [doc.pinned ? 'unpin' : 'pin', true, keys.togglePin[0]]],
         [['splitUp'], ['splitDown'], ['splitLeft'], ['splitRight', true, keys.splitRight[0]]],
-        [['moveNext', true, keys.moveToNextGroup[0]], ['movePrevious', true, keys.moveToPreviousGroup[0]], ['moveTo', m.mayDrag(doc), keys.moveTo[0]]],
+        // "Move to…" points at the groups on the screen: a phone shows one, its list moves documents instead.
+        [['moveNext', true, keys.moveToNextGroup[0]], ['movePrevious', true, keys.moveToPreviousGroup[0]], m.currentPresentation === 'phone' ? null : ['moveTo', m.mayDrag(doc), keys.moveTo[0]]],
         this.dockEntries({ document: doc, group, manager: m, copy: false }),
       ],
       group,
@@ -137,8 +142,8 @@ export class TabMenus {
         return [`dock${name}`, m.maySubject(subject, side) && !(alone && area?.side === side), doc ? keys[`dock${name}`][0] : undefined];
       }),
       area ? ['autoHide', m.mayAutoHide(area), keys.toggleAutoHide[0], area.autoHidden ? 'tabDocsAutoHideOff' : 'tabDocsAutoHide'] : null,
-      // In a floating window, the strip's command moves the whole window.
-      ['newWindow', m.mayNewWindow(subject), doc ? keys.moveToNewWindow[0] : undefined, !doc && w ? 'tabDocsWindowToNewWindow' : undefined],
+      // In a floating window, the strip's command moves the whole window. A phone has no windows beside the page.
+      m.currentPresentation === 'phone' ? null : ['newWindow', m.mayNewWindow(subject), doc ? keys.moveToNewWindow[0] : undefined, !doc && w ? 'tabDocsWindowToNewWindow' : undefined],
       group.browserWindow ? ['mainWindow', true, doc ? keys.moveToMainWindow[0] : undefined] : null,
     ];
     return entries;
@@ -173,9 +178,30 @@ export class TabMenus {
     );
   }
 
+  /** A document's commands in an action sheet, asking `onContextMenuOpening` first as a tab's menu does. */
+  openSheet(doc: TabDocument, group: TabGroup, byKeyboard: boolean, returnFocus: HTMLElement | null): boolean {
+    const m = this.manager;
+    if (!m.contextMenu) return false;
+    const args: TabContextMenuEventArgs = { document: doc, group, items: this.forTab(doc, group), byKeyboard, cancel: false, source: m };
+    m.contextMenuOpening(args);
+    if (args.cancel) return false;
+    if (!this.sheet) {
+      this.sheet = new ActionSheet({ container: m.element });
+      this.sheet.element.classList.add('mx-tabdocs__menu-sheet');
+      m.controls.add(this.sheet);
+    }
+    const sheet = this.sheet;
+    sheet.title = doc.title;
+    sheet.items = args.items;
+    if (returnFocus) returnFocus.focus({ preventScroll: true });
+    return sheet.open(byKeyboard);
+  }
+
   dispose(): void {
     for (const menu of [this.menu, ...this.others.values()]) if (!menu.isDisposed) void menu.dispose();
     this.others.clear();
+    if (this.sheet && !this.sheet.isDisposed) void this.sheet.dispose();
+    this.sheet = null;
   }
 
   private build(sections: (Entry | null)[][], group: TabGroup, doc: TabDocument | null): MenuItem[] {
@@ -204,9 +230,12 @@ export class TabMenus {
   private opening(e: ContextMenuOpeningEventArgs, menu: ContextMenu): void {
     const m = this.manager;
     const target = e.target;
-    const group = m.groups.find((g) => g.element.contains(target));
-    const doc = group?.tabOf(target)?.document ?? null;
-    if (!m.contextMenu || !group || (!doc && !group.isStripSpace(target))) {
+    const strip = m.groups.find((g) => g.element.contains(target));
+    // On a tablet a strip may show tabs of groups folded into it: the menu is the tab's own group's.
+    const tab = strip?.tabOf(target) ?? (strip ? m.tabOfHeader(target) : undefined);
+    const group = tab?.group ?? strip;
+    const doc = tab?.document ?? null;
+    if (!m.contextMenu || !group || !strip || (!doc && !strip.isStripSpace(target))) {
       e.cancel = true;
       return;
     }

@@ -1,0 +1,13 @@
+{
+  "drawer": {
+    "$description": "Lilac drawers: more room inside, rounded on the open side.",
+    "padding": {
+      "$type": "dimension",
+      "$value": "{space.5}"
+    },
+    "radius": {
+      "$type": "dimension",
+      "$value": "{radius.xl}"
+    }
+  }
+}

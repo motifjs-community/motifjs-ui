@@ -1,0 +1,214 @@
+/* Drawer: a layer over the page (the top layer, as a popover) or over its container
+   (data-contained), holding the scrim and the panel at its edge (data-side: start, end, top,
+   bottom). The panel's size is --_size (else drawer.size), never more than 85% of the room; a finger
+   moving it writes --_shift-x / --_shift-y, how far it is from open. In push mode (data-mode) the
+   element it pushes takes data-mx-drawer-push and --_mx-push. Motion comes from the motion tokens
+   (none with reduced motion); the panel keeps clear of the screen's safe areas on its edge. */
+@layer mx.components {
+  .mx-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: var(--mx-z-overlay);
+    box-sizing: border-box;
+    inline-size: auto;
+    block-size: auto;
+    max-inline-size: none;
+    max-block-size: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    color: var(--mx-drawer-fg);
+    background: none;
+    border: 0;
+    pointer-events: none;
+  }
+
+  .mx-drawer[data-contained] {
+    position: absolute;
+  }
+
+  .mx-drawer:is([hidden], [popover]:not(:popover-open)) {
+    display: none;
+  }
+
+  .mx-drawer__scrim {
+    position: absolute;
+    inset: 0;
+    display: none;
+    background: var(--mx-drawer-scrim);
+    opacity: 0;
+    transition: opacity var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
+  }
+
+  .mx-drawer[data-scrim] > .mx-drawer__scrim {
+    display: block;
+    pointer-events: auto;
+  }
+
+  .mx-drawer[data-open] > .mx-drawer__scrim {
+    opacity: 1;
+  }
+
+  .mx-drawer__panel {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    font-family: var(--mx-drawer-font-family);
+    font-size: var(--mx-drawer-font-size);
+    line-height: var(--mx-drawer-line-height);
+    background: var(--mx-drawer-background);
+    border: 0 solid var(--mx-drawer-border-color);
+    box-shadow: var(--mx-drawer-shadow);
+    pointer-events: auto;
+    transition: translate var(--mx-motion-duration-normal) var(--mx-motion-easing-out);
+  }
+
+  .mx-drawer[data-mode='push'] > .mx-drawer__panel {
+    box-shadow: var(--mx-drawer-shadow-push);
+  }
+
+  .mx-drawer[data-dragging] > .mx-drawer__panel {
+    transition: none;
+    user-select: none;
+  }
+
+  .mx-drawer__panel:focus {
+    outline: none;
+  }
+
+  .mx-drawer:is([data-side='start'], [data-side='end']) > .mx-drawer__panel {
+    inset-block: 0;
+    inline-size: var(--_size, var(--mx-drawer-size));
+    max-inline-size: 85%;
+    padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
+  }
+
+  .mx-drawer[data-side='start'] > .mx-drawer__panel {
+    inset-inline-start: 0;
+    padding-inline-start: env(safe-area-inset-left);
+    border-inline-end-width: var(--mx-drawer-border-width);
+    border-start-end-radius: var(--mx-drawer-radius);
+    border-end-end-radius: var(--mx-drawer-radius);
+    translate: -100% 0;
+  }
+
+  .mx-drawer[data-side='end'] > .mx-drawer__panel {
+    inset-inline-end: 0;
+    padding-inline-end: env(safe-area-inset-right);
+    border-inline-start-width: var(--mx-drawer-border-width);
+    border-start-start-radius: var(--mx-drawer-radius);
+    border-end-start-radius: var(--mx-drawer-radius);
+    translate: 100% 0;
+  }
+
+  .mx-drawer[data-side='start']:dir(rtl) > .mx-drawer__panel {
+    padding-inline-start: env(safe-area-inset-right);
+    translate: 100% 0;
+  }
+
+  .mx-drawer[data-side='end']:dir(rtl) > .mx-drawer__panel {
+    padding-inline-end: env(safe-area-inset-left);
+    translate: -100% 0;
+  }
+
+  .mx-drawer:is([data-side='top'], [data-side='bottom']) > .mx-drawer__panel {
+    inset-inline: 0;
+    block-size: var(--_size, var(--mx-drawer-size));
+    max-block-size: 85%;
+    padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+  }
+
+  .mx-drawer[data-side='top'] > .mx-drawer__panel {
+    inset-block-start: 0;
+    padding-block-start: env(safe-area-inset-top);
+    border-block-end-width: var(--mx-drawer-border-width);
+    border-end-start-radius: var(--mx-drawer-radius);
+    border-end-end-radius: var(--mx-drawer-radius);
+    translate: 0 -100%;
+  }
+
+  .mx-drawer[data-side='bottom'] > .mx-drawer__panel {
+    inset-block-end: 0;
+    padding-block-end: env(safe-area-inset-bottom);
+    border-block-start-width: var(--mx-drawer-border-width);
+    border-start-start-radius: var(--mx-drawer-radius);
+    border-start-end-radius: var(--mx-drawer-radius);
+    translate: 0 100%;
+  }
+
+  .mx-drawer[data-open][data-side] > .mx-drawer__panel {
+    translate: var(--_shift-x, 0px) var(--_shift-y, 0px);
+  }
+
+  .mx-drawer__header {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--mx-drawer-header-gap);
+    min-inline-size: 0;
+    padding-block: var(--mx-drawer-header-padding);
+    padding-inline: var(--mx-drawer-padding);
+    border-block-end: var(--mx-drawer-border-width) solid var(--mx-drawer-header-border-color);
+  }
+
+  .mx-drawer__header[hidden] {
+    display: none;
+  }
+
+  .mx-drawer__title {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    font-size: var(--mx-drawer-title-font-size);
+    font-weight: var(--mx-drawer-title-font-weight);
+    line-height: var(--mx-drawer-title-line-height);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mx-drawer__tools {
+    display: flex;
+    flex: none;
+    align-items: center;
+    margin-inline-start: auto;
+  }
+
+  .mx-drawer__body {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    padding: var(--mx-drawer-padding);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .mx-drawer__body:focus-visible {
+    outline: var(--mx-drawer-focus-width) solid var(--mx-drawer-focus-color);
+    outline-offset: calc(var(--mx-drawer-focus-width) * -1);
+  }
+
+  .mx-drawer__footer {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--mx-drawer-footer-gap);
+    padding: var(--mx-drawer-footer-padding);
+    border-block-start: var(--mx-drawer-border-width) solid var(--mx-drawer-footer-border-color);
+  }
+
+  .mx-drawer__footer[hidden] {
+    display: none;
+  }
+
+  /* What a drawer in push mode moves aside. */
+  [data-mx-drawer-push] {
+    translate: var(--_mx-push, 0px 0px);
+    transition: translate var(--mx-motion-duration-normal) var(--mx-motion-easing-out);
+  }
+
+  [data-mx-drawer-push][data-mx-dragging] {
+    transition: none;
+  }
+}

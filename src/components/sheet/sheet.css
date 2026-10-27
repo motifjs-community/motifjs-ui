@@ -1,0 +1,203 @@
+/* BottomSheet: a layer over the page (the top layer, as a popover) or over its container
+   (data-contained), holding the scrim and the panel. The layer lets presses through; the scrim
+   (data-scrim) and the panel take them. The panel's height is --_size (one of its detents, or where
+   the finger has it), --_drop how far it is pulled below its lowest height; it slides in and out
+   with the motion tokens (none with reduced motion) and keeps clear of the screen's safe areas. */
+@layer mx.components {
+  .mx-bottom-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: var(--mx-z-overlay);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    box-sizing: border-box;
+    inline-size: auto;
+    block-size: auto;
+    max-inline-size: none;
+    max-block-size: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    color: var(--mx-sheet-fg);
+    background: none;
+    border: 0;
+    pointer-events: none;
+  }
+
+  .mx-bottom-sheet[data-contained] {
+    position: absolute;
+  }
+
+  /* Over the page, it stands on the on-screen keyboard. */
+  .mx-bottom-sheet:not([data-contained]) {
+    inset-block-end: var(--_keyboard, 0px);
+  }
+
+  .mx-bottom-sheet:is([hidden], [popover]:not(:popover-open)) {
+    display: none;
+  }
+
+  .mx-bottom-sheet__scrim {
+    position: absolute;
+    inset: 0;
+    display: none;
+    background: var(--mx-sheet-scrim);
+    opacity: 0;
+    transition: opacity var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
+  }
+
+  .mx-bottom-sheet[data-scrim] > .mx-bottom-sheet__scrim {
+    display: block;
+    pointer-events: auto;
+  }
+
+  .mx-bottom-sheet[data-open] > .mx-bottom-sheet__scrim {
+    opacity: 1;
+  }
+
+  .mx-bottom-sheet__panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    inline-size: 100%;
+    max-inline-size: var(--mx-sheet-max-width);
+    block-size: var(--_size, auto);
+    max-block-size: 100%;
+    padding-block-end: env(safe-area-inset-bottom);
+    padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+    font-family: var(--mx-sheet-font-family);
+    font-size: var(--mx-sheet-font-size);
+    line-height: var(--mx-sheet-line-height);
+    background: var(--mx-sheet-background);
+    border: var(--mx-sheet-border-width) solid var(--mx-sheet-border-color);
+    border-block-end: 0;
+    border-start-start-radius: var(--mx-sheet-radius);
+    border-start-end-radius: var(--mx-sheet-radius);
+    box-shadow: var(--mx-sheet-shadow);
+    pointer-events: auto;
+    translate: 0 100%;
+    transition:
+      translate var(--mx-motion-duration-normal) var(--mx-motion-easing-out),
+      block-size var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
+  }
+
+  .mx-bottom-sheet[data-open] > .mx-bottom-sheet__panel {
+    translate: 0 var(--_drop, 0px);
+  }
+
+  /* Up to the top of the room, its corners square off. */
+  .mx-bottom-sheet[data-full] > .mx-bottom-sheet__panel {
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+    padding-block-start: env(safe-area-inset-top);
+  }
+
+  .mx-bottom-sheet[data-dragging] > .mx-bottom-sheet__panel {
+    transition: none;
+    user-select: none;
+  }
+
+  .mx-bottom-sheet__panel:focus {
+    outline: none;
+  }
+
+  /* The handle: a slider for the keys, a grip for the finger and the mouse. */
+  .mx-bottom-sheet__handle {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: var(--mx-sheet-handle-area);
+    border-radius: var(--mx-sheet-handle-radius);
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .mx-bottom-sheet[data-dragging] .mx-bottom-sheet__handle {
+    cursor: grabbing;
+  }
+
+  .mx-bottom-sheet__handle[hidden] {
+    display: none;
+  }
+
+  .mx-bottom-sheet__handle:focus-visible {
+    outline: var(--mx-sheet-focus-width) solid var(--mx-sheet-focus-color);
+    outline-offset: var(--mx-sheet-focus-offset);
+    box-shadow: var(--mx-sheet-focus-halo);
+  }
+
+  .mx-bottom-sheet__grip {
+    inline-size: var(--mx-sheet-grip-width);
+    block-size: var(--mx-sheet-grip-height);
+    background: var(--mx-sheet-grip-color);
+    border-radius: var(--mx-sheet-grip-radius);
+  }
+
+  .mx-bottom-sheet__header {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--mx-sheet-header-gap);
+    min-inline-size: 0;
+    padding-block: var(--mx-sheet-header-padding);
+    padding-inline: var(--mx-sheet-padding);
+    touch-action: none;
+  }
+
+  .mx-bottom-sheet__header[hidden] {
+    display: none;
+  }
+
+  .mx-bottom-sheet__title {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    font-size: var(--mx-sheet-title-font-size);
+    font-weight: var(--mx-sheet-title-font-weight);
+    line-height: var(--mx-sheet-title-line-height);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mx-bottom-sheet__tools {
+    display: flex;
+    flex: none;
+    align-items: center;
+    margin-inline-start: auto;
+  }
+
+  .mx-bottom-sheet__body {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    padding: var(--mx-sheet-padding);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .mx-bottom-sheet__body:focus-visible {
+    outline: var(--mx-sheet-focus-width) solid var(--mx-sheet-focus-color);
+    outline-offset: calc(var(--mx-sheet-focus-width) * -1);
+  }
+
+  .mx-bottom-sheet__footer {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--mx-sheet-footer-gap);
+    padding: var(--mx-sheet-footer-padding);
+    border-block-start: var(--mx-sheet-border-width) solid var(--mx-sheet-footer-border-color);
+  }
+
+  .mx-bottom-sheet__footer[hidden] {
+    display: none;
+  }
+}

@@ -76,6 +76,8 @@ const ALL_SIDES: readonly TabDropSide[] = ['center', 'left', 'right', 'up', 'dow
 /** What `'auto'` keeps: a dock area its pin and close button, a floating window its own close button. */
 const AREA_BUTTONS: readonly TabBarButton[] = ['autoHide', 'close'];
 const WINDOW_BUTTONS: readonly TabBarButton[] = ['closeWindow'];
+/** What `'auto'` keeps in the documents' groups on a tablet or a phone: only the "…" menu, which holds the rest. */
+const NO_BUTTONS: readonly TabBarButton[] = [];
 
 /** What a group's bar follows: its dock area's or window's own settings, else the manager's. */
 interface BarLook {
@@ -110,7 +112,8 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     this.listen();
     const stopLook = effect(() => {
       const look = this.look();
-      const title = look.singleTabTitle && this.documents.length === 1;
+      // A tablet's strip that holds the tabs of groups folded into it is no title.
+      const title = look.singleTabTitle && this.documents.length === 1 && !manager.groupHasGuests(this);
       const close = manager.groupActions && (!!this.dockArea || !!this.window) && (look.buttons === 'all' || look.buttons.includes('close'));
       untracked(() => this.renderLook(look, title, close));
     });
@@ -360,20 +363,49 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     untracked(() => {
       const pinned = parts.tabs.filter((t) => t.document.pinned);
       parts.tabs.splice(0, parts.tabs.length, ...pinned, ...parts.tabs.filter((t) => !t.document.pinned));
-      const focus = deepActiveElement(this.element);
-      const had = parts.tabs.find((t) => t.header === focus);
+    });
+    this.placeHeaders();
+    this.changed();
+  }
+
+  /**
+   * @internal The headers where they belong: the pinned ones in their row, the others in theirs. On
+   * a tablet a group shown for others folded into it holds their headers too, before and after its own.
+   */
+  placeHeaders(): void {
+    const parts = this.parts;
+    if (parts.manager.groupFolded(this)) {
+      // Its headers are in the strip of the group shown for it: that strip is drawn again.
+      this.renderRoving();
+      parts.manager.presentationSettingChanged();
+      return;
+    }
+    untracked(() => {
+      const pinned = parts.tabs.filter((t) => t.document.pinned);
+      const guests = parts.manager.guestHeaders(this);
+      const focus = deepActiveElement(this.element) ?? deepActiveElement(parts.manager.element);
+      const had = [...parts.tabs.map((t) => t.header), ...(guests?.before ?? []), ...(guests?.after ?? [])].find((h) => h === focus);
       syncChildren(
         parts.pinnedRow,
         pinned.map((t) => t.header),
       );
-      syncChildren(
-        parts.row,
-        parts.tabs.filter((t) => !pinned.includes(t)).map((t) => t.header),
-      );
+      syncChildren(parts.row, [...(guests?.before ?? []), ...parts.tabs.filter((t) => !pinned.includes(t)).map((t) => t.header), ...(guests?.after ?? [])]);
+      for (const header of [...(guests?.before ?? []), ...(guests?.after ?? [])]) {
+        // Another group's tab: its panel is not the one shown here.
+        header.toggleAttribute('data-guest', true);
+        header.setAttribute('aria-selected', 'false');
+        header.tabIndex = -1;
+      }
+      for (const tab of parts.tabs) {
+        if (!tab.header.hasAttribute('data-guest') || tab.header.parentElement === parts.row || tab.header.parentElement === parts.pinnedRow) {
+          tab.header.removeAttribute('data-guest');
+          tab.header.setAttribute('aria-selected', String(tab === parts.active));
+        }
+      }
       parts.pinnedRow.hidden = !pinned.length;
-      if (had && deepActiveElement(this.element) !== had.header) had.header.focus({ preventScroll: true });
+      if (had && had.isConnected && deepActiveElement(had) !== had) had.focus({ preventScroll: true });
     });
-    this.changed();
+    this.renderRoving();
     this.queueOverflow();
   }
 
@@ -455,7 +487,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
 
   /** @internal Scrolls the strip, not the page, so that a tab is in sight. */
   reveal(tab: DocumentTab): void {
-    const row = this.parts.row;
+    const row = tab.header.parentElement === this.parts.row || !tab.header.isConnected ? this.parts.row : (tab.header.closest('.mx-tabdocs__row') as HTMLDivElement | null) ?? this.parts.row;
     const header = tab.header;
     if (!row.isConnected || header.parentElement !== row) return;
     const room = row.getBoundingClientRect();
@@ -468,7 +500,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   /** @internal The roving tab stop: the active tab. */
   renderRoving(): void {
     const parts = this.parts;
-    for (const tab of parts.tabs) tab.header.tabIndex = tab === parts.active ? 0 : -1;
+    for (const tab of parts.tabs) tab.header.tabIndex = tab === parts.active && !tab.header.hasAttribute('data-guest') ? 0 : -1;
   }
 
   /** @internal Puts the recently used order back, as `saveLayout` wrote it. */
@@ -554,6 +586,18 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   private look(): BarLook {
     const m = this.manager;
     const own = this.dockArea ?? this.window;
+    // On a tablet or a phone the documents' groups are narrow: they take the compact settings too (`narrowBars`).
+    if (!own && !this.browserWindow && m.currentPresentation !== 'desktop' && m.narrowBars === 'compact') {
+      const buttons = m.compactBarButtons;
+      return {
+        scrollButtons: m.compactScrollButtons,
+        tabSize: m.compactTabSize,
+        tabMinWidth: m.compactTabMinWidth,
+        singleTabTitle: m.compactSingleTabTitle,
+        buttons: buttons === 'auto' ? NO_BUTTONS : buttons,
+        buttonSize: m.compactBarButtonSize,
+      };
+    }
     if (!own) return { scrollButtons: m.scrollButtons, tabSize: m.tabSize, tabMinWidth: m.tabMinWidth, singleTabTitle: m.singleTabTitle, buttons: m.barButtons, buttonSize: m.barButtonSize };
     const buttons = own.barButtons ?? m.compactBarButtons;
     return {
@@ -676,7 +720,8 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       overflow: 'never',
       icon: () => pinMark(),
       hint: () => manager.textOf(this.dockArea?.autoHidden ? 'tabDocsAutoHideOff' : 'tabDocsAutoHide'),
-      visible: () => manager.groupActions && !!this.dockArea && manager.mayAutoHide(this.dockArea),
+      // On a tablet or a phone the area is in a drawer or a sheet already: nothing to fold.
+      visible: () => manager.groupActions && !!this.dockArea && manager.mayAutoHide(this.dockArea) && manager.currentPresentation === 'desktop',
       click: () => manager.toggleAutoHideByUser(this),
     };
     // In a dock area: the active document closes, or hides when it may not close. It stays in sight next to the pin.
@@ -793,7 +838,8 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     const { list, row, bar, manager } = parts;
     this.element.addEventListener('focusin', () => manager.groupFocused(this));
     list.addEventListener('click', (e) => {
-      const tab = this.tabOf(e.target);
+      // On a tablet the strip may hold the tabs of groups folded into this one.
+      const tab = this.tabOf(e.target) ?? manager.tabOfHeader(e.target);
       if (!tab) return;
       const target = e.target as Element;
       // A title whose bar has the close button shows none of its own.
@@ -813,7 +859,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       if ((e.target as Element).closest('.mx-tabdocs__close, .mx-tabdocs__pin')) e.preventDefault();
     });
     list.addEventListener('auxclick', (e) => {
-      const tab = this.tabOf(e.target);
+      const tab = this.tabOf(e.target) ?? manager.tabOfHeader(e.target);
       if (tab && e.button === 1) {
         e.preventDefault();
         void manager.closeByUser(tab.document);
@@ -848,7 +894,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       button.addEventListener('click', () => this.scrollBy(button === parts.forward ? 1 : -1));
     }
     list.addEventListener('focusin', (e) => {
-      const tab = this.tabOf(e.target);
+      const tab = this.tabOf(e.target) ?? manager.tabOfHeader(e.target);
       if (tab) this.reveal(tab);
     });
     parts.panels.element.addEventListener('focusin', (e) => {
