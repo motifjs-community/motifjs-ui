@@ -1,0 +1,27 @@
+/* RecurrenceEditor: its choices (the kit's fields) on a grid of two columns, a choice of the whole
+   width across both; the weekday buttons in a row of one width under their caption; the line in words last.
+   The pieces are units of its schema, painted by units.css; only the layout is here. */
+@layer mx.components {
+  .mx-recurrence-editor {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--_recurrence-editor-row-gap) var(--_recurrence-editor-column-gap);
+    align-items: start;
+    min-inline-size: 0;
+  }
+
+  .mx-recurrence-editor > [data-span='all'] {
+    grid-column: 1 / -1;
+  }
+
+  .mx-recurrence-editor__days-label {
+    display: block;
+  }
+
+  /* Seven buttons of one width: the widest name's. */
+  .mx-recurrence-editor__days {
+    display: inline-grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+  }
+}

@@ -103,6 +103,7 @@ export const GROUPS = [
     pages: [
       { id: 'scheduler', label: 'Overview', title: 'Scheduler', path: '/scheduler', related: ['scheduler-editing', 'calendar', 'datebox'] },
       { id: 'scheduler-editing', label: 'Editing', title: 'Scheduler: Editing', path: '/scheduler/editing', related: ['scheduler', 'formlayout', 'window'] },
+      { id: 'scheduler-recurrence', label: 'Recurrence and time zones', title: 'Scheduler: Recurrence and time zones', path: '/scheduler/recurrence', related: ['scheduler', 'scheduler-editing', 'datebox'] },
     ],
   },
   {

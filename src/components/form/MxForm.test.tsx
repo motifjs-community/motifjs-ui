@@ -49,6 +49,9 @@ function press(key: string, init: KeyboardEventInit = {}, target = document.acti
   return e.defaultPrevented;
 }
 
+/** A form open from the start opens once it is in the document (`onMounted`, a later task): wait for that, not for a number of ticks. */
+const opened = (form: MxForm) => vi.waitFor(() => expect(form.isOpen).toBe(true));
+
 const tools = (f: MxForm) => Array.from(f.element.querySelectorAll<HTMLButtonElement>('.mx-form__tools button'));
 const closeButton = (f: MxForm) => f.element.querySelector<HTMLButtonElement>('.mx-form__close')!;
 const content = (f: MxForm) => f.element.querySelector<HTMLElement>('.mx-form__content')!;
@@ -150,8 +153,7 @@ describe('MxForm', () => {
     const s = reactive({ open: true });
     let form!: MxForm;
     page(<MxForm ref={(f: MxForm) => (form = f)} title="Welcome" modal x-model={() => s.open} />);
-    await settle();
-    expect(form.isOpen).toBe(true);
+    await opened(form);
     expect(form.isModal).toBe(true);
     press('Escape', {}, form.element);
     await settle();
@@ -171,7 +173,7 @@ describe('MxForm', () => {
         onClosed={(e) => log.push(`closed:${e.result}`)}
       />,
     );
-    await settle();
+    await vi.waitFor(() => expect(log).toContain('shown'));
     s.open = false;
     await settle();
     expect(log).toEqual(['loaded', 'activate', 'shown', 'closed:cancel']);
@@ -197,7 +199,7 @@ describe('MxForm', () => {
     let form!: MxForm;
     let keep = true;
     page(<MxForm ref={(f: MxForm) => (form = f)} title="Edit" x-model={() => s.open} onClosing={(e) => (e.cancel = keep)} />);
-    await settle();
+    await opened(form);
     closeButton(form).click();
     await settle();
     expect(form.isOpen).toBe(true);

@@ -21,6 +21,12 @@ export interface SchedulerHost<T> {
   allDayLines(): number;
   rtl(): boolean;
   template(): ((context: AppointmentTemplateContext<T>) => ComponentBase) | null;
+  /** Occurrences and ones changed apart carry their marks. */
+  recurrenceMarks(): boolean;
+  /** How an appointment's series repeats, in plain words; empty for one that happens once. */
+  recurrenceText(item: T): string;
+  /** An appointment's own time zone when it is not the scheduler's; empty otherwise. */
+  zoneOf(item: T): string;
   /** The lines a week of the month has room for, measured by the month view. */
   setMonthRoom(lines: number): void;
   cellPointerDown(place: CellPlace, e: PointerEvent): void;

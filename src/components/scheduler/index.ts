@@ -1,4 +1,6 @@
 export { Scheduler } from './Scheduler';
+export { RecurrenceEditor } from './RecurrenceEditor';
+export type { RecurrenceEditorProps } from './recurrence-editor-props';
 export type { SchedulerProps } from './scheduler-props';
 export type { SchedulerView } from './scheduler-view';
 export type { SchedulerViewType } from './scheduler-view-type';
@@ -29,3 +31,10 @@ export type { AppointmentDeletedEventArgs } from './appointment-deleted-event-ar
 export type { FormOpeningEventArgs } from './form-opening-event-args';
 export type { DragEventArgs } from './drag-event-args';
 export type { DataErrorEventArgs } from './data-error-event-args';
+export type { SeriesScope } from './model/series-scope';
+export type { SeriesAction } from './series-action';
+export type { SeriesEditMode } from './series-edit-mode';
+export type { SeriesAskingEventArgs } from './series-asking-event-args';
+export type { SeriesAnsweredEventArgs } from './series-answered-event-args';
+export type { SeriesWrite } from './model/series-write';
+export { rangeFilter } from './model/range-filter';

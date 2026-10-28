@@ -1638,6 +1638,20 @@
     "value": "0px"
   },
   {
+    "name": "button.face.min-width",
+    "cssVar": "--mx-button-face-min-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "button.face.padding-inline",
+    "cssVar": "--mx-button-face-padding-inline",
+    "type": "dimension",
+    "ref": null,
+    "value": "initial"
+  },
+  {
     "name": "button.icon.size",
     "cssVar": "--mx-button-icon-size",
     "type": "dimension",
@@ -11396,6 +11410,139 @@
     "value": "#5e5c55"
   },
   {
+    "name": "recurrence-editor.row-gap",
+    "cssVar": "--mx-recurrence-editor-row-gap",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "recurrence-editor.column-gap",
+    "cssVar": "--mx-recurrence-editor-column-gap",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "recurrence-editor.day-button.variant",
+    "cssVar": "--mx-recurrence-editor-day-button-variant",
+    "type": "keyword",
+    "ref": null,
+    "value": "solid"
+  },
+  {
+    "name": "recurrence-editor.day-button.size",
+    "cssVar": "--mx-recurrence-editor-day-button-size",
+    "type": "keyword",
+    "ref": null,
+    "value": "sm"
+  },
+  {
+    "name": "recurrence-editor.day-button.face.radius",
+    "cssVar": "--mx-recurrence-editor-day-button-face-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "recurrence-editor.day-button.face.min-width",
+    "cssVar": "--mx-recurrence-editor-day-button-face-min-width",
+    "type": "dimension",
+    "ref": "control.height.md",
+    "value": "2rem"
+  },
+  {
+    "name": "recurrence-editor.day-button.face.padding-inline",
+    "cssVar": "--mx-recurrence-editor-day-button-face-padding-inline",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "recurrence-editor.day-button.face.toggled.bg",
+    "cssVar": "--mx-recurrence-editor-day-button-face-toggled-bg",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "recurrence-editor.day-button.face.toggled.color",
+    "cssVar": "--mx-recurrence-editor-day-button-face-toggled-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "recurrence-editor.day-button.face.toggled-hover.bg",
+    "cssVar": "--mx-recurrence-editor-day-button-face-toggled-hover-bg",
+    "type": "color",
+    "ref": "color.accent.solid-hover",
+    "value": "#b43f20"
+  },
+  {
+    "name": "recurrence-editor.day-button.face.outline-toggled.bg",
+    "cssVar": "--mx-recurrence-editor-day-button-face-outline-toggled-bg",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "recurrence-editor.day-button.face.outline-toggled.color",
+    "cssVar": "--mx-recurrence-editor-day-button-face-outline-toggled-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "recurrence-editor.day-button.face.outline-toggled.border-color",
+    "cssVar": "--mx-recurrence-editor-day-button-face-outline-toggled-border-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "recurrence-editor.day-button.face.outline-toggled-hover.bg",
+    "cssVar": "--mx-recurrence-editor-day-button-face-outline-toggled-hover-bg",
+    "type": "color",
+    "ref": "color.accent.solid-hover",
+    "value": "#b43f20"
+  },
+  {
+    "name": "recurrence-editor.days-label.color",
+    "cssVar": "--mx-recurrence-editor-days-label-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "recurrence-editor.days-label.font-weight",
+    "cssVar": "--mx-recurrence-editor-days-label-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.medium",
+    "value": "500"
+  },
+  {
+    "name": "recurrence-editor.days-label.margin-bottom",
+    "cssVar": "--mx-recurrence-editor-days-label-margin-bottom",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "recurrence-editor.days.gap",
+    "cssVar": "--mx-recurrence-editor-days-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "recurrence-editor.summary.color",
+    "cssVar": "--mx-recurrence-editor-summary-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
     "name": "scheduler.height",
     "cssVar": "--mx-scheduler-height",
     "type": "dimension",
@@ -11545,6 +11692,13 @@
   {
     "name": "scheduler.appointment-text-mix",
     "cssVar": "--mx-scheduler-appointment-text-mix",
+    "type": "number",
+    "ref": null,
+    "value": 0
+  },
+  {
+    "name": "scheduler.appointment-text-auto",
+    "cssVar": "--mx-scheduler-appointment-text-auto",
     "type": "number",
     "ref": null,
     "value": 0
@@ -12621,11 +12775,18 @@
     "value": "#5e5c55"
   },
   {
+    "name": "scheduler.appointment-time.hover.color",
+    "cssVar": "--mx-scheduler-appointment-time-hover-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
     "name": "scheduler.appointment-time.open.color",
     "cssVar": "--mx-scheduler-appointment-time-open-color",
     "type": "color",
-    "ref": null,
-    "value": "color-mix(in oklab, #1d1c1a calc(0 * 1%), #5e5c55)"
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
   },
   {
     "name": "scheduler.tooltip.width",
@@ -12668,6 +12829,83 @@
     "type": "color",
     "ref": "color.fg.secondary",
     "value": "#5e5c55"
+  },
+  {
+    "name": "scheduler.tooltip-repeat.color",
+    "cssVar": "--mx-scheduler-tooltip-repeat-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "scheduler.series-mark.display",
+    "cssVar": "--mx-scheduler-series-mark-display",
+    "type": "keyword",
+    "ref": null,
+    "value": "block"
+  },
+  {
+    "name": "scheduler.series-mark.width",
+    "cssVar": "--mx-scheduler-series-mark-width",
+    "type": "dimension",
+    "ref": "icon.size.sm",
+    "value": "0.75rem"
+  },
+  {
+    "name": "scheduler.series-mark.margin-start",
+    "cssVar": "--mx-scheduler-series-mark-margin-start",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "scheduler.series-mark.icon",
+    "cssVar": "--mx-scheduler-series-mark-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-repeat)"
+  },
+  {
+    "name": "scheduler.series-mark.opacity",
+    "cssVar": "--mx-scheduler-series-mark-opacity",
+    "type": "number",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "scheduler.exception-mark.display",
+    "cssVar": "--mx-scheduler-exception-mark-display",
+    "type": "keyword",
+    "ref": null,
+    "value": "block"
+  },
+  {
+    "name": "scheduler.exception-mark.width",
+    "cssVar": "--mx-scheduler-exception-mark-width",
+    "type": "dimension",
+    "ref": "icon.size.sm",
+    "value": "0.75rem"
+  },
+  {
+    "name": "scheduler.exception-mark.margin-start",
+    "cssVar": "--mx-scheduler-exception-mark-margin-start",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "scheduler.exception-mark.icon",
+    "cssVar": "--mx-scheduler-exception-mark-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-repeat-off)"
+  },
+  {
+    "name": "scheduler.exception-mark.opacity",
+    "cssVar": "--mx-scheduler-exception-mark-opacity",
+    "type": "number",
+    "ref": null,
+    "value": "initial"
   },
   {
     "name": "scheduler.tooltip-actions.gap",

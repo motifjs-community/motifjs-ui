@@ -21,6 +21,11 @@ const FIELDS: SchedulerFields = {
   allowResize: 'allowResize',
   allowEdit: 'allowEdit',
   allowDelete: 'allowDelete',
+  recurrenceRule: 'recurrenceRule',
+  recurrenceException: 'recurrenceException',
+  recurrenceId: 'recurrenceId',
+  startTimeZone: 'startDateTimeZone',
+  endTimeZone: 'endDateTimeZone',
 };
 
 const view = (over: Partial<ResolvedView> = {}): ResolvedView => ({

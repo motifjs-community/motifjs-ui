@@ -47,7 +47,8 @@ function kitCss(): string[] {
   return out;
 }
 
-describe('component tokens', () => {
+// Building every language through Style Dictionary takes seconds, more while the other test files run.
+describe('component tokens', { timeout: 30_000 }, () => {
   it("every language gives every token of the schema a value (a unit's token it does not write stays unset), and nothing else", () => {
     expect(languages()[0]).toBe(DEFAULT_LANGUAGE);
     const names = [...schema().tokens.keys()].sort();

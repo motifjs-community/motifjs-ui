@@ -26,4 +26,14 @@ export interface SchedulerFields {
   allowEdit: string;
   /** Default `'allowDelete'`. */
   allowDelete: string;
+  /** Default `'recurrenceRule'`: how it repeats, an RFC 5545 rule (`FREQ=WEEKLY;BYDAY=MO,WE`); empty for once. */
+  recurrenceRule: string;
+  /** Default `'recurrenceException'`: the times of a series left out (`EXDATE`), a text apart by commas or a list of dates. */
+  recurrenceException: string;
+  /** Default `'recurrenceId'`: on an occurrence changed apart from its series, the key of that series. */
+  recurrenceId: string;
+  /** Default `'startDateTimeZone'`: the IANA time zone the start is set in (and a series repeats in); empty for the scheduler's. */
+  startTimeZone: string;
+  /** Default `'endDateTimeZone'`: the time zone the end is set in; empty for the start's. */
+  endTimeZone: string;
 }

@@ -816,6 +816,17 @@ ul.docs-list {
   border-radius: var(--mx-radius-sm);
 }
 
+.sched-zones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: var(--mx-space-3);
+  inline-size: 100%;
+}
+
+.sched-rule > .mx-recurrence-editor {
+  max-inline-size: 34rem;
+}
+
 .sched-events {
   min-block-size: var(--mx-space-10);
   margin: 0;

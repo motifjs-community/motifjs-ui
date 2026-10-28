@@ -427,6 +427,22 @@
     --_field-box-readonly-invalid-focus-shadow: var(--mx-radiogroup-field-box-readonly-invalid-focus-shadow);
   }
 
+  /* recurrence-editor: day-button — A weekday button: its variant and size, its shape (corners, the least width, the room on its sides) and how a day that is on looks, for a solid and an outline button. */
+  .mx-recurrence-editor__days > .mx-button {
+    --_button-variant: var(--mx-recurrence-editor-day-button-variant);
+    --_button-size: var(--mx-recurrence-editor-day-button-size);
+    --_button-face-radius: var(--mx-recurrence-editor-day-button-face-radius);
+    --_button-face-min-width: var(--mx-recurrence-editor-day-button-face-min-width);
+    --_button-face-padding-inline: var(--mx-recurrence-editor-day-button-face-padding-inline);
+    --_button-face-toggled-bg: var(--mx-recurrence-editor-day-button-face-toggled-bg);
+    --_button-face-toggled-color: var(--mx-recurrence-editor-day-button-face-toggled-color);
+    --_button-face-toggled-hover-bg: var(--mx-recurrence-editor-day-button-face-toggled-hover-bg);
+    --_button-face-outline-toggled-bg: var(--mx-recurrence-editor-day-button-face-outline-toggled-bg);
+    --_button-face-outline-toggled-color: var(--mx-recurrence-editor-day-button-face-outline-toggled-color);
+    --_button-face-outline-toggled-border-color: var(--mx-recurrence-editor-day-button-face-outline-toggled-border-color);
+    --_button-face-outline-toggled-hover-bg: var(--mx-recurrence-editor-day-button-face-outline-toggled-hover-bg);
+  }
+
   /* scheduler: today-button — Today, in the bar (its size is the bar's). */
   .mx-scheduler__bar > .mx-scheduler__today {
     --_button-variant: var(--mx-scheduler-today-button-variant);

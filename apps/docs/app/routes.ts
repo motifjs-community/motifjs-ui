@@ -48,6 +48,7 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   'tabdocs-workspace': () => import('../pages/tabdocs/TabDocsWorkspacePage'),
   scheduler: () => import('../pages/scheduler/SchedulerPage'),
   'scheduler-editing': () => import('../pages/scheduler/SchedulerEditingPage'),
+  'scheduler-recurrence': () => import('../pages/scheduler/SchedulerRecurrencePage'),
   datagrid: () => import('../pages/datagrid/DataGridPage'),
   'datagrid-editing': () => import('../pages/datagrid/DataGridEditingPage'),
   'datagrid-forms': () => import('../pages/datagrid/DataGridFormsPage'),

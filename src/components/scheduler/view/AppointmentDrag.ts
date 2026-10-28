@@ -1,10 +1,9 @@
-import { addDays } from '../../../parts/dates/add-days';
-import { dayStart } from '../../../parts/dates/day-start';
 import type { Draft } from '../model/draft';
 import type { ResolvedView } from '../model/resolved-view';
 import type { SchedulerModel } from '../model/SchedulerModel';
 
 const MINUTE = 60_000;
+const DAY = 86_400_000;
 /** Pixels the pointer moves before a press becomes a drag. */
 const THRESHOLD = 4;
 /** A finger held this long starts a drag (a shorter touch scrolls or taps). */
@@ -216,6 +215,7 @@ export class AppointmentDrag<T> {
 
   private moved(press: Press<T>, cell: CellAt): { start: Date; end: Date; allDay: boolean } | null {
     const view = this.host.view();
+    const zone = this.host.model.zone;
     const duration = press.end.getTime() - press.start.getTime();
     if (cell.time && press.at) {
       // Over the hours: keeps the distance from where it was taken; from the all-day panel it gets a slot's length.
@@ -223,7 +223,8 @@ export class AppointmentDrag<T> {
         const start = this.snap(cell.time);
         return { start, end: new Date(start.getTime() + Math.max(view.cellDuration, 30) * MINUTE * 2), allDay: false };
       }
-      const start = this.snap(new Date(press.start.getTime() + (cell.time.getTime() - press.at.getTime())));
+      // The distance on the clock, so a move over the change of summer time keeps the hour it shows.
+      const start = this.snap(zone.date(zone.wall(press.start) + (zone.wall(cell.time) - zone.wall(press.at))));
       return { start, end: new Date(start.getTime() + duration), allDay: false };
     }
     if (cell.time) {
@@ -231,13 +232,13 @@ export class AppointmentDrag<T> {
       return { start, end: new Date(start.getTime() + (press.allDay ? view.cellDuration * 2 * MINUTE : duration)), allDay: false };
     }
     // Over a day: by whole days, keeping the time of day.
-    const from = press.atDay ?? dayStart(press.start);
-    const days = Math.round((cell.day.getTime() - from.getTime()) / 86_400_000);
+    const from = press.atDay ?? zone.dayStart(press.start);
+    const days = Math.round((zone.wall(cell.day) - zone.wall(from)) / DAY);
     if (view.type !== 'month' && !press.allDay) {
       // A timed one dropped on the all-day panel becomes an all-day one of that day.
-      return { start: cell.day, end: addDays(cell.day, 1), allDay: true };
+      return { start: cell.day, end: zone.addDays(cell.day, 1), allDay: true };
     }
-    return { start: addDays(press.start, days), end: addDays(press.end, days), allDay: press.allDay };
+    return { start: zone.addDays(press.start, days), end: zone.addDays(press.end, days), allDay: press.allDay };
   }
 
   private resized(press: Press<T>, cell: CellAt): { start: Date; end: Date; allDay: boolean } | null {
@@ -248,22 +249,27 @@ export class AppointmentDrag<T> {
       return { start: new Date(Math.min(at.getTime(), press.end.getTime() - least)), end: press.end, allDay: false };
     }
     // By days: the bar of an all-day appointment, or a timed one over days in the month.
+    const zone = this.host.model.zone;
     const day = cell.day;
+    /** The day of the cell at the clock time of `time`. */
+    const at = (time: Date) => zone.date(zone.wall(day) + (zone.wall(time) - zone.wall(zone.dayStart(time))));
     if (press.mode === 'end') {
-      const end = press.allDay ? addDays(day, 1) : new Date(day.getTime() + (press.end.getTime() - dayStart(press.end).getTime()));
-      return { start: press.start, end: end <= press.start ? (press.allDay ? addDays(dayStart(press.start), 1) : press.end) : end, allDay: press.allDay };
+      const end = press.allDay ? zone.addDays(day, 1) : at(press.end);
+      return { start: press.start, end: end <= press.start ? (press.allDay ? zone.addDays(zone.dayStart(press.start), 1) : press.end) : end, allDay: press.allDay };
     }
-    const start = press.allDay ? day : new Date(day.getTime() + (press.start.getTime() - dayStart(press.start).getTime()));
+    const start = press.allDay ? day : at(press.start);
     return { start: start >= press.end ? press.start : start, end: press.end, allDay: press.allDay };
   }
 
-  /** A time on the snap step from the day's start (`up`: the step that has it, its end). */
+  /** A time on the snap step from the day's start on the clock (`up`: the step that has it, its end). */
   private snap(time: Date, up = false): Date {
+    const zone = this.host.model.zone;
     const step = Math.max(1, this.host.snapMinutes());
-    const day = dayStart(time);
-    const minutes = (time.getTime() - day.getTime()) / MINUTE;
+    const wall = zone.wall(time);
+    const day = Math.floor(wall / DAY) * DAY;
+    const minutes = (wall - day) / MINUTE;
     const snapped = up ? Math.ceil(minutes / step) * step : Math.round(minutes / step) * step;
-    return new Date(day.getTime() + snapped * MINUTE);
+    return zone.date(day + snapped * MINUTE);
   }
 
   /** The cell under a point of the screen: its day, and the time there for a cell of the hours. */
@@ -281,7 +287,7 @@ export class AppointmentDrag<T> {
     const box = el.getBoundingClientRect();
     const share = box.height > 0 ? Math.max(0, Math.min(1, (y - box.top) / box.height)) : 0;
     const minutes = slot.minutes + share * this.host.view().cellDuration;
-    return { day: day.date, time: new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate(), 0, minutes) };
+    return { day: day.date, time: model.zone.date(day.wall + minutes * MINUTE) };
   }
 
   /** Near an edge of the scroll box it scrolls, a frame at a time, and the draft follows. */

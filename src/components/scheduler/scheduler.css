@@ -298,8 +298,14 @@
     min-inline-size: 0;
     overflow: hidden;
     user-select: none;
-    background: var(--_box-bg);
-    color: var(--_text);
+    /* The fill as it is now, and black or white on it, whichever stands out (taken by `appointment-text-auto`). */
+    --_fill: var(--_box-bg);
+    --_contrast: oklch(from var(--_fill) clamp(0, (0.65 - l) * 1000, 1) 0 0);
+
+    --_ink: color-mix(in oklab, var(--_contrast) calc(var(--_scheduler-appointment-text-auto) * 1%), var(--_text));
+
+    background: var(--_fill);
+    color: var(--_ink);
     outline: none;
   }
 
@@ -365,8 +371,9 @@
     --_open-edge: var(--_scheduler-appointment-open-edge-color);
     --_open-edge-mix: calc(var(--_scheduler-appointment-open-edge-mix) * 1%);
 
-    background: color-mix(in oklab, var(--_c) calc(var(--_scheduler-appointment-open-tint) * 1%), var(--_box-bg));
-    color: var(--_open-text);
+    --_fill: color-mix(in oklab, var(--_c) calc(var(--_scheduler-appointment-open-tint) * 1%), var(--_box-bg));
+
+    --_ink: color-mix(in oklab, var(--_contrast) calc(var(--_scheduler-appointment-text-auto) * 1%), var(--_open-text));
     border-block-start: var(--_top-w) solid color-mix(in oklab, var(--_open-edge) var(--_open-edge-mix), color-mix(in oklab, var(--_c) calc(var(--_top-mix) * 1%), var(--_frame)));
     border-inline-end: var(--_end-w) solid color-mix(in oklab, var(--_open-edge) var(--_open-edge-mix), color-mix(in oklab, var(--_c) calc(var(--_end-mix) * 1%), var(--_frame)));
     border-block-end: var(--_bottom-w) solid color-mix(in oklab, var(--_open-edge) var(--_open-edge-mix), color-mix(in oklab, var(--_c) calc(var(--_bottom-mix) * 1%), var(--_frame)));
@@ -421,6 +428,20 @@
   /* A short one reads its text first. */
   .mx-scheduler__appointment[data-short] .mx-scheduler__appointment-time {
     order: 1;
+  }
+
+  /* An occurrence's mark (a series, or one changed apart) at the end of the box, after the text; the units draw it, or not. */
+  .mx-scheduler__appointment-content {
+    flex: 1 1 auto;
+  }
+
+  .mx-scheduler__mark {
+    flex: none;
+    align-self: flex-start;
+  }
+
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) > .mx-scheduler__mark {
+    align-self: center;
   }
 
   /* Moving and resizing. The box being moved stands where it would go; a copy shows next to the appointment. */
@@ -504,6 +525,8 @@
   }
 
   .mx-scheduler__tooltip-time,
+  .mx-scheduler__tooltip-zone,
+  .mx-scheduler__tooltip-repeat,
   .mx-scheduler__tooltip-description {
     overflow-wrap: break-word;
   }

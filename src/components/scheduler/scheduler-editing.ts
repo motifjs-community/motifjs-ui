@@ -14,4 +14,8 @@ export interface SchedulerEditing {
   allowCopying: boolean;
   /** Asks before deleting. Default `true`. */
   confirmDelete: boolean;
+  /** The form edits how an appointment repeats. Default `true`. */
+  allowRecurrence: boolean;
+  /** The form edits the time zones of the start and the end. Default `false`. */
+  allowTimeZones: boolean;
 }

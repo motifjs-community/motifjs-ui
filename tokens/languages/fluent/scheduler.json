@@ -22,6 +22,7 @@
     "appointment-past-tint": { "$value": 8 },
     "appointment-past-color-mix": { "$value": 45 },
     "appointment-text-mix": { "$value": 0 },
+    "appointment-text-auto": { "$value": 0 },
     "appointment-frame-color": { "$value": "{color.bg.surface}" },
     "appointment-open-tint": { "$value": 0 },
     "appointment-open-color": { "$value": "{scheduler.appointment-foreground}" },
@@ -291,8 +292,11 @@
     },
     "appointment-time": {
       "color": { "$value": "{color.fg.secondary}" },
+      "hover": {
+        "color": { "$value": "{color.fg.primary}" }
+      },
       "open": {
-        "color": { "$value": "color-mix(in oklab, {color.fg.primary} calc(0 * 1%), {color.fg.secondary})" }
+        "color": { "$value": "{color.fg.primary}" }
       }
     },
     "tooltip": {
@@ -306,6 +310,21 @@
     },
     "tooltip-detail": {
       "color": { "$value": "{color.fg.secondary}" }
+    },
+    "tooltip-repeat": {
+      "color": { "$value": "{color.fg.secondary}" }
+    },
+    "series-mark": {
+      "display": { "$value": "block" },
+      "width": { "$value": "{icon.size.sm}" },
+      "margin-start": { "$value": "{space.1}" },
+      "icon": { "$value": "repeat" }
+    },
+    "exception-mark": {
+      "display": { "$value": "block" },
+      "width": { "$value": "{icon.size.sm}" },
+      "margin-start": { "$value": "{space.1}" },
+      "icon": { "$value": "repeat-off" }
     },
     "tooltip-actions": {
       "gap": { "$value": "{space.2}" }

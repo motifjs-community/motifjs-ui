@@ -1408,6 +1408,55 @@ mentioned further down.
   reaches it too. Narrow boxes cut their text short on one line instead of breaking words.
 - Docs page `/scheduler/editing`; `e2e/checks/58-scheduler-editing.mjs`.
 
+### Scheduler, milestone 3: recurrence and time zones
+
+- **Recurrence rules (RFC 5545), the kit's own engine** (`src/parts/recurrence/`, DOM-free, exported):
+  `parseRecurrenceRule` / `formatRecurrenceRule` (`FREQ` daily to yearly, `INTERVAL`, `COUNT`, `UNTIL`, `BYDAY`
+  with `2MO` and `-1FR`, `BYMONTHDAY`, `BYMONTH`, `BYYEARDAY`, `BYWEEKNO`, `BYSETPOS`, `WKST`, `BYHOUR`,
+  `BYMINUTE`, `BYSECOND`; parts it does not read are kept), `recurrenceDates` (the times in a range only, on the
+  wall clock, skipping the steps before the range when there is no count), `describeRecurrence` (the rule in plain
+  words, en and tr), exception dates (`readRuleDates`, `addRuleDate`, `filterRuleDates`, `parseRuleDate`,
+  `formatRuleDate`). Tested with the RFC's examples, leap years and the 31st.
+- **Time zones** (`src/parts/dates/time-zone.ts`, `TimeZone`, `Intl` only): moments and wall clock times both ways,
+  a time the clock skips moved on by the gap, one it shows twice taken as the first (or the later). Scheduler
+  `timeZone` puts the days and hours on a zone's clock; a series repeats on its start's zone
+  (`fields.startTimeZone`); a box on the night summer time changes reaches its end's row and is never shorter than
+  it lasts.
+- **Series in the scheduler:** `fields.recurrenceRule`, `recurrenceException` (`EXDATE`), `recurrenceId` (an
+  occurrence changed apart names its series' key), `startTimeZone`, `endTimeZone`. Only the days shown are
+  expanded; each occurrence is an object of its own, kept while it stays on screen.
+- **Changing a series:** a drag, the keys, the form and Delete ask "this one / this and the following / the whole
+  series" (`MxForm` + `FormLayout` with radio buttons; `seriesEdit` answers without asking; `onSeriesAsking` may
+  answer, narrow or cancel; `onSeriesAnswered`). This one: a new appointment in its place and its time left out of
+  the series. This and the following: the series ends before it (`UNTIL`, or the count split) and a new series
+  goes on. The whole series: every occurrence moves as this one did (a weekly series moved a day moves its
+  weekdays). The update and delete events carry `scope` and `series`; `onAppointmentUpdated` gives `added`.
+- **Through the data layer:** a change to a series is written one write after another through the adapter (new rows,
+  then changes, then deletes). When a later write fails the earlier ones are taken back through the adapter;
+  `onDataError` now has `saved`, `unsaved` and `undone`, and the live region says when part of a change stayed
+  saved. A deleted series takes its changed occurrences, asked of the adapter (loaded or not). `rangeFilter(range,
+  fields)` builds the data layer's filter for a range with the series that began before it; `remoteFiltering`
+  uses it (the old filter left such series out).
+- **`RecurrenceEditor`** (exported, also in the appointment form, `editing.allowRecurrence`): the repeat list, every
+  how many, the weekday buttons, a day of the month or a weekday by its place, the month, the end; it reads and
+  writes the rule (`value`, `x-model`) and says it in words. With `editing.allowTimeZones` the form has one
+  searchable time zone picker (`Intl`'s zones) and a box "Separate end time zone" (`separateEndZone`, an item like
+  the others): checked, a second picker sets the end's zone, and an appointment whose end zone differs opens
+  with it checked; unchecked, the end follows the start's zone. Each picker has the whole row (a zone's name is
+  long), the box its own row under it; the field's tooltip gives the whole name.
+- **Marks:** an occurrence carries a series mark, one changed apart an exception mark (units `series-mark`,
+  `exception-mark`; glyphs `repeat`, `repeat-off`; Material draws none; `recurrenceMarks`).
+  The tooltip says how it repeats (unit `tooltip-repeat`) and the time on the appointment's own clock.
+- Methods `seriesOf`, `isOccurrence`, `isException`, `occurrencesOf`, `recurrenceText`, `askSeries`;
+  `updateAppointment` and `deleteAppointment` take a `scope`.
+- Token schema `recurrence-editor.json` (units `editor`, `days-label`, `days`, `summary`; the weekday buttons'
+  place `day-button`), values in every language. The seven weekday buttons are of one width, the widest name's
+  (measured in en, tr, de, fr, el, ta and ar); Fluent draws them as small rounded toggle buttons.
+- An appointment's text stands out on its fill in every language and theme, at rest, under the pointer and open:
+  `appointment-text-auto` takes black or white by the fill (Material, whose boxes take the appointment's own
+  colour), and the time takes the title's colour under the pointer and open (`appointment-time` `hover`, `open`).
+- Docs page `/scheduler/recurrence` (one example from a data source); `e2e/checks/60-scheduler-recurrence.mjs`.
+
 ### Design languages, step 1: what lets a language change everything
 
 Any design system, or a new version of one, is added as files only and looks like its source.

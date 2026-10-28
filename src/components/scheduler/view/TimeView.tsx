@@ -35,8 +35,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
     const st = model.state;
     const format = host.format;
     const t = host.text.bind(host);
-    const slotTime = (slot: TimeSlot) => new Date(2000, 0, 1, 0, slot.minutes);
-    const cellTime = (day: SchedulerDay, slot: TimeSlot) => new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate(), 0, slot.minutes);
+    const cellTime = (day: SchedulerDay, slot: TimeSlot) => model.zone.date(day.wall + slot.minutes * 60_000);
     const work = (day: SchedulerDay, slot: TimeSlot) => {
       const hours = host.workHours();
       return day.work && slot.minutes >= hours.start * 60 && slot.minutes < hours.end * 60;
@@ -131,7 +130,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
             <div class="mx-scheduler__ruler" aria-hidden="true">
               {st.slots.map((slot) => (
                 <div key={slot.index} class="mx-scheduler__hour" data-hour-start={() => slot.hourStart || null}>
-                  <span>{() => (slot.hourStart ? format.hour(slotTime(slot)) : '')}</span>
+                  <span>{() => (slot.hourStart ? format.hour(slot.minutes) : '')}</span>
                 </div>
               ))}
             </div>

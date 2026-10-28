@@ -52,6 +52,7 @@
 @import '../components/filterbuilder/filterbuilder.css';
 @import '../components/datagrid/datagrid.css';
 @import '../components/scheduler/scheduler.css';
+@import '../components/scheduler/recurrence-editor.css';
 /* The units' paint comes after the components: their CSS only places the units. */
 @import '../generated/units.css';
 @import '../generated/places.css';

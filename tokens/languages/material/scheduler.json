@@ -22,6 +22,7 @@
     "appointment-past-tint": { "$value": 100 },
     "appointment-past-color-mix": { "$value": 70 },
     "appointment-text-mix": { "$value": 0 },
+    "appointment-text-auto": { "$value": 100 },
     "appointment-frame-color": { "$value": "{color.bg.canvas}" },
     "appointment-open-tint": { "$value": 0 },
     "appointment-open-color": { "$value": "{scheduler.appointment-foreground}" },
@@ -289,12 +290,6 @@
     "appointment-text": {
       "font-weight": { "$value": "{font.weight.medium}" }
     },
-    "appointment-time": {
-      "color": { "$value": "{color.accent.on-solid}" },
-      "open": {
-        "color": { "$value": "color-mix(in oklab, {color.accent.on-solid} calc(0 * 1%), {color.accent.on-solid})" }
-      }
-    },
     "tooltip": {
       "width": { "$value": {"value": 18, "unit": "rem"} },
       "padding": { "$value": "{space.4}" },
@@ -305,6 +300,9 @@
       "font-weight": { "$value": "{font.weight.regular}" }
     },
     "tooltip-detail": {
+      "color": { "$value": "{color.fg.secondary}" }
+    },
+    "tooltip-repeat": {
       "color": { "$value": "{color.fg.secondary}" }
     },
     "tooltip-actions": {

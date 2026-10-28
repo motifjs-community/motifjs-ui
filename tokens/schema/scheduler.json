@@ -24,6 +24,7 @@
     "appointment-past-tint": { "$type": "number" },
     "appointment-past-color-mix": { "$type": "number" },
     "appointment-text-mix": { "$type": "number", "$description": "How much of the appointment's colour its text takes (0: the text colour alone)." },
+    "appointment-text-auto": { "$type": "number", "$description": "How much the text of a box (its title, and its time when the language gives the time no colour of its own) takes black or white, whichever stands out on the box's fill as it is now (at rest, under the pointer, open): 100 for boxes filled with the appointment's own colour, 0 to keep the text colour." },
     "appointment-frame-color": { "$type": "color", "$description": "A box's four edges: each one's width and how much of the appointment's colour it takes (0: this neutral frame colour; 100: the colour)." },
     "appointment-open-tint": { "$type": "number", "$description": "An open appointment (its tooltip showing): how much of its colour is laid over the box's fill (0: unchanged; 100: the colour)." },
     "appointment-open-color": { "$type": "color", "$description": "The text of an open appointment, laid over its text and time by `appointment-open-color-mix` (0: unchanged)." },
@@ -289,9 +290,10 @@
         "selector": ".mx-scheduler__appointment-text"
       },
       "appointment-time": {
-        "$description": "An appointment's time (`open`: while its tooltip shows).",
+        "$description": "An appointment's time (`hover`: the box under the pointer, its fill deeper; `open`: while its tooltip shows).",
         "selector": ".mx-scheduler__appointment-time",
         "states": {
+          "hover": ".mx-scheduler__appointment:hover .mx-scheduler__appointment-time",
           "open": ".mx-scheduler__appointment[data-open] .mx-scheduler__appointment-time"
         }
       },
@@ -318,8 +320,45 @@
         }
       },
       "tooltip-detail": {
-        "$description": "The tooltip's time and description.",
-        "selector": ":is(.mx-scheduler__tooltip-time, .mx-scheduler__tooltip-description)"
+        "$description": "The tooltip's time (and its time on the appointment's own clock) and description.",
+        "selector": ":is(.mx-scheduler__tooltip-time, .mx-scheduler__tooltip-zone, .mx-scheduler__tooltip-description)"
+      },
+      "tooltip-repeat": {
+        "$description": "The tooltip's line on how the appointment repeats (`exception`: that it was changed apart from its series).",
+        "selector": ".mx-scheduler__tooltip-repeat",
+        "states": {
+          "exception": ".mx-scheduler__tooltip-repeat[data-exception]"
+        }
+      },
+      "series-mark": {
+        "$description": "The mark of an occurrence of a series (a repeat glyph, by its `icon`): in a `bar`, a `chip`, an `open` box, a `past` one, a `disabled` one. At the end of the box, the height of a line of its text (the glyph is centred in it); in the box's text colour. None unless a language draws it (`recurrenceMarks: false` leaves it out too).",
+        "selector": ".mx-scheduler__mark[data-mark='series']",
+        "defaults": {
+          "display": "none",
+          "height": "1lh"
+        },
+        "states": {
+          "bar": ".mx-scheduler__appointment[data-kind='bar'] > .mx-scheduler__mark[data-mark='series']",
+          "chip": ".mx-scheduler__appointment[data-kind='chip'] > .mx-scheduler__mark[data-mark='series']",
+          "open": ".mx-scheduler__appointment[data-open] > .mx-scheduler__mark[data-mark='series']",
+          "past": ".mx-scheduler__appointment[data-past] > .mx-scheduler__mark[data-mark='series']",
+          "disabled": ".mx-scheduler__appointment[data-disabled] > .mx-scheduler__mark[data-mark='series']"
+        }
+      },
+      "exception-mark": {
+        "$description": "The mark of an occurrence changed apart from its series (a repeat glyph struck through), in the same places. At the end of the box, the height of a line of its text (the glyph is centred in it); in the box's text colour. None unless a language draws it (`recurrenceMarks: false` leaves it out too).",
+        "selector": ".mx-scheduler__mark[data-mark='exception']",
+        "defaults": {
+          "display": "none",
+          "height": "1lh"
+        },
+        "states": {
+          "bar": ".mx-scheduler__appointment[data-kind='bar'] > .mx-scheduler__mark[data-mark='exception']",
+          "chip": ".mx-scheduler__appointment[data-kind='chip'] > .mx-scheduler__mark[data-mark='exception']",
+          "open": ".mx-scheduler__appointment[data-open] > .mx-scheduler__mark[data-mark='exception']",
+          "past": ".mx-scheduler__appointment[data-past] > .mx-scheduler__mark[data-mark='exception']",
+          "disabled": ".mx-scheduler__appointment[data-disabled] > .mx-scheduler__mark[data-mark='exception']"
+        }
       },
       "tooltip-actions": {
         "$description": "The tooltip's buttons.",

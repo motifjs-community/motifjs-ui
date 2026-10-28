@@ -1,0 +1,41 @@
+{
+  "recurrence-editor": {
+    "row-gap": { "$value": "{form-layout.row-gap}" },
+    "column-gap": { "$value": "{form-layout.column-gap}" },
+    "day-button": {
+      "variant": { "$value": "outline" },
+      "size": { "$value": "sm" },
+      "face": {
+        "radius": { "$value": "{radius.full}" },
+        "min-width": { "$value": "{control.height.md}" },
+        "padding-inline": { "$value": "{space.2}" },
+        "toggled": {
+          "bg": { "$value": "{color.selection.bg}" },
+          "color": { "$value": "{color.selection.fg}" }
+        },
+        "toggled-hover": {
+          "bg": { "$value": "{color.selection.bg}" }
+        },
+        "outline-toggled": {
+          "bg": { "$value": "{color.selection.bg}" },
+          "color": { "$value": "{color.selection.fg}" },
+          "border-color": { "$value": "{color.accent.solid}" }
+        },
+        "outline-toggled-hover": {
+          "bg": { "$value": "{color.selection.bg}" }
+        }
+      }
+    },
+    "days-label": {
+      "color": { "$value": "{color.fg.primary}" },
+      "font-weight": { "$value": "{font.weight.medium}" },
+      "margin-bottom": { "$value": "{space.1}" }
+    },
+    "days": {
+      "gap": { "$value": "{space.2}" }
+    },
+    "summary": {
+      "color": { "$value": "{color.fg.secondary}" }
+    }
+  }
+}

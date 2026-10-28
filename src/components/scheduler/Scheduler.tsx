@@ -8,9 +8,10 @@ import { pageLocale } from '../../core/page-locale';
 import { uiLocale } from '../../core/ui-locale';
 import type { UiStrings } from '../../core/ui-strings';
 import { Popup } from '../../parts/popup/Popup';
-import { dayStart } from '../../parts/dates/day-start';
 import { firstDayOfWeek as localeFirstDay } from '../../parts/dates/first-day-of-week';
 import { sameDay } from '../../parts/dates/same-day';
+import { TimeZone } from '../../parts/dates/time-zone';
+import { describeRecurrence } from '../../parts/recurrence/describe-recurrence';
 import { Button } from '../button/Button';
 import { Calendar } from '../calendar/Calendar';
 import { Spinner } from '../progress/Spinner';
@@ -39,6 +40,8 @@ import type { CellPlace } from './model/cell-place';
 import type { OverlapMode } from './model/overlap-mode';
 import type { ResolvedView } from './model/resolved-view';
 import { SchedulerModel } from './model/SchedulerModel';
+import { rangeFilter } from './model/range-filter';
+import type { SeriesScope } from './model/series-scope';
 import type { StripPiece } from './model/strip-piece';
 import type { TimedPiece } from './model/timed-piece';
 import { stepDate, viewDates } from './model/view-dates';
@@ -51,6 +54,10 @@ import type { SchedulerRange } from './scheduler-range';
 import type { SchedulerView } from './scheduler-view';
 import type { SchedulerViewType } from './scheduler-view-type';
 import type { SelectionChangedEventArgs } from './selection-changed-event-args';
+import type { SeriesAction } from './series-action';
+import type { SeriesAnsweredEventArgs } from './series-answered-event-args';
+import type { SeriesAskingEventArgs } from './series-asking-event-args';
+import type { SeriesEditMode } from './series-edit-mode';
 import type { ViewChangedEventArgs } from './view-changed-event-args';
 import type { ViewChangingEventArgs } from './view-changing-event-args';
 import { MonthView } from './view/MonthView';
@@ -84,6 +91,9 @@ const OWN = [
   'scrollHour',
   'toolbar',
   'locale',
+  'timeZone',
+  'seriesEdit',
+  'recurrenceMarks',
   'appointmentTemplate',
   'texts',
   'keys',
@@ -102,6 +112,8 @@ const DEFAULT_EDITING: SchedulerEditing = {
   allowResizing: true,
   allowCopying: true,
   confirmDelete: true,
+  allowRecurrence: true,
+  allowTimeZones: false,
 };
 
 /** Props whose value is a function (a template, a test of a day). */
@@ -121,6 +133,11 @@ const DEFAULT_FIELDS: SchedulerFields = {
   allowResize: 'allowResize',
   allowEdit: 'allowEdit',
   allowDelete: 'allowDelete',
+  recurrenceRule: 'recurrenceRule',
+  recurrenceException: 'recurrenceException',
+  recurrenceId: 'recurrenceId',
+  startTimeZone: 'startDateTimeZone',
+  endTimeZone: 'endDateTimeZone',
 };
 
 const DEFAULT_KEYS: SchedulerKeys = {
@@ -228,6 +245,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       [own.onResizeStart, parts.events.resizeStart as Emitter<never>],
       [own.onResizing, parts.events.resizing as Emitter<never>],
       [own.onResizeEnd, parts.events.resizeEnd as Emitter<never>],
+      [own.onSeriesAsking, parts.events.seriesAsking as Emitter<never>],
+      [own.onSeriesAnswered, parts.events.seriesAnswered as Emitter<never>],
     ];
     for (const [handler, emitter] of on) if (handler) emitter.event(handler);
     this.motif.setDisposable(() => {
@@ -401,6 +420,27 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set locale(value: Bind<string>) {
     this.assignProperty('locale', value);
   }
+  /** The clock the days and hours are on, an IANA time zone; `null` for the browser's. */
+  get timeZone(): string | null {
+    return this.getProperty<string | null | undefined>('timeZone') || null;
+  }
+  set timeZone(value: Bind<string | null>) {
+    this.assignProperty('timeZone', value);
+  }
+  /** What changing or deleting an occurrence of a series reaches; `'ask'` asks the user. */
+  get seriesEdit(): SeriesEditMode {
+    return this.getProperty<SeriesEditMode | undefined>('seriesEdit') ?? 'ask';
+  }
+  set seriesEdit(value: Bind<SeriesEditMode>) {
+    this.assignProperty('seriesEdit', value);
+  }
+  /** Marks on occurrences of a series and on ones changed apart. Default `true`. */
+  get recurrenceMarks(): boolean {
+    return this.getProperty<boolean | undefined>('recurrenceMarks') ?? true;
+  }
+  set recurrenceMarks(value: Bind<boolean>) {
+    this.assignProperty('recurrenceMarks', value, Boolean);
+  }
   get appointmentTemplate(): ((context: AppointmentTemplateContext<T>) => ComponentBase) | null {
     return this.getProperty<((context: AppointmentTemplateContext<T>) => ComponentBase) | null | undefined>('appointmentTemplate') ?? null;
   }
@@ -560,6 +600,12 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   get onResizeEnd(): MotifEvent<DragEventArgs<T>> {
     return this.parts.events.resizeEnd.event;
   }
+  get onSeriesAsking(): MotifEvent<SeriesAskingEventArgs<T>> {
+    return this.parts.events.seriesAsking.event;
+  }
+  get onSeriesAnswered(): MotifEvent<SeriesAnsweredEventArgs<T>> {
+    return this.parts.events.seriesAnswered.event;
+  }
 
   // Methods.
 
@@ -621,13 +667,53 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   addAppointment(values: Partial<T>): Promise<T | null> {
     return this.parts.editor.add(values);
   }
-  /** Changes an appointment's fields, asking `onAppointmentUpdating` first. */
-  updateAppointment(appointment: T, changes: Partial<T>): Promise<boolean> {
-    return this.parts.editor.update(appointment, changes);
+  /**
+   * Changes an appointment's fields, asking `onAppointmentUpdating` first. For an occurrence of a
+   * series, `scope` says what the change reaches; default: `seriesEdit`'s, else the occurrence.
+   */
+  updateAppointment(appointment: T, changes: Partial<T>, scope: SeriesScope | null = null): Promise<boolean> {
+    return this.parts.editor.update(appointment, changes, false, scope);
   }
-  /** Deletes an appointment, asking `onAppointmentDeleting` first (not the user). */
-  deleteAppointment(appointment: T): Promise<boolean> {
-    return this.parts.editor.remove(appointment);
+  /** Deletes an appointment, asking `onAppointmentDeleting` first (not the user); `scope` as for `updateAppointment`. */
+  deleteAppointment(appointment: T, scope: SeriesScope | null = null): Promise<boolean> {
+    return this.parts.editor.remove(appointment, false, scope);
+  }
+  /** The series of an occurrence (or of one changed apart from it), a series itself, or `null`. */
+  seriesOf(appointment: T): T | null {
+    return this.parts.model.seriesOf(appointment);
+  }
+  /** Whether an appointment is an occurrence of a series (the scheduler made it from the series' rule). */
+  isOccurrence(appointment: T): boolean {
+    return !!this.parts.model.occurrenceOf(appointment);
+  }
+  /** Whether an appointment is an occurrence changed apart from its series (it names the series by `recurrenceId`). */
+  isException(appointment: T): boolean {
+    return this.parts.model.isException(appointment);
+  }
+  /** The occurrences of a series that have any part between `start` and `end`. */
+  occurrencesOf(series: T, start: Date, end: Date): T[] {
+    const model = this.parts.model;
+    return model.occurrences.of(series, start.getTime(), end.getTime()).filter((o) => {
+      const time = model.timeOf(o);
+      return !!time && time.start < end && (time.end > start || time.end.getTime() === time.start.getTime());
+    });
+  }
+  /** How a series (or the series of an occurrence) repeats, in plain words; empty for an appointment that happens once. */
+  recurrenceText(appointment: T): string {
+    const series = this.parts.model.seriesOf(appointment);
+    const rule = series ? this.parts.model.occurrences.ruleOf(series) : null;
+    if (!series || !rule) return '';
+    const time = this.parts.model.timeOf(series);
+    const zone = this.parts.model.occurrences.zoneOf(series);
+    return describeRecurrence(rule, time ? zone.toLocal(time.start) : null, {
+      locale: this.locale,
+      strings: { ...uiLocale.strings, ...this.texts },
+      timeZone: zone.name || undefined,
+    });
+  }
+  /** Asks the user what a change (or a delete) of an occurrence reaches; `null` when the question is cancelled. */
+  askSeries(appointment: T, action: SeriesAction = 'update'): Promise<SeriesScope | null> {
+    return this.parts.editor.askSeries(appointment, action);
   }
   /** Opens the appointment form: for an appointment, or for a new one at `cell` (the selection by default). */
   showAppointmentForm(appointment: T | null = null, cell: SchedulerCell | null = null): Promise<void> {
@@ -755,7 +841,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       saving: [],
     }) as Parts<T>['version'];
     const more = reactive({ date: null, items: [] }) as MoreListState<T>;
-    const format = new SchedulerFormat(() => this.locale);
+    const zone = () => TimeZone.of(this.timeZone);
+    const format = new SchedulerFormat(() => this.locale, zone);
     const model = new SchedulerModel<T>({
       date: () => this.currentDate,
       items: () => this.items(),
@@ -767,6 +854,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       overlapMode: () => this.overlapMode,
       room: () => ({ month: version.monthRoom, allDay: this.allDayLines + 1 }),
       draft: () => version.draft,
+      zone,
     });
     const parts = {
       model,
@@ -811,6 +899,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
         resizeStart: new Emitter(),
         resizing: new Emitter(),
         resizeEnd: new Emitter(),
+        seriesAsking: new Emitter(),
+        seriesAnswered: new Emitter(),
       },
     } as unknown as Parts<T>;
     parts.host = this.createHost(parts);
@@ -827,7 +917,11 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       view: parts.host,
       events: parts.events,
       fields: () => this.fields,
+      items: () => this.items(),
       editing: () => this.editing,
+      seriesEdit: () => this.seriesEdit,
+      locale: () => this.locale,
+      firstDayOfWeek: () => this.firstDayOfWeek,
       resolvedView: () => this.resolveView(),
       snapMinutes: () => this.snapMinutes,
       minDuration: () => this.minDuration,
@@ -871,6 +965,12 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       allDayLines: () => this.allDayLines,
       rtl: () => this.isRtl(),
       template: () => this.appointmentTemplate,
+      recurrenceMarks: () => this.recurrenceMarks,
+      recurrenceText: (item) => this.recurrenceText(item),
+      zoneOf: (item) => {
+        const name = (item as Record<string, unknown>)?.[this.fields.startTimeZone];
+        return typeof name === 'string' && name !== (this.timeZone ?? '') ? name : '';
+      },
       setMonthRoom: (lines) => {
         if (parts.version.monthRoom !== lines) parts.version.monthRoom = lines;
       },
@@ -942,12 +1042,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
         if (source.status === 'idle') void source.load();
         return;
       }
-      const span = {
-        and: [
-          { field: fields.start, op: '<' as const, value: range.end },
-          { field: fields.end, op: '>=' as const, value: range.start },
-        ],
-      };
+      // A series that began before the days shown may still happen in them.
+      const span = rangeFilter(range, fields);
       void source.setFilter(parts.baseFilter ? { and: [parts.baseFilter, span] } : span);
     });
   }
@@ -1017,7 +1113,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
         const now = new Date();
         const range = parts.model.range();
         const showsToday = now >= range.start && now < range.end;
-        const at = hour ?? (showsToday && now.getHours() > start ? Math.max(view.startDayHour, now.getHours() - 1) : start);
+        const hours = Math.floor((parts.model.zone.wall(now) - parts.model.todayWall()) / 3_600_000);
+        const at = hour ?? (showsToday && hours > start ? Math.max(view.startDayHour, hours - 1) : start);
         this.scrollToTime(at);
       };
       if (parts.scroller) go();
@@ -1051,12 +1148,13 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return (view.text !== undefined ? read(view.text) : '') || this.textOf(VIEW_TEXTS[view.type]);
   }
 
+  /** The days a view shows around `date`, as moments on the scheduler's clock. */
   private rangeOf(view: ResolvedView, date: Date): SchedulerRange {
     const dates = viewDates(view, date, this.firstDayOfWeek, this.workDays);
-    const last = dates[dates.length - 1];
+    const zone = TimeZone.of(this.timeZone);
     return {
-      start: dates[0],
-      end: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1),
+      start: zone.date(TimeZone.wallOfLocal(dates[0])),
+      end: zone.date(TimeZone.wallOfLocal(dates[dates.length - 1]) + 86_400_000),
     };
   }
 
@@ -1066,8 +1164,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return this.parts.format.range(view.type, range.start, range.end);
   }
 
+  /** Today on the scheduler's clock, as a date of the browser's (what `currentDate` holds). */
   private today(): Date {
-    return dayStart(new Date(this.parts.model.state.now));
+    return TimeZone.localOfWall(this.parts.model.todayWall());
   }
 
   private isRtl(): boolean {
@@ -1248,7 +1347,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
 
   private openMore(day: Date, anchor: HTMLElement): void {
     const parts = this.parts;
-    const items = parts.model.appointmentsIn(day, new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1));
+    const items = parts.model.appointmentsIn(day, parts.model.zone.addDays(day, 1));
     const e: MoreOpeningEventArgs<T> = {
       date: day,
       appointments: items,
@@ -1393,10 +1492,10 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   /** The cell a time is in, among the days shown. */
   private placeOf(time: Date, allDay: boolean): CellPlace | null {
     const model = this.parts.model;
-    const day = model.state.days.findIndex((d) => sameDay(d.date, time));
+    const day = model.state.days.findIndex((d) => model.zone.sameDay(d.date, time));
     if (day < 0) return null;
     if (allDay || this.resolveView().type === 'month') return { day, slot: -1 };
-    const minutes = time.getHours() * 60 + time.getMinutes();
+    const minutes = (model.zone.wall(time) - model.state.days[day].wall) / 60_000;
     const slots = model.state.slots;
     let slot = 0;
     for (let i = 0; i < slots.length; i++) if (slots[i].minutes <= minutes) slot = i;

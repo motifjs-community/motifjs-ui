@@ -23,4 +23,7 @@ export interface TimedPiece<T> {
   text: string;
   color: string;
   disabled: boolean;
+  /** An occurrence of a series, or one changed apart from its series. */
+  series: boolean;
+  exception: boolean;
 }

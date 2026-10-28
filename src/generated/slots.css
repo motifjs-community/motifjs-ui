@@ -239,13 +239,15 @@
     --_button-face-focus-image: var(--mx-button-face-focus-image);
     --_button-face-disabled-image: var(--mx-button-face-disabled-image);
     --_button-spinner-shape-display: var(--mx-button-spinner-shape-display);
+    --_button-face-min-width: var(--mx-button-face-min-width);
+    --_button-face-padding-inline: var(--mx-button-face-padding-inline);
+    --_button-face-toggled-color: var(--mx-button-face-toggled-color);
+    --_button-face-outline-toggled-color: var(--mx-button-face-outline-toggled-color);
     --_button-face-hover-color: var(--mx-button-face-hover-color);
     --_button-face-outline-hover-color: var(--mx-button-face-outline-hover-color);
     --_button-face-ghost-hover-color: var(--mx-button-face-ghost-hover-color);
     --_button-face-outline-pressed-color: var(--mx-button-face-outline-pressed-color);
     --_button-face-ghost-pressed-color: var(--mx-button-face-ghost-pressed-color);
-    --_button-face-toggled-color: var(--mx-button-face-toggled-color);
-    --_button-face-outline-toggled-color: var(--mx-button-face-outline-toggled-color);
     --_button-face-ghost-toggled-color: var(--mx-button-face-ghost-toggled-color);
     --_button-face-outline-toggled-hover-color: var(--mx-button-face-outline-toggled-hover-color);
     --_button-face-ghost-toggled-hover-color: var(--mx-button-face-ghost-toggled-hover-color);
@@ -1435,6 +1437,16 @@
     --_radiogroup-circle-hover-border-color: var(--mx-radiogroup-circle-hover-border-color);
   }
 
+  .mx-recurrence-editor {
+    --_recurrence-editor-row-gap: var(--mx-recurrence-editor-row-gap);
+    --_recurrence-editor-column-gap: var(--mx-recurrence-editor-column-gap);
+    --_recurrence-editor-days-label-color: var(--mx-recurrence-editor-days-label-color);
+    --_recurrence-editor-days-label-font-weight: var(--mx-recurrence-editor-days-label-font-weight);
+    --_recurrence-editor-days-label-margin-bottom: var(--mx-recurrence-editor-days-label-margin-bottom);
+    --_recurrence-editor-days-gap: var(--mx-recurrence-editor-days-gap);
+    --_recurrence-editor-summary-color: var(--mx-recurrence-editor-summary-color);
+  }
+
   .mx-scheduler {
     --_scheduler-height: var(--mx-scheduler-height);
     --_scheduler-ruler-width: var(--mx-scheduler-ruler-width);
@@ -1458,6 +1470,7 @@
     --_scheduler-appointment-past-tint: var(--mx-scheduler-appointment-past-tint);
     --_scheduler-appointment-past-color-mix: var(--mx-scheduler-appointment-past-color-mix);
     --_scheduler-appointment-text-mix: var(--mx-scheduler-appointment-text-mix);
+    --_scheduler-appointment-text-auto: var(--mx-scheduler-appointment-text-auto);
     --_scheduler-appointment-frame-color: var(--mx-scheduler-appointment-frame-color);
     --_scheduler-appointment-open-tint: var(--mx-scheduler-appointment-open-tint);
     --_scheduler-appointment-open-color: var(--mx-scheduler-appointment-open-color);
@@ -1595,6 +1608,7 @@
     --_scheduler-appointment-content-row-gap: var(--mx-scheduler-appointment-content-row-gap);
     --_scheduler-appointment-text-font-weight: var(--mx-scheduler-appointment-text-font-weight);
     --_scheduler-appointment-time-color: var(--mx-scheduler-appointment-time-color);
+    --_scheduler-appointment-time-hover-color: var(--mx-scheduler-appointment-time-hover-color);
     --_scheduler-appointment-time-open-color: var(--mx-scheduler-appointment-time-open-color);
     --_scheduler-tooltip-width: var(--mx-scheduler-tooltip-width);
     --_scheduler-tooltip-padding: var(--mx-scheduler-tooltip-padding);
@@ -1602,6 +1616,15 @@
     --_scheduler-tooltip-title-font-size: var(--mx-scheduler-tooltip-title-font-size);
     --_scheduler-tooltip-title-font-weight: var(--mx-scheduler-tooltip-title-font-weight);
     --_scheduler-tooltip-detail-color: var(--mx-scheduler-tooltip-detail-color);
+    --_scheduler-tooltip-repeat-color: var(--mx-scheduler-tooltip-repeat-color);
+    --_scheduler-series-mark-display: var(--mx-scheduler-series-mark-display);
+    --_scheduler-series-mark-width: var(--mx-scheduler-series-mark-width);
+    --_scheduler-series-mark-margin-start: var(--mx-scheduler-series-mark-margin-start);
+    --_scheduler-series-mark-icon: var(--mx-scheduler-series-mark-icon);
+    --_scheduler-exception-mark-display: var(--mx-scheduler-exception-mark-display);
+    --_scheduler-exception-mark-width: var(--mx-scheduler-exception-mark-width);
+    --_scheduler-exception-mark-margin-start: var(--mx-scheduler-exception-mark-margin-start);
+    --_scheduler-exception-mark-icon: var(--mx-scheduler-exception-mark-icon);
     --_scheduler-tooltip-actions-gap: var(--mx-scheduler-tooltip-actions-gap);
     --_scheduler-more-padding-inline: var(--mx-scheduler-more-padding-inline);
     --_scheduler-more-radius: var(--mx-scheduler-more-radius);
@@ -1632,6 +1655,8 @@
     --_scheduler-state-shadow: var(--mx-scheduler-state-shadow);
     --_scheduler-state-danger-color: var(--mx-scheduler-state-danger-color);
     --_scheduler-cell-today-bg: var(--mx-scheduler-cell-today-bg);
+    --_scheduler-series-mark-opacity: var(--mx-scheduler-series-mark-opacity);
+    --_scheduler-exception-mark-opacity: var(--mx-scheduler-exception-mark-opacity);
   }
 
   .mx-bottom-sheet {

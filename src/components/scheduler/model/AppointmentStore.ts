@@ -50,8 +50,15 @@ export class AppointmentStore<T> {
     this.options.changed();
   }
 
+  /** The appointments whose `field` holds `value` (the occurrences changed apart from a series): asked of the adapter, so rows not loaded are found too. */
+  async rowsNaming(field: string, value: unknown): Promise<T[]> {
+    const source = this.options.source();
+    if (source) return (await source.adapter.load({ filter: { field, op: '=', value } })).rows;
+    return this.options.appointments().filter((item) => (item as Record<string, unknown>)?.[field] === value);
+  }
+
   /** The adapter's key of a row (its own key settings), else the key field. */
-  private keyOf(item: T): unknown {
+  keyOf(item: T): unknown {
     const source = this.options.source();
     return source ? source.adapter.keyOf(item) : (item as Record<string, unknown>)[this.options.keyField()];
   }

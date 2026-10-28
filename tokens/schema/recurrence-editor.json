@@ -1,0 +1,50 @@
+{
+  "recurrence-editor": {
+    "$description": "RecurrenceEditor: the choices of how something repeats on a grid of two columns (the kit's fields), the weekday buttons and the line that says it in words. The gaps of the grid are plain tokens; the weekday buttons are a place (the kit's button); every other piece is a unit.",
+    "$selector": ".mx-recurrence-editor",
+    "row-gap": { "$type": "dimension" },
+    "column-gap": { "$type": "dimension" },
+    "$places": {
+      "day-button": {
+        "$description": "A weekday button: its variant and size, its shape (corners, the least width, the room on its sides) and how a day that is on looks, for a solid and an outline button.",
+        "selector": ".mx-recurrence-editor__days > .mx-button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size",
+          "face.radius",
+          "face.min-width",
+          "face.padding-inline",
+          "face.toggled.bg",
+          "face.toggled.color",
+          "face.toggled-hover.bg",
+          "face.outline-toggled.bg",
+          "face.outline-toggled.color",
+          "face.outline-toggled.border-color",
+          "face.outline-toggled-hover.bg"
+        ]
+      }
+    },
+    "$units": {
+      "editor": {
+        "$description": "The editor as a whole: a frame or a fill around its choices, when a language draws one.",
+        "selector": ".mx-recurrence-editor"
+      },
+      "days-label": {
+        "$description": "The caption over the weekday buttons, as a field's label.",
+        "selector": ".mx-recurrence-editor__days-label"
+      },
+      "days": {
+        "$description": "The row of weekday buttons: the room between them, or one frame around them all when a language joins them.",
+        "selector": ".mx-recurrence-editor__days"
+      },
+      "summary": {
+        "$description": "The line that says how it repeats.",
+        "selector": ".mx-recurrence-editor__summary",
+        "defaults": {
+          "margin": "0px"
+        }
+      }
+    }
+  }
+}

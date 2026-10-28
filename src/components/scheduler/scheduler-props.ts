@@ -25,6 +25,9 @@ import type { SchedulerKeys } from './scheduler-keys';
 import type { SchedulerView } from './scheduler-view';
 import type { SchedulerViewType } from './scheduler-view-type';
 import type { SelectionChangedEventArgs } from './selection-changed-event-args';
+import type { SeriesAnsweredEventArgs } from './series-answered-event-args';
+import type { SeriesAskingEventArgs } from './series-asking-event-args';
+import type { SeriesEditMode } from './series-edit-mode';
 import type { ViewChangedEventArgs } from './view-changed-event-args';
 import type { ViewChangingEventArgs } from './view-changing-event-args';
 
@@ -81,6 +84,15 @@ export interface SchedulerProps<T> extends ControlProps {
   toolbar?: Bind<boolean>;
   /** Default: the page's language. */
   locale?: Bind<string>;
+  /**
+   * The clock the days and hours are on: an IANA time zone (`'Europe/Istanbul'`). Default `null`, the
+   * browser's. An appointment's own zone (`fields.startTimeZone`) is the one its series repeats in.
+   */
+  timeZone?: Bind<string | null>;
+  /** What changing or deleting an occurrence of a series reaches: `'ask'` (default) asks the user; from code it is the occurrence. */
+  seriesEdit?: Bind<SeriesEditMode>;
+  /** Occurrences of a series, and ones changed apart from it, carry a mark where the design language draws one. Default `true`. */
+  recurrenceMarks?: Bind<boolean>;
   /** Draws an appointment's content in place of the text and the time. */
   appointmentTemplate?: Bind<((context: AppointmentTemplateContext<T>) => ComponentBase) | null>;
   /** Changes the texts it writes; the rest come from `uiLocale`. */
@@ -121,4 +133,6 @@ export interface SchedulerProps<T> extends ControlProps {
   onResizeStart?: (e: DragEventArgs<T>) => void;
   onResizing?: (e: DragEventArgs<T>) => void;
   onResizeEnd?: (e: DragEventArgs<T>) => void;
+  onSeriesAsking?: (e: SeriesAskingEventArgs<T>) => void;
+  onSeriesAnswered?: (e: SeriesAnsweredEventArgs<T>) => void;
 }

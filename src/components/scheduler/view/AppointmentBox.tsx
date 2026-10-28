@@ -13,7 +13,8 @@ const isTimed = <T,>(piece: TimedPiece<T> | StripPiece<T>): piece is TimedPiece<
 /**
  * One appointment, or the part of it on one day or one week: placed by its piece's fields (bound,
  * so a change in the layout moves it without building it again), coloured by the appointment's
- * own colour, its content the template's or its text and time.
+ * own colour, its content the template's or its text and time. An occurrence of a series carries
+ * the series mark, one changed apart the exception mark, where the design language draws them.
  */
 export function AppointmentBox<T>(props: Props<T>) {
   const { host, piece } = props;
@@ -30,7 +31,12 @@ export function AppointmentBox<T>(props: Props<T>) {
       ? host.format.range('day', piece.start, piece.end)
       : `${host.format.fullDate(piece.start)} ${host.format.timeRange(piece.start, piece.end)}`;
     const more = piece.before || piece.after ? `, ${host.text('schedulerContinues')}` : '';
-    return `, ${when}${more}`;
+    const repeats = piece.series
+      ? `, ${host.text('schedulerRepeats', { rule: host.recurrenceText(piece.item) })}`
+      : piece.exception
+        ? `, ${host.text('schedulerChanged')}`
+        : '';
+    return `, ${when}${more}${repeats}`;
   };
   const style = () => {
     const own = { '--_color': piece.color };
@@ -83,6 +89,8 @@ export function AppointmentBox<T>(props: Props<T>) {
       data-saving={() => host.isSaving(piece.item) || null}
       data-open={() => host.isOpen(piece.item) || null}
       data-draggable={() => host.canDrag(piece.item) || null}
+      data-series={() => piece.series || null}
+      data-exception={() => piece.exception || null}
       aria-disabled={() => (piece.disabled ? 'true' : null)}
       style={style}
       x-display={() => isTimed(piece) || !piece.hidden}
@@ -107,6 +115,12 @@ export function AppointmentBox<T>(props: Props<T>) {
           <span class="mx-sr-only">{details}</span>
         </div>
       )}
+      <span
+        class="mx-glyph mx-scheduler__mark"
+        aria-hidden="true"
+        data-mark={() => (piece.exception ? 'exception' : 'series')}
+        x-display={() => host.recurrenceMarks() && (piece.series || piece.exception)}
+      />
       <div class="mx-scheduler__resize" data-edge="end" aria-hidden="true" x-display={() => resizable() && !piece.after} onpointerdown={press('end')} />
     </div>
   );

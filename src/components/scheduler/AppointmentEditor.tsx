@@ -2,6 +2,7 @@ import { reactive, type Emitter } from '@motifx/core';
 import type { UiStrings } from '../../core/ui-strings';
 import { addDays } from '../../parts/dates/add-days';
 import { dayStart } from '../../parts/dates/day-start';
+import { TimeZone } from '../../parts/dates/time-zone';
 import { Popup } from '../../parts/popup/Popup';
 import { Button } from '../button/Button';
 import { confirm } from '../form/confirm';
@@ -23,17 +24,33 @@ import type { AppointmentStore } from './model/AppointmentStore';
 import type { Draft } from './model/draft';
 import type { ResolvedView } from './model/resolved-view';
 import type { SchedulerModel } from './model/SchedulerModel';
+import { SeriesEdit } from './model/SeriesEdit';
+import type { SeriesRun } from './model/series-run';
+import { SeriesWriter } from './model/SeriesWriter';
+import type { SeriesScope } from './model/series-scope';
 import type { StripPiece } from './model/strip-piece';
 import type { TimedPiece } from './model/timed-piece';
+import { RecurrenceEditor } from './RecurrenceEditor';
 import type { Scheduler } from './Scheduler';
 import type { SchedulerCell } from './scheduler-cell';
 import type { SchedulerEditing } from './scheduler-editing';
 import type { SchedulerFields } from './scheduler-fields';
+import type { SeriesAction } from './series-action';
+import type { SeriesAnsweredEventArgs } from './series-answered-event-args';
+import type { SeriesAskingEventArgs } from './series-asking-event-args';
+import type { SeriesEditMode } from './series-edit-mode';
 import type { DragHost, DragMode } from './view/AppointmentDrag';
 import { AppointmentTooltip, type TooltipState } from './view/AppointmentTooltip';
+import { askSeriesScope } from './view/ask-series-scope';
 import type { SchedulerHost } from './view/scheduler-host';
 
 const MINUTE = 60_000;
+const SCOPES: readonly SeriesScope[] = ['occurrence', 'following', 'series'];
+const SCOPE_TEXTS: Record<SeriesScope, keyof UiStrings> = {
+  occurrence: 'schedulerSeriesOccurrence',
+  following: 'schedulerSeriesFollowing',
+  series: 'schedulerSeriesAll',
+};
 
 /** The events the editor fires, owned by the scheduler. */
 export interface EditorEvents<T> {
@@ -51,6 +68,8 @@ export interface EditorEvents<T> {
   resizeStart: Emitter<DragEventArgs<T>>;
   resizing: Emitter<DragEventArgs<T>>;
   resizeEnd: Emitter<DragEventArgs<T>>;
+  seriesAsking: Emitter<SeriesAskingEventArgs<T>>;
+  seriesAnswered: Emitter<SeriesAnsweredEventArgs<T>>;
 }
 
 /** What the editor uses of its scheduler. */
@@ -61,7 +80,12 @@ export interface EditorHost<T> {
   view: SchedulerHost<T>;
   events: EditorEvents<T>;
   fields(): SchedulerFields;
+  /** The appointments loaded. */
+  items(): readonly T[];
   editing(): SchedulerEditing;
+  seriesEdit(): SeriesEditMode;
+  locale(): string;
+  firstDayOfWeek(): number;
   resolvedView(): ResolvedView;
   snapMinutes(): number;
   minDuration(): number;
@@ -79,7 +103,9 @@ export interface EditorHost<T> {
 /**
  * The scheduler's editing: who may change what, adding, changing and deleting through its store
  * with the events first (each may wait for a promise), the appointment form, the tooltip, moving
- * and resizing by the keys, and what a drag does when it is let go.
+ * and resizing by the keys, and what a drag does when it is let go. A change to an occurrence of a
+ * series asks what it reaches (this one, this and the following, the whole series) and writes what
+ * that comes to (`SeriesEdit`); the form, a drag and the keys go the same way.
  */
 export class AppointmentEditor<T> implements DragHost<T> {
   private tooltipPopup: Popup | null = null;
@@ -88,8 +114,17 @@ export class AppointmentEditor<T> implements DragHost<T> {
   private readonly opened = reactive({ id: '' });
   /** Moving or resizing by the keys: the draft so far. */
   private keyDraft: { mode: DragMode; draft: Draft<T> } | null = null;
+  private readonly series: SeriesEdit<T>;
+  private readonly writer: SeriesWriter<T>;
 
-  constructor(private readonly host: EditorHost<T>) {}
+  constructor(private readonly host: EditorHost<T>) {
+    this.writer = new SeriesWriter(host.store);
+    this.series = new SeriesEdit<T>({
+      fields: () => host.fields(),
+      occurrences: host.model.occurrences,
+      keyOf: (item) => host.store.keyOf(item),
+    });
+  }
 
   // Who may change what: the appointment's own field wins over `editing`.
 
@@ -118,7 +153,8 @@ export class AppointmentEditor<T> implements DragHost<T> {
     return this.host.editing().allowAdding;
   }
   isSaving(item: T): boolean {
-    return this.host.saving.includes(this.host.model.idOf(item));
+    const series = this.host.model.occurrenceOf(item)?.series;
+    return this.host.saving.includes(this.host.model.idOf(item)) || (!!series && this.host.saving.includes(this.host.model.idOf(series)));
   }
 
   // Writing.
@@ -135,26 +171,42 @@ export class AppointmentEditor<T> implements DragHost<T> {
       this.host.say(this.host.text('schedulerAdded', { text: this.textOf(saved) }));
       return saved;
     } catch (error) {
-      events.dataError.fire({ operation: 'add', appointment: e.appointment, error, source: scheduler });
+      events.dataError.fire({ operation: 'add', appointment: e.appointment, error, saved: [], unsaved: [{ kind: 'add', appointment: e.appointment }], undone: true, source: scheduler });
       this.host.say(this.host.text('schedulerSaveFailed'));
       return null;
     }
   }
 
-  /** Changes an appointment (asking `onAppointmentUpdating` first); `false` when it did not change. */
-  async update(item: T, changes: Partial<T>, byUser = false): Promise<boolean> {
+  /**
+   * Changes an appointment (asking `onAppointmentUpdating` first); `false` when it did not change.
+   * An occurrence of a series asks what the change reaches, unless `scope` says it.
+   */
+  async update(item: T, changes: Partial<T>, byUser = false, scope: SeriesScope | null = null): Promise<boolean> {
     const { events, scheduler } = this.host;
-    const e: AppointmentUpdatingEventArgs<T> = { appointment: item, changes: { ...changes }, byUser, cancel: false, source: scheduler };
+    const series = this.host.model.occurrenceOf(item)?.series ?? null;
+    if (series) {
+      // A new rule cannot be one occurrence's own.
+      const scopes = (changes as Record<string, unknown>)[this.host.fields().recurrenceRule] !== undefined ? SCOPES.slice(1) : SCOPES;
+      scope = scope ?? (await this.scopeFor(item, 'update', byUser, scopes));
+      if (!scope) return false;
+    }
+    const e: AppointmentUpdatingEventArgs<T> = { appointment: item, changes: { ...changes }, byUser, scope, series, cancel: false, source: scheduler };
     events.updating.fire(e);
     if (!(await allowed(e))) return false;
-    const id = this.host.model.idOf(item);
+    const id = this.host.model.idOf(series ?? item);
     this.host.saving.push(id);
     try {
-      await this.host.store.update(item, e.changes);
-      events.updated.fire({ appointment: item, changes: e.changes, byUser, source: scheduler });
+      let added: T | null = null;
+      if (series && scope) {
+        const run = await this.writer.run(this.series.update(item, e.changes, scope));
+        if (run.failed) return this.failed('update', item, run);
+        added = run.added;
+      } else await this.host.store.update(item, e.changes);
+      events.updated.fire({ appointment: item, changes: e.changes, byUser, scope, series, added, source: scheduler });
       return true;
     } catch (error) {
-      events.dataError.fire({ operation: 'update', appointment: item, error, source: scheduler });
+      const write = { kind: 'update' as const, appointment: item, changes: e.changes };
+      events.dataError.fire({ operation: 'update', appointment: item, error, saved: [], unsaved: [write], undone: true, source: scheduler });
       this.host.say(this.host.text('schedulerSaveFailed'));
       return false;
     } finally {
@@ -162,24 +214,44 @@ export class AppointmentEditor<T> implements DragHost<T> {
     }
   }
 
-  /** Deletes an appointment: by the user it asks first (`editing.confirmDelete`), then `onAppointmentDeleting`. */
-  async remove(item: T, byUser = false): Promise<boolean> {
+  /**
+   * Deletes an appointment: by the user it asks first (`editing.confirmDelete`), then
+   * `onAppointmentDeleting`. An occurrence of a series asks what the delete reaches instead,
+   * unless `scope` says it.
+   */
+  async remove(item: T, byUser = false, scope: SeriesScope | null = null): Promise<boolean> {
     const { events, scheduler } = this.host;
-    if (byUser && this.host.editing().confirmDelete) {
+    const series = this.host.model.occurrenceOf(item)?.series ?? null;
+    if (series) {
+      const asks = !scope && byUser && this.host.seriesEdit() === 'ask';
+      scope = scope ?? (await this.scopeFor(item, 'delete', byUser, SCOPES));
+      if (!scope) return false;
+      // Asked which ones, the user has said yes already.
+      if (!asks && byUser && this.host.editing().confirmDelete) {
+        if (!(await confirm(this.host.text('schedulerDeleteConfirm', { text: this.textOf(item) }), { tone: 'danger' }))) return false;
+      }
+    } else if (byUser && this.host.editing().confirmDelete) {
       if (!(await confirm(this.host.text('schedulerDeleteConfirm', { text: this.textOf(item) }), { tone: 'danger' }))) return false;
     }
-    const e: AppointmentDeletingEventArgs<T> = { appointment: item, byUser, cancel: false, source: scheduler };
+    const e: AppointmentDeletingEventArgs<T> = { appointment: item, byUser, scope, series, cancel: false, source: scheduler };
     events.deleting.fire(e);
     if (!(await allowed(e))) return false;
-    const id = this.host.model.idOf(item);
+    const id = this.host.model.idOf(series ?? item);
     this.host.saving.push(id);
     try {
-      await this.host.store.remove(item);
-      events.deleted.fire({ appointment: item, byUser, source: scheduler });
+      if (series && scope) {
+        // The occurrences changed apart go with the series, loaded or not.
+        const key = scope === 'occurrence' ? null : this.host.store.keyOf(series!);
+        const exceptions = key === null || key === undefined ? [] : await this.host.store.rowsNaming(this.host.fields().recurrenceId, key);
+        const run = await this.writer.run(this.series.remove(item, scope, exceptions));
+        if (run.failed) return this.failed('delete', item, run);
+      } else await this.host.store.remove(item);
+      events.deleted.fire({ appointment: item, byUser, scope, series, source: scheduler });
       this.host.say(this.host.text('schedulerDeleted', { text: this.textOf(item) }));
       return true;
     } catch (error) {
-      events.dataError.fire({ operation: 'delete', appointment: item, error, source: scheduler });
+      const write = { kind: 'delete' as const, appointment: item };
+      events.dataError.fire({ operation: 'delete', appointment: item, error, saved: [], unsaved: [write], undone: true, source: scheduler });
       this.host.say(this.host.text('schedulerSaveFailed'));
       return false;
     } finally {
@@ -192,10 +264,67 @@ export class AppointmentEditor<T> implements DragHost<T> {
     if (at >= 0) this.host.saving.splice(at, 1);
   }
 
-  /** An appointment's time as values of its fields. */
+  /** A change to a series that did not go through: `onDataError` says what was saved and whether it was taken back. */
+  private failed(operation: 'update' | 'delete', item: T, run: SeriesRun<T>): false {
+    const { saved, unsaved, error } = run;
+    const undone = run.undone || !saved.length;
+    this.host.events.dataError.fire({ operation, appointment: item, error, saved, unsaved, undone, source: this.host.scheduler });
+    this.host.say(this.host.text(undone ? 'schedulerSaveFailed' : 'schedulerSavedInPart'));
+    return false;
+  }
+
+  // Series.
+
+  /** What a change reaches: the setting's answer, the occurrence from code, else the user's answer. */
+  private async scopeFor(item: T, action: SeriesAction, byUser: boolean, scopes: readonly SeriesScope[]): Promise<SeriesScope | null> {
+    const mode = this.host.seriesEdit();
+    if (mode !== 'ask') return scopes.includes(mode) ? mode : scopes[scopes.length - 1];
+    if (!byUser) return scopes[0];
+    return this.askSeries(item, action, scopes);
+  }
+
+  /**
+   * Asks the user what a change (or a delete) of an occurrence reaches: `onSeriesAsking` first (it
+   * may answer, narrow the choices or cancel), then the question, then `onSeriesAnswered`.
+   */
+  async askSeries(item: T, action: SeriesAction, scopes: readonly SeriesScope[] = SCOPES, byUser = true): Promise<SeriesScope | null> {
+    const { events, scheduler } = this.host;
+    const series = this.host.model.occurrenceOf(item)?.series;
+    if (!series) return null;
+    const e: SeriesAskingEventArgs<T> = { appointment: item, series, action, scopes: [...scopes], scope: null, cancel: false, source: scheduler };
+    events.seriesAsking.fire(e);
+    let scope: SeriesScope | null = null;
+    if (!e.cancel && e.scopes.length) {
+      if (e.scope) scope = e.scope;
+      else {
+        this.hideTooltip();
+        const t = (key: keyof UiStrings, values?: Record<string, unknown>) => this.host.text(key, values);
+        const del = action === 'delete';
+        scope = await askSeriesScope({
+          title: () => t(del ? 'schedulerSeriesDelete' : 'schedulerSeriesEdit'),
+          text: () => t(del ? 'schedulerSeriesDeleteQuestion' : 'schedulerSeriesEditQuestion', { text: this.textOf(item) }),
+          scopes: e.scopes,
+          label: (s) => t(SCOPE_TEXTS[s]),
+          ok: () => t(del ? 'schedulerDelete' : 'schedulerSave'),
+          cancel: () => t('cancel'),
+          danger: del,
+          host: scheduler,
+        });
+      }
+    }
+    events.seriesAnswered.fire({ appointment: item, series, action, scope, byUser, source: scheduler });
+    return scope;
+  }
+
+  /** An appointment's time as values of its fields: an all-day one's as dates of the browser's clock. */
   timeValues(start: Date, end: Date, allDay: boolean): Partial<T> {
     const fields = this.host.fields();
-    return { [fields.start]: start, [fields.end]: end, [fields.allDay]: allDay } as Partial<T>;
+    const zone = this.host.model.zone;
+    return {
+      [fields.start]: allDay ? zone.toLocal(start) : start,
+      [fields.end]: allDay ? zone.toLocal(end) : end,
+      [fields.allDay]: allDay,
+    } as Partial<T>;
   }
 
   // The form.
@@ -206,21 +335,44 @@ export class AppointmentEditor<T> implements DragHost<T> {
     if (item ? !this.canEdit(item) : !this.canAdd()) return;
     this.hideTooltip();
     const fields = this.host.fields();
+    const editing = this.host.editing();
+    const model = this.host.model;
     const record = (item ?? {}) as Record<string, unknown>;
-    const time = item ? this.host.model.timeOf(item) : null;
+    const time = item ? model.timeOf(item) : null;
     const start = time?.start ?? cell?.start ?? new Date();
     const end = time?.end ?? cell?.end ?? new Date(start.getTime() + this.host.resolvedView().cellDuration * MINUTE);
     const allDay = time?.allDay ?? cell?.allDay ?? false;
+    const series = item ? model.seriesOf(item) : null;
+    const startZone = String(record[fields.startTimeZone] ?? '');
+    const endZone = String(record[fields.endTimeZone] ?? '');
+    // The editors show the browser's clock: the times go there with the fields of their own zone's (or the scheduler's).
+    const zoneOf = (name: unknown) => (typeof name === 'string' && name ? TimeZone.of(name) : model.zone);
     // An all-day appointment ends at the start of the day after; the form shows its last day.
     const data = reactive({
       text: String(record[fields.text] ?? ''),
-      start,
-      end: allDay ? addDays(dayStart(end), -1) : end,
+      start: allDay ? model.zone.toLocal(start) : zoneOf(startZone).toLocal(start),
+      end: allDay ? addDays(dayStart(model.zone.toLocal(end)), -1) : zoneOf(endZone || startZone).toLocal(end),
       allDay,
       description: String(record[fields.description] ?? ''),
+      recurrenceRule: String(((series ?? record) as Record<string, unknown>)[fields.recurrenceRule] ?? ''),
+      startTimeZone: startZone,
+      endTimeZone: endZone,
+      // The end has a zone of its own only when it differs from the start's.
+      separateEndZone: !!endZone && endZone !== startZone,
     }) as AppointmentFormData;
-    const t = (key: keyof UiStrings) => this.host.text(key);
-    const endAfterStart = (value: unknown) => !(value instanceof Date) || !(data.start instanceof Date) || value >= data.start || t('schedulerEndBeforeStart');
+    const t = (key: keyof UiStrings, values?: Record<string, unknown>) => this.host.text(key, values);
+    /** The moment a form time names, on its zone's clock. */
+    const momentOf = (value: Date, zone: unknown) => (data.allDay ? value : zoneOf(zone).fromLocal(value));
+    const endAfterStart = (value: unknown) =>
+      !(value instanceof Date) ||
+      !(data.start instanceof Date) ||
+      momentOf(value, (data.separateEndZone && data.endTimeZone) || data.startTimeZone) >= momentOf(data.start, data.startTimeZone) ||
+      t('schedulerEndBeforeStart');
+    const zones = editing.allowTimeZones ? this.zoneItems(start) : [];
+    const own = () => t('schedulerOwnZone', { zone: model.zone.name || TimeZone.localName() });
+    /** A zone's whole name, the picker's tooltip where the field is too narrow for it. */
+    const zoneText = (name: unknown) => zones.find((z) => z.value === name)?.text ?? '';
+    const exception = !!item && model.isException(item);
     const items: FormItem[] = [
       { field: 'text', label: () => t('schedulerSubject'), required: true, colSpan: 'all' },
       { field: 'start', label: () => t('schedulerStart'), editor: 'datetime', required: true, visible: () => !data.allDay },
@@ -241,7 +393,62 @@ export class AppointmentEditor<T> implements DragHost<T> {
         visible: () => data.allDay,
         rules: [{ type: 'custom', check: endAfterStart }],
       },
+      // A zone's name is long ("(GMT-3) America/Argentina/Rio Gallegos"): each picker has the whole row, the box its own.
+      {
+        field: 'startTimeZone',
+        label: () => t(data.separateEndZone ? 'schedulerStartTimeZone' : 'schedulerTimeZone'),
+        editor: 'dropdown',
+        colSpan: 'all',
+        editorProps: { items: zones, searchEnabled: true, placeholder: own, clearButton: true, hint: () => zoneText(data.startTimeZone) },
+        visible: () => editing.allowTimeZones && !data.allDay,
+      },
+      {
+        field: 'separateEndZone',
+        label: () => t('schedulerSeparateEndZone'),
+        editor: 'checkbox',
+        colSpan: 'all',
+        editorProps: {
+          class: 'mx-scheduler__end-zone-switch',
+          // Unchecked, the end follows the start's zone again.
+          onValueChanged: (e: { value: unknown; byUser: boolean }) => {
+            if (!e.byUser) return;
+            data.separateEndZone = !!e.value;
+            if (!e.value) data.endTimeZone = '';
+          },
+        },
+        visible: () => editing.allowTimeZones && !data.allDay,
+      },
+      {
+        field: 'endTimeZone',
+        label: () => t('schedulerEndTimeZone'),
+        editor: 'dropdown',
+        colSpan: 'all',
+        editorProps: {
+          items: zones,
+          searchEnabled: true,
+          placeholder: () => (data.startTimeZone ? String(data.startTimeZone) : own()),
+          clearButton: true,
+          hint: () => zoneText(data.endTimeZone),
+        },
+        visible: () => editing.allowTimeZones && !data.allDay && !!data.separateEndZone,
+      },
       { field: 'allDay', label: () => t('schedulerAllDay'), editor: 'switch', colSpan: 'all' },
+      {
+        field: 'recurrenceRule',
+        colSpan: 'all',
+        visible: () => editing.allowRecurrence && !exception,
+        template: () => (
+          <RecurrenceEditor
+            class="mx-scheduler__recurrence"
+            x-model={() => data.recurrenceRule}
+            start={() => (data.start instanceof Date ? data.start : null)}
+            allDay={() => !!data.allDay}
+            timeZone={() => (data.startTimeZone ? String(data.startTimeZone) : model.zone.name || null)}
+            locale={() => this.host.locale()}
+            firstDayOfWeek={() => this.host.firstDayOfWeek()}
+          />
+        ),
+      },
       { field: 'description', label: () => t('schedulerDescription'), editor: 'textarea', colSpan: 'all' },
     ];
     const form = new MxForm({ title: () => t(item ? 'schedulerEditAppointment' : 'schedulerNewAppointment'), width: 'var(--_scheduler-editor-width)', modal: true });
@@ -280,24 +487,54 @@ export class AppointmentEditor<T> implements DragHost<T> {
       return;
     }
     if (result !== 'ok') return;
-    const values = this.formValues(data);
-    if (item) await this.update(item, values, true);
+    const values = this.formValues(data, editing);
+    if (item) await this.update(item, model.occurrenceOf(item) ? this.changed(item, series, values) : values, true);
     else await this.add(values, true);
   }
 
-  /** The form's values as the appointment's fields: its own ones by their names, the extra ones as they are. */
-  private formValues(data: AppointmentFormData): Partial<T> {
+  /** The time zones a form offers, by their offset at `at`. */
+  private zoneItems(at: Date): { value: string; text: string }[] {
+    const format = this.host.view.format;
+    return TimeZone.names()
+      .map((name) => ({ name, offset: TimeZone.of(name).offset(at) }))
+      .sort((a, b) => a.offset - b.offset || a.name.localeCompare(b.name))
+      .map(({ name }) => ({ value: name, text: format.zoneName(name, at) }));
+  }
+
+  /** The form's values that differ from the occurrence's (its rule: the series'), so the rest of the series keeps its own. */
+  private changed(item: T, series: T | null, values: Partial<T>): Partial<T> {
     const fields = this.host.fields();
+    const out: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(values)) {
+      const old = ((key === fields.recurrenceRule && series ? series : item) as Record<string, unknown>)[key];
+      if (!sameValue(old, value)) out[key] = value;
+    }
+    return out as Partial<T>;
+  }
+
+  /** The form's values as the appointment's fields: its own ones by their names, the extra ones as they are. */
+  private formValues(data: AppointmentFormData, editing: SchedulerEditing): Partial<T> {
+    const fields = this.host.fields();
+    const model = this.host.model;
     const start = data.start instanceof Date ? data.start : new Date();
     const end = data.end instanceof Date ? data.end : start;
+    const own = ['text', 'start', 'end', 'allDay', 'description', 'recurrenceRule', 'startTimeZone', 'endTimeZone', 'separateEndZone'];
     const out: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(data)) if (!['text', 'start', 'end', 'allDay', 'description'].includes(key)) out[key] = value;
+    for (const [key, value] of Object.entries(data)) if (!own.includes(key)) out[key] = value;
     out[fields.text] = data.text;
     out[fields.description] = data.description;
-    Object.assign(
-      out,
-      data.allDay ? this.timeValues(dayStart(start), addDays(dayStart(end), 1), true) : this.timeValues(start, end < start ? start : end, false),
-    );
+    if (editing.allowRecurrence) out[fields.recurrenceRule] = String(data.recurrenceRule ?? '');
+    if (data.allDay) {
+      Object.assign(out, { [fields.start]: dayStart(start), [fields.end]: addDays(dayStart(end), 1), [fields.allDay]: true });
+    } else {
+      const startZone = String(data.startTimeZone ?? '');
+      const ownEnd = data.separateEndZone ? String(data.endTimeZone ?? '') : '';
+      const endZone = ownEnd || startZone;
+      const from = (startZone ? TimeZone.of(startZone) : model.zone).fromLocal(start);
+      const to = (endZone ? TimeZone.of(endZone) : model.zone).fromLocal(end);
+      Object.assign(out, this.timeValues(from, to < from ? from : to, false));
+      if (editing.allowTimeZones) Object.assign(out, { [fields.startTimeZone]: startZone, [fields.endTimeZone]: ownEnd });
+    }
     return out as Partial<T>;
   }
 
@@ -379,12 +616,13 @@ export class AppointmentEditor<T> implements DragHost<T> {
     const { draft } = current;
     const minutes = step.minutes * MINUTE;
     const days = step.days;
+    const zone = this.host.model.zone;
     let next: Draft<T>;
     if (mode === 'move') {
-      next = { ...draft, start: addDays(new Date(draft.start.getTime() + minutes), days), end: addDays(new Date(draft.end.getTime() + minutes), days) };
+      next = { ...draft, start: zone.addDays(new Date(draft.start.getTime() + minutes), days), end: zone.addDays(new Date(draft.end.getTime() + minutes), days) };
     } else {
       const least = (draft.allDay ? 24 * 60 : this.minDuration()) * MINUTE;
-      const end = addDays(new Date(draft.end.getTime() + minutes), days);
+      const end = zone.addDays(new Date(draft.end.getTime() + minutes), days);
       next = { ...draft, end: new Date(Math.max(end.getTime(), draft.start.getTime() + least)) };
     }
     next.invalid = !this.over(mode, next, true);
@@ -494,10 +732,14 @@ export class AppointmentEditor<T> implements DragHost<T> {
     };
   }
 
-  /** A copy of an appointment's fields without its key (a new one gets its own). */
+  /** A copy of an appointment's fields without its key (a new one gets its own): a copy of an occurrence happens once. */
   private copyOf(item: T): Partial<T> {
+    const fields = this.host.fields();
     const copy = { ...(item as object) } as Record<string, unknown>;
-    delete copy[this.host.fields().key];
+    delete copy[fields.key];
+    delete copy[fields.recurrenceRule];
+    delete copy[fields.recurrenceException];
+    delete copy[fields.recurrenceId];
     return copy as Partial<T>;
   }
 
@@ -521,4 +763,12 @@ async function allowed(e: { cancel: boolean; promise?: Promise<boolean> }): Prom
   } catch {
     return false;
   }
+}
+
+/** Whether a field keeps its value: a date by its time, a switch by on and off, nothing and an empty text alike. */
+function sameValue(a: unknown, b: unknown): boolean {
+  if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
+  if (typeof a === 'boolean' || typeof b === 'boolean') return !!a === !!b;
+  const blank = (v: unknown) => v === undefined || v === null || v === '';
+  return a === b || (blank(a) && blank(b));
 }
