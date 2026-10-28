@@ -8,6 +8,11 @@
    the language's tokens; only the layout is here. */
 @layer mx.components {
   .mx-scheduler {
+    /* The stacking of a timeline: the resource column over its row's cells, the scale over the rows. */
+    --_z-sticky: 1;
+    --_z-line: 2;
+    --_z-head: 3;
+
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
@@ -232,6 +237,28 @@
     box-sizing: border-box;
     min-inline-size: 0;
     outline: none;
+  }
+
+  /* A big view (many groups): the columns take their least width, and a row of cells is laid out by
+     place (`--_at`), not as a grid of every column. */
+  .mx-scheduler__time-view[data-virtual] :is(.mx-scheduler__dates, .mx-scheduler__body, .mx-scheduler__groups) {
+    grid-template-columns: var(--_scheduler-ruler-width) repeat(var(--_columns, 7), var(--_scheduler-column-min-width));
+  }
+
+  .mx-scheduler__time-view[data-virtual] :is(.mx-scheduler__row, .mx-scheduler__bars) {
+    grid-template-columns: repeat(var(--_columns, 7), var(--_scheduler-column-min-width));
+  }
+
+  .mx-scheduler__time-view[data-virtual] .mx-scheduler__cells > .mx-scheduler__row {
+    position: relative;
+    display: block;
+  }
+
+  .mx-scheduler__time-view[data-virtual] .mx-scheduler__cells > .mx-scheduler__row > .mx-scheduler__cell {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(var(--_at) * var(--_scheduler-column-min-width));
+    inline-size: var(--_scheduler-column-min-width);
   }
 
   /* One layer over all the columns: a timed appointment's column is `--_column`, its place in it
@@ -493,7 +520,7 @@
     min-inline-size: 0;
   }
 
-  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-short]) .mx-scheduler__appointment-content {
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-kind='line'], [data-short]) .mx-scheduler__appointment-content {
     flex-direction: row;
     align-items: baseline;
   }
@@ -523,19 +550,30 @@
     }
   }
 
-  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-short]) .mx-scheduler__appointment-text {
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-kind='line'], [data-short]) .mx-scheduler__appointment-text {
     white-space: nowrap;
   }
 
+  /* In a row the one in front stays whole and the one after gives way; in a box too narrow for the one in front, it is cut short too, so nothing runs under the marks. */
   .mx-scheduler__appointment-time {
     flex: none;
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: var(--_time);
     white-space: nowrap;
   }
 
-  /* A short one reads its text first. */
-  .mx-scheduler__appointment[data-short] .mx-scheduler__appointment-time {
+  /* A short one, and one on a timeline, reads its text first. */
+  .mx-scheduler__appointment:is([data-short], [data-kind='line']) .mx-scheduler__appointment-time {
+    flex: 0 1 auto;
     order: 1;
+    min-inline-size: 0;
+  }
+
+  .mx-scheduler__appointment:is([data-short], [data-kind='line']) .mx-scheduler__appointment-text {
+    flex: none;
+    max-inline-size: 100%;
   }
 
   /* An occurrence's mark (a series, or one changed apart) at the end of the box, after the text; the units draw it, or not. */
@@ -548,7 +586,7 @@
     align-self: flex-start;
   }
 
-  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) > .mx-scheduler__mark {
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-kind='line']) > .mx-scheduler__mark {
     align-self: center;
   }
 
@@ -559,7 +597,7 @@
     order: -1;
   }
 
-  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) > .mx-scheduler__drop-mark {
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-kind='line']) > .mx-scheduler__drop-mark {
     align-self: center;
   }
 
@@ -587,7 +625,7 @@
     inset-block-end: 0;
   }
 
-  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) .mx-scheduler__resize {
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-kind='line']) .mx-scheduler__resize {
     inset-block: 0;
     inset-inline: auto;
     inline-size: var(--_scheduler-resize-size);
@@ -595,11 +633,11 @@
     cursor: ew-resize;
   }
 
-  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) .mx-scheduler__resize[data-edge='start'] {
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-kind='line']) .mx-scheduler__resize[data-edge='start'] {
     inset-inline-start: 0;
   }
 
-  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) .mx-scheduler__resize[data-edge='end'] {
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-kind='line']) .mx-scheduler__resize[data-edge='end'] {
     inset-inline-end: 0;
   }
 
@@ -608,7 +646,7 @@
       block-size: var(--_scheduler-resize-size-touch);
     }
 
-    .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) .mx-scheduler__resize {
+    .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-kind='line']) .mx-scheduler__resize {
       inline-size: var(--_scheduler-resize-size-touch);
     }
   }
@@ -740,5 +778,271 @@
     inset-inline-end: var(--_scheduler-state-inset);
     display: flex;
     align-items: center;
+  }
+
+  /* The timeline views. One scroll box holds the scale (staying at the top) and the rows, each row's
+     resource cells staying at the start. A cell along the time is `--_tick` wide (written by the
+     view, with `--_ticks` cells and `--_levels` levels of resources), each cell at its own place
+     `--_at`; an appointment from `--_from` over `--_span` cells on lane `--_lane`. */
+
+  .mx-scheduler__timeline-view,
+  .mx-scheduler__timeline,
+  .mx-scheduler__rows {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-block-size: 0;
+  }
+
+  .mx-scheduler__scale {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: var(--_z-head);
+    display: flex;
+    box-sizing: border-box;
+    inline-size: max-content;
+    min-inline-size: 100%;
+  }
+
+  .mx-scheduler__scale > .mx-scheduler__corner {
+    position: sticky;
+    inset-inline-start: 0;
+    z-index: var(--_z-sticky);
+    display: flex;
+    flex: none;
+    align-items: flex-end;
+    box-sizing: border-box;
+    inline-size: calc(var(--_levels, 0) * var(--_scheduler-timeline-resource-width));
+  }
+
+  .mx-scheduler__corner-label {
+    box-sizing: border-box;
+    inline-size: var(--_scheduler-timeline-resource-width);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mx-scheduler__scale-area {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    inline-size: calc(var(--_tick) * var(--_ticks));
+  }
+
+  .mx-scheduler__scale-tier {
+    display: grid;
+    grid-template-columns: repeat(var(--_ticks, 1), var(--_tick));
+  }
+
+  /* Clipped, not a scroll box: the date in it stays in view along the scroll box's start. */
+  .mx-scheduler__scale-cell {
+    display: flex;
+    box-sizing: border-box;
+    min-inline-size: 0;
+    overflow: clip;
+  }
+
+  /* A day's head over its hours keeps its date in view while the hours scroll under it. */
+  .mx-scheduler__scale-content {
+    position: sticky;
+    inset-inline-start: calc(var(--_levels, 0) * var(--_scheduler-timeline-resource-width));
+    display: flex;
+    align-items: baseline;
+    min-inline-size: 0;
+    white-space: nowrap;
+  }
+
+  .mx-scheduler__scale-cell[data-kind='day'] > .mx-scheduler__scale-content {
+    flex-direction: column;
+    align-items: center;
+    inline-size: 100%;
+  }
+
+  .mx-scheduler__line {
+    position: relative;
+    display: flex;
+    box-sizing: border-box;
+    inline-size: max-content;
+    min-inline-size: 100%;
+  }
+
+  /* The divider over a row, centred on its edge (the `timeline-divider` unit draws it, or not). */
+  .mx-scheduler__line[data-edge]::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: var(--_z-line);
+    translate: 0 -50%;
+    pointer-events: none;
+  }
+
+  .mx-scheduler__line-head {
+    position: sticky;
+    inset-inline-start: 0;
+    z-index: var(--_z-line);
+    display: flex;
+    flex: none;
+  }
+
+  .mx-scheduler__resource {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    inline-size: var(--_scheduler-timeline-resource-width);
+    min-inline-size: 0;
+    overflow: hidden;
+  }
+
+  .mx-scheduler__line-track {
+    position: relative;
+    flex: none;
+    inline-size: calc(var(--_tick) * var(--_ticks));
+  }
+
+  .mx-scheduler__line-track > .mx-scheduler__cell {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(var(--_tick) * var(--_at));
+    inline-size: var(--_tick);
+  }
+
+  .mx-scheduler__cell-content {
+    pointer-events: none;
+  }
+
+  .mx-scheduler__line-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .mx-scheduler__line-layer > :is(.mx-scheduler__appointment, .mx-scheduler__more) {
+    position: absolute;
+    inset-block-start: calc(var(--_scheduler-lane-gap) + var(--_lane, 0) * (var(--_scheduler-timeline-lane-size) + var(--_scheduler-lane-gap)));
+    inset-inline-start: calc(var(--_tick) * var(--_from, 0));
+    box-sizing: border-box;
+    block-size: var(--_scheduler-timeline-lane-size);
+    pointer-events: auto;
+  }
+
+  /* An appointment keeps a gap free at its end, as wide as the one between lanes. */
+  .mx-scheduler__appointment[data-kind='line'] {
+    align-items: center;
+    inline-size: max(var(--_scheduler-lane-gap), calc(var(--_tick) * var(--_span, 1) - var(--_scheduler-lane-gap)));
+    white-space: nowrap;
+  }
+
+  .mx-scheduler__line-layer > .mx-scheduler__now {
+    inset-block: 0;
+    inset-inline-start: calc(var(--_tick) * var(--_at, 0));
+    inline-size: auto;
+    translate: -50% 0;
+  }
+
+  .mx-scheduler__line-layer > .mx-scheduler__now:dir(rtl) {
+    translate: 50% 0;
+  }
+
+  /* A dot stands only at the top of the line: on the first row. */
+  .mx-scheduler__line:not([data-first]) .mx-scheduler__now::before {
+    display: none;
+  }
+
+  .mx-scheduler__timeline-view .mx-scheduler__now::before {
+    inset-block-start: 0;
+    inset-inline: 0;
+    margin-block: 0;
+    margin-inline: auto;
+    translate: 0 -50%;
+  }
+
+  .mx-scheduler__probe-tick {
+    inline-size: var(--_scheduler-timeline-cell-width);
+  }
+
+  .mx-scheduler__probe-line {
+    block-size: var(--_scheduler-timeline-lane-size);
+  }
+
+  .mx-scheduler__probe-gap {
+    block-size: var(--_scheduler-lane-gap);
+  }
+
+  .mx-scheduler__probe-row {
+    block-size: var(--_scheduler-timeline-row-min-height);
+  }
+
+  .mx-scheduler__probe-head {
+    inline-size: var(--_scheduler-timeline-resource-width);
+  }
+
+  /* The agenda: its days, each a head and its rows; a row's time in a column as wide as
+     `agenda-time-width`, the appointment's colour (`--_color`) before its text. */
+
+  .mx-scheduler__agenda-view {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-block-size: 0;
+  }
+
+  .mx-scheduler__agenda-list,
+  .mx-scheduler__agenda-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mx-scheduler__agenda-day {
+    display: flex;
+    align-items: center;
+  }
+
+  .mx-scheduler__agenda-date {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .mx-scheduler__agenda-row {
+    display: flex;
+    align-items: center;
+    outline: none;
+    user-select: none;
+  }
+
+  .mx-scheduler__agenda-content {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    min-inline-size: 0;
+  }
+
+  .mx-scheduler__agenda-time {
+    flex: none;
+    box-sizing: border-box;
+    inline-size: var(--_scheduler-agenda-time-width);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mx-scheduler__agenda-dot {
+    flex: none;
+    background: var(--_color, var(--_scheduler-appointment-default));
+  }
+
+  .mx-scheduler__agenda-text {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mx-scheduler__agenda-empty {
+    text-align: center;
   }
 }

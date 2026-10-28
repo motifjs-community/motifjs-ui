@@ -14,6 +14,11 @@
     "resize-size-touch": { "$value": "{space.4}" },
     "editor-width": { "$value": "34rem" },
     "state-inset": { "$value": "{space.2}" },
+    "timeline-cell-width": { "$value": {"value": 4.5, "unit": "rem"} },
+    "timeline-resource-width": { "$value": {"value": 10, "unit": "rem"} },
+    "timeline-lane-size": { "$value": {"value": 2, "unit": "rem"} },
+    "timeline-row-min-height": { "$value": {"value": 3.25, "unit": "rem"} },
+    "agenda-time-width": { "$value": {"value": 9, "unit": "rem"} },
     "appointment-default": { "$value": "{color.accent.solid}" },
     "appointment-surface": { "$value": "{color.bg.surface}" },
     "appointment-tint": { "$value": 22 },
@@ -157,6 +162,15 @@
       },
       "outside": {
         "color": { "$value": "{color.fg.secondary}" }
+      },
+      "scale": {
+        "min-width": { "$value": {"value": 1.5, "unit": "rem"} },
+        "height": { "$value": {"value": 1.5, "unit": "rem"} },
+        "font-size": { "$value": "{font.size.caption}" }
+      },
+      "agenda": {
+        "min-width": { "$value": {"value": 2, "unit": "rem"} },
+        "height": { "$value": {"value": 2, "unit": "rem"} }
       }
     },
     "all-day": {
@@ -218,6 +232,15 @@
         "outline-width": { "$value": "{focus.ring.width}" },
         "outline-color": { "$value": "{focus.ring.color}" },
         "outline-offset": { "$value": "calc(-1 * {focus.ring.width})" }
+      },
+      "line": {
+        "border-start-color": { "$value": "{color.fill.subtle.secondary}" }
+      },
+      "line-hour": {
+        "border-start-color": { "$value": "{color.stroke.divider}" }
+      },
+      "line-day": {
+        "border-start-color": { "$value": "{color.stroke.divider}" }
       }
     },
     "now": {
@@ -288,6 +311,12 @@
       "saving": {
         "opacity": { "$value": 0.7 },
         "cursor": { "$value": "progress" }
+      },
+      "line-before": {
+        "radius-start": { "$value": "0px" }
+      },
+      "line-after": {
+        "radius-end": { "$value": "0px" }
       }
     },
     "appointment-content": {
@@ -423,6 +452,164 @@
       "danger": {
         "color": { "$value": "{color.danger.fg}" }
       }
+    },
+    "timeline-row": {
+      "border-top-width": { "$value": "{border.width.1}" },
+      "border-color": { "$value": "{color.stroke.divider}" },
+      "first": {
+        "border-top-width": { "$value": "0px" }
+      }
+    },
+    "timeline-divider": {
+      "display": { "$value": "block" },
+      "height": { "$value": "{border.width.2}" },
+      "bg": { "$value": "{color.stroke.divider}" },
+      "inner": {
+        "display": { "$value": "none" }
+      }
+    },
+    "resource-cell": {
+      "padding-block": { "$value": "{space.1}" },
+      "padding-inline": { "$value": "{space.3}" },
+      "bg": { "$value": "{color.bg.surface}" },
+      "border-top-width": { "$value": "{border.width.1}" },
+      "border-end-width": { "$value": "{border.width.1}" },
+      "border-color": { "$value": "{color.stroke.divider}" },
+      "color": { "$value": "{color.fg.secondary}" },
+      "font-size": { "$value": "{font.size.caption}" },
+      "font-weight": { "$value": "{font.weight.medium}" },
+      "inner": {
+        "font-weight": { "$value": "{font.weight.regular}" }
+      },
+      "first": {
+        "border-top-width": { "$value": "0px" }
+      },
+      "continued": {
+        "border-top-width": { "$value": "0px" }
+      }
+    },
+    "timeline-corner": {
+      "bg": { "$value": "{color.bg.surface}" },
+      "border-end-width": { "$value": "{border.width.1}" },
+      "border-color": { "$value": "{color.stroke.divider}" }
+    },
+    "timeline-corner-label": {
+      "padding-block": { "$value": "{space.1}" },
+      "padding-inline": { "$value": "{space.2}" },
+      "color": { "$value": "{color.fg.secondary}" },
+      "font-size": { "$value": "{font.size.caption}" }
+    },
+    "scale": {
+      "bg": { "$value": "{color.bg.surface}" },
+      "border-bottom-width": { "$value": "{border.width.1}" },
+      "border-color": { "$value": "{color.stroke.divider}" }
+    },
+    "scale-upper": {
+      "padding-block": { "$value": "{space.1}" },
+      "padding-inline": { "$value": "{space.3}" },
+      "border-start-width": { "$value": "{border.width.1}" },
+      "border-color": { "$value": "{color.stroke.divider}" },
+      "color": { "$value": "{color.fg.secondary}" },
+      "font-size": { "$value": "{font.size.caption}" },
+      "font-weight": { "$value": "{font.weight.medium}" },
+      "today": {
+        "color": { "$value": "{color.accent.fg}" }
+      }
+    },
+    "scale-lower": {
+      "padding-block": { "$value": "{space.1}" },
+      "padding-inline": { "$value": "{space.1}" },
+      "border-top-width": { "$value": "{border.width.1}" },
+      "border-start-width": { "$value": "{border.width.1}" },
+      "border-color": { "$value": "{color.stroke.divider}" },
+      "color": { "$value": "{color.fg.secondary}" },
+      "font-size": { "$value": "{font.size.caption}" },
+      "day-start": {
+        "border-start-color": { "$value": "{color.stroke.divider}" }
+      },
+      "today": {
+        "color": { "$value": "{color.accent.fg}" }
+      }
+    },
+    "agenda": {
+      "padding-inline": { "$value": "{space.4}" },
+      "padding-block": { "$value": "{space.3}" }
+    },
+    "agenda-group": {
+      "padding-block": { "$value": "{space.3}" },
+      "gap": { "$value": "{space.1}" },
+      "border-top-width": { "$value": "{border.width.1}" },
+      "border-color": { "$value": "{color.stroke.divider}" },
+      "first": {
+        "border-top-width": { "$value": "0px" }
+      }
+    },
+    "agenda-resource": {
+      "padding-block": { "$value": "{space.1}" },
+      "color": { "$value": "{color.fg.secondary}" },
+      "font-size": { "$value": "{font.size.body}" },
+      "font-weight": { "$value": "{font.weight.medium}" }
+    },
+    "agenda-day": {
+      "gap": { "$value": "{space.2}" },
+      "padding-block": { "$value": "{space.1}" }
+    },
+    "agenda-weekday": {
+      "color": { "$value": "{color.fg.secondary}" },
+      "font-size": { "$value": "{font.size.caption}" },
+      "font-weight": { "$value": "{font.weight.medium}" },
+      "today": {
+        "color": { "$value": "{color.accent.fg}" }
+      }
+    },
+    "agenda-month": {
+      "color": { "$value": "{color.fg.secondary}" },
+      "font-size": { "$value": "{font.size.caption}" }
+    },
+    "agenda-row": {
+      "padding-block": { "$value": "{space.2}" },
+      "padding-inline": { "$value": "{space.3}" },
+      "radius": { "$value": "{radius.md}" },
+      "hover": {
+        "bg": { "$value": "{color.fill.subtle.secondary}" }
+      },
+      "selected": {
+        "bg": { "$value": "{color.selection.bg}" }
+      },
+      "focus": {
+        "glow": { "$value": "{focus.ring.halo-inset}" },
+        "outline-width": { "$value": "{focus.ring.width}" },
+        "outline-color": { "$value": "{focus.ring.color}" },
+        "outline-offset": { "$value": "calc(-1 * {focus.ring.width})" }
+      },
+      "past": {
+        "color": { "$value": "{color.fg.secondary}" }
+      },
+      "disabled": {
+        "opacity": { "$value": "{opacity.disabled}" }
+      }
+    },
+    "agenda-content": {
+      "gap": { "$value": "{space.3}" }
+    },
+    "agenda-time": {
+      "color": { "$value": "{color.fg.secondary}" },
+      "font-size": { "$value": "{font.size.caption}" }
+    },
+    "agenda-dot": {
+      "display": { "$value": "block" },
+      "size": { "$value": {"value": 0.625, "unit": "rem"} },
+      "radius": { "$value": "{radius.full}" }
+    },
+    "agenda-text": {
+      "color": { "$value": "{color.fg.primary}" },
+      "font-size": { "$value": "{font.size.body}" },
+      "font-weight": { "$value": "{font.weight.regular}" }
+    },
+    "agenda-empty": {
+      "padding": { "$value": "{space.6}" },
+      "color": { "$value": "{color.fg.secondary}" },
+      "font-size": { "$value": "{font.size.body}" }
     }
   }
 }

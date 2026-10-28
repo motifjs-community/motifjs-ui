@@ -38,7 +38,7 @@ export function GroupHeads<T>(props: Props<T>) {
       {st.heads.map((row) => (
         <div key={row.level} class="mx-scheduler__groups" data-level={() => String(row.level)}>
           {ruler && <div class="mx-scheduler__corner" />}
-          {row.cells.map((cell) => (
+          {host.model.shownHeads(row.cells).map((cell) => (
             <div
               key={cell.key}
               class="mx-scheduler__group-head"

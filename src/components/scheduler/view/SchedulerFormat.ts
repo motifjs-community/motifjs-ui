@@ -31,6 +31,11 @@ export class SchedulerFormat {
     return this.get('weekday', { weekday: 'short' }).format(date);
   }
 
+  /** "Monday" */
+  weekdayLong(date: Date): string {
+    return this.get('weekdayLong', { weekday: 'long' }).format(date);
+  }
+
   /** "27" */
   dayNumber(date: Date): string {
     return this.get('dayNumber', { day: 'numeric' }).format(date);
@@ -44,6 +49,11 @@ export class SchedulerFormat {
       month: 'long',
       year: 'numeric',
     }).format(date);
+  }
+
+  /** "October 2026" */
+  monthYear(date: Date): string {
+    return this.get('monthYear', { month: 'long', year: 'numeric' }).format(date);
   }
 
   /** "27 Oct" */

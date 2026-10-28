@@ -6,6 +6,8 @@ import type { SchedulerCell } from '../scheduler-cell';
 import type { SchedulerFields } from '../scheduler-fields';
 import type { SchedulerRange } from '../scheduler-range';
 import type { SchedulerTimeCheck } from '../scheduler-time-check';
+import type { AgendaDay } from './agenda-day';
+import type { AgendaPiece } from './agenda-piece';
 import { blockedSpans, type BlockedSpan } from './blocked-spans';
 import type { CellPlace } from './cell-place';
 import type { ColumnEdge } from './column-edge';
@@ -14,27 +16,36 @@ import type { GroupResource } from './group-resource';
 import type { Draft } from './draft';
 import type { HeaderCell } from './header-cell';
 import type { HeaderRow } from './header-row';
+import type { LinePiece } from './line-piece';
 import { makeGroups } from './make-groups';
 import type { OccurrenceInfo } from './occurrence-info';
 import { Occurrences } from './Occurrences';
 import type { OverlapMode } from './overlap-mode';
 import { placeLanes, type LaneSpan } from './place-lanes';
+import { placeStack, type StackSpan } from './place-stack';
 import { placeTimed, type TimedSpan } from './place-timed';
 import type { ResolvedView } from './resolved-view';
+import type { ResourceKind } from './ResourceKind';
 import type { Resources } from './Resources';
 import { sameValue } from './same-value';
+import type { ScaleCell } from './scale-cell';
 import type { SchedulerColumn } from './scheduler-column';
 import type { SchedulerDay } from './scheduler-day';
 import type { SchedulerGroup } from './scheduler-group';
 import type { StripPiece } from './strip-piece';
 import type { StripRow } from './strip-row';
 import type { TimeSlot } from './time-slot';
+import type { TimeTick } from './time-tick';
 import type { TimedPiece } from './timed-piece';
+import type { TimelineRow } from './timeline-row';
 import { toDate } from './to-date';
 import { viewDates } from './view-dates';
+import { dayCells, viewKind, type ViewKind } from './view-kind';
 
 const DAY = 86_400_000;
 const MINUTE = 60_000;
+/** Past this many cells a view set to `scrolling: 'auto'` builds only what is in view. */
+const VIRTUAL_CELLS = 2000;
 
 /** A rule of the developer's: whether an appointment may be at a time. */
 export type TimeRule<T> = (check: SchedulerTimeCheck<T>) => boolean;
@@ -65,6 +76,8 @@ export interface SchedulerModelOptions<T> {
   allowOverlap?: () => boolean | TimeRule<T>;
   /** Whether an appointment may be outside the work hours. Default `true`. */
   allowOffHours?: () => boolean;
+  /** A timeline row's sizes in pixels (measured): a lane, the gap around lanes, the least a row is. */
+  lineMetrics?: () => { lane: number; gap: number; min: number };
 }
 
 /** An appointment as the layout reads it. */
@@ -111,6 +124,17 @@ interface ModelState<T> {
   anchor: CellPlace | null;
   /** The appointments shown, in time order. */
   shown: T[];
+  /** A timeline's cells along the time, its rows (a group each), and the heads over the cells: days or months over hours or days. */
+  ticks: TimeTick[];
+  rows: TimelineRow<T>[];
+  upper: ScaleCell[];
+  lower: ScaleCell[];
+  /** The agenda's days (in each group), with their appointments. */
+  agenda: AgendaDay<T>[];
+  /** What a big view builds: the columns of the day views, or the cells along a timeline's time, from `first`. */
+  window: { first: number; count: number };
+  /** Moves on each time the appointments of the days shown are read again. */
+  revision: number;
 }
 
 /**
@@ -129,13 +153,39 @@ export class SchedulerModel<T> {
   private readonly stripCache = new Map<string, StripPiece<T>>();
   /** Group heads by their resources (and date): a head keeps its object while its item is shown. */
   private readonly headCache = new Map<string, HeaderCell>();
+  private readonly lineCache = new Map<string, LinePiece<T>>();
+  private readonly agendaCache = new Map<string, AgendaPiece<T>>();
+  private readonly agendaDays = new Map<string, AgendaDay<T>>();
   private readonly ids = new WeakMap<object, string>();
+  private fieldsNow: SchedulerFields | null = null;
+  /** The shape of the columns last made: the days, the groups and how they stand. */
+  private shape = '';
+  /** The resource kinds while a layout runs (read once for all its appointments). */
+  private kindsNow: ResourceKind<unknown>[] | null = null;
+  /** The timed pieces as written last, with each one's column. */
+  private timedRaw: { pieces: TimedPiece<T>[]; columns: number[] } = { pieces: [], columns: [] };
+  /** The appointments shown, as written last. */
+  private shownRaw: T[] = [];
+  /** What was written last into each piece kept, and into each timeline row's list. */
+  private readonly written = new WeakMap<object, object>();
+  private readonly rowPieces = new WeakMap<object, LinePiece<T>[]>();
+  private zoneNow: TimeZone | null = null;
   private nextId = 0;
   private readonly stops: (() => void)[] = [];
+  /** The appointments of the days shown, read once for every layout until they change (a drag only adds its draft). */
+  private base: Entry<T>[] = [];
+  private baseById = new Map<string, Entry<T>>();
+  /** The base's appointments by the group they are in, made again when the base or the groups change. */
+  private buckets: { revision: number; groups: string; byGroup: Entry<T>[][] } = { revision: -1, groups: '', byGroup: [] };
+  /** The groups each appointment read is in, and the groups by their key. */
+  private groupsCache = new WeakMap<Entry<T>, { version: number; list: number[] }>();
+  private groupIndex: { key: string; version: number; keys: Map<string, number> } = { key: '', version: 0, keys: new Map() };
+  /** What the timeline was last laid out for: a draft alone lays out only the rows it touches. */
+  private laid: { revision: number; settings: string; draft: Entry<T> | null } = { revision: -1, settings: '', draft: null };
 
   constructor(private readonly options: SchedulerModelOptions<T>) {
     this.occurrences = new Occurrences<T>({
-      fields: () => this.options.fields(),
+      fields: () => this.fields(),
       zone: () => this.zone,
       idOf: (item) => this.idOf(item),
     });
@@ -161,6 +211,13 @@ export class SchedulerModel<T> {
       focus: { column: 0, slot: 0 },
       anchor: null,
       shown: [],
+      ticks: [],
+      rows: [],
+      upper: [],
+      lower: [],
+      agenda: [],
+      window: { first: 0, count: 64 },
+      revision: 0,
     }) as ModelState<T>;
   }
 
@@ -171,6 +228,10 @@ export class SchedulerModel<T> {
     this.stops.push(effect(() => this.fillGroups()));
     this.stops.push(effect(() => this.fillDays()));
     this.stops.push(effect(() => this.fillSlots()));
+    this.stops.push(effect(() => this.fillTicks()));
+    this.stops.push(effect(() => this.fillRows()));
+    this.stops.push(effect(() => this.fillBlocks()));
+    this.stops.push(effect(() => this.collect()));
     this.stops.push(effect(() => this.layout()));
   }
 
@@ -182,9 +243,114 @@ export class SchedulerModel<T> {
     return this.options.view();
   }
 
+  /** The layout the view uses. Reactive. */
+  get kind(): ViewKind {
+    return viewKind(this.view.type);
+  }
+
   /** The scheduler's clock. */
   get zone(): TimeZone {
-    return this.options.zone?.() ?? TimeZone.local;
+    return this.zoneNow ?? this.options.zone?.() ?? TimeZone.local;
+  }
+
+  /** The fields it reads: while the appointments are read, the ones read at the start (each read of an option has its cost, and the appointments are many). */
+  private fields(): SchedulerFields {
+    return this.fieldsNow ?? this.options.fields();
+  }
+
+  /** Whether the view builds only what is in view: set so, or (`'auto'`) its cells are many. Reactive. */
+  get virtual(): boolean {
+    const mode = this.view.scrolling ?? 'auto';
+    if (mode !== 'auto') return mode === 'virtual';
+    const kind = this.kind;
+    if (kind === 'timeline') return this.state.rows.length * this.state.ticks.length > VIRTUAL_CELLS;
+    if (kind === 'time') return this.state.columns.length * Math.max(1, this.state.slots.length) > VIRTUAL_CELLS;
+    return false;
+  }
+
+  /** Sets what a big view builds: from `first`, `count` columns (day views) or cells along the time (a timeline). */
+  setWindow(first: number, count: number): void {
+    const at = Math.max(0, Math.floor(first));
+    const size = Math.max(1, Math.ceil(count));
+    const now = this.state.window;
+    if (now.first !== at || now.count !== size) this.state.window = { first: at, count: size };
+  }
+
+  /** The columns the day views build: all of them, or the window's. Reactive. */
+  shownColumns(): SchedulerColumn[] {
+    const columns = this.state.columns;
+    if (this.kind !== 'time' || !this.virtual) return columns;
+    const { first, count } = this.state.window;
+    return columns.slice(first, first + count);
+  }
+
+  /** Whether a run of columns (`first`, `span`) is in what the day views build. Reactive. */
+  columnsShown(first: number, span: number): boolean {
+    if (this.kind !== 'time' || !this.virtual) return true;
+    const { first: from, count } = this.state.window;
+    return first < from + count && first + span > from;
+  }
+
+  /** The timed pieces the day views build. Reactive. */
+  shownTimed(): TimedPiece<T>[] {
+    const timed = this.state.timed;
+    if (this.kind !== 'time' || !this.virtual) return timed;
+    const { first, count } = this.state.window;
+    // By the columns written with them: the pieces themselves are not read one by one.
+    const { pieces, columns } = this.timedRaw;
+    return pieces.filter((_, i) => columns[i] >= first && columns[i] < first + count);
+  }
+
+  /** Of heads over runs of columns, in the order of their first column, the ones in what the day views build. Reactive. */
+  shownHeads<H extends { first: number; span: number }>(heads: readonly H[]): readonly H[] {
+    if (this.kind !== 'time' || !this.virtual) return heads;
+    const { first, count } = this.state.window;
+    // The first head that ends after the window's start, then on while they start before its end.
+    let lo = 0;
+    let hi = heads.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (heads[mid].first + heads[mid].span <= first) lo = mid + 1;
+      else hi = mid;
+    }
+    let end = lo;
+    while (end < heads.length && heads[end].first < first + count) end++;
+    return heads.slice(lo, end);
+  }
+
+  /** The cells along a timeline's time it builds. Reactive. */
+  shownTicks(): TimeTick[] {
+    const ticks = this.state.ticks;
+    if (!this.virtual) return ticks;
+    const { first, count } = this.state.window;
+    return ticks.slice(first, first + count);
+  }
+
+  /** Whether a run of a timeline's cells (`from`, `span`, shares of a cell too) is in what it builds. Reactive. */
+  ticksShown(from: number, span: number): boolean {
+    if (!this.virtual) return true;
+    const { first, count } = this.state.window;
+    return from < first + count && from + span > first;
+  }
+
+  /** Where now is along a timeline, in cells; `null` when it is not in the days and hours shown. Reactive. */
+  nowTick(): number | null {
+    const today = this.todayWall();
+    const day = this.state.days.findIndex((d) => d.wall === today);
+    if (day < 0) return null;
+    const minutes = (this.zone.wall(this.state.now) - today) / MINUTE;
+    if (dayCells(this.view.type)) return day + minutes / (24 * 60);
+    const { from, to, step } = this.hours();
+    if (minutes < from || minutes > to) return null;
+    return day * this.state.slots.length + (minutes - from) / step;
+  }
+
+  /** The minutes of the day the time rows show, and the minutes in a row. */
+  private hours(): { from: number; to: number; step: number } {
+    const view = this.view;
+    const from = Math.max(0, Math.min(24, view.startDayHour)) * 60;
+    const to = Math.max(from / 60 + 1, Math.min(24, view.endDayHour)) * 60;
+    return { from, to, step: Math.max(5, Math.min(240, Math.round(view.cellDuration))) };
   }
 
   /** Whether the columns are grouped. Reactive. */
@@ -225,7 +391,7 @@ export class SchedulerModel<T> {
 
   /** The columns of today, empty when it is not shown. Reactive. */
   todayColumns(): SchedulerColumn[] {
-    return this.state.columns.filter((c) => c.day.today);
+    return this.shownColumns().filter((c) => c.day.today);
   }
 
   /** Where now is in a day column (0–1), or `null` outside the hours shown. Reactive. */
@@ -241,7 +407,7 @@ export class SchedulerModel<T> {
   idOf(item: T): string {
     const occurrence = this.occurrences.infoOf(item);
     if (occurrence) return occurrence.id;
-    const key = (item as Record<string, unknown>)?.[this.options.fields().key];
+    const key = (item as Record<string, unknown>)?.[this.fields().key];
     if (key !== undefined && key !== null) return `k${String(key)}`;
     const object = item as unknown as object;
     let id = this.ids.get(object);
@@ -251,7 +417,7 @@ export class SchedulerModel<T> {
 
   /** An appointment's start and end, `end` never before `start`. */
   timeOf(item: T): { start: Date; end: Date; allDay: boolean } | null {
-    const fields = this.options.fields();
+    const fields = this.fields();
     const record = item as Record<string, unknown>;
     const start = toDate(record[fields.start]);
     if (!start) return null;
@@ -288,7 +454,7 @@ export class SchedulerModel<T> {
 
   /** Whether an appointment is an occurrence changed apart from its series. */
   isException(item: T): boolean {
-    const id = (item as Record<string, unknown>)?.[this.options.fields().recurrenceId];
+    const id = (item as Record<string, unknown>)?.[this.fields().recurrenceId];
     return !this.occurrences.infoOf(item) && id !== undefined && id !== null && id !== '';
   }
 
@@ -343,7 +509,10 @@ export class SchedulerModel<T> {
     const we = Math.max(ws, zone.wall(end));
     const groups = this.state.groups.filter((g) => inGroup(values, g));
     const id = this.idOf(item);
-    const overlapping = this.entries(start, end)
+    // Within the days shown, the appointments are read already.
+    const range = this.range();
+    const read = this.state.days.length && start >= range.start && end <= range.end ? this.base : this.entries(start, end);
+    const overlapping = read
       .filter((e) => !e.draft && e.id !== id && e.start < end && start < e.end)
       .filter((e) => !this.grouped || groups.some((g) => inGroup(e.values, g)))
       .map((e) => e.item);
@@ -401,7 +570,7 @@ export class SchedulerModel<T> {
     const zone = this.zone;
     const slot = this.state.slots[place.slot];
     const resources = column.group ? { ...column.group.values } : null;
-    if (place.slot < 0 || this.view.type === 'month' || !slot) return { start: day.date, end: zone.date(day.wall + DAY), allDay: true, resources };
+    if (place.slot < 0 || dayCells(this.view.type) || !slot) return { start: day.date, end: zone.date(day.wall + DAY), allDay: true, resources };
     return {
       start: zone.date(day.wall + slot.minutes * MINUTE),
       end: zone.date(day.wall + (slot.minutes + this.view.cellDuration) * MINUTE),
@@ -443,7 +612,7 @@ export class SchedulerModel<T> {
   blockAt(column: number, slot: number): DayBlock | null {
     const col = this.state.columns[column];
     if (!col) return null;
-    if (slot < 0 || this.view.type === 'month') return col.blocked ? (col.blocks.find((b) => b.from <= 0 && b.to >= 24 * 60) ?? null) : null;
+    if (slot < 0 || dayCells(this.view.type)) return col.blocked ? (col.blocks.find((b) => b.from <= 0 && b.to >= 24 * 60) ?? null) : null;
     const row = this.state.slots[slot];
     if (!row) return null;
     const end = row.minutes + this.view.cellDuration;
@@ -454,9 +623,9 @@ export class SchedulerModel<T> {
   focusCell(place: CellPlace, extend = false): void {
     const columns = this.state.columns.length;
     const slots = this.state.slots.length;
-    const month = this.view.type === 'month';
+    const month = dayCells(this.view.type);
     const column = Math.max(0, Math.min(columns - 1, place.column));
-    const slot = month ? -1 : Math.max(this.view.allDayPanel ? -1 : 0, Math.min(slots - 1, place.slot));
+    const slot = month ? -1 : Math.max(this.view.allDayPanel && this.kind === 'time' ? -1 : 0, Math.min(slots - 1, place.slot));
     const anchor = extend && this.state.anchor ? this.state.anchor : { column, slot };
     this.state.focus = { column, slot };
     this.state.anchor = anchor;
@@ -534,7 +703,7 @@ export class SchedulerModel<T> {
       const shownAny = shown >= 0 ? shown : columns.findIndex((c) => c.day.local.getTime() === dayStart(date).getTime());
       const focus = this.state.focus;
       const column = keep >= 0 ? keep : shownAny >= 0 ? shownAny : Math.max(0, Math.min(focus.column, columns.length - 1));
-      const slot = view.type === 'month' ? -1 : focus.slot;
+      const slot = dayCells(view.type) ? -1 : viewKind(view.type) === 'timeline' ? Math.max(0, focus.slot) : focus.slot;
       if (column !== focus.column || slot !== focus.slot) this.state.focus = { column, slot };
       const anchor = this.state.anchor;
       if (anchor && anchor.column >= columns.length) this.state.anchor = null;
@@ -544,7 +713,9 @@ export class SchedulerModel<T> {
   /** The columns: in each group the days (or, by date, in each day the groups), and the heads over them. */
   private fillColumns(view: ResolvedView, groups: SchedulerGroup[], hours: { start: number; end: number }, workDays: readonly number[]): void {
     const days = this.state.days;
-    const byDate = view.groupByDate;
+    const kind = viewKind(view.type);
+    // A timeline has a row per group and the agenda a list: neither stands the groups under the dates.
+    const byDate = view.groupByDate && (kind === 'time' || kind === 'month');
     const month = view.type === 'month';
     const list: (SchedulerGroup | null)[] = groups.length ? groups : [null];
     const rows = month ? Math.ceil(days.length / 7) : 1;
@@ -567,13 +738,21 @@ export class SchedulerModel<T> {
         });
       });
     }
+    // Another date fills the columns in place; another shape (other days, other groups) makes them anew, as one change.
+    const shape = [kind, byDate, days.length, list.map((g) => g?.key ?? '').join(',')].join('|');
+    const reshaped = shape !== this.shape;
+    this.shape = shape;
+    if (reshaped) this.state.columns = made.map((values) => ({ ...values, blocks: [], blocked: false }) as SchedulerColumn);
     const columns = this.state.columns;
-    made.forEach((values, index) => {
-      if (index < columns.length) assign(columns[index], values as SchedulerColumn);
-      else columns.push({ ...values, blocks: [], blocked: false });
-    });
-    if (columns.length > made.length) columns.splice(made.length);
-    this.fillHeads(columns.slice(0, month ? 7 * list.length : columns.length), groups.length ? view.groups.length : 0, byDate || (!month && days.length === 1));
+    if (!reshaped) {
+      made.forEach((values, index) => {
+        if (index < columns.length) assign(columns[index], values as SchedulerColumn);
+        else columns.push({ ...values, blocks: [], blocked: false });
+      });
+      if (columns.length > made.length) columns.splice(made.length);
+    }
+    if (kind === 'time' || kind === 'month') this.fillHeads(columns.slice(0, month ? 7 * list.length : columns.length), groups.length ? view.groups.length : 0, byDate || (!month && days.length === 1));
+    else this.fillHeads([], 0, false);
   }
 
   /** The heads over a row of columns: a date (a weekday) per day, and a row of group heads per level. */
@@ -600,7 +779,8 @@ export class SchedulerModel<T> {
         values: column.group ? { ...column.group.values } : {},
       });
     }
-    fillList(this.state.dates, dates);
+    if (this.state.dates.length !== dates.length) this.state.dates = dates;
+    else fillList(this.state.dates, dates);
     const heads: HeaderRow[] = [];
     const kinds = this.options.resources;
     const seen = new Set<string>();
@@ -665,8 +845,9 @@ export class SchedulerModel<T> {
         });
     }
     if (weeks.length > count) weeks.splice(count);
-    this.state.allDay.days = month ? [] : days.slice();
-    this.state.allDay.columns = month ? [] : columns.slice();
+    const panel = viewKind(this.view.type) === 'time';
+    this.state.allDay.days = panel ? days.slice() : [];
+    this.state.allDay.columns = panel ? columns.slice() : [];
   }
 
   private fillSlots(): void {
@@ -691,67 +872,349 @@ export class SchedulerModel<T> {
     });
   }
 
-  /** Reads every appointment and places it: all of it runs again when anything it reads changes. */
-  private layout(): void {
+  /** A timeline's cells along the time (a time row of each day, or each whole day) and the heads over them. */
+  private fillTicks(): void {
     const view = this.options.view();
+    const kind = viewKind(view.type);
+    const days = this.state.days.map((d) => d);
+    const slots = this.state.slots.map((s) => ({ minutes: s.minutes, hourStart: s.hourStart }));
+    untracked(() => {
+      const made: Omit<TimeTick, 'index'>[] = [];
+      if (kind === 'timeline') {
+        const whole = dayCells(view.type);
+        for (const day of days) {
+          if (whole) made.push({ day, slot: -1, minutes: 0, hourStart: true, dayStart: false });
+          else slots.forEach((slot, i) => made.push({ day, slot: i, minutes: slot.minutes, hourStart: slot.hourStart, dayStart: i === 0 }));
+        }
+      }
+      fillObjects(
+        this.state.ticks,
+        made.map((values, index) => ({ index, ...values })),
+      );
+      const upper: ScaleCell[] = [];
+      const lower: ScaleCell[] = [];
+      if (kind === 'timeline' && dayCells(view.type)) {
+        // The months over their days.
+        days.forEach((day, i) => {
+          const last = upper[upper.length - 1];
+          if (last && last.day.local.getMonth() === day.local.getMonth() && last.day.local.getFullYear() === day.local.getFullYear()) last.span++;
+          else upper.push({ key: `m${i}`, first: i, span: 1, kind: 'month', day, minutes: 0, dayStart: true });
+          lower.push({ key: `d${i}`, first: i, span: 1, kind: 'day', day, minutes: 0, dayStart: true });
+        });
+      } else if (kind === 'timeline') {
+        // The days over their hours: an hour stands over its rows, to the next hour's first.
+        const per = slots.length;
+        days.forEach((day, d) => {
+          upper.push({ key: `d${d}`, first: d * per, span: per, kind: 'day', day, minutes: 0, dayStart: true });
+          slots.forEach((slot, i) => {
+            const last = lower[lower.length - 1];
+            if (!slot.hourStart && last && last.day === day) last.span++;
+            else lower.push({ key: `h${d * per + i}`, first: d * per + i, span: 1, kind: 'hour', day, minutes: slot.minutes, dayStart: i === 0 });
+          });
+        });
+      }
+      fillObjects(this.state.upper, upper);
+      fillObjects(this.state.lower, lower);
+    });
+  }
+
+  /** A timeline's rows: a row per group (one without groups), with what its head cells show. */
+  private fillRows(): void {
+    const view = this.options.view();
+    const timeline = viewKind(view.type) === 'timeline';
+    const groups = timeline ? this.state.groups.map((g) => g) : [];
+    for (const group of groups) void group.key, void group.path;
+    const days = this.state.days.length;
+    untracked(() => {
+      const list: (SchedulerGroup | null)[] = timeline ? (groups.length ? groups : [null]) : [];
+      const rows = this.state.rows;
+      list.forEach((group, index) => {
+        const before = index > 0 ? list[index - 1] : null;
+        const path = group?.path ?? [];
+        const starts = path.map((_, level) => !before || path.slice(0, level + 1).some((p, i) => !sameValue(p.value, before.path[i]?.value)));
+        const edge: TimelineRow<T>['edge'] = !before ? '' : starts[0] ? 'outer' : 'inner';
+        const values = {
+          index,
+          key: group?.key ?? '',
+          group,
+          first: (group?.index ?? 0) * days,
+          edge,
+          label: path.map((p) => p.text).join(', '),
+        };
+        if (index < rows.length) {
+          const row = rows[index];
+          assign(row, values as TimelineRow<T>);
+          if (row.starts.join() !== starts.join()) row.starts = starts;
+        } else {
+          // A store of its own, as a piece is: in development DevTools then finds what changes in it at once.
+          rows.push(reactive({ ...values, starts, pieces: [], lanes: 0, height: 0, more: [], moreLane: 0 }) as TimelineRow<T>);
+        }
+      });
+      if (rows.length > list.length) rows.splice(list.length);
+    });
+  }
+
+  /** Writes into each column the blocked times of its day that are for its group. */
+  private fillBlocks(): void {
+    const view = this.options.view();
+    const blocks = this.options.blockedTimes?.() ?? [];
+    if (!blocks.length) {
+      // None: no column is read one by one.
+      void this.state.columns.length;
+      untracked(() => {
+        for (const column of this.state.columns) {
+          if (column.blocked) column.blocked = false;
+          if (column.blocks.length) column.blocks = [];
+        }
+      });
+      return;
+    }
     const columns = this.state.columns.map((c) => c);
     for (const column of columns) void column.day.wall, void column.group;
-    void this.state.slots.length;
     const days = this.state.days.map((d) => d.wall);
-    if (!days.length || !columns.length) return;
-    const zone = this.zone;
-    const entries = this.entries(zone.date(days[0]), zone.date(days[days.length - 1] + DAY));
-    const blocks = blockedSpans(this.options.blockedTimes?.() ?? [], days[0], days[days.length - 1] + DAY, zone);
-    const room = this.options.room();
-    const mode = this.options.overlapMode();
-    const grouped = this.state.groups.length > 0;
+    if (!days.length) return;
+    const spans = blockedSpans(blocks, days[0], days[days.length - 1] + DAY, this.zone);
+    untracked(() => this.placeBlocks(columns, spans, view));
+  }
+
+  /** Reads the appointments of the days shown (without a draft): every layout places them from here until they change. */
+  private collect(): void {
+    const days = this.state.days.map((d) => d.wall);
     // The colours resources give: which kind colours, and its items' colours.
     for (const kind of this.options.resources?.kinds() ?? []) {
       void kind.useColorAsDefault;
       for (const item of kind.items) void kind.valueOf(item), void kind.colorOf(item);
     }
+    const zone = this.zone;
+    const entries = days.length ? this.read(zone.date(days[0]), zone.date(days[days.length - 1] + DAY), null) : [];
     untracked(() => {
-      const timed = new Set<string>();
-      const strip = new Set<string>();
-      this.placeBlocks(columns, blocks, view);
-      if (view.type === 'month') {
-        this.state.timed = [];
-        this.placeStrip(this.state.allDay, [], strip, room.allDay, view);
-        this.state.weeks.forEach((week) => this.placeStrip(week, entries, strip, room.month, view));
-      } else {
-        const toStrip = entries.filter((e) => view.allDayPanel && (e.allDay || e.we - e.ws >= DAY));
-        const inColumns = entries.filter((e) => !toStrip.includes(e));
-        this.placeStrip(this.state.allDay, toStrip, strip, room.allDay, view);
-        const counts = new Map<string, number>();
-        this.state.timed = columns.flatMap((column) => this.placeColumn(column, inColumns, view, mode, timed, counts));
-      }
-      for (const id of this.timedCache.keys()) if (!timed.has(id)) this.timedCache.delete(id);
-      for (const id of this.stripCache.keys()) if (!strip.has(id)) this.stripCache.delete(id);
+      this.base = entries;
+      this.baseById = new Map(entries.map((e) => [e.id, e]));
       this.occurrences.sweep();
-      const groups = this.state.groups;
-      this.state.shown = entries.filter((e) => !e.draft && (!grouped || groups.some((g) => inGroup(e.values, g)))).map((e) => e.item);
+      this.state.revision++;
     });
+  }
+
+  /** Places the appointments read (and a draft): the views each their own way. */
+  private layout(): void {
+    const view = this.options.view();
+    const kind = viewKind(view.type);
+    const revision = this.state.revision;
+    // A timeline places by its rows and days, not by the columns.
+    const columns = kind === 'timeline' ? [] : this.state.columns.map((c) => c);
+    for (const column of columns) void column.day.wall, void column.group;
+    const count = this.state.columns.length;
+    const slots = this.state.slots.length;
+    const days = this.state.days.map((d) => d.wall);
+    const groups = this.state.groups.map((g) => g);
+    for (const group of groups) void group.key;
+    const draft = this.options.draft?.() ?? null;
+    const room = this.options.room();
+    const mode = this.options.overlapMode();
+    const rows = kind === 'timeline' ? this.state.rows.map((r) => r) : [];
+    const ticks = kind === 'timeline' ? this.state.ticks.length : 0;
+    const metrics = kind === 'timeline' ? (this.options.lineMetrics?.() ?? { lane: 0, gap: 0, min: 0 }) : null;
+    for (const kind of this.options.resources?.kinds() ?? []) {
+      void kind.useColorAsDefault;
+      for (const item of kind.items) void kind.colorOf(item);
+    }
+    if (!days.length || !count) return;
+    const kinds = this.options.resources?.kinds() ?? null;
+    untracked(() => {
+      this.kindsNow = kinds;
+      const moved = draft && !draft.copy ? this.idOf(draft.item) : null;
+      const extra = draft ? this.draftEntry(draft) : null;
+      const range = { from: days[0], to: days[days.length - 1] + DAY };
+      const entries = this.base.filter((e) => e.id !== moved);
+      const shows = !!extra && extra.ws < range.to && (extra.we > range.from || (extra.we === extra.ws && extra.ws >= range.from));
+      if (extra && shows) entries.splice(upperBound(entries, extra), 0, extra);
+      if (groups.length) this.indexGroups(groups);
+      const byGroup = this.byGroup(groups, view, moved, shows ? extra : null);
+      const of = (group: SchedulerGroup | null) => (group ? (byGroup[group.index] ?? []) : entries);
+      const strip = new Set<string>();
+      if (kind === 'timeline') {
+        this.state.timed = [];
+        this.placeStrip(this.state.allDay, () => [], strip, room.allDay, view);
+        const settings = [
+          view.type,
+          view.startDayHour,
+          view.endDayHour,
+          view.cellDuration,
+          view.maxAppointmentsPerCell,
+          ticks,
+          slots,
+          rows.length,
+          metrics!.lane,
+          metrics!.gap,
+          metrics!.min,
+          days[0],
+          groups.length,
+        ].join('|');
+        const laid = this.laid;
+        // A draft alone changes the rows it was and is in, and the ones the appointment left.
+        let only: Set<number> | null = null;
+        if (laid.revision === revision && laid.settings === settings) {
+          only = new Set<number>();
+          for (const entry of [laid.draft, shows ? extra : null, moved ? (this.baseById.get(moved) ?? null) : null]) {
+            if (!entry) continue;
+            if (!groups.length) only.add(0);
+            else for (const g of this.groupsOf(entry, groups, view)) only.add(g);
+          }
+        }
+        this.laid = { revision, settings, draft: shows ? extra : null };
+        for (const row of rows) if (!only || only.has(row.index)) this.placeLine(row, of(row.group), view, metrics!);
+        this.clearAgenda();
+      } else {
+        this.laid = { revision: -1, settings: '', draft: null };
+        const timed = new Set<string>();
+        if (kind === 'agenda') {
+          this.state.timed = [];
+          this.placeStrip(this.state.allDay, () => [], strip, room.allDay, view);
+          this.placeAgenda(groups.length ? groups : [null], of);
+        } else if (view.type === 'month') {
+          this.state.timed = [];
+          this.placeStrip(this.state.allDay, () => [], strip, room.allDay, view);
+          this.state.weeks.forEach((week) => this.placeStrip(week, of, strip, room.month, view));
+          this.clearAgenda();
+        } else {
+          const toStrip = (e: Entry<T>) => view.allDayPanel && (e.allDay || e.we - e.ws >= DAY);
+          const split = new Map<SchedulerGroup | null, { strip: Entry<T>[]; timed: Entry<T>[] }>();
+          const parts = (group: SchedulerGroup | null) => {
+            let part = split.get(group);
+            if (!part) {
+              const list = of(group);
+              split.set(group, (part = { strip: list.filter(toStrip), timed: list.filter((e) => !toStrip(e)) }));
+            }
+            return part;
+          };
+          this.placeStrip(this.state.allDay, (group) => parts(group).strip, strip, room.allDay, view);
+          const counts = new Map<string, number>();
+          const pieces: TimedPiece<T>[] = [];
+          const at: number[] = [];
+          for (const column of columns) {
+            for (const piece of this.placeColumn(column, parts(column.group).timed, view, mode, timed, counts)) {
+              pieces.push(piece);
+              at.push(column.index);
+            }
+          }
+          this.timedRaw = { pieces, columns: at };
+          this.state.timed = pieces;
+          this.clearAgenda();
+        }
+        for (const id of this.timedCache.keys()) if (!timed.has(id)) this.timedCache.delete(id);
+        this.clearLines();
+      }
+      for (const id of this.stripCache.keys()) if (!strip.has(id)) this.stripCache.delete(id);
+      const grouped = groups.length > 0;
+      const shown = entries.filter((e) => !e.draft && (!grouped || this.groupsOf(e, groups, view).length > 0)).map((e) => e.item);
+      if (!sameList(this.shownRaw, shown)) {
+        this.state.shown = shown;
+        this.shownRaw = shown;
+      }
+      this.kindsNow = null;
+    });
+  }
+
+  /** The appointments read, by the group they are in: made again when they or the groups change; a draft changes only its own groups. */
+  private byGroup(groups: SchedulerGroup[], view: ResolvedView, moved: string | null, extra: Entry<T> | null): Entry<T>[][] {
+    if (!groups.length) return [];
+    const key = this.indexGroups(groups);
+    if (this.buckets.revision !== this.state.revision || this.buckets.groups !== key) {
+      const byGroup: Entry<T>[][] = groups.map(() => []);
+      for (const entry of this.base) for (const g of this.groupsOf(entry, groups, view)) byGroup[g].push(entry);
+      this.buckets = { revision: this.state.revision, groups: key, byGroup };
+    }
+    const lists = this.buckets.byGroup;
+    const old = moved ? this.baseById.get(moved) : undefined;
+    if (!old && !extra) return lists;
+    const out = lists.slice();
+    const to = extra ? this.groupsOf(extra, groups, view) : [];
+    for (const g of new Set<number>([...(old ? this.groupsOf(old, groups, view) : []), ...to])) {
+      const list = (lists[g] ?? []).filter((e) => e.id !== moved);
+      if (extra && to.includes(g)) list.splice(upperBound(list, extra), 0, extra);
+      out[g] = list;
+    }
+    return out;
+  }
+
+  /** The groups by their key, made again when they change; the key of them all. */
+  private indexGroups(groups: SchedulerGroup[]): string {
+    const key = groups.map((g) => g.key).join('#');
+    if (key !== this.groupIndex.key) this.groupIndex = { key, version: this.groupIndex.version + 1, keys: new Map(groups.map((g) => [g.key, g.index])) };
+    return key;
+  }
+
+  /** The indices of the groups an appointment is in: one for each set of its values of the fields grouped by. */
+  private groupsOf(entry: Entry<T>, groups: SchedulerGroup[], view: ResolvedView): number[] {
+    const version = this.groupIndex.version;
+    const known = this.groupsCache.get(entry);
+    if (known && known.version === version && this.groupIndex.keys.size === groups.length) return known.list;
+    const fields = groups[0]?.path.map((p) => p.field) ?? view.groups;
+    if (fields.length === 1) {
+      const list: number[] = [];
+      for (const value of entry.values[fields[0]] ?? []) {
+        const at = this.groupIndex.keys.get(`${fields[0]}=${String(value)}`);
+        if (at !== undefined && !list.includes(at)) list.push(at);
+      }
+      this.groupsCache.set(entry, { version, list });
+      return list;
+    }
+    let keys = [''];
+    for (const field of fields) {
+      const next: string[] = [];
+      for (const key of keys) for (const value of entry.values[field] ?? []) next.push(`${key}${key ? '|' : ''}${field}=${String(value)}`);
+      keys = next;
+      if (!keys.length) break;
+    }
+    const list: number[] = [];
+    for (const key of keys) {
+      const at = this.groupIndex.keys.get(key);
+      if (at !== undefined && !list.includes(at)) list.push(at);
+    }
+    this.groupsCache.set(entry, { version, list });
+    return list;
   }
 
   /** Writes into each column the blocked times of its day that are for its group. */
   private placeBlocks(columns: SchedulerColumn[], spans: BlockedSpan[], view: ResolvedView): void {
     const grouped = new Set(view.groups);
     for (const column of columns) {
+      if (!spans.length) {
+        if (column.blocks.length) column.blocks = [];
+        if (column.blocked) column.blocked = false;
+        continue;
+      }
       const day = column.day.wall;
       const own = spans
         .filter((s) => s.start < day + DAY && s.end > day && blockShows(s.block, column.group, grouped))
         .map((s) => ({ from: Math.max(0, (s.start - day) / MINUTE), to: Math.min(24 * 60, (s.end - day) / MINUTE), text: s.block.text ?? '' }));
       const blocked = own.some((b) => b.from <= 0 && b.to >= 24 * 60);
-      if (JSON.stringify(own) !== JSON.stringify(column.blocks)) column.blocks = own;
+      if ((own.length || column.blocks.length) && JSON.stringify(own) !== JSON.stringify(column.blocks)) column.blocks = own;
       if (column.blocked !== blocked) column.blocked = blocked;
     }
   }
 
+  /** The appointments between `from` and `to`, with the draft (where it would go, in place of the appointment moved). */
   private entries(from: Date, to: Date): Entry<T>[] {
+    return this.read(from, to, this.options.draft?.() ?? null);
+  }
+
+  private read(from: Date, to: Date, draft: Draft<T> | null): Entry<T>[] {
     const fields = this.options.fields();
     const zone = this.zone;
+    const kept = { fields: this.fieldsNow, zone: this.zoneNow };
+    this.fieldsNow = fields;
+    this.zoneNow = zone;
+    try {
+      return this.readWith(fields, zone, from, to, draft);
+    } finally {
+      this.fieldsNow = kept.fields;
+      this.zoneNow = kept.zone;
+    }
+  }
+
+  private readWith(fields: SchedulerFields, zone: TimeZone, from: Date, to: Date, draft: Draft<T> | null): Entry<T>[] {
     const resources = this.options.resources;
-    const draft = this.options.draft?.() ?? null;
     const moved = draft && !draft.copy ? this.idOf(draft.item) : null;
     const touches = (start: Date, end: Date) => start < to && (end > from || (end.getTime() === start.getTime() && start >= from));
     const out: Entry<T>[] = [];
@@ -778,28 +1241,30 @@ export class SchedulerModel<T> {
       if (this.occurrences.ruleOf(item)) for (const occurrence of this.occurrences.of(item, from.getTime(), to.getTime())) add(occurrence);
       else add(item);
     }
-    if (draft && touches(draft.start, draft.end)) {
-      // Moved, it keeps its id (and its box); a copy is one more.
-      const id = this.idOf(draft.item) + (draft.copy ? '~copy' : '');
-      out.push({
-        id,
-        item: draft.item,
-        start: draft.start,
-        end: draft.end,
-        ws: zone.wall(draft.start),
-        we: zone.wall(draft.end),
-        allDay: draft.allDay,
-        draft: true,
-        invalid: draft.invalid,
-        values: resources?.allValuesOf({ ...(draft.item as object), ...(draft.resources ?? {}) }) ?? {},
-        ...this.lookOf(draft.item),
-      });
-    }
-    return out.sort((a, b) => a.start.getTime() - b.start.getTime() || b.end.getTime() - a.end.getTime());
+    if (draft && touches(draft.start, draft.end)) out.push(this.draftEntry(draft));
+    return out.sort(byTime);
+  }
+
+  /** A draft as the layout reads it: moved, it keeps its id (and its box); a copy is one more. */
+  private draftEntry(draft: Draft<T>): Entry<T> {
+    const zone = this.zone;
+    return {
+      id: this.idOf(draft.item) + (draft.copy ? '~copy' : ''),
+      item: draft.item,
+      start: draft.start,
+      end: draft.end,
+      ws: zone.wall(draft.start),
+      we: zone.wall(draft.end),
+      allDay: draft.allDay,
+      draft: true,
+      invalid: draft.invalid,
+      values: this.options.resources?.allValuesOf({ ...(draft.item as object), ...(draft.resources ?? {}) }) ?? {},
+      ...this.lookOf(draft.item),
+    };
   }
 
   private lookOf(item: T): { text: string; color: string; disabled: boolean; series: boolean; exception: boolean } {
-    const fields = this.options.fields();
+    const fields = this.fields();
     const record = item as Record<string, unknown>;
     const text = record?.[fields.text];
     const color = record?.[fields.color];
@@ -814,10 +1279,10 @@ export class SchedulerModel<T> {
 
   /** An entry's colour in a column: its own, else its resources' (the group's item, where it is grouped by the colouring kind). */
   private colorIn(entry: Entry<T>, group: SchedulerGroup | null): string {
-    return entry.color || this.options.resources?.colorOf(entry.values, group) || '';
+    return entry.color || this.options.resources?.colorOf(entry.values, group, this.kindsNow ?? undefined) || '';
   }
 
-  /** Places the timed pieces of a column: the appointments of its group on its day. */
+  /** Places the timed pieces of a column: of the appointments of its group, the ones on its day. */
   private placeColumn(
     column: SchedulerColumn,
     entries: Entry<T>[],
@@ -837,7 +1302,6 @@ export class SchedulerModel<T> {
     const length = to - from;
     const spans: (TimedSpan & { entry: Entry<T>; s: Date; e: Date; last: number })[] = [];
     for (const entry of entries) {
-      if (group && !inGroup(entry.values, group)) continue;
       const zero = entry.we === entry.ws;
       if (!(entry.ws < dayEnd && (entry.we > day || (zero && entry.ws >= day)))) continue;
       const s = entry.start < dayStarts ? dayStarts : entry.start;
@@ -900,23 +1364,27 @@ export class SchedulerModel<T> {
    * on the days of its columns, each bar on the lowest line free; a bar over columns that do not
    * stand side by side (the groups under each date) is cut into a piece per run of them.
    */
-  private placeStrip(row: StripRow<T>, entries: Entry<T>[], seen: Set<string>, room: number, view: ResolvedView): void {
+  private placeStrip(row: StripRow<T>, entriesOf: (group: SchedulerGroup | null) => Entry<T>[], seen: Set<string>, room: number, view: ResolvedView): void {
     const columns = row.columns;
     const more = columns.map(() => 0);
     const moreAt = columns.map(() => 0);
     const pieces: StripPiece<T>[] = [];
     const tag = view.type === 'month' ? 'm' : 'a';
-    const groups = [...new Set(columns.map((c) => c.group))];
-    for (const group of groups) {
-      // The group's columns in the row, by their place.
-      const own = columns.map((c, at) => ({ c, at })).filter((x) => x.c.group === group);
+    // Each group's columns in the row, by their place.
+    const byGroup = new Map<SchedulerGroup | null, { c: SchedulerColumn; at: number }[]>();
+    columns.forEach((c, at) => {
+      const group = c.group;
+      const list = byGroup.get(group);
+      if (list) list.push({ c, at });
+      else byGroup.set(group, [{ c, at }]);
+    });
+    for (const [group, own] of byGroup) {
       const days = own.map((x) => x.c.day.wall);
       const spans: (LaneSpan & { entry: Entry<T> })[] = [];
       if (days.length) {
         const rowStart = days[0];
         const rowEnd = days[days.length - 1] + DAY;
-        entries.forEach((entry, order) => {
-          if (group && !inGroup(entry.values, group)) return;
+        entriesOf(group).forEach((entry, order) => {
           const zero = entry.we === entry.ws;
           if (!(entry.ws < rowEnd && (entry.we > rowStart || (zero && entry.ws >= rowStart)))) return;
           const first = days.findIndex((d, i) => entry.ws < d + DAY && (i === 0 || entry.ws >= d));
@@ -990,14 +1458,218 @@ export class SchedulerModel<T> {
     row.lanes = Math.max(0, ...moreAt.map((c, d) => c + (more[d] > 0 ? 1 : 0)));
   }
 
+  /**
+   * Lays out a row of a timeline on its own: each appointment of its group from where it starts to
+   * where it ends along the row (cut to the days and hours shown), stacked on the lowest lane free;
+   * the row is as tall as its lanes. With a number for `maxAppointmentsPerCell`, lanes past it are
+   * left out and each day says how many ("+N more").
+   */
+  private placeLine(row: TimelineRow<T>, entries: Entry<T>[], view: ResolvedView, metrics: { lane: number; gap: number; min: number }): void {
+    const along = this.along(view);
+    const spans: (StackSpan & { entry: Entry<T>; before: boolean; after: boolean })[] = [];
+    entries.forEach((entry, order) => {
+      const at = along(entry);
+      if (at) spans.push({ id: entry.id, start: at.from, end: at.to, order, entry, before: at.before, after: at.after });
+    });
+    const { lanes, count } = placeStack(spans);
+    const limit = typeof view.maxAppointmentsPerCell === 'number' ? Math.max(0, view.maxAppointmentsPerCell) : Infinity;
+    const days = this.state.days.length;
+    const per = dayCells(view.type) ? 1 : Math.max(1, this.state.slots.length);
+    const more = new Array<number>(days).fill(0);
+    const group = row.group;
+    const pieces = spans.map((span) => {
+      const lane = lanes.get(span.id)!;
+      const hidden = lane >= limit;
+      if (hidden) for (let d = Math.floor(span.start / per); d < Math.min(days, Math.ceil(span.end / per)); d++) more[d]++;
+      const entry = span.entry;
+      const values: LinePiece<T> = {
+        id: `${span.id}@r${row.index}`,
+        item: entry.item,
+        group: group?.index ?? -1,
+        start: entry.start,
+        end: entry.end,
+        allDay: entry.allDay,
+        from: span.start,
+        span: span.end - span.start,
+        lane,
+        hidden,
+        before: span.before,
+        after: span.after,
+        draft: entry.draft,
+        invalid: entry.invalid,
+        text: entry.text,
+        color: this.colorIn(entry, group),
+        disabled: entry.disabled,
+        series: entry.series,
+        exception: entry.exception,
+      };
+      return this.keep(this.lineCache, values);
+    });
+    const kept = new Set(pieces.map((p) => p.id));
+    const before = this.rowPieces.get(row) ?? [];
+    for (const piece of before) if (!kept.has(piece.id)) this.lineCache.delete(piece.id);
+    const shown = Math.min(count, limit);
+    const lines = shown + (more.some((n) => n > 0) ? 1 : 0);
+    if (!sameList(before, pieces)) {
+      row.pieces = pieces;
+      this.rowPieces.set(row, pieces);
+    }
+    if (row.lanes !== lines) row.lanes = lines;
+    const height = Math.max(metrics.min, metrics.gap + lines * (metrics.lane + metrics.gap));
+    if (row.height !== height) row.height = height;
+    const left = more.map((count, day) => ({ day, count })).filter((m) => m.count > 0);
+    if (row.more.map((m) => `${m.day}:${m.count}`).join() !== left.map((m) => `${m.day}:${m.count}`).join()) row.more = left;
+    if (row.moreLane !== shown) row.moreLane = shown;
+  }
+
+  /**
+   * Where an appointment is along a timeline's row, in cells: from its start to its end, cut to the
+   * days and hours shown (`before`, `after`: it goes on past them); `null` when none of it is shown.
+   * In a timeline of days (the month) it takes its days whole.
+   */
+  private along(view: ResolvedView): (entry: Entry<T>) => { from: number; to: number; before: boolean; after: boolean } | null {
+    const walls = this.state.days.map((d) => d.wall);
+    const count = walls.length;
+    if (dayCells(view.type)) {
+      return (entry) => {
+        const zero = entry.we === entry.ws;
+        let first = -1;
+        let last = -1;
+        for (let d = 0; d < count; d++) {
+          if (first < 0 && walls[d] + DAY > entry.ws) first = d;
+          if (walls[d] < entry.we || (zero && walls[d] <= entry.ws)) last = d;
+        }
+        if (first < 0 || last < first) return null;
+        return { from: first, to: last + 1, before: entry.ws < walls[first], after: entry.we > walls[last] + DAY };
+      };
+    }
+    const { from, to, step } = this.hours();
+    const per = Math.max(1, this.state.slots.length);
+    const shortest = Math.min(30, step) / step;
+    const open = (d: number) => walls[d] + from * MINUTE;
+    const close = (d: number) => walls[d] + to * MINUTE;
+    const at = (d: number, wall: number) => d * per + ((wall - walls[d]) / MINUTE - from) / step;
+    return (entry) => {
+      const zero = entry.we === entry.ws;
+      let first = -1;
+      for (let d = 0; d < count; d++) {
+        if (close(d) > entry.ws || (zero && close(d) === entry.ws)) {
+          first = d;
+          break;
+        }
+      }
+      if (first < 0) return null;
+      let last = -1;
+      for (let d = count - 1; d >= 0; d--) {
+        if (open(d) < entry.we || (zero && open(d) <= entry.we)) {
+          last = d;
+          break;
+        }
+      }
+      if (last < first) return null;
+      const before = entry.ws < open(first);
+      const after = entry.we > close(last);
+      const start = before ? first * per : at(first, entry.ws);
+      const end = after ? (last + 1) * per : at(last, entry.we);
+      if (end < start || (end === start && !zero)) return null;
+      return { from: start, to: Math.max(end, start + shortest), before, after };
+    };
+  }
+
+  /** The agenda: in each group, each day with its appointments in time order (one that lasts days on each of them); a day with none is left out. */
+  private placeAgenda(groups: (SchedulerGroup | null)[], entriesOf: (group: SchedulerGroup | null) => Entry<T>[]): void {
+    const zone = this.zone;
+    const days = this.state.days;
+    const out: AgendaDay<T>[] = [];
+    const seenDays = new Set<string>();
+    const seen = new Set<string>();
+    for (const group of groups) {
+      const entries = entriesOf(group);
+      let first = true;
+      for (const day of days) {
+        const end = day.wall + DAY;
+        const items: AgendaPiece<T>[] = [];
+        for (const entry of entries) {
+          const zero = entry.we === entry.ws;
+          if (!(entry.ws < end && (entry.we > day.wall || (zero && entry.ws >= day.wall)))) continue;
+          const before = entry.ws < day.wall;
+          const after = entry.we > end;
+          const values: AgendaPiece<T> = {
+            id: `${entry.id}@a${day.index}${group ? `:${group.index}` : ''}`,
+            item: entry.item,
+            group: group?.index ?? -1,
+            start: before ? zone.date(day.wall) : entry.start,
+            end: after ? zone.date(end) : entry.end,
+            whole: entry.allDay || (entry.ws <= day.wall && entry.we >= end),
+            before,
+            after,
+            draft: entry.draft,
+            invalid: entry.invalid,
+            text: entry.text,
+            color: this.colorIn(entry, group),
+            disabled: entry.disabled,
+            series: entry.series,
+            exception: entry.exception,
+          };
+          seen.add(values.id);
+          items.push(this.keep(this.agendaCache, values));
+        }
+        if (!items.length) continue;
+        // The ones that take the day first, then in time order.
+        items.sort((a, b) => Number(b.whole) - Number(a.whole));
+        const key = `${group?.key ?? ''}@${day.index}`;
+        seenDays.add(key);
+        const values = { key, day, group, first, label: group ? group.path.map((p) => p.text).join(', ') : '' };
+        first = false;
+        let made = this.agendaDays.get(key);
+        if (made) {
+          assign(made, values as AgendaDay<T>);
+          if (!sameList(made.items, items)) made.items = items;
+        } else {
+          made = reactive({ ...values, items }) as AgendaDay<T>;
+          this.agendaDays.set(key, made);
+        }
+        out.push(made);
+      }
+    }
+    for (const id of this.agendaCache.keys()) if (!seen.has(id)) this.agendaCache.delete(id);
+    for (const key of this.agendaDays.keys()) if (!seenDays.has(key)) this.agendaDays.delete(key);
+    if (!sameList(this.state.agenda, out)) this.state.agenda = out;
+  }
+
+  private clearAgenda(): void {
+    if (this.state.agenda.length) this.state.agenda = [];
+    this.agendaCache.clear();
+    this.agendaDays.clear();
+  }
+
+  private clearLines(): void {
+    for (const row of this.state.rows) {
+      if (!this.rowPieces.get(row)?.length) continue;
+      row.pieces = [];
+      this.rowPieces.set(row, []);
+    }
+    this.lineCache.clear();
+  }
+
   /** The cached piece with the new values written into it (only what changed), or a new one. */
   private keep<P extends { id: string }>(cache: Map<string, P>, values: P): P {
     const known = cache.get(values.id);
     if (known) {
-      assign(known, values);
+      // Told apart from what was written last (kept plain): a read of the piece itself would cost as much again.
+      const last = this.written.get(known) as Record<string, unknown>;
+      const target = known as unknown as Record<string, unknown>;
+      for (const [key, value] of Object.entries(values as unknown as Record<string, unknown>)) {
+        const old = last[key];
+        if (old instanceof Date && value instanceof Date ? old.getTime() !== value.getTime() : old !== value) {
+          target[key] = value;
+          last[key] = value;
+        }
+      }
       return known;
     }
     const piece = reactive(values) as P;
+    this.written.set(piece, { ...values });
     cache.set(values.id, piece);
     return piece;
   }
@@ -1089,4 +1761,35 @@ function sameHead(key: string, a: unknown, b: unknown): boolean {
 /** A timed appointment that ends on the day it starts (wall clock times). */
 function sameDay(start: number, end: number): boolean {
   return Math.floor(start / DAY) === Math.floor(Math.max(start, end - 1) / DAY);
+}
+
+/** The time order of appointments: by start, the longer first. */
+function byTime<T>(a: Entry<T>, b: Entry<T>): number {
+  return a.start.getTime() - b.start.getTime() || b.end.getTime() - a.end.getTime();
+}
+
+/** Where an entry goes in a list in time order: after the ones it ties with. */
+function upperBound<T>(list: Entry<T>[], entry: Entry<T>): number {
+  let lo = 0;
+  let hi = list.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (byTime(list[mid], entry) <= 0) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+/** Whether two lists hold the same items in the same order. */
+function sameList<T>(a: readonly T[], b: readonly T[]): boolean {
+  return a.length === b.length && a.every((x, i) => x === b[i]);
+}
+
+/** Fills a list of objects in place: the object at a place keeps itself, its fields written where they differ. */
+function fillObjects<T extends object>(list: T[], values: T[]): void {
+  values.forEach((value, index) => {
+    if (index < list.length) assign(list[index], value);
+    else list.push(value);
+  });
+  if (list.length > values.length) list.splice(values.length);
 }

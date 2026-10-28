@@ -55,8 +55,7 @@ export class Resources {
    * The colour resources give an appointment: of the kind marked `useColorAsDefault`, else of the
    * first kind whose item has one. In a group, the group's item of that kind.
    */
-  colorOf(values: Record<string, unknown[]>, group: SchedulerGroup | null = null): string {
-    const kinds = this.kinds();
+  colorOf(values: Record<string, unknown[]>, group: SchedulerGroup | null = null, kinds: ResourceKind<unknown>[] = this.kinds()): string {
     const marked = kinds.find((k) => k.useColorAsDefault);
     for (const kind of marked ? [marked] : kinds) {
       const own = group?.path.find((p) => p.field === kind.field);

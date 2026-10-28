@@ -33,8 +33,8 @@ import { SeriesEdit } from './model/SeriesEdit';
 import type { SeriesRun } from './model/series-run';
 import { SeriesWriter } from './model/SeriesWriter';
 import type { SeriesScope } from './model/series-scope';
-import type { StripPiece } from './model/strip-piece';
-import type { TimedPiece } from './model/timed-piece';
+import type { AnyPiece } from './model/any-piece';
+import { dayCells, viewKind } from './model/view-kind';
 import { RecurrenceEditor } from './RecurrenceEditor';
 import type { Scheduler } from './Scheduler';
 import type { SchedulerCell } from './scheduler-cell';
@@ -48,6 +48,7 @@ import type { SeriesAskingEventArgs } from './series-asking-event-args';
 import type { SeriesEditMode } from './series-edit-mode';
 import type { DragHost, DragMode } from './view/AppointmentDrag';
 import { AppointmentTooltip, type TooltipState } from './view/AppointmentTooltip';
+import type { TooltipTemplateContext } from './tooltip-template-context';
 import { askSeriesScope } from './view/ask-series-scope';
 import type { SchedulerHost } from './view/scheduler-host';
 
@@ -685,18 +686,55 @@ export class AppointmentEditor<T> implements DragHost<T> {
     const popup = new Popup();
     popup.matchWidth = false;
     popup.class.add('mx-scheduler__tooltip-popup');
+    const view = this.host.view;
+    const state = this.tooltipState;
+    const editor = this;
+    const context: TooltipTemplateContext<T> = {
+      get appointment() {
+        return state.item;
+      },
+      get text() {
+        return state.item ? editor.textOf(state.item) : '';
+      },
+      get time() {
+        const time = state.item ? view.model.timeOf(state.item) : null;
+        if (!time) return '';
+        return time.allDay ? view.format.range('day', time.start, time.end) : `${view.format.fullDate(time.start)}, ${view.format.timeRange(time.start, time.end)}`;
+      },
+      get canEdit() {
+        return !!state.item && editor.canEdit(state.item);
+      },
+      get canDelete() {
+        return !!state.item && editor.canDelete(state.item);
+      },
+      edit: () => {
+        if (state.item) void this.openForm(state.item);
+      },
+      remove: () => {
+        const item = state.item;
+        popup.close();
+        if (item) void this.remove(item, true);
+      },
+      close: () => popup.close(),
+    };
     popup.controls.add(
-      <AppointmentTooltip<T>
-        host={this.host.view}
-        state={this.tooltipState}
-        canEdit={(item: T) => this.canEdit(item)}
-        canDelete={(item: T) => this.canDelete(item)}
-        edit={(item: T) => void this.openForm(item)}
-        remove={(item: T) => {
-          popup.close();
-          void this.remove(item, true);
-        }}
-      />,
+      <>
+        {view.tooltipTemplate() ? (
+          <div class="mx-scheduler__tooltip-own">{view.tooltipTemplate()!(context)}</div>
+        ) : (
+          <AppointmentTooltip<T>
+            host={view}
+            state={state}
+            canEdit={(item: T) => this.canEdit(item)}
+            canDelete={(item: T) => this.canDelete(item)}
+            edit={(item: T) => void this.openForm(item)}
+            remove={(item: T) => {
+              popup.close();
+              void this.remove(item, true);
+            }}
+          />
+        )}
+      </>,
     );
     popup.onClosed(() => (this.opened.id = ''));
     this.host.scheduler.controls.add(popup);
@@ -707,7 +745,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
   // Moving and resizing by the keys.
 
   /** The keys of a focused appointment; `true` when one was used. */
-  key(piece: TimedPiece<T> | StripPiece<T>, e: KeyboardEvent): boolean {
+  key(piece: AnyPiece<T>, e: KeyboardEvent): boolean {
     const item = piece.item;
     const moving = this.keyDraft;
     if (moving && moving.draft.item !== item) this.cancelKeys();
@@ -718,14 +756,17 @@ export class AppointmentEditor<T> implements DragHost<T> {
     if (e.key === 'Enter' && this.keyDraft) {
       const { mode, draft } = this.keyDraft;
       this.keyDraft = null;
-      void this.drop(mode, draft, true).finally(() => this.host.setDraft(null));
+      void this.drop(mode, draft, true).finally(() => {
+        this.host.setDraft(null);
+        this.keepFocus(item);
+      });
       return true;
     }
     if ((e.key === 'Delete' || e.key === 'Backspace') && !this.keyDraft) {
       if (this.canDelete(item)) void this.remove(item, true);
       return true;
     }
-    const groupStep = this.groupStep(e);
+    const groupStep = this.groupStep(e) || this.rowStep(e);
     const step = groupStep ? { minutes: 0, days: 0 } : this.arrowStep(e);
     if (!step) return false;
     const mode: DragMode = e.shiftKey && !groupStep ? 'end' : 'move';
@@ -762,6 +803,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
     current.mode = mode;
     current.draft = next;
     this.host.setDraft(next);
+    this.keepFocus(item);
     const when = next.allDay
       ? this.host.view.format.range('day', next.start, next.end)
       : `${this.host.view.format.fullDate(next.start)} ${this.host.view.format.timeRange(next.start, next.end)}`;
@@ -779,6 +821,31 @@ export class AppointmentEditor<T> implements DragHost<T> {
     return this.host.rtl() ? -by : by;
   }
 
+  /** In a timeline, Up and Down move a focused appointment to the row above or below (its group); 0 for other keys, or without groups. */
+  private rowStep(e: KeyboardEvent): number {
+    if (this.host.model.kind !== 'timeline' || this.host.model.state.groups.length < 2) return 0;
+    if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return 0;
+    return e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
+  }
+
+  /**
+   * After a move by the keys, focus stays on the appointment: a box that moved to another row of a
+   * timeline is another element (each row holds its own boxes), so focus goes to the new one.
+   */
+  private keepFocus(item: T): void {
+    const root = this.host.root();
+    const id = `${this.host.model.idOf(item)}@`;
+    const mine = (el: Element | null) => el instanceof HTMLElement && el.classList.contains('mx-scheduler__appointment') && (el.dataset.piece ?? '').startsWith(id);
+    let tries = 0;
+    const look = () => {
+      if (mine(root.ownerDocument.activeElement)) return;
+      const box = [...root.querySelectorAll<HTMLElement>('.mx-scheduler__appointment')].find(mine);
+      if (box) box.focus();
+      else if (tries++ < 4) requestAnimationFrame(look);
+    };
+    queueMicrotask(look);
+  }
+
   /** Takes a move by the keys back (Escape, or focus leaving it). */
   cancelKeys(): void {
     if (!this.keyDraft) return;
@@ -786,11 +853,21 @@ export class AppointmentEditor<T> implements DragHost<T> {
     this.host.setDraft(null);
   }
 
-  /** What an arrow does: Up / Down a snap step (a week in the month), Left / Right a day (mirrored right to left). */
+  /**
+   * What an arrow does: Up / Down a snap step (a week in the month), Left / Right a day (mirrored
+   * right to left). In a timeline the time runs along: Left / Right a snap step (a day in the
+   * timeline month); Up / Down go to another row.
+   */
   private arrowStep(e: KeyboardEvent): { minutes: number; days: number } | null {
     if (e.ctrlKey || e.altKey || e.metaKey) return null;
-    const month = this.host.resolvedView().type === 'month';
+    const type = this.host.resolvedView().type;
+    const month = type === 'month';
     const across = this.host.rtl() ? -1 : 1;
+    if (viewKind(type) === 'timeline') {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return null;
+      const by = (e.key === 'ArrowRight' ? 1 : -1) * across;
+      return dayCells(type) ? { minutes: 0, days: by } : { minutes: by * this.snapMinutes(), days: 0 };
+    }
     switch (e.key) {
       case 'ArrowUp':
         return month ? { minutes: 0, days: -7 } : { minutes: -this.snapMinutes(), days: 0 };

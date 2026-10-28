@@ -843,7 +843,8 @@ ul.docs-list {
   font-size: var(--mx-font-size-caption);
   font-weight: var(--mx-font-weight-semibold);
   /* Black or white on the person's colour, whichever reads better (black from a luminance of 0.179 up). */
-  color: color(from var(--person-color) srgb-linear clamp(0, (0.1791 - (0.2126 * r + 0.7152 * g + 0.0722 * b)) * 1000000, 1) clamp(0, (0.1791 - (0.2126 * r + 0.7152 * g + 0.0722 * b)) * 1000000, 1) clamp(0, (0.1791 - (0.2126 * r + 0.7152 * g + 0.0722 * b)) * 1000000, 1));
+  --person-ink: color(from var(--person-color) srgb-linear clamp(0, (0.1791 - (0.2126 * r + 0.7152 * g + 0.0722 * b)) * 1000000, 1) clamp(0, (0.1791 - (0.2126 * r + 0.7152 * g + 0.0722 * b)) * 1000000, 1) clamp(0, (0.1791 - (0.2126 * r + 0.7152 * g + 0.0722 * b)) * 1000000, 1));
+  color: var(--person-ink);
   background: var(--person-color);
   border-radius: var(--mx-radius-full);
 }
@@ -859,6 +860,76 @@ ul.docs-list {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sched-date,
+.sched-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--mx-font-weight-semibold);
+}
+
+/* A mark in the corner of a cell outside the work hours, drawn by a cell template. */
+.sched-off[data-off] {
+  position: absolute;
+  inset-block-start: var(--mx-space-1);
+  inset-inline-end: var(--mx-space-1);
+  inline-size: var(--mx-space-1);
+  block-size: var(--mx-space-1);
+  background: var(--mx-color-fg-tertiary);
+  border-radius: var(--mx-radius-full);
+}
+
+.sched-job {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sched-more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-1);
+  min-inline-size: 12rem;
+  padding: var(--mx-space-2);
+}
+
+.sched-more__item {
+  padding: var(--mx-space-1) var(--mx-space-2);
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+  background: none;
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-divider);
+  border-radius: var(--mx-radius-sm);
+}
+
+.sched-more__item:hover {
+  background: var(--mx-color-fill-subtle-secondary);
+}
+
+.sched-more__item:focus-visible {
+  outline: var(--mx-focus-ring-width) solid var(--mx-focus-ring-color);
+}
+
+.sched-agenda-row {
+  display: flex;
+  flex: 1 1 auto;
+  gap: var(--mx-space-2);
+  align-items: baseline;
+  min-inline-size: 0;
+}
+
+.sched-agenda-row > small {
+  color: var(--mx-color-fg-secondary);
+}
+
+.sched-tip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-2);
+  min-inline-size: 14rem;
+  padding: var(--mx-space-3);
 }
 
 .sched-colors {

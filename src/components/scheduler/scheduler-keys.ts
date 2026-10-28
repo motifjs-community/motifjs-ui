@@ -6,11 +6,12 @@ export interface SchedulerKeys {
   next: string[];
   /** Default `P`, `K`. */
   previous: string[];
-  /** Default `D`, `W`, `X`, `M`: the views by type. */
+  /** Default `D`, `W`, `X`, `M`, `A`: the views by type (the first view of the type). */
   dayView: string[];
   weekView: string[];
   workWeekView: string[];
   monthView: string[];
+  agendaView: string[];
   /**
    * On a focused appointment while the columns are grouped: moves it to the group before or after
    * (Enter saves, Escape takes it back). Default `Alt+Shift+ArrowLeft` and `Alt+Shift+ArrowRight`,

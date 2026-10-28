@@ -1,6 +1,6 @@
 {
   "scheduler": {
-    "$description": "Scheduler: the bar, the day views (the head with the dates and the all-day panel, the time ruler and the cells) and the month view, the appointments, their tooltip and \"+N more\". The sizes, the layout values and the shares that mix an appointment's own colour into its fill, text and edges are plain tokens; every other piece is a unit (`$units`).",
+    "$description": "Scheduler: the bar, the day views (the head with the dates and the all-day panel, the time ruler and the cells), the month view, the timeline views (the scale, the resource column, the rows), the agenda, the appointments, their tooltip and \"+N more\". The sizes, the layout values and the shares that mix an appointment's own colour into its fill, text and edges are plain tokens; every other piece is a unit (`$units`).",
     "$selector": ".mx-scheduler",
     "height": { "$type": "dimension" },
     "ruler-width": { "$type": "dimension" },
@@ -16,6 +16,11 @@
     "resize-size-touch": { "$type": "dimension" },
     "editor-width": { "$type": "dimension", "$description": "The appointment form." },
     "state-inset": { "$type": "dimension", "$description": "How far the load state stands from the corner, and its padding." },
+    "timeline-cell-width": { "$type": "dimension", "$description": "The least width of a timeline's cell along the time (the cells stretch to fill the room when they are few)." },
+    "timeline-resource-width": { "$type": "dimension", "$description": "A level of a timeline's resource column." },
+    "timeline-lane-size": { "$type": "dimension", "$description": "A lane of a timeline row: an appointment's height there (the lanes stand `lane-gap` apart)." },
+    "timeline-row-min-height": { "$type": "dimension", "$description": "The least height of a timeline row, with no appointment in it." },
+    "agenda-time-width": { "$type": "dimension", "$description": "The agenda's time column, the rows' times lined up in it." },
     "appointment-default": { "$type": "color" },
     "appointment-surface": { "$type": "color" },
     "appointment-tint": { "$type": "number" },
@@ -174,18 +179,20 @@
         "$description": "A day head's weekday (`today`).",
         "selector": ".mx-scheduler__weekday",
         "states": {
-          "today": ".mx-scheduler__date[data-today] .mx-scheduler__weekday"
+          "today": ":is(.mx-scheduler__date, .mx-scheduler__scale-cell)[data-today] .mx-scheduler__weekday"
         }
       },
       "day-number": {
-        "$description": "A day's number, in a day head or a month cell (`month`); `today`, `outside` the month. Its size: `date-number-size`, `month-date-size`.",
+        "$description": "A day's number, in a day head, a month cell (`month`), a timeline's scale (`scale`) or the agenda (`agenda`); `today`, `outside` the month. Its size: `date-number-size`, `month-date-size`.",
         "selector": ".mx-scheduler__day-number",
         "defaults": {
           "min-width": "var(--_number-size)",
           "height": "var(--_number-size)"
         },
         "states": {
-          "today": ":is(.mx-scheduler__date, .mx-scheduler__month-cell)[data-today] .mx-scheduler__day-number",
+          "today": ":is(.mx-scheduler__date, .mx-scheduler__month-cell, .mx-scheduler__scale-cell, .mx-scheduler__agenda-day)[data-today] .mx-scheduler__day-number",
+          "scale": ".mx-scheduler__scale-cell .mx-scheduler__day-number",
+          "agenda": ".mx-scheduler__agenda-day .mx-scheduler__day-number",
           "month": ".mx-scheduler__month-cell .mx-scheduler__day-number",
           "outside": ".mx-scheduler__month-cell[data-outside] .mx-scheduler__day-number"
         }
@@ -210,12 +217,21 @@
         }
       },
       "cell": {
-        "$description": "A cell: a time slot, an all-day cell or a month day (`month`); today's column, off hours (of its group's resource, else the scheduler's), a holiday, outside the month, a weekend, the first day of a week row; in a blocked time (`blocked`); a past day (`past`: a layer over its fill); under the pointer, selected, focused by the keys.",
+        "$description": "A cell: a time slot, an all-day cell or a month day (`month`), a cell along a timeline's time (`line`: the first of an hour `line-hour`, of a day `line-day`); today's column, off hours (of its group's resource, else the scheduler's), a holiday, outside the month, a weekend, the first day of a week row; in a blocked time (`blocked`); a past day (`past`: a layer over its fill); under the pointer, selected, focused by the keys.",
         "selector": ".mx-scheduler__cell",
         "states": {
           "today": ".mx-scheduler__cells .mx-scheduler__cell[data-today]",
-          "off": ".mx-scheduler__cells .mx-scheduler__cell:not([data-work])",
-          "holiday": ".mx-scheduler__cells .mx-scheduler__cell[data-holiday]",
+          "off": ":is(.mx-scheduler__cells, .mx-scheduler__line-track) .mx-scheduler__cell:not([data-work])",
+          "holiday": ":is(.mx-scheduler__cells, .mx-scheduler__line-track) .mx-scheduler__cell[data-holiday]",
+          "line": ".mx-scheduler__line-track > .mx-scheduler__cell",
+          "line-hour": {
+            "selector": ".mx-scheduler__line-track > .mx-scheduler__cell[data-hour-start]",
+            "from": "line"
+          },
+          "line-day": {
+            "selector": ".mx-scheduler__line-track > .mx-scheduler__cell[data-day-start]",
+            "from": "line-hour"
+          },
           "month": ".mx-scheduler__month-cell",
           "outside": {
             "selector": ".mx-scheduler__month-cell[data-outside]",
@@ -241,12 +257,32 @@
         }
       },
       "now": {
-        "$description": "The line at the time it is now, over its day.",
-        "selector": ".mx-scheduler__now"
+        "$description": "The line at the time it is now, over its day; in a timeline it stands, across the row (written lying: its height is its thickness).",
+        "selector": ".mx-scheduler__now",
+        "turn": {
+          "where": ".mx-scheduler__timeline-view",
+          "what": [
+            "size",
+            "radius",
+            "margin",
+            "padding",
+            "border"
+          ]
+        }
       },
       "now-dot": {
-        "$description": "A dot at the start of the now line.",
-        "selector": ".mx-scheduler__now::before"
+        "$description": "A dot at the start of the now line; in a timeline it stands, across the row (written lying: its height is its thickness).",
+        "selector": ".mx-scheduler__now::before",
+        "turn": {
+          "where": ".mx-scheduler__timeline-view",
+          "what": [
+            "size",
+            "radius",
+            "margin",
+            "padding",
+            "border"
+          ]
+        }
       },
       "weekdays": {
         "$description": "The month view's head: the weekdays; a line under it.",
@@ -264,7 +300,7 @@
         }
       },
       "appointment": {
-        "$description": "An appointment's box (`timed` in a day, a `bar` over the all-day panel or a month week, a `chip` in a month cell): its space, text size, corners (a piece that goes on before or after: `timed-before`, `bar-after` …), focused by the keys, disabled, one that can be dragged, the box being moved (`draft`), one that cannot go where it stands (`invalid`), one being saved. Its fill, text and four edges mix its own colour by the plain `appointment-*`, `chip-*` shares.",
+        "$description": "An appointment's box (`timed` in a day, a `bar` over the all-day panel or a month week, a `chip` in a month cell, a `line` on a timeline row's lane): its space, text size, corners (a piece that goes on before or after: `timed-before`, `bar-after` …), focused by the keys, disabled, one that can be dragged, the box being moved (`draft`), one that cannot go where it stands (`invalid`), one being saved. Its fill, text and four edges mix its own colour by the plain `appointment-*`, `chip-*` shares.",
         "selector": ".mx-scheduler__appointment",
         "defaults": {
           "cursor": "default"
@@ -279,14 +315,23 @@
           "draggable": ".mx-scheduler__appointment[data-draggable]",
           "draft": ".mx-scheduler__appointment[data-draft]",
           "invalid": ".mx-scheduler__appointment[data-invalid]",
-          "saving": ".mx-scheduler__appointment[data-saving]"
+          "saving": ".mx-scheduler__appointment[data-saving]",
+          "line": ".mx-scheduler__appointment[data-kind='line']",
+          "line-before": {
+            "selector": ".mx-scheduler__appointment[data-kind='line'][data-before]",
+            "from": "line"
+          },
+          "line-after": {
+            "selector": ".mx-scheduler__appointment[data-kind='line'][data-after]",
+            "from": "line"
+          }
         }
       },
       "appointment-content": {
-        "$description": "An appointment's text and time (`row`: side by side, in a bar, a chip or a short one).",
+        "$description": "An appointment's text and time (`row`: side by side, in a bar, a chip, a timeline's lane or a short one).",
         "selector": ".mx-scheduler__appointment-content",
         "states": {
-          "row": ".mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-short]) .mx-scheduler__appointment-content"
+          "row": ".mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-kind='line'], [data-short]) .mx-scheduler__appointment-content"
         }
       },
       "appointment-text": {
@@ -432,7 +477,12 @@
           "display": "none"
         },
         "states": {
-          "inner": ".mx-scheduler__group-head:not([data-level='0']) .mx-scheduler__group-swatch"
+          "inner": ".mx-scheduler__group-head:not([data-level='0']) .mx-scheduler__group-swatch",
+          "resource": ".mx-scheduler__resource .mx-scheduler__group-swatch",
+          "resource-inner": {
+            "selector": ".mx-scheduler__resource:not([data-level='0']) .mx-scheduler__group-swatch",
+            "from": "resource"
+          }
         }
       },
       "group-divider": {
@@ -482,6 +532,139 @@
         "states": {
           "tooltip": ".mx-scheduler__tooltip-resource-item > .mx-scheduler__resource-swatch::before"
         }
+      },
+      "timeline-row": {
+        "$description": "A row of a timeline (a group of resources, or the one row without groups): the part along the time, under its cells, and the line over it (`first`: the first row).",
+        "selector": ".mx-scheduler__line-track",
+        "states": {
+          "first": ".mx-scheduler__line[data-first] > .mx-scheduler__line-track"
+        }
+      },
+      "timeline-divider": {
+        "$description": "The line over a timeline row where an item of the outermost groups starts (`inner`: where only an inner one does), across the resource column and the cells; centred on the row's edge. None unless a language draws it.",
+        "selector": ".mx-scheduler__line[data-edge]::before",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "inner": ".mx-scheduler__line[data-edge='inner']::before"
+        }
+      },
+      "resource-cell": {
+        "$description": "A cell of a timeline's resource column, staying at the start while the time scrolls: an item of the row's group at one level (`inner`: under the outermost), and the line over it (`first`: the first row); `continued`: the same item as the row above (its name stands on its first row, and no line parts them).",
+        "selector": ".mx-scheduler__resource",
+        "states": {
+          "inner": ".mx-scheduler__resource:not([data-level='0'])",
+          "first": ".mx-scheduler__line[data-first] .mx-scheduler__resource",
+          "continued": ".mx-scheduler__resource[data-continued]",
+          "inner-continued": {
+            "selector": ".mx-scheduler__resource:not([data-level='0'])[data-continued]",
+            "from": "inner"
+          }
+        }
+      },
+      "timeline-corner": {
+        "$description": "The corner over a timeline's resource column.",
+        "selector": ".mx-scheduler__scale > .mx-scheduler__corner"
+      },
+      "timeline-corner-label": {
+        "$description": "The name of a kind grouped by, over its level of the resource column.",
+        "selector": ".mx-scheduler__corner-label"
+      },
+      "scale": {
+        "$description": "A timeline's head over its cells (staying at the top while the rows scroll): its fill and the line under it.",
+        "selector": ".mx-scheduler__scale"
+      },
+      "scale-upper": {
+        "$description": "A cell of the scale's upper tier: a day over its hours, a month over its days; `today`.",
+        "selector": ".mx-scheduler__scale-cell[data-tier='upper']",
+        "states": {
+          "today": ".mx-scheduler__scale-cell[data-tier='upper'][data-today]"
+        }
+      },
+      "scale-lower": {
+        "$description": "A cell of the scale's lower tier: an hour over its cells (`day-start`: a day's first), a day of the timeline month (`day`, `weekend`); `today`.",
+        "selector": ".mx-scheduler__scale-cell[data-tier='lower']",
+        "states": {
+          "day-start": ".mx-scheduler__scale-cell[data-tier='lower'][data-day-start]",
+          "day": ".mx-scheduler__scale-cell[data-tier='lower'][data-kind='day']",
+          "weekend": {
+            "selector": ".mx-scheduler__scale-cell[data-tier='lower'][data-weekend]",
+            "from": "day"
+          },
+          "today": ".mx-scheduler__scale-cell[data-tier='lower'][data-today]"
+        }
+      },
+      "agenda": {
+        "$description": "The agenda: the list of its days.",
+        "selector": ".mx-scheduler__agenda-list"
+      },
+      "agenda-group": {
+        "$description": "A day of the agenda (in a group): its head and its rows, and the line over it (`first`: the first day).",
+        "selector": ".mx-scheduler__agenda-group",
+        "states": {
+          "first": ".mx-scheduler__agenda-group:first-child"
+        }
+      },
+      "agenda-resource": {
+        "$description": "The head of a group in the agenda (its resources' names), over its first day.",
+        "selector": ".mx-scheduler__agenda-resource"
+      },
+      "agenda-day": {
+        "$description": "A day's head in the agenda: its number (the `day-number` unit's `agenda`), its weekday and its month; `today`.",
+        "selector": ".mx-scheduler__agenda-day",
+        "states": {
+          "today": ".mx-scheduler__agenda-day[data-today]"
+        }
+      },
+      "agenda-weekday": {
+        "$description": "A day head's weekday in the agenda; `today`.",
+        "selector": ".mx-scheduler__agenda-weekday",
+        "states": {
+          "today": ".mx-scheduler__agenda-day[data-today] .mx-scheduler__agenda-weekday"
+        }
+      },
+      "agenda-month": {
+        "$description": "A day head's month and year in the agenda.",
+        "selector": ".mx-scheduler__agenda-month"
+      },
+      "agenda-row": {
+        "$description": "An appointment in the agenda: under the pointer, focused by the keys, selected (the focused one), open (its tooltip showing), ended (`past`), disabled.",
+        "selector": ".mx-scheduler__agenda-row",
+        "defaults": {
+          "cursor": "default"
+        },
+        "states": {
+          "hover": ".mx-scheduler__agenda-row:hover",
+          "selected": ".mx-scheduler__agenda-row[aria-selected='true']",
+          "open": ".mx-scheduler__agenda-row[data-open]",
+          "focus": ".mx-scheduler__agenda-row:focus-visible",
+          "past": ".mx-scheduler__agenda-row[data-past]",
+          "disabled": ".mx-scheduler__agenda-row[data-disabled]"
+        }
+      },
+      "agenda-content": {
+        "$description": "An agenda row's time, colour and text, side by side.",
+        "selector": ".mx-scheduler__agenda-content"
+      },
+      "agenda-time": {
+        "$description": "An agenda row's time, as wide as `agenda-time-width`.",
+        "selector": ".mx-scheduler__agenda-time"
+      },
+      "agenda-dot": {
+        "$description": "The appointment's colour before its text (a dot, a bar). None unless a language draws it.",
+        "selector": ".mx-scheduler__agenda-dot",
+        "defaults": {
+          "display": "none"
+        }
+      },
+      "agenda-text": {
+        "$description": "An agenda row's text.",
+        "selector": ".mx-scheduler__agenda-text"
+      },
+      "agenda-empty": {
+        "$description": "What the agenda says when its days have no appointments.",
+        "selector": ".mx-scheduler__agenda-empty"
       },
       "state": {
         "$description": "What the scheduler says while it loads or failed (`danger`).",

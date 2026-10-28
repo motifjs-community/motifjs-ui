@@ -1,6 +1,7 @@
 import type { Draft } from '../model/draft';
 import type { ResolvedView } from '../model/resolved-view';
 import type { SchedulerModel } from '../model/SchedulerModel';
+import { dayCells } from '../model/view-kind';
 
 const MINUTE = 60_000;
 const DAY = 86_400_000;
@@ -222,6 +223,12 @@ export class AppointmentDrag<T> {
     const view = this.host.view();
     const zone = this.host.model.zone;
     const duration = press.end.getTime() - press.start.getTime();
+    // In a timeline an all-day appointment stays one: it moves by whole days.
+    if (this.host.model.kind === 'timeline' && press.allDay) {
+      const from = press.atDay ?? zone.dayStart(press.start);
+      const days = Math.round((zone.wall(zone.dayStart(cell.day)) - zone.wall(from)) / DAY);
+      return { start: zone.addDays(press.start, days), end: zone.addDays(press.end, days), allDay: true };
+    }
     if (cell.time && press.at) {
       // Over the hours: keeps the distance from where it was taken; from the all-day panel it gets a slot's length.
       if (press.allDay) {
@@ -239,7 +246,7 @@ export class AppointmentDrag<T> {
     // Over a day: by whole days, keeping the time of day.
     const from = press.atDay ?? zone.dayStart(press.start);
     const days = Math.round((zone.wall(cell.day) - zone.wall(from)) / DAY);
-    if (view.type !== 'month' && !press.allDay) {
+    if (!dayCells(view.type) && !press.allDay) {
       // A timed one dropped on the all-day panel becomes an all-day one of that day.
       return { start: cell.day, end: zone.addDays(cell.day, 1), allDay: true };
     }
@@ -288,9 +295,18 @@ export class AppointmentDrag<T> {
     const day = model.state.columns[columnIndex]?.day;
     if (!day) return null;
     const slot = slotIndex >= 0 ? model.state.slots[slotIndex] : undefined;
-    if (!slot || this.host.view().type === 'month') return { day: day.date, time: null, column: columnIndex };
+    if (!slot || dayCells(this.host.view().type)) return { day: day.date, time: null, column: columnIndex };
     const box = el.getBoundingClientRect();
-    const share = box.height > 0 ? Math.max(0, Math.min(1, (y - box.top) / box.height)) : 0;
+    // Down the day columns; along a timeline's row (from its end, right to left).
+    const along = model.kind === 'timeline';
+    const rtl = along && getComputedStyle(el).direction === 'rtl';
+    const share = along
+      ? box.width > 0
+        ? Math.max(0, Math.min(1, (rtl ? box.right - x : x - box.left) / box.width))
+        : 0
+      : box.height > 0
+        ? Math.max(0, Math.min(1, (y - box.top) / box.height))
+        : 0;
     const minutes = slot.minutes + share * this.host.view().cellDuration;
     return { day: day.date, time: model.zone.date(day.wall + minutes * MINUTE), column: columnIndex };
   }

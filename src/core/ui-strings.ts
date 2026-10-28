@@ -431,6 +431,11 @@ export interface UiStrings {
   schedulerWeek: string;
   schedulerWorkWeek: string;
   schedulerMonth: string;
+  schedulerTimelineDay: string;
+  schedulerTimelineWeek: string;
+  schedulerTimelineWorkWeek: string;
+  schedulerTimelineMonth: string;
+  schedulerAgenda: string;
   schedulerAllDay: string;
   schedulerTimes: string;
   schedulerAppointments: string;

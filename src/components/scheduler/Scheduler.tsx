@@ -32,6 +32,16 @@ import type { Draft } from './model/draft';
 import type { SchedulerEditing } from './scheduler-editing';
 import { AppointmentDrag } from './view/AppointmentDrag';
 import type { AppointmentTemplateContext } from './appointment-template-context';
+import type { AgendaRowContext } from './agenda-row-context';
+import type { CellTemplateContext } from './cell-template-context';
+import type { DateTemplateContext } from './date-template-context';
+import type { MoreListContext } from './more-list-context';
+import type { SchedulerTemplates } from './scheduler-templates';
+import type { TimeTemplateContext } from './time-template-context';
+import type { TooltipTemplateContext } from './tooltip-template-context';
+import type { ScrollingMode } from './model/scrolling-mode';
+import type { AnyPiece } from './model/any-piece';
+import { dayCells, viewKind } from './model/view-kind';
 import type { CellClickEventArgs } from './cell-click-event-args';
 import type { ContentReadyEventArgs } from './content-ready-event-args';
 import type { DateChangedEventArgs } from './date-changed-event-args';
@@ -44,8 +54,6 @@ import { sameValue } from './model/same-value';
 import { SchedulerModel } from './model/SchedulerModel';
 import { rangeFilter } from './model/range-filter';
 import type { SeriesScope } from './model/series-scope';
-import type { StripPiece } from './model/strip-piece';
-import type { TimedPiece } from './model/timed-piece';
 import { stepDate, viewDates } from './model/view-dates';
 import type { MoreOpeningEventArgs } from './more-opening-event-args';
 import type { SchedulerCell } from './scheduler-cell';
@@ -71,6 +79,9 @@ import { MoreList, type MoreListState } from './view/MoreList';
 import type { SchedulerHost } from './view/scheduler-host';
 import { SchedulerFormat } from './view/SchedulerFormat';
 import { TimeView } from './view/TimeView';
+import { AgendaView } from './view/AgendaView';
+import { TimelineView } from './view/TimelineView';
+import type { TimelineScroll } from './view/timeline-scroll';
 
 const OWN = [
   'appointments',
@@ -101,6 +112,14 @@ const OWN = [
   'seriesEdit',
   'recurrenceMarks',
   'appointmentTemplate',
+  'appointmentTooltipTemplate',
+  'dataCellTemplate',
+  'dateCellTemplate',
+  'timeCellTemplate',
+  'agendaRowTemplate',
+  'moreListTemplate',
+  'agendaDuration',
+  'scrolling',
   'resources',
   'groups',
   'groupByDate',
@@ -130,7 +149,18 @@ const DEFAULT_EDITING: SchedulerEditing = {
 };
 
 /** Props whose value is a function (a template, a test of a day, a rule). */
-const FUNCTION_VALUES = new Set(['isHoliday', 'appointmentTemplate', 'resourceHeaderTemplate', 'allowOverlap']);
+const FUNCTION_VALUES = new Set([
+  'isHoliday',
+  'appointmentTemplate',
+  'appointmentTooltipTemplate',
+  'dataCellTemplate',
+  'dateCellTemplate',
+  'timeCellTemplate',
+  'agendaRowTemplate',
+  'moreListTemplate',
+  'resourceHeaderTemplate',
+  'allowOverlap',
+]);
 
 const DEFAULT_FIELDS: SchedulerFields = {
   key: 'id',
@@ -161,6 +191,7 @@ const DEFAULT_KEYS: SchedulerKeys = {
   weekView: ['W'],
   workWeekView: ['X'],
   monthView: ['M'],
+  agendaView: ['A'],
   previousGroup: ['Alt+Shift+ArrowLeft'],
   nextGroup: ['Alt+Shift+ArrowRight'],
 };
@@ -170,6 +201,11 @@ const VIEW_TEXTS: Record<SchedulerViewType, keyof UiStrings> = {
   week: 'schedulerWeek',
   workWeek: 'schedulerWorkWeek',
   month: 'schedulerMonth',
+  timelineDay: 'schedulerTimelineDay',
+  timelineWeek: 'schedulerTimelineWeek',
+  timelineWorkWeek: 'schedulerTimelineWorkWeek',
+  timelineMonth: 'schedulerTimelineMonth',
+  agenda: 'schedulerAgenda',
 };
 
 const DEFAULT_VIEWS: readonly SchedulerViewType[] = ['day', 'week', 'workWeek', 'month'];
@@ -182,7 +218,16 @@ interface Parts<T> {
   format: SchedulerFormat;
   host: SchedulerHost<T>;
   /** Changes of the rows (the data source's, or the array's in place) to read them again; the draft; the appointments being saved. */
-  version: { rows: number; status: string; monthRoom: number; said: string; draft: Draft<T> | null; saving: string[] };
+  version: {
+    rows: number;
+    status: string;
+    monthRoom: number;
+    said: string;
+    draft: Draft<T> | null;
+    saving: string[];
+    /** A timeline row's sizes in pixels, measured by the timeline view. */
+    lines: { lane: number; gap: number; min: number };
+  };
   store: AppointmentStore<T>;
   editor: AppointmentEditor<T>;
   drag: AppointmentDrag<T>;
@@ -192,6 +237,9 @@ interface Parts<T> {
   picker: Calendar | null;
   title: Button | null;
   scroller: HTMLElement | null;
+  timeline: TimelineScroll | null;
+  /** The agenda's focused row, by its piece's id. */
+  agendaFocus: { id: string };
   /** The view whose hours were scrolled to last, so a new date does not scroll again. */
   scrolledFor: string;
   /** A press is selecting cells. */
@@ -312,10 +360,10 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set fields(value: Bind<Partial<SchedulerFields>>) {
     this.assignProperty('fields', value);
   }
-  get views(): readonly (SchedulerViewType | SchedulerView)[] {
-    return this.getProperty<readonly (SchedulerViewType | SchedulerView)[] | undefined>('views') ?? DEFAULT_VIEWS;
+  get views(): readonly (SchedulerViewType | SchedulerView<T>)[] {
+    return this.getProperty<readonly (SchedulerViewType | SchedulerView<T>)[] | undefined>('views') ?? DEFAULT_VIEWS;
   }
-  set views(value: Bind<readonly (SchedulerViewType | SchedulerView)[]>) {
+  set views(value: Bind<readonly (SchedulerViewType | SchedulerView<T>)[]>) {
     this.assignProperty('views', value);
   }
   /** The view on screen, by name. */
@@ -396,6 +444,20 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set maxAppointmentsPerCell(value: Bind<number | 'auto'>) {
     this.assignProperty('maxAppointmentsPerCell', value);
   }
+  /** The days the agenda shows. */
+  get agendaDuration(): number {
+    return Math.max(1, Math.round(this.getProperty<number | undefined>('agendaDuration') ?? 7));
+  }
+  set agendaDuration(value: Bind<number>) {
+    this.assignProperty('agendaDuration', value, Number);
+  }
+  /** Whether a view builds every cell and row or only what is in view. */
+  get scrolling(): ScrollingMode {
+    return this.getProperty<ScrollingMode | undefined>('scrolling') ?? 'auto';
+  }
+  set scrolling(value: Bind<ScrollingMode>) {
+    this.assignProperty('scrolling', value);
+  }
   get overlapMode(): OverlapMode {
     return this.getProperty<OverlapMode | undefined>('overlapMode') ?? 'columns';
   }
@@ -464,6 +526,42 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
   set appointmentTemplate(value: Bind<((context: AppointmentTemplateContext<T>) => ComponentBase) | null>) {
     this.bindOwn('appointmentTemplate', value);
+  }
+  get appointmentTooltipTemplate(): ((context: TooltipTemplateContext<T>) => ComponentBase) | null {
+    return this.getProperty<((context: TooltipTemplateContext<T>) => ComponentBase) | null | undefined>('appointmentTooltipTemplate') ?? null;
+  }
+  set appointmentTooltipTemplate(value: Bind<((context: TooltipTemplateContext<T>) => ComponentBase) | null>) {
+    this.bindOwn('appointmentTooltipTemplate', value);
+  }
+  get dataCellTemplate(): ((context: CellTemplateContext) => ComponentBase) | null {
+    return this.getProperty<((context: CellTemplateContext) => ComponentBase) | null | undefined>('dataCellTemplate') ?? null;
+  }
+  set dataCellTemplate(value: Bind<((context: CellTemplateContext) => ComponentBase) | null>) {
+    this.bindOwn('dataCellTemplate', value);
+  }
+  get dateCellTemplate(): ((context: DateTemplateContext) => ComponentBase) | null {
+    return this.getProperty<((context: DateTemplateContext) => ComponentBase) | null | undefined>('dateCellTemplate') ?? null;
+  }
+  set dateCellTemplate(value: Bind<((context: DateTemplateContext) => ComponentBase) | null>) {
+    this.bindOwn('dateCellTemplate', value);
+  }
+  get timeCellTemplate(): ((context: TimeTemplateContext) => ComponentBase) | null {
+    return this.getProperty<((context: TimeTemplateContext) => ComponentBase) | null | undefined>('timeCellTemplate') ?? null;
+  }
+  set timeCellTemplate(value: Bind<((context: TimeTemplateContext) => ComponentBase) | null>) {
+    this.bindOwn('timeCellTemplate', value);
+  }
+  get agendaRowTemplate(): ((context: AgendaRowContext<T>) => ComponentBase) | null {
+    return this.getProperty<((context: AgendaRowContext<T>) => ComponentBase) | null | undefined>('agendaRowTemplate') ?? null;
+  }
+  set agendaRowTemplate(value: Bind<((context: AgendaRowContext<T>) => ComponentBase) | null>) {
+    this.bindOwn('agendaRowTemplate', value);
+  }
+  get moreListTemplate(): ((context: MoreListContext<T>) => ComponentBase) | null {
+    return this.getProperty<((context: MoreListContext<T>) => ComponentBase) | null | undefined>('moreListTemplate') ?? null;
+  }
+  set moreListTemplate(value: Bind<((context: MoreListContext<T>) => ComponentBase) | null>) {
+    this.bindOwn('moreListTemplate', value);
   }
   get resources(): readonly SchedulerResource<any>[] {
     return this.getProperty<readonly SchedulerResource<any>[] | undefined>('resources') ?? [];
@@ -692,16 +790,46 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   showView(name: string): boolean {
     return this.changeView(name, false);
   }
-  /** Scrolls the day columns to a time of day. */
+  /** Scrolls the hours to a time of day: the day columns down to it, a timeline along to it (on the date shown, else the first day). */
   scrollToTime(hour: number, minute = 0): void {
     const scroller = this.parts.scroller;
     const view = this.resolveView();
-    if (!scroller || view.type === 'month') return;
+    const kind = viewKind(view.type);
+    if (!scroller || kind === 'month' || kind === 'agenda') return;
+    if (kind === 'timeline') {
+      const model = this.parts.model;
+      const days = model.state.days;
+      const shown = days.findIndex((d) => sameDay(d.local, this.currentDate));
+      this.parts.timeline?.scrollTo(this.tickAt(Math.max(0, shown), hour * 60 + minute), null);
+      return;
+    }
     const body = scroller.firstElementChild as HTMLElement | null;
     const span = (view.endDayHour - view.startDayHour) * 60;
     if (!body || !(span > 0)) return;
     const at = (hour * 60 + minute - view.startDayHour * 60) / span;
     scroller.scrollTop = Math.max(0, at * body.offsetHeight);
+  }
+  /**
+   * Scrolls a time into view: in the day views to its hour and its day's column, in a timeline to
+   * its cell and the row of `resources` (the group's values). A time not shown changes nothing.
+   */
+  scrollTo(date: Date, resources: Record<string, unknown> | null = null): void {
+    const model = this.parts.model;
+    const kind = model.kind;
+    const place = this.placeOf(date, dayCells(model.view.type), resources);
+    if (!place) return;
+    if (kind === 'timeline') {
+      const column = model.state.columns[place.column];
+      const row = model.state.rows.find((r) => r.group === column?.group)?.index ?? 0;
+      const minutes = (model.zone.wall(date) - (column?.day.wall ?? 0)) / 60_000;
+      this.parts.timeline?.scrollTo(this.tickAt(column?.day.index ?? 0, minutes), row);
+      return;
+    }
+    if (kind === 'time') {
+      const time = model.zone.wall(date) - (model.state.columns[place.column]?.day.wall ?? 0);
+      this.scrollToTime(Math.floor(time / 3_600_000), Math.floor((time % 3_600_000) / 60_000));
+      this.revealColumn(place.column);
+    }
   }
   /** The appointments with any part between `start` and `end`. */
   appointmentsIn(start: Date, end: Date): T[] {
@@ -858,7 +986,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const parts = this.parts;
     const host = parts.host;
     const t = (key: keyof UiStrings, values?: Record<string, unknown>) => this.textOf(key, values);
-    const type = () => (this.resolveView().type === 'month' ? 'month' : 'time');
+    const kind = () => viewKind(this.resolveView().type);
     return (
       <>
         <Toolbar class="mx-scheduler__bar" label={() => this.text || t('schedulerLabel')} size="sm" x-display={() => this.toolbar}>
@@ -883,7 +1011,18 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
           ))}
         </Toolbar>
         <div class="mx-scheduler__content" aria-busy={() => (this.loading ? 'true' : null)}>
-          {type() === 'month' ? <MonthView host={host} /> : <TimeView host={host} />}
+          {() => {
+            switch (kind()) {
+              case 'month':
+                return <MonthView host={host} />;
+              case 'timeline':
+                return <TimelineView host={host} />;
+              case 'agenda':
+                return <AgendaView host={host} focus={parts.agendaFocus} />;
+              default:
+                return <TimeView host={host} />;
+            }
+          }}
           <div class="mx-scheduler__state" x-display={() => this.loading}>
             <Spinner size="sm" label={() => t('loading')} />
           </div>
@@ -925,6 +1064,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       said: '',
       draft: null,
       saving: [],
+      lines: { lane: 0, gap: 0, min: 0 },
     }) as Parts<T>['version'];
     const more = reactive({ date: null, items: [] }) as MoreListState<T>;
     const zone = () => TimeZone.of(this.timeZone);
@@ -947,6 +1087,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       blockedTimes: () => this.blockedTimes,
       allowOverlap: () => this.allowOverlap,
       allowOffHours: () => this.allowOffHours,
+      lineMetrics: () => version.lines,
     });
     const parts = {
       model,
@@ -958,6 +1099,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       picker: null,
       title: null,
       scroller: null,
+      timeline: null,
+      agendaFocus: reactive({ id: '' }),
       scrolledFor: '',
       selecting: false,
       focusWhenShown: false,
@@ -1057,10 +1200,16 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       showCurrentTime: () => this.showCurrentTime,
       dimPast: () => this.dimPast,
       resources: parts.resources,
-      headerTemplate: () => this.resourceHeaderTemplate,
+      headerTemplate: () => this.templateOf('resourceHeaderTemplate'),
+      cellTemplate: () => this.templateOf('dataCellTemplate'),
+      dateTemplate: () => this.templateOf('dateCellTemplate'),
+      timeTemplate: () => this.templateOf('timeCellTemplate'),
+      agendaTemplate: () => this.templateOf('agendaRowTemplate'),
+      tooltipTemplate: () => this.templateOf('appointmentTooltipTemplate'),
+      moreTemplate: () => this.templateOf('moreListTemplate'),
       allDayLines: () => this.allDayLines,
       rtl: () => this.isRtl(),
-      template: () => this.appointmentTemplate,
+      template: () => this.templateOf('appointmentTemplate'),
       recurrenceMarks: () => this.recurrenceMarks,
       recurrenceText: (item) => this.recurrenceText(item),
       zoneOf: (item) => {
@@ -1070,6 +1219,13 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       setMonthRoom: (lines) => {
         if (parts.version.monthRoom !== lines) parts.version.monthRoom = lines;
       },
+      setLineMetrics: (metrics) => {
+        const now = parts.version.lines;
+        if (now.lane !== metrics.lane || now.gap !== metrics.gap || now.min !== metrics.min) parts.version.lines = metrics;
+      },
+      setTimeline: (timeline) => (parts.timeline = timeline),
+      dragging: () => !!parts.version.draft,
+      agendaKey: (e) => this.agendaKey(e),
       cellPointerDown: (place, e) => this.cellPointerDown(place, e),
       cellClick: (place, e) => this.fireCell(parts.cellClick, place, e),
       cellDblClick: (place, e) => this.openCell(place, e),
@@ -1077,7 +1233,12 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       appointmentDblClick: (piece, e) => this.openAppointment(piece, e),
       appointmentKey: (piece, e) => this.appointmentKey(piece, e),
       appointmentPointerDown: (piece, mode, e) => parts.drag.begin(piece.item, mode, e, piece.group),
-      appointmentBlur: () => parts.editor.cancelKeys(),
+      appointmentBlur: (piece, e) => {
+        const to = e.relatedTarget;
+        const id = `${parts.model.idOf(piece.item)}@`;
+        if (to instanceof HTMLElement && (to.dataset.piece ?? '').startsWith(id)) return;
+        parts.editor.cancelKeys();
+      },
       canDrag: (item) => parts.editor.canDrag(item),
       canResize: (item) => parts.editor.canResize(item),
       isSaving: (item) => parts.editor.isSaving(item),
@@ -1179,6 +1340,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       add(keys.weekView, byType('week'));
       add(keys.workWeekView, byType('workWeek'));
       add(keys.monthView, byType('month'));
+      add(keys.agendaView, byType('agenda'));
     });
   }
 
@@ -1219,7 +1381,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     untracked(() => {
       const parts = this.parts;
       const id = `${view.name}:${hour}`;
-      if (view.type === 'month' || parts.scrolledFor === id) return;
+      const kind = viewKind(view.type);
+      if (kind === 'month' || kind === 'agenda' || parts.scrolledFor === id) return;
       const go = () => {
         if (!parts.scroller || this.isDisposed) return;
         parts.scrolledFor = id;
@@ -1228,40 +1391,71 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
         const showsToday = now >= range.start && now < range.end;
         const hours = Math.floor((parts.model.zone.wall(now) - parts.model.todayWall()) / 3_600_000);
         const at = hour ?? (showsToday && hours > start ? Math.max(view.startDayHour, hours - 1) : start);
-        this.scrollToTime(at);
+        // The timeline of days goes to today (or the date shown); one of hours to the hour, on today when it is shown.
+        if (kind === 'timeline' && dayCells(view.type)) {
+          const days = parts.model.state.days;
+          const today = days.findIndex((d) => d.today);
+          const shown = days.findIndex((d) => sameDay(d.local, this.currentDate));
+          parts.timeline?.scrollTo(Math.max(0, (today >= 0 ? today : shown) - 1), null);
+        } else if (kind === 'timeline') {
+          const days = parts.model.state.days;
+          const day = showsToday ? days.findIndex((d) => d.today) : Math.max(0, days.findIndex((d) => sameDay(d.local, this.currentDate)));
+          parts.timeline?.scrollTo(this.tickAt(Math.max(0, day), at * 60), null);
+        } else this.scrollToTime(at);
       };
       if (parts.scroller) go();
       else setTimeout(go, 0);
     });
   }
 
-  private viewList(): (SchedulerView & { name: string })[] {
+  private viewList(): (SchedulerView<T> & { name: string })[] {
     return this.views.map((v) => (typeof v === 'string' ? { type: v, name: v } : { ...v, name: v.name ?? v.type }));
   }
 
-  private resolveView(): ResolvedView {
+  /** The view on screen as it was given. */
+  private currentViewOf(): (SchedulerView<T> & { name: string }) | null {
     const list = this.viewList();
     const name = this.currentView;
-    const view = list.find((v) => v.name === name) ?? list[0] ?? { type: 'week', name: 'week' };
+    return list.find((v) => v.name === name) ?? list[0] ?? null;
+  }
+
+  private resolveView(): ResolvedView {
+    const view = this.currentViewOf() ?? { type: 'week' as const, name: 'week' };
     const own = <V,>(value: Bind<V> | undefined, fallback: V): V => (value === undefined ? fallback : (read(value) ?? fallback));
     const start = own(view.startDayHour, this.startDayHour);
     const kinds = this.resources.map((r) => r.field);
     const groups = own<readonly string[]>(view.groups, this.groups).filter((field, i, list) => kinds.includes(field) && list.indexOf(field) === i);
+    const kind = viewKind(view.type);
+    const startDate = own<Date | null>(view.startDate, null);
     return {
       name: view.name ?? view.type,
       type: view.type,
       intervalCount: Math.max(1, own(view.intervalCount, 1)),
+      startDate: startDate instanceof Date && !Number.isNaN(startDate.getTime()) ? startDate : null,
       startDayHour: start,
       endDayHour: Math.max(start + 1, own(view.endDayHour, this.endDayHour)),
       cellDuration: own(view.cellDuration, this.cellDuration),
-      allDayPanel: own(view.allDayPanel, this.allDayPanel),
+      allDayPanel: kind === 'time' && own(view.allDayPanel, this.allDayPanel),
       maxAppointmentsPerCell: own(view.maxAppointmentsPerCell, this.maxAppointmentsPerCell),
       groups,
-      groupByDate: groups.length > 0 && own(view.groupByDate, this.groupByDate),
+      // A timeline has a row per group and the agenda a list: neither stands them under the dates.
+      groupByDate: groups.length > 0 && (kind === 'time' || kind === 'month') && own(view.groupByDate, this.groupByDate),
+      agendaDuration: Math.max(1, Math.round(own(view.agendaDuration, this.agendaDuration))),
+      scrolling: own(view.scrolling, this.scrolling),
     };
   }
 
-  private viewText(view: SchedulerView): string {
+  /** A template of the view shown: its own (`null` there turns it off), else the scheduler's. */
+  private templateOf<K extends keyof SchedulerTemplates<T>>(name: K): Scheduler<T>[K] | null {
+    const own = this.currentViewOf()?.[name] as unknown;
+    if (own !== undefined) {
+      const value = typeof own === 'function' && own.length > 0 ? own : read(own as Bind<unknown>);
+      if (value !== undefined) return (value ?? null) as Scheduler<T>[K] | null;
+    }
+    return this[name] ?? null;
+  }
+
+  private viewText(view: SchedulerView<T>): string {
     return (view.text !== undefined ? read(view.text) : '') || this.textOf(VIEW_TEXTS[view.type]);
   }
 
@@ -1396,7 +1590,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return !e.cancel;
   }
 
-  private fireAppointment(emitter: Emitter<AppointmentClickEventArgs<T>>, piece: TimedPiece<T> | StripPiece<T>, event: MouseEvent | KeyboardEvent): boolean {
+  private fireAppointment(emitter: Emitter<AppointmentClickEventArgs<T>>, piece: AnyPiece<T>, event: MouseEvent | KeyboardEvent): boolean {
     const group = this.parts.model.state.groups[piece.group];
     const e: AppointmentClickEventArgs<T> = {
       appointment: piece.item,
@@ -1412,7 +1606,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
 
   /** A click on an appointment (not the end of a drag): the event, then its tooltip. */
-  private clickAppointment(piece: TimedPiece<T> | StripPiece<T>, e: MouseEvent | KeyboardEvent): void {
+  private clickAppointment(piece: AnyPiece<T>, e: MouseEvent | KeyboardEvent): void {
     const parts = this.parts;
     if (parts.drag.justEnded) return;
     const box = e.currentTarget as HTMLElement | null;
@@ -1421,7 +1615,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
 
   /** A double click (or Enter) on an appointment: the event, then its form. */
-  private openAppointment(piece: TimedPiece<T> | StripPiece<T>, e: MouseEvent | KeyboardEvent): void {
+  private openAppointment(piece: AnyPiece<T>, e: MouseEvent | KeyboardEvent): void {
     const parts = this.parts;
     if (parts.drag.justEnded) return;
     if (this.fireAppointment(parts.appointmentDblClick, piece, e)) void parts.editor.openForm(piece.item);
@@ -1439,7 +1633,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
 
   /** The keys of a focused appointment: moving and resizing by the keys, Delete, Enter and Space. */
-  private appointmentKey(piece: TimedPiece<T> | StripPiece<T>, e: KeyboardEvent): void {
+  private appointmentKey(piece: AnyPiece<T>, e: KeyboardEvent): void {
     if (this.parts.editor.key(piece, e)) {
       e.preventDefault();
       e.stopPropagation();
@@ -1457,11 +1651,16 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   /** The box an appointment shows in (its first one). */
   private boxOf(item: T): HTMLElement | null {
     const id = this.parts.model.idOf(item);
-    const piece = [...this.parts.model.state.timed, ...this.parts.model.state.allDay.pieces, ...this.parts.model.state.weeks.flatMap((w) => w.pieces)].find(
-      (p) => p.id.startsWith(`${id}@`) || p.id.startsWith(`${id}#`),
-    );
-    if (!piece) return null;
-    return [...this.element.querySelectorAll<HTMLElement>('.mx-scheduler__appointment')].find((el) => el.dataset.piece === piece.id) ?? null;
+    const st = this.parts.model.state;
+    const pieces = [
+      ...st.timed,
+      ...st.allDay.pieces,
+      ...st.weeks.flatMap((w) => w.pieces),
+      ...st.rows.flatMap((r) => r.pieces),
+      ...st.agenda.flatMap((d) => d.items),
+    ];
+    const ids = pieces.filter((p) => p.id.startsWith(`${id}@`) || p.id.startsWith(`${id}#`)).map((p) => p.id);
+    return [...this.element.querySelectorAll<HTMLElement>('.mx-scheduler__appointment, .mx-scheduler__agenda-row')].find((el) => ids.includes(el.dataset.piece ?? '')) ?? null;
   }
 
   private openMore(day: Date, group: number, anchor: HTMLElement): void {
@@ -1502,7 +1701,25 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
         source: this,
       });
     };
-    popup.controls.add(<MoreList host={parts.host} state={parts.more} choose={choose} />);
+    const more = parts.more;
+    const context: MoreListContext<T> = {
+      get date() {
+        return more.date;
+      },
+      get appointments() {
+        return more.items;
+      },
+      choose: (item, event) => choose(item, event as MouseEvent),
+    };
+    popup.controls.add(
+      <>
+        {parts.host.moreTemplate() ? (
+          <div class="mx-scheduler__more-own">{parts.host.moreTemplate()!(context)}</div>
+        ) : (
+          <MoreList host={parts.host} state={parts.more} choose={choose} />
+        )}
+      </>,
+    );
     this.controls.add(popup);
     parts.morePopup = popup;
     return popup;
@@ -1512,6 +1729,10 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   private gridKey(e: KeyboardEvent): void {
     const parts = this.parts;
     const model = parts.model;
+    if (model.kind === 'timeline') {
+      this.lineKey(e);
+      return;
+    }
     const view = this.resolveView();
     const month = view.type === 'month';
     const focus = model.state.focus;
@@ -1590,10 +1811,141 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     this.focusCellElement();
   }
 
+  /** The agenda's keys: Up and Down (Home, End, PageUp, PageDown) move over its rows; Enter, Space and Delete are a double click, a click and Delete. */
+  private agendaKey(e: KeyboardEvent): void {
+    const parts = this.parts;
+    const rows = parts.model.state.agenda.flatMap((day) => day.items);
+    if (!rows.length) return;
+    const focus = parts.agendaFocus;
+    const at = Math.max(0, rows.findIndex((p) => p.id === focus.id));
+    const piece = rows[at];
+    let next = at;
+    switch (e.key) {
+      case 'ArrowDown':
+        next = Math.min(rows.length - 1, at + 1);
+        break;
+      case 'ArrowUp':
+        next = Math.max(0, at - 1);
+        break;
+      case 'Home':
+        next = 0;
+        break;
+      case 'End':
+        next = rows.length - 1;
+        break;
+      case 'PageDown':
+        next = Math.min(rows.length - 1, at + this.pageRows());
+        break;
+      case 'PageUp':
+        next = Math.max(0, at - this.pageRows());
+        break;
+      case 'Enter':
+        e.preventDefault();
+        this.openAppointment(piece, e);
+        return;
+      case ' ':
+        e.preventDefault();
+        this.clickAppointment(piece, e);
+        return;
+      case 'Delete':
+      case 'Backspace':
+        e.preventDefault();
+        if (parts.editor.canDelete(piece.item)) void parts.editor.remove(piece.item, true);
+        return;
+      default:
+        return;
+    }
+    e.preventDefault();
+    focus.id = rows[next].id;
+    queueMicrotask(() => [...this.element.querySelectorAll<HTMLElement>('.mx-scheduler__agenda-row')].find((el) => el.dataset.piece === focus.id)?.focus());
+  }
+
+  /**
+   * A timeline's keys: Left and Right move along the time (mirrored right to left; past the first or
+   * the last cell the view moves on), Up and Down to the row above or below, Home and End to the
+   * row's first and last cell (with Ctrl, of the first and the last row), PageUp and PageDown by a
+   * screen of rows; Shift selects. Enter and Space are a double click and a click.
+   */
+  private lineKey(e: KeyboardEvent): void {
+    const parts = this.parts;
+    const model = parts.model;
+    const st = model.state;
+    const focus = st.focus;
+    const days = Math.max(1, st.days.length);
+    const whole = dayCells(model.view.type);
+    const per = whole ? 1 : Math.max(1, st.slots.length);
+    const ticks = days * per;
+    const rows = Math.max(1, st.rows.length);
+    let row = Math.floor(focus.column / days);
+    let tick = (focus.column % days) * per + (whole ? 0 : Math.max(0, focus.slot));
+    const across = this.isRtl() ? -1 : 1;
+    switch (e.key) {
+      case 'ArrowLeft':
+        tick -= across;
+        break;
+      case 'ArrowRight':
+        tick += across;
+        break;
+      case 'ArrowUp':
+        row = Math.max(0, row - 1);
+        break;
+      case 'ArrowDown':
+        row = Math.min(rows - 1, row + 1);
+        break;
+      case 'Home':
+        if (e.ctrlKey) row = 0;
+        tick = 0;
+        break;
+      case 'End':
+        if (e.ctrlKey) row = rows - 1;
+        tick = ticks - 1;
+        break;
+      case 'PageUp':
+      case 'PageDown':
+        row = Math.max(0, Math.min(rows - 1, row + (e.key === 'PageUp' ? -1 : 1) * this.pageRows()));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        this.openCell(focus, e);
+        return;
+      case ' ':
+        e.preventDefault();
+        model.focusCell(focus);
+        this.fireCell(parts.cellClick, focus, e);
+        return;
+      case 'Escape':
+        if (!st.anchor) return;
+        e.preventDefault();
+        model.clearSelection();
+        return;
+      default:
+        return;
+    }
+    e.preventDefault();
+    const at = (r: number, t: number) => ({ column: r * days + Math.floor(t / per), slot: whole ? -1 : t % per });
+    if (tick < 0 || tick >= ticks) {
+      // Past the first or the last cell: the view moves on, the focus to the other end of the same row.
+      const by = tick < 0 ? -1 : 1;
+      if (!this.step(by, true)) return;
+      queueMicrotask(() => {
+        // The new view's days and cells.
+        const daysNow = Math.max(1, st.days.length);
+        const whole = dayCells(model.view.type);
+        const perNow = whole ? 1 : Math.max(1, st.slots.length);
+        const t = by < 0 ? daysNow * perNow - 1 : 0;
+        model.focusCell({ column: row * daysNow + Math.floor(t / perNow), slot: whole ? -1 : t % perNow }, e.shiftKey);
+        this.focusCellElement();
+      });
+      return;
+    }
+    model.focusCell(at(row, tick), e.shiftKey);
+    this.focusCellElement();
+  }
+
   /** The time rows on one screen. */
   private pageRows(): number {
     const scroller = this.parts.scroller;
-    const row = scroller?.querySelector<HTMLElement>('.mx-scheduler__cells .mx-scheduler__row');
+    const row = scroller?.querySelector<HTMLElement>('.mx-scheduler__cells .mx-scheduler__row, .mx-scheduler__line, .mx-scheduler__agenda-row');
     return scroller && row && row.offsetHeight > 0 ? Math.max(1, Math.floor(scroller.clientHeight / row.offsetHeight) - 1) : 8;
   }
 
@@ -1603,13 +1955,55 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return !!focus && !!this.element.querySelector('.mx-scheduler__content')?.contains(focus);
   }
 
-  /** Moves DOM focus to the focused cell (after the view drew it). */
+  /** Moves DOM focus to the focused cell (after the view drew it; in a big view it is scrolled into view and built first). */
   private focusCellElement(): void {
-    queueMicrotask(() => {
-      const focus = this.parts.model.state.focus;
-      const cell = this.element.querySelector<HTMLElement>(`[data-cell="${focus.column}:${focus.slot}"]`);
-      cell?.focus({ preventScroll: false });
-    });
+    const model = this.parts.model;
+    const focus = model.state.focus;
+    if (model.virtual) {
+      if (model.kind === 'timeline') {
+        const column = model.state.columns[focus.column];
+        const row = model.state.rows.find((r) => r.group === (column?.group ?? null))?.index ?? 0;
+        const per = dayCells(model.view.type) ? 1 : model.state.slots.length;
+        this.parts.timeline?.reveal((column?.day.index ?? 0) * per + Math.max(0, focus.slot), row);
+      } else this.revealColumn(focus.column);
+    }
+    let tries = 0;
+    const find = () => {
+      const now = model.state.focus;
+      const cell = this.element.querySelector<HTMLElement>(`[data-cell="${now.column}:${now.slot}"]`);
+      if (cell) cell.focus({ preventScroll: !model.virtual ? false : true });
+      else if (tries++ < 4) requestAnimationFrame(find);
+    };
+    queueMicrotask(find);
+  }
+
+  /** In a big day view: scrolls a column into view (it is then built). */
+  private revealColumn(column: number): void {
+    const scroller = this.parts.scroller;
+    const model = this.parts.model;
+    if (!scroller || model.kind !== 'time') return;
+    const cells = scroller.querySelector<HTMLElement>('.mx-scheduler__cells');
+    const count = model.state.columns.length;
+    if (!cells || !count) return;
+    const width = cells.offsetWidth / count;
+    const ruler = cells.offsetLeft;
+    const left = Math.abs(scroller.scrollLeft);
+    const start = column * width;
+    const room = scroller.clientWidth - ruler;
+    if (start >= left && start + width <= left + room) return;
+    const at = Math.max(0, start < left ? start : start + width - room);
+    scroller.scrollLeft = this.isRtl() ? -at : at;
+  }
+
+  /** A timeline's cell along the time at a time of a day (by the day's index), as a share of cells. */
+  private tickAt(day: number, minutes: number): number {
+    const model = this.parts.model;
+    const view = model.view;
+    if (dayCells(view.type)) return day;
+    const step = Math.max(5, Math.min(240, Math.round(view.cellDuration)));
+    const per = model.state.slots.length;
+    const into = Math.max(0, Math.min(per, (minutes - view.startDayHour * 60) / step));
+    return day * per + into;
   }
 
   /** The cell a time is in, among the days shown: in the group of `resources` (the first one by default). */

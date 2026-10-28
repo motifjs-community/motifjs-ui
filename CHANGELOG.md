@@ -1506,6 +1506,58 @@ mentioned further down.
 - Docs pages `/scheduler/resources` and `/scheduler/form`; `e2e/checks/61-scheduler-resources.mjs` and
   `62-scheduler-form.mjs`.
 
+### Scheduler, milestone 5: timelines, the agenda and big data
+
+- **Timeline views** `timelineDay`, `timelineWeek`, `timelineWorkWeek`, `timelineMonth`: a row per group (one without
+  groups), nested groups in levels of a resource column, the time along the row (mirrored right to left). The scale
+  has two tiers (the days over their hours; the months over their days) and stays at the top while the rows scroll;
+  the resource column stays at the start while the time scrolls; a long day's date stays in view. Appointments at
+  the same time stack in lanes of their row and the row grows; each row is laid out on its own. The current time,
+  blocked times and the hours outside work carry over; cells stretch to fill the room when they are few.
+  `maxAppointmentsPerCell` (a number) keeps that many lanes and says "+N more" per day.
+- **Everything of milestones 2–4 in the timeline:** a drag along the row and to another row (its resources change),
+  both ends resize, a copy with Ctrl, the drop mark; the keys over the cells (Left / Right along the time, Up / Down
+  between rows, Home / End, Ctrl + Home / End, PageUp / PageDown, past the end the view moves on) and on an
+  appointment (Left / Right a snap step, Up / Down to the row above or below, Shift for its end, Enter saves); the
+  form, the tooltip, recurrence, time zones, availability. Cells read their group, date and time.
+- **Agenda** (`agenda`, `agendaDuration`, default 7, component-wide and per view): the coming days with their
+  appointments in time order (the ones taking the day first; one that lasts days on each of them), days with none
+  left out, grouped by resource with `groups`, "No appointments" (`uiLocale`) when empty. A list box: Up / Down,
+  Home / End, PageUp / PageDown move over the rows (the focused one is selected), Space shows the tooltip, Enter the
+  form, Delete deletes; `keys.agendaView` (`A`).
+- **Big data:** a timeline's rows go through `Virtualization` when they are many (each as tall as its lanes, worked
+  out by the model from the lane's measured height); the cells and appointments along the time, and the columns of
+  a day or a week with many groups, are built from a window the model keeps (`setWindow`, `shownTicks`,
+  `shownColumns`, `shownTimed`, `shownHeads`), moved on by a few cells as the view scrolls. `scrolling: 'auto' |
+  'standard' | 'virtual'` (component-wide and per view; `'auto'` turns virtual past about 2,000 cells). A drag lays
+  out only the rows it touches; the appointments are read once for every layout until they change; groups are found
+  by key. Measured in development (DevTools on), 1,440 × 900: 1,000 rows × 10,000 appointments in a timeline week
+  show in about 0.6 s with about 850 elements and scroll at 55–60 fps both ways (dragging 50–60 fps); a week of 200
+  groups (1,400 columns, 4,000 appointments) shows in about 0.75 s with about 2,700 elements, 60 fps down, 40–58 fps
+  sideways (between runs), 45 fps dragging.
+- **Settings per view:** `startDate` (intervals counted from it), `agendaDuration`, `scrolling`, and every
+  template: a view's own wins, `null` there turns it off.
+- **Narrow boxes:** in a row the text in front stays whole and the one after gives way; a short box and a box on a
+  timeline read their title first, before the time. The time no longer runs under the series mark in a narrow box
+  (it did in the week view too).
+- **Templates** (`SchedulerTemplates`, component-wide and per view): `appointmentTemplate`,
+  `appointmentTooltipTemplate` (`TooltipTemplateContext`), `dataCellTemplate` (`CellTemplateContext`),
+  `dateCellTemplate` (`DateTemplateContext`), `timeCellTemplate` (`TimeTemplateContext`), `resourceHeaderTemplate`,
+  `agendaRowTemplate` (`AgendaRowContext`), `moreListTemplate` (`MoreListContext`).
+- **Methods:** `scrollTo(date, resources?)`; `scrollToTime` scrolls a timeline along.
+- Units `timeline-row` (`first`), `timeline-divider` (`inner`), `resource-cell` (`inner`, `first`, `continued`),
+  `timeline-corner`, `timeline-corner-label`, `scale`, `scale-upper` (`today`), `scale-lower` (`day-start`, `day`,
+  `weekend`, `today`), `agenda`, `agenda-group` (`first`), `agenda-resource`, `agenda-day` (`today`),
+  `agenda-weekday` (`today`), `agenda-month`, `agenda-row` (`hover`, `selected`, `open`, `focus`, `past`,
+  `disabled`), `agenda-content`, `agenda-time`, `agenda-dot`, `agenda-text`, `agenda-empty`; the cell's `line`,
+  `line-hour`, `line-day`, the appointment's `line`, `line-before`, `line-after`, the day number's `scale` and
+  `agenda`, the group swatch's `resource`; `now` and `now-dot` stand up in a timeline (turned). Plain tokens
+  `timeline-cell-width`, `timeline-resource-width`, `timeline-lane-size`, `timeline-row-min-height`,
+  `agenda-time-width`. Material draws no row divider and an agenda with a day's number in a
+  circle, rows lit whole, a dot); Fluent a colour bar on an agenda row.
+- Docs pages `/scheduler/timeline`, `/scheduler/agenda`, `/scheduler/big-data`; `e2e/checks/63-scheduler-timeline.mjs`,
+  `64-scheduler-agenda.mjs`, `65-scheduler-big-data.mjs` (the numbers against limits).
+
 ### Design languages, step 1: what lets a language change everything
 
 Any design system, or a new version of one, is added as files only and looks like its source.

@@ -106,6 +106,9 @@ export const GROUPS = [
       { id: 'scheduler-recurrence', label: 'Recurrence and time zones', title: 'Scheduler: Recurrence and time zones', path: '/scheduler/recurrence', related: ['scheduler', 'scheduler-editing', 'datebox'] },
       { id: 'scheduler-resources', label: 'Resources and groups', title: 'Scheduler: Resources and groups', path: '/scheduler/resources', related: ['scheduler', 'scheduler-form', 'tagbox'] },
       { id: 'scheduler-form', label: 'The appointment form', title: 'Scheduler: The appointment form', path: '/scheduler/form', related: ['scheduler-editing', 'formlayout', 'tabs'] },
+      { id: 'scheduler-timeline', label: 'Timeline', title: 'Scheduler: Timeline', path: '/scheduler/timeline', related: ['scheduler-resources', 'scheduler-big-data', 'scheduler'] },
+      { id: 'scheduler-agenda', label: 'Agenda', title: 'Scheduler: Agenda', path: '/scheduler/agenda', related: ['scheduler', 'scheduler-resources', 'listbox'] },
+      { id: 'scheduler-big-data', label: 'Big data', title: 'Scheduler: Big data', path: '/scheduler/big-data', related: ['scheduler-timeline', 'scheduler-resources', 'datagrid'] },
     ],
   },
   {

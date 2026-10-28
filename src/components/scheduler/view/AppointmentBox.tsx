@@ -1,29 +1,37 @@
+import type { LinePiece } from '../model/line-piece';
 import type { StripPiece } from '../model/strip-piece';
 import type { TimedPiece } from '../model/timed-piece';
 import type { DragMode } from './AppointmentDrag';
 import type { SchedulerHost } from './scheduler-host';
 
+type Piece<T> = TimedPiece<T> | StripPiece<T> | LinePiece<T>;
+
 interface Props<T> {
   host: SchedulerHost<T>;
-  piece: TimedPiece<T> | StripPiece<T>;
+  piece: Piece<T>;
 }
 
-const isTimed = <T,>(piece: TimedPiece<T> | StripPiece<T>): piece is TimedPiece<T> => 'top' in piece;
+const isTimed = <T,>(piece: Piece<T>): piece is TimedPiece<T> => 'top' in piece;
+const isLine = <T,>(piece: Piece<T>): piece is LinePiece<T> => 'from' in piece;
 
 /**
- * One appointment, or the part of it on one day or one week: placed by its piece's fields (bound,
- * so a change in the layout moves it without building it again), coloured by the appointment's
- * own colour (else its resources'), its content the template's or its text and time. An
- * occurrence of a series carries the series mark, one changed apart the exception mark, and a box
- * that may not go where it is being moved the drop mark, where the design language draws them.
+ * One appointment, or the part of it on one day, one week or one row of a timeline: placed by its
+ * piece's fields (bound, so a change in the layout moves it without building it again), coloured
+ * by the appointment's own colour (else its resources'), its content the template's or its text
+ * and time. An occurrence of a series carries the series mark, one changed apart the exception
+ * mark, and a box that may not go where it is being moved the drop mark, where the design language
+ * draws them.
  */
 export function AppointmentBox<T>(props: Props<T>) {
   const { host, piece } = props;
   const text = () => piece.text || host.text('schedulerNoTitle');
-  const allDay = () => !isTimed(piece) && !piece.timed;
+  const allDay = () => (isLine(piece) ? piece.allDay : !isTimed(piece) && !piece.timed);
   const time = () => {
     if (allDay()) return '';
-    if (!isTimed(piece)) return host.format.time(piece.start);
+    if (!isTimed(piece) && !isLine(piece)) return host.format.time(piece.start);
+    // Along a timeline the box shows its days: two times, not two dates.
+    if (isLine(piece) && !host.model.zone.sameDay(piece.start, new Date(Math.max(piece.start.getTime(), piece.end.getTime() - 1))))
+      return `${host.format.time(piece.start)} – ${host.format.time(piece.end)}`;
     return host.format.timeRange(piece.start, piece.end);
   };
   /** Read after the text: the day (and the whole time of a part), which the box itself does not write. */
@@ -51,6 +59,7 @@ export function AppointmentBox<T>(props: Props<T>) {
         blockSize: `${piece.height * 100}%`,
       };
     }
+    if (isLine(piece)) return { ...own, '--_from': String(piece.from), '--_span': String(piece.span), '--_lane': String(piece.lane) };
     return {
       ...own,
       gridColumn: `${piece.first + 1} / span ${piece.span}`,
@@ -71,7 +80,7 @@ export function AppointmentBox<T>(props: Props<T>) {
     const group = host.model.state.groups[piece.group];
     return group ? { ...group.values } : null;
   };
-  const resizable = () => !piece.draft && host.canResize(piece.item) && (isTimed(piece) || !piece.timed);
+  const resizable = () => !piece.draft && host.canResize(piece.item) && (isTimed(piece) || isLine(piece) || !piece.timed);
   const press = (mode: DragMode) => (e: PointerEvent) => {
     // A press on an appointment selects no cells.
     e.stopPropagation();
@@ -82,7 +91,7 @@ export function AppointmentBox<T>(props: Props<T>) {
       class="mx-scheduler__appointment"
       role="button"
       tabindex="0"
-      data-kind={isTimed(piece) ? 'timed' : piece.timed ? 'chip' : 'bar'}
+      data-kind={isTimed(piece) ? 'timed' : isLine(piece) ? 'line' : piece.timed ? 'chip' : 'bar'}
       data-piece={piece.id}
       data-before={() => piece.before || null}
       data-after={() => piece.after || null}
@@ -104,7 +113,7 @@ export function AppointmentBox<T>(props: Props<T>) {
       onclick={(e: MouseEvent) => host.appointmentClick(piece, e)}
       ondblclick={(e: MouseEvent) => host.appointmentDblClick(piece, e)}
       onkeydown={(e: KeyboardEvent) => host.appointmentKey(piece, e)}
-      onfocusout={() => host.appointmentBlur()}
+      onfocusout={(e: FocusEvent) => host.appointmentBlur(piece, e)}
     >
       <div class="mx-scheduler__resize" data-edge="start" aria-hidden="true" x-display={() => resizable() && !piece.before} onpointerdown={press('start')} />
       {host.template() ? (

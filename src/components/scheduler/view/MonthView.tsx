@@ -1,4 +1,8 @@
-import { Component } from '@motifx/core';
+import { Component, untracked, type ComponentBase } from '@motifx/core';
+import type { CellTemplateContext } from '../cell-template-context';
+import type { HeaderCell } from '../model/header-cell';
+import type { SchedulerColumn } from '../model/scheduler-column';
+import type { StripRow } from '../model/strip-row';
 import { ResizeWatch } from '../../../core/resize-watch';
 import { AppointmentBox } from './AppointmentBox';
 import { cellWords } from './cell-words';
@@ -51,6 +55,88 @@ export class MonthView<T> extends Component<HTMLDivElement, Props<T>> {
     const focused = (column: number) => st.focus.column === column;
     /** A column's place in its week. */
     const inWeek = (column: number) => column % model.perRow;
+    const dateContext = (cell: HeaderCell) => ({
+      get date() {
+        return cell.day?.date ?? new Date(NaN);
+      },
+      get weekday() {
+        return cell.day ? format.weekday(cell.day.date) : '';
+      },
+      number: '',
+      get today() {
+        return false;
+      },
+      get view() {
+        return model.view.type;
+      },
+      get resources() {
+        return Object.keys(cell.values).length ? { ...cell.values } : null;
+      },
+    });
+    const cellContext = (column: SchedulerColumn): CellTemplateContext => ({
+      get start() {
+        return column.day.date;
+      },
+      get end() {
+        return model.zone.addDays(column.day.date, 1);
+      },
+      allDay: true,
+      get resources() {
+        return column.group ? { ...column.group.values } : null;
+      },
+      get view() {
+        return model.view.type;
+      },
+      get today() {
+        return column.day.today;
+      },
+      get work() {
+        return column.work;
+      },
+      get blocked() {
+        return column.blocked;
+      },
+    });
+    /** The weeks' cells; a cell template draws into each cell, after its number, once it is made. */
+    const weeks = (template: ((context: CellTemplateContext) => ComponentBase) | null) => {
+      const fill = (c: ComponentBase, column: SchedulerColumn) => {
+        if (template) c.controls.add(<div class="mx-scheduler__cell-content">{template(cellContext(column))}</div>);
+      };
+      return (
+        <>
+          {st.weeks.map((week: StripRow<T>) => (
+            <div key={week.index} class="mx-scheduler__week-row" role="row">
+              {week.columns.map((column) => (
+                <div
+                  key={column.index}
+                  ref={(c: ComponentBase) => fill(c, column)}
+                  class="mx-scheduler__cell mx-scheduler__month-cell"
+                  role="gridcell"
+                  data-cell={`${column.index}:-1`}
+                  data-today={() => column.day.today || null}
+                  data-past={() => column.day.past || null}
+                  data-outside={() => column.day.outside || null}
+                  data-holiday={() => column.day.holiday || null}
+                  data-weekend={() => column.day.weekend || null}
+                  data-edge={() => column.edge || null}
+                  data-blocked={() => column.blocked || null}
+                  tabindex={() => (focused(column.index) ? 0 : -1)}
+                  aria-selected={() => model.isSelected(column.index, -1)}
+                  aria-label={() => `${cellWords(host, column, -1).group}${format.fullDate(column.day.date)}${cellWords(host, column, -1).block}`}
+                  onpointerdown={(e: PointerEvent) => host.cellPointerDown({ column: column.index, slot: -1 }, e)}
+                  onclick={(e: MouseEvent) => host.cellClick({ column: column.index, slot: -1 }, e)}
+                  ondblclick={(e: MouseEvent) => host.cellDblClick({ column: column.index, slot: -1 }, e)}
+                >
+                  <span class="mx-scheduler__day-number" aria-hidden="true">
+                    {() => format.dayNumber(column.day.date)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </>
+      );
+    };
     return (
       <>
         <div class="mx-scheduler__month-head" data-by-date={() => model.datesFirst || null} style={() => ({ '--_columns': String(model.perRow) })}>
@@ -63,7 +149,11 @@ export class MonthView<T> extends Component<HTMLDivElement, Props<T>> {
                 data-edge={() => cell.edge || null}
                 style={() => ({ gridColumn: `${cell.first + 1} / span ${cell.span}` })}
               >
-                {() => (cell.day ? format.weekday(cell.day.date) : '')}
+                {host.dateTemplate() ? (
+                  <div class="mx-scheduler__date-content">{host.dateTemplate()!(dateContext(cell))}</div>
+                ) : (
+                  <span>{() => (cell.day ? format.weekday(cell.day.date) : '')}</span>
+                )}
               </div>
             ))}
           </div>
@@ -76,35 +166,14 @@ export class MonthView<T> extends Component<HTMLDivElement, Props<T>> {
             ref={(c) => (this.grid = c.element as HTMLElement)}
             onkeydown={(e: KeyboardEvent) => host.gridKey(e)}
           >
-            {st.weeks.map((week) => (
-              <div key={week.index} class="mx-scheduler__week-row" role="row">
-                {week.columns.map((column) => (
-                  <div
-                    key={column.index}
-                    class="mx-scheduler__cell mx-scheduler__month-cell"
-                    role="gridcell"
-                    data-cell={`${column.index}:-1`}
-                    data-today={() => column.day.today || null}
-                    data-past={() => column.day.past || null}
-                    data-outside={() => column.day.outside || null}
-                    data-holiday={() => column.day.holiday || null}
-                    data-weekend={() => column.day.weekend || null}
-                    data-edge={() => column.edge || null}
-                    data-blocked={() => column.blocked || null}
-                    tabindex={() => (focused(column.index) ? 0 : -1)}
-                    aria-selected={() => model.isSelected(column.index, -1)}
-                    aria-label={() => `${cellWords(host, column, -1).group}${format.fullDate(column.day.date)}${cellWords(host, column, -1).block}`}
-                    onpointerdown={(e: PointerEvent) => host.cellPointerDown({ column: column.index, slot: -1 }, e)}
-                    onclick={(e: MouseEvent) => host.cellClick({ column: column.index, slot: -1 }, e)}
-                    ondblclick={(e: MouseEvent) => host.cellDblClick({ column: column.index, slot: -1 }, e)}
-                  >
-                    <span class="mx-scheduler__day-number" aria-hidden="true">
-                      {() => format.dayNumber(column.day.date)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ))}
+            {() => {
+              switch (host.cellTemplate() ? 'template' : 'plain') {
+                case 'template':
+                  return weeks(untracked(() => host.cellTemplate()));
+                default:
+                  return weeks(null);
+              }
+            }}
           </div>
           <div class="mx-scheduler__month-layer" role="group" aria-label={() => t('schedulerAppointments')}>
             {st.weeks.map((week) => (
