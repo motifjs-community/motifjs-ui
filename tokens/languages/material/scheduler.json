@@ -23,6 +23,9 @@
     "appointment-past-color-mix": { "$value": 70 },
     "appointment-text-mix": { "$value": 0 },
     "appointment-text-auto": { "$value": 100 },
+    "appointment-time-tone": { "$value": "{scheduler.appointment-foreground}" },
+    "appointment-time-tone-hover": { "$value": "{scheduler.appointment-foreground}" },
+    "appointment-time-tone-open": { "$value": "{scheduler.appointment-foreground}" },
     "appointment-frame-color": { "$value": "{color.bg.canvas}" },
     "appointment-open-tint": { "$value": 0 },
     "appointment-open-color": { "$value": "{scheduler.appointment-foreground}" },
@@ -348,6 +351,44 @@
     },
     "more-time": {
       "color": { "$value": "{color.accent.on-solid}" }
+    },
+    "group-header": {
+      "padding-block": { "$value": "{space.1}" },
+      "padding-inline": { "$value": "{space.1}" },
+      "border-start-width": { "$value": "{border.width.1}" },
+      "border-color": { "$value": "{color.stroke.divider}" },
+      "color": { "$value": "{color.fg.primary}" },
+      "font-size": { "$value": "{font.size.body}" },
+      "font-weight": { "$value": "{font.weight.medium}" },
+      "inner": {
+        "color": { "$value": "{color.fg.secondary}" },
+        "font-size": { "$value": "{font.size.caption}" },
+        "font-weight": { "$value": "{font.weight.regular}" }
+      }
+    },
+    "group-swatch": {
+      "display": { "$value": "block" },
+      "width": { "$value": "0.625rem" },
+      "height": { "$value": "0.625rem" },
+      "radius": { "$value": "{radius.full}" },
+      "margin-end": { "$value": "{space.2}" }
+    },
+    "unavailable": {
+      "display": { "$value": "block" },
+      "image": { "$value": "repeating-linear-gradient(135deg, {color.stroke.divider} 0 {border.width.1}, transparent {border.width.1} {space.2})" }
+    },
+    "resource-swatch": {
+      "display": { "$value": "block" },
+      "width": { "$value": "0.75rem" },
+      "height": { "$value": "0.75rem" },
+      "radius": { "$value": "{radius.full}" }
+    },
+    "tooltip-resource-item": {
+      "gap": { "$value": "{space.2}" },
+      "margin-end": { "$value": "{space.3}" }
+    },
+    "tooltip-resource-label": {
+      "margin-end": { "$value": "{space.2}" }
     },
     "state": {
       "gap": { "$value": "{space.2}" },

@@ -95,9 +95,15 @@ addShortcut('Mod+K', () => palette.open()); // app-wide
   worksheet. ExcelJS is an optional peer dependency the app installs; apps that do not import this
   entry never load it.
 - RTL through logical properties; what must turn the other way (an arrow, a resize cursor) uses `:dir(rtl)`.
-  Build your CSS for browsers that have `:dir()` (Chrome and Edge 120, Firefox 49, Safari 16.4; in Vite,
-  `build.cssTarget`): for older targets a minifier rewrites it as a list of `:lang()` values, which only matches a
-  page whose `lang` is a right-to-left language.
+
+## Browsers
+
+Chrome and Edge 120, Firefox 128, Safari 18 and later. The styles use `:has()`, `@property`, `:dir()` and relative
+colour syntax (`color(from …)`, `oklch(from …)`, which keep text readable on any colour a user picks).
+
+Build your CSS for these browsers (in Vite, `build.cssTarget: ['chrome120', 'edge120', 'firefox128', 'safari18']`):
+for an older target a minifier rewrites `:dir(rtl)` as a list of `:lang()` values, which only matches a page whose
+`lang` is a right-to-left language.
 
 ## Docs
 

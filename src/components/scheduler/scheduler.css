@@ -1,8 +1,8 @@
-/* Scheduler. The day views are a head (the dates, the all-day panel) over a scroll box: the hours
-   on the start side, a grid of cells (a row per time, a column per day) and over it the layer of
-   appointments, laid on the same columns. `--_days` and `--_rows` (written by the view) give the
-   columns and the rows. The month view lays a grid of weeks and, over it, a layer per week with
-   its appointments in lines. An appointment's own colour is `--_color` (written on it), shown as
+/* Scheduler. The day views are a head (the heads of the groups, the dates, the all-day panel) over
+   a scroll box: the hours on the start side, a grid of cells (a row per time, a column per day of
+   each group) and over it the layer of appointments, laid on the same columns. `--_columns` and
+   `--_rows` (written by the view) give the columns and the rows. The month view lays a grid of
+   weeks and, over it, a layer per week with its appointments in lines. An appointment's own colour is `--_color` (written on it), shown as
    the language says: a tint, any of its four edges, its text (by the plain tokens that mix it, here).
    Every other piece's look is a unit of the scheduler's schema (`$units`), painted by units.css from
    the language's tokens; only the layout is here. */
@@ -48,15 +48,83 @@
   /* The day views. */
 
   .mx-scheduler__head {
+    display: flex;
     flex: none;
+    flex-direction: column;
     overflow: hidden;
     scrollbar-gutter: stable;
   }
 
   .mx-scheduler__dates,
-  .mx-scheduler__body {
+  .mx-scheduler__body,
+  .mx-scheduler__head .mx-scheduler__groups {
     display: grid;
-    grid-template-columns: var(--_scheduler-ruler-width) repeat(var(--_days, 7), minmax(var(--_scheduler-column-min-width), 1fr));
+    grid-template-columns: var(--_scheduler-ruler-width) repeat(var(--_columns, 7), minmax(var(--_scheduler-column-min-width), 1fr));
+  }
+
+  /* The heads of the groups stand over the dates; by date, under them. */
+  :is(.mx-scheduler__head, .mx-scheduler__month-head)[data-by-date] > .mx-scheduler__group-rows {
+    order: 1;
+  }
+
+  .mx-scheduler__all-day {
+    order: 2;
+  }
+
+  .mx-scheduler__group-head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: 0;
+  }
+
+  .mx-scheduler__group-content {
+    display: flex;
+    align-items: center;
+    min-inline-size: 0;
+  }
+
+  .mx-scheduler__group-swatch {
+    flex: none;
+    background: var(--_color);
+  }
+
+  .mx-scheduler__group-text {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* A divider stands on the start edge of the first column of a group (or of a day, by date), down
+     its heads and cells: the `group-divider` unit draws it, or not. */
+  :is(.mx-scheduler__cell, .mx-scheduler__date, .mx-scheduler__group-head, .mx-scheduler__weekday-name)[data-edge] {
+    position: relative;
+  }
+
+  :is(.mx-scheduler__cell, .mx-scheduler__date, .mx-scheduler__group-head, .mx-scheduler__weekday-name)[data-edge]::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    translate: -50% 0;
+    pointer-events: none;
+  }
+
+  :is(.mx-scheduler__cell, .mx-scheduler__date, .mx-scheduler__group-head, .mx-scheduler__weekday-name)[data-edge]:dir(rtl)::before {
+    translate: 50% 0;
+  }
+
+  /* A blocked cell may carry a layer over its fill (the `unavailable` unit). */
+  .mx-scheduler__cell[data-blocked] {
+    position: relative;
+  }
+
+  .mx-scheduler__cell[data-blocked]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
 
   .mx-scheduler__date {
@@ -100,12 +168,14 @@
 
   .mx-scheduler__row {
     display: grid;
-    grid-template-columns: repeat(var(--_days, 7), minmax(var(--_scheduler-column-min-width), 1fr));
+    grid-template-columns: repeat(var(--_columns, 7), minmax(var(--_scheduler-column-min-width), 1fr));
   }
 
+  /* Above the cells, which a divider or a blocked time positions. */
   .mx-scheduler__bars {
+    position: relative;
     display: grid;
-    grid-template-columns: repeat(var(--_days, 7), minmax(var(--_scheduler-column-min-width), 1fr));
+    grid-template-columns: repeat(var(--_columns, 7), minmax(var(--_scheduler-column-min-width), 1fr));
     grid-auto-rows: var(--_scheduler-lane-size);
     row-gap: var(--_scheduler-lane-gap);
     min-block-size: calc(var(--_lines, 1) * (var(--_scheduler-lane-size) + var(--_scheduler-lane-gap)) + var(--_scheduler-lane-gap));
@@ -164,11 +234,11 @@
     outline: none;
   }
 
-  /* One layer over all the day columns: a timed appointment's column is `--_day`, its place in it
+  /* One layer over all the columns: a timed appointment's column is `--_column`, its place in it
      `--_left` and `--_width` (fractions of the column, short of the gap kept free at its end). */
   .mx-scheduler__layer {
-    --_column: calc(100% / var(--_days, 7));
-    --_room: calc(var(--_column) - var(--_scheduler-column-end-gap));
+    --_column-size: calc(100% / var(--_columns, 7));
+    --_room: calc(var(--_column-size) - var(--_scheduler-column-end-gap));
 
     position: relative;
     pointer-events: none;
@@ -176,8 +246,8 @@
 
   .mx-scheduler__now {
     position: absolute;
-    inset-inline-start: calc(var(--_column) * var(--_day, 0));
-    inline-size: var(--_column);
+    inset-inline-start: calc(var(--_column-size) * var(--_column, 0));
+    inline-size: var(--_column-size);
     translate: 0 -50%;
     pointer-events: none;
   }
@@ -198,10 +268,16 @@
 
   /* The month view. */
 
-  .mx-scheduler__weekdays {
-    display: grid;
+  .mx-scheduler__month-head {
+    display: flex;
     flex: none;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    flex-direction: column;
+  }
+
+  .mx-scheduler__weekdays,
+  .mx-scheduler__month-head .mx-scheduler__groups {
+    display: grid;
+    grid-template-columns: repeat(var(--_columns, 7), minmax(0, 1fr));
   }
 
   .mx-scheduler__weekday-name {
@@ -225,7 +301,7 @@
 
   .mx-scheduler__week-row {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--_columns, 7), minmax(0, 1fr));
   }
 
   .mx-scheduler__month-cell .mx-scheduler__day-number {
@@ -235,12 +311,13 @@
   }
 
   .mx-scheduler__month-layer {
+    position: relative;
     pointer-events: none;
   }
 
   .mx-scheduler__week-layer {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--_columns, 7), minmax(0, 1fr));
     grid-auto-rows: var(--_scheduler-lane-size);
     row-gap: var(--_scheduler-lane-gap);
     align-content: start;
@@ -298,19 +375,48 @@
     min-inline-size: 0;
     overflow: hidden;
     user-select: none;
-    /* The fill as it is now, and black or white on it, whichever stands out (taken by `appointment-text-auto`). */
     --_fill: var(--_box-bg);
-    --_contrast: oklch(from var(--_fill) clamp(0, (0.65 - l) * 1000, 1) 0 0);
 
+    /* What its text is read on: the fill as it is now, the surface where the fill lets it through. */
+    --_seen: color(from color-mix(in srgb-linear, var(--_fill) 99.99%, var(--_scheduler-appointment-surface)) srgb-linear r g b / 1);
+
+    /* Black or white, whichever stands out more on it (black from a luminance of 0.179 up), taken by `appointment-text-auto`. */
+    --_contrast: color(from var(--_seen) srgb-linear var(--_white) var(--_white) var(--_white));
     --_ink: color-mix(in oklab, var(--_contrast) calc(var(--_scheduler-appointment-text-auto) * 1%), var(--_text));
+    --_time-tone: var(--_scheduler-appointment-time-tone);
+    --_time-ink: color-mix(in oklab, var(--_contrast) calc(var(--_scheduler-appointment-text-auto) * 1%), var(--_time-tone));
+
+    /* Whatever the colour, the text and the time read on the fill: where a language's ink would not stand out
+       4.6 times, it is made darker (on a light fill) or lighter (on a dark one) just as far as needed, its hue
+       kept. The ink is mixed with a black whose alpha is the fill's luminance, so one colour carries both;
+       the parts below read them back (`alpha`: half the fill's luminance and a half; the channels: the ink's,
+       halved by it). */
+    --_seen-lum: color(from var(--_seen) srgb-linear 0 0 0 / var(--_lum));
+    --_title: color(from color-mix(in srgb-linear, var(--_ink) 50%, var(--_seen-lum)) srgb-linear var(--_read-r) var(--_read-g) var(--_read-b) / 1);
+    --_time: color(from color-mix(in srgb-linear, var(--_time-ink) 50%, var(--_seen-lum)) srgb-linear var(--_read-r) var(--_read-g) var(--_read-b) / 1);
 
     background: var(--_fill);
-    color: var(--_ink);
+    color: var(--_title);
     outline: none;
+  }
+
+  /* The parts of the readable ink (as text, read inside the colours above, where `r`, `g`, `b` and `alpha` are the mixed colour's). */
+  .mx-scheduler__appointment {
+    --_lum: calc(0.2126 * r + 0.7152 * g + 0.0722 * b);
+    --_white: clamp(0, (0.1791 - var(--_lum)) * 1000000, 1);
+    --_fill-lum: calc(2 * alpha - 1);
+    --_ink-lum: calc(2 * alpha * var(--_lum));
+    --_darker: clamp(0, (var(--_fill-lum) - 0.1791) * 1000000, 1);
+    --_down: min(1, ((var(--_fill-lum) + 0.05) / 4.6 - 0.05) / max(var(--_ink-lum), 0.000001));
+    --_up: max(0, min(1, (1.05 - 4.6 * (var(--_fill-lum) + 0.05)) / max(1 - var(--_ink-lum), 0.000001)));
+    --_read-r: calc(var(--_darker) * 2 * alpha * r * var(--_down) + (1 - var(--_darker)) * (1 - (1 - 2 * alpha * r) * var(--_up)));
+    --_read-g: calc(var(--_darker) * 2 * alpha * g * var(--_down) + (1 - var(--_darker)) * (1 - (1 - 2 * alpha * g) * var(--_up)));
+    --_read-b: calc(var(--_darker) * 2 * alpha * b * var(--_down) + (1 - var(--_darker)) * (1 - (1 - 2 * alpha * b) * var(--_up)));
   }
 
   .mx-scheduler__appointment:hover {
     --_box-bg: color-mix(in oklab, var(--_c) calc(var(--_scheduler-appointment-tint-hover) * 1%), var(--_scheduler-appointment-surface));
+    --_time-tone: var(--_scheduler-appointment-time-tone-hover);
   }
 
   /* Ended: its colour fades (a lighter tint, paler edges); the text keeps its contrast. */
@@ -325,7 +431,7 @@
 
   .mx-scheduler__appointment[data-kind='timed'] {
     position: absolute;
-    inset-inline-start: calc(var(--_column) * var(--_day, 0) + var(--_room) * var(--_left, 0));
+    inset-inline-start: calc(var(--_column-size) * var(--_column, 0) + var(--_room) * var(--_left, 0));
     inline-size: calc(var(--_room) * var(--_width, 1));
     min-block-size: var(--_scheduler-lane-size);
   }
@@ -374,6 +480,7 @@
     --_fill: color-mix(in oklab, var(--_c) calc(var(--_scheduler-appointment-open-tint) * 1%), var(--_box-bg));
 
     --_ink: color-mix(in oklab, var(--_contrast) calc(var(--_scheduler-appointment-text-auto) * 1%), var(--_open-text));
+    --_time-tone: var(--_scheduler-appointment-time-tone-open);
     border-block-start: var(--_top-w) solid color-mix(in oklab, var(--_open-edge) var(--_open-edge-mix), color-mix(in oklab, var(--_c) calc(var(--_top-mix) * 1%), var(--_frame)));
     border-inline-end: var(--_end-w) solid color-mix(in oklab, var(--_open-edge) var(--_open-edge-mix), color-mix(in oklab, var(--_c) calc(var(--_end-mix) * 1%), var(--_frame)));
     border-block-end: var(--_bottom-w) solid color-mix(in oklab, var(--_open-edge) var(--_open-edge-mix), color-mix(in oklab, var(--_c) calc(var(--_bottom-mix) * 1%), var(--_frame)));
@@ -422,6 +529,7 @@
 
   .mx-scheduler__appointment-time {
     flex: none;
+    color: var(--_time);
     white-space: nowrap;
   }
 
@@ -441,6 +549,17 @@
   }
 
   .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) > .mx-scheduler__mark {
+    align-self: center;
+  }
+
+  /* Where it may not go, a box may lead with a mark (the `drop-mark` unit), on its first line. */
+  .mx-scheduler__drop-mark {
+    flex: none;
+    align-self: flex-start;
+    order: -1;
+  }
+
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) > .mx-scheduler__drop-mark {
     align-self: center;
   }
 
@@ -529,6 +648,35 @@
   .mx-scheduler__tooltip-repeat,
   .mx-scheduler__tooltip-description {
     overflow-wrap: break-word;
+  }
+
+  /* A line per kind of resource: its name, then each item with its colour. */
+  .mx-scheduler__tooltip-resource {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+
+  .mx-scheduler__tooltip-resource-item {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* A resource's colour: the `resource-swatch` unit, centred in its holder (a list's icon place, or before a name). */
+  .mx-scheduler__resource-swatch {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+  }
+
+  .mx-list__icon > .mx-scheduler__resource-swatch {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .mx-scheduler__resource-swatch::before {
+    content: '';
+    background: var(--_color);
   }
 
   .mx-scheduler__tooltip-actions {

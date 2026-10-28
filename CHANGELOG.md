@@ -1457,6 +1457,55 @@ mentioned further down.
   colour), and the time takes the title's colour under the pointer and open (`appointment-time` `hover`, `open`).
 - Docs page `/scheduler/recurrence` (one example from a data source); `e2e/checks/60-scheduler-recurrence.mjs`.
 
+### Scheduler, milestone 4: resources, groups and the form
+
+- **Resources** (`resources: SchedulerResource[]`): a kind's `field` (one value, or a list with `allowMultiple`),
+  `label`, `items` (an array, or a data source loaded once and followed), `valueExpr`, `displayExpr`, `colorExpr`,
+  `useColorAsDefault`, `parentExpr`, and an item's own `workStartHour`, `workEndHour`, `workDays` (through
+  `…Expr`). Resources colour the appointments (the kind marked, else the first kind whose item has a colour; an
+  appointment's own `color` wins; in a group, the group's item). An item's own `allowDrag`, `allowResize`,
+  `allowEdit`, `allowDelete` win over `editing` for its appointments. The tooltip has a line per kind.
+- **Groups** (`groups`, a view's own `groups`): the columns of the day, week, work week and month views split by
+  resource, nested (a room over its people; `parentExpr` keeps a person under their own room), with a row of heads
+  per level; `groupByDate` puts the groups under each date (a single day shows its date over the groups).
+  `resourceHeaderTemplate` draws a head. Cells name their group (`aria-label`), `selectedCells` and the cell events
+  carry `resources`, a new appointment from a cell gets its group's values. A bar under groups by date is cut into a
+  piece per day. The model (`SchedulerModel`) is DOM-free: `groups`, `columns`, `dates`, `heads`, kept in place.
+- **Moving between groups:** a drag, and `Alt+Shift+ArrowLeft` / `ArrowRight` on an appointment (`keys.previousGroup`
+  / `nextGroup`, mirrored right to left), change the resource fields; in a list only the value of the group it
+  leaves changes. `DragEventArgs.resources`, `AppointmentClickEventArgs.group`, `AppointmentTemplateContext.group`.
+- **Availability:** `blockedTimes` (`{ start, end, text?, allDay?, recurrenceRule?, resources? }`) mark their cells
+  (`data-blocked`, read out); `allowOffHours: false` keeps what the user moves, resizes or saves in the work hours
+  (of its resources, else the scheduler's); `allowOverlap: false` keeps it off another appointment of its group,
+  and a function there decides the whole check (`SchedulerTimeCheck`: `overlapping`, `blocked`, `offHours`). A drag
+  or a move by the keys shows where it may not go (`onMoving` / `onResizing` start with `cancel` set there);
+  the form says why it cannot save. `checkTime()`, `resourcesOf()`.
+- **The form:** each kind gets a picker (`DropDown`, or `TagBox` for several), each item with its colour.
+  `editing.form` (`SchedulerForm`): `items` by name (`text`, `start`, `end`, `allDay`, `timeZone` or its three items,
+  `recurrenceRule`, `description`, a resource's field) or items of your own, groups and tabs, `columns`,
+  `minColumnWidth`, `labelMode`, `title`, `width`. An item of a built-in's field changes it (its rules add); its
+  `visible`, `readOnly`, `enabled`, `required`, `label`, `helpText`, `rules` may be functions of the form
+  (`AppointmentFormContext`: `appointment`, `data`, `isNew`). `editor` may be a function (any component taking an
+  editor's props) and `template` any MotifJS component. `onFormOpening` gets the items made and may cancel.
+- **`FormLayout`:** `tabs` items (every tab checked; a check shows the tab of the first field that failed), `editor`
+  as a function, `template(context)` with `{ data, field, validationGroup }`, `editor: 'tagbox'`.
+- **Data:** `rangeFilter(range, fields, { resources })` (`RangeFilterOptions`) asks for the resources shown too; a
+  scheduler grouped by a field of one value uses it with `remoteFiltering`.
+- Units `group-header` (`inner`, `month`), `group-swatch`, `group-divider` (`inner`, `head`), `unavailable` (`all-day`,
+  `month`), `drop-mark` (`bar`, `chip`), `resource-swatch` (`tooltip`), `tooltip-resource-label`,
+  `tooltip-resource-item`; the cell's `blocked` state; the glyph `blocked`. Material draws no divider and no drop
+  mark, Lounge no hatch.
+- **Text that reads on any colour:** an appointment's title and time read on its fill whatever the colour, in
+  every language and theme. Black or white (`appointment-text-auto`) is chosen by contrast (the fill's luminance
+  from 0.179 up takes black; it was a lightness of 0.65, which gave white on mid colours such as `#00838f`).
+  A language's ink that would not stand out 4.6 times is made darker on a light fill or lighter on a dark one just
+  as far as needed, its hue kept; one that does is left as it is. The time's colours are plain tokens now
+  (`appointment-time-tone`, `-hover`, `-open`), read on the fill the same way. Measured in check 61 on 24 hues at 5
+  lightnesses, 6 greys and the docs' colours, on a box, a bar and a chip, in six states: at least 4.56:1.
+- The layout's column variables are `--_columns` and `--_column` (they were `--_days` and `--_day`).
+- Docs pages `/scheduler/resources` and `/scheduler/form`; `e2e/checks/61-scheduler-resources.mjs` and
+  `62-scheduler-form.mjs`.
+
 ### Design languages, step 1: what lets a language change everything
 
 Any design system, or a new version of one, is added as files only and looks like its source.

@@ -24,6 +24,10 @@ import type { SchedulerFields } from './scheduler-fields';
 import type { SchedulerKeys } from './scheduler-keys';
 import type { SchedulerView } from './scheduler-view';
 import type { SchedulerViewType } from './scheduler-view-type';
+import type { ResourceHeaderContext } from './resource-header-context';
+import type { SchedulerBlockedTime } from './scheduler-blocked-time';
+import type { SchedulerResource } from './scheduler-resource';
+import type { SchedulerTimeCheck } from './scheduler-time-check';
 import type { SelectionChangedEventArgs } from './selection-changed-event-args';
 import type { SeriesAnsweredEventArgs } from './series-answered-event-args';
 import type { SeriesAskingEventArgs } from './series-asking-event-args';
@@ -93,6 +97,27 @@ export interface SchedulerProps<T> extends ControlProps {
   seriesEdit?: Bind<SeriesEditMode>;
   /** Occurrences of a series, and ones changed apart from it, carry a mark where the design language draws one. Default `true`. */
   recurrenceMarks?: Bind<boolean>;
+  /**
+   * The kinds of resources the appointments use (rooms, people): they colour the appointments,
+   * group the columns (`groups`) and each gets a picker in the form.
+   */
+  resources?: Bind<readonly SchedulerResource<any>[]>;
+  /** The resource fields the columns are grouped by, outer first (`['roomId', 'ownerIds']`). A view's own win. */
+  groups?: Bind<readonly string[]>;
+  /** The groups stand under each date, not the dates under each group. Default `false`. */
+  groupByDate?: Bind<boolean>;
+  /** Draws a group's head (a resource item) in place of its name. */
+  resourceHeaderTemplate?: Bind<((context: ResourceHeaderContext) => ComponentBase) | null>;
+  /** Times nothing may be put in, shaded on the days shown (for every resource, or the ones named). */
+  blockedTimes?: Bind<readonly SchedulerBlockedTime[]>;
+  /**
+   * Whether an appointment the user moves, resizes or saves may overlap another one of its group
+   * (of the scheduler, without groups). Default `true`. A function decides the whole check (blocked
+   * times and work hours too): `true` when the time is free for it.
+   */
+  allowOverlap?: Bind<boolean | ((check: SchedulerTimeCheck<T>) => boolean)>;
+  /** Whether the user may put an appointment outside the work hours (of its resources, else the scheduler's). Default `true`. */
+  allowOffHours?: Bind<boolean>;
   /** Draws an appointment's content in place of the text and the time. */
   appointmentTemplate?: Bind<((context: AppointmentTemplateContext<T>) => ComponentBase) | null>;
   /** Changes the texts it writes; the rest come from `uiLocale`. */
@@ -101,7 +126,7 @@ export interface SchedulerProps<T> extends ControlProps {
   /** Says the date and the view to screen readers when they change. Default `true`. */
   announce?: Bind<boolean>;
   /** What the user may change: `false` nothing, `true` (default) everything, or each switch of `SchedulerEditing`. An appointment's own `allowDrag`, `allowResize`, `allowEdit`, `allowDelete` win. */
-  editing?: Bind<boolean | Partial<SchedulerEditing>>;
+  editing?: Bind<boolean | Partial<SchedulerEditing<T>>>;
   /** The minutes a drag and the keys move by. Default: the view's cell. */
   snapMinutes?: Bind<number>;
   /** The shortest an appointment gets by resizing, in minutes. Default: `snapMinutes`. */

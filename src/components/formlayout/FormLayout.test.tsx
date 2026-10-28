@@ -131,4 +131,45 @@ describe('FormLayout', () => {
     expect((form.editorOf('code') as TextBox).value).toBe('ABC');
     FormLayout.editors.delete('upper');
   });
+
+  it('makes an editor by a function, gives a template its place, and has a tag box by name', async () => {
+    const data = reactive({ code: 'abc', tags: ['a'], note: 'Hi' });
+    const form = new FormLayout<typeof data>({
+      data,
+      items: [
+        { field: 'code', editor: (p) => new TextBox({ ...p, placeholder: 'Code' }) },
+        { field: 'tags', editor: 'tagbox', editorProps: { items: ['a', 'b'] } },
+        { field: 'note', template: (place) => <output class="own">{() => `${place.field}=${String((place.data as typeof data).note)}`}</output> },
+      ],
+    });
+    page(form);
+    await settle();
+    expect((form.editorOf('code') as TextBox).inputElement.placeholder).toBe('Code');
+    expect(form.editorOf('tags')!.element.classList.contains('mx-tag-box')).toBe(true);
+    expect(form.element.querySelector('.own')!.textContent).toBe('note=Hi');
+  });
+
+  it('lays items out on tabs, checks the fields of every tab and shows the tab of the first that failed', async () => {
+    const data = reactive({ name: 'Ada', city: '' });
+    const form = new FormLayout<typeof data>({
+      data,
+      items: [
+        {
+          tabs: [
+            { title: 'Person', items: [{ field: 'name', label: 'Name' }] },
+            { title: 'Address', items: [{ field: 'city', label: 'City', required: true }] },
+          ],
+        },
+      ],
+    });
+    page(form);
+    await settle();
+    const tabs = [...form.element.querySelectorAll<HTMLElement>('[role="tab"]')];
+    expect(tabs.map((t) => t.textContent)).toEqual(['Person', 'Address']);
+    expect(tabs[0].getAttribute('aria-selected')).toBe('true');
+    const result = await form.validate();
+    expect(result.valid).toBe(false);
+    await settle();
+    expect(tabs[1].getAttribute('aria-selected')).toBe('true');
+  });
 });

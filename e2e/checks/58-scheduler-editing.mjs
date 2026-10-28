@@ -10,7 +10,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   const lines = () => editing.locator('.sched-events li').allTextContents();
   /** Whether the log has a line like this (the drop and the save come one after the other). */
   const logged = async (pattern) => (await lines()).some((line) => pattern.test(line));
-  const dayOf = (locator) => locator.evaluate((el) => el.style.getPropertyValue('--_day'));
+  const dayOf = (locator) => locator.evaluate((el) => el.style.getPropertyValue('--_column'));
   /** A cell of the hours with nothing over its middle, on screen. */
   const freeCell = (scope) =>
     scope.evaluate((el) => {

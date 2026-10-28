@@ -2,9 +2,10 @@
 export interface StripPiece<T> {
   id: string;
   item: T;
-  /** The first day of the row it covers, and how many. */
+  /** The first column of the row it covers, and how many; the group's index (-1 without groups). */
   first: number;
   span: number;
+  group: number;
   /** Its line in the row, from 0. */
   lane: number;
   /** Lines past what the row has room for are left out ("+N more"). */

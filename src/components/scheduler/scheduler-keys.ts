@@ -11,4 +11,11 @@ export interface SchedulerKeys {
   weekView: string[];
   workWeekView: string[];
   monthView: string[];
+  /**
+   * On a focused appointment while the columns are grouped: moves it to the group before or after
+   * (Enter saves, Escape takes it back). Default `Alt+Shift+ArrowLeft` and `Alt+Shift+ArrowRight`,
+   * mirrored right to left.
+   */
+  previousGroup: string[];
+  nextGroup: string[];
 }

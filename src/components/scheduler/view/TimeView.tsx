@@ -1,7 +1,9 @@
 import { Component } from '@motifx/core';
-import type { SchedulerDay } from '../model/scheduler-day';
+import type { SchedulerColumn } from '../model/scheduler-column';
 import type { TimeSlot } from '../model/time-slot';
 import { AppointmentBox } from './AppointmentBox';
+import { cellWords } from './cell-words';
+import { GroupHeads } from './GroupHeads';
 import type { SchedulerHost } from './scheduler-host';
 
 interface Props<T> {
@@ -9,10 +11,11 @@ interface Props<T> {
 }
 
 /**
- * The day, week and work week views: the dates on top, the all-day panel under them, then the
- * hours down with a column per day. The cells are one grid (arrows, Shift to select); the
- * appointments lie over it in their own layer, each placed by its piece. Changing the date fills
- * the same rows and columns in place.
+ * The day, week and work week views: the dates on top (with the heads of the groups over them, or
+ * under them by date), the all-day panel under them, then the hours down with a column per day of
+ * each group. The cells are one grid (arrows, Shift to select); the appointments lie over it in
+ * their own layer, each placed by its piece. Changing the date fills the same rows and columns in
+ * place.
  */
 export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
   private head: HTMLElement | null = null;
@@ -35,29 +38,30 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
     const st = model.state;
     const format = host.format;
     const t = host.text.bind(host);
-    const cellTime = (day: SchedulerDay, slot: TimeSlot) => model.zone.date(day.wall + slot.minutes * 60_000);
-    const work = (day: SchedulerDay, slot: TimeSlot) => {
-      const hours = host.workHours();
-      return day.work && slot.minutes >= hours.start * 60 && slot.minutes < hours.end * 60;
-    };
-    const focused = (day: number, slot: number) => st.focus.day === day && st.focus.slot === slot;
+    const cellTime = (column: SchedulerColumn, slot: TimeSlot) => model.zone.date(column.day.wall + slot.minutes * 60_000);
+    const work = (column: SchedulerColumn, slot: TimeSlot) => column.work && slot.minutes >= column.workStart * 60 && slot.minutes < column.workEnd * 60;
+    const focused = (column: number, slot: number) => st.focus.column === column && st.focus.slot === slot;
     const allDayLines = () => Math.max(1, Math.min(st.allDay.lanes, host.allDayLines() + 1));
-    const columns = () => ({ '--_days': String(st.days.length) });
+    const columns = () => ({ '--_columns': String(st.columns.length) });
+    const where = (column: SchedulerColumn, slot: number) => cellWords(host, column, slot);
     return (
       <>
-        <div class="mx-scheduler__head" style={columns} ref={(c) => (this.head = c.element as HTMLElement)}>
+        <div class="mx-scheduler__head" data-by-date={() => model.datesFirst || null} style={columns} ref={(c) => (this.head = c.element as HTMLElement)}>
+          <GroupHeads host={host} ruler />
           <div class="mx-scheduler__dates" aria-hidden="true">
             <div class="mx-scheduler__corner" />
-            {st.days.map((day) => (
+            {st.dates.map((cell) => (
               <div
-                key={day.index}
+                key={cell.key}
                 class="mx-scheduler__date"
-                data-today={() => day.today || null}
-                data-holiday={() => day.holiday || null}
-                data-weekend={() => day.weekend || null}
+                data-today={() => cell.day?.today || null}
+                data-holiday={() => cell.day?.holiday || null}
+                data-weekend={() => cell.day?.weekend || null}
+                data-edge={() => cell.edge || null}
+                style={() => ({ gridColumn: `${cell.first + 2} / span ${cell.span}` })}
               >
-                <span class="mx-scheduler__weekday">{() => format.weekday(day.date)}</span>
-                <span class="mx-scheduler__day-number">{() => format.dayNumber(day.date)}</span>
+                <span class="mx-scheduler__weekday">{() => (cell.day ? format.weekday(cell.day.date) : '')}</span>
+                <span class="mx-scheduler__day-number">{() => (cell.day ? format.dayNumber(cell.day.date) : '')}</span>
               </div>
             ))}
           </div>
@@ -68,20 +72,22 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
             <div class="mx-scheduler__all-day-area">
               <div class="mx-scheduler__all-day-grid" role="grid" aria-label={() => t('schedulerAllDay')} onkeydown={(e: KeyboardEvent) => host.gridKey(e)}>
                 <div class="mx-scheduler__row" role="row">
-                  {st.days.map((day) => (
+                  {st.columns.map((column) => (
                     <div
-                      key={day.index}
+                      key={column.index}
                       class="mx-scheduler__cell mx-scheduler__all-day-cell"
                       role="gridcell"
-                      data-cell={`${day.index}:-1`}
-                      data-today={() => day.today || null}
-                      data-past={() => day.past || null}
-                      tabindex={() => (focused(day.index, -1) ? 0 : -1)}
-                      aria-selected={() => model.isSelected(day.index, -1)}
-                      aria-label={() => `${t('schedulerAllDay')}, ${format.fullDate(day.date)}`}
-                      onpointerdown={(e: PointerEvent) => host.cellPointerDown({ day: day.index, slot: -1 }, e)}
-                      onclick={(e: MouseEvent) => host.cellClick({ day: day.index, slot: -1 }, e)}
-                      ondblclick={(e: MouseEvent) => host.cellDblClick({ day: day.index, slot: -1 }, e)}
+                      data-cell={`${column.index}:-1`}
+                      data-today={() => column.day.today || null}
+                      data-past={() => column.day.past || null}
+                      data-edge={() => column.edge || null}
+                      data-blocked={() => column.blocked || null}
+                      tabindex={() => (focused(column.index, -1) ? 0 : -1)}
+                      aria-selected={() => model.isSelected(column.index, -1)}
+                      aria-label={() => `${where(column, -1).group}${t('schedulerAllDay')}, ${format.fullDate(column.day.date)}${where(column, -1).block}`}
+                      onpointerdown={(e: PointerEvent) => host.cellPointerDown({ column: column.index, slot: -1 }, e)}
+                      onclick={(e: MouseEvent) => host.cellClick({ column: column.index, slot: -1 }, e)}
+                      ondblclick={(e: MouseEvent) => host.cellDblClick({ column: column.index, slot: -1 }, e)}
                     />
                   ))}
                 </div>
@@ -90,27 +96,27 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
                 {st.allDay.pieces.map((piece) => (
                   <AppointmentBox key={piece.id} host={host} piece={piece} />
                 ))}
-                {st.days.map((day) => (
+                {st.columns.map((column) => (
                   <button
-                    key={day.index}
+                    key={column.index}
                     type="button"
                     class="mx-scheduler__more"
-                    x-display={() => (st.allDay.more[day.index] ?? 0) > 0}
+                    x-display={() => (st.allDay.more[column.index] ?? 0) > 0}
                     style={() => ({
-                      gridColumn: String(day.index + 1),
-                      gridRow: String((st.allDay.moreAt[day.index] ?? 0) + 1),
+                      gridColumn: String(column.index + 1),
+                      gridRow: String((st.allDay.moreAt[column.index] ?? 0) + 1),
                     })}
                     aria-label={() =>
                       t('schedulerMoreLabel', {
-                        count: st.allDay.more[day.index] ?? 0,
-                        date: format.fullDate(day.date),
+                        count: st.allDay.more[column.index] ?? 0,
+                        date: `${where(column, -1).group}${format.fullDate(column.day.date)}`,
                       })
                     }
-                    onclick={(e: MouseEvent) => host.openMore(day.date, e.currentTarget as HTMLElement)}
+                    onclick={(e: MouseEvent) => host.openMore(column.day.date, column.group?.index ?? -1, e.currentTarget as HTMLElement)}
                   >
                     {() =>
                       t('schedulerMore', {
-                        count: st.allDay.more[day.index] ?? 0,
+                        count: st.allDay.more[column.index] ?? 0,
                       })
                     }
                   </button>
@@ -137,22 +143,24 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
             <div class="mx-scheduler__cells" role="grid" aria-label={() => t('schedulerTimes')} onkeydown={(e: KeyboardEvent) => host.gridKey(e)}>
               {st.slots.map((slot) => (
                 <div key={slot.index} class="mx-scheduler__row" role="row" data-hour-start={() => slot.hourStart || null}>
-                  {st.days.map((day) => (
+                  {st.columns.map((column) => (
                     <div
-                      key={day.index}
+                      key={column.index}
                       class="mx-scheduler__cell"
                       role="gridcell"
-                      data-cell={`${day.index}:${slot.index}`}
-                      data-work={() => work(day, slot) || null}
-                      data-holiday={() => day.holiday || null}
-                      data-today={() => day.today || null}
-                      data-past={() => day.past || null}
-                      tabindex={() => (focused(day.index, slot.index) ? 0 : -1)}
-                      aria-selected={() => model.isSelected(day.index, slot.index)}
-                      aria-label={() => `${format.fullDate(day.date)}, ${format.time(cellTime(day, slot))}`}
-                      onpointerdown={(e: PointerEvent) => host.cellPointerDown({ day: day.index, slot: slot.index }, e)}
-                      onclick={(e: MouseEvent) => host.cellClick({ day: day.index, slot: slot.index }, e)}
-                      ondblclick={(e: MouseEvent) => host.cellDblClick({ day: day.index, slot: slot.index }, e)}
+                      data-cell={`${column.index}:${slot.index}`}
+                      data-work={() => work(column, slot) || null}
+                      data-holiday={() => column.day.holiday || null}
+                      data-today={() => column.day.today || null}
+                      data-past={() => column.day.past || null}
+                      data-edge={() => column.edge || null}
+                      data-blocked={() => !!model.blockAt(column.index, slot.index) || null}
+                      tabindex={() => (focused(column.index, slot.index) ? 0 : -1)}
+                      aria-selected={() => model.isSelected(column.index, slot.index)}
+                      aria-label={() => `${where(column, slot.index).group}${format.fullDate(column.day.date)}, ${format.time(cellTime(column, slot))}${where(column, slot.index).block}`}
+                      onpointerdown={(e: PointerEvent) => host.cellPointerDown({ column: column.index, slot: slot.index }, e)}
+                      onclick={(e: MouseEvent) => host.cellClick({ column: column.index, slot: slot.index }, e)}
+                      ondblclick={(e: MouseEvent) => host.cellDblClick({ column: column.index, slot: slot.index }, e)}
                     />
                   ))}
                 </div>
@@ -162,15 +170,18 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
               {st.timed.map((piece) => (
                 <AppointmentBox key={piece.id} host={host} piece={piece} />
               ))}
-              <div
-                class="mx-scheduler__now"
-                aria-hidden="true"
-                x-display={() => host.showCurrentTime() && model.todayIndex() >= 0 && model.nowAt() !== null}
-                style={() => ({
-                  '--_day': String(Math.max(0, model.todayIndex())),
-                  insetBlockStart: `${(model.nowAt() ?? 0) * 100}%`,
-                })}
-              />
+              {model.todayColumns().map((column) => (
+                <div
+                  key={column.index}
+                  class="mx-scheduler__now"
+                  aria-hidden="true"
+                  x-display={() => host.showCurrentTime() && model.nowAt() !== null}
+                  style={() => ({
+                    '--_column': String(column.index),
+                    insetBlockStart: `${(model.nowAt() ?? 0) * 100}%`,
+                  })}
+                />
+              ))}
             </div>
           </div>
         </div>

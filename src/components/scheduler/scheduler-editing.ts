@@ -1,5 +1,7 @@
-/** What the user may change. Each is a switch of its own; an appointment's own field (`fields.allowDrag`…) wins over it. */
-export interface SchedulerEditing {
+import type { SchedulerForm } from './scheduler-form';
+
+/** What the user may change, and the form. Each is a switch of its own; an appointment's own field (`fields.allowDrag`…) wins over it. */
+export interface SchedulerEditing<T = unknown> {
   /** A double click (or Enter) on cells opens the form for a new appointment. Default `true`. */
   allowAdding: boolean;
   /** The form edits an appointment. Default `true`. */
@@ -18,4 +20,6 @@ export interface SchedulerEditing {
   allowRecurrence: boolean;
   /** The form edits the time zones of the start and the end. Default `false`. */
   allowTimeZones: boolean;
+  /** What the appointment form holds and how it is laid out, without events (`onFormOpening` still gets the items). */
+  form?: SchedulerForm<T>;
 }

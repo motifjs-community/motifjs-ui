@@ -119,7 +119,7 @@ describe('Scheduler editing', () => {
     key(box, 'ArrowRight');
     await tick();
     expect(box.dataset.draft).toBe('true');
-    expect(box.style.getPropertyValue('--_day')).toBe('3');
+    expect(box.style.getPropertyValue('--_column')).toBe('3');
     key(box, 'Enter');
     await tick();
     expect(drops).toEqual(['29 9:30 true']);
@@ -132,7 +132,7 @@ describe('Scheduler editing', () => {
     key(box, 'Escape');
     await tick();
     expect(list[0].endDate).toEqual(at(29, 10, 30));
-    expect(box.style.getPropertyValue('--_day')).toBe('3');
+    expect(box.style.getPropertyValue('--_column')).toBe('3');
   });
 
   it('Shift and the arrows resize; an event can keep it from going somewhere', async () => {

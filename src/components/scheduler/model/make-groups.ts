@@ -1,0 +1,58 @@
+import type { GroupResource } from './group-resource';
+import type { ResourceKind } from './ResourceKind';
+import { sameValue } from './same-value';
+import type { SchedulerGroup } from './scheduler-group';
+
+/** The work time a group falls back on. */
+export interface BaseWork {
+  start: number;
+  end: number;
+  days: readonly number[];
+}
+
+/**
+ * The groups of the columns: every item of the first kind, each with every item of the next
+ * (only its own, when the next kind says whose it is by `parentExpr`), and so on. A group's work
+ * time is the innermost item's own, else the base.
+ */
+export function makeGroups(kinds: readonly ResourceKind<unknown>[], base: BaseWork): Omit<SchedulerGroup, 'index'>[] {
+  if (!kinds.length) return [];
+  const out: Omit<SchedulerGroup, 'index'>[] = [];
+  const walk = (level: number, path: GroupResource[]) => {
+    if (level === kinds.length) {
+      out.push(groupOf(kinds, path, base));
+      return;
+    }
+    const kind = kinds[level];
+    const parent = path[level - 1];
+    for (const item of kind.items) {
+      if (parent && kind.def.parentExpr && !sameValue(kind.parentOf(item), parent.value)) continue;
+      const value = kind.valueOf(item);
+      walk(level + 1, [...path, { field: kind.field, value, item, text: kind.textOf(item), color: kind.colorOf(item) }]);
+    }
+  };
+  walk(0, []);
+  return out;
+}
+
+function groupOf(kinds: readonly ResourceKind<unknown>[], path: GroupResource[], base: BaseWork): Omit<SchedulerGroup, 'index'> {
+  const values: Record<string, unknown> = {};
+  for (const step of path) values[step.field] = step.value;
+  let start: number | undefined;
+  let end: number | undefined;
+  let days: readonly number[] | undefined;
+  for (let level = path.length - 1; level >= 0; level--) {
+    const own = kinds[level].workOf(path[level].item);
+    start ??= own.start;
+    end ??= own.end;
+    days ??= own.days;
+  }
+  return {
+    key: path.map((step) => `${step.field}=${String(step.value)}`).join('|'),
+    values,
+    path,
+    workStart: start ?? base.start,
+    workEnd: end ?? base.end,
+    workDays: days ?? base.days,
+  };
+}

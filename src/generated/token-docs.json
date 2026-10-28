@@ -11704,6 +11704,27 @@
     "value": 0
   },
   {
+    "name": "scheduler.appointment-time-tone",
+    "cssVar": "--mx-scheduler-appointment-time-tone",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "scheduler.appointment-time-tone-hover",
+    "cssVar": "--mx-scheduler-appointment-time-tone-hover",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "scheduler.appointment-time-tone-open",
+    "cssVar": "--mx-scheduler-appointment-time-tone-open",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
     "name": "scheduler.appointment-frame-color",
     "cssVar": "--mx-scheduler-appointment-frame-color",
     "type": "color",
@@ -12453,6 +12474,13 @@
     "value": "0px"
   },
   {
+    "name": "scheduler.cell.blocked.bg",
+    "cssVar": "--mx-scheduler-cell-blocked-bg",
+    "type": "color",
+    "ref": "color.fill.subtle.tertiary",
+    "value": "rgb(0 0 0 / 0.0241)"
+  },
+  {
     "name": "scheduler.cell.hover.bg",
     "cssVar": "--mx-scheduler-cell-hover-bg",
     "type": "color",
@@ -12768,27 +12796,6 @@
     "value": "500"
   },
   {
-    "name": "scheduler.appointment-time.color",
-    "cssVar": "--mx-scheduler-appointment-time-color",
-    "type": "color",
-    "ref": "color.fg.secondary",
-    "value": "#5e5c55"
-  },
-  {
-    "name": "scheduler.appointment-time.hover.color",
-    "cssVar": "--mx-scheduler-appointment-time-hover-color",
-    "type": "color",
-    "ref": "color.fg.primary",
-    "value": "#1d1c1a"
-  },
-  {
-    "name": "scheduler.appointment-time.open.color",
-    "cssVar": "--mx-scheduler-appointment-time-open-color",
-    "type": "color",
-    "ref": "color.fg.primary",
-    "value": "#1d1c1a"
-  },
-  {
     "name": "scheduler.tooltip.width",
     "cssVar": "--mx-scheduler-tooltip-width",
     "type": "dimension",
@@ -13074,6 +13081,251 @@
     "type": "color",
     "ref": "color.fg.secondary",
     "value": "#5e5c55"
+  },
+  {
+    "name": "scheduler.group-header.padding",
+    "cssVar": "--mx-scheduler-group-header-padding",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "scheduler.group-header.border-start-width",
+    "cssVar": "--mx-scheduler-group-header-border-start-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "scheduler.group-header.border-bottom-width",
+    "cssVar": "--mx-scheduler-group-header-border-bottom-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "scheduler.group-header.border-color",
+    "cssVar": "--mx-scheduler-group-header-border-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "scheduler.group-header.color",
+    "cssVar": "--mx-scheduler-group-header-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "scheduler.group-header.font-size",
+    "cssVar": "--mx-scheduler-group-header-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "scheduler.group-header.font-weight",
+    "cssVar": "--mx-scheduler-group-header-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "scheduler.group-header.inner.color",
+    "cssVar": "--mx-scheduler-group-header-inner-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "scheduler.group-header.inner.font-weight",
+    "cssVar": "--mx-scheduler-group-header-inner-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.regular",
+    "value": "400"
+  },
+  {
+    "name": "scheduler.group-header.inner.font-size",
+    "cssVar": "--mx-scheduler-group-header-inner-font-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "scheduler.group-header.padding-block",
+    "cssVar": "--mx-scheduler-group-header-padding-block",
+    "type": "dimension",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "scheduler.group-header.padding-inline",
+    "cssVar": "--mx-scheduler-group-header-padding-inline",
+    "type": "dimension",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "scheduler.group-swatch.display",
+    "cssVar": "--mx-scheduler-group-swatch-display",
+    "type": "keyword",
+    "ref": null,
+    "value": "block"
+  },
+  {
+    "name": "scheduler.group-swatch.width",
+    "cssVar": "--mx-scheduler-group-swatch-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.5rem"
+  },
+  {
+    "name": "scheduler.group-swatch.height",
+    "cssVar": "--mx-scheduler-group-swatch-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.5rem"
+  },
+  {
+    "name": "scheduler.group-swatch.radius",
+    "cssVar": "--mx-scheduler-group-swatch-radius",
+    "type": "dimension",
+    "ref": "radius.full",
+    "value": "9999px"
+  },
+  {
+    "name": "scheduler.group-swatch.margin-end",
+    "cssVar": "--mx-scheduler-group-swatch-margin-end",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "scheduler.group-divider.display",
+    "cssVar": "--mx-scheduler-group-divider-display",
+    "type": "keyword",
+    "ref": null,
+    "value": "block"
+  },
+  {
+    "name": "scheduler.group-divider.width",
+    "cssVar": "--mx-scheduler-group-divider-width",
+    "type": "dimension",
+    "ref": "border.width.2",
+    "value": "2px"
+  },
+  {
+    "name": "scheduler.group-divider.bg",
+    "cssVar": "--mx-scheduler-group-divider-bg",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "scheduler.group-divider.inner.display",
+    "cssVar": "--mx-scheduler-group-divider-inner-display",
+    "type": "keyword",
+    "ref": null,
+    "value": "none"
+  },
+  {
+    "name": "scheduler.unavailable.display",
+    "cssVar": "--mx-scheduler-unavailable-display",
+    "type": "keyword",
+    "ref": null,
+    "value": "block"
+  },
+  {
+    "name": "scheduler.unavailable.image",
+    "cssVar": "--mx-scheduler-unavailable-image",
+    "type": "keyword",
+    "ref": null,
+    "value": "repeating-linear-gradient(135deg, rgb(0 0 0 / 0.1) 0 1px, transparent 1px 0.5rem)"
+  },
+  {
+    "name": "scheduler.drop-mark.display",
+    "cssVar": "--mx-scheduler-drop-mark-display",
+    "type": "keyword",
+    "ref": null,
+    "value": "block"
+  },
+  {
+    "name": "scheduler.drop-mark.width",
+    "cssVar": "--mx-scheduler-drop-mark-width",
+    "type": "dimension",
+    "ref": "icon.size.sm",
+    "value": "0.75rem"
+  },
+  {
+    "name": "scheduler.drop-mark.margin-end",
+    "cssVar": "--mx-scheduler-drop-mark-margin-end",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "scheduler.drop-mark.icon",
+    "cssVar": "--mx-scheduler-drop-mark-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-blocked)"
+  },
+  {
+    "name": "scheduler.resource-swatch.display",
+    "cssVar": "--mx-scheduler-resource-swatch-display",
+    "type": "keyword",
+    "ref": null,
+    "value": "block"
+  },
+  {
+    "name": "scheduler.resource-swatch.width",
+    "cssVar": "--mx-scheduler-resource-swatch-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.75rem"
+  },
+  {
+    "name": "scheduler.resource-swatch.height",
+    "cssVar": "--mx-scheduler-resource-swatch-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.75rem"
+  },
+  {
+    "name": "scheduler.resource-swatch.radius",
+    "cssVar": "--mx-scheduler-resource-swatch-radius",
+    "type": "dimension",
+    "ref": "radius.full",
+    "value": "9999px"
+  },
+  {
+    "name": "scheduler.tooltip-resource-label.margin-end",
+    "cssVar": "--mx-scheduler-tooltip-resource-label-margin-end",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "scheduler.tooltip-resource-label.font-weight",
+    "cssVar": "--mx-scheduler-tooltip-resource-label-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "scheduler.tooltip-resource-item.gap",
+    "cssVar": "--mx-scheduler-tooltip-resource-item-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "scheduler.tooltip-resource-item.margin-end",
+    "cssVar": "--mx-scheduler-tooltip-resource-item-margin-end",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
   },
   {
     "name": "scheduler.state.gap",

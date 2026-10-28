@@ -49,6 +49,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   scheduler: () => import('../pages/scheduler/SchedulerPage'),
   'scheduler-editing': () => import('../pages/scheduler/SchedulerEditingPage'),
   'scheduler-recurrence': () => import('../pages/scheduler/SchedulerRecurrencePage'),
+  'scheduler-resources': () => import('../pages/scheduler/SchedulerResourcesPage'),
+  'scheduler-form': () => import('../pages/scheduler/SchedulerFormPage'),
   datagrid: () => import('../pages/datagrid/DataGridPage'),
   'datagrid-editing': () => import('../pages/datagrid/DataGridEditingPage'),
   'datagrid-forms': () => import('../pages/datagrid/DataGridFormsPage'),

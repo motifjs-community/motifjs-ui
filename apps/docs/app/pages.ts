@@ -104,6 +104,8 @@ export const GROUPS = [
       { id: 'scheduler', label: 'Overview', title: 'Scheduler', path: '/scheduler', related: ['scheduler-editing', 'calendar', 'datebox'] },
       { id: 'scheduler-editing', label: 'Editing', title: 'Scheduler: Editing', path: '/scheduler/editing', related: ['scheduler', 'formlayout', 'window'] },
       { id: 'scheduler-recurrence', label: 'Recurrence and time zones', title: 'Scheduler: Recurrence and time zones', path: '/scheduler/recurrence', related: ['scheduler', 'scheduler-editing', 'datebox'] },
+      { id: 'scheduler-resources', label: 'Resources and groups', title: 'Scheduler: Resources and groups', path: '/scheduler/resources', related: ['scheduler', 'scheduler-form', 'tagbox'] },
+      { id: 'scheduler-form', label: 'The appointment form', title: 'Scheduler: The appointment form', path: '/scheduler/form', related: ['scheduler-editing', 'formlayout', 'tabs'] },
     ],
   },
   {

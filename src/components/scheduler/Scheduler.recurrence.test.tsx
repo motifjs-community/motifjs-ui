@@ -59,7 +59,7 @@ function make(props: Record<string, unknown> = {}) {
 const series = (): Meeting => ({ id: 1, text: 'Standup', startDate: at(5, 9), endDate: at(5, 10), recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,WE,FR' });
 const boxes = (s: Scheduler<Meeting>) => [...s.element.querySelectorAll<HTMLElement>('.mx-scheduler__appointment')].filter((b) => !b.hidden);
 const textOf = (el: Element) => el.querySelector('.mx-scheduler__appointment-text')?.textContent;
-const dayOf = (el: HTMLElement) => el.style.getPropertyValue('--_day');
+const dayOf = (el: HTMLElement) => el.style.getPropertyValue('--_column');
 const key = (el: Element, k: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
 /** Answers the series question with `scope` and records what was asked. */
 const answer = (scope: SeriesScope, asked: string[] = []) => ({

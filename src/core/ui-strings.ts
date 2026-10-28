@@ -475,6 +475,13 @@ export interface UiStrings {
   schedulerEndTimeZone: string;
   schedulerOwnZone: string;
   schedulerInZone: string;
+  schedulerBlocked: string;
+  schedulerUnavailable: string;
+  schedulerMovingNotFree: string;
+  schedulerTaken: string;
+  schedulerBlockedTime: string;
+  schedulerOffHours: string;
+  schedulerNotFree: string;
   recurrenceRepeat: string;
   recurrenceNever: string;
   recurrenceDaily: string;

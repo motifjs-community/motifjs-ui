@@ -60,7 +60,7 @@ describe('Scheduler', () => {
     expect(s.element.querySelectorAll('.mx-scheduler__cells [role="gridcell"]').length).toBe(7 * 48);
     const standup = s.element.querySelector<HTMLElement>('.mx-scheduler__layer .mx-scheduler__appointment')!;
     expect(textOf(standup)).toBe('Standup');
-    expect(standup.style.getPropertyValue('--_day')).toBe('2');
+    expect(standup.style.getPropertyValue('--_column')).toBe('2');
     const bar = s.element.querySelector('.mx-scheduler__bars .mx-scheduler__appointment') as HTMLElement;
     expect(textOf(bar)).toBe('Trip');
     expect(bar.style.gridColumn).toBe('2 / span 2');
@@ -76,7 +76,7 @@ describe('Scheduler', () => {
     list[0].endDate = at(29, 10);
     await tick();
     expect(boxes(s)[0]).toBe(box);
-    expect(box.style.getPropertyValue('--_day')).toBe('3');
+    expect(box.style.getPropertyValue('--_column')).toBe('3');
     list.push({
       id: 2,
       text: 'Review',
@@ -161,6 +161,7 @@ describe('Scheduler', () => {
       start: at(28, 9),
       end: at(28, 11),
       allDay: false,
+      resources: null,
     });
     expect(s.element.querySelectorAll('[aria-selected="true"]').length).toBe(4);
     key('Escape');

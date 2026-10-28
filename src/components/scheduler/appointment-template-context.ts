@@ -11,4 +11,6 @@ export interface AppointmentTemplateContext<T> {
   time: string;
   allDay: boolean;
   view: SchedulerViewType;
+  /** The resource values of the group the piece stands in, by field; `null` without groups. */
+  group: Record<string, unknown> | null;
 }

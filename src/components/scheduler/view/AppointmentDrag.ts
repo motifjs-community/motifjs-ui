@@ -43,9 +43,10 @@ interface Press<T> {
   start: Date;
   end: Date;
   allDay: boolean;
-  /** The time (or the day) under the pointer when it was pressed. */
+  /** The time (or the day) under the pointer when it was pressed, and the group of the piece pressed (-1 without groups). */
   at: Date | null;
   atDay: Date | null;
+  group: number;
   started: boolean;
   touchTimer?: ReturnType<typeof setTimeout>;
 }
@@ -76,8 +77,8 @@ export class AppointmentDrag<T> {
     return Date.now() - this.endedAt < 300;
   }
 
-  /** A press on an appointment (or on one of its edges): it becomes a drag once the pointer moves. */
-  begin(item: T, mode: DragMode, e: PointerEvent): void {
+  /** A press on an appointment (or on one of its edges) in a group: it becomes a drag once the pointer moves. */
+  begin(item: T, mode: DragMode, e: PointerEvent, group = -1): void {
     if (e.button !== 0 || this.press) return;
     const time = this.host.model.timeOf(item);
     if (!time) return;
@@ -93,6 +94,7 @@ export class AppointmentDrag<T> {
       allDay: time.allDay,
       at: cell?.time ?? null,
       atDay: cell?.day ?? null,
+      group,
       started: false,
     };
     const doc = this.host.root().ownerDocument;
@@ -205,7 +207,10 @@ export class AppointmentDrag<T> {
     const next = press.mode === 'move' ? this.moved(press, cell) : this.resized(press, cell);
     if (!next) return;
     const copy = press.mode === 'move' && last.copy && this.host.canCopy();
-    const draft: Draft<T> = { item: press.item, ...next, copy, invalid: false };
+    // Moved into another group, it takes that group's resources.
+    const model = this.host.model;
+    const resources = press.mode === 'move' ? model.movedValues(press.item, model.state.groups[press.group] ?? null, model.groupOf(cell.column)) : null;
+    const draft: Draft<T> = { item: press.item, ...next, copy, invalid: false, resources };
     const current = this.draft;
     if (current && same(current, draft)) return;
     draft.invalid = !this.host.over(press.mode, draft);
@@ -278,16 +283,16 @@ export class AppointmentDrag<T> {
     const el = root.ownerDocument.elementsFromPoint(x, y).find((node) => node instanceof HTMLElement && node.dataset.cell && root.contains(node)) as
       HTMLElement | undefined;
     if (!el) return null;
-    const [dayIndex, slotIndex] = el.dataset.cell!.split(':').map(Number);
+    const [columnIndex, slotIndex] = el.dataset.cell!.split(':').map(Number);
     const model = this.host.model;
-    const day = model.state.days[dayIndex];
+    const day = model.state.columns[columnIndex]?.day;
     if (!day) return null;
     const slot = slotIndex >= 0 ? model.state.slots[slotIndex] : undefined;
-    if (!slot || this.host.view().type === 'month') return { day: day.date, time: null };
+    if (!slot || this.host.view().type === 'month') return { day: day.date, time: null, column: columnIndex };
     const box = el.getBoundingClientRect();
     const share = box.height > 0 ? Math.max(0, Math.min(1, (y - box.top) / box.height)) : 0;
     const minutes = slot.minutes + share * this.host.view().cellDuration;
-    return { day: day.date, time: model.zone.date(day.wall + minutes * MINUTE) };
+    return { day: day.date, time: model.zone.date(day.wall + minutes * MINUTE), column: columnIndex };
   }
 
   /** Near an edge of the scroll box it scrolls, a frame at a time, and the draft follows. */
@@ -318,8 +323,15 @@ export class AppointmentDrag<T> {
 interface CellAt {
   day: Date;
   time: Date | null;
+  column: number;
 }
 
 function same<T>(a: Draft<T>, b: Draft<T>): boolean {
-  return a.start.getTime() === b.start.getTime() && a.end.getTime() === b.end.getTime() && a.allDay === b.allDay && a.copy === b.copy;
+  return (
+    a.start.getTime() === b.start.getTime() &&
+    a.end.getTime() === b.end.getTime() &&
+    a.allDay === b.allDay &&
+    a.copy === b.copy &&
+    JSON.stringify(a.resources ?? null) === JSON.stringify(b.resources ?? null)
+  );
 }

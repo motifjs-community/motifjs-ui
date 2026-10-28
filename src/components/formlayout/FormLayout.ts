@@ -1,4 +1,4 @@
-import { effect, read, untracked, type Bind, type ComponentBase, type IBaseProp } from '@motifx/core';
+import { Component, effect, read, untracked, type Bind, type ComponentBase, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
 import type { FieldLabelMode } from '../../parts/field/field-label-mode';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
@@ -14,6 +14,9 @@ import { NumberBox } from '../numberbox/NumberBox';
 import { RadioGroup } from '../radiogroup/RadioGroup';
 import { Slider } from '../slider/Slider';
 import { Switch } from '../switch/Switch';
+import { Tab } from '../tabs/Tab';
+import { Tabs } from '../tabs/Tabs';
+import { TagBox } from '../tagbox/TagBox';
 import { TextArea } from '../textarea/TextArea';
 import { TextBox } from '../textbox/TextBox';
 import type { FormEditorFactory } from './form-editor-factory';
@@ -31,12 +34,15 @@ interface Parts {
   made: ComponentBase[];
   editors: Map<string, ComponentBase>;
   stops: (() => void)[];
+  /** The tabs of the form, so a check can show the tab of the field that failed. */
+  tabs: Tabs[];
 }
 
 /**
- * Lays out the fields of a data object: each item a field with its editor (chosen by name or by the
- * type of the value), a group under a caption, a button or a component of your own. The editors are
- * bound to the object both ways and checked together; sending the form checks them first.
+ * Lays out the fields of a data object: each item a field with its editor (chosen by name, by the
+ * type of the value, or made by a function), a group under a caption, tabs, a button or a
+ * component of your own. The editors are bound to the object both ways and checked together (the
+ * ones on hidden tabs too); sending the form checks them first.
  *
  * @example
  * <FormLayout data={this.order} columns={2} onValidSubmit={() => this.save()} items={[
@@ -60,6 +66,7 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     ['checkbox', (p) => new CheckBox(p)],
     ['switch', (p) => new Switch(p)],
     ['dropdown', (p) => new DropDown(p)],
+    ['tagbox', (p) => new TagBox(p)],
     ['combobox', (p) => new ComboBox(p)],
     ['lookup', (p) => new Lookup(p)],
     ['radio', (p) => new RadioGroup(p)],
@@ -145,8 +152,16 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     return this.formParts.editors.get(field);
   }
 
-  validate(options?: { focus?: boolean }): Promise<ValidationResult> {
-    return this.formParts.group.validate(options);
+  /** Checks every field; the first one that failed gets focus (its tab shown first) unless `focus` is `false`. */
+  async validate(options?: { focus?: boolean }): Promise<ValidationResult> {
+    const result = await this.formParts.group.validate({ focus: false });
+    if (options?.focus !== false) {
+      for (const target of result.invalid) {
+        this.reveal(target.element);
+        if (target.focus()) break;
+      }
+    }
+    return result;
   }
 
   resetValidation(): void {
@@ -163,7 +178,7 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
 
   private get formParts(): Parts {
     const self = this as unknown as { [PARTS]?: Parts };
-    return (self[PARTS] ??= { group: new ValidationGroup(), made: [], editors: new Map(), stops: [] });
+    return (self[PARTS] ??= { group: new ValidationGroup(), made: [], editors: new Map(), stops: [], tabs: [] });
   }
 
   private clear(): void {
@@ -171,6 +186,15 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     for (const stop of parts.stops.splice(0)) stop();
     for (const made of parts.made.splice(0)) if (!made.isDisposed) void made.dispose();
     parts.editors.clear();
+    parts.tabs.length = 0;
+  }
+
+  /** Selects the tab an element is on (each tab up from it, for tabs in tabs). */
+  private reveal(element: Element): void {
+    for (const tabs of this.formParts.tabs) {
+      const tab = tabs.tabs.find((t) => t.element.contains(element));
+      if (tab && tabs.selectedTab !== tab) tabs.selectedIndex = tabs.tabs.indexOf(tab);
+    }
   }
 
   private render(): void {
@@ -205,12 +229,43 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
       for (const child of item.items) this.place(child, inner);
       return;
     }
-    const component = item.template ? item.template() : item.button ? this.button(item) : item.field ? this.editor(item) : null;
+    if (item.tabs) {
+      cell.dataset.span = item.colSpan === undefined ? 'all' : cell.dataset.span;
+      this.placeTabs(item, cell);
+      return;
+    }
+    const context = { data: (this.peekProperty<T | null>('data') ?? null) as Record<string, unknown> | null, field: item.field ?? '', validationGroup: parts.group };
+    const component = item.template ? item.template(context) : item.button ? this.button(item) : item.field ? this.editor(item) : null;
     if (!component) return;
     this.controls.add(component);
     parts.made.push(component);
     cell.append(component.element as Node);
     if (item.button) cell.dataset.kind = 'button';
+  }
+
+  /** Tabs of items: every panel is built at once, so every field is checked whichever tab shows. */
+  private placeTabs(item: FormItem, cell: HTMLElement): void {
+    const parts = this.formParts;
+    const tabs = new Tabs({ lazy: false, label: item.label });
+    tabs.class.add('mx-form-layout__tabs');
+    for (const page of item.tabs!) {
+      const tab = new Tab({
+        title: page.title,
+        visible: page.visible,
+        content: () => {
+          const panel = new Component<HTMLDivElement>('div');
+          panel.element.className = 'mx-form-layout__grid';
+          if (page.columns) panel.element.style.setProperty('--_form-columns', String(page.columns));
+          for (const child of page.items) this.place(child, panel.element);
+          return panel;
+        },
+      });
+      tabs.add(tab);
+    }
+    this.controls.add(tabs);
+    parts.made.push(tabs);
+    parts.tabs.push(tabs);
+    cell.append(tabs.element as Node);
   }
 
   private button(item: FormItem): ComponentBase {
@@ -222,7 +277,7 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     const field = item.field!;
     const value = () => (this.getProperty<T | null | undefined>('data') as Record<string, unknown> | null | undefined)?.[field];
     const name = item.editor ?? this.editorFor(untracked(value));
-    const factory = FormLayout.editors.get(name) ?? FormLayout.editors.get('text')!;
+    const factory = typeof name === 'function' ? name : (FormLayout.editors.get(name) ?? FormLayout.editors.get('text')!);
     const props: Props = {
       label: item.label ?? field,
       value,

@@ -2,8 +2,9 @@
 export interface TimedPiece<T> {
   id: string;
   item: T;
-  /** The column's day index. */
-  day: number;
+  /** The column it stands in (a day, in a group), and the group's index (-1 without groups). */
+  column: number;
+  group: number;
   /** The part's own time, within the day. */
   start: Date;
   end: Date;

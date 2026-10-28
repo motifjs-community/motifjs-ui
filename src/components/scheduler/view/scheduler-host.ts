@@ -2,6 +2,8 @@ import type { ComponentBase } from '@motifx/core';
 import type { UiStrings } from '../../../core/ui-strings';
 import type { AppointmentTemplateContext } from '../appointment-template-context';
 import type { CellPlace } from '../model/cell-place';
+import type { Resources } from '../model/Resources';
+import type { ResourceHeaderContext } from '../resource-header-context';
 import type { SchedulerModel } from '../model/SchedulerModel';
 import type { StripPiece } from '../model/strip-piece';
 import type { TimedPiece } from '../model/timed-piece';
@@ -17,7 +19,10 @@ export interface SchedulerHost<T> {
   fields(): SchedulerFields;
   showCurrentTime(): boolean;
   dimPast(): boolean;
-  workHours(): { start: number; end: number };
+  /** The resource kinds: the names of an appointment's items. */
+  resources: Resources;
+  /** Draws a group's head. */
+  headerTemplate(): ((context: ResourceHeaderContext) => ComponentBase) | null;
   allDayLines(): number;
   rtl(): boolean;
   template(): ((context: AppointmentTemplateContext<T>) => ComponentBase) | null;
@@ -43,7 +48,8 @@ export interface SchedulerHost<T> {
   isSaving(item: T): boolean;
   /** The appointment's tooltip is showing. */
   isOpen(item: T): boolean;
-  openMore(day: Date, anchor: HTMLElement): void;
+  /** "+N more" of a day, in a group (its index, -1 without groups). */
+  openMore(day: Date, group: number, anchor: HTMLElement): void;
   gridKey(e: KeyboardEvent): void;
   /** A view is on the page. */
   viewShown(): void;

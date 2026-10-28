@@ -33,7 +33,7 @@ export default async function ({ page, base, check, axeSource, box }) {
     return {
       series: boxes.filter((b) => b.hasAttribute('data-series')).length,
       exceptions: boxes.filter((b) => b.hasAttribute('data-exception')).length,
-      standupDays: standups.map((b) => b.style.getPropertyValue('--_day')).sort(),
+      standupDays: standups.map((b) => b.style.getPropertyValue('--_column')).sort(),
       named: standups[0]?.textContent ?? '',
     };
   });
@@ -242,7 +242,7 @@ export default async function ({ page, base, check, axeSource, box }) {
       (el, start) =>
         [...el.querySelectorAll('.mx-scheduler__appointment')]
           .filter((b) => b.textContent.includes('Call with New York'))
-          .map((b) => `${b.style.getPropertyValue('--_day')}@${Math.round(start + (parseFloat(b.style.insetBlockStart) / 100) * 16)}`)
+          .map((b) => `${b.style.getPropertyValue('--_column')}@${Math.round(start + (parseFloat(b.style.insetBlockStart) / 100) * 16)}`)
           .join(' '),
       from,
     );

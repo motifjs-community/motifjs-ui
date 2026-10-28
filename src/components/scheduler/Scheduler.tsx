@@ -39,6 +39,8 @@ import type { DateChangingEventArgs } from './date-changing-event-args';
 import type { CellPlace } from './model/cell-place';
 import type { OverlapMode } from './model/overlap-mode';
 import type { ResolvedView } from './model/resolved-view';
+import { Resources } from './model/Resources';
+import { sameValue } from './model/same-value';
 import { SchedulerModel } from './model/SchedulerModel';
 import { rangeFilter } from './model/range-filter';
 import type { SeriesScope } from './model/series-scope';
@@ -50,6 +52,10 @@ import type { SchedulerCell } from './scheduler-cell';
 import type { SchedulerFields } from './scheduler-fields';
 import type { SchedulerKeys } from './scheduler-keys';
 import type { SchedulerProps } from './scheduler-props';
+import type { ResourceHeaderContext } from './resource-header-context';
+import type { SchedulerBlockedTime } from './scheduler-blocked-time';
+import type { SchedulerResource } from './scheduler-resource';
+import type { SchedulerTimeCheck } from './scheduler-time-check';
 import type { SchedulerRange } from './scheduler-range';
 import type { SchedulerView } from './scheduler-view';
 import type { SchedulerViewType } from './scheduler-view-type';
@@ -95,6 +101,13 @@ const OWN = [
   'seriesEdit',
   'recurrenceMarks',
   'appointmentTemplate',
+  'resources',
+  'groups',
+  'groupByDate',
+  'resourceHeaderTemplate',
+  'blockedTimes',
+  'allowOverlap',
+  'allowOffHours',
   'texts',
   'keys',
   'announce',
@@ -116,8 +129,8 @@ const DEFAULT_EDITING: SchedulerEditing = {
   allowTimeZones: false,
 };
 
-/** Props whose value is a function (a template, a test of a day). */
-const FUNCTION_VALUES = new Set(['isHoliday', 'appointmentTemplate']);
+/** Props whose value is a function (a template, a test of a day, a rule). */
+const FUNCTION_VALUES = new Set(['isHoliday', 'appointmentTemplate', 'resourceHeaderTemplate', 'allowOverlap']);
 
 const DEFAULT_FIELDS: SchedulerFields = {
   key: 'id',
@@ -148,6 +161,8 @@ const DEFAULT_KEYS: SchedulerKeys = {
   weekView: ['W'],
   workWeekView: ['X'],
   monthView: ['M'],
+  previousGroup: ['Alt+Shift+ArrowLeft'],
+  nextGroup: ['Alt+Shift+ArrowRight'],
 };
 
 const VIEW_TEXTS: Record<SchedulerViewType, keyof UiStrings> = {
@@ -163,6 +178,7 @@ const PARTS = Symbol('mx.scheduler');
 
 interface Parts<T> {
   model: SchedulerModel<T>;
+  resources: Resources;
   format: SchedulerFormat;
   host: SchedulerHost<T>;
   /** Changes of the rows (the data source's, or the array's in place) to read them again; the draft; the appointments being saved. */
@@ -206,8 +222,10 @@ interface Parts<T> {
  * reads are options. It moves by day, week or month (today, previous, next, a date chosen from a
  * calendar), selects cells with the pointer and the keyboard, places appointments at the same
  * time side by side, shows all-day and multi-day ones as bars, and what does not fit a month day
- * as "+N more". Every setting is a value or a function that is followed; a view's own settings
- * win over the scheduler's.
+ * as "+N more". Resources colour the appointments and split the columns into groups (nested, or
+ * under each date); blocked times, work hours per resource and an overlap rule say where an
+ * appointment may go. Every setting is a value or a function that is followed; a view's own
+ * settings win over the scheduler's.
  *
  * @example
  * <Scheduler appointments={state.meetings} currentView="week" startDayHour={7} onAppointmentDblClick={(e) => open(e.appointment)} />
@@ -447,6 +465,52 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set appointmentTemplate(value: Bind<((context: AppointmentTemplateContext<T>) => ComponentBase) | null>) {
     this.bindOwn('appointmentTemplate', value);
   }
+  get resources(): readonly SchedulerResource<any>[] {
+    return this.getProperty<readonly SchedulerResource<any>[] | undefined>('resources') ?? [];
+  }
+  set resources(value: Bind<readonly SchedulerResource<any>[]>) {
+    this.assignProperty('resources', value);
+  }
+  /** The resource fields the columns are grouped by, outer first. */
+  get groups(): readonly string[] {
+    return this.getProperty<readonly string[] | undefined>('groups') ?? [];
+  }
+  set groups(value: Bind<readonly string[]>) {
+    this.assignProperty('groups', value);
+  }
+  get groupByDate(): boolean {
+    return this.getProperty<boolean | undefined>('groupByDate') ?? false;
+  }
+  set groupByDate(value: Bind<boolean>) {
+    this.assignProperty('groupByDate', value, Boolean);
+  }
+  get resourceHeaderTemplate(): ((context: ResourceHeaderContext) => ComponentBase) | null {
+    return this.getProperty<((context: ResourceHeaderContext) => ComponentBase) | null | undefined>('resourceHeaderTemplate') ?? null;
+  }
+  set resourceHeaderTemplate(value: Bind<((context: ResourceHeaderContext) => ComponentBase) | null>) {
+    this.bindOwn('resourceHeaderTemplate', value);
+  }
+  /** Times nothing may be put in. */
+  get blockedTimes(): readonly SchedulerBlockedTime[] {
+    return this.getProperty<readonly SchedulerBlockedTime[] | undefined>('blockedTimes') ?? [];
+  }
+  set blockedTimes(value: Bind<readonly SchedulerBlockedTime[]>) {
+    this.assignProperty('blockedTimes', value);
+  }
+  /** Whether the user may make an appointment overlap another of its group; or a rule that decides whether a time is free. Default `true`. */
+  get allowOverlap(): boolean | ((check: SchedulerTimeCheck<T>) => boolean) {
+    return this.getProperty<boolean | ((check: SchedulerTimeCheck<T>) => boolean) | undefined>('allowOverlap') ?? true;
+  }
+  set allowOverlap(value: Bind<boolean | ((check: SchedulerTimeCheck<T>) => boolean)>) {
+    this.bindOwn('allowOverlap', value);
+  }
+  /** Whether the user may put an appointment outside the work hours. Default `true`. */
+  get allowOffHours(): boolean {
+    return this.getProperty<boolean | undefined>('allowOffHours') ?? true;
+  }
+  set allowOffHours(value: Bind<boolean>) {
+    this.assignProperty('allowOffHours', value, Boolean);
+  }
   get texts(): Partial<UiStrings> {
     return this.getProperty<Partial<UiStrings> | undefined>('texts') ?? {};
   }
@@ -469,12 +533,12 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     this.assignProperty('announce', value, Boolean);
   }
   /** What the user may change; `false` changes nothing (read only), `true` everything. */
-  get editing(): SchedulerEditing {
-    const value = this.getProperty<boolean | Partial<SchedulerEditing> | undefined>('editing');
-    if (value === false) return Object.fromEntries(Object.keys(DEFAULT_EDITING).map((k) => [k, k === 'confirmDelete'])) as unknown as SchedulerEditing;
-    return { ...DEFAULT_EDITING, ...(typeof value === 'object' && value ? value : {}) };
+  get editing(): SchedulerEditing<T> {
+    const value = this.getProperty<boolean | Partial<SchedulerEditing<T>> | undefined>('editing');
+    if (value === false) return Object.fromEntries(Object.keys(DEFAULT_EDITING).map((k) => [k, k === 'confirmDelete'])) as unknown as SchedulerEditing<T>;
+    return { ...DEFAULT_EDITING, ...(typeof value === 'object' && value ? value : {}) } as SchedulerEditing<T>;
   }
-  set editing(value: Bind<boolean | Partial<SchedulerEditing>>) {
+  set editing(value: Bind<boolean | Partial<SchedulerEditing<T>>>) {
     this.assignProperty('editing', value);
   }
   /** The minutes a drag and the keys move by. Default: the view's cell. */
@@ -655,8 +719,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       model.clearSelection();
       return true;
     }
-    const first = this.placeOf(cell.start, cell.allDay);
-    const last = this.placeOf(new Date(cell.end.getTime() - 1), cell.allDay);
+    const first = this.placeOf(cell.start, cell.allDay, cell.resources ?? null);
+    const last = this.placeOf(new Date(cell.end.getTime() - 1), cell.allDay, cell.resources ?? null);
     if (!first || !last) return false;
     model.focusCell(first);
     model.focusCell(last, true);
@@ -726,6 +790,28 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
   hideTooltip(): void {
     this.parts.editor.hideTooltip();
+  }
+  /**
+   * Whether an appointment may be at a time, and what is there: the appointments it would overlap
+   * in its groups, the blocked times, whether it is outside the work hours. With `resources`, the
+   * values its resource fields would have there.
+   */
+  checkTime(
+    appointment: T,
+    start: Date,
+    end: Date,
+    options: { allDay?: boolean; resources?: Record<string, unknown> | null } = {},
+  ): SchedulerTimeCheck<T> & { free: boolean } {
+    const result = this.parts.model.check(appointment, start, end, options.allDay ?? false, options.resources ?? null);
+    return { ...result.check, free: result.free };
+  }
+  /** An appointment's resource items, by kind, in the order of `resources` (the kinds it has). */
+  resourcesOf(appointment: T): { field: string; label: string; items: { value: unknown; text: string; color: string; item: unknown }[] }[] {
+    return this.parts.resources.itemsOf(appointment).map(({ kind, items }) => ({
+      field: kind.field,
+      label: kind.label,
+      items: items.map(({ value, text, color, item }) => ({ value, text, color, item })),
+    }));
   }
 
   /** The text for `key`: the scheduler's own `texts`, else `uiLocale`'s, filled in. */
@@ -843,6 +929,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const more = reactive({ date: null, items: [] }) as MoreListState<T>;
     const zone = () => TimeZone.of(this.timeZone);
     const format = new SchedulerFormat(() => this.locale, zone);
+    const resources = new Resources(() => this.resources);
     const model = new SchedulerModel<T>({
       date: () => this.currentDate,
       items: () => this.items(),
@@ -855,9 +942,15 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       room: () => ({ month: version.monthRoom, allDay: this.allDayLines + 1 }),
       draft: () => version.draft,
       zone,
+      resources,
+      workHours: () => ({ start: this.workStartHour, end: this.workEndHour }),
+      blockedTimes: () => this.blockedTimes,
+      allowOverlap: () => this.allowOverlap,
+      allowOffHours: () => this.allowOffHours,
     });
     const parts = {
       model,
+      resources,
       format,
       version,
       more,
@@ -919,6 +1012,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       fields: () => this.fields,
       items: () => this.items(),
       editing: () => this.editing,
+      resources: parts.resources,
       seriesEdit: () => this.seriesEdit,
       locale: () => this.locale,
       firstDayOfWeek: () => this.firstDayOfWeek,
@@ -932,6 +1026,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       root: () => this.element,
       scroller: () => parts.scroller,
       rtl: () => this.isRtl(),
+      keys: () => this.keys,
       saving: version.saving,
     });
     parts.drag = new AppointmentDrag<T>(parts.editor);
@@ -961,7 +1056,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       fields: () => this.fields,
       showCurrentTime: () => this.showCurrentTime,
       dimPast: () => this.dimPast,
-      workHours: () => ({ start: this.workStartHour, end: this.workEndHour }),
+      resources: parts.resources,
+      headerTemplate: () => this.resourceHeaderTemplate,
       allDayLines: () => this.allDayLines,
       rtl: () => this.isRtl(),
       template: () => this.appointmentTemplate,
@@ -980,13 +1076,13 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       appointmentClick: (piece, e) => this.clickAppointment(piece, e),
       appointmentDblClick: (piece, e) => this.openAppointment(piece, e),
       appointmentKey: (piece, e) => this.appointmentKey(piece, e),
-      appointmentPointerDown: (piece, mode, e) => parts.drag.begin(piece.item, mode, e),
+      appointmentPointerDown: (piece, mode, e) => parts.drag.begin(piece.item, mode, e, piece.group),
       appointmentBlur: () => parts.editor.cancelKeys(),
       canDrag: (item) => parts.editor.canDrag(item),
       canResize: (item) => parts.editor.canResize(item),
       isSaving: (item) => parts.editor.isSaving(item),
       isOpen: (item) => parts.editor.isOpen(item),
-      openMore: (day, anchor) => this.openMore(day, anchor),
+      openMore: (day, group, anchor) => this.openMore(day, group, anchor),
       gridKey: (e) => this.gridKey(e),
       viewShown: () => {
         if (!parts.focusWhenShown) return;
@@ -1029,13 +1125,15 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     });
   }
 
-  /** With remote filtering, the data source is asked for the days shown only. */
+  /** With remote filtering, the data source is asked for the days shown only (and, grouped, for the resources shown). */
   private filterSource(): void {
     const source = this.dataSource;
     if (!source) return;
-    const range = this.rangeOf(this.resolveView(), this.currentDate);
+    const view = this.resolveView();
+    const range = this.rangeOf(view, this.currentDate);
     const remote = this.remoteFiltering;
     const fields = this.fields;
+    const resources = this.shownResources(view);
     untracked(() => {
       const parts = this.parts;
       if (!remote) {
@@ -1043,9 +1141,24 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
         return;
       }
       // A series that began before the days shown may still happen in them.
-      const span = rangeFilter(range, fields);
+      const span = rangeFilter(range, fields, { resources });
       void source.setFilter(parts.baseFilter ? { and: [parts.baseFilter, span] } : span);
     });
+  }
+
+  /** The values shown of each field grouped by that holds one value (a list cannot be asked for); none without groups. */
+  private shownResources(view: ResolvedView): Record<string, unknown[]> {
+    const groups = this.parts.model.state.groups;
+    const out: Record<string, unknown[]> = {};
+    if (!groups.length) return out;
+    for (const field of view.groups) {
+      const kind = this.parts.resources.kind(field);
+      if (!kind || kind.multiple) continue;
+      const values: unknown[] = [];
+      for (const group of groups) if (!values.some((v) => sameValue(v, group.values[field]))) values.push(group.values[field]);
+      out[field] = values;
+    }
+    return out;
   }
 
   private bindKeys(keys: SchedulerKeys): void {
@@ -1086,7 +1199,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     untracked(() => {
       const active = deepActiveElement(this.element);
       const cell = active?.closest<HTMLElement>('[data-cell]');
-      if (cell && this.element.contains(cell) && cell.dataset.cell !== `${focus.day}:${focus.slot}`) this.focusCellElement();
+      if (cell && this.element.contains(cell) && cell.dataset.cell !== `${focus.column}:${focus.slot}`) this.focusCellElement();
     });
   }
 
@@ -1132,6 +1245,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const view = list.find((v) => v.name === name) ?? list[0] ?? { type: 'week', name: 'week' };
     const own = <V,>(value: Bind<V> | undefined, fallback: V): V => (value === undefined ? fallback : (read(value) ?? fallback));
     const start = own(view.startDayHour, this.startDayHour);
+    const kinds = this.resources.map((r) => r.field);
+    const groups = own<readonly string[]>(view.groups, this.groups).filter((field, i, list) => kinds.includes(field) && list.indexOf(field) === i);
     return {
       name: view.name ?? view.type,
       type: view.type,
@@ -1141,6 +1256,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       cellDuration: own(view.cellDuration, this.cellDuration),
       allDayPanel: own(view.allDayPanel, this.allDayPanel),
       maxAppointmentsPerCell: own(view.maxAppointmentsPerCell, this.maxAppointmentsPerCell),
+      groups,
+      groupByDate: groups.length > 0 && own(view.groupByDate, this.groupByDate),
     };
   }
 
@@ -1252,8 +1369,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       const target = doc.elementFromPoint(ev.clientX, ev.clientY);
       const cell = target instanceof Element ? target.closest<HTMLElement>('[data-cell]') : null;
       if (!cell || !this.element.contains(cell)) return;
-      const [day, slot] = cell.dataset.cell!.split(':').map(Number);
-      if (day !== parts.model.state.focus.day || slot !== parts.model.state.focus.slot) parts.model.focusCell({ day, slot }, true);
+      const [column, slot] = cell.dataset.cell!.split(':').map(Number);
+      if (column !== parts.model.state.focus.column || slot !== parts.model.state.focus.slot) parts.model.focusCell({ column, slot }, true);
     };
     const up = () => {
       parts.selecting = false;
@@ -1280,10 +1397,12 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
 
   private fireAppointment(emitter: Emitter<AppointmentClickEventArgs<T>>, piece: TimedPiece<T> | StripPiece<T>, event: MouseEvent | KeyboardEvent): boolean {
+    const group = this.parts.model.state.groups[piece.group];
     const e: AppointmentClickEventArgs<T> = {
       appointment: piece.item,
       start: piece.start,
       end: piece.end,
+      group: group ? { ...group.values } : null,
       event,
       cancel: false,
       source: this,
@@ -1345,9 +1464,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return [...this.element.querySelectorAll<HTMLElement>('.mx-scheduler__appointment')].find((el) => el.dataset.piece === piece.id) ?? null;
   }
 
-  private openMore(day: Date, anchor: HTMLElement): void {
+  private openMore(day: Date, group: number, anchor: HTMLElement): void {
     const parts = this.parts;
-    const items = parts.model.appointmentsIn(day, parts.model.zone.addDays(day, 1));
+    const items = parts.model.appointmentsIn(day, parts.model.zone.addDays(day, 1), parts.model.state.groups[group] ?? null);
     const e: MoreOpeningEventArgs<T> = {
       date: day,
       appointments: items,
@@ -1377,6 +1496,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
         appointment: item,
         start: time.start,
         end: time.end,
+        group: null,
         event,
         cancel: false,
         source: this,
@@ -1395,35 +1515,38 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const view = this.resolveView();
     const month = view.type === 'month';
     const focus = model.state.focus;
-    const days = model.state.days.length;
+    const columns = model.state.columns.length;
+    // A row of the month is a week (in every group); the day views are one row.
+    const per = model.perRow;
     const rows = model.state.slots.length;
     const across = this.isRtl() ? -1 : 1;
     const minSlot = month ? -1 : view.allDayPanel ? -1 : 0;
-    let day = focus.day;
+    let column = focus.column;
     let slot = focus.slot;
     let stepOut = 0;
+    const rowStart = month ? column - (column % per) : 0;
     switch (e.key) {
       case 'ArrowLeft':
-        day -= across;
+        column -= across;
         break;
       case 'ArrowRight':
-        day += across;
+        column += across;
         break;
       case 'ArrowUp':
-        if (month) day -= 7;
+        if (month) column -= per;
         else slot = Math.max(minSlot, slot - 1);
         break;
       case 'ArrowDown':
-        if (month) day += 7;
+        if (month) column += per;
         else slot = Math.min(rows - 1, slot + 1);
         break;
       case 'Home':
-        if (e.ctrlKey) [day, slot] = [0, month ? -1 : 0];
-        else day = month ? day - (day % 7) : 0;
+        if (e.ctrlKey) [column, slot] = [0, month ? -1 : 0];
+        else column = rowStart;
         break;
       case 'End':
-        if (e.ctrlKey) [day, slot] = [days - 1, month ? -1 : rows - 1];
-        else day = month ? day - (day % 7) + 6 : days - 1;
+        if (e.ctrlKey) [column, slot] = [columns - 1, month ? -1 : rows - 1];
+        else column = month ? rowStart + per - 1 : columns - 1;
         break;
       case 'PageUp':
       case 'PageDown': {
@@ -1450,20 +1573,20 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
         return;
     }
     e.preventDefault();
-    if (!stepOut && (day < 0 || day >= days)) stepOut = day < 0 ? -1 : 1;
+    if (!stepOut && (column < 0 || column >= columns)) stepOut = column < 0 ? -1 : 1;
     if (stepOut) {
-      // Past the first or the last day: the view moves on and the focus keeps its place in it.
-      const keep = month ? ((focus.day % 7) + 7) % 7 : day < 0 ? days - 1 : day >= days ? 0 : focus.day;
+      // Past the first or the last column: the view moves on and the focus keeps its place in it.
+      const keep = month ? ((focus.column % per) + per) % per : column < 0 ? columns - 1 : column >= columns ? 0 : focus.column;
       if (!this.step(stepOut, true)) return;
       queueMicrotask(() => {
-        const count = model.state.days.length;
-        const target = month ? Math.min(count - 1, (stepOut < 0 ? Math.floor((count - 1) / 7) * 7 : 0) + keep) : Math.min(count - 1, keep);
-        model.focusCell({ day: target, slot }, e.shiftKey);
+        const count = model.state.columns.length;
+        const target = month ? Math.min(count - 1, (stepOut < 0 ? Math.floor((count - 1) / per) * per : 0) + keep) : Math.min(count - 1, keep);
+        model.focusCell({ column: target, slot }, e.shiftKey);
         this.focusCellElement();
       });
       return;
     }
-    model.focusCell({ day, slot }, e.shiftKey);
+    model.focusCell({ column, slot }, e.shiftKey);
     this.focusCellElement();
   }
 
@@ -1484,21 +1607,23 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   private focusCellElement(): void {
     queueMicrotask(() => {
       const focus = this.parts.model.state.focus;
-      const cell = this.element.querySelector<HTMLElement>(`[data-cell="${focus.day}:${focus.slot}"]`);
+      const cell = this.element.querySelector<HTMLElement>(`[data-cell="${focus.column}:${focus.slot}"]`);
       cell?.focus({ preventScroll: false });
     });
   }
 
-  /** The cell a time is in, among the days shown. */
-  private placeOf(time: Date, allDay: boolean): CellPlace | null {
+  /** The cell a time is in, among the days shown: in the group of `resources` (the first one by default). */
+  private placeOf(time: Date, allDay: boolean, resources: Record<string, unknown> | null = null): CellPlace | null {
     const model = this.parts.model;
-    const day = model.state.days.findIndex((d) => model.zone.sameDay(d.date, time));
-    if (day < 0) return null;
-    if (allDay || this.resolveView().type === 'month') return { day, slot: -1 };
-    const minutes = (model.zone.wall(time) - model.state.days[day].wall) / 60_000;
+    const ofDay = model.state.columns.filter((c) => model.zone.sameDay(c.day.date, time));
+    const own = resources ? ofDay.find((c) => !c.group || Object.entries(c.group.values).every(([field, value]) => sameValue(resources[field], value))) : null;
+    const column = own ?? ofDay[0];
+    if (!column) return null;
+    if (allDay || this.resolveView().type === 'month') return { column: column.index, slot: -1 };
+    const minutes = (model.zone.wall(time) - column.day.wall) / 60_000;
     const slots = model.state.slots;
     let slot = 0;
     for (let i = 0; i < slots.length; i++) if (slots[i].minutes <= minutes) slot = i;
-    return { day, slot };
+    return { column: column.index, slot };
   }
 }

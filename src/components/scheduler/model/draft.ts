@@ -6,6 +6,8 @@ export interface Draft<T> {
   allDay: boolean;
   /** A copy goes there; the appointment stays. */
   copy: boolean;
-  /** It may not go there (an event said so). */
+  /** It may not go there (an event or the time's availability said so). */
   invalid: boolean;
+  /** Moved to another group: the values its resource fields would get, by field. */
+  resources?: Record<string, unknown> | null;
 }

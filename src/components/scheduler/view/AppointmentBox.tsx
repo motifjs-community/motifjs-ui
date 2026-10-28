@@ -13,8 +13,9 @@ const isTimed = <T,>(piece: TimedPiece<T> | StripPiece<T>): piece is TimedPiece<
 /**
  * One appointment, or the part of it on one day or one week: placed by its piece's fields (bound,
  * so a change in the layout moves it without building it again), coloured by the appointment's
- * own colour, its content the template's or its text and time. An occurrence of a series carries
- * the series mark, one changed apart the exception mark, where the design language draws them.
+ * own colour (else its resources'), its content the template's or its text and time. An
+ * occurrence of a series carries the series mark, one changed apart the exception mark, and a box
+ * that may not go where it is being moved the drop mark, where the design language draws them.
  */
 export function AppointmentBox<T>(props: Props<T>) {
   const { host, piece } = props;
@@ -43,7 +44,7 @@ export function AppointmentBox<T>(props: Props<T>) {
     if (isTimed(piece)) {
       return {
         ...own,
-        '--_day': String(piece.day),
+        '--_column': String(piece.column),
         '--_left': String(piece.left),
         '--_width': String(piece.width),
         insetBlockStart: `${piece.top * 100}%`,
@@ -64,7 +65,12 @@ export function AppointmentBox<T>(props: Props<T>) {
     time: time(),
     allDay: allDay(),
     view: host.model.view.type,
+    group: groupValues(),
   });
+  const groupValues = () => {
+    const group = host.model.state.groups[piece.group];
+    return group ? { ...group.values } : null;
+  };
   const resizable = () => !piece.draft && host.canResize(piece.item) && (isTimed(piece) || !piece.timed);
   const press = (mode: DragMode) => (e: PointerEvent) => {
     // A press on an appointment selects no cells.
@@ -115,6 +121,7 @@ export function AppointmentBox<T>(props: Props<T>) {
           <span class="mx-sr-only">{details}</span>
         </div>
       )}
+      <span class="mx-glyph mx-scheduler__drop-mark" aria-hidden="true" x-display={() => piece.invalid} />
       <span
         class="mx-glyph mx-scheduler__mark"
         aria-hidden="true"

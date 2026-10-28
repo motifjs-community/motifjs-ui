@@ -1,4 +1,4 @@
-import { reactive, type Emitter } from '@motifx/core';
+import { reactive, read, type Bind, type Emitter } from '@motifx/core';
 import type { UiStrings } from '../../core/ui-strings';
 import { addDays } from '../../parts/dates/add-days';
 import { dayStart } from '../../parts/dates/day-start';
@@ -9,6 +9,11 @@ import { confirm } from '../form/confirm';
 import { MxForm } from '../form/MxForm';
 import { FormLayout } from '../formlayout/FormLayout';
 import type { FormItem } from '../formlayout/form-item';
+import type { ValidationRule } from '../../parts/validation/validation-rule';
+import type { AppointmentFormContext } from './appointment-form-context';
+import { formItems } from './form-items';
+import type { ResourceKind } from './model/ResourceKind';
+import type { Resources } from './model/Resources';
 import { Stack } from '../layout/Stack';
 import type { AppointmentAddedEventArgs } from './appointment-added-event-args';
 import type { AppointmentAddingEventArgs } from './appointment-adding-event-args';
@@ -35,6 +40,8 @@ import type { Scheduler } from './Scheduler';
 import type { SchedulerCell } from './scheduler-cell';
 import type { SchedulerEditing } from './scheduler-editing';
 import type { SchedulerFields } from './scheduler-fields';
+import type { SchedulerKeys } from './scheduler-keys';
+import { isChord } from '../../core/keyboard';
 import type { SeriesAction } from './series-action';
 import type { SeriesAnsweredEventArgs } from './series-answered-event-args';
 import type { SeriesAskingEventArgs } from './series-asking-event-args';
@@ -82,7 +89,9 @@ export interface EditorHost<T> {
   fields(): SchedulerFields;
   /** The appointments loaded. */
   items(): readonly T[];
-  editing(): SchedulerEditing;
+  editing(): SchedulerEditing<T>;
+  /** The resource kinds: the form's pickers. */
+  resources: Resources;
   seriesEdit(): SeriesEditMode;
   locale(): string;
   firstDayOfWeek(): number;
@@ -96,6 +105,7 @@ export interface EditorHost<T> {
   root(): HTMLElement;
   scroller(): HTMLElement | null;
   rtl(): boolean;
+  keys(): SchedulerKeys;
   /** Ids of the appointments being saved. */
   saving: string[];
 }
@@ -112,8 +122,8 @@ export class AppointmentEditor<T> implements DragHost<T> {
   private readonly tooltipState = reactive({ item: null }) as TooltipState<T>;
   /** The id of the appointment whose tooltip is showing ('' for none). */
   private readonly opened = reactive({ id: '' });
-  /** Moving or resizing by the keys: the draft so far. */
-  private keyDraft: { mode: DragMode; draft: Draft<T> } | null = null;
+  /** Moving or resizing by the keys: the draft so far, and the group it left and the one it is in (-1 without groups). */
+  private keyDraft: { mode: DragMode; draft: Draft<T>; from: number; group: number } | null = null;
   private readonly series: SeriesEdit<T>;
   private readonly writer: SeriesWriter<T>;
 
@@ -126,11 +136,21 @@ export class AppointmentEditor<T> implements DragHost<T> {
     });
   }
 
-  // Who may change what: the appointment's own field wins over `editing`.
+  // Who may change what: the appointment's own field wins over `editing`, and so do its resources' (a field of that name on a resource item).
 
   private own(item: T, field: keyof SchedulerFields): boolean | undefined {
-    const value = (item as Record<string, unknown>)?.[this.host.fields()[field]];
-    return typeof value === 'boolean' ? value : undefined;
+    const name = this.host.fields()[field];
+    const value = (item as Record<string, unknown>)?.[name];
+    if (typeof value === 'boolean') return value;
+    let allowed: boolean | undefined;
+    for (const { items } of this.host.resources.itemsOf(item)) {
+      for (const resource of items) {
+        const says = (resource.item as Record<string, unknown> | undefined)?.[name];
+        if (says === false) return false;
+        if (says === true) allowed = true;
+      }
+    }
+    return allowed;
   }
 
   private locked(item: T): boolean {
@@ -336,6 +356,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
     this.hideTooltip();
     const fields = this.host.fields();
     const editing = this.host.editing();
+    const settings = editing.form ?? {};
     const model = this.host.model;
     const record = (item ?? {}) as Record<string, unknown>;
     const time = item ? model.timeOf(item) : null;
@@ -345,13 +366,12 @@ export class AppointmentEditor<T> implements DragHost<T> {
     const series = item ? model.seriesOf(item) : null;
     const startZone = String(record[fields.startTimeZone] ?? '');
     const endZone = String(record[fields.endTimeZone] ?? '');
-    // The editors show the browser's clock: the times go there with the fields of their own zone's (or the scheduler's).
-    const zoneOf = (name: unknown) => (typeof name === 'string' && name ? TimeZone.of(name) : model.zone);
+    const kinds = this.host.resources.kinds();
     // An all-day appointment ends at the start of the day after; the form shows its last day.
     const data = reactive({
       text: String(record[fields.text] ?? ''),
-      start: allDay ? model.zone.toLocal(start) : zoneOf(startZone).toLocal(start),
-      end: allDay ? addDays(dayStart(model.zone.toLocal(end)), -1) : zoneOf(endZone || startZone).toLocal(end),
+      start: allDay ? model.zone.toLocal(start) : this.zoneOf(startZone).toLocal(start),
+      end: allDay ? addDays(dayStart(model.zone.toLocal(end)), -1) : this.zoneOf(endZone || startZone).toLocal(end),
       allDay,
       description: String(record[fields.description] ?? ''),
       recurrenceRule: String(((series ?? record) as Record<string, unknown>)[fields.recurrenceRule] ?? ''),
@@ -359,99 +379,20 @@ export class AppointmentEditor<T> implements DragHost<T> {
       endTimeZone: endZone,
       // The end has a zone of its own only when it differs from the start's.
       separateEndZone: !!endZone && endZone !== startZone,
+      // Each resource: the appointment's own, or (a new one) the cell's group's.
+      ...Object.fromEntries(kinds.map((kind) => [kind.field, this.resourceValue(kind, item ? record[kind.field] : cell?.resources?.[kind.field])])),
     }) as AppointmentFormData;
     const t = (key: keyof UiStrings, values?: Record<string, unknown>) => this.host.text(key, values);
-    /** The moment a form time names, on its zone's clock. */
-    const momentOf = (value: Date, zone: unknown) => (data.allDay ? value : zoneOf(zone).fromLocal(value));
-    const endAfterStart = (value: unknown) =>
-      !(value instanceof Date) ||
-      !(data.start instanceof Date) ||
-      momentOf(value, (data.separateEndZone && data.endTimeZone) || data.startTimeZone) >= momentOf(data.start, data.startTimeZone) ||
-      t('schedulerEndBeforeStart');
-    const zones = editing.allowTimeZones ? this.zoneItems(start) : [];
-    const own = () => t('schedulerOwnZone', { zone: model.zone.name || TimeZone.localName() });
-    /** A zone's whole name, the picker's tooltip where the field is too narrow for it. */
-    const zoneText = (name: unknown) => zones.find((z) => z.value === name)?.text ?? '';
-    const exception = !!item && model.isException(item);
-    const items: FormItem[] = [
-      { field: 'text', label: () => t('schedulerSubject'), required: true, colSpan: 'all' },
-      { field: 'start', label: () => t('schedulerStart'), editor: 'datetime', required: true, visible: () => !data.allDay },
-      {
-        field: 'end',
-        label: () => t('schedulerEnd'),
-        editor: 'datetime',
-        required: true,
-        visible: () => !data.allDay,
-        rules: [{ type: 'custom', check: endAfterStart }],
-      },
-      { field: 'start', label: () => t('schedulerStart'), editor: 'date', required: true, visible: () => data.allDay },
-      {
-        field: 'end',
-        label: () => t('schedulerEnd'),
-        editor: 'date',
-        required: true,
-        visible: () => data.allDay,
-        rules: [{ type: 'custom', check: endAfterStart }],
-      },
-      // A zone's name is long ("(GMT-3) America/Argentina/Rio Gallegos"): each picker has the whole row, the box its own.
-      {
-        field: 'startTimeZone',
-        label: () => t(data.separateEndZone ? 'schedulerStartTimeZone' : 'schedulerTimeZone'),
-        editor: 'dropdown',
-        colSpan: 'all',
-        editorProps: { items: zones, searchEnabled: true, placeholder: own, clearButton: true, hint: () => zoneText(data.startTimeZone) },
-        visible: () => editing.allowTimeZones && !data.allDay,
-      },
-      {
-        field: 'separateEndZone',
-        label: () => t('schedulerSeparateEndZone'),
-        editor: 'checkbox',
-        colSpan: 'all',
-        editorProps: {
-          class: 'mx-scheduler__end-zone-switch',
-          // Unchecked, the end follows the start's zone again.
-          onValueChanged: (e: { value: unknown; byUser: boolean }) => {
-            if (!e.byUser) return;
-            data.separateEndZone = !!e.value;
-            if (!e.value) data.endTimeZone = '';
-          },
-        },
-        visible: () => editing.allowTimeZones && !data.allDay,
-      },
-      {
-        field: 'endTimeZone',
-        label: () => t('schedulerEndTimeZone'),
-        editor: 'dropdown',
-        colSpan: 'all',
-        editorProps: {
-          items: zones,
-          searchEnabled: true,
-          placeholder: () => (data.startTimeZone ? String(data.startTimeZone) : own()),
-          clearButton: true,
-          hint: () => zoneText(data.endTimeZone),
-        },
-        visible: () => editing.allowTimeZones && !data.allDay && !!data.separateEndZone,
-      },
-      { field: 'allDay', label: () => t('schedulerAllDay'), editor: 'switch', colSpan: 'all' },
-      {
-        field: 'recurrenceRule',
-        colSpan: 'all',
-        visible: () => editing.allowRecurrence && !exception,
-        template: () => (
-          <RecurrenceEditor
-            class="mx-scheduler__recurrence"
-            x-model={() => data.recurrenceRule}
-            start={() => (data.start instanceof Date ? data.start : null)}
-            allDay={() => !!data.allDay}
-            timeZone={() => (data.startTimeZone ? String(data.startTimeZone) : model.zone.name || null)}
-            locale={() => this.host.locale()}
-            firstDayOfWeek={() => this.host.firstDayOfWeek()}
-          />
-        ),
-      },
-      { field: 'description', label: () => t('schedulerDescription'), editor: 'textarea', colSpan: 'all' },
-    ];
-    const form = new MxForm({ title: () => t(item ? 'schedulerEditAppointment' : 'schedulerNewAppointment'), width: 'var(--_scheduler-editor-width)', modal: true });
+    const context: AppointmentFormContext<T> = { appointment: item, data, isNew: !item, source: scheduler };
+    const builtIns = this.formBuiltIns(item, data, editing, start);
+    const order = ['text', 'start', 'end', 'timeZone', 'allDay', ...kinds.map((k) => k.field), 'recurrenceRule', 'description'];
+    const items = formItems(settings.items ?? order, builtIns, context);
+    const title = settings.title;
+    const form = new MxForm({
+      title: () => (title === undefined ? t(item ? 'schedulerEditAppointment' : 'schedulerNewAppointment') : typeof title === 'function' && title.length > 0 ? (title as (f: AppointmentFormContext<T>) => string)(context) : (read(title as Bind<string>) ?? '')),
+      width: settings.width ?? 'var(--_scheduler-editor-width)',
+      modal: true,
+    });
     form.class.add('mx-scheduler__form');
     const e: FormOpeningEventArgs<T> = { appointment: item, data, items, form, cancel: false, source: scheduler };
     this.host.events.formOpening.fire(e);
@@ -463,7 +404,16 @@ export class AppointmentEditor<T> implements DragHost<T> {
     const save = async () => {
       if (layout && (await layout.validate({ focus: true })).valid) form.close('ok');
     };
-    form.content = <FormLayout<AppointmentFormData> data={data} items={e.items} columns={2} ref={(c: FormLayout<AppointmentFormData>) => (layout = c)} />;
+    form.content = (
+      <FormLayout<AppointmentFormData>
+        data={data}
+        items={e.items}
+        columns={settings.columns ?? 2}
+        minColumnWidth={settings.minColumnWidth ?? ''}
+        labelMode={settings.labelMode}
+        ref={(c: FormLayout<AppointmentFormData>) => (layout = c)}
+      />
+    );
     let ok: Button | null = null;
     let cancel: Button | null = null;
     form.footer = (
@@ -492,6 +442,185 @@ export class AppointmentEditor<T> implements DragHost<T> {
     else await this.add(values, true);
   }
 
+  /** The built-in items of the form, by the field each edits (the start and the end: as a date and time, and as a date). */
+  private formBuiltIns(item: T | null, data: AppointmentFormData, editing: SchedulerEditing<T>, at: Date): Map<string, FormItem[]> {
+    const model = this.host.model;
+    const t = (key: keyof UiStrings, values?: Record<string, unknown>) => this.host.text(key, values);
+    /** The moment a form time names, on its zone's clock. */
+    const momentOf = (value: Date, zone: unknown) => (data.allDay ? value : this.zoneOf(zone).fromLocal(value));
+    const endAfterStart = (value: unknown) =>
+      !(value instanceof Date) ||
+      !(data.start instanceof Date) ||
+      momentOf(value, (data.separateEndZone && data.endTimeZone) || data.startTimeZone) >= momentOf(data.start, data.startTimeZone) ||
+      t('schedulerEndBeforeStart');
+    /** The time must be free for it (its blocked times, its work hours, its overlaps, by the scheduler's rules). */
+    const free = () => {
+      if (!(data.start instanceof Date) || !(data.end instanceof Date)) return true;
+      const when = this.formTimes(data);
+      const resources: Record<string, unknown> = {};
+      for (const kind of this.host.resources.kinds()) resources[kind.field] = data[kind.field];
+      const { free: ok, check } = model.check(item ?? ({} as T), when.start, when.end, when.allDay, resources);
+      if (ok) return true;
+      if (check.overlapping.length) return t('schedulerTaken', { text: this.textOf(check.overlapping[0]) });
+      if (check.blocked.length) return t('schedulerBlockedTime', { text: check.blocked[0].text || t('schedulerUnavailable') });
+      return check.offHours ? t('schedulerOffHours') : t('schedulerNotFree');
+    };
+    const endRules: ValidationRule[] = [
+      { type: 'custom', check: endAfterStart },
+      { type: 'custom', check: free, ignoreEmpty: false },
+    ];
+    const zones = editing.allowTimeZones ? this.zoneItems(at) : [];
+    const own = () => t('schedulerOwnZone', { zone: model.zone.name || TimeZone.localName() });
+    /** A zone's whole name, the picker's tooltip where the field is too narrow for it. */
+    const zoneText = (name: unknown) => zones.find((z) => z.value === name)?.text ?? '';
+    const exception = !!item && model.isException(item);
+    const map = new Map<string, FormItem[]>([
+      ['text', [{ field: 'text', label: () => t('schedulerSubject'), required: true, colSpan: 'all' }]],
+      [
+        'start',
+        [
+          { field: 'start', label: () => t('schedulerStart'), editor: 'datetime', required: true, visible: () => !data.allDay },
+          { field: 'start', label: () => t('schedulerStart'), editor: 'date', required: true, visible: () => !!data.allDay },
+        ],
+      ],
+      [
+        'end',
+        [
+          { field: 'end', label: () => t('schedulerEnd'), editor: 'datetime', required: true, visible: () => !data.allDay, rules: endRules },
+          { field: 'end', label: () => t('schedulerEnd'), editor: 'date', required: true, visible: () => !!data.allDay, rules: endRules },
+        ],
+      ],
+      // A zone's name is long ("(GMT-3) America/Argentina/Rio Gallegos"): each picker has the whole row, the box its own.
+      [
+        'startTimeZone',
+        [
+          {
+            field: 'startTimeZone',
+            label: () => t(data.separateEndZone ? 'schedulerStartTimeZone' : 'schedulerTimeZone'),
+            editor: 'dropdown',
+            colSpan: 'all',
+            editorProps: { items: zones, searchEnabled: true, placeholder: own, clearButton: true, hint: () => zoneText(data.startTimeZone) },
+            visible: () => editing.allowTimeZones && !data.allDay,
+          },
+        ],
+      ],
+      [
+        'separateEndZone',
+        [
+          {
+            field: 'separateEndZone',
+            label: () => t('schedulerSeparateEndZone'),
+            editor: 'checkbox',
+            colSpan: 'all',
+            editorProps: {
+              class: 'mx-scheduler__end-zone-switch',
+              // Unchecked, the end follows the start's zone again.
+              onValueChanged: (e: { value: unknown; byUser: boolean }) => {
+                if (!e.byUser) return;
+                data.separateEndZone = !!e.value;
+                if (!e.value) data.endTimeZone = '';
+              },
+            },
+            visible: () => editing.allowTimeZones && !data.allDay,
+          },
+        ],
+      ],
+      [
+        'endTimeZone',
+        [
+          {
+            field: 'endTimeZone',
+            label: () => t('schedulerEndTimeZone'),
+            editor: 'dropdown',
+            colSpan: 'all',
+            editorProps: {
+              items: zones,
+              searchEnabled: true,
+              placeholder: () => (data.startTimeZone ? String(data.startTimeZone) : own()),
+              clearButton: true,
+              hint: () => zoneText(data.endTimeZone),
+            },
+            visible: () => editing.allowTimeZones && !data.allDay && !!data.separateEndZone,
+          },
+        ],
+      ],
+      ['allDay', [{ field: 'allDay', label: () => t('schedulerAllDay'), editor: 'switch', colSpan: 'all' }]],
+      [
+        'recurrenceRule',
+        [
+          {
+            field: 'recurrenceRule',
+            colSpan: 'all',
+            visible: () => editing.allowRecurrence && !exception,
+            template: () => (
+              <RecurrenceEditor
+                class="mx-scheduler__recurrence"
+                x-model={() => data.recurrenceRule}
+                start={() => (data.start instanceof Date ? data.start : null)}
+                allDay={() => !!data.allDay}
+                timeZone={() => (data.startTimeZone ? String(data.startTimeZone) : model.zone.name || null)}
+                locale={() => this.host.locale()}
+                firstDayOfWeek={() => this.host.firstDayOfWeek()}
+              />
+            ),
+          },
+        ],
+      ],
+      ['description', [{ field: 'description', label: () => t('schedulerDescription'), editor: 'textarea', colSpan: 'all' }]],
+    ]);
+    for (const kind of this.host.resources.kinds()) map.set(kind.field, [this.resourceItem(kind)]);
+    return map;
+  }
+
+  /** A resource's picker: a drop-down, or a tag box for several; each item with its colour. */
+  private resourceItem(kind: ResourceKind<unknown>): FormItem {
+    const swatch = (row: unknown) => {
+      const color = kind.colorOf(row);
+      return color ? <span class="mx-scheduler__resource-swatch" style={{ '--_color': color }} /> : undefined;
+    };
+    return {
+      field: kind.field,
+      label: () => kind.label,
+      editor: kind.multiple ? 'tagbox' : 'dropdown',
+      colSpan: 'all',
+      editorProps: {
+        // The loaded items: a data source of the scheduler's is not searched from here.
+        items: () => kind.items,
+        valueField: (row: unknown) => kind.valueOf(row),
+        textField: (row: unknown) => kind.textOf(row),
+        iconField: (row: unknown) => swatch(row),
+        clearButton: true,
+        class: 'mx-scheduler__resource-picker',
+      },
+    };
+  }
+
+  /** A resource field's value in the form: a list for a kind of several, one value or `null` otherwise. */
+  private resourceValue(kind: ResourceKind<unknown>, value: unknown): unknown {
+    const list = Array.isArray(value) ? value : value === undefined || value === null || value === '' ? [] : [value];
+    return kind.multiple ? [...list] : (list[0] ?? null);
+  }
+
+  /** A zone by its name, or the scheduler's. */
+  private zoneOf(name: unknown): TimeZone {
+    return typeof name === 'string' && name ? TimeZone.of(name) : this.host.model.zone;
+  }
+
+  /** The moments the form's times name (each on its zone's clock); an all-day one's days whole. */
+  private formTimes(data: AppointmentFormData): { start: Date; end: Date; allDay: boolean } {
+    const start = data.start instanceof Date ? data.start : new Date();
+    const end = data.end instanceof Date ? data.end : start;
+    if (data.allDay) {
+      const zone = this.host.model.zone;
+      return { start: zone.date(TimeZone.wallOfLocal(dayStart(start))), end: zone.date(TimeZone.wallOfLocal(addDays(dayStart(end), 1))), allDay: true };
+    }
+    const startZone = String(data.startTimeZone ?? '');
+    const endZone = (data.separateEndZone ? String(data.endTimeZone ?? '') : '') || startZone;
+    const from = this.zoneOf(startZone).fromLocal(start);
+    const to = this.zoneOf(endZone).fromLocal(end);
+    return { start: from, end: to < from ? from : to, allDay: false };
+  }
+
   /** The time zones a form offers, by their offset at `at`. */
   private zoneItems(at: Date): { value: string; text: string }[] {
     const format = this.host.view.format;
@@ -513,9 +642,8 @@ export class AppointmentEditor<T> implements DragHost<T> {
   }
 
   /** The form's values as the appointment's fields: its own ones by their names, the extra ones as they are. */
-  private formValues(data: AppointmentFormData, editing: SchedulerEditing): Partial<T> {
+  private formValues(data: AppointmentFormData, editing: SchedulerEditing<T>): Partial<T> {
     const fields = this.host.fields();
-    const model = this.host.model;
     const start = data.start instanceof Date ? data.start : new Date();
     const end = data.end instanceof Date ? data.end : start;
     const own = ['text', 'start', 'end', 'allDay', 'description', 'recurrenceRule', 'startTimeZone', 'endTimeZone', 'separateEndZone'];
@@ -527,13 +655,9 @@ export class AppointmentEditor<T> implements DragHost<T> {
     if (data.allDay) {
       Object.assign(out, { [fields.start]: dayStart(start), [fields.end]: addDays(dayStart(end), 1), [fields.allDay]: true });
     } else {
-      const startZone = String(data.startTimeZone ?? '');
-      const ownEnd = data.separateEndZone ? String(data.endTimeZone ?? '') : '';
-      const endZone = ownEnd || startZone;
-      const from = (startZone ? TimeZone.of(startZone) : model.zone).fromLocal(start);
-      const to = (endZone ? TimeZone.of(endZone) : model.zone).fromLocal(end);
-      Object.assign(out, this.timeValues(from, to < from ? from : to, false));
-      if (editing.allowTimeZones) Object.assign(out, { [fields.startTimeZone]: startZone, [fields.endTimeZone]: ownEnd });
+      const when = this.formTimes(data);
+      Object.assign(out, this.timeValues(when.start, when.end, false));
+      if (editing.allowTimeZones) Object.assign(out, { [fields.startTimeZone]: String(data.startTimeZone ?? ''), [fields.endTimeZone]: data.separateEndZone ? String(data.endTimeZone ?? '') : '' });
     }
     return out as Partial<T>;
   }
@@ -601,9 +725,10 @@ export class AppointmentEditor<T> implements DragHost<T> {
       if (this.canDelete(item)) void this.remove(item, true);
       return true;
     }
-    const step = this.arrowStep(e);
+    const groupStep = this.groupStep(e);
+    const step = groupStep ? { minutes: 0, days: 0 } : this.arrowStep(e);
     if (!step) return false;
-    const mode: DragMode = e.shiftKey ? 'end' : 'move';
+    const mode: DragMode = e.shiftKey && !groupStep ? 'end' : 'move';
     if (mode === 'move' ? !this.canDrag(item) : !this.canResize(item)) return true;
     let current = this.keyDraft;
     if (!current) {
@@ -611,9 +736,16 @@ export class AppointmentEditor<T> implements DragHost<T> {
       if (!time) return true;
       const draft: Draft<T> = { item, ...time, copy: false, invalid: false };
       if (!this.starting(mode, draft, true)) return true;
-      current = this.keyDraft = { mode, draft };
+      current = this.keyDraft = { mode, draft, from: piece.group, group: piece.group };
     }
     const { draft } = current;
+    const model = this.host.model;
+    if (groupStep) {
+      const count = model.state.groups.length;
+      const group = Math.max(0, Math.min(count - 1, current.group + groupStep));
+      if (group === current.group) return true;
+      current.group = group;
+    }
     const minutes = step.minutes * MINUTE;
     const days = step.days;
     const zone = this.host.model.zone;
@@ -625,6 +757,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
       const end = zone.addDays(new Date(draft.end.getTime() + minutes), days);
       next = { ...draft, end: new Date(Math.max(end.getTime(), draft.start.getTime() + least)) };
     }
+    next.resources = mode === 'move' ? model.movedValues(item, model.state.groups[current.from] ?? null, model.state.groups[current.group] ?? null) : null;
     next.invalid = !this.over(mode, next, true);
     current.mode = mode;
     current.draft = next;
@@ -632,8 +765,18 @@ export class AppointmentEditor<T> implements DragHost<T> {
     const when = next.allDay
       ? this.host.view.format.range('day', next.start, next.end)
       : `${this.host.view.format.fullDate(next.start)} ${this.host.view.format.timeRange(next.start, next.end)}`;
-    this.host.say(this.host.text('schedulerMoving', { text: this.textOf(item), time: when }));
+    const group = model.state.groups[current.group];
+    const where = group && current.group !== current.from ? `${when}, ${group.path.map((p) => p.text).join(', ')}` : when;
+    this.host.say(this.host.text(next.invalid ? 'schedulerMovingNotFree' : 'schedulerMoving', { text: this.textOf(item), time: where }));
     return true;
+  }
+
+  /** The keys that move a focused appointment to the group before or after (mirrored right to left); 0 for others, or without groups. */
+  private groupStep(e: KeyboardEvent): number {
+    if (this.host.model.state.groups.length < 2) return 0;
+    const keys = this.host.keys();
+    const by = isChord(keys.nextGroup, e) ? 1 : isChord(keys.previousGroup, e) ? -1 : 0;
+    return this.host.rtl() ? -by : by;
   }
 
   /** Takes a move by the keys back (Escape, or focus leaving it). */
@@ -698,15 +841,22 @@ export class AppointmentEditor<T> implements DragHost<T> {
 
   over(mode: DragMode, draft: Draft<T>, byKeys = false): boolean {
     const e = this.dragArgs(draft, byKeys);
+    // Where the time is not free it may not go, unless the event says it may.
+    e.cancel = !this.isFree(draft.copy ? (this.copyOf(draft.item) as T) : draft.item, draft.start, draft.end, draft.allDay, draft.resources ?? null);
     (mode === 'move' ? this.host.events.moving : this.host.events.resizing).fire(e);
     return !e.cancel;
+  }
+
+  /** Whether the user may put an appointment at a time (its blocked times, work hours and overlaps, by the scheduler's rules). */
+  isFree(item: T, start: Date, end: Date, allDay: boolean, resources: Record<string, unknown> | null): boolean {
+    return this.host.model.check(item, start, end, allDay, resources).free;
   }
 
   async drop(mode: DragMode, draft: Draft<T>, byKeys = false): Promise<void> {
     const e = this.dragArgs(draft, byKeys);
     (mode === 'move' ? this.host.events.moveEnd : this.host.events.resizeEnd).fire(e);
     if (e.cancel || draft.invalid) return;
-    const time = this.timeValues(e.start, e.end, e.allDay);
+    const time = { ...this.timeValues(e.start, e.end, e.allDay), ...((e.resources ?? {}) as Partial<T>) };
     if (e.copy) {
       await this.add({ ...this.copyOf(draft.item), ...time }, true);
       return;
@@ -727,6 +877,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
       allDay: draft.allDay,
       copy: draft.copy,
       byKeys,
+      resources: draft.resources ?? null,
       cancel: false,
       source: this.host.scheduler,
     };
@@ -768,6 +919,11 @@ async function allowed(e: { cancel: boolean; promise?: Promise<boolean> }): Prom
 /** Whether a field keeps its value: a date by its time, a switch by on and off, nothing and an empty text alike. */
 function sameValue(a: unknown, b: unknown): boolean {
   if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
+  if (Array.isArray(a) || Array.isArray(b)) {
+    const x = Array.isArray(a) ? a : a === undefined || a === null || a === '' ? [] : [a];
+    const y = Array.isArray(b) ? b : b === undefined || b === null || b === '' ? [] : [b];
+    return x.length === y.length && x.every((v, i) => sameValue(v, y[i]));
+  }
   if (typeof a === 'boolean' || typeof b === 'boolean') return !!a === !!b;
   const blank = (v: unknown) => v === undefined || v === null || v === '';
   return a === b || (blank(a) && blank(b));

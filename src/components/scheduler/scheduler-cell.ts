@@ -4,4 +4,6 @@ export interface SchedulerCell {
   end: Date;
   /** A cell of the all-day panel, or a day of the month view. */
   allDay: boolean;
+  /** In a group: its resource values, by field (`{ roomId: 1 }`); a new appointment there gets them. */
+  resources?: Record<string, unknown> | null;
 }

@@ -1471,6 +1471,9 @@
     --_scheduler-appointment-past-color-mix: var(--mx-scheduler-appointment-past-color-mix);
     --_scheduler-appointment-text-mix: var(--mx-scheduler-appointment-text-mix);
     --_scheduler-appointment-text-auto: var(--mx-scheduler-appointment-text-auto);
+    --_scheduler-appointment-time-tone: var(--mx-scheduler-appointment-time-tone);
+    --_scheduler-appointment-time-tone-hover: var(--mx-scheduler-appointment-time-tone-hover);
+    --_scheduler-appointment-time-tone-open: var(--mx-scheduler-appointment-time-tone-open);
     --_scheduler-appointment-frame-color: var(--mx-scheduler-appointment-frame-color);
     --_scheduler-appointment-open-tint: var(--mx-scheduler-appointment-open-tint);
     --_scheduler-appointment-open-color: var(--mx-scheduler-appointment-open-color);
@@ -1562,6 +1565,7 @@
     --_scheduler-cell-outside-bg: var(--mx-scheduler-cell-outside-bg);
     --_scheduler-cell-month-holiday-bg: var(--mx-scheduler-cell-month-holiday-bg);
     --_scheduler-cell-week-start-border-start-width: var(--mx-scheduler-cell-week-start-border-start-width);
+    --_scheduler-cell-blocked-bg: var(--mx-scheduler-cell-blocked-bg);
     --_scheduler-cell-hover-bg: var(--mx-scheduler-cell-hover-bg);
     --_scheduler-cell-selected-bg: var(--mx-scheduler-cell-selected-bg);
     --_scheduler-cell-focus-glow: var(--mx-scheduler-cell-focus-glow);
@@ -1607,9 +1611,6 @@
     --_scheduler-appointment-content-gap: var(--mx-scheduler-appointment-content-gap);
     --_scheduler-appointment-content-row-gap: var(--mx-scheduler-appointment-content-row-gap);
     --_scheduler-appointment-text-font-weight: var(--mx-scheduler-appointment-text-font-weight);
-    --_scheduler-appointment-time-color: var(--mx-scheduler-appointment-time-color);
-    --_scheduler-appointment-time-hover-color: var(--mx-scheduler-appointment-time-hover-color);
-    --_scheduler-appointment-time-open-color: var(--mx-scheduler-appointment-time-open-color);
     --_scheduler-tooltip-width: var(--mx-scheduler-tooltip-width);
     --_scheduler-tooltip-padding: var(--mx-scheduler-tooltip-padding);
     --_scheduler-tooltip-gap: var(--mx-scheduler-tooltip-gap);
@@ -1649,6 +1650,37 @@
     --_scheduler-more-item-focus-outline-width: var(--mx-scheduler-more-item-focus-outline-width);
     --_scheduler-more-item-focus-outline-color: var(--mx-scheduler-more-item-focus-outline-color);
     --_scheduler-more-time-color: var(--mx-scheduler-more-time-color);
+    --_scheduler-group-header-padding: var(--mx-scheduler-group-header-padding);
+    --_scheduler-group-header-border-start-width: var(--mx-scheduler-group-header-border-start-width);
+    --_scheduler-group-header-border-bottom-width: var(--mx-scheduler-group-header-border-bottom-width);
+    --_scheduler-group-header-border-color: var(--mx-scheduler-group-header-border-color);
+    --_scheduler-group-header-color: var(--mx-scheduler-group-header-color);
+    --_scheduler-group-header-font-size: var(--mx-scheduler-group-header-font-size);
+    --_scheduler-group-header-font-weight: var(--mx-scheduler-group-header-font-weight);
+    --_scheduler-group-header-inner-font-weight: var(--mx-scheduler-group-header-inner-font-weight);
+    --_scheduler-group-swatch-display: var(--mx-scheduler-group-swatch-display);
+    --_scheduler-group-swatch-width: var(--mx-scheduler-group-swatch-width);
+    --_scheduler-group-swatch-height: var(--mx-scheduler-group-swatch-height);
+    --_scheduler-group-swatch-radius: var(--mx-scheduler-group-swatch-radius);
+    --_scheduler-group-swatch-margin-end: var(--mx-scheduler-group-swatch-margin-end);
+    --_scheduler-group-divider-display: var(--mx-scheduler-group-divider-display);
+    --_scheduler-group-divider-width: var(--mx-scheduler-group-divider-width);
+    --_scheduler-group-divider-bg: var(--mx-scheduler-group-divider-bg);
+    --_scheduler-group-divider-inner-display: var(--mx-scheduler-group-divider-inner-display);
+    --_scheduler-unavailable-display: var(--mx-scheduler-unavailable-display);
+    --_scheduler-unavailable-image: var(--mx-scheduler-unavailable-image);
+    --_scheduler-drop-mark-display: var(--mx-scheduler-drop-mark-display);
+    --_scheduler-drop-mark-width: var(--mx-scheduler-drop-mark-width);
+    --_scheduler-drop-mark-margin-end: var(--mx-scheduler-drop-mark-margin-end);
+    --_scheduler-drop-mark-icon: var(--mx-scheduler-drop-mark-icon);
+    --_scheduler-resource-swatch-display: var(--mx-scheduler-resource-swatch-display);
+    --_scheduler-resource-swatch-width: var(--mx-scheduler-resource-swatch-width);
+    --_scheduler-resource-swatch-height: var(--mx-scheduler-resource-swatch-height);
+    --_scheduler-resource-swatch-radius: var(--mx-scheduler-resource-swatch-radius);
+    --_scheduler-tooltip-resource-label-margin-end: var(--mx-scheduler-tooltip-resource-label-margin-end);
+    --_scheduler-tooltip-resource-label-font-weight: var(--mx-scheduler-tooltip-resource-label-font-weight);
+    --_scheduler-tooltip-resource-item-gap: var(--mx-scheduler-tooltip-resource-item-gap);
+    --_scheduler-tooltip-resource-item-margin-end: var(--mx-scheduler-tooltip-resource-item-margin-end);
     --_scheduler-state-gap: var(--mx-scheduler-state-gap);
     --_scheduler-state-bg: var(--mx-scheduler-state-bg);
     --_scheduler-state-radius: var(--mx-scheduler-state-radius);
@@ -1657,6 +1689,10 @@
     --_scheduler-cell-today-bg: var(--mx-scheduler-cell-today-bg);
     --_scheduler-series-mark-opacity: var(--mx-scheduler-series-mark-opacity);
     --_scheduler-exception-mark-opacity: var(--mx-scheduler-exception-mark-opacity);
+    --_scheduler-group-header-inner-color: var(--mx-scheduler-group-header-inner-color);
+    --_scheduler-group-header-padding-block: var(--mx-scheduler-group-header-padding-block);
+    --_scheduler-group-header-padding-inline: var(--mx-scheduler-group-header-padding-inline);
+    --_scheduler-group-header-inner-font-size: var(--mx-scheduler-group-header-inner-font-size);
   }
 
   .mx-bottom-sheet {

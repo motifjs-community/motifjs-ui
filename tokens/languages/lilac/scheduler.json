@@ -23,6 +23,9 @@
     "appointment-past-color-mix": { "$value": 45 },
     "appointment-text-mix": { "$value": 0 },
     "appointment-text-auto": { "$value": 0 },
+    "appointment-time-tone": { "$value": "{color.fg.secondary}" },
+    "appointment-time-tone-hover": { "$value": "{color.fg.primary}" },
+    "appointment-time-tone-open": { "$value": "{color.fg.primary}" },
     "appointment-frame-color": { "$value": "{color.bg.surface}" },
     "appointment-open-tint": { "$value": 0 },
     "appointment-open-color": { "$value": "{scheduler.appointment-foreground}" },
@@ -201,6 +204,9 @@
       "week-start": {
         "border-start-width": { "$value": "0px" }
       },
+      "blocked": {
+        "bg": { "$value": "{color.fill.subtle.tertiary}" }
+      },
       "hover": {
         "bg": { "$value": "{color.fill.subtle.secondary}" }
       },
@@ -293,15 +299,6 @@
     "appointment-text": {
       "font-weight": { "$value": "{font.weight.medium}" }
     },
-    "appointment-time": {
-      "color": { "$value": "{color.fg.secondary}" },
-      "hover": {
-        "color": { "$value": "{color.fg.primary}" }
-      },
-      "open": {
-        "color": { "$value": "{color.fg.primary}" }
-      }
-    },
     "tooltip": {
       "width": { "$value": {"value": 18, "unit": "rem"} },
       "padding": { "$value": "{space.3}" },
@@ -374,6 +371,56 @@
     },
     "more-time": {
       "color": { "$value": "{color.fg.secondary}" }
+    },
+    "group-header": {
+      "padding": { "$value": "{space.1}" },
+      "border-start-width": { "$value": "{border.width.1}" },
+      "border-color": { "$value": "{color.stroke.divider}" },
+      "color": { "$value": "{color.fg.primary}" },
+      "font-size": { "$value": "{font.size.caption}" },
+      "font-weight": { "$value": "{font.weight.medium}" },
+      "inner": {
+        "color": { "$value": "{color.fg.secondary}" },
+        "font-weight": { "$value": "{font.weight.regular}" }
+      }
+    },
+    "group-swatch": {
+      "display": { "$value": "block" },
+      "width": { "$value": "0.625rem" },
+      "height": { "$value": "0.625rem" },
+      "radius": { "$value": "{radius.full}" },
+      "margin-end": { "$value": "{space.1}" }
+    },
+    "group-divider": {
+      "display": { "$value": "block" },
+      "width": { "$value": "{border.width.2}" },
+      "bg": { "$value": "{color.stroke.control.strong}" },
+      "inner": {
+        "display": { "$value": "none" }
+      }
+    },
+    "unavailable": {
+      "display": { "$value": "block" },
+      "image": { "$value": "repeating-linear-gradient(135deg, {color.stroke.control.default} 0 {border.width.1}, transparent {border.width.1} {space.2})" }
+    },
+    "drop-mark": {
+      "display": { "$value": "block" },
+      "width": { "$value": "{icon.size.sm}" },
+      "margin-end": { "$value": "{space.1}" },
+      "icon": { "$value": "blocked" }
+    },
+    "resource-swatch": {
+      "display": { "$value": "block" },
+      "width": { "$value": "0.75rem" },
+      "height": { "$value": "0.75rem" },
+      "radius": { "$value": "{radius.full}" }
+    },
+    "tooltip-resource-label": {
+      "margin-end": { "$value": "{space.1}" }
+    },
+    "tooltip-resource-item": {
+      "gap": { "$value": "{space.1}" },
+      "margin-end": { "$value": "{space.2}" }
     },
     "state": {
       "gap": { "$value": "{space.2}" },

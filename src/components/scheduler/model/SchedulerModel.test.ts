@@ -37,6 +37,8 @@ const view = (over: Partial<ResolvedView> = {}): ResolvedView => ({
   cellDuration: 30,
   allDayPanel: true,
   maxAppointmentsPerCell: 'auto',
+  groups: [],
+  groupByDate: false,
   ...over,
 });
 
@@ -123,7 +125,7 @@ describe('layout', () => {
     ]) as Item[];
     const { m } = model(items);
     await tick();
-    const wednesday = m.state.timed.filter((p) => p.day === 2);
+    const wednesday = m.state.timed.filter((p) => p.column === 2);
     expect(wednesday.map((p) => p.item.text)).toEqual(['Standup', 'Review']);
     const standup = wednesday[0];
     expect(standup.top).toBeCloseTo(9 / 24);
@@ -149,8 +151,8 @@ describe('layout', () => {
       },
     ]);
     await tick();
-    expect(m.state.timed.filter((p) => p.day === 2).map((p) => [p.item.text, p.before, p.after])).toEqual([['Night', false, true]]);
-    expect(m.state.timed.filter((p) => p.day === 3).map((p) => [p.item.text, p.before, p.after])).toEqual([['Night', true, false]]);
+    expect(m.state.timed.filter((p) => p.column === 2).map((p) => [p.item.text, p.before, p.after])).toEqual([['Night', false, true]]);
+    expect(m.state.timed.filter((p) => p.column === 3).map((p) => [p.item.text, p.before, p.after])).toEqual([['Night', true, false]]);
     expect(m.state.allDay.pieces.map((p) => [p.item.text, p.first, p.span])).toEqual([
       ['Trip', 1, 4],
       ['Holiday', 3, 1],
@@ -183,21 +185,23 @@ describe('layout', () => {
   it('selects from the anchor to the focus; an all-day cell selects whole days', async () => {
     const { m } = model([]);
     await tick();
-    m.focusCell({ day: 1, slot: 18 });
-    m.focusCell({ day: 1, slot: 20 }, true);
+    m.focusCell({ column: 1, slot: 18 });
+    m.focusCell({ column: 1, slot: 20 }, true);
     expect(m.selection()).toEqual({
       start: at(27, 9),
       end: at(27, 10, 30),
       allDay: false,
+      resources: null,
     });
     expect(m.isSelected(1, 19)).toBe(true);
     expect(m.isSelected(1, 21)).toBe(false);
-    m.focusCell({ day: 2, slot: -1 });
-    m.focusCell({ day: 4, slot: -1 }, true);
+    m.focusCell({ column: 2, slot: -1 });
+    m.focusCell({ column: 4, slot: -1 }, true);
     expect(m.selection()).toEqual({
       start: at(28, 0),
       end: at(31, 0),
       allDay: true,
+      resources: null,
     });
   });
 

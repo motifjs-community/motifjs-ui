@@ -54,7 +54,7 @@ function model(items: Item[], date: Date, zone = berlin, type: ResolvedView['typ
     date: () => state.date,
     items: () => state.items,
     fields: () => FIELDS,
-    view: () => ({ name: type, type, intervalCount: 1, startDayHour: 0, endDayHour: 24, cellDuration: 30, allDayPanel: true, maxAppointmentsPerCell: 'auto' }),
+    view: () => ({ name: type, type, intervalCount: 1, startDayHour: 0, endDayHour: 24, cellDuration: 30, allDayPanel: true, maxAppointmentsPerCell: 'auto', groups: [], groupByDate: false }),
     firstDayOfWeek: () => 1,
     workDays: () => [1, 2, 3, 4, 5],
     isHoliday: () => null,
@@ -82,7 +82,7 @@ describe('series in the layout', () => {
     ]) as Item[];
     const { m, state } = model(items, new Date(2026, 9, 28));
     await tick();
-    expect(m.state.timed.map((p) => p.day)).toEqual([0, 2, 4]);
+    expect(m.state.timed.map((p) => p.column)).toEqual([0, 2, 4]);
     expect(m.state.timed.every((p) => p.series && !p.exception)).toBe(true);
     expect(minutes(m.state.timed[0])).toEqual([540, 15]);
     const first = m.state.timed[0];
@@ -94,7 +94,7 @@ describe('series in the layout', () => {
     expect(first.text).toBe('Daily');
     state.date = new Date(2026, 10, 4);
     await tick();
-    expect(m.state.timed.map((p) => p.day)).toEqual([0, 2, 4]);
+    expect(m.state.timed.map((p) => p.column)).toEqual([0, 2, 4]);
     expect(m.appointmentsIn(on(berlin, 2026, 10, 1), on(berlin, 2026, 11, 1)).length).toBe(12);
   });
 
@@ -112,7 +112,7 @@ describe('series in the layout', () => {
     ]) as Item[];
     const { m } = model(items, new Date(2026, 9, 28));
     await tick();
-    expect(m.state.timed.map((p) => [p.day, p.text, p.series, p.exception])).toEqual([[1, 'Review (moved)', false, true]]);
+    expect(m.state.timed.map((p) => [p.column, p.text, p.series, p.exception])).toEqual([[1, 'Review (moved)', false, true]]);
     expect(m.seriesOf(items[1])).toBe(items[0]);
     expect(m.isException(items[1])).toBe(true);
   });
@@ -164,7 +164,7 @@ describe('summer time in the layout', () => {
     const daily = m.state.timed.filter((p) => p.text === 'Daily');
     expect(daily.map(minutes)).toEqual(Array.from({ length: 7 }, () => [540, 60]));
     const doubled = m.state.timed.find((p) => p.text === 'Doubled')!;
-    expect([doubled.day, ...minutes(doubled)]).toEqual([6, 150, 60]);
+    expect([doubled.column, ...minutes(doubled)]).toEqual([6, 150, 60]);
     expect((doubled.end.getTime() - doubled.start.getTime()) / MINUTE).toBe(60);
   });
 
@@ -173,8 +173,8 @@ describe('summer time in the layout', () => {
     const { m } = model(items, new Date(2026, 2, 26));
     await tick();
     const night = m.state.timed[0];
-    expect([night.day, ...minutes(night)]).toEqual([6, 90, 120]);
-    const cell = m.cellOf({ day: 6, slot: 5 })!;
+    expect([night.column, ...minutes(night)]).toEqual([6, 90, 120]);
+    const cell = m.cellOf({ column: 6, slot: 5 })!;
     expect(cell.start.toISOString()).toBe('2026-03-29T01:30:00.000Z');
   });
 
@@ -186,12 +186,12 @@ describe('summer time in the layout', () => {
     const { m, state } = model(items, new Date(2026, 2, 5), newYork);
     await tick();
     const forward = m.state.timed[0];
-    expect([forward.day, ...minutes(forward)]).toEqual([6, 60, 180]);
+    expect([forward.column, ...minutes(forward)]).toEqual([6, 60, 180]);
     expect((forward.end.getTime() - forward.start.getTime()) / MINUTE).toBe(120);
     state.date = new Date(2026, 10, 1);
     await tick();
     const back = m.state.timed[0];
-    expect([back.text, back.day, ...minutes(back)]).toEqual(['Back', 6, 90, 60]);
+    expect([back.text, back.column, ...minutes(back)]).toEqual(['Back', 6, 90, 60]);
   });
 
   it('the days and today follow the zone: the same moment is another day in Tokyo', async () => {
@@ -199,10 +199,10 @@ describe('summer time in the layout', () => {
     const items = [{ id: 1, text: 'Late', startDate: new Date(Date.UTC(2026, 9, 27, 20)), endDate: new Date(Date.UTC(2026, 9, 27, 21)) }];
     const { m, state } = model(items, new Date(2026, 9, 28));
     await tick();
-    expect(m.state.timed[0].day).toBe(1);
+    expect(m.state.timed[0].column).toBe(1);
     state.zone = tokyo.name;
     await tick();
-    expect([m.state.timed[0].day, ...minutes(m.state.timed[0])]).toEqual([2, 300, 60]);
+    expect([m.state.timed[0].column, ...minutes(m.state.timed[0])]).toEqual([2, 300, 60]);
     expect(m.state.days[0].date.toISOString()).toBe('2026-10-25T15:00:00.000Z');
   });
 });

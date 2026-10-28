@@ -7,6 +7,8 @@ export interface AppointmentClickEventArgs<T = unknown> extends EventArgs {
   /** Where it was clicked: the day of the piece of it shown there. */
   start: Date;
   end: Date;
+  /** The resource values of the group it was clicked in; `null` without groups. */
+  group: Record<string, unknown> | null;
   event: MouseEvent | KeyboardEvent;
   source: Scheduler<T>;
 }

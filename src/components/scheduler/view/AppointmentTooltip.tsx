@@ -16,7 +16,7 @@ interface Props<T> {
   remove: (item: T) => void;
 }
 
-/** What a click on an appointment shows: its colour, text, time (and on its own zone's clock), how it repeats and its description, with Edit and Delete. */
+/** What a click on an appointment shows: its colour, text, time (and on its own zone's clock), how it repeats, its resources and its description, with Edit and Delete. */
 export function AppointmentTooltip<T>(props: Props<T>) {
   const { host, state } = props;
   const record = () => state.item as Record<string, unknown> | null;
@@ -51,8 +51,11 @@ export function AppointmentTooltip<T>(props: Props<T>) {
   };
   const color = () => {
     const value = record()?.[host.fields().color];
-    return { '--_color': typeof value === 'string' ? value : '' };
+    const own = typeof value === 'string' ? value : '';
+    return { '--_color': own || (state.item ? host.resources.colorOf(host.resources.allValuesOf(state.item)) : '') };
   };
+  /** A line per kind of resource it has: the kind's name, then its items with their colours. */
+  const resources = () => (state.item ? host.resources.itemsOf(state.item) : []);
   return (
     <div class="mx-scheduler__tooltip" style={color}>
       <div class="mx-scheduler__tooltip-title">{text}</div>
@@ -67,6 +70,17 @@ export function AppointmentTooltip<T>(props: Props<T>) {
       >
         {repeats}
       </div>
+      {resources().map((line) => (
+        <div key={line.kind.field} class="mx-scheduler__tooltip-resource">
+          <span class="mx-scheduler__tooltip-resource-label">{line.kind.label}</span>
+          {line.items.map((item) => (
+            <span key={String(item.value)} class="mx-scheduler__tooltip-resource-item">
+              <span class="mx-scheduler__resource-swatch" aria-hidden="true" x-display={() => !!item.color} style={{ '--_color': item.color }} />
+              <span>{item.text}</span>
+            </span>
+          ))}
+        </div>
+      ))}
       <div class="mx-scheduler__tooltip-description" x-display={() => description() !== ''}>
         {description}
       </div>

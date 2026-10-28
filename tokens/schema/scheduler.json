@@ -24,7 +24,10 @@
     "appointment-past-tint": { "$type": "number" },
     "appointment-past-color-mix": { "$type": "number" },
     "appointment-text-mix": { "$type": "number", "$description": "How much of the appointment's colour its text takes (0: the text colour alone)." },
-    "appointment-text-auto": { "$type": "number", "$description": "How much the text of a box (its title, and its time when the language gives the time no colour of its own) takes black or white, whichever stands out on the box's fill as it is now (at rest, under the pointer, open): 100 for boxes filled with the appointment's own colour, 0 to keep the text colour." },
+    "appointment-text-auto": { "$type": "number", "$description": "How much the text of a box (its title and its time) takes black or white, whichever stands out more on the box's fill as it is now (at rest, under the pointer, open): 100 for boxes filled with the appointment's own colour, 0 to keep the text colour. Either way the text is then made darker or lighter just as far as it needs to read on the fill (4.6:1), whatever the colour." },
+    "appointment-time-tone": { "$type": "color", "$description": "An appointment's time at rest, under the pointer (`-hover`) and open (`-open`), read on the fill as the title is." },
+    "appointment-time-tone-hover": { "$type": "color" },
+    "appointment-time-tone-open": { "$type": "color" },
     "appointment-frame-color": { "$type": "color", "$description": "A box's four edges: each one's width and how much of the appointment's colour it takes (0: this neutral frame colour; 100: the colour)." },
     "appointment-open-tint": { "$type": "number", "$description": "An open appointment (its tooltip showing): how much of its colour is laid over the box's fill (0: unchanged; 100: the colour)." },
     "appointment-open-color": { "$type": "color", "$description": "The text of an open appointment, laid over its text and time by `appointment-open-color-mix` (0: unchanged)." },
@@ -207,7 +210,7 @@
         }
       },
       "cell": {
-        "$description": "A cell: a time slot, an all-day cell or a month day (`month`); today's column, off hours, a holiday, outside the month, a weekend, the first day of a week row; a past day (`past`: a layer over its fill); under the pointer, selected, focused by the keys.",
+        "$description": "A cell: a time slot, an all-day cell or a month day (`month`); today's column, off hours (of its group's resource, else the scheduler's), a holiday, outside the month, a weekend, the first day of a week row; in a blocked time (`blocked`); a past day (`past`: a layer over its fill); under the pointer, selected, focused by the keys.",
         "selector": ".mx-scheduler__cell",
         "states": {
           "today": ".mx-scheduler__cells .mx-scheduler__cell[data-today]",
@@ -230,6 +233,7 @@
             "selector": ".mx-scheduler__week-row > .mx-scheduler__month-cell:first-child",
             "from": "month"
           },
+          "blocked": ".mx-scheduler .mx-scheduler__cell[data-blocked]",
           "past": ".mx-scheduler .mx-scheduler__cell[data-past]",
           "hover": ".mx-scheduler .mx-scheduler__cell:hover",
           "selected": ".mx-scheduler .mx-scheduler__cell[aria-selected='true']",
@@ -290,7 +294,7 @@
         "selector": ".mx-scheduler__appointment-text"
       },
       "appointment-time": {
-        "$description": "An appointment's time (`hover`: the box under the pointer, its fill deeper; `open`: while its tooltip shows).",
+        "$description": "An appointment's time (`hover`: the box under the pointer, its fill deeper; `open`: while its tooltip shows). Its colour is the plain `appointment-time-tone*`, read on the fill.",
         "selector": ".mx-scheduler__appointment-time",
         "states": {
           "hover": ".mx-scheduler__appointment:hover .mx-scheduler__appointment-time",
@@ -320,8 +324,16 @@
         }
       },
       "tooltip-detail": {
-        "$description": "The tooltip's time (and its time on the appointment's own clock) and description.",
-        "selector": ":is(.mx-scheduler__tooltip-time, .mx-scheduler__tooltip-zone, .mx-scheduler__tooltip-description)"
+        "$description": "The tooltip's time (and its time on the appointment's own clock), its lines of resources and its description.",
+        "selector": ":is(.mx-scheduler__tooltip-time, .mx-scheduler__tooltip-zone, .mx-scheduler__tooltip-resource, .mx-scheduler__tooltip-description)"
+      },
+      "tooltip-resource-label": {
+        "$description": "The name of a kind of resource on its line of the tooltip (\"Room\"), before its items.",
+        "selector": ".mx-scheduler__tooltip-resource-label"
+      },
+      "tooltip-resource-item": {
+        "$description": "A resource item on its line of the tooltip: its colour (`resource-swatch`) and its name.",
+        "selector": ".mx-scheduler__tooltip-resource-item"
       },
       "tooltip-repeat": {
         "$description": "The tooltip's line on how the appointment repeats (`exception`: that it was changed apart from its series).",
@@ -400,6 +412,76 @@
       "more-time": {
         "$description": "An item's time.",
         "selector": ".mx-scheduler__more-time"
+      },
+      "group-header": {
+        "$description": "The head of a group over its columns: a resource item (the room, then the person under it). `inner`: a level under the outermost; `month`: in the month view. Its text is the unit's, the item's colour a `group-swatch` before it.",
+        "selector": ".mx-scheduler__group-head",
+        "states": {
+          "inner": ".mx-scheduler__group-head:not([data-level='0'])",
+          "month": ".mx-scheduler__month-head .mx-scheduler__group-head",
+          "month-inner": {
+            "selector": ".mx-scheduler__month-head .mx-scheduler__group-head:not([data-level='0'])",
+            "from": "inner"
+          }
+        }
+      },
+      "group-swatch": {
+        "$description": "The colour of a group's resource item, before its name (a dot, a square, a bar). None unless a language draws it.",
+        "selector": ".mx-scheduler__group-swatch",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "inner": ".mx-scheduler__group-head:not([data-level='0']) .mx-scheduler__group-swatch"
+        }
+      },
+      "group-divider": {
+        "$description": "The line between groups, down their heads and cells, on the start edge of a group's first column (by date: of a day's first column); `inner`: between items of a level under the outermost (by date: between the groups of a day); `head`: its part over the heads. Centred on the column's edge. None unless a language draws it.",
+        "selector": ":is(.mx-scheduler__cell, .mx-scheduler__date, .mx-scheduler__group-head, .mx-scheduler__weekday-name)[data-edge]::before",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "inner": ":is(.mx-scheduler__cell, .mx-scheduler__date, .mx-scheduler__group-head, .mx-scheduler__weekday-name)[data-edge='inner']::before",
+          "head": ":is(.mx-scheduler__date, .mx-scheduler__group-head, .mx-scheduler__weekday-name)[data-edge]::before",
+          "head-inner": {
+            "selector": ":is(.mx-scheduler__date, .mx-scheduler__group-head, .mx-scheduler__weekday-name)[data-edge='inner']::before",
+            "from": "inner"
+          }
+        }
+      },
+      "unavailable": {
+        "$description": "A layer over a cell in a blocked time (a hatch, a tint), over the cell's own `blocked` fill; `month` and `all-day` for a whole day. None unless a language draws it.",
+        "selector": ".mx-scheduler__cell[data-blocked]::after",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "all-day": ".mx-scheduler__all-day-cell[data-blocked]::after",
+          "month": ".mx-scheduler__month-cell[data-blocked]::after"
+        }
+      },
+      "drop-mark": {
+        "$description": "The mark on a box being moved where it may not go (a glyph, by its `icon`): at the start of the box, the height of a line of its text; in a `bar` and a `chip`. None unless a language draws it; the box itself is the `appointment` unit's `invalid` state.",
+        "selector": ".mx-scheduler__drop-mark",
+        "defaults": {
+          "display": "none",
+          "height": "1lh"
+        },
+        "states": {
+          "bar": ".mx-scheduler__appointment[data-kind='bar'] > .mx-scheduler__drop-mark",
+          "chip": ".mx-scheduler__appointment[data-kind='chip'] > .mx-scheduler__drop-mark"
+        }
+      },
+      "resource-swatch": {
+        "$description": "A resource item's colour in the form's pickers (in the place of an option's icon) and in the tooltip (`tooltip`): a dot, a square. None unless a language draws it.",
+        "selector": ".mx-scheduler__resource-swatch::before",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "tooltip": ".mx-scheduler__tooltip-resource-item > .mx-scheduler__resource-swatch::before"
+        }
       },
       "state": {
         "$description": "What the scheduler says while it loads or failed (`danger`).",

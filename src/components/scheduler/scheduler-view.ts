@@ -20,4 +20,7 @@ export interface SchedulerView {
   allDayPanel?: Bind<boolean>;
   /** Appointments shown in a month cell (or the all-day panel) before "+N more"; `'auto'`: as many as fit. */
   maxAppointmentsPerCell?: Bind<number | 'auto'>;
+  /** The resource fields its columns are grouped by; `[]` for none. */
+  groups?: Bind<readonly string[]>;
+  groupByDate?: Bind<boolean>;
 }
