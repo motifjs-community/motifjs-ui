@@ -135,6 +135,8 @@ interface ModelState<T> {
   window: { first: number; count: number };
   /** Moves on each time the appointments of the days shown are read again. */
   revision: number;
+  /** Moves on each time what the cells show is written again (the days, their columns, the time rows, the blocked times): a view that writes its cells once reads this instead of every cell's sources. */
+  look: number;
 }
 
 /**
@@ -169,6 +171,8 @@ export class SchedulerModel<T> {
   /** What was written last into each piece kept, and into each timeline row's list. */
   private readonly written = new WeakMap<object, object>();
   private readonly rowPieces = new WeakMap<object, LinePiece<T>[]>();
+  /** What a timeline row was laid out from last: a row whose appointments read the same is not laid out again. */
+  private readonly rowMarks = new WeakMap<object, { settings: string; mark: string; items: unknown[] }>();
   private zoneNow: TimeZone | null = null;
   private nextId = 0;
   private readonly stops: (() => void)[] = [];
@@ -218,6 +222,7 @@ export class SchedulerModel<T> {
       agenda: [],
       window: { first: 0, count: 64 },
       revision: 0,
+      look: 0,
     }) as ModelState<T>;
   }
 
@@ -707,6 +712,7 @@ export class SchedulerModel<T> {
       if (column !== focus.column || slot !== focus.slot) this.state.focus = { column, slot };
       const anchor = this.state.anchor;
       if (anchor && anchor.column >= columns.length) this.state.anchor = null;
+      this.state.look++;
     });
   }
 
@@ -869,6 +875,7 @@ export class SchedulerModel<T> {
       }
       if (slots.length > index) slots.splice(index);
       if (this.state.focus.slot >= index) this.state.focus = { column: this.state.focus.column, slot: index - 1 };
+      this.state.look++;
     });
   }
 
@@ -915,6 +922,7 @@ export class SchedulerModel<T> {
       }
       fillObjects(this.state.upper, upper);
       fillObjects(this.state.lower, lower);
+      this.state.look++;
     });
   }
 
@@ -966,6 +974,7 @@ export class SchedulerModel<T> {
           if (column.blocked) column.blocked = false;
           if (column.blocks.length) column.blocks = [];
         }
+        this.state.look++;
       });
       return;
     }
@@ -974,7 +983,10 @@ export class SchedulerModel<T> {
     const days = this.state.days.map((d) => d.wall);
     if (!days.length) return;
     const spans = blockedSpans(blocks, days[0], days[days.length - 1] + DAY, this.zone);
-    untracked(() => this.placeBlocks(columns, spans, view));
+    untracked(() => {
+      this.placeBlocks(columns, spans, view);
+      this.state.look++;
+    });
   }
 
   /** Reads the appointments of the days shown (without a draft): every layout places them from here until they change. */
@@ -1062,7 +1074,15 @@ export class SchedulerModel<T> {
           }
         }
         this.laid = { revision, settings, draft: shows ? extra : null };
-        for (const row of rows) if (!only || only.has(row.index)) this.placeLine(row, of(row.group), view, metrics!);
+        for (const row of rows) {
+          if (only && !only.has(row.index)) continue;
+          const list = of(row.group);
+          const mark = this.markOf(row, list);
+          const last = this.rowMarks.get(row);
+          if (!only && last && last.settings === settings && last.mark === mark && sameList(last.items, list.map((e) => e.item))) continue;
+          this.placeLine(row, list, view, metrics!);
+          this.rowMarks.set(row, { settings, mark, items: list.map((e) => e.item) });
+        }
         this.clearAgenda();
       } else {
         this.laid = { revision: -1, settings: '', draft: null };
@@ -1464,6 +1484,16 @@ export class SchedulerModel<T> {
    * the row is as tall as its lanes. With a number for `maxAppointmentsPerCell`, lanes past it are
    * left out and each day says how many ("+N more").
    */
+  /** What a row's layout comes from, besides the view's settings: its group and each appointment's time and look. */
+  private markOf(row: TimelineRow<T>, entries: Entry<T>[]): string {
+    const group = row.group;
+    let mark = `${row.key}|${group?.index ?? -1}`;
+    for (const e of entries) {
+      mark += `|${e.id}~${e.ws}~${e.we}~${+e.allDay}${+e.draft}${+e.invalid}${+e.disabled}${+e.series}${+e.exception}~${e.text}~${this.colorIn(e, group)}`;
+    }
+    return mark;
+  }
+
   private placeLine(row: TimelineRow<T>, entries: Entry<T>[], view: ResolvedView, metrics: { lane: number; gap: number; min: number }): void {
     const along = this.along(view);
     const spans: (StackSpan & { entry: Entry<T>; before: boolean; after: boolean })[] = [];

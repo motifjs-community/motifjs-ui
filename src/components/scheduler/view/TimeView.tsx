@@ -1,9 +1,11 @@
-import { Component, untracked, type ComponentBase } from '@motifx/core';
+import { Component, reactive, untracked, type ComponentBase } from '@motifx/core';
 import type { CellTemplateContext } from '../cell-template-context';
 import type { HeaderCell } from '../model/header-cell';
 import type { SchedulerColumn } from '../model/scheduler-column';
 import type { TimeSlot } from '../model/time-slot';
 import { AppointmentBox } from './AppointmentBox';
+import { CellWriter } from './CellWriter';
+import type { CellSpot } from './cell-spot';
 import { cellWords } from './cell-words';
 import { GroupHeads } from './GroupHeads';
 import type { SchedulerHost } from './scheduler-host';
@@ -120,97 +122,160 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
         return model.view.type;
       },
     });
-    const cellContext = (column: SchedulerColumn, slot: TimeSlot | null): CellTemplateContext => ({
+    const cellContext = (spot: CellSpot): CellTemplateContext => ({
       get start() {
-        return slot ? cellTime(column, slot) : column.day.date;
+        const column = spot.column!;
+        return spot.slot ? cellTime(column, spot.slot) : column.day.date;
       },
       get end() {
-        return slot ? model.zone.date(column.day.wall + (slot.minutes + model.view.cellDuration) * 60_000) : model.zone.addDays(column.day.date, 1);
+        const column = spot.column!;
+        return spot.slot ? model.zone.date(column.day.wall + (spot.slot.minutes + model.view.cellDuration) * 60_000) : model.zone.addDays(column.day.date, 1);
       },
       get allDay() {
-        return !slot;
+        return !spot.slot;
       },
       get resources() {
-        return column.group ? { ...column.group.values } : null;
+        const group = spot.column?.group;
+        return group ? { ...group.values } : null;
       },
       get view() {
         return model.view.type;
       },
       get today() {
-        return column.day.today;
+        return !!spot.column?.day.today;
       },
       get work() {
-        return slot ? work(column, slot) : column.work;
+        const column = spot.column!;
+        return spot.slot ? work(column, spot.slot) : column.work;
       },
       get blocked() {
-        return !!model.blockAt(column.index, slot ? slot.index : -1);
+        return !!model.blockAt(spot.column!.index, spot.slot ? spot.slot.index : -1);
       },
     });
-    /** The cells' rows; a cell template draws into each cell once it is made. */
-    const rows = (template: ((context: CellTemplateContext) => ComponentBase) | null) => {
-      const fill = (c: ComponentBase, column: SchedulerColumn, slot: TimeSlot) => {
-        if (template) c.controls.add(<div class="mx-scheduler__cell-content">{template(cellContext(column, slot))}</div>);
-      };
-      return (
-        <>
-          {st.slots.map((slot) => (
-            <div key={slot.index} class="mx-scheduler__row" role="row" data-hour-start={() => slot.hourStart || null}>
-              {model.shownColumns().map((column) => (
-                <div
-                  key={column.index}
-                  ref={(c: ComponentBase) => fill(c, column, slot)}
-                  class="mx-scheduler__cell"
-                  role="gridcell"
-                  style={`grid-column: ${column.index + 1}; --_at: ${column.index}`}
-                  data-cell={`${column.index}:${slot.index}`}
-                  data-work={() => work(column, slot) || null}
-                  data-holiday={() => column.day.holiday || null}
-                  data-today={() => column.day.today || null}
-                  data-past={() => column.day.past || null}
-                  data-edge={() => column.edge || null}
-                  data-blocked={() => !!model.blockAt(column.index, slot.index) || null}
-                  tabindex={() => (focused(column.index, slot.index) ? 0 : -1)}
-                  aria-selected={() => model.isSelected(column.index, slot.index)}
-                  aria-label={() => `${where(column, slot.index).group}${format.fullDate(column.day.date)}, ${format.time(cellTime(column, slot))}${where(column, slot.index).block}`}
-                  onpointerdown={(e: PointerEvent) => host.cellPointerDown({ column: column.index, slot: slot.index }, e)}
-                  onclick={(e: MouseEvent) => host.cellClick({ column: column.index, slot: slot.index }, e)}
-                  ondblclick={(e: MouseEvent) => host.cellDblClick({ column: column.index, slot: slot.index }, e)}
-                />
-              ))}
-            </div>
-          ))}
-        </>
-      );
+    // Many columns of many rows. A row's cells stand in places, as many as the columns built, and each place shows
+    // the column the window puts there: as the view scrolls a place shows another column and is written again, and
+    // no cell is made or dropped. A cell is written when it is made and again only when what it shows changes
+    // (followed here once for all of them); the rows listen for their cells.
+    let places: number[] = [];
+    const shownPlaces = () => {
+      const count = model.virtual ? Math.min(st.window.count, st.columns.length) : st.columns.length;
+      if (places.length !== count) places = Array.from({ length: count }, (_, place) => place);
+      return places;
     };
-    const allDayCells = (template: ((context: CellTemplateContext) => ComponentBase) | null) => {
-      const fill = (c: ComponentBase, column: SchedulerColumn) => {
-        if (template) c.controls.add(<div class="mx-scheduler__cell-content">{template(cellContext(column, null))}</div>);
-      };
-      return (
-        <div class="mx-scheduler__row" role="row">
-          {model.shownColumns().map((column) => (
-            <div
-              key={column.index}
-              ref={(c: ComponentBase) => fill(c, column)}
-              class="mx-scheduler__cell mx-scheduler__all-day-cell"
-              role="gridcell"
-              style={`grid-column: ${column.index + 1}`}
-              data-cell={`${column.index}:-1`}
-              data-today={() => column.day.today || null}
-              data-past={() => column.day.past || null}
-              data-edge={() => column.edge || null}
-              data-blocked={() => column.blocked || null}
-              tabindex={() => (focused(column.index, -1) ? 0 : -1)}
-              aria-selected={() => model.isSelected(column.index, -1)}
-              aria-label={() => `${where(column, -1).group}${t('schedulerAllDay')}, ${format.fullDate(column.day.date)}${where(column, -1).block}`}
-              onpointerdown={(e: PointerEvent) => host.cellPointerDown({ column: column.index, slot: -1 }, e)}
-              onclick={(e: MouseEvent) => host.cellClick({ column: column.index, slot: -1 }, e)}
-              ondblclick={(e: MouseEvent) => host.cellDblClick({ column: column.index, slot: -1 }, e)}
-            />
-          ))}
-        </div>
-      );
+    /** What decides the column of each place: read once for all of them. */
+    const windowNow = () => ({ virtual: model.virtual, first: st.window.first, columns: st.columns, count: places.length });
+    /** The column a place shows: in a big view the window's column that falls on it, else its own. */
+    const columnAt = (place: number, now = windowNow()): SchedulerColumn | undefined => {
+      if (!now.virtual || !now.count) return now.columns[place];
+      return now.columns[now.first + ((((place - now.first) % now.count) + now.count) % now.count)];
     };
+    const placeOf = (column: number) => {
+      const count = places.length;
+      return model.virtual && count ? ((column % count) + count) % count : column;
+    };
+    const idOf = (place: number, slot: number) => place * 1000 + slot + 1;
+    const writer = new CellWriter<CellSpot>(
+      ({ column, slot }, cell) => {
+        cell.flag('hidden', !column);
+        if (!column) return;
+        cell
+          .put('style', slot ? `grid-column: ${column.index + 1}; --_at: ${column.index}` : `grid-column: ${column.index + 1}`)
+          .put('data-cell', `${column.index}:${slot ? slot.index : -1}`)
+          .flag('data-work', !!slot && work(column, slot))
+          .flag('data-holiday', !!slot && column.day.holiday)
+          .flag('data-today', column.day.today)
+          .flag('data-past', column.day.past)
+          .put('data-edge', column.edge || null)
+          .flag('data-blocked', slot ? !!model.blockAt(column.index, slot.index) : column.blocked)
+          .put(
+            'aria-label',
+            slot
+              ? `${where(column, slot.index).group}${format.fullDate(column.day.date)}, ${format.time(cellTime(column, slot))}${where(column, slot.index).block}`
+              : `${where(column, -1).group}${t('schedulerAllDay')}, ${format.fullDate(column.day.date)}${where(column, -1).block}`,
+          );
+      },
+      ({ column, slot }, cell) => {
+        if (!column) return;
+        const at = slot ? slot.index : -1;
+        cell.put('tabindex', focused(column.index, at) ? '0' : '-1').put('aria-selected', String(model.isSelected(column.index, at)));
+      },
+    );
+    this.bindings.watch(() => {
+      void st.look, void format.time(new Date(0)), void t('schedulerAllDay'), void t('schedulerUnavailable');
+      writer.writeLook();
+    });
+    // The window moved, or the columns changed: the places that show another column now.
+    this.bindings.watch(() => {
+      void st.window.count, void st.columns.length;
+      const now = windowNow();
+      writer.forEach((spot, id) => {
+        const column = untracked(() => columnAt(spot.place, now));
+        if (column === spot.column) return;
+        spot.column = column;
+        writer.write(id);
+      });
+    });
+    // The cells the focus left and the one it is on; every cell while a range is selected.
+    let lit: number[] = [];
+    let ranged = false;
+    this.bindings.watch(() => {
+      const { column, slot } = st.focus;
+      const anchor = st.anchor;
+      void st.look;
+      const now = [idOf(untracked(() => placeOf(column)), slot)];
+      const range = !!anchor && (anchor.column !== column || anchor.slot !== slot);
+      if (range || ranged) writer.writeFocus();
+      else writer.writeFocus([...lit, ...now]);
+      ranged = range;
+      lit = now;
+    });
+    const cellAt = (e: Event) => {
+      const spot = writer.placeOf(e, '.mx-scheduler__cell');
+      return spot?.column ? { column: spot.column.index, slot: spot.slot ? spot.slot.index : -1 } : null;
+    };
+    const listen = {
+      onpointerdown: (e: PointerEvent) => {
+        const at = cellAt(e);
+        if (at) host.cellPointerDown(at, e);
+      },
+      onclick: (e: MouseEvent) => {
+        const at = cellAt(e);
+        if (at) host.cellClick(at, e);
+      },
+      ondblclick: (e: MouseEvent) => {
+        const at = cellAt(e);
+        if (at) host.cellDblClick(at, e);
+      },
+    };
+    /** A place's cell; a cell template draws into it once it is made, and follows the column shown there. */
+    const cell = (place: number, slot: TimeSlot | null, template: ((context: CellTemplateContext) => ComponentBase) | null) => (
+      <div
+        key={place}
+        ref={(c: ComponentBase) => {
+          const spot = reactive({ place, column: untracked(() => columnAt(place)), slot }) as CellSpot;
+          writer.add(idOf(place, slot ? slot.index : -1), spot, c);
+          if (template) untracked(() => c.controls.add(<div class="mx-scheduler__cell-content">{template(cellContext(spot))}</div>));
+        }}
+        class={slot ? 'mx-scheduler__cell' : 'mx-scheduler__cell mx-scheduler__all-day-cell'}
+        role="gridcell"
+        onDisposing={() => writer.delete(idOf(place, slot ? slot.index : -1))}
+      />
+    );
+    /** The cells' rows. */
+    const rows = (template: ((context: CellTemplateContext) => ComponentBase) | null) => (
+      <>
+        {st.slots.map((slot) => (
+          <div key={slot.index} class="mx-scheduler__row" role="row" data-hour-start={() => slot.hourStart || null} {...listen}>
+            {shownPlaces().map((place) => cell(place, slot, template))}
+          </div>
+        ))}
+      </>
+    );
+    const allDayCells = (template: ((context: CellTemplateContext) => ComponentBase) | null) => (
+      <div class="mx-scheduler__row" role="row" {...listen}>
+        {shownPlaces().map((place) => cell(place, null, template))}
+      </div>
+    );
     return (
       <>
         <div class="mx-scheduler__head" data-by-date={() => model.datesFirst || null} style={columns} ref={(c) => (this.head = c.element as HTMLElement)}>

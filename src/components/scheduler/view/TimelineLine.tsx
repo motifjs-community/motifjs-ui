@@ -1,4 +1,4 @@
-import type { ComponentBase } from '@motifx/core';
+import { untracked, type ComponentBase } from '@motifx/core';
 import type { LinePiece } from '../model/line-piece';
 import type { CellTemplateContext } from '../cell-template-context';
 import type { SchedulerColumn } from '../model/scheduler-column';
@@ -6,6 +6,7 @@ import type { TimeTick } from '../model/time-tick';
 import type { TimelineRow } from '../model/timeline-row';
 import { dayCells } from '../model/view-kind';
 import { AppointmentBox } from './AppointmentBox';
+import { CellWriter } from './CellWriter';
 import { cellWords } from './cell-words';
 import type { SchedulerHost } from './scheduler-host';
 
@@ -78,30 +79,66 @@ export function TimelineLine<T>(props: Props<T>) {
   const fill = (tick: TimeTick, c: ComponentBase) => {
     if (cellTemplate) c.controls.add(<div class="mx-scheduler__cell-content">{cellTemplate(context(tick))}</div>);
   };
+  // A row has a cell for each place along the time in view, and many rows are on screen: a cell is written once
+  // when it is made, and again only when what it shows changes (the row follows that for all its cells at once).
+  const cells = new CellWriter<TimeTick>(
+    (tick, cell) =>
+      cell
+        .put('style', `--_at: ${tick.index}`)
+        .put('data-cell', `${row.first + tick.day.index}:${tick.slot}`)
+        .flag('data-work', work(tick))
+        .flag('data-today', tick.day.today)
+        .flag('data-past', tick.day.past)
+        .flag('data-holiday', tick.day.holiday)
+        .flag('data-weekend', tick.slot < 0 && tick.day.weekend)
+        .flag('data-hour-start', tick.hourStart)
+        .flag('data-day-start', tick.dayStart)
+        .flag('data-blocked', !!model.blockAt(row.first + tick.day.index, tick.slot))
+        .put('aria-label', label(tick)),
+    (tick, cell) =>
+      cell.put('tabindex', focused(tick) ? '0' : '-1').put('aria-selected', String(model.isSelected(row.first + tick.day.index, tick.slot))),
+  );
+  /** The days, their columns, the time rows or the blocked times were written again, or the words: every cell again. */
+  const followLook = () => {
+    void st.look, void row.first, void format.time(new Date(0)), void t('schedulerUnavailable');
+    cells.writeLook();
+  };
+  /**
+   * The focus or the selection moved: the cells it left and the one it is on; every cell of the row while a range
+   * is selected on it (a selection stays in its anchor's row).
+   */
+  const mine = (column: number) => column >= row.first && column < row.first + untracked(() => st.days.length);
+  const idOf = (column: number, slot: number) => untracked(() => (column - row.first) * per() + (dayCells(model.view.type) ? 0 : slot));
+  let lit: number[] = [];
+  let ranged = false;
+  const followFocus = () => {
+    const { column, slot } = st.focus;
+    const anchor = st.anchor;
+    void st.look;
+    const now = mine(column) ? [idOf(column, slot)] : [];
+    const range = !!anchor && (anchor.column !== column || anchor.slot !== slot) && mine(anchor.column);
+    if (range || ranged) cells.writeFocus();
+    else cells.writeFocus([...lit, ...now]);
+    ranged = range;
+    lit = now;
+  };
   const cell = (tick: TimeTick) => (
     <div
       key={tick.index}
-      ref={(c: ComponentBase) => fill(tick, c)}
+      ref={(c: ComponentBase) => {
+        cells.add(tick.index, tick, c);
+        untracked(() => fill(tick, c));
+      }}
       class="mx-scheduler__cell"
       role="gridcell"
-      style={`--_at: ${tick.index}`}
-      data-cell={() => `${row.first + tick.day.index}:${tick.slot}`}
-      data-work={() => work(tick) || null}
-      data-today={() => tick.day.today || null}
-      data-past={() => tick.day.past || null}
-      data-holiday={() => tick.day.holiday || null}
-      data-weekend={() => (tick.slot < 0 && tick.day.weekend) || null}
-      data-hour-start={() => tick.hourStart || null}
-      data-day-start={() => tick.dayStart || null}
-      data-blocked={() => !!model.blockAt(row.first + tick.day.index, tick.slot) || null}
-      tabindex={() => (focused(tick) ? 0 : -1)}
-      aria-selected={() => model.isSelected(row.first + tick.day.index, tick.slot)}
-      aria-label={() => label(tick)}
-      onpointerdown={(e: PointerEvent) => host.cellPointerDown(place(tick), e)}
-      onclick={(e: MouseEvent) => host.cellClick(place(tick), e)}
-      ondblclick={(e: MouseEvent) => host.cellDblClick(place(tick), e)}
+      onDisposing={() => cells.delete(tick.index)}
     />
   );
+  /** The cell an event is on: the row listens once for all its cells. */
+  const placeOf = (e: Event) => {
+    const tick = cells.placeOf(e, '.mx-scheduler__cell');
+    return tick ? place(tick) : null;
+  };
   const levels = () => row.group?.path ?? [];
   // A row the virtual list keeps off screen for later stops following the window along the time; back on screen it catches up.
   const id = ++made;
@@ -116,6 +153,10 @@ export function TimelineLine<T>(props: Props<T>) {
       data-edge={() => row.edge || null}
       data-first={() => row.index === 0 || null}
       style={() => ({ blockSize: `${row.height}px` })}
+      onConfig={(c: ComponentBase) => {
+        c.bindings.watch(followLook);
+        c.bindings.watch(followFocus);
+      }}
       onActivated={() => (away[id] = false)}
       onDeactivated={() => (away[id] = true)}
       onDisposing={() => delete away[id]}
@@ -153,7 +194,21 @@ export function TimelineLine<T>(props: Props<T>) {
           </div>
         ))}
       </div>
-      <div class="mx-scheduler__line-track">
+      <div
+        class="mx-scheduler__line-track"
+        onpointerdown={(e: PointerEvent) => {
+          const at = placeOf(e);
+          if (at) host.cellPointerDown(at, e);
+        }}
+        onclick={(e: MouseEvent) => {
+          const at = placeOf(e);
+          if (at) host.cellClick(at, e);
+        }}
+        ondblclick={(e: MouseEvent) => {
+          const at = placeOf(e);
+          if (at) host.cellDblClick(at, e);
+        }}
+      >
         {shownTicks().map((tick) => cell(tick))}
         <div class="mx-scheduler__line-layer" role="gridcell">
           {shownPieces().map((piece) => (

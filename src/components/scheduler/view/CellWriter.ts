@@ -1,0 +1,71 @@
+import { untracked, type ComponentBase } from '@motifx/core';
+import { CellAttributes } from './CellAttributes';
+
+/**
+ * The cells of a big grid, written once when they are made and again only when what they show changes: a cell
+ * has no bindings of its own (thousands of them would each follow the same few values), the view calls `writeLook`
+ * or `writeFocus` from one watch of those values, and listens once for all its cells (`placeOf`).
+ */
+export class CellWriter<K> {
+  private readonly cells = new Map<number, { key: K; c: ComponentBase }>();
+  private readonly keys = new WeakMap<Element, K>();
+
+  constructor(
+    /** Writes what the cell shows: its place, its day and time, its words. */
+    private readonly look: (key: K, cell: CellAttributes) => void,
+    /** Writes whether the keys are on the cell and whether it is selected. */
+    private readonly focus: (key: K, cell: CellAttributes) => void,
+  ) {}
+
+  /** A cell was made: written at once. */
+  add(id: number, key: K, c: ComponentBase): void {
+    untracked(() => {
+      this.cells.set(id, { key, c });
+      this.keys.set(c.element, key);
+      const cell = new CellAttributes(c);
+      this.look(key, cell);
+      this.focus(key, cell);
+    });
+  }
+
+  delete(id: number): void {
+    this.cells.delete(id);
+  }
+
+  /** Every cell's key, to see which show something else now (`write` them). */
+  forEach(fn: (key: K, id: number) => void): void {
+    untracked(() => this.cells.forEach(({ key }, id) => fn(key, id)));
+  }
+
+  /** A cell again, all of it: its key shows something else now. */
+  write(id: number): void {
+    const cell = this.cells.get(id);
+    if (!cell) return;
+    untracked(() => {
+      const attributes = new CellAttributes(cell.c);
+      this.look(cell.key, attributes);
+      this.focus(cell.key, attributes);
+    });
+  }
+
+  writeLook(): void {
+    untracked(() => this.cells.forEach(({ key, c }) => this.look(key, new CellAttributes(c))));
+  }
+
+  /** The focus and the selection again: of every cell, or (`ids`) of those only. */
+  writeFocus(ids?: Iterable<number>): void {
+    untracked(() => {
+      if (!ids) return this.cells.forEach(({ key, c }) => this.focus(key, new CellAttributes(c)));
+      for (const id of ids) {
+        const cell = this.cells.get(id);
+        if (cell) this.focus(cell.key, new CellAttributes(cell.c));
+      }
+    });
+  }
+
+  /** The cell an event is on (`selector` names the cells). */
+  placeOf(e: Event, selector: string): K | undefined {
+    const el = (e.target as Element | null)?.closest?.(selector);
+    return el ? this.keys.get(el) : undefined;
+  }
+}

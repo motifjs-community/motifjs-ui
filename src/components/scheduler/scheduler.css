@@ -256,9 +256,12 @@
     grid-template-columns: repeat(var(--_columns, 7), var(--_column-width));
   }
 
+  /* Its size is its own (the cells lie in it by place): cells coming and going as the view scrolls lay out this
+     row alone, not the whole view. Not its paint, so a ring under the keys may stand outside it. */
   .mx-scheduler__time-view[data-virtual] .mx-scheduler__cells > .mx-scheduler__row {
     position: relative;
     display: block;
+    contain: layout size style;
   }
 
   .mx-scheduler__time-view[data-virtual] .mx-scheduler__cells > .mx-scheduler__row > .mx-scheduler__cell {
@@ -266,6 +269,7 @@
     inset-block: 0;
     inset-inline-start: calc(var(--_at) * var(--_column-width));
     inline-size: var(--_column-width);
+    contain: layout size style;
   }
 
   /* One layer over all the columns: a timed appointment's column is `--_column`, its place in it

@@ -6,6 +6,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Scheduler: smooth scrolling in big views
+
+- The cells of a timeline row and of the day views have no bindings of their own: a cell is written once when it
+  is made, and again only when what it shows changes (`CellWriter`, followed once per row or view; the model's
+  `look` counter says when the days, columns, time rows or blocked times were written again). The focus writes only
+  the cells it left and reached. Cell events are listened for once per row.
+- The day views with many groups keep their cells in places: scrolling shows other columns in the same cells, none
+  are made or dropped. Their rows and cells are laid out on their own (`contain`).
+- After a drop only the timeline rows whose appointments changed are laid out again.
+- Measured with a wheel, frame by frame: 1,000 rows × 10,000 appointments in development went from 47 frames over
+  33 ms to 2–4 (of about 520) down and from up to 25 to none sideways; the week of 200 groups down from 14 to none.
+
 ### Design languages: the token model, units and places
 
 Any design system is carried by a design language's files alone: a new one, or a new version of one, needs no
