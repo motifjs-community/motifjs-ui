@@ -1,40 +1,47 @@
+/* FilterBuilder: rows of kit buttons, indented per level. Only the layout and the lines along the
+   groups are here: every piece's look is a unit of the filter builder's schema (`$units`), painted by
+   units.css from the language's tokens; the buttons take their variant, tone and size from their places. */
 @layer mx.components {
-  .mx-filter-builder {
-    color: var(--mx-filterbuilder-fg);
-    font-size: var(--mx-filterbuilder-font-size);
-  }
-
   .mx-filter-builder__tree {
     display: flex;
     flex-direction: column;
-    row-gap: var(--mx-filterbuilder-row-gap);
   }
 
-  /* Rows sit flat (the tree is in aria-level); each level moves in, with a line for every group it is in. */
+  /* Rows sit flat (the tree is in aria-level); each level moves in, with a line for every group it is
+     in, and an elbow from the last line to the row. */
   .mx-filter-builder__row {
-    --_half: calc(var(--mx-filterbuilder-indent) / 2);
+    --_row-indent: var(--_filterbuilder-indent);
+    --_line-at: var(--_filterbuilder-line-offset);
+    --_line-width: var(--_filterbuilder-line-width);
     --_lines: repeating-linear-gradient(
       var(--_towards, to right),
-      transparent 0 var(--_half),
-      var(--mx-filterbuilder-line-color) var(--_half) calc(var(--_half) + var(--mx-filterbuilder-line-width)),
-      transparent calc(var(--_half) + var(--mx-filterbuilder-line-width)) var(--mx-filterbuilder-indent)
+      transparent 0 var(--_line-at),
+      var(--_filterbuilder-line-color) var(--_line-at) calc(var(--_line-at) + var(--_line-width)),
+      transparent calc(var(--_line-at) + var(--_line-width)) var(--_row-indent)
     );
+    --_elbow: linear-gradient(var(--_filterbuilder-elbow-color), var(--_filterbuilder-elbow-color));
+    --_elbow-at: calc((var(--_level, 0) - 1) * var(--_row-indent) + var(--_line-at));
+    --_elbow-length: calc(min(var(--_level, 0), 1) * var(--_filterbuilder-elbow-length));
 
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--mx-filterbuilder-gap);
-    padding-inline-start: calc(var(--_level, 0) * var(--mx-filterbuilder-indent));
-    background-image: var(--_lines);
-    background-position: left top;
+    background-image: var(--_lines), var(--_elbow);
+    background-position:
+      left top,
+      left var(--_elbow-at) center;
     background-repeat: no-repeat;
-    background-size: calc(var(--_level, 0) * var(--mx-filterbuilder-indent)) 100%;
+    background-size:
+      calc(var(--_level, 0) * var(--_row-indent)) 100%,
+      var(--_elbow-length) var(--_line-width);
   }
 
   .mx-filter-builder__row:dir(rtl) {
     --_towards: to left;
 
-    background-position: right top;
+    background-position:
+      right top,
+      right var(--_elbow-at) center;
   }
 
   .mx-filter-builder__cell {
@@ -46,10 +53,9 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--mx-filterbuilder-gap);
   }
 
   .mx-filter-builder__editor > * {
-    min-inline-size: var(--mx-filterbuilder-editor-width);
+    min-inline-size: var(--_filterbuilder-value-width);
   }
 }

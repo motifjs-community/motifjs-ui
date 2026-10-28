@@ -1,6 +1,0 @@
-{
-  "combo-box": {
-    "$description": "ComboBox and Autocomplete: the list row shown while items load.",
-    "loading-fg": { "$type": "color", "$value": "{color.fg.secondary}" }
-  }
-}

@@ -1,0 +1,82 @@
+{
+  "list": {
+    "$description": "List: the options of a drop-down, a combo box or a list box.",
+    "$selector": ".mx-list",
+    "item-height": { "$type": "dimension" },
+    "$units": {
+      "container": {
+        "$description": "The list: its space around and between the items, its height before it scrolls, and a surface a design may give it.",
+        "selector": ".mx-list"
+      },
+      "group": {
+        "$description": "The items under one header (the same space between them as in the list).",
+        "selector": ".mx-list > [role='group']"
+      },
+      "item": {
+        "$description": "An option: under the pointer, pressed, the one the keys are on (`active`), chosen (`selected`), disabled; `next`: an item after another (a line between them), `select-all`: the \"Select all\" row.",
+        "selector": ".mx-list__item",
+        "defaults": {
+          "min-height": "var(--_list-item-height)",
+          "cursor": "default"
+        },
+        "states": {
+          "next": ".mx-list__item + .mx-list__item",
+          "hover": ".mx-list__item:hover:not([data-selected], [aria-disabled='true'])",
+          "pressed": ".mx-list__item:active:not([data-selected], [aria-disabled='true'])",
+          "active": ".mx-list__item[data-active]:not([data-selected])",
+          "selected": ".mx-list__item[data-selected]",
+          "selected-hover": {
+            "selector": ".mx-list__item[data-selected]:hover",
+            "from": "selected"
+          },
+          "selected-pressed": {
+            "selector": ".mx-list__item[data-selected]:active:not([aria-disabled='true'])",
+            "from": "selected"
+          },
+          "disabled": ".mx-list__item[aria-disabled='true']",
+          "select-all": ".mx-list__item[data-select-all]"
+        }
+      },
+      "indicator": {
+        "$description": "The bar on a chosen item, centred along its side (`margin-start` / `margin-end`: `auto` on one side puts it on the other); `multiple`: in a list of several choices.",
+        "selector": ".mx-list__item[data-selected]::before",
+        "defaults": {
+          "display": "block",
+          "margin-block": "auto",
+          "margin-end": "auto"
+        },
+        "states": {
+          "multiple": ".mx-list[aria-multiselectable] .mx-list__item[data-selected]::before"
+        }
+      },
+      "check": {
+        "$description": "Where the mark of a chosen item stands in a list of several choices (a box a design may draw).",
+        "selector": ".mx-list__check"
+      },
+      "mark": {
+        "$description": "The mark of a chosen item in a list of several choices.",
+        "selector": ".mx-list__check > .mx-glyph"
+      },
+      "icon": {
+        "$description": "An item's icon.",
+        "selector": ".mx-list__icon"
+      },
+      "text": {
+        "$description": "An item's text.",
+        "selector": ".mx-list__text"
+      },
+      "header": {
+        "$description": "A group's header (as high as an item: a long list counts rows of one height).",
+        "selector": ".mx-list__header"
+      },
+      "select-all-divider": {
+        "$description": "The line under \"Select all\", drawn over the row so every row keeps one height.",
+        "selector": ".mx-list__item[data-select-all]::after"
+      },
+      "empty": {
+        "$description": "What an empty list says.",
+        "selector": ".mx-list__empty"
+      }
+    }
+  }
+}

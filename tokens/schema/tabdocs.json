@@ -1,0 +1,613 @@
+{
+  "tabdocs": {
+    "$description": "TabDocumentManager: the groups with their strips of tabs and their panels, the splitters, the dock areas and their folded strips, the floating windows, the drag ghosts, guides and marks, the menus of documents, the phone's bar, tools and list. The sizes the layout counts with (a tab's height and space, the room an icon or a close button takes, the touch sizes) are plain tokens; every piece is a unit (`$units`).",
+    "$selector": ".mx-tabdocs, .mx-tabdocs__popup",
+    "tabs-height": { "$type": "dimension", "$description": "A tab's height, and the strip's least height." },
+    "tab-inset": { "$type": "dimension", "$description": "The space at a tab's two ends (a shrinking tab keeps it)." },
+    "tab-spacing": { "$type": "dimension", "$description": "The space between a tab's parts (a shrinking tab keeps it)." },
+    "title-max": { "$type": "dimension", "$description": "The widest a tab's title or description gets." },
+    "title-min": { "$type": "dimension", "$description": "The least of a title a shrinking tab keeps." },
+    "preview-font-style": { "$type": "keyword", "$description": "The title of a document open for a look (a preview)." },
+    "indicator-inset": { "$type": "dimension", "$description": "Space between the bar's ends and the tab's sides." },
+    "indicator-inset-start": { "$type": "dimension", "$description": "Where the bar stands: from the tab's top (`auto` puts it at the bottom with `indicator-inset-end`)." },
+    "indicator-inset-end": { "$type": "dimension" },
+    "icon-room": { "$type": "dimension", "$description": "A tab's icon's size (and the room a shrinking tab keeps for it)." },
+    "close-room": { "$type": "dimension", "$description": "The close button's size (and the room a shrinking tab keeps for it)." },
+    "pin-room": { "$type": "dimension", "$description": "The pin's size, on a tab and in the phone list." },
+    "scroll-back-rotate": { "$type": "angle" },
+    "scroll-forward-rotate": { "$type": "angle" },
+    "actions-padding": { "$type": "dimension" },
+    "sash-thickness": { "$type": "dimension", "$description": "A splitter's thickness, for the pointer." },
+    "bar-button-size": { "$type": "dimension" },
+    "bar-button-padding": { "$type": "dimension" },
+    "bar-button-gap": { "$type": "dimension" },
+    "bar-icon-size": { "$type": "dimension" },
+    "menu-width": { "$type": "dimension", "$description": "The least width of the menus of documents." },
+    "menu-max-height": { "$type": "dimension", "$description": "How tall the documents of a menu get before they scroll." },
+    "menu-search-height": { "$type": "dimension", "$description": "The menu search box's height (the `menu-search` place)." },
+    "menu-search-font-size": { "$type": "dimension", "$description": "The menu search box's text (the `menu-search` place)." },
+    "drag-copy-max-width": { "$type": "dimension", "$description": "The widest the copy of a dragged tab or group gets." },
+    "floating-min-width": { "$type": "dimension", "$description": "A floating window's least width." },
+    "floating-min-height": { "$type": "dimension", "$description": "A floating window's least height." },
+    "window-resize-edge": { "$type": "dimension" },
+    "folded-pin-rotate": { "$type": "angle", "$description": "The pin of a folded area's group lies down: its turn." },
+    "folded-tab-height": { "$type": "dimension", "$description": "A folded document's title's height in the strip." },
+    "guide-room": { "$type": "dimension", "$description": "A dock guide's size (the space between guides is a share of it, `guide-spacing`)." },
+    "guide-spacing": { "$type": "number", "$description": "Space between the guides of the cross, and between an edge guide and its edge: a share of a guide's size." },
+    "focus-width": { "$type": "dimension" },
+    "focus-offset": { "$type": "dimension" },
+    "touch-tab-height": { "$type": "dimension" },
+    "touch-close-size": { "$type": "dimension" },
+    "touch-bar-button-size": { "$type": "dimension" },
+    "phone-row-height": { "$type": "dimension", "$description": "The phone bar's height." },
+    "tools-padding": { "$type": "dimension" },
+    "phone-list-row-height": { "$type": "dimension" },
+    "phone-list-preview-font-style": { "$type": "keyword" },
+    "$places": {
+      "menu-search": {
+        "$description": "The search at the top of the documents' menu: a row of the menu, its label hidden.",
+        "selector": ".mx-tabdocs__list > .mx-tabdocs__search",
+        "part": "field",
+        "tokens": [
+          "label-mode",
+          "height.md",
+          "font-size.md",
+          "frame.display",
+          "box.bg",
+          "border-width",
+          "box.radius"
+        ]
+      },
+      "phone-search": {
+        "$description": "The search at the top of the phone's list of documents.",
+        "selector": ".mx-tabdocs__list-search",
+        "part": "field",
+        "tokens": [
+          "label-mode",
+          "variant",
+          "notch"
+        ]
+      },
+      "phone-close": {
+        "$description": "The phone bar's close button.",
+        "selector": ".mx-tabdocs__phone-bar > .mx-tabdocs__phone-close",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "phone-count": {
+        "$description": "The phone bar's button with the number of open documents.",
+        "selector": ".mx-tabdocs__phone-bar > .mx-tabdocs__phone-count",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "actions": {
+        "$description": "The toolbar of a group's actions at the end of its strip.",
+        "selector": ".mx-tabdocs__bar > .mx-tabdocs__actions",
+        "part": "toolbar",
+        "tokens": [
+          "bar.bg"
+        ]
+      },
+      "actions-small": {
+        "$description": "The toolbar of a group's actions with small buttons (`barButtonSize: 'small'`).",
+        "selector": ".mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions",
+        "part": "toolbar",
+        "tokens": [
+          "bar.gap"
+        ]
+      },
+      "actions-button": {
+        "$description": "A button of a group's actions, the \"…\" button too.",
+        "selector": ".mx-tabdocs__bar > .mx-tabdocs__actions > .mx-button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "actions-small-button": {
+        "$description": "A small button of a group's actions: about the size of a pointer target, a smaller mark.",
+        "selector": ".mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions > .mx-button",
+        "part": "button",
+        "tokens": [
+          "height.sm",
+          "padding.sm",
+          "icon.size"
+        ]
+      },
+      "actions-small-count": {
+        "$description": "The small \"…\" button showing how many tabs are out of sight (\"+2\"): the count fills it.",
+        "selector": ".mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions > .mx-button:has(.mx-tabdocs__count)",
+        "part": "button",
+        "tokens": [
+          "padding.sm"
+        ]
+      },
+      "tool-drawer": {
+        "$description": "The drawer a dock area shows in on a tablet: the area fills it.",
+        "selector": ".mx-tabdocs__tool-panel.mx-drawer",
+        "part": "drawer",
+        "tokens": [
+          "body.padding"
+        ]
+      },
+      "tool-drawer-start-end": {
+        "$description": "The drawer of a dock area at the start or end side.",
+        "selector": ".mx-tabdocs__tool-panel.mx-drawer:is([data-side='start'], [data-side='end'])",
+        "part": "drawer",
+        "tokens": [
+          "size"
+        ]
+      },
+      "tool-drawer-top-bottom": {
+        "$description": "The drawer of a dock area at the top or bottom.",
+        "selector": ".mx-tabdocs__tool-panel.mx-drawer:is([data-side='top'], [data-side='bottom'])",
+        "part": "drawer",
+        "tokens": [
+          "size"
+        ]
+      },
+      "tool-sheet": {
+        "$description": "The sheet a dock area shows in on a phone: the area fills it.",
+        "selector": ".mx-tabdocs__tool-panel.mx-bottom-sheet",
+        "part": "sheet",
+        "tokens": [
+          "body.padding"
+        ]
+      },
+      "window-sheet": {
+        "$description": "The sheet a floating window shows in on a tablet or a phone: the window's groups fill it.",
+        "selector": ".mx-tabdocs__window-sheet",
+        "part": "sheet",
+        "tokens": [
+          "body.padding"
+        ]
+      }
+    },
+    "$units": {
+      "manager": {
+        "$description": "The whole manager: its fill and text.",
+        "selector": ".mx-tabdocs"
+      },
+      "group": {
+        "$description": "A group of documents: its fill (`second`: the second group side by side on a tablet, a line between them).",
+        "selector": ".mx-tabdocs__group",
+        "states": {
+          "second": ".mx-tabdocs[data-presentation='tablet'] .mx-tabdocs__group[data-slot='2']"
+        }
+      },
+      "bar": {
+        "$description": "A group's strip: its fill and the line under it (`dragging`: the group being dragged).",
+        "selector": ".mx-tabdocs__bar",
+        "states": {
+          "dragging": ".mx-tabdocs__group[data-dragging] > .mx-tabdocs__bar"
+        }
+      },
+      "pinned": {
+        "$description": "The pinned tabs (`row`: in a row of their own, a line under it).",
+        "selector": ".mx-tabdocs__pinned",
+        "states": {
+          "row": ".mx-tabdocs[data-pinned-row] .mx-tabdocs__pinned"
+        }
+      },
+      "scroll": {
+        "$description": "A button at an end of the strip that scrolls it (`end`: nothing more that way).",
+        "selector": ".mx-tabdocs__scroll",
+        "defaults": {
+          "cursor": "default"
+        },
+        "states": {
+          "hover": ".mx-tabdocs__scroll:hover:not([data-end])",
+          "pressed": {
+            "selector": ".mx-tabdocs__scroll:active:not([data-end])",
+            "from": "hover"
+          },
+          "end": ".mx-tabdocs__scroll[data-end]"
+        }
+      },
+      "scroll-icon": {
+        "$description": "A scroll button's glyph (turned by `scroll-*-rotate`).",
+        "selector": ".mx-tabdocs__scroll > .mx-glyph"
+      },
+      "scrollbar": {
+        "$description": "The thin scrollbar over the foot of the tabs, without scroll buttons: its track.",
+        "selector": ".mx-tabdocs__scrollbar"
+      },
+      "thumb": {
+        "$description": "The scrollbar's thumb (`hover`: under the pointer or dragged).",
+        "selector": ".mx-tabdocs__thumb",
+        "states": {
+          "hover": ".mx-tabdocs__thumb:hover, .mx-tabdocs__scrollbar[data-dragging] > .mx-tabdocs__thumb"
+        }
+      },
+      "count": {
+        "$description": "How many tabs are out of sight, in the place of the \"…\" mark.",
+        "selector": ".mx-tabdocs__count"
+      },
+      "tab": {
+        "$description": "A tab: under the pointer, shown (`selected`), the one before the shown tab (its separator), focused by the keys, dragged; a single document shown as a title (`title`, `title-active` in the active group). Its end side is the separator between tabs.",
+        "selector": ".mx-tabdocs__tab",
+        "defaults": {
+          "min-height": "var(--_tab-height)",
+          "padding-inline": "var(--_tabdocs-tab-inset)",
+          "padding-block": "0px",
+          "gap": "var(--_tabdocs-tab-spacing)",
+          "white-space": "nowrap",
+          "cursor": "default",
+          "bg": "transparent",
+          "border-width": "0px"
+        },
+        "states": {
+          "hover": ".mx-tabdocs__tab:hover:not([aria-selected='true'])",
+          "selected": ".mx-tabdocs__tab[aria-selected='true']",
+          "before-selected": ".mx-tabdocs__tab:has(+ .mx-tabdocs__tab[aria-selected='true'])",
+          "focus": ".mx-tabdocs__tab:focus-visible",
+          "selected-focus": {
+            "selector": ".mx-tabdocs__tab[aria-selected='true']:focus-visible",
+            "from": "focus"
+          },
+          "dragging": ".mx-tabdocs__tab[data-dragging]",
+          "title": ".mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab",
+          "title-active": {
+            "selector": ".mx-tabdocs__group[data-title][data-active] > .mx-tabdocs__bar .mx-tabdocs__tab",
+            "from": "title"
+          },
+          "title-focus": {
+            "selector": ".mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab:focus-visible",
+            "from": "title"
+          }
+        }
+      },
+      "indicator": {
+        "$description": "The bar on a tab (by default along its top: `indicator-inset-*`): under the pointer, on the shown tab, on the shown tab of the active group (`active`); none on a title.",
+        "selector": ".mx-tabdocs__tab::after",
+        "states": {
+          "hover": ".mx-tabdocs__tab:hover:not([aria-selected='true'])::after",
+          "selected": ".mx-tabdocs__tab[aria-selected='true']::after",
+          "active": {
+            "selector": ".mx-tabdocs__group[data-active] > :where(.mx-tabdocs__bar) .mx-tabdocs__tab[aria-selected='true']::after",
+            "from": "selected"
+          },
+          "title": ".mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab::after"
+        }
+      },
+      "title": {
+        "$description": "A tab's title, in its tone (`warning`, `danger`, `success`, `accent`).",
+        "selector": ".mx-tabdocs__title",
+        "states": {
+          "warning": ".mx-tabdocs__tab[data-tone='warning'] .mx-tabdocs__title",
+          "danger": ".mx-tabdocs__tab[data-tone='danger'] .mx-tabdocs__title",
+          "success": ".mx-tabdocs__tab[data-tone='success'] .mx-tabdocs__title",
+          "accent": ".mx-tabdocs__tab[data-tone='accent'] .mx-tabdocs__title"
+        }
+      },
+      "letter": {
+        "$description": "A compact pinned tab's first letter.",
+        "selector": ".mx-tabdocs__letter"
+      },
+      "pin": {
+        "$description": "A pinned tab's pin, which unpins it (`hover`).",
+        "selector": ".mx-tabdocs__pin",
+        "defaults": {
+          "size": "var(--_pin-size)"
+        },
+        "states": {
+          "hover": ".mx-tabdocs__pin:hover"
+        }
+      },
+      "description": {
+        "$description": "A tab's description, after its title.",
+        "selector": ".mx-tabdocs__description"
+      },
+      "icon": {
+        "$description": "A tab's icon.",
+        "selector": ".mx-tabdocs__icon",
+        "defaults": {
+          "size": "var(--_tabdocs-icon-room)"
+        }
+      },
+      "badge": {
+        "$description": "A tab's count or mark (`dot`: a dot), in its tone (`warning`, `danger` …, `warning-dot` …).",
+        "selector": ".mx-tabdocs__badge",
+        "states": {
+          "dot": ".mx-tabdocs__badge[data-dot]",
+          "warning": ".mx-tabdocs__tab[data-tone='warning'] .mx-tabdocs__badge",
+          "danger": ".mx-tabdocs__tab[data-tone='danger'] .mx-tabdocs__badge",
+          "success": ".mx-tabdocs__tab[data-tone='success'] .mx-tabdocs__badge",
+          "accent": ".mx-tabdocs__tab[data-tone='accent'] .mx-tabdocs__badge",
+          "warning-dot": {
+            "selector": ".mx-tabdocs__tab[data-tone='warning'] .mx-tabdocs__badge[data-dot]",
+            "from": "dot"
+          },
+          "danger-dot": {
+            "selector": ".mx-tabdocs__tab[data-tone='danger'] .mx-tabdocs__badge[data-dot]",
+            "from": "dot"
+          },
+          "success-dot": {
+            "selector": ".mx-tabdocs__tab[data-tone='success'] .mx-tabdocs__badge[data-dot]",
+            "from": "dot"
+          },
+          "accent-dot": {
+            "selector": ".mx-tabdocs__tab[data-tone='accent'] .mx-tabdocs__badge[data-dot]",
+            "from": "dot"
+          }
+        }
+      },
+      "close": {
+        "$description": "A tab's close button (`hover`).",
+        "selector": ".mx-tabdocs__close",
+        "defaults": {
+          "size": "var(--_close-size)"
+        },
+        "states": {
+          "hover": ".mx-tabdocs__tab[data-close] .mx-tabdocs__close:hover"
+        }
+      },
+      "dirty": {
+        "$description": "The dot of unsaved changes, in the close button's place.",
+        "selector": ".mx-tabdocs__dirty"
+      },
+      "panel": {
+        "$description": "A document's panel (`focus`: focused by the keys).",
+        "selector": ".mx-tabdocs__panel",
+        "states": {
+          "focus": ".mx-tabdocs__panel:focus-visible"
+        }
+      },
+      "empty": {
+        "$description": "What an empty group says.",
+        "selector": ".mx-tabdocs__empty"
+      },
+      "sash": {
+        "$description": "A splitter between two groups or a dock area and the documents (`focus`: focused by the keys).",
+        "selector": ".mx-tabdocs__sash",
+        "states": {
+          "focus": ".mx-tabdocs__sash:focus-visible"
+        }
+      },
+      "sash-line": {
+        "$description": "The splitter's line, standing (`across`: lying, between groups one above another), thicker in the accent under the pointer, while dragged or focused (`active`, `across-active`).",
+        "selector": ".mx-tabdocs__sash::before",
+        "states": {
+          "across": ":is(.mx-tabdocs__split[data-orientation='vertical'] > .mx-tabdocs__sash, .mx-tabdocs__area-sash[aria-orientation='horizontal'])::before",
+          "active": ":is(.mx-tabdocs__sash:hover, .mx-tabdocs__sash:focus-visible, .mx-tabdocs[data-resizing] .mx-tabdocs__sash:focus)::before",
+          "across-active": {
+            "selector": ":is(.mx-tabdocs__split[data-orientation='vertical'] > .mx-tabdocs__sash, .mx-tabdocs__area-sash[aria-orientation='horizontal']):is(:hover, :focus-visible, .mx-tabdocs[data-resizing] :focus)::before",
+            "from": "across"
+          }
+        }
+      },
+      "ghost": {
+        "$description": "The copy of a dragged tab or group under the pointer (`copy`: a drop would copy it; `refused`: none would take it).",
+        "selector": ".mx-tabdocs__ghost",
+        "states": {
+          "copy": ".mx-tabdocs__ghost[data-target='copy']",
+          "refused": ".mx-tabdocs__ghost[data-target='none']"
+        }
+      },
+      "drop": {
+        "$description": "The area a drop would take: its frame.",
+        "selector": ".mx-tabdocs__drop"
+      },
+      "drop-fill": {
+        "$description": "The area's fill, under its frame (its corners: the frame's).",
+        "selector": ".mx-tabdocs__drop::before"
+      },
+      "insert": {
+        "$description": "The mark between two tabs where a dragged tab would go.",
+        "selector": ".mx-tabdocs__insert"
+      },
+      "window": {
+        "$description": "A floating window (`active`: the one in front; `maximized`).",
+        "selector": ".mx-tabdocs__window",
+        "states": {
+          "active": ".mx-tabdocs__window[data-active]",
+          "maximized": ".mx-tabdocs__window[data-maximized]"
+        }
+      },
+      "area": {
+        "$description": "A dock area: its fill; folded and slid out over the documents from its side (`folded`, `folded-left` …: a line on the side towards the documents and a shadow); in a drawer or a sheet on a tablet or a phone (`presented`).",
+        "selector": ".mx-tabdocs__area",
+        "states": {
+          "folded": ".mx-tabdocs__area[data-auto-hide]",
+          "folded-left": {
+            "selector": ".mx-tabdocs__area[data-auto-hide][data-side='left']",
+            "from": "folded"
+          },
+          "folded-right": {
+            "selector": ".mx-tabdocs__area[data-auto-hide][data-side='right']",
+            "from": "folded"
+          },
+          "folded-top": {
+            "selector": ".mx-tabdocs__area[data-auto-hide][data-side='top']",
+            "from": "folded"
+          },
+          "folded-bottom": {
+            "selector": ".mx-tabdocs__area[data-auto-hide][data-side='bottom']",
+            "from": "folded"
+          },
+          "presented": ".mx-tabdocs .mx-tabdocs__area[data-presented][data-side]"
+        }
+      },
+      "autohide": {
+        "$description": "The strip of a folded area along the manager's edge (`left`, `right`, `top`, `bottom`: a line on the side towards the documents).",
+        "selector": ".mx-tabdocs__autohide",
+        "states": {
+          "left": ".mx-tabdocs__autohide[data-side='left']",
+          "right": ".mx-tabdocs__autohide[data-side='right']",
+          "top": ".mx-tabdocs__autohide[data-side='top']",
+          "bottom": ".mx-tabdocs__autohide[data-side='bottom']"
+        }
+      },
+      "autohide-tab": {
+        "$description": "A folded document's title in the strip: under the pointer, the one slid out (`open`), focused by the keys; the first of another group (`group-start`: space before it).",
+        "selector": ".mx-tabdocs__autohide-tab",
+        "defaults": {
+          "min-height": "var(--_autohide-size)",
+          "padding-block": "0px",
+          "white-space": "nowrap",
+          "cursor": "default",
+          "bg": "transparent",
+          "border-width": "0px"
+        },
+        "states": {
+          "group-start": ".mx-tabdocs__autohide-tab[data-group-start]",
+          "hover": ".mx-tabdocs__autohide-tab:hover:not([data-open])",
+          "open": ".mx-tabdocs__autohide-tab[data-open]",
+          "focus": ".mx-tabdocs__autohide-tab:focus-visible"
+        }
+      },
+      "autohide-indicator": {
+        "$description": "The bar on the side of a folded title towards the documents (`open`: the area slid out).",
+        "selector": ".mx-tabdocs__autohide-tab::after",
+        "states": {
+          "open": ".mx-tabdocs__autohide-tab[data-open]::after"
+        }
+      },
+      "guide": {
+        "$description": "A dock guide while dragging: the cross over a group, or one at the manager's edges (`edge`); the one under the pointer (`pointed`, `edge-pointed`).",
+        "selector": ".mx-tabdocs__guide",
+        "defaults": {
+          "size": "var(--_tabdocs-guide-room)"
+        },
+        "states": {
+          "edge": ".mx-tabdocs__guide[data-kind='edge']",
+          "pointed": ".mx-tabdocs__guide[data-pointed]",
+          "edge-pointed": {
+            "selector": ".mx-tabdocs__guide[data-kind='edge'][data-pointed]",
+            "from": "edge"
+          }
+        }
+      },
+      "guide-icon": {
+        "$description": "A guide's glyph.",
+        "selector": ".mx-tabdocs__guide > .mx-glyph"
+      },
+      "list": {
+        "$description": "The menu of documents (\"…\", the recently used ones): the search over the documents.",
+        "selector": ".mx-tabdocs__list"
+      },
+      "list-dirty": {
+        "$description": "The dot of unsaved changes in a list of documents (`phone`: in the phone's list).",
+        "selector": ".mx-tabdocs__list-dirty",
+        "states": {
+          "phone": ".mx-tabdocs__list-open > .mx-tabdocs__list-dirty"
+        }
+      },
+      "phone-bar": {
+        "$description": "The phone's bar: the shown document's title, its close button, how many are open.",
+        "selector": ".mx-tabdocs__phone-bar",
+        "defaults": {
+          "min-height": "var(--_tabdocs-phone-row-height)"
+        }
+      },
+      "phone-title": {
+        "$description": "The phone bar's title, which opens the list (`hover`, `focus`).",
+        "selector": ".mx-tabdocs__phone-title",
+        "defaults": {
+          "min-height": "var(--_tabdocs-phone-row-height)",
+          "bg": "transparent",
+          "border-width": "0px"
+        },
+        "states": {
+          "hover": ".mx-tabdocs__phone-title:hover:not(:disabled)",
+          "focus": ".mx-tabdocs__phone-title:focus-visible"
+        }
+      },
+      "phone-dirty": {
+        "$description": "The dot of unsaved changes in the phone bar.",
+        "selector": ".mx-tabdocs__phone-dirty"
+      },
+      "phone-tools": {
+        "$description": "The phone's tools, under the document (its space: `tools-padding`, over the safe area).",
+        "selector": ".mx-tabdocs__phone-tools"
+      },
+      "phone-tool": {
+        "$description": "A tool button of the phone's tools: under the pointer, the open tool (`open`), focused by the keys.",
+        "selector": ".mx-tabdocs__phone-tool",
+        "defaults": {
+          "bg": "transparent",
+          "border-width": "0px"
+        },
+        "states": {
+          "hover": ".mx-tabdocs__phone-tool:hover:not([data-open])",
+          "open": ".mx-tabdocs__phone-tool[data-open]",
+          "focus": ".mx-tabdocs__phone-tool:focus-visible"
+        }
+      },
+      "phone-tool-icon": {
+        "$description": "A tool button's icon (or letter).",
+        "selector": ".mx-tabdocs__phone-tool-icon"
+      },
+      "list-search": {
+        "$description": "The phone list's search box (the space under it).",
+        "selector": ".mx-tabdocs__list-search"
+      },
+      "list-sections": {
+        "$description": "The phone list's sections.",
+        "selector": ".mx-tabdocs__list-sections"
+      },
+      "list-head": {
+        "$description": "A section's head in the phone list.",
+        "selector": ".mx-tabdocs__list-head"
+      },
+      "list-row": {
+        "$description": "A document in the phone list (`swiping`: swiped to close; `lifted`: dragged to a new place).",
+        "selector": ".mx-tabdocs__list-row",
+        "states": {
+          "swiping": ".mx-tabdocs__list-row[data-swiping]",
+          "lifted": ".mx-tabdocs__list-row[data-lifted]"
+        }
+      },
+      "list-open": {
+        "$description": "What opens a document in the phone list: under the pointer, the shown document (`current`), focused by the keys.",
+        "selector": ".mx-tabdocs__list-open",
+        "defaults": {
+          "min-height": "var(--_tabdocs-phone-list-row-height)",
+          "color": "inherit",
+          "bg": "transparent",
+          "border-width": "0px"
+        },
+        "states": {
+          "hover": ".mx-tabdocs__list-open:hover",
+          "current": ".mx-tabdocs__list-row[aria-current='true'] > .mx-tabdocs__list-open",
+          "focus": ".mx-tabdocs__list-open:focus-visible"
+        }
+      },
+      "list-description": {
+        "$description": "A document's description in the phone list.",
+        "selector": ".mx-tabdocs__list-description"
+      },
+      "list-pin": {
+        "$description": "A pinned document's pin in the phone list.",
+        "selector": ".mx-tabdocs__list-pin",
+        "defaults": {
+          "size": "var(--_tabdocs-pin-room)"
+        }
+      },
+      "list-close": {
+        "$description": "A document's close button in the phone list (`hover`, `focus`).",
+        "selector": ".mx-tabdocs__list-close",
+        "defaults": {
+          "padding": "0px",
+          "bg": "transparent",
+          "border-width": "0px"
+        },
+        "states": {
+          "hover": ".mx-tabdocs__list-close:hover:not(:disabled)",
+          "focus": ".mx-tabdocs__list-close:focus-visible"
+        }
+      },
+      "list-empty": {
+        "$description": "What the phone list says when no document matches.",
+        "selector": ".mx-tabdocs__list-empty"
+      }
+    }
+  }
+}

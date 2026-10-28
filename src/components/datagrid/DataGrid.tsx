@@ -2940,17 +2940,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
             </div>
             <div class="mx-data-grid__state" x-display={() => overlay() === 'empty'}>
               <span>{() => (model.isFiltered() ? t('gridNoMatches') : t('gridNoRows'))}</span>
-              <Button class="mx-data-grid__clear-filters" text={() => t('gridClearFilters')} size="sm" variant="outline" visible={() => model.isFiltered()} onclick={() => this.clearFilters()} />
+              <Button class="mx-data-grid__clear-filters" text={() => t('gridClearFilters')} visible={() => model.isFiltered()} onclick={() => this.clearFilters()} />
             </div>
             <div class="mx-data-grid__state" data-tone="danger" role="alert" x-display={() => overlay() === 'error'}>
               <span>{() => t('loadFailed')}</span>
-              <Button text={() => t('retry')} size="sm" variant="outline" onclick={() => this.retry()} />
+              <Button text={() => t('retry')} onclick={() => this.retry()} />
             </div>
           </div>
           <div class="mx-data-grid__load-more" role="status" data-state={() => model.moreState()} x-display={() => model.moreState() !== null}>
             <Spinner size="sm" label={() => t('gridLoadingMore')} visible={() => model.moreState() === 'loading'} />
             <span x-display={() => model.moreState() === 'failed'}>{() => t('gridLoadMoreFailed')}</span>
-            <Button text={() => t('retry')} size="sm" variant="outline" visible={() => model.moreState() === 'failed'} onclick={() => this.retry()} />
+            <Button text={() => t('retry')} visible={() => model.moreState() === 'failed'} onclick={() => this.retry()} />
           </div>
           <div class="mx-data-grid__export-panel" x-display={() => this.exportPanel.shown}>
             <ProgressBar
@@ -2968,8 +2968,6 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
             <Button
               class="mx-data-grid__export-cancel"
               text={() => (acting() ? t('gridActionStop') : t('gridExportCancel'))}
-              size="sm"
-              variant="outline"
               visible={() => panel.cancel}
               onclick={() => this.stopPanelExport?.()}
             />
@@ -2991,11 +2989,11 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
           </span>
           <span class="mx-data-grid__note" data-tone="danger" role="status" x-display={() => st.failedBlocks > (model.moreState() === 'failed' ? 1 : 0)}>
             {() => t('gridSomeRowsFailed')}
-            <Button text={() => t('retry')} size="sm" variant="ghost" onclick={() => this.retry()} />
+            <Button text={() => t('retry')} onclick={() => this.retry()} />
           </span>
           <span class="mx-data-grid__note mx-data-grid__errors" data-tone="danger" role="status" x-display={showErrors}>
             {() => t('gridSaveErrors', { count: count(model.stats.failed) })}
-            <Button text={() => t('gridNextError')} size="sm" variant="ghost" on:pointerdown={keepFocus} onclick={() => this.goToNextError()} />
+            <Button text={() => t('gridNextError')} on:pointerdown={keepFocus} onclick={() => this.goToNextError()} />
           </span>
           {this.pager}
         </div>

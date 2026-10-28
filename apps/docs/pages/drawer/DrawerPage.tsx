@@ -47,10 +47,9 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['drawer.background, drawer.fg, drawer.border-color, drawer.border-width, drawer.radius, drawer.shadow, drawer.shadow-push', 'The surface; corners and border on its open side.'],
-  ['drawer.scrim, drawer.size', 'The dimmed layer, and the size it opens at.'],
-  ['drawer.padding, drawer.header-*, drawer.footer-*', 'Inside.'],
-  ['drawer.title-*, drawer.font-*', 'The type.'],
+  ['drawer.scrim, drawer.panel', 'Units: the dimmed layer; the surface at each edge (`start`, `end`, `top`, `bottom`: its sides towards the content and the room differ) and pushing the content (`push`).'],
+  ['drawer.header, drawer.title, drawer.tools, drawer.body, drawer.footer', 'Units: inside (`body.focus`: a ring inside the content).'],
+  ['drawer.size, drawer.max-size, drawer.inset, drawer.font-family', 'The size it opens at, the most of the room it takes, the room around it; the type’s family.'],
 ];
 
 export default function DrawerPage() {

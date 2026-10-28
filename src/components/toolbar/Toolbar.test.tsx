@@ -179,9 +179,10 @@ describe('Toolbar', () => {
     );
     await settle();
     const buttons = Array.from(t.element.querySelectorAll<HTMLElement>(':scope > .mx-button'));
+    // Without a buttonVariant the toolbar's place decides the look in CSS (jsdom has none): no variant is forced.
     expect(buttons.map((b) => [b.dataset.size, b.dataset.variant])).toEqual([
-      ['sm', 'ghost'],
-      ['sm', 'ghost'],
+      ['sm', 'solid'],
+      ['sm', 'solid'],
       ['lg', 'solid'],
     ]);
     expect(t.element.querySelector<HTMLElement>('.mx-field')!.dataset.size).toBe('sm');
@@ -288,7 +289,7 @@ describe('Toolbar', () => {
     t.focus();
     press('ArrowRight');
     expect(document.activeElement).toBe(faces(t)[1]);
-    expect((b.element as HTMLElement).dataset.variant).toBe('ghost');
+    expect((b.element as HTMLElement).dataset.size).toBe('md');
     b.enabled = false;
     await settle();
     expect(tabbable(t)).toEqual([faces(t)[0]]);

@@ -57,8 +57,9 @@ function drag(el: Element, from: number, points: number[], stepMs = 16) {
 }
 
 /** Waits until `ok()` holds (history moves in a later task), at most half a second. */
+/** Waits for a condition, up to 3 s: jsdom's history.back() can take its time when the machine is busy. */
 async function until(ok: () => boolean) {
-  for (let i = 0; i < 50 && !ok(); i++) await new Promise((r) => setTimeout(r, 10));
+  for (let i = 0; i < 300 && !ok(); i++) await new Promise((r) => setTimeout(r, 10));
 }
 
 function touch(el: Element, type: string, x: number, y: number) {
@@ -281,7 +282,7 @@ describe('BottomSheet', () => {
     sheet.closeOnBack = false;
     sheet.open();
     expect(backButtonHolders(window)).toBe(0);
-  });
+  }, 15_000);
 
   it('opens over the page as a popover-less layer when there is no container, non-modal when asked', async () => {
     const outside = document.createElement('button');

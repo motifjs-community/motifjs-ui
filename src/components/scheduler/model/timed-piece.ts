@@ -15,4 +15,12 @@ export interface TimedPiece<T> {
   /** It began on an earlier day, or goes on after this one. */
   before: boolean;
   after: boolean;
+  /** It is the appointment being moved or resized, shown where it would go. */
+  draft: boolean;
+  /** …where it may not go. */
+  invalid: boolean;
+  /** The appointment's text, colour and whether it is disabled, as its box shows them. */
+  text: string;
+  color: string;
+  disabled: boolean;
 }

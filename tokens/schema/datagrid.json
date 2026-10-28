@@ -1,0 +1,783 @@
+{
+  "datagrid": {
+    "$description": "DataGrid: the header, filter, body, group, total and form rows, the toolbar, the bottom bar and the pager, the header filter window, the drag ghosts and marks. The sizes, the layout values, the tints over a row (shared by its cells), the pinned edge, the cell ranges and the status symbols are plain tokens; every other piece is a unit (`$units`).",
+    "$selector": ".mx-data-grid, .mx-data-grid__values, .mx-data-grid__menu, .mx-data-grid__tip",
+    "record-height": { "$type": "dimension", "$description": "A row's height without its space (`row-space`); rows of one height are counted." },
+    "row-space": { "$type": "dimension", "$description": "Space added to a row's height." },
+    "cell-inset": { "$type": "dimension", "$description": "The space at the start and the end of a cell (and of the group content, the cell editor, the chips)." },
+    "icon-size": { "$type": "dimension" },
+    "button-size": { "$type": "dimension" },
+    "resize-hit-width": { "$type": "dimension", "$description": "How wide the place to resize a header is, for the pointer." },
+    "group-indent": { "$type": "dimension" },
+    "chip-spacing": { "$type": "dimension", "$description": "The space between the group panel's chips, inside a chip, and round the panel." },
+    "adaptive-gap": { "$type": "dimension" },
+    "adaptive-label-column": { "$type": "dimension", "$description": "The width of the titles in the adaptive details." },
+    "values-window-width": { "$type": "dimension", "$description": "The width of the header filter window." },
+    "values-row-height": { "$type": "dimension" },
+    "page-number-width": { "$type": "dimension" },
+    "page-size-width": { "$type": "dimension" },
+    "export-max-width": { "$type": "dimension" },
+    "export-inset": { "$type": "dimension" },
+    "loading-inset": { "$type": "dimension" },
+    "loading-inset-block": { "$type": "dimension", "$description": "The placeholder bars of rows still loading: their space above and below." },
+    "row-line-width": { "$type": "dimension" },
+    "hover-tint": { "$type": "color", "$description": "The tint over a body row under the pointer (and over the active row while rows are selected)." },
+    "stripe-tint": { "$type": "color", "$description": "The tint over every other row of a striped grid." },
+    "active-tint": { "$type": "color", "$description": "The tint over the keys' row." },
+    "new-tint": { "$type": "color", "$description": "The tint over a new row." },
+    "pinned-edge-width": { "$type": "dimension" },
+    "pinned-edge-color": { "$type": "color" },
+    "range-fill": { "$type": "color" },
+    "range-fill-opacity": { "$type": "number" },
+    "range-selected-fill": { "$type": "color" },
+    "range-border-color": { "$type": "color" },
+    "range-border-width": { "$type": "dimension" },
+    "range-anchor-fill": { "$type": "color" },
+    "row-run-border-color": { "$type": "color" },
+    "row-run-border-width": { "$type": "dimension" },
+    "search-mark-line": { "$type": "color" },
+    "search-mark-thickness": { "$type": "dimension" },
+    "search-mark-offset": { "$type": "dimension" },
+    "filter-text-underline-width": { "$type": "dimension" },
+    "filter-text-underline-offset": { "$type": "dimension" },
+    "status-new-mark": { "$type": "keyword", "$description": "The marks of the status column (CSS strings)." },
+    "status-changed-mark": { "$type": "keyword" },
+    "status-removed-mark": { "$type": "keyword" },
+    "status-saving-mark": { "$type": "keyword" },
+    "status-failed-mark": { "$type": "keyword" },
+    "group-toggle-rotate-open": { "$type": "angle" },
+    "expand-rotate-open": { "$type": "angle" },
+    "step-back-rotate": { "$type": "angle", "$description": "The pager's first and previous arrows (one glyph, turned)." },
+    "step-forward-rotate": { "$type": "angle" },
+    "pager-button-size": { "$type": "keyword", "$description": "The pager's buttons: their size, the steps' variant, a page's variant and tone, the current page's." },
+    "pager-step-variant": { "$type": "keyword" },
+    "pager-page-variant": { "$type": "keyword" },
+    "pager-page-tone": { "$type": "keyword" },
+    "pager-current-variant": { "$type": "keyword" },
+    "pager-current-tone": { "$type": "keyword" },
+    "$places": {
+      "filter-editor": {
+        "$description": "An editor in the filter row.",
+        "selector": ".mx-data-grid__filter > .mx-field",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "foot.display"
+        ]
+      },
+      "cell-editor": {
+        "$description": "An editor in a cell.",
+        "selector": ".mx-field[data-in-cell]",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "padding.sm",
+          "padding.md",
+          "padding.lg",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "border-width",
+          "box.radius",
+          "box.shadow",
+          "box.focus.shadow",
+          "frame.display",
+          "indicator.display",
+          "foot.display",
+          "padding-start.sm",
+          "padding-start.md",
+          "padding-start.lg",
+          "padding-end.sm",
+          "padding-end.md",
+          "padding-end.lg",
+          "box.pressed.bg",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "box.invalid-focus.shadow",
+          "box.readonly-focus.shadow",
+          "box.disabled.shadow",
+          "box.underline-focus.shadow",
+          "box.underline-invalid-focus.shadow",
+          "box.underline-readonly-focus.shadow",
+          "box.underline-disabled.shadow",
+          "box.readonly-invalid-focus.shadow",
+          "box.underline-readonly-invalid-focus.shadow"
+        ]
+      },
+      "pager-field": {
+        "$description": "A field of the pager (the page number, the page size).",
+        "selector": ".mx-field[data-in-pager]",
+        "part": "field",
+        "tokens": [
+          "foot.display"
+        ]
+      },
+      "header-filter-list": {
+        "$description": "The list of values in the header filter's popup: its frame, fill and corners there (a language may leave the popup's frame alone).",
+        "selector": ".mx-data-grid__values .mx-data-grid__values-list > .mx-list-box",
+        "part": "field",
+        "tokens": [
+          "frame.display",
+          "indicator.display",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "frame.border-color",
+          "frame.hover.border-color",
+          "frame.focus.border-color",
+          "frame.border-bottom-color",
+          "frame.hover.border-bottom-color",
+          "frame.focus.border-bottom-color",
+          "box.radius",
+          "box.shadow",
+          "box.focus.shadow",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "box.invalid-focus.shadow",
+          "box.readonly-focus.shadow",
+          "box.disabled.shadow",
+          "box.readonly-invalid-focus.shadow"
+        ]
+      },
+      "values-apply": {
+        "$description": "The header filter's Apply.",
+        "selector": ".mx-data-grid__values-bar > .mx-data-grid__apply",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "values-dismiss": {
+        "$description": "The header filter's Cancel.",
+        "selector": ".mx-data-grid__values-bar > .mx-data-grid__dismiss",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "form-apply": {
+        "$description": "The edit form's Save.",
+        "selector": ".mx-data-grid__form-buttons > .mx-data-grid__apply",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "form-dismiss": {
+        "$description": "The edit form's Cancel.",
+        "selector": ".mx-data-grid__form-buttons > .mx-data-grid__dismiss",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "builder-apply": {
+        "$description": "The filter builder's OK.",
+        "selector": ".mx-data-grid__filter-builder-buttons > .mx-data-grid__apply",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "builder-dismiss": {
+        "$description": "The filter builder's Cancel.",
+        "selector": ".mx-data-grid__filter-builder-buttons > .mx-data-grid__dismiss",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "state-button": {
+        "$description": "The buttons on the empty, error and load-more states and on the export panel.",
+        "selector": ":is(.mx-data-grid__state, .mx-data-grid__load-more, .mx-data-grid__export-panel) > .mx-button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "note-button": {
+        "$description": "The buttons in the notes of the bottom bar.",
+        "selector": ".mx-data-grid__note > .mx-button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "filter-clear": {
+        "$description": "The filter panel's Clear.",
+        "selector": ".mx-data-grid__filter-panel .mx-data-grid__filter-clear",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "values-popup": {
+        "$description": "The header filter's popup: its padding (outweighs a popup's general rule).",
+        "selector": ".mx-data-grid .mx-data-grid__values",
+        "part": "popup",
+        "tokens": [
+          "surface.padding-block",
+          "surface.padding-inline"
+        ]
+      }
+    },
+    "$units": {
+      "grid": {
+        "$description": "The whole grid: its frame, corners, fill and text.",
+        "selector": ".mx-data-grid"
+      },
+      "row": {
+        "$description": "A row: the header row (`header`, a row of bands `band`), the filter row, a body row (`body`) and what it can be (selected, dragged, a drop target), a group row, a group's footer, the totals row. Its fill; the tints over it (stripes, hover, the active row, a new row) are the plain `stripe`, `hover`, `active`, `new` tokens.",
+        "selector": ".mx-data-grid__row",
+        "states": {
+          "header": ".mx-data-grid__row--header",
+          "band": {
+            "selector": ".mx-data-grid__row--band",
+            "from": "header"
+          },
+          "header-drop": {
+            "selector": ".mx-data-grid__row--header[data-drop]",
+            "from": "header"
+          },
+          "filter": ".mx-data-grid__row--filter",
+          "total": ".mx-data-grid__total-row",
+          "total-focus": {
+            "selector": ".mx-data-grid__total-row:focus-visible",
+            "from": "total"
+          },
+          "total-loading": {
+            "selector": ".mx-data-grid__total-row[data-state='loading']",
+            "from": "total"
+          },
+          "body": ".mx-data-grid__body > .mx-data-grid__row",
+          "group": {
+            "selector": ".mx-data-grid__body > .mx-data-grid__group-row",
+            "from": "body"
+          },
+          "group-footer": {
+            "selector": ".mx-data-grid__body > .mx-data-grid__group-footer",
+            "from": "body"
+          },
+          "group-footer-focus": {
+            "selector": ".mx-data-grid__group-footer:focus-visible",
+            "from": "group-footer"
+          },
+          "selected": {
+            "selector": ".mx-data-grid__body > .mx-data-grid__row[data-selected]",
+            "from": "body"
+          },
+          "drag-indicate": {
+            "selector": ".mx-data-grid__body > .mx-data-grid__row[data-drag-source='indicate']",
+            "from": "body"
+          },
+          "drag-push": {
+            "selector": ".mx-data-grid__body > .mx-data-grid__row[data-drag-source='push']",
+            "from": "body"
+          },
+          "drop-target": {
+            "selector": ".mx-data-grid__body > .mx-data-grid__row[data-drop-target]",
+            "from": "body"
+          }
+        }
+      },
+      "selection": {
+        "$description": "A selected row's frame and effect, drawn over its cells (the pinned ones too), under the focus ring.",
+        "selector": ".mx-data-grid__body > .mx-data-grid__row[data-selected]::after"
+      },
+      "indicator": {
+        "$description": "The mark on a selected row, centred along it (`margin-start` / `margin-end`: `auto` on one side puts it on the other).",
+        "selector": ".mx-data-grid__body > .mx-data-grid__row[data-selected]::before",
+        "defaults": {
+          "margin-block": "auto"
+        }
+      },
+      "cell": {
+        "$description": "A body cell: focused by the keys, in a range of a selected row or the range's anchor, in a removed or a saving row, a lookup key that is missing, a group summary, the actions; the status, selection, expand, drag and adaptive cells (`bare`: no padding).",
+        "selector": ".mx-data-grid__cell",
+        "states": {
+          "focus": ".mx-data-grid__cell:focus-visible",
+          "bare": ".mx-data-grid__cell:is(.mx-data-grid__status, .mx-data-grid__select, .mx-data-grid__expand, .mx-data-grid__drag, .mx-data-grid__adaptive-cell)",
+          "actions": ".mx-data-grid__cell.mx-data-grid__actions",
+          "group-summary": ".mx-data-grid__group-row > .mx-data-grid__cell.mx-data-grid__summary-cell",
+          "range-selected": ".mx-data-grid__row[data-selected] > .mx-data-grid__cell[data-range]",
+          "range-anchor": ".mx-data-grid__cell[data-range~='anchor']",
+          "missing": ".mx-data-grid__cell[data-lookup='missing']",
+          "removed": ".mx-data-grid__row[data-status='removed'] .mx-data-grid__cell:not(.mx-data-grid__status)",
+          "saving": ".mx-data-grid__row[data-status='saving'] .mx-data-grid__cell:not(.mx-data-grid__status)"
+        }
+      },
+      "changed": {
+        "$description": "The corner mark of an unsaved value (two sides of its frame: a triangle).",
+        "selector": ".mx-data-grid__cell[data-changed]::before"
+      },
+      "invalid": {
+        "$description": "An invalid value's frame over its cell.",
+        "selector": ".mx-data-grid__cell[aria-invalid='true']::after"
+      },
+      "placeholder": {
+        "$description": "The soft bar in a cell whose row (or lookup value) is still loading.",
+        "selector": ":is(.mx-data-grid__row[data-loading] .mx-data-grid__cell, .mx-data-grid__cell[data-lookup='loading'])::after"
+      },
+      "header-cell": {
+        "$description": "A header: sortable, under the pointer (a layer over its fill), focused by the keys, being dragged; a band over its columns (`band`); the selection header (`bare`).",
+        "selector": ".mx-data-grid__header-cell",
+        "states": {
+          "sortable": ".mx-data-grid__header-cell[data-sortable]",
+          "hover": ".mx-data-grid__header-cell:hover",
+          "dragging": ".mx-data-grid__header-cell[data-dragging]",
+          "focus": ".mx-data-grid__header-cell:focus-visible",
+          "band": ".mx-data-grid__header-cell.mx-data-grid__band",
+          "bare": ".mx-data-grid__header-cell.mx-data-grid__select"
+        }
+      },
+      "title": {
+        "$description": "A header's text.",
+        "selector": ".mx-data-grid__title"
+      },
+      "sort": {
+        "$description": "A header's sort mark (its arrows, and the order among sorted columns).",
+        "selector": ".mx-data-grid__sort"
+      },
+      "sort-icon": {
+        "$description": "An arrow of the sort mark.",
+        "selector": ".mx-data-grid__sort > .mx-glyph",
+        "defaults": {
+          "size": "var(--_datagrid-icon-size)"
+        }
+      },
+      "head-button": {
+        "$description": "A header's menu and filter buttons: hidden until the header is under the pointer or has the keys (`shown`; always on touch screens), under the pointer, a column with a filter (`active`).",
+        "selector": ":is(.mx-data-grid__menu-button, .mx-data-grid__filter-button)",
+        "defaults": {
+          "size": "var(--_datagrid-button-size)",
+          "padding": "0px",
+          "color": "inherit",
+          "bg": "transparent",
+          "border-width": "0px",
+          "cursor": "pointer"
+        },
+        "states": {
+          "hover": ":is(.mx-data-grid__menu-button, .mx-data-grid__filter-button):hover",
+          "shown": ".mx-data-grid__header-cell:is(:hover, :focus-within) :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button), :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button):focus-visible, .mx-data-grid[data-header-buttons='always'] :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button)",
+          "active": ".mx-data-grid__filter-button[data-active]"
+        }
+      },
+      "head-button-icon": {
+        "$description": "A header button's glyph.",
+        "selector": ":is(.mx-data-grid__menu-button, .mx-data-grid__filter-button) > .mx-glyph",
+        "defaults": {
+          "size": "var(--_datagrid-icon-size)"
+        }
+      },
+      "resize": {
+        "$description": "The line at a header's end where it is resized (`active`: under the pointer, or while it is resized).",
+        "selector": ".mx-data-grid__resize::after",
+        "states": {
+          "active": ".mx-data-grid__resize:hover::after, .mx-data-grid__header-cell[data-resizing] .mx-data-grid__resize::after"
+        }
+      },
+      "column-drop": {
+        "$description": "Where a dragged header would land among the headers.",
+        "selector": ".mx-data-grid__drop"
+      },
+      "filter-cell": {
+        "$description": "A cell of the filter row (`focus`: focused by the keys).",
+        "selector": ".mx-data-grid__filter-cell",
+        "states": {
+          "focus": ".mx-data-grid__filter-cell:focus-visible"
+        }
+      },
+      "filter": {
+        "$description": "A filter row cell's condition button and fields.",
+        "selector": ".mx-data-grid__filter"
+      },
+      "condition": {
+        "$description": "The filter row's condition button (a kit button; its least width; `set`: a column with a filter).",
+        "selector": ".mx-data-grid__condition",
+        "defaults": {
+          "min-width": "var(--_datagrid-button-size)"
+        },
+        "states": {
+          "set": ".mx-data-grid__condition[data-set]"
+        }
+      },
+      "group-cell": {
+        "$description": "A group row's cell over every column (`focus`: focused by the keys).",
+        "selector": ".mx-data-grid__group-cell",
+        "states": {
+          "focus": ".mx-data-grid__group-cell:focus-visible"
+        }
+      },
+      "group-content": {
+        "$description": "A group row's toggle, text, count and summary, moved in by the group's level (`group-indent`).",
+        "selector": ".mx-data-grid__group-content",
+        "defaults": {
+          "padding-start": "calc(var(--_datagrid-cell-inset) + var(--_level, 0) * var(--_datagrid-group-indent))",
+          "padding-end": "var(--_datagrid-cell-inset)"
+        }
+      },
+      "group-count": {
+        "$description": "A group's row count.",
+        "selector": ".mx-data-grid__group-count"
+      },
+      "group-summary": {
+        "$description": "A group's summary items on its row.",
+        "selector": ".mx-data-grid__group-summary"
+      },
+      "group-toggle": {
+        "$description": "A group row's toggle (`hover`; `locked`: a group that cannot be closed).",
+        "selector": ".mx-data-grid__group-toggle",
+        "defaults": {
+          "size": "var(--_datagrid-button-size)",
+          "cursor": "pointer"
+        },
+        "states": {
+          "hover": ".mx-data-grid__group-toggle:hover",
+          "locked": ".mx-data-grid__group-row[data-locked] .mx-data-grid__group-toggle"
+        }
+      },
+      "group-toggle-icon": {
+        "$description": "The toggle's arrow (turned by `group-toggle-rotate-open` while the group is open).",
+        "selector": ".mx-data-grid__group-toggle > .mx-glyph",
+        "defaults": {
+          "size": "var(--_datagrid-icon-size)"
+        }
+      },
+      "group-panel": {
+        "$description": "The group panel at the start of the toolbar: the grouped columns as chips (`drop`: while a header can be dropped on it).",
+        "selector": ".mx-data-grid__group-panel",
+        "defaults": {
+          "gap": "var(--_datagrid-chip-spacing)",
+          "min-height": "var(--_datagrid-button-size)"
+        },
+        "states": {
+          "drop": ".mx-data-grid__group-panel[data-drop]"
+        }
+      },
+      "group-empty": {
+        "$description": "What the group panel says while no column is grouped.",
+        "selector": ".mx-data-grid__group-empty"
+      },
+      "chip": {
+        "$description": "A grouped column in the group panel: under the pointer, being dragged.",
+        "selector": ".mx-data-grid__chip",
+        "defaults": {
+          "gap": "var(--_datagrid-chip-spacing)",
+          "height": "var(--_datagrid-button-size)",
+          "cursor": "pointer",
+          "bg": "transparent",
+          "border-width": "0px"
+        },
+        "states": {
+          "hover": ".mx-data-grid__chip:hover",
+          "dragging": ".mx-data-grid__chip[data-dragging]"
+        }
+      },
+      "chip-sort": {
+        "$description": "A chip's sort arrows.",
+        "selector": ".mx-data-grid__chip-sort"
+      },
+      "chip-sort-icon": {
+        "$description": "A sort arrow on a chip.",
+        "selector": ".mx-data-grid__chip-sort > .mx-glyph",
+        "defaults": {
+          "size": "var(--_datagrid-icon-size)"
+        }
+      },
+      "chip-drop": {
+        "$description": "Where a dragged header or chip lands among the chips.",
+        "selector": ".mx-data-grid__chip-drop"
+      },
+      "toolbar": {
+        "$description": "The toolbar above the rows (the kit's toolbar): its line under it (`drop-ready`: while a header is dragged it takes drops for the group panel; `drop`: under the pointer).",
+        "selector": ".mx-data-grid .mx-data-grid__toolbar",
+        "defaults": {
+          "radius": "0px"
+        },
+        "states": {
+          "drop-ready": ".mx-data-grid .mx-data-grid__toolbar[data-drop-ready]",
+          "drop": ".mx-data-grid .mx-data-grid__toolbar[data-drop]"
+        }
+      },
+      "ghost": {
+        "$description": "The copy of a dragged header (`header`, with the header row's look), chip or row (`row`) next to the pointer; `target`: where a drop would group, move or ungroup the column.",
+        "selector": ".mx-data-grid__ghost",
+        "states": {
+          "header": ".mx-data-grid__ghost[data-kind='header']",
+          "row": ".mx-data-grid__ghost[data-kind='row']",
+          "target": ".mx-data-grid__ghost:is([data-target='group'], [data-target='move'], [data-target='ungroup'])"
+        }
+      },
+      "ghost-rows": {
+        "$description": "The rows in the copy of a dragged row.",
+        "selector": ".mx-data-grid__ghost-rows"
+      },
+      "status-mark": {
+        "$description": "The row status column's mark.",
+        "selector": ".mx-data-grid__status-mark"
+      },
+      "status-symbol": {
+        "$description": "The symbol of a row status (`new`, `changed`, `removed`, `saving`, `failed`; the symbols are the `status-*-mark` tokens).",
+        "selector": ".mx-data-grid__status-mark::before",
+        "states": {
+          "new": ".mx-data-grid__status[data-status='new'] .mx-data-grid__status-mark::before",
+          "changed": ".mx-data-grid__status[data-status='changed'] .mx-data-grid__status-mark::before",
+          "removed": ".mx-data-grid__status[data-status='removed'] .mx-data-grid__status-mark::before",
+          "saving": ".mx-data-grid__status[data-status='saving'] .mx-data-grid__status-mark::before",
+          "failed": ".mx-data-grid__status:is([data-status='failed'], [data-status='invalid']) .mx-data-grid__status-mark::before"
+        }
+      },
+      "check": {
+        "$description": "A selection check box (`checked`: checked or mixed; `disabled`).",
+        "selector": ".mx-data-grid__check",
+        "states": {
+          "checked": ".mx-data-grid__check:is([aria-checked='true'], [aria-checked='mixed'])",
+          "disabled": ".mx-data-grid__check[aria-disabled='true']"
+        }
+      },
+      "check-mark": {
+        "$description": "The check mark and the dash of a selection check box.",
+        "selector": ".mx-data-grid__check > .mx-glyph"
+      },
+      "editor": {
+        "$description": "The editor over the active cell (`in-form`: an editor in the edit form).",
+        "selector": ".mx-data-grid__editor",
+        "states": {
+          "in-form": ".mx-data-grid__form-field > .mx-data-grid__editor"
+        }
+      },
+      "expand": {
+        "$description": "A master-detail row's arrow (`hover`).",
+        "selector": ".mx-data-grid__expand-button",
+        "defaults": {
+          "size": "var(--_datagrid-button-size)",
+          "cursor": "pointer"
+        },
+        "states": {
+          "hover": ".mx-data-grid__expand-button:hover"
+        }
+      },
+      "expand-icon": {
+        "$description": "The arrow (turned by `expand-rotate-open` while the details are open).",
+        "selector": ".mx-data-grid__expand-button > .mx-glyph",
+        "defaults": {
+          "size": "var(--_datagrid-icon-size)"
+        }
+      },
+      "drag-handle": {
+        "$description": "The drag icon of a row that can be dragged (`hover`).",
+        "selector": ".mx-data-grid__drag-handle",
+        "defaults": {
+          "size": "var(--_datagrid-button-size)"
+        },
+        "states": {
+          "hover": ".mx-data-grid__row[data-draggable] .mx-data-grid__drag-handle:hover"
+        }
+      },
+      "drag-icon": {
+        "$description": "The drag icon.",
+        "selector": ".mx-data-grid__drag-handle > .mx-glyph",
+        "defaults": {
+          "size": "var(--_datagrid-icon-size)"
+        }
+      },
+      "row-drop": {
+        "$description": "The line where a dragged row would land.",
+        "selector": ".mx-data-grid__row-drop"
+      },
+      "detail-row": {
+        "$description": "A row's details under it (`adaptive`: the hidden columns' titles and values).",
+        "selector": ".mx-data-grid__body > .mx-data-grid__detail-row",
+        "states": {
+          "adaptive": ".mx-data-grid__body > .mx-data-grid__adaptive-row"
+        }
+      },
+      "detail-cell": {
+        "$description": "The details' one cell (`adaptive`; `focus`: focused by the keys).",
+        "selector": ".mx-data-grid__detail-cell",
+        "states": {
+          "adaptive": ".mx-data-grid__adaptive-row > .mx-data-grid__detail-cell",
+          "focus": ".mx-data-grid__detail-cell:focus-visible"
+        }
+      },
+      "adaptive-button": {
+        "$description": "The \"…\" button that opens the adaptive details (`hover`, `open`).",
+        "selector": ".mx-data-grid__adaptive-button",
+        "defaults": {
+          "size": "var(--_datagrid-button-size)",
+          "cursor": "pointer"
+        },
+        "states": {
+          "hover": ".mx-data-grid__adaptive-button:hover",
+          "open": ".mx-data-grid__adaptive-button[aria-expanded='true']"
+        }
+      },
+      "adaptive-icon": {
+        "$description": "The \"…\" glyph.",
+        "selector": ".mx-data-grid__adaptive-button > .mx-glyph",
+        "defaults": {
+          "size": "var(--_datagrid-icon-size)"
+        }
+      },
+      "adaptive-label": {
+        "$description": "A hidden column's title in the details.",
+        "selector": ".mx-data-grid__adaptive-label"
+      },
+      "form-row": {
+        "$description": "The edit form in place of a row.",
+        "selector": ".mx-data-grid__body > .mx-data-grid__form-row"
+      },
+      "form-cell": {
+        "$description": "The edit form's cell (`focus`: focused by the keys).",
+        "selector": ".mx-data-grid__form-cell",
+        "states": {
+          "focus": ".mx-data-grid__form-cell:focus-visible"
+        }
+      },
+      "form": {
+        "$description": "The edit form (`popup`: in a popup window).",
+        "selector": ".mx-data-grid__form",
+        "states": {
+          "popup": ".mx-data-grid__popup .mx-data-grid__form"
+        }
+      },
+      "form-message": {
+        "$description": "The edit form's message.",
+        "selector": ".mx-data-grid__form-message"
+      },
+      "form-buttons": {
+        "$description": "The edit form's buttons.",
+        "selector": ".mx-data-grid__form-buttons"
+      },
+      "form-label": {
+        "$description": "An edit form field's title.",
+        "selector": ".mx-data-grid__form-label"
+      },
+      "values": {
+        "$description": "The header filter window: the value list and its buttons.",
+        "selector": ".mx-data-grid__values"
+      },
+      "values-list": {
+        "$description": "The value list (with \"Select all\" over a tree of dates).",
+        "selector": ".mx-data-grid__values-list"
+      },
+      "values-note": {
+        "$description": "What the value list says while it loads or has nothing.",
+        "selector": ".mx-data-grid__values-note"
+      },
+      "values-bar": {
+        "$description": "The header filter window's buttons.",
+        "selector": ".mx-data-grid__values-bar"
+      },
+      "value-count": {
+        "$description": "How many rows a value has.",
+        "selector": ".mx-data-grid__value-count"
+      },
+      "state": {
+        "$description": "What the grid says over the body while it loads, has no rows or failed (`danger`).",
+        "selector": ".mx-data-grid__state",
+        "states": {
+          "danger": ".mx-data-grid__state[data-tone='danger']"
+        }
+      },
+      "note": {
+        "$description": "A note in the bottom bar (`danger`: an error).",
+        "selector": ".mx-data-grid__note",
+        "states": {
+          "danger": ".mx-data-grid__note[data-tone='danger']"
+        }
+      },
+      "load-more": {
+        "$description": "The mark over the last rows while the next part loads in the infinite mode (`failed`: with Retry).",
+        "selector": ".mx-data-grid__load-more",
+        "states": {
+          "failed": ".mx-data-grid__load-more[data-state='failed']"
+        }
+      },
+      "export-panel": {
+        "$description": "An export's progress and its stop button over the rows.",
+        "selector": ".mx-data-grid__export-panel"
+      },
+      "mark": {
+        "$description": "Text the search found (the line under it: the plain `search-mark-*` tokens).",
+        "selector": ".mx-data-grid__mark"
+      },
+      "filter-panel": {
+        "$description": "The filter panel under the rows: the check box, the filter as text, Clear.",
+        "selector": ".mx-data-grid__filter-panel"
+      },
+      "filter-icon": {
+        "$description": "The filter panel's icon.",
+        "selector": ".mx-data-grid__filter-icon"
+      },
+      "filter-text": {
+        "$description": "The filter as text, which opens the builder: under the pointer (a line under it), focused by the keys, turned off (`off`: struck through).",
+        "selector": ".mx-data-grid__filter-text",
+        "defaults": {
+          "bg": "transparent",
+          "border-width": "0px",
+          "cursor": "pointer"
+        },
+        "states": {
+          "hover": ".mx-data-grid__filter-text:hover",
+          "focus": ".mx-data-grid__filter-text:focus-visible",
+          "off": ".mx-data-grid__filter-panel[data-off] .mx-data-grid__filter-text:not([data-empty])"
+        }
+      },
+      "filter-builder-buttons": {
+        "$description": "The filter builder window's buttons.",
+        "selector": ".mx-data-grid__filter-builder-buttons"
+      },
+      "bar": {
+        "$description": "The bottom bar: the row count, the selected count, errors, the pager.",
+        "selector": ".mx-data-grid__bar"
+      },
+      "pager": {
+        "$description": "The pager in the bottom bar.",
+        "selector": ".mx-data-grid__pager"
+      },
+      "pager-group": {
+        "$description": "The pager's pages, its page sizes, its page number box.",
+        "selector": ":is(.mx-data-grid__pages, .mx-data-grid__page-sizes, .mx-data-grid__page-jump)"
+      },
+      "page-sizes": {
+        "$description": "The page sizes (or their drop-down), and the space after them.",
+        "selector": ":is(.mx-data-grid__page-sizes, .mx-data-grid__page-size-list)"
+      },
+      "page-gap": {
+        "$description": "The \"…\" between page numbers.",
+        "selector": ".mx-data-grid__page-gap"
+      },
+      "page-info": {
+        "$description": "The pager's text (\"1–20 of 91\").",
+        "selector": ".mx-data-grid__page-info"
+      },
+      "bar-actions": {
+        "$description": "The selected rows' actions in the bottom bar (the kit's toolbar, without its own bar look).",
+        "selector": ".mx-data-grid .mx-data-grid__bar-actions",
+        "defaults": {
+          "min-height": "0px",
+          "padding": "0px",
+          "bg": "transparent"
+        }
+      },
+      "tip": {
+        "$description": "A cell's hint (`error`: a value's message).",
+        "selector": ".mx-data-grid__tip",
+        "states": {
+          "error": ".mx-data-grid__tip[data-error]"
+        }
+      }
+    }
+  }
+}

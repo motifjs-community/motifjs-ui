@@ -91,7 +91,7 @@ const STYLING = [
   ['.mx-tabdocs__drop', 'The translucent area a drop would take; it glides between places (the motion tokens: none with reduced motion).'],
   ['.mx-tabdocs__insert', 'The mark between two tabs.'],
   ['.mx-tabdocs__grip', "The group's handle (`groupDragHandle`), a button of the group's toolbar."],
-  ['tabdocs.drop-area-*, drop-mark-*, ghost-*, drag-source-opacity', 'Their tokens.'],
+  ['tabdocs.drop, drop-fill, insert, ghost', 'Their units (the ghost: `copy`, `refused`; a dragged tab: the `tab` unit\'s `dragging`).'],
 ];
 
 export default function TabDocsDragPage() {

@@ -120,11 +120,13 @@ const HOOKS = [
 const TOKENS = [
   ['field.width', 'The width when not stretched.'],
   ['field.height.*, field.padding.*, field.font-size.*', 'Sizes, from the density tokens.'],
-  ['field.radius, field.border-width, field.focus-width', 'Corners, border, and the bottom line while focused.'],
-  ['field.gap, field.label-gap, field.label-width, field.label-font-weight', 'Spacing and the label.'],
-  ['field.message-gap, field.message-font-size, field.message-line', 'The line under the box.'],
-  ['field.icon-size, field.button-inset, field.button-radius', 'Icons and buttons in the box.'],
-  ['field.floating-height, field.floating-font-size', 'The floating label.'],
+  ['field.box, field.layer, field.frame, field.indicator, field.ring', 'Units: the box, a state layer over its fill, the frame (with `frame-start`, `frame-notch`, `frame-end` around a notch), the line along its bottom and a ring under the keys, each with its box per state: per variant (`filled-…`, `underline-…`), status (`invalid`, `readonly`, `disabled`) and `hover`, `focus`, `pressed`.'],
+  ['field.label, field.required, field.icon, field.prefix, field.suffix, field.placeholder', 'Units: the label (`focus`, `invalid`, `disabled`, `floating-…`), the required mark and the parts beside the text.'],
+  ['field.slot, field.button, field.glyph, field.button-icon', 'Units: the groups of buttons in the box, the buttons (`hover`, `pressed`, `focus`, `disabled`) and what they show.'],
+  ['field.foot, field.message, field.counter', 'Units: the line under the box (`shown`, `invalid`, `disabled`), the help or error text and the counter.'],
+  ['field.border-width, field.gap, field.label-gap, field.label-width, field.label-font-weight, field.label-font-size', 'The frame’s width, spacing and the label.'],
+  ['field.icon-size, field.button-inset', 'Icons, and how far the buttons sit from the box’s edges.'],
+  ['field.floating-height, field.floating-font-size, field.floating-padding, field.notch-gap', 'The floating label and the notch cut for it.'],
 ];
 
 export default function TextBoxPage() {

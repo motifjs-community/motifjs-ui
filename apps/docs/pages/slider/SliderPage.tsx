@@ -1,5 +1,6 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
+import Centred from './examples/Centred';
 import FromCode from './examples/FromCode';
 import Localization from './examples/Localization';
 import Range from './examples/Range';
@@ -19,6 +20,7 @@ const PROPS = [
   ['largeStep', '`Bind<number>`', '`10 × step`', 'What Page Up and Page Down move by.'],
   ['range', '`Bind<boolean>`', '`false`', 'Two thumbs; the value is `[start, end]`. The thumbs cannot cross.'],
   ['minDistance', '`Bind<number>`', '`0`', 'The least distance between the two thumbs.'],
+  ['origin', '`Bind<number | undefined>`', '`undefined`', 'A centred slider: the active part of the track runs from this value to the thumb, on either side. Not with `range`.'],
   ['orientation', "`Bind<'horizontal' | 'vertical'>`", "`'horizontal'`", 'Vertical: up is more.'],
   ['ticks', '`Bind<boolean | number>`', '`false`', '`true`: a mark at every step (up to 1000); a number: that many equal parts.'],
   ['tickLabels', '`Bind<boolean>`', '`false`', 'The values under the marks, or at the two ends without marks.'],
@@ -71,21 +73,27 @@ const A11Y = [
 ];
 
 const HOOKS = [
-  ['.mx-slider', 'The field. `data-size`, `data-orientation`, `data-range`, `data-show-value`, `data-ticks`, `data-tick-labels`, `data-dragging`, `data-readonly`, `data-disabled`, `data-invalid`.'],
+  ['.mx-slider', 'The field. `data-size`, `data-orientation`, `data-range`, `data-show-value`, `data-ticks`, `data-tick-labels`, `data-dragging`, `data-readonly`, `data-disabled`, `data-invalid`, `data-split`.'],
   ['.mx-slider__control', 'What the pointer is pressed on: the track and the marks.'],
-  ['.mx-slider__track, .mx-slider__rail, .mx-slider__fill', 'The track, the rail, and its filled part (`--_from`, `--_to`).'],
-  ['.mx-slider__thumb', 'A thumb (`data-thumb="start | end"`, `data-dragging`, `--_at`).'],
+  ['.mx-slider__track, .mx-slider__rail', 'The track, and the rail that holds its segments (`--_from`, `--_to`; `data-from="start | thumb | origin"`, `data-to="thumb | origin | end"`, `data-start-active`, `data-end-active`).'],
+  ['.mx-slider__fill, .mx-slider__segment', 'The active segment, and the inactive ones before and after it (`data-side`).'],
+  ['.mx-slider__thumb', 'A thumb: the pressable area (`data-thumb="start | end"`, `data-dragging`, `--_at`).'],
+  ['.mx-slider__halo, .mx-slider__knob, .mx-slider__core', 'What a thumb shows, centred on it: a halo, the knob and the part inside the knob.'],
   ['.mx-slider__bubble', 'The value over a thumb.'],
-  ['.mx-slider__ticks, .mx-slider__tick, .mx-slider__tick-label', 'The marks (`data-mark`, `--_at`) and their labels.'],
+  ['.mx-slider__ticks, .mx-slider__tick, .mx-slider__tick-label', 'The marks (`data-mark`, `data-active`, `--_at`) and their labels.'],
 ];
 
 const TOKENS = [
-  ['slider.rail-thickness.*, slider.thumb-size.*, slider.dot-size.*', 'The rail, the thumbs and the dot in them, per size.'],
+  ['slider.track, slider.active, slider.stop', 'Units: the inactive segments (`before`, `after`), the active one (`from-start`, `to-end`) and the dots at the ends (`active`), each with its box per state (`hover`, `focus`, `pressed`, `readonly`, `disabled`).'],
+  ['slider.halo, slider.knob, slider.core', 'Units: what a thumb shows, with its box per state (`hover`, `focus`, `pressed`, `readonly`, `disabled`).'],
+  ['slider.bubble, slider.bubble-arrow, slider.tick, slider.tick-label, slider.ring', 'Units: the value bubble and its arrow, the marks, their labels, and a ring around the whole control under the keys.'],
+  ['slider.track-thickness.*, slider.active-thickness.*', 'The inactive and the active segments, per size.'],
+  ['slider.thumb-width.*, slider.thumb-height.*, slider.thumb-core-size.*', 'The knob along and across the track, and the part inside it, per size.'],
+  ['slider.track-gap, slider.origin-gap, slider.stop-inset', 'A track split around the thumbs and the origin, and where the dots at its ends sit.'],
   ['slider.hit-size', 'How tall the track is for the pointer, and the touch target of a thumb.'],
   ['slider.vertical-length', 'The length of a vertical slider.'],
-  ['slider.rail-radius, slider.thumb-border-width, slider.thumb-edge-width', 'Corners, the thumb\'s border and bottom edge.'],
-  ['slider.tick-length, slider.tick-width, slider.tick-gap, slider.tick-font-size, slider.tick-label-width', 'The marks and their labels.'],
-  ['slider.bubble-*', 'The value bubble: gap, padding, radius, font size, shadow.'],
+  ['slider.tick-length, slider.tick-width, slider.tick-offset, slider.tick-gap, slider.tick-line-height, slider.tick-label-width', 'Where the marks and their labels sit.'],
+  ['slider.bubble-gap, slider.bubble-arrow-size', 'How far the bubble is from its thumb, and its arrow.'],
   ['field.width', 'The width of a horizontal slider, as for every field.'],
 ];
 
@@ -121,6 +129,15 @@ import { Slider, type SliderValue } from '@motifx-community/ui';
         </p>
         <Example files={code('Range.tsx')} stack>
           <Range />
+        </Example>
+      </Section>
+
+      <Section anchor="centred" title="Centred">
+        <p>
+          <Rich text="With `origin` the active part of the track runs from that value to the thumb, on either side of it: a balance, an offset, a correction." />
+        </p>
+        <Example files={code('Centred.tsx')} stack>
+          <Centred />
         </Example>
       </Section>
 

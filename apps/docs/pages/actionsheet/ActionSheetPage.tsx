@@ -49,11 +49,8 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['actionsheet.item-height, actionsheet.item-padding, actionsheet.item-gap, actionsheet.item-radius', 'The items.'],
-  ['actionsheet.item-font-size, actionsheet.item-line-height', 'Their type.'],
-  ['actionsheet.message-fg, actionsheet.message-font-size, actionsheet.message-line-height, actionsheet.message-padding', 'The message.'],
-  ['actionsheet.list-padding', 'Around the items.'],
-  ['actionsheet.cancel-height, actionsheet.cancel-padding, actionsheet.cancel-border-width, actionsheet.cancel-border-color, actionsheet.cancel-font-size, actionsheet.cancel-font-weight', 'The cancel row.'],
+  ['actionsheet.message, actionsheet.back, actionsheet.cancel', 'Units: the message, the mark of the item that goes back out of a submenu (`rtl`), the strip that holds the cancel button.'],
+  ['actionsheet.menu.*, actionsheet.cancel-button.*, actionsheet.sheet.*', 'Places: the items, large enough for a finger; the cancel button; the sheet’s content padding.'],
   ['sheet.*', 'The surface, the handle and the title, as on the bottom sheet.'],
 ];
 

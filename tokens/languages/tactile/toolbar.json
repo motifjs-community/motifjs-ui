@@ -1,0 +1,56 @@
+{
+  "toolbar": {
+    "height": { "$value": "{bar.height}" },
+    "button": {
+      "variant": { "$value": "ghost" },
+      "size": { "$value": "md" },
+      "face": {
+        "toggled": {
+          "bg": { "$value": "{button.face.toggled.bg}" },
+          "color": { "$value": "{button.face.toggled.color}" }
+        },
+        "toggled-hover": {
+          "bg": { "$value": "{button.face.toggled-hover.bg}" }
+        },
+        "outline-toggled": {
+          "bg": { "$value": "{button.face.outline-toggled.bg}" },
+          "color": { "$value": "{button.face.outline-toggled.color}" }
+        },
+        "ghost-toggled": {
+          "bg": { "$value": "{button.face.ghost-toggled.bg}" },
+          "color": { "$value": "{button.face.ghost-toggled.color}" }
+        },
+        "outline-toggled-hover": {
+          "bg": { "$value": "{button.face.outline-toggled-hover.bg}" },
+          "color": { "$value": "{button.face.outline-toggled-hover.color}" }
+        },
+        "ghost-toggled-hover": {
+          "bg": { "$value": "{button.face.ghost-toggled-hover.bg}" },
+          "color": { "$value": "{button.face.ghost-toggled-hover.color}" }
+        }
+      }
+    },
+    "more": {
+      "chevron": {
+        "display": { "$value": "none" }
+      }
+    },
+    "bar": {
+      "padding": { "$value": "{space.1}" },
+      "gap": { "$value": "{space.1}" },
+      "bg": { "$value": "{color.bg.bar}" },
+      "radius": { "$value": "{radius.md}" }
+    },
+    "separator": {
+      "width": { "$value": "{border.width.1}" },
+      "margin-block": { "$value": "{space.1}" },
+      "bg": { "$value": "{color.stroke.divider}" },
+      "vertical": {
+        "width": { "$value": "auto" },
+        "height": { "$value": "{border.width.1}" },
+        "margin-block": { "$value": "0px" },
+        "margin-inline": { "$value": "{space.1}" }
+      }
+    }
+  }
+}

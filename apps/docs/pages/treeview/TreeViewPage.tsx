@@ -95,14 +95,11 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['treeview.row-height.*, treeview.padding.*, treeview.font-size.*', 'Row sizes, from the density tokens.'],
-  ['treeview.indent.*', 'How far each level moves in.'],
-  ['treeview.gap, treeview.radius', 'Inside a row; its corners.'],
-  ['treeview.hover, treeview.selected, treeview.indicator-width, treeview.indicator-color', 'Hover and selection (the bar at the start).'],
-  ['treeview.expander-size, treeview.icon-size', 'The arrow and the icon.'],
-  ['treeview.check-size, treeview.check-mark-size, treeview.check-radius', 'The check box.'],
-  ['treeview.line-width, treeview.line-color', 'The lines (`showLines`).'],
-  ['treeview.search-gap', 'Between the search box and the rows.'],
+  ['treeview.row, treeview.indicator, treeview.expander, treeview.expander-icon, treeview.spinner', 'Units: a row in each state (`hover`, `pressed`, `selected`, `selected-hover`, `focus`, `disabled`), the selection mark, the arrow and its plate, the loading ring.'],
+  ['treeview.check, treeview.mark, treeview.icon, treeview.text, treeview.error, treeview.retry, treeview.empty, treeview.container, treeview.body', 'Units: the check box (`hover`, `checked`, `checked-hover`, `disabled`, `checked-disabled`) and the other parts.'],
+  ['treeview.row-height.*, treeview.padding.*, treeview.font-size.*, treeview.line-height.*, treeview.indent.*', 'Sizes per size class, and how far each level moves in.'],
+  ['treeview.row-spacing, treeview.expander-plate', 'The space between two rows; the arrow\'s plate the lines are centred under.'],
+  ['treeview.line-width, treeview.line-color, treeview.elbow-length, treeview.elbow-color', 'The lines (`showLines`).'],
 ];
 
 export default function TreeViewPage() {

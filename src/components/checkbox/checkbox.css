@@ -1,7 +1,10 @@
 /* CheckBox, and the layout every field drawn as a native checkbox shares (.mx-toggle-field: CheckBox,
    Switch): the box and its caption side by side, the help or error line under the caption. The
-   text-field frame of .mx-field is taken away. The look binds to data-size, data-state
-   (checked | unchecked | mixed), data-label-position and the field's state attributes. */
+   field's own box, frame and indicator are switched off by the `field` place. Only the layout is
+   here: the caption, the box, what is drawn over it (the mark, the dash), the halo and the ring are
+   units of the check box's schema (`$units`), painted by units.css. The look binds to data-size,
+   data-state (checked | unchecked | mixed), data-label-position, data-focus-scope and the field's
+   state attributes. */
 @layer mx.components {
   /* The shared layout. */
 
@@ -37,120 +40,70 @@
     grid-area: label;
     position: static;
     block-size: auto;
-    margin: 0;
-    font-size: var(--_text-size);
-    font-weight: var(--mx-checkbox-label-font-weight);
-    color: var(--mx-checkbox-label-fg);
     pointer-events: auto;
     transition: none;
   }
 
-  .mx-toggle-field.mx-field[data-disabled]:not([data-label-mode='hidden']) > .mx-field__label {
-    color: var(--mx-checkbox-label-fg-disabled);
-  }
-
   /* The box holds the control and what is drawn over it, in one cell. */
-  .mx-toggle-field.mx-field .mx-field__box {
+  .mx-toggle-field.mx-field > .mx-field__box {
     grid-area: control;
     display: grid;
     align-items: center;
     justify-items: start;
-    min-block-size: var(--_row);
-    padding: 0;
-    font-size: var(--_text-size);
-    background: none;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-    cursor: default;
     transition: none;
   }
 
-  .mx-toggle-field .mx-field__box > * {
+  .mx-toggle-field > .mx-field__box > * {
     grid-area: 1 / 1;
   }
 
-  .mx-toggle-field.mx-field .mx-field__foot {
+  .mx-toggle-field.mx-field > .mx-field__foot {
     grid-area: foot;
   }
 
   /* Text-field parts have no place next to a box. */
-  .mx-toggle-field :is(.mx-field__icon, .mx-field__prefix, .mx-field__suffix, .mx-field__start, .mx-field__end) {
+  .mx-toggle-field > :where(.mx-field__box) > :is(.mx-field__icon, .mx-field__prefix, .mx-field__suffix, .mx-field__start, .mx-field__end) {
     display: none;
   }
 
   /* CheckBox. */
 
   .mx-check-box {
-    --_gap: var(--mx-checkbox-gap);
-    --_fill: var(--mx-checkbox-bg);
-    --_fill-hover: var(--mx-checkbox-bg-hover);
-    --_fill-active: var(--mx-checkbox-bg-active);
-    --_stroke: var(--mx-checkbox-border);
-    --_stroke-edge: var(--mx-checkbox-edge);
-    /* The depth sits under the box, not in its bottom border: the outline stays whole on any background. */
-    --_glow: var(--mx-checkbox-shadow), 0 var(--mx-checkbox-edge-width) 0 var(--_stroke-edge);
-    --_press: var(--mx-checkbox-press-offset);
+    --_gap: var(--_checkbox-gap);
+    --_press: var(--_checkbox-press-offset);
   }
 
   .mx-check-box[data-size='sm'] {
-    --_box: var(--mx-checkbox-size-sm);
-    --_mark-size: var(--mx-checkbox-mark-size-sm);
-    --_row: var(--mx-checkbox-height-sm);
-    --_text-size: var(--mx-checkbox-font-size-sm);
+    --_box: var(--_checkbox-size-sm);
+    --_mark-size: var(--_checkbox-mark-size-sm);
+    --_row: var(--_checkbox-height-sm);
+    --_text-size: var(--_checkbox-font-size-sm);
   }
 
   .mx-check-box[data-size='md'] {
-    --_box: var(--mx-checkbox-size-md);
-    --_mark-size: var(--mx-checkbox-mark-size-md);
-    --_row: var(--mx-checkbox-height-md);
-    --_text-size: var(--mx-checkbox-font-size-md);
+    --_box: var(--_checkbox-size-md);
+    --_mark-size: var(--_checkbox-mark-size-md);
+    --_row: var(--_checkbox-height-md);
+    --_text-size: var(--_checkbox-font-size-md);
   }
 
   .mx-check-box[data-size='lg'] {
-    --_box: var(--mx-checkbox-size-lg);
-    --_mark-size: var(--mx-checkbox-mark-size-lg);
-    --_row: var(--mx-checkbox-height-lg);
-    --_text-size: var(--mx-checkbox-font-size-lg);
-  }
-
-  .mx-check-box:is([data-state='checked'], [data-state='mixed']) {
-    --_fill: var(--mx-checkbox-checked-bg);
-    --_fill-hover: var(--mx-checkbox-checked-bg-hover);
-    --_fill-active: var(--mx-checkbox-checked-bg-active);
-    --_stroke: var(--mx-checkbox-checked-border);
-    --_stroke-edge: var(--mx-checkbox-checked-edge);
-  }
-
-  .mx-check-box[data-invalid]:not([data-state='checked']) {
-    --_stroke: var(--mx-checkbox-invalid-border);
-    --_stroke-edge: var(--mx-checkbox-invalid-border);
+    --_box: var(--_checkbox-size-lg);
+    --_mark-size: var(--_checkbox-mark-size-lg);
+    --_row: var(--_checkbox-height-lg);
+    --_text-size: var(--_checkbox-font-size-lg);
   }
 
   .mx-check-box[data-readonly] {
-    --_fill-hover: var(--_fill);
-    --_fill-active: var(--_fill);
     --_press: 0;
   }
 
   .mx-check-box__input {
     appearance: none;
-    inline-size: var(--_box);
-    block-size: var(--_box);
-    margin: 0;
-    background: var(--_fill);
-    border: var(--mx-checkbox-border-width) solid var(--_stroke);
-    border-radius: var(--mx-checkbox-radius);
-    box-shadow: var(--_glow);
-    cursor: default;
     transition:
       background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       translate var(--mx-motion-duration-instant) var(--mx-motion-easing-standard);
-  }
-
-  .mx-check-box__input:hover {
-    background: var(--_fill-hover);
   }
 
   .mx-check-box__input:active,
@@ -158,53 +111,44 @@
     translate: 0 var(--_press);
   }
 
-  .mx-check-box__input:active {
-    background: var(--_fill-active);
-    box-shadow: none;
+  /* The ring around the box and its caption together (`focus-scope: item`): over the first row of the layout,
+     standing out of it by its negative margins. */
+  .mx-check-box[data-focus-scope='item']:has(> .mx-field__box > .mx-check-box__input:focus-visible) {
+    position: relative;
   }
 
-  /* The focus halo is a box-shadow too: keep both. */
-  .mx-check-box__input:focus-visible {
-    outline: var(--mx-checkbox-focus-width) solid var(--mx-checkbox-focus-color);
-    outline-offset: var(--mx-checkbox-focus-offset);
-    box-shadow:
-      var(--mx-checkbox-focus-halo),
-      var(--_glow);
-  }
-
-  .mx-check-box__input:disabled {
-    background: var(--mx-checkbox-disabled-bg);
-    border-color: var(--mx-checkbox-disabled-border);
-    box-shadow: none;
-  }
-
-  .mx-check-box:is([data-state='checked'], [data-state='mixed']) .mx-check-box__input:disabled {
-    background: var(--mx-checkbox-checked-bg-disabled);
-    border-color: transparent;
+  .mx-check-box::after {
+    content: '';
+    position: absolute;
+    grid-row: 1;
+    grid-column: 1 / -1;
+    inset: 0;
+    pointer-events: none;
   }
 
   /* The mark is drawn over the box (positioned, so it paints above it) and lets clicks through. */
-  .mx-check-box .mx-field__box > .mx-check-box__mark {
+  .mx-check-box > .mx-field__box > .mx-check-box__mark {
     position: relative;
     display: grid;
     place-items: center;
     place-self: center start;
-    inline-size: var(--_box);
-    block-size: var(--_box);
-    margin: 0;
-    color: var(--mx-checkbox-mark-fg);
     pointer-events: none;
     transition: translate var(--mx-motion-duration-instant) var(--mx-motion-easing-standard);
   }
 
-  .mx-check-box[data-disabled] .mx-check-box__mark {
-    color: var(--mx-checkbox-mark-fg-disabled);
+  /* The halo around the box: out of the mark's grid, so a halo wider than the box neither grows the cell nor
+     moves the mark; centred on the box (its middle on the box's middle, whatever its size), under the box and its mark. */
+  .mx-check-box > .mx-field__box > .mx-check-box__mark::before {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    z-index: var(--_under);
+    translate: -50% -50%;
+    transition: opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
   .mx-check-box__mark > .mx-glyph {
     grid-area: 1 / 1;
-    inline-size: var(--_mark-size);
-    block-size: var(--_mark-size);
     opacity: 0;
     transition: opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }

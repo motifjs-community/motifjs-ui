@@ -94,12 +94,12 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['tabs.height.*, tabs.padding.*, tabs.font-size.*', 'Sizes, from the density tokens.'],
-  ['tabs.gap, tabs.tab-gap, tabs.radius, tabs.font-weight', 'Inside a tab; between pills; corners; weight.'],
-  ['tabs.divider-width, tabs.indicator-width', 'The line along the panel and the bar on the selected tab.'],
-  ['tabs.strip-padding, tabs.vertical-width', 'The pill tray\'s padding; the width of a vertical strip.'],
-  ['tabs.icon-size, tabs.badge-*, tabs.close-*', 'Icon, badge and close button.'],
-  ['tabs.scroll-size, tabs.panel-padding', 'The scroll buttons; the space around a panel.'],
+  ['tabs.container, tabs.strip, tabs.list, tabs.scroll, tabs.scroll-icon', 'Units: the whole, the strip with its line along the panel (`bottom`, `start`, `end`; the pill tray: `pill`, `pill-bottom` …), the row of tabs, the scroll buttons and their glyph.'],
+  ['tabs.tab, tabs.label, tabs.icon, tabs.badge, tabs.close, tabs.close-icon', 'Units: a tab in each state (`hover`, `pressed`, `selected`, `disabled`, `focus`; in the pill variant `pill`, `pill-hover` …) and its parts.'],
+  ['tabs.indicator, tabs.separator, tabs.panel', 'Units: the line variant\'s mark (`vertical`, `hover`, `selected`, `selected-disabled`), a line between two tabs, the panel (`pill`, `pill-across`, `focus`).'],
+  ['tabs.height.*, tabs.pill-height.*, tabs.padding.*, tabs.font-size.*, tabs.line-height.*, tabs.indicator-inset.*', 'Sizes per size class.'],
+  ['tabs.pill-gap, tabs.tab-overlap, tabs.indicator-offset, tabs.indicator-inset-vertical, tabs.close-pull, tabs.vertical-width', 'Where the layout puts the pieces: between pills, over the strip\'s line, the mark, the close button, a vertical strip\'s width.'],
+  ['tabs.curve-display, tabs.curve-size, tabs.curve-frame-width, tabs.curve-frame-color', 'Outward curves at the selected tab\'s corners on the panel\'s side, in its fill.'],
 ];
 
 export default function TabsPage() {

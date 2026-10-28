@@ -1,126 +1,117 @@
 /* Switch: the native checkbox is the track; the thumb and the on / off text are drawn over it (or
    next to it) and let clicks through. The layout with the caption comes from .mx-toggle-field
-   (checkbox.css). The look binds to data-size, data-state (checked | unchecked), data-state-text
-   (inside | beside | none) and the field's state attributes. */
+   (checkbox.css). Only the layout is here: the track, the thumb with its halo and icon, and the texts
+   are units of the switch's schema (`$units`), painted by units.css. The look binds to data-size,
+   data-state (checked | unchecked), data-state-text (inside | beside | none) and the field's state
+   attributes. */
 @layer mx.components {
   .mx-switch {
-    --_gap: var(--mx-switch-gap);
-    --_inset: var(--mx-switch-thumb-inset);
+    --_gap: var(--_switch-gap);
+    --_inset: var(--_switch-thumb-inset);
     --_thumb: calc(var(--_track-height) - 2 * var(--_inset));
-    --_fill: var(--mx-switch-bg);
-    --_fill-hover: var(--mx-switch-bg-hover);
-    --_stroke: var(--mx-switch-border);
-    --_knob: var(--mx-switch-thumb);
-    --_state-color: var(--mx-switch-text-fg);
+    --_size-rest: var(--_size-off);
   }
 
   .mx-switch[data-size='sm'] {
-    --_track-width: var(--mx-switch-track-width-sm);
-    --_track-height: var(--mx-switch-track-height-sm);
-    --_row: var(--mx-switch-height-sm);
-    --_text-size: var(--mx-switch-font-size-sm);
+    --_track-width: var(--_switch-track-width-sm);
+    --_track-height: var(--_switch-track-height-sm);
+    --_size-off: var(--_switch-thumb-size-sm);
+    --_size-on: var(--_switch-thumb-size-checked-sm);
+    --_size-hover: var(--_switch-thumb-size-hover-sm);
+    --_size-pressed: var(--_switch-thumb-size-pressed-sm);
+    --_row: var(--_switch-height-sm);
+    --_text-size: var(--_switch-font-size-sm);
   }
 
   .mx-switch[data-size='md'] {
-    --_track-width: var(--mx-switch-track-width-md);
-    --_track-height: var(--mx-switch-track-height-md);
-    --_row: var(--mx-switch-height-md);
-    --_text-size: var(--mx-switch-font-size-md);
+    --_track-width: var(--_switch-track-width-md);
+    --_track-height: var(--_switch-track-height-md);
+    --_size-off: var(--_switch-thumb-size-md);
+    --_size-on: var(--_switch-thumb-size-checked-md);
+    --_size-hover: var(--_switch-thumb-size-hover-md);
+    --_size-pressed: var(--_switch-thumb-size-pressed-md);
+    --_row: var(--_switch-height-md);
+    --_text-size: var(--_switch-font-size-md);
   }
 
   .mx-switch[data-size='lg'] {
-    --_track-width: var(--mx-switch-track-width-lg);
-    --_track-height: var(--mx-switch-track-height-lg);
-    --_row: var(--mx-switch-height-lg);
-    --_text-size: var(--mx-switch-font-size-lg);
+    --_track-width: var(--_switch-track-width-lg);
+    --_track-height: var(--_switch-track-height-lg);
+    --_size-off: var(--_switch-thumb-size-lg);
+    --_size-on: var(--_switch-thumb-size-checked-lg);
+    --_size-hover: var(--_switch-thumb-size-hover-lg);
+    --_size-pressed: var(--_switch-thumb-size-pressed-lg);
+    --_row: var(--_switch-height-lg);
+    --_text-size: var(--_switch-font-size-lg);
   }
 
   .mx-switch[data-state='checked'] {
-    --_fill: var(--mx-switch-checked-bg);
-    --_fill-hover: var(--mx-switch-checked-bg-hover);
-    --_stroke: var(--mx-switch-checked-border);
-    --_knob: var(--mx-switch-checked-thumb);
-    --_state-color: var(--mx-switch-checked-text-fg);
-  }
-
-  .mx-switch[data-invalid]:not([data-state='checked']) {
-    --_stroke: var(--mx-switch-invalid-border);
-  }
-
-  .mx-switch[data-readonly] {
-    --_fill-hover: var(--_fill);
-  }
-
-  .mx-switch[data-disabled] {
-    --_fill: var(--mx-switch-disabled-bg);
-    --_fill-hover: var(--_fill);
-    --_stroke: var(--mx-switch-disabled-border);
-    --_knob: var(--mx-switch-disabled-thumb);
-    --_state-color: var(--mx-switch-disabled-text-fg);
-  }
-
-  .mx-switch[data-disabled][data-state='checked'] {
-    --_fill: var(--mx-switch-checked-bg-disabled);
-    --_stroke: transparent;
-    --_knob: var(--mx-switch-checked-thumb-disabled);
-    --_state-color: var(--mx-switch-checked-text-fg-disabled);
+    --_size-rest: var(--_size-on);
   }
 
   /* The track fills its cell, which is as wide as the track or the text inside it. */
   .mx-switch__input {
     appearance: none;
     justify-self: stretch;
-    min-inline-size: var(--_track-width);
-    block-size: var(--_track-height);
-    margin: 0;
-    background: var(--_fill);
-    border: var(--mx-switch-border-width) solid var(--_stroke);
-    border-radius: var(--mx-switch-track-radius);
-    cursor: default;
     transition:
       background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-switch__input:hover {
-    background: var(--_fill-hover);
-  }
-
-  .mx-switch .mx-field__box > .mx-switch__thumb {
-    --_thumb-width: var(--_thumb);
+  /* The thumb keeps its middle half a track height from its end, whatever its size in a state. It holds the halo
+     (centred on it, under it and over the track) and an icon (centred in it). */
+  .mx-switch > .mx-field__box > .mx-switch__thumb {
+    --_size: var(--_size-rest);
+    --_stretch: 0px;
 
     position: relative;
-    display: block;
-    inline-size: var(--_thumb-width);
-    block-size: var(--_thumb);
-    margin: 0;
-    margin-inline-start: var(--_inset);
-    background: var(--_knob);
-    border-radius: var(--mx-switch-thumb-radius);
+    z-index: 0;
+    display: grid;
+    place-items: center;
+    inline-size: calc(var(--_size) + var(--_stretch));
+    block-size: var(--_size);
+    margin-inline-start: calc(var(--_track-height) / 2 - var(--_size) / 2);
     pointer-events: none;
     transition:
       margin-inline-start var(--mx-motion-duration-normal) var(--mx-motion-easing-standard),
       inline-size var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      block-size var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
+  .mx-switch__thumb::before {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    z-index: var(--_under);
+    translate: -50% -50%;
+    transition: opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-switch__thumb::after {
+    content: '';
+    grid-area: 1 / 1;
+    mask: var(--_icon, none) center / contain no-repeat;
+  }
+
   /* A margin in percent is measured against the cell, that is the track. */
-  .mx-switch[data-state='checked'] .mx-field__box > .mx-switch__thumb {
-    margin-inline-start: calc(100% - var(--_thumb-width) - var(--_inset));
+  .mx-switch[data-state='checked'] > .mx-field__box > .mx-switch__thumb {
+    margin-inline-start: calc(100% - var(--_track-height) / 2 - var(--_size) / 2 - var(--_stretch));
   }
 
-  /* Pressed, the thumb stretches toward where it will go. */
+  .mx-switch:not([data-readonly], [data-disabled]) .mx-switch__input:hover ~ .mx-switch__thumb {
+    --_size: var(--_size-hover);
+  }
+
+  /* Pressed, the thumb takes its pressed size and stretches toward where it will go. */
   .mx-switch:not([data-readonly]) .mx-switch__input:active ~ .mx-switch__thumb {
-    --_thumb-width: calc(var(--_thumb) + var(--_inset));
+    --_size: var(--_size-pressed);
+    --_stretch: var(--_switch-thumb-stretch);
   }
 
-  .mx-switch .mx-field__box > .mx-switch__text {
+  .mx-switch > .mx-field__box > .mx-switch__text {
     position: relative;
     display: grid;
-    margin: 0;
-    font-size: var(--mx-switch-text-font-size);
-    line-height: 1;
-    white-space: nowrap;
     pointer-events: none;
   }
 
@@ -134,28 +125,20 @@
   }
 
   /* Inside: the text sits on the side the thumb is not on. */
-  .mx-switch[data-state-text='inside'] .mx-field__box > .mx-switch__text {
-    padding-inline: calc(var(--_thumb) + 2 * var(--_inset)) var(--mx-switch-text-padding);
-    color: var(--_state-color);
+  .mx-switch[data-state-text='inside'] > .mx-field__box > .mx-switch__text {
+    padding-inline: calc(var(--_thumb) + 2 * var(--_inset)) var(--_switch-text-padding);
     transition: color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-switch[data-state-text='inside'][data-state='checked'] .mx-field__box > .mx-switch__text {
-    padding-inline: var(--mx-switch-text-padding) calc(var(--_thumb) + 2 * var(--_inset));
+  .mx-switch[data-state-text='inside'][data-state='checked'] > .mx-field__box > .mx-switch__text {
+    padding-inline: var(--_switch-text-padding) calc(var(--_thumb) + 2 * var(--_inset));
   }
 
-  .mx-switch[data-state-text='beside'] .mx-field__box > .mx-switch__text {
+  .mx-switch[data-state-text='beside'] > .mx-field__box > .mx-switch__text {
     grid-area: 1 / 2;
-    margin-inline-start: var(--_gap);
-    font-size: var(--_text-size);
-    color: var(--mx-switch-label-fg);
   }
 
-  .mx-switch[data-disabled][data-state-text='beside'] .mx-field__box > .mx-switch__text {
-    color: var(--mx-switch-label-fg-disabled);
-  }
-
-  .mx-switch[data-state-text='none'] .mx-field__box > .mx-switch__text {
+  .mx-switch[data-state-text='none'] > .mx-field__box > .mx-switch__text {
     display: none;
   }
 }

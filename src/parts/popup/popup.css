@@ -1,5 +1,7 @@
 /* Popup: a fixed surface in the top layer (or above the page where popovers are missing).
-   placePopup writes its position; the gap to the anchor is the margin of the side it opens on. */
+   placePopup writes its position; the gap to the anchor is the margin of the side it opens on.
+   Only the layout is here: the surface's look is a unit of the popup's schema (`$units`), painted by
+   units.css from the language's tokens. */
 @layer mx.components {
   .mx-popup {
     position: fixed;
@@ -7,14 +9,8 @@
     z-index: var(--mx-z-dropdown);
     box-sizing: border-box;
     margin: 0;
-    padding: var(--mx-popup-padding);
     overflow: auto;
     overscroll-behavior: contain;
-    color: var(--mx-popup-fg);
-    background: var(--mx-popup-background);
-    border: var(--mx-popup-border-width) solid var(--mx-popup-border-color);
-    border-radius: var(--mx-popup-radius);
-    box-shadow: var(--mx-popup-shadow);
   }
 
   /* Closed, it stays out of the page whatever display its content asks for. */
@@ -23,18 +19,18 @@
   }
 
   .mx-popup[data-side='bottom'] {
-    margin-block-start: var(--mx-popup-offset);
+    margin-block-start: var(--_popup-offset);
   }
 
   .mx-popup[data-side='top'] {
-    margin-block-end: var(--mx-popup-offset);
+    margin-block-end: var(--_popup-offset);
   }
 
   .mx-popup[data-side='end'] {
-    margin-inline-start: var(--mx-popup-offset);
+    margin-inline-start: var(--_popup-offset);
   }
 
   .mx-popup[data-side='start'] {
-    margin-inline-end: var(--mx-popup-offset);
+    margin-inline-end: var(--_popup-offset);
   }
 }

@@ -1,9 +1,0 @@
-{
-  "popup": {
-    "$description": "Material menus: 16 container corners.",
-    "radius": {
-      "$type": "dimension",
-      "$value": "{radius.lg}"
-    }
-  }
-}

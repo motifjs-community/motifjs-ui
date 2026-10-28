@@ -101,7 +101,8 @@ export const GROUPS = [
     title: 'Scheduler',
     section: 'Components',
     pages: [
-      { id: 'scheduler', label: 'Overview', title: 'Scheduler', path: '/scheduler', related: ['calendar', 'datebox', 'tabdocs'] },
+      { id: 'scheduler', label: 'Overview', title: 'Scheduler', path: '/scheduler', related: ['scheduler-editing', 'calendar', 'datebox'] },
+      { id: 'scheduler-editing', label: 'Editing', title: 'Scheduler: Editing', path: '/scheduler/editing', related: ['scheduler', 'formlayout', 'window'] },
     ],
   },
   {

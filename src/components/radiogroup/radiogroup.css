@@ -1,17 +1,13 @@
-/* RadioGroup: the field's label is the group's caption above the options; the text-field frame of
-   .mx-field is taken away. Each option is a native radio drawn as a circle, with its text and an
-   optional help line. The look binds to data-size, data-orientation, data-columns, :checked and
-   the field's state attributes; --_columns and --_rows are written with columns. */
+/* RadioGroup: the field's label is the group's caption above the options; the text-field box of
+   .mx-field is switched off by the `field` place. Each option is a native radio drawn as a circle,
+   with its text and an optional help line. Only the layout is here: the circle, the dot of the chosen
+   one (drawn by the text's ::before over the circle), the halo, the ring, the row, the text and the
+   help line are units of the radio group's schema (`$units`), painted by units.css. The look binds to
+   data-size, data-orientation, data-columns, :checked and the field's state attributes; --_columns
+   and --_rows are written with columns. */
 @layer mx.components {
   .mx-radio-group {
-    --_fill: var(--mx-radiogroup-bg);
-    --_fill-hover: var(--mx-radiogroup-bg-hover);
-    --_fill-active: var(--mx-radiogroup-bg-active);
-    --_stroke: var(--mx-radiogroup-border);
-    --_stroke-edge: var(--mx-radiogroup-edge);
-    /* The depth sits under the circle, not in its bottom border: the outline stays whole on any background. */
-    --_glow: var(--mx-radiogroup-shadow), 0 var(--mx-radiogroup-edge-width) 0 var(--_stroke-edge);
-    --_press: var(--mx-radiogroup-press-offset);
+    --_press: var(--_radiogroup-press-offset);
   }
 
   .mx-radio-group.mx-field:not([data-stretch]) {
@@ -19,34 +15,33 @@
   }
 
   .mx-radio-group[data-size='sm'] {
-    --_box: var(--mx-radiogroup-size-sm);
-    --_dot: var(--mx-radiogroup-dot-size-sm);
-    --_row: var(--mx-radiogroup-height-sm);
-    --_text-size: var(--mx-radiogroup-font-size-sm);
+    --_box: var(--_radiogroup-size-sm);
+    --_dot: var(--_radiogroup-dot-size-sm);
+    --_dot-hover: var(--_radiogroup-dot-size-hover-sm);
+    --_dot-pressed: var(--_radiogroup-dot-size-pressed-sm);
+    --_row: var(--_radiogroup-height-sm);
+    --_text-size: var(--_radiogroup-font-size-sm);
   }
 
   .mx-radio-group[data-size='md'] {
-    --_box: var(--mx-radiogroup-size-md);
-    --_dot: var(--mx-radiogroup-dot-size-md);
-    --_row: var(--mx-radiogroup-height-md);
-    --_text-size: var(--mx-radiogroup-font-size-md);
+    --_box: var(--_radiogroup-size-md);
+    --_dot: var(--_radiogroup-dot-size-md);
+    --_dot-hover: var(--_radiogroup-dot-size-hover-md);
+    --_dot-pressed: var(--_radiogroup-dot-size-pressed-md);
+    --_row: var(--_radiogroup-height-md);
+    --_text-size: var(--_radiogroup-font-size-md);
   }
 
   .mx-radio-group[data-size='lg'] {
-    --_box: var(--mx-radiogroup-size-lg);
-    --_dot: var(--mx-radiogroup-dot-size-lg);
-    --_row: var(--mx-radiogroup-height-lg);
-    --_text-size: var(--mx-radiogroup-font-size-lg);
-  }
-
-  .mx-radio-group[data-invalid] {
-    --_stroke: var(--mx-radiogroup-invalid-border);
-    --_stroke-edge: var(--mx-radiogroup-invalid-border);
+    --_box: var(--_radiogroup-size-lg);
+    --_dot: var(--_radiogroup-dot-size-lg);
+    --_dot-hover: var(--_radiogroup-dot-size-hover-lg);
+    --_dot-pressed: var(--_radiogroup-dot-size-pressed-lg);
+    --_row: var(--_radiogroup-height-lg);
+    --_text-size: var(--_radiogroup-font-size-lg);
   }
 
   .mx-radio-group[data-readonly] {
-    --_fill-hover: var(--_fill);
-    --_fill-active: var(--_fill);
     --_press: 0;
   }
 
@@ -55,26 +50,15 @@
     position: static;
     display: block;
     block-size: auto;
-    margin: 0 0 var(--mx-field-label-gap);
-    font-size: inherit;
-    font-weight: var(--mx-field-label-font-weight);
-    color: inherit;
     pointer-events: auto;
   }
 
-  .mx-radio-group.mx-field .mx-field__box {
+  /* The field's box holds the options: no text-field look (the `field` place), only the layout. */
+  .mx-radio-group.mx-field > .mx-field__box {
     display: block;
-    min-block-size: 0;
-    padding: 0;
-    font-size: var(--_text-size);
-    background: none;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-    cursor: default;
   }
 
-  .mx-radio-group :is(.mx-field__icon, .mx-field__prefix, .mx-field__suffix, .mx-field__start, .mx-field__end) {
+  .mx-radio-group > :where(.mx-field__box) > :is(.mx-field__icon, .mx-field__prefix, .mx-field__suffix, .mx-field__start, .mx-field__end) {
     display: none;
   }
 
@@ -87,14 +71,14 @@
 
   .mx-radio-group[data-orientation='horizontal'] .mx-radio-group__list {
     flex-flow: row wrap;
-    column-gap: var(--mx-radiogroup-column-gap);
+    column-gap: var(--_radiogroup-column-gap);
   }
 
   .mx-radio-group[data-columns] .mx-radio-group__list {
     display: grid;
     grid-template-columns: repeat(var(--_columns), auto);
     grid-auto-flow: row;
-    column-gap: var(--mx-radiogroup-column-gap);
+    column-gap: var(--_radiogroup-column-gap);
   }
 
   /* Vertical in columns: down the first column, then the next. */
@@ -108,84 +92,87 @@
   }
 
   .mx-radio-group__label {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: var(--mx-radiogroup-gap);
+    gap: var(--_radiogroup-gap);
     min-block-size: var(--_row);
+  }
+
+  /* The halo and the dot are centred on the circle (which opens the row), out of the layout: the halo under
+     the circle, the dot over it. */
+  .mx-radio-group__label::before,
+  .mx-radio-group__input + .mx-radio-group__text::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: calc(var(--_box) / 2);
+    translate: -50% -50%;
+    pointer-events: none;
+  }
+
+  .mx-radio-group__label:dir(rtl)::before,
+  .mx-radio-group__input:dir(rtl) + .mx-radio-group__text::before {
+    translate: 50% -50%;
+  }
+
+  .mx-radio-group__label::before {
+    z-index: var(--_under);
+    transition: opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-radio-group__input + .mx-radio-group__text::before {
+    transition:
+      inline-size var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      block-size var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+      translate var(--mx-motion-duration-instant) var(--mx-motion-easing-standard);
   }
 
   .mx-radio-group__help {
     display: block;
-    margin-block-start: calc(var(--mx-radiogroup-help-gap) * -1);
-    padding-block-end: var(--mx-radiogroup-help-gap);
-    padding-inline-start: calc(var(--_box) + var(--mx-radiogroup-gap));
-    font-size: var(--mx-radiogroup-help-font-size);
-    line-height: var(--mx-radiogroup-help-line);
-    color: var(--mx-radiogroup-help-fg);
+    margin-block-start: calc(var(--_radiogroup-help-gap) * -1);
+    padding-block-end: var(--_radiogroup-help-gap);
+    padding-inline-start: calc(var(--_box) + var(--_radiogroup-gap));
   }
 
   .mx-radio-group__input {
     appearance: none;
     flex: none;
     box-sizing: border-box;
-    inline-size: var(--_box);
-    block-size: var(--_box);
-    margin: 0;
-    background: var(--_fill);
-    border: var(--mx-radiogroup-border-width) solid var(--_stroke);
-    border-radius: var(--mx-radiogroup-radius);
-    box-shadow: var(--_glow);
-    cursor: default;
     transition:
       background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
-      border-width var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       translate var(--mx-motion-duration-instant) var(--mx-motion-easing-standard);
   }
 
-  .mx-radio-group__input:hover {
-    background: var(--_fill-hover);
-  }
-
+  /* Pressed, the circle and its dot go down together. */
   .mx-radio-group__input:active {
-    background: var(--_fill-active);
-    box-shadow: none;
     translate: 0 var(--_press);
   }
 
-  /* Chosen: a thick accent ring around a dot of the on-accent color. */
-  .mx-radio-group__input:checked {
-    background: var(--mx-radiogroup-checked-dot);
-    border-width: calc((var(--_box) - var(--_dot)) / 2);
-    border-color: var(--mx-radiogroup-checked-border);
+  .mx-radio-group__input:active + .mx-radio-group__text::before {
+    translate: -50% calc(-50% + var(--_press));
   }
 
-  .mx-radio-group:not([data-readonly]) .mx-radio-group__input:checked:hover {
-    border-color: var(--mx-radiogroup-checked-border-hover);
+  .mx-radio-group__input:dir(rtl):active + .mx-radio-group__text::before {
+    translate: 50% calc(-50% + var(--_press));
   }
 
-  /* The focus halo is a box-shadow too: keep both. */
-  .mx-radio-group__input:focus-visible {
-    outline: var(--mx-radiogroup-focus-width) solid var(--mx-radiogroup-focus-color);
-    outline-offset: var(--mx-radiogroup-focus-offset);
-    box-shadow:
-      var(--mx-radiogroup-focus-halo),
-      var(--_glow);
+  /* The chosen dot's size follows the pointer. */
+  .mx-radio-group:not([data-readonly]) .mx-radio-group__input:hover:not(:disabled) + .mx-radio-group__text {
+    --_dot: var(--_dot-hover);
   }
 
-  .mx-radio-group__input:disabled {
-    background: var(--mx-radiogroup-disabled-bg);
-    border-color: var(--mx-radiogroup-disabled-border);
-    box-shadow: none;
+  .mx-radio-group:not([data-readonly]) .mx-radio-group__input:hover:active:not(:disabled) + .mx-radio-group__text {
+    --_dot: var(--_dot-pressed);
   }
 
-  .mx-radio-group__input:checked:disabled {
-    background: var(--mx-radiogroup-checked-dot-disabled);
-    border-color: var(--mx-radiogroup-checked-border-disabled);
-  }
-
-  /* The help line of a disabled option keeps its color: it is a description, it must stay readable. */
-  .mx-radio-group__input:disabled + .mx-radio-group__text {
-    color: var(--mx-radiogroup-text-fg-disabled);
+  /* The ring around the option's circle and text together (`focus-scope: item`), standing out of the row by its
+     negative margins. */
+  .mx-radio-group__label::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
 }

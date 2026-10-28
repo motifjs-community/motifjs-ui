@@ -8,7 +8,11 @@
    data-pinned-row and data-wrap, and the widths `--_tab-min`, `--_tab-max`, `--_tab-fixed` are
    written on each group from the props. The root is a grid: the
    documents in the middle (row 4, column 4), the dock areas and their splitters around them in the
-   order they nest (each writes its own grid-area), the strips of folded areas along the edges. */
+   order they nest (each writes its own grid-area), the strips of folded areas along the edges.
+   Only the layout is here: every piece's look is a unit of the manager's schema (`$units`), painted
+   by units.css from the language's tokens; the sizes the layout counts with are plain tokens. The
+   parts it holds (the group's toolbar and its buttons, the menu's search, the phone bar's buttons,
+   the drawers and sheets) take their look from its places. */
 @layer mx.components {
   .mx-tabdocs {
     position: relative;
@@ -19,10 +23,13 @@
     min-block-size: 0;
     /* Clipped, not a scroll box: focus going into a sliding area never scrolls the manager. */
     overflow: clip;
-    color: var(--mx-tabdocs-tab-fg-active);
-    background: var(--mx-tabdocs-bg);
+
     --_z-panel: 2;
     --_z-strip: 3;
+    --_tab-height: var(--_tabdocs-tabs-height);
+    --_close-size: var(--_tabdocs-close-room);
+    --_pin-size: var(--_tabdocs-pin-room);
+    --_autohide-size: var(--_tabdocs-folded-tab-height);
   }
 
   .mx-tabdocs[data-resizing] {
@@ -50,7 +57,6 @@
     min-block-size: var(--_min-height);
     overflow: hidden;
     contain: size;
-    background: var(--mx-tabdocs-group-bg);
   }
 
   :is(.mx-tabdocs__group, .mx-tabdocs__split, .mx-tabdocs__sash)[hidden] {
@@ -65,9 +71,7 @@
     align-items: stretch;
     justify-content: space-between;
     min-inline-size: 0;
-    min-block-size: var(--mx-tabdocs-tab-height);
-    background: var(--mx-tabdocs-bar-bg);
-    border-block-end: var(--mx-tabdocs-bar-border-width) solid var(--mx-tabdocs-bar-border-color);
+    min-block-size: var(--_tabdocs-tabs-height);
   }
 
   /* The tab list between its scroll buttons: pinned tabs first, then the others, which scroll. It
@@ -110,7 +114,6 @@
 
   .mx-tabdocs[data-pinned-row] .mx-tabdocs__pinned {
     flex-wrap: wrap;
-    border-block-end: var(--mx-tabdocs-pinned-row-border-width) solid var(--mx-tabdocs-pinned-row-border-color);
   }
 
   .mx-tabdocs[data-wrap] .mx-tabdocs__row {
@@ -132,11 +135,6 @@
     align-items: center;
     justify-content: center;
     align-self: center;
-    min-inline-size: var(--mx-tabdocs-scroll-size);
-    min-block-size: var(--mx-tabdocs-scroll-size);
-    color: var(--mx-tabdocs-scroll-fg);
-    border-radius: var(--mx-tabdocs-scroll-radius);
-    cursor: default;
     user-select: none;
   }
 
@@ -152,7 +150,6 @@
     inset-inline-start: var(--_track-start, 0);
     display: none;
     inline-size: var(--_track-size, 100%);
-    block-size: var(--mx-tabdocs-scrollbar-size);
     pointer-events: none;
     opacity: 0;
     transition: opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
@@ -172,51 +169,35 @@
     inset-block: 0;
     inset-inline-start: var(--_thumb-at, 0);
     inline-size: var(--_thumb-size, 0);
-    background: var(--mx-tabdocs-scrollbar-thumb-color);
-    border-radius: var(--mx-tabdocs-scrollbar-radius);
     pointer-events: auto;
   }
 
-  .mx-tabdocs__thumb:hover,
-  .mx-tabdocs__scrollbar[data-dragging] > .mx-tabdocs__thumb {
-    background: var(--mx-tabdocs-scrollbar-thumb-color-hover);
-  }
-
-  .mx-tabdocs__scroll:hover:not([data-end]) {
-    color: var(--mx-tabdocs-scroll-fg-hover);
-    background: var(--mx-tabdocs-scroll-bg-hover);
-  }
-
-  .mx-tabdocs__scroll[data-end] {
-    color: var(--mx-tabdocs-scroll-fg-disabled);
-  }
-
-  /* The glyph is a down arrow: turned to point along the strip. */
+  /* The glyph is turned to point along the strip. */
   .mx-tabdocs__scroll[data-direction='back'] > .mx-glyph {
-    rotate: 90deg;
+    rotate: var(--_tabdocs-scroll-back-rotate);
   }
 
   .mx-tabdocs__scroll[data-direction='forward'] > .mx-glyph {
-    rotate: -90deg;
+    rotate: var(--_tabdocs-scroll-forward-rotate);
   }
 
   .mx-tabdocs__scroll[data-direction='back']:dir(rtl) > .mx-glyph {
-    rotate: -90deg;
+    rotate: calc(-1 * var(--_tabdocs-scroll-back-rotate));
   }
 
   .mx-tabdocs__scroll[data-direction='forward']:dir(rtl) > .mx-glyph {
-    rotate: 90deg;
+    rotate: calc(-1 * var(--_tabdocs-scroll-forward-rotate));
   }
 
+  /* The group's actions: a toolbar as tall as the tabs, its fill and buttons from the places. */
   .mx-tabdocs__bar > .mx-tabdocs__actions {
     flex: 0 1 auto;
     min-inline-size: 0;
     align-self: flex-start;
-    block-size: var(--mx-tabdocs-tab-height);
+    block-size: var(--_tabdocs-tabs-height);
     min-block-size: 0;
     padding-block: 0;
-    padding-inline: var(--mx-tabdocs-actions-padding);
-    background: transparent;
+    padding-inline: var(--_tabdocs-actions-padding);
   }
 
   .mx-tabdocs__bar > .mx-tabdocs__actions:is([hidden], :empty) {
@@ -226,29 +207,18 @@
   /* Small buttons (`barButtonSize: 'small'`): about the size of a pointer target, a smaller mark, tight gaps. */
   /* The ends leave room for a button's focus ring: the toolbar clips what goes past them. */
   .mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions {
-    gap: var(--mx-tabdocs-bar-button-gap);
-    padding-inline: max(var(--mx-tabdocs-actions-padding), calc(var(--mx-tabdocs-focus-width) + var(--mx-tabdocs-focus-offset)));
+    padding-inline: max(var(--_tabdocs-actions-padding), calc(var(--_tabdocs-focus-width) + var(--_tabdocs-focus-offset)));
   }
 
-  .mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions .mx-button__face {
-    min-inline-size: var(--mx-tabdocs-bar-button-size);
-    min-block-size: var(--mx-tabdocs-bar-button-size);
-    padding-inline: var(--mx-tabdocs-bar-button-padding);
+  /* Square: as wide as they are tall. */
+  .mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions > .mx-button {
+    min-inline-size: var(--_tabdocs-bar-button-size);
   }
 
-  .mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions .mx-button__icon {
-    inline-size: var(--mx-tabdocs-bar-icon-size);
-    block-size: var(--mx-tabdocs-bar-icon-size);
-  }
-
-  /* The "+2" of the "…" button fills the square, which keeps its size. */
-  .mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions .mx-button__face:has(.mx-tabdocs__count) {
-    padding-inline: 0;
-  }
-
-  .mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions .mx-button__icon:has(> .mx-tabdocs__count) {
+  /* The "+2" of the "…" button fills the square, which keeps its size: the mark's box grows with the count. */
+  .mx-tabdocs__group[data-bar-size='small'] > .mx-tabdocs__bar > .mx-tabdocs__actions > :where(.mx-button) > .mx-button__icon:has(> .mx-tabdocs__count) {
     inline-size: auto;
-    min-inline-size: var(--mx-tabdocs-bar-icon-size);
+    min-inline-size: var(--_tabdocs-bar-icon-size);
   }
 
   /* How many tabs are out of sight, in the place of the "…" mark: as large as the mark, whatever the count. */
@@ -258,8 +228,6 @@
     justify-content: center;
     inline-size: 100%;
     block-size: 100%;
-    font-size: var(--mx-tabdocs-count-font-size);
-    font-weight: var(--mx-tabdocs-count-font-weight);
     line-height: 1;
     white-space: nowrap;
     /* "+2" reads the same way right to left. */
@@ -267,66 +235,28 @@
     unicode-bidi: isolate;
   }
 
+  /* A tab: its end side is the separator between tabs (the `tab` unit). */
   .mx-tabdocs__tab {
     appearance: none;
     position: relative;
     display: inline-flex;
     flex: none;
     align-items: center;
-    gap: var(--mx-tabdocs-tab-gap);
-    min-block-size: var(--mx-tabdocs-tab-height);
     margin: 0;
-    padding-block: 0;
-    padding-inline: var(--mx-tabdocs-tab-padding);
     font: inherit;
-    font-size: var(--mx-tabdocs-tab-font-size);
-    font-weight: var(--mx-tabdocs-tab-font-weight);
-    line-height: var(--mx-tabdocs-tab-line-height);
-    white-space: nowrap;
-    color: var(--mx-tabdocs-tab-fg);
-    background: transparent;
-    border: 0;
-    border-inline-end: var(--mx-tabdocs-tab-separator-width) solid var(--mx-tabdocs-tab-separator-color);
-    border-radius: 0;
-    cursor: default;
     user-select: none;
     transition:
       background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-tabdocs__tab:hover:not([aria-selected='true']) {
-    color: var(--mx-tabdocs-tab-fg-hover);
-    background: var(--mx-tabdocs-tab-bg-hover);
-  }
-
-  .mx-tabdocs__tab[aria-selected='true'] {
-    color: var(--mx-tabdocs-tab-fg-active);
-    background: var(--mx-tabdocs-tab-bg-active);
-  }
-
-  .mx-tabdocs__tab:focus-visible {
-    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
-    outline-offset: calc(var(--mx-tabdocs-focus-width) * -1);
-    box-shadow: var(--mx-tabdocs-focus-halo);
-  }
-
-  /* The bar along the top of the active tab: the accent in the active group. */
+  /* The bar on the shown tab (the `indicator` unit; by default along its top), centred along it. */
   .mx-tabdocs__tab::after {
     content: '';
     position: absolute;
-    inset-block-start: 0;
-    inset-inline: 0;
-    block-size: var(--mx-tabdocs-indicator-width);
-    background: transparent;
-  }
-
-  .mx-tabdocs__tab[aria-selected='true']::after {
-    background: var(--mx-tabdocs-indicator-color-inactive);
-  }
-
-  .mx-tabdocs__group[data-active] .mx-tabdocs__tab[aria-selected='true']::after {
-    background: var(--mx-tabdocs-indicator-color);
+    inset-block: var(--_tabdocs-indicator-inset-start) var(--_tabdocs-indicator-inset-end);
+    inset-inline: var(--_tabdocs-indicator-inset);
+    margin-inline: auto;
   }
 
   /* A single document shown as a title: the tab without its box and indicator, as wide as its
@@ -340,18 +270,6 @@
     flex: 0 1 auto;
     min-inline-size: 0;
     max-inline-size: 100%;
-    font-weight: var(--mx-tabdocs-title-font-weight);
-    color: var(--mx-tabdocs-title-fg);
-    background: transparent;
-    border-inline-end-color: transparent;
-  }
-
-  .mx-tabdocs__group[data-title][data-active] > .mx-tabdocs__bar .mx-tabdocs__tab {
-    color: var(--mx-tabdocs-title-fg-active);
-  }
-
-  .mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab::after {
-    background: transparent;
   }
 
   .mx-tabdocs__group[data-title] > .mx-tabdocs__bar :is(.mx-tabdocs__title, .mx-tabdocs__description) {
@@ -379,15 +297,15 @@
   /* Shrinking, a tab keeps its icon, its close button and a few letters of its title. */
   .mx-tabdocs__group[data-tab-size='shrink'] > .mx-tabdocs__bar .mx-tabdocs__row > .mx-tabdocs__tab {
     flex: 0 1 auto;
-    min-inline-size: max(var(--_tab-min), calc(2 * var(--mx-tabdocs-tab-padding) + var(--_icon-room, 0px) + var(--_close-room, 0px) + var(--mx-tabdocs-tab-title-min-width)));
+    min-inline-size: max(var(--_tab-min), calc(2 * var(--_tabdocs-tab-inset) + var(--_icon-room, 0px) + var(--_close-room, 0px) + var(--_tabdocs-title-min)));
   }
 
   .mx-tabdocs__tab[data-icon] {
-    --_icon-room: calc(var(--mx-tabdocs-icon-size) + var(--mx-tabdocs-tab-gap));
+    --_icon-room: calc(var(--_tabdocs-icon-room) + var(--_tabdocs-tab-spacing));
   }
 
   .mx-tabdocs__tab:is([data-close], [data-dirty]) {
-    --_close-room: calc(var(--mx-tabdocs-close-size) + var(--mx-tabdocs-tab-gap));
+    --_close-room: calc(var(--_tabdocs-close-room) + var(--_tabdocs-tab-spacing));
   }
 
   .mx-tabdocs__group[data-tab-size='fixed'] > .mx-tabdocs__bar .mx-tabdocs__row > .mx-tabdocs__tab {
@@ -406,35 +324,18 @@
 
   .mx-tabdocs__title {
     min-inline-size: 0;
-    max-inline-size: var(--mx-tabdocs-tab-title-max-width);
+    max-inline-size: var(--_tabdocs-title-max);
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .mx-tabdocs__tab[data-preview] .mx-tabdocs__title {
-    font-style: italic;
-  }
-
-  .mx-tabdocs__tab[data-tone='warning'] .mx-tabdocs__title {
-    color: var(--mx-tabdocs-tone-warning-fg);
-  }
-
-  .mx-tabdocs__tab[data-tone='danger'] .mx-tabdocs__title {
-    color: var(--mx-tabdocs-tone-danger-fg);
-  }
-
-  .mx-tabdocs__tab[data-tone='success'] .mx-tabdocs__title {
-    color: var(--mx-tabdocs-tone-success-fg);
-  }
-
-  .mx-tabdocs__tab[data-tone='accent'] .mx-tabdocs__title {
-    color: var(--mx-tabdocs-tone-accent-fg);
+  .mx-tabdocs__tab[data-preview] > .mx-tabdocs__title {
+    font-style: var(--_tabdocs-preview-font-style);
   }
 
   /* A compact pinned tab shows its icon, or its first letter; the title stays for screen readers. */
   .mx-tabdocs__letter {
     display: none;
-    font-weight: var(--mx-tabdocs-letter-font-weight);
   }
 
   .mx-tabdocs[data-pinned-size='compact'] .mx-tabdocs__tab[data-pinned]:not([data-icon]) .mx-tabdocs__letter {
@@ -480,37 +381,24 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-tabdocs-pin-size);
-    block-size: var(--mx-tabdocs-pin-size);
-    color: var(--mx-tabdocs-pin-fg);
-    border-radius: var(--mx-tabdocs-pin-radius);
   }
 
   .mx-tabdocs__tab[data-pinned] .mx-tabdocs__pin {
     display: inline-flex;
   }
 
-  .mx-tabdocs__pin:hover {
-    color: var(--mx-tabdocs-pin-fg-hover);
-    background: var(--mx-tabdocs-pin-bg-hover);
-  }
-
   /* A narrow tab gives up its description before the letters of its title. */
   .mx-tabdocs__description {
     flex: 0 1000 auto;
     min-inline-size: 0;
-    max-inline-size: var(--mx-tabdocs-tab-title-max-width);
+    max-inline-size: var(--_tabdocs-title-max);
     overflow: hidden;
-    font-size: var(--mx-tabdocs-description-font-size);
     text-overflow: ellipsis;
-    color: var(--mx-tabdocs-description-fg);
   }
 
   .mx-tabdocs__icon {
     display: inline-flex;
     flex: none;
-    inline-size: var(--mx-tabdocs-icon-size);
-    block-size: var(--mx-tabdocs-icon-size);
   }
 
   .mx-tabdocs__icon > :is(img, svg, .mx-glyph) {
@@ -523,58 +411,7 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    min-inline-size: var(--mx-tabdocs-badge-height);
-    block-size: var(--mx-tabdocs-badge-height);
-    padding-inline: var(--mx-tabdocs-badge-padding);
-    font-size: var(--mx-tabdocs-badge-font-size);
     line-height: 1;
-    color: var(--mx-tabdocs-badge-fg);
-    background: var(--mx-tabdocs-badge-bg);
-    border-radius: var(--mx-tabdocs-badge-radius);
-  }
-
-  .mx-tabdocs__badge[data-dot] {
-    min-inline-size: 0;
-    inline-size: var(--mx-tabdocs-badge-dot-size);
-    block-size: var(--mx-tabdocs-badge-dot-size);
-    padding: 0;
-    background: var(--mx-tabdocs-badge-dot-color);
-  }
-
-  .mx-tabdocs__tab[data-tone='warning'] .mx-tabdocs__badge {
-    color: var(--mx-tabdocs-tone-warning-fg);
-    background: var(--mx-tabdocs-tone-warning-badge-bg);
-  }
-
-  .mx-tabdocs__tab[data-tone='danger'] .mx-tabdocs__badge {
-    color: var(--mx-tabdocs-tone-danger-fg);
-    background: var(--mx-tabdocs-tone-danger-badge-bg);
-  }
-
-  .mx-tabdocs__tab[data-tone='success'] .mx-tabdocs__badge {
-    color: var(--mx-tabdocs-tone-success-fg);
-    background: var(--mx-tabdocs-tone-success-badge-bg);
-  }
-
-  .mx-tabdocs__tab[data-tone='accent'] .mx-tabdocs__badge {
-    color: var(--mx-tabdocs-tone-accent-fg);
-    background: var(--mx-tabdocs-tone-accent-badge-bg);
-  }
-
-  .mx-tabdocs__tab[data-tone='warning'] .mx-tabdocs__badge[data-dot] {
-    background: var(--mx-tabdocs-tone-warning-fg);
-  }
-
-  .mx-tabdocs__tab[data-tone='danger'] .mx-tabdocs__badge[data-dot] {
-    background: var(--mx-tabdocs-tone-danger-fg);
-  }
-
-  .mx-tabdocs__tab[data-tone='success'] .mx-tabdocs__badge[data-dot] {
-    background: var(--mx-tabdocs-tone-success-fg);
-  }
-
-  .mx-tabdocs__tab[data-tone='accent'] .mx-tabdocs__badge[data-dot] {
-    background: var(--mx-tabdocs-tone-accent-fg);
   }
 
   /* The close button, or the dot of unsaved changes in its place (the button again under the pointer). */
@@ -583,15 +420,6 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-tabdocs-close-size);
-    block-size: var(--mx-tabdocs-close-size);
-    color: var(--mx-tabdocs-close-fg);
-    border-radius: var(--mx-tabdocs-close-radius);
-  }
-
-  .mx-tabdocs__tab[data-close] .mx-tabdocs__close:hover {
-    color: var(--mx-tabdocs-close-fg-hover);
-    background: var(--mx-tabdocs-close-bg-hover);
   }
 
   .mx-tabdocs__tab:not([data-close], [data-dirty]) .mx-tabdocs__close {
@@ -604,10 +432,6 @@
 
   .mx-tabdocs__dirty {
     display: none;
-    inline-size: var(--mx-tabdocs-dirty-size);
-    block-size: var(--mx-tabdocs-dirty-size);
-    background: var(--mx-tabdocs-dirty-color);
-    border-radius: var(--mx-tabdocs-dirty-radius);
   }
 
   .mx-tabdocs__tab[data-dirty] .mx-tabdocs__close > .mx-glyph {
@@ -646,22 +470,13 @@
     display: none;
   }
 
-  .mx-tabdocs__panel:focus-visible {
-    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
-    outline-offset: calc(var(--mx-tabdocs-focus-width) * -1);
-    box-shadow: var(--mx-tabdocs-focus-halo);
-  }
-
   .mx-tabdocs__empty {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--mx-tabdocs-empty-padding);
-    font-size: var(--mx-tabdocs-empty-font-size);
     text-align: center;
-    color: var(--mx-tabdocs-empty-fg);
   }
 
   .mx-tabdocs__empty[hidden] {
@@ -673,45 +488,24 @@
   .mx-tabdocs__sash {
     position: relative;
     flex: none;
-    inline-size: var(--mx-tabdocs-sash-size);
+    inline-size: var(--_tabdocs-sash-thickness);
     touch-action: none;
     cursor: col-resize;
-    --_line: var(--mx-tabdocs-sash-line-width);
-    --_line-color: var(--mx-tabdocs-sash-line-color);
   }
 
   .mx-tabdocs__split[data-orientation='vertical'] > .mx-tabdocs__sash {
     inline-size: auto;
-    block-size: var(--mx-tabdocs-sash-size);
+    block-size: var(--_tabdocs-sash-thickness);
     cursor: row-resize;
   }
 
+  /* The line (the `sash-line` unit), centred in the splitter. */
   .mx-tabdocs__sash::before {
     content: '';
     position: absolute;
     inset: 0;
-    inline-size: var(--_line);
     margin: auto;
-    background: var(--_line-color);
     transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
-  }
-
-  .mx-tabdocs__split[data-orientation='vertical'] > .mx-tabdocs__sash::before {
-    inline-size: auto;
-    block-size: var(--_line);
-  }
-
-  .mx-tabdocs__sash:hover,
-  .mx-tabdocs__sash:focus-visible,
-  .mx-tabdocs[data-resizing] .mx-tabdocs__sash:focus {
-    --_line: var(--mx-tabdocs-sash-active-width);
-    --_line-color: var(--mx-tabdocs-sash-active-color);
-  }
-
-  .mx-tabdocs__sash:focus-visible {
-    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
-    outline-offset: calc(var(--mx-tabdocs-focus-width) * -1);
-    box-shadow: var(--mx-tabdocs-focus-halo);
   }
 
   .mx-tabdocs[data-disabled] .mx-tabdocs__sash {
@@ -737,11 +531,6 @@
     cursor: no-drop;
   }
 
-  .mx-tabdocs__tab[data-dragging],
-  .mx-tabdocs__group[data-dragging] > .mx-tabdocs__bar {
-    opacity: var(--mx-tabdocs-drag-source-opacity);
-  }
-
   .mx-tabdocs__tab {
     -webkit-touch-callout: none;
   }
@@ -757,14 +546,9 @@
     inset-inline-start: 0;
     z-index: var(--mx-z-overlay);
     display: flex;
-    max-inline-size: var(--mx-tabdocs-ghost-max-width);
+    max-inline-size: var(--_tabdocs-drag-copy-max-width);
     overflow: hidden;
     pointer-events: none;
-    color: var(--mx-tabdocs-tab-fg-active);
-    background: var(--mx-tabdocs-ghost-bg);
-    border: var(--mx-tabdocs-ghost-border-width) solid var(--mx-tabdocs-ghost-border-color);
-    border-radius: var(--mx-tabdocs-ghost-radius);
-    box-shadow: var(--mx-tabdocs-ghost-shadow);
   }
 
   .mx-tabdocs__ghost > * {
@@ -772,22 +556,12 @@
     max-inline-size: none;
   }
 
-  .mx-tabdocs__ghost[data-target='copy'] {
-    outline: var(--mx-tabdocs-ghost-copy-width) solid var(--mx-tabdocs-ghost-copy-color);
-  }
-
-  .mx-tabdocs__ghost[data-target='none'] {
-    opacity: var(--mx-tabdocs-ghost-refused-opacity);
-  }
-
-  /* The frame at full strength, the fill under it translucent. Fixed in the viewport, above floating windows. */
+  /* The frame at full strength, the fill under it translucent (`drop`, `drop-fill`). Fixed in the viewport, above floating windows. */
   .mx-tabdocs__drop {
     position: fixed;
     z-index: var(--mx-z-overlay);
     box-sizing: border-box;
     pointer-events: none;
-    border: var(--mx-tabdocs-drop-area-border-width) solid var(--mx-tabdocs-drop-area-border-color);
-    border-radius: var(--mx-tabdocs-drop-area-radius);
     transition-property: left, top, width, height;
     transition-duration: var(--mx-motion-duration-fast);
     transition-timing-function: var(--mx-motion-easing-standard);
@@ -798,16 +572,12 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: var(--mx-tabdocs-drop-area-bg);
-    opacity: var(--mx-tabdocs-drop-area-opacity);
   }
 
   .mx-tabdocs__insert {
     position: fixed;
     z-index: var(--mx-z-overlay);
-    inline-size: var(--mx-tabdocs-drop-mark-width);
     pointer-events: none;
-    background: var(--mx-tabdocs-drop-mark-color);
     translate: -50% 0;
   }
 
@@ -838,25 +608,16 @@
     display: flex;
     inline-size: var(--_w);
     block-size: var(--_h);
-    min-inline-size: var(--mx-tabdocs-window-min-width);
-    min-block-size: var(--mx-tabdocs-window-min-height);
+    min-inline-size: var(--_tabdocs-floating-min-width);
+    min-block-size: var(--_tabdocs-floating-min-height);
     overflow: hidden;
-    background: var(--mx-tabdocs-window-bg);
-    border: var(--mx-tabdocs-window-border-width) solid var(--mx-tabdocs-window-border-color);
-    border-radius: var(--mx-tabdocs-window-radius);
-    box-shadow: var(--mx-tabdocs-window-shadow-inactive);
     transition: box-shadow var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
-  }
-
-  .mx-tabdocs__window[data-active] {
-    box-shadow: var(--mx-tabdocs-window-shadow);
   }
 
   .mx-tabdocs__window[data-maximized] {
     inset: 0;
     inline-size: auto;
     block-size: auto;
-    border-radius: 0;
   }
 
   .mx-tabdocs__window:is([data-moving], [data-resizing]) {
@@ -895,14 +656,14 @@
   }
 
   .mx-tabdocs__window-edge:is([data-edge='top'], [data-edge='bottom']) {
-    inset-inline: var(--mx-tabdocs-window-resize-edge);
-    block-size: var(--mx-tabdocs-window-resize-edge);
+    inset-inline: var(--_tabdocs-window-resize-edge);
+    block-size: var(--_tabdocs-window-resize-edge);
     cursor: ns-resize;
   }
 
   .mx-tabdocs__window-edge:is([data-edge='start'], [data-edge='end']) {
-    inset-block: var(--mx-tabdocs-window-resize-edge);
-    inline-size: var(--mx-tabdocs-window-resize-edge);
+    inset-block: var(--_tabdocs-window-resize-edge);
+    inline-size: var(--_tabdocs-window-resize-edge);
     cursor: ew-resize;
   }
 
@@ -923,8 +684,8 @@
   }
 
   .mx-tabdocs__window-edge[data-edge*='-'] {
-    inline-size: calc(2 * var(--mx-tabdocs-window-resize-edge));
-    block-size: calc(2 * var(--mx-tabdocs-window-resize-edge));
+    inline-size: calc(2 * var(--_tabdocs-window-resize-edge));
+    block-size: calc(2 * var(--_tabdocs-window-resize-edge));
   }
 
   .mx-tabdocs__window-edge:is([data-edge='top-start'], [data-edge='bottom-end']) {
@@ -949,21 +710,16 @@
     min-inline-size: 0;
     min-block-size: 0;
     overflow: hidden;
-    background: var(--mx-tabdocs-area-bg);
   }
 
   .mx-tabdocs__area-sash[aria-orientation='horizontal'] {
     inline-size: auto;
-    block-size: var(--mx-tabdocs-sash-size);
+    block-size: var(--_tabdocs-sash-thickness);
     cursor: row-resize;
   }
 
-  .mx-tabdocs__area-sash[aria-orientation='horizontal']::before {
-    inline-size: auto;
-    block-size: var(--_line);
-  }
-
-  /* A folded area: only its strip shows; slid out, it lies over the documents from its edge. */
+  /* A folded area: only its strip shows; slid out, it lies over the documents from its edge (a line on
+     the side towards them: the `area` unit's `folded-*`). */
   .mx-tabdocs__area[data-auto-hide] {
     position: absolute;
     z-index: var(--_z-panel);
@@ -971,8 +727,6 @@
     box-sizing: border-box;
     max-inline-size: 100%;
     max-block-size: 100%;
-    border: 0 solid var(--mx-tabdocs-panel-border-color);
-    box-shadow: var(--mx-tabdocs-panel-shadow);
     transition:
       translate var(--mx-motion-duration-normal) var(--mx-motion-easing-out),
       display var(--mx-motion-duration-normal) allow-discrete;
@@ -985,25 +739,21 @@
   .mx-tabdocs__area[data-auto-hide][data-side='left'] {
     inset-block: 0;
     inset-inline-start: 0;
-    border-inline-end-width: var(--mx-tabdocs-panel-border-width);
   }
 
   .mx-tabdocs__area[data-auto-hide][data-side='right'] {
     inset-block: 0;
     inset-inline-end: 0;
-    border-inline-start-width: var(--mx-tabdocs-panel-border-width);
   }
 
   .mx-tabdocs__area[data-auto-hide][data-side='top'] {
     inset-inline: 0;
     inset-block-start: 0;
-    border-block-end-width: var(--mx-tabdocs-panel-border-width);
   }
 
   .mx-tabdocs__area[data-auto-hide][data-side='bottom'] {
     inset-inline: 0;
     inset-block-end: 0;
-    border-block-start-width: var(--mx-tabdocs-panel-border-width);
   }
 
   /* It slides in from its edge, and back (the motion tokens: no slide with reduced motion). */
@@ -1046,8 +796,8 @@
   }
 
   /* The pin of a dock area's group stands while the area is docked, and lies down while it is folded. */
-  .mx-tabdocs__area[data-auto-hide] .mx-tabdocs__auto-hide .mx-glyph {
-    rotate: 90deg;
+  .mx-tabdocs__area[data-auto-hide] .mx-tabdocs__auto-hide > :where(.mx-button__icon) > .mx-glyph {
+    rotate: var(--_tabdocs-folded-pin-rotate);
   }
 
   /* The strip of a folded area: its documents' titles along the manager's edge, over the area sliding out from under it. */
@@ -1055,13 +805,9 @@
     position: relative;
     z-index: var(--_z-strip);
     display: flex;
-    gap: var(--mx-tabdocs-autohide-gap);
     min-inline-size: 0;
     min-block-size: 0;
-    padding: var(--mx-tabdocs-autohide-padding);
     overflow: hidden;
-    background: var(--mx-tabdocs-autohide-bg);
-    border: 0 solid var(--mx-tabdocs-autohide-border-color);
   }
 
   .mx-tabdocs__autohide[hidden] {
@@ -1071,23 +817,19 @@
   .mx-tabdocs__autohide[data-side='left'] {
     flex-direction: column;
     grid-area: 1 / 1 / 8 / 2;
-    border-inline-end-width: var(--mx-tabdocs-autohide-border-width);
   }
 
   .mx-tabdocs__autohide[data-side='right'] {
     flex-direction: column;
     grid-area: 1 / 7 / 8 / 8;
-    border-inline-start-width: var(--mx-tabdocs-autohide-border-width);
   }
 
   .mx-tabdocs__autohide[data-side='top'] {
     grid-area: 1 / 2 / 2 / 7;
-    border-block-end-width: var(--mx-tabdocs-autohide-border-width);
   }
 
   .mx-tabdocs__autohide[data-side='bottom'] {
     grid-area: 7 / 2 / 8 / 7;
-    border-block-start-width: var(--mx-tabdocs-autohide-border-width);
   }
 
   .mx-tabdocs__autohide-tab {
@@ -1096,73 +838,33 @@
     display: inline-flex;
     flex: none;
     align-items: center;
-    gap: var(--mx-tabdocs-autohide-tab-gap);
-    min-block-size: var(--mx-tabdocs-autohide-size);
-    margin: 0;
-    padding-block: 0;
-    padding-inline: var(--mx-tabdocs-autohide-tab-padding);
     font: inherit;
-    font-size: var(--mx-tabdocs-autohide-tab-font-size);
-    line-height: var(--mx-tabdocs-autohide-tab-line-height);
-    white-space: nowrap;
-    color: var(--mx-tabdocs-autohide-tab-fg);
-    background: transparent;
-    border: 0;
-    border-radius: var(--mx-tabdocs-autohide-tab-radius);
-    cursor: default;
     user-select: none;
     transition:
       background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-tabdocs__autohide:is([data-side='left'], [data-side='right']) .mx-tabdocs__autohide-tab {
+  .mx-tabdocs__autohide:is([data-side='left'], [data-side='right']) > .mx-tabdocs__autohide-tab {
     writing-mode: vertical-rl;
   }
 
-  .mx-tabdocs__autohide-tab[data-group-start] {
-    margin-inline-start: var(--mx-tabdocs-autohide-group-gap);
-  }
-
-  .mx-tabdocs__autohide-tab:hover:not([data-open]) {
-    color: var(--mx-tabdocs-autohide-tab-fg-hover);
-    background: var(--mx-tabdocs-autohide-tab-bg-hover);
-  }
-
-  .mx-tabdocs__autohide-tab[data-open] {
-    color: var(--mx-tabdocs-autohide-tab-fg-open);
-    background: var(--mx-tabdocs-autohide-tab-bg-open);
-  }
-
-  .mx-tabdocs__autohide-tab:focus-visible {
-    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
-    outline-offset: calc(var(--mx-tabdocs-focus-width) * -1);
-    box-shadow: var(--mx-tabdocs-focus-halo);
-  }
-
-  /* A bar on the side towards the documents: the accent on the title of the area slid out. */
+  /* A bar on the side towards the documents (the `autohide-indicator` unit): the accent on the title of the area slid out. */
   .mx-tabdocs__autohide-tab::after {
     content: '';
     position: absolute;
     inset-block-end: 0;
     inset-inline: 0;
-    block-size: var(--mx-tabdocs-autohide-indicator-width);
-    background: var(--mx-tabdocs-autohide-indicator-color);
-    border-radius: inherit;
   }
 
   /* Top to bottom titles start their block on the right: the left strip's bar is there. */
-  .mx-tabdocs__autohide:is([data-side='bottom'], [data-side='left']) .mx-tabdocs__autohide-tab::after,
-  .mx-tabdocs__autohide[data-side='right']:dir(rtl) .mx-tabdocs__autohide-tab::after {
+  .mx-tabdocs__autohide:is([data-side='bottom'], [data-side='left']) > .mx-tabdocs__autohide-tab::after,
+  .mx-tabdocs__autohide[data-side='right']:dir(rtl) > .mx-tabdocs__autohide-tab::after {
     inset-block: 0 auto;
   }
 
-  .mx-tabdocs__autohide[data-side='left']:dir(rtl) .mx-tabdocs__autohide-tab::after {
+  .mx-tabdocs__autohide[data-side='left']:dir(rtl) > .mx-tabdocs__autohide-tab::after {
     inset-block: auto 0;
-  }
-
-  .mx-tabdocs__autohide-tab[data-open]::after {
-    background: var(--mx-tabdocs-autohide-indicator-color-open);
   }
 
   /* The dock guides: above everything while dragging, never in the pointer's way. */
@@ -1174,14 +876,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-tabdocs-guide-size);
-    block-size: var(--mx-tabdocs-guide-size);
+    /* How far apart the guides stand (read by the script that places them). */
+    gap: calc(var(--_tabdocs-guide-room) * var(--_tabdocs-guide-spacing));
     pointer-events: none;
-    color: var(--mx-tabdocs-guide-fg);
-    background: var(--mx-tabdocs-guide-bg);
-    border: var(--mx-tabdocs-guide-border-width) solid var(--mx-tabdocs-guide-border-color);
-    border-radius: var(--mx-tabdocs-guide-radius);
-    box-shadow: var(--mx-tabdocs-guide-shadow);
     transition:
       background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
@@ -1189,17 +886,6 @@
 
   .mx-tabdocs__guide[hidden] {
     display: none;
-  }
-
-  .mx-tabdocs__guide > .mx-glyph {
-    inline-size: var(--mx-tabdocs-guide-icon-size);
-    block-size: var(--mx-tabdocs-guide-icon-size);
-  }
-
-  .mx-tabdocs__guide[data-pointed] {
-    color: var(--mx-tabdocs-guide-fg-pointed);
-    background: var(--mx-tabdocs-guide-bg-pointed);
-    border-color: var(--mx-tabdocs-guide-border-color-pointed);
   }
 
   /* Read by screen readers only. */
@@ -1230,41 +916,31 @@
   /* The menus of documents (the "…" button, the recently used list): the documents are menu items
      like the commands; only they scroll, under the search. */
   .mx-tabdocs__popup {
-    min-inline-size: var(--mx-tabdocs-list-width);
+    min-inline-size: var(--_tabdocs-menu-width);
   }
 
   .mx-tabdocs__list {
     display: flex;
     flex-direction: column;
-    gap: var(--mx-tabdocs-list-gap);
   }
 
   .mx-tabdocs__list[hidden] {
     display: none;
   }
 
+  /* The search is a row of the menu: its height, text and frame come from the menu-search place. */
   .mx-tabdocs__search {
     flex: none;
   }
 
-  /* The search is a row of the menu: its height and text are the menu items' in every language. */
-  .mx-tabdocs__search .mx-field__box {
-    min-block-size: var(--mx-tabdocs-list-search-height);
-    font-size: var(--mx-tabdocs-list-search-font-size);
-  }
-
   .mx-tabdocs__documents {
-    max-block-size: var(--mx-tabdocs-list-max-height);
+    max-block-size: var(--_tabdocs-menu-max-height);
     overflow-y: auto;
     overscroll-behavior: contain;
   }
 
   .mx-tabdocs__list-dirty {
     flex: none;
-    inline-size: var(--mx-tabdocs-list-dirty-size);
-    block-size: var(--mx-tabdocs-list-dirty-size);
-    background: var(--mx-tabdocs-list-dirty-color);
-    border-radius: var(--mx-tabdocs-dirty-radius);
   }
 
   /* Tablet and phone (data-presentation on the root): the documents' layout keeps its splits, but
@@ -1313,7 +989,6 @@
 
   .mx-tabdocs[data-presentation='tablet'] .mx-tabdocs__group[data-slot='2'] {
     grid-area: 2 / 3 / 3 / 4;
-    border-inline-start: var(--mx-tabdocs-divider-width) solid var(--mx-tabdocs-divider-color);
   }
 
   .mx-tabdocs[data-presentation='tablet'] > .mx-tabdocs__autohide[data-side='left'] {
@@ -1353,8 +1028,6 @@
     inline-size: auto;
     block-size: auto;
     min-block-size: 0;
-    border: 0;
-    box-shadow: none;
     translate: none;
   }
 
@@ -1367,10 +1040,9 @@
     inset-block-end: var(--_tools-height, 0px);
   }
 
-  :is(.mx-tabdocs__tool-panel, .mx-tabdocs__window-sheet) :is(.mx-bottom-sheet__body, .mx-drawer__body) {
+  :is(.mx-tabdocs__tool-panel, .mx-tabdocs__window-sheet) > :where(.mx-bottom-sheet__panel, .mx-drawer__panel) > :is(.mx-bottom-sheet__body, .mx-drawer__body) {
     display: flex;
     flex-direction: column;
-    padding: 0;
     overflow: hidden;
   }
 
@@ -1379,12 +1051,7 @@
     display: flex;
     grid-area: 1 / 1 / 2 / 2;
     align-items: center;
-    gap: var(--mx-tabdocs-phone-bar-gap);
     min-inline-size: 0;
-    min-block-size: var(--mx-tabdocs-phone-bar-height);
-    padding-inline: var(--mx-tabdocs-phone-bar-padding);
-    background: var(--mx-tabdocs-phone-bar-bg);
-    border-block-end: var(--mx-tabdocs-phone-bar-border-width) solid var(--mx-tabdocs-phone-bar-border-color);
   }
 
   .mx-tabdocs__phone-title {
@@ -1392,34 +1059,14 @@
     display: flex;
     flex: 1 1 auto;
     align-items: center;
-    gap: var(--mx-tabdocs-phone-title-gap);
     min-inline-size: 0;
-    min-block-size: var(--mx-tabdocs-phone-bar-height);
     margin: 0;
-    padding-inline: var(--mx-tabdocs-phone-title-padding);
     font: inherit;
-    font-size: var(--mx-tabdocs-phone-title-font-size);
-    font-weight: var(--mx-tabdocs-phone-title-font-weight);
-    line-height: var(--mx-tabdocs-phone-title-line-height);
     text-align: start;
-    color: var(--mx-tabdocs-phone-title-fg);
-    background: transparent;
-    border: 0;
-    border-radius: var(--mx-tabdocs-phone-title-radius);
     overflow: hidden;
     touch-action: pan-y;
     user-select: none;
     -webkit-touch-callout: none;
-  }
-
-  .mx-tabdocs__phone-title:hover:not(:disabled) {
-    background: var(--mx-tabdocs-phone-title-bg-hover);
-  }
-
-  .mx-tabdocs__phone-title:focus-visible {
-    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
-    outline-offset: var(--mx-tabdocs-focus-offset);
-    box-shadow: var(--mx-tabdocs-focus-halo);
   }
 
   .mx-tabdocs__phone-label {
@@ -1436,10 +1083,6 @@
 
   .mx-tabdocs__phone-dirty {
     flex: none;
-    inline-size: var(--mx-tabdocs-phone-dirty-size);
-    block-size: var(--mx-tabdocs-phone-dirty-size);
-    background: var(--mx-tabdocs-phone-dirty-color);
-    border-radius: var(--mx-tabdocs-dirty-radius);
   }
 
   .mx-tabdocs__phone-dirty[hidden] {
@@ -1459,13 +1102,10 @@
   .mx-tabdocs__phone-tools {
     display: flex;
     grid-area: 3 / 1 / 4 / 2;
-    gap: var(--mx-tabdocs-tools-gap);
     min-inline-size: 0;
-    padding: var(--mx-tabdocs-tools-padding);
-    padding-block-end: max(var(--mx-tabdocs-tools-padding), env(safe-area-inset-bottom));
+    padding: var(--_tabdocs-tools-padding);
+    padding-block-end: max(var(--_tabdocs-tools-padding), env(safe-area-inset-bottom));
     overflow-x: auto;
-    background: var(--mx-tabdocs-tools-bg);
-    border-block-start: var(--mx-tabdocs-tools-border-width) solid var(--mx-tabdocs-tools-border-color);
     scrollbar-width: none;
   }
 
@@ -1473,6 +1113,8 @@
     display: none;
   }
 
+  /* The open tool and the shown document look as the design language marks a selection: its fill,
+     text, frame and surface effect (the `phone-tool` and `list-open` units). */
   .mx-tabdocs__phone-tool {
     appearance: none;
     display: flex;
@@ -1480,48 +1122,14 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--mx-tabdocs-tool-gap);
-    min-inline-size: var(--mx-tabdocs-tool-min-width);
-    min-block-size: var(--mx-tabdocs-tool-min-height);
     margin: 0;
-    padding: var(--mx-tabdocs-tool-padding);
     font: inherit;
-    font-size: var(--mx-tabdocs-tool-font-size);
-    line-height: var(--mx-tabdocs-tool-line-height);
-    color: var(--mx-tabdocs-tool-fg);
-    background: transparent;
-    border: 0;
-    border-radius: var(--mx-tabdocs-tool-radius);
-  }
-
-  .mx-tabdocs__phone-tool:hover:not([data-open]) {
-    color: var(--mx-tabdocs-tool-fg-hover);
-    background: var(--mx-tabdocs-tool-bg-hover);
-  }
-
-  /* The open tool and the shown document look as the design language marks a selection: its fill,
-     text, frame and surface effect. */
-  .mx-tabdocs__phone-tool[data-open] {
-    color: var(--mx-tabdocs-tool-fg-open);
-    background: var(--mx-tabdocs-tool-bg-open);
-    box-shadow:
-      inset 0 0 0 var(--mx-tabdocs-tool-border-width-open) var(--mx-tabdocs-tool-border-open),
-      var(--mx-tabdocs-tool-shadow-open);
-  }
-
-  .mx-tabdocs__phone-tool:focus-visible {
-    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
-    outline-offset: var(--mx-tabdocs-focus-offset);
-    box-shadow: var(--mx-tabdocs-focus-halo);
   }
 
   .mx-tabdocs__phone-tool-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-tabdocs-tool-icon-size);
-    block-size: var(--mx-tabdocs-tool-icon-size);
-    font-weight: var(--mx-tabdocs-letter-font-weight);
   }
 
   .mx-tabdocs__phone-tool-icon > :is(svg, img, .mx-glyph) {
@@ -1537,14 +1145,9 @@
   }
 
   /* The phone's list of documents, in its sheet. */
-  .mx-tabdocs__list-search {
-    margin-block-end: var(--mx-tabdocs-phone-list-gap);
-  }
-
   .mx-tabdocs__list-sections {
     display: flex;
     flex-direction: column;
-    gap: var(--mx-tabdocs-phone-list-gap);
   }
 
   .mx-tabdocs__list-section[hidden],
@@ -1552,13 +1155,6 @@
   .mx-tabdocs__list-row[hidden],
   .mx-tabdocs__list-empty[hidden] {
     display: none;
-  }
-
-  .mx-tabdocs__list-head {
-    padding-inline: var(--mx-tabdocs-phone-list-head-padding);
-    font-size: var(--mx-tabdocs-phone-list-head-font-size);
-    font-weight: var(--mx-tabdocs-phone-list-head-font-weight);
-    color: var(--mx-tabdocs-phone-list-head-fg);
   }
 
   .mx-tabdocs__list-rows {
@@ -1571,8 +1167,6 @@
     position: relative;
     display: flex;
     align-items: center;
-    background: var(--mx-tabdocs-phone-list-row-bg);
-    border-radius: var(--mx-tabdocs-phone-list-row-radius);
     transition: translate var(--mx-motion-duration-fast) var(--mx-motion-easing-out);
     touch-action: pan-y;
     user-select: none;
@@ -1580,13 +1174,11 @@
   }
 
   .mx-tabdocs__list-row[data-swiping] {
-    background: var(--mx-tabdocs-phone-list-swipe-bg);
     transition: none;
   }
 
   .mx-tabdocs__list-row[data-lifted] {
     z-index: var(--mx-z-sticky);
-    box-shadow: var(--mx-tabdocs-phone-list-lifted-shadow);
     transition: none;
   }
 
@@ -1600,38 +1192,10 @@
     display: flex;
     flex: 1 1 auto;
     align-items: center;
-    gap: var(--mx-tabdocs-phone-list-row-gap);
     min-inline-size: 0;
-    min-block-size: var(--mx-tabdocs-phone-list-row-height);
     margin: 0;
-    padding-inline: var(--mx-tabdocs-phone-list-row-padding);
     font: inherit;
-    font-size: var(--mx-tabdocs-phone-list-row-font-size);
-    line-height: var(--mx-tabdocs-phone-list-row-line-height);
     text-align: start;
-    color: inherit;
-    background: transparent;
-    border: 0;
-    border-radius: var(--mx-tabdocs-phone-list-row-radius);
-  }
-
-  .mx-tabdocs__list-open:hover {
-    background: var(--mx-tabdocs-phone-list-row-bg-hover);
-  }
-
-  .mx-tabdocs__list-row[aria-current='true'] > .mx-tabdocs__list-open {
-    color: var(--mx-tabdocs-phone-list-row-fg-current);
-    background: var(--mx-tabdocs-phone-list-row-bg-current);
-    box-shadow:
-      inset 0 0 0 var(--mx-tabdocs-phone-list-row-border-width-current) var(--mx-tabdocs-phone-list-row-border-current),
-      var(--mx-tabdocs-phone-list-row-shadow-current);
-  }
-
-  .mx-tabdocs__list-open:focus-visible,
-  .mx-tabdocs__list-close:focus-visible {
-    outline: var(--mx-tabdocs-focus-width) solid var(--mx-tabdocs-focus-color);
-    outline-offset: var(--mx-tabdocs-focus-offset);
-    box-shadow: var(--mx-tabdocs-focus-halo);
   }
 
   .mx-tabdocs__list-text {
@@ -1643,27 +1207,12 @@
   }
 
   .mx-tabdocs__list-row[data-preview] .mx-tabdocs__list-title {
-    font-style: italic;
-  }
-
-  .mx-tabdocs__list-description {
-    font-size: var(--mx-tabdocs-phone-list-description-font-size);
-    color: var(--mx-tabdocs-phone-list-description-fg);
+    font-style: var(--_tabdocs-phone-list-preview-font-style);
   }
 
   .mx-tabdocs__list-pin {
     display: inline-flex;
     flex: none;
-    inline-size: var(--mx-tabdocs-pin-size);
-    block-size: var(--mx-tabdocs-pin-size);
-  }
-
-  .mx-tabdocs__list-dirty {
-    flex: none;
-    inline-size: var(--mx-tabdocs-phone-list-dirty-size);
-    block-size: var(--mx-tabdocs-phone-list-dirty-size);
-    background: var(--mx-tabdocs-phone-list-dirty-color);
-    border-radius: var(--mx-tabdocs-dirty-radius);
   }
 
   .mx-tabdocs__list-close {
@@ -1672,107 +1221,86 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-tabdocs-phone-list-close-size);
-    block-size: var(--mx-tabdocs-phone-list-close-size);
     margin: 0;
-    padding: 0;
-    color: var(--mx-tabdocs-phone-list-close-fg);
-    background: transparent;
-    border: 0;
-    border-radius: var(--mx-tabdocs-phone-list-close-radius);
-  }
-
-  .mx-tabdocs__list-close:hover:not(:disabled) {
-    background: var(--mx-tabdocs-phone-list-close-bg-hover);
   }
 
   .mx-tabdocs__list-close:disabled {
     visibility: hidden;
   }
 
-  .mx-tabdocs__list-empty {
-    padding: var(--mx-tabdocs-phone-list-head-padding);
-    color: var(--mx-tabdocs-phone-list-empty-fg);
-  }
-
   /* A coarse pointer (a finger): larger tabs, close buttons and bar buttons, in every presentation. */
   @media (pointer: coarse) {
-    .mx-tabdocs__tab {
-      min-block-size: var(--mx-tabdocs-touch-tab-height);
-    }
-
-    .mx-tabdocs__close,
-    .mx-tabdocs__pin {
-      inline-size: var(--mx-tabdocs-touch-close-size);
-      block-size: var(--mx-tabdocs-touch-close-size);
-    }
-
-    .mx-tabdocs__autohide-tab {
-      min-block-size: var(--mx-tabdocs-touch-tab-height);
+    .mx-tabdocs {
+      --_tab-height: var(--_tabdocs-touch-tab-height);
+      --_close-size: var(--_tabdocs-touch-close-size);
+      --_pin-size: var(--_tabdocs-touch-close-size);
+      --_autohide-size: var(--_tabdocs-touch-tab-height);
     }
   }
 
+  /* The system colours: over the units' own (`:root` outranks them). */
   @media (forced-colors: active) {
-    .mx-tabdocs__group[data-active] .mx-tabdocs__tab[aria-selected='true']::after {
+    :root .mx-tabdocs__group[data-active] > :where(.mx-tabdocs__bar) .mx-tabdocs__tab[aria-selected='true']::after {
       background: Highlight;
     }
 
-    .mx-tabdocs__tab[aria-selected='true']::after,
-    .mx-tabdocs__dirty,
-    .mx-tabdocs__list-dirty,
-    .mx-tabdocs__badge[data-dot],
-    .mx-tabdocs__thumb {
+    :root .mx-tabdocs__tab[aria-selected='true']::after,
+    :root .mx-tabdocs__dirty,
+    :root .mx-tabdocs__list-dirty,
+    :root .mx-tabdocs__list-open > .mx-tabdocs__list-dirty,
+    :root .mx-tabdocs__badge[data-dot],
+    :root .mx-tabdocs__thumb {
       background: CanvasText;
     }
 
-    .mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab::after {
+    :root .mx-tabdocs__group[data-title] > .mx-tabdocs__bar .mx-tabdocs__tab::after {
       background: transparent;
     }
 
-    .mx-tabdocs__sash::before {
+    :root .mx-tabdocs__sash::before {
       background: CanvasText;
     }
 
-    .mx-tabdocs__drop {
+    :root .mx-tabdocs__drop {
       border-color: Highlight;
     }
 
-    .mx-tabdocs__drop::before {
+    :root .mx-tabdocs__drop::before {
       background: Highlight;
     }
 
-    .mx-tabdocs__insert {
+    :root .mx-tabdocs__insert {
       background: Highlight;
     }
 
-    .mx-tabdocs__ghost {
+    :root .mx-tabdocs__ghost {
       border-color: CanvasText;
     }
 
-    .mx-tabdocs__ghost[data-target='copy'] {
+    :root .mx-tabdocs__ghost[data-target='copy'] {
       outline-color: Highlight;
     }
 
-    .mx-tabdocs__window,
-    .mx-tabdocs__guide {
+    :root .mx-tabdocs__window,
+    :root .mx-tabdocs__guide {
       border-color: CanvasText;
     }
 
-    .mx-tabdocs__window[data-active] {
+    :root .mx-tabdocs__window[data-active] {
       border-color: Highlight;
     }
 
-    .mx-tabdocs__guide[data-pointed] {
+    :root .mx-tabdocs__guide[data-pointed] {
       color: HighlightText;
       background: Highlight;
       border-color: Highlight;
     }
 
-    .mx-tabdocs__autohide-tab::after {
+    :root .mx-tabdocs__autohide-tab::after {
       background: CanvasText;
     }
 
-    .mx-tabdocs__autohide-tab[data-open]::after {
+    :root .mx-tabdocs__autohide-tab[data-open]::after {
       background: Highlight;
     }
   }

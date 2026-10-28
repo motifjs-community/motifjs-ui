@@ -732,7 +732,8 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
       return null;
     }
     if (current) return current;
-    const button = new Button({ variant: 'ghost', size: 'sm' });
+    // Variant and size come from the title bar's places (tool-button, close-button).
+    const button = new Button();
     button.element.classList.add('mx-form__tool');
     button.element.addEventListener('click', click);
     this.placeIn(button, this.parts.tools);
@@ -828,9 +829,8 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     if (parts.chip) return;
     const target = this.minimizeTarget;
     if (!target) return;
+    // Its variant and size come from its place (window.chip).
     const chip = new Button({
-      variant: 'outline',
-      size: 'sm',
       // A literal title: an & in it is not an access key here.
       text: () => parseAccessKey(this.text).text.replace(/&/g, '&&'),
       icon: () => {

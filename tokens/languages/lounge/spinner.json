@@ -1,0 +1,47 @@
+{
+  "spinner": {
+    "gap": { "$value": "{space.2}" },
+    "cover-padding": { "$value": "{space.4}" },
+    "cover-background": { "$value": "{color.bg.glass}" },
+    "size": {
+      "sm": { "$value": "{icon.size.md}" },
+      "md": { "$value": {"value": 1.5, "unit": "rem"} },
+      "lg": { "$value": {"value": 2.5, "unit": "rem"} }
+    },
+    "ring-width": {
+      "sm": { "$value": "{border.width.2}" },
+      "md": { "$value": {"value": 0.1875, "unit": "rem"} },
+      "lg": { "$value": {"value": 0.25, "unit": "rem"} }
+    },
+    "ring-style": { "$value": "solid" },
+    "duration": { "$value": "calc({motion.duration.slow} * 3)" },
+    "fg": { "$value": "{color.fg.secondary}" },
+    "track-color": { "$value": "{color.stroke.control.default}" },
+    "accent": { "$value": "{progress.accent}" },
+    "neutral": { "$value": "{progress.neutral}" },
+    "success": { "$value": "{progress.success}" },
+    "caution": { "$value": "{progress.caution}" },
+    "danger": { "$value": "{progress.danger}" },
+    "radius": { "$value": "{radius.full}" },
+    "cover-fg": { "$value": "{color.fg.primary}" },
+    "focus-width": { "$value": "{focus.ring.width}" },
+    "focus-offset": { "$value": "calc({focus.ring.width} * -1)" },
+    "focus-color": { "$value": "{focus.ring.color}" },
+    "focus-halo": { "$value": "{focus.ring.halo}" },
+    "shape-size": {
+      "sm": { "$value": "{spinner.size.sm}" },
+      "md": { "$value": "{spinner.size.md}" },
+      "lg": { "$value": "{spinner.size.lg}" }
+    },
+    "shape-1": { "$value": "soft-burst" },
+    "shape-2": { "$value": "cookie-9" },
+    "shape-3": { "$value": "pentagon" },
+    "shape-4": { "$value": "pill" },
+    "shape-5": { "$value": "sunny" },
+    "shape-6": { "$value": "cookie-4" },
+    "shape-7": { "$value": "oval" },
+    "morph-duration": { "$value": "calc({motion.duration.slow} * 15)" },
+    "morph-easing": { "$value": [0.34,1.56,0.64,1] },
+    "spin-duration": { "$value": "calc({motion.duration.slow} * 9)" }
+  }
+}

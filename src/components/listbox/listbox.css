@@ -1,79 +1,29 @@
-/* ListBox: a list that stays on the page, in the field's box, with a search box above it. The look
-   binds to data-selection-mode, data-check-boxes and the field's state attributes; the rows are the
-   shared list's (data-active, data-selected, data-select-all, data-mixed). */
+/* ListBox: a list that stays on the page, in the field's box, with a search box above it. The box
+   itself is the field's, its values the list box's own (the `field` place); the search box and the
+   list are places too. Only the layout is here: the space it lays out, its check boxes, the ring
+   around the keys' row and that row while the list is not in use are units of the list box's
+   schema (`$units`), painted by units.css. The look binds to data-selection-mode, data-check-boxes
+   and the field's state attributes; the rows are the shared list's (data-active, data-selected,
+   data-select-all, data-mixed). */
 @layer mx.components {
-  .mx-list-box {
-    --_bg-hover: var(--_bg);
-  }
-
-  .mx-list-box .mx-field__box {
+  .mx-list-box > .mx-field__box {
     flex-direction: column;
     align-items: stretch;
-    gap: var(--mx-listbox-gap);
-    padding: var(--mx-listbox-padding);
-    cursor: default;
   }
 
-  .mx-list-box .mx-field__control {
+  .mx-list-box > :where(.mx-field__box) > .mx-field__control {
     outline: none;
   }
 
   /* A disabled list cannot be focused, so it does not scroll either. */
-  .mx-list-box[data-disabled] .mx-list {
+  .mx-list-box[data-disabled] > :where(.mx-field__box) > .mx-list {
     overflow: hidden;
   }
 
-  /* The highlight shows while the list is in use; the keys also draw the focus ring around it. */
-  .mx-list-box .mx-list:not(:focus, :hover) .mx-list__item[data-active]:not([data-selected]) {
-    background: transparent;
-  }
-
-  .mx-list-box .mx-list:is(:focus-visible, [data-keys]:focus) .mx-list__item[data-active] {
-    outline: var(--mx-listbox-focus-width) solid var(--mx-listbox-focus-color);
-    outline-offset: calc(-1 * var(--mx-listbox-focus-width));
-  }
-
-  .mx-list-box[data-check-boxes] .mx-list__check {
+  .mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) .mx-list__check {
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-listbox-check-size);
-    block-size: var(--mx-listbox-check-size);
-    color: transparent;
     visibility: visible;
-    background: var(--mx-listbox-check-bg);
-    border: var(--mx-listbox-check-border-width) solid var(--mx-listbox-check-border);
-    border-radius: var(--mx-listbox-check-radius);
-  }
-
-  .mx-list-box[data-check-boxes] .mx-list__item[data-selected] .mx-list__check {
-    color: var(--mx-listbox-checked-mark);
-    background: var(--mx-listbox-checked-bg);
-    border-color: var(--mx-listbox-checked-border);
-  }
-
-  .mx-list-box[data-check-boxes] .mx-list__item[aria-disabled='true'] .mx-list__check {
-    background: var(--mx-listbox-check-bg-disabled);
-    border-color: var(--mx-listbox-check-border-disabled);
-  }
-
-  .mx-list-box[data-disabled][data-check-boxes] .mx-list__item[data-selected] .mx-list__check {
-    color: var(--mx-listbox-checked-mark-disabled);
-    background: var(--mx-listbox-checked-bg-disabled);
-    border-color: transparent;
-  }
-
-  /* A line under "Select all", drawn over the row so every row keeps one height. */
-  .mx-list__item[data-select-all] {
-    font-weight: var(--mx-listbox-select-all-font-weight);
-  }
-
-  .mx-list__item[data-select-all]::after {
-    content: '';
-    position: absolute;
-    inset-inline: 0;
-    inset-block-end: 0;
-    block-size: var(--mx-listbox-divider-width);
-    background: var(--mx-listbox-divider);
   }
 
   .mx-list-box__search {

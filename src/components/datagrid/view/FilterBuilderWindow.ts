@@ -54,7 +54,9 @@ export class FilterBuilderWindow<T> {
     } as FilterBuilderProps);
     builder.element.classList.add('mx-data-grid__filter-builder');
     const ok = new Button({ text: () => model.text('ok'), tone: 'accent' });
-    const cancel = new Button({ text: () => model.text('cancel'), variant: 'outline' });
+    const cancel = new Button({ text: () => model.text('cancel') });
+    ok.element.classList.add('mx-data-grid__apply');
+    cancel.element.classList.add('mx-data-grid__dismiss');
     ok.element.addEventListener('click', () => untracked(() => this.close(true)));
     cancel.element.addEventListener('click', () => untracked(() => this.close(false)));
     const footer = new Component<HTMLDivElement>('div');

@@ -3,7 +3,7 @@ import { Spinner, type ControlSize, type ProgressTone } from '@motifx-community/
 const SIZES: ControlSize[] = ['sm', 'md', 'lg'];
 const TONES: ProgressTone[] = ['neutral', 'success', 'caution', 'danger'];
 
-/** Spinners in every size, with a label beside or under them, and in the tones. */
+/** Spinners in every size, with a label beside or under them, in a container of their own, and in the tones. */
 export default function Spinners() {
   return (
     <>
@@ -12,6 +12,7 @@ export default function Spinners() {
       ))}
       <Spinner label="Loading orders" />
       <Spinner label="Saving" labelPosition="bottom" size="lg" />
+      <Spinner label="Syncing" labelPosition="bottom" size="lg" contained />
       {TONES.map((tone) => (
         <Spinner key={tone} tone={tone} size="sm" label={tone} />
       ))}

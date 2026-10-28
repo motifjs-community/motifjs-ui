@@ -1,0 +1,41 @@
+{
+  "combo-box": {
+    "field": {
+      "variant": { "$value": "{field.variant}" },
+      "box": {
+        "bg": { "$value": "{field.box.bg}" },
+        "hover": {
+          "bg": { "$value": "{field.box.hover.bg}" }
+        },
+        "focus": {
+          "bg": { "$value": "{field.box.focus.bg}" },
+          "shadow": { "$value": {"color": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0.12}, "offsetX": {"value": 0, "unit": "px"}, "offsetY": {"value": 1, "unit": "px"}, "blur": {"value": 2, "unit": "px"}, "spread": {"value": 0, "unit": "px"}, "inset": true} }
+        },
+        "radius": { "$value": "{field.box.radius}" },
+        "shadow": { "$value": "{field.box.shadow}" }
+      },
+      "frame": {
+        "border-color": { "$value": "{field.frame.border-color}" },
+        "hover": {
+          "border-color": { "$value": "{color.stroke.control.default}" },
+          "border-bottom-color": { "$value": "{color.stroke.control.default}" }
+        },
+        "focus": {
+          "border-color": { "$value": "{color.stroke.control.default}" },
+          "border-bottom-color": { "$value": "{field.frame.focus.border-bottom-color}" },
+          "border-width": { "$value": "{border.width.1}" }
+        },
+        "border-bottom-color": { "$value": "{color.stroke.control.default}" }
+      }
+    },
+    "arrow-glyph": {
+      "icon": { "$value": "chevron-down" },
+      "open": {
+        "rotate": { "$value": {"value": 0.5, "unit": "turn"} }
+      }
+    },
+    "loading": {
+      "color": { "$value": "{color.fg.secondary}" }
+    }
+  }
+}

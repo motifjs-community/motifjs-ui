@@ -1,0 +1,734 @@
+{
+  "field": {
+    "$description": "Field: the box of the text-like editors, with its label and the line under it. `variant`, `label-mode` and `size` are the design language’s defaults for a field that does not set them; `notch: cut` opens the top of an outline frame under a floating label that has moved up (the frame is then drawn by its three pieces). The sizes and the room between the parts are plain tokens; every part’s look is a unit.",
+    "$selector": ".mx-field",
+    "width": { "$type": "dimension" },
+    "variant": { "$type": "keyword" },
+    "label-mode": { "$type": "keyword" },
+    "notch": { "$type": "keyword" },
+    "size": { "$type": "keyword", "$description": "The size of a field that is not given one: sm, md or lg. A place may decide it (a search box in a list)." },
+    "border-width": { "$type": "dimension", "$description": "The frame’s width, and the clear room in the box’s border where the frame lies." },
+    "gap": { "$type": "dimension", "$description": "Between the parts in the box, and in the line under it." },
+    "label-gap": { "$type": "dimension", "$description": "Between a label above the box and the box." },
+    "label-width": { "$type": "dimension", "$description": "A label beside the box." },
+    "label-font-weight": { "$type": "fontWeight", "$description": "The label above or beside the box, and a floating label that has moved up." },
+    "label-font-size": { "$type": "dimension", "$description": "The label above or beside the box (1em: the field’s text)." },
+    "icon-size": { "$type": "dimension", "$description": "The icon at the start of the box, and an icon in a button." },
+    "button-inset": { "$type": "dimension", "$description": "From the box’s edges to the buttons in it." },
+    "floating-height": { "$type": "dimension", "$description": "A box with a floating label: its least height." },
+    "floating-font-size": { "$type": "dimension", "$description": "A floating label that has moved up (the notch is cut to its width)." },
+    "floating-label-inset": { "$type": "dimension", "$description": "A floating label that has moved up: how far from the top of the box its band starts." },
+    "floating-label-height": { "$type": "dimension", "$description": "The band the moved-up label is centred in." },
+    "floating-label-font-weight": { "$type": "fontWeight", "$description": "A floating label resting in the box." },
+    "floating-padding": { "$type": "dimension", "$description": "A floating label: the room under the text in the box." },
+    "notch-gap": { "$type": "dimension", "$description": "Between the notch’s ends and the label in it." },
+    "font-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "padding": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "padding-start": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "padding-end": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "$units": {
+      "box": {
+        "$description": "The box around the editor and its buttons: its fill, shadow and corners, the text colour. Its border is clear room for the frame. States per variant (`filled-…`, `underline-…`; the outline at rest), per status (`invalid`, `readonly`, `disabled`) and per interaction (`hover`, `focus`, `pressed`: a field pressed like a button).",
+        "selector": ":where(.mx-field) > .mx-field__box",
+        "defaults": {
+          "min-height": "var(--_box-height)",
+          "padding-start": "var(--_padding-start)",
+          "padding-end": "var(--_padding-end)",
+          "gap": "var(--_field-gap)",
+          "font-size": "var(--_font-size)",
+          "border-width": "var(--_field-border-width)",
+          "border-style": "solid",
+          "border-color": "transparent"
+        },
+        "states": {
+          "hover": ":where(.mx-field[data-variant='outline']:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))))",
+          "focus": ":where(.mx-field[data-variant='outline']:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))",
+          "pressed": {
+            "selector": ".mx-field[data-pressable]:where([data-variant='outline']:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:active:focus-within:not(:has(.mx-field :focus, .mx-field__button:active))",
+            "from": "focus"
+          },
+          "invalid": ".mx-field[data-invalid]:where([data-variant='outline']:not([data-disabled])) > .mx-field__box",
+          "invalid-hover": {
+            "selector": ".mx-field[data-invalid]:where([data-variant='outline']:not([data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))))",
+            "from": "invalid"
+          },
+          "invalid-focus": {
+            "selector": ".mx-field[data-invalid]:where([data-variant='outline']:not([data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))",
+            "from": "invalid"
+          },
+          "invalid-pressed": {
+            "selector": ".mx-field[data-invalid][data-pressable]:where([data-variant='outline']:not([data-readonly], [data-disabled])) > .mx-field__box:active:focus-within:not(:has(.mx-field :focus, .mx-field__button:active))",
+            "from": "invalid-focus"
+          },
+          "readonly-invalid": {
+            "selector": ".mx-field[data-invalid][data-readonly]:where([data-variant='outline']:not([data-disabled])) > .mx-field__box",
+            "from": "invalid"
+          },
+          "readonly-invalid-focus": {
+            "selector": ".mx-field[data-invalid][data-readonly]:where([data-variant='outline']:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))",
+            "from": "readonly-invalid"
+          },
+          "readonly": ".mx-field[data-readonly]:where([data-variant='outline']:not([data-invalid], [data-disabled])) > .mx-field__box",
+          "readonly-focus": {
+            "selector": ".mx-field[data-readonly]:where([data-variant='outline']:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))",
+            "from": "readonly"
+          },
+          "disabled": ".mx-field[data-disabled]:where([data-variant='outline']) > .mx-field__box",
+          "filled": ".mx-field[data-variant='filled'] > .mx-field__box",
+          "filled-hover": {
+            "selector": ".mx-field[data-variant='filled']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))))",
+            "from": "filled"
+          },
+          "filled-focus": {
+            "selector": ".mx-field[data-variant='filled']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))",
+            "from": "filled"
+          },
+          "filled-pressed": {
+            "selector": ".mx-field[data-variant='filled'][data-pressable]:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:active:focus-within:not(:has(.mx-field :focus, .mx-field__button:active))",
+            "from": "filled-focus"
+          },
+          "filled-invalid": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid]:where(:not([data-disabled])) > .mx-field__box",
+            "from": "filled"
+          },
+          "filled-invalid-hover": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))))",
+            "from": "filled-invalid"
+          },
+          "filled-invalid-focus": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))",
+            "from": "filled-invalid"
+          },
+          "filled-invalid-pressed": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid][data-pressable]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:active:focus-within:not(:has(.mx-field :focus, .mx-field__button:active))",
+            "from": "filled-invalid-focus"
+          },
+          "filled-readonly-invalid": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box",
+            "from": "filled-invalid"
+          },
+          "filled-readonly-invalid-focus": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))",
+            "from": "filled-readonly-invalid"
+          },
+          "filled-readonly": {
+            "selector": ".mx-field[data-variant='filled'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box",
+            "from": "filled"
+          },
+          "filled-readonly-focus": {
+            "selector": ".mx-field[data-variant='filled'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))",
+            "from": "filled-readonly"
+          },
+          "filled-disabled": {
+            "selector": ".mx-field[data-variant='filled'][data-disabled] > .mx-field__box",
+            "from": "filled"
+          },
+          "underline": ".mx-field[data-variant='underline'] > .mx-field__box",
+          "underline-hover": {
+            "selector": ".mx-field[data-variant='underline']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))))",
+            "from": "underline"
+          },
+          "underline-focus": {
+            "selector": ".mx-field[data-variant='underline']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))",
+            "from": "underline"
+          },
+          "underline-pressed": {
+            "selector": ".mx-field[data-variant='underline'][data-pressable]:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:active:focus-within:not(:has(.mx-field :focus, .mx-field__button:active))",
+            "from": "underline-focus"
+          },
+          "underline-invalid": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid]:where(:not([data-disabled])) > .mx-field__box",
+            "from": "underline"
+          },
+          "underline-invalid-hover": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))))",
+            "from": "underline-invalid"
+          },
+          "underline-invalid-focus": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))",
+            "from": "underline-invalid"
+          },
+          "underline-invalid-pressed": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid][data-pressable]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:active:focus-within:not(:has(.mx-field :focus, .mx-field__button:active))",
+            "from": "underline-invalid-focus"
+          },
+          "underline-readonly-invalid": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box",
+            "from": "underline-invalid"
+          },
+          "underline-readonly-invalid-focus": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))",
+            "from": "underline-readonly-invalid"
+          },
+          "underline-readonly": {
+            "selector": ".mx-field[data-variant='underline'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box",
+            "from": "underline"
+          },
+          "underline-readonly-focus": {
+            "selector": ".mx-field[data-variant='underline'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))",
+            "from": "underline-readonly"
+          },
+          "underline-disabled": {
+            "selector": ".mx-field[data-variant='underline'][data-disabled] > .mx-field__box",
+            "from": "underline"
+          }
+        }
+      },
+      "layer": {
+        "$description": "A state layer over the box’s fill, under the frame (its opacity per state).",
+        "selector": ":where(.mx-field) > .mx-field__box::before",
+        "defaults": {
+          "display": "none",
+          "radius": "inherit"
+        },
+        "states": {
+          "hover": ":where(.mx-field:not([data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))))::before",
+          "focus": ":where(.mx-field:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys])))::before",
+          "pressed": {
+            "selector": ".mx-field[data-pressable]:where(:not([data-disabled])) > .mx-field__box:active:focus-within:not(:has(.mx-field :focus, .mx-field__button:active))::before",
+            "from": "focus"
+          }
+        }
+      },
+      "frame": {
+        "$description": "The frame: the box’s border, laid over it (`border-bottom-…`: its bottom edge). Its corners follow the box’s. States as the box’s.",
+        "selector": ":where(.mx-field) > .mx-field__box > .mx-field__frame",
+        "defaults": {
+          "display": "flex",
+          "border-width": "var(--_field-border-width)",
+          "border-style": "solid",
+          "radius": "inherit"
+        },
+        "states": {
+          "hover": ":where(.mx-field[data-variant='outline']:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame",
+          "focus": ":where(.mx-field[data-variant='outline']:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame",
+          "invalid": ".mx-field[data-invalid]:where([data-variant='outline']:not([data-disabled])) > .mx-field__box > .mx-field__frame",
+          "invalid-hover": {
+            "selector": ".mx-field[data-invalid]:where([data-variant='outline']:not([data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame",
+            "from": "invalid"
+          },
+          "invalid-focus": {
+            "selector": ".mx-field[data-invalid]:where([data-variant='outline']:not([data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame",
+            "from": "invalid"
+          },
+          "readonly-invalid": {
+            "selector": ".mx-field[data-invalid][data-readonly]:where([data-variant='outline']:not([data-disabled])) > .mx-field__box > .mx-field__frame",
+            "from": "invalid"
+          },
+          "readonly-invalid-focus": {
+            "selector": ".mx-field[data-invalid][data-readonly]:where([data-variant='outline']:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame",
+            "from": "readonly-invalid"
+          },
+          "readonly": ".mx-field[data-readonly]:where([data-variant='outline']:not([data-invalid], [data-disabled])) > .mx-field__box > .mx-field__frame",
+          "readonly-focus": {
+            "selector": ".mx-field[data-readonly]:where([data-variant='outline']:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame",
+            "from": "readonly"
+          },
+          "disabled": ".mx-field[data-disabled]:where([data-variant='outline']) > .mx-field__box > .mx-field__frame",
+          "filled": ".mx-field[data-variant='filled'] > .mx-field__box > .mx-field__frame",
+          "filled-hover": {
+            "selector": ".mx-field[data-variant='filled']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame",
+            "from": "filled"
+          },
+          "filled-focus": {
+            "selector": ".mx-field[data-variant='filled']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame",
+            "from": "filled"
+          },
+          "filled-invalid": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame",
+            "from": "filled"
+          },
+          "filled-invalid-hover": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame",
+            "from": "filled-invalid"
+          },
+          "filled-invalid-focus": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame",
+            "from": "filled-invalid"
+          },
+          "filled-readonly-invalid": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame",
+            "from": "filled-invalid"
+          },
+          "filled-readonly-invalid-focus": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame",
+            "from": "filled-readonly-invalid"
+          },
+          "filled-readonly": {
+            "selector": ".mx-field[data-variant='filled'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box > .mx-field__frame",
+            "from": "filled"
+          },
+          "filled-readonly-focus": {
+            "selector": ".mx-field[data-variant='filled'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame",
+            "from": "filled-readonly"
+          },
+          "filled-disabled": {
+            "selector": ".mx-field[data-variant='filled'][data-disabled] > .mx-field__box > .mx-field__frame",
+            "from": "filled"
+          },
+          "underline": ".mx-field[data-variant='underline'] > .mx-field__box > .mx-field__frame",
+          "underline-hover": {
+            "selector": ".mx-field[data-variant='underline']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame",
+            "from": "underline"
+          },
+          "underline-focus": {
+            "selector": ".mx-field[data-variant='underline']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame",
+            "from": "underline"
+          },
+          "underline-invalid": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame",
+            "from": "underline"
+          },
+          "underline-invalid-hover": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame",
+            "from": "underline-invalid"
+          },
+          "underline-invalid-focus": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame",
+            "from": "underline-invalid"
+          },
+          "underline-readonly-invalid": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame",
+            "from": "underline-invalid"
+          },
+          "underline-readonly-invalid-focus": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame",
+            "from": "underline-readonly-invalid"
+          },
+          "underline-readonly": {
+            "selector": ".mx-field[data-variant='underline'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box > .mx-field__frame",
+            "from": "underline"
+          },
+          "underline-readonly-focus": {
+            "selector": ".mx-field[data-variant='underline'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame",
+            "from": "underline-readonly"
+          },
+          "underline-disabled": {
+            "selector": ".mx-field[data-variant='underline'][data-disabled] > .mx-field__box > .mx-field__frame",
+            "from": "underline"
+          }
+        }
+      },
+      "frame-start": {
+        "$description": "With a notch cut for a floating label (an outline field): the frame’s piece before the notch, with its start corners. Its colours and corners are the frame’s.",
+        "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'] > .mx-field__box > .mx-field__frame > .mx-field__frame-start",
+        "defaults": {
+          "border-width": "var(--_field-border-width)",
+          "border-style": "solid",
+          "border-end-width": "0px",
+          "border-color": "inherit",
+          "radius-start": "inherit"
+        },
+        "states": {
+          "hover": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame > .mx-field__frame-start",
+          "focus": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__frame-start",
+          "invalid": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__frame-start",
+          "invalid-hover": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame > .mx-field__frame-start",
+            "from": "invalid"
+          },
+          "invalid-focus": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__frame-start",
+            "from": "invalid"
+          },
+          "readonly-invalid": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__frame-start",
+            "from": "invalid"
+          },
+          "readonly-invalid-focus": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__frame-start",
+            "from": "readonly-invalid"
+          },
+          "readonly": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__frame-start",
+          "readonly-focus": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__frame-start",
+            "from": "readonly"
+          },
+          "disabled": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-disabled] > .mx-field__box > .mx-field__frame > .mx-field__frame-start"
+        }
+      },
+      "frame-notch": {
+        "$description": "With a notch cut for a floating label: the frame’s piece under the label; its top opens once the label has moved up. Its colours are the frame’s.",
+        "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'] > .mx-field__box > .mx-field__frame > .mx-field__frame-notch",
+        "defaults": {
+          "border-width": "var(--_field-border-width)",
+          "border-style": "solid",
+          "border-inline-width": "0px",
+          "border-color": "inherit",
+          "border-top-color": "var(--_notch-open, inherit)",
+          "padding-inline": "var(--_notch-gap, 0px)"
+        },
+        "states": {
+          "hover": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame > .mx-field__frame-notch",
+          "focus": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__frame-notch",
+          "invalid": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__frame-notch",
+          "invalid-hover": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame > .mx-field__frame-notch",
+            "from": "invalid"
+          },
+          "invalid-focus": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__frame-notch",
+            "from": "invalid"
+          },
+          "readonly-invalid": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__frame-notch",
+            "from": "invalid"
+          },
+          "readonly-invalid-focus": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__frame-notch",
+            "from": "readonly-invalid"
+          },
+          "readonly": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__frame-notch",
+          "readonly-focus": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__frame-notch",
+            "from": "readonly"
+          },
+          "disabled": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-disabled] > .mx-field__box > .mx-field__frame > .mx-field__frame-notch"
+        }
+      },
+      "frame-end": {
+        "$description": "With a notch cut for a floating label: the frame’s piece after the notch, with its end corners. Its colours and corners are the frame’s.",
+        "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'] > .mx-field__box > .mx-field__frame > .mx-field__frame-end",
+        "defaults": {
+          "border-width": "var(--_field-border-width)",
+          "border-style": "solid",
+          "border-start-width": "0px",
+          "border-color": "inherit",
+          "radius-end": "inherit"
+        },
+        "states": {
+          "hover": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame > .mx-field__frame-end",
+          "focus": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__frame-end",
+          "invalid": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__frame-end",
+          "invalid-hover": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame > .mx-field__frame-end",
+            "from": "invalid"
+          },
+          "invalid-focus": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__frame-end",
+            "from": "invalid"
+          },
+          "readonly-invalid": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__frame-end",
+            "from": "invalid"
+          },
+          "readonly-invalid-focus": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__frame-end",
+            "from": "readonly-invalid"
+          },
+          "readonly": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__frame-end",
+          "readonly-focus": {
+            "selector": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__frame-end",
+            "from": "readonly"
+          },
+          "disabled": ".mx-field[data-notch][data-variant='outline'][data-label-mode='floating'][data-disabled] > .mx-field__box > .mx-field__frame > .mx-field__frame-end"
+        }
+      },
+      "indicator": {
+        "$description": "A line along the bottom inside the frame (an inset shadow), following its inner corners. States as the box’s.",
+        "selector": ":where(.mx-field) > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+        "defaults": {
+          "display": "block"
+        },
+        "states": {
+          "hover": ":where(.mx-field[data-variant='outline']:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame > .mx-field__indicator",
+          "focus": ":where(.mx-field[data-variant='outline']:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__indicator",
+          "invalid": ".mx-field[data-invalid]:where([data-variant='outline']:not([data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+          "invalid-hover": {
+            "selector": ".mx-field[data-invalid]:where([data-variant='outline']:not([data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame > .mx-field__indicator",
+            "from": "invalid"
+          },
+          "invalid-focus": {
+            "selector": ".mx-field[data-invalid]:where([data-variant='outline']:not([data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__indicator",
+            "from": "invalid"
+          },
+          "readonly-invalid": {
+            "selector": ".mx-field[data-invalid][data-readonly]:where([data-variant='outline']:not([data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+            "from": "invalid"
+          },
+          "readonly-invalid-focus": {
+            "selector": ".mx-field[data-invalid][data-readonly]:where([data-variant='outline']:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__indicator",
+            "from": "readonly-invalid"
+          },
+          "readonly": ".mx-field[data-readonly]:where([data-variant='outline']:not([data-invalid], [data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+          "readonly-focus": {
+            "selector": ".mx-field[data-readonly]:where([data-variant='outline']:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__indicator",
+            "from": "readonly"
+          },
+          "disabled": ".mx-field[data-disabled]:where([data-variant='outline']) > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+          "filled": ".mx-field[data-variant='filled'] > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+          "filled-hover": {
+            "selector": ".mx-field[data-variant='filled']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame > .mx-field__indicator",
+            "from": "filled"
+          },
+          "filled-focus": {
+            "selector": ".mx-field[data-variant='filled']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__indicator",
+            "from": "filled"
+          },
+          "filled-invalid": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+            "from": "filled"
+          },
+          "filled-invalid-hover": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame > .mx-field__indicator",
+            "from": "filled-invalid"
+          },
+          "filled-invalid-focus": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__indicator",
+            "from": "filled-invalid"
+          },
+          "filled-readonly-invalid": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+            "from": "filled-invalid"
+          },
+          "filled-readonly-invalid-focus": {
+            "selector": ".mx-field[data-variant='filled'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__indicator",
+            "from": "filled-readonly-invalid"
+          },
+          "filled-readonly": {
+            "selector": ".mx-field[data-variant='filled'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+            "from": "filled"
+          },
+          "filled-readonly-focus": {
+            "selector": ".mx-field[data-variant='filled'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__indicator",
+            "from": "filled-readonly"
+          },
+          "filled-disabled": {
+            "selector": ".mx-field[data-variant='filled'][data-disabled] > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+            "from": "filled"
+          },
+          "underline": ".mx-field[data-variant='underline'] > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+          "underline-hover": {
+            "selector": ".mx-field[data-variant='underline']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame > .mx-field__indicator",
+            "from": "underline"
+          },
+          "underline-focus": {
+            "selector": ".mx-field[data-variant='underline']:where(:not([data-invalid], [data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__indicator",
+            "from": "underline"
+          },
+          "underline-invalid": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+            "from": "underline"
+          },
+          "underline-invalid-hover": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:hover:where(:not(:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))))) > .mx-field__frame > .mx-field__indicator",
+            "from": "underline-invalid"
+          },
+          "underline-invalid-focus": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid]:where(:not([data-readonly], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__indicator",
+            "from": "underline-invalid"
+          },
+          "underline-readonly-invalid": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+            "from": "underline-invalid"
+          },
+          "underline-readonly-invalid-focus": {
+            "selector": ".mx-field[data-variant='underline'][data-invalid][data-readonly]:where(:not([data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__indicator",
+            "from": "underline-readonly-invalid"
+          },
+          "underline-readonly": {
+            "selector": ".mx-field[data-variant='underline'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+            "from": "underline"
+          },
+          "underline-readonly-focus": {
+            "selector": ".mx-field[data-variant='underline'][data-readonly]:where(:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__frame > .mx-field__indicator",
+            "from": "underline-readonly"
+          },
+          "underline-disabled": {
+            "selector": ".mx-field[data-variant='underline'][data-disabled] > .mx-field__box > .mx-field__frame > .mx-field__indicator",
+            "from": "underline"
+          }
+        }
+      },
+      "ring": {
+        "$description": "A ring around the box under the keys (outside it by negative margins).",
+        "selector": ":where(.mx-field) > .mx-field__box::after",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "focus": ":where(.mx-field) > .mx-field__box:focus-within:has(:focus-visible):not(:has(.mx-field :focus))::after"
+        }
+      },
+      "label": {
+        "$description": "The label: above, beside or in the box (`floating`, moving up once there is something in it); its size, weight and the room under it are the field’s `label-*` and `floating-*` tokens.",
+        "selector": ":where(.mx-field) > .mx-field__label",
+        "defaults": {
+          "margin-bottom": "var(--_label-gap)",
+          "font-size": "var(--_label-size)",
+          "font-weight": "var(--_label-weight)"
+        },
+        "states": {
+          "focus": ".mx-field:where(:not([data-label-mode='floating'], [data-disabled])):focus-within:not(:has(.mx-field :focus)) > .mx-field__label",
+          "invalid": ".mx-field[data-invalid]:where(:not([data-label-mode='floating'], [data-disabled]):not(:focus-within:not(:has(.mx-field :focus)))) > .mx-field__label",
+          "disabled": ".mx-field[data-disabled]:where(:not([data-label-mode='floating'])) > .mx-field__label",
+          "floating": ".mx-field[data-label-mode='floating'] > .mx-field__label",
+          "floating-focus": {
+            "selector": ".mx-field[data-label-mode='floating']:where(:not([data-disabled])):focus-within:not(:has(.mx-field :focus)) > .mx-field__label",
+            "from": "floating"
+          },
+          "floating-invalid": {
+            "selector": ".mx-field[data-label-mode='floating']:where([data-invalid]:not(:focus-within:not(:has(.mx-field :focus)))) > .mx-field__label",
+            "from": "floating"
+          },
+          "floating-disabled": {
+            "selector": ".mx-field[data-label-mode='floating']:where([data-disabled]:not([data-invalid])) > .mx-field__label",
+            "from": "floating"
+          }
+        }
+      },
+      "required": {
+        "$description": "The mark after the label of a required field.",
+        "selector": ":where(.mx-field > .mx-field__label) > .mx-field__required",
+        "states": {
+          "disabled": ".mx-field[data-disabled] > :where(.mx-field__label) > .mx-field__required"
+        }
+      },
+      "icon": {
+        "$description": "The icon at the start of the box.",
+        "selector": ":where(.mx-field > .mx-field__box) > .mx-field__icon",
+        "defaults": {
+          "size": "var(--_field-icon-size)"
+        },
+        "states": {
+          "focus": ".mx-field:where(:not([data-invalid], [data-disabled])) > .mx-field__box:focus-within:not(:has(.mx-field :focus, > .mx-list:focus:not(:focus-visible, [data-keys]))) > .mx-field__icon",
+          "invalid": ".mx-field[data-invalid]:where(:not([data-disabled])) > :where(.mx-field__box) > .mx-field__icon",
+          "disabled": ".mx-field[data-disabled] > :where(.mx-field__box) > .mx-field__icon"
+        }
+      },
+      "prefix": {
+        "$description": "A text before the value.",
+        "selector": ":where(.mx-field > .mx-field__box) > .mx-field__prefix",
+        "defaults": {
+          "margin-bottom": "var(--_lift)"
+        },
+        "states": {
+          "disabled": ".mx-field[data-disabled] > :where(.mx-field__box) > .mx-field__prefix"
+        }
+      },
+      "suffix": {
+        "$description": "A text after the value.",
+        "selector": ":where(.mx-field > .mx-field__box) > .mx-field__suffix",
+        "defaults": {
+          "margin-bottom": "var(--_lift)"
+        },
+        "states": {
+          "disabled": ".mx-field[data-disabled] > :where(.mx-field__box) > .mx-field__suffix"
+        }
+      },
+      "placeholder": {
+        "$description": "The text shown while the input is empty.",
+        "selector": ".mx-field__input::placeholder",
+        "defaults": {
+          "opacity": "1"
+        },
+        "states": {
+          "disabled": ".mx-field[data-disabled] > :where(.mx-field__box) > .mx-field__input::placeholder"
+        }
+      },
+      "slot": {
+        "$description": "A group of buttons in the box, at its start or its end; at an edge of the box it sits `button-inset` from it.",
+        "selector": ":where(.mx-field > .mx-field__box) > :is(.mx-field__start, .mx-field__tools, .mx-field__end, .mx-field__actions)",
+        "defaults": {
+          "margin-start": "var(--_slot-start)",
+          "margin-end": "var(--_slot-end)"
+        }
+      },
+      "button": {
+        "$description": "A button in the box (clear, reveal, the arrow, the steps, the field’s own buttons): `button-inset` from the box’s edges.",
+        "selector": ".mx-field__button",
+        "defaults": {
+          "min-width": "calc(var(--_height) - 2 * var(--_field-button-inset))",
+          "height": "calc(var(--_height) - 2 * var(--_field-button-inset))",
+          "margin": "0px",
+          "padding-block": "0px",
+          "border-width": "0px",
+          "border-style": "solid",
+          "bg": "transparent",
+          "cursor": "default"
+        },
+        "states": {
+          "hover": ".mx-field__button:hover:where(:not(:active, :disabled))",
+          "pressed": ".mx-field__button:active:where(:not(:disabled))",
+          "focus": ".mx-field__button:focus-visible",
+          "disabled": ".mx-field__button:disabled"
+        }
+      },
+      "glyph": {
+        "$description": "The kit’s glyph in a button in the box.",
+        "selector": ":where(.mx-field__button) > .mx-glyph",
+        "states": {
+          "hover": ":where(.mx-field__button:hover:not(:active, :disabled)) > .mx-glyph",
+          "pressed": ":where(.mx-field__button:active:not(:disabled)) > .mx-glyph",
+          "disabled": ":where(.mx-field__button:disabled) > .mx-glyph"
+        }
+      },
+      "button-icon": {
+        "$description": "An icon given to a button in the box.",
+        "selector": ".mx-field__button-icon",
+        "defaults": {
+          "size": "var(--_field-icon-size)"
+        }
+      },
+      "foot": {
+        "$description": "The line under the box (help, error, counter); `shown` while it holds something.",
+        "selector": ":where(.mx-field) > .mx-field__foot",
+        "defaults": {
+          "display": "flex",
+          "gap": "var(--_field-gap)"
+        },
+        "states": {
+          "shown": ".mx-field[data-message] > .mx-field__foot",
+          "invalid": {
+            "selector": ".mx-field[data-message][data-invalid] > .mx-field__foot",
+            "from": "shown"
+          },
+          "disabled": {
+            "selector": ".mx-field[data-message][data-disabled]:where(:not([data-invalid])) > .mx-field__foot",
+            "from": "shown"
+          }
+        }
+      },
+      "message": {
+        "$description": "The help text, or the error while the value is invalid.",
+        "selector": ":where(.mx-field > .mx-field__foot) > .mx-field__message",
+        "states": {
+          "invalid": ".mx-field[data-invalid] > :where(.mx-field__foot) > .mx-field__message",
+          "disabled": ".mx-field[data-disabled]:where(:not([data-invalid])) > :where(.mx-field__foot) > .mx-field__message"
+        }
+      },
+      "counter": {
+        "$description": "The count at the end of the line under the box.",
+        "selector": ":where(.mx-field > .mx-field__foot) > .mx-field__counter",
+        "defaults": {
+          "margin-start": "auto"
+        },
+        "states": {
+          "invalid": ".mx-field[data-invalid] > :where(.mx-field__foot) > .mx-field__counter",
+          "disabled": ".mx-field[data-disabled]:where(:not([data-invalid])) > :where(.mx-field__foot) > .mx-field__counter"
+        }
+      }
+    }
+  }
+}

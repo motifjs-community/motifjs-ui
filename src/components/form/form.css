@@ -1,7 +1,10 @@
 /* MxForm: a <dialog> window with a title bar, a scrolling content area, a buttons row and resize
    handles. Centered until it is moved (data-placed: --_mx-x from the start edge, --_mx-y from the
    top); sized by its content or --_mx-w / --_mx-h. A modal form sits in the browser's top layer
-   over a backdrop; a modeless one is fixed above the page in the order of the window stack. */
+   over a backdrop; a modeless one is fixed above the page in the order of the window stack. Its look
+   is its units' (units.css: the scrim, the surface, the title bar, its icon, title and buttons, the
+   content, the buttons row, the grips, a message box's pieces); this file only places them. The title
+   bar's buttons and the buttons row take their look from their places. */
 @layer mx.components {
   .mx-form {
     position: fixed;
@@ -9,25 +12,16 @@
     box-sizing: border-box;
     inline-size: var(--_mx-w, fit-content);
     block-size: var(--_mx-h, fit-content);
-    min-inline-size: min(var(--mx-window-min-width), calc(100vw - 2 * var(--mx-window-viewport-margin)));
-    min-block-size: var(--mx-window-min-height);
-    max-inline-size: calc(100vw - 2 * var(--mx-window-viewport-margin));
-    max-block-size: calc(100dvh - 2 * var(--mx-window-viewport-margin));
-    padding: 0;
+    min-inline-size: min(var(--_window-min-width), calc(100vw - 2 * var(--_window-viewport-margin)));
+    min-block-size: var(--_window-min-height);
+    max-inline-size: calc(100vw - 2 * var(--_window-viewport-margin));
+    max-block-size: calc(100dvh - 2 * var(--_window-viewport-margin));
     margin: auto;
     overflow: hidden;
-    font-family: var(--mx-window-font-family);
-    font-size: var(--mx-window-font-size);
-    font-weight: var(--mx-window-font-weight);
-    line-height: var(--mx-window-line-height);
-    color: var(--mx-window-fg);
+    font-family: var(--_window-font-family);
     text-align: start;
-    background: var(--mx-window-background);
-    border: var(--mx-window-border-width) solid var(--mx-window-border-color);
-    border-radius: var(--mx-window-radius);
-    box-shadow: var(--mx-window-shadow-inactive);
     opacity: 0;
-    translate: 0 var(--mx-window-enter-offset);
+    translate: 0 var(--_window-enter-offset);
     transition:
       opacity var(--mx-motion-duration-normal) var(--mx-motion-easing-out),
       translate var(--mx-motion-duration-normal) var(--mx-motion-easing-out),
@@ -46,7 +40,7 @@
   @starting-style {
     .mx-form[open] {
       opacity: 0;
-      translate: 0 var(--mx-window-enter-offset);
+      translate: 0 var(--_window-enter-offset);
     }
   }
 
@@ -56,17 +50,7 @@
     z-index: calc(var(--mx-z-window) + var(--_mx-z, 0));
   }
 
-  .mx-form[data-active],
-  .mx-form[data-modal] {
-    box-shadow: var(--mx-window-shadow);
-  }
-
-  .mx-form[data-modal] {
-    box-shadow: var(--mx-window-shadow-modal);
-  }
-
   .mx-form::backdrop {
-    background: var(--mx-window-backdrop);
     opacity: 0;
     transition:
       opacity var(--mx-motion-duration-normal) var(--mx-motion-easing-out),
@@ -84,11 +68,6 @@
     }
   }
 
-  /* Focus inside shows on the controls; the window itself only takes it as a last resort. */
-  .mx-form:focus {
-    outline: none;
-  }
-
   .mx-form[data-placed] {
     inset-block: var(--_mx-y) auto;
     inset-inline: var(--_mx-x) auto;
@@ -102,7 +81,6 @@
     max-inline-size: none;
     max-block-size: none;
     margin: 0;
-    border-radius: 0;
   }
 
   .mx-form[data-state='minimized'] {
@@ -127,23 +105,12 @@
   .mx-form__bar {
     display: flex;
     flex: none;
-    gap: var(--mx-window-bar-gap);
     align-items: center;
-    min-block-size: var(--mx-window-bar-height);
-    padding-inline: var(--mx-window-bar-padding) var(--mx-window-bar-tools-padding);
-    color: var(--mx-window-bar-fg);
     user-select: none;
-    background: var(--mx-window-bar-background);
-    border-block-end: var(--mx-window-border-width) solid var(--mx-window-bar-border-color);
     touch-action: none;
   }
 
-  .mx-form[data-active] .mx-form__bar,
-  .mx-form[data-modal] .mx-form__bar {
-    color: var(--mx-window-bar-fg-active);
-  }
-
-  .mx-form[data-movable]:not([data-state='maximized']) .mx-form__bar {
+  .mx-form[data-movable]:not([data-state='maximized']) > .mx-form__bar {
     cursor: move;
   }
 
@@ -157,19 +124,11 @@
     display: none;
   }
 
-  .mx-form__icon > * {
-    inline-size: var(--mx-window-icon-size);
-    block-size: var(--mx-window-icon-size);
-  }
-
   .mx-form__title {
     flex: 1;
     min-inline-size: 0;
-    margin: 0;
     overflow: hidden;
-    font-size: var(--mx-window-title-font-size);
-    font-weight: var(--mx-window-title-font-weight);
-    line-height: var(--mx-window-title-line-height);
+    text-align: var(--_window-title-align);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -177,7 +136,7 @@
   .mx-form__tools {
     display: flex;
     flex: none;
-    gap: var(--mx-window-tools-gap);
+    order: var(--_window-tools-order);
     align-items: center;
     margin-inline-start: auto;
     cursor: default;
@@ -186,7 +145,6 @@
   .mx-form__content {
     flex: 1 1 auto;
     min-block-size: 0;
-    padding: var(--mx-window-padding);
     overflow: auto;
     overscroll-behavior: contain;
   }
@@ -195,21 +153,18 @@
     display: flex;
     flex: none;
     flex-wrap: wrap;
-    gap: var(--mx-window-footer-gap);
     justify-content: flex-end;
-    padding: var(--mx-window-footer-padding) var(--mx-window-padding);
-    border-block-start: var(--mx-window-border-width) solid var(--mx-window-bar-border-color);
   }
 
   .mx-form__footer[hidden] {
     display: none;
   }
 
-  /* The footer holds one control; its own children are the buttons. */
+  /* The footer holds one control; its own children are the buttons, as far apart as the footer's. */
   .mx-form__footer > * {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--mx-window-footer-gap);
+    gap: inherit;
     justify-content: flex-end;
   }
 
@@ -219,8 +174,8 @@
     pointer-events: none;
   }
 
-  .mx-form:not([data-resizable]) .mx-form__frame,
-  .mx-form:not([data-state='normal']) .mx-form__frame {
+  .mx-form:not([data-resizable]) > .mx-form__frame,
+  .mx-form:not([data-state='normal']) > .mx-form__frame {
     display: none;
   }
 
@@ -231,14 +186,14 @@
   }
 
   .mx-form__resize:is([data-edge='top'], [data-edge='bottom']) {
-    inset-inline: var(--mx-window-resize-edge);
-    block-size: var(--mx-window-resize-edge);
+    inset-inline: var(--_window-resize-edge);
+    block-size: var(--_window-resize-edge);
     cursor: ns-resize;
   }
 
   .mx-form__resize:is([data-edge='start'], [data-edge='end']) {
-    inset-block: var(--mx-window-resize-edge);
-    inline-size: var(--mx-window-resize-edge);
+    inset-block: var(--_window-resize-edge);
+    inline-size: var(--_window-resize-edge);
     cursor: ew-resize;
   }
 
@@ -259,8 +214,8 @@
   }
 
   .mx-form__resize[data-edge*='-'] {
-    inline-size: calc(2 * var(--mx-window-resize-edge));
-    block-size: calc(2 * var(--mx-window-resize-edge));
+    inline-size: calc(2 * var(--_window-resize-edge));
+    block-size: calc(2 * var(--_window-resize-edge));
   }
 
   .mx-form__resize:is([data-edge='top-start'], [data-edge='bottom-end']) {
@@ -282,33 +237,15 @@
   /* Message boxes: a tone glyph beside the text. */
   .mx-message-box {
     display: flex;
-    gap: var(--mx-window-message-gap);
     align-items: flex-start;
   }
 
+  /* The glyph's room is as high as a line, so it stands beside the first one. */
   .mx-message-box__icon {
     display: inline-flex;
     flex: none;
     align-items: center;
-    block-size: var(--mx-window-line-height);
-    color: var(--mx-window-message-icon-fg);
-  }
-
-  .mx-message-box__icon > * {
-    inline-size: var(--mx-window-message-icon-size);
-    block-size: var(--mx-window-message-icon-size);
-  }
-
-  .mx-message-box[data-tone='success'] .mx-message-box__icon {
-    color: var(--mx-window-message-success-fg);
-  }
-
-  .mx-message-box[data-tone='caution'] .mx-message-box__icon {
-    color: var(--mx-window-message-caution-fg);
-  }
-
-  .mx-message-box[data-tone='danger'] .mx-message-box__icon {
-    color: var(--mx-window-message-danger-fg);
+    block-size: 1lh;
   }
 
   .mx-message-box__text {

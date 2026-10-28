@@ -1,0 +1,96 @@
+{
+  "drawer": {
+    "font-family": { "$value": "{font.family.sans}" },
+    "size": { "$value": {"value": 22.5, "unit": "rem"} },
+    "inset": { "$value": "0px" },
+    "max-size": { "$value": "85%" },
+    "close-button": {
+      "variant": { "$value": "ghost" },
+      "tone": { "$value": "standard" },
+      "size": { "$value": "sm" }
+    },
+    "list-box": {
+      "width": { "$value": "{field.width}" },
+      "box": {
+        "bg": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} },
+        "hover": {
+          "bg": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} }
+        },
+        "focus": {
+          "bg": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} },
+          "shadow": { "$value": {"color": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0}, "offsetX": {"value": 0, "unit": "px"}, "offsetY": {"value": 0, "unit": "px"}, "blur": {"value": 0, "unit": "px"}, "spread": {"value": 0, "unit": "px"}} }
+        },
+        "shadow": { "$value": {"color": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0}, "offsetX": {"value": 0, "unit": "px"}, "offsetY": {"value": 0, "unit": "px"}, "blur": {"value": 0, "unit": "px"}, "spread": {"value": 0, "unit": "px"}} },
+        "invalid-hover": {
+          "bg": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} }
+        },
+        "invalid-focus": {
+          "bg": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} },
+          "shadow": { "$value": {"color": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0}, "offsetX": {"value": 0, "unit": "px"}, "offsetY": {"value": 0, "unit": "px"}, "blur": {"value": 0, "unit": "px"}, "spread": {"value": 0, "unit": "px"}} }
+        },
+        "readonly-focus": {
+          "shadow": { "$value": {"color": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0}, "offsetX": {"value": 0, "unit": "px"}, "offsetY": {"value": 0, "unit": "px"}, "blur": {"value": 0, "unit": "px"}, "spread": {"value": 0, "unit": "px"}} }
+        },
+        "disabled": {
+          "shadow": { "$value": {"color": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0}, "offsetX": {"value": 0, "unit": "px"}, "offsetY": {"value": 0, "unit": "px"}, "blur": {"value": 0, "unit": "px"}, "spread": {"value": 0, "unit": "px"}} }
+        },
+        "readonly-invalid-focus": {
+          "shadow": { "$value": {"color": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0}, "offsetX": {"value": 0, "unit": "px"}, "offsetY": {"value": 0, "unit": "px"}, "blur": {"value": 0, "unit": "px"}, "spread": {"value": 0, "unit": "px"}} }
+        }
+      },
+      "frame": {
+        "display": { "$value": "none" }
+      },
+      "indicator": {
+        "display": { "$value": "none" }
+      }
+    },
+    "scrim": {
+      "bg": { "$value": "{color.bg.smoke}" }
+    },
+    "panel": {
+      "bg": { "$value": "{color.bg.layer}" },
+      "shadow": { "$value": "{elevation.card}" },
+      "color": { "$value": "{color.fg.primary}" },
+      "font-size": { "$value": "{font.size.body}" },
+      "line-height": { "$value": "{font.line.body}" },
+      "push": {
+        "shadow": { "$value": "none" }
+      },
+      "start": {
+        "radius-end": { "$value": "{radius.lg}" }
+      },
+      "end": {
+        "radius-start": { "$value": "{radius.lg}" }
+      },
+      "top": {
+        "radius-bottom": { "$value": "{radius.lg}" }
+      },
+      "bottom": {
+        "radius-top": { "$value": "{radius.lg}" }
+      }
+    },
+    "header": {
+      "padding": { "$value": "{space.3}" },
+      "gap": { "$value": "{space.2}" }
+    },
+    "title": {
+      "font-size": { "$value": "{font.size.subtitle}" },
+      "font-weight": { "$value": "{font.weight.regular}" },
+      "line-height": { "$value": "{font.line.subtitle}" }
+    },
+    "body": {
+      "padding": { "$value": "{space.3}" },
+      "focus": {
+        "outline-width": { "$value": "{focus.ring.width}" },
+        "outline-color": { "$value": "{focus.ring.color}" },
+        "outline-offset": { "$value": "calc({focus.ring.width} * -1)" },
+        "glow": { "$value": "none" }
+      }
+    },
+    "footer": {
+      "padding": { "$value": "{space.3}" },
+      "gap": { "$value": "{space.2}" }
+    }
+  }
+}

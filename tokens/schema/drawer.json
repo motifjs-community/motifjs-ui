@@ -1,0 +1,86 @@
+{
+  "drawer": {
+    "$description": "Drawer: a panel that slides in from an edge, over the content or pushing it aside.",
+    "$selector": ".mx-drawer",
+    "font-family": { "$type": "fontFamily" },
+    "size": { "$type": "dimension" },
+    "inset": { "$type": "dimension", "$description": "Room between the panel and the room's edges (0: on its edge, from end to end)." },
+    "max-size": { "$type": "dimension", "$description": "The most of the room the panel takes." },
+    "$places": {
+      "close-button": {
+        "$description": "The close button in the header.",
+        "selector": ".mx-drawer__tools > .mx-drawer__close",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "list-box": {
+        "$description": "A list box inside a drawer: the surface is its frame, so by default the list draws none of its own (no frame, fill or shadow); its width there (100% to fill the drawer).",
+        "selector": ".mx-drawer .mx-list-box",
+        "part": "field",
+        "tokens": [
+          "frame.display",
+          "indicator.display",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "box.shadow",
+          "box.focus.shadow",
+          "width",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "box.invalid-focus.shadow",
+          "box.readonly-focus.shadow",
+          "box.disabled.shadow",
+          "box.readonly-invalid-focus.shadow"
+        ]
+      }
+    },
+    "$units": {
+      "scrim": {
+        "$description": "The scrim behind the panel (a modal drawer).",
+        "selector": ".mx-drawer__scrim"
+      },
+      "panel": {
+        "$description": "The panel, at an edge of the room (`start`, `end`, `top`, `bottom`: its sides towards the content and the room's edge differ); `push`: it pushes the content aside instead of lying over it.",
+        "selector": ".mx-drawer__panel",
+        "defaults": {
+          "outline-style": "none"
+        },
+        "states": {
+          "push": ".mx-drawer[data-mode='push'] > .mx-drawer__panel",
+          "start": ".mx-drawer[data-side='start'] > .mx-drawer__panel",
+          "end": ".mx-drawer[data-side='end'] > .mx-drawer__panel",
+          "top": ".mx-drawer[data-side='top'] > .mx-drawer__panel",
+          "bottom": ".mx-drawer[data-side='bottom'] > .mx-drawer__panel"
+        }
+      },
+      "header": {
+        "$description": "The header: the title and the buttons.",
+        "selector": ".mx-drawer__header"
+      },
+      "title": {
+        "$description": "The title.",
+        "selector": ".mx-drawer__title"
+      },
+      "tools": {
+        "$description": "The header's buttons (the close button's look is its place's).",
+        "selector": ".mx-drawer__tools"
+      },
+      "body": {
+        "$description": "The content (`focus`: it has the keys and scrolls by them, a ring inside it).",
+        "selector": ".mx-drawer__body",
+        "states": {
+          "focus": ".mx-drawer__body:focus-visible"
+        }
+      },
+      "footer": {
+        "$description": "The footer: its buttons in a row.",
+        "selector": ".mx-drawer__footer"
+      }
+    }
+  }
+}

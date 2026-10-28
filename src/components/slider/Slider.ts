@@ -1,4 +1,5 @@
 import { effect, read, untracked, type Bind, type IBaseProp } from '@motifx/core';
+import { LanguageLook } from '../../core/language-look';
 import { uiLocale } from '../../core/ui-locale';
 import { Field } from '../../parts/field/Field';
 import type { SliderOrientation } from './slider-orientation';
@@ -13,6 +14,7 @@ const OWN = [
   'largeStep',
   'range',
   'minDistance',
+  'origin',
   'orientation',
   'ticks',
   'tickLabels',
@@ -44,8 +46,11 @@ interface Drag {
 interface Parts {
   control: HTMLDivElement;
   track: HTMLDivElement;
-  fill: HTMLDivElement;
+  /** Carries `--_from` / `--_to` and what lies at each end of the active segment. */
+  rail: HTMLDivElement;
   ticks: HTMLDivElement;
+  /** The values of the marks drawn, in their order. */
+  tickValues: number[];
   thumbs: HTMLDivElement[];
   bubbles: HTMLSpanElement[];
   inputs: HTMLInputElement[];
@@ -69,8 +74,12 @@ function createThumb(name: 'start' | 'end'): HTMLDivElement {
   thumb.dataset.thumb = name;
   thumb.setAttribute('role', 'slider');
   thumb.tabIndex = 0;
-  const bubble = thumb.appendChild(element('span', 'mx-slider__bubble'));
+  // The thumb is the pressable area; what shows is drawn inside it: a halo, the knob with its core, the value.
+  const knob = element('span', 'mx-slider__knob');
+  knob.append(element('span', 'mx-slider__core'));
+  const bubble = element('span', 'mx-slider__bubble');
   bubble.setAttribute('aria-hidden', 'true');
+  thumb.append(element('span', 'mx-slider__halo'), knob, bubble);
   return thumb;
 }
 
@@ -102,14 +111,19 @@ function decimals(n: number): number {
  * zoom.value = 100;
  */
 export class Slider extends Field<SliderValue, SliderProps> {
+  /** What the design language decides: a track split around the thumbs (a gap there). */
+  private readonly trackLook = new LanguageLook(this.element, { gap: '--_slider-track-gap', originGap: '--_slider-origin-gap' }, () => this.renderTrack());
+
   constructor(props?: IBaseProp<SliderProps>) {
     super(props);
+    this.motif.setDisposable(this.trackLook.watch());
     const own = (this.props ?? {}) as SliderProps;
     this.element.classList.add('mx-slider');
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.valueText) this.setProperty('valueText', own.valueText);
 
     for (const name of ['min', 'max', 'step', 'range', 'minDistance'] as const) this.observeProperty(name, () => this.conform());
+    this.observeProperty('origin', () => this.draw());
     this.observeProperty('orientation', () => this.renderOrientation());
     this.observeProperty('ticks', () => this.renderTicks());
     this.observeProperty('tickLabels', () => this.renderTicks());
@@ -173,6 +187,14 @@ export class Slider extends Field<SliderValue, SliderProps> {
   }
   set minDistance(value: Bind<number>) {
     this.assignProperty('minDistance', value);
+  }
+  /** Where the active segment starts on a one-thumb slider; `undefined` for the start of the track. */
+  get origin(): number | undefined {
+    const origin = this.getProperty<number | null | undefined>('origin');
+    return origin === null || origin === undefined ? undefined : toNumber(origin, 0);
+  }
+  set origin(value: Bind<number | undefined>) {
+    this.assignProperty('origin', value);
   }
   get orientation(): SliderOrientation {
     return this.getProperty<SliderOrientation | undefined>('orientation') ?? 'horizontal';
@@ -301,6 +323,11 @@ export class Slider extends Field<SliderValue, SliderProps> {
     }
   }
 
+  override onMounted(): void {
+    super.onMounted();
+    this.trackLook.read();
+  }
+
   protected override get focusElement(): HTMLElement {
     return this.sliderParts.thumbs[0];
   }
@@ -312,6 +339,8 @@ export class Slider extends Field<SliderValue, SliderProps> {
     else if (name === 'enabled') {
       if (value === false) this.element.setAttribute('aria-disabled', 'true');
       else this.element.removeAttribute('aria-disabled');
+      // A disabled field sends nothing with its form, as a native one.
+      for (const input of this.sliderParts.inputs) input.disabled = value === false;
     }
   }
 
@@ -326,7 +355,9 @@ export class Slider extends Field<SliderValue, SliderProps> {
     const control = element('div', 'mx-slider__control');
     const track = control.appendChild(element('div', 'mx-slider__track'));
     const rail = track.appendChild(element('div', 'mx-slider__rail'));
-    const fill = rail.appendChild(element('div', 'mx-slider__fill'));
+    // The inactive segments before and after the active one (the fill); they draw only on a split track.
+    for (const side of ['before', 'after']) rail.appendChild(element('div', 'mx-slider__segment')).dataset.side = side;
+    rail.appendChild(element('div', 'mx-slider__fill'));
     const thumbs = [createThumb('start'), createThumb('end')];
     track.append(...thumbs);
     const ticks = control.appendChild(element('div', 'mx-slider__ticks'));
@@ -335,10 +366,11 @@ export class Slider extends Field<SliderValue, SliderProps> {
     return {
       control,
       track,
-      fill,
+      rail,
       ticks,
+      tickValues: [],
       thumbs,
-      bubbles: thumbs.map((thumb) => thumb.firstElementChild as HTMLSpanElement),
+      bubbles: thumbs.map((thumb) => thumb.lastElementChild as HTMLSpanElement),
       inputs: [],
       shown: null,
       drag: null,
@@ -422,18 +454,58 @@ export class Slider extends Field<SliderValue, SliderProps> {
     const gap = this.gap;
     if (Array.isArray(value)) {
       const [start, end] = value;
-      parts.fill.style.setProperty('--_from', at(start));
-      parts.fill.style.setProperty('--_to', at(end));
       this.drawThumb(0, start, min, end - gap, at);
       this.drawThumb(1, end, start + gap, max, at);
     } else {
-      parts.fill.style.setProperty('--_from', '0%');
-      parts.fill.style.setProperty('--_to', at(value));
       this.drawThumb(0, value, min, max, at);
     }
+    // The active segment and what lies at its ends: the start, a thumb or the origin.
+    const [from, to] = this.activeSpan(value);
+    const origin = this.originValue();
+    const rail = parts.rail;
+    rail.style.setProperty('--_from', Array.isArray(value) || origin !== null ? at(from) : '0%');
+    rail.style.setProperty('--_to', at(to));
+    // An origin at an end of the track is that end; a thumb on the origin has the thumb on both sides.
+    const { min: low, max: high } = this.bounds;
+    const fromKind = Array.isArray(value) || (origin !== null && value <= origin) ? 'thumb' : origin === null || origin <= low ? 'start' : 'origin';
+    const toKind = Array.isArray(value) || origin === null || value >= origin ? 'thumb' : origin >= high ? 'end' : 'origin';
+    rail.dataset.from = fromKind;
+    rail.dataset.to = toKind;
+    rail.toggleAttribute('data-start-active', from <= min);
+    rail.toggleAttribute('data-end-active', to >= max);
+    this.markTicks(from, to);
     const committed = this.peekValue();
     const values = Array.isArray(committed) ? committed : [committed];
     parts.inputs.forEach((input, i) => (input.value = String(values[i] ?? '')));
+  }
+
+  /** The values the active segment spans: from the start, the origin or the first thumb to the value or the second thumb. */
+  private activeSpan(value: SliderValue): [number, number] {
+    const { min } = this.bounds;
+    if (Array.isArray(value)) return [value[0], value[1]];
+    const origin = this.originValue();
+    if (origin === null) return [min, value];
+    return value < origin ? [value, origin] : [origin, value];
+  }
+
+  /** The origin inside the bounds; `null` without one, and with a range. */
+  private originValue(): number | null {
+    const origin = this.peekProperty<number | null>('origin');
+    if (origin === null || origin === undefined || this.peekProperty('range')) return null;
+    const { min, max } = this.bounds;
+    return Math.min(max, Math.max(min, toNumber(origin, min)));
+  }
+
+  /** Marks inside the active segment are drawn in its colour. */
+  private markTicks(from: number, to: number): void {
+    const parts = this.sliderParts;
+    parts.tickValues.forEach((v, i) => parts.ticks.children[i]?.toggleAttribute('data-active', v >= from && v <= to));
+  }
+
+  private renderTrack(): void {
+    const look = this.trackLook;
+    const zero = (v: string | null) => v === null || parseFloat(v) === 0;
+    this.element.toggleAttribute('data-split', !zero(look.get('gap')) || !zero(look.get('originGap')));
   }
 
   private drawThumb(index: number, value: number, low: number, high: number, at: (v: number) => string): void {
@@ -536,9 +608,11 @@ export class Slider extends Field<SliderValue, SliderProps> {
         return tick;
       }),
     );
+    parts.tickValues = values;
     parts.ticks.hidden = !values.length;
     this.element.toggleAttribute('data-ticks', marks);
     this.element.toggleAttribute('data-tick-labels', labels && values.length > 0);
+    this.markTicks(...this.activeSpan(parts.shown ?? this.peekValue()));
   }
 
   /** Hidden inputs that send the value with a form. */
@@ -554,7 +628,10 @@ export class Slider extends Field<SliderValue, SliderProps> {
       parts.inputs.push(input);
       this.element.append(input);
     }
-    for (const input of parts.inputs) input.name = name ?? '';
+    for (const input of parts.inputs) {
+      input.name = name ?? '';
+      input.disabled = !this.enabled;
+    }
     this.draw();
   }
 

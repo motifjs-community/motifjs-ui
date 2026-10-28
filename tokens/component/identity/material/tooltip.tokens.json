@@ -1,9 +1,0 @@
-{
-  "tooltip": {
-    "$description": "Material plain tooltips: 4 corners.",
-    "radius": {
-      "$type": "dimension",
-      "$value": "{radius.xs}"
-    }
-  }
-}

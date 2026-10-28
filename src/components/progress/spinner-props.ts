@@ -14,6 +14,8 @@ export interface SpinnerProps extends ControlProps {
   size?: Bind<ControlSize>;
   /** Default `'accent'`. */
   tone?: Bind<ProgressTone>;
+  /** Drawn inside a container of its own (a disc behind it), where the design language has one. Default `false`. */
+  contained?: Bind<boolean>;
   /** Milliseconds before it shows, so quick work does not flash it. Default `0`. */
   delay?: Bind<number>;
 }

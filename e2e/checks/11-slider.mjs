@@ -57,7 +57,8 @@ export default async function ({ page, base, check, axeSource, box }) {
   const bubble = end.locator('.mx-slider__bubble');
   await page.waitForTimeout(200);
   check('the value bubble shows while a key moves the thumb', (await bubble.evaluate((el) => getComputedStyle(el).visibility)) === 'visible' && (await bubble.textContent()) === '€380');
-  const [bb, eb] = [await box(bubble), await box(end)];
+  // Over the knob it shows (the thumb is the larger touch target around it).
+  const [bb, eb] = [await box(bubble), await box(end.locator('.mx-slider__knob'))];
   check('…centered over the thumb', Math.abs(bb.left + bb.width / 2 - (eb.left + eb.width / 2)) < 1.5 && bb.bottom <= eb.top);
 
   const ticks = page.locator('section[aria-labelledby="ticks"]');

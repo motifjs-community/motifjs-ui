@@ -95,12 +95,11 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['button.radius, button.border-width', 'Corners and border.'],
-  ['button.edge-width, button.press-offset', 'The bottom edge and how far a solid button moves when pressed.'],
-  ['button.height.{sm,md,lg}, button.padding.{sm,md,lg}, button.font-size.{sm,md,lg}', 'Sizes, from the density tokens.'],
-  ['button.font-weight, button.gap, button.icon-size', 'Text weight, icon gap and icon size.'],
-  ['button.arrow-padding, button.spinner-width', 'The arrow of a split button, the spinner stroke.'],
-  ['popup.*, menu.*', 'The popup surface and the menu items.'],
+  ['button.face', 'Unit: what is pressed, with its frame (the bottom side is a key’s edge), its fill and state layer (`image`) and its focus ring (outline and `glow`). Each look is a state (`accent`, `danger`, `outline`, `outline-accent`, `ghost`, …), and each look in each state too (`hover`, `toggled-hover`, `open`, `pressed`, `focus`, `toggled`, `disabled`: `outline-hover`, `accent-pressed`, …); also `icon-only`, `busy`, and a split button’s `main` and `arrow`.'],
+  ['button.icon, button.caption, button.chevron, button.spinner, button.divider', 'Units: the icon, the text, the arrow of a menu (`open`), the busy spinner and the line of a split button, each look a state.'],
+  ['button.height.{sm,md,lg}, button.padding.{sm,md,lg}, button.font-size.{sm,md,lg}, button.line-height.{sm,md,lg}', 'Sizes, from the density tokens.'],
+  ['button.press-offset, button.icon-only-square, button.text-box, button.spinner-duration', 'How far a solid button moves when pressed, a square icon button, the caption’s line box, the spinner’s turn.'],
+  ['popup.surface, menu.*', 'The popup surface and the menu items.'],
 ];
 
 export default function ButtonPage() {

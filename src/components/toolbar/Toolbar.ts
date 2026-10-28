@@ -257,15 +257,29 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     this.parts.itemClick.fire(args);
   }
 
-  /** Gives a control the toolbar's size, and a button its variant, unless it has its own. */
+  /**
+   * Gives a control the toolbar's size, and a button its variant, unless it has its own. A button
+   * the toolbar is given no size or variant for takes them from the toolbar's button place.
+   */
   private adopt(control: Control): void {
     const parts = this.parts;
     if (parts.styled.has(control)) return;
     parts.styled.add(control);
     const own = (control.props ?? {}) as { size?: unknown; variant?: unknown };
     const target = control as unknown as { size?: Bind<ControlSize>; variant?: Bind<ButtonVariant> };
-    if ('size' in control && own.size === undefined) target.size = () => this.size;
-    if (control instanceof Button && own.variant === undefined) target.variant = () => this.buttonVariant;
+    const isButton = control instanceof Button;
+    if ('size' in control && own.size === undefined) target.size = isButton ? () => this.givenSize() : () => this.size;
+    if (isButton && own.variant === undefined) target.variant = () => this.givenButtonVariant();
+  }
+
+  /** The size the toolbar is given; none: its buttons' place decides. */
+  private givenSize(): ControlSize {
+    return this.getProperty<ControlSize | undefined>('size') as ControlSize;
+  }
+
+  /** The button variant the toolbar is given; none: its buttons' place decides. */
+  private givenButtonVariant(): ButtonVariant {
+    return this.getProperty<ButtonVariant | undefined>('buttonVariant') as ButtonVariant;
   }
 
   // The bar's controls: styling, roving focus.
@@ -416,7 +430,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
   private moreButton(): Button {
     const parts = this.parts;
     if (parts.more) return parts.more;
-    const more = new Button({ menu: [], icon: moreMark(), size: () => this.size, variant: () => this.buttonVariant });
+    const more = new Button({ menu: [], icon: moreMark(), size: () => this.givenSize(), variant: () => this.givenButtonVariant() });
     parts.styled.add(more);
     more.element.classList.add('mx-toolbar__more');
     more.element.setAttribute('data-idle', '');
@@ -461,12 +475,18 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       untracked(() => this.renderRoving());
     });
     if (typeof MutationObserver === 'function') {
-      // Controls added from code, disabled, hidden: the arrows and Tab follow.
+      // Controls added from code, disabled, hidden: the arrows and Tab follow. A control that takes another size
+      // (its look read once it is in the page) changes what fits.
       const observer = new MutationObserver((records) => {
         this.queueRefresh();
-        if (records.some((r) => r.type === 'childList' && r.target === this.element)) this.queueLayout();
+        if (records.some((r) => (r.type === 'childList' && r.target === this.element) || r.attributeName === 'data-size' || r.attributeName === 'data-variant')) this.queueLayout();
       });
-      observer.observe(this.element, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'hidden', 'tabindex', 'aria-disabled'] });
+      observer.observe(this.element, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['disabled', 'hidden', 'tabindex', 'aria-disabled', 'data-size', 'data-variant'],
+      });
       this.motif.setDisposable(() => observer.disconnect());
     }
     // Another design language, theme or density: the controls have other sizes.

@@ -1,0 +1,15 @@
+{
+  "lookup": {
+    "popup-width": { "$value": {"value": 28, "unit": "rem"} },
+    "column-gap": { "$value": "{space.3}" },
+    "header": {
+      "padding-block": { "$value": "{space.1}" },
+      "padding-inline": { "$value": "{list.item.padding-inline}" },
+      "font-size": { "$value": "{font.size.caption}" },
+      "font-weight": { "$value": "{font.weight.semibold}" },
+      "color": { "$value": "{color.fg.secondary}" },
+      "border-bottom-width": { "$value": "{border.width.1}" },
+      "border-bottom-color": { "$value": "{color.stroke.divider}" }
+    }
+  }
+}

@@ -1,59 +1,18 @@
-/* ActionSheet: a BottomSheet (its surface, handle and title come from the sheet's tokens) holding
-   the kit's menu list and a cancel button apart. The items are large enough for a finger; the
-   shortcuts menus show beside their items are left out. */
+/* ActionSheet: a BottomSheet holding the kit's menu list and a cancel button apart. The sheet, the
+   list and the button take their look from the action sheet's places; the message, the back mark and
+   the cancel strip are its units (units.css). The items are large enough for a finger; the shortcuts
+   menus show beside their items are left out. */
 @layer mx.components {
-  .mx-action-sheet .mx-bottom-sheet__body {
-    padding: var(--mx-actionsheet-list-padding);
-  }
-
-  .mx-action-sheet__message {
-    padding-inline: var(--mx-actionsheet-message-padding);
-    padding-block-end: var(--mx-actionsheet-list-padding);
-    font-size: var(--mx-actionsheet-message-font-size);
-    line-height: var(--mx-actionsheet-message-line-height);
-    color: var(--mx-actionsheet-message-fg);
-  }
-
   .mx-action-sheet__message[hidden] {
     display: none;
-  }
-
-  .mx-action-sheet__list > .mx-menu__item {
-    gap: var(--mx-actionsheet-item-gap);
-    min-block-size: var(--mx-actionsheet-item-height);
-    padding-inline: var(--mx-actionsheet-item-padding);
-    font-size: var(--mx-actionsheet-item-font-size);
-    line-height: var(--mx-actionsheet-item-line-height);
-    white-space: normal;
-    border-radius: var(--mx-actionsheet-item-radius);
-  }
-
-  .mx-action-sheet__list .mx-menu__shortcut {
-    display: none;
-  }
-
-  .mx-action-sheet__back {
-    rotate: 90deg;
-  }
-
-  .mx-action-sheet__back:dir(rtl) {
-    rotate: -90deg;
   }
 
   .mx-action-sheet__cancel {
     display: flex;
     flex: none;
-    padding: var(--mx-actionsheet-cancel-padding);
-    border-block-start: var(--mx-actionsheet-cancel-border-width) solid var(--mx-actionsheet-cancel-border-color);
   }
 
   .mx-action-sheet__cancel[hidden] {
     display: none;
-  }
-
-  .mx-action-sheet__cancel > .mx-button {
-    min-block-size: var(--mx-actionsheet-cancel-height);
-    font-size: var(--mx-actionsheet-cancel-font-size);
-    font-weight: var(--mx-actionsheet-cancel-font-weight);
   }
 }

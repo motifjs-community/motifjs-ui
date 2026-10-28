@@ -1,16 +1,13 @@
-/* TextBox: the password button, and the browser's own buttons it replaces. */
+/* TextBox: the browser's own buttons it replaces with the field's. The password button and its glyph
+   are units of the text box's schema (`$units`), painted by units.css from the language's tokens. */
 @layer mx.components {
-  .mx-text-box .mx-field__input::-webkit-search-cancel-button,
-  .mx-text-box .mx-field__input::-webkit-search-decoration {
+  .mx-text-box > :where(.mx-field__box) > .mx-field__input::-webkit-search-cancel-button,
+  .mx-text-box > :where(.mx-field__box) > .mx-field__input::-webkit-search-decoration {
     appearance: none;
   }
 
-  .mx-text-box .mx-field__input::-ms-reveal,
-  .mx-text-box .mx-field__input::-ms-clear {
+  .mx-text-box > :where(.mx-field__box) > .mx-field__input::-ms-reveal,
+  .mx-text-box > :where(.mx-field__box) > .mx-field__input::-ms-clear {
     display: none;
-  }
-
-  .mx-text-box__reveal[aria-pressed='true'] {
-    color: var(--mx-text-box-reveal-fg-pressed);
   }
 }

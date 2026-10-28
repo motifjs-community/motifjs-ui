@@ -1,0 +1,75 @@
+{
+  "list": {
+    "item-height": { "$value": "{space.12}" },
+    "container": {
+      "max-height": { "$value": {"value": 20, "unit": "rem"} }
+    },
+    "item": {
+      "padding-inline": { "$value": "{space.4}" },
+      "gap": { "$value": "{space.3}" },
+      "radius": { "$value": "{radius.md}" },
+      "font-size": { "$value": "1em" },
+      "hover": {
+        "bg": { "$value": "{color.fill.subtle.secondary}" }
+      },
+      "pressed": {
+        "bg": { "$value": "{color.fill.subtle.tertiary}" }
+      },
+      "active": {
+        "bg": { "$value": "{color.fill.subtle.secondary}" }
+      },
+      "selected": {
+        "bg": { "$value": "{color.selection.bg}" },
+        "shadow": { "$value": "{effect.selection}" },
+        "glow": { "$value": {"color": "{color.selection.border}", "offsetX": {"value": 0, "unit": "px"}, "offsetY": {"value": 0, "unit": "px"}, "blur": {"value": 0, "unit": "px"}, "spread": "{selection.border-width}", "inset": true} },
+        "color": { "$value": "{color.selection.fg}" }
+      },
+      "selected-hover": {
+        "bg": { "$value": "{color.selection.bg}" }
+      },
+      "selected-pressed": {
+        "bg": { "$value": "{color.selection.bg}" }
+      },
+      "disabled": {
+        "color": { "$value": "{color.fg.on-accent-disabled}" }
+      },
+      "select-all": {
+        "font-weight": { "$value": "{font.weight.medium}" }
+      }
+    },
+    "indicator": {
+      "width": { "$value": "{indicator.thickness}" },
+      "height": { "$value": "{indicator.length}" },
+      "bg": { "$value": "{color.selection.indicator}" },
+      "radius": { "$value": "{indicator.radius}" },
+      "multiple": {
+        "display": { "$value": "none" }
+      }
+    },
+    "check": {
+      "color": { "$value": "{color.selection.fg}" }
+    },
+    "mark": {
+      "size": { "$value": "{glyph.size}" },
+      "icon": { "$value": "check" }
+    },
+    "icon": {
+      "size": { "$value": {"value": 1.5, "unit": "rem"} }
+    },
+    "header": {
+      "padding-inline": { "$value": "{space.4}" },
+      "padding-bottom": { "$value": "{space.1}" },
+      "color": { "$value": "{color.fg.secondary}" },
+      "font-size": { "$value": "{font.size.body}" },
+      "font-weight": { "$value": "{font.weight.medium}" }
+    },
+    "select-all-divider": {
+      "height": { "$value": "{border.width.1}" },
+      "bg": { "$value": "{color.stroke.divider}" }
+    },
+    "empty": {
+      "padding": { "$value": "{space.4}" },
+      "color": { "$value": "{color.fg.secondary}" }
+    }
+  }
+}

@@ -6,6 +6,58 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Design languages: the token model, units and places
+
+Any design system is carried by a design language's files alone: a new one, or a new version of one, needs no
+component touched. This replaces `tokens/component/` and its `identity/` mappings
+mentioned further down.
+
+- **Schema and languages.** `tokens/schema/<component>.json` names a component's tokens; every language is a folder,
+  `tokens/languages/<language>/`, with the values its design draws. The build checks every language against the
+  schema and the design system's references and types. `npm run language -- <name> [--from <language>]` starts a new
+  language; the docs Style menu and the checks take the list of languages from the design system.
+- **Units.** Every piece a design could draw on its own is a unit (`$units`): the field's box, frame, notch, active
+  indicator, label, buttons and help line; a button's face, caption, spinner and split parts; a list's items; a
+  slider's segments, knob and stops; and so on for every component. The build gives each unit the same box (display,
+  size, margin and padding per side, fill, frame per side, corners, shadow and glow, backdrop, opacity, scale,
+  rotation, translation, text, outline, icon) in each of its states and paints it in `src/generated/units.css`; a
+  unit standing upright (a vertical slider) is turned a quarter by the build. A language writes only what its design
+  has: a piece it leaves out stays invisible, and pieces it shows as one have the space and the corners between
+  them at 0. Component CSS keeps the layout only.
+- **Slots and places.** A component reads its tokens through slots on its own root (`--_<component>-…`), so one
+  instance's values never flow into another inside it. Where a component holds a part (a list in a popup, a field in
+  a grid cell, a toolbar's buttons) a place decides that part's units there.
+- **Shapes.** `tokens/shapes/kit.shapes.json` describes shapes by kind (circle, ellipse, rounded polygon, rect,
+  wave: soft burst, cookies, sunny, pill, pentagon …); the build turns each into a `polygon()` of the same 180
+  points, so one becomes the next smoothly. A `shape` token names one.
+- Every look in every language and theme is unchanged by the move, measured by pixel and computed-style compares,
+  except where a language now draws its source: below.
+
+### Material 3 Expressive, from its specs and videos
+
+- **Slider:** a 16 px track of segments with a 6 px gap at each side of a 4 × 44 px bar handle that narrows to 2 px
+  pressed or focused, 2 px inner corners, stop dots at the ends of the inactive track, the steps as dots on the
+  track; centred (`origin`) and range sliders the same way; the value as a pill on the inverse surface.
+- **Loading indicator (Spinner):** a filled shape that becomes the next of seven (soft burst, 9-sided cookie,
+  pentagon, pill, sunny, 4-sided cookie, oval) with a spring while it turns; `contained` draws it in a disc
+  (`accent.subtle`, the shape in `accent.on-subtle`). A busy button turns the same shape in its place.
+- **Progress indicator (ProgressBar):** while the value is known the bar is a wave travelling along, flat while short
+  and again at 100 %, with a gap, the rest of the track and a stop dot; `shape="circle"` the same round a ring. While
+  the value is not known both stay as they were.
+
+### New in the components
+
+- `Slider`: `origin` (a centred slider), a track of segments that can stop short of the thumbs (`track-gap`), stop
+  dots, a halo, a knob and a core, a value bubble with an arrow, `tick-label-room`; a disabled slider sends nothing
+  with its form.
+- `Spinner`: `contained`; a shape instead of the ring where the language draws one.
+- `ProgressBar`: `shape: 'line' | 'circle'` (a determinate and a turning circle), `labelPosition: 'bottom'`, a wave.
+- `Button`: the caption is an element (`.mx-button__text`), so a language can trim its line box (`text-box`) and
+  centre the letters optically; `data-icon-only`; `readLook()`. `Field`: `readLook()`. Both for a control placed in
+  the page outside the component tree.
+- `Accordion`: the chevron stands in a plate of its own (`.mx-accordion__plate`).
+- `Toolbar` measures again when a control takes another size or variant from its place.
+
 ### Design languages
 
 - Material and Fluent in the docs Style menu next to Tactile and Lounge, with per-language component
@@ -20,9 +72,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   there now). Every look in every language and theme is unchanged, measured.
 - Lilac in the Style menu, with its own spacing in `tokens/component/identity/lilac/` (more room
   between a label and its field, between form rows and columns, in popups, tooltips, toasts, dialogs,
-  tabs, accordions and calendars; 18 px check boxes and radios; a 3 px tab indicator) and its first
-  language stylesheet, `src/styles/identity/lilac.css`: a framed field shows focus as a lilac ring all
-  around. `e2e/checks/37-design-languages.mjs` measures it too.
+  tabs, accordions and calendars; 18 px check boxes and radios; a 3 px tab indicator; a framed field
+  shows focus as a 2 px lilac ring all around, from its field tokens). `e2e/checks/37-design-languages.mjs` measures it too.
 - A split button's focus ring is drawn whole: the focused part sits above the arrow next to it.
 - Material: pill tabs and the tab scroll buttons are fully round (the segmented button shape).
 - Tools: `npm run fingerprint` / `fingerprint:compare` (the computed look of every element on every
@@ -1330,6 +1381,32 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Texts in `uiLocale` (en, tr) and `texts`; dates and times by `Intl` in `locale`. Component tokens
   `tokens/component/scheduler.tokens.json`; `chevronStart` in the glyphs.
 - Docs page `/scheduler`; `e2e/checks/57-scheduler.mjs` (32 checks, axe in every view in light and dark).
+
+### Scheduler, milestone 2: adding, the form, moving and resizing
+
+- Appointments are moved by dragging (on the step of `snapMinutes`; over the hours, onto the all-day panel, by days in
+  the month), resized by their edges (`minDuration`), copied with Ctrl, taken back with Escape; the view scrolls near
+  its edges; a finger starts with a long press. While it goes the appointment's own box stands where it would go (a
+  draft the layout shows): nothing is built for the drag.
+- The keys: the arrows move a focused appointment (Shift + arrows its end), Enter saves, Escape takes it back; Delete
+  deletes (asking first, `editing.confirmDelete`); Enter on cells opens the form for a new one over the selection.
+- A click shows the tooltip (text, time, description, Edit, Delete; `tooltip`); a double click opens the form
+  (`MxForm` + `FormLayout`: title, start, end, all day, description, the end checked against the start).
+  `onFormOpening` gets its `items` and `data` to add fields of its own (written to the appointment's fields of those
+  names), or cancels it for a form of one's own.
+- Writes go where the appointments come from: into the array (pushed, assigned, spliced) or through the data source's
+  adapter. `onAppointmentAdding` / `Updating` / `Deleting` may cancel or set a `promise` to wait; while one saves
+  the appointment is locked; `onDataError` tells when saving failed, and it shows as it was.
+- `editing` (`false`: read only; or `allowAdding`, `allowUpdating`, `allowDeleting`, `allowDragging`,
+  `allowResizing`, `allowCopying`, `confirmDelete`), an appointment's own `allowDrag`, `allowResize`, `allowEdit`,
+  `allowDelete` winning. `onMoveStart` / `onMoving` / `onMoveEnd` and `onResizeStart` / `onResizing` / `onResizeEnd`
+  (cancel on `…ing` marks a place it may not go). Methods `addAppointment`, `updateAppointment`, `deleteAppointment`,
+  `showAppointmentForm`, `showTooltip`, `hideTooltip`.
+- A scheduler's data source must load `'all'` (it warns otherwise): a page of rows would leave appointments of the
+  days shown out. The milestone 1 example used `'page'`; fixed.
+- A box carries its text, colour and disabled state from the layout, so a plain object changed by a data source
+  reaches it too. Narrow boxes cut their text short on one line instead of breaking words.
+- Docs page `/scheduler/editing`; `e2e/checks/58-scheduler-editing.mjs`.
 
 ### Design languages, step 1: what lets a language change everything
 

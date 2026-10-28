@@ -68,11 +68,13 @@ const HOOKS = [
 ];
 
 const TOKENS = [
+  ['switch.track, switch.thumb', 'Units: the track and the thumb, each with every state (`checked`, `invalid`, `hover`, `pressed`, `focus`, `disabled` and their pairs).'],
+  ['switch.thumb-icon, switch.halo', 'Units: an icon in the thumb and a halo around it, where the language has them.'],
+  ['switch.text, switch.side-text', 'Units: the on / off text in the track and beside it.'],
   ['switch.track-width.*, switch.track-height.*', 'The track, per size.'],
-  ['switch.thumb-inset', 'The space around the thumb; the thumb fills the rest of the track height.'],
+  ['switch.thumb-size.*, switch.thumb-size-checked.*, switch.thumb-size-hover.*, switch.thumb-size-pressed.*, switch.thumb-inset, switch.thumb-stretch', 'The thumb per size and state, the space around it, and how far it stretches while pressed.'],
   ['switch.height.*, switch.font-size.*', 'The row height (density tokens) and the caption size.'],
-  ['switch.text-font-size, switch.text-padding', 'The on / off text.'],
-  ['switch.border-width, switch.gap', 'The track border, and the space before the caption.'],
+  ['switch.text-padding, switch.gap', 'The space of the on / off text, and before the caption.'],
 ];
 
 export default function SwitchPage() {

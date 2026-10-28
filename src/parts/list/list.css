@@ -1,10 +1,11 @@
-/* List: the options of a drop-down, a combo box or a list box. The highlight is data-active, the
-   chosen ones data-selected (a bar at the start, a check mark in a multiple list). */
+/* List: the options of a drop-down, a combo box or a list box. The keys' item is data-active (the
+   highlight), the chosen ones data-selected: a bar, or in a list of several choices a check mark.
+   Only the layout is here: every part's look is a unit of the list's schema (`$units`), painted by
+   units.css from the language's tokens. */
 @layer mx.components {
   .mx-list {
     display: flex;
     flex-direction: column;
-    max-block-size: var(--mx-list-max-height);
     overflow: auto;
     overscroll-behavior: contain;
   }
@@ -19,57 +20,37 @@
     display: flex;
     flex: none;
     align-items: center;
-    gap: var(--mx-list-item-gap);
-    min-block-size: var(--mx-list-item-height);
-    padding-inline: var(--mx-list-item-padding);
-    border-radius: var(--mx-list-item-radius);
-    cursor: default;
     user-select: none;
   }
 
+  /* The selection's shadow, for a host that draws a ring over it and keeps it (a list box's keys). */
   .mx-list__item[data-selected] {
-    color: var(--mx-list-item-selected-text);
-    background: var(--mx-list-item-selected);
-    box-shadow:
-      inset 0 0 0 var(--mx-list-item-selected-border-width) var(--mx-list-item-selected-border),
-      var(--mx-list-item-selected-effect);
+    --_selected-shadow:
+      var(--_list-item-selected-glow, var(--_list-item-glow, 0 0 #0000)),
+      var(--_list-item-selected-shadow, var(--_list-item-shadow, 0 0 #0000));
   }
 
-  /* A selected item keeps the language's selection look while it is the active one. */
-  .mx-list__item[data-active]:not([data-selected]) {
-    background: var(--mx-list-item-highlight);
-  }
-
-  .mx-list:not([aria-multiselectable]) .mx-list__item[data-selected]::before {
+  /* The selection bar: centred along the item by layout, on the side its margins leave. */
+  .mx-list__item[data-selected]::before {
     content: '';
     position: absolute;
-    inset-block: calc(50% - var(--mx-list-indicator-length) / 2);
-    inset-inline-start: 0;
-    inline-size: var(--mx-list-indicator-width);
-    background: var(--mx-list-indicator-color);
-    border-radius: var(--mx-list-indicator-radius);
-  }
-
-  .mx-list__item[aria-disabled='true'] {
-    color: var(--mx-list-item-fg-disabled);
+    inset-block: 0;
+    inset-inline: 0;
   }
 
   .mx-list__check {
     display: inline-flex;
     flex: none;
     visibility: hidden;
-    color: var(--mx-list-indicator-color);
   }
 
-  .mx-list__item[data-selected] .mx-list__check {
+  .mx-list__item[data-selected] > .mx-list__check {
     visibility: visible;
   }
 
   .mx-list__icon {
     display: inline-flex;
     flex: none;
-    inline-size: var(--mx-list-icon-size);
-    block-size: var(--mx-list-icon-size);
   }
 
   .mx-list__icon > :is(img, svg, .mx-glyph) {
@@ -90,20 +71,18 @@
     display: flex;
     flex: none;
     align-items: flex-end;
-    block-size: var(--mx-list-item-height);
-    padding-inline: var(--mx-list-item-padding);
-    padding-block-end: var(--mx-list-header-padding);
-    font-size: var(--mx-list-header-font-size);
-    font-weight: var(--mx-list-header-font-weight);
-    color: var(--mx-list-header-fg);
+    block-size: var(--_list-item-height);
+  }
+
+  /* "Select all": a line under it, drawn over the row so every row keeps one height. */
+  .mx-list__item[data-select-all]::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
   }
 
   .mx-list__space {
     flex: none;
-  }
-
-  .mx-list__empty {
-    padding: var(--mx-list-item-padding);
-    color: var(--mx-list-empty-fg);
   }
 }

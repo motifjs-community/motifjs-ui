@@ -17,6 +17,10 @@ const FIELDS: SchedulerFields = {
   color: 'color',
   disabled: 'disabled',
   visible: 'visible',
+  allowDrag: 'allowDrag',
+  allowResize: 'allowResize',
+  allowEdit: 'allowEdit',
+  allowDelete: 'allowDelete',
 };
 
 const view = (over: Partial<ResolvedView> = {}): ResolvedView => ({

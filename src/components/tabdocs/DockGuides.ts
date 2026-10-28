@@ -34,8 +34,7 @@ export class DockGuides {
       this.hide();
       this.root = root;
     }
-    const size = this.size();
-    const gap = Math.round(size / 4);
+    const { size, gap } = this.measure();
     const rtl = isRtl(root);
     this.shown = [];
     const outer = root.getBoundingClientRect();
@@ -141,12 +140,14 @@ export class DockGuides {
     return el;
   }
 
-  /** How big a guide is: its style's, 32 pixels where nothing is laid out. */
-  private size(): number {
+  /** How big a guide is and how far apart they stand: their style's (the gap), 32 and 8 pixels where nothing is laid out. */
+  private measure(): { size: number; gap: number } {
     const probe = this.cross.get('center') ?? this.guide(this.cross, 'center', 'center', 'cross');
-    const view = this.root.ownerDocument.defaultView;
-    const width = view ? parseFloat(view.getComputedStyle(probe).inlineSize || view.getComputedStyle(probe).width) : NaN;
-    return width > 0 ? width : 32;
+    const style = this.root.ownerDocument.defaultView?.getComputedStyle(probe);
+    const width = style ? parseFloat(style.inlineSize || style.width) : NaN;
+    const size = width > 0 ? width : 32;
+    const gap = style ? parseFloat(style.columnGap) : NaN;
+    return { size, gap: Math.round(gap >= 0 ? gap : size / 4) };
   }
 }
 

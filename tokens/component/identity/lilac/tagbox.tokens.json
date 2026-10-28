@@ -1,9 +1,0 @@
-{
-  "tagbox": {
-    "$description": "Lilac tags: more side space.",
-    "tag-padding": {
-      "$type": "dimension",
-      "$value": "{space.3}"
-    }
-  }
-}

@@ -1,0 +1,151 @@
+{
+  "calendar": {
+    "$description": "Calendar: the header, the grid of days (or months, years, decades) and the foot. The cell size and the layout values are plain tokens; every piece is a unit (`$units`).",
+    "$selector": ".mx-calendar",
+    "day-size": { "$type": "dimension", "$description": "A day: the grid, the header buttons and the weekday row are built on it." },
+    "view-cell-width-scale": { "$type": "number", "$description": "A cell of the year, decade and century views, as a share of a day cell." },
+    "view-cell-height-scale": { "$type": "number" },
+    "previous-rotate": { "$type": "angle" },
+    "next-rotate": { "$type": "angle" },
+    "$units": {
+      "container": {
+        "$description": "The whole calendar: the space around and between the header, the grid and the foot; its text (`disabled`).",
+        "selector": ".mx-calendar",
+        "states": {
+          "disabled": ".mx-calendar[data-disabled]"
+        }
+      },
+      "header": {
+        "$description": "The header: previous, the title, next; a line under it.",
+        "selector": ".mx-calendar__header"
+      },
+      "title": {
+        "$description": "The title, a button that zooms out to the year, the decade, the century.",
+        "selector": ".mx-calendar__title",
+        "defaults": {
+          "border-width": "0px",
+          "bg": "transparent",
+          "cursor": "default",
+          "color": "inherit",
+          "min-height": "var(--_calendar-day-size)"
+        },
+        "states": {
+          "hover": ".mx-calendar__title:hover:not(:disabled)",
+          "pressed": {
+            "selector": ".mx-calendar__title:active:not(:disabled)",
+            "from": "hover"
+          },
+          "focus": ".mx-calendar__title:focus-visible",
+          "disabled": ".mx-calendar__title:disabled"
+        }
+      },
+      "nav": {
+        "$description": "The previous and next buttons.",
+        "selector": ".mx-calendar__nav",
+        "defaults": {
+          "border-width": "0px",
+          "bg": "transparent",
+          "cursor": "default",
+          "size": "var(--_calendar-day-size)"
+        },
+        "states": {
+          "hover": ".mx-calendar__nav:hover:not(:disabled)",
+          "pressed": {
+            "selector": ".mx-calendar__nav:active:not(:disabled)",
+            "from": "hover"
+          },
+          "focus": ".mx-calendar__nav:focus-visible",
+          "disabled": ".mx-calendar__nav:disabled"
+        }
+      },
+      "nav-icon": {
+        "$description": "The previous and next buttons' glyph (turned per side by `previous-rotate`, `next-rotate`).",
+        "selector": ".mx-calendar__nav > .mx-glyph"
+      },
+      "weekday": {
+        "$description": "A weekday over its column.",
+        "selector": ".mx-calendar__grid th",
+        "defaults": {
+          "height": "var(--_calendar-day-size)",
+          "padding": "0px"
+        }
+      },
+      "week": {
+        "$description": "The week numbers, beside the rows (on the weekday unit: what it does not write, it takes from it).",
+        "selector": ".mx-calendar__grid .mx-calendar__week"
+      },
+      "cell": {
+        "$description": "A day, or a month, a year, a decade in the zoomed-out views (`block`): under the pointer, pressed, focused by the keys, outside the month, today, chosen (`selected`), today and chosen, disabled.",
+        "selector": ".mx-calendar__cell",
+        "defaults": {
+          "width": "var(--_cell-w)",
+          "height": "var(--_cell-h)",
+          "padding": "0px",
+          "cursor": "default"
+        },
+        "states": {
+          "block": ".mx-calendar:not([data-view='month']) .mx-calendar__cell",
+          "hover": ".mx-calendar__cell:hover:not([aria-disabled='true'], [aria-selected='true'])",
+          "pressed": {
+            "selector": ".mx-calendar__cell:active:not([aria-disabled='true'], [aria-selected='true'])",
+            "from": "hover"
+          },
+          "focus": ".mx-calendar__cell:focus-visible",
+          "outside": ".mx-calendar__cell[data-outside]",
+          "today": ".mx-calendar__cell[data-today]",
+          "today-hover": {
+            "selector": ".mx-calendar__cell[data-today]:hover:not([aria-disabled='true'], [aria-selected='true'])",
+            "from": "today"
+          },
+          "today-pressed": {
+            "selector": ".mx-calendar__cell[data-today]:active:not([aria-disabled='true'], [aria-selected='true'])",
+            "from": "today-hover"
+          },
+          "selected": ".mx-calendar__cell[aria-selected='true']",
+          "selected-hover": {
+            "selector": ".mx-calendar__cell[aria-selected='true']:hover",
+            "from": "selected"
+          },
+          "today-selected": {
+            "selector": ".mx-calendar__cell[data-today][aria-selected='true']",
+            "from": "selected"
+          },
+          "today-selected-hover": {
+            "selector": ".mx-calendar__cell[data-today][aria-selected='true']:hover",
+            "from": "today-selected"
+          },
+          "disabled": ".mx-calendar__cell[aria-disabled='true']",
+          "today-selected-disabled": {
+            "selector": ".mx-calendar__cell[data-today][aria-selected='true'][aria-disabled='true']",
+            "from": "today-selected"
+          }
+        }
+      },
+      "ring": {
+        "$description": "A ring around the chosen day, beside the focus ring (its frame; negative margins put it outside the day). Its corners follow the day's.",
+        "selector": ".mx-calendar__cell[aria-selected='true']::before"
+      },
+      "foot": {
+        "$description": "The foot with Today; a line over it.",
+        "selector": ".mx-calendar__foot"
+      },
+      "today": {
+        "$description": "The Today button in the foot.",
+        "selector": ".mx-calendar__today",
+        "defaults": {
+          "border-width": "0px",
+          "bg": "transparent",
+          "cursor": "default"
+        },
+        "states": {
+          "hover": ".mx-calendar__today:hover:not(:disabled)",
+          "pressed": {
+            "selector": ".mx-calendar__today:active:not(:disabled)",
+            "from": "hover"
+          },
+          "focus": ".mx-calendar__today:focus-visible"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "form-layout": {
+    "$description": "FormLayout: the gaps between fields and the look of groups.",
+    "$selector": ".mx-form-layout",
+    "row-gap": { "$type": "dimension" },
+    "column-gap": { "$type": "dimension" },
+    "caption-float": { "$type": "keyword", "$description": "Where a group's caption sits: none (on the group's frame) or inline-start (inside the group, above its fields)." },
+    "$places": {
+      "field": {
+        "$description": "The form's fields: the width of their label column, where the labels stand beside the boxes (`labelMode: 'side'`).",
+        "selector": ":where(.mx-form-layout__item) > .mx-field",
+        "part": "field",
+        "tokens": [
+          "label-width"
+        ]
+      }
+    },
+    "$units": {
+      "group": {
+        "$description": "A group of fields under a caption: its card (a frame, a fill) and the room inside it.",
+        "selector": ".mx-form-layout__group",
+        "defaults": {
+          "margin": "0px"
+        }
+      },
+      "caption": {
+        "$description": "A group's caption, on its frame or above its fields.",
+        "selector": ".mx-form-layout__caption"
+      }
+    }
+  }
+}

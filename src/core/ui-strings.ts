@@ -443,4 +443,20 @@ export interface UiStrings {
   schedulerShown: string;
   schedulerViewShown: string;
   schedulerNoAppointments: string;
+  schedulerNewAppointment: string;
+  schedulerEditAppointment: string;
+  schedulerSubject: string;
+  schedulerStart: string;
+  schedulerEnd: string;
+  schedulerDescription: string;
+  schedulerSave: string;
+  schedulerEdit: string;
+  schedulerDelete: string;
+  schedulerDeleteConfirm: string;
+  schedulerEndBeforeStart: string;
+  schedulerAdded: string;
+  schedulerDeleted: string;
+  schedulerMoved: string;
+  schedulerMoving: string;
+  schedulerSaveFailed: string;
 }

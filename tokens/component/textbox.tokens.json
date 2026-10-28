@@ -1,6 +1,0 @@
-{
-  "text-box": {
-    "$description": "TextBox: the password button while the password shows.",
-    "reveal-fg-pressed": { "$type": "color", "$value": "{color.fg.primary}" }
-  }
-}

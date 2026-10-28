@@ -1,0 +1,21 @@
+{
+  "tooltip": {
+    "offset": { "$value": "{space.1}" },
+    "enter-offset": { "$value": "0px" },
+    "text-align": { "$value": "start" },
+    "surface": {
+      "max-width": { "$value": {"value": 20, "unit": "rem"} },
+      "padding-block": { "$value": {"value": 7, "unit": "px"} },
+      "padding-inline": { "$value": {"value": 9, "unit": "px"} },
+      "bg": { "$value": "{color.bg.surface}" },
+      "border-width": { "$value": "{border.width.1}" },
+      "border-color": { "$value": "{color.stroke.card}" },
+      "radius": { "$value": "{radius.md}" },
+      "shadow": { "$value": "{elevation.tooltip}" },
+      "color": { "$value": "{color.fg.primary}" },
+      "font-size": { "$value": "{font.size.caption}" },
+      "font-weight": { "$value": "{font.weight.regular}" },
+      "line-height": { "$value": "{font.line.caption}" }
+    }
+  }
+}

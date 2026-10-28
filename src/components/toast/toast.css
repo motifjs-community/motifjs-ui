@@ -1,33 +1,34 @@
-/* Toast and Toaster. A toaster is a region with a fixed stack at each edge position in use;
-   a toast is a surface card whose tone shows in its glyph. It slides in from its edge and fades
-   out, with the motion tokens (none under reduced motion). */
+/* Toast and Toaster. A toaster is a region with a fixed stack at each edge position in use; a toast
+   is a surface whose tone shows in its glyph and wherever a design language draws it (the units in
+   units.css: the surface, a stripe along its start edge, a timer line along its bottom, the glyph on
+   its plate). It slides in from its edge and fades out, with the motion tokens (none under reduced
+   motion). This file only places the pieces; its buttons take their look from the toast's places. */
 @layer mx.components {
   .mx-toaster__stack {
     position: fixed;
     z-index: var(--mx-z-toast);
     display: flex;
     flex-direction: column;
-    gap: var(--mx-toast-gap);
     box-sizing: border-box;
-    inline-size: var(--mx-toast-width);
-    max-inline-size: calc(100vw - 2 * var(--mx-toast-inset));
+    inline-size: var(--_toast-width);
+    max-inline-size: calc(100vw - 2 * var(--_toast-inset));
     pointer-events: none;
   }
 
   .mx-toaster__stack[data-position^='top'] {
-    inset-block-start: var(--mx-toast-inset);
+    inset-block-start: var(--_toast-inset);
   }
 
   .mx-toaster__stack[data-position^='bottom'] {
-    inset-block-end: var(--mx-toast-inset);
+    inset-block-end: var(--_toast-inset);
   }
 
   .mx-toaster__stack[data-position$='-start'] {
-    inset-inline-start: var(--mx-toast-inset);
+    inset-inline-start: var(--_toast-inset);
   }
 
   .mx-toaster__stack[data-position$='-end'] {
-    inset-inline-end: var(--mx-toast-inset);
+    inset-inline-end: var(--_toast-inset);
   }
 
   .mx-toaster__stack:is([data-position='top'], [data-position='bottom']) {
@@ -36,82 +37,106 @@
   }
 
   .mx-toast {
-    --_slide: var(--mx-toast-slide);
-    --_tint: var(--mx-toast-icon-fg);
+    --_slide: var(--_toast-slide);
+    --_slide-inline: 0;
 
+    position: relative;
     display: flex;
-    gap: var(--mx-toast-content-gap);
     align-items: flex-start;
     box-sizing: border-box;
-    padding: var(--mx-toast-padding);
-    font-size: var(--mx-toast-font-size);
-    line-height: var(--mx-toast-line-height);
-    color: var(--mx-toast-fg);
-    background: var(--mx-toast-background);
-    border: var(--mx-toast-border-width) solid var(--mx-toast-border-color);
-    border-radius: var(--mx-toast-radius);
-    box-shadow: var(--mx-toast-shadow);
     pointer-events: auto;
     transition:
       opacity var(--mx-motion-duration-normal) var(--mx-motion-easing-out),
       translate var(--mx-motion-duration-normal) var(--mx-motion-easing-out);
   }
 
-  .mx-toaster__stack[data-position^='top'] .mx-toast {
-    --_slide: calc(-1 * var(--mx-toast-slide));
+  /* The stripe along the start edge and the timer line along the bottom, inside the frame. The line
+     runs out from the end towards the start while the toast's time runs (Toast.ts animates it). */
+  .mx-toast::before,
+  .mx-toast::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .mx-toast::before {
+    inset-block: 0;
+    inset-inline-start: 0;
+  }
+
+  .mx-toast::after {
+    inset-inline: 0;
+    inset-block-end: 0;
+    transform-origin: left;
+  }
+
+  .mx-toast:dir(rtl)::after {
+    transform-origin: right;
+  }
+
+  .mx-toaster__stack[data-position^='top'] > .mx-toast {
+    --_slide: calc(-1 * var(--_toast-slide));
+  }
+
+  /* At a corner it may also come in from its side. */
+  .mx-toaster__stack[data-position$='-start'] > .mx-toast {
+    --_slide-inline: calc(-1 * var(--_toast-slide-inline));
+  }
+
+  .mx-toaster__stack[data-position$='-end'] > .mx-toast {
+    --_slide-inline: var(--_toast-slide-inline);
+  }
+
+  .mx-toaster__stack[data-position$='-start'] > .mx-toast:dir(rtl) {
+    --_slide-inline: var(--_toast-slide-inline);
+  }
+
+  .mx-toaster__stack[data-position$='-end'] > .mx-toast:dir(rtl) {
+    --_slide-inline: calc(-1 * var(--_toast-slide-inline));
   }
 
   .mx-toast[data-state='entering'] {
     opacity: 0;
-    translate: 0 var(--_slide);
+    translate: var(--_slide-inline) var(--_slide);
   }
 
   .mx-toast[data-state='leaving'] {
     opacity: 0;
   }
 
-  .mx-toast[data-tone='success'] {
-    --_tint: var(--mx-toast-success-icon-fg);
-  }
-
-  .mx-toast[data-tone='caution'] {
-    --_tint: var(--mx-toast-caution-icon-fg);
-  }
-
-  .mx-toast[data-tone='danger'] {
-    --_tint: var(--mx-toast-danger-icon-fg);
-  }
-
-  .mx-toast__icon {
+  /* The glyph's room is as high as a line, so it stands beside the first one. */
+  :where(.mx-toast) > .mx-toast__icon {
+    position: relative;
     display: inline-flex;
     flex: none;
     align-items: center;
-    block-size: var(--mx-toast-line-height);
-    color: var(--_tint);
+    block-size: 1lh;
   }
 
-  .mx-toast__icon[hidden] {
+  :where(.mx-toast) > .mx-toast__icon[hidden] {
     display: none;
   }
 
-  .mx-toast__icon > * {
-    inline-size: var(--mx-toast-icon-size);
-    block-size: var(--mx-toast-icon-size);
+  /* The plate is centred on the glyph and takes no room of its own: the glyph is drawn over it. */
+  :where(.mx-toast) > .mx-toast__icon::before {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    translate: -50% -50%;
   }
 
-  .mx-toast__body {
+  :where(.mx-toast) > .mx-toast__icon > * {
+    position: relative;
+  }
+
+  :where(.mx-toast) > .mx-toast__body {
     flex: 1;
     min-inline-size: 0;
     overflow-wrap: break-word;
   }
 
-  .mx-toast__title {
-    font-weight: var(--mx-toast-title-font-weight);
-  }
-
-  .mx-toast__action,
-  .mx-toast__close {
+  :where(.mx-toast) > :is(.mx-toast__action, .mx-toast__close) {
     flex: none;
-    align-self: center;
+    align-self: var(--_toast-buttons-align);
   }
 }

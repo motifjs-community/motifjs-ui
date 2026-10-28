@@ -180,7 +180,7 @@ describe('Slider', () => {
     expect(s.price).toEqual([50, 60]);
     press(end, 'PageUp');
     expect(s.price).toEqual([50, 70]);
-    expect(b.element.querySelector<HTMLElement>('.mx-slider__fill')!.style.getPropertyValue('--_from')).toBe('50%');
+    expect(b.element.querySelector<HTMLElement>('.mx-slider__rail')!.style.getPropertyValue('--_from')).toBe('50%');
 
     uiLocale.strings = trStrings;
     await settle();
@@ -339,6 +339,17 @@ describe('Slider', () => {
     expect(new FormData(form).getAll('price')).toEqual(['30']);
     b.name = '';
     expect(new FormData(form).getAll('price')).toEqual([]);
+  });
+
+  it('sends nothing with its form while disabled, as a native field', async () => {
+    const b = new Slider({ name: 'volume', value: 40, enabled: false });
+    page(b);
+    const form = document.createElement('form');
+    document.body.append(form);
+    form.append(b.element);
+    expect(new FormData(form).getAll('volume')).toEqual([]);
+    b.enabled = true;
+    expect(new FormData(form).getAll('volume')).toEqual(['40']);
   });
 
   it('marks an error on the thumbs', async () => {

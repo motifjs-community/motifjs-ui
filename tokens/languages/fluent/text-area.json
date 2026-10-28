@@ -1,0 +1,9 @@
+{
+  "text-area": {
+    "line-height": {
+      "sm": { "$value": "{font.line.caption}" },
+      "md": { "$value": "{font.line.body}" },
+      "lg": { "$value": "{font.line.body-large}" }
+    }
+  }
+}

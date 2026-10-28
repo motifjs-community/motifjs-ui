@@ -1,4 +1,5 @@
 /** Real-browser checks of the TabDocumentManager's New windows page: a real `window.open` window, what moves into it and what works there. */
+import { identityThemes } from '../languages.mjs';
 export default async function ({ page, base, check, axeSource, box }) {
   const titlesIn = (scope) => scope.locator('[role="tab"] .mx-tabdocs__title').allTextContents();
   const open = async (anchor) => {
@@ -81,7 +82,8 @@ export default async function ({ page, base, check, axeSource, box }) {
 
   // The look, state by state, the same as in the page in every language and theme.
   {
-    const COMBOS = [['tactile', 'light'], ['tactile', 'dark'], ['tactile', 'high-contrast'], ['lounge', 'dark'], ['material', 'light'], ['material', 'dark'], ['fluent', 'light'], ['fluent', 'dark'], ['lilac', 'light'], ['lilac', 'dark']];
+    // Every design language in every theme it ships.
+    const COMBOS = Object.entries(identityThemes).flatMap(([identity, { themes }]) => themes.map((theme) => [identity, theme]));
     const measure = (root) => {
       const cs = (el) => {
         const c = getComputedStyle(el);

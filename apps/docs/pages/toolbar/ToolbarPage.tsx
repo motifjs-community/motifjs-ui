@@ -67,9 +67,8 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['toolbar.height, toolbar.padding, toolbar.gap', 'The bar’s height (the density-aware bar height), padding and spacing.'],
-  ['toolbar.radius, toolbar.background', 'Its corners and fill (the bar color).'],
-  ['toolbar.separator-color, toolbar.separator-width, toolbar.separator-inset', 'The separators.'],
+  ['toolbar.height', 'The bar’s least height (the density-aware bar height).'],
+  ['toolbar.bar, toolbar.separator', 'Units: the bar (`vertical`: a column of controls) and the separators across it.'],
 ];
 
 export default function ToolbarPage() {

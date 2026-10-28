@@ -1,0 +1,26 @@
+{
+  "lookup": {
+    "$description": "Lookup: the table-like list of a drop-down: the column header and the cells.",
+    "$selector": ".mx-lookup, .mx-lookup__popup",
+    "popup-width": { "$type": "dimension" },
+    "column-gap": { "$type": "dimension" },
+    "$units": {
+      "header": {
+        "$description": "The column header over the list.",
+        "selector": ".mx-lookup__header"
+      },
+      "cell": {
+        "$description": "A cell of a row (`header`: of the header); `next`: a cell after another (a divider at its start), `header-next` in the header.",
+        "selector": ".mx-lookup__cell",
+        "states": {
+          "next": ".mx-lookup__cell + .mx-lookup__cell",
+          "header": ".mx-lookup__header > .mx-lookup__cell",
+          "header-next": {
+            "selector": ".mx-lookup__header > .mx-lookup__cell + .mx-lookup__cell",
+            "from": "next"
+          }
+        }
+      }
+    }
+  }
+}

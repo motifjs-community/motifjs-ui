@@ -1,18 +1,14 @@
-/* Toolbar: a row (or a column) of controls on the bar color. Items that left for the "more" menu
-   and the "more" button while it is not needed are out of the layout; separators run across the
-   toolbar. */
+/* Toolbar: a row (or a column) of controls. Items that left for the "more" menu and the "more"
+   button while it is not needed are out of the layout; separators run across the toolbar. The bar
+   and the separators are units (units.css); its buttons, and the "more" button without its arrow,
+   take their look from the toolbar's places. This file only places them. */
 @layer mx.components {
   .mx-toolbar {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
-    gap: var(--mx-toolbar-gap);
     box-sizing: border-box;
     min-inline-size: 0;
-    min-block-size: var(--mx-toolbar-height);
-    padding: var(--mx-toolbar-padding);
-    background: var(--mx-toolbar-background);
-    border-radius: var(--mx-toolbar-radius);
   }
 
   .mx-toolbar[data-orientation='vertical'] {
@@ -51,21 +47,7 @@
     margin-block-start: auto;
   }
 
-  .mx-toolbar__more .mx-button__chevron {
-    display: none;
-  }
-
-  .mx-toolbar__separator {
+  :where(.mx-toolbar) > .mx-toolbar__separator {
     align-self: stretch;
-    inline-size: var(--mx-toolbar-separator-width);
-    margin-block: var(--mx-toolbar-separator-inset);
-    background: var(--mx-toolbar-separator-color);
-  }
-
-  .mx-toolbar[data-orientation='vertical'] > .mx-toolbar__separator {
-    inline-size: auto;
-    block-size: var(--mx-toolbar-separator-width);
-    margin-block: 0;
-    margin-inline: var(--mx-toolbar-separator-inset);
   }
 }

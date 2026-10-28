@@ -1,0 +1,86 @@
+{
+  "spinner": {
+    "$description": "Spinner: what turns (a ring, or a shape that becomes the next one), its container, its label, and the layer it covers a container with.",
+    "$selector": ".mx-spinner, .mx-button__spinner",
+    "gap": { "$type": "dimension" },
+    "cover-padding": { "$type": "dimension" },
+    "cover-background": { "$type": "color" },
+    "size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "ring-width": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "ring-style": { "$type": "keyword", "$description": "The ring's line style." },
+    "duration": { "$type": "duration", "$description": "One turn of the ring; follows the motion durations, so reduced motion stops it." },
+    "fg": { "$type": "color" },
+    "track-color": { "$type": "color" },
+    "accent": { "$type": "color", "$description": "The turning arc, per tone." },
+    "neutral": { "$type": "color" },
+    "success": { "$type": "color" },
+    "caution": { "$type": "color" },
+    "danger": { "$type": "color" },
+    "radius": { "$type": "dimension" },
+    "cover-fg": { "$type": "color" },
+    "focus-width": { "$type": "dimension" },
+    "focus-offset": { "$type": "dimension" },
+    "focus-color": { "$type": "color" },
+    "focus-halo": { "$type": "shadow" },
+    "shape-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "shape-1": { "$type": "shape", "$description": "The seven shapes the shape becomes in turn (names of the kit's shapes); repeat one for fewer." },
+    "shape-2": { "$type": "shape" },
+    "shape-3": { "$type": "shape" },
+    "shape-4": { "$type": "shape" },
+    "shape-5": { "$type": "shape" },
+    "shape-6": { "$type": "shape" },
+    "shape-7": { "$type": "shape" },
+    "morph-duration": { "$type": "duration", "$description": "The seven shapes once; follows the motion durations, so reduced motion stops it." },
+    "morph-easing": { "$type": "cubicBezier", "$description": "How a shape reaches the next (overshooting: a spring)." },
+    "spin-duration": { "$type": "duration", "$description": "One turn of the shape." },
+    "$units": {
+      "box": {
+        "$description": "The container of what turns (a disc behind it): drawn when `contained`, where the language has one.",
+        "selector": ".mx-spinner__box",
+        "states": {
+          "contained": ".mx-spinner[data-contained] .mx-spinner__box"
+        }
+      },
+      "ring": {
+        "$description": "A turning ring: its track and, on top, the arc in the tone.",
+        "selector": ".mx-spinner__ring",
+        "defaults": {
+          "display": "block",
+          "size": "var(--_size)",
+          "border-width": "var(--_ring)",
+          "border-style": "var(--_spinner-ring-style)",
+          "border-color": "var(--_spinner-track-color)",
+          "border-top-color": "var(--_tone)",
+          "radius": "var(--_spinner-radius)"
+        },
+        "states": {
+          "contained": ".mx-spinner[data-contained] .mx-spinner__ring"
+        }
+      },
+      "shape": {
+        "$description": "A filled shape in the tone that turns while it becomes the next of its shapes (`shape-1` … `shape-7`).",
+        "selector": ".mx-spinner__shape",
+        "defaults": {
+          "display": "none",
+          "size": "var(--_shape)",
+          "bg": "var(--_tone)"
+        },
+        "states": {
+          "contained": ".mx-spinner[data-contained] .mx-spinner__shape"
+        }
+      }
+    }
+  }
+}

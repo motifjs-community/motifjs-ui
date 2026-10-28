@@ -1,63 +1,33 @@
-/* MenuBar: a row of top items on the bar color; the menus open on a Popup. An open item keeps
-   the pressed fill while its menu shows. */
+/* MenuBar: a row of top items; the menus open on a Popup. An open item keeps its look while its menu
+   shows. The bar, the items, their icons and access keys are units (units.css); this file only places
+   them. The menus it opens keep the menu's and the popup's own look. */
 @layer mx.components {
   .mx-menubar {
     display: block;
   }
 
-  .mx-menubar__bar {
+  :where(.mx-menubar) > .mx-menubar__bar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--mx-menubar-gap);
-    min-block-size: var(--mx-menubar-height);
-    padding-inline: var(--mx-menubar-padding);
-    background: var(--mx-menubar-background);
-    border-radius: var(--mx-menubar-radius);
   }
 
-  .mx-menubar__item {
+  :where(.mx-menubar > .mx-menubar__bar) > .mx-menubar__item {
     appearance: none;
     display: inline-flex;
     align-items: center;
-    gap: var(--mx-menubar-item-gap);
-    min-block-size: var(--mx-menubar-item-height);
-    margin: 0;
-    padding-block: 0;
-    padding-inline: var(--mx-menubar-item-padding);
     font: inherit;
-    font-size: var(--mx-menubar-item-font-size);
-    line-height: var(--mx-menubar-item-line-height);
     white-space: nowrap;
-    color: var(--mx-menubar-item-fg);
-    background: transparent;
-    border: 0;
-    border-radius: var(--mx-menubar-item-radius);
-    cursor: default;
     user-select: none;
     transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-menubar__item:hover:not([aria-disabled='true']) {
-    background: var(--mx-menubar-item-highlight);
-  }
-
-  .mx-menubar__item[aria-expanded='true'] {
-    background: var(--mx-menubar-item-open);
-  }
-
-  .mx-menubar__item:is(:disabled, [aria-disabled='true']) {
-    color: var(--mx-menubar-item-fg-disabled);
-  }
-
-  .mx-menubar__icon {
+  :where(.mx-menubar > .mx-menubar__bar > .mx-menubar__item) > .mx-menubar__icon {
     display: inline-flex;
     flex: none;
-    inline-size: var(--mx-menubar-icon-size);
-    block-size: var(--mx-menubar-icon-size);
   }
 
-  .mx-menubar__icon > :is(img, svg, .mx-glyph) {
+  :where(.mx-menubar > .mx-menubar__bar > .mx-menubar__item) > .mx-menubar__icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }

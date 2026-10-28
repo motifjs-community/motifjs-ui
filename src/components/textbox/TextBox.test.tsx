@@ -243,7 +243,9 @@ describe('TextBox', () => {
     );
     await settle();
     const box = b.element.querySelector('.mx-field__box')!;
+    // The frame (with the indicator inside it) is the box's first part, drawn over the rest.
     expect(Array.from(box.children).map((c) => c.className)).toEqual([
+      'mx-field__frame',
       'mx-field__icon',
       'mx-field__prefix',
       'mx-field__input mx-field__control',

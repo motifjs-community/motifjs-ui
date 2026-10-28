@@ -21,7 +21,7 @@ const PROPS = [
   ['searchEnabled', '`Bind<boolean>`', '`false`', 'A search box above the list.'],
   ['searchMode', "`Bind<'contains' | 'startswith'>`", "`'contains'`", 'How items in memory match the search.'],
   ['searchDelay', '`Bind<number>`', '`0` / `250`', 'Milliseconds after the last key before searching (in memory / a data source).'],
-  ['height', '`Bind<number | string | null>`', '—', 'Rows (`8`) or a CSS length (`"12rem"`). Without it the list is as high as its items, up to `list.max-height`.'],
+  ['height', '`Bind<number | string | null>`', '—', 'Rows (`8`) or a CSS length (`"12rem"`). Without it the list is as high as its items, up to the list’s `max-height` (`list.container`).'],
   ['itemTemplate', '`Bind<(item, host) => cleanup | void>`', '—', 'Draws an item your way.'],
   ['noItemsText', '`Bind<string>`', '—', 'What an empty list says instead of `uiLocale`’s “No items”.'],
   ['label, labelMode, helpText, hint, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup', 'see TextBox', '', 'The field props every editor has.'],
@@ -77,11 +77,11 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['listbox.padding, listbox.gap', 'The space around the list and between it and the search box.'],
-  ['listbox.check-size, listbox.check-radius, listbox.check-border-width', 'The check boxes.'],
-  ['listbox.divider-width', 'The line under "Select all".'],
-  ['list.*', 'The rows, as for DropDown: height, padding, highlight, chosen item, headers, the most height.'],
-  ['field.*', 'The label, the box, the line under it.'],
+  ['listbox.container, listbox.box', 'Units: the space around the list box, and around and between its search box and list.'],
+  ['listbox.check', 'Unit: the check box of a row in a list of several choices (`checked`, `disabled`, `checked-disabled`).'],
+  ['listbox.keys, listbox.idle', 'Units: the ring round the row the keys are on (`selected`), and that row while the list is not in use.'],
+  ['listbox.field, listbox.search, listbox.list', 'Places: the field, the search box and the list inside a list box (the list\'s and the field\'s own units, as they look here).'],
+  ['list.*', 'The rows, as for DropDown: height, padding, highlight, chosen item, headers, "Select all".'],
 ];
 
 export default function ListBoxPage() {

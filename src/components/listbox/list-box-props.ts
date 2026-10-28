@@ -31,7 +31,7 @@ export interface ListBoxProps<T, V> extends FieldProps<V | V[] | null> {
   searchMode?: Bind<'contains' | 'startswith'>;
   /** Milliseconds between the last key and the search. Default `0` in memory, `250` with a data source. */
   searchDelay?: Bind<number>;
-  /** The list's height: a number of rows, or a CSS length. Default: as high as its items, up to `list.max-height`. */
+  /** The list's height: a number of rows, or a CSS length. Default: as high as its items, up to the list's `max-height` (`list.container`). */
   height?: Bind<number | string | null>;
   itemTemplate?: Bind<ItemTemplate<T> | null>;
   /** What an empty list says; `uiLocale`'s "No items" by default. */

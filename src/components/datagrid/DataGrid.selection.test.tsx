@@ -100,10 +100,20 @@ describe('DataGrid selection', () => {
       [false, false],
     ]);
     expect(grid.element.getAttribute('data-selection')).toBe('multiple');
-    const tokens = JSON.parse(readFileSync('tokens/component/datagrid.tokens.json', 'utf8')).datagrid;
-    const roles = Object.fromEntries(
-      ['selected', 'selected-text', 'selected-border', 'selected-border-width', 'selected-effect', 'indicator-width', 'indicator-length', 'indicator-radius', 'indicator-color'].map((name) => [name, tokens[name].$value]),
-    );
+    const tokens = JSON.parse(readFileSync('tokens/languages/tactile/datagrid.json', 'utf8')).datagrid;
+    // The units of the selection: the row's fill and text, the frame and effect over it, the mark at its start.
+    const ring = tokens.selection.glow.$value;
+    const roles = {
+      selected: tokens.row.selected.bg.$value,
+      'selected-text': tokens.row.selected.color.$value,
+      'selected-border': ring.color,
+      'selected-border-width': ring.spread,
+      'selected-effect': tokens.selection.shadow.$value,
+      'indicator-width': tokens.indicator.width.$value,
+      'indicator-length': tokens.indicator.height.$value,
+      'indicator-radius': tokens.indicator.radius.$value,
+      'indicator-color': tokens.indicator.bg.$value,
+    };
     expect(roles).toEqual({
       selected: '{color.selection.bg}',
       'selected-text': '{color.selection.fg}',

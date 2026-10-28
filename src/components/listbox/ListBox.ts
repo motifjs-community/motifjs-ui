@@ -392,7 +392,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
       return;
     }
     if (parts.search) return;
-    const search = new TextBox({ type: 'search', labelMode: 'hidden', size: 'sm', stretch: true, autocomplete: 'off' });
+    const search = new TextBox({ type: 'search', labelMode: 'hidden', stretch: true, autocomplete: 'off' });
     search.label = () => uiLocale.strings.search;
     search.placeholder = () => uiLocale.strings.search;
     search.element.classList.add('mx-list-box__search');

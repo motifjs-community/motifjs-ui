@@ -15,4 +15,10 @@ export interface StripPiece<T> {
   timed: boolean;
   start: Date;
   end: Date;
+  draft: boolean;
+  invalid: boolean;
+  /** The appointment's text, colour and whether it is disabled, as its box shows them. */
+  text: string;
+  color: string;
+  disabled: boolean;
 }

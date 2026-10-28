@@ -1,9 +1,0 @@
-{
-  "calendar": {
-    "$description": "Material docked date picker: 16 container corners.",
-    "block-radius": {
-      "$type": "dimension",
-      "$value": "{radius.lg}"
-    }
-  }
-}

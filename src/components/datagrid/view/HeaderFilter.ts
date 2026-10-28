@@ -280,10 +280,11 @@ export class HeaderFilter<T> {
     body.element.className = 'mx-data-grid__values-list';
     const bar = new Component<HTMLDivElement>('div');
     bar.element.className = 'mx-data-grid__values-bar';
-    bar.controls.add(
-      new Button({ text: () => model.text('gridApply'), size: 'sm', tone: 'accent', onclick: () => void this.apply() }),
-      new Button({ text: () => model.text('cancel'), size: 'sm', variant: 'outline', onclick: () => this.close() }),
-    );
+    const apply = new Button({ text: () => model.text('gridApply'), tone: 'accent', onclick: () => void this.apply() });
+    const dismiss = new Button({ text: () => model.text('cancel'), onclick: () => this.close() });
+    apply.element.classList.add('mx-data-grid__apply');
+    dismiss.element.classList.add('mx-data-grid__dismiss');
+    bar.controls.add(apply, dismiss);
     popup.controls.add(body, bar);
     this.owner.controls.add(popup);
     popup.onClosed(() => this.release());

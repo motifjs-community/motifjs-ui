@@ -251,21 +251,12 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['datagrid.row-height, datagrid.row-padding', 'The row height, from the density tokens.'],
-  ['datagrid.cell-padding, datagrid.font-size, datagrid.head-font-weight', 'Cells and headers.'],
-  ['datagrid.background, head-background, head-color, line-color, outline-color, edge-color', 'Surfaces and lines.'],
-  ['datagrid.hover, stripe, active, new, changed, invalid, placeholder', 'Row tints and the marks of cells.'],
-  ['datagrid.bar-*, gap, icon-size, button-size, resize-width, mark-size, invalid-width, radius, border-width', 'The bar, the header parts and the marks.'],
-  ['datagrid.selected, check-size, check-mark-size, check-radius', 'Selected rows and the selection check boxes.'],
-  ['datagrid.range-fill, range-fill-opacity, range-text, range-border-color, range-border-width, range-anchor-fill, row-run-border-color, row-run-border-width', 'Selecting by dragging: the cell ranges’ fill (whole over a selected row, with its own text), frame and anchor cell; the frame around the rows a drag selects.'],
-  ['datagrid.action-gap, filter-padding, values-width, values-gap, values-row-height', 'The action buttons, the filter row, the header filter window (a row of its tree).'],
-  ['datagrid.page-info-gap, page-number-width, page-size-width', 'The pager: room around its text and page sizes, the page number box and the page size list.'],
-  ['datagrid.search-mark-background, search-mark-color, search-mark-line', 'The text the search found: its tint, its text and the line under it.'],
-  ['datagrid.group-indent, group-font-weight, group-background, group-count-color', 'Group rows: the step of each level, the text, the row and the count.'],
-  ['datagrid.chip-gap, chip-radius, chip-background, chip-border-color, panel-empty-color, drop-target', 'The group panel, its chips, its empty text and the tint where something can be dropped.'],
-  ['datagrid.band-line-color', 'The lines under and beside a band’s header.'],
-  ['datagrid.adaptive-color, adaptive-radius, adaptive-padding, adaptive-gap, adaptive-background, adaptive-label-color, adaptive-label-font-weight', 'The “…” button and the adaptive detail: its room, its titles and values.'],
-  ['datagrid.more-gap, more-padding-block, more-padding-inline, more-offset, more-radius, more-color, more-danger-color, more-background, more-shadow', 'Infinite mode: the “Loading more rows…” mark over the last rows, and its failed look with Retry.'],
+  ['datagrid.grid, row, selection, indicator, cell, changed, invalid, placeholder, header-cell', 'Units: the grid, a row (`header`, `band`, `filter`, `total`, `body`, `group`, `group-footer`, `selected`, drag and drop states), the selection\'s frame and mark, a cell and a header in their states, the marks over a cell.'],
+  ['datagrid.title, sort, head-button, resize, column-drop, filter-cell, filter, condition, group-*, chip*, toolbar, ghost*, status-*, check*, editor, expand*, drag-*, row-drop, detail-*, adaptive-*, form*, values*, state, note, load-more, export-panel, mark, filter-panel, filter-text, bar, pager*, page-*, tip', 'Units: every other piece, in its states.'],
+  ['datagrid.record-height, row-space, cell-inset, icon-size, button-size, resize-hit-width, group-indent, chip-spacing', 'Sizes the layout counts with.'],
+  ['datagrid.hover-tint, stripe-tint, active-tint, new-tint', 'The tints over a row (and its cells): under the pointer, every other row, the keys\' row, a new row.'],
+  ['datagrid.range-fill, range-fill-opacity, range-selected-fill, range-border-color, range-border-width, range-anchor-fill, row-run-border-color, row-run-border-width', 'Selecting by dragging: the cell ranges\' fill, frame and anchor cell; the frame around the rows a drag selects.'],
+  ['datagrid.pinned-edge-width, pinned-edge-color, search-mark-line, search-mark-thickness, search-mark-offset, status-*-mark', 'The edge of the pinned columns, the line under what the search found, the status symbols.'],
 ];
 
 export default function DataGridApiPage() {

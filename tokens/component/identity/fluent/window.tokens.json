@@ -1,9 +1,0 @@
-{
-  "window": {
-    "$description": "Fluent content dialogs: ContentDialogPadding 24.",
-    "padding": {
-      "$type": "dimension",
-      "$value": "{space.6}"
-    }
-  }
-}

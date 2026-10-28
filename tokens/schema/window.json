@@ -1,0 +1,159 @@
+{
+  "window": {
+    "$description": "MxForm: a window or a modal dialog with its title bar, content and buttons row.",
+    "$selector": ".mx-form, .mx-message-box",
+    "font-family": { "$type": "fontFamily" },
+    "title-align": { "$type": "keyword", "$description": "The title's place in its room: start, center or end." },
+    "min-width": { "$type": "dimension" },
+    "min-height": { "$type": "dimension" },
+    "viewport-margin": { "$type": "dimension" },
+    "resize-edge": { "$type": "dimension" },
+    "enter-offset": { "$type": "dimension" },
+    "message-width": { "$type": "dimension" },
+    "tools-order": { "$type": "number", "$description": "Where the title bar's buttons sit: 0 after the title (at the end), -1 before the icon (at the start)." },
+    "bar-height": { "$type": "dimension" },
+    "$places": {
+      "tool-button": {
+        "$description": "The title bar's minimize and maximize buttons.",
+        "selector": ".mx-form__tools > .mx-form__tool",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "close-button": {
+        "$description": "The title bar close button: its own hover and press colours too.",
+        "selector": ".mx-form__tools > .mx-form__tool.mx-form__close",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size",
+          "face.outline-hover.bg",
+          "face.ghost-hover.bg",
+          "face.outline-pressed.bg",
+          "face.ghost-pressed.bg",
+          "face.outline-hover.color",
+          "face.ghost-hover.color",
+          "face.outline-pressed.color",
+          "face.ghost-pressed.color"
+        ]
+      },
+      "chip": {
+        "$description": "The button a minimized window leaves in its minimize target.",
+        "selector": ".mx-button.mx-form-chip",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "footer-button": {
+        "$description": "A button in the buttons row (a message box button, or a button of the footer control). Places of their own (a grid edit form) outweigh it.",
+        "selector": ":where(.mx-form__footer > *) > .mx-button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size",
+          "face.outline.color",
+          "face.ghost.color",
+          "face.outline-hover.color",
+          "face.ghost-hover.color",
+          "face.outline-pressed.color",
+          "face.ghost-pressed.color"
+        ]
+      },
+      "footer-main-button": {
+        "$description": "The main or destructive action in the buttons row (a button given tone accent or danger).",
+        "selector": ":where(.mx-form__footer > *) > .mx-button:where(:not([data-tone='standard']))",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      }
+    },
+    "$units": {
+      "scrim": {
+        "$description": "The scrim behind a modal window.",
+        "selector": ".mx-form::backdrop"
+      },
+      "surface": {
+        "$description": "The window: `active` (the active window), `dialog` (a modal window: a dialog, a message box), `maximized` (it fills the room).",
+        "selector": ":where(.mx-form)",
+        "defaults": {
+          "padding": "0px",
+          "outline-style": "none"
+        },
+        "states": {
+          "active": ":where(.mx-form)[data-active]",
+          "dialog": ":where(.mx-form)[data-modal]",
+          "maximized": ":where(.mx-form)[data-state='maximized']"
+        }
+      },
+      "bar": {
+        "$description": "The title bar: `active` (of the active window), `dialog` (of a modal one; as `active` unless a language says otherwise).",
+        "selector": ".mx-form__bar",
+        "defaults": {
+          "min-height": "var(--_window-bar-height)"
+        },
+        "states": {
+          "active": ".mx-form[data-active] > .mx-form__bar",
+          "dialog": {
+            "selector": ".mx-form[data-modal] > .mx-form__bar",
+            "from": "active"
+          }
+        }
+      },
+      "icon": {
+        "$description": "The title bar's icon.",
+        "selector": ".mx-form__icon > *"
+      },
+      "title": {
+        "$description": "The title (`dialog`: of a modal window).",
+        "selector": ".mx-form__title",
+        "defaults": {
+          "margin": "0px"
+        },
+        "states": {
+          "dialog": ".mx-form[data-modal] > :where(.mx-form__bar) > .mx-form__title"
+        }
+      },
+      "tools": {
+        "$description": "The title bar's buttons (their look is their places').",
+        "selector": ".mx-form__tools"
+      },
+      "body": {
+        "$description": "The content.",
+        "selector": ".mx-form__content"
+      },
+      "footer": {
+        "$description": "The buttons row.",
+        "selector": ".mx-form__footer"
+      },
+      "grip": {
+        "$description": "A resize grip along an edge or at a corner (`corner`: the one at the bottom end, where a design may draw a grip).",
+        "selector": ".mx-form__resize",
+        "states": {
+          "corner": ".mx-form__resize[data-edge='bottom-end']"
+        }
+      },
+      "message": {
+        "$description": "A message box's content: the tone glyph beside the text.",
+        "selector": ".mx-message-box"
+      },
+      "message-icon": {
+        "$description": "A message box's tone glyph, per tone (`success`, `caution`, `danger`; at rest the info one).",
+        "selector": ".mx-message-box__icon > *",
+        "states": {
+          "success": ".mx-message-box[data-tone='success'] > .mx-message-box__icon > *",
+          "caution": ".mx-message-box[data-tone='caution'] > .mx-message-box__icon > *",
+          "danger": ".mx-message-box[data-tone='danger'] > .mx-message-box__icon > *"
+        }
+      }
+    }
+  }
+}

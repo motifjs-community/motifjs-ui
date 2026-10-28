@@ -1,0 +1,63 @@
+{
+  "actionsheet": {
+    "$description": "ActionSheet: menu items in a bottom sheet, large enough for a finger, with a cancel button apart.",
+    "$selector": ".mx-action-sheet",
+    "$places": {
+      "sheet": {
+        "$description": "The bottom sheet the action sheet is: its content's padding.",
+        "selector": ".mx-action-sheet",
+        "part": "sheet",
+        "tokens": [
+          "body.padding"
+        ]
+      },
+      "menu": {
+        "$description": "The list of actions: items large enough for a finger.",
+        "selector": ".mx-action-sheet__list",
+        "part": "menu",
+        "tokens": [
+          "item-height",
+          "item.padding-inline",
+          "item.gap",
+          "item.font-size",
+          "item.line-height",
+          "item.radius",
+          "item.first.radius-top",
+          "item.last.radius-bottom",
+          "item-white-space",
+          "shortcut.display"
+        ]
+      },
+      "cancel-button": {
+        "$description": "The cancel button apart from the list.",
+        "selector": ".mx-action-sheet__cancel > .mx-button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size",
+          "height.lg",
+          "font-size.lg",
+          "face.font-weight"
+        ]
+      }
+    },
+    "$units": {
+      "message": {
+        "$description": "The message above the actions.",
+        "selector": ".mx-action-sheet__message"
+      },
+      "back": {
+        "$description": "The mark of the item that goes back out of a submenu: its icon and its turn (`rtl`: right to left).",
+        "selector": ".mx-glyph.mx-action-sheet__back",
+        "states": {
+          "rtl": ".mx-glyph.mx-action-sheet__back:dir(rtl)"
+        }
+      },
+      "cancel": {
+        "$description": "The strip under the actions that holds the cancel button.",
+        "selector": ".mx-action-sheet__cancel"
+      }
+    }
+  }
+}

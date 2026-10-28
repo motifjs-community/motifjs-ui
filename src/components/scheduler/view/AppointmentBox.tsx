@@ -1,5 +1,6 @@
 import type { StripPiece } from '../model/strip-piece';
 import type { TimedPiece } from '../model/timed-piece';
+import type { DragMode } from './AppointmentDrag';
 import type { SchedulerHost } from './scheduler-host';
 
 interface Props<T> {
@@ -16,11 +17,7 @@ const isTimed = <T,>(piece: TimedPiece<T> | StripPiece<T>): piece is TimedPiece<
  */
 export function AppointmentBox<T>(props: Props<T>) {
   const { host, piece } = props;
-  const record = () => piece.item as Record<string, unknown>;
-  const text = () => {
-    const value = record()?.[host.fields().text];
-    return value === undefined || value === null || value === '' ? host.text('schedulerNoTitle') : String(value);
-  };
+  const text = () => piece.text || host.text('schedulerNoTitle');
   const allDay = () => !isTimed(piece) && !piece.timed;
   const time = () => {
     if (allDay()) return '';
@@ -36,8 +33,7 @@ export function AppointmentBox<T>(props: Props<T>) {
     return `, ${when}${more}`;
   };
   const style = () => {
-    const color = record()?.[host.fields().color];
-    const own = typeof color === 'string' && color ? { '--_color': color } : { '--_color': '' };
+    const own = { '--_color': piece.color };
     if (isTimed(piece)) {
       return {
         ...own,
@@ -63,14 +59,11 @@ export function AppointmentBox<T>(props: Props<T>) {
     allDay: allDay(),
     view: host.model.view.type,
   });
-  const keydown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      host.appointmentDblClick(piece, e);
-    } else if (e.key === ' ') {
-      e.preventDefault();
-      host.appointmentClick(piece, e);
-    }
+  const resizable = () => !piece.draft && host.canResize(piece.item) && (isTimed(piece) || !piece.timed);
+  const press = (mode: DragMode) => (e: PointerEvent) => {
+    // A press on an appointment selects no cells.
+    e.stopPropagation();
+    if (mode !== 'move' || host.canDrag(piece.item)) host.appointmentPointerDown(piece, mode, e);
   };
   return (
     <div
@@ -78,23 +71,32 @@ export function AppointmentBox<T>(props: Props<T>) {
       role="button"
       tabindex="0"
       data-kind={isTimed(piece) ? 'timed' : piece.timed ? 'chip' : 'bar'}
+      data-piece={piece.id}
       data-before={() => piece.before || null}
       data-after={() => piece.after || null}
       data-short={() => (isTimed(piece) && piece.end.getTime() - piece.start.getTime() <= 30 * 60_000) || null}
       data-past={() => (host.dimPast() && piece.end.getTime() <= host.model.state.now) || null}
-      data-disabled={() => !!record()?.[host.fields().disabled] || null}
-      aria-disabled={() => (record()?.[host.fields().disabled] ? 'true' : null)}
+      data-disabled={() => piece.disabled || null}
+      data-draft={() => piece.draft || null}
+      data-invalid={() => piece.invalid || null}
+      data-copy={() => (piece.draft && piece.id.includes('~copy')) || null}
+      data-saving={() => host.isSaving(piece.item) || null}
+      data-open={() => host.isOpen(piece.item) || null}
+      data-draggable={() => host.canDrag(piece.item) || null}
+      aria-disabled={() => (piece.disabled ? 'true' : null)}
       style={style}
       x-display={() => isTimed(piece) || !piece.hidden}
-      onpointerdown={(e: PointerEvent) => e.stopPropagation()}
+      onpointerdown={press('move')}
       onclick={(e: MouseEvent) => host.appointmentClick(piece, e)}
       ondblclick={(e: MouseEvent) => host.appointmentDblClick(piece, e)}
-      onkeydown={keydown}
+      onkeydown={(e: KeyboardEvent) => host.appointmentKey(piece, e)}
+      onfocusout={() => host.appointmentBlur()}
     >
+      <div class="mx-scheduler__resize" data-edge="start" aria-hidden="true" x-display={() => resizable() && !piece.before} onpointerdown={press('start')} />
       {host.template() ? (
         <div class="mx-scheduler__appointment-content">
           {host.template()!(context())}
-          <span class="mx-scheduler__hidden">{details}</span>
+          <span class="mx-sr-only">{details}</span>
         </div>
       ) : (
         <div class="mx-scheduler__appointment-content">
@@ -102,9 +104,10 @@ export function AppointmentBox<T>(props: Props<T>) {
             {time}
           </span>
           <span class="mx-scheduler__appointment-text">{text}</span>
-          <span class="mx-scheduler__hidden">{details}</span>
+          <span class="mx-sr-only">{details}</span>
         </div>
       )}
+      <div class="mx-scheduler__resize" data-edge="end" aria-hidden="true" x-display={() => resizable() && !piece.after} onpointerdown={press('end')} />
     </div>
   );
 }

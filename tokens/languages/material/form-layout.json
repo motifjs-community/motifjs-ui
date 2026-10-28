@@ -1,0 +1,20 @@
+{
+  "form-layout": {
+    "row-gap": { "$value": "{space.4}" },
+    "column-gap": { "$value": "{space.4}" },
+    "caption-float": { "$value": "inline-start" },
+    "field": {
+      "label-width": { "$value": "{field.label-width}" }
+    },
+    "group": {
+      "padding": { "$value": "{space.4}" },
+      "bg": { "$value": "{color.bg.layer}" },
+      "radius": { "$value": "{radius.md}" }
+    },
+    "caption": {
+      "padding-inline": { "$value": "{space.1}" },
+      "font-size": { "$value": "1em" },
+      "font-weight": { "$value": "{font.weight.medium}" }
+    }
+  }
+}

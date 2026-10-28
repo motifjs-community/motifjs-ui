@@ -1,0 +1,104 @@
+{
+  "filterbuilder": {
+    "$description": "FilterBuilder: a tree of groups and conditions, each row of kit buttons (their look: the places), indented per level with a line along each group. The indent, the lines and the layout values are plain tokens; the pieces are units (`$units`).",
+    "$selector": ".mx-filter-builder",
+    "indent": { "$type": "dimension" },
+    "line-width": { "$type": "dimension" },
+    "line-color": { "$type": "color" },
+    "line-offset": { "$type": "dimension", "$description": "Where a group's line runs in each level's indent, from its start." },
+    "elbow-length": { "$type": "dimension", "$description": "A line from a group's line to each of its rows (0: none)." },
+    "elbow-color": { "$type": "color" },
+    "value-width": { "$type": "dimension", "$description": "The least width of each field in a value's editor." },
+    "$places": {
+      "field-button": {
+        "$description": "The button that chooses a condition's field.",
+        "selector": ".mx-filter-builder__cell > .mx-filter-builder__field",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "operation-button": {
+        "$description": "The button that chooses a condition's operation.",
+        "selector": ".mx-filter-builder__cell > .mx-filter-builder__operation",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "value-button": {
+        "$description": "The button that shows a condition's value and starts its editor.",
+        "selector": ".mx-filter-builder__cell > .mx-filter-builder__value",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "group-button": {
+        "$description": "The button that chooses a group's operation (and, or).",
+        "selector": ".mx-filter-builder__cell > .mx-filter-builder__group",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "add-button": {
+        "$description": "The button that adds a condition or a group.",
+        "selector": ".mx-filter-builder__cell > .mx-filter-builder__add",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "remove-button": {
+        "$description": "The button that removes a condition or a group.",
+        "selector": ".mx-filter-builder__cell > .mx-filter-builder__remove",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      }
+    },
+    "$units": {
+      "container": {
+        "$description": "The whole builder: its text.",
+        "selector": ".mx-filter-builder"
+      },
+      "tree": {
+        "$description": "The rows, one under another (`gap`: the space between them).",
+        "selector": ".mx-filter-builder__tree"
+      },
+      "row": {
+        "$description": "A condition's row (`group`: a group's row, with its operation and its add button; `hover`: under the pointer). Its start padding grows with its level (`indent`); the lines along the groups are drawn in it.",
+        "selector": ".mx-filter-builder__row",
+        "defaults": {
+          "padding-start": "calc(var(--_level, 0) * var(--_row-indent))"
+        },
+        "states": {
+          "group": ".mx-filter-builder__row[data-kind='group']",
+          "hover": ".mx-filter-builder__row:hover"
+        }
+      },
+      "cell": {
+        "$description": "The place of one button in a row.",
+        "selector": ".mx-filter-builder__cell"
+      },
+      "editor": {
+        "$description": "A value's editor in a row (the fields in it are at least `value-width` wide).",
+        "selector": ".mx-filter-builder__editor"
+      }
+    }
+  }
+}

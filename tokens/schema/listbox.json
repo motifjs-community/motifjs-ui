@@ -1,0 +1,91 @@
+{
+  "listbox": {
+    "$description": "ListBox: the list in the field's box, its check boxes and its search box. A list is not a text field: `variant` and `label-mode` are its own defaults (and its search box's), in place of the field's.",
+    "$selector": ".mx-list-box",
+    "$places": {
+      "field": {
+        "$description": "The list box's own box: a list, not a text field (its frame, fill, corners and states).",
+        "selector": ".mx-list-box",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "label-mode",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "frame.border-color",
+          "frame.hover.border-color",
+          "frame.focus.border-color",
+          "box.radius",
+          "frame.border-bottom-color",
+          "frame.hover.border-bottom-color",
+          "frame.focus.border-bottom-color",
+          "frame.focus.border-width",
+          "box.shadow",
+          "box.focus.shadow",
+          "box.cursor",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "frame.disabled.border-color",
+          "indicator.radius",
+          "indicator.focus.shadow",
+          "indicator.invalid-focus.shadow",
+          "indicator.readonly-focus.shadow",
+          "indicator.readonly-invalid-focus.shadow"
+        ]
+      },
+      "search": {
+        "$description": "The search box above the list.",
+        "selector": ".mx-list-box__search",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "list": {
+        "$description": "The list in the box: its check size, and its items' height and corners.",
+        "selector": ".mx-list-box .mx-list",
+        "part": "list",
+        "tokens": [
+          "mark.size",
+          "item-height",
+          "item.radius"
+        ]
+      }
+    },
+    "$units": {
+      "container": {
+        "$description": "The list box: the space around it (a correction a design makes where it sits in a surface, a popup).",
+        "selector": ".mx-list-box"
+      },
+      "box": {
+        "$description": "The field's box as the list box lays it out: the space around the search box and the list, and between them.",
+        "selector": ".mx-list-box > .mx-field__box"
+      },
+      "check": {
+        "$description": "The check box on a row in multiple selection (the list's `mark` is drawn in it, in its `color`): `checked` on a chosen row, `disabled` on a disabled row, `checked-disabled` chosen in a disabled list box.",
+        "selector": ".mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) .mx-list__check",
+        "states": {
+          "checked": ".mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) .mx-list__item[data-selected] .mx-list__check",
+          "disabled": ".mx-list-box[data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) .mx-list__item[aria-disabled='true'] .mx-list__check",
+          "checked-disabled": {
+            "selector": ".mx-list-box[data-disabled][data-check-boxes] > :where(.mx-field__box) > :where(.mx-list) .mx-list__item[data-selected] .mx-list__check",
+            "from": "checked"
+          }
+        }
+      },
+      "keys": {
+        "$description": "The ring around the row the keys are on, while the keys move in the list (`outline`, and `glow`: a band inside it); `selected` on a chosen row (where nothing is written, the list's selection ring stays inside it).",
+        "selector": ".mx-list-box > :where(.mx-field__box) > .mx-list:is(:focus-visible, [data-keys]:focus) .mx-list__item[data-active]",
+        "states": {
+          "selected": ".mx-list-box > :where(.mx-field__box) > .mx-list:is(:focus-visible, [data-keys]:focus) .mx-list__item[data-active][data-selected]"
+        }
+      },
+      "idle": {
+        "$description": "The row the keys are on while the list is not in use: the list's highlight comes back on focus or under the pointer.",
+        "selector": ".mx-list-box > :where(.mx-field__box) > .mx-list:not(:focus, :hover) .mx-list__item[data-active]:not([data-selected])"
+      }
+    }
+  }
+}

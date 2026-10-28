@@ -815,3 +815,11 @@ ul.docs-list {
   border: var(--mx-border-width-1) solid currentcolor;
   border-radius: var(--mx-radius-sm);
 }
+
+.sched-events {
+  min-block-size: var(--mx-space-10);
+  margin: 0;
+  padding-inline-start: var(--mx-space-5);
+  font-size: var(--mx-font-size-caption);
+  color: var(--mx-color-fg-secondary);
+}

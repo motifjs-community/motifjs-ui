@@ -1,14 +1,28 @@
 import { Component, reactive, untracked } from '@motifx/core';
 import { chevronDown } from '../../../core/glyphs';
 import { fillTemplate } from '../../../core/fill-template';
+import { LanguageLook } from '../../../core/language-look';
 import { ResizeWatch } from '../../../core/resize-watch';
 import { Button } from '../../button/Button';
+import type { ButtonTone } from '../../button/button-tone';
+import type { ButtonVariant } from '../../button/button-variant';
 import { DropDown } from '../../dropdown/DropDown';
 import { NumberBox } from '../../numberbox/NumberBox';
 import type { GridModel } from '../model/GridModel';
 import type { PagerHost } from './pager-host';
 
 type PageItem = { key: string; page: number; gap: boolean };
+type ButtonLook = { size: 'sm' | 'md' | 'lg'; step: ButtonVariant; page: ButtonVariant; pageTone: ButtonTone; current: ButtonVariant; currentTone: ButtonTone };
+
+const BUTTONS: ButtonLook = { size: 'sm', step: 'ghost', page: 'ghost', pageTone: 'standard', current: 'solid', currentTone: 'accent' };
+const BUTTON_TOKENS: Record<keyof ButtonLook, string> = {
+  size: '--_datagrid-pager-button-size',
+  step: '--_datagrid-pager-step-variant',
+  page: '--_datagrid-pager-page-variant',
+  pageTone: '--_datagrid-pager-page-tone',
+  current: '--_datagrid-pager-current-variant',
+  currentTone: '--_datagrid-pager-current-tone',
+};
 /** A page size; `on` is its button's pressed state, two-way: pressing it shows that many rows. */
 type SizeItem = { key: string; value: number; text: () => string; on: boolean };
 
@@ -29,12 +43,18 @@ export class GridPager<T> extends Component<HTMLElement> {
   private fullWidth = 0;
   private readonly pages = new Map<string, PageItem>();
   private readonly sizes = new Map<number, SizeItem>();
+  /** The buttons' look, the design language's: their size, the steps' variant, a page's and the current page's. Reactive. */
+  private readonly buttons = reactive({ ...BUTTONS });
+  private readonly language = new LanguageLook(this.element, BUTTON_TOKENS, () => {
+    for (const name of Object.keys(BUTTONS) as (keyof typeof BUTTONS)[]) (this.buttons as Record<string, string>)[name] = this.language.get(name) ?? BUTTONS[name];
+  });
 
   constructor(
     private readonly grid: GridModel<T>,
     private readonly host: PagerHost,
   ) {
     super('nav');
+    this.motif.setDisposable(this.language.watch());
   }
 
   /** Whether the compact look shows now. Reactive. */
@@ -65,6 +85,7 @@ export class GridPager<T> extends Component<HTMLElement> {
   }
 
   override onMounted() {
+    this.language.read();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeWatch(() => this.fit());
     observer.observe(this.element.parentElement ?? this.element);
@@ -99,11 +120,11 @@ export class GridPager<T> extends Component<HTMLElement> {
               key={item.key}
               class="mx-data-grid__page-size"
               text={item.text}
-              size="sm"
+              size={() => this.buttons.size}
               toggle
               x-model={() => item.on}
-              variant={() => (grid.pageSize === item.value ? 'solid' : 'ghost')}
-              tone={() => (grid.pageSize === item.value ? 'accent' : 'standard')}
+              variant={() => (grid.pageSize === item.value ? this.buttons.current : this.buttons.page)}
+              tone={() => (grid.pageSize === item.value ? this.buttons.currentTone : this.buttons.pageTone)}
             />
           ))}
         </div>
@@ -131,8 +152,8 @@ export class GridPager<T> extends Component<HTMLElement> {
           data-step="first"
           icon={() => this.stepIcon(true)}
           hint={() => t('gridFirstPage')}
-          size="sm"
-          variant="ghost"
+          size={() => this.buttons.size}
+          variant={() => this.buttons.step}
           enabled={() => st.page > 0}
           onclick={() => host.goTo(0)}
         />
@@ -142,8 +163,8 @@ export class GridPager<T> extends Component<HTMLElement> {
           data-step="previous"
           icon={() => this.stepIcon(false)}
           hint={() => t('gridPreviousPage')}
-          size="sm"
-          variant="ghost"
+          size={() => this.buttons.size}
+          variant={() => this.buttons.step}
           enabled={() => st.page > 0}
           onclick={() => host.goTo(st.page - 1)}
         />
@@ -158,9 +179,9 @@ export class GridPager<T> extends Component<HTMLElement> {
                 key={p.key}
                 class="mx-data-grid__page"
                 text={() => count(p.page + 1)}
-                size="sm"
-                variant={() => (st.page === p.page ? 'solid' : 'ghost')}
-                tone={() => (st.page === p.page ? 'accent' : 'standard')}
+                size={() => this.buttons.size}
+                variant={() => (st.page === p.page ? this.buttons.current : this.buttons.page)}
+                tone={() => (st.page === p.page ? this.buttons.currentTone : this.buttons.pageTone)}
                 aria-label={() => t('gridPageButton', { page: count(p.page + 1) })}
                 aria-current={() => (st.page === p.page ? 'page' : null)}
                 onclick={() => host.goTo(p.page)}
@@ -196,8 +217,8 @@ export class GridPager<T> extends Component<HTMLElement> {
           data-step="next"
           icon={() => this.stepIcon(false)}
           hint={() => t('gridNextPage')}
-          size="sm"
-          variant="ghost"
+          size={() => this.buttons.size}
+          variant={() => this.buttons.step}
           enabled={() => st.page < last()}
           onclick={() => host.goTo(st.page + 1)}
         />
@@ -207,8 +228,8 @@ export class GridPager<T> extends Component<HTMLElement> {
           data-step="last"
           icon={() => this.stepIcon(true)}
           hint={() => t('gridLastPage')}
-          size="sm"
-          variant="ghost"
+          size={() => this.buttons.size}
+          variant={() => this.buttons.step}
           enabled={() => st.page < last()}
           onclick={() => host.goTo(last())}
         />

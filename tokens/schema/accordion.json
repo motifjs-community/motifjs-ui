@@ -1,0 +1,110 @@
+{
+  "accordion": {
+    "$description": "Accordion: headers that open and close their sections, sized by the density tokens.",
+    "$selector": ".mx-accordion",
+    "font-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "line-height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "padding": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "body-padding-inline": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "chevron-size": { "$type": "dimension" },
+    "chevron-plate-size": { "$type": "dimension" },
+    "content-padding": { "$type": "dimension" },
+    "$units": {
+      "container": {
+        "$description": "The accordion: `list` (its items in one frame), `separated` (cards apart), `flush` (no frame).",
+        "selector": ".mx-accordion",
+        "states": {
+          "list": ".mx-accordion[data-variant='list']",
+          "separated": ".mx-accordion[data-variant='separated']",
+          "flush": ".mx-accordion[data-variant='flush']"
+        }
+      },
+      "item": {
+        "$description": "An item: per variant (`list`; `list-next`: an item after another in a list, a line between them; `separated`: a card; `flush`: a line under it); `expanded`: its section open.",
+        "selector": ":where(.mx-accordion) > .mx-accordion__item",
+        "states": {
+          "list": ".mx-accordion[data-variant='list'] > .mx-accordion__item",
+          "list-next": ".mx-accordion[data-variant='list'] > .mx-accordion__item + .mx-accordion__item",
+          "separated": ".mx-accordion[data-variant='separated'] > .mx-accordion__item",
+          "flush": ".mx-accordion[data-variant='flush'] > .mx-accordion__item",
+          "expanded": ":where(.mx-accordion) > .mx-accordion__item[data-expanded]"
+        }
+      },
+      "header": {
+        "$description": "An item's header: `expanded` (its section open), `hover`, `pressed`, `disabled`, `focus` (the keys: a ring, inside the header where the item clips its corners).",
+        "selector": ":where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading) > .mx-accordion__header",
+        "defaults": {
+          "min-height": "var(--_height)",
+          "padding-inline": "var(--_padding)",
+          "font-size": "var(--_font-size)",
+          "line-height": "var(--_line-height)",
+          "padding-block": "0px",
+          "margin": "0px",
+          "border-width": "0px",
+          "bg": "transparent",
+          "cursor": "default"
+        },
+        "states": {
+          "expanded": ":where(.mx-accordion > .mx-accordion__item[data-expanded] > .mx-accordion__heading) > .mx-accordion__header",
+          "hover": ":where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading) > .mx-accordion__header:hover:not(:disabled, [aria-disabled='true'])",
+          "pressed": ":where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading) > .mx-accordion__header:active:not(:disabled, [aria-disabled='true'])",
+          "disabled": ":where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading) > .mx-accordion__header:disabled",
+          "focus": ":where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading) > .mx-accordion__header:focus-visible"
+        }
+      },
+      "icon": {
+        "$description": "A header's icon.",
+        "selector": ":where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading > .mx-accordion__header) > .mx-accordion__icon"
+      },
+      "chevron": {
+        "$description": "The chevron at the header's end or start (`open`: its section open); its size is `chevron-size`.",
+        "selector": ":where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading > .mx-accordion__header) > :where(.mx-accordion__plate) > .mx-glyph.mx-accordion__chevron",
+        "defaults": {
+          "size": "var(--_accordion-chevron-size)"
+        },
+        "states": {
+          "open": ":where(.mx-accordion > .mx-accordion__item[data-expanded] > .mx-accordion__heading > .mx-accordion__header) > :where(.mx-accordion__plate) > .mx-glyph.mx-accordion__chevron"
+        }
+      },
+      "plate": {
+        "$description": "A plate behind the chevron, the chevron centred in it, following the header (`hover`, `pressed`): drawn where the language gives it a fill or a frame; its size is `chevron-plate-size`.",
+        "selector": ":where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading > .mx-accordion__header) > .mx-accordion__plate",
+        "defaults": {
+          "size": "var(--_accordion-chevron-plate-size)"
+        },
+        "states": {
+          "hover": ":where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading) > .mx-accordion__header:hover:not(:disabled, [aria-disabled='true']) > .mx-accordion__plate",
+          "pressed": ":where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading) > .mx-accordion__header:active:not(:disabled, [aria-disabled='true']) > .mx-accordion__plate"
+        }
+      },
+      "body": {
+        "$description": "An item's open section.",
+        "selector": ":where(.mx-accordion > .mx-accordion__item > .mx-accordion__region) > .mx-accordion__body",
+        "defaults": {
+          "padding-inline": "var(--_body-padding)"
+        }
+      }
+    }
+  }
+}

@@ -1,9 +1,0 @@
-{
-  "button": {
-    "$description": "Fluent buttons: regular-weight text (Button FontWeight Normal).",
-    "font-weight": {
-      "$type": "fontWeight",
-      "$value": "{font.weight.regular}"
-    }
-  }
-}

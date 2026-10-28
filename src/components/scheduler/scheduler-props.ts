@@ -1,6 +1,16 @@
 import type { Bind, ComponentBase } from '@motifx/core';
 import type { data } from '@motifx-community/data';
 import type { ControlProps } from '../../core/control';
+import type { AppointmentAddedEventArgs } from './appointment-added-event-args';
+import type { AppointmentAddingEventArgs } from './appointment-adding-event-args';
+import type { AppointmentDeletedEventArgs } from './appointment-deleted-event-args';
+import type { AppointmentDeletingEventArgs } from './appointment-deleting-event-args';
+import type { AppointmentUpdatedEventArgs } from './appointment-updated-event-args';
+import type { AppointmentUpdatingEventArgs } from './appointment-updating-event-args';
+import type { DataErrorEventArgs } from './data-error-event-args';
+import type { DragEventArgs } from './drag-event-args';
+import type { FormOpeningEventArgs } from './form-opening-event-args';
+import type { SchedulerEditing } from './scheduler-editing';
 import type { UiStrings } from '../../core/ui-strings';
 import type { AppointmentClickEventArgs } from './appointment-click-event-args';
 import type { AppointmentTemplateContext } from './appointment-template-context';
@@ -24,7 +34,10 @@ export interface SchedulerProps<T> extends ControlProps {
   label?: Bind<string>;
   /** The appointments, in memory. A reactive array of reactive objects is followed: a change moves the appointment. */
   appointments?: Bind<readonly T[]>;
-  /** The appointments from a data source of `@motifx-community/data`, in place of `appointments`. */
+  /**
+   * The appointments from a data source of `@motifx-community/data`, in place of `appointments`. Make it
+   * with `loadMode: 'all'`: a view needs every appointment of its days (`remoteFiltering` asks for those only).
+   */
   dataSource?: Bind<data.DataSource<T, unknown> | null>;
   /** Asks the data source only for the days shown (a filter on the start and end fields). Default `true`. */
   remoteFiltering?: Bind<boolean>;
@@ -75,6 +88,14 @@ export interface SchedulerProps<T> extends ControlProps {
   keys?: Bind<Partial<SchedulerKeys>>;
   /** Says the date and the view to screen readers when they change. Default `true`. */
   announce?: Bind<boolean>;
+  /** What the user may change: `false` nothing, `true` (default) everything, or each switch of `SchedulerEditing`. An appointment's own `allowDrag`, `allowResize`, `allowEdit`, `allowDelete` win. */
+  editing?: Bind<boolean | Partial<SchedulerEditing>>;
+  /** The minutes a drag and the keys move by. Default: the view's cell. */
+  snapMinutes?: Bind<number>;
+  /** The shortest an appointment gets by resizing, in minutes. Default: `snapMinutes`. */
+  minDuration?: Bind<number>;
+  /** A click on an appointment shows its tooltip (text, time, Edit, Delete). Default `true`. */
+  tooltip?: Bind<boolean>;
   onViewChanging?: (e: ViewChangingEventArgs<T>) => void;
   onViewChanged?: (e: ViewChangedEventArgs<T>) => void;
   onDateChanging?: (e: DateChangingEventArgs<T>) => void;
@@ -86,4 +107,18 @@ export interface SchedulerProps<T> extends ControlProps {
   onSelectionChanged?: (e: SelectionChangedEventArgs<T>) => void;
   onContentReady?: (e: ContentReadyEventArgs<T>) => void;
   onMoreOpening?: (e: MoreOpeningEventArgs<T>) => void;
+  onAppointmentAdding?: (e: AppointmentAddingEventArgs<T>) => void;
+  onAppointmentAdded?: (e: AppointmentAddedEventArgs<T>) => void;
+  onAppointmentUpdating?: (e: AppointmentUpdatingEventArgs<T>) => void;
+  onAppointmentUpdated?: (e: AppointmentUpdatedEventArgs<T>) => void;
+  onAppointmentDeleting?: (e: AppointmentDeletingEventArgs<T>) => void;
+  onAppointmentDeleted?: (e: AppointmentDeletedEventArgs<T>) => void;
+  onFormOpening?: (e: FormOpeningEventArgs<T>) => void;
+  onDataError?: (e: DataErrorEventArgs<T>) => void;
+  onMoveStart?: (e: DragEventArgs<T>) => void;
+  onMoving?: (e: DragEventArgs<T>) => void;
+  onMoveEnd?: (e: DragEventArgs<T>) => void;
+  onResizeStart?: (e: DragEventArgs<T>) => void;
+  onResizing?: (e: DragEventArgs<T>) => void;
+  onResizeEnd?: (e: DragEventArgs<T>) => void;
 }

@@ -1,5 +1,6 @@
 import { effect, read, untracked, type Bind, type IBaseProp } from '@motifx/core';
 import { registerControl } from '../../core/control-map';
+import { LanguageLook } from '../../core/language-look';
 import { deepActiveElement, isFocusable } from '../../core/focus';
 import { nextId } from '../../core/next-id';
 import { Field } from '../../parts/field/Field';
@@ -54,8 +55,14 @@ interface Parts {
  * ship.value = 'exp';
  */
 export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>> {
+  /** Where the design language puts the focus ring: around the circle, or around the circle and its text. */
+  private readonly focusLook = new LanguageLook(this.element, { scope: '--_radiogroup-focus-scope' }, () => {
+    this.element.dataset.focusScope = this.focusLook.get('scope') ?? 'box';
+  });
+
   constructor(props?: IBaseProp<RadioGroupProps<T>>) {
     super(props);
+    this.motif.setDisposable(this.focusLook.watch());
     const own = (this.props ?? {}) as RadioGroupProps<T>;
     const list = this.listElement;
     this.element.classList.add('mx-radio-group');
@@ -136,6 +143,11 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
   /** The native radios, in the order of the items. */
   get inputs(): readonly HTMLInputElement[] {
     return this.radioParts.rows.map((row) => row.input);
+  }
+
+  override onMounted(): void {
+    super.onMounted();
+    this.focusLook.read();
   }
 
   override get canFocus(): boolean {

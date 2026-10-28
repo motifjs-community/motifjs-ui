@@ -22,7 +22,7 @@ async function settle() {
   for (let i = 0; i < 6; i++) await tick();
 }
 
-const bar = (p: ProgressBar) => p.element.querySelector<HTMLElement>('.mx-progress__bar')!;
+const done = (p: ProgressBar) => p.element.style.getPropertyValue('--_fraction');
 const shown = (p: ProgressBar) => p.element.querySelector<HTMLElement>('.mx-progress__value')!;
 
 describe('ProgressBar', () => {
@@ -40,16 +40,17 @@ describe('ProgressBar', () => {
     expect(el.getAttribute('aria-labelledby')).toBe(el.querySelector('.mx-progress__label')!.id);
     expect(el.querySelector('.mx-progress__label')!.textContent).toBe('Uploading');
     expect(['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext'].map((n) => el.getAttribute(n))).toEqual(['40', '0', '100', '40%']);
-    expect(bar(jsx).style.getPropertyValue('--_value')).toBe('40%');
+    expect(done(jsx)).toBe('0.4');
     expect(shown(jsx).textContent).toBe('40%');
-    expect({ ...el.dataset }).toMatchObject({ state: 'determinate', tone: 'accent', size: 'md', labelPosition: 'top' });
+    expect({ ...el.dataset }).toMatchObject({ state: 'determinate', shape: 'line', tone: 'accent', size: 'md', labelPosition: 'top' });
+    expect(el.hasAttribute('data-complete')).toBe(false);
 
     coded.value = 2;
     coded.tone = 'success';
     coded.size = 'lg';
     expect(coded.fraction).toBe(0.25);
     expect(coded.element.getAttribute('aria-valuenow')).toBe('2');
-    expect(bar(coded).style.getPropertyValue('--_value')).toBe('25%');
+    expect(done(coded)).toBe('0.25');
     expect(coded.element.dataset.tone).toBe('success');
     expect(shown(coded).hidden).toBe(true);
   });
@@ -70,9 +71,46 @@ describe('ProgressBar', () => {
     await settle();
     expect(el.dataset.state).toBe('determinate');
     expect(el.getAttribute('aria-valuenow')).toBe('100');
+    expect(el.hasAttribute('data-complete')).toBe(true);
     s.value = null;
     await settle();
     expect(el.dataset.state).toBe('indeterminate');
+    expect(el.hasAttribute('data-complete')).toBe(false);
+    expect(done(p)).toBe('');
+  });
+
+  it('is a circle when told, with its caption under it, and a line again', async () => {
+    const s = reactive({ shape: 'circle' as 'line' | 'circle', value: 30 as number | null });
+    let p!: ProgressBar;
+    page(<ProgressBar ref={(x: ProgressBar) => (p = x)} label="Saving" shape={() => s.shape} value={() => s.value} showValue locale="en" />);
+    await settle();
+    const el = p.element;
+    const circle = el.querySelector('.mx-progress__circle')!;
+    expect(circle.getAttribute('aria-hidden')).toBe('true');
+    expect([...circle.children].map((c) => `${c.localName}.${c.getAttribute('class')}`)).toEqual(['circle.mx-progress__ring', 'circle.mx-progress__arc']);
+    expect({ ...el.dataset }).toMatchObject({ shape: 'circle', labelPosition: 'bottom', state: 'determinate' });
+    expect(p.labelPosition).toBe('bottom');
+    expect(el.getAttribute('aria-valuetext')).toBe('30%');
+    expect(done(p)).toBe('0.3');
+    s.value = null;
+    await settle();
+    expect(el.dataset.state).toBe('indeterminate');
+    s.shape = 'line';
+    await settle();
+    expect({ ...el.dataset }).toMatchObject({ shape: 'line', labelPosition: 'top' });
+    p.labelPosition = 'bottom';
+    expect(el.dataset.labelPosition).toBe('bottom');
+  });
+
+  it('draws no wave where the design language gives it none', async () => {
+    const p = new ProgressBar({ value: 50 });
+    page(p);
+    await settle();
+    expect(p.element.hasAttribute('data-wave')).toBe(false);
+    expect(p.element.querySelector('.mx-progress__wave')).toBeNull();
+    p.shape = 'circle';
+    await settle();
+    expect(p.element.querySelector('.mx-progress__circle path')).toBeNull();
   });
 
   it('is named from uiLocale without a label', async () => {

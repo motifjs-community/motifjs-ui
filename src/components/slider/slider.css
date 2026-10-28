@@ -1,65 +1,72 @@
-/* Slider: the field frame without the box look; a track with the rail, the fill and the thumbs,
-   marks under it. Positions come from --_at (thumbs, marks) and --_from / --_to (the fill), which
-   the slider writes; everything else binds to data-size, data-orientation, data-show-value,
-   data-readonly, data-disabled and data-dragging. */
+/* Slider: the field frame without the box look; a track with the thumbs, marks under it. Only the
+   layout is here: every part's look is a unit of the slider's schema (`$units`), painted by
+   units.css from the language's tokens.
+   The rail holds three segments: the inactive one before the active segment (`track`, before), the
+   active one (`active`: from the start or the origin to the value, or between the two thumbs of a
+   range) and the inactive one after it (`track`, after). With a gap (`data-split`, the language's
+   `track-gap` or `origin-gap`) each segment stops short of the thumb or the origin beside it. Stop dots
+   sit at the rail's ends. A thumb is the pressable area; it holds a halo, the knob with its core, and
+   the value bubble, all centred on it. Positions come from --_at (thumbs, marks) and --_from / --_to
+   (on the rail), which the slider writes with data-from / data-to (what lies at each end of the active
+   segment: an end of the track, a thumb or the origin). Vertical, up is more: the units turn with it. */
 @layer mx.components {
   .mx-slider {
-    --_rail: var(--mx-slider-rail-thickness-md);
-    --_thumb: var(--mx-slider-thumb-size-md);
-    --_dot: var(--mx-slider-dot-size-md);
-    --_rail-color: var(--mx-slider-rail-color);
-    --_fill-color: var(--mx-slider-fill-color);
-    --_thumb-shadow: var(--mx-slider-thumb-shadow);
+    --_rail: var(--_slider-track-thickness-md);
+    --_active: var(--_slider-active-thickness-md);
+    --_thumb-w: var(--_slider-thumb-width-md);
+    --_thumb-h: var(--_slider-thumb-height-md);
+    --_core: var(--_slider-thumb-core-size-md);
     --_move: var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
   .mx-slider[data-size='sm'] {
-    --_rail: var(--mx-slider-rail-thickness-sm);
-    --_thumb: var(--mx-slider-thumb-size-sm);
-    --_dot: var(--mx-slider-dot-size-sm);
+    --_rail: var(--_slider-track-thickness-sm);
+    --_active: var(--_slider-active-thickness-sm);
+    --_thumb-w: var(--_slider-thumb-width-sm);
+    --_thumb-h: var(--_slider-thumb-height-sm);
+    --_core: var(--_slider-thumb-core-size-sm);
   }
 
   .mx-slider[data-size='lg'] {
-    --_rail: var(--mx-slider-rail-thickness-lg);
-    --_thumb: var(--mx-slider-thumb-size-lg);
-    --_dot: var(--mx-slider-dot-size-lg);
-  }
-
-  .mx-slider[data-readonly] {
-    --_fill-color: var(--mx-slider-readonly-fill-color);
-  }
-
-  .mx-slider[data-disabled] {
-    --_rail-color: var(--mx-slider-disabled-rail-color);
-    --_fill-color: var(--mx-slider-disabled-fill-color);
+    --_rail: var(--_slider-track-thickness-lg);
+    --_active: var(--_slider-active-thickness-lg);
+    --_thumb-w: var(--_slider-thumb-width-lg);
+    --_thumb-h: var(--_slider-thumb-height-lg);
+    --_core: var(--_slider-thumb-core-size-lg);
   }
 
   .mx-slider[data-orientation='vertical'] {
     inline-size: auto;
   }
 
-  /* The frame's box only holds the parts here. */
-  .mx-slider .mx-field__box,
-  .mx-slider .mx-field__box:is(:hover, :focus-within),
-  .mx-slider[data-disabled] .mx-field__box {
-    padding-inline: 0;
-    background: none;
-    border: 0;
-    box-shadow: none;
-    cursor: default;
-  }
-
-  .mx-slider[data-orientation='vertical'] .mx-field__box {
+  /* The field's box only holds the parts here: no text-field look (the `field` place). */
+  .mx-slider[data-orientation='vertical'] > .mx-field__box {
     justify-content: center;
   }
 
+  /* The control stacks its parts: the segments, then the marks (dots on the track, too), then the thumbs. */
   .mx-slider__control {
+    position: relative;
+    isolation: isolate;
     display: flex;
     flex-direction: column;
-    padding-inline: calc(var(--_thumb) / 2);
+    padding-inline: calc(var(--_thumb-w) / 2);
     touch-action: pan-y;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Room at the ends for the first and the last step's label. */
+  .mx-slider[data-tick-labels] .mx-slider__control {
+    padding-inline: max(var(--_thumb-w) / 2, var(--_slider-tick-label-room));
+  }
+
+  /* A ring around the whole control (the `ring` unit, shown while a thumb has the keys). */
+  .mx-slider__control::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
 
   /* The track is as tall as a touch target: a press near the rail counts. */
@@ -67,48 +74,124 @@
     position: relative;
     display: flex;
     align-items: center;
-    block-size: var(--mx-slider-hit-size);
+    block-size: var(--_slider-hit-size);
   }
 
+  /* Rail and segments. */
+
+  /* How far each end of the active segment stops short of what lies there, once the track is split: a thumb
+     (half its width and the gap) or the origin (half its gap); the inactive segment beside it stops as far. */
   .mx-slider__rail {
+    --_cut-thumb: calc(var(--_thumb-w) / 2 + var(--_slider-track-gap));
+    --_cut-origin: calc(var(--_slider-origin-gap) / 2);
+    --_cut-from: 0px;
+    --_cut-to: 0px;
+
     position: relative;
     flex: 1 1 auto;
     block-size: var(--_rail);
-    background: var(--_rail-color);
-    border-radius: var(--mx-slider-rail-radius);
   }
 
-  .mx-slider__fill {
+  .mx-slider[data-split] .mx-slider__rail[data-from='thumb'] {
+    --_cut-from: var(--_cut-thumb);
+  }
+
+  .mx-slider[data-split] .mx-slider__rail[data-from='origin'] {
+    --_cut-from: var(--_cut-origin);
+  }
+
+  .mx-slider[data-split] .mx-slider__rail[data-to='thumb'] {
+    --_cut-to: var(--_cut-thumb);
+  }
+
+  .mx-slider[data-split] .mx-slider__rail[data-to='origin'] {
+    --_cut-to: var(--_cut-origin);
+  }
+
+  :where(.mx-slider__rail) > :is(.mx-slider__segment, .mx-slider__fill) {
     position: absolute;
+  }
+
+  :where(.mx-slider__rail) > .mx-slider__segment {
     inset-block: 0;
-    inset-inline-start: var(--_from);
-    inline-size: calc(var(--_to) - var(--_from));
-    background: var(--_fill-color);
-    border-radius: inherit;
     transition:
       inset-inline-start var(--_move),
       inline-size var(--_move);
   }
 
+  /* No inactive segment before an active one that starts at the start, none after one that ends at the end. */
+  :where(.mx-slider__rail[data-from='start']) > .mx-slider__segment[data-side='before'],
+  :where(.mx-slider__rail[data-to='end']) > .mx-slider__segment[data-side='after'] {
+    display: none;
+  }
+
+  :where(.mx-slider__rail) > .mx-slider__segment[data-side='before'] {
+    inset-inline-start: 0;
+    inline-size: calc(var(--_from) - var(--_cut-from));
+  }
+
+  :where(.mx-slider__rail) > .mx-slider__segment[data-side='after'] {
+    inset-inline-start: calc(var(--_to) + var(--_cut-to));
+    inline-size: calc(100% - var(--_to) - var(--_cut-to));
+  }
+
+  /* The active segment, centred on the rail: it may be thicker or thinner than the inactive ones. */
+  .mx-slider__fill {
+    inset-block-start: calc(50% - var(--_active) / 2);
+    inset-inline-start: calc(var(--_from) + var(--_cut-from));
+    inline-size: calc(var(--_to) - var(--_from) - var(--_cut-from) - var(--_cut-to));
+    block-size: var(--_active);
+    transition:
+      inset-inline-start var(--_move),
+      inline-size var(--_move);
+  }
+
+  /* Stop dots at the rail's ends, centred across it: at the start only where the start is not the active
+     segment's own (a range, a centred slider). */
+  .mx-slider__rail::before,
+  .mx-slider__rail::after {
+    --_over: 1;
+
+    content: '';
+    position: absolute;
+    z-index: var(--_over);
+    inset-block: 0;
+    margin-block: auto;
+  }
+
+  .mx-slider__rail::before {
+    inset-inline-start: var(--_slider-stop-inset);
+  }
+
+  .mx-slider__rail::after {
+    inset-inline-end: var(--_slider-stop-inset);
+  }
+
+  .mx-slider__rail[data-from='start']::before,
+  .mx-slider__rail[data-to='end']::after {
+    display: none;
+  }
+
   /* Thumbs. */
 
-  /* A pressable knob: opaque, a bottom edge, a top highlight, and a dot in the accent color. */
+  /* The pressable area, as wide and as tall as a touch target, centred on its value and on the track; what it
+     shows (halo, knob, core) is centred in it, whatever its size. It draws nothing itself, under the keys
+     either: the knob shows the focus. */
   .mx-slider__thumb {
+    --_over: 2;
+
     position: absolute;
+    z-index: var(--_over);
     inset-inline-start: var(--_at);
     inset-block-start: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    inline-size: var(--_thumb);
-    block-size: var(--_thumb);
-    margin-inline-start: calc(var(--_thumb) / -2);
-    margin-block-start: calc(var(--_thumb) / -2);
-    background: var(--mx-slider-thumb-bg);
-    border: var(--mx-slider-thumb-border-width) solid var(--mx-slider-thumb-border);
-    border-block-end: var(--mx-slider-thumb-edge-width) solid var(--mx-slider-thumb-edge);
-    border-radius: var(--mx-slider-thumb-radius);
-    box-shadow: var(--_thumb-shadow);
+    inline-size: var(--_slider-hit-size);
+    block-size: var(--_slider-hit-size);
+    /* Centred on its value by margins of half its size: logical, so right to left needs nothing of its own (a
+       :dir() rule would not survive a build for older browsers). */
+    margin-block-start: calc(var(--_slider-hit-size) / -2);
+    margin-inline-start: calc(var(--_slider-hit-size) / -2);
+    outline: none;
+    box-shadow: none;
     cursor: grab;
     transition: inset-inline-start var(--_move);
   }
@@ -117,50 +200,28 @@
     display: none;
   }
 
-  /* A touch target bigger than the knob. */
-  .mx-slider__thumb::before {
-    content: '';
+  .mx-slider__thumb > :is(.mx-slider__halo, .mx-slider__knob) {
     position: absolute;
-    inset: calc((var(--_thumb) - var(--mx-slider-hit-size)) / 2);
-    border-radius: var(--mx-slider-thumb-radius);
+    inset: 50% auto auto 50%;
+    translate: -50% -50%;
+    pointer-events: none;
   }
 
-  .mx-slider__thumb::after {
-    content: '';
-    flex: none;
-    inline-size: var(--_dot);
-    block-size: var(--_dot);
-    background: var(--_fill-color);
-    border-radius: var(--mx-slider-dot-radius);
+  .mx-slider__knob {
+    display: grid;
+    place-items: center;
+    transition:
+      inline-size var(--_move),
+      block-size var(--_move);
+  }
+
+  .mx-slider__core {
     transition: scale var(--_move);
-  }
-
-  .mx-slider:not([data-readonly], [data-disabled]) .mx-slider__thumb:hover::after {
-    scale: 1.25;
-  }
-
-  .mx-slider:not([data-readonly], [data-disabled]) .mx-slider__thumb[data-dragging]::after {
-    scale: 0.85;
-  }
-
-  /* The focus halo is a box-shadow too: keep both. */
-  .mx-slider__thumb:focus-visible {
-    outline: var(--mx-slider-focus-width) solid var(--mx-slider-focus-color);
-    outline-offset: var(--mx-slider-focus-offset);
-    box-shadow:
-      var(--mx-slider-focus-halo),
-      var(--_thumb-shadow);
   }
 
   .mx-slider[data-readonly] .mx-slider__thumb,
   .mx-slider[data-disabled] .mx-slider__thumb {
     cursor: default;
-  }
-
-  .mx-slider[data-disabled] .mx-slider__thumb {
-    background: var(--mx-slider-thumb-bg-disabled);
-    border-color: var(--mx-slider-thumb-border-disabled);
-    box-shadow: none;
   }
 
   .mx-slider[data-dragging],
@@ -169,32 +230,38 @@
   }
 
   /* While a thumb follows the pointer it moves at once. */
-  .mx-slider[data-dragging] :is(.mx-slider__thumb, .mx-slider__fill) {
+  .mx-slider[data-dragging] :is(.mx-slider__thumb, .mx-slider__fill, .mx-slider__segment) {
     transition: none;
   }
 
   /* The value bubble. */
 
-  /* Centered over the thumb by the thumb's own centering (its static position). */
+  /* Centred over the thumb: from its middle, by half its own width (physical, so the same in either direction). */
   .mx-slider__bubble {
+    --_edge: var(--_slider-bubble-border-width, 0px);
+
     position: absolute;
-    inset-block-end: calc(100% + var(--mx-slider-bubble-gap));
-    padding-block: var(--mx-slider-bubble-padding-block);
-    padding-inline: var(--mx-slider-bubble-padding-inline);
-    font-size: var(--mx-slider-bubble-font-size);
-    line-height: var(--mx-slider-bubble-line-height);
+    inset: auto auto calc(50% + var(--_thumb-h) / 2 + var(--_slider-bubble-gap)) 50%;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
-    color: var(--mx-slider-bubble-fg);
-    background: var(--mx-slider-bubble-bg);
-    border-radius: var(--mx-slider-bubble-radius);
-    box-shadow: var(--mx-slider-bubble-shadow);
     pointer-events: none;
     visibility: hidden;
     opacity: 0;
+    translate: -50% 0;
     transition:
       opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       visibility var(--mx-motion-duration-fast);
+  }
+
+  /* An arrow from the bubble to its thumb: a square turned on its corner, its centre on the bubble's outer edge;
+     only the half out of the bubble shows. */
+  .mx-slider__bubble::after {
+    content: '';
+    position: absolute;
+    inset: calc(100% + var(--_edge)) auto auto 50%;
+    translate: -50% -50%;
+    rotate: 45deg;
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
   }
 
   .mx-slider[data-show-value='always'] .mx-slider__bubble,
@@ -206,16 +273,20 @@
   /* Room above the rail for bubbles that always show. */
   .mx-slider[data-show-value='always'] .mx-slider__control {
     padding-block-start: calc(
-      var(--mx-slider-bubble-line-height) + 2 * var(--mx-slider-bubble-padding-block) + var(--mx-slider-bubble-gap) -
-        (var(--mx-slider-hit-size) - var(--_thumb)) / 2
+      var(--_slider-bubble-line-height) + 2 * var(--_slider-bubble-padding-block) + var(--_slider-bubble-gap) -
+        (var(--_slider-hit-size) - var(--_thumb-h)) / 2
     );
   }
 
-  /* Marks. */
+  /* Marks: lines under the track, or dots on it (`tick-offset`, the `tick` unit's corners). */
 
   .mx-slider__ticks {
+    --_over: 1;
+
     position: relative;
-    block-size: var(--mx-slider-tick-length);
+    z-index: var(--_over);
+    block-size: var(--_slider-tick-length);
+    margin-block-start: var(--_slider-tick-offset);
   }
 
   .mx-slider__ticks[hidden] {
@@ -223,10 +294,10 @@
   }
 
   .mx-slider[data-tick-labels] .mx-slider__ticks {
-    margin-block-end: calc(var(--mx-slider-tick-gap) + var(--mx-slider-tick-line-height));
+    margin-block-end: calc(var(--_slider-tick-gap) + var(--_slider-tick-line-height));
   }
 
-  /* A zero-wide column at its value; the mark and the label are centered on it. */
+  /* A zero-wide column at its value; the mark and the label are centred on it. */
   .mx-slider__tick {
     position: absolute;
     inset-block: 0;
@@ -239,31 +310,21 @@
   .mx-slider__tick[data-mark]::before {
     content: '';
     flex: none;
-    inline-size: var(--mx-slider-tick-width);
-    block-size: var(--mx-slider-tick-length);
-    background: var(--mx-slider-tick-color);
   }
 
   .mx-slider__tick-label {
     position: absolute;
-    inset-block-start: calc(var(--mx-slider-tick-length) + var(--mx-slider-tick-gap));
-    font-size: var(--mx-slider-tick-font-size);
-    line-height: var(--mx-slider-tick-line-height);
+    inset-block-start: calc(var(--_slider-tick-length) + var(--_slider-tick-gap));
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
-    color: var(--mx-slider-tick-label-fg);
   }
 
-  .mx-slider[data-disabled] .mx-slider__tick-label {
-    color: var(--mx-slider-tick-label-fg-disabled);
-  }
-
-  /* Vertical: up is more. */
+  /* Vertical: up is more. Everything along the track turns to the block axis, from the bottom. */
 
   .mx-slider[data-orientation='vertical'] .mx-slider__control {
     flex-direction: row;
-    block-size: var(--mx-slider-vertical-length);
-    padding-block: calc(var(--_thumb) / 2);
+    block-size: var(--_slider-vertical-length);
+    padding-block: calc(var(--_thumb-w) / 2);
     padding-inline: 0;
     touch-action: pan-x;
   }
@@ -271,7 +332,7 @@
   .mx-slider[data-orientation='vertical'] .mx-slider__track {
     flex-direction: column;
     justify-content: center;
-    inline-size: var(--mx-slider-hit-size);
+    inline-size: var(--_slider-hit-size);
     block-size: auto;
   }
 
@@ -280,40 +341,92 @@
     block-size: auto;
   }
 
-  .mx-slider[data-orientation='vertical'] .mx-slider__fill {
+  .mx-slider[data-orientation='vertical'] :where(.mx-slider__rail) > .mx-slider__segment {
     inset-inline: 0;
-    inset-block: auto var(--_from);
     inline-size: auto;
-    block-size: calc(var(--_to) - var(--_from));
     transition:
       inset-block-end var(--_move),
       block-size var(--_move);
   }
 
+  .mx-slider[data-orientation='vertical'] :where(.mx-slider__rail) > .mx-slider__segment[data-side='before'] {
+    inset-block: auto 0;
+    block-size: calc(var(--_from) - var(--_cut-from));
+  }
+
+  .mx-slider[data-orientation='vertical'] :where(.mx-slider__rail) > .mx-slider__segment[data-side='after'] {
+    inset-block: auto calc(var(--_to) + var(--_cut-to));
+    block-size: calc(100% - var(--_to) - var(--_cut-to));
+  }
+
+  .mx-slider[data-orientation='vertical'] .mx-slider__fill {
+    inset-inline-start: calc(50% - var(--_active) / 2);
+    inset-block: auto calc(var(--_from) + var(--_cut-from));
+    inline-size: var(--_active);
+    block-size: calc(var(--_to) - var(--_from) - var(--_cut-from) - var(--_cut-to));
+    transition:
+      inset-block-end var(--_move),
+      block-size var(--_move);
+  }
+
+  .mx-slider[data-orientation='vertical'] .mx-slider__rail::before,
+  .mx-slider[data-orientation='vertical'] .mx-slider__rail::after {
+    inset-block: auto;
+    inset-inline: 0;
+    margin-block: 0;
+    margin-inline: auto;
+  }
+
+  .mx-slider[data-orientation='vertical'] .mx-slider__rail::before {
+    inset-block-end: var(--_slider-stop-inset);
+  }
+
+  .mx-slider[data-orientation='vertical'] .mx-slider__rail::after {
+    inset-block-start: var(--_slider-stop-inset);
+  }
+
   .mx-slider[data-orientation='vertical'] .mx-slider__thumb {
     inset-inline-start: 50%;
     inset-block: auto var(--_at);
-    margin-block: 0 calc(var(--_thumb) / -2);
+    margin-block: 0 calc(var(--_slider-hit-size) / -2);
     transition: inset-block-end var(--_move);
   }
 
+  /* Beside the thumb, its arrow pointing at it. */
   .mx-slider[data-orientation='vertical'] .mx-slider__bubble {
-    inset-block-end: auto;
-    inset-inline-end: calc(100% + var(--mx-slider-bubble-gap));
+    inset-block: 50% auto;
+    inset-inline: auto calc(50% + var(--_thumb-h) / 2 + var(--_slider-bubble-gap));
+    translate: 0 -50%;
+  }
+
+  .mx-slider[data-orientation='vertical'] .mx-slider__bubble::after {
+    inset: 50% auto auto calc(100% + var(--_edge));
+    rotate: -45deg;
+  }
+
+  .mx-slider[data-orientation='vertical'] .mx-slider__bubble:dir(rtl)::after {
+    inset: 50% auto auto calc(-1 * var(--_edge));
+    rotate: 135deg;
+  }
+
+  .mx-slider[data-orientation='vertical'][data-tick-labels] .mx-slider__control {
+    padding-block: max(var(--_thumb-w) / 2, var(--_slider-tick-label-room));
   }
 
   .mx-slider[data-orientation='vertical'][data-show-value='always'] .mx-slider__control {
-    padding-inline-start: var(--mx-slider-tick-label-width);
+    padding-inline-start: var(--_slider-tick-label-width);
   }
 
   .mx-slider[data-orientation='vertical'] .mx-slider__ticks {
-    inline-size: var(--mx-slider-tick-length);
+    inline-size: var(--_slider-tick-length);
     block-size: auto;
+    margin-block-start: 0;
+    margin-inline-start: var(--_slider-tick-offset);
   }
 
   .mx-slider[data-orientation='vertical'][data-tick-labels] .mx-slider__ticks {
     margin-block-end: 0;
-    margin-inline-end: var(--mx-slider-tick-label-width);
+    margin-inline-end: var(--_slider-tick-label-width);
   }
 
   .mx-slider[data-orientation='vertical'] .mx-slider__tick {
@@ -325,13 +438,8 @@
     block-size: 0;
   }
 
-  .mx-slider[data-orientation='vertical'] .mx-slider__tick[data-mark]::before {
-    inline-size: var(--mx-slider-tick-length);
-    block-size: var(--mx-slider-tick-width);
-  }
-
   .mx-slider[data-orientation='vertical'] .mx-slider__tick-label {
     inset-block-start: auto;
-    inset-inline-start: calc(var(--mx-slider-tick-length) + var(--mx-slider-tick-gap));
+    inset-inline-start: calc(var(--_slider-tick-length) + var(--_slider-tick-gap));
   }
 }

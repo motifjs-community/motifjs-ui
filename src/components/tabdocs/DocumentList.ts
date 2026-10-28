@@ -48,7 +48,7 @@ export class DocumentList {
     popup.element.append(part);
 
     if (kind === 'open') {
-      const search = (this.search = new TextBox({ type: 'search', labelMode: 'hidden', size: 'md', stretch: true, autocomplete: 'off' }));
+      const search = (this.search = new TextBox({ type: 'search', size: 'md', stretch: true, autocomplete: 'off' }));
       search.label = () => manager.textOf('search');
       search.placeholder = () => manager.textOf('search');
       search.element.classList.add('mx-tabdocs__search');

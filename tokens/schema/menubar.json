@@ -1,0 +1,47 @@
+{
+  "menubar": {
+    "$description": "MenuBar: a bar of menus at the top of an app or a window.",
+    "$selector": ".mx-menubar",
+    "height": { "$type": "dimension" },
+    "item-height": { "$type": "dimension" },
+    "$units": {
+      "bar": {
+        "$description": "The bar holding the top items.",
+        "selector": ":where(.mx-menubar) > .mx-menubar__bar",
+        "defaults": {
+          "min-height": "var(--_menubar-height)"
+        }
+      },
+      "item": {
+        "$description": "A top item: `hover`, `pressed`, `open` (its menu shows; under the pointer it is `hover`), `disabled`, `focus` (the keys: a ring).",
+        "selector": ":where(.mx-menubar > .mx-menubar__bar) > .mx-menubar__item",
+        "defaults": {
+          "min-height": "var(--_menubar-item-height)",
+          "margin": "0px",
+          "padding-block": "0px",
+          "border-width": "0px",
+          "bg": "transparent",
+          "cursor": "default"
+        },
+        "states": {
+          "hover": ":where(.mx-menubar > .mx-menubar__bar) > .mx-menubar__item:hover:not([aria-disabled='true'])",
+          "pressed": ":where(.mx-menubar > .mx-menubar__bar) > .mx-menubar__item:active:not([aria-disabled='true'])",
+          "open": ":where(.mx-menubar > .mx-menubar__bar) > .mx-menubar__item[aria-expanded='true']",
+          "disabled": ":where(.mx-menubar > .mx-menubar__bar) > .mx-menubar__item:is(:disabled, [aria-disabled='true'])",
+          "focus": ":where(.mx-menubar > .mx-menubar__bar) > .mx-menubar__item:focus-visible"
+        }
+      },
+      "icon": {
+        "$description": "A top item's icon.",
+        "selector": ":where(.mx-menubar > .mx-menubar__bar > .mx-menubar__item) > .mx-menubar__icon"
+      },
+      "mnemonic": {
+        "$description": "The access key's mark in a top item's label (`shown`: while Alt is held, or always); the kit's own mark is the access key's.",
+        "selector": ":where(.mx-menubar__item) .mx-access-key",
+        "states": {
+          "shown": ":root:is([data-mx-alt], [data-mx-access-keys='always']) :where(.mx-menubar__item) .mx-access-key"
+        }
+      }
+    }
+  }
+}

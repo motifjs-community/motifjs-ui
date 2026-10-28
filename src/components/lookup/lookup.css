@@ -1,14 +1,15 @@
-/* Lookup: a drop-down whose list is a table of columns under a header. */
+/* Lookup: a drop-down whose list is a table of columns under a header. Only the layout is here: the
+   header and the cells are units of the lookup's schema (`$units`), painted by units.css. */
 @layer mx.components {
   .mx-lookup__popup {
-    min-inline-size: var(--_lookup-width, var(--mx-lookup-popup-width));
+    min-inline-size: var(--_wanted-width, var(--_lookup-popup-width));
   }
 
   .mx-lookup__header,
   .mx-lookup__row {
     display: grid;
-    grid-template-columns: var(--_lookup-columns, 1fr);
-    gap: var(--mx-lookup-column-gap);
+    grid-template-columns: var(--_columns, 1fr);
+    gap: var(--_lookup-column-gap);
     align-items: center;
   }
 
@@ -18,12 +19,6 @@
 
   .mx-lookup__header {
     flex: none;
-    padding-block: var(--mx-lookup-header-padding);
-    padding-inline: var(--mx-list-item-padding);
-    font-size: var(--mx-lookup-header-font-size);
-    font-weight: var(--mx-lookup-header-font-weight);
-    color: var(--mx-lookup-header-fg);
-    border-block-end: var(--mx-lookup-header-border-width) solid var(--mx-lookup-header-border);
   }
 
   .mx-lookup__header[hidden] {

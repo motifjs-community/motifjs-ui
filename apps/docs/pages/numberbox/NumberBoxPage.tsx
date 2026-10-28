@@ -79,7 +79,8 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['number-box.spin-width', 'The width of a stacked spin button.'],
+  ['number-box.spin, number-box.step, number-box.glyph', 'Units: the spin buttons together (`stacked`, `inline`, `disabled`), each step (`up`, `down`, `next`, `hover`, `pressed`, `disabled`) and its glyph.'],
+  ['number-box.spin-layout, number-box.spin-order', 'Where the steps stand (stacked at the end, or one on each side) and in which order.'],
   ['number-box.spin-inset', 'The space around the stacked spin buttons.'],
   ['field.*', 'Everything else, as for TextBox.'],
 ];

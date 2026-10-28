@@ -1,0 +1,15 @@
+{
+  "text-box": {
+    "reveal": {
+      "shown": {
+        "color": { "$value": "{color.fg.primary}" }
+      }
+    },
+    "reveal-glyph": {
+      "icon": { "$value": "eye-open" },
+      "shown": {
+        "icon": { "$value": "eye-closed" }
+      }
+    }
+  }
+}

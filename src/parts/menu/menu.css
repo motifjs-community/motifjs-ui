@@ -1,182 +1,88 @@
 /* Menu: a column of commands. The focused item is the highlight, for the pointer and the keys
    alike; the leading column for a mark or an icon appears only when an item uses one. A shortcut and the arrow
-   of a submenu sit at the end of the item. */
+   of a submenu sit at the end of the item. Only the layout is here: every part's look is a unit of the
+   menu's schema (`$units`), painted by units.css from the language's tokens; the rules reach only this
+   menu's own items (`>`). */
 @layer mx.components {
   .mx-menu {
     display: flex;
     flex-direction: column;
   }
 
-  .mx-menu__item {
+  :where(.mx-menu) > .mx-menu__item {
     appearance: none;
     display: flex;
     align-items: center;
-    gap: var(--mx-menu-item-gap);
-    min-block-size: var(--mx-menu-item-height);
-    margin: 0;
-    padding-block: 0;
-    padding-inline: var(--mx-menu-item-padding);
     font: inherit;
-    font-size: var(--mx-menu-item-font-size);
-    line-height: var(--mx-menu-item-line-height);
     text-align: start;
-    white-space: nowrap;
-    color: var(--mx-menu-item-fg);
-    background: transparent;
-    border: 0;
-    border-radius: var(--mx-menu-item-radius);
-    cursor: default;
+    white-space: var(--_menu-item-white-space);
   }
 
-  /* Focused by the pointer opening it, the menu itself shows no ring: no item is highlighted yet. */
-  .mx-menu:focus {
-    outline: none;
-  }
-
-  .mx-menu__item:focus,
-  .mx-menu__item[aria-expanded='true'] {
-    background: var(--mx-menu-item-highlight);
-  }
-
-  .mx-menu__item[aria-disabled='true'] {
-    color: var(--mx-menu-item-fg-disabled);
-  }
-
-  /* A tone (data-tone, written for an item that is not standard): its text and icon, at rest and
-     highlighted. A disabled item keeps the disabled look. */
-  .mx-menu__item[data-tone='accent'] {
-    --_tone-fg: var(--mx-menu-item-accent-fg);
-    --_tone-fg-highlight: var(--mx-menu-item-accent-fg-highlight);
-    --_tone-icon: var(--mx-menu-item-accent-icon);
-    --_tone-icon-highlight: var(--mx-menu-item-accent-icon-highlight);
-  }
-
-  .mx-menu__item[data-tone='success'] {
-    --_tone-fg: var(--mx-menu-item-success-fg);
-    --_tone-fg-highlight: var(--mx-menu-item-success-fg-highlight);
-    --_tone-icon: var(--mx-menu-item-success-icon);
-    --_tone-icon-highlight: var(--mx-menu-item-success-icon-highlight);
-  }
-
-  .mx-menu__item[data-tone='caution'] {
-    --_tone-fg: var(--mx-menu-item-caution-fg);
-    --_tone-fg-highlight: var(--mx-menu-item-caution-fg-highlight);
-    --_tone-icon: var(--mx-menu-item-caution-icon);
-    --_tone-icon-highlight: var(--mx-menu-item-caution-icon-highlight);
-  }
-
-  .mx-menu__item[data-tone='danger'] {
-    --_tone-fg: var(--mx-menu-item-danger-fg);
-    --_tone-fg-highlight: var(--mx-menu-item-danger-fg-highlight);
-    --_tone-icon: var(--mx-menu-item-danger-icon);
-    --_tone-icon-highlight: var(--mx-menu-item-danger-icon-highlight);
-  }
-
-  .mx-menu__item[data-tone]:not([aria-disabled='true']) {
-    color: var(--_tone-fg);
-  }
-
-  .mx-menu__item[data-tone]:not([aria-disabled='true']) > .mx-menu__icon {
-    color: var(--_tone-icon);
-  }
-
-  .mx-menu__item[data-tone]:not([aria-disabled='true']):is(:focus, [aria-expanded='true']) {
-    color: var(--_tone-fg-highlight);
-  }
-
-  .mx-menu__item[data-tone]:not([aria-disabled='true']):is(:focus, [aria-expanded='true']) > .mx-menu__icon {
-    color: var(--_tone-icon-highlight);
-  }
-
-  .mx-menu__check,
-  .mx-menu__icon {
+  :where(.mx-menu > .mx-menu__item) > :is(.mx-menu__check, .mx-menu__icon) {
     display: none;
     flex: none;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-menu-icon-size);
-    block-size: var(--mx-menu-icon-size);
   }
 
   /* One leading column for the mark and the icon: an item never shows both. A checked item shows
      its mark, any other item its icon or the empty place, so the texts stay in line. */
-  .mx-menu:is([data-checks], [data-icons]) .mx-menu__icon,
-  .mx-menu__check:has(> *) {
+  .mx-menu:is([data-checks], [data-icons]) > :where(.mx-menu__item) > .mx-menu__icon,
+  :where(.mx-menu > .mx-menu__item) > .mx-menu__check:has(> *) {
     display: inline-flex;
   }
 
-  .mx-menu__item:has(> .mx-menu__check > *) > .mx-menu__icon {
+  :where(.mx-menu) > .mx-menu__item:has(> .mx-menu__check > *) > .mx-menu__icon {
     display: none;
   }
 
   /* Marks apart (data-marks-apart): the mark has its own column before the icons, kept empty on the
      items that are not checked, and a checked item keeps its icon. */
-  .mx-menu[data-marks-apart]:is([data-checks], [data-icons]) .mx-menu__check {
+  .mx-menu[data-marks-apart]:is([data-checks], [data-icons]) > :where(.mx-menu__item) > .mx-menu__check {
     display: inline-flex;
   }
 
-  .mx-menu[data-marks-apart] .mx-menu__item:has(> .mx-menu__check > *) > .mx-menu__icon {
+  .mx-menu[data-marks-apart] > .mx-menu__item:has(> .mx-menu__check > *) > .mx-menu__icon {
     display: inline-flex;
   }
 
-  .mx-menu[data-marks-apart]:not([data-icons]) .mx-menu__icon {
+  .mx-menu[data-marks-apart]:not([data-icons]) > :where(.mx-menu__item) > .mx-menu__icon {
     display: none;
   }
 
-  .mx-menu__check > .mx-glyph,
-  .mx-menu__icon > :is(img, svg, .mx-glyph) {
+  :where(.mx-menu > .mx-menu__item) > .mx-menu__check > .mx-glyph,
+  :where(.mx-menu > .mx-menu__item) > .mx-menu__icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }
 
-  .mx-menu__label {
+  :where(.mx-menu > .mx-menu__item) > .mx-menu__label {
     flex: 1 1 auto;
   }
 
   /* A description follows the label, dimmer; the label then takes only its own room. */
-  .mx-menu__label:has(+ .mx-menu__description) {
+  :where(.mx-menu > .mx-menu__item) > .mx-menu__label:has(+ .mx-menu__description) {
     flex: 0 1 auto;
   }
 
-  .mx-menu__description {
+  :where(.mx-menu > .mx-menu__item) > .mx-menu__description {
     flex: 1 1 auto;
     min-inline-size: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: var(--mx-menu-description-font-size);
-    color: var(--mx-menu-description-color);
   }
 
-  .mx-menu__shortcut {
+  :where(.mx-menu > .mx-menu__item) > .mx-menu__shortcut {
     flex: none;
-    padding-inline-start: var(--mx-menu-shortcut-gap);
-    font-size: var(--mx-menu-shortcut-font-size);
-    color: var(--mx-menu-shortcut-color);
   }
 
-  .mx-menu__item[aria-disabled='true'] :is(.mx-menu__shortcut, .mx-menu__description) {
-    color: inherit;
-  }
-
-  .mx-menu__arrow {
+  :where(.mx-menu > .mx-menu__item) > .mx-menu__arrow {
     display: inline-flex;
     flex: none;
-    inline-size: var(--mx-menu-arrow-size);
-    block-size: var(--mx-menu-arrow-size);
   }
 
-  .mx-menu__arrow > .mx-glyph {
-    inline-size: 100%;
-    block-size: 100%;
-  }
-
-  .mx-menu__arrow > .mx-glyph:dir(rtl) {
+  /* The arrow points the way the submenu opens. */
+  :where(.mx-menu > .mx-menu__item) > .mx-menu__arrow > .mx-glyph:dir(rtl) {
     scale: -1 1;
-  }
-
-  .mx-menu__separator {
-    block-size: var(--mx-menu-separator-width);
-    margin-block: var(--mx-menu-separator-gap);
-    background: var(--mx-menu-separator-color);
   }
 }

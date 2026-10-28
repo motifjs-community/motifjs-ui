@@ -77,7 +77,7 @@ export class PhoneList {
       }),
     });
     this.sheet.element.classList.add('mx-tabdocs__phone-list');
-    const search = (this.search = new TextBox({ type: 'search', labelMode: 'hidden', stretch: true, autocomplete: 'off' }));
+    const search = (this.search = new TextBox({ type: 'search', stretch: true, autocomplete: 'off' }));
     search.label = () => manager.textOf('tabDocsPhoneSearch');
     search.placeholder = () => manager.textOf('tabDocsPhoneSearch');
     search.element.classList.add('mx-tabdocs__list-search');
@@ -102,6 +102,8 @@ export class PhoneList {
   }
 
   open(): boolean {
+    // Outside the component tree the search is never mounted: on the page, it reads its look from the list's place.
+    this.search.readLook();
     this.render();
     if (!this.sheet.open()) return false;
     const active = this.presenter.phoneDocument;

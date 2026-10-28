@@ -4,6 +4,10 @@
   "stroke": 1.5,
   "icons": {
     "chevron-down": "M4 6l4 4 4-4",
+    "caret-down": {
+      "path": "M4.5 6.25h7L8 9.75z",
+      "fill": true
+    },
     "check": "M3.5 8.5l3 3 6-7",
     "chevron-up": "M4 10l4-4 4 4",
     "dismiss": "M4.5 4.5l7 7M11.5 4.5l-7 7",

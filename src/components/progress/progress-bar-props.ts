@@ -2,11 +2,12 @@ import type { Bind } from '@motifx/core';
 import type { ControlProps } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
 import type { ProgressLabelPosition } from './progress-label-position';
+import type { ProgressShape } from './progress-shape';
 import type { ProgressTone } from './progress-tone';
 
 /** Props of `ProgressBar`. Each one is also a settable, reactive property. */
 export interface ProgressBarProps extends ControlProps {
-  /** How far the work is; `null` (the default) when that is not known: the bar then runs to and fro. */
+  /** How far the work is; `null` (the default) when that is not known: the bar then runs to and fro, a circle turns. */
   value?: Bind<number | null>;
   /** Default `0`. */
   min?: Bind<number>;
@@ -14,7 +15,9 @@ export interface ProgressBarProps extends ControlProps {
   max?: Bind<number>;
   /** A caption; it names the bar for screen readers. The same as `text`. */
   label?: Bind<string>;
-  /** Default `'top'`. */
+  /** A line (the default) or a circle. */
+  shape?: Bind<ProgressShape>;
+  /** Default `'top'` (`'bottom'` for a circle). */
   labelPosition?: Bind<ProgressLabelPosition>;
   /** Writes the percent next to the label. */
   showValue?: Bind<boolean>;
@@ -22,7 +25,7 @@ export interface ProgressBarProps extends ControlProps {
   locale?: Bind<string>;
   /** Default `'accent'`. */
   tone?: Bind<ProgressTone>;
-  /** The thickness. Default `'md'`. */
+  /** The thickness, and a circle's size. Default `'md'`. */
   size?: Bind<ControlSize>;
   /** Fills the width of what it sits in. */
   stretch?: Bind<boolean>;

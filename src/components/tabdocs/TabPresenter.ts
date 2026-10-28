@@ -346,7 +346,7 @@ export class TabPresenter {
     };
     const panel =
       mode === 'drawer'
-        ? new Drawer({ ...common, side: area.side === 'left' ? 'start' : area.side === 'right' ? 'end' : area.side, edgeSwipe: () => m.edgeSwipe && this.kind !== 'desktop', size: () => (area.side === 'top' || area.side === 'bottom' ? '45%' : '80%') })
+        ? new Drawer({ ...common, side: area.side === 'left' ? 'start' : area.side === 'right' ? 'end' : area.side, edgeSwipe: () => m.edgeSwipe && this.kind !== 'desktop' })
         : new BottomSheet({ ...common, modal: false, detents: ['peek', 'half', 'full'], detent: 'half' });
     panel.element.classList.add('mx-tabdocs__tool-panel');
     panel.element.dataset.side = area.side;

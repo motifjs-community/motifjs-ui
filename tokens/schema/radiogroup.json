@@ -1,0 +1,230 @@
+{
+  "radiogroup": {
+    "$description": "RadioGroup: the circles and the dot of the chosen one, the halo and the ring, the option texts and help lines, and how the options are laid out.",
+    "$selector": ".mx-radio-group",
+    "gap": { "$type": "dimension" },
+    "column-gap": { "$type": "dimension" },
+    "help-gap": { "$type": "dimension" },
+    "size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "dot-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "dot-size-hover": {
+      "sm": { "$type": "dimension", "$description": "The chosen dot under the pointer." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "dot-size-pressed": {
+      "sm": { "$type": "dimension", "$description": "The chosen dot while pressed." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "font-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "press-offset": { "$type": "dimension" },
+    "focus-scope": { "$type": "keyword", "$description": "Where the ring under the keys sits: `box` (around the box) or `item` (around the box and its text together)." },
+    "$places": {
+      "field": {
+        "$description": "The field under a radio group: no text-field box.",
+        "selector": ".mx-radio-group",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "label-mode",
+          "padding.sm",
+          "padding.md",
+          "padding.lg",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "border-width",
+          "box.radius",
+          "box.shadow",
+          "box.focus.shadow",
+          "box.cursor",
+          "frame.display",
+          "indicator.display",
+          "box.disabled.bg",
+          "box.disabled.shadow",
+          "padding-start.sm",
+          "padding-start.md",
+          "padding-start.lg",
+          "padding-end.sm",
+          "padding-end.md",
+          "padding-end.lg",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "box.invalid-focus.shadow",
+          "box.readonly-focus.shadow",
+          "box.readonly-invalid-focus.shadow"
+        ]
+      }
+    },
+    "$units": {
+      "floating-label": {
+        "$description": "The group's label where the field's would float: there is nothing to float in, so it stands above as with `top`.",
+        "selector": ".mx-radio-group.mx-field[data-label-mode='floating'] > .mx-field__label",
+        "defaults": {
+          "margin": "0px",
+          "margin-bottom": "var(--_field-label-gap)",
+          "font-size": "inherit",
+          "font-weight": "var(--_field-label-font-weight)",
+          "color": "inherit"
+        }
+      },
+      "options": {
+        "$description": "The field's box as the group lays it out: it holds the options, at their own text size.",
+        "selector": ".mx-radio-group.mx-field > .mx-field__box",
+        "defaults": {
+          "min-height": "0px",
+          "font-size": "var(--_text-size)"
+        }
+      },
+      "row": {
+        "$description": "An option's row: its circle and text side by side, a row high; under the pointer, `checked`, `disabled`.",
+        "selector": ".mx-radio-group__label",
+        "states": {
+          "hover": ".mx-radio-group__label:hover",
+          "checked": ".mx-radio-group__label:has(> .mx-radio-group__input:checked)",
+          "disabled": ".mx-radio-group__label:has(> .mx-radio-group__input:disabled)"
+        }
+      },
+      "circle": {
+        "$description": "The circle: not chosen at rest, `checked` (its frame is the ring around the dot, `checked-sm` and `checked-lg` where its width differs per size; its fill shows between them), `invalid` (not chosen), `checked-invalid`; each under the pointer (`-hover`), pressed (`-pressed`), under the keys (`-focus`, `-pressed-focus`: the outline and the glow, its shadow kept), and disabled (`disabled`, `checked-disabled`). Read only, it does not follow the pointer.",
+        "selector": ".mx-radio-group__input",
+        "defaults": {
+          "size": "var(--_box)",
+          "margin": "0px",
+          "cursor": "default"
+        },
+        "states": {
+          "checked": ".mx-radio-group__input:checked",
+          "invalid": ".mx-radio-group[data-invalid] .mx-radio-group__input:not(:checked)",
+          "checked-sm": {
+            "selector": ".mx-radio-group[data-size='sm'] .mx-radio-group__input:checked",
+            "from": "checked"
+          },
+          "checked-lg": {
+            "selector": ".mx-radio-group[data-size='lg'] .mx-radio-group__input:checked",
+            "from": "checked"
+          },
+          "checked-invalid": {
+            "selector": ".mx-radio-group[data-invalid] .mx-radio-group__input:checked",
+            "from": "checked"
+          },
+          "hover": ".mx-radio-group:not([data-readonly]) .mx-radio-group__input:hover:not(:checked, :disabled)",
+          "checked-hover": {
+            "selector": ".mx-radio-group:not([data-readonly]) .mx-radio-group__input:checked:hover:not(:disabled)",
+            "from": "checked"
+          },
+          "invalid-hover": {
+            "selector": ".mx-radio-group[data-invalid]:not([data-readonly]) .mx-radio-group__input:hover:not(:checked, :disabled)",
+            "from": "invalid"
+          },
+          "pressed": ".mx-radio-group:not([data-readonly]) .mx-radio-group__input:active:not(:checked, :disabled)",
+          "checked-pressed": {
+            "selector": ".mx-radio-group:not([data-readonly]) .mx-radio-group__input:checked:active:not(:disabled)",
+            "from": "checked"
+          },
+          "invalid-pressed": {
+            "selector": ".mx-radio-group[data-invalid]:not([data-readonly]) .mx-radio-group__input:active:not(:checked, :disabled)",
+            "from": "invalid"
+          },
+          "focus": ".mx-radio-group__input:focus-visible",
+          "checked-focus": {
+            "selector": ".mx-radio-group__input:checked:focus-visible",
+            "from": "checked"
+          },
+          "invalid-focus": {
+            "selector": ".mx-radio-group[data-invalid] .mx-radio-group__input:not(:checked):focus-visible",
+            "from": "invalid"
+          },
+          "checked-invalid-focus": {
+            "selector": ".mx-radio-group[data-invalid] .mx-radio-group__input:checked:focus-visible",
+            "from": "checked-invalid"
+          },
+          "pressed-focus": {
+            "selector": ".mx-radio-group:not([data-readonly]) .mx-radio-group__input:active:focus-visible:not(:checked, :disabled)",
+            "from": "pressed"
+          },
+          "checked-pressed-focus": {
+            "selector": ".mx-radio-group:not([data-readonly]) .mx-radio-group__input:checked:active:focus-visible:not(:disabled)",
+            "from": "checked-pressed"
+          },
+          "disabled": ".mx-radio-group .mx-radio-group__input:disabled:not(:checked)",
+          "checked-disabled": {
+            "selector": ".mx-radio-group .mx-radio-group__input:checked:disabled",
+            "from": "checked"
+          }
+        }
+      },
+      "dot": {
+        "$description": "The dot centred in the circle (`checked`: of the chosen option, the only one a design usually shows); `pressed`, `disabled`. Its size is the size class's, per state.",
+        "selector": ".mx-radio-group__input + .mx-radio-group__text::before",
+        "defaults": {
+          "display": "none",
+          "size": "var(--_dot)"
+        },
+        "states": {
+          "checked": ".mx-radio-group__input:checked + .mx-radio-group__text::before",
+          "pressed": {
+            "selector": ".mx-radio-group:not([data-readonly]) .mx-radio-group__input:checked:hover:active:not(:disabled) + .mx-radio-group__text::before",
+            "from": "checked"
+          },
+          "disabled": {
+            "selector": ".mx-radio-group__input:checked:disabled + .mx-radio-group__text::before",
+            "from": "checked"
+          }
+        }
+      },
+      "text": {
+        "$description": "An option's text: `disabled`.",
+        "selector": ".mx-radio-group__text",
+        "states": {
+          "disabled": ".mx-radio-group__input:disabled + .mx-radio-group__text"
+        }
+      },
+      "help": {
+        "$description": "An option's help line under its text (a disabled option's stays readable).",
+        "selector": ".mx-radio-group__help"
+      },
+      "halo": {
+        "$description": "A halo centred on the circle, under it (a state layer: its colour per value, its opacity per state). None unless a language shows it.",
+        "selector": ".mx-radio-group__label::before",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "checked": ".mx-radio-group__label:has(> .mx-radio-group__input:checked)::before",
+          "hover": ".mx-radio-group:not([data-readonly]) .mx-radio-group__label:has(> .mx-radio-group__input:hover:not(:disabled))::before",
+          "focus": ".mx-radio-group__label:has(> .mx-radio-group__input:focus-visible)::before",
+          "pressed": ".mx-radio-group:not([data-readonly]) .mx-radio-group__label:has(> .mx-radio-group__input:active:not(:disabled))::before"
+        }
+      },
+      "ring": {
+        "$description": "A ring around an option's circle and text together while the keys are on it, standing out of the row by negative margins (where the language puts the ring around the item: `focus-scope`). None unless a language shows it.",
+        "selector": ".mx-radio-group__label::after",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "focus": ".mx-radio-group[data-focus-scope='item'] .mx-radio-group__label:has(> .mx-radio-group__input:focus-visible)::after"
+        }
+      }
+    }
+  }
+}

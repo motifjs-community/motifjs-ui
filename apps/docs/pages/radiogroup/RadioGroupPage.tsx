@@ -80,11 +80,14 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['radiogroup.size.*, radiogroup.dot-size.*', 'The circle and the dot of the chosen one, per size.'],
+  ['radiogroup.circle, radiogroup.dot', 'Units: the circle, with every state (`checked`, `invalid`, `hover`, `pressed`, `focus` and their pairs, `disabled`), and the dot of the chosen one (`checked`, `pressed`, `disabled`).'],
+  ['radiogroup.row, radiogroup.text, radiogroup.help', 'Units: an option\'s row (`hover`, `checked`, `disabled`), its text and its help line.'],
+  ['radiogroup.halo, radiogroup.ring', 'Units: a halo centred on the circle and a ring round an option under the keys, where the language has them.'],
+  ['radiogroup.options, radiogroup.floating-label', 'Units: the options together, and the group\'s label where it floats.'],
+  ['radiogroup.size.*, radiogroup.dot-size.*, radiogroup.dot-size-hover.*, radiogroup.dot-size-pressed.*', 'The circle and the dot, per size and state.'],
   ['radiogroup.height.*, radiogroup.font-size.*', 'The row height (density tokens) and the text size.'],
-  ['radiogroup.gap, radiogroup.column-gap', 'The space before the text, and between options side by side.'],
-  ['radiogroup.help-font-size, radiogroup.help-line', 'The help line of an option.'],
-  ['radiogroup.border-width', 'The circle border.'],
+  ['radiogroup.gap, radiogroup.column-gap, radiogroup.help-gap', 'The space before the text, between options side by side, and above an option\'s help line.'],
+  ['radiogroup.press-offset, radiogroup.focus-scope', 'How far a press moves the circle, and what the ring under the keys goes round.'],
 ];
 
 export default function RadioGroupPage() {

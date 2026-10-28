@@ -16,6 +16,8 @@ export interface SliderProps extends FieldProps<SliderValue> {
   largeStep?: Bind<number>;
   /** Two thumbs; the value is `[start, end]`. */
   range?: Bind<boolean>;
+  /** A centred slider: the active segment runs from this value to the thumb. Not with `range`. */
+  origin?: Bind<number | undefined>;
   /** The least distance between the two thumbs. Default `0`. */
   minDistance?: Bind<number>;
   /** Default `'horizontal'`. */

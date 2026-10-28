@@ -666,7 +666,8 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
       parts.stopLabel?.();
       parts.stopLabel = null;
     } else if (wanted && !parts.close) {
-      const button = new Button({ variant: 'ghost', size: 'sm', icon: dismissMark() });
+      // Its variant and size come from its place in the header.
+      const button = new Button({ icon: dismissMark() });
       button.element.classList.add(`${(this.constructor as typeof OverlayPanel).overlayClass}__close`);
       button.element.addEventListener('click', () => this.closeBy('button'));
       this.placeIn(button, parts.tools);

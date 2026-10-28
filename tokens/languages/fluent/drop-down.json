@@ -1,0 +1,55 @@
+{
+  "drop-down": {
+    "popup-gap": { "$value": "{space.1}" },
+    "field": {
+      "variant": { "$value": "{field.variant}" },
+      "box": {
+        "bg": { "$value": "{field.box.bg}" },
+        "hover": {
+          "bg": { "$value": "{field.box.hover.bg}" }
+        },
+        "focus": {
+          "bg": { "$value": "{field.box.focus.bg}" },
+          "shadow": { "$value": {"color": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0}, "offsetX": {"value": 0, "unit": "px"}, "offsetY": {"value": 0, "unit": "px"}, "blur": {"value": 0, "unit": "px"}, "spread": {"value": 0, "unit": "px"}} }
+        },
+        "pressed": {
+          "bg": { "$value": "{color.bg.card}" },
+          "color": { "$value": "{color.fg.primary}" }
+        },
+        "radius": { "$value": "{field.box.radius}" },
+        "shadow": { "$value": {"color": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0}, "offsetX": {"value": 0, "unit": "px"}, "offsetY": {"value": 0, "unit": "px"}, "blur": {"value": 0, "unit": "px"}, "spread": {"value": 0, "unit": "px"}} },
+        "cursor": { "$value": "default" }
+      },
+      "frame": {
+        "border-color": { "$value": "{field.frame.border-color}" },
+        "hover": {
+          "border-color": { "$value": "{color.stroke.control.default}" },
+          "border-bottom-color": { "$value": "{color.stroke.control.strong}" }
+        },
+        "focus": {
+          "border-color": { "$value": "{color.stroke.control.default}" },
+          "border-bottom-color": { "$value": "{field.frame.focus.border-bottom-color}" },
+          "border-width": { "$value": "{border.width.1}" }
+        },
+        "border-bottom-color": { "$value": "{field.frame.border-bottom-color}" }
+      }
+    },
+    "search": {
+      "variant": { "$value": "{field.variant}" },
+      "size": { "$value": "sm" }
+    },
+    "value": {
+      "placeholder": {
+        "color": { "$value": "{color.fg.secondary}" }
+      }
+    },
+    "chevron": {
+      "size": { "$value": "{glyph.size}" },
+      "color": { "$value": "{color.fg.secondary}" },
+      "icon": { "$value": "chevron-down" },
+      "disabled": {
+        "color": { "$value": "{color.fg.disabled}" }
+      }
+    }
+  }
+}

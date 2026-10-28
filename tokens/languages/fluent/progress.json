@@ -1,0 +1,80 @@
+{
+  "progress": {
+    "$description": "Fluent progress bars: ProgressBarMinHeight 3.",
+    "active-gap": { "$value": "0px" },
+    "dot-size": { "$value": {"value": 3, "unit": "px"} },
+    "stop-inset": { "$value": "0px" },
+    "runner-length": { "$value": {"value": 40, "unit": "%"} },
+    "runner-duration": { "$value": "calc({motion.duration.slow} * 7)" },
+    "gap": { "$value": "{space.2}" },
+    "head-gap": { "$value": "{space.1}" },
+    "width": { "$value": {"value": 16, "unit": "rem"} },
+    "thickness": {
+      "sm": { "$value": {"value": 1, "unit": "px"} },
+      "md": { "$value": {"value": 3, "unit": "px"} },
+      "lg": { "$value": {"value": 4, "unit": "px"} }
+    },
+    "rest-thickness": {
+      "sm": { "$value": "{progress.thickness.sm}" },
+      "md": { "$value": "{progress.thickness.md}" },
+      "lg": { "$value": "{progress.thickness.lg}" }
+    },
+    "wave-amplitude": { "$value": {"value": 0, "unit": "px"} },
+    "wave-length": { "$value": {"value": 40, "unit": "px"} },
+    "wave-speed": { "$value": "calc({motion.duration.slow} * 4 / 3)" },
+    "wave-direction": { "$value": "forward" },
+    "wave-start": { "$value": 0.1 },
+    "wave-end": { "$value": 0.95 },
+    "wave-grow-duration": { "$value": "{motion.duration.fast}" },
+    "ring-size": {
+      "sm": { "$value": "{icon.size.md}" },
+      "md": { "$value": {"value": 2, "unit": "rem"} },
+      "lg": { "$value": {"value": 2.5, "unit": "rem"} }
+    },
+    "ring-thickness": {
+      "sm": { "$value": "{border.width.2}" },
+      "md": { "$value": {"value": 0.25, "unit": "rem"} },
+      "lg": { "$value": {"value": 0.25, "unit": "rem"} }
+    },
+    "ring-active-gap": { "$value": {"value": 0, "unit": "px"} },
+    "ring-runner-length": { "$value": 0.25 },
+    "ring-turn-duration": { "$value": "calc({motion.duration.slow} * 3)" },
+    "ring-wave-amplitude": { "$value": {"value": 0, "unit": "px"} },
+    "ring-wave-length": { "$value": {"value": 15, "unit": "px"} },
+    "ring-wave-speed": { "$value": "calc({motion.duration.slow} * 4 / 3)" },
+    "ring-wave-direction": { "$value": "forward" },
+    "ring-wave-start": { "$value": 0.1 },
+    "ring-wave-end": { "$value": 0.95 },
+    "ring-wave-grow-duration": { "$value": "{motion.duration.fast}" },
+    "accent": { "$value": "{color.accent.solid}" },
+    "accent-subtle": { "$value": "{color.accent.subtle}" },
+    "neutral": { "$value": "{color.fg.secondary}" },
+    "neutral-subtle": { "$value": "{color.fill.subtle.secondary}" },
+    "success": { "$value": "{color.success.fg}" },
+    "success-subtle": { "$value": "{color.success.subtle}" },
+    "caution": { "$value": "{color.caution.fg}" },
+    "caution-subtle": { "$value": "{color.caution.subtle}" },
+    "danger": { "$value": "{color.danger.solid}" },
+    "danger-subtle": { "$value": "{color.danger.subtle}" },
+    "track": {
+      "bg": { "$value": "{color.stroke.control.secondary}" },
+      "radius": { "$value": "{radius.full}" }
+    },
+    "bar": {
+      "radius": { "$value": "{radius.full}" }
+    },
+    "ring": {
+      "color": { "$value": "{color.stroke.control.secondary}" }
+    },
+    "label": {
+      "color": { "$value": "{color.fg.primary}" },
+      "font-size": { "$value": {"value": 1, "unit": "em"} },
+      "font-weight": { "$value": "{font.weight.regular}" }
+    },
+    "value": {
+      "color": { "$value": "{color.fg.secondary}" },
+      "font-size": { "$value": "{font.size.caption}" },
+      "font-weight": { "$value": "{font.weight.regular}" }
+    }
+  }
+}

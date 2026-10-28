@@ -1,5 +1,5 @@
 import { Component, reactive, RouterView, untracked, useNavigation } from '@motifx/core';
-import type { IdentityName, ThemeChoice } from '@motifx-community/design-system';
+import { defaultIdentity, identities, type IdentityName, type ThemeChoice } from '@motifx-community/design-system';
 import { Button, TextBox } from '@motifx-community/ui';
 import { GROUPS, PAGES, SECTIONS } from '../app/pages';
 import { PageOutline } from '../app/PageOutline';
@@ -13,13 +13,11 @@ const THEMES: { id: ThemeChoice; label: string }[] = [
   { id: 'high-contrast', label: 'High contrast' },
 ];
 
-const STYLES: { id: IdentityName | 'default'; label: string }[] = [
-  { id: 'default', label: 'Tactile' },
-  { id: 'lounge', label: 'Lounge' },
-  { id: 'material', label: 'Material' },
-  { id: 'fluent', label: 'Fluent' },
-  { id: 'lilac', label: 'Lilac' },
-];
+/** Every design language the design system ships, the default one first: a new one shows up here by itself. */
+const STYLES: { id: IdentityName | 'default'; label: string }[] = [defaultIdentity, ...identities.filter((id) => id !== defaultIdentity)].map((id) => ({
+  id: id === defaultIdentity ? 'default' : id,
+  label: id.split('-').map((word) => word[0].toUpperCase() + word.slice(1)).join(' '),
+}));
 
 /** How far below the top bar a section heading may be and still count as the one being read. */
 const READING_LINE = 140;

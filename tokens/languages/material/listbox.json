@@ -1,0 +1,104 @@
+{
+  "listbox": {
+    "field": {
+      "variant": { "$value": "outline" },
+      "label-mode": { "$value": "top" },
+      "box": {
+        "bg": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} },
+        "hover": {
+          "bg": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} }
+        },
+        "focus": {
+          "bg": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} },
+          "shadow": { "$value": {"color": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0}, "offsetX": {"value": 0, "unit": "px"}, "offsetY": {"value": 0, "unit": "px"}, "blur": {"value": 0, "unit": "px"}, "spread": {"value": 0, "unit": "px"}} }
+        },
+        "radius": { "$value": "{radius.lg}" },
+        "shadow": { "$value": {"color": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0}, "offsetX": {"value": 0, "unit": "px"}, "offsetY": {"value": 0, "unit": "px"}, "blur": {"value": 0, "unit": "px"}, "spread": {"value": 0, "unit": "px"}} },
+        "cursor": { "$value": "default" },
+        "invalid-hover": {
+          "bg": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} }
+        },
+        "invalid-focus": {
+          "bg": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} }
+        }
+      },
+      "frame": {
+        "border-color": { "$value": "{color.stroke.control.default}" },
+        "hover": {
+          "border-color": { "$value": "{field.frame.hover.border-color}" },
+          "border-bottom-color": { "$value": "{color.fg.primary}" }
+        },
+        "focus": {
+          "border-color": { "$value": "{field.frame.focus.border-color}" },
+          "border-bottom-color": { "$value": "{color.accent.solid}" },
+          "border-width": { "$value": "{field.frame.focus.border-width}" }
+        },
+        "border-bottom-color": { "$value": "{color.stroke.control.strong}" },
+        "disabled": {
+          "border-color": { "$value": "{color.fill.control.disabled}" }
+        }
+      },
+      "indicator": {
+        "radius": { "$value": "calc({radius.lg} - {border.width.1})" },
+        "focus": {
+          "shadow": { "$value": "none" }
+        },
+        "invalid-focus": {
+          "shadow": { "$value": "none" }
+        },
+        "readonly-focus": {
+          "shadow": { "$value": "none" }
+        },
+        "readonly-invalid-focus": {
+          "shadow": { "$value": "none" }
+        }
+      }
+    },
+    "search": {
+      "variant": { "$value": "outline" },
+      "size": { "$value": "sm" }
+    },
+    "list": {
+      "item-height": { "$value": {"value": 56, "unit": "px"} },
+      "item": {
+        "radius": { "$value": "{list.item.radius}" }
+      },
+      "mark": {
+        "size": { "$value": "{glyph.size}" }
+      }
+    },
+    "box": {
+      "padding": { "$value": "{space.1}" },
+      "gap": { "$value": "{space.1}" }
+    },
+    "check": {
+      "size": { "$value": {"value": 18, "unit": "px"} },
+      "radius": { "$value": {"value": 2, "unit": "px"} },
+      "border-width": { "$value": "{border.width.2}" },
+      "border-color": { "$value": "{color.fg.secondary}" },
+      "color": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} },
+      "checked": {
+        "color": { "$value": "{color.accent.on-solid}" },
+        "bg": { "$value": "{color.accent.solid}" },
+        "border-color": { "$value": "{color.accent.solid}" }
+      },
+      "disabled": {
+        "bg": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} },
+        "border-color": { "$value": "{color.fg.on-accent-disabled}" }
+      },
+      "checked-disabled": {
+        "color": { "$value": "{color.bg.canvas}" },
+        "bg": { "$value": "{color.fg.on-accent-disabled}" },
+        "border-color": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} }
+      }
+    },
+    "keys": {
+      "outline-width": { "$value": "{focus.ring.width}" },
+      "outline-color": { "$value": "{focus.ring.color}" },
+      "outline-offset": { "$value": "calc(-1 * {focus.ring.width})" }
+    },
+    "idle": {
+      "bg": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} }
+    }
+  }
+}

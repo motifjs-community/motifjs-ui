@@ -190,7 +190,8 @@ import { Scheduler } from '@motifx-community/ui';
               '`data-kind="timed|bar|chip"`, `data-before`, `data-after`, `data-short`, `data-past`, `data-disabled`; its colour is `--_color`.',
             ],
             ['.mx-scheduler__more, __more-list, __now', '"+N more", its list, the current time.'],
-            ['scheduler.height, scheduler.slot-height, scheduler.appointment-tint, scheduler.now-color, …', 'Component tokens.'],
+            ['scheduler.scheduler, bar, head, date, day-number, hour, time-row, cell, now, week-row, appointment, tooltip, more, more-item, state, …', 'Units: every piece in its states (a cell: `today`, `off`, `holiday`, `month`, `outside`, `weekend`, `past`, `hover`, `selected`, `focus` …).'],
+            ['scheduler.height, slot-height, ruler-width, lane-size, appointment-tint, appointment-*-width, appointment-*-mix, chip-*, …', 'Sizes, and the shares that mix an appointment\'s own colour into its fill, its text and its four edges.'],
           ]}
         />
       </Section>

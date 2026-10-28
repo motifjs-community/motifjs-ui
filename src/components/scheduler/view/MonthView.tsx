@@ -73,6 +73,7 @@ export class MonthView<T> extends Component<HTMLDivElement, Props<T>> {
                     role="gridcell"
                     data-cell={`${day.index}:-1`}
                     data-today={() => day.today || null}
+                    data-past={() => day.past || null}
                     data-outside={() => day.outside || null}
                     data-holiday={() => day.holiday || null}
                     data-weekend={() => day.weekend || null}

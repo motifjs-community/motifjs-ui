@@ -38,7 +38,7 @@ describe('Spinner', () => {
     expect(el.hasAttribute('aria-valuenow')).toBe(false);
     expect(el.getAttribute('aria-labelledby')).toBe(el.querySelector('.mx-spinner__label')!.id);
     expect(el.querySelector('.mx-spinner__label')!.textContent).toBe('Loading orders');
-    expect(el.querySelector('.mx-spinner__ring')!.getAttribute('aria-hidden')).toBe('true');
+    expect(el.querySelector('.mx-spinner__box')!.getAttribute('aria-hidden')).toBe('true');
     expect({ ...el.dataset }).toMatchObject({ size: 'lg', tone: 'neutral', labelPosition: 'side' });
 
     expect(coded.element.getAttribute('aria-label')).toBe('Loading…');

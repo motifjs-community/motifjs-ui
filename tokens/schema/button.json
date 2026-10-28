@@ -1,0 +1,402 @@
+{
+  "button": {
+    "$description": "Button: the pressable look, sized by the density tokens.",
+    "$selector": ".mx-button",
+    "variant": { "$type": "keyword", "$description": "The variant of a button that is not given one: solid, outline or ghost. A place a button sits in (a toolbar, a window's title bar) may decide it there." },
+    "tone": { "$type": "keyword", "$description": "The tone of a button that is not given one: standard, accent or danger." },
+    "size": { "$type": "keyword", "$description": "The size of a button that is not given one: sm, md or lg." },
+    "press-offset": { "$type": "dimension" },
+    "icon-only-square": { "$type": "number", "$description": "A button with an icon and no text: 1 makes it as wide as it is high (a square, or a circle with a full icon-only-radius), 0 keeps the padding." },
+    "spinner-duration": { "$type": "duration" },
+    "font-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "line-height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "text-box": { "$type": "keyword", "$description": "The caption's line box: normal, or trimmed to the letters (for example `trim-both cap alphabetic`) so the caption sits optically in the middle." },
+    "height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "padding": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "$units": {
+      "face": {
+        "$description": "What is pressed: the button itself, or a menu button's main part and arrow. Its frame (the bottom side is a key's edge), its fill with a state layer over it (`image`: an empty layer at rest, so text and corners are drawn the same at rest and in every state), its focus ring (outline and glow). Each look is a state (`accent`, `outline`, `outline-accent`, `ghost` …: a solid standard button is the face at rest), and so is each look in each state (`outline-hover`, `accent-pressed` …).",
+        "selector": ".mx-button__face",
+        "defaults": {
+          "margin": "0px",
+          "padding-block": "0px",
+          "padding-inline": "var(--_pad)",
+          "min-height": "var(--_height)",
+          "font-size": "var(--_font-size)",
+          "line-height": "var(--_line)",
+          "cursor": "default",
+          "image": "linear-gradient(transparent, transparent)"
+        },
+        "states": {
+          "accent": ".mx-button__face:where([data-variant='solid'][data-tone='accent'], [data-variant='solid'][data-tone='accent'] > *)",
+          "danger": ".mx-button__face:where([data-variant='solid'][data-tone='danger'], [data-variant='solid'][data-tone='danger'] > *)",
+          "outline": ".mx-button__face:where([data-variant='outline'], [data-variant='outline'] > *)",
+          "outline-accent": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='accent'], [data-variant='outline'][data-tone='accent'] > *)",
+            "from": "outline"
+          },
+          "outline-danger": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='danger'], [data-variant='outline'][data-tone='danger'] > *)",
+            "from": "outline"
+          },
+          "ghost": ".mx-button__face:where([data-variant='ghost'], [data-variant='ghost'] > *)",
+          "ghost-accent": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='accent'], [data-variant='ghost'][data-tone='accent'] > *)",
+            "from": "ghost"
+          },
+          "ghost-danger": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='danger'], [data-variant='ghost'][data-tone='danger'] > *)",
+            "from": "ghost"
+          },
+          "icon-only": ".mx-button__face:where([data-icon-only], [data-icon-only] > *)",
+          "hover": ".mx-button__face:hover:not(:disabled, [aria-disabled='true'])",
+          "accent-hover": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='accent'], [data-variant='solid'][data-tone='accent'] > *):hover:not(:disabled, [aria-disabled='true'])",
+            "from": "accent"
+          },
+          "danger-hover": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='danger'], [data-variant='solid'][data-tone='danger'] > *):hover:not(:disabled, [aria-disabled='true'])",
+            "from": "danger"
+          },
+          "outline-hover": {
+            "selector": ".mx-button__face:where([data-variant='outline'], [data-variant='outline'] > *):hover:not(:disabled, [aria-disabled='true'])",
+            "from": "outline"
+          },
+          "outline-accent-hover": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='accent'], [data-variant='outline'][data-tone='accent'] > *):hover:not(:disabled, [aria-disabled='true'])",
+            "from": "outline-accent"
+          },
+          "outline-danger-hover": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='danger'], [data-variant='outline'][data-tone='danger'] > *):hover:not(:disabled, [aria-disabled='true'])",
+            "from": "outline-danger"
+          },
+          "ghost-hover": {
+            "selector": ".mx-button__face:where([data-variant='ghost'], [data-variant='ghost'] > *):hover:not(:disabled, [aria-disabled='true'])",
+            "from": "ghost"
+          },
+          "ghost-accent-hover": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='accent'], [data-variant='ghost'][data-tone='accent'] > *):hover:not(:disabled, [aria-disabled='true'])",
+            "from": "ghost-accent"
+          },
+          "ghost-danger-hover": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='danger'], [data-variant='ghost'][data-tone='danger'] > *):hover:not(:disabled, [aria-disabled='true'])",
+            "from": "ghost-danger"
+          },
+          "toggled-hover": {
+            "selector": ".mx-button__face:hover:not(:disabled, [aria-disabled='true']):where([aria-pressed='true'])",
+            "from": "toggled"
+          },
+          "accent-toggled-hover": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='accent'], [data-variant='solid'][data-tone='accent'] > *):hover:not(:disabled, [aria-disabled='true']):where([aria-pressed='true'])",
+            "from": "accent-toggled"
+          },
+          "danger-toggled-hover": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='danger'], [data-variant='solid'][data-tone='danger'] > *):hover:not(:disabled, [aria-disabled='true']):where([aria-pressed='true'])",
+            "from": "danger-toggled"
+          },
+          "outline-toggled-hover": {
+            "selector": ".mx-button__face:where([data-variant='outline'], [data-variant='outline'] > *):hover:not(:disabled, [aria-disabled='true']):where([aria-pressed='true'])",
+            "from": "outline-toggled"
+          },
+          "outline-accent-toggled-hover": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='accent'], [data-variant='outline'][data-tone='accent'] > *):hover:not(:disabled, [aria-disabled='true']):where([aria-pressed='true'])",
+            "from": "outline-accent-toggled"
+          },
+          "outline-danger-toggled-hover": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='danger'], [data-variant='outline'][data-tone='danger'] > *):hover:not(:disabled, [aria-disabled='true']):where([aria-pressed='true'])",
+            "from": "outline-danger-toggled"
+          },
+          "ghost-toggled-hover": {
+            "selector": ".mx-button__face:where([data-variant='ghost'], [data-variant='ghost'] > *):hover:not(:disabled, [aria-disabled='true']):where([aria-pressed='true'])",
+            "from": "ghost-toggled"
+          },
+          "ghost-accent-toggled-hover": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='accent'], [data-variant='ghost'][data-tone='accent'] > *):hover:not(:disabled, [aria-disabled='true']):where([aria-pressed='true'])",
+            "from": "ghost-accent-toggled"
+          },
+          "ghost-danger-toggled-hover": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='danger'], [data-variant='ghost'][data-tone='danger'] > *):hover:not(:disabled, [aria-disabled='true']):where([aria-pressed='true'])",
+            "from": "ghost-danger-toggled"
+          },
+          "open": ".mx-button__face[aria-expanded='true']",
+          "accent-open": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='accent'], [data-variant='solid'][data-tone='accent'] > *)[aria-expanded='true']",
+            "from": "accent"
+          },
+          "danger-open": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='danger'], [data-variant='solid'][data-tone='danger'] > *)[aria-expanded='true']",
+            "from": "danger"
+          },
+          "outline-open": {
+            "selector": ".mx-button__face:where([data-variant='outline'], [data-variant='outline'] > *)[aria-expanded='true']",
+            "from": "outline"
+          },
+          "outline-accent-open": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='accent'], [data-variant='outline'][data-tone='accent'] > *)[aria-expanded='true']",
+            "from": "outline-accent"
+          },
+          "outline-danger-open": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='danger'], [data-variant='outline'][data-tone='danger'] > *)[aria-expanded='true']",
+            "from": "outline-danger"
+          },
+          "ghost-open": {
+            "selector": ".mx-button__face:where([data-variant='ghost'], [data-variant='ghost'] > *)[aria-expanded='true']",
+            "from": "ghost"
+          },
+          "ghost-accent-open": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='accent'], [data-variant='ghost'][data-tone='accent'] > *)[aria-expanded='true']",
+            "from": "ghost-accent"
+          },
+          "ghost-danger-open": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='danger'], [data-variant='ghost'][data-tone='danger'] > *)[aria-expanded='true']",
+            "from": "ghost-danger"
+          },
+          "pressed": ".mx-button__face:active:not(:disabled, [aria-disabled='true'], [aria-busy='true'])",
+          "accent-pressed": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='accent'], [data-variant='solid'][data-tone='accent'] > *):active:not(:disabled, [aria-disabled='true'], [aria-busy='true'])",
+            "from": "accent"
+          },
+          "danger-pressed": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='danger'], [data-variant='solid'][data-tone='danger'] > *):active:not(:disabled, [aria-disabled='true'], [aria-busy='true'])",
+            "from": "danger"
+          },
+          "outline-pressed": {
+            "selector": ".mx-button__face:where([data-variant='outline'], [data-variant='outline'] > *):active:not(:disabled, [aria-disabled='true'], [aria-busy='true'])",
+            "from": "outline"
+          },
+          "outline-accent-pressed": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='accent'], [data-variant='outline'][data-tone='accent'] > *):active:not(:disabled, [aria-disabled='true'], [aria-busy='true'])",
+            "from": "outline-accent"
+          },
+          "outline-danger-pressed": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='danger'], [data-variant='outline'][data-tone='danger'] > *):active:not(:disabled, [aria-disabled='true'], [aria-busy='true'])",
+            "from": "outline-danger"
+          },
+          "ghost-pressed": {
+            "selector": ".mx-button__face:where([data-variant='ghost'], [data-variant='ghost'] > *):active:not(:disabled, [aria-disabled='true'], [aria-busy='true'])",
+            "from": "ghost"
+          },
+          "ghost-accent-pressed": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='accent'], [data-variant='ghost'][data-tone='accent'] > *):active:not(:disabled, [aria-disabled='true'], [aria-busy='true'])",
+            "from": "ghost-accent"
+          },
+          "ghost-danger-pressed": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='danger'], [data-variant='ghost'][data-tone='danger'] > *):active:not(:disabled, [aria-disabled='true'], [aria-busy='true'])",
+            "from": "ghost-danger"
+          },
+          "icon-only-pressed": {
+            "selector": ".mx-button__face:where([data-icon-only], [data-icon-only] > *):active:not(:disabled, [aria-disabled='true'], [aria-busy='true'])",
+            "from": "icon-only"
+          },
+          "focus": ".mx-button__face:focus-visible",
+          "accent-focus": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='accent'], [data-variant='solid'][data-tone='accent'] > *):focus-visible",
+            "from": "accent"
+          },
+          "danger-focus": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='danger'], [data-variant='solid'][data-tone='danger'] > *):focus-visible",
+            "from": "danger"
+          },
+          "outline-focus": {
+            "selector": ".mx-button__face:where([data-variant='outline'], [data-variant='outline'] > *):focus-visible",
+            "from": "outline"
+          },
+          "outline-accent-focus": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='accent'], [data-variant='outline'][data-tone='accent'] > *):focus-visible",
+            "from": "outline-accent"
+          },
+          "outline-danger-focus": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='danger'], [data-variant='outline'][data-tone='danger'] > *):focus-visible",
+            "from": "outline-danger"
+          },
+          "ghost-focus": {
+            "selector": ".mx-button__face:where([data-variant='ghost'], [data-variant='ghost'] > *):focus-visible",
+            "from": "ghost"
+          },
+          "ghost-accent-focus": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='accent'], [data-variant='ghost'][data-tone='accent'] > *):focus-visible",
+            "from": "ghost-accent"
+          },
+          "ghost-danger-focus": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='danger'], [data-variant='ghost'][data-tone='danger'] > *):focus-visible",
+            "from": "ghost-danger"
+          },
+          "toggled": ".mx-button__face[aria-pressed='true']",
+          "accent-toggled": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='accent'], [data-variant='solid'][data-tone='accent'] > *)[aria-pressed='true']",
+            "from": "accent"
+          },
+          "danger-toggled": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='danger'], [data-variant='solid'][data-tone='danger'] > *)[aria-pressed='true']",
+            "from": "danger"
+          },
+          "outline-toggled": {
+            "selector": ".mx-button__face:where([data-variant='outline'], [data-variant='outline'] > *)[aria-pressed='true']",
+            "from": "outline"
+          },
+          "outline-accent-toggled": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='accent'], [data-variant='outline'][data-tone='accent'] > *)[aria-pressed='true']",
+            "from": "outline-accent"
+          },
+          "outline-danger-toggled": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='danger'], [data-variant='outline'][data-tone='danger'] > *)[aria-pressed='true']",
+            "from": "outline-danger"
+          },
+          "ghost-toggled": {
+            "selector": ".mx-button__face:where([data-variant='ghost'], [data-variant='ghost'] > *)[aria-pressed='true']",
+            "from": "ghost"
+          },
+          "ghost-accent-toggled": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='accent'], [data-variant='ghost'][data-tone='accent'] > *)[aria-pressed='true']",
+            "from": "ghost-accent"
+          },
+          "ghost-danger-toggled": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='danger'], [data-variant='ghost'][data-tone='danger'] > *)[aria-pressed='true']",
+            "from": "ghost-danger"
+          },
+          "disabled": ".mx-button__face:is(:disabled, [aria-disabled='true'])",
+          "accent-disabled": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='accent'], [data-variant='solid'][data-tone='accent'] > *):is(:disabled, [aria-disabled='true'])",
+            "from": "accent"
+          },
+          "danger-disabled": {
+            "selector": ".mx-button__face:where([data-variant='solid'][data-tone='danger'], [data-variant='solid'][data-tone='danger'] > *):is(:disabled, [aria-disabled='true'])",
+            "from": "danger"
+          },
+          "outline-disabled": {
+            "selector": ".mx-button__face:where([data-variant='outline'], [data-variant='outline'] > *):is(:disabled, [aria-disabled='true'])",
+            "from": "outline"
+          },
+          "outline-accent-disabled": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='accent'], [data-variant='outline'][data-tone='accent'] > *):is(:disabled, [aria-disabled='true'])",
+            "from": "outline-accent"
+          },
+          "outline-danger-disabled": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='danger'], [data-variant='outline'][data-tone='danger'] > *):is(:disabled, [aria-disabled='true'])",
+            "from": "outline-danger"
+          },
+          "ghost-disabled": {
+            "selector": ".mx-button__face:where([data-variant='ghost'], [data-variant='ghost'] > *):is(:disabled, [aria-disabled='true'])",
+            "from": "ghost"
+          },
+          "ghost-accent-disabled": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='accent'], [data-variant='ghost'][data-tone='accent'] > *):is(:disabled, [aria-disabled='true'])",
+            "from": "ghost-accent"
+          },
+          "ghost-danger-disabled": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='danger'], [data-variant='ghost'][data-tone='danger'] > *):is(:disabled, [aria-disabled='true'])",
+            "from": "ghost-danger"
+          },
+          "busy": ".mx-button__face[aria-busy='true']",
+          "main": ".mx-button[data-mode='split'] > .mx-button__main",
+          "main-hover": {
+            "selector": ".mx-button[data-mode='split'] > .mx-button__main:is(:hover, :active):not(:disabled, [aria-disabled='true'])",
+            "from": "main"
+          },
+          "arrow": ".mx-button[data-mode='split'] > .mx-button__arrow",
+          "arrow-hover": {
+            "selector": ".mx-button[data-mode='split'] > .mx-button__arrow:is(:hover, :active):not(:disabled, [aria-disabled='true'])",
+            "from": "arrow"
+          }
+        }
+      },
+      "icon": {
+        "$description": "The icon.",
+        "selector": ".mx-button__icon"
+      },
+      "caption": {
+        "$description": "The text.",
+        "selector": ".mx-button__text"
+      },
+      "chevron": {
+        "$description": "The arrow of a button that opens a menu or a drop-down (`open`: while it is open).",
+        "selector": ":is(.mx-button__chevron, .mx-button__arrow > .mx-glyph)",
+        "defaults": {
+          "display": "inline-block"
+        },
+        "states": {
+          "open": ":is(.mx-button__face[aria-expanded='true'] > .mx-button__chevron, .mx-button__arrow[aria-expanded='true'] > .mx-glyph)"
+        }
+      },
+      "spinner": {
+        "$description": "The ring that turns while the button is busy, in the colour of its look (`color`; the gap in the ring: one side of its frame).",
+        "selector": ".mx-button__spinner",
+        "defaults": {
+          "size": "var(--_button-icon-size)"
+        },
+        "states": {
+          "accent": ".mx-button__face:where([data-variant='solid'][data-tone='accent'], [data-variant='solid'][data-tone='accent'] > *) > .mx-button__spinner",
+          "danger": ".mx-button__face:where([data-variant='solid'][data-tone='danger'], [data-variant='solid'][data-tone='danger'] > *) > .mx-button__spinner",
+          "outline": ".mx-button__face:where([data-variant='outline'], [data-variant='outline'] > *) > .mx-button__spinner",
+          "outline-accent": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='accent'], [data-variant='outline'][data-tone='accent'] > *) > .mx-button__spinner",
+            "from": "outline"
+          },
+          "outline-danger": {
+            "selector": ".mx-button__face:where([data-variant='outline'][data-tone='danger'], [data-variant='outline'][data-tone='danger'] > *) > .mx-button__spinner",
+            "from": "outline"
+          },
+          "ghost": ".mx-button__face:where([data-variant='ghost'], [data-variant='ghost'] > *) > .mx-button__spinner",
+          "ghost-accent": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='accent'], [data-variant='ghost'][data-tone='accent'] > *) > .mx-button__spinner",
+            "from": "ghost"
+          },
+          "ghost-danger": {
+            "selector": ".mx-button__face:where([data-variant='ghost'][data-tone='danger'], [data-variant='ghost'][data-tone='danger'] > *) > .mx-button__spinner",
+            "from": "ghost"
+          }
+        }
+      },
+      "spinner-shape": {
+        "$description": "A shape in the spinner's place that becomes the next one, where the language draws the busy spinner as one (the spinner's shapes and timing, in the look's colour).",
+        "selector": ".mx-button__spinner::before",
+        "defaults": {
+          "display": "none",
+          "bg": "currentcolor"
+        }
+      },
+      "divider": {
+        "$description": "The line between a split button's main part and its arrow, over the arrow's start side, per look.",
+        "selector": ".mx-button[data-mode='split'] > .mx-button__arrow::before",
+        "states": {
+          "accent": ".mx-button[data-mode='split']:where([data-variant='solid'][data-tone='accent']) > .mx-button__arrow::before",
+          "danger": ".mx-button[data-mode='split']:where([data-variant='solid'][data-tone='danger']) > .mx-button__arrow::before",
+          "outline": ".mx-button[data-mode='split']:where([data-variant='outline']) > .mx-button__arrow::before",
+          "outline-accent": {
+            "selector": ".mx-button[data-mode='split']:where([data-variant='outline'][data-tone='accent']) > .mx-button__arrow::before",
+            "from": "outline"
+          },
+          "outline-danger": {
+            "selector": ".mx-button[data-mode='split']:where([data-variant='outline'][data-tone='danger']) > .mx-button__arrow::before",
+            "from": "outline"
+          },
+          "ghost": ".mx-button[data-mode='split']:where([data-variant='ghost']) > .mx-button__arrow::before",
+          "ghost-accent": {
+            "selector": ".mx-button[data-mode='split']:where([data-variant='ghost'][data-tone='accent']) > .mx-button__arrow::before",
+            "from": "ghost"
+          },
+          "ghost-danger": {
+            "selector": ".mx-button[data-mode='split']:where([data-variant='ghost'][data-tone='danger']) > .mx-button__arrow::before",
+            "from": "ghost"
+          }
+        }
+      }
+    }
+  }
+}

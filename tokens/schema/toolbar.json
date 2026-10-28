@@ -1,0 +1,56 @@
+{
+  "toolbar": {
+    "$description": "Toolbar: a bar of commands on the bar color, its controls sized by the density tokens.",
+    "$selector": ".mx-toolbar",
+    "height": { "$type": "dimension" },
+    "$places": {
+      "button": {
+        "$description": "A button on the toolbar that is given no variant or size (neither its own nor the toolbar's): its variant and size, and the look of a toggle that is on.",
+        "selector": ".mx-toolbar > .mx-button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size",
+          "face.toggled.bg",
+          "face.toggled-hover.bg",
+          "face.toggled.color",
+          "face.outline-toggled.bg",
+          "face.ghost-toggled.bg",
+          "face.outline-toggled-hover.bg",
+          "face.ghost-toggled-hover.bg",
+          "face.outline-toggled.color",
+          "face.ghost-toggled.color",
+          "face.outline-toggled-hover.color",
+          "face.ghost-toggled-hover.color"
+        ]
+      },
+      "more": {
+        "$description": "The \"more\" button the items that do not fit go into: an icon without the menu arrow.",
+        "selector": ".mx-toolbar > .mx-toolbar__more",
+        "part": "button",
+        "tokens": [
+          "chevron.display"
+        ]
+      }
+    },
+    "$units": {
+      "bar": {
+        "$description": "The bar (`vertical`: a column of controls).",
+        "selector": ":where(.mx-toolbar)",
+        "defaults": {
+          "min-height": "var(--_toolbar-height)"
+        },
+        "states": {
+          "vertical": ":where(.mx-toolbar)[data-orientation='vertical']"
+        }
+      },
+      "separator": {
+        "$description": "The line between groups: across a row (`width` its thickness, `margin-block` how far it stays from the ends), `vertical` across a column.",
+        "selector": ":where(.mx-toolbar) > .mx-toolbar__separator",
+        "states": {
+          "vertical": ".mx-toolbar[data-orientation='vertical'] > .mx-toolbar__separator"
+        }
+      }
+    }
+  }
+}

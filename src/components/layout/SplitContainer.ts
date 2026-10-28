@@ -15,7 +15,7 @@ const OWN = ['orientation', 'position', 'fixedPanel', 'firstMinSize', 'secondMin
 
 const LAYOUT = ['orientation', 'position', 'fixedPanel', 'firstMinSize', 'secondMinSize', 'collapsed'] as const;
 
-const SPLITTER = 'var(--mx-layout-splitter-size)';
+const SPLITTER = 'var(--_layout-splitter-size)';
 
 interface Drag {
   pointer: number;

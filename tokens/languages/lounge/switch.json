@@ -1,0 +1,121 @@
+{
+  "switch": {
+    "thumb-inset": { "$value": "{space.1}" },
+    "gap": { "$value": "{space.2}" },
+    "text-padding": { "$value": "{space.2}" },
+    "track-width": {
+      "sm": { "$value": {"value": 2, "unit": "rem"} },
+      "md": { "$value": {"value": 2.5, "unit": "rem"} },
+      "lg": { "$value": {"value": 3, "unit": "rem"} }
+    },
+    "track-height": {
+      "sm": { "$value": {"value": 1, "unit": "rem"} },
+      "md": { "$value": {"value": 1.25, "unit": "rem"} },
+      "lg": { "$value": {"value": 1.5, "unit": "rem"} }
+    },
+    "height": {
+      "sm": { "$value": "{control.height.sm}" },
+      "md": { "$value": "{control.height.md}" },
+      "lg": { "$value": "{control.height.lg}" }
+    },
+    "font-size": {
+      "sm": { "$value": "{font.size.caption}" },
+      "md": { "$value": "{font.size.body}" },
+      "lg": { "$value": "{font.size.body-large}" }
+    },
+    "thumb-stretch": { "$value": "{switch.thumb-inset}" },
+    "thumb-size": {
+      "sm": { "$value": "calc({switch.track-height.sm} - 2 * {switch.thumb-inset})" },
+      "md": { "$value": "calc({switch.track-height.md} - 2 * {switch.thumb-inset})" },
+      "lg": { "$value": "calc({switch.track-height.lg} - 2 * {switch.thumb-inset})" }
+    },
+    "thumb-size-checked": {
+      "sm": { "$value": "{switch.thumb-size.sm}" },
+      "md": { "$value": "{switch.thumb-size.md}" },
+      "lg": { "$value": "{switch.thumb-size.lg}" }
+    },
+    "thumb-size-hover": {
+      "sm": { "$value": "{switch.thumb-size.sm}" },
+      "md": { "$value": "{switch.thumb-size.md}" },
+      "lg": { "$value": "{switch.thumb-size.lg}" }
+    },
+    "thumb-size-pressed": {
+      "sm": { "$value": "{switch.thumb-size.sm}" },
+      "md": { "$value": "{switch.thumb-size.md}" },
+      "lg": { "$value": "{switch.thumb-size.lg}" }
+    },
+    "track": {
+      "bg": { "$value": "{color.fill.control.default}" },
+      "border-width": { "$value": "{border.width.1}" },
+      "border-color": { "$value": "{color.stroke.control.strong}" },
+      "radius": { "$value": "{radius.full}" },
+      "checked": {
+        "bg": { "$value": "{color.accent.solid}" },
+        "border-color": { "$value": "{color.accent.solid}" }
+      },
+      "invalid": {
+        "border-color": { "$value": "{color.danger.solid}" }
+      },
+      "hover": {
+        "bg": { "$value": "{color.fill.control.secondary}" }
+      },
+      "checked-hover": {
+        "bg": { "$value": "{color.accent.solid-hover}" }
+      },
+      "pressed": {
+        "bg": { "$value": "{color.fill.control.secondary}" }
+      },
+      "checked-pressed": {
+        "bg": { "$value": "{color.accent.solid-hover}" }
+      },
+      "focus": {
+        "outline-width": { "$value": "{focus.ring.width}" },
+        "outline-color": { "$value": "{focus.ring.color}" },
+        "outline-offset": { "$value": "{focus.ring.offset}" },
+        "glow": { "$value": "{focus.ring.halo}" }
+      },
+      "disabled": {
+        "bg": { "$value": "{color.fill.control.disabled}" },
+        "border-color": { "$value": "{color.stroke.control.default}" }
+      },
+      "checked-disabled": {
+        "bg": { "$value": "{color.fill.accent-disabled}" },
+        "border-color": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} }
+      }
+    },
+    "thumb": {
+      "bg": { "$value": "{color.fg.secondary}" },
+      "radius": { "$value": "{radius.full}" },
+      "checked": {
+        "bg": { "$value": "{color.accent.on-solid}" }
+      },
+      "disabled": {
+        "bg": { "$value": "{color.fg.disabled}" }
+      },
+      "checked-disabled": {
+        "bg": { "$value": "{color.fg.on-accent-disabled}" }
+      }
+    },
+    "text": {
+      "font-size": { "$value": "{font.size.caption}" },
+      "line-height": { "$value": 1 },
+      "color": { "$value": "{color.fg.secondary}" },
+      "checked": {
+        "color": { "$value": "{color.accent.on-solid}" }
+      },
+      "disabled": {
+        "color": { "$value": "{color.fg.disabled}" }
+      },
+      "checked-disabled": {
+        "color": { "$value": "{color.fg.on-accent-disabled}" }
+      }
+    },
+    "side-text": {
+      "line-height": { "$value": 1 },
+      "color": { "$value": "{color.fg.primary}" },
+      "disabled": {
+        "color": { "$value": "{color.fg.disabled}" }
+      }
+    }
+  }
+}

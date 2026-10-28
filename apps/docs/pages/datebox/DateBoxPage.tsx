@@ -106,7 +106,7 @@ import { DateBox } from '@motifx-community/ui';
             ['.mx-date-box', 'Added to the field; `data-type="date|time|datetime"`.'],
             ['.mx-date-box__toggle, .mx-date-box__clear', 'The picker and clear buttons.'],
             ['.mx-date-box__popup, .mx-date-box__times', 'The picker and its list of times.'],
-            ['date-box.times-width, date-box.times-height', 'Component tokens of the list of times; the rest is `field.*` and `calendar.*`.'],
+            ['date-box.times, date-box.popup-gap, date-box.calendar', 'The list of times (a unit: `focus`, `beside`), the space between the field and its popup, and the calendar as it looks in the popup (a place); the rest is `field.*` and `calendar.*`.'],
           ]}
         />
       </Section>

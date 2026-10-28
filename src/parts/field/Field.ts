@@ -1,3 +1,4 @@
+import { LanguageLook } from '../../core/language-look';
 import { effect, Emitter, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { afterPress } from '../../core/after-press';
@@ -55,7 +56,11 @@ interface Parts {
   labelText: HTMLSpanElement;
   requiredMark: HTMLSpanElement | null;
   box: HTMLDivElement;
+  /** The notch of the frame, where a language cuts one for the label: it carries the label's text for CSS to draw. */
+  notch: HTMLSpanElement;
   control: HTMLElement;
+  /** The design language's defaults for a variant and a label mode not given (`--mx-field-variant`, `--mx-field-label-mode`). */
+  look: LanguageLook<'variant' | 'labelMode' | 'notch' | 'size'>;
   areas: Map<BoxArea, HTMLElement>;
   message: HTMLSpanElement;
   counter: HTMLSpanElement | null;
@@ -98,6 +103,8 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
 
     this.observeProperty<string>('text', (text) => this.renderLabel(text));
     for (const name of LOOK) this.observeProperty(name, () => this.renderLook());
+    // A variant or a label mode not given is the design language's: read again when the language changes.
+    this.motif.setDisposable(this.parts.look.watch());
     this.observeProperty<string>('hint', (hint) => this.renderHint(hint));
     this.observeProperty<string>('prefix', (text) => this.renderAffix('prefix', text));
     this.observeProperty<string>('suffix', (text) => this.renderAffix('suffix', text));
@@ -162,8 +169,9 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
   set label(value: Bind<string>) {
     this.text = value;
   }
+  /** As set, else the design language's default. */
   get labelMode(): FieldLabelMode {
-    return this.getProperty<FieldLabelMode | undefined>('labelMode') ?? 'top';
+    return this.getProperty<FieldLabelMode | undefined>('labelMode') ?? (this.parts.look.get('labelMode') as FieldLabelMode | null) ?? 'top';
   }
   set labelMode(value: Bind<FieldLabelMode>) {
     this.assignProperty('labelMode', value);
@@ -217,13 +225,14 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     this.assignProperty('required', value, Boolean);
   }
   get size(): ControlSize {
-    return this.getProperty<ControlSize | undefined>('size') ?? 'md';
+    return this.getProperty<ControlSize | undefined>('size') ?? (this.parts.look.get('size') as ControlSize | null) ?? 'md';
   }
   set size(value: Bind<ControlSize>) {
     this.assignProperty('size', value);
   }
+  /** As set, else the design language's default. */
   get variant(): FieldVariant {
-    return this.getProperty<FieldVariant | undefined>('variant') ?? 'outline';
+    return this.getProperty<FieldVariant | undefined>('variant') ?? (this.parts.look.get('variant') as FieldVariant | null) ?? 'outline';
   }
   set variant(value: Bind<FieldVariant>) {
     this.assignProperty('variant', value);
@@ -460,11 +469,24 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     const labelText = label.appendChild(document.createElement('span'));
     const box = document.createElement('div');
     box.className = 'mx-field__box';
+    box.setAttribute('data-mx-press', '');
+    // The frame and the line under the box are parts of their own, so a design language can shape them: a frame
+    // with a notch for the label (its start, the notch with the label's text, its end), an indicator that grows.
+    const frame = box.appendChild(document.createElement('span'));
+    frame.className = 'mx-field__frame';
+    frame.setAttribute('aria-hidden', 'true');
+    const pieces = ['start', 'notch', 'end'].map((part) => {
+      const piece = frame.appendChild(document.createElement('span'));
+      piece.className = `mx-field__frame-${part}`;
+      return piece;
+    });
     const control = this.createControl();
     control.id = id;
     control.classList.add('mx-field__control');
     if (labelable(control)) label.htmlFor = id;
     box.append(control);
+    const indicator = frame.appendChild(document.createElement('span'));
+    indicator.className = 'mx-field__indicator';
     const foot = document.createElement('div');
     foot.className = 'mx-field__foot';
     const message = foot.appendChild(document.createElement('span'));
@@ -477,7 +499,9 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
       labelText,
       requiredMark: null,
       box,
+      notch: pieces[1],
       control,
+      look: new LanguageLook(this.element, { variant: '--_field-variant', labelMode: '--_field-label-mode', notch: '--_field-notch', size: '--_field-size' }, () => this.renderLook()),
       areas: new Map(),
       message,
       counter: null,
@@ -539,6 +563,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     const parts = this.parts;
     const parsed = parseAccessKey(text ?? '');
     renderAccessKey(parts.labelText, parsed);
+    parts.notch.dataset.label = parsed.text;
     parts.label.hidden = !parsed.text;
     this.setAccessKey(parsed.key);
     if (labelable(parts.control)) return;
@@ -548,10 +573,22 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
 
   private renderLook(): void {
     const data = this.element.dataset;
-    data.labelMode = this.peekProperty<FieldLabelMode>('labelMode') ?? 'top';
-    data.size = this.peekProperty<ControlSize>('size') ?? 'md';
-    data.variant = this.peekProperty<FieldVariant>('variant') ?? 'outline';
+    const look = this.parts.look;
+    data.labelMode = this.peekProperty<FieldLabelMode>('labelMode') ?? look.get('labelMode') ?? 'top';
+    data.size = this.peekProperty<ControlSize>('size') ?? look.get('size') ?? 'md';
+    data.variant = this.peekProperty<FieldVariant>('variant') ?? look.get('variant') ?? 'outline';
     this.element.toggleAttribute('data-stretch', !!this.peekProperty('stretch'));
+    this.element.toggleAttribute('data-notch', look.get('notch') === 'cut');
+  }
+
+  /** Reads again what the design language decides for the field (variant, label mode, size). The field does it once
+   *  it is in the page; one placed in the page outside the component tree is told when it is placed. */
+  readLook(): void {
+    this.parts.look.read();
+  }
+
+  override onMounted(): void {
+    this.readLook();
   }
 
   private renderHint(hint: string | undefined): void {

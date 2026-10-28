@@ -27,7 +27,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   await tones.getByRole('button', { name: 'danger' }).click();
   await page.waitForTimeout(200);
   check('danger is read out at once', (await region.locator('[role="alert"]').textContent()) === 'The server did not answer.');
-  const tint = await corner.locator('.mx-toast__icon').evaluate((el) => getComputedStyle(el).color);
+  const tint = await corner.locator('.mx-toast__icon > *').first().evaluate((el) => getComputedStyle(el).color);
   const textColor = await corner.locator('.mx-toast__text').evaluate((el) => getComputedStyle(el).color);
   check('its glyph has the tone color', tint !== textColor, `${tint} vs ${textColor}`);
   await page.evaluate(() => document.querySelectorAll('.mx-toast__close').forEach((b) => b.click()));

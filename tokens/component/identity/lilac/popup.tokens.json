@@ -1,9 +1,0 @@
-{
-  "popup": {
-    "$description": "Lilac popups: more room between the round frame and the items in it.",
-    "padding": {
-      "$type": "dimension",
-      "$value": "{space.2}"
-    }
-  }
-}

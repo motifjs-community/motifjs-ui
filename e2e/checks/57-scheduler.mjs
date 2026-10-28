@@ -96,7 +96,11 @@ export default async function ({ page, base, check, axeSource, box }) {
     const own = getComputedStyle(el.closest('.mx-scheduler'));
     return { cell: [cell.fontSize, cell.fontWeight], title: [title.fontSize, title.fontWeight], scheduler: own.fontSize };
   });
-  check("the calendar keeps its own type, not the bar's date", type.cell[0] === type.scheduler && type.cell[0] !== type.title[0] && type.cell[1] !== type.title[1], JSON.stringify(type));
+  check(
+    "the calendar keeps its own type, not the bar's date",
+    type.cell[0] === type.scheduler && type.cell[0] !== type.title[0] && type.cell[1] !== type.title[1],
+    JSON.stringify(type),
+  );
   const target = picker.locator('.mx-calendar__cell:not([data-outside])').filter({ hasText: /^15$/ }).first();
   await target.click();
   await page.waitForTimeout(200);
@@ -150,7 +154,13 @@ export default async function ({ page, base, check, axeSource, box }) {
   }));
   check('arrows move over the cells and Shift selects from where it began', keys.focus === '2:7' && keys.selected === '2:5,2:6,2:7', JSON.stringify(keys));
   await page.keyboard.press('Enter');
-  check('Enter on a cell is its double click', (await basics.locator('.sched-log').textContent()).startsWith('New at'));
+  const newForm = page.locator('dialog.mx-scheduler__form[open]');
+  await newForm.waitFor();
+  check('Enter on a cell is its double click: the form for a new appointment there', (await basics.locator('.sched-log').textContent()).startsWith('New at'));
+  await page.keyboard.press('Escape');
+  await newForm.waitFor({ state: 'detached' });
+  const refocused = await page.evaluate(() => document.activeElement?.dataset.cell);
+  check('…Escape closes the form and focus goes back to the cell', refocused === '2:7', refocused);
   await page.keyboard.press('Escape');
   check('Escape clears the selection', (await s.locator('[data-cell][aria-selected="true"]').count()) === 0);
   const first = await title();
@@ -166,7 +176,12 @@ export default async function ({ page, base, check, axeSource, box }) {
     hasText: 'Design review',
   });
   await appointment.dblclick();
-  check('a double click on an appointment reports it', (await basics.locator('.sched-log').textContent()) === 'Open: Design review');
+  check(
+    'a double click on an appointment reports it, and opens its form',
+    (await basics.locator('.sched-log').textContent()) === 'Open: Design review' && (await page.locator('dialog.mx-scheduler__form[open]').count()) === 1,
+  );
+  await page.keyboard.press('Escape');
+  await page.locator('dialog.mx-scheduler__form').waitFor({ state: 'detached' });
   const name = await appointment.evaluate((el) => el.textContent);
   check('an appointment is named by its time, its text and its day', /Design review/.test(name) && /10:00/.test(name) && /,/.test(name), name);
 
@@ -228,7 +243,8 @@ export default async function ({ page, base, check, axeSource, box }) {
   // Right to left.
   await page.evaluate(() => (document.documentElement.dir = 'rtl'));
   await page.waitForTimeout(150);
-  await s.locator('.mx-scheduler__cells [data-cell="3:4"]').click();
+  // The day's first row: no appointment stands over it, so the click reaches the cell.
+  await s.locator('.mx-scheduler__cells [data-cell="3:0"]').click();
   await page.keyboard.press('ArrowRight');
   const rtl = await s.evaluate((el) => {
     const a = el.querySelector('.mx-scheduler__date:nth-child(2)').getBoundingClientRect();
@@ -238,6 +254,6 @@ export default async function ({ page, base, check, axeSource, box }) {
       order: a.left > b.left,
     };
   });
-  check('right to left: the days run from the right, and Right goes to the day before', rtl.focus === '2:4' && rtl.order, JSON.stringify(rtl));
+  check('right to left: the days run from the right, and Right goes to the day before', rtl.focus === '2:0' && rtl.order, JSON.stringify(rtl));
   await page.evaluate(() => document.documentElement.removeAttribute('dir'));
 }

@@ -71,9 +71,9 @@ const HOOKS = [
 
 const TOKENS = [
   ['field.*', 'The field, as for TextBox.'],
-  ['list.item-height, list.item-padding, list.item-gap, list.item-radius', 'The options.'],
-  ['list.item-highlight, list.item-selected, list.indicator-width, list.indicator-color', 'The highlight and the chosen option.'],
-  ['list.header-font-size, list.header-font-weight, list.max-height, list.icon-size', 'Group headers, the list height, icons.'],
+  ['list.item-height, list.item', 'The options: their row height, and the item unit in each state (`hover`, `pressed`, `active`, `selected`, `selected-hover`, `selected-pressed`, `disabled`, `next`, `select-all`).'],
+  ['list.indicator, list.check, list.mark, list.icon, list.text', 'Units: the bar on the chosen option (`multiple`), the check of a list of several choices and its mark, an icon, the text.'],
+  ['list.container, list.group, list.header, list.select-all-divider, list.empty', 'Units: the list (its space and most height), a group, group headers, the line under "Select all", the empty text.'],
 ];
 
 export default function DropDownPage() {

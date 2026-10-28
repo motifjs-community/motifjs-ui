@@ -15,9 +15,9 @@ export interface ToolbarProps extends ControlProps {
   items?: Bind<readonly ToolbarItem[]>;
   /** Default `'horizontal'`. */
   orientation?: Bind<ToolbarOrientation>;
-  /** The size of the controls inside that have none of their own. Default `'md'`. */
+  /** The size of the controls inside that have none of their own. Not given: `'md'`, and for a button its toolbar button place's (`'md'` in every language today). */
   size?: Bind<ControlSize>;
-  /** The variant of the buttons inside that have none of their own. Default `'ghost'`. */
+  /** The variant of the buttons inside that have none of their own. Not given: the design language's (its toolbar button place; `'ghost'` in every language today). */
   buttonVariant?: Bind<ButtonVariant>;
   /** What happens to items that do not fit. Default `'menu'`. */
   overflow?: Bind<ToolbarOverflow>;

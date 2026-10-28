@@ -57,7 +57,7 @@ export class FilterPanel<T> extends Component<HTMLDivElement> {
         >
           {() => (has() ? host.text() : grid.text('gridFilterPanelCreate'))}
         </button>
-        <Button class="mx-data-grid__filter-clear" text={() => grid.text('gridFilterPanelClear')} size="sm" variant="ghost" tone="accent" visible={has} onclick={() => host.clear()} />
+        <Button class="mx-data-grid__filter-clear" text={() => grid.text('gridFilterPanelClear')} visible={has} onclick={() => host.clear()} />
       </>
     );
   }

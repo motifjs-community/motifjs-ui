@@ -1,18 +1,18 @@
 /* Calendar: a header (previous, the title that zooms out, next), the grid, a foot with Today.
-   Cells carry aria-selected, aria-disabled, data-today and data-outside. */
+   Cells carry aria-selected, aria-disabled, data-today and data-outside. Only the layout is here:
+   every piece's look is a unit of the calendar's schema (`$units`), painted by units.css from the
+   language's tokens. A cell's size comes from `day-size` (and the zoomed-out views' scales). */
 @layer mx.components {
   .mx-calendar {
     display: inline-flex;
     flex-direction: column;
-    gap: var(--mx-calendar-gap);
-    padding: var(--mx-calendar-padding);
-    color: var(--mx-calendar-fg);
+
+    --_z-focus: 1;
   }
 
   .mx-calendar__header {
     display: flex;
     align-items: center;
-    gap: var(--mx-calendar-header-gap);
   }
 
   .mx-calendar__title,
@@ -21,18 +21,10 @@
     appearance: none;
     margin: 0;
     font: inherit;
-    color: inherit;
-    background: transparent;
-    border: 0;
-    border-radius: var(--mx-calendar-block-radius);
-    cursor: default;
   }
 
   .mx-calendar__title {
     flex: 1 1 auto;
-    min-block-size: var(--mx-calendar-cell-size);
-    padding-inline: var(--mx-calendar-title-padding);
-    font-weight: var(--mx-calendar-title-font-weight);
     text-align: start;
   }
 
@@ -40,37 +32,23 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-calendar-cell-size);
-    block-size: var(--mx-calendar-cell-size);
-    color: var(--mx-calendar-nav-fg);
   }
 
-  .mx-calendar__previous .mx-glyph {
-    rotate: 0.25turn;
+  .mx-calendar__previous > .mx-glyph {
+    rotate: var(--_calendar-previous-rotate);
   }
 
-  .mx-calendar__next .mx-glyph {
-    rotate: -0.25turn;
+  .mx-calendar__next > .mx-glyph {
+    rotate: var(--_calendar-next-rotate);
   }
 
-  .mx-calendar:dir(rtl) .mx-calendar__previous .mx-glyph {
-    rotate: -0.25turn;
+  /* Right to left, previous and next trade their turns. */
+  .mx-calendar:dir(rtl) .mx-calendar__previous > .mx-glyph {
+    rotate: var(--_calendar-next-rotate);
   }
 
-  .mx-calendar:dir(rtl) .mx-calendar__next .mx-glyph {
-    rotate: 0.25turn;
-  }
-
-  :is(.mx-calendar__title, .mx-calendar__nav, .mx-calendar__today):hover:not(:disabled) {
-    background: var(--mx-calendar-button-bg-hover);
-  }
-
-  :is(.mx-calendar__title, .mx-calendar__nav):disabled {
-    color: var(--mx-calendar-nav-fg-disabled);
-  }
-
-  .mx-calendar__title:disabled {
-    color: inherit;
+  .mx-calendar:dir(rtl) .mx-calendar__next > .mx-glyph {
+    rotate: var(--_calendar-previous-rotate);
   }
 
   .mx-calendar__grid {
@@ -79,61 +57,39 @@
   }
 
   .mx-calendar__grid th {
-    block-size: var(--mx-calendar-cell-size);
-    padding: 0;
-    font-size: var(--mx-calendar-head-font-size);
-    font-weight: var(--mx-calendar-head-font-weight);
-    color: var(--mx-calendar-head-fg);
     text-align: center;
   }
 
   .mx-calendar__cell {
-    inline-size: var(--mx-calendar-cell-size);
-    block-size: var(--mx-calendar-cell-size);
-    padding: 0;
+    --_cell-w: var(--_calendar-day-size);
+    --_cell-h: var(--_calendar-day-size);
+
     text-align: center;
-    border-radius: var(--mx-calendar-cell-radius);
-    cursor: default;
     user-select: none;
     font-variant-numeric: tabular-nums;
   }
 
   .mx-calendar:not([data-view='month']) .mx-calendar__cell {
-    inline-size: calc(var(--mx-calendar-cell-size) * 1.75);
-    block-size: calc(var(--mx-calendar-cell-size) * 1.5);
-    border-radius: var(--mx-calendar-block-radius);
-  }
-
-  .mx-calendar__cell:hover:not([aria-disabled='true'], [aria-selected='true']) {
-    background: var(--mx-calendar-cell-bg-hover);
-  }
-
-  .mx-calendar__cell[data-outside] {
-    color: var(--mx-calendar-outside-fg);
-  }
-
-  .mx-calendar__cell[data-today] {
-    font-weight: var(--mx-calendar-title-font-weight);
-    color: var(--mx-calendar-today-color);
-    box-shadow: inset 0 0 0 var(--mx-calendar-today-width) var(--mx-calendar-today-color);
+    --_cell-w: calc(var(--_calendar-day-size) * var(--_calendar-view-cell-width-scale));
+    --_cell-h: calc(var(--_calendar-day-size) * var(--_calendar-view-cell-height-scale));
   }
 
   .mx-calendar__cell[aria-selected='true'] {
-    color: var(--mx-calendar-selected-color);
-    background: var(--mx-calendar-selected-background);
-    box-shadow: none;
+    position: relative;
   }
 
-  .mx-calendar__cell[aria-disabled='true'] {
-    color: var(--mx-calendar-cell-fg-disabled);
+  /* The chosen day's ring (the `ring` unit), drawn like an outline so it keeps its place beside the focus ring. */
+  .mx-calendar__cell[aria-selected='true']::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
   }
 
   .mx-calendar__cell:focus-visible {
     position: relative;
-  }
-
-  .mx-calendar__week {
-    color: var(--mx-calendar-week-fg);
+    z-index: var(--_z-focus);
   }
 
   .mx-calendar:not([data-foot]) .mx-calendar__foot {
@@ -143,15 +99,5 @@
   .mx-calendar__foot {
     display: flex;
     justify-content: center;
-  }
-
-  .mx-calendar__today {
-    padding-block: var(--mx-calendar-today-padding-block);
-    padding-inline: var(--mx-calendar-today-padding-inline);
-    color: var(--mx-calendar-today-button-fg);
-  }
-
-  .mx-calendar[data-disabled] {
-    color: var(--mx-calendar-fg-disabled);
   }
 }

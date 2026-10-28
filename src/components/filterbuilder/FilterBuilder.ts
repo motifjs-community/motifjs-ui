@@ -571,7 +571,6 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     const groupOps = model.groupOperations();
     this.addCell(row, 'group', {
       text: model.groupText(group.operation),
-      tone: 'accent',
       label: model.text('filterBuilderGroupLabel', { operation: model.groupText(group.operation) }),
       menu: groupOps.map((op) => ({
         text: model.groupText(op),
@@ -608,7 +607,6 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     const caption = model.caption(c.field);
     this.addCell(row, 'field', {
       text: caption,
-      tone: 'accent',
       label: model.text('filterBuilderFieldLabel', { field: caption }),
       menu: this.fieldMenu(c),
     });
@@ -689,20 +687,19 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
   private addCell(
     row: Row,
     part: Part,
-    look: { text?: string; icon?: () => HTMLSpanElement; label: string; tone?: 'accent'; enabled?: boolean; menu?: MenuItem[]; click?: () => void },
+    look: { text?: string; icon?: () => HTMLSpanElement; label: string; enabled?: boolean; menu?: MenuItem[]; click?: () => void },
   ): Cell {
     const component = new Component<HTMLDivElement>('div');
     component.element.className = 'mx-filter-builder__cell';
     component.element.setAttribute('role', 'gridcell');
     component.element.dataset.part = part;
     row.component.controls.add(component);
+    // Variant, tone and size come from the part's place; a size given to the builder wins.
     const button = new Button({
       text: look.text ?? '',
       icon: look.icon ?? null,
       hint: look.icon ? look.label : '',
-      variant: 'ghost',
-      tone: look.tone ?? 'standard',
-      size: this.size,
+      size: this.getProperty<ControlSize | undefined>('size'),
       enabled: look.enabled ?? true,
       tabStop: false,
       ...(look.menu ? { menu: look.menu } : {}),

@@ -1,0 +1,27 @@
+{
+  "date-box": {
+    "$description": "DateBox: the list of times next to the calendar, and where the calendar sits on the popup.",
+    "$selector": ".mx-date-box, .mx-date-box__popup",
+    "popup-gap": { "$type": "dimension" },
+    "$places": {
+      "calendar": {
+        "$description": "The calendar on the popup.",
+        "selector": ".mx-date-box__popup > .mx-calendar",
+        "part": "calendar",
+        "tokens": [
+          "container.padding"
+        ]
+      }
+    },
+    "$units": {
+      "times": {
+        "$description": "The list of times on the popup (its ring under the keys drawn inside it: it scrolls); `beside`: next to the calendar (the space and the line between them at its start).",
+        "selector": ".mx-date-box__popup > .mx-date-box__times",
+        "states": {
+          "focus": ".mx-date-box__popup > .mx-date-box__times:focus-visible",
+          "beside": ".mx-date-box__popup > .mx-calendar + .mx-date-box__times"
+        }
+      }
+    }
+  }
+}

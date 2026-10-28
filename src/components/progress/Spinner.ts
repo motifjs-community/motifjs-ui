@@ -8,9 +8,9 @@ import type { ProgressTone } from './progress-tone';
 import type { SpinnerLabelPosition } from './spinner-label-position';
 import type { SpinnerProps } from './spinner-props';
 
-const OWN = ['labelPosition', 'size', 'tone', 'delay'] as const;
+const OWN = ['labelPosition', 'size', 'tone', 'contained', 'delay'] as const;
 
-const LOOK = ['labelPosition', 'size', 'tone'] as const;
+const LOOK = ['labelPosition', 'size', 'tone', 'contained'] as const;
 
 const PARTS = Symbol('mx.spinner');
 
@@ -21,7 +21,8 @@ interface Parts {
 }
 
 /**
- * A turning ring that says "busy, wait": alone, with a label, after a delay so quick work does
+ * A turning ring, or a shape that turns into the next one, as the design language draws it, that says "busy,
+ * wait": alone, with a label, after a delay so quick work does
  * not flash it, or over a container while it loads (`Spinner.cover`). Screen readers meet it as
  * a progress bar without a value, named by its label or `uiLocale.strings.loading`.
  *
@@ -125,6 +126,12 @@ export class Spinner extends Control<HTMLDivElement, SpinnerProps> {
   set tone(value: Bind<ProgressTone>) {
     this.assignProperty('tone', value);
   }
+  get contained(): boolean {
+    return !!this.getProperty<boolean>('contained');
+  }
+  set contained(value: Bind<boolean>) {
+    this.assignProperty('contained', value, Boolean);
+  }
   get delay(): number {
     return Math.max(0, Number(this.getProperty('delay')) || 0);
   }
@@ -149,13 +156,19 @@ export class Spinner extends Control<HTMLDivElement, SpinnerProps> {
   }
 
   private buildParts(): Parts {
+    // A box holding what turns: a ring and a shape; the language shows one of them, the box is the container.
+    const box = document.createElement('span');
+    box.className = 'mx-spinner__box';
+    box.setAttribute('aria-hidden', 'true');
     const ring = document.createElement('span');
     ring.className = 'mx-spinner__ring';
-    ring.setAttribute('aria-hidden', 'true');
+    const shape = document.createElement('span');
+    shape.className = 'mx-spinner__shape';
+    box.append(ring, shape);
     const label = document.createElement('span');
     label.className = 'mx-spinner__label';
     label.id = nextId('spinner');
-    this.element.append(ring, label);
+    this.element.append(box, label);
     return { label, timer: null, stopName: null };
   }
 
@@ -179,6 +192,7 @@ export class Spinner extends Control<HTMLDivElement, SpinnerProps> {
     data.labelPosition = this.peekProperty<SpinnerLabelPosition>('labelPosition') ?? 'side';
     data.size = this.peekProperty<ControlSize>('size') ?? 'md';
     data.tone = this.peekProperty<ProgressTone>('tone') ?? 'accent';
+    this.element.toggleAttribute('data-contained', !!this.peekProperty('contained'));
   }
 
   /** Stays unseen for `delay` milliseconds from now. */

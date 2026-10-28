@@ -94,15 +94,13 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['window.background, window.border-color, window.border-width, window.radius', 'The surface.'],
-  ['window.shadow, window.shadow-inactive, window.shadow-modal', 'Active, inactive and modal elevation.'],
-  ['window.backdrop', 'Behind a modal form.'],
-  ['window.bar-background, window.bar-height, window.bar-padding, window.bar-gap, window.bar-border-color', 'The title bar (from the design system’s `bar.*`).'],
-  ['window.title-font-size, window.title-font-weight, window.icon-size', 'The title and its icon.'],
-  ['window.padding, window.footer-padding, window.footer-gap', 'The content area and the buttons row.'],
+  ['window.scrim, window.surface', 'Units: behind a modal form; the surface (`active`, `dialog`: a modal one, `maximized`).'],
+  ['window.bar, window.icon, window.title, window.tools', 'Units: the title bar (`active`, `dialog`), its icon, the title (`dialog`) and its buttons.'],
+  ['window.body, window.footer, window.grip', 'Units: the content area, the buttons row, the resize grips (`corner`).'],
+  ['window.bar-height, window.title-align, window.tools-order', 'The title bar’s height (from the design system’s `bar.*`), where the title sits, where its buttons sit.'],
   ['window.min-width, window.min-height, window.viewport-margin', 'The smallest size and the room kept around it.'],
   ['window.resize-edge, window.enter-offset', 'The resize handles; how far it slides in.'],
-  ['window.message-width, window.message-gap, window.message-icon-size', 'Message boxes.'],
+  ['window.message, window.message-icon, window.message-width', 'Message boxes: units for the content and its tone glyph (per tone), and their width.'],
 ];
 
 export default function WindowPage() {

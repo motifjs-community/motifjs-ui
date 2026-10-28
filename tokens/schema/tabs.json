@@ -1,0 +1,230 @@
+{
+  "tabs": {
+    "$description": "Tabs: the strip of tabs and the panel under it. Sizes per size class and the layout values are plain tokens; every piece is a unit (`$units`).",
+    "$selector": ".mx-tabs",
+    "pill-gap": { "$type": "dimension", "$description": "The space between two tabs in the pill variant (the line variant's tabs touch); a separator is centred in it." },
+    "curve-display": { "$type": "keyword", "$description": "Outward curves at the panel-side corners of the selected tab, in its fill, joining it to the strip's line (none or block; top and bottom strips)." },
+    "curve-size": { "$type": "dimension" },
+    "curve-frame-width": { "$type": "dimension", "$description": "A line along each curve, continuing the selected tab's frame." },
+    "curve-frame-color": { "$type": "color", "$description": "The line along the curves; their fill is the selected tab's." },
+    "tab-overlap": { "$type": "dimension", "$description": "How far the selected tab reaches over the strip's line toward the panel, covering it; the strip does not clip it." },
+    "indicator-offset": { "$type": "dimension", "$description": "The indicator's distance from the tab's edge on the panel's side; calc(100% - its width) puts it on the far side." },
+    "indicator-inset-vertical": { "$type": "dimension", "$description": "Space between the indicator's ends and a tab's top and bottom when the strip is upright." },
+    "close-pull": { "$type": "number", "$description": "How far the close mark reaches into the tab's end padding, as a share of it." },
+    "scroll-back-rotate": { "$type": "angle" },
+    "scroll-forward-rotate": { "$type": "angle" },
+    "scroll-up-rotate": { "$type": "angle" },
+    "scroll-down-rotate": { "$type": "angle" },
+    "vertical-width": { "$type": "dimension" },
+    "font-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "line-height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "padding": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "indicator-inset": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "pill-height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "$units": {
+      "container": {
+        "$description": "The whole: the text colour the parts take.",
+        "selector": ".mx-tabs"
+      },
+      "strip": {
+        "$description": "The strip the tabs stand in: its line along the panel (on the panel's side: `bottom`, `start`, `end` are the other placements), and in the pill variant the tray (`pill`, `pill-bottom` …).",
+        "selector": ".mx-tabs__strip",
+        "states": {
+          "bottom": ".mx-tabs[data-placement='bottom'] > .mx-tabs__strip",
+          "start": ".mx-tabs[data-placement='start'] > .mx-tabs__strip",
+          "end": ".mx-tabs[data-placement='end'] > .mx-tabs__strip",
+          "pill": ".mx-tabs[data-variant='pill'] > .mx-tabs__strip",
+          "pill-bottom": {
+            "selector": ".mx-tabs[data-variant='pill'][data-placement='bottom'] > .mx-tabs__strip",
+            "from": "pill"
+          },
+          "pill-start": {
+            "selector": ".mx-tabs[data-variant='pill'][data-placement='start'] > .mx-tabs__strip",
+            "from": "pill"
+          },
+          "pill-end": {
+            "selector": ".mx-tabs[data-variant='pill'][data-placement='end'] > .mx-tabs__strip",
+            "from": "pill"
+          }
+        }
+      },
+      "list": {
+        "$description": "The row (or column) of tabs inside the strip: the space around them (`pill`: in the tray). The space between two tabs is `pill-gap`.",
+        "selector": ".mx-tabs__list",
+        "defaults": {
+          "gap": "var(--_strip-gap)",
+          "margin-top": "var(--_pull-top, 0px)",
+          "margin-bottom": "var(--_pull-bottom, 0px)",
+          "margin-start": "var(--_pull-start, 0px)",
+          "margin-end": "var(--_pull-end, 0px)"
+        },
+        "states": {
+          "pill": ".mx-tabs[data-variant='pill'] > .mx-tabs__strip > .mx-tabs__list"
+        }
+      },
+      "scroll": {
+        "$description": "A button at an end of the strip that scrolls it (`end`: nothing more that way).",
+        "selector": ".mx-tabs__scroll",
+        "defaults": {
+          "cursor": "default"
+        },
+        "states": {
+          "hover": ".mx-tabs__scroll:hover:not([data-end])",
+          "pressed": {
+            "selector": ".mx-tabs__scroll:active:not([data-end])",
+            "from": "hover"
+          },
+          "end": ".mx-tabs__scroll[data-end]"
+        }
+      },
+      "scroll-icon": {
+        "$description": "A scroll button's glyph (turned to point along the strip by `scroll-*-rotate`).",
+        "selector": ".mx-tabs__scroll > .mx-glyph"
+      },
+      "tab": {
+        "$description": "A tab: under the pointer, pressed, selected, disabled, focused by the keys; each also in the pill variant (`pill`, `pill-hover` …: the line variant is the tab at rest).",
+        "selector": ".mx-tabs__tab",
+        "defaults": {
+          "min-height": "var(--_height)",
+          "padding-inline": "var(--_padding)",
+          "margin-top": "var(--_tab-pull-top, 0px)",
+          "margin-bottom": "var(--_tab-pull-bottom, 0px)",
+          "margin-start": "var(--_tab-pull-start, 0px)",
+          "margin-end": "var(--_tab-pull-end, 0px)",
+          "font-size": "var(--_font-size)",
+          "line-height": "var(--_line)",
+          "white-space": "nowrap",
+          "cursor": "default",
+          "bg": "transparent",
+          "border-width": "0px",
+          "padding-block": "0px"
+        },
+        "states": {
+          "pill": ":where(.mx-tabs[data-variant='pill'] > .mx-tabs__strip > .mx-tabs__list) > .mx-tabs__tab",
+          "hover": ".mx-tabs__tab:hover:not([aria-selected='true'], :disabled, [aria-disabled='true'])",
+          "pill-hover": {
+            "selector": ":where(.mx-tabs[data-variant='pill'] > .mx-tabs__strip > .mx-tabs__list) > .mx-tabs__tab:hover:not([aria-selected='true'], :disabled, [aria-disabled='true'])",
+            "from": "hover"
+          },
+          "pressed": {
+            "selector": ".mx-tabs__tab:active:not([aria-selected='true'], :disabled, [aria-disabled='true'])",
+            "from": "hover"
+          },
+          "pill-pressed": {
+            "selector": ":where(.mx-tabs[data-variant='pill'] > .mx-tabs__strip > .mx-tabs__list) > .mx-tabs__tab:active:not([aria-selected='true'], :disabled, [aria-disabled='true'])",
+            "from": "pill-hover"
+          },
+          "selected": ".mx-tabs__tab[aria-selected='true']",
+          "pill-selected": {
+            "selector": ":where(.mx-tabs[data-variant='pill'] > .mx-tabs__strip > .mx-tabs__list) > .mx-tabs__tab[aria-selected='true']",
+            "from": "selected"
+          },
+          "disabled": ".mx-tabs__tab:is(:disabled, [aria-disabled='true'])",
+          "pill-disabled": {
+            "selector": ":where(.mx-tabs[data-variant='pill'] > .mx-tabs__strip > .mx-tabs__list) > .mx-tabs__tab:is(:disabled, [aria-disabled='true'])",
+            "from": "disabled"
+          },
+          "focus": ".mx-tabs__tab:focus-visible"
+        }
+      },
+      "label": {
+        "$description": "A tab's text.",
+        "selector": ".mx-tabs__label"
+      },
+      "icon": {
+        "$description": "A tab's icon.",
+        "selector": ".mx-tabs__icon"
+      },
+      "badge": {
+        "$description": "A tab's count or mark (`pill-selected`: on the selected tab of a pill strip).",
+        "selector": ".mx-tabs__badge",
+        "states": {
+          "pill-selected": ":where(.mx-tabs[data-variant='pill'] > .mx-tabs__strip > .mx-tabs__list) > .mx-tabs__tab[aria-selected='true'] > .mx-tabs__badge"
+        }
+      },
+      "close": {
+        "$description": "A tab's close button (`disabled`: on a disabled tab). It reaches into the tab's end padding by `close-pull` of it.",
+        "selector": ".mx-tabs__close",
+        "defaults": {
+          "margin-end": "calc(var(--_padding) * var(--_tabs-close-pull) * -1)"
+        },
+        "states": {
+          "hover": ".mx-tabs__close:hover",
+          "pressed": {
+            "selector": ".mx-tabs__close:active",
+            "from": "hover"
+          },
+          "disabled": ".mx-tabs__tab:is(:disabled, [aria-disabled='true']) > .mx-tabs__close"
+        }
+      },
+      "close-icon": {
+        "$description": "The close button's glyph.",
+        "selector": ".mx-tabs__close > .mx-glyph"
+      },
+      "indicator": {
+        "$description": "The line variant's mark on a tab (lying, its height is its thickness; `vertical`: in an upright strip), `indicator-offset` from the tab's edge on the panel's side; under the pointer, on the selected tab, on a selected tab that is disabled.",
+        "selector": ":where(.mx-tabs[data-variant='line'] > .mx-tabs__strip > .mx-tabs__list) > .mx-tabs__tab::after",
+        "states": {
+          "vertical": ":where(.mx-tabs[data-variant='line']:is([data-placement='start'], [data-placement='end']) > .mx-tabs__strip > .mx-tabs__list) > .mx-tabs__tab::after",
+          "hover": ":where(.mx-tabs[data-variant='line'] > .mx-tabs__strip > .mx-tabs__list) > .mx-tabs__tab:hover:not([aria-selected='true'], :disabled, [aria-disabled='true'])::after",
+          "selected": ":where(.mx-tabs[data-variant='line'] > .mx-tabs__strip > .mx-tabs__list) > .mx-tabs__tab[aria-selected='true']::after",
+          "selected-disabled": {
+            "selector": ":where(.mx-tabs[data-variant='line'] > .mx-tabs__strip > .mx-tabs__list) > .mx-tabs__tab[aria-selected='true']:is(:disabled, [aria-disabled='true'])::after",
+            "from": "selected"
+          }
+        }
+      },
+      "separator": {
+        "$description": "A line between two tabs, centred in the space between them (none next to the selected tab); lying, its width is its thickness and its block margins keep it off the tab's ends.",
+        "selector": ".mx-tabs__tab + .mx-tabs__tab:not([aria-selected='true'], [aria-selected='true'] + *)::before",
+        "defaults": {
+          "display": "none"
+        },
+        "turn": {
+          "where": ".mx-tabs:is([data-placement='start'], [data-placement='end'])",
+          "what": [
+            "size",
+            "margin"
+          ]
+        }
+      },
+      "panel": {
+        "$description": "The panel (`pill`: under a pill strip, `pill-across`: under one above or below it; `focus`: focused by the keys).",
+        "selector": ".mx-tabs__panel",
+        "states": {
+          "pill": ".mx-tabs[data-variant='pill'] > .mx-tabs__panels > .mx-tabs__panel",
+          "pill-across": {
+            "selector": ".mx-tabs[data-variant='pill']:is([data-placement='top'], [data-placement='bottom']) > .mx-tabs__panels > .mx-tabs__panel",
+            "from": "pill"
+          },
+          "focus": ".mx-tabs__panel:focus-visible"
+        }
+      }
+    }
+  }
+}

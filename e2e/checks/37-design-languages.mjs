@@ -72,7 +72,7 @@ const PARTS = {
   tab: ['tabs', '.mx-tabs[data-size="md"][data-variant="line"] .mx-tabs__tab'],
   indicator: ['tabs', '.mx-tabs[data-size="md"][data-variant="line"] .mx-tabs__tab[aria-selected="true"]', 'after'],
   'list item': ['listbox', '.mx-list-box .mx-list__item'],
-  'slider thumb': ['slider', '.mx-slider:is(:not([data-size]), [data-size="md"]) .mx-slider__thumb'],
+  'slider thumb': ['slider', '.mx-slider:is(:not([data-size]), [data-size="md"]) .mx-slider__knob'],
   progress: ['progress', '.mx-progress:is(:not([data-size]), [data-size="md"]) .mx-progress__track'],
   'accordion header': ['accordion', '.mx-accordion[data-size="md"] .mx-accordion__header'],
 };
@@ -87,11 +87,13 @@ export default async function ({ page, base, check }) {
       // A key press first, so the focus given below is keyboard focus (:focus-visible).
       if (how === 'focus') await page.keyboard.press('Shift');
       const value = await page.evaluate(
-        ([id, sel, mode, name]) => {
+        async ([id, sel, mode, name]) => {
           document.documentElement.dataset.identity = id;
           delete document.documentElement.dataset.theme;
           const el = [...document.querySelectorAll(`.docs-main ${sel}`)].find((e) => e.checkVisibility());
           if (!el) return 'missing';
+          // A part that eases into its new size (a knob) is measured once it is there.
+          await Promise.all(el.getAnimations().map((a) => a.finished.catch(() => undefined)));
           if (mode === 'focus') el.focus();
           const cs = getComputedStyle(el, mode === 'after' ? '::after' : null);
           const v = cs.getPropertyValue(name);

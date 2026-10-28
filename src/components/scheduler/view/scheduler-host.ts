@@ -6,6 +6,7 @@ import type { SchedulerModel } from '../model/SchedulerModel';
 import type { StripPiece } from '../model/strip-piece';
 import type { TimedPiece } from '../model/timed-piece';
 import type { SchedulerFields } from '../scheduler-fields';
+import type { DragMode } from './AppointmentDrag';
 import type { SchedulerFormat } from './SchedulerFormat';
 
 /** What the views of a scheduler use of it: the model, the settings they draw with, and where to send what the user does. */
@@ -27,6 +28,15 @@ export interface SchedulerHost<T> {
   cellDblClick(place: CellPlace, e: MouseEvent): void;
   appointmentClick(piece: TimedPiece<T> | StripPiece<T>, e: MouseEvent | KeyboardEvent): void;
   appointmentDblClick(piece: TimedPiece<T> | StripPiece<T>, e: MouseEvent | KeyboardEvent): void;
+  appointmentKey(piece: TimedPiece<T> | StripPiece<T>, e: KeyboardEvent): void;
+  appointmentPointerDown(piece: TimedPiece<T> | StripPiece<T>, mode: DragMode, e: PointerEvent): void;
+  /** Focus left an appointment: a move by the keys goes back. */
+  appointmentBlur(): void;
+  canDrag(item: T): boolean;
+  canResize(item: T): boolean;
+  isSaving(item: T): boolean;
+  /** The appointment's tooltip is showing. */
+  isOpen(item: T): boolean;
   openMore(day: Date, anchor: HTMLElement): void;
   gridKey(e: KeyboardEvent): void;
   /** A view is on the page. */

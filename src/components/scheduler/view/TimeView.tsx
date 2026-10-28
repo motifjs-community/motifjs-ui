@@ -76,6 +76,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
                       role="gridcell"
                       data-cell={`${day.index}:-1`}
                       data-today={() => day.today || null}
+                      data-past={() => day.past || null}
                       tabindex={() => (focused(day.index, -1) ? 0 : -1)}
                       aria-selected={() => model.isSelected(day.index, -1)}
                       aria-label={() => `${t('schedulerAllDay')}, ${format.fullDate(day.date)}`}
@@ -146,6 +147,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
                       data-work={() => work(day, slot) || null}
                       data-holiday={() => day.holiday || null}
                       data-today={() => day.today || null}
+                      data-past={() => day.past || null}
                       tabindex={() => (focused(day.index, slot.index) ? 0 : -1)}
                       aria-selected={() => model.isSelected(day.index, slot.index)}
                       aria-label={() => `${format.fullDate(day.date)}, ${format.time(cellTime(day, slot))}`}

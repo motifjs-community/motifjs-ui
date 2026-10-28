@@ -1,0 +1,157 @@
+{
+  "toast": {
+    "$description": "Toast: short notifications stacked at an edge of the window.",
+    "$selector": ".mx-toaster__stack, .mx-toast",
+    "width": { "$type": "dimension" },
+    "inset": { "$type": "dimension" },
+    "buttons-align": { "$type": "keyword", "$description": "Where the action and close buttons sit across the toast: center, or flex-start beside the first line." },
+    "slide": { "$type": "dimension" },
+    "slide-inline": { "$type": "dimension", "$description": "At a corner: how far it also comes in from its side (0: only from its edge)." },
+    "$places": {
+      "action": {
+        "$description": "The button of a toast action: its variant, size and colours (a text button can read on an inverse surface).",
+        "selector": ".mx-toast > .mx-toast__action",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size",
+          "face.bg",
+          "face.hover.bg",
+          "face.pressed.bg",
+          "face.color",
+          "face.hover.color",
+          "face.pressed.color",
+          "face.outline.color",
+          "face.ghost.color",
+          "face.outline-hover.color",
+          "face.ghost-hover.color",
+          "face.outline-pressed.color",
+          "face.ghost-pressed.color",
+          "face.outline-hover.bg",
+          "face.ghost-hover.bg",
+          "face.outline-pressed.bg",
+          "face.ghost-pressed.bg",
+          "face.outline.border-color",
+          "face.hover.image",
+          "face.pressed.image",
+          "face.focus.image"
+        ]
+      },
+      "close": {
+        "$description": "The button that closes a toast: its variant, size and colours.",
+        "selector": ".mx-toast > .mx-toast__close",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size",
+          "face.bg",
+          "face.hover.bg",
+          "face.pressed.bg",
+          "face.color",
+          "face.hover.color",
+          "face.pressed.color",
+          "face.outline.color",
+          "face.ghost.color",
+          "face.outline-hover.color",
+          "face.ghost-hover.color",
+          "face.outline-pressed.color",
+          "face.ghost-pressed.color",
+          "face.outline-hover.bg",
+          "face.ghost-hover.bg",
+          "face.outline-pressed.bg",
+          "face.ghost-pressed.bg",
+          "face.outline.border-color",
+          "face.hover.image",
+          "face.pressed.image",
+          "face.focus.image"
+        ]
+      }
+    },
+    "$units": {
+      "stack": {
+        "$description": "The column of toasts at one edge position: the space between them.",
+        "selector": ".mx-toaster__stack"
+      },
+      "surface": {
+        "$description": "The toast: per tone (`success`, `caution`, `danger`; at rest it is the info tone), and `focus` under the keys (a ring, a halo over its shadow).",
+        "selector": ".mx-toast",
+        "states": {
+          "success": ".mx-toast[data-tone='success']",
+          "caution": ".mx-toast[data-tone='caution']",
+          "danger": ".mx-toast[data-tone='danger']",
+          "focus": ".mx-toast:focus-visible"
+        }
+      },
+      "stripe": {
+        "$description": "A stripe along the start edge inside the frame, per tone (`display` shows it; `width` its thickness; its corners follow the toast's).",
+        "selector": ":where(.mx-toast)::before",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "success": ".mx-toast[data-tone='success']::before",
+          "caution": ".mx-toast[data-tone='caution']::before",
+          "danger": ".mx-toast[data-tone='danger']::before"
+        }
+      },
+      "timer": {
+        "$description": "A line along the bottom edge inside the frame that runs out with the time the toast stays (`display` shows it; `height` its thickness), per tone.",
+        "selector": ":where(.mx-toast)::after",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "success": ".mx-toast[data-tone='success']::after",
+          "caution": ".mx-toast[data-tone='caution']::after",
+          "danger": ".mx-toast[data-tone='danger']::after"
+        }
+      },
+      "plate": {
+        "$description": "A plate behind the tone glyph, centred on it (`display` shows it), per tone; the room it needs is the glyph’s margin.",
+        "selector": ":where(.mx-toast) > .mx-toast__icon::before",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "success": ".mx-toast[data-tone='success'] > .mx-toast__icon::before",
+          "caution": ".mx-toast[data-tone='caution'] > .mx-toast__icon::before",
+          "danger": ".mx-toast[data-tone='danger'] > .mx-toast__icon::before"
+        }
+      },
+      "icon": {
+        "$description": "The tone glyph or the icon given (its size, the room around it, its colour), per tone.",
+        "selector": ":where(.mx-toast) > .mx-toast__icon > *",
+        "states": {
+          "success": ".mx-toast[data-tone='success'] > .mx-toast__icon > *",
+          "caution": ".mx-toast[data-tone='caution'] > .mx-toast__icon > *",
+          "danger": ".mx-toast[data-tone='danger'] > .mx-toast__icon > *"
+        }
+      },
+      "mark": {
+        "$description": "The tone's own glyph when no icon is given: its icon per tone (at rest the info tone's).",
+        "selector": ":where(.mx-toast > .mx-toast__icon) > .mx-glyph.mx-toast__mark",
+        "states": {
+          "success": ":where(.mx-toast[data-tone='success'] > .mx-toast__icon) > .mx-glyph.mx-toast__mark",
+          "caution": ":where(.mx-toast[data-tone='caution'] > .mx-toast__icon) > .mx-glyph.mx-toast__mark",
+          "danger": ":where(.mx-toast[data-tone='danger'] > .mx-toast__icon) > .mx-glyph.mx-toast__mark"
+        }
+      },
+      "title": {
+        "$description": "The title above the message.",
+        "selector": ":where(.mx-toast > .mx-toast__body) > .mx-toast__title"
+      },
+      "message": {
+        "$description": "The message.",
+        "selector": ":where(.mx-toast > .mx-toast__body) > .mx-toast__text"
+      },
+      "action-room": {
+        "$description": "The room around the action button (its look is the `action` place's).",
+        "selector": ":where(.mx-toast) > .mx-toast__action.mx-button"
+      },
+      "close-room": {
+        "$description": "The room around the close button (its look is the `close` place's).",
+        "selector": ":where(.mx-toast) > .mx-toast__close.mx-button"
+      }
+    }
+  }
+}

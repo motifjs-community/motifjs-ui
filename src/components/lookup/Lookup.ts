@@ -30,7 +30,7 @@ export class Lookup<T = unknown, V = unknown> extends DropDown<T, V> {
     if (own.matchWidth === undefined) this.matchWidth = false;
     for (const name of ['columns', 'showColumnHeaders', 'popupWidth'] as const) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     this.observeProperty('columns', () => this.applyColumns());
-    this.observeProperty<string>('popupWidth', (width) => this.element.style.setProperty('--_lookup-width', width ?? ''));
+    this.observeProperty<string>('popupWidth', (width) => this.element.style.setProperty('--_wanted-width', width ?? ''));
     this.motif.setDisposable(() => this.lookupParts.stopHeader?.());
   }
 
@@ -78,7 +78,7 @@ export class Lookup<T = unknown, V = unknown> extends DropDown<T, V> {
   /** The columns lay out every row (and the header) on one grid. */
   private applyColumns(): void {
     const columns = this.peekProperty<readonly LookupColumn<T>[]>('columns') ?? [];
-    this.element.style.setProperty('--_lookup-columns', columns.map((c) => read(c.width) ?? '1fr').join(' '));
+    this.element.style.setProperty('--_columns', columns.map((c) => read(c.width) ?? '1fr').join(' '));
     this.element.toggleAttribute('data-columns', columns.length > 0);
     this.itemTemplate = columns.length
       ? (item: T, host: HTMLElement) => {

@@ -1,9 +1,0 @@
-{
-  "menu": {
-    "$description": "Lilac menus: more room around a separator.",
-    "separator-gap": {
-      "$type": "dimension",
-      "$value": "{space.2}"
-    }
-  }
-}

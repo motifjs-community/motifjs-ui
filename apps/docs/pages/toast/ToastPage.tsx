@@ -73,10 +73,12 @@ const HOOKS = [
 
 const TOKENS = [
   ['toast.width', 'The width of a toast (never wider than the window).'],
-  ['toast.inset, toast.gap', 'The distance to the window edge, and between toasts.'],
-  ['toast.padding, toast.content-gap, toast.icon-size, toast.title-font-weight', 'Inside a toast.'],
-  ['toast.background, toast.border-color, toast.border-width, toast.radius, toast.shadow', 'Its surface.'],
-  ['toast.slide', 'How far it slides in from its edge.'],
+  ['toast.inset, toast.slide, toast.slide-inline', 'The distance to the window edge; how far it slides in from its edge (at a corner, also from its side).'],
+  ['toast.buttons-align', 'Where the action and close buttons sit across the toast.'],
+  ['toast.stack, toast.surface', 'Units: the space between toasts; the toast with its box per tone (`success`, `caution`, `danger`) and under the keys (`focus`).'],
+  ['toast.stripe, toast.timer', 'Units a design may show: a stripe along the start edge, and a line that runs out with the time the toast stays; per tone.'],
+  ['toast.icon, toast.plate, toast.mark', 'Units: the tone glyph and a plate behind it, per tone; the tone’s own mark.'],
+  ['toast.title, toast.message, toast.action-room, toast.close-room', 'Units: the title, the message and the room around the buttons (their look is the `action` and `close` places’).'],
 ];
 
 export default function ToastPage() {

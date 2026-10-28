@@ -45,9 +45,9 @@ export class PhoneBar {
     this.unsaved = span(doc, 'mx-tabdocs__phone-dirty');
     this.unsaved.setAttribute('aria-hidden', 'true');
     title.append(this.icon, this.label, this.unsaved);
-    this.close = new Button({ variant: 'ghost', size: 'lg', icon: dismissMark() });
+    this.close = new Button({ icon: dismissMark() });
     this.close.element.classList.add('mx-tabdocs__phone-close');
-    this.count = new Button({ variant: 'outline', size: 'lg' });
+    this.count = new Button();
     this.count.element.classList.add('mx-tabdocs__phone-count');
     this.count.element.setAttribute('aria-haspopup', 'dialog');
     // Built here and placed in the bar, not among the manager's children (core would put them back there).
@@ -94,6 +94,9 @@ export class PhoneBar {
     this.count.text = String(docs.length);
     this.count.element.setAttribute('aria-label', m.textOf('tabDocsPhoneCount', { n: docs.length }));
     this.count.element.setAttribute('aria-expanded', String(this.presenter.listOpen));
+    // Outside the component tree the buttons are never mounted: on the page, they read their look from the bar's places.
+    this.close.readLook();
+    this.count.readLook();
   }
 
   dispose(): void {

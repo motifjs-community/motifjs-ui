@@ -1,0 +1,207 @@
+{
+  "checkbox": {
+    "$description": "CheckBox: the box, its mark and dash, the halo and the ring, and the caption next to it. Switch and RadioGroup share the caption layout.",
+    "$selector": ".mx-toggle-field, .mx-check-box",
+    "gap": { "$type": "dimension" },
+    "size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "mark-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "font-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "press-offset": { "$type": "dimension" },
+    "focus-scope": { "$type": "keyword", "$description": "Where the ring under the keys sits: `box` (around the box) or `item` (around the box and its text together)." },
+    "$places": {
+      "field": {
+        "$description": "The field under a check box or a switch: the box and its caption side by side, no text-field frame.",
+        "selector": ".mx-toggle-field",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "label-mode",
+          "padding.sm",
+          "padding.md",
+          "padding.lg",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "border-width",
+          "box.radius",
+          "box.shadow",
+          "box.focus.shadow",
+          "box.cursor",
+          "frame.display",
+          "indicator.display",
+          "box.disabled.bg",
+          "box.disabled.shadow",
+          "padding-start.sm",
+          "padding-start.md",
+          "padding-start.lg",
+          "padding-end.sm",
+          "padding-end.md",
+          "padding-end.lg",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "box.invalid-focus.shadow",
+          "box.readonly-focus.shadow",
+          "box.readonly-invalid-focus.shadow"
+        ]
+      }
+    },
+    "$units": {
+      "label": {
+        "$description": "The caption next to the box (or the track of a switch), in place of the field's label above it.",
+        "selector": ".mx-toggle-field.mx-field:not([data-label-mode='hidden']) > .mx-field__label",
+        "defaults": {
+          "margin": "0px",
+          "font-size": "var(--_text-size)"
+        },
+        "states": {
+          "disabled": ".mx-toggle-field.mx-field[data-disabled]:not([data-label-mode='hidden']) > .mx-field__label"
+        }
+      },
+      "control": {
+        "$description": "The field's box as a toggle lays it out: one cell, a row high, holding the box (or the track) and what is drawn over it.",
+        "selector": ".mx-toggle-field.mx-field > .mx-field__box",
+        "defaults": {
+          "min-height": "var(--_row)",
+          "font-size": "var(--_text-size)"
+        }
+      },
+      "box": {
+        "$description": "The box: unchecked at rest, `checked`, `mixed` (neither: the dash), `invalid` (not checked); each under the pointer (`-hover`), pressed (`-pressed`), under the keys (`-focus`, `-pressed-focus`: its outline and glow, its shadow kept), and disabled (`disabled`, `checked-disabled`). Read only, it does not follow the pointer.",
+        "selector": ".mx-check-box__input",
+        "defaults": {
+          "size": "var(--_box)",
+          "margin": "0px",
+          "cursor": "default"
+        },
+        "states": {
+          "checked": ".mx-check-box[data-state='checked'] .mx-check-box__input",
+          "mixed": ".mx-check-box[data-state='mixed'] .mx-check-box__input",
+          "invalid": ".mx-check-box[data-invalid]:not([data-state='checked']) .mx-check-box__input",
+          "hover": ".mx-check-box[data-state='unchecked']:not([data-readonly]) .mx-check-box__input:hover:not(:disabled)",
+          "checked-hover": {
+            "selector": ".mx-check-box[data-state='checked']:not([data-readonly]) .mx-check-box__input:hover:not(:disabled)",
+            "from": "checked"
+          },
+          "mixed-hover": {
+            "selector": ".mx-check-box[data-state='mixed']:not([data-readonly]) .mx-check-box__input:hover:not(:disabled)",
+            "from": "mixed"
+          },
+          "invalid-hover": {
+            "selector": ".mx-check-box[data-invalid]:not([data-state='checked'], [data-readonly]) .mx-check-box__input:hover:not(:disabled)",
+            "from": "invalid"
+          },
+          "pressed": ".mx-check-box[data-state='unchecked']:not([data-readonly]) .mx-check-box__input:active:not(:disabled)",
+          "checked-pressed": {
+            "selector": ".mx-check-box[data-state='checked']:not([data-readonly]) .mx-check-box__input:active:not(:disabled)",
+            "from": "checked"
+          },
+          "mixed-pressed": {
+            "selector": ".mx-check-box[data-state='mixed']:not([data-readonly]) .mx-check-box__input:active:not(:disabled)",
+            "from": "mixed"
+          },
+          "invalid-pressed": {
+            "selector": ".mx-check-box[data-invalid]:not([data-state='checked'], [data-readonly]) .mx-check-box__input:active:not(:disabled)",
+            "from": "invalid"
+          },
+          "focus": ".mx-check-box__input:focus-visible",
+          "checked-focus": {
+            "selector": ".mx-check-box[data-state='checked'] .mx-check-box__input:focus-visible",
+            "from": "checked"
+          },
+          "mixed-focus": {
+            "selector": ".mx-check-box[data-state='mixed'] .mx-check-box__input:focus-visible",
+            "from": "mixed"
+          },
+          "invalid-focus": {
+            "selector": ".mx-check-box[data-invalid]:not([data-state='checked']) .mx-check-box__input:focus-visible",
+            "from": "invalid"
+          },
+          "pressed-focus": {
+            "selector": ".mx-check-box[data-state='unchecked']:not([data-readonly]) .mx-check-box__input:active:focus-visible:not(:disabled)",
+            "from": "pressed"
+          },
+          "checked-pressed-focus": {
+            "selector": ".mx-check-box[data-state='checked']:not([data-readonly]) .mx-check-box__input:active:focus-visible:not(:disabled)",
+            "from": "checked-pressed"
+          },
+          "mixed-pressed-focus": {
+            "selector": ".mx-check-box[data-state='mixed']:not([data-readonly]) .mx-check-box__input:active:focus-visible:not(:disabled)",
+            "from": "mixed-pressed"
+          },
+          "invalid-pressed-focus": {
+            "selector": ".mx-check-box[data-invalid]:not([data-state='checked'], [data-readonly]) .mx-check-box__input:active:focus-visible:not(:disabled)",
+            "from": "invalid-pressed"
+          },
+          "disabled": ".mx-check-box:not([data-state='checked'], [data-state='mixed']) .mx-check-box__input:disabled",
+          "checked-disabled": ".mx-check-box:is([data-state='checked'], [data-state='mixed']) .mx-check-box__input:disabled"
+        }
+      },
+      "overlay": {
+        "$description": "What is drawn over the box, as large as it: the mark and the dash, in its colour; `pressed` while the box is held, `disabled`.",
+        "selector": ".mx-check-box > .mx-field__box > .mx-check-box__mark",
+        "defaults": {
+          "size": "var(--_box)",
+          "margin": "0px"
+        },
+        "states": {
+          "pressed": ".mx-check-box:not([data-readonly]) .mx-check-box__input:hover:active:not(:disabled) ~ .mx-check-box__mark",
+          "disabled": ".mx-check-box[data-disabled] > .mx-field__box > .mx-check-box__mark"
+        }
+      },
+      "mark": {
+        "$description": "The check mark of a checked box (shown only then).",
+        "selector": ".mx-check-box__mark > .mx-check-box__check",
+        "defaults": {
+          "size": "var(--_mark-size)"
+        }
+      },
+      "dash": {
+        "$description": "The dash of a box neither checked nor unchecked (shown only then).",
+        "selector": ".mx-check-box__mark > .mx-check-box__dash",
+        "defaults": {
+          "size": "var(--_mark-size)"
+        }
+      },
+      "halo": {
+        "$description": "A halo centred on the box, under it (a state layer: its colour per value, its opacity per state). None unless a language shows it.",
+        "selector": ".mx-check-box > .mx-field__box > .mx-check-box__mark::before",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "checked": ".mx-check-box:is([data-state='checked'], [data-state='mixed']) > .mx-field__box > .mx-check-box__mark::before",
+          "hover": ".mx-check-box:not([data-readonly]) .mx-check-box__input:hover:not(:disabled) ~ .mx-check-box__mark::before",
+          "focus": ".mx-check-box .mx-check-box__input:focus-visible ~ .mx-check-box__mark::before",
+          "pressed": ".mx-check-box:not([data-readonly]) .mx-check-box__input:active:not(:disabled) ~ .mx-check-box__mark::before"
+        }
+      },
+      "ring": {
+        "$description": "A ring around the box and its caption together while the keys are on the box, standing out of them by negative margins (where the language puts the ring around the item: `focus-scope`). None unless a language shows it.",
+        "selector": ".mx-check-box::after",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "focus": ".mx-check-box[data-focus-scope='item']:has(> .mx-field__box > .mx-check-box__input:focus-visible)::after"
+        }
+      }
+    }
+  }
+}

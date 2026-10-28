@@ -1,0 +1,19 @@
+{
+  "access-key": {
+    "$description": "The access key's mark in a label (`&Save`): shown while Alt is held, or always.",
+    "$selector": ".mx-access-key",
+    "underline-style": { "$type": "keyword" },
+    "underline-color": { "$type": "color" },
+    "underline-thickness": { "$type": "dimension" },
+    "underline-offset": { "$type": "dimension" },
+    "$units": {
+      "key": {
+        "$description": "The access key in a label (`&Save`); `shown`: while Alt is held, or always. The line is the `underline-*` tokens.",
+        "selector": ".mx-access-key",
+        "states": {
+          "shown": ":root:is([data-mx-alt], [data-mx-access-keys='always']) .mx-access-key"
+        }
+      }
+    }
+  }
+}

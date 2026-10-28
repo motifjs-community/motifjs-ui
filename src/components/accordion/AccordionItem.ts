@@ -277,7 +277,10 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
     header.setAttribute('aria-expanded', 'false');
     const label = header.appendChild(document.createElement('span'));
     label.className = 'mx-accordion__label';
-    const chevron = header.appendChild(chevronDown());
+    // The chevron stands in a plate of its own, which a language may draw behind it.
+    const plate = header.appendChild(document.createElement('span'));
+    plate.className = 'mx-accordion__plate';
+    const chevron = plate.appendChild(chevronDown());
     chevron.classList.add('mx-accordion__chevron');
     registerControl(header, this);
     this.element.prepend(heading);

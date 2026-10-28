@@ -1,0 +1,175 @@
+{
+  "treeview": {
+    "$description": "TreeView: rows with their arrows, check boxes, icons and texts, and the lines under each parent. The sizes per size class, the lines and the layout values are plain tokens; every other piece is a unit (`$units`).",
+    "$selector": ".mx-tree-view",
+    "line-height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "row-height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "padding": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "font-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "indent": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "row-spacing": { "$type": "dimension", "$description": "Space between two rows' plates: a row's place is `row-height` plus this, its plate `row-height`." },
+    "line-width": { "$type": "dimension" },
+    "line-color": { "$type": "color" },
+    "elbow-length": { "$type": "dimension", "$description": "A line from the parent's line to the row (0: none)." },
+    "elbow-color": { "$type": "color" },
+    "expander-plate": { "$type": "dimension", "$description": "The arrow's plate (the `expander` unit's size): the lines under a parent are centred under it." },
+    "expander-rotate-open": { "$type": "angle", "$description": "Its turn while the branch is open, left to right (turned the other way right to left)." },
+    "spinner-duration": { "$type": "duration" },
+    "$places": {
+      "search": {
+        "$description": "The search box above the rows: its label is read, not shown.",
+        "selector": ".mx-tree-view > .mx-tree-view__search",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "label-mode",
+          "size"
+        ]
+      }
+    },
+    "$units": {
+      "container": {
+        "$description": "The whole tree: the space between the search box and the rows, the text.",
+        "selector": ".mx-tree-view",
+        "defaults": {
+          "font-size": "var(--_font-size)",
+          "line-height": "var(--_line-height)"
+        }
+      },
+      "body": {
+        "$description": "The scrolling area that holds the rows.",
+        "selector": ".mx-tree-view__body"
+      },
+      "empty": {
+        "$description": "What an empty tree says.",
+        "selector": ".mx-tree-view__empty",
+        "defaults": {
+          "padding": "var(--_padding)"
+        }
+      },
+      "row": {
+        "$description": "A row (the plate of an item, its children's rows under it): under the pointer, pressed, selected, selected under the pointer, focused by the keys, disabled. Its start padding grows with its level (`indent`).",
+        "selector": ".mx-tree-view__row",
+        "defaults": {
+          "height": "var(--_tree-row-size)",
+          "min-height": "var(--_row)",
+          "margin-block": "calc(var(--_treeview-row-spacing) / 2)",
+          "padding-start": "calc(var(--_padding) + (var(--_level) - 1) * var(--_indent))",
+          "padding-end": "var(--_padding)",
+          "cursor": "default"
+        },
+        "states": {
+          "hover": ".mx-tree-view__item:not([data-disabled], [data-selected]) > .mx-tree-view__row:hover",
+          "pressed": {
+            "selector": ".mx-tree-view__item:not([data-disabled], [data-selected]) > .mx-tree-view__row:active",
+            "from": "hover"
+          },
+          "selected": ".mx-tree-view__item[data-selected] > .mx-tree-view__row",
+          "selected-hover": {
+            "selector": ".mx-tree-view__item[data-selected]:not([data-disabled]) > .mx-tree-view__row:hover",
+            "from": "selected"
+          },
+          "focus": ".mx-tree-view__item:focus-visible > .mx-tree-view__row",
+          "disabled": ".mx-tree-view__item[data-disabled] > .mx-tree-view__row"
+        }
+      },
+      "indicator": {
+        "$description": "The mark on a selected row, centred along it (`margin-start` / `margin-end`: `auto` on one side puts it on the other).",
+        "selector": ".mx-tree-view__item[data-selected] > .mx-tree-view__row::before",
+        "defaults": {
+          "margin-block": "auto"
+        }
+      },
+      "expander": {
+        "$description": "The arrow's plate (`selected`, `disabled`: on such a row).",
+        "selector": ".mx-tree-view__expander",
+        "defaults": {
+          "size": "var(--_treeview-expander-plate)"
+        },
+        "states": {
+          "selected": ".mx-tree-view__item[data-selected] > .mx-tree-view__row > .mx-tree-view__expander",
+          "disabled": ".mx-tree-view__item[data-disabled] > .mx-tree-view__row > .mx-tree-view__expander"
+        }
+      },
+      "expander-icon": {
+        "$description": "A branch's arrow (turned by `expander-rotate-open` while it is open).",
+        "selector": ".mx-tree-view__expander > .mx-glyph"
+      },
+      "spinner": {
+        "$description": "The ring that turns while a branch loads (the gap in it: its end side).",
+        "selector": ".mx-tree-view__item[data-loading] > .mx-tree-view__row > .mx-tree-view__expander::after"
+      },
+      "check": {
+        "$description": "A row's check box: under the pointer, checked (or mixed), disabled.",
+        "selector": ".mx-tree-view__check",
+        "states": {
+          "hover": ".mx-tree-view__check:hover",
+          "checked": ".mx-tree-view__item:is([data-state='checked'], [data-state='mixed']) > .mx-tree-view__row > .mx-tree-view__check",
+          "checked-hover": {
+            "selector": ".mx-tree-view__item:is([data-state='checked'], [data-state='mixed']):not([data-disabled]) > .mx-tree-view__row > .mx-tree-view__check:hover",
+            "from": "checked"
+          },
+          "disabled": ".mx-tree-view__item[data-disabled] > .mx-tree-view__row > .mx-tree-view__check",
+          "checked-disabled": {
+            "selector": ".mx-tree-view__item[data-disabled]:is([data-state='checked'], [data-state='mixed']) > .mx-tree-view__row > .mx-tree-view__check",
+            "from": "disabled"
+          }
+        }
+      },
+      "mark": {
+        "$description": "The check mark and the dash of a mixed check box.",
+        "selector": ".mx-tree-view__check > .mx-glyph"
+      },
+      "icon": {
+        "$description": "A row's icon.",
+        "selector": ".mx-tree-view__icon",
+        "states": {
+          "selected": ".mx-tree-view__item[data-selected] > .mx-tree-view__row > .mx-tree-view__icon",
+          "disabled": ".mx-tree-view__item[data-disabled] > .mx-tree-view__row > .mx-tree-view__icon"
+        }
+      },
+      "text": {
+        "$description": "A row's text.",
+        "selector": ".mx-tree-view__text",
+        "states": {
+          "selected": ".mx-tree-view__item[data-selected] > .mx-tree-view__row > .mx-tree-view__text",
+          "disabled": ".mx-tree-view__item[data-disabled] > .mx-tree-view__row > .mx-tree-view__text"
+        }
+      },
+      "error": {
+        "$description": "What a branch that failed to load says, with its retry link.",
+        "selector": ".mx-tree-view__error"
+      },
+      "retry": {
+        "$description": "The retry link.",
+        "selector": ".mx-tree-view__retry",
+        "defaults": {
+          "padding-block": "0px",
+          "bg": "transparent",
+          "border-width": "0px",
+          "cursor": "pointer"
+        }
+      }
+    }
+  }
+}

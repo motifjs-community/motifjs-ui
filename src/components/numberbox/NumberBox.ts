@@ -1,5 +1,6 @@
 import { effect, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { chevronDown, chevronUp, dashMark, plusMark } from '../../core/glyphs';
+import { LanguageLook } from '../../core/language-look';
 import { uiLocale } from '../../core/ui-locale';
 import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
 import { Field } from '../../parts/field/Field';
@@ -76,8 +77,12 @@ function finite(value: unknown): number | null {
  * qty.value = 3;
  */
 export class NumberBox extends Field<number | null, NumberBoxProps> {
+  /** A spin layout not given is the design language's, or the one of the place the box sits in. */
+  private readonly spinLook = new LanguageLook(this.element, { layout: '--_number-box-spin-layout', order: '--_number-box-spin-order' }, () => this.renderSpin());
+
   constructor(props?: IBaseProp<NumberBoxProps>) {
     super(props);
+    this.motif.setDisposable(this.spinLook.watch());
     const own = (this.props ?? {}) as NumberBoxProps;
     this.element.classList.add('mx-number-box');
 
@@ -136,7 +141,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     this.assignProperty('showSpinButtons', value, Boolean);
   }
   get spinLayout(): SpinLayout {
-    return this.getProperty<SpinLayout | undefined>('spinLayout') ?? 'stacked';
+    return this.getProperty<SpinLayout | undefined>('spinLayout') ?? (this.spinLook.get('layout') as SpinLayout | null) ?? 'stacked';
   }
   set spinLayout(value: Bind<SpinLayout>) {
     this.assignProperty('spinLayout', value);
@@ -560,10 +565,15 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     }
   }
 
+  override onMounted(): void {
+    super.onMounted();
+    this.spinLook.read();
+  }
+
   private renderSpin(): void {
     const parts = this.numberParts;
     const show = this.peekProperty('showSpinButtons') !== false;
-    const layout = this.peekProperty<SpinLayout>('spinLayout') ?? 'stacked';
+    const layout = this.peekProperty<SpinLayout>('spinLayout') ?? (this.spinLook.get('layout') as SpinLayout | null) ?? 'stacked';
     this.element.toggleAttribute('data-spin', show);
     if (!show) {
       this.stopRepeat();
@@ -587,7 +597,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     spin.dataset.layout = layout;
     up.replaceChildren(layout === 'inline' ? plusMark() : chevronUp());
     down.replaceChildren(layout === 'inline' ? dashMark() : chevronDown());
-    if (layout === 'inline') spin.replaceChildren(down, up);
+    if (layout === 'inline') spin.replaceChildren(...(this.spinLook.get('order') === 'up-down' ? [up, down] : [down, up]));
     else spin.replaceChildren(up, down);
     this.renderSpinState();
   }

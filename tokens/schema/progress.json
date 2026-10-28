@@ -1,0 +1,179 @@
+{
+  "progress": {
+    "$description": "ProgressBar: a line (the track, the bar, the rest of the track, a stop dot, a runner, a wave) or a circle (a ring and an arc), and its caption.",
+    "$selector": ".mx-progress",
+    "active-gap": { "$type": "dimension", "$description": "Space between the end of the bar and the rest of the track (0: the rest starts where the bar ends)." },
+    "dot-size": { "$type": "dimension", "$description": "The stop dot at the end of the track (the `stop` unit), across and along." },
+    "stop-inset": { "$type": "dimension", "$description": "From the end of the track to the dot." },
+    "runner-length": { "$type": "dimension", "$description": "The part that runs along the track while the value is not known, as a share of the track." },
+    "runner-duration": { "$type": "duration", "$description": "One run along the track; follows the motion durations, so reduced motion stops it." },
+    "gap": { "$type": "dimension" },
+    "head-gap": { "$type": "dimension" },
+    "width": { "$type": "dimension" },
+    "thickness": {
+      "sm": { "$type": "dimension", "$description": "The bar per size; `rest-thickness`: the rest of the track." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "rest-thickness": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "wave-amplitude": { "$type": "dimension", "$description": "How far the bar swings to each side of the track while it is a wave (0: a straight bar). The track keeps room for it." },
+    "wave-length": { "$type": "dimension", "$description": "One wave, crest to crest." },
+    "wave-speed": { "$type": "duration", "$description": "How long the wave takes to travel one wave length; follows the motion durations, so reduced motion keeps it still." },
+    "wave-direction": { "$type": "keyword", "$description": "Where the wave travels: `forward` (toward the end) or `backward` (toward the start)." },
+    "wave-start": { "$type": "number", "$description": "The share of the work done from which the bar is a wave (it is straight while shorter)." },
+    "wave-end": { "$type": "number", "$description": "The share from which it is straight again." },
+    "wave-grow-duration": { "$type": "duration", "$description": "How long the wave takes to grow in or flatten out." },
+    "ring-size": {
+      "sm": { "$type": "dimension", "$description": "The circle (`shape=\"circle\"`) per size: across, without the room for a wave." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "ring-thickness": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "ring-active-gap": { "$type": "dimension", "$description": "Space between each end of the arc and the ring (0: the ring runs on under the arc)." },
+    "ring-runner-length": { "$type": "number", "$description": "The arc that turns while the value is not known, as a share of the ring." },
+    "ring-turn-duration": { "$type": "duration", "$description": "One turn of that arc; follows the motion durations, so reduced motion stops it." },
+    "ring-wave-amplitude": { "$type": "dimension", "$description": "The wave of the arc, as `wave-*` for the bar (0: a smooth arc); its length is fitted so whole waves go round." },
+    "ring-wave-length": { "$type": "dimension" },
+    "ring-wave-speed": { "$type": "duration" },
+    "ring-wave-direction": { "$type": "keyword" },
+    "ring-wave-start": { "$type": "number" },
+    "ring-wave-end": { "$type": "number" },
+    "ring-wave-grow-duration": { "$type": "duration" },
+    "accent": { "$type": "color", "$description": "The bar, the runner, the dot, the wave and the arc per tone (each unit reads it as `var(--_tone)`); `-subtle`: the track a runner runs along." },
+    "accent-subtle": { "$type": "color" },
+    "neutral": { "$type": "color" },
+    "neutral-subtle": { "$type": "color" },
+    "success": { "$type": "color" },
+    "success-subtle": { "$type": "color" },
+    "caution": { "$type": "color" },
+    "caution-subtle": { "$type": "color" },
+    "danger": { "$type": "color" },
+    "danger-subtle": { "$type": "color" },
+    "$units": {
+      "track": {
+        "$description": "The band the bar fills: drawn where the design shows the track as one band under the bar (it is as high as the bar and, with a wave, the room the wave swings in).",
+        "selector": ".mx-progress__track",
+        "defaults": {
+          "height": "var(--_room)"
+        },
+        "states": {
+          "indeterminate": ".mx-progress[data-state='indeterminate'] > .mx-progress__track",
+          "complete": ".mx-progress[data-complete] > .mx-progress__track"
+        }
+      },
+      "bar": {
+        "$description": "The part done, from the start to the value; while the value is not known, the whole track the runner runs along (in the tone's subtle colour).",
+        "selector": ".mx-progress__bar",
+        "defaults": {
+          "width": "var(--_bar)",
+          "height": "var(--_thickness)",
+          "bg": "var(--_fill)"
+        },
+        "states": {
+          "neutral": ".mx-progress[data-tone='neutral'] .mx-progress__bar",
+          "success": ".mx-progress[data-tone='success'] .mx-progress__bar",
+          "caution": ".mx-progress[data-tone='caution'] .mx-progress__bar",
+          "danger": ".mx-progress[data-tone='danger'] .mx-progress__bar",
+          "indeterminate": ".mx-progress[data-state='indeterminate'] .mx-progress__bar",
+          "complete": ".mx-progress[data-complete] .mx-progress__bar"
+        }
+      },
+      "rest": {
+        "$description": "The rest of the track as its own line, from `active-gap` after the bar to the end, centred on the bar (it can be thinner).",
+        "selector": ".mx-progress__track::before",
+        "defaults": {
+          "display": "none",
+          "height": "var(--_rest)"
+        },
+        "states": {
+          "indeterminate": ".mx-progress[data-state='indeterminate'] > .mx-progress__track::before",
+          "complete": ".mx-progress[data-complete] > .mx-progress__track::before"
+        }
+      },
+      "stop": {
+        "$description": "A dot at the end of the track, centred on it; the bar pushes it out as it comes near.",
+        "selector": ".mx-progress__track::after",
+        "defaults": {
+          "display": "none",
+          "size": "var(--_progress-dot-size)",
+          "bg": "var(--_tone)",
+          "radius": "50%"
+        },
+        "states": {
+          "neutral": ".mx-progress[data-tone='neutral'] .mx-progress__track::after",
+          "success": ".mx-progress[data-tone='success'] .mx-progress__track::after",
+          "caution": ".mx-progress[data-tone='caution'] .mx-progress__track::after",
+          "danger": ".mx-progress[data-tone='danger'] .mx-progress__track::after",
+          "indeterminate": ".mx-progress[data-state='indeterminate'] > .mx-progress__track::after"
+        }
+      },
+      "runner": {
+        "$description": "The part that runs along the track while the value is not known.",
+        "selector": ".mx-progress__bar::after",
+        "defaults": {
+          "bg": "var(--_tone)",
+          "radius": "inherit"
+        },
+        "states": {
+          "neutral": ".mx-progress[data-tone='neutral'] .mx-progress__bar::after",
+          "success": ".mx-progress[data-tone='success'] .mx-progress__bar::after",
+          "caution": ".mx-progress[data-tone='caution'] .mx-progress__bar::after",
+          "danger": ".mx-progress[data-tone='danger'] .mx-progress__bar::after"
+        }
+      },
+      "wave": {
+        "$description": "The bar drawn as a line that swings (`wave-*`), where the language gives it an amplitude: its colour is the line's.",
+        "selector": ".mx-progress__wave",
+        "defaults": {
+          "color": "var(--_tone)"
+        },
+        "states": {
+          "neutral": ".mx-progress[data-tone='neutral'] .mx-progress__wave",
+          "success": ".mx-progress[data-tone='success'] .mx-progress__wave",
+          "caution": ".mx-progress[data-tone='caution'] .mx-progress__wave",
+          "danger": ".mx-progress[data-tone='danger'] .mx-progress__wave",
+          "complete": ".mx-progress[data-complete] .mx-progress__wave"
+        }
+      },
+      "ring": {
+        "$description": "The circle's track: the ring the arc goes round (its colour is the line's), with `ring-active-gap` beside each end of the arc.",
+        "selector": ".mx-progress__ring",
+        "states": {
+          "indeterminate": ".mx-progress[data-state='indeterminate'] .mx-progress__ring",
+          "complete": ".mx-progress[data-complete] .mx-progress__ring"
+        }
+      },
+      "arc": {
+        "$description": "The circle's part done, from the top round to the value (a wave where `ring-wave-amplitude` is given); while the value is not known, an arc that turns.",
+        "selector": ".mx-progress__arc",
+        "defaults": {
+          "color": "var(--_tone)"
+        },
+        "states": {
+          "neutral": ".mx-progress[data-tone='neutral'] .mx-progress__arc",
+          "success": ".mx-progress[data-tone='success'] .mx-progress__arc",
+          "caution": ".mx-progress[data-tone='caution'] .mx-progress__arc",
+          "danger": ".mx-progress[data-tone='danger'] .mx-progress__arc",
+          "indeterminate": ".mx-progress[data-state='indeterminate'] .mx-progress__arc",
+          "complete": ".mx-progress[data-complete] .mx-progress__arc"
+        }
+      },
+      "label": {
+        "$description": "The caption that names the bar.",
+        "selector": ".mx-progress__label"
+      },
+      "value": {
+        "$description": "The percent, or what `valueText` writes.",
+        "selector": ".mx-progress__value"
+      }
+    }
+  }
+}

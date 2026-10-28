@@ -41,5 +41,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    // The kit's CSS mirrors for right to left with :dir(rtl). A target older than these browsers makes the minifier
+    // rewrite it as a list of :lang() values, which a page with dir="rtl" but another lang never matches.
+    cssTarget: ['chrome120', 'edge120', 'firefox121', 'safari17'],
   },
 });

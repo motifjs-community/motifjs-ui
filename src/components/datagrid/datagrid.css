@@ -8,12 +8,14 @@
    from --_columns on the viewport; hidden columns, alignment and sticky offsets from the grid's own
    per-grid sheet. The toolbar is the kit's; text the search found is a <mark>; the group panel's
    chips carry data-dir and data-dragging, the panel and the header row data-drop while something
-   can be dropped on them. */
+   can be dropped on them. Only the layout is here, with the tints over a row (shared by its cells), the
+   cell ranges and the lines a search draws under its marks: every piece's look is a unit of the grid's
+   schema (`$units`), painted by units.css from the language's tokens. */
 @layer mx.components {
   .mx-data-grid {
-    --_row-height: calc(var(--mx-datagrid-row-height) + var(--mx-datagrid-row-padding));
-    --_sticky-start: inset calc(var(--mx-datagrid-border-width) * -1) 0 0 var(--mx-datagrid-edge-color);
-    --_sticky-end: inset var(--mx-datagrid-border-width) 0 0 var(--mx-datagrid-edge-color);
+    --_row-height: calc(var(--_datagrid-record-height) + var(--_datagrid-row-space));
+    --_sticky-start: inset calc(var(--_datagrid-pinned-edge-width) * -1) 0 0 var(--_datagrid-pinned-edge-color);
+    --_sticky-end: inset var(--_datagrid-pinned-edge-width) 0 0 var(--_datagrid-pinned-edge-color);
     /* Stacking inside the grid only. */
     --_z-sticky: 1;
     --_z-focus: 2;
@@ -29,11 +31,6 @@
     min-block-size: 0;
     min-inline-size: 0;
     overflow: hidden;
-    font-size: var(--mx-datagrid-font-size);
-    color: var(--mx-datagrid-color);
-    background-color: var(--mx-datagrid-background);
-    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-outline-color);
-    border-radius: var(--mx-datagrid-radius);
   }
 
   .mx-data-grid__main {
@@ -61,7 +58,6 @@
     inline-size: max-content;
     min-inline-size: 100%;
     block-size: var(--_row-height);
-    background-color: var(--mx-datagrid-background);
     background-image: linear-gradient(var(--_tint), var(--_tint));
   }
 
@@ -77,10 +73,6 @@
 
   .mx-data-grid__row--header {
     position: relative;
-    font-weight: var(--mx-datagrid-head-font-weight);
-    color: var(--mx-datagrid-head-color);
-    background-color: var(--mx-datagrid-head-background);
-    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-edge-color);
   }
 
   .mx-data-grid__body {
@@ -94,61 +86,51 @@
     inset-block-start: 0;
     inset-inline-start: 0;
     box-sizing: border-box;
-    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
     will-change: transform;
   }
 
   /* A selected row's fill stands for the stripe and the new-row tint. */
   .mx-data-grid[data-striped] .mx-data-grid__body > .mx-data-grid__row[data-odd]:not([data-selected]) {
-    --_tint: var(--mx-datagrid-stripe);
+    --_tint: var(--_datagrid-stripe-tint);
   }
 
   .mx-data-grid__body > .mx-data-grid__row[data-status='new']:not([data-selected]) {
-    --_tint: var(--mx-datagrid-new);
+    --_tint: var(--_datagrid-new-tint);
   }
 
   .mx-data-grid__body > .mx-data-grid__row:hover {
-    --_tint: var(--mx-datagrid-hover);
+    --_tint: var(--_datagrid-hover-tint);
   }
 
   .mx-data-grid__body > .mx-data-grid__row[data-active] {
-    --_tint: var(--mx-datagrid-active);
+    --_tint: var(--_datagrid-active-tint);
   }
 
   /* With selection on, the active row has only the hover tint, over the selection fill too. */
   .mx-data-grid[data-selection] .mx-data-grid__body > .mx-data-grid__row[data-active] {
-    --_tint: var(--mx-datagrid-hover);
+    --_tint: var(--_datagrid-hover-tint);
   }
 
-  /* The design language's selection look: its fill and text, and a frame, an effect and a bar at
-     the start drawn over the cells (sticky ones too), under the focus ring. None of it takes room. */
-  .mx-data-grid__body > .mx-data-grid__row[data-selected] {
-    color: var(--mx-datagrid-selected-text);
-    background-color: var(--mx-datagrid-selected);
-  }
-
+  /* The design language's selection look (the `row` unit's `selected` state): its fill and text, and a
+     frame, an effect (`selection`) and a bar at the start (`indicator`) drawn over the cells (sticky ones
+     too), under the focus ring. None of it takes room. */
   .mx-data-grid__body > .mx-data-grid__row[data-selected]::after {
     content: '';
     position: absolute;
     inset: 0;
     z-index: var(--_z-sticky);
     pointer-events: none;
-    box-shadow:
-      inset 0 0 0 var(--mx-datagrid-selected-border-width) var(--mx-datagrid-selected-border),
-      var(--mx-datagrid-selected-effect);
   }
 
+  /* Centred along the row by layout, on the side its margins leave. */
   .mx-data-grid__body > .mx-data-grid__row[data-selected]::before {
     content: '';
     position: absolute;
-    inset-block: calc(50% - var(--mx-datagrid-indicator-length) / 2);
-    inset-inline-start: 0;
+    inset-block: 0;
+    inset-inline: 0;
     /* Over the sticky cells: it comes before them. */
     z-index: var(--_z-focus);
-    inline-size: var(--mx-datagrid-indicator-width);
     pointer-events: none;
-    background: var(--mx-datagrid-indicator-color);
-    border-radius: var(--mx-datagrid-indicator-radius);
   }
 
   /* Cells: one line, cut with an ellipsis. */
@@ -156,9 +138,8 @@
   .mx-data-grid__header-cell {
     position: relative;
     min-inline-size: 0;
-    padding-inline: var(--mx-datagrid-cell-padding);
     overflow: hidden;
-    line-height: calc(var(--_row-height) - var(--mx-datagrid-border-width));
+    line-height: calc(var(--_row-height) - var(--_datagrid-row-line-width));
     text-overflow: ellipsis;
     white-space: nowrap;
     background: inherit;
@@ -169,9 +150,6 @@
   .mx-data-grid__header-cell:focus-visible,
   .mx-data-grid__filter-cell:focus-visible {
     z-index: var(--_z-focus);
-    outline: var(--mx-datagrid-cell-focus-width) solid var(--mx-datagrid-cell-focus-color);
-    outline-offset: calc(var(--mx-datagrid-cell-focus-width) * -1);
-    box-shadow: var(--mx-datagrid-cell-focus-halo);
   }
 
   /* Cell ranges (cellSelection) and the rows a drag selects: data-range on the cells of a range,
@@ -179,8 +157,8 @@
      anchor on the cell the last range started on. Frame and fill are background layers over the
      row's own look, so the pinned columns' edge and the focus ring stay as they are. */
   .mx-data-grid__cell:is([data-range], [data-run]) {
-    --_edge: var(--mx-datagrid-range-border-color);
-    --_edge-width: var(--mx-datagrid-range-border-width);
+    --_edge: var(--_datagrid-range-border-color);
+    --_edge-width: var(--_datagrid-range-border-width);
     --_line: linear-gradient(var(--_edge), var(--_edge));
 
     background-image:
@@ -202,27 +180,23 @@
   }
 
   .mx-data-grid__cell[data-range] {
-    --_fill: color-mix(in srgb, var(--mx-datagrid-range-fill) calc(var(--mx-datagrid-range-fill-opacity) * 100%), transparent);
+    --_fill: color-mix(in srgb, var(--_datagrid-range-fill) calc(var(--_datagrid-range-fill-opacity) * 100%), transparent);
     --_range: linear-gradient(var(--_fill), var(--_fill));
   }
 
-  /* Over a selected row the fill is whole, with its own text, so the text keeps its contrast. */
-  .mx-data-grid__row[data-selected] > .mx-data-grid__cell[data-range],
-  .mx-data-grid__cell[data-range~='anchor'] {
-    color: var(--mx-datagrid-range-text);
-  }
-
+  /* Over a selected row the fill is whole, with its own text (the `cell` unit's `range-selected`,
+     `range-anchor`), so the text keeps its contrast. */
   .mx-data-grid__row[data-selected] > .mx-data-grid__cell[data-range] {
-    --_fill: var(--mx-datagrid-range-selected-fill);
+    --_fill: var(--_datagrid-range-selected-fill);
   }
 
   .mx-data-grid__cell[data-range~='anchor'] {
-    --_fill: var(--mx-datagrid-range-anchor-fill);
+    --_fill: var(--_datagrid-range-anchor-fill);
   }
 
   .mx-data-grid__cell[data-run] {
-    --_edge: var(--mx-datagrid-row-run-border-color);
-    --_edge-width: var(--mx-datagrid-row-run-border-width);
+    --_edge: var(--_datagrid-row-run-border-color);
+    --_edge-width: var(--_datagrid-row-run-border-width);
   }
 
   .mx-data-grid__cell:is([data-range~='top'], [data-run~='top']) {
@@ -250,14 +224,13 @@
     cursor: cell;
   }
 
-  /* An unsaved value: a corner mark. A message: a frame; the text shows on hover and focus. */
+  /* An unsaved value: a corner mark (the `changed` unit). A message: a frame (`invalid`); the text shows on
+     hover and focus. */
   .mx-data-grid__cell[data-changed]::before {
     content: '';
     position: absolute;
     inset-block-start: 0;
     inset-inline-start: 0;
-    border-block-start: var(--mx-datagrid-mark-size) solid var(--mx-datagrid-changed);
-    border-inline-end: var(--mx-datagrid-mark-size) solid transparent;
     pointer-events: none;
   }
 
@@ -265,56 +238,30 @@
     content: '';
     position: absolute;
     inset: 0;
-    border: var(--mx-datagrid-invalid-width) solid var(--mx-datagrid-invalid);
     pointer-events: none;
   }
 
-  .mx-data-grid__row[data-status='removed'] .mx-data-grid__cell:not(.mx-data-grid__status) {
-    color: var(--mx-datagrid-removed-color);
-    text-decoration: line-through;
-  }
-
-  .mx-data-grid__row[data-status='saving'] .mx-data-grid__cell:not(.mx-data-grid__status) {
-    color: var(--mx-datagrid-saving-color);
-  }
-
-  /* Rows still loading: a soft bar in each cell. */
-  .mx-data-grid__row[data-loading] .mx-data-grid__cell::after {
-    content: '';
-    position: absolute;
-    inset-inline: var(--mx-datagrid-cell-padding);
-    inset-block: 35%;
-    background-color: var(--mx-datagrid-placeholder);
-    border-radius: var(--mx-datagrid-placeholder-radius);
-  }
-
-  /* A lookup cell whose key is still asked for: the same soft bar. */
+  /* Rows still loading, and a lookup cell whose key is still asked for: a soft bar in each cell (`placeholder`). */
+  .mx-data-grid__row[data-loading] .mx-data-grid__cell::after,
   .mx-data-grid__cell[data-lookup='loading']::after {
     content: '';
     position: absolute;
-    inset-inline: var(--mx-datagrid-cell-padding);
-    inset-block: 35%;
-    background-color: var(--mx-datagrid-placeholder);
-    border-radius: var(--mx-datagrid-placeholder-radius);
+    inset-inline: var(--_datagrid-loading-inset);
+    inset-block: var(--_datagrid-loading-inset-block);
   }
 
-  /* A key the lookup source does not have: the key itself, muted and underlined; the hint tells why. */
+  /* A key the lookup source does not have: the key itself, muted and underlined (`missing`); the hint tells why. */
   .mx-data-grid__cell[data-lookup='missing'] {
-    color: var(--mx-datagrid-missing-color);
-    text-decoration: underline dotted;
+    text-decoration-style: dotted;
   }
 
   /* Group rows: one cell over every column; its content is moved in by level and stays in view while
      the rows scroll sideways. */
-  .mx-data-grid__body > .mx-data-grid__group-row {
-    background-color: var(--mx-datagrid-group-background);
-  }
-
   .mx-data-grid__group-cell {
     position: relative;
     grid-column: 1 / -1;
     min-inline-size: 0;
-    line-height: calc(var(--_row-height) - var(--mx-datagrid-border-width));
+    line-height: calc(var(--_row-height) - var(--_datagrid-row-line-width));
     white-space: nowrap;
   }
 
@@ -322,11 +269,8 @@
     position: sticky;
     inset-inline-start: 0;
     display: inline-flex;
-    gap: var(--mx-datagrid-gap);
     align-items: center;
     max-inline-size: 100%;
-    padding-inline: calc(var(--mx-datagrid-cell-padding) + var(--_level, 0) * var(--mx-datagrid-group-indent)) var(--mx-datagrid-cell-padding);
-    font-weight: var(--mx-datagrid-group-font-weight);
   }
 
   .mx-data-grid__group-text {
@@ -339,20 +283,9 @@
     display: none;
   }
 
-  .mx-data-grid__group-count {
-    font-weight: var(--mx-datagrid-group-count-font-weight);
-    color: var(--mx-datagrid-group-count-color);
-  }
-
-  .mx-data-grid__group-summary {
-    font-weight: var(--mx-datagrid-group-summary-font-weight);
-    color: var(--mx-datagrid-group-count-color);
-  }
-
   /* Group summary items under their columns: cells on the group row's line, after its text. */
   .mx-data-grid__group-row > .mx-data-grid__summary-cell {
     grid-row: 1;
-    font-weight: var(--mx-datagrid-group-summary-font-weight);
   }
 
   .mx-data-grid__group-row > .mx-data-grid__summary-cell[hidden] {
@@ -366,12 +299,10 @@
   /* A group's footer: its summary items under their columns, on one line. */
   .mx-data-grid__body > .mx-data-grid__group-footer {
     outline: none;
-    background-color: var(--mx-datagrid-group-background);
   }
 
   .mx-data-grid__group-footer:focus-visible {
     z-index: var(--_z-focus);
-    box-shadow: inset 0 0 0 var(--mx-datagrid-row-focus-width) var(--mx-datagrid-row-focus-color);
   }
 
   /* The row of totals: under the rows, at the bottom of the viewport while they scroll. */
@@ -386,19 +317,7 @@
   .mx-data-grid__total-row {
     block-size: auto;
     min-block-size: var(--_row-height);
-    font-weight: var(--mx-datagrid-head-font-weight);
-    color: var(--mx-datagrid-total-color);
-    background-color: var(--mx-datagrid-head-background);
-    border-block-start: var(--mx-datagrid-border-width) solid var(--mx-datagrid-edge-color);
     outline: none;
-  }
-
-  .mx-data-grid__total-row:focus-visible {
-    box-shadow: inset 0 0 0 var(--mx-datagrid-row-focus-width) var(--mx-datagrid-row-focus-color);
-  }
-
-  .mx-data-grid__total-row[data-state='loading'] {
-    color: var(--mx-datagrid-total-loading-color);
   }
 
   .mx-data-grid__summary-item {
@@ -411,21 +330,6 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-datagrid-button-size);
-    block-size: var(--mx-datagrid-button-size);
-    margin-inline-start: calc(var(--mx-datagrid-gap) * -1);
-    color: var(--mx-datagrid-group-toggle-color);
-    cursor: pointer;
-    border-radius: var(--mx-datagrid-group-toggle-radius);
-  }
-
-  .mx-data-grid__group-toggle:hover {
-    background-color: var(--mx-datagrid-hover);
-  }
-
-  .mx-data-grid__group-toggle > .mx-glyph {
-    inline-size: var(--mx-datagrid-icon-size);
-    block-size: var(--mx-datagrid-icon-size);
   }
 
   .mx-data-grid__group-toggle:dir(rtl) > .mx-glyph {
@@ -433,15 +337,11 @@
   }
 
   .mx-data-grid__group-row[data-expanded] .mx-data-grid__group-toggle > .mx-glyph {
-    rotate: 90deg;
+    rotate: var(--_datagrid-group-toggle-rotate-open);
   }
 
   .mx-data-grid__group-row[data-expand='rowClick']:not([data-locked]) {
     cursor: pointer;
-  }
-
-  .mx-data-grid__group-row[data-locked] .mx-data-grid__group-toggle {
-    cursor: default;
   }
 
   /* The group panel at the start of the toolbar: the grouped columns as chips. */
@@ -449,26 +349,16 @@
     position: relative;
     display: flex;
     flex: 0 1 auto;
-    gap: var(--mx-datagrid-chip-gap);
     align-items: center;
     min-inline-size: 0;
-    min-block-size: var(--mx-datagrid-button-size);
-    padding-inline: var(--mx-datagrid-chip-gap);
-    border-radius: var(--mx-datagrid-chip-radius);
   }
 
   .mx-data-grid__group-panel[hidden] {
     display: none;
   }
 
-  .mx-data-grid__group-panel[data-drop],
-  .mx-data-grid__row--header[data-drop] {
-    background-image: linear-gradient(var(--mx-datagrid-drop-target), var(--mx-datagrid-drop-target));
-  }
-
   .mx-data-grid__group-empty {
     overflow: hidden;
-    color: var(--mx-datagrid-panel-empty-color);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -480,25 +370,9 @@
   .mx-data-grid__chip {
     display: inline-flex;
     flex: none;
-    gap: var(--mx-datagrid-chip-gap);
     align-items: center;
-    block-size: var(--mx-datagrid-button-size);
-    padding-inline: var(--mx-datagrid-cell-padding);
     font: inherit;
-    color: var(--mx-datagrid-chip-color);
-    cursor: pointer;
-    background-color: var(--mx-datagrid-chip-background);
-    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-chip-border-color);
-    border-radius: var(--mx-datagrid-chip-radius);
     touch-action: none;
-  }
-
-  .mx-data-grid__chip:hover {
-    background-color: var(--mx-datagrid-hover);
-  }
-
-  .mx-data-grid__chip[data-dragging] {
-    opacity: var(--mx-datagrid-chip-drag-opacity);
   }
 
   .mx-data-grid__group-panel[data-locked] .mx-data-grid__chip {
@@ -507,12 +381,6 @@
 
   .mx-data-grid__chip-sort {
     display: inline-flex;
-    color: var(--mx-datagrid-chip-sort-color);
-  }
-
-  .mx-data-grid__chip-sort > .mx-glyph {
-    inline-size: var(--mx-datagrid-icon-size);
-    block-size: var(--mx-datagrid-icon-size);
   }
 
   .mx-data-grid__chip[data-dir='asc'] .mx-data-grid__sort-down,
@@ -520,28 +388,20 @@
     display: none;
   }
 
-  /* Where a dragged header or chip lands among the chips. */
+  /* Where a dragged header or chip lands among the chips: centred in the space between two. */
   .mx-data-grid__chip-drop {
     position: absolute;
-    inset-block: var(--mx-datagrid-chip-gap);
-    inline-size: var(--mx-datagrid-invalid-width);
-    margin-inline-start: calc(var(--mx-datagrid-chip-gap) / -2);
+    inset-block: var(--_datagrid-chip-spacing);
     pointer-events: none;
-    background-color: var(--mx-datagrid-chip-drop-color);
+    translate: -50% 0;
+  }
+
+  .mx-data-grid__chip-drop:dir(rtl) {
+    translate: 50% 0;
   }
 
   .mx-data-grid__chip-drop[hidden] {
     display: none;
-  }
-
-  /* While a header is dragged the whole toolbar takes drops for the group panel: outlined, then filled under the pointer. */
-  .mx-data-grid__toolbar[data-drop-ready] {
-    outline: var(--mx-datagrid-border-width) dashed var(--mx-datagrid-drop-ready);
-    outline-offset: calc(var(--mx-datagrid-border-width) * -1);
-  }
-
-  .mx-data-grid__toolbar[data-drop] {
-    background-image: linear-gradient(var(--mx-datagrid-drop-target), var(--mx-datagrid-drop-target));
   }
 
   /* A copy of the dragged header (with the header row's look) or chip, next to the pointer. */
@@ -552,118 +412,70 @@
     z-index: var(--_z-ghost);
     overflow: hidden;
     pointer-events: none;
-    border-radius: var(--mx-datagrid-chip-radius);
-    box-shadow: var(--mx-datagrid-ghost-shadow);
-  }
-
-  .mx-data-grid__ghost[data-kind='header'] {
-    font-weight: var(--mx-datagrid-head-font-weight);
-    color: var(--mx-datagrid-head-color);
-    background-color: var(--mx-datagrid-head-background);
-    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-ghost-border-color);
   }
 
   .mx-data-grid__ghost > .mx-data-grid__header-cell {
     box-sizing: border-box;
   }
 
-  /* Where a drop would group, move or ungroup the column: an edge in the accent color, never only a color. */
-  .mx-data-grid__ghost[data-target='group'],
-  .mx-data-grid__ghost[data-target='move'],
-  .mx-data-grid__ghost[data-target='ungroup'] {
-    outline: var(--mx-datagrid-invalid-width) solid var(--mx-datagrid-ghost-target-color);
-  }
-
+  /* Where a drop would group, move or ungroup the column: an edge in the accent color, never only a color
+     (the `ghost` unit's `target`). */
+  /* The system colours: over the units' own (`:root` outranks them). */
   @media (forced-colors: active) {
-    .mx-data-grid__ghost {
+    :root .mx-data-grid__ghost {
       border-color: CanvasText;
     }
 
-    .mx-data-grid__ghost[data-target='group'],
-    .mx-data-grid__ghost[data-target='move'],
-    .mx-data-grid__ghost[data-target='ungroup'] {
+    :root .mx-data-grid__ghost[data-target='group'],
+    :root .mx-data-grid__ghost[data-target='move'],
+    :root .mx-data-grid__ghost[data-target='ungroup'] {
       outline-color: Highlight;
     }
   }
 
-  /* The row status column: a mark by state, never only a color. */
+  /* The row status column: a mark by state, never only a color (the `status-symbol` unit's colour). */
   .mx-data-grid__status {
-    padding-inline: 0;
     text-align: center;
   }
 
-  .mx-data-grid__status-mark {
-    font-size: var(--mx-datagrid-status-font-size);
-    font-weight: var(--mx-datagrid-status-font-weight);
-  }
-
   .mx-data-grid__status[data-status='new'] .mx-data-grid__status-mark::before {
-    content: '+';
-    color: var(--mx-datagrid-status-new-color);
+    content: var(--_datagrid-status-new-mark);
   }
 
   .mx-data-grid__status[data-status='changed'] .mx-data-grid__status-mark::before {
-    content: '\270E';
-    color: var(--mx-datagrid-status-changed-color);
+    content: var(--_datagrid-status-changed-mark);
   }
 
   .mx-data-grid__status[data-status='removed'] .mx-data-grid__status-mark::before {
-    content: '\2212';
-    color: var(--mx-datagrid-status-removed-color);
+    content: var(--_datagrid-status-removed-mark);
   }
 
   .mx-data-grid__status[data-status='saving'] .mx-data-grid__status-mark::before {
-    content: '\2026';
-    color: var(--mx-datagrid-status-saving-color);
+    content: var(--_datagrid-status-saving-mark);
   }
 
   .mx-data-grid__status:is([data-status='failed'], [data-status='invalid']) .mx-data-grid__status-mark::before {
-    content: '!';
-    color: var(--mx-datagrid-status-failed-color);
+    content: var(--_datagrid-status-failed-mark);
   }
 
   /* The selection column: a check box drawn like the kit's, the cell keeps the focus. */
   .mx-data-grid__select {
     display: grid;
     place-items: center;
-    padding-inline: 0;
   }
 
   .mx-data-grid__check {
     display: inline-grid;
     place-items: center;
     box-sizing: border-box;
-    inline-size: var(--mx-datagrid-check-size);
-    block-size: var(--mx-datagrid-check-size);
-    color: var(--mx-datagrid-check-color);
-    background: var(--mx-datagrid-check-background);
-    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-check-border-color);
-    border-radius: var(--mx-datagrid-check-radius);
-    box-shadow:
-      var(--mx-datagrid-check-shadow),
-      0 var(--mx-datagrid-border-width) 0 var(--mx-datagrid-check-edge-color);
   }
 
   .mx-data-grid__check[hidden] {
     display: none;
   }
 
-  .mx-data-grid__check:is([aria-checked='true'], [aria-checked='mixed']) {
-    background: var(--mx-datagrid-check-checked-background);
-    border-color: var(--mx-datagrid-check-checked-border-color);
-    box-shadow:
-      var(--mx-datagrid-check-shadow),
-      0 var(--mx-datagrid-border-width) 0 var(--mx-datagrid-check-checked-edge-color);
-  }
-
-  .mx-data-grid__check[aria-disabled='true'] {
-    opacity: var(--mx-datagrid-check-disabled-opacity);
-  }
-
   .mx-data-grid__check > .mx-glyph {
     grid-area: 1 / 1;
-    inline-size: var(--mx-datagrid-check-mark-size);
-    block-size: var(--mx-datagrid-check-mark-size);
     opacity: 0;
   }
 
@@ -674,14 +486,12 @@
 
   .mx-data-grid__header-cell.mx-data-grid__select {
     justify-content: center;
-    padding-inline: 0;
   }
 
   /* The actions column: kit buttons side by side, the "more" button last. */
   .mx-data-grid__actions {
     display: flex;
     align-items: center;
-    gap: var(--mx-datagrid-action-gap);
     text-overflow: clip;
   }
 
@@ -715,8 +525,6 @@
     align-items: center;
     line-height: normal;
     white-space: normal;
-    background-color: var(--mx-datagrid-background);
-    box-shadow: inset 0 0 0 var(--mx-datagrid-invalid-width) var(--mx-datagrid-editor-frame-color);
   }
 
   .mx-data-grid__editor[data-kind='boolean'] {
@@ -734,49 +542,26 @@
     inline-size: auto;
   }
 
-  .mx-field[data-in-cell] .mx-field__box {
+  /* An editor in a cell fills it; its look is the `cell-editor` place. */
+  .mx-field[data-in-cell] > .mx-field__box {
     block-size: 100%;
     min-block-size: 0;
-    padding-inline: var(--mx-datagrid-cell-padding);
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  .mx-field[data-in-cell] .mx-field__foot {
-    display: none;
   }
 
   /* The expand column of master-detail rows: an arrow that turns when the row's details are open. */
   .mx-data-grid__expand {
     display: grid;
     place-items: center;
-    padding-inline: 0;
   }
 
   .mx-data-grid__expand-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-datagrid-button-size);
-    block-size: var(--mx-datagrid-button-size);
-    color: var(--mx-datagrid-expand-color);
-    cursor: pointer;
-    border-radius: var(--mx-datagrid-expand-radius);
   }
 
   .mx-data-grid__expand-button[hidden] {
     display: none;
-  }
-
-  .mx-data-grid__expand-button:hover {
-    background-color: var(--mx-datagrid-hover);
-  }
-
-  .mx-data-grid__expand-button > .mx-glyph {
-    inline-size: var(--mx-datagrid-icon-size);
-    block-size: var(--mx-datagrid-icon-size);
   }
 
   .mx-data-grid__expand-button:dir(rtl) > .mx-glyph {
@@ -784,7 +569,7 @@
   }
 
   .mx-data-grid__expand-button[aria-expanded='true'] > .mx-glyph {
-    rotate: 90deg;
+    rotate: var(--_datagrid-expand-rotate-open);
   }
 
   /* Row drag and drop: the drag icon of a row that can be dragged, the row dragged (dimmed, or a gap
@@ -793,17 +578,12 @@
   .mx-data-grid__drag {
     display: grid;
     place-items: center;
-    padding-inline: 0;
   }
 
   .mx-data-grid__drag-handle {
     display: none;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-datagrid-button-size);
-    block-size: var(--mx-datagrid-button-size);
-    color: var(--mx-datagrid-drag-color);
-    border-radius: var(--mx-datagrid-drag-radius);
   }
 
   .mx-data-grid__row[data-draggable] > .mx-data-grid__drag {
@@ -815,15 +595,6 @@
     display: inline-flex;
   }
 
-  .mx-data-grid__row[data-draggable] .mx-data-grid__drag-handle:hover {
-    background-color: var(--mx-datagrid-hover);
-  }
-
-  .mx-data-grid__drag-handle > .mx-glyph {
-    inline-size: var(--mx-datagrid-icon-size);
-    block-size: var(--mx-datagrid-icon-size);
-  }
-
   .mx-data-grid[data-row-dragging] {
     cursor: grabbing;
     user-select: none;
@@ -833,49 +604,31 @@
     transition: translate var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-data-grid__body > .mx-data-grid__row[data-drag-source='indicate'] {
-    opacity: var(--mx-datagrid-row-drag-opacity);
-  }
-
+  /* A row dragged with 'push' leaves a gap (the `row` unit's `drag-push`): no tint over it. */
   .mx-data-grid__body > .mx-data-grid__row[data-drag-source='push'] {
-    background-color: var(--mx-datagrid-row-drag-placeholder);
     background-image: none;
-    outline: var(--mx-datagrid-row-drop-inside-width) dashed var(--mx-datagrid-row-drop-color);
-    outline-offset: calc(var(--mx-datagrid-row-drop-inside-width) * -1);
   }
 
   .mx-data-grid__body > .mx-data-grid__row[data-drag-source='push'] > * {
     visibility: hidden;
   }
 
-  .mx-data-grid__body > .mx-data-grid__row[data-drop-target] {
-    outline: var(--mx-datagrid-row-drop-inside-width) solid var(--mx-datagrid-row-drop-color);
-    outline-offset: calc(var(--mx-datagrid-row-drop-inside-width) * -1);
-  }
-
+  /* Centred on the line between two rows. */
   .mx-data-grid__row-drop {
     position: absolute;
     inset-block-start: 0;
     inset-inline: 0;
     z-index: var(--_z-drop);
-    block-size: var(--mx-datagrid-row-drop-width);
-    margin-block-start: calc(var(--mx-datagrid-row-drop-width) / -2);
-    background-color: var(--mx-datagrid-row-drop-color);
     pointer-events: none;
+    translate: 0 -50%;
   }
 
   .mx-data-grid__row-drop[hidden] {
     display: none;
   }
 
-  .mx-data-grid__ghost[data-kind='row'] {
-    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-ghost-border-color);
-    border-radius: var(--mx-datagrid-row-ghost-radius);
-  }
-
   .mx-data-grid__ghost-rows {
     overflow: hidden;
-    background-color: var(--mx-datagrid-background);
   }
 
   /* A row's details: one cell across the viewport under the row, kept in view while the rows scroll
@@ -886,8 +639,6 @@
     inset-inline-start: 0;
     z-index: var(--_z-sticky);
     box-sizing: border-box;
-    background-color: var(--mx-datagrid-detail-background);
-    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
   }
 
   .mx-data-grid__body > .mx-data-grid__detail-row[hidden] {
@@ -898,7 +649,6 @@
 
   .mx-data-grid__detail-cell {
     box-sizing: border-box;
-    padding: var(--mx-datagrid-detail-padding);
     line-height: normal;
     white-space: normal;
     outline: none;
@@ -908,69 +658,34 @@
     overflow: auto;
   }
 
-  .mx-data-grid__detail-cell:focus-visible {
-    outline: var(--mx-datagrid-cell-focus-width) solid var(--mx-datagrid-cell-focus-color);
-    outline-offset: calc(var(--mx-datagrid-cell-focus-width) * -1);
-    box-shadow: var(--mx-datagrid-cell-focus-halo);
-  }
-
   /* The adaptive detail: the hidden columns' titles and values under the row, on the rows' own
      background; the "…" cell that opens it. */
-  .mx-data-grid__body > .mx-data-grid__adaptive-row {
-    background-color: var(--mx-datagrid-adaptive-background);
-  }
-
-  .mx-data-grid__adaptive-row > .mx-data-grid__detail-cell {
-    padding: var(--mx-datagrid-adaptive-padding);
-  }
-
   .mx-data-grid__adaptive-cell {
     display: grid;
     place-items: center;
-    padding-inline: 0;
   }
 
   .mx-data-grid__adaptive-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-datagrid-button-size);
-    block-size: var(--mx-datagrid-button-size);
-    color: var(--mx-datagrid-adaptive-color);
-    cursor: pointer;
-    border-radius: var(--mx-datagrid-adaptive-radius);
   }
 
   .mx-data-grid__adaptive-button[hidden] {
     display: none;
   }
 
-  .mx-data-grid__adaptive-button:hover,
-  .mx-data-grid__adaptive-button[aria-expanded='true'] {
-    background-color: var(--mx-datagrid-hover);
-  }
-
-  .mx-data-grid__adaptive-button > .mx-glyph {
-    inline-size: var(--mx-datagrid-icon-size);
-    block-size: var(--mx-datagrid-icon-size);
-  }
-
   /* A text beside its title, in line with the editors' labels. */
   .mx-data-grid__adaptive-item {
     display: grid;
-    grid-template-columns: var(--mx-datagrid-adaptive-label-width) minmax(0, 1fr);
-    column-gap: var(--mx-datagrid-adaptive-gap);
+    grid-template-columns: var(--_datagrid-adaptive-label-column) minmax(0, 1fr);
+    column-gap: var(--_datagrid-adaptive-gap);
     align-items: baseline;
     min-inline-size: 0;
   }
 
   .mx-data-grid__adaptive-item:is([data-label-mode='top'], [data-label-mode='floating']) {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .mx-data-grid__adaptive-label {
-    font-weight: var(--mx-datagrid-adaptive-label-font-weight);
-    color: var(--mx-datagrid-adaptive-label-color);
   }
 
   .mx-data-grid__adaptive-item[data-label-mode='hidden'] > .mx-data-grid__adaptive-label {
@@ -989,15 +704,6 @@
 
   /* Bands: a row of headers per level over the header row. A band's header draws its line under it
      and at its end; the rows draw none, so a column without a band over it reads as one tall header. */
-  .mx-data-grid__row--band {
-    border-block-end: 0;
-  }
-
-  .mx-data-grid__header-cell.mx-data-grid__band {
-    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-band-line-color);
-    border-inline-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-band-line-color);
-  }
-
   .mx-data-grid__band-filler {
     background: inherit;
   }
@@ -1014,8 +720,6 @@
     inset-inline-start: 0;
     z-index: var(--_z-sticky);
     box-sizing: border-box;
-    background-color: var(--mx-datagrid-form-background);
-    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
   }
 
   .mx-data-grid__form-row[hidden] {
@@ -1026,28 +730,12 @@
     outline: none;
   }
 
-  .mx-data-grid__form-cell:focus-visible {
-    outline: var(--mx-datagrid-cell-focus-width) solid var(--mx-datagrid-cell-focus-color);
-    outline-offset: calc(var(--mx-datagrid-cell-focus-width) * -1);
-    box-shadow: var(--mx-datagrid-cell-focus-halo);
-  }
-
   .mx-data-grid__form {
     display: flex;
     flex-direction: column;
-    gap: var(--mx-datagrid-form-gap);
     box-sizing: border-box;
-    padding: var(--mx-datagrid-form-padding);
     line-height: normal;
     white-space: normal;
-  }
-
-  .mx-data-grid__popup .mx-data-grid__form {
-    padding: 0;
-  }
-
-  .mx-data-grid__form-message {
-    color: var(--mx-datagrid-form-message-color);
   }
 
   .mx-data-grid__form-message[hidden] {
@@ -1058,7 +746,6 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: var(--mx-datagrid-form-gap);
   }
 
   .mx-data-grid__form-field > .mx-data-grid__editor {
@@ -1066,33 +753,13 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .mx-data-grid__form-label {
-    font-size: var(--mx-datagrid-form-label-font-size);
-    color: var(--mx-datagrid-form-label-color);
   }
 
   /* Headers. */
   .mx-data-grid__header-cell {
     display: flex;
     align-items: center;
-    gap: var(--mx-datagrid-gap);
     user-select: none;
-  }
-
-  .mx-data-grid__header-cell[data-sortable] {
-    cursor: pointer;
-  }
-
-  .mx-data-grid__header-cell:hover {
-    background-image: linear-gradient(var(--mx-datagrid-hover), var(--mx-datagrid-hover));
-  }
-
-  .mx-data-grid__header-cell[data-dragging] {
-    opacity: var(--mx-datagrid-head-drag-opacity);
   }
 
   .mx-data-grid__title {
@@ -1106,15 +773,10 @@
     display: inline-flex;
     flex: none;
     align-items: center;
-    gap: var(--mx-datagrid-gap);
-    font-size: var(--mx-datagrid-sort-font-size);
-    color: var(--mx-datagrid-sort-color);
   }
 
   .mx-data-grid__sort > .mx-glyph {
     display: none;
-    inline-size: var(--mx-datagrid-icon-size);
-    block-size: var(--mx-datagrid-icon-size);
   }
 
   .mx-data-grid__header-cell[data-sort='asc'] .mx-data-grid__sort-up,
@@ -1128,60 +790,21 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-datagrid-button-size);
-    block-size: var(--mx-datagrid-button-size);
-    padding: 0;
-    color: inherit;
-    background-color: transparent;
-    border: 0;
-    border-radius: var(--mx-datagrid-head-button-radius);
-    opacity: 0;
-    cursor: pointer;
   }
 
-  .mx-data-grid__menu-button:hover,
-  .mx-data-grid__filter-button:hover {
-    background-color: var(--mx-datagrid-head-button-hover);
-  }
-
-  .mx-data-grid__header-cell:is(:hover, :focus-within) :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button),
-  :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button):focus-visible,
-  .mx-data-grid[data-header-buttons='always'] :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button) {
-    opacity: 1;
-  }
-
-  /* A column with a filter shows it, hover or not. */
-  .mx-data-grid__filter-button[data-active] {
-    color: var(--mx-datagrid-filter-active-color);
-    opacity: 1;
-  }
-
-  .mx-data-grid__filter-button > .mx-glyph,
-  .mx-data-grid__menu-button > .mx-glyph {
-    inline-size: var(--mx-datagrid-icon-size);
-    block-size: var(--mx-datagrid-icon-size);
-  }
-
-  /* No hover on touch screens: the header buttons always show. */
+  /* No hover on touch screens: the header buttons always show (over the `head-button` unit's rest). */
   @media (hover: none) {
-    .mx-data-grid__menu-button,
-    .mx-data-grid__filter-button {
+    .mx-data-grid :is(.mx-data-grid__menu-button, .mx-data-grid__filter-button) {
       opacity: 1;
     }
   }
 
   /* The filter row: a condition button and small kit fields in every cell. */
-  .mx-data-grid__row--filter {
-    background-color: var(--mx-datagrid-head-background);
-    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
-  }
-
   .mx-data-grid__filter-cell {
     position: relative;
     display: flex;
     align-items: center;
     min-inline-size: 0;
-    padding-inline: var(--mx-datagrid-filter-padding);
     overflow: hidden;
     background: inherit;
   }
@@ -1190,7 +813,6 @@
     display: flex;
     flex: 1 1 auto;
     align-items: center;
-    gap: var(--mx-datagrid-gap);
     min-inline-size: 0;
   }
 
@@ -1204,17 +826,8 @@
     min-inline-size: 0;
   }
 
-  .mx-field[data-in-filter] .mx-field__foot {
-    display: none;
-  }
-
   .mx-data-grid__condition {
     flex: none;
-    min-inline-size: var(--mx-datagrid-button-size);
-  }
-
-  .mx-data-grid__condition[data-set] {
-    --_fg: var(--mx-datagrid-condition-set-color);
   }
 
   .mx-data-grid__condition-mark {
@@ -1222,26 +835,43 @@
   }
 
   /* The header filter window: the value list and its buttons. */
+  /* The window is as high as the room below the header allows: the buttons keep their place and the list gets
+     shorter, scrolling within itself, however tall a language draws its rows. */
   .mx-data-grid__values {
-    display: grid;
-    gap: var(--mx-datagrid-values-gap);
+    display: flex;
+    flex-direction: column;
     box-sizing: border-box;
-    inline-size: var(--mx-datagrid-values-width);
-    padding: var(--mx-datagrid-values-gap);
+    inline-size: var(--_datagrid-values-window-width);
   }
 
   .mx-data-grid__values-list > .mx-field {
     inline-size: 100%;
+    min-block-size: 0;
+  }
+
+  .mx-data-grid__values-list > .mx-field > .mx-field__box {
+    flex: 0 1 auto;
+    min-block-size: 0;
+  }
+
+  .mx-data-grid__values-list .mx-list {
+    flex: 0 1 auto;
+    min-block-size: 0;
   }
 
   /* The tree of date parts or ranges: "Select all" above it, as many rows tall as the list. */
   .mx-data-grid__values-list {
-    display: grid;
-    gap: var(--mx-datagrid-values-gap);
+    display: flex;
+    flex-direction: column;
+    min-block-size: 0;
+  }
+
+  .mx-data-grid__values-tree {
+    min-block-size: 0;
   }
 
   .mx-data-grid__values-tree .mx-tree-view__body {
-    max-block-size: calc(var(--_rows) * var(--mx-datagrid-values-row-height));
+    max-block-size: calc(var(--_rows) * var(--_datagrid-values-row-height));
   }
 
   .mx-data-grid__values-tree .mx-tree-view__text {
@@ -1250,14 +880,10 @@
     min-inline-size: 0;
   }
 
-  .mx-data-grid__values-note {
-    color: var(--mx-datagrid-state-color);
-  }
-
   .mx-data-grid__values-bar {
     display: flex;
+    flex: none;
     justify-content: flex-end;
-    gap: var(--mx-datagrid-values-gap);
   }
 
   .mx-data-grid__values .mx-list__text {
@@ -1276,42 +902,35 @@
   .mx-data-grid__value-count {
     flex: none;
     margin-inline-start: auto;
-    padding-inline-start: var(--mx-datagrid-values-gap);
     font-variant-numeric: tabular-nums;
-    color: var(--mx-datagrid-value-count-color);
   }
 
   .mx-data-grid__resize {
     position: absolute;
     inset-block: 0;
     inset-inline-end: 0;
-    inline-size: var(--mx-datagrid-resize-width);
+    inline-size: var(--_datagrid-resize-hit-width);
     cursor: col-resize;
     touch-action: none;
   }
 
+  /* The line at its end (the `resize` unit), the whole height while it is used. */
   .mx-data-grid__resize::after {
     content: '';
     position: absolute;
     inset-block: 25%;
     inset-inline-end: 0;
-    inline-size: var(--mx-datagrid-border-width);
-    background-color: var(--mx-datagrid-edge-color);
   }
 
   .mx-data-grid__resize:hover::after,
   .mx-data-grid__header-cell[data-resizing] .mx-data-grid__resize::after {
     inset-block: 0;
-    inline-size: var(--mx-datagrid-invalid-width);
-    background-color: var(--mx-datagrid-resize-active-color);
   }
 
   .mx-data-grid__drop {
     position: absolute;
     inset-block: 0;
     z-index: var(--_z-drop);
-    inline-size: var(--mx-datagrid-invalid-width);
-    background-color: var(--mx-datagrid-column-drop-color);
     pointer-events: none;
   }
 
@@ -1336,18 +955,7 @@
   .mx-data-grid__state {
     display: inline-flex;
     align-items: center;
-    gap: var(--mx-datagrid-state-gap);
-    padding: var(--mx-datagrid-state-padding-block) var(--mx-datagrid-state-padding-inline);
-    color: var(--mx-datagrid-state-color);
     pointer-events: auto;
-  }
-
-  .mx-data-grid__state[data-tone='danger'] {
-    color: var(--mx-datagrid-state-danger-color);
-  }
-
-  .mx-data-grid__note[data-tone='danger'] {
-    color: var(--mx-datagrid-note-danger-color);
   }
 
   /* Infinite mode: the mark over the last rows while the next part loads, or with Retry when it failed. */
@@ -1358,19 +966,8 @@
     z-index: var(--_z-head);
     display: flex;
     align-items: center;
-    gap: var(--mx-datagrid-more-gap);
     inline-size: fit-content;
-    margin: 0 auto var(--mx-datagrid-more-offset);
-    padding: var(--mx-datagrid-more-padding-block) var(--mx-datagrid-more-padding-inline);
-    color: var(--mx-datagrid-more-color);
-    background: var(--mx-datagrid-more-background);
-    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
-    border-radius: var(--mx-datagrid-more-radius);
-    box-shadow: var(--mx-datagrid-more-shadow);
-  }
-
-  .mx-data-grid__load-more[data-state='failed'] {
-    color: var(--mx-datagrid-more-danger-color);
+    margin-inline: auto;
   }
 
   /* An export with its load panel: progress and a stop button over the rows. */
@@ -1381,13 +978,7 @@
     margin: auto;
     display: flex;
     align-items: flex-end;
-    gap: var(--mx-datagrid-export-gap);
-    inline-size: min(22rem, calc(100% - 2 * var(--mx-datagrid-export-inset)));
-    padding: var(--mx-datagrid-export-padding);
-    border: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
-    border-radius: var(--mx-datagrid-export-radius);
-    background: var(--mx-datagrid-background);
-    box-shadow: var(--mx-datagrid-export-shadow);
+    inline-size: min(var(--_datagrid-export-max-width), calc(100% - 2 * var(--_datagrid-export-inset)));
   }
 
   .mx-data-grid__export-progress {
@@ -1397,7 +988,7 @@
 
   .mx-data-grid__probe {
     position: absolute;
-    inline-size: var(--mx-datagrid-border-width);
+    inline-size: 1px;
     block-size: var(--_row-height);
     visibility: hidden;
     pointer-events: none;
@@ -1407,8 +998,6 @@
      to the end (it measures nothing, so the overflow sees only the items). */
   .mx-data-grid__toolbar {
     flex: none;
-    border-block-end: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
-    border-radius: 0;
   }
 
   .mx-data-grid__toolbar-gap {
@@ -1424,15 +1013,11 @@
     min-inline-size: 0;
   }
 
-  /* Text the search found: a tint and a line under it, so it does not rest on the color alone. */
+  /* Text the search found: a tint and a line under it (the `mark` unit), so it does not rest on the color alone. */
   .mx-data-grid__mark {
-    color: var(--mx-datagrid-search-mark-color);
-    background-color: var(--mx-datagrid-search-mark-background);
-    border-radius: var(--mx-datagrid-search-mark-radius);
-    text-decoration-line: underline;
-    text-decoration-color: var(--mx-datagrid-search-mark-line);
-    text-decoration-thickness: var(--mx-datagrid-invalid-width);
-    text-underline-offset: var(--mx-datagrid-invalid-width);
+    text-decoration-color: var(--_datagrid-search-mark-line);
+    text-decoration-thickness: var(--_datagrid-search-mark-thickness);
+    text-underline-offset: var(--_datagrid-search-mark-offset);
   }
 
   /* The filter panel under the rows: the check box, the filter as text (it opens the builder), Clear. */
@@ -1440,13 +1025,7 @@
     display: flex;
     flex: none;
     align-items: center;
-    gap: var(--mx-datagrid-filter-panel-gap);
     min-block-size: var(--_row-height);
-    padding-inline: var(--mx-datagrid-filter-panel-padding);
-    font-size: var(--mx-datagrid-filter-panel-font-size);
-    color: var(--mx-datagrid-filter-panel-color);
-    background-color: var(--mx-datagrid-filter-panel-background);
-    border-block-start: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
   }
 
   .mx-data-grid__filter-panel[hidden] {
@@ -1456,8 +1035,6 @@
   .mx-data-grid__filter-icon {
     display: inline-flex;
     flex: none;
-    inline-size: var(--mx-datagrid-filter-icon-size);
-    block-size: var(--mx-datagrid-filter-icon-size);
   }
 
   .mx-data-grid__filter-icon > .mx-glyph {
@@ -1468,32 +1045,15 @@
   .mx-data-grid__filter-text {
     flex: 0 1 auto;
     min-inline-size: 0;
-    padding: var(--mx-datagrid-filter-text-padding);
     font: inherit;
-    color: var(--mx-datagrid-filter-text-color);
     text-align: start;
-    cursor: pointer;
-    background: none;
-    border: 0;
-    border-radius: var(--mx-datagrid-filter-text-radius);
   }
 
+  /* Under the pointer a line under it (the `filter-text` unit's `hover`); turned off, its text stays,
+     struck through (`off`). */
   .mx-data-grid__filter-text:hover {
-    text-decoration-line: underline;
-    text-decoration-thickness: var(--mx-datagrid-filter-text-underline-width);
-    text-underline-offset: var(--mx-datagrid-filter-text-underline-offset);
-  }
-
-  .mx-data-grid__filter-text:focus-visible {
-    outline: var(--mx-datagrid-filter-text-focus-width) solid var(--mx-datagrid-filter-text-focus-color);
-    outline-offset: var(--mx-datagrid-filter-text-focus-offset);
-    box-shadow: var(--mx-datagrid-filter-text-focus-halo);
-  }
-
-  /* The filter value turned off: its text stays, struck through. */
-  .mx-data-grid__filter-panel[data-off] .mx-data-grid__filter-text:not([data-empty]) {
-    color: var(--mx-datagrid-filter-text-off-color);
-    text-decoration-line: line-through;
+    text-decoration-thickness: var(--_datagrid-filter-text-underline-width);
+    text-underline-offset: var(--_datagrid-filter-text-underline-offset);
   }
 
   .mx-data-grid__filter-clear {
@@ -1503,7 +1063,6 @@
   .mx-data-grid__filter-builder-buttons {
     display: flex;
     justify-content: flex-end;
-    gap: var(--mx-datagrid-filter-builder-buttons-gap);
   }
 
   /* The bar: the row count, the selected count, errors, the pager. */
@@ -1512,19 +1071,12 @@
     flex: none;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--mx-datagrid-bar-gap);
     min-block-size: var(--_row-height);
-    padding-inline: var(--mx-datagrid-bar-padding);
-    font-size: var(--mx-datagrid-bar-font-size);
-    color: var(--mx-datagrid-bar-color);
-    background-color: var(--mx-datagrid-head-background);
-    border-block-start: var(--mx-datagrid-border-width) solid var(--mx-datagrid-line-color);
   }
 
   .mx-data-grid__note {
     display: inline-flex;
     align-items: center;
-    gap: var(--mx-datagrid-note-gap);
   }
 
   /* The pager: the page sizes, the text, the steps and the pages (full), or a page number box and a
@@ -1532,7 +1084,6 @@
   .mx-data-grid__pager {
     display: flex;
     align-items: center;
-    gap: var(--mx-datagrid-gap);
     margin-inline-start: auto;
   }
 
@@ -1545,20 +1096,9 @@
   .mx-data-grid__page-jump {
     display: flex;
     align-items: center;
-    gap: var(--mx-datagrid-gap);
-  }
-
-  .mx-data-grid__page-sizes,
-  .mx-data-grid__page-size-list {
-    margin-inline-end: var(--mx-datagrid-page-info-gap);
-  }
-
-  .mx-data-grid__page-gap {
-    padding-inline: var(--mx-datagrid-gap);
   }
 
   .mx-data-grid__page-info {
-    margin-inline-end: var(--mx-datagrid-page-info-gap);
     white-space: nowrap;
   }
 
@@ -1567,15 +1107,11 @@
   }
 
   .mx-data-grid__page-number {
-    inline-size: var(--mx-datagrid-page-number-width);
+    inline-size: var(--_datagrid-page-number-width);
   }
 
   .mx-data-grid__page-size-list {
-    inline-size: var(--mx-datagrid-page-size-width);
-  }
-
-  .mx-field[data-in-pager] .mx-field__foot {
-    display: none;
+    inline-size: var(--_datagrid-page-size-width);
   }
 
   .mx-data-grid__step-icon {
@@ -1583,15 +1119,15 @@
   }
 
   .mx-data-grid__step-icon > .mx-glyph + .mx-glyph {
-    margin-inline-start: calc(var(--mx-datagrid-icon-size) / -2);
+    margin-inline-start: calc(var(--_datagrid-icon-size) / -2);
   }
 
   .mx-data-grid__page-step:is([data-step='first'], [data-step='previous']) .mx-data-grid__step-icon > .mx-glyph {
-    rotate: 90deg;
+    rotate: var(--_datagrid-step-back-rotate);
   }
 
   .mx-data-grid__page-step:is([data-step='next'], [data-step='last']) .mx-data-grid__step-icon > .mx-glyph {
-    rotate: -90deg;
+    rotate: var(--_datagrid-step-forward-rotate);
   }
 
   .mx-data-grid__page-step:dir(rtl) .mx-data-grid__step-icon {
@@ -1602,9 +1138,6 @@
      taking the room the other items leave so what does not fit goes into its "more" menu. */
   .mx-data-grid__bar-actions {
     flex: 1 1 auto;
-    min-block-size: 0;
-    padding: 0;
-    background: transparent;
   }
 
   .mx-data-grid__bar-actions[hidden],
@@ -1625,39 +1158,35 @@
     white-space: nowrap;
   }
 
-  .mx-data-grid__tip[data-error] {
-    color: var(--mx-datagrid-tip-error-color);
-    border-color: var(--mx-datagrid-invalid);
-  }
-
+  /* The system colours: over the units' own (`:root` outranks them). */
   @media (forced-colors: active) {
     .mx-data-grid__body > .mx-data-grid__row[data-active] {
-      outline: var(--mx-datagrid-border-width) solid Highlight;
-      outline-offset: calc(var(--mx-datagrid-border-width) * -1);
+      outline: var(--_datagrid-grid-border-width, 1px) solid Highlight;
+      outline-offset: calc(var(--_datagrid-grid-border-width, 1px) * -1);
     }
 
     .mx-data-grid__editor {
-      outline: var(--mx-datagrid-invalid-width) solid Highlight;
-      outline-offset: calc(var(--mx-datagrid-invalid-width) * -1);
+      outline: var(--_datagrid-invalid-border-width, 2px) solid Highlight;
+      outline-offset: calc(var(--_datagrid-invalid-border-width, 2px) * -1);
     }
 
-    .mx-data-grid__mark {
+    :root .mx-data-grid__mark {
       color: MarkText;
       background-color: Mark;
     }
 
-    .mx-data-grid__row-drop {
+    :root .mx-data-grid__row-drop {
       background-color: Highlight;
     }
 
-    .mx-data-grid__body > .mx-data-grid__row:is([data-drop-target], [data-drag-source='push']) {
+    :root .mx-data-grid__body > .mx-data-grid__row:is([data-drop-target], [data-drag-source='push']) {
       outline-color: Highlight;
     }
 
     /* The system colors drop the layers: each cell of a range is framed, the anchor dashed (the focus ring wins). */
     .mx-data-grid__cell:where([data-range]) {
-      outline: var(--mx-datagrid-range-border-width) solid Highlight;
-      outline-offset: calc(var(--mx-datagrid-range-border-width) * -1);
+      outline: var(--_datagrid-range-border-width) solid Highlight;
+      outline-offset: calc(var(--_datagrid-range-border-width) * -1);
     }
 
     .mx-data-grid__cell:where([data-range~='anchor']) {

@@ -1,0 +1,58 @@
+{
+  "number-box": {
+    "$description": "NumberBox: the spin buttons in the box, their glyphs and dividers.",
+    "$selector": ".mx-number-box",
+    "spin-layout": { "$type": "keyword", "$description": "Where the steps go when a box does not say: `stacked` (one above the other at the end) or `inline` (minus and plus side by side)." },
+    "spin-order": { "$type": "keyword", "$description": "The steps side by side, from the start: `down-up` (minus, then plus) or `up-down`." },
+    "spin-inset": { "$type": "dimension" },
+    "$units": {
+      "spin": {
+        "$description": "The steps together, at the end of the box: a fill behind them and a divider to the text (its `border-start`); `stacked` or `inline`, as laid out.",
+        "selector": ".mx-number-box__spin",
+        "states": {
+          "stacked": ".mx-number-box__spin[data-layout='stacked']",
+          "inline": ".mx-number-box__spin[data-layout='inline']",
+          "disabled": ".mx-number-box[data-disabled] .mx-number-box__spin"
+        }
+      },
+      "step": {
+        "$description": "One step: `up` (more) or `down`; `stacked` or `inline` as laid out, `next` the second of the pair (a divider at its top or start). Its height in a stacked pair is the layout's (half the box).",
+        "selector": ".mx-number-box__step",
+        "states": {
+          "up": ".mx-number-box__step[data-step='up']",
+          "down": ".mx-number-box__step[data-step='down']",
+          "stacked": ".mx-number-box__spin[data-layout='stacked'] > .mx-number-box__step",
+          "next": {
+            "selector": ".mx-number-box__spin[data-layout='stacked'] > .mx-number-box__step + .mx-number-box__step",
+            "from": "stacked"
+          },
+          "inline": ".mx-number-box__spin[data-layout='inline'] > .mx-number-box__step",
+          "inline-next": {
+            "selector": ".mx-number-box__spin[data-layout='inline'] > .mx-number-box__step + .mx-number-box__step",
+            "from": "inline"
+          },
+          "hover": ".mx-number-box__step:hover:not(:disabled)",
+          "pressed": ".mx-number-box__step:active:not(:disabled)",
+          "disabled": ".mx-number-box__step:disabled"
+        }
+      },
+      "glyph": {
+        "$description": "A step's glyph: `up` and `down` stacked, `inline-up` and `inline-down` side by side; `stacked`: its size there (it fits half the box).",
+        "selector": ".mx-number-box__step > .mx-glyph",
+        "states": {
+          "up": ".mx-number-box__step[data-step='up'] > .mx-glyph",
+          "down": ".mx-number-box__step[data-step='down'] > .mx-glyph",
+          "inline-up": {
+            "selector": ".mx-number-box__spin[data-layout='inline'] > .mx-number-box__step[data-step='up'] > .mx-glyph",
+            "from": "up"
+          },
+          "inline-down": {
+            "selector": ".mx-number-box__spin[data-layout='inline'] > .mx-number-box__step[data-step='down'] > .mx-glyph",
+            "from": "down"
+          },
+          "stacked": ".mx-number-box__spin[data-layout='stacked'] > .mx-number-box__step > .mx-glyph"
+        }
+      }
+    }
+  }
+}

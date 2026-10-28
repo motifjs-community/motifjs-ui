@@ -5,6 +5,7 @@ import type { SchedulerCell } from '../scheduler-cell';
 import type { SchedulerFields } from '../scheduler-fields';
 import type { SchedulerRange } from '../scheduler-range';
 import type { CellPlace } from './cell-place';
+import type { Draft } from './draft';
 import type { OverlapMode } from './overlap-mode';
 import { placeLanes, type LaneSpan } from './place-lanes';
 import { placeTimed, type TimedSpan } from './place-timed';
@@ -33,6 +34,8 @@ export interface SchedulerModelOptions<T> {
   overlapMode: () => OverlapMode;
   /** The lines a week of the month and the all-day panel have room for (measured); `Infinity` before. */
   room: () => { month: number; allDay: number };
+  /** An appointment being moved or resized, shown where it would go. */
+  draft?: () => Draft<T> | null;
 }
 
 /** An appointment as the layout reads it. */
@@ -42,6 +45,12 @@ interface Entry<T> {
   start: Date;
   end: Date;
   allDay: boolean;
+  draft: boolean;
+  invalid: boolean;
+  /** What its box writes and paints, read here so a plain object's change reaches the box too. */
+  text: string;
+  color: string;
+  disabled: boolean;
 }
 
 interface ModelState<T> {
@@ -262,6 +271,7 @@ export class SchedulerModel<T> {
           index,
           date,
           today: date.getTime() === today,
+          past: date.getTime() < today,
           work: workDays.includes(date.getDay()),
           weekend: date.getDay() === 0 || date.getDay() === 6,
           holiday: !!holiday?.(date),
@@ -358,16 +368,43 @@ export class SchedulerModel<T> {
 
   private entries(from: Date, to: Date): Entry<T>[] {
     const fields = this.options.fields();
+    const draft = this.options.draft?.() ?? null;
+    const moved = draft && !draft.copy ? draft.item : null;
+    const touches = (start: Date, end: Date) => start < to && (end > from || (end.getTime() === start.getTime() && start >= from));
     const out: Entry<T>[] = [];
     for (const item of this.options.items()) {
       const record = item as Record<string, unknown>;
-      if (record?.[fields.visible] === false) continue;
+      if (item === moved || record?.[fields.visible] === false) continue;
       const time = this.timeOf(item);
-      if (!time) continue;
-      const touches = time.start < to && (time.end > from || (time.end.getTime() === time.start.getTime() && time.start >= from));
-      if (touches) out.push({ id: this.idOf(item), item, ...time });
+      if (time && touches(time.start, time.end)) out.push({ id: this.idOf(item), item, ...time, draft: false, invalid: false, ...this.lookOf(item) });
+    }
+    if (draft && touches(draft.start, draft.end)) {
+      // Moved, it keeps its id (and its box); a copy is one more.
+      const id = this.idOf(draft.item) + (draft.copy ? '~copy' : '');
+      out.push({
+        id,
+        item: draft.item,
+        start: draft.start,
+        end: draft.end,
+        allDay: draft.allDay,
+        draft: true,
+        invalid: draft.invalid,
+        ...this.lookOf(draft.item),
+      });
     }
     return out.sort((a, b) => a.start.getTime() - b.start.getTime() || b.end.getTime() - a.end.getTime());
+  }
+
+  private lookOf(item: T): { text: string; color: string; disabled: boolean } {
+    const fields = this.options.fields();
+    const record = item as Record<string, unknown>;
+    const text = record?.[fields.text];
+    const color = record?.[fields.color];
+    return {
+      text: text === undefined || text === null ? '' : String(text),
+      color: typeof color === 'string' ? color : '',
+      disabled: !!record?.[fields.disabled],
+    };
   }
 
   private placeColumn(
@@ -424,6 +461,11 @@ export class SchedulerModel<T> {
         width,
         before: span.entry.start < day,
         after: span.entry.end > dayEnd,
+        draft: span.entry.draft,
+        invalid: span.entry.invalid,
+        text: span.entry.text,
+        color: span.entry.color,
+        disabled: span.entry.disabled,
       };
       seen.add(values.id);
       return this.keep(this.timedCache, values);
@@ -480,6 +522,11 @@ export class SchedulerModel<T> {
         timed: !entry.allDay && sameDayTime(entry.start, entry.end),
         start: entry.start,
         end: entry.end,
+        draft: entry.draft,
+        invalid: entry.invalid,
+        text: entry.text,
+        color: entry.color,
+        disabled: entry.disabled,
       };
       seen.add(values.id);
       return this.keep(this.stripCache, values);

@@ -1,0 +1,32 @@
+{
+  "tooltip": {
+    "$description": "Tooltip: a short description next to the element it describes.",
+    "$selector": ".mx-tooltip",
+    "offset": { "$type": "dimension" },
+    "enter-offset": { "$type": "dimension", "$description": "How far it comes in from its target as it appears (0: it only fades in)." },
+    "text-align": { "$type": "keyword" },
+    "$units": {
+      "surface": {
+        "$description": "The tooltip; `rich`: it holds more than its text (content of its own).",
+        "selector": ":where(.mx-tooltip)",
+        "states": {
+          "rich": ":where(.mx-tooltip):has(> :not(.mx-tooltip__text))"
+        }
+      },
+      "arrow": {
+        "$description": "An arrow towards the target: a square turned on its corner, centred on the edge that faces the target, the half outside the tooltip showing (`display` shows it; `size` its side; its fill and its frame continue the tooltip's).",
+        "selector": ".mx-tooltip::before",
+        "defaults": {
+          "display": "none"
+        }
+      },
+      "text": {
+        "$description": "The text (`rich`: in a tooltip with content of its own).",
+        "selector": ".mx-tooltip__text",
+        "states": {
+          "rich": ".mx-tooltip:has(> :not(.mx-tooltip__text)) > .mx-tooltip__text"
+        }
+      }
+    }
+  }
+}

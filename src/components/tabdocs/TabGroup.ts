@@ -788,7 +788,6 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     };
     // A narrow group folds its buttons into the toolbar's "…" menu before it squeezes the tabs.
     const actions = new Toolbar({
-      size: 'sm',
       overflow: 'menu',
       label: () => manager.textOf('tabDocsGroupActions'),
     });

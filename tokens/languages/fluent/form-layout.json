@@ -1,0 +1,21 @@
+{
+  "form-layout": {
+    "row-gap": { "$value": "{space.4}" },
+    "column-gap": { "$value": "{space.4}" },
+    "caption-float": { "$value": "none" },
+    "field": {
+      "label-width": { "$value": "{field.label-width}" }
+    },
+    "group": {
+      "padding": { "$value": "{space.4}" },
+      "border-width": { "$value": "{border.width.1}" },
+      "border-color": { "$value": "{color.stroke.divider}" },
+      "radius": { "$value": "{radius.lg}" }
+    },
+    "caption": {
+      "padding-inline": { "$value": "{space.1}" },
+      "font-size": { "$value": "1em" },
+      "font-weight": { "$value": "{font.weight.semibold}" }
+    }
+  }
+}

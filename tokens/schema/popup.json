@@ -1,0 +1,69 @@
+{
+  "popup": {
+    "$description": "Popup: the surface menus and drop-downs open on, above the page.",
+    "$selector": ".mx-popup",
+    "offset": { "$type": "dimension" },
+    "$places": {
+      "list-box": {
+        "$description": "A list box inside a popup: the surface is its frame, so by default the list draws none of its own (no frame, fill or shadow).",
+        "selector": ".mx-popup .mx-list-box",
+        "part": "field",
+        "tokens": [
+          "frame.display",
+          "indicator.display",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "box.shadow",
+          "box.focus.shadow",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "box.invalid-focus.shadow",
+          "box.readonly-focus.shadow",
+          "box.disabled.shadow",
+          "box.readonly-invalid-focus.shadow"
+        ]
+      },
+      "with-list": {
+        "$description": "A popup holding a list or a list box: its own padding there (designs often take it away and let the list's items reach the edge). General: any owner's own place outweighs it.",
+        "selector": ".mx-popup:where(:has(> .mx-list, .mx-list-box))",
+        "part": "popup",
+        "tokens": [
+          "surface.padding-block",
+          "surface.padding-inline"
+        ]
+      },
+      "list": {
+        "$description": "A list right in a popup: its margin and padding there, and its items' height and corners.",
+        "selector": ".mx-popup > .mx-list",
+        "part": "list",
+        "tokens": [
+          "container.margin",
+          "container.padding-block",
+          "container.padding-inline",
+          "item-height",
+          "item.radius"
+        ]
+      },
+      "list-box-space": {
+        "$description": "A list box in a popup: its margin and padding there.",
+        "selector": ".mx-popup .mx-list-box",
+        "part": "listbox",
+        "tokens": [
+          "container.margin",
+          "box.padding-block",
+          "box.padding-inline"
+        ]
+      }
+    },
+    "$units": {
+      "surface": {
+        "$description": "The surface menus and drop-downs open on; `focus`: the keys moved focus onto the surface itself (a ring).",
+        "selector": ".mx-popup",
+        "states": {
+          "focus": ".mx-popup:focus-visible"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "text-area": {
+    "$description": "TextArea: the line height of its text, paired with the field font sizes, and the resize grip.",
+    "$selector": ".mx-text-area",
+    "line-height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "$units": {
+      "grip": {
+        "$description": "The resize grip in the box's end corner, over the browser's own (only where the box resizes; `icon`: a glyph drawn in `bg`). None unless a language shows it.",
+        "selector": ".mx-text-area:is([data-resize='vertical'], [data-resize='both']):not([data-disabled]) > .mx-field__box > .mx-field__frame::after",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "hover": ".mx-text-area:is([data-resize='vertical'], [data-resize='both']):not([data-disabled]) > .mx-field__box:hover > .mx-field__frame::after",
+          "focus": ".mx-text-area:is([data-resize='vertical'], [data-resize='both']):not([data-disabled]) > .mx-field__box:focus-within > .mx-field__frame::after"
+        }
+      }
+    }
+  }
+}

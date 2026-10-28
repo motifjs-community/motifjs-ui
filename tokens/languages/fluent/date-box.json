@@ -1,0 +1,25 @@
+{
+  "date-box": {
+    "popup-gap": { "$value": "{space.1}" },
+    "calendar": {
+      "container": {
+        "padding": { "$value": "{calendar.container.padding}" }
+      }
+    },
+    "times": {
+      "min-width": { "$value": {"value": 6, "unit": "rem"} },
+      "max-height": { "$value": {"value": 18, "unit": "rem"} },
+      "focus": {
+        "outline-width": { "$value": "{focus.ring.width}" },
+        "outline-color": { "$value": "{focus.ring.color}" },
+        "outline-offset": { "$value": "calc(-1 * {focus.ring.width})" },
+        "glow": { "$value": "{focus.ring.halo}" }
+      },
+      "beside": {
+        "padding-start": { "$value": "{space.1}" },
+        "border-start-width": { "$value": "{border.width.1}" },
+        "border-start-color": { "$value": "{color.stroke.divider}" }
+      }
+    }
+  }
+}

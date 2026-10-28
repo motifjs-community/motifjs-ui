@@ -5,6 +5,7 @@ import Delay from './examples/Delay';
 import FromCode from './examples/FromCode';
 import Localization from './examples/Localization';
 import NotKnown from './examples/NotKnown';
+import Shapes from './examples/Shapes';
 import Sizes from './examples/Sizes';
 import Spinners from './examples/Spinners';
 import Tones from './examples/Tones';
@@ -12,15 +13,16 @@ import Tones from './examples/Tones';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const BAR_PROPS = [
-  ['value', '`Bind<number | null>`', '`null`', 'How far the work is. `null` (or no value) when that is not known: the bar runs to and fro.'],
+  ['value', '`Bind<number | null>`', '`null`', 'How far the work is. `null` (or no value) when that is not known: the bar runs to and fro, a circle turns.'],
   ['min / max', '`Bind<number>`', '`0` / `100`', 'The bounds of `value`.'],
   ['label', '`Bind<string>`', "`''`", 'A caption; it names the bar. The same property as `text`.'],
-  ['labelPosition', "`Bind<'top' | 'side'>`", "`'top'`", '`top`: the label and the value above the bar; `side`: the label before it, the value after it.'],
+  ['shape', "`Bind<'line' | 'circle'>`", "`'line'`", '`line`: a bar along a track; `circle`: an arc that goes round a ring from the top.'],
+  ['labelPosition', "`Bind<'top' | 'bottom' | 'side'>`", "`'top'` (`'bottom'` for a circle)", '`top`: the label and the value above the bar; `bottom`: under it; `side`: the label before it, the value after it.'],
   ['showValue', '`Bind<boolean>`', '`false`', 'Writes the percent (whole, rounded down) or `valueText`.'],
   ['valueText', '`(value, fraction) => string`', '—', 'The text for a value, shown and read out (`3 of 12 files`). A function, so it is stored as it is, not bound.'],
   ['locale', '`Bind<string>`', "the page's `lang`", 'The locale of the percent.'],
   ['tone', '`Bind<ProgressTone>`', "`'accent'`", '`accent`, `neutral`, `success`, `caution`, `danger`.'],
-  ['size', '`Bind<ControlSize>`', "`'md'`", 'The thickness: `sm`, `md`, `lg`.'],
+  ['size', '`Bind<ControlSize>`', "`'md'`", 'The thickness, and the size of a circle: `sm`, `md`, `lg`.'],
   ['stretch', '`Bind<boolean>`', '`false`', 'Fills the width of what it sits in.'],
   ['visible, enabled, …', 'see Control', '', 'The shared properties of every control.'],
 ];
@@ -30,6 +32,7 @@ const SPINNER_PROPS = [
   ['labelPosition', "`Bind<'side' | 'bottom'>`", "`'side'`", 'After the ring or under it.'],
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`.'],
   ['tone', '`Bind<ProgressTone>`', "`'accent'`", 'The color of the turning part.'],
+  ['contained', '`Bind<boolean>`', '`false`', 'Inside a container of its own (a disc behind it), where the design language draws one.'],
   ['delay', '`Bind<number>`', '`0`', 'Milliseconds before it shows, from when it is created or shown again; quick work then shows nothing.'],
   ['visible, …', 'see Control', '', 'Showing it again (`visible`) starts the delay again.'],
 ];
@@ -47,23 +50,31 @@ const A11Y = [
   ['Spinner', '`role="progressbar"` without a value: an indicator of unknown progress, found and named like any widget. Not a `status` live region: those interrupt the reader each time one appears, and a page with many would be noisy.'],
   ['Name', 'The label (`aria-labelledby`), or `uiLocale.strings.loading` when there is none.'],
   ['Cover', 'The container gets `aria-busy="true"`; what is under the spinner is `inert`. Focus inside it moves to the spinner and comes back to where it was.'],
-  ['Motion', 'With reduced motion the bar rests as a tinted track and the ring stands still.'],
+  ['Motion', 'With reduced motion the bar rests as a tinted track, a new value is shown at once, a wave keeps still, and the arcs, the ring and the shape stand still. A wave is drawn only while the bar is in sight.'],
 ];
 
 const HOOKS = [
-  ['.mx-progress', 'The bar. `data-state="determinate | indeterminate"`, `data-tone`, `data-size`, `data-label-position`, `data-stretch`.'],
+  ['.mx-progress', 'The bar. `data-state="determinate | indeterminate"`, `data-complete`, `data-shape`, `data-wave` (a wave is drawn), `data-tone`, `data-size`, `data-label-position`, `data-stretch`; `--_fraction`: how much is done, 0 to 1.'],
   ['.mx-progress__head, .mx-progress__label, .mx-progress__value', 'The caption row.'],
-  ['.mx-progress__track, .mx-progress__bar', 'The track and the filled part (`--_value`).'],
-  ['.mx-spinner', 'The spinner. `data-size`, `data-tone`, `data-label-position`, `data-waiting`, `data-cover`.'],
-  ['.mx-spinner__ring, .mx-spinner__label', 'The ring and the label.'],
+  ['.mx-progress__track, .mx-progress__bar', 'The line: the track (`::before`: the rest of it, `::after`: the stop dot) and the part done (`::after`: the runner).'],
+  ['.mx-progress__wave', 'The wave drawn over the track instead of the bar.'],
+  ['.mx-progress__circle, .mx-progress__ring, .mx-progress__arc', 'The circle: its drawing, the ring and the arc.'],
+  ['.mx-spinner', 'The spinner. `data-size`, `data-tone`, `data-label-position`, `data-contained`, `data-waiting`, `data-cover`.'],
+  ['.mx-spinner__box', 'The container of what turns.'],
+  ['.mx-spinner__ring, .mx-spinner__shape, .mx-spinner__label', 'The ring, the shape (the language shows one of them) and the label.'],
   ['[data-mx-covered]', 'A container under `Spinner.cover`.'],
 ];
 
 const TOKENS = [
-  ['progress.thickness.*', 'The thickness per size.'],
-  ['progress.width, progress.radius', 'The width when not stretched, the corners.'],
-  ['progress.gap, progress.head-gap, progress.label-font-weight, progress.value-font-size', 'The caption.'],
-  ['spinner.size.*, spinner.ring-width.*', 'The ring per size.'],
+  ['progress.track, progress.bar, progress.rest, progress.stop, progress.runner, progress.wave', 'Units of the line, each with its box: the band, the part done, the rest of the track, the stop dot, the runner, the wave (its colour). States: `indeterminate`, `complete`, the tones.'],
+  ['progress.ring, progress.arc, progress.label, progress.value', 'Units of the circle and of the caption.'],
+  ['progress.thickness.*, progress.rest-thickness.*, progress.active-gap, progress.dot-size, progress.stop-inset', 'The line per size, the gap after the part done, the dot.'],
+  ['progress.wave-amplitude, wave-length, wave-speed, wave-direction, wave-start, wave-end, wave-grow-duration', 'The wave: how far it swings (0: none), how long a wave is and how fast and which way it travels, between which shares of the work it swings, how long it takes to grow in.'],
+  ['progress.ring-size.*, ring-thickness.*, ring-active-gap, ring-runner-length, ring-turn-duration, ring-wave-*', 'The circle per size, its gaps, its turning arc and its wave.'],
+  ['progress.width, progress.gap, progress.head-gap, progress.accent … danger-subtle', 'The width when not stretched, the caption, the tones.'],
+  ['spinner.size.*, spinner.ring-width.*, spinner.shape-size.*', 'The ring and the shape per size.'],
+  ['spinner.box, spinner.ring, spinner.shape', 'Units: the container (`contained`), the ring and the shape, each with its box.'],
+  ['spinner.shape-1 … spinner.shape-7, spinner.morph-duration, spinner.morph-easing, spinner.spin-duration', 'The shapes the shape becomes in turn (names from the shapes of the kit), how long the round takes, how each is reached, and one turn.'],
   ['spinner.gap', 'Between the ring and the label.'],
   ['spinner.cover-padding, spinner.cover-background', 'The layer over a covered container.'],
 ];
@@ -72,7 +83,7 @@ export default function ProgressPage() {
   return (
     <>
       <p class="lead">
-        ProgressBar shows how far some work is, or that it runs when that is not known. Spinner says "busy, wait": a
+        ProgressBar shows how far some work is, as a line or a circle, or that it runs when that is not known. Spinner says "busy, wait": a
         turning ring, alone or over a panel while it loads, shown only after a delay so quick work does not flash it.
       </p>
 
@@ -99,6 +110,15 @@ import { ProgressBar, Spinner, type ProgressTone } from '@motifx-community/ui';
         </p>
         <Example files={code('NotKnown.tsx')} stack>
           <NotKnown />
+        </Example>
+      </Section>
+
+      <Section anchor="shapes" title="Line or circle">
+        <p>
+          <Rich text={'`shape="circle"` draws the progress as an arc that goes round a ring from the top; without a value the arc turns. The caption goes under it (`labelPosition="bottom"`, its default), above it or beside it, and `size` sets the size of the circle and of its line. Where the design language gives it a wave (Material), the line and the arc swing while they grow, straight while little is done and again at the end.'} />
+        </p>
+        <Example files={code('Shapes.tsx')} stack>
+          <Shapes />
         </Example>
       </Section>
 

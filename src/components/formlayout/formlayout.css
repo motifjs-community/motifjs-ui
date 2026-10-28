@@ -1,4 +1,6 @@
-/* FormLayout: the fields of an object on a grid of columns; groups under captions. */
+/* FormLayout: the fields of an object on a grid of columns; groups under captions. A group's card and
+   its caption are units (units.css); the fields' label column is the form layout's field place. This
+   file only places them. */
 @layer mx.components {
   .mx-form-layout {
     display: block;
@@ -7,7 +9,7 @@
   .mx-form-layout__grid {
     display: grid;
     grid-template-columns: repeat(var(--_form-columns, 1), minmax(0, 1fr));
-    gap: var(--mx-form-layout-row-gap) var(--mx-form-layout-column-gap);
+    gap: var(--_form-layout-row-gap) var(--_form-layout-column-gap);
     align-items: start;
   }
 
@@ -35,14 +37,14 @@
 
   .mx-form-layout__group {
     min-inline-size: 0;
-    margin: 0;
-    padding: var(--mx-form-layout-group-padding);
-    border: var(--mx-form-layout-group-border-width) solid var(--mx-form-layout-group-border);
-    border-radius: var(--mx-form-layout-group-radius);
   }
 
+  /* On the group's frame, or (floated) inside the group above its fields. */
   .mx-form-layout__caption {
-    padding-inline: var(--mx-form-layout-caption-padding);
-    font-weight: var(--mx-form-layout-caption-weight);
+    float: var(--_form-layout-caption-float);
+  }
+
+  .mx-form-layout__group > .mx-form-layout__grid {
+    clear: both;
   }
 }

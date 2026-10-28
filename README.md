@@ -63,18 +63,18 @@ addShortcut('Mod+K', () => palette.open()); // app-wide
   OS preference by default), density (`data-density="compact"`), the fonts, reduced motion, reduced
   transparency and forced colors all come from `@motifx-community/design-system`. Its
   `--mx-*` custom properties are the contract; this package never redefines them.
-- Each component brings its **component tokens**: DTCG JSON in `tokens/component/`, each a fine-tuning
-  knob of one component that references a design-system token. They are built with Style Dictionary
+- Each component brings its **component tokens**: a schema in `tokens/schema/` (names and types) and a
+  value for every token in every language, `tokens/languages/<language>/`, each a knob of one
+  component that references a design-system token. They are built with Style Dictionary
   against the design system's source, so a reference to a token that does not exist fails the build,
   and written inside `@layer mx.components`, after the design system's `mx.base`: one group per component
   (`button.*`, `field.*`, `list.*`, `calendar.*` …).
 - **Design languages.** The design system ships Tactile (the default), Lounge, Material, Fluent and
   Lilac (`data-identity`). Every kit stylesheet paints only with its own component tokens, one per role
-  (fill, text, frame per side, edge, effect, focus, marks), and a language can map any of them in
-  `tokens/component/identity/<language>/` (Material's 56 px filled text field with square bottom
-  corners, Fluent's 20 px check box). What tokens cannot express goes in that language's own
-  stylesheet, `src/styles/identity/<language>.css`, every rule scoped to it (Lilac's focus ring all
-  around a field). What a language decides for every component at once
+  (fill, text, frame per side, edge, effect, focus, marks), and every language gives each of them its
+  own value in `tokens/languages/<language>/` (Material's 56 px filled text field with square bottom
+  corners, Fluent's 20 px check box); no language takes anything from another, and a new one is
+  files only. What a language decides for every component at once
   (focus, raised faces, elevation per kind of surface, selection) comes from the design system's
   role tokens the component tokens point at.
 - Un-layered app CSS wins over both packages. Override a design-system token to restyle everything:
@@ -94,7 +94,10 @@ addShortcut('Mod+K', () => palette.open()); // app-wide
 - `@motifx-community/ui/excel` exports `exportDataGrid`, which writes a `DataGrid` to an ExcelJS
   worksheet. ExcelJS is an optional peer dependency the app installs; apps that do not import this
   entry never load it.
-- RTL through logical properties.
+- RTL through logical properties; what must turn the other way (an arrow, a resize cursor) uses `:dir(rtl)`.
+  Build your CSS for browsers that have `:dir()` (Chrome and Edge 120, Firefox 49, Safari 16.4; in Vite,
+  `build.cssTarget`): for older targets a minifier rewrites it as a list of `:lang()` values, which only matches a
+  page whose `lang` is a right-to-left language.
 
 ## Docs
 

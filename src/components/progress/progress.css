@@ -1,32 +1,133 @@
-/* ProgressBar and Spinner. The bar's width comes from --_value, which the bar writes; the rest
-   binds to data-state, data-tone, data-size, data-label-position, data-waiting and data-cover.
-   Reduced motion zeroes the motion tokens: the indeterminate bar then rests as a tinted track and
-   the ring stands still. Forced colors: the drawn parts keep the system colors the tokens map to. */
+/* ProgressBar and Spinner: the layout only; units.css paints every piece. The bar writes how much is done
+   as --_fraction (0 to 1), which glides to each new value: the bar's length, the rest of the track, the dot
+   and the circle's arc and ring all follow it, and a wave reads it to draw itself. The rest binds to
+   data-state, data-complete, data-shape, data-wave, data-tone, data-size, data-label-position, data-waiting
+   and data-cover. Reduced motion zeroes the motion tokens the glide, the run, the wave and the turns are
+   timed from: the indeterminate bar then rests as a tinted track and the rings stand still. Forced
+   colors: the drawn parts keep the system colors the tokens map to. */
+@property --_fraction {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+/* The numbers the bar reads to draw a wave, resolved by the browser (a length in px, a time, a number). */
+@property --_progress-wave-amplitude {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --_progress-wave-length {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --_progress-wave-speed {
+  syntax: '<time>';
+  inherits: true;
+  initial-value: 0s;
+}
+
+@property --_progress-wave-grow-duration {
+  syntax: '<time>';
+  inherits: true;
+  initial-value: 0s;
+}
+
+@property --_progress-wave-start {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --_progress-wave-end {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --_progress-ring-wave-amplitude {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --_progress-ring-wave-length {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --_progress-ring-wave-speed {
+  syntax: '<time>';
+  inherits: true;
+  initial-value: 0s;
+}
+
+@property --_progress-ring-wave-grow-duration {
+  syntax: '<time>';
+  inherits: true;
+  initial-value: 0s;
+}
+
+@property --_progress-ring-wave-start {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --_progress-ring-wave-end {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
 @layer mx.components {
-  .mx-progress,
+  .mx-progress {
+    --_tone: var(--_progress-accent);
+    --_tone-subtle: var(--_progress-accent-subtle);
+  }
+
+  .mx-progress[data-tone='neutral'] {
+    --_tone: var(--_progress-neutral);
+    --_tone-subtle: var(--_progress-neutral-subtle);
+  }
+
+  .mx-progress[data-tone='success'] {
+    --_tone: var(--_progress-success);
+    --_tone-subtle: var(--_progress-success-subtle);
+  }
+
+  .mx-progress[data-tone='caution'] {
+    --_tone: var(--_progress-caution);
+    --_tone-subtle: var(--_progress-caution-subtle);
+  }
+
+  .mx-progress[data-tone='danger'] {
+    --_tone: var(--_progress-danger);
+    --_tone-subtle: var(--_progress-danger-subtle);
+  }
+
   .mx-spinner {
-    --_tone: var(--mx-progress-accent);
-    --_tone-subtle: var(--mx-progress-accent-subtle);
+    --_tone: var(--_spinner-accent);
   }
 
-  :is(.mx-progress, .mx-spinner)[data-tone='neutral'] {
-    --_tone: var(--mx-progress-neutral);
-    --_tone-subtle: var(--mx-progress-neutral-subtle);
+  .mx-spinner[data-tone='neutral'] {
+    --_tone: var(--_spinner-neutral);
   }
 
-  :is(.mx-progress, .mx-spinner)[data-tone='success'] {
-    --_tone: var(--mx-progress-success);
-    --_tone-subtle: var(--mx-progress-success-subtle);
+  .mx-spinner[data-tone='success'] {
+    --_tone: var(--_spinner-success);
   }
 
-  :is(.mx-progress, .mx-spinner)[data-tone='caution'] {
-    --_tone: var(--mx-progress-caution);
-    --_tone-subtle: var(--mx-progress-caution-subtle);
+  .mx-spinner[data-tone='caution'] {
+    --_tone: var(--_spinner-caution);
   }
 
-  :is(.mx-progress, .mx-spinner)[data-tone='danger'] {
-    --_tone: var(--mx-progress-danger);
-    --_tone-subtle: var(--mx-progress-danger-subtle);
+  .mx-spinner[data-tone='danger'] {
+    --_tone: var(--_spinner-danger);
   }
 
   /* ProgressBar. */
@@ -34,21 +135,44 @@
   .mx-progress {
     display: inline-flex;
     flex-direction: column;
-    gap: var(--mx-progress-head-gap);
-    inline-size: var(--mx-progress-width);
+    gap: var(--_progress-head-gap);
+    inline-size: var(--_progress-width);
     max-inline-size: 100%;
     vertical-align: middle;
-    color: var(--mx-progress-fg);
+    transition: --_fraction var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
 
-    --_thickness: var(--mx-progress-thickness-md);
+    --_thickness: var(--_progress-thickness-md);
+    --_rest: var(--_progress-rest-thickness-md);
+    --_ring-size: var(--_progress-ring-size-md);
+    --_ring-thickness: var(--_progress-ring-thickness-md);
+    /* The track is as high as the bar and the room its wave swings in. */
+    --_room: calc(var(--_thickness) + 2 * var(--_progress-wave-amplitude));
+    --_bar: calc(var(--_fraction) * 100%);
+    --_fill: var(--_tone);
+    /* The gaps beside the part done, once there is one. */
+    --_gap: min(var(--_progress-active-gap), var(--_fraction) * 100000px);
+    --_ring-gap: min(var(--_progress-ring-active-gap), var(--_fraction) * 100000px);
   }
 
   .mx-progress[data-size='sm'] {
-    --_thickness: var(--mx-progress-thickness-sm);
+    --_thickness: var(--_progress-thickness-sm);
+    --_rest: var(--_progress-rest-thickness-sm);
+    --_ring-size: var(--_progress-ring-size-sm);
+    --_ring-thickness: var(--_progress-ring-thickness-sm);
   }
 
   .mx-progress[data-size='lg'] {
-    --_thickness: var(--mx-progress-thickness-lg);
+    --_thickness: var(--_progress-thickness-lg);
+    --_rest: var(--_progress-rest-thickness-lg);
+    --_ring-size: var(--_progress-ring-size-lg);
+    --_ring-thickness: var(--_progress-ring-thickness-lg);
+  }
+
+  /* Not known: the bar is the whole track, tinted, and a part runs along it; no wave, so no room for one. */
+  .mx-progress[data-state='indeterminate'] {
+    --_room: var(--_thickness);
+    --_bar: 100%;
+    --_fill: var(--_tone-subtle);
   }
 
   .mx-progress[data-stretch] {
@@ -56,101 +180,233 @@
     inline-size: 100%;
   }
 
-  .mx-progress__head {
+  :where(.mx-progress) > .mx-progress__head {
     display: flex;
     align-items: baseline;
-    gap: var(--mx-progress-gap);
+    gap: var(--_progress-gap);
   }
 
-  .mx-progress__head[hidden],
-  .mx-progress__head > [hidden] {
+  :where(.mx-progress) > .mx-progress__head[hidden],
+  :where(.mx-progress) > .mx-progress__head > [hidden] {
     display: none;
   }
 
-  .mx-progress__label {
+  :where(.mx-progress > .mx-progress__head) > .mx-progress__label {
     flex: 1 1 auto;
     min-inline-size: 0;
-    font-weight: var(--mx-progress-label-font-weight);
     overflow-wrap: anywhere;
   }
 
-  .mx-progress__value {
+  :where(.mx-progress > .mx-progress__head) > .mx-progress__value {
     flex: none;
     margin-inline-start: auto;
-    font-size: var(--mx-progress-value-font-size);
     font-variant-numeric: tabular-nums;
-    color: var(--mx-progress-value-fg);
   }
 
-  .mx-progress__track {
+  /* The line: the track, the bar in it, the rest of the track after it and a dot at its end, each centred on
+     the track. */
+  :where(.mx-progress) > .mx-progress__track {
     position: relative;
+    display: grid;
     overflow: hidden;
-    block-size: var(--_thickness);
-    background: var(--mx-progress-track-color);
-    border-radius: var(--mx-progress-radius);
     forced-color-adjust: none;
   }
 
-  .mx-progress__bar {
+  :where(.mx-progress > .mx-progress__track) > .mx-progress__bar {
     position: absolute;
-    inset-block: 0;
     inset-inline-start: 0;
-    inline-size: var(--_value);
-    background: var(--_tone);
-    border-radius: inherit;
-    transition: inline-size var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
+    align-self: center;
   }
 
-  /* Not known: a tinted track with a part that runs along it. */
-  .mx-progress[data-state='indeterminate'] .mx-progress__bar {
-    inline-size: 100%;
-    background: var(--_tone-subtle);
+  :where(.mx-progress) > .mx-progress__track::before {
+    content: '';
+    position: absolute;
+    inset-inline: calc(var(--_bar) + var(--_gap)) 0;
+    align-self: center;
   }
 
-  .mx-progress[data-state='indeterminate'] .mx-progress__bar::after {
+  .mx-progress[data-state='indeterminate'] > .mx-progress__track::before {
+    inset-inline-start: 0;
+  }
+
+  /* Centred in the round end of the track; the rest of the track pushes it out once it is shorter than the dot. */
+  :where(.mx-progress) > .mx-progress__track::after {
+    content: '';
+    position: absolute;
+    align-self: center;
+    inset-inline-start: max(
+      calc(var(--_bar) + var(--_gap)),
+      calc(100% - var(--_progress-stop-inset) - (max(var(--_rest), var(--_progress-dot-size)) + var(--_progress-dot-size)) / 2)
+    );
+  }
+
+  .mx-progress[data-state='indeterminate'] > :where(.mx-progress__track) > .mx-progress__bar::after {
     content: '';
     position: absolute;
     inset-block: 0;
     inset-inline-start: 0;
     inline-size: 0;
-    background: var(--_tone);
-    border-radius: inherit;
-    animation: mx-progress-run calc(var(--mx-motion-duration-slow) * 7) var(--mx-motion-easing-standard) infinite;
+    animation: mx-progress-run var(--_progress-runner-duration) var(--mx-motion-easing-standard) infinite;
   }
 
   @keyframes mx-progress-run {
     from {
-      inset-inline-start: -40%;
-      inline-size: 40%;
+      inset-inline-start: calc(-1 * var(--_progress-runner-length));
+      inline-size: var(--_progress-runner-length);
     }
 
     to {
       inset-inline-start: 100%;
-      inline-size: 40%;
+      inline-size: var(--_progress-runner-length);
     }
+  }
+
+  /* A wave the bar draws over the whole track instead of itself (the bar keeps its length, unseen). */
+  :where(.mx-progress > .mx-progress__track) > .mx-progress__wave {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  :where(.mx-progress > .mx-progress__track) > .mx-progress__wave:dir(rtl) {
+    transform: scaleX(-1);
+  }
+
+  .mx-progress[data-wave] > :where(.mx-progress__track) > .mx-progress__bar,
+  .mx-progress[data-wave] > :where(.mx-progress__circle) > circle.mx-progress__arc {
+    visibility: hidden;
+  }
+
+  :where(.mx-progress > .mx-progress__track > .mx-progress__wave) > path,
+  :where(.mx-progress > .mx-progress__circle) > * {
+    fill: none;
+    stroke: currentcolor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  :where(.mx-progress > .mx-progress__track > .mx-progress__wave) > path {
+    stroke-width: var(--_thickness);
+  }
+
+  /* The circle: a ring and the arc from the top round, with room for the arc's wave. */
+  .mx-progress[data-shape='circle'] {
+    inline-size: auto;
+    align-items: center;
+  }
+
+  .mx-progress[data-shape='circle'][data-stretch] {
+    inline-size: 100%;
+  }
+
+  .mx-progress[data-shape='circle'] > .mx-progress__track {
+    display: none;
+  }
+
+  :where(.mx-progress) > .mx-progress__circle {
+    --_round: calc(3.14159 * (var(--_ring-size) - var(--_ring-thickness)));
+    --_arc: calc(var(--_fraction) * var(--_round));
+    /* A gap is measured from a round end, so a ring with gaps stops half its line short of them; with no gap
+       it runs on under the arc. */
+    --_cap: min(var(--_ring-thickness) / 2, var(--_ring-gap) * 1000);
+    --_ring-length: calc(var(--_round) - var(--_arc) - 2 * var(--_ring-gap) - 2 * var(--_cap));
+
+    flex: none;
+    inline-size: calc(var(--_ring-size) + 2 * var(--_progress-ring-wave-amplitude));
+    block-size: calc(var(--_ring-size) + 2 * var(--_progress-ring-wave-amplitude));
+    overflow: visible;
+    rotate: -90deg;
+    forced-color-adjust: none;
+  }
+
+  :where(.mx-progress > .mx-progress__circle) > circle {
+    cx: 50%;
+    cy: 50%;
+    r: calc((var(--_ring-size) - var(--_ring-thickness)) / 2);
+  }
+
+  /* Gone once nothing is left of it. */
+  :where(.mx-progress > .mx-progress__circle) > .mx-progress__ring {
+    stroke-width: clamp(0px, var(--_ring-length) * 1000, var(--_ring-thickness));
+    stroke-dasharray: max(0.001px, var(--_ring-length)) var(--_round);
+    stroke-dashoffset: calc(-1 * (var(--_arc) + var(--_ring-gap) + var(--_cap)));
+  }
+
+  /* The arc stops half its line inside its length, so its round ends stay within it; at 0 it is not drawn. */
+  :where(.mx-progress > .mx-progress__circle) > .mx-progress__arc {
+    stroke-width: min(var(--_ring-thickness), var(--_fraction) * 100000px);
+  }
+
+  :where(.mx-progress > .mx-progress__circle) > path.mx-progress__arc {
+    stroke-width: var(--_ring-thickness);
+  }
+
+  :where(.mx-progress > .mx-progress__circle) > circle.mx-progress__arc {
+    stroke-dasharray: max(0.001px, var(--_arc) - var(--_ring-thickness)) var(--_round);
+    stroke-dashoffset: calc(var(--_ring-thickness) / -2);
+  }
+
+  .mx-progress[data-complete] > :where(.mx-progress__circle) > circle.mx-progress__arc {
+    stroke-dasharray: none;
+  }
+
+  /* Not known: the whole ring, and an arc that turns. */
+  .mx-progress[data-state='indeterminate'] > .mx-progress__circle {
+    animation: mx-progress-turn var(--_progress-ring-turn-duration) linear infinite;
+  }
+
+  .mx-progress[data-state='indeterminate'] > :where(.mx-progress__circle) > .mx-progress__ring {
+    stroke-width: var(--_ring-thickness);
+    stroke-dasharray: none;
+  }
+
+  .mx-progress[data-state='indeterminate'] > :where(.mx-progress__circle) > .mx-progress__arc {
+    stroke-width: var(--_ring-thickness);
+    stroke-dasharray: max(0.001px, var(--_progress-ring-runner-length) * var(--_round) - var(--_ring-thickness)) var(--_round);
+  }
+
+  @keyframes mx-progress-turn {
+    from {
+      rotate: -90deg;
+    }
+
+    to {
+      rotate: 270deg;
+    }
+  }
+
+  /* Below: the bar, then the label and the value. */
+  .mx-progress[data-label-position='bottom'] > .mx-progress__head {
+    order: 1;
   }
 
   /* Beside: the label, the bar, then the value. */
   .mx-progress[data-label-position='side'] {
     flex-direction: row;
     align-items: center;
-    gap: var(--mx-progress-gap);
+    gap: var(--_progress-gap);
   }
 
-  .mx-progress[data-label-position='side'] .mx-progress__head {
+  .mx-progress[data-label-position='side'] > .mx-progress__head {
     display: contents;
   }
 
-  .mx-progress[data-label-position='side'] .mx-progress__label {
+  .mx-progress[data-label-position='side'] > :where(.mx-progress__head) > .mx-progress__label {
     flex: none;
   }
 
-  .mx-progress[data-label-position='side'] .mx-progress__track {
-    flex: 1 1 auto;
+  .mx-progress[data-label-position='side'] > :is(.mx-progress__track, .mx-progress__circle) {
     order: 1;
   }
 
-  .mx-progress[data-label-position='side'] .mx-progress__value {
+  .mx-progress[data-label-position='side'] > .mx-progress__track {
+    flex: 1 1 auto;
+  }
+
+  .mx-progress[data-label-position='side'] > :where(.mx-progress__head) > .mx-progress__value {
     order: 2;
     margin-inline-start: 0;
   }
@@ -160,23 +416,26 @@
   .mx-spinner {
     display: inline-flex;
     align-items: center;
-    gap: var(--mx-spinner-gap);
+    gap: var(--_spinner-gap);
     vertical-align: middle;
-    color: var(--mx-spinner-fg);
+    color: var(--_spinner-fg);
     transition: opacity var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
 
-    --_size: var(--mx-spinner-size-md);
-    --_ring: var(--mx-spinner-ring-width-md);
+    --_size: var(--_spinner-size-md);
+    --_ring: var(--_spinner-ring-width-md);
+    --_shape: var(--_spinner-shape-size-md);
   }
 
   .mx-spinner[data-size='sm'] {
-    --_size: var(--mx-spinner-size-sm);
-    --_ring: var(--mx-spinner-ring-width-sm);
+    --_size: var(--_spinner-size-sm);
+    --_ring: var(--_spinner-ring-width-sm);
+    --_shape: var(--_spinner-shape-size-sm);
   }
 
   .mx-spinner[data-size='lg'] {
-    --_size: var(--mx-spinner-size-lg);
-    --_ring: var(--mx-spinner-ring-width-lg);
+    --_size: var(--_spinner-size-lg);
+    --_ring: var(--_spinner-ring-width-lg);
+    --_shape: var(--_spinner-shape-size-lg);
   }
 
   .mx-spinner[data-label-position='bottom'] {
@@ -188,18 +447,81 @@
     opacity: 0;
   }
 
-  .mx-spinner__ring {
+  /* What turns sits in a box (the `box` unit: a container where the language draws one): a ring and a shape
+     in its one cell, the language showing one of them (the `ring` and `shape` units). */
+  :where(.mx-spinner) > .mx-spinner__box {
+    display: grid;
     flex: none;
-    inline-size: var(--_size);
-    block-size: var(--_size);
-    border: var(--_ring) solid var(--mx-spinner-track-color);
-    border-block-start-color: var(--_tone);
-    border-radius: var(--mx-spinner-radius);
-    forced-color-adjust: none;
-    animation: mx-spinner-turn calc(var(--mx-motion-duration-slow) * 3) linear infinite;
+    place-items: center;
   }
 
-  .mx-spinner__label[hidden] {
+  :where(.mx-spinner__box) > * {
+    grid-area: 1 / 1;
+    forced-color-adjust: none;
+  }
+
+  .mx-spinner__ring {
+    animation: mx-spinner-turn var(--_spinner-duration) linear infinite;
+  }
+
+  /* A shape that becomes the next of its seven, each held a while and reached with the morph's easing, while
+     it turns. */
+  .mx-spinner__shape {
+    clip-path: var(--_spinner-shape-1);
+    animation:
+      mx-spinner-morph var(--_spinner-morph-duration) infinite,
+      mx-spinner-turn var(--_spinner-spin-duration) linear infinite;
+  }
+
+  @keyframes mx-spinner-morph {
+    0% {
+      clip-path: var(--_spinner-shape-7);
+      animation-timing-function: var(--_spinner-morph-easing);
+    }
+
+    4.29%,
+    14.29% {
+      clip-path: var(--_spinner-shape-1);
+      animation-timing-function: var(--_spinner-morph-easing);
+    }
+
+    18.57%,
+    28.57% {
+      clip-path: var(--_spinner-shape-2);
+      animation-timing-function: var(--_spinner-morph-easing);
+    }
+
+    32.86%,
+    42.86% {
+      clip-path: var(--_spinner-shape-3);
+      animation-timing-function: var(--_spinner-morph-easing);
+    }
+
+    47.14%,
+    57.14% {
+      clip-path: var(--_spinner-shape-4);
+      animation-timing-function: var(--_spinner-morph-easing);
+    }
+
+    61.43%,
+    71.43% {
+      clip-path: var(--_spinner-shape-5);
+      animation-timing-function: var(--_spinner-morph-easing);
+    }
+
+    75.71%,
+    85.71% {
+      clip-path: var(--_spinner-shape-6);
+      animation-timing-function: var(--_spinner-morph-easing);
+    }
+
+    90%,
+    100% {
+      clip-path: var(--_spinner-shape-7);
+    }
+  }
+
+  :where(.mx-spinner) > .mx-spinner__label[hidden] {
     display: none;
   }
 
@@ -219,16 +541,16 @@
     inset: 0;
     display: flex;
     justify-content: center;
-    padding: var(--mx-spinner-cover-padding);
-    color: var(--mx-spinner-cover-fg);
-    background: var(--mx-spinner-cover-background);
+    padding: var(--_spinner-cover-padding);
+    color: var(--_spinner-cover-fg);
+    background: var(--_spinner-cover-background);
     border-radius: inherit;
   }
 
-  /* The cover fills its container: its ring is drawn inside it. */
+  /* The cover fills its container: its ring is drawn inside it (a negative offset). */
   .mx-spinner[data-cover]:focus-visible {
-    outline: var(--mx-spinner-focus-width) solid var(--mx-spinner-focus-color);
-    outline-offset: calc(-1 * var(--mx-spinner-focus-width));
-    box-shadow: var(--mx-spinner-focus-halo);
+    outline: var(--_spinner-focus-width) solid var(--_spinner-focus-color);
+    outline-offset: var(--_spinner-focus-offset);
+    box-shadow: var(--_spinner-focus-halo);
   }
 }

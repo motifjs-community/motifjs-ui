@@ -61,7 +61,7 @@ const KEYS = [
 
 const TOKENS = [
   ['datagrid.range-fill, range-fill-opacity', 'The fill of the cells of a range, laid over the row’s own look at that opacity; whole over a selected row.'],
-  ['datagrid.range-text', 'The text of a range over a selected row, and of the anchor cell.'],
+  ['datagrid.cell (`range-selected`, `range-anchor`)', 'The text of a range over a selected row, and of the anchor cell.'],
   ['datagrid.range-border-color, range-border-width', 'The frame around a range.'],
   ['datagrid.range-anchor-fill', 'The cell the last range started on (the language’s surface).'],
   ['datagrid.row-run-border-color, row-run-border-width', 'The frame around the rows a drag selects, while it runs.'],

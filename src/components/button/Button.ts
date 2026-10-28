@@ -1,3 +1,4 @@
+import { LanguageLook } from '../../core/language-look';
 import { effect, read, type Bind, type ComponentBase, type IBaseProp } from '@motifx/core';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
@@ -5,7 +6,6 @@ import { registerControl } from '../../core/control-map';
 import { focusInitial, isFocusable } from '../../core/focus';
 import { chevronDown } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
-import { isHtmlElement } from '../../core/node-kind';
 import type { IconSource } from '../../core/icon-source';
 import { uiLocale } from '../../core/ui-locale';
 import { MenuList } from '../../parts/menu/MenuList';
@@ -43,7 +43,7 @@ interface Parts {
   face: HTMLButtonElement;
   arrow: HTMLButtonElement | null;
   stopArrowLabel: (() => void) | null;
-  caption: Text | HTMLSpanElement | null;
+  caption: HTMLSpanElement | null;
   icon: HTMLSpanElement | null;
   releaseIcon: () => void;
   spinner: HTMLSpanElement | null;
@@ -74,6 +74,11 @@ function withMenu(props: IBaseProp<ButtonProps> | undefined): boolean {
  * retry.busy = true;
  */
 export class Button extends Control<HTMLElement, ButtonProps> {
+  /** A variant, tone or size not given is the design language's, or the one of the place the button sits in. */
+  private readonly look = new LanguageLook(this.element, { variant: '--_button-variant', tone: '--_button-tone', size: '--_button-size' }, () =>
+    this.renderLook(),
+  );
+
   constructor(props?: IBaseProp<ButtonProps>) {
     // A button with a menu is two parts in a group, so its element is chosen here.
     super(withMenu(props) ? 'div' : 'button', props);
@@ -93,6 +98,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     this.observeProperty('menu', () => this.refill());
     this.observeProperty('dropDown', () => this.refill());
 
+    this.motif.setDisposable(this.look.watch());
     this.listen();
     this.placeChildren();
     this.motif.setDisposable(() => {
@@ -105,19 +111,19 @@ export class Button extends Control<HTMLElement, ButtonProps> {
   // Properties (see ButtonProps).
 
   get variant(): ButtonVariant {
-    return this.getProperty<ButtonVariant | undefined>('variant') ?? 'solid';
+    return this.getProperty<ButtonVariant | undefined>('variant') ?? (this.look.get('variant') as ButtonVariant | null) ?? 'solid';
   }
   set variant(value: Bind<ButtonVariant>) {
     this.assignProperty('variant', value);
   }
   get tone(): ButtonTone {
-    return this.getProperty<ButtonTone | undefined>('tone') ?? 'standard';
+    return this.getProperty<ButtonTone | undefined>('tone') ?? (this.look.get('tone') as ButtonTone | null) ?? 'standard';
   }
   set tone(value: Bind<ButtonTone>) {
     this.assignProperty('tone', value);
   }
   get size(): ButtonSize {
-    return this.getProperty<ButtonSize | undefined>('size') ?? 'md';
+    return this.getProperty<ButtonSize | undefined>('size') ?? (this.look.get('size') as ButtonSize | null) ?? 'md';
   }
   set size(value: Bind<ButtonSize>) {
     this.assignProperty('size', value);
@@ -352,24 +358,32 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     const parsed = parseAccessKey(text ?? '');
     this.setAccessKey(parsed.key);
     const parts = this.parts;
-    if (parsed.index >= 0) {
-      const span = isHtmlElement(parts.caption) && parts.caption.localName === 'span' ? parts.caption : this.placeCaption(this.element.ownerDocument.createElement('span'));
-      renderAccessKey(span, parsed);
-    } else if (parts.caption?.nodeType === 3) {
-      (parts.caption as Text).data = parsed.text;
-    } else if (parsed.text || parts.caption) {
-      this.placeCaption(this.element.ownerDocument.createTextNode(parsed.text));
+    if (parsed.text || parts.caption) {
+      const caption = parts.caption ?? this.placeCaption();
+      renderAccessKey(caption, parsed);
+      // An empty caption would still take a gap next to the icon.
+      caption.hidden = !parsed.text;
     }
     if (parts.popup && parts.content) parts.popup.element.setAttribute('aria-label', parsed.text);
+    this.renderIconOnly();
   }
 
-  private placeCaption<T extends Text | HTMLSpanElement>(node: T): T {
+  /** An icon and no text: the language may draw it square or round. */
+  private renderIconOnly(): void {
+    const text = this.parts.caption?.textContent ?? '';
+    const only = !!this.peekProperty('icon') && !text && !this.childs?.length;
+    this.element.toggleAttribute('data-icon-only', only);
+  }
+
+  /** The caption has its own element, so the language can trim its line box to the letters (`text-box`). */
+  private placeCaption(): HTMLSpanElement {
     const parts = this.parts;
-    if (parts.caption) parts.caption.replaceWith(node);
-    else if (parts.icon) parts.icon.after(node);
-    else parts.face.prepend(node);
-    parts.caption = node;
-    return node;
+    const caption = this.element.ownerDocument.createElement('span');
+    caption.className = 'mx-button__text';
+    if (parts.icon) parts.icon.after(caption);
+    else parts.face.prepend(caption);
+    parts.caption = caption;
+    return caption;
   }
 
   private renderIcon(): void {
@@ -378,6 +392,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     parts.releaseIcon();
     parts.releaseIcon = () => {};
     this.element.toggleAttribute('data-icon', !!icon);
+    this.renderIconOnly();
     if (!icon) {
       parts.icon?.remove();
       parts.icon = null;
@@ -408,11 +423,22 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     if (busy) this.close();
   }
 
+  /** Reads again what the design language decides for the button (variant, tone, size). The button does it once
+   *  it is in the page; one placed in the page outside the component tree is told when it is placed. */
+  readLook(): void {
+    this.look.read();
+  }
+
+  override onMounted(): void {
+    this.readLook();
+  }
+
   private renderLook(): void {
     const data = this.element.dataset;
-    data.variant = this.peekProperty<ButtonVariant>('variant') ?? 'solid';
-    data.tone = this.peekProperty<ButtonTone>('tone') ?? 'standard';
-    data.size = this.peekProperty<ButtonSize>('size') ?? 'md';
+    const look = this.look;
+    data.variant = this.peekProperty<ButtonVariant>('variant') ?? look.get('variant') ?? 'solid';
+    data.tone = this.peekProperty<ButtonTone>('tone') ?? look.get('tone') ?? 'standard';
+    data.size = this.peekProperty<ButtonSize>('size') ?? look.get('size') ?? 'md';
     data.iconPosition = this.peekProperty<'start' | 'end'>('iconPosition') ?? 'start';
     this.element.toggleAttribute('data-stretch', !!this.peekProperty('stretch'));
   }

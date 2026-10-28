@@ -1301,7 +1301,8 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
       return;
     }
     if (parts.search) return;
-    const search = new TextBox({ type: 'search', labelMode: 'hidden', size: 'sm', stretch: true, autocomplete: 'off' });
+    // Its variant and label mode come from its place (treeview.search).
+    const search = new TextBox({ type: 'search', stretch: true, autocomplete: 'off' });
     search.label = () => uiLocale.strings.search;
     search.placeholder = () => uiLocale.strings.search;
     search.element.classList.add('mx-tree-view__search');

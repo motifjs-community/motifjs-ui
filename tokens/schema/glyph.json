@@ -1,0 +1,17 @@
+{
+  "glyph": {
+    "$description": "The kit's own small glyphs (a chevron, a check mark), drawn in the text color.",
+    "$selector": ".mx-glyph",
+    "size": { "$type": "dimension" },
+    "$units": {
+      "mark": {
+        "$description": "A glyph of the kit's set: a mask of its icon over its fill (the text colour); `size` is the kit's glyph size, which other components' glyphs take too.",
+        "selector": ":where(.mx-glyph)",
+        "defaults": {
+          "size": "var(--_glyph-size)",
+          "bg": "currentcolor"
+        }
+      }
+    }
+  }
+}

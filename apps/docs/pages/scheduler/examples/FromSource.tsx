@@ -10,7 +10,8 @@ export default function FromSource() {
   const adapter = new SlowAdapter<Meeting, number>({ data: sampleAppointments(), key: 'id' }, 600);
   const source = new data.DataSource<Meeting, number>({
     adapter,
-    loadMode: 'page',
+    // 'all': a view needs every appointment of its days; the scheduler asks for those days only.
+    loadMode: 'all',
   });
   source.onChanged((e) => {
     if (e.reason !== 'loading') return;

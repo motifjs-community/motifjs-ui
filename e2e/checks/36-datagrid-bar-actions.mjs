@@ -67,7 +67,7 @@ export default async function ({ page, base, check, axeSource }) {
   check('datagrid bar actions: the action applies to all three rows', removed === 3 && afterRemove.some((b) => b.id === 'restore' && /Restore/.test(b.label + b.text)), `${removed} · ${JSON.stringify(afterRemove)}`);
 
   // The bottom bar.
-  await page.locator(`section[aria-labelledby="actions"] [role="group"][aria-label="Where the actions show"] button:text-is("bottom")`).click();
+  await page.locator(`section[aria-labelledby="actions"] [role="group"][aria-label="Where the actions show"]`).getByRole('button', { name: 'bottom', exact: true }).click();
   await page.waitForFunction((g) => document.querySelector(`${g} .mx-data-grid__bar-actions .mx-data-grid__bar-action:not([hidden])`), grid);
   const bottom = await barButtons('bar-actions');
   const bottomLabel = await page.getAttribute(`${grid} .mx-data-grid__bar-actions`, 'aria-label');
@@ -108,7 +108,7 @@ export default async function ({ page, base, check, axeSource }) {
   check('datagrid bar actions: Shift+F10 opens the row menu and Escape returns to the cell', byKey.includes('Print (3)') && back, `${byKey.join(' | ')} · back ${back}`);
 
   // Menu only, in the row: only "more", whose menu lists every action; an item applies.
-  await page.locator(`section[aria-labelledby="actions"] [role="group"][aria-label="Where the actions show"] button:text-is("row")`).click();
+  await page.locator(`section[aria-labelledby="actions"] [role="group"][aria-label="Where the actions show"]`).getByRole('button', { name: 'row', exact: true }).click();
   await page.locator('section[aria-labelledby="actions"] label', { hasText: 'Menu only' }).click();
   await page.waitForFunction((g) => document.querySelector(`${g} .mx-data-grid__more:not([hidden])`), grid);
   const rowButtons = await page.evaluate((sel) => [...document.querySelectorAll(`${sel} .mx-data-grid__actions > button:not([hidden])`)].map((b) => b.dataset.action ?? 'more'), row(6));
@@ -128,7 +128,7 @@ export default async function ({ page, base, check, axeSource }) {
   );
 
   // The bar's menu button in the menu display, then axe in both themes with the toolbar shown.
-  await page.locator(`section[aria-labelledby="actions"] [role="group"][aria-label="Where the actions show"] button:text-is("toolbar")`).click();
+  await page.locator(`section[aria-labelledby="actions"] [role="group"][aria-label="Where the actions show"]`).getByRole('button', { name: 'toolbar', exact: true }).click();
   await page.waitForFunction((g) => document.querySelector(`${g} .mx-data-grid__toolbar .mx-data-grid__bar-menu:not([hidden])`), grid);
   const menuName = await page.getAttribute(`${grid} .mx-data-grid__toolbar .mx-data-grid__bar-menu .mx-button__face`, 'aria-label');
   check('datagrid bar actions: the bars hold one “Actions” menu button in the menu display', /^Actions for \d+ selected rows?$|^Actions for the selected row$/.test(menuName ?? ''), menuName);

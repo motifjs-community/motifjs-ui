@@ -1,0 +1,96 @@
+{
+  "sheet": {
+    "$description": "BottomSheet (and the ActionSheet on it): a panel that comes up from the bottom, with a handle, a title and its content.",
+    "$selector": ".mx-bottom-sheet",
+    "font-family": { "$type": "fontFamily" },
+    "inset": { "$type": "dimension", "$description": "Room between the panel and the edges of the room (0: on the bottom edge, as wide as it may be)." },
+    "top-gap": { "$type": "dimension" },
+    "peek-height": { "$type": "dimension" },
+    "handle-area": { "$type": "dimension" },
+    "$places": {
+      "close-button": {
+        "$description": "The close button in the header.",
+        "selector": ".mx-bottom-sheet__tools > .mx-bottom-sheet__close",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "tone",
+          "size"
+        ]
+      },
+      "list-box": {
+        "$description": "A list box inside a bottom sheet: the surface is its frame, so by default the list draws none of its own (no frame, fill or shadow).",
+        "selector": ".mx-bottom-sheet .mx-list-box",
+        "part": "field",
+        "tokens": [
+          "frame.display",
+          "indicator.display",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "box.shadow",
+          "box.focus.shadow",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "box.invalid-focus.shadow",
+          "box.readonly-focus.shadow",
+          "box.disabled.shadow",
+          "box.readonly-invalid-focus.shadow"
+        ]
+      }
+    },
+    "$units": {
+      "scrim": {
+        "$description": "The scrim behind the panel (a modal sheet).",
+        "selector": ".mx-bottom-sheet__scrim"
+      },
+      "panel": {
+        "$description": "The panel; `full`: it reaches the top of the room (its top corners).",
+        "selector": ".mx-bottom-sheet__panel",
+        "defaults": {
+          "outline-style": "none"
+        },
+        "states": {
+          "full": ".mx-bottom-sheet[data-full] > .mx-bottom-sheet__panel"
+        }
+      },
+      "handle": {
+        "$description": "The handle along the top edge (a slider for the keys: `focus`).",
+        "selector": ".mx-bottom-sheet__handle",
+        "defaults": {
+          "min-height": "var(--_sheet-handle-area)"
+        },
+        "states": {
+          "focus": ".mx-bottom-sheet__handle:focus-visible"
+        }
+      },
+      "grip": {
+        "$description": "The grip drawn in the handle.",
+        "selector": ".mx-bottom-sheet__grip"
+      },
+      "header": {
+        "$description": "The header: the title and the buttons.",
+        "selector": ".mx-bottom-sheet__header"
+      },
+      "title": {
+        "$description": "The title.",
+        "selector": ".mx-bottom-sheet__title"
+      },
+      "tools": {
+        "$description": "The header's buttons (the close button's look is its place's).",
+        "selector": ".mx-bottom-sheet__tools"
+      },
+      "body": {
+        "$description": "The content (`focus`: it has the keys and scrolls by them, a ring inside it).",
+        "selector": ".mx-bottom-sheet__body",
+        "states": {
+          "focus": ".mx-bottom-sheet__body:focus-visible"
+        }
+      },
+      "footer": {
+        "$description": "The footer: its buttons in a row.",
+        "selector": ".mx-bottom-sheet__footer"
+      }
+    }
+  }
+}

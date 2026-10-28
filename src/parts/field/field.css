@@ -1,21 +1,21 @@
-/* Field: the label, the box with the editor and its buttons, the line for help or an error.
-   The look binds to data-size / data-variant / data-label-mode and to the state attributes the
-   field writes (data-invalid, data-readonly, data-disabled, data-filled). */
+/* Field: the label, the box with the editor and its buttons, the line for help or an error. Only the
+   layout is here: every part's look is a unit of the field's schema (`$units`), painted by units.css
+   from the language's tokens. The units' states follow what the field writes on its root
+   (data-variant, data-label-mode, data-invalid, data-readonly, data-disabled, data-filled;
+   data-pressable on a field pressed like a button) and the box's hover and focus.
+   The box holds a state layer (::before), the frame (in three pieces around a notch a language can cut
+   for a floating label) with the indicator along its bottom, and a ring for the keys (::after).
+
+   Sizes come from the size class (--_height, --_padding-start, --_padding-end, --_font-size), which the
+   units read too. Every rule reaches only this field's own parts (`>`, the steps between in :where()):
+   a field inside the box (a list's search box) keeps its own look. */
 @layer mx.components {
   .mx-field {
     display: inline-flex;
     flex-direction: column;
-    inline-size: var(--mx-field-width);
+    inline-size: var(--_field-width);
     max-inline-size: 100%;
     vertical-align: top;
-    color: var(--mx-field-fg);
-
-    --_bg: var(--mx-field-bg);
-    --_bg-hover: var(--mx-field-bg-hover);
-    --_bg-focus: var(--mx-field-bg-focus);
-    --_border: var(--mx-field-border);
-    --_edge: var(--mx-field-edge);
-    --_edge-focus: var(--mx-field-edge-focus);
   }
 
   .mx-field[data-stretch] {
@@ -24,70 +24,44 @@
   }
 
   .mx-field[data-size='sm'] {
-    --_height: var(--mx-field-height-sm);
-    --_padding: var(--mx-field-padding-sm);
-    --_font-size: var(--mx-field-font-size-sm);
+    --_height: var(--_field-height-sm);
+    --_padding: var(--_field-padding-sm);
+    --_padding-start: var(--_field-padding-start-sm);
+    --_padding-end: var(--_field-padding-end-sm);
+    --_font-size: var(--_field-font-size-sm);
   }
 
   .mx-field[data-size='md'] {
-    --_height: var(--mx-field-height-md);
-    --_padding: var(--mx-field-padding-md);
-    --_font-size: var(--mx-field-font-size-md);
+    --_height: var(--_field-height-md);
+    --_padding: var(--_field-padding-md);
+    --_padding-start: var(--_field-padding-start-md);
+    --_padding-end: var(--_field-padding-end-md);
+    --_font-size: var(--_field-font-size-md);
   }
 
   .mx-field[data-size='lg'] {
-    --_height: var(--mx-field-height-lg);
-    --_padding: var(--mx-field-padding-lg);
-    --_font-size: var(--mx-field-font-size-lg);
+    --_height: var(--_field-height-lg);
+    --_padding: var(--_field-padding-lg);
+    --_padding-start: var(--_field-padding-start-lg);
+    --_padding-end: var(--_field-padding-end-lg);
+    --_font-size: var(--_field-font-size-lg);
   }
 
-  .mx-field[data-variant='filled'] {
-    --_bg: var(--mx-field-filled-bg);
-    --_bg-hover: var(--mx-field-filled-bg-hover);
-    --_border: transparent;
-  }
+  /* Label: its size, weight and the room under it per label mode (the label unit reads them). */
 
-  .mx-field[data-variant='underline'] {
-    --_bg: transparent;
-    --_bg-hover: transparent;
-    --_bg-focus: transparent;
-    --_border: transparent;
-  }
+  :where(.mx-field) > .mx-field__label {
+    --_label-gap: var(--_field-label-gap);
+    --_label-size: var(--_field-label-font-size);
+    --_label-weight: var(--_field-label-font-weight);
 
-  .mx-field[data-invalid] {
-    --_edge: var(--mx-field-invalid-border);
-    --_edge-focus: var(--mx-field-invalid-border);
-  }
-
-  .mx-field[data-invalid]:not([data-variant='underline']) {
-    --_border: var(--mx-field-invalid-border);
-  }
-
-  .mx-field[data-readonly] {
-    --_bg-hover: var(--_bg);
-    --_bg-focus: var(--_bg);
-    --_edge: var(--mx-field-readonly-edge);
-    --_edge-focus: var(--mx-field-readonly-edge-focus);
-  }
-
-  /* Label. */
-
-  .mx-field__label {
-    margin-block-end: var(--mx-field-label-gap);
-    font-weight: var(--mx-field-label-font-weight);
     overflow-wrap: anywhere;
   }
 
-  .mx-field__label[hidden] {
+  :where(.mx-field) > .mx-field__label[hidden] {
     display: none;
   }
 
-  .mx-field__required {
-    margin-inline-start: var(--mx-field-required-gap);
-    color: var(--mx-field-required-fg);
-  }
-
-  .mx-field[data-label-mode='hidden'] .mx-field__label {
+  .mx-field[data-label-mode='hidden'] > .mx-field__label {
     position: absolute;
     inline-size: 1px;
     block-size: 1px;
@@ -99,14 +73,14 @@
 
   .mx-field[data-label-mode='side'] {
     display: inline-grid;
-    inline-size: calc(var(--mx-field-label-width) + var(--mx-field-gap) + var(--mx-field-width));
-    grid-template-columns: var(--mx-field-label-width) minmax(0, 1fr);
-    column-gap: var(--mx-field-gap);
+    inline-size: calc(var(--_field-label-width) + var(--_field-gap) + var(--_field-width));
+    grid-template-columns: var(--_field-label-width) minmax(0, 1fr);
+    column-gap: var(--_field-gap);
     align-items: center;
   }
 
-  .mx-field[data-label-mode='side'] .mx-field__label {
-    margin-block-end: 0;
+  .mx-field[data-label-mode='side'] > .mx-field__label {
+    --_label-gap: 0px;
   }
 
   .mx-field[data-label-mode='side'][data-stretch] {
@@ -122,82 +96,169 @@
     position: relative;
   }
 
-  .mx-field[data-label-mode='floating'] .mx-field__box {
-    min-block-size: var(--mx-field-floating-height);
-    align-items: flex-end;
-    padding-block-end: var(--mx-field-floating-padding);
+  /* The text goes down under the label that moved up; the icons and the buttons stay in the middle of the box. */
+  .mx-field[data-label-mode='floating'] > .mx-field__box {
+    --_box-height: var(--_field-floating-height);
+    --_lift: var(--_field-floating-padding);
   }
 
-  .mx-field[data-label-mode='floating'] .mx-field__label {
+  .mx-field[data-label-mode='floating'] > :where(.mx-field__box) > :is(.mx-field__control, .mx-field__prefix, .mx-field__suffix) {
+    align-self: flex-end;
+  }
+
+  .mx-field[data-label-mode='floating'] > :where(.mx-field__box) > .mx-field__control {
+    margin-block-end: var(--_lift);
+  }
+
+  /* The label lies over the box. */
+  .mx-field[data-label-mode='floating'] > .mx-field__label {
+    --_over: 1;
+    --_label-gap: 0px;
+    --_label-size: var(--_font-size);
+    --_label-weight: var(--_field-floating-label-font-weight);
+
     position: absolute;
-    margin: 0;
+    z-index: var(--_over);
     inset-block-start: 0;
-    inset-inline-start: calc(var(--_padding) + var(--mx-field-border-width));
+    inset-inline-start: calc(var(--_padding-start) + var(--_field-border-width));
     display: flex;
     align-items: center;
-    block-size: var(--mx-field-floating-height);
-    font-size: var(--_font-size);
-    font-weight: var(--mx-field-floating-label-font-weight);
-    color: var(--mx-field-floating-label-fg);
+    block-size: var(--_field-floating-height);
     pointer-events: none;
     transition:
+      inset-block-start var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       block-size var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       font-size var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-field[data-label-mode='floating']:is(:focus-within, [data-filled], [data-placeholder], [data-prefix], [data-icon]) .mx-field__label {
-    block-size: calc(var(--mx-field-floating-height) / 2);
-    font-size: var(--mx-field-floating-font-size);
-    font-weight: var(--mx-field-label-font-weight);
+  /* Moved up: centred in its own band at the top of the box. */
+  .mx-field[data-label-mode='floating']:is(:focus-within, [data-filled], [data-placeholder], [data-prefix], [data-icon]) > .mx-field__label {
+    --_label-size: var(--_field-floating-font-size);
+    --_label-weight: var(--_field-label-font-weight);
+
+    inset-block-start: var(--_field-floating-label-inset);
+    block-size: var(--_field-floating-label-height);
   }
 
-  /* Box. */
+  /* Box. Its border is clear room for the frame laid over it. The frame and the indicator lie under the
+     content, so a focus ring inside the box is drawn over them. */
 
-  .mx-field__box {
+  :where(.mx-field) > .mx-field__box {
+    --_under: -1;
+    --_box-height: var(--_height);
+    --_lift: 0px;
+
+    position: relative;
+    isolation: isolate;
     display: flex;
     align-items: center;
-    gap: var(--mx-field-gap);
-    min-block-size: var(--_height);
-    padding-inline: var(--_padding);
-    font-size: var(--_font-size);
-    background: var(--_bg);
-    border: var(--mx-field-border-width) solid var(--_border);
-    border-block-end-color: var(--_edge);
-    border-radius: var(--mx-field-radius);
-    cursor: text;
     transition:
       background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
-      border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+      box-shadow var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-field[data-variant='underline'] .mx-field__box {
-    border-radius: 0;
+  /* The state layer over the box's fill, and the ring around the box. */
+  :where(.mx-field) > .mx-field__box::before {
+    content: '';
+    position: absolute;
+    inset: calc(-1 * var(--_field-border-width));
+    z-index: var(--_under);
+    pointer-events: none;
+    transition: opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-field__box:hover {
-    background: var(--_bg-hover);
+  :where(.mx-field) > .mx-field__box::after {
+    content: '';
+    position: absolute;
+    inset: calc(-1 * var(--_field-border-width));
+    pointer-events: none;
   }
 
-  /* Focus: the bottom line turns thick and accent colored. */
-  .mx-field__box:focus-within {
-    background: var(--_bg-focus);
-    border-block-end-color: var(--_edge-focus);
-    box-shadow: inset 0 calc(var(--mx-field-border-width) - var(--mx-field-focus-width)) 0 0 var(--_edge-focus);
+  /* The frame: the box's border, laid over it. Its pieces are there for a design language that cuts a
+     notch for a floating label; otherwise they draw nothing and the frame is one border. */
+  :where(.mx-field > .mx-field__box) > .mx-field__frame {
+    position: absolute;
+    inset: calc(-1 * var(--_field-border-width));
+    z-index: var(--_under);
+    overflow: hidden;
+    pointer-events: none;
+    transition: border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-field[data-disabled] .mx-field__box {
-    color: var(--mx-field-disabled-fg);
-    background: var(--mx-field-disabled-bg);
-    border-color: var(--mx-field-disabled-border);
-    box-shadow: none;
-    cursor: default;
+  /* Notch: the frame is drawn by its pieces, and the top opens under the label once it has moved up. */
+  .mx-field[data-notch][data-variant='outline'][data-label-mode='floating'] > .mx-field__box {
+    --_lift: 0px;
   }
 
-  .mx-field[data-disabled] .mx-field__label {
-    color: var(--mx-field-disabled-fg);
+  .mx-field[data-notch][data-variant='outline'][data-label-mode='floating'] > :where(.mx-field__box) > :is(.mx-field__control, .mx-field__prefix, .mx-field__suffix) {
+    align-self: auto;
   }
 
-  .mx-field__control {
+  .mx-field[data-notch][data-variant='outline'][data-label-mode='floating'] > :where(.mx-field__box) > .mx-field__frame {
+    border-style: none;
+  }
+
+  .mx-field[data-notch][data-variant='outline'][data-label-mode='floating'] > :where(.mx-field__box) > :where(.mx-field__frame) > :is(.mx-field__frame-start, .mx-field__frame-notch, .mx-field__frame-end) {
+    box-sizing: border-box;
+    transition: border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  .mx-field[data-notch][data-variant='outline'][data-label-mode='floating'] > :where(.mx-field__box) > :where(.mx-field__frame) > .mx-field__frame-start {
+    flex: none;
+    inline-size: calc(var(--_padding-start) + var(--_field-border-width) - var(--_field-notch-gap));
+  }
+
+  .mx-field[data-notch][data-variant='outline'][data-label-mode='floating'] > :where(.mx-field__box) > :where(.mx-field__frame) > .mx-field__frame-notch {
+    flex: none;
+  }
+
+  .mx-field[data-notch][data-variant='outline'][data-label-mode='floating'] > :where(.mx-field__box) > :where(.mx-field__frame) > .mx-field__frame-end {
+    flex: 1 1 auto;
+  }
+
+  .mx-field[data-notch][data-variant='outline'][data-label-mode='floating']:is(:focus-within, [data-filled], [data-placeholder], [data-prefix], [data-icon])
+    > :where(.mx-field__box)
+    > :where(.mx-field__frame)
+    > .mx-field__frame-notch {
+    --_notch-gap: var(--_field-notch-gap);
+    --_notch-open: transparent;
+  }
+
+  .mx-field[data-notch][data-variant='outline'][data-label-mode='floating']:is(:focus-within, [data-filled], [data-placeholder], [data-prefix], [data-icon])
+    > :where(.mx-field__box)
+    > :where(.mx-field__frame)
+    > .mx-field__frame-notch::before {
+    max-inline-size: none;
+  }
+
+  .mx-field[data-notch][data-variant='outline'][data-label-mode='floating']:is(:focus-within, [data-filled], [data-placeholder], [data-prefix], [data-icon]) > .mx-field__label {
+    inset-block-start: 0;
+    block-size: auto;
+    translate: 0 -50%;
+  }
+
+  /* The label's text in the notch (drawn from `data-label`, so it is in no text and read by nobody): it gives the notch its width. */
+  :where(.mx-field > .mx-field__box > .mx-field__frame) > .mx-field__frame-notch::before {
+    content: attr(data-label);
+    display: block;
+    max-inline-size: 0;
+    padding-inline: 0;
+    overflow: hidden;
+    font-size: var(--_field-floating-font-size);
+    font-weight: var(--_field-label-font-weight);
+    white-space: nowrap;
+    visibility: hidden;
+  }
+
+  /* The indicator: over the frame's inside, its line drawn along the bottom. */
+  :where(.mx-field > .mx-field__box > .mx-field__frame) > .mx-field__indicator {
+    position: absolute;
+    inset: 0;
+    z-index: var(--_under);
+    transition: box-shadow var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  :where(.mx-field > .mx-field__box) > .mx-field__control {
     flex: 1 1 auto;
     min-inline-size: 0;
   }
@@ -207,7 +268,7 @@
      the top of the box, so there the input keeps its own height; check boxes, radios and the other
      inputs that are not text keep theirs too. */
   .mx-field:not([data-label-mode='floating'])
-    .mx-field__box
+    > .mx-field__box
     > input.mx-field__control:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file']) {
     align-self: stretch;
   }
@@ -229,56 +290,42 @@
     box-shadow: none;
   }
 
-  .mx-field__input::placeholder {
-    color: var(--mx-field-placeholder);
-    opacity: 1;
-  }
-
-  .mx-field[data-align='center'] .mx-field__input {
+  .mx-field[data-align='center'] > :where(.mx-field__box) > .mx-field__input {
     text-align: center;
   }
 
-  .mx-field[data-align='end'] .mx-field__input {
+  .mx-field[data-align='end'] > :where(.mx-field__box) > .mx-field__input {
     text-align: end;
   }
 
-  .mx-field__icon {
+  :where(.mx-field > .mx-field__box) > .mx-field__icon {
     display: inline-flex;
     flex: none;
-    inline-size: var(--mx-field-icon-size);
-    block-size: var(--mx-field-icon-size);
-    color: var(--mx-field-icon-fg);
   }
 
-  .mx-field__icon > :is(img, svg, .mx-glyph) {
+  :where(.mx-field > .mx-field__box) > .mx-field__icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }
 
-  .mx-field__prefix,
-  .mx-field__suffix {
+  :where(.mx-field > .mx-field__box) > :is(.mx-field__prefix, .mx-field__suffix) {
     flex: none;
-    color: var(--mx-field-affix-fg);
     white-space: nowrap;
   }
 
-  .mx-field__start,
-  .mx-field__tools,
-  .mx-field__end,
-  .mx-field__actions {
+  :where(.mx-field > .mx-field__box) > :is(.mx-field__start, .mx-field__tools, .mx-field__end, .mx-field__actions) {
     display: inline-flex;
     flex: none;
     align-items: center;
-    gap: var(--mx-field-tools-gap);
   }
 
   /* Buttons at the edge sit close to it. */
-  .mx-field__box > :first-child:is(.mx-field__start) {
-    margin-inline-start: calc(var(--mx-field-button-inset) - var(--_padding));
+  :where(.mx-field > .mx-field__box) > .mx-field__frame + .mx-field__start {
+    --_slot-start: calc(var(--_field-button-inset) - var(--_padding-start));
   }
 
-  .mx-field__box > :last-child:is(.mx-field__tools, .mx-field__end, .mx-field__actions) {
-    margin-inline-end: calc(var(--mx-field-button-inset) - var(--_padding));
+  :where(.mx-field) > .mx-field__box > :last-child:is(.mx-field__tools, .mx-field__end, .mx-field__actions) {
+    --_slot-end: calc(var(--_field-button-inset) - var(--_padding-end));
   }
 
   /* Buttons in the box. */
@@ -288,41 +335,15 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--mx-field-button-gap);
-    min-inline-size: calc(var(--_height) - 2 * var(--mx-field-button-inset));
-    block-size: calc(var(--_height) - 2 * var(--mx-field-button-inset));
-    margin: 0;
-    padding-block: 0;
-    padding-inline: var(--mx-field-button-padding);
     font: inherit;
-    color: var(--mx-field-button-fg);
-    background: transparent;
-    border: 0;
-    border-radius: var(--mx-field-button-radius);
-    cursor: default;
   }
 
-  .mx-field:is(:not([data-filled]), [data-readonly], [data-disabled]) .mx-field__clear {
+  .mx-field:is(:not([data-filled]), [data-readonly], [data-disabled]) > :where(.mx-field__box) > * > .mx-field__clear {
     display: none;
-  }
-
-  .mx-field__button:hover:not(:disabled) {
-    color: var(--mx-field-button-fg-hover);
-    background: var(--mx-field-button-bg-hover);
-  }
-
-  .mx-field__button:active:not(:disabled) {
-    background: var(--mx-field-button-bg-active);
-  }
-
-  .mx-field__button:disabled {
-    color: var(--mx-field-button-fg-disabled);
   }
 
   .mx-field__button-icon {
     display: inline-flex;
-    inline-size: var(--mx-field-icon-size);
-    block-size: var(--mx-field-icon-size);
   }
 
   .mx-field__button-icon > :is(img, svg, .mx-glyph) {
@@ -330,33 +351,15 @@
     block-size: 100%;
   }
 
-  /* The line under the box. */
+  /* The line under the box. The message is a live region: it stays in the page, empty, so a new error is read out. */
 
-  .mx-field__foot {
-    display: flex;
-    gap: var(--mx-field-gap);
-    font-size: var(--mx-field-message-font-size);
-    line-height: var(--mx-field-message-line);
-    color: var(--mx-field-message-fg);
-  }
-
-  /* The message is a live region: it stays in the page, empty, so a new error is read out. */
-  .mx-field[data-message] .mx-field__foot {
-    padding-block-start: var(--mx-field-message-gap);
-  }
-
-  .mx-field__message {
+  :where(.mx-field > .mx-field__foot) > .mx-field__message {
     flex: 1 1 auto;
     min-inline-size: 0;
   }
 
-  .mx-field[data-invalid] .mx-field__message {
-    color: var(--mx-field-error-fg);
-  }
-
-  .mx-field__counter {
+  :where(.mx-field > .mx-field__foot) > .mx-field__counter {
     flex: none;
-    margin-inline-start: auto;
     font-variant-numeric: tabular-nums;
   }
 }

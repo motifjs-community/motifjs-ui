@@ -1,6 +1,9 @@
-/* NumberBox: the spin buttons at the end of the box, on top of each other or side by side. */
+/* NumberBox: the spin buttons at the end of the box, on top of each other or side by side. Only the
+   layout is here: the steps' look (with what they share with the field's buttons), their glyphs and
+   dividers are units of the number box's schema (`$units`), painted by units.css. Stacked, the pair
+   splits the box's height. */
 @layer mx.components {
-  .mx-number-box .mx-field__input {
+  .mx-number-box > :where(.mx-field__box) > .mx-field__input {
     font-variant-numeric: tabular-nums;
   }
 
@@ -12,18 +15,15 @@
   }
 
   .mx-field__box > .mx-number-box__spin[data-layout='stacked']:last-child {
-    margin-inline-end: calc(var(--mx-number-box-spin-inset) - var(--_padding));
+    margin-inline-end: calc(var(--_number-box-spin-inset) - var(--_padding-end));
   }
 
-  .mx-number-box__spin[data-layout='stacked'] .mx-number-box__step {
-    min-inline-size: var(--mx-number-box-spin-width);
-    block-size: calc((var(--_height) - 2 * var(--mx-field-border-width) - 2 * var(--mx-number-box-spin-inset)) / 2);
-    padding: 0;
+  .mx-number-box__spin[data-layout='stacked'] > .mx-number-box__step {
+    block-size: calc((var(--_height) - 2 * var(--_field-border-width) - 2 * var(--_number-box-spin-inset)) / 2);
   }
 
-  .mx-number-box__spin[data-layout='stacked'] .mx-glyph {
+  .mx-number-box__spin[data-layout='stacked'] > .mx-number-box__step > .mx-glyph {
     block-size: 100%;
-    max-block-size: var(--mx-number-box-glyph-size);
   }
 
   .mx-number-box[data-readonly] .mx-number-box__spin {

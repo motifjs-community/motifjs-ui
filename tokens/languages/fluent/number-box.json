@@ -1,0 +1,24 @@
+{
+  "number-box": {
+    "spin-layout": { "$value": "inline" },
+    "spin-order": { "$value": "down-up" },
+    "spin-inset": { "$value": "{border.width.2}" },
+    "step": {
+      "stacked": {
+        "min-width": { "$value": "{space.5}" },
+        "padding-inline": { "$value": "0px" }
+      }
+    },
+    "glyph": {
+      "up": {
+        "icon": { "$value": "chevron-up" }
+      },
+      "down": {
+        "icon": { "$value": "chevron-down" }
+      },
+      "stacked": {
+        "max-height": { "$value": "{icon.size.sm}" }
+      }
+    }
+  }
+}

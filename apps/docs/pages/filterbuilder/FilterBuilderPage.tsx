@@ -115,11 +115,10 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['filterbuilder.gap, filterbuilder.row-gap', 'Between the buttons of a row; between the rows.'],
+  ['filterbuilder.container, filterbuilder.tree, filterbuilder.row, filterbuilder.cell, filterbuilder.editor', 'Units: the text, the rows (`group`, `hover`) and the space between them, a button\'s place, a value\'s editor.'],
   ['filterbuilder.indent', 'How far each level moves in.'],
-  ['filterbuilder.line-width, filterbuilder.line-color', 'The line along each group.'],
-  ['filterbuilder.editor-width', 'The smallest width of a value editor.'],
-  ['filterbuilder.fg, filterbuilder.font-size', 'The text.'],
+  ['filterbuilder.line-width, line-color, line-offset, elbow-length, elbow-color', 'The line along each group, and an elbow to each row.'],
+  ['filterbuilder.value-width', 'The least width of a value editor\'s field.'],
 ];
 
 export default function FilterBuilderPage() {

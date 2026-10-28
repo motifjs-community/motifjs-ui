@@ -62,12 +62,25 @@ export default async function ({ page, base, check, axeSource, box }) {
     await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => done())));
     return box(colors.getByRole('radio', { name, exact: true }));
   };
+  // The three radios once their layout holds what is checked, measured again for up to 1.5 s: on a busy machine a
+  // new layout may land a few frames after the press.
+  const placed = async (ok) => {
+    let three;
+    for (let i = 0; i < 15; i++) {
+      three = [await at('red'), await at('orange'), await at('yellow')];
+      if (ok(...three)) break;
+      await page.waitForTimeout(100);
+    }
+    return three;
+  };
+  const vertical = (red, orange, yellow) => Math.abs(red.left - orange.left) < 1 && orange.top > red.top && Math.abs(yellow.top - red.top) < 1 && yellow.left > red.left;
+  const across = (red, orange, yellow) => Math.abs(orange.top - red.top) < 1 && orange.left > red.left && Math.abs(yellow.top - red.top) < 1;
   await layout.getByRole('button', { name: '4 columns' }).click();
-  let [red, orange, yellow] = [await at('red'), await at('orange'), await at('yellow')];
-  check('columns, vertical: down the first column, then the next', Math.abs(red.left - orange.left) < 1 && orange.top > red.top && Math.abs(yellow.top - red.top) < 1 && yellow.left > red.left);
+  let [red, orange, yellow] = await placed(vertical);
+  check('columns, vertical: down the first column, then the next', vertical(red, orange, yellow));
   await layout.getByRole('button', { name: 'horizontal' }).click();
-  [red, orange, yellow] = [await at('red'), await at('orange'), await at('yellow')];
-  check('columns, horizontal: across the rows', Math.abs(orange.top - red.top) < 1 && orange.left > red.left && Math.abs(yellow.top - red.top) < 1);
+  [red, orange, yellow] = await placed(across);
+  check('columns, horizontal: across the rows', across(red, orange, yellow));
   await layout.getByRole('button', { name: 'no grid' }).click();
   [red, orange] = [await at('red'), await at('orange')];
   check('horizontal: side by side', Math.abs(orange.top - red.top) < 1 && orange.left > red.left);

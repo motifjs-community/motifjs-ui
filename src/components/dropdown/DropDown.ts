@@ -56,6 +56,8 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     super(props);
     const own = (this.props ?? {}) as DropDownProps<T, V>;
     this.element.classList.add('mx-drop-down');
+    // Pressed like a button: the field shows its pressed look while held.
+    this.element.toggleAttribute('data-pressable', true);
 
     this.observeProperty('clearButton', () => this.renderClear());
     this.observeProperty('matchWidth', (on) => {
@@ -479,7 +481,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     popup.element.classList.add('mx-drop-down__popup');
     this.controls.add(popup);
     if (this.peekProperty('searchEnabled')) {
-      const search = new TextBox({ type: 'search', labelMode: 'hidden', size: 'sm', stretch: true, autocomplete: 'off' });
+      const search = new TextBox({ type: 'search', labelMode: 'hidden', stretch: true, autocomplete: 'off' });
       search.label = () => uiLocale.strings.search;
       search.placeholder = () => uiLocale.strings.search;
       search.element.classList.add('mx-drop-down__search');

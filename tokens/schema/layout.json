@@ -1,0 +1,111 @@
+{
+  "layout": {
+    "$description": "Layout containers: the spacing steps of gap and padding, the default gap, panels, group boxes and the splitter.",
+    "$selector": ".mx-stack, .mx-grid, .mx-dock-panel, .mx-panel, .mx-group-box, .mx-split-container",
+    "space": {
+      "xxs": { "$type": "dimension" },
+      "xs": { "$type": "dimension" },
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" },
+      "xl": { "$type": "dimension" },
+      "xxl": { "$type": "dimension" }
+    },
+    "gap": { "$type": "dimension" },
+    "group-box": {
+      "gap": { "$type": "dimension" },
+      "legend-float": { "$type": "keyword", "$description": "Where the title sits: none (on the frame) or inline-start (inside the box, above its content)." }
+    },
+    "splitter": {
+      "size": { "$type": "dimension" },
+      "line-width": { "$type": "dimension" },
+      "active-width": { "$type": "dimension" },
+      "grip-length": { "$type": "dimension" },
+      "grip-thickness": { "$type": "dimension" }
+    },
+    "$units": {
+      "panel": {
+        "$description": "A panel: `outline` (a frame) or `card` (a raised surface); plain draws nothing.",
+        "selector": ".mx-panel",
+        "states": {
+          "outline": ".mx-panel[data-variant='outline']",
+          "card": ".mx-panel[data-variant='card']"
+        }
+      },
+      "group": {
+        "$description": "A group box: its frame and the room inside it; `plain`: the variant without a frame; `collapsed`: folded, only its caption shows.",
+        "selector": ".mx-group-box",
+        "defaults": {
+          "margin": "0px"
+        },
+        "states": {
+          "plain": ".mx-group-box[data-variant='plain']",
+          "collapsed": ".mx-group-box[data-collapsed]:not([data-variant='plain'])"
+        }
+      },
+      "group-caption": {
+        "$description": "A group box's caption, on its frame or above its content (`plain`: of the plain variant; `disabled`).",
+        "selector": ".mx-group-box__legend",
+        "states": {
+          "plain": ".mx-group-box[data-variant='plain'] > .mx-group-box__legend",
+          "disabled": ".mx-group-box[data-disabled] > .mx-group-box__legend"
+        }
+      },
+      "group-toggle": {
+        "$description": "The button that folds a group box: its caption with a chevron (`hover`, `pressed`, `focus`); it reaches out as far as its padding, so the caption stays in line with a plain one.",
+        "selector": ".mx-group-box__toggle",
+        "defaults": {
+          "padding-block": "0px",
+          "margin-block": "0px",
+          "border-width": "0px",
+          "bg": "transparent",
+          "cursor": "default"
+        },
+        "states": {
+          "hover": ".mx-group-box__toggle:hover:not(:disabled)",
+          "pressed": ".mx-group-box__toggle:active:not(:disabled)",
+          "focus": ".mx-group-box__toggle:focus-visible"
+        }
+      },
+      "group-chevron": {
+        "$description": "The chevron of a group box that folds (`collapsed`; `collapsed-rtl`: right to left).",
+        "selector": ".mx-glyph.mx-group-box__chevron",
+        "states": {
+          "collapsed": ".mx-group-box[data-collapsed] > :where(.mx-group-box__legend) > :where(.mx-group-box__toggle) > .mx-glyph.mx-group-box__chevron",
+          "collapsed-rtl": ".mx-group-box[data-collapsed] > :where(.mx-group-box__legend) > :where(.mx-group-box__toggle) > .mx-glyph.mx-group-box__chevron:dir(rtl)"
+        }
+      },
+      "splitter-handle": {
+        "$description": "The splitter between two panes (`focus`: the keys move it).",
+        "selector": ".mx-split-container__splitter",
+        "states": {
+          "focus": ".mx-split-container__splitter:focus-visible"
+        }
+      },
+      "splitter-line": {
+        "$description": "The line along the splitter (`active`: under the pointer or dragged; `disabled`); its thickness is `splitter.line-width`, `splitter.active-width`.",
+        "selector": ".mx-split-container__splitter::before",
+        "defaults": {
+          "width": "var(--_line-w, auto)",
+          "height": "var(--_line-h, auto)"
+        },
+        "states": {
+          "active": ".mx-split-container[data-resizable]:not([data-disabled]) > .mx-split-container__splitter:hover::before, .mx-split-container[data-dragging] > .mx-split-container__splitter::before",
+          "disabled": ".mx-split-container[data-disabled] > .mx-split-container__splitter::before"
+        }
+      },
+      "splitter-grip": {
+        "$description": "The grip in the middle of the splitter (`active`; `disabled`: also while it cannot be moved); its size is `splitter.grip-length` × `splitter.grip-thickness`.",
+        "selector": ".mx-split-container__splitter::after",
+        "defaults": {
+          "width": "var(--_grip-w)",
+          "height": "var(--_grip-h)"
+        },
+        "states": {
+          "active": ".mx-split-container[data-resizable]:not([data-disabled]) > .mx-split-container__splitter:hover::after, .mx-split-container[data-dragging] > .mx-split-container__splitter::after",
+          "disabled": ".mx-split-container:not([data-resizable]) > .mx-split-container__splitter::after, .mx-split-container[data-disabled] > .mx-split-container__splitter::after"
+        }
+      }
+    }
+  }
+}

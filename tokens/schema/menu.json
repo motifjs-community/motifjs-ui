@@ -1,0 +1,135 @@
+{
+  "menu": {
+    "$description": "Menu: a list of commands on a popup.",
+    "$selector": ".mx-menu",
+    "item-height": { "$type": "dimension" },
+    "item-white-space": { "$type": "keyword", "$description": "An item's text: `nowrap` keeps it on one line, `normal` lets it wrap." },
+    "$units": {
+      "panel": {
+        "$description": "The column of items: its space around and between them (the surface is the popup).",
+        "selector": ".mx-menu",
+        "defaults": {
+          "outline-style": "none"
+        }
+      },
+      "item": {
+        "$description": "A command: `highlight` (the item the pointer or the keys are on, or whose submenu is open), `pressed`, `focus` (the keys: a ring), `checked`, `disabled`; `first` and `last`: the outer corners; each tone (`accent`, `success`, `caution`, `danger`) at rest and highlighted.",
+        "selector": ":where(.mx-menu) > .mx-menu__item",
+        "defaults": {
+          "bg": "transparent",
+          "border-width": "0px",
+          "margin": "0px",
+          "padding-block": "0px",
+          "min-height": "var(--_menu-item-height)",
+          "cursor": "default"
+        },
+        "states": {
+          "first": ":where(.mx-menu) > .mx-menu__item:first-child",
+          "last": ":where(.mx-menu) > .mx-menu__item:last-child",
+          "checked": ":where(.mx-menu) > .mx-menu__item[aria-checked='true']",
+          "highlight": ":where(.mx-menu) > .mx-menu__item:is(:focus, [aria-expanded='true'])",
+          "pressed": {
+            "selector": ":where(.mx-menu) > .mx-menu__item:active:not([aria-disabled='true'])",
+            "from": "highlight"
+          },
+          "focus": {
+            "selector": ":where(.mx-menu) > .mx-menu__item:focus-visible",
+            "from": "highlight"
+          },
+          "disabled": ":where(.mx-menu) > .mx-menu__item[aria-disabled='true']",
+          "accent": ":where(.mx-menu) > .mx-menu__item[data-tone='accent']:not([aria-disabled='true'])",
+          "success": ":where(.mx-menu) > .mx-menu__item[data-tone='success']:not([aria-disabled='true'])",
+          "caution": ":where(.mx-menu) > .mx-menu__item[data-tone='caution']:not([aria-disabled='true'])",
+          "danger": ":where(.mx-menu) > .mx-menu__item[data-tone='danger']:not([aria-disabled='true'])",
+          "accent-highlight": {
+            "selector": ":where(.mx-menu) > .mx-menu__item[data-tone='accent']:not([aria-disabled='true']):is(:focus, [aria-expanded='true'])",
+            "from": "accent"
+          },
+          "success-highlight": {
+            "selector": ":where(.mx-menu) > .mx-menu__item[data-tone='success']:not([aria-disabled='true']):is(:focus, [aria-expanded='true'])",
+            "from": "success"
+          },
+          "caution-highlight": {
+            "selector": ":where(.mx-menu) > .mx-menu__item[data-tone='caution']:not([aria-disabled='true']):is(:focus, [aria-expanded='true'])",
+            "from": "caution"
+          },
+          "danger-highlight": {
+            "selector": ":where(.mx-menu) > .mx-menu__item[data-tone='danger']:not([aria-disabled='true']):is(:focus, [aria-expanded='true'])",
+            "from": "danger"
+          }
+        }
+      },
+      "check": {
+        "$description": "The leading place of a checked item's mark.",
+        "selector": ":where(.mx-menu > .mx-menu__item) > .mx-menu__check",
+        "states": {
+          "disabled": ":where(.mx-menu) > .mx-menu__item[aria-disabled='true'] > .mx-menu__check"
+        }
+      },
+      "icon": {
+        "$description": "An item's icon, per tone.",
+        "selector": ":where(.mx-menu > .mx-menu__item) > .mx-menu__icon",
+        "states": {
+          "disabled": ":where(.mx-menu) > .mx-menu__item[aria-disabled='true'] > .mx-menu__icon",
+          "accent": ":where(.mx-menu) > .mx-menu__item[data-tone='accent']:not([aria-disabled='true']) > .mx-menu__icon",
+          "success": ":where(.mx-menu) > .mx-menu__item[data-tone='success']:not([aria-disabled='true']) > .mx-menu__icon",
+          "caution": ":where(.mx-menu) > .mx-menu__item[data-tone='caution']:not([aria-disabled='true']) > .mx-menu__icon",
+          "danger": ":where(.mx-menu) > .mx-menu__item[data-tone='danger']:not([aria-disabled='true']) > .mx-menu__icon",
+          "accent-highlight": {
+            "selector": ":where(.mx-menu) > .mx-menu__item[data-tone='accent']:not([aria-disabled='true']):is(:focus, [aria-expanded='true']) > .mx-menu__icon",
+            "from": "accent"
+          },
+          "success-highlight": {
+            "selector": ":where(.mx-menu) > .mx-menu__item[data-tone='success']:not([aria-disabled='true']):is(:focus, [aria-expanded='true']) > .mx-menu__icon",
+            "from": "success"
+          },
+          "caution-highlight": {
+            "selector": ":where(.mx-menu) > .mx-menu__item[data-tone='caution']:not([aria-disabled='true']):is(:focus, [aria-expanded='true']) > .mx-menu__icon",
+            "from": "caution"
+          },
+          "danger-highlight": {
+            "selector": ":where(.mx-menu) > .mx-menu__item[data-tone='danger']:not([aria-disabled='true']):is(:focus, [aria-expanded='true']) > .mx-menu__icon",
+            "from": "danger"
+          }
+        }
+      },
+      "check-mark": {
+        "$description": "The mark of a checked item.",
+        "selector": ":where(.mx-menu > .mx-menu__item) > .mx-menu__check > .mx-glyph[data-icon='check']"
+      },
+      "radio-mark": {
+        "$description": "The mark of the chosen item of a group.",
+        "selector": ":where(.mx-menu > .mx-menu__item) > .mx-menu__check > .mx-glyph[data-icon='radio']"
+      },
+      "label": {
+        "$description": "An item's text.",
+        "selector": ":where(.mx-menu > .mx-menu__item) > .mx-menu__label"
+      },
+      "description": {
+        "$description": "A dimmer text after the label.",
+        "selector": ":where(.mx-menu > .mx-menu__item) > .mx-menu__description",
+        "states": {
+          "disabled": ":where(.mx-menu) > .mx-menu__item[aria-disabled='true'] > .mx-menu__description"
+        }
+      },
+      "shortcut": {
+        "$description": "The shortcut at the end of an item (`display: none` leaves it out).",
+        "selector": ":where(.mx-menu > .mx-menu__item) > .mx-menu__shortcut",
+        "defaults": {
+          "display": "block"
+        },
+        "states": {
+          "disabled": ":where(.mx-menu) > .mx-menu__item[aria-disabled='true'] > .mx-menu__shortcut"
+        }
+      },
+      "arrow": {
+        "$description": "The arrow of an item that opens a submenu.",
+        "selector": ":where(.mx-menu > .mx-menu__item) > .mx-menu__arrow > .mx-glyph"
+      },
+      "separator": {
+        "$description": "The line between groups of items.",
+        "selector": ":where(.mx-menu) > .mx-menu__separator"
+      }
+    }
+  }
+}

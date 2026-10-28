@@ -228,7 +228,7 @@ describe('Scheduler', () => {
         data: rows,
         key: 'id',
       }),
-      loadMode: 'page',
+      loadMode: 'all',
     });
     const s = make({ dataSource: source });
     for (let i = 0; i < 6; i++) await tick();

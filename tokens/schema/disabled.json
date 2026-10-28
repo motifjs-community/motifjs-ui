@@ -1,0 +1,15 @@
+{
+  "disabled": {
+    "$description": "Elements a disabled control covers without a native disabled state (links, focusable parts).",
+    "$selector": "[data-disabled] [aria-disabled='true'], [data-disabled][aria-disabled='true']",
+    "$units": {
+      "element": {
+        "$description": "An element a disabled control covers without a native disabled state (a link, a focusable part): its own look, when it has one, outweighs this.",
+        "selector": ":where([data-disabled] [aria-disabled='true'], [data-disabled][aria-disabled='true'])",
+        "defaults": {
+          "cursor": "default"
+        }
+      }
+    }
+  }
+}

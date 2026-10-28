@@ -1,5 +1,7 @@
 /* Tooltip: a small surface in the top layer (or above the page where popovers are missing).
-   placePopup writes its position; the gap to the target is the margin of the side it opens on. */
+   placePopup writes its position; the gap to the target is the margin of the side it opens on. It
+   comes in from its target by `enter-offset` (0: it only fades in). Its look is its units' (units.css:
+   the surface, an arrow, the text); this file only places them. */
 @layer mx.components {
   .mx-tooltip {
     position: fixed;
@@ -7,23 +9,14 @@
     z-index: var(--mx-z-toast);
     box-sizing: border-box;
     inline-size: max-content;
-    max-inline-size: var(--mx-tooltip-max-width);
     margin: 0;
-    padding-block: var(--mx-tooltip-padding-block);
-    padding-inline: var(--mx-tooltip-padding-inline);
     overflow: visible;
-    font-size: var(--mx-tooltip-font-size);
-    font-weight: var(--mx-tooltip-font-weight);
-    line-height: var(--mx-tooltip-line-height);
-    color: var(--mx-tooltip-fg);
-    text-align: start;
+    text-align: var(--_tooltip-text-align);
     overflow-wrap: break-word;
     white-space: normal;
-    background: var(--mx-tooltip-background);
-    border: var(--mx-tooltip-border-width) solid var(--mx-tooltip-border-color);
-    border-radius: var(--mx-tooltip-radius);
-    box-shadow: var(--mx-tooltip-shadow);
     animation: mx-tooltip-in var(--mx-motion-duration-fast) var(--mx-motion-easing-out);
+
+    --_enter: 0 0;
   }
 
   .mx-tooltip[hidden] {
@@ -31,24 +24,74 @@
   }
 
   .mx-tooltip[data-side='bottom'] {
-    margin-block-start: var(--mx-tooltip-offset);
+    margin-block-start: var(--_tooltip-offset);
+
+    --_enter: 0 calc(-1 * var(--_tooltip-enter-offset));
   }
 
   .mx-tooltip[data-side='top'] {
-    margin-block-end: var(--mx-tooltip-offset);
+    margin-block-end: var(--_tooltip-offset);
+
+    --_enter: 0 var(--_tooltip-enter-offset);
   }
 
   .mx-tooltip[data-side='end'] {
-    margin-inline-start: var(--mx-tooltip-offset);
+    margin-inline-start: var(--_tooltip-offset);
+
+    --_enter: calc(-1 * var(--_tooltip-enter-offset)) 0;
   }
 
   .mx-tooltip[data-side='start'] {
-    margin-inline-end: var(--mx-tooltip-offset);
+    margin-inline-end: var(--_tooltip-offset);
+
+    --_enter: var(--_tooltip-enter-offset) 0;
+  }
+
+  .mx-tooltip[data-side='end']:dir(rtl) {
+    --_enter: var(--_tooltip-enter-offset) 0;
+  }
+
+  .mx-tooltip[data-side='start']:dir(rtl) {
+    --_enter: calc(-1 * var(--_tooltip-enter-offset)) 0;
+  }
+
+  /* The arrow: centred on the edge towards the target, its inner half clipped away (the half outside
+     covers the frame at its base). */
+  .mx-tooltip::before {
+    content: '';
+    position: absolute;
+    box-sizing: border-box;
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+  }
+
+  .mx-tooltip[data-side='bottom']::before {
+    inset: 0 auto auto 50%;
+    translate: -50% -50%;
+    rotate: 45deg;
+  }
+
+  .mx-tooltip[data-side='top']::before {
+    inset: auto auto 0 50%;
+    translate: -50% 50%;
+    rotate: 225deg;
+  }
+
+  .mx-tooltip:is([data-side='end']:dir(ltr), [data-side='start']:dir(rtl))::before {
+    inset: 50% auto auto 0;
+    translate: -50% -50%;
+    rotate: -45deg;
+  }
+
+  .mx-tooltip:is([data-side='start']:dir(ltr), [data-side='end']:dir(rtl))::before {
+    inset: 50% 0 auto auto;
+    translate: 50% -50%;
+    rotate: 135deg;
   }
 
   @keyframes mx-tooltip-in {
     from {
       opacity: 0;
+      translate: var(--_enter);
     }
   }
 }

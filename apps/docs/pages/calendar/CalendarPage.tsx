@@ -87,7 +87,8 @@ import { Calendar } from '@motifx-community/ui';
             ['.mx-calendar', '`data-view="month|year|decade"`.'],
             ['.mx-calendar__header, __previous, __title, __next', 'The header.'],
             ['.mx-calendar__cell', '`aria-selected`, `aria-disabled`, `data-today`, `data-outside`.'],
-            ['calendar.cell-size, calendar.cell-radius, calendar.selected-background, calendar.today-color, …', 'Component tokens.'],
+            ['calendar.container, header, title, nav, nav-icon, weekday, week, cell, ring, foot, today', 'Units: every piece in its states (a cell: `block`, `hover`, `pressed`, `focus`, `outside`, `today`, `selected`, `disabled` …).'],
+            ['calendar.day-size, calendar.view-cell-width-scale, calendar.view-cell-height-scale, calendar.previous-rotate, calendar.next-rotate', 'A day\'s size (the grid is built on it), the zoomed-out views\' cells, the arrows\' turns.'],
           ]}
         />
       </Section>

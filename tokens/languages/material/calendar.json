@@ -1,0 +1,118 @@
+{
+  "calendar": {
+    "day-size": { "$value": "{control.height.md}" },
+    "view-cell-width-scale": { "$value": 1.75 },
+    "view-cell-height-scale": { "$value": 1.5 },
+    "previous-rotate": { "$value": {"value": 0.25, "unit": "turn"} },
+    "next-rotate": { "$value": {"value": -0.25, "unit": "turn"} },
+    "container": {
+      "padding": { "$value": "{space.2}" },
+      "gap": { "$value": "{space.2}" },
+      "color": { "$value": "{color.fg.primary}" },
+      "disabled": {
+        "color": { "$value": "{color.fg.on-accent-disabled}" }
+      }
+    },
+    "header": {
+      "gap": { "$value": "{space.1}" }
+    },
+    "title": {
+      "padding-inline": { "$value": "{space.2}" },
+      "radius": { "$value": "{radius.lg}" },
+      "font-weight": { "$value": "{font.weight.medium}" },
+      "hover": {
+        "bg": { "$value": "{color.fill.subtle.secondary}" }
+      },
+      "pressed": {
+        "bg": { "$value": "{color.fill.subtle.tertiary}" }
+      },
+      "focus": {
+        "glow": { "$value": "{focus.ring.halo}" },
+        "outline-width": { "$value": "{focus.ring.width}" },
+        "outline-color": { "$value": "{focus.ring.color}" },
+        "outline-offset": { "$value": "{focus.ring.offset}" }
+      }
+    },
+    "nav": {
+      "radius": { "$value": "{radius.lg}" },
+      "color": { "$value": "{color.fg.secondary}" },
+      "hover": {
+        "bg": { "$value": "{color.fill.subtle.secondary}" }
+      },
+      "pressed": {
+        "bg": { "$value": "{color.fill.subtle.tertiary}" }
+      },
+      "focus": {
+        "glow": { "$value": "{focus.ring.halo}" },
+        "outline-width": { "$value": "{focus.ring.width}" },
+        "outline-color": { "$value": "{focus.ring.color}" },
+        "outline-offset": { "$value": "{focus.ring.offset}" }
+      },
+      "disabled": {
+        "color": { "$value": "{color.fg.on-accent-disabled}" }
+      }
+    },
+    "nav-icon": {
+      "icon": { "$value": "chevron-down" }
+    },
+    "weekday": {
+      "color": { "$value": "{color.fg.primary}" },
+      "font-size": { "$value": "{font.size.body}" },
+      "font-weight": { "$value": "{font.weight.regular}" }
+    },
+    "cell": {
+      "radius": { "$value": "{radius.full}" },
+      "block": {
+        "radius": { "$value": "{radius.lg}" }
+      },
+      "hover": {
+        "bg": { "$value": "{color.fill.subtle.secondary}" }
+      },
+      "pressed": {
+        "bg": { "$value": "{color.fill.subtle.tertiary}" }
+      },
+      "focus": {
+        "glow": { "$value": "{focus.ring.halo}" },
+        "outline-width": { "$value": "{focus.ring.width}" },
+        "outline-color": { "$value": "{focus.ring.color}" },
+        "outline-offset": { "$value": "{focus.ring.offset}" }
+      },
+      "outside": {
+        "color": { "$value": "{color.fg.on-accent-disabled}" }
+      },
+      "today": {
+        "shadow": { "$value": {"color": "{color.accent.fg}", "offsetX": "0px", "offsetY": "0px", "blur": "0px", "spread": "{border.width.1}", "inset": true} },
+        "color": { "$value": "{color.accent.fg}" },
+        "font-weight": { "$value": "{font.weight.medium}" }
+      },
+      "selected": {
+        "bg": { "$value": "{color.accent.solid}" },
+        "color": { "$value": "{color.accent.on-solid}" }
+      },
+      "selected-hover": {
+        "bg": { "$value": "{color.accent.solid}" }
+      },
+      "disabled": {
+        "color": { "$value": "{color.fg.on-accent-disabled}" }
+      }
+    },
+    "today": {
+      "padding-block": { "$value": "{space.1}" },
+      "padding-inline": { "$value": "{space.3}" },
+      "radius": { "$value": "{radius.lg}" },
+      "color": { "$value": "{color.accent.fg}" },
+      "hover": {
+        "bg": { "$value": "{color.fill.subtle.secondary}" }
+      },
+      "pressed": {
+        "bg": { "$value": "{color.fill.subtle.tertiary}" }
+      },
+      "focus": {
+        "glow": { "$value": "{focus.ring.halo}" },
+        "outline-width": { "$value": "{focus.ring.width}" },
+        "outline-color": { "$value": "{focus.ring.color}" },
+        "outline-offset": { "$value": "{focus.ring.offset}" }
+      }
+    }
+  }
+}

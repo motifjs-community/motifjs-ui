@@ -61,11 +61,10 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['tooltip.max-width', 'The widest it gets before it wraps.'],
-  ['tooltip.offset', 'The gap to its target.'],
-  ['tooltip.padding-block, tooltip.padding-inline', 'Space inside.'],
-  ['tooltip.font-size', 'Its text size.'],
-  ['tooltip.background, tooltip.border-color, tooltip.border-width, tooltip.radius, tooltip.shadow', 'Its surface.'],
+  ['tooltip.offset, tooltip.enter-offset', 'The gap to its target, and how far it comes in from it.'],
+  ['tooltip.surface', 'Unit: the tooltip with its box (`max-width`: the widest it gets before it wraps; `rich`: with content of its own).'],
+  ['tooltip.arrow, tooltip.text', 'Units: an arrow towards the target a design may show, and the text.'],
+  ['tooltip.text-align', 'How its text lines up.'],
 ];
 
 export default function TooltipPage() {

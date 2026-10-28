@@ -6,7 +6,7 @@
 // A component made ready for any design language takes no literal
 // length either: every size, space, corner, line and shadow is one of its tokens, so a language can
 // change it. Its files are listed here as they are done.
-const LOSSLESS = [];
+const LOSSLESS = ['src/components/scheduler/**/*.css'];
 
 export default {
   extends: ['@motifx-community/design-system/stylelint'],

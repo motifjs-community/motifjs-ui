@@ -1,9 +1,0 @@
-{
-  "form-layout": {
-    "$description": "Material cards: 12 corners.",
-    "group-radius": {
-      "$type": "dimension",
-      "$value": "{radius.md}"
-    }
-  }
-}

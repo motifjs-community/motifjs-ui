@@ -1,0 +1,77 @@
+{
+  "tagbox": {
+    "$description": "TagBox: the tags in the field's box (text, remove button, \"+N\"), the text input after them and the arrow.",
+    "$selector": ".mx-tag-box, .mx-tag-box__popup",
+    "inset": { "$type": "dimension" },
+    "input-min-width": { "$type": "dimension" },
+    "$units": {
+      "box": {
+        "$description": "The field's box as the tag box lays it out: the room above and below the tags (`inset`, which the tags' height follows).",
+        "selector": ".mx-tag-box > .mx-field__box",
+        "defaults": {
+          "padding-block": "var(--_tagbox-inset)"
+        }
+      },
+      "tags": {
+        "$description": "The tags together: the space between them (also between rows once they wrap).",
+        "selector": ".mx-tag-box__tags"
+      },
+      "tag": {
+        "$description": "A tag: under the pointer, the one the keys are on (`focus`), while its item loads (`loading`), the \"+N\" tag for the items not shown (`more`), with no remove button (`fixed`: read only or disabled), `disabled`. Its height is the box's less the inset.",
+        "selector": ".mx-tag-box__tag",
+        "defaults": {
+          "height": "var(--_tag-height)",
+          "cursor": "default"
+        },
+        "states": {
+          "more": ".mx-tag-box__tag.mx-tag-box__more",
+          "loading": ".mx-tag-box__tag[data-loading]",
+          "focus": ".mx-tag-box__tag:focus-visible",
+          "hover": ".mx-tag-box:not([data-disabled]) .mx-tag-box__tag:hover",
+          "fixed": ".mx-tag-box:is([data-readonly], [data-disabled]) .mx-tag-box__tag:not(.mx-tag-box__more)",
+          "disabled": ".mx-tag-box[data-disabled] .mx-tag-box__tag"
+        }
+      },
+      "tag-text": {
+        "$description": "A tag's text (cut with an ellipsis).",
+        "selector": ".mx-tag-box__tag-text"
+      },
+      "remove": {
+        "$description": "A tag's remove button (none while read only or disabled).",
+        "selector": ".mx-tag-box__remove",
+        "defaults": {
+          "margin": "0px",
+          "padding": "0px",
+          "border-width": "0px",
+          "bg": "transparent",
+          "cursor": "default"
+        },
+        "states": {
+          "hover": ".mx-tag-box__remove:hover",
+          "pressed": ".mx-tag-box__remove:active"
+        }
+      },
+      "remove-glyph": {
+        "$description": "The remove button's glyph.",
+        "selector": ".mx-tag-box__remove > .mx-glyph",
+        "states": {
+          "hover": ".mx-tag-box__remove:hover > .mx-glyph"
+        }
+      },
+      "arrow": {
+        "$description": "The arrow button (a field button: its hover, pressed and focus are the field's `button`); `open` while the list shows.",
+        "selector": ".mx-tag-box__arrow",
+        "states": {
+          "open": ".mx-tag-box[data-open] > :where(.mx-field__box) > * > .mx-tag-box__arrow"
+        }
+      },
+      "arrow-glyph": {
+        "$description": "The arrow button's glyph: `open` while the list shows.",
+        "selector": ".mx-tag-box__arrow > .mx-glyph",
+        "states": {
+          "open": ".mx-tag-box[data-open] > :where(.mx-field__box) > * > .mx-tag-box__arrow > .mx-glyph"
+        }
+      }
+    }
+  }
+}

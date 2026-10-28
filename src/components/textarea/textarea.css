@@ -1,44 +1,46 @@
 /* TextArea: a box of several lines. The parts beside the text sit on its first line; the box
-   itself carries the resize grip, so it is the whole field that grows. */
+   itself carries the resize grip, so it is the whole field that grows. Only the layout is here: the
+   grip a design may draw over the browser's own is a unit of the text area's schema (`$units`),
+   painted by units.css; the counter is the field's. */
 @layer mx.components {
-  .mx-text-area .mx-field__box {
+  .mx-text-area > .mx-field__box {
     align-items: flex-start;
   }
 
   .mx-text-area[data-size='sm'] {
-    --_line: var(--mx-text-area-line-height-sm);
+    --_line: var(--_text-area-line-height-sm);
   }
 
   .mx-text-area[data-size='md'] {
-    --_line: var(--mx-text-area-line-height-md);
+    --_line: var(--_text-area-line-height-md);
   }
 
   .mx-text-area[data-size='lg'] {
-    --_line: var(--mx-text-area-line-height-lg);
+    --_line: var(--_text-area-line-height-lg);
   }
 
   .mx-text-area[data-label-mode='side'] {
     align-items: start;
   }
 
-  .mx-text-area[data-label-mode='side'] .mx-field__label:not([hidden]) {
+  .mx-text-area[data-label-mode='side'] > .mx-field__label:not([hidden]) {
     display: flex;
     align-items: center;
     min-block-size: var(--_height);
   }
 
-  .mx-text-area[data-resize='vertical'] .mx-field__box {
+  .mx-text-area[data-resize='vertical'] > .mx-field__box {
     overflow: hidden;
     resize: vertical;
   }
 
-  .mx-text-area[data-resize='both'] .mx-field__box {
+  .mx-text-area[data-resize='both'] > .mx-field__box {
     overflow: hidden;
     resize: both;
     max-inline-size: 100%;
   }
 
-  .mx-text-area[data-disabled] .mx-field__box {
+  .mx-text-area[data-disabled] > .mx-field__box {
     resize: none;
   }
 
@@ -46,20 +48,20 @@
     inline-size: auto;
   }
 
-  .mx-text-area[data-resize='both']:not([data-stretch]) .mx-field__box {
-    inline-size: var(--mx-field-width);
+  .mx-text-area[data-resize='both']:not([data-stretch]) > .mx-field__box {
+    inline-size: var(--_field-width);
   }
 
   .mx-text-area[data-resize='both'][data-label-mode='side']:not([data-stretch]) {
     inline-size: auto;
-    grid-template-columns: var(--mx-field-label-width) auto;
+    grid-template-columns: var(--_field-label-width) auto;
   }
 
   .mx-text-area__input {
     align-self: stretch;
     min-block-size: 0;
     line-height: var(--_line);
-    padding-block: calc((var(--_height) - 2 * var(--mx-field-border-width) - 1lh) / 2);
+    padding-block: calc((var(--_height) - 2 * var(--_field-border-width) - 1lh) / 2);
     resize: none;
     overflow-wrap: break-word;
   }
@@ -69,23 +71,59 @@
   }
 
   /* The parts beside the text line up with its first line. */
-  .mx-text-area .mx-field__box > :is(.mx-field__prefix, .mx-field__suffix, .mx-field__start, .mx-field__tools, .mx-field__end, .mx-field__actions) {
-    min-block-size: calc(var(--_height) - 2 * var(--mx-field-border-width));
+  .mx-text-area > .mx-field__box > :is(.mx-field__prefix, .mx-field__suffix, .mx-field__start, .mx-field__tools, .mx-field__end, .mx-field__actions) {
+    min-block-size: calc(var(--_height) - 2 * var(--_field-border-width));
     display: inline-flex;
     align-items: center;
   }
 
-  .mx-text-area .mx-field__icon {
-    margin-block-start: calc((var(--_height) - 2 * var(--mx-field-border-width) - var(--mx-field-icon-size)) / 2);
+  .mx-text-area > :where(.mx-field__box) > .mx-field__icon {
+    margin-block-start: calc((var(--_height) - 2 * var(--_field-border-width) - var(--_field-icon-size)) / 2);
   }
 
   /* Floating label: it rests on the first line and moves up above the text. */
-  .mx-text-area[data-label-mode='floating'] .mx-field__box {
+  .mx-text-area[data-label-mode='floating'] > .mx-field__box {
     align-items: flex-start;
-    padding-block: calc(var(--mx-field-floating-height) / 2) 0;
+    padding-block: calc(var(--_field-floating-height) / 2) 0;
   }
 
-  .mx-text-area[data-label-mode='floating'] .mx-field__label {
-    block-size: calc(var(--mx-field-floating-height) + var(--_height));
+  /* Its lines fill the box from the top; the parts beside them stay on the first line. */
+  .mx-text-area[data-label-mode='floating'] > :where(.mx-field__box) > .mx-field__control {
+    align-self: stretch;
+    margin-block-end: 0;
+  }
+
+  .mx-text-area[data-label-mode='floating'] > :where(.mx-field__box) > :is(.mx-field__prefix, .mx-field__suffix) {
+    align-self: auto;
+    margin-block-end: 0;
+  }
+
+  /* A box that resizes clips what lies over its border, so there the frame lies inside it, where the border was. */
+  .mx-text-area:is([data-resize='vertical'], [data-resize='both']) > .mx-field__box {
+    padding-block: var(--_field-border-width);
+    padding-inline: calc(var(--_padding) + var(--_field-border-width));
+    border-width: 0;
+  }
+
+  .mx-text-area:is([data-resize='vertical'], [data-resize='both'])[data-label-mode='floating'] > .mx-field__box {
+    padding-block: calc(var(--_field-floating-height) / 2 + var(--_field-border-width)) var(--_field-border-width);
+  }
+
+  .mx-text-area:is([data-resize='vertical'], [data-resize='both']) > :where(.mx-field__box) > .mx-field__frame {
+    inset: 0;
+  }
+
+  .mx-text-area[data-label-mode='floating'] > .mx-field__label {
+    block-size: calc(var(--_field-floating-height) + var(--_height));
+  }
+
+  /* The grip a design may draw in the box's end corner, over the browser's own (which stays what is dragged). */
+  .mx-text-area:is([data-resize='vertical'], [data-resize='both']):not([data-disabled]) > .mx-field__box > .mx-field__frame::after {
+    content: '';
+    position: absolute;
+    inset-block: auto 0;
+    inset-inline: auto 0;
+    mask: var(--_icon, none) center / contain no-repeat;
+    pointer-events: none;
   }
 }

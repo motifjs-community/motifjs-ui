@@ -1,0 +1,49 @@
+{
+  "combo-box": {
+    "$description": "ComboBox and Autocomplete: the arrow button, its glyph, and the list row shown while items load.",
+    "$selector": ".mx-combo-box, .mx-combo-box__popup",
+    "$places": {
+      "field": {
+        "$description": "The combo box's own box.",
+        "selector": ".mx-combo-box",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "box.radius",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "frame.border-color",
+          "frame.hover.border-color",
+          "frame.focus.border-color",
+          "frame.border-bottom-color",
+          "frame.hover.border-bottom-color",
+          "frame.focus.border-bottom-color",
+          "frame.focus.border-width",
+          "box.shadow",
+          "box.focus.shadow"
+        ]
+      }
+    },
+    "$units": {
+      "arrow": {
+        "$description": "The arrow button (a field button: its hover, pressed and focus are the field's `button`); `open` while the list shows.",
+        "selector": ".mx-combo-box__arrow",
+        "states": {
+          "open": ".mx-combo-box[data-open] > :where(.mx-field__box) > * > .mx-combo-box__arrow"
+        }
+      },
+      "arrow-glyph": {
+        "$description": "The arrow button's glyph: `open` while the list shows.",
+        "selector": ".mx-combo-box__arrow > .mx-glyph",
+        "states": {
+          "open": ".mx-combo-box[data-open] > :where(.mx-field__box) > * > .mx-combo-box__arrow > .mx-glyph"
+        }
+      },
+      "loading": {
+        "$description": "The row the list shows while items load.",
+        "selector": ".mx-combo-box__popup .mx-list__item[data-loading]"
+      }
+    }
+  }
+}

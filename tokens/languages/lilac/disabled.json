@@ -1,0 +1,7 @@
+{
+  "disabled": {
+    "element": {
+      "color": { "$value": "{color.fg.disabled}" }
+    }
+  }
+}

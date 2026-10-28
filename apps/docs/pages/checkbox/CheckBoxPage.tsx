@@ -70,9 +70,13 @@ const HOOKS = [
 ];
 
 const TOKENS = [
+  ['checkbox.box', 'Unit: the box, with every state (`checked`, `mixed`, `invalid`, each with `-hover`, `-pressed`, `-focus`; `disabled`, `checked-disabled`).'],
+  ['checkbox.mark, checkbox.dash, checkbox.overlay', 'Units: the check mark, the dash of a mixed box, and a layer over the box (`pressed`, `disabled`).'],
+  ['checkbox.halo, checkbox.ring', 'Units: a halo centred on the box (`checked`, `hover`, `focus`, `pressed`) and a ring round the box and its caption under the keys, where the language has them.'],
+  ['checkbox.label, checkbox.control', 'Units: the caption (`disabled`) and the row it sits in.'],
   ['checkbox.size.*, checkbox.mark-size.*', 'The box and its mark, per size.'],
   ['checkbox.height.*, checkbox.font-size.*', 'The row height (density tokens) and the caption size.'],
-  ['checkbox.radius, checkbox.border-width, checkbox.gap', 'Corners, border, and the space before the caption.'],
+  ['checkbox.gap, checkbox.press-offset, checkbox.focus-scope', 'The space before the caption, how far a press moves the box, and what the ring under the keys goes round (`box` or `item`).'],
 ];
 
 export default function CheckBoxPage() {

@@ -61,7 +61,7 @@ export function messageBox(options: MessageBoxOptions): Promise<FormResult> {
     footer: row,
     alert: tone === 'caution' || tone === 'danger',
     resizable: false,
-    width: 'var(--mx-window-message-width)',
+    width: 'var(--_window-message-width)',
   });
   form.element.setAttribute('aria-describedby', text.id);
   const made = buttons.map((b) => {

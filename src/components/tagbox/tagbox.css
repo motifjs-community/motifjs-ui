@@ -1,25 +1,22 @@
 /* TagBox: the chosen items as tags in the field's box, the text input after them, the list on a
-   popup. The look binds to data-open, data-text and the field's state attributes. */
+   popup. Only the layout is here: the box's room around the tags, the tags (their text, remove
+   button and glyph, the "+N" tag) and the arrow are units of the tag box's schema (`$units`),
+   painted by units.css. The look binds to data-open, data-text and the field's state attributes. */
 @layer mx.components {
   .mx-tag-box {
-    --_tag-height: calc(var(--_height) - 2 * var(--mx-tagbox-inset) - 2 * var(--mx-field-border-width));
-  }
-
-  /* One row: the tags wrap in their own block, the input takes the rest, the buttons stay at the end. */
-  .mx-tag-box .mx-field__box {
-    padding-block: var(--mx-tagbox-inset);
+    --_tag-height: calc(var(--_height) - 2 * var(--_tagbox-inset) - 2 * var(--_field-border-width));
   }
 
   /* Icons and the prefix stay at the start, before the tags. */
-  .mx-tag-box :is(.mx-field__icon, .mx-field__prefix) {
+  .mx-tag-box > :where(.mx-field__box) > :is(.mx-field__icon, .mx-field__prefix) {
     order: -1;
   }
 
+  /* One row: the tags wrap in their own block, the input takes the rest, the buttons stay at the end. */
   .mx-tag-box__tags {
     display: flex;
     flex: 0 1 auto;
     flex-wrap: wrap;
-    gap: var(--mx-tagbox-gap);
     min-inline-size: 0;
     max-inline-size: 100%;
   }
@@ -29,39 +26,16 @@
   }
 
   .mx-tag-box .mx-tag-box__input {
-    flex: 1 1 var(--mx-tagbox-input-min-width);
+    flex: 1 1 var(--_tagbox-input-min-width);
     inline-size: auto;
-    min-inline-size: var(--mx-tagbox-input-min-width);
+    min-inline-size: var(--_tagbox-input-min-width);
     block-size: var(--_tag-height);
   }
 
   .mx-tag-box__tag {
     display: inline-flex;
     align-items: center;
-    gap: var(--mx-tagbox-tag-gap);
-    max-inline-size: var(--mx-tagbox-tag-max-width);
-    block-size: var(--_tag-height);
-    padding-inline: var(--mx-tagbox-tag-padding) var(--mx-tagbox-inset);
-    font-size: var(--mx-tagbox-tag-font-size);
-    color: var(--mx-tagbox-tag-fg);
-    background: var(--mx-tagbox-tag-bg);
-    border: var(--mx-tagbox-tag-border-width) solid var(--mx-tagbox-tag-border);
-    border-radius: var(--mx-tagbox-tag-radius);
-    cursor: default;
     user-select: none;
-  }
-
-  .mx-tag-box__tag:hover {
-    background: var(--mx-tagbox-tag-bg-hover);
-  }
-
-  .mx-tag-box__tag[data-loading] {
-    color: var(--mx-tagbox-loading-fg);
-  }
-
-  .mx-tag-box__more {
-    padding-inline-end: var(--mx-tagbox-tag-padding);
-    color: var(--mx-tagbox-more-fg);
   }
 
   .mx-tag-box__tag-text {
@@ -77,40 +51,18 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    inline-size: var(--mx-tagbox-remove-size);
-    block-size: var(--mx-tagbox-remove-size);
-    margin: 0;
-    padding: 0;
-    color: var(--mx-tagbox-remove-fg);
-    background: transparent;
-    border: 0;
-    border-radius: var(--mx-tagbox-remove-radius);
-    cursor: default;
-  }
-
-  .mx-tag-box__remove:hover {
-    color: var(--mx-tagbox-remove-fg-hover);
-    background: var(--mx-tagbox-remove-bg-hover);
   }
 
   .mx-tag-box:is([data-readonly], [data-disabled]) .mx-tag-box__remove {
     display: none;
   }
 
-  .mx-tag-box[data-disabled] .mx-tag-box__tag {
-    color: var(--mx-tagbox-tag-fg-disabled);
-  }
-
   .mx-tag-box:is(:not([data-filled]), [data-readonly], [data-disabled]) .mx-tag-box__clear {
     display: none;
   }
 
-  .mx-tag-box__arrow .mx-glyph {
+  .mx-tag-box__arrow > .mx-glyph {
     transition: rotate var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
-  }
-
-  .mx-tag-box[data-open] .mx-tag-box__arrow .mx-glyph {
-    rotate: 0.5turn;
   }
 
   .mx-tag-box[data-readonly] .mx-tag-box__arrow {

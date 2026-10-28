@@ -1,0 +1,54 @@
+{
+  "filterbuilder": {
+    "indent": { "$value": "{space.6}" },
+    "line-width": { "$value": "{border.width.1}" },
+    "line-color": { "$value": "{color.stroke.divider}" },
+    "line-offset": { "$value": "{space.3}" },
+    "elbow-length": { "$value": "0px" },
+    "elbow-color": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} },
+    "value-width": { "$value": {"value": 12, "unit": "rem"} },
+    "field-button": {
+      "variant": { "$value": "ghost" },
+      "tone": { "$value": "accent" },
+      "size": { "$value": "sm" }
+    },
+    "operation-button": {
+      "variant": { "$value": "ghost" },
+      "tone": { "$value": "standard" },
+      "size": { "$value": "sm" }
+    },
+    "value-button": {
+      "variant": { "$value": "ghost" },
+      "tone": { "$value": "standard" },
+      "size": { "$value": "sm" }
+    },
+    "group-button": {
+      "variant": { "$value": "ghost" },
+      "tone": { "$value": "accent" },
+      "size": { "$value": "sm" }
+    },
+    "add-button": {
+      "variant": { "$value": "ghost" },
+      "tone": { "$value": "standard" },
+      "size": { "$value": "sm" }
+    },
+    "remove-button": {
+      "variant": { "$value": "ghost" },
+      "tone": { "$value": "standard" },
+      "size": { "$value": "sm" }
+    },
+    "container": {
+      "color": { "$value": "{color.fg.primary}" },
+      "font-size": { "$value": "{font.size.body}" }
+    },
+    "tree": {
+      "gap": { "$value": "{space.1}" }
+    },
+    "row": {
+      "gap": { "$value": "{space.1}" }
+    },
+    "editor": {
+      "gap": { "$value": "{space.1}" }
+    }
+  }
+}

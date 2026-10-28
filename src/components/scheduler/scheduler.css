@@ -2,34 +2,22 @@
    on the start side, a grid of cells (a row per time, a column per day) and over it the layer of
    appointments, laid on the same columns. `--_days` and `--_rows` (written by the view) give the
    columns and the rows. The month view lays a grid of weeks and, over it, a layer per week with
-   its appointments in lines. An appointment's own colour is `--_color` (written on it), shown
-   as a tint and a start stripe. */
+   its appointments in lines. An appointment's own colour is `--_color` (written on it), shown as
+   the language says: a tint, any of its four edges, its text (by the plain tokens that mix it, here).
+   Every other piece's look is a unit of the scheduler's schema (`$units`), painted by units.css from
+   the language's tokens; only the layout is here. */
 @layer mx.components {
   .mx-scheduler {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
     min-inline-size: 0;
-    block-size: var(--mx-scheduler-height);
+    block-size: var(--_scheduler-height);
     overflow: clip;
-    color: var(--mx-scheduler-color);
-    background: var(--mx-scheduler-background);
-    border: var(--mx-scheduler-border-width) solid var(--mx-scheduler-outline-color);
-    border-radius: var(--mx-scheduler-radius);
   }
 
   .mx-scheduler__bar {
     flex: none;
-    gap: var(--mx-scheduler-bar-gap);
-    padding: var(--mx-scheduler-bar-padding);
-    background: var(--mx-scheduler-bar-background);
-    border-block-end: var(--mx-scheduler-border-width) solid var(--mx-scheduler-line-color);
-  }
-
-  /* Only its face: the calendar it opens sits inside the button and keeps its own type. */
-  .mx-scheduler__title > .mx-button__face {
-    font-size: var(--mx-scheduler-title-font-size);
-    font-weight: var(--mx-scheduler-title-font-weight);
   }
 
   /* The views stand at the end of the bar. */
@@ -63,58 +51,36 @@
     flex: none;
     overflow: hidden;
     scrollbar-gutter: stable;
-    background: var(--mx-scheduler-head-background);
-    border-block-end: var(--mx-scheduler-border-width) solid var(--mx-scheduler-line-color);
   }
 
   .mx-scheduler__dates,
   .mx-scheduler__body {
     display: grid;
-    grid-template-columns: var(--mx-scheduler-ruler-width) repeat(var(--_days, 7), minmax(var(--mx-scheduler-column-min-width), 1fr));
+    grid-template-columns: var(--_scheduler-ruler-width) repeat(var(--_days, 7), minmax(var(--_scheduler-column-min-width), 1fr));
   }
 
   .mx-scheduler__date {
     display: flex;
     flex-direction: column;
-    gap: var(--mx-scheduler-head-padding);
     align-items: center;
-    padding: var(--mx-scheduler-head-padding);
-    font-size: var(--mx-scheduler-head-font-size);
-    color: var(--mx-scheduler-head-color);
-    border-inline-start: var(--mx-scheduler-border-width) solid var(--mx-scheduler-line-color);
   }
 
+  /* A day's number, as large as its place says (the `day-number` unit's size). */
   .mx-scheduler__day-number {
+    --_number-size: var(--_scheduler-date-number-size);
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-inline-size: var(--mx-scheduler-date-number-size);
-    block-size: var(--mx-scheduler-date-number-size);
-    font-size: var(--mx-scheduler-date-number-font-size);
-    color: var(--mx-scheduler-color);
-    border-radius: var(--mx-scheduler-date-number-radius);
-  }
-
-  .mx-scheduler__date[data-today] .mx-scheduler__weekday {
-    color: var(--mx-scheduler-today-color);
-  }
-
-  :is(.mx-scheduler__date, .mx-scheduler__month-cell)[data-today] .mx-scheduler__day-number {
-    color: var(--mx-scheduler-today-number-color);
-    background: var(--mx-scheduler-today-background);
   }
 
   .mx-scheduler__all-day {
     display: grid;
-    grid-template-columns: var(--mx-scheduler-ruler-width) minmax(0, 1fr);
-    border-block-start: var(--mx-scheduler-border-width) solid var(--mx-scheduler-line-color);
+    grid-template-columns: var(--_scheduler-ruler-width) minmax(0, 1fr);
   }
 
   .mx-scheduler__all-day-label {
     align-self: center;
-    padding-inline: var(--mx-scheduler-head-padding);
-    font-size: var(--mx-scheduler-head-font-size);
-    color: var(--mx-scheduler-all-day-label-color);
     text-align: end;
   }
 
@@ -134,16 +100,16 @@
 
   .mx-scheduler__row {
     display: grid;
-    grid-template-columns: repeat(var(--_days, 7), minmax(var(--mx-scheduler-column-min-width), 1fr));
+    grid-template-columns: repeat(var(--_days, 7), minmax(var(--_scheduler-column-min-width), 1fr));
   }
 
   .mx-scheduler__bars {
     display: grid;
-    grid-template-columns: repeat(var(--_days, 7), minmax(var(--mx-scheduler-column-min-width), 1fr));
-    grid-auto-rows: var(--mx-scheduler-lane-size);
-    row-gap: var(--mx-scheduler-lane-gap);
-    min-block-size: calc(var(--_lines, 1) * (var(--mx-scheduler-lane-size) + var(--mx-scheduler-lane-gap)) + var(--mx-scheduler-lane-gap));
-    padding-block: var(--mx-scheduler-lane-gap);
+    grid-template-columns: repeat(var(--_days, 7), minmax(var(--_scheduler-column-min-width), 1fr));
+    grid-auto-rows: var(--_scheduler-lane-size);
+    row-gap: var(--_scheduler-lane-gap);
+    min-block-size: calc(var(--_lines, 1) * (var(--_scheduler-lane-size) + var(--_scheduler-lane-gap)) + var(--_scheduler-lane-gap));
+    padding-block: var(--_scheduler-lane-gap);
     pointer-events: none;
   }
 
@@ -164,7 +130,7 @@
   .mx-scheduler__ruler,
   .mx-scheduler__cells {
     display: grid;
-    grid-template-rows: repeat(var(--_rows, 48), var(--mx-scheduler-slot-height));
+    grid-template-rows: repeat(var(--_rows, 48), var(--_scheduler-slot-height));
     grid-row: 1;
   }
 
@@ -179,9 +145,6 @@
   }
 
   .mx-scheduler__hour {
-    padding-inline-end: var(--mx-scheduler-head-padding);
-    font-size: var(--mx-scheduler-ruler-font-size);
-    color: var(--mx-scheduler-ruler-color);
     text-align: end;
   }
 
@@ -195,48 +158,17 @@
     translate: none;
   }
 
-  .mx-scheduler__cells > .mx-scheduler__row {
-    border-block-start: var(--mx-scheduler-border-width) solid var(--mx-scheduler-minor-line-color);
-  }
-
-  .mx-scheduler__cells > .mx-scheduler__row[data-hour-start] {
-    border-block-start-color: var(--mx-scheduler-line-color);
-  }
-
   .mx-scheduler__cell {
     box-sizing: border-box;
     min-inline-size: 0;
-    border-inline-start: var(--mx-scheduler-border-width) solid var(--mx-scheduler-line-color);
     outline: none;
-  }
-
-  .mx-scheduler__cells .mx-scheduler__cell:not([data-work]) {
-    background: var(--mx-scheduler-off-hours-background);
-  }
-
-  .mx-scheduler__cells .mx-scheduler__cell[data-holiday] {
-    background: var(--mx-scheduler-holiday-background);
-  }
-
-  .mx-scheduler__cell:hover {
-    background: var(--mx-scheduler-cell-hover);
-  }
-
-  .mx-scheduler__cell[aria-selected='true'] {
-    background: var(--mx-scheduler-selected);
-  }
-
-  .mx-scheduler__cell:focus-visible {
-    outline: var(--mx-scheduler-cell-focus-width) solid var(--mx-scheduler-cell-focus-color);
-    outline-offset: calc(-1 * var(--mx-scheduler-cell-focus-width));
-    box-shadow: var(--mx-scheduler-cell-focus-halo);
   }
 
   /* One layer over all the day columns: a timed appointment's column is `--_day`, its place in it
      `--_left` and `--_width` (fractions of the column, short of the gap kept free at its end). */
   .mx-scheduler__layer {
     --_column: calc(100% / var(--_days, 7));
-    --_room: calc(var(--_column) - var(--mx-scheduler-column-end-gap));
+    --_room: calc(var(--_column) - var(--_scheduler-column-end-gap));
 
     position: relative;
     pointer-events: none;
@@ -246,9 +178,22 @@
     position: absolute;
     inset-inline-start: calc(var(--_column) * var(--_day, 0));
     inline-size: var(--_column);
-    block-size: var(--mx-scheduler-now-width);
+    translate: 0 -50%;
     pointer-events: none;
-    background: var(--mx-scheduler-now-color);
+  }
+
+  /* Centred on the line's start. */
+  .mx-scheduler__now::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    margin-block: auto;
+    translate: -50% 0;
+  }
+
+  .mx-scheduler__now:dir(rtl)::before {
+    translate: 50% 0;
   }
 
   /* The month view. */
@@ -257,14 +202,9 @@
     display: grid;
     flex: none;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    font-size: var(--mx-scheduler-head-font-size);
-    color: var(--mx-scheduler-head-color);
-    background: var(--mx-scheduler-head-background);
-    border-block-end: var(--mx-scheduler-border-width) solid var(--mx-scheduler-line-color);
   }
 
   .mx-scheduler__weekday-name {
-    padding: var(--mx-scheduler-head-padding);
     text-align: center;
   }
 
@@ -286,37 +226,12 @@
   .mx-scheduler__week-row {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    border-block-start: var(--mx-scheduler-border-width) solid var(--mx-scheduler-line-color);
-  }
-
-  .mx-scheduler__week-row:first-child {
-    border-block-start: 0;
-  }
-
-  .mx-scheduler__month-cell {
-    padding-inline: var(--mx-scheduler-lane-gap);
-  }
-
-  .mx-scheduler__week-row > .mx-scheduler__month-cell:first-child {
-    border-inline-start: 0;
   }
 
   .mx-scheduler__month-cell .mx-scheduler__day-number {
-    min-inline-size: var(--mx-scheduler-month-date-size);
-    block-size: var(--mx-scheduler-month-date-size);
-    font-size: var(--mx-scheduler-head-font-size);
-  }
+    --_number-size: var(--_scheduler-month-date-size);
 
-  .mx-scheduler__month-cell[data-outside] {
-    background: var(--mx-scheduler-outside-background);
-  }
-
-  .mx-scheduler__month-cell[data-outside] .mx-scheduler__day-number {
-    color: var(--mx-scheduler-outside-color);
-  }
-
-  .mx-scheduler__month-cell[data-holiday] {
-    background: var(--mx-scheduler-holiday-background);
+    justify-self: var(--_scheduler-month-date-align);
   }
 
   .mx-scheduler__month-layer {
@@ -326,12 +241,12 @@
   .mx-scheduler__week-layer {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    grid-auto-rows: var(--mx-scheduler-lane-size);
-    row-gap: var(--mx-scheduler-lane-gap);
+    grid-auto-rows: var(--_scheduler-lane-size);
+    row-gap: var(--_scheduler-lane-gap);
     align-content: start;
     min-block-size: 0;
-    padding-block-start: var(--mx-scheduler-month-date-size);
-    padding-inline: var(--mx-scheduler-lane-gap);
+    padding-block-start: var(--_scheduler-month-date-size);
+    padding-inline: var(--_scheduler-lane-gap);
     overflow: hidden;
   }
 
@@ -344,69 +259,69 @@
   }
 
   .mx-scheduler__probe-lane {
-    block-size: calc(var(--mx-scheduler-lane-size) + var(--mx-scheduler-lane-gap));
+    block-size: calc(var(--_scheduler-lane-size) + var(--_scheduler-lane-gap));
   }
 
   .mx-scheduler__probe-date {
-    block-size: var(--mx-scheduler-month-date-size);
+    block-size: var(--_scheduler-month-date-size);
   }
 
   /* Appointments. */
 
+  /* The edges of a box with an appointment's colour (a box, a chip, the tooltip, an item of "+N more"): each of the
+     four as wide as its token says, taking as much of the colour as its mix says (0: the neutral frame). A side
+     stripe, a top stripe, a frame or nothing are values, not rules. */
+  :is(.mx-scheduler__appointment, .mx-scheduler__tooltip, .mx-scheduler__more-item) {
+    border-block-start: var(--_top-w) solid color-mix(in oklab, var(--_c) calc(var(--_top-mix) * 1%), var(--_frame));
+    border-inline-end: var(--_end-w) solid color-mix(in oklab, var(--_c) calc(var(--_end-mix) * 1%), var(--_frame));
+    border-block-end: var(--_bottom-w) solid color-mix(in oklab, var(--_c) calc(var(--_bottom-mix) * 1%), var(--_frame));
+    border-inline-start: var(--_start-w) solid color-mix(in oklab, var(--_c) calc(var(--_start-mix) * 1%), var(--_frame));
+  }
+
   .mx-scheduler__appointment {
-    --_c: var(--_color, var(--mx-scheduler-appointment-default));
+    --_c: var(--_color, var(--_scheduler-appointment-default));
+    --_frame: var(--_scheduler-appointment-frame-color);
+    --_top-w: var(--_scheduler-appointment-top-width);
+    --_top-mix: var(--_scheduler-appointment-top-mix);
+    --_end-w: var(--_scheduler-appointment-end-width);
+    --_end-mix: var(--_scheduler-appointment-end-mix);
+    --_bottom-w: var(--_scheduler-appointment-bottom-width);
+    --_bottom-mix: var(--_scheduler-appointment-bottom-mix);
+    --_start-w: var(--_scheduler-appointment-start-width);
+    --_start-mix: var(--_scheduler-appointment-start-mix);
+    --_text: color-mix(in oklab, var(--_c) calc(var(--_scheduler-appointment-text-mix) * 1%), var(--_scheduler-appointment-foreground));
+
+    --_box-bg: color-mix(in oklab, var(--_c) calc(var(--_scheduler-appointment-tint) * 1%), var(--_scheduler-appointment-surface));
 
     box-sizing: border-box;
     display: flex;
     min-inline-size: 0;
-    padding: var(--mx-scheduler-appointment-padding-block) var(--mx-scheduler-appointment-padding-inline);
     overflow: hidden;
-    font-size: var(--mx-scheduler-appointment-font-size);
-    color: var(--mx-scheduler-appointment-color);
-    cursor: default;
     user-select: none;
-    background: color-mix(in oklab, var(--_c) calc(var(--mx-scheduler-appointment-tint) * 1%), var(--mx-scheduler-appointment-surface));
-    border: var(--mx-scheduler-border-width) solid var(--mx-scheduler-appointment-edge-color);
-    border-inline-start: var(--mx-scheduler-appointment-stripe-width) solid var(--_c);
-    border-radius: var(--mx-scheduler-appointment-radius);
+    background: var(--_box-bg);
+    color: var(--_text);
     outline: none;
   }
 
   .mx-scheduler__appointment:hover {
-    background: color-mix(in oklab, var(--_c) calc(var(--mx-scheduler-appointment-tint-hover) * 1%), var(--mx-scheduler-appointment-surface));
+    --_box-bg: color-mix(in oklab, var(--_c) calc(var(--_scheduler-appointment-tint-hover) * 1%), var(--_scheduler-appointment-surface));
   }
 
-  .mx-scheduler__appointment:focus-visible {
-    outline: var(--mx-scheduler-appointment-focus-width) solid var(--mx-scheduler-appointment-focus-color);
-    box-shadow: var(--mx-scheduler-appointment-focus-halo);
-  }
-
-  /* Ended: its colour fades (a lighter tint, a paler stripe); the text keeps its contrast. */
+  /* Ended: its colour fades (a lighter tint, paler edges); the text keeps its contrast. */
   .mx-scheduler__appointment[data-past] {
-    --_c: color-mix(in oklab, var(--_color, var(--mx-scheduler-appointment-default)) calc(var(--mx-scheduler-appointment-past-stripe-mix) * 1%), var(--mx-scheduler-appointment-surface));
-
-    background: color-mix(in oklab, var(--_c) calc(var(--mx-scheduler-appointment-past-tint) * 1%), var(--mx-scheduler-appointment-surface));
-  }
-
-  .mx-scheduler__appointment[data-disabled] {
-    opacity: var(--mx-scheduler-appointment-disabled-opacity);
+    --_c: color-mix(
+      in oklab,
+      var(--_color, var(--_scheduler-appointment-default)) calc(var(--_scheduler-appointment-past-color-mix) * 1%),
+      var(--_scheduler-appointment-surface)
+    );
+    --_box-bg: color-mix(in oklab, var(--_c) calc(var(--_scheduler-appointment-past-tint) * 1%), var(--_scheduler-appointment-surface));
   }
 
   .mx-scheduler__appointment[data-kind='timed'] {
     position: absolute;
     inset-inline-start: calc(var(--_column) * var(--_day, 0) + var(--_room) * var(--_left, 0));
     inline-size: calc(var(--_room) * var(--_width, 1));
-    min-block-size: var(--mx-scheduler-lane-size);
-  }
-
-  .mx-scheduler__appointment[data-kind='timed'][data-before] {
-    border-start-start-radius: 0;
-    border-start-end-radius: 0;
-  }
-
-  .mx-scheduler__appointment[data-kind='timed'][data-after] {
-    border-end-start-radius: 0;
-    border-end-end-radius: 0;
+    min-block-size: var(--_scheduler-lane-size);
   }
 
   .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) {
@@ -415,49 +330,83 @@
   }
 
   .mx-scheduler__appointment[data-kind='bar'][data-before] {
-    border-inline-start-width: var(--mx-scheduler-border-width);
-    border-start-start-radius: 0;
-    border-end-start-radius: 0;
-  }
-
-  .mx-scheduler__appointment[data-kind='bar'][data-after] {
-    border-start-end-radius: 0;
-    border-end-end-radius: 0;
+    --_start-w: var(--_scheduler-appointment-continued-start-width);
   }
 
   .mx-scheduler__appointment[data-kind='chip'] {
-    background: transparent;
-    border-color: transparent;
-    border-inline-start-color: var(--_c);
+    --_frame: var(--_scheduler-chip-frame-color);
+    --_top-w: var(--_scheduler-chip-top-width);
+    --_top-mix: var(--_scheduler-chip-top-mix);
+    --_end-w: var(--_scheduler-chip-end-width);
+    --_end-mix: var(--_scheduler-chip-end-mix);
+    --_bottom-w: var(--_scheduler-chip-bottom-width);
+    --_bottom-mix: var(--_scheduler-chip-bottom-mix);
+    --_start-w: var(--_scheduler-chip-start-width);
+    --_start-mix: var(--_scheduler-chip-start-mix);
+    --_text: color-mix(in oklab, var(--_c) calc(var(--_scheduler-chip-text-mix) * 1%), var(--_scheduler-chip-color));
+    --_box-bg: var(--_scheduler-chip-background);
   }
 
   .mx-scheduler__appointment[data-kind='chip']:hover {
-    background: color-mix(in oklab, var(--_c) calc(var(--mx-scheduler-appointment-tint) * 1%), var(--mx-scheduler-appointment-surface));
+    --_box-bg: color-mix(in oklab, var(--_c) calc(var(--_scheduler-appointment-tint) * 1%), var(--_scheduler-appointment-surface));
+  }
+
+  /* A chip may lead with a dot in the appointment's colour (the `dot` unit). */
+  .mx-scheduler__appointment[data-kind='chip']::before {
+    content: '';
+    flex: none;
+    background: var(--_c);
+  }
+
+  /* Open (its tooltip showing): the appointment's colour, a text colour and an edge colour laid
+     over its own look, each by its share. */
+  .mx-scheduler__appointment[data-open] {
+    --_open-text: color-mix(in oklab, var(--_scheduler-appointment-open-color) calc(var(--_scheduler-appointment-open-color-mix) * 1%), var(--_text));
+    --_open-edge: var(--_scheduler-appointment-open-edge-color);
+    --_open-edge-mix: calc(var(--_scheduler-appointment-open-edge-mix) * 1%);
+
+    background: color-mix(in oklab, var(--_c) calc(var(--_scheduler-appointment-open-tint) * 1%), var(--_box-bg));
+    color: var(--_open-text);
+    border-block-start: var(--_top-w) solid color-mix(in oklab, var(--_open-edge) var(--_open-edge-mix), color-mix(in oklab, var(--_c) calc(var(--_top-mix) * 1%), var(--_frame)));
+    border-inline-end: var(--_end-w) solid color-mix(in oklab, var(--_open-edge) var(--_open-edge-mix), color-mix(in oklab, var(--_c) calc(var(--_end-mix) * 1%), var(--_frame)));
+    border-block-end: var(--_bottom-w) solid color-mix(in oklab, var(--_open-edge) var(--_open-edge-mix), color-mix(in oklab, var(--_c) calc(var(--_bottom-mix) * 1%), var(--_frame)));
+    border-inline-start: var(--_start-w) solid color-mix(in oklab, var(--_open-edge) var(--_open-edge-mix), color-mix(in oklab, var(--_c) calc(var(--_start-mix) * 1%), var(--_frame)));
   }
 
   .mx-scheduler__appointment-content {
     display: flex;
     flex-direction: column;
-    gap: var(--mx-scheduler-appointment-gap);
     min-inline-size: 0;
   }
 
   .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-short]) .mx-scheduler__appointment-content {
     flex-direction: row;
-    gap: var(--mx-scheduler-appointment-padding-inline);
     align-items: baseline;
   }
 
   .mx-scheduler__appointment-text {
     min-inline-size: 0;
     overflow: hidden;
-    font-weight: var(--mx-scheduler-appointment-font-weight);
     text-overflow: ellipsis;
   }
 
-  /* A tall one wraps its text, breaking a word only when it does not fit; one on a line cuts it short. */
+  /* A tall one wraps its text between words; a narrow one (its own width, a container) keeps each line whole and cuts it short. */
+  .mx-scheduler__appointment[data-kind='timed'] {
+    container-type: inline-size;
+  }
+
   .mx-scheduler__appointment[data-kind='timed']:not([data-short]) .mx-scheduler__appointment-text {
-    overflow-wrap: break-word;
+    overflow-wrap: normal;
+  }
+
+  /* A container query takes no variable: the width is written here. */
+  @container (inline-size < 6rem) {
+    .mx-scheduler__appointment-text,
+    .mx-scheduler__appointment-time {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-short]) .mx-scheduler__appointment-text {
@@ -466,7 +415,6 @@
 
   .mx-scheduler__appointment-time {
     flex: none;
-    color: var(--mx-scheduler-appointment-time-color);
     white-space: nowrap;
   }
 
@@ -475,43 +423,115 @@
     order: 1;
   }
 
+  /* Moving and resizing. The box being moved stands where it would go; a copy shows next to the appointment. */
+  .mx-scheduler__appointment {
+    -webkit-touch-callout: none;
+  }
+
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) {
+    position: relative;
+  }
+
+  .mx-scheduler__resize {
+    position: absolute;
+    inset-inline: 0;
+    block-size: var(--_scheduler-resize-size);
+    cursor: ns-resize;
+  }
+
+  .mx-scheduler__resize[data-edge='start'] {
+    inset-block-start: 0;
+  }
+
+  .mx-scheduler__resize[data-edge='end'] {
+    inset-block-end: 0;
+  }
+
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) .mx-scheduler__resize {
+    inset-block: 0;
+    inset-inline: auto;
+    inline-size: var(--_scheduler-resize-size);
+    block-size: auto;
+    cursor: ew-resize;
+  }
+
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) .mx-scheduler__resize[data-edge='start'] {
+    inset-inline-start: 0;
+  }
+
+  .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) .mx-scheduler__resize[data-edge='end'] {
+    inset-inline-end: 0;
+  }
+
+  @media (pointer: coarse) {
+    .mx-scheduler__resize {
+      block-size: var(--_scheduler-resize-size-touch);
+    }
+
+    .mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip']) .mx-scheduler__resize {
+      inline-size: var(--_scheduler-resize-size-touch);
+    }
+  }
+
+  /* The tooltip and the form. */
+
+  .mx-scheduler__tooltip {
+    --_c: var(--_color, var(--_scheduler-appointment-default));
+
+    --_frame: var(--_scheduler-tooltip-frame-color);
+    --_top-w: var(--_scheduler-tooltip-top-width);
+    --_top-mix: var(--_scheduler-tooltip-top-mix);
+    --_end-w: var(--_scheduler-tooltip-end-width);
+    --_end-mix: var(--_scheduler-tooltip-end-mix);
+    --_bottom-w: var(--_scheduler-tooltip-bottom-width);
+    --_bottom-mix: var(--_scheduler-tooltip-bottom-mix);
+    --_start-w: var(--_scheduler-tooltip-start-width);
+    --_start-mix: var(--_scheduler-tooltip-start-mix);
+
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mx-scheduler__tooltip-title {
+    overflow-wrap: break-word;
+  }
+
+  /* A swatch in the appointment's colour before the title, on its first line (the `swatch` unit). */
+  .mx-scheduler__tooltip-title::before {
+    content: '';
+    vertical-align: middle;
+    background: var(--_c);
+  }
+
+  .mx-scheduler__tooltip-time,
+  .mx-scheduler__tooltip-description {
+    overflow-wrap: break-word;
+  }
+
+  .mx-scheduler__tooltip-actions {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  /* Delete stands apart, at the start of the form's buttons. */
+  .mx-scheduler__form-delete {
+    margin-inline-end: auto;
+  }
+
   /* "+N more" and its list. */
 
   .mx-scheduler__more {
     min-inline-size: 0;
-    padding-inline: var(--mx-scheduler-appointment-padding-inline);
     overflow: hidden;
     font: inherit;
-    font-size: var(--mx-scheduler-more-font-size);
-    color: var(--mx-scheduler-more-color);
     text-align: start;
     text-overflow: ellipsis;
     white-space: nowrap;
-    cursor: pointer;
-    background: none;
-    border: 0;
-    border-radius: var(--mx-scheduler-more-radius);
-  }
-
-  .mx-scheduler__more:hover {
-    background: var(--mx-scheduler-more-hover-background);
-  }
-
-  .mx-scheduler__more:focus-visible {
-    outline: var(--mx-scheduler-more-focus-width) solid var(--mx-scheduler-more-focus-color);
-    box-shadow: var(--mx-scheduler-more-focus-halo);
   }
 
   .mx-scheduler__more-list {
     display: flex;
     flex-direction: column;
-    gap: var(--mx-scheduler-state-gap);
-    inline-size: var(--mx-scheduler-more-list-width);
-    padding: var(--mx-scheduler-more-list-padding);
-  }
-
-  .mx-scheduler__more-title {
-    font-weight: var(--mx-scheduler-title-font-weight);
   }
 
   .mx-scheduler__more-items {
@@ -520,63 +540,34 @@
   }
 
   .mx-scheduler__more-item {
-    --_c: var(--_color, var(--mx-scheduler-appointment-default));
+    --_c: var(--_color, var(--_scheduler-appointment-default));
+    --_frame: var(--_scheduler-more-item-frame-color);
+    --_top-w: var(--_scheduler-more-item-top-width);
+    --_top-mix: var(--_scheduler-more-item-top-mix);
+    --_end-w: var(--_scheduler-more-item-end-width);
+    --_end-mix: var(--_scheduler-more-item-end-mix);
+    --_bottom-w: var(--_scheduler-more-item-bottom-width);
+    --_bottom-mix: var(--_scheduler-more-item-bottom-mix);
+    --_start-w: var(--_scheduler-more-item-start-width);
+    --_start-mix: var(--_scheduler-more-item-start-mix);
 
     display: flex;
-    gap: var(--mx-scheduler-appointment-padding-inline);
     inline-size: 100%;
-    padding: var(--mx-scheduler-appointment-padding-block) var(--mx-scheduler-appointment-padding-inline);
     font: inherit;
-    font-size: var(--mx-scheduler-appointment-font-size);
-    color: var(--mx-scheduler-appointment-color);
     text-align: start;
-    cursor: pointer;
-    background: none;
-    border: 0;
-    border-inline-start: var(--mx-scheduler-appointment-stripe-width) solid var(--_c);
-    border-radius: var(--mx-scheduler-appointment-radius);
-  }
-
-  .mx-scheduler__more-item:hover {
-    background: var(--mx-scheduler-more-item-hover);
-  }
-
-  .mx-scheduler__more-item:focus-visible {
-    outline: var(--mx-scheduler-more-item-focus-width) solid var(--mx-scheduler-more-item-focus-color);
-    box-shadow: var(--mx-scheduler-more-item-focus-halo);
   }
 
   .mx-scheduler__more-time {
     flex: none;
-    color: var(--mx-scheduler-appointment-time-color);
   }
 
-  /* Load states and the live region. */
+  /* Load states. */
 
   .mx-scheduler__state {
     position: absolute;
-    inset-block-start: var(--mx-scheduler-state-padding);
-    inset-inline-end: var(--mx-scheduler-state-padding);
+    inset-block-start: var(--_scheduler-state-inset);
+    inset-inline-end: var(--_scheduler-state-inset);
     display: flex;
-    gap: var(--mx-scheduler-state-gap);
     align-items: center;
-    padding: var(--mx-scheduler-state-padding);
-    background: var(--mx-scheduler-state-background);
-    border-radius: var(--mx-scheduler-state-radius);
-    box-shadow: var(--mx-scheduler-state-shadow);
-  }
-
-  .mx-scheduler__state[data-tone='danger'] {
-    color: var(--mx-scheduler-danger-color);
-  }
-
-  .mx-scheduler__live,
-  .mx-scheduler__hidden {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    overflow: hidden;
-    white-space: nowrap;
-    clip-path: inset(50%);
   }
 }

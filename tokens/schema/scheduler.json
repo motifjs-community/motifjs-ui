@@ -1,0 +1,377 @@
+{
+  "scheduler": {
+    "$description": "Scheduler: the bar, the day views (the head with the dates and the all-day panel, the time ruler and the cells) and the month view, the appointments, their tooltip and \"+N more\". The sizes, the layout values and the shares that mix an appointment's own colour into its fill, text and edges are plain tokens; every other piece is a unit (`$units`).",
+    "$selector": ".mx-scheduler",
+    "height": { "$type": "dimension" },
+    "ruler-width": { "$type": "dimension" },
+    "slot-height": { "$type": "dimension" },
+    "column-min-width": { "$type": "dimension" },
+    "column-end-gap": { "$type": "dimension" },
+    "lane-size": { "$type": "dimension" },
+    "lane-gap": { "$type": "dimension" },
+    "month-date-size": { "$type": "dimension" },
+    "month-date-align": { "$type": "keyword", "$description": "Where a month cell's day number stands: start, center or end." },
+    "date-number-size": { "$type": "dimension" },
+    "resize-size": { "$type": "dimension" },
+    "resize-size-touch": { "$type": "dimension" },
+    "editor-width": { "$type": "dimension", "$description": "The appointment form." },
+    "state-inset": { "$type": "dimension", "$description": "How far the load state stands from the corner, and its padding." },
+    "appointment-default": { "$type": "color" },
+    "appointment-surface": { "$type": "color" },
+    "appointment-tint": { "$type": "number" },
+    "appointment-tint-hover": { "$type": "number" },
+    "appointment-foreground": { "$type": "color", "$description": "The text an appointment's colour is mixed into (`appointment-text-mix`)." },
+    "appointment-past-tint": { "$type": "number" },
+    "appointment-past-color-mix": { "$type": "number" },
+    "appointment-text-mix": { "$type": "number", "$description": "How much of the appointment's colour its text takes (0: the text colour alone)." },
+    "appointment-frame-color": { "$type": "color", "$description": "A box's four edges: each one's width and how much of the appointment's colour it takes (0: this neutral frame colour; 100: the colour)." },
+    "appointment-open-tint": { "$type": "number", "$description": "An open appointment (its tooltip showing): how much of its colour is laid over the box's fill (0: unchanged; 100: the colour)." },
+    "appointment-open-color": { "$type": "color", "$description": "The text of an open appointment, laid over its text and time by `appointment-open-color-mix` (0: unchanged)." },
+    "appointment-open-color-mix": { "$type": "number" },
+    "appointment-open-edge-color": { "$type": "color", "$description": "The edges of an open appointment, laid over each edge's colour by `appointment-open-edge-mix` (0: unchanged)." },
+    "appointment-open-edge-mix": { "$type": "number" },
+    "appointment-top-width": { "$type": "dimension", "$description": "The top edge of a box, and how much of the appointment's colour it takes (a stripe on top)." },
+    "appointment-top-mix": { "$type": "number" },
+    "appointment-end-width": { "$type": "dimension" },
+    "appointment-end-mix": { "$type": "number" },
+    "appointment-bottom-width": { "$type": "dimension" },
+    "appointment-bottom-mix": { "$type": "number" },
+    "appointment-start-width": { "$type": "dimension" },
+    "appointment-start-mix": { "$type": "number", "$description": "How much of the appointment's colour the start stripe takes." },
+    "appointment-continued-start-width": { "$type": "dimension", "$description": "The start edge of a bar that goes on from before what is shown." },
+    "chip-background": { "$type": "color", "$description": "A month view's chip (a timed appointment in a day): its fill and four edges, as a box's." },
+    "chip-frame-color": { "$type": "color" },
+    "chip-color": { "$type": "color", "$description": "A chip's text: this colour, taking `chip-text-mix` of the appointment's (0: this colour alone)." },
+    "chip-text-mix": { "$type": "number" },
+    "chip-top-width": { "$type": "dimension" },
+    "chip-top-mix": { "$type": "number" },
+    "chip-end-width": { "$type": "dimension" },
+    "chip-end-mix": { "$type": "number" },
+    "chip-bottom-width": { "$type": "dimension" },
+    "chip-bottom-mix": { "$type": "number" },
+    "chip-start-width": { "$type": "dimension" },
+    "chip-start-mix": { "$type": "number" },
+    "tooltip-frame-color": { "$type": "color", "$description": "The tooltip of an appointment: its four edges, as a box's." },
+    "tooltip-top-width": { "$type": "dimension" },
+    "tooltip-top-mix": { "$type": "number" },
+    "tooltip-end-width": { "$type": "dimension" },
+    "tooltip-end-mix": { "$type": "number" },
+    "tooltip-bottom-width": { "$type": "dimension" },
+    "tooltip-bottom-mix": { "$type": "number" },
+    "tooltip-start-width": { "$type": "dimension" },
+    "tooltip-start-mix": { "$type": "number" },
+    "more-item-frame-color": { "$type": "color", "$description": "An item of \"+N more\":       its four edges, as a box's." },
+    "more-item-top-width": { "$type": "dimension" },
+    "more-item-top-mix": { "$type": "number" },
+    "more-item-end-width": { "$type": "dimension" },
+    "more-item-end-mix": { "$type": "number" },
+    "more-item-bottom-width": { "$type": "dimension" },
+    "more-item-bottom-mix": { "$type": "number" },
+    "more-item-start-width": { "$type": "dimension" },
+    "more-item-start-mix": { "$type": "number" },
+    "$places": {
+      "today-button": {
+        "$description": "Today, in the bar (its size is the bar's).",
+        "selector": ".mx-scheduler__bar > .mx-scheduler__today",
+        "part": "button",
+        "tokens": [
+          "variant"
+        ]
+      },
+      "step-button": {
+        "$description": "Previous and next, in the bar.",
+        "selector": ".mx-scheduler__bar > .mx-scheduler__step",
+        "part": "button",
+        "tokens": [
+          "variant"
+        ]
+      },
+      "title-button": {
+        "$description": "The range in the bar, opening the calendar: its variant and type.",
+        "selector": ".mx-scheduler__bar > .mx-scheduler__title",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "font-size.sm",
+          "face.font-weight"
+        ]
+      },
+      "view-button": {
+        "$description": "A view in the bar (pressed: the current one).",
+        "selector": ".mx-scheduler__bar > .mx-scheduler__view-button",
+        "part": "button",
+        "tokens": [
+          "variant"
+        ]
+      },
+      "state-button": {
+        "$description": "Retry, on the error state.",
+        "selector": ".mx-scheduler__state > .mx-button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "tooltip-button": {
+        "$description": "Edit and Delete in the tooltip.",
+        "selector": ".mx-scheduler__tooltip-actions > .mx-button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "size"
+        ]
+      },
+      "form-delete": {
+        "$description": "Delete in the appointment form.",
+        "selector": ".mx-scheduler__form-buttons > .mx-scheduler__form-delete",
+        "part": "button",
+        "tokens": [
+          "variant"
+        ]
+      },
+      "tooltip-popup": {
+        "$description": "The tooltip's popup: its padding adds to the tooltip's own.",
+        "selector": ".mx-scheduler__tooltip-popup",
+        "part": "popup",
+        "tokens": [
+          "surface.padding-block",
+          "surface.padding-inline"
+        ]
+      },
+      "more-popup": {
+        "$description": "The popup of \"+N more\".",
+        "selector": ".mx-scheduler__more-popup",
+        "part": "popup",
+        "tokens": [
+          "surface.padding-block",
+          "surface.padding-inline"
+        ]
+      }
+    },
+    "$units": {
+      "scheduler": {
+        "$description": "The whole scheduler: its frame, corners, fill and text.",
+        "selector": ".mx-scheduler"
+      },
+      "bar": {
+        "$description": "The bar over the views (the kit's toolbar): Today, the steps, the title, the views; a line under it.",
+        "selector": ".mx-scheduler .mx-scheduler__bar"
+      },
+      "head": {
+        "$description": "The day views' head: the dates and the all-day panel; a line under it.",
+        "selector": ".mx-scheduler__head"
+      },
+      "date": {
+        "$description": "A day's head in a day view: its weekday and its number.",
+        "selector": ".mx-scheduler__date"
+      },
+      "weekday": {
+        "$description": "A day head's weekday (`today`).",
+        "selector": ".mx-scheduler__weekday",
+        "states": {
+          "today": ".mx-scheduler__date[data-today] .mx-scheduler__weekday"
+        }
+      },
+      "day-number": {
+        "$description": "A day's number, in a day head or a month cell (`month`); `today`, `outside` the month. Its size: `date-number-size`, `month-date-size`.",
+        "selector": ".mx-scheduler__day-number",
+        "defaults": {
+          "min-width": "var(--_number-size)",
+          "height": "var(--_number-size)"
+        },
+        "states": {
+          "today": ":is(.mx-scheduler__date, .mx-scheduler__month-cell)[data-today] .mx-scheduler__day-number",
+          "month": ".mx-scheduler__month-cell .mx-scheduler__day-number",
+          "outside": ".mx-scheduler__month-cell[data-outside] .mx-scheduler__day-number"
+        }
+      },
+      "all-day": {
+        "$description": "The all-day panel; a line over it.",
+        "selector": ".mx-scheduler__all-day"
+      },
+      "all-day-label": {
+        "$description": "The all-day panel's label.",
+        "selector": ".mx-scheduler__all-day-label"
+      },
+      "hour": {
+        "$description": "An hour on the time ruler.",
+        "selector": ".mx-scheduler__hour"
+      },
+      "time-row": {
+        "$description": "A row of time cells: the line over it (`hour`: the row an hour starts).",
+        "selector": ".mx-scheduler__cells > .mx-scheduler__row",
+        "states": {
+          "hour": ".mx-scheduler__cells > .mx-scheduler__row[data-hour-start]"
+        }
+      },
+      "cell": {
+        "$description": "A cell: a time slot, an all-day cell or a month day (`month`); today's column, off hours, a holiday, outside the month, a weekend, the first day of a week row; a past day (`past`: a layer over its fill); under the pointer, selected, focused by the keys.",
+        "selector": ".mx-scheduler__cell",
+        "states": {
+          "today": ".mx-scheduler__cells .mx-scheduler__cell[data-today]",
+          "off": ".mx-scheduler__cells .mx-scheduler__cell:not([data-work])",
+          "holiday": ".mx-scheduler__cells .mx-scheduler__cell[data-holiday]",
+          "month": ".mx-scheduler__month-cell",
+          "outside": {
+            "selector": ".mx-scheduler__month-cell[data-outside]",
+            "from": "month"
+          },
+          "month-holiday": {
+            "selector": ".mx-scheduler__month-cell[data-holiday]",
+            "from": "month"
+          },
+          "weekend": {
+            "selector": ".mx-scheduler__month-cell[data-weekend]:not([data-outside], [data-holiday])",
+            "from": "month"
+          },
+          "week-start": {
+            "selector": ".mx-scheduler__week-row > .mx-scheduler__month-cell:first-child",
+            "from": "month"
+          },
+          "past": ".mx-scheduler .mx-scheduler__cell[data-past]",
+          "hover": ".mx-scheduler .mx-scheduler__cell:hover",
+          "selected": ".mx-scheduler .mx-scheduler__cell[aria-selected='true']",
+          "focus": ".mx-scheduler__cell:focus-visible"
+        }
+      },
+      "now": {
+        "$description": "The line at the time it is now, over its day.",
+        "selector": ".mx-scheduler__now"
+      },
+      "now-dot": {
+        "$description": "A dot at the start of the now line.",
+        "selector": ".mx-scheduler__now::before"
+      },
+      "weekdays": {
+        "$description": "The month view's head: the weekdays; a line under it.",
+        "selector": ".mx-scheduler__weekdays"
+      },
+      "weekday-name": {
+        "$description": "A weekday in the month view's head.",
+        "selector": ".mx-scheduler__weekday-name"
+      },
+      "week-row": {
+        "$description": "A week in the month view: the line over it (`first`: none over the first week).",
+        "selector": ".mx-scheduler__week-row",
+        "states": {
+          "first": ".mx-scheduler__week-row:first-child"
+        }
+      },
+      "appointment": {
+        "$description": "An appointment's box (`timed` in a day, a `bar` over the all-day panel or a month week, a `chip` in a month cell): its space, text size, corners (a piece that goes on before or after: `timed-before`, `bar-after` …), focused by the keys, disabled, one that can be dragged, the box being moved (`draft`), one that cannot go where it stands (`invalid`), one being saved. Its fill, text and four edges mix its own colour by the plain `appointment-*`, `chip-*` shares.",
+        "selector": ".mx-scheduler__appointment",
+        "defaults": {
+          "cursor": "default"
+        },
+        "states": {
+          "focus": ".mx-scheduler__appointment:focus-visible",
+          "disabled": ".mx-scheduler__appointment[data-disabled]",
+          "timed-before": ".mx-scheduler__appointment[data-kind='timed'][data-before]",
+          "timed-after": ".mx-scheduler__appointment[data-kind='timed'][data-after]",
+          "bar-before": ".mx-scheduler__appointment[data-kind='bar'][data-before]",
+          "bar-after": ".mx-scheduler__appointment[data-kind='bar'][data-after]",
+          "draggable": ".mx-scheduler__appointment[data-draggable]",
+          "draft": ".mx-scheduler__appointment[data-draft]",
+          "invalid": ".mx-scheduler__appointment[data-invalid]",
+          "saving": ".mx-scheduler__appointment[data-saving]"
+        }
+      },
+      "appointment-content": {
+        "$description": "An appointment's text and time (`row`: side by side, in a bar, a chip or a short one).",
+        "selector": ".mx-scheduler__appointment-content",
+        "states": {
+          "row": ".mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-short]) .mx-scheduler__appointment-content"
+        }
+      },
+      "appointment-text": {
+        "$description": "An appointment's text.",
+        "selector": ".mx-scheduler__appointment-text"
+      },
+      "appointment-time": {
+        "$description": "An appointment's time (`open`: while its tooltip shows).",
+        "selector": ".mx-scheduler__appointment-time",
+        "states": {
+          "open": ".mx-scheduler__appointment[data-open] .mx-scheduler__appointment-time"
+        }
+      },
+      "dot": {
+        "$description": "A dot before a chip's text, in the appointment's colour.",
+        "selector": ".mx-scheduler__appointment[data-kind='chip']::before",
+        "defaults": {
+          "display": "none"
+        }
+      },
+      "tooltip": {
+        "$description": "An appointment's tooltip: its space and width (its edges mix the appointment's colour by the plain `tooltip-*` shares).",
+        "selector": ".mx-scheduler__tooltip"
+      },
+      "tooltip-title": {
+        "$description": "The tooltip's title.",
+        "selector": ".mx-scheduler__tooltip-title"
+      },
+      "swatch": {
+        "$description": "A swatch in the appointment's colour before the title, on its first line.",
+        "selector": ".mx-scheduler__tooltip-title::before",
+        "defaults": {
+          "display": "none"
+        }
+      },
+      "tooltip-detail": {
+        "$description": "The tooltip's time and description.",
+        "selector": ":is(.mx-scheduler__tooltip-time, .mx-scheduler__tooltip-description)"
+      },
+      "tooltip-actions": {
+        "$description": "The tooltip's buttons.",
+        "selector": ".mx-scheduler__tooltip-actions"
+      },
+      "more": {
+        "$description": "A day's \"+N more\" (`hover`, `focus`).",
+        "selector": ".mx-scheduler__more",
+        "defaults": {
+          "bg": "transparent",
+          "border-width": "0px",
+          "cursor": "pointer"
+        },
+        "states": {
+          "hover": ".mx-scheduler__more:hover",
+          "focus": ".mx-scheduler__more:focus-visible"
+        }
+      },
+      "more-list": {
+        "$description": "The list \"+N more\" opens.",
+        "selector": ".mx-scheduler__more-list"
+      },
+      "more-title": {
+        "$description": "The list's title (the day).",
+        "selector": ".mx-scheduler__more-title"
+      },
+      "more-item": {
+        "$description": "An appointment in the list (`hover`, `focus`; its edges mix its colour by the plain `more-item-*` shares).",
+        "selector": ".mx-scheduler__more-item",
+        "defaults": {
+          "bg": "transparent",
+          "cursor": "pointer"
+        },
+        "states": {
+          "hover": ".mx-scheduler__more-item:hover",
+          "focus": ".mx-scheduler__more-item:focus-visible"
+        }
+      },
+      "more-time": {
+        "$description": "An item's time.",
+        "selector": ".mx-scheduler__more-time"
+      },
+      "state": {
+        "$description": "What the scheduler says while it loads or failed (`danger`).",
+        "selector": ".mx-scheduler__state",
+        "defaults": {
+          "padding": "var(--_scheduler-state-inset)"
+        },
+        "states": {
+          "danger": ".mx-scheduler__state[data-tone='danger']"
+        }
+      }
+    }
+  }
+}

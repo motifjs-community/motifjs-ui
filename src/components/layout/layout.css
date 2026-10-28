@@ -1,13 +1,14 @@
-/* Layout containers. The look binds to data-* attributes the components write and to tokens
-   only; the sizes the app gives (gap, padding, tracks) arrive as inline custom properties
+/* Layout containers. The layout binds to data-* attributes the components write and to the layout's
+   slots (`--_layout-*`); the sizes the app gives (gap, padding, tracks) arrive as inline custom properties
    (--_gap, --_row-gap, --_column-gap) or inline grid properties. Each container sets its own
    --_gap default, so a nested one never inherits its parent's. Children of Stack, Grid and
-   DockPanel carry their own placement inline, written from their props. */
+   DockPanel carry their own placement inline, written from their props. The look of panels, group
+   boxes and splitters is their units' (units.css); this file only places them. */
 @layer mx.components {
   /* Stack. */
 
   .mx-stack {
-    --_gap: var(--mx-layout-gap);
+    --_gap: var(--_layout-gap);
     display: flex;
     flex-direction: column;
     gap: var(--_gap);
@@ -88,7 +89,7 @@
   /* Grid. */
 
   .mx-grid {
-    --_gap: var(--mx-layout-gap);
+    --_gap: var(--_layout-gap);
     --_row-gap: var(--_gap);
     --_column-gap: var(--_gap);
     display: grid;
@@ -146,18 +147,6 @@
     min-block-size: 0;
   }
 
-  .mx-panel[data-variant='outline'] {
-    border: var(--mx-layout-panel-border-width) solid var(--mx-layout-panel-border);
-    border-radius: var(--mx-layout-panel-radius);
-  }
-
-  .mx-panel[data-variant='card'] {
-    background: var(--mx-layout-panel-bg);
-    border: var(--mx-layout-panel-border-width) solid var(--mx-layout-panel-border);
-    border-radius: var(--mx-layout-panel-radius);
-    box-shadow: var(--mx-layout-panel-shadow);
-  }
-
   .mx-panel[data-scroll='both'] {
     overflow: auto;
   }
@@ -175,85 +164,38 @@
   /* GroupBox. */
 
   .mx-group-box {
-    --_gap: var(--mx-layout-group-box-gap);
+    --_gap: var(--_layout-group-box-gap);
     display: flex;
     flex-direction: column;
     gap: var(--_gap);
     min-inline-size: 0;
-    margin: 0;
-    padding: var(--mx-layout-group-box-padding);
-    color: var(--mx-layout-group-box-fg);
-    border: var(--mx-layout-group-box-border-width) solid var(--mx-layout-group-box-border);
-    border-radius: var(--mx-layout-group-box-radius);
   }
 
-  .mx-group-box[data-variant='plain'] {
-    padding: 0;
-    border-color: transparent;
-  }
-
+  /* On the frame, or (floated, so a plain item of the box's column) inside the box above its content;
+     in a plain box as far above it as the box's gap. */
   .mx-group-box__legend {
-    padding-block: 0;
-    padding-inline: var(--mx-layout-group-box-legend-padding);
-    font-size: var(--mx-layout-group-box-font-size);
-    font-weight: var(--mx-layout-group-box-font-weight);
-    line-height: var(--mx-layout-group-box-line-height);
+    float: var(--_layout-group-box-legend-float);
   }
 
   .mx-group-box[data-variant='plain'] > .mx-group-box__legend {
-    padding-inline: 0;
     padding-block-end: var(--_gap);
-  }
-
-  .mx-group-box[data-disabled] > .mx-group-box__legend {
-    color: var(--mx-layout-group-box-legend-fg-disabled);
   }
 
   .mx-group-box__toggle {
     appearance: none;
     display: inline-flex;
     align-items: center;
-    gap: var(--mx-layout-group-box-toggle-gap);
-    margin: 0;
-    padding-block: 0;
-    padding-inline: var(--mx-layout-group-box-legend-padding);
-    margin-inline: calc(var(--mx-layout-group-box-legend-padding) * -1);
     font: inherit;
     color: inherit;
-    background: transparent;
-    border: 0;
-    border-radius: var(--mx-layout-group-box-toggle-radius);
-    cursor: default;
     transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-group-box__toggle:hover:not(:disabled) {
-    background: var(--mx-layout-group-box-toggle-bg-hover);
-  }
-
-  .mx-group-box__toggle:active:not(:disabled) {
-    background: var(--mx-layout-group-box-toggle-bg-active);
-  }
-
   .mx-group-box__chevron {
-    color: var(--mx-layout-group-box-chevron-fg);
     transition: rotate var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
-  }
-
-  .mx-group-box[data-collapsed] .mx-group-box__chevron {
-    rotate: -90deg;
-  }
-
-  .mx-group-box[data-collapsed] .mx-group-box__chevron:dir(rtl) {
-    rotate: 90deg;
   }
 
   .mx-group-box[data-collapsed] > :not(legend) {
     display: none;
-  }
-
-  .mx-group-box[data-collapsed]:not([data-variant='plain']) {
-    padding-block-end: 0;
   }
 
   /* DockPanel. */
@@ -335,44 +277,34 @@
     align-items: center;
     justify-content: center;
     touch-action: none;
-    --_line: var(--mx-layout-splitter-line-width);
-    --_line-color: var(--mx-layout-splitter-line-color);
-    --_grip-color: var(--mx-layout-splitter-grip-color);
+    --_line: var(--_layout-splitter-line-width);
   }
 
+  /* The line runs the splitter's length, as thick as --_line; the grip lies across it. */
   .mx-split-container__splitter::before {
     content: '';
     position: absolute;
     inset: 0;
     margin: auto;
-    background: var(--_line-color);
     transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
   .mx-split-container__splitter::after {
     content: '';
     position: relative;
-    background: var(--_grip-color);
-    border-radius: var(--mx-layout-splitter-grip-radius);
     transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-split-container[data-orientation='horizontal'] > .mx-split-container__splitter::before {
-    inline-size: var(--_line);
+  .mx-split-container[data-orientation='horizontal'] > .mx-split-container__splitter {
+    --_line-w: var(--_line);
+    --_grip-w: var(--_layout-splitter-grip-thickness);
+    --_grip-h: var(--_layout-splitter-grip-length);
   }
 
-  .mx-split-container[data-orientation='vertical'] > .mx-split-container__splitter::before {
-    block-size: var(--_line);
-  }
-
-  .mx-split-container[data-orientation='horizontal'] > .mx-split-container__splitter::after {
-    inline-size: var(--mx-layout-splitter-grip-thickness);
-    block-size: var(--mx-layout-splitter-grip-length);
-  }
-
-  .mx-split-container[data-orientation='vertical'] > .mx-split-container__splitter::after {
-    inline-size: var(--mx-layout-splitter-grip-length);
-    block-size: var(--mx-layout-splitter-grip-thickness);
+  .mx-split-container[data-orientation='vertical'] > .mx-split-container__splitter {
+    --_line-h: var(--_line);
+    --_grip-w: var(--_layout-splitter-grip-length);
+    --_grip-h: var(--_layout-splitter-grip-thickness);
   }
 
   .mx-split-container[data-resizable][data-orientation='horizontal'] > .mx-split-container__splitter {
@@ -385,14 +317,7 @@
 
   .mx-split-container[data-resizable]:not([data-disabled]) > .mx-split-container__splitter:hover,
   .mx-split-container[data-dragging] > .mx-split-container__splitter {
-    --_line: var(--mx-layout-splitter-active-width);
-    --_line-color: var(--mx-layout-splitter-active-color);
-    --_grip-color: var(--mx-layout-splitter-active-color);
-  }
-
-  .mx-split-container:not([data-resizable]) > .mx-split-container__splitter::after,
-  .mx-split-container[data-disabled] > .mx-split-container__splitter::after {
-    background: var(--mx-layout-splitter-grip-color-disabled);
+    --_line: var(--_layout-splitter-active-width);
   }
 
   .mx-split-container[data-disabled] > .mx-split-container__splitter {

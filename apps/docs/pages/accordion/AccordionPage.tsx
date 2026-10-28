@@ -80,9 +80,9 @@ const HOOKS = [
 
 const TOKENS = [
   ['accordion.height.*, accordion.padding.*, accordion.font-size.*', 'Header sizes, from the density tokens.'],
-  ['accordion.radius, accordion.border-width, accordion.card-gap', 'The box or the cards.'],
-  ['accordion.gap, accordion.font-weight, accordion.icon-size', 'Inside a header.'],
-  ['accordion.content-padding', 'The space above and below a section\'s content.'],
+  ['accordion.container, accordion.item', 'Units: the accordion and its items per variant (`list`, `list-next`, `separated`, `flush`; `expanded`).'],
+  ['accordion.header, accordion.icon, accordion.chevron, accordion.plate, accordion.body', 'Units: a header (`expanded`, `hover`, `pressed`, `disabled`, `focus`), its icon, the chevron (`open`) and a plate behind it, the open section.'],
+  ['accordion.chevron-size, accordion.chevron-plate-size, accordion.content-padding', 'The chevron’s and the plate’s sizes; the space above and below a section\'s content.'],
 ];
 
 export default function AccordionPage() {

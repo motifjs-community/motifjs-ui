@@ -1,0 +1,13 @@
+{
+  "access-key": {
+    "underline-style": { "$value": "solid" },
+    "underline-color": { "$value": "currentcolor" },
+    "underline-thickness": { "$value": "auto" },
+    "underline-offset": { "$value": "auto" },
+    "key": {
+      "shown": {
+        "text-decoration": { "$value": "underline" }
+      }
+    }
+  }
+}

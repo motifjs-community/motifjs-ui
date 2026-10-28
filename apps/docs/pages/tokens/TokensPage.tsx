@@ -54,13 +54,14 @@ export default function TokensPage() {
       <p class="lead">
         Five layers. The first four — primitives, the design language's own scales, semantic tokens per theme,
         density — come from <code>@motifx-community/design-system</code> and are listed here for reference. The fifth, the component
-        tokens, is this kit's own: a fine-tuning knob per component, each referencing a design-system token, written
-        in <code>@layer mx.components</code>. Components bring their own; none has been written yet.
+        tokens, is this kit's own: a knob per component, each referencing a design-system token, written in{' '}
+        <code>@layer mx.components</code>. Every design language gives every one of them its own value.
       </p>
 
       <Section anchor="component" title="Component ({componentDocs.length})">
         <p>
-          Source: <code>tokens/component/*.tokens.json</code>. Override one after <code>styles.css</code> to restyle
+          Source: <code>tokens/schema/*.json</code> (names and types) and <code>tokens/languages/&lt;language&gt;/*.json</code>{' '}
+          (the values; listed here: Tactile's). Override one after <code>styles.css</code> to restyle
           every instance of that component; override the design-system token it references to restyle everything.
         </p>
         <div class="table-scroll" tabindex="0">

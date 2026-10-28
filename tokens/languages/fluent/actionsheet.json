@@ -1,0 +1,63 @@
+{
+  "actionsheet": {
+    "sheet": {
+      "body": {
+        "padding": { "$value": "{space.2}" }
+      }
+    },
+    "menu": {
+      "item-height": { "$value": "{control.height.lg}" },
+      "item-white-space": { "$value": "normal" },
+      "item": {
+        "padding-inline": { "$value": "{space.4}" },
+        "gap": { "$value": "{space.3}" },
+        "font-size": { "$value": "{font.size.body-large}" },
+        "line-height": { "$value": "{font.line.body-large}" },
+        "radius": { "$value": "{radius.md}" },
+        "first": {
+          "radius-top": { "$value": "{radius.md}" }
+        },
+        "last": {
+          "radius-bottom": { "$value": "{radius.md}" }
+        }
+      },
+      "shortcut": {
+        "display": { "$value": "none" }
+      }
+    },
+    "cancel-button": {
+      "variant": { "$value": "solid" },
+      "tone": { "$value": "standard" },
+      "size": { "$value": "lg" },
+      "height": {
+        "lg": { "$value": "{control.height.lg}" }
+      },
+      "font-size": {
+        "lg": { "$value": "{font.size.body-large}" }
+      },
+      "face": {
+        "font-weight": { "$value": "{font.weight.regular}" }
+      }
+    },
+    "message": {
+      "padding-top": { "$value": "0px" },
+      "padding": { "$value": "{space.4}" },
+      "padding-bottom": { "$value": "{space.2}" },
+      "color": { "$value": "{color.fg.secondary}" },
+      "font-size": { "$value": "{font.size.body}" },
+      "line-height": { "$value": "{font.line.body}" }
+    },
+    "back": {
+      "rotate": { "$value": {"value": 90, "unit": "deg"} },
+      "icon": { "$value": "chevron-down" },
+      "rtl": {
+        "rotate": { "$value": {"value": -90, "unit": "deg"} }
+      }
+    },
+    "cancel": {
+      "padding": { "$value": "{space.2}" },
+      "border-top-width": { "$value": "{border.width.1}" },
+      "border-top-color": { "$value": "{color.stroke.divider}" }
+    }
+  }
+}

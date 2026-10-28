@@ -144,8 +144,10 @@ const HOOKS = [
 const TOKENS = [
   ['layout.space.xxs … xxl', 'The spacing steps of `gap` and `padding`.'],
   ['layout.gap', 'The gap of Stack and Grid when none is given.'],
-  ['layout.panel.radius, layout.panel.border-width', 'The frame of an `outline` or `card` panel.'],
-  ['layout.group-box.*', '`radius`, `border-width`, `padding`, `gap`, `legend-padding`, `font-size`, `font-weight`.'],
+  ['layout.panel', 'Unit: a panel (`outline`: a frame, `card`: a raised surface).'],
+  ['layout.group, layout.group-caption, layout.group-toggle, layout.group-chevron', 'Units: a group box (`plain`, `collapsed`), its caption, the button that folds it and its chevron.'],
+  ['layout.group-box.gap, layout.group-box.legend-float', 'The gap inside a group box when none is given; where its caption sits.'],
+  ['layout.splitter-handle, layout.splitter-line, layout.splitter-grip', 'Units: the splitter (`focus`), its line and its grip (`active`, `disabled`).'],
   ['layout.splitter.*', '`size` (the area that takes the pointer), `line-width`, `active-width`, `grip-length`, `grip-thickness`.'],
 ];
 

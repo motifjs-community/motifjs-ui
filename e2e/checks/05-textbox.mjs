@@ -47,8 +47,8 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.keyboard.press('Tab');
   await page.waitForTimeout(100);
   check('a changed field is checked when it is left', (await validation.locator('.mx-field__message').first().textContent()) === 'Enter a valid email address.' && (await email.getAttribute('aria-invalid')) === 'true');
-  const edge = await validation.locator('.mx-field__box').first().evaluate((el) => getComputedStyle(el).borderBottomColor);
-  const restEdge = await validation.locator('.mx-field__box').nth(2).evaluate((el) => getComputedStyle(el).borderBottomColor);
+  const edge = await validation.locator('.mx-field__frame').first().evaluate((el) => getComputedStyle(el).borderBottomColor);
+  const restEdge = await validation.locator('.mx-field__frame').nth(2).evaluate((el) => getComputedStyle(el).borderBottomColor);
   check('…and its box turns to the error color', edge !== restEdge, `${edge} vs ${restEdge}`);
   await email.fill('ada@motif.dev');
   await page.waitForTimeout(50);

@@ -2,12 +2,17 @@
    themes, user preferences, base styles), then this kit's own layer with its
    component tokens and components. The design system declares
    `@layer mx.reset, mx.tokens, mx.base;` first, so the `mx.components` layer
-   the files below open comes after them. scripts/build-css.mjs inlines the
+   the files below open comes after them. The slots take each component's
+   tokens in on its own root; the places come last: inside a
+   component, they point a part's tokens at the ones the component decides
+   there. scripts/build-css.mjs inlines the
    relative imports into dist/styles.css and keeps the design-system import as
    it is, for the app's bundler to resolve. */
 @import '@motifx-community/design-system/styles.css';
 @import '../generated/components.css';
+@import '../generated/slots.css';
 @import '../generated/icons.css';
+@import '../generated/shapes.css';
 @import './base.css';
 @import '../parts/popup/popup.css';
 @import '../parts/menu/menu.css';
@@ -47,4 +52,6 @@
 @import '../components/filterbuilder/filterbuilder.css';
 @import '../components/datagrid/datagrid.css';
 @import '../components/scheduler/scheduler.css';
-@import './identity/lilac.css';
+/* The units' paint comes after the components: their CSS only places the units. */
+@import '../generated/units.css';
+@import '../generated/places.css';

@@ -1,8 +1,0 @@
-{
-  "number-box": {
-    "$description": "NumberBox: the spin buttons in the box.",
-    "spin-width": { "$type": "dimension", "$value": "{space.5}" },
-    "spin-inset": { "$type": "dimension", "$value": "{border.width.2}" },
-    "glyph-size": { "$type": "dimension", "$value": "{icon.size.sm}" }
-  }
-}

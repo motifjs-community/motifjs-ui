@@ -80,11 +80,11 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['tagbox.inset, tagbox.gap', 'The space around and between the tags; a tag fills the field’s height less the inset.'],
-  ['tagbox.tag-padding, tagbox.tag-gap, tagbox.tag-radius, tagbox.tag-border-width, tagbox.tag-font-size, tagbox.tag-max-width', 'A tag.'],
-  ['tagbox.tag-bg, tagbox.tag-bg-hover, tagbox.tag-border', 'Its colors.'],
-  ['tagbox.remove-size, tagbox.input-min-width', 'The remove button; the narrowest the input gets before it goes to the next line.'],
-  ['list.*, listbox.divider-width, field.*', 'The list, the line under "Select all", the field.'],
+  ['tagbox.tag, tagbox.tag-text', 'Units: a tag (`more`: the "+N" tag, `loading`, `focus`, `hover`, `fixed`, `disabled`) and its text.'],
+  ['tagbox.remove, tagbox.remove-glyph', 'Units: a tag\'s remove button (`hover`, `pressed`) and its glyph.'],
+  ['tagbox.box, tagbox.tags, tagbox.arrow, tagbox.arrow-glyph', 'Units: the box\'s space round the tags, the tags together, and the arrow that opens the list (`open`).'],
+  ['tagbox.inset, tagbox.input-min-width', 'The space between the tags and the field\'s edge; the narrowest the input gets before it goes to the next line.'],
+  ['list.*, listbox.*, field.*', 'The list, the list box and the field.'],
 ];
 
 export default function TagBoxPage() {

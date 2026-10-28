@@ -1,9 +1,0 @@
-{
-  "toast": {
-    "$description": "Lilac toasts: more inner space.",
-    "padding": {
-      "$type": "dimension",
-      "$value": "{space.4}"
-    }
-  }
-}

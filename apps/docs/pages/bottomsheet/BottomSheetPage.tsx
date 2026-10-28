@@ -79,13 +79,11 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['sheet.background, sheet.fg, sheet.border-color, sheet.border-width, sheet.radius, sheet.shadow', 'The surface (rounded at the top).'],
-  ['sheet.scrim', 'The dimmed layer.'],
-  ['sheet.max-width, sheet.top-gap, sheet.peek-height', 'How wide it gets on a large screen, the gap it leaves at the top at full height, and the peek height.'],
-  ['sheet.handle-area, sheet.handle-radius, sheet.grip-width, sheet.grip-height, sheet.grip-radius, sheet.grip-color', 'The handle and its grip.'],
-  ['sheet.padding, sheet.header-padding, sheet.header-gap, sheet.footer-padding, sheet.footer-gap, sheet.footer-border-color', 'Inside.'],
-  ['sheet.title-font-size, sheet.title-font-weight, sheet.title-line-height, sheet.font-*', 'The type.'],
-  ['sheet.focus-width, sheet.focus-offset, sheet.focus-color, sheet.focus-halo', 'The handle\'s focus ring.'],
+  ['sheet.scrim, sheet.panel', 'Units: the dimmed layer; the surface (`max-width`: how wide it gets on a large screen; `full`: its top corners once it reaches the top of the room).'],
+  ['sheet.handle, sheet.grip', 'Units: the handle (`focus`: the keys) and its grip.'],
+  ['sheet.header, sheet.title, sheet.tools, sheet.body, sheet.footer', 'Units: inside (`body.focus`: a ring inside the content).'],
+  ['sheet.top-gap, sheet.peek-height, sheet.inset', 'The gap it leaves at the top at full height, the peek height, the room around the panel.'],
+  ['sheet.handle-area, sheet.font-family', 'The handle’s grab area; the type’s family.'],
 ];
 
 export default function BottomSheetPage() {

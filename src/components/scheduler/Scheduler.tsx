@@ -15,7 +15,21 @@ import { Button } from '../button/Button';
 import { Calendar } from '../calendar/Calendar';
 import { Spinner } from '../progress/Spinner';
 import { Toolbar } from '../toolbar/Toolbar';
+import type { AppointmentAddedEventArgs } from './appointment-added-event-args';
+import type { AppointmentAddingEventArgs } from './appointment-adding-event-args';
 import type { AppointmentClickEventArgs } from './appointment-click-event-args';
+import type { AppointmentDeletedEventArgs } from './appointment-deleted-event-args';
+import type { AppointmentDeletingEventArgs } from './appointment-deleting-event-args';
+import { AppointmentEditor, type EditorEvents } from './AppointmentEditor';
+import type { AppointmentUpdatedEventArgs } from './appointment-updated-event-args';
+import type { AppointmentUpdatingEventArgs } from './appointment-updating-event-args';
+import type { DataErrorEventArgs } from './data-error-event-args';
+import type { DragEventArgs } from './drag-event-args';
+import type { FormOpeningEventArgs } from './form-opening-event-args';
+import { AppointmentStore } from './model/AppointmentStore';
+import type { Draft } from './model/draft';
+import type { SchedulerEditing } from './scheduler-editing';
+import { AppointmentDrag } from './view/AppointmentDrag';
 import type { AppointmentTemplateContext } from './appointment-template-context';
 import type { CellClickEventArgs } from './cell-click-event-args';
 import type { ContentReadyEventArgs } from './content-ready-event-args';
@@ -74,7 +88,21 @@ const OWN = [
   'texts',
   'keys',
   'announce',
+  'editing',
+  'snapMinutes',
+  'minDuration',
+  'tooltip',
 ] as const;
+
+const DEFAULT_EDITING: SchedulerEditing = {
+  allowAdding: true,
+  allowUpdating: true,
+  allowDeleting: true,
+  allowDragging: true,
+  allowResizing: true,
+  allowCopying: true,
+  confirmDelete: true,
+};
 
 /** Props whose value is a function (a template, a test of a day). */
 const FUNCTION_VALUES = new Set(['isHoliday', 'appointmentTemplate']);
@@ -89,6 +117,10 @@ const DEFAULT_FIELDS: SchedulerFields = {
   color: 'color',
   disabled: 'disabled',
   visible: 'visible',
+  allowDrag: 'allowDrag',
+  allowResize: 'allowResize',
+  allowEdit: 'allowEdit',
+  allowDelete: 'allowDelete',
 };
 
 const DEFAULT_KEYS: SchedulerKeys = {
@@ -116,8 +148,12 @@ interface Parts<T> {
   model: SchedulerModel<T>;
   format: SchedulerFormat;
   host: SchedulerHost<T>;
-  /** Changes of the data source's rows, to read them again. */
-  version: { rows: number; status: string; monthRoom: number; said: string };
+  /** Changes of the rows (the data source's, or the array's in place) to read them again; the draft; the appointments being saved. */
+  version: { rows: number; status: string; monthRoom: number; said: string; draft: Draft<T> | null; saving: string[] };
+  store: AppointmentStore<T>;
+  editor: AppointmentEditor<T>;
+  drag: AppointmentDrag<T>;
+  events: EditorEvents<T>;
   more: MoreListState<T>;
   morePopup: Popup | null;
   picker: Calendar | null;
@@ -178,10 +214,26 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       [own.onSelectionChanged, parts.selectionChanged as Emitter<never>],
       [own.onContentReady, parts.contentReady as Emitter<never>],
       [own.onMoreOpening, parts.moreOpening as Emitter<never>],
+      [own.onAppointmentAdding, parts.events.adding as Emitter<never>],
+      [own.onAppointmentAdded, parts.events.added as Emitter<never>],
+      [own.onAppointmentUpdating, parts.events.updating as Emitter<never>],
+      [own.onAppointmentUpdated, parts.events.updated as Emitter<never>],
+      [own.onAppointmentDeleting, parts.events.deleting as Emitter<never>],
+      [own.onAppointmentDeleted, parts.events.deleted as Emitter<never>],
+      [own.onFormOpening, parts.events.formOpening as Emitter<never>],
+      [own.onDataError, parts.events.dataError as Emitter<never>],
+      [own.onMoveStart, parts.events.moveStart as Emitter<never>],
+      [own.onMoving, parts.events.moving as Emitter<never>],
+      [own.onMoveEnd, parts.events.moveEnd as Emitter<never>],
+      [own.onResizeStart, parts.events.resizeStart as Emitter<never>],
+      [own.onResizing, parts.events.resizing as Emitter<never>],
+      [own.onResizeEnd, parts.events.resizeEnd as Emitter<never>],
     ];
     for (const [handler, emitter] of on) if (handler) emitter.event(handler);
     this.motif.setDisposable(() => {
       parts.model.dispose();
+      parts.drag.dispose();
+      parts.editor.dispose();
       parts.stopSource?.();
       for (const stop of parts.stopKeys) stop();
       for (const [, emitter] of on) emitter.dispose();
@@ -376,6 +428,36 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set announce(value: Bind<boolean>) {
     this.assignProperty('announce', value, Boolean);
   }
+  /** What the user may change; `false` changes nothing (read only), `true` everything. */
+  get editing(): SchedulerEditing {
+    const value = this.getProperty<boolean | Partial<SchedulerEditing> | undefined>('editing');
+    if (value === false) return Object.fromEntries(Object.keys(DEFAULT_EDITING).map((k) => [k, k === 'confirmDelete'])) as unknown as SchedulerEditing;
+    return { ...DEFAULT_EDITING, ...(typeof value === 'object' && value ? value : {}) };
+  }
+  set editing(value: Bind<boolean | Partial<SchedulerEditing>>) {
+    this.assignProperty('editing', value);
+  }
+  /** The minutes a drag and the keys move by. Default: the view's cell. */
+  get snapMinutes(): number {
+    return Math.max(1, this.getProperty<number | undefined>('snapMinutes') ?? this.resolveView().cellDuration);
+  }
+  set snapMinutes(value: Bind<number>) {
+    this.assignProperty('snapMinutes', value, Number);
+  }
+  /** The shortest an appointment gets by resizing, in minutes. Default: `snapMinutes`. */
+  get minDuration(): number {
+    return Math.max(1, this.getProperty<number | undefined>('minDuration') ?? this.snapMinutes);
+  }
+  set minDuration(value: Bind<number>) {
+    this.assignProperty('minDuration', value, Number);
+  }
+  /** A click on an appointment shows its tooltip. Default `true`. */
+  get tooltip(): boolean {
+    return this.getProperty<boolean | undefined>('tooltip') ?? true;
+  }
+  set tooltip(value: Bind<boolean>) {
+    this.assignProperty('tooltip', value, Boolean);
+  }
 
   // State.
 
@@ -436,6 +518,48 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   get onMoreOpening(): MotifEvent<MoreOpeningEventArgs<T>> {
     return this.parts.moreOpening.event;
   }
+  get onAppointmentAdding(): MotifEvent<AppointmentAddingEventArgs<T>> {
+    return this.parts.events.adding.event;
+  }
+  get onAppointmentAdded(): MotifEvent<AppointmentAddedEventArgs<T>> {
+    return this.parts.events.added.event;
+  }
+  get onAppointmentUpdating(): MotifEvent<AppointmentUpdatingEventArgs<T>> {
+    return this.parts.events.updating.event;
+  }
+  get onAppointmentUpdated(): MotifEvent<AppointmentUpdatedEventArgs<T>> {
+    return this.parts.events.updated.event;
+  }
+  get onAppointmentDeleting(): MotifEvent<AppointmentDeletingEventArgs<T>> {
+    return this.parts.events.deleting.event;
+  }
+  get onAppointmentDeleted(): MotifEvent<AppointmentDeletedEventArgs<T>> {
+    return this.parts.events.deleted.event;
+  }
+  get onFormOpening(): MotifEvent<FormOpeningEventArgs<T>> {
+    return this.parts.events.formOpening.event;
+  }
+  get onDataError(): MotifEvent<DataErrorEventArgs<T>> {
+    return this.parts.events.dataError.event;
+  }
+  get onMoveStart(): MotifEvent<DragEventArgs<T>> {
+    return this.parts.events.moveStart.event;
+  }
+  get onMoving(): MotifEvent<DragEventArgs<T>> {
+    return this.parts.events.moving.event;
+  }
+  get onMoveEnd(): MotifEvent<DragEventArgs<T>> {
+    return this.parts.events.moveEnd.event;
+  }
+  get onResizeStart(): MotifEvent<DragEventArgs<T>> {
+    return this.parts.events.resizeStart.event;
+  }
+  get onResizing(): MotifEvent<DragEventArgs<T>> {
+    return this.parts.events.resizing.event;
+  }
+  get onResizeEnd(): MotifEvent<DragEventArgs<T>> {
+    return this.parts.events.resizeEnd.event;
+  }
 
   // Methods.
 
@@ -493,6 +617,31 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return true;
   }
 
+  /** Adds an appointment where they come from (the array, or the data source), asking `onAppointmentAdding` first. */
+  addAppointment(values: Partial<T>): Promise<T | null> {
+    return this.parts.editor.add(values);
+  }
+  /** Changes an appointment's fields, asking `onAppointmentUpdating` first. */
+  updateAppointment(appointment: T, changes: Partial<T>): Promise<boolean> {
+    return this.parts.editor.update(appointment, changes);
+  }
+  /** Deletes an appointment, asking `onAppointmentDeleting` first (not the user). */
+  deleteAppointment(appointment: T): Promise<boolean> {
+    return this.parts.editor.remove(appointment);
+  }
+  /** Opens the appointment form: for an appointment, or for a new one at `cell` (the selection by default). */
+  showAppointmentForm(appointment: T | null = null, cell: SchedulerCell | null = null): Promise<void> {
+    return this.parts.editor.openForm(appointment, cell ?? (appointment ? null : this.parts.model.selection()));
+  }
+  /** Shows an appointment's tooltip next to `anchor` (its box by default). */
+  showTooltip(appointment: T, anchor?: HTMLElement): void {
+    const box = anchor ?? this.boxOf(appointment);
+    if (box) this.parts.editor.showTooltip(appointment, box);
+  }
+  hideTooltip(): void {
+    this.parts.editor.hideTooltip();
+  }
+
   /** The text for `key`: the scheduler's own `texts`, else `uiLocale`'s, filled in. */
   textOf(key: keyof UiStrings, values?: Record<string, unknown>): string {
     const text = this.texts[key] ?? uiLocale.strings[key];
@@ -523,6 +672,16 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     this.bindings.watch(() => this.scrollOnShow());
   }
 
+  override onMounted() {
+    // A finger dragging an appointment must not scroll the page: the listener has to be there before the finger lands.
+    const drag = this.parts.drag;
+    const hold = (e: TouchEvent) => {
+      if (drag.active) e.preventDefault();
+    };
+    this.element.addEventListener('touchmove', hold, { passive: false });
+    this.motif.setDisposable(() => this.element.removeEventListener('touchmove', hold));
+  }
+
   override view() {
     const parts = this.parts;
     const host = parts.host;
@@ -531,17 +690,15 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return (
       <>
         <Toolbar class="mx-scheduler__bar" label={() => this.text || t('schedulerLabel')} size="sm" x-display={() => this.toolbar}>
-          <Button class="mx-scheduler__today" text={() => t('today')} variant="outline" size="sm" onclick={() => this.changeDate(this.today(), true)} />
+          <Button class="mx-scheduler__today" text={() => t('today')} onclick={() => this.changeDate(this.today(), true)} />
           <Button
             class="mx-scheduler__step"
             icon={chevronStart()}
             hint={() => t('schedulerPrevious')}
-            variant="ghost"
-            size="sm"
             onclick={() => this.step(-1, true)}
           />
-          <Button class="mx-scheduler__step" icon={chevronEnd()} hint={() => t('schedulerNext')} variant="ghost" size="sm" onclick={() => this.step(1, true)} />
-          <Button class="mx-scheduler__title" text={() => this.rangeText()} variant="ghost" dropDown={parts.picker} ref={(b: Button) => (parts.title = b)} />
+          <Button class="mx-scheduler__step" icon={chevronEnd()} hint={() => t('schedulerNext')} onclick={() => this.step(1, true)} />
+          <Button class="mx-scheduler__title" text={() => this.rangeText()} dropDown={parts.picker} ref={(b: Button) => (parts.title = b)} />
           {this.viewList().map((view) => (
             <Button
               key={view.name}
@@ -549,8 +706,6 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
               toggle
               pressed={() => this.currentView === view.name}
               text={() => this.viewText(view)}
-              variant="ghost"
-              size="sm"
               onclick={() => this.changeView(view.name, true)}
             />
           ))}
@@ -562,10 +717,10 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
           </div>
           <div class="mx-scheduler__state" data-tone="danger" role="alert" x-display={() => parts.version.status === 'error'}>
             <span>{() => t('loadFailed')}</span>
-            <Button text={() => t('retry')} size="sm" variant="outline" onclick={() => void this.dataSource?.retry()} />
+            <Button text={() => t('retry')} onclick={() => void this.dataSource?.retry()} />
           </div>
         </div>
-        <div class="mx-scheduler__live" aria-live="polite" role="status">
+        <div class="mx-scheduler__live mx-sr-only" aria-live="polite" role="status">
           {() => parts.version.said}
         </div>
       </>
@@ -596,7 +751,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       status: 'ready',
       monthRoom: Infinity,
       said: '',
-    });
+      draft: null,
+      saving: [],
+    }) as Parts<T>['version'];
     const more = reactive({ date: null, items: [] }) as MoreListState<T>;
     const format = new SchedulerFormat(() => this.locale);
     const model = new SchedulerModel<T>({
@@ -609,6 +766,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       isHoliday: () => this.isHoliday,
       overlapMode: () => this.overlapMode,
       room: () => ({ month: version.monthRoom, allDay: this.allDayLines + 1 }),
+      draft: () => version.draft,
     });
     const parts = {
       model,
@@ -638,8 +796,51 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       selectionChanged: new Emitter(),
       contentReady: new Emitter(),
       moreOpening: new Emitter(),
+      events: {
+        adding: new Emitter(),
+        added: new Emitter(),
+        updating: new Emitter(),
+        updated: new Emitter(),
+        deleting: new Emitter(),
+        deleted: new Emitter(),
+        formOpening: new Emitter(),
+        dataError: new Emitter(),
+        moveStart: new Emitter(),
+        moving: new Emitter(),
+        moveEnd: new Emitter(),
+        resizeStart: new Emitter(),
+        resizing: new Emitter(),
+        resizeEnd: new Emitter(),
+      },
     } as unknown as Parts<T>;
     parts.host = this.createHost(parts);
+    parts.store = new AppointmentStore<T>({
+      appointments: () => this.appointments,
+      source: () => this.dataSource,
+      keyField: () => this.fields.key,
+      changed: () => version.rows++,
+    });
+    parts.editor = new AppointmentEditor<T>({
+      scheduler: this,
+      model,
+      store: parts.store,
+      view: parts.host,
+      events: parts.events,
+      fields: () => this.fields,
+      editing: () => this.editing,
+      resolvedView: () => this.resolveView(),
+      snapMinutes: () => this.snapMinutes,
+      minDuration: () => this.minDuration,
+      tooltip: () => this.tooltip,
+      text: (key, values) => this.textOf(key, values),
+      say: (text) => this.say(text),
+      setDraft: (draft) => (version.draft = draft),
+      root: () => this.element,
+      scroller: () => parts.scroller,
+      rtl: () => this.isRtl(),
+      saving: version.saving,
+    });
+    parts.drag = new AppointmentDrag<T>(parts.editor);
     return parts;
   }
 
@@ -675,9 +876,16 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       },
       cellPointerDown: (place, e) => this.cellPointerDown(place, e),
       cellClick: (place, e) => this.fireCell(parts.cellClick, place, e),
-      cellDblClick: (place, e) => this.fireCell(parts.cellDblClick, place, e),
-      appointmentClick: (piece, e) => this.fireAppointment(parts.appointmentClick, piece, e),
-      appointmentDblClick: (piece, e) => this.fireAppointment(parts.appointmentDblClick, piece, e),
+      cellDblClick: (place, e) => this.openCell(place, e),
+      appointmentClick: (piece, e) => this.clickAppointment(piece, e),
+      appointmentDblClick: (piece, e) => this.openAppointment(piece, e),
+      appointmentKey: (piece, e) => this.appointmentKey(piece, e),
+      appointmentPointerDown: (piece, mode, e) => parts.drag.begin(piece.item, mode, e),
+      appointmentBlur: () => parts.editor.cancelKeys(),
+      canDrag: (item) => parts.editor.canDrag(item),
+      canResize: (item) => parts.editor.canResize(item),
+      isSaving: (item) => parts.editor.isSaving(item),
+      isOpen: (item) => parts.editor.isOpen(item),
       openMore: (day, anchor) => this.openMore(day, anchor),
       gridKey: (e) => this.gridKey(e),
       viewShown: () => {
@@ -696,9 +904,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   private items(): readonly T[] {
     const parts = this.parts;
     const source = this.dataSource;
-    if (!source) return this.appointments;
     void parts.version.rows;
-    return source.rows;
+    return source ? source.rows : this.appointments;
   }
 
   private followSource(source: data.DataSource<T, unknown> | null): void {
@@ -710,6 +917,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       parts.source = source;
       parts.baseFilter = source?.filter ?? null;
       if (!source) return;
+      // A page of rows would leave appointments of the days shown out.
+      if (source.loadMode !== 'all')
+        console.warn(`Scheduler: its data source loads '${source.loadMode}'; make it with loadMode: 'all' so every appointment of the days shown comes.`);
       const listening = source.onChanged(() => {
         parts.version.rows++;
         parts.version.status = source.status;
@@ -983,6 +1193,59 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return !e.cancel;
   }
 
+  /** A click on an appointment (not the end of a drag): the event, then its tooltip. */
+  private clickAppointment(piece: TimedPiece<T> | StripPiece<T>, e: MouseEvent | KeyboardEvent): void {
+    const parts = this.parts;
+    if (parts.drag.justEnded) return;
+    const box = e.currentTarget as HTMLElement | null;
+    if (!this.fireAppointment(parts.appointmentClick, piece, e)) return;
+    if (this.tooltip && box) parts.editor.showTooltip(piece.item, box);
+  }
+
+  /** A double click (or Enter) on an appointment: the event, then its form. */
+  private openAppointment(piece: TimedPiece<T> | StripPiece<T>, e: MouseEvent | KeyboardEvent): void {
+    const parts = this.parts;
+    if (parts.drag.justEnded) return;
+    if (this.fireAppointment(parts.appointmentDblClick, piece, e)) void parts.editor.openForm(piece.item);
+  }
+
+  /** A double click (or Enter) on cells: the event, then the form for a new appointment there (the selection when the cell is in it). */
+  private openCell(place: CellPlace, e: MouseEvent | KeyboardEvent): void {
+    const parts = this.parts;
+    if (!this.fireCell(parts.cellDblClick, place, e) || !parts.editor.canAdd()) return;
+    const model = parts.model;
+    const selection = model.selection();
+    const cell = model.cellOf(place);
+    const inside = !!selection && !!cell && cell.allDay === selection.allDay && cell.start >= selection.start && cell.end <= selection.end;
+    void parts.editor.openForm(null, inside ? selection : cell);
+  }
+
+  /** The keys of a focused appointment: moving and resizing by the keys, Delete, Enter and Space. */
+  private appointmentKey(piece: TimedPiece<T> | StripPiece<T>, e: KeyboardEvent): void {
+    if (this.parts.editor.key(piece, e)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      this.openAppointment(piece, e);
+    } else if (e.key === ' ') {
+      e.preventDefault();
+      this.clickAppointment(piece, e);
+    }
+  }
+
+  /** The box an appointment shows in (its first one). */
+  private boxOf(item: T): HTMLElement | null {
+    const id = this.parts.model.idOf(item);
+    const piece = [...this.parts.model.state.timed, ...this.parts.model.state.allDay.pieces, ...this.parts.model.state.weeks.flatMap((w) => w.pieces)].find(
+      (p) => p.id.startsWith(`${id}@`) || p.id.startsWith(`${id}#`),
+    );
+    if (!piece) return null;
+    return [...this.element.querySelectorAll<HTMLElement>('.mx-scheduler__appointment')].find((el) => el.dataset.piece === piece.id) ?? null;
+  }
+
   private openMore(day: Date, anchor: HTMLElement): void {
     const parts = this.parts;
     const items = parts.model.appointmentsIn(day, new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1));
@@ -1072,7 +1335,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       }
       case 'Enter':
         e.preventDefault();
-        this.fireCell(parts.cellDblClick, focus, e);
+        this.openCell(focus, e);
         return;
       case ' ':
         e.preventDefault();

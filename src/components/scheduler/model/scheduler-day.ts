@@ -5,6 +5,8 @@ export interface SchedulerDay {
   /** The day's start. */
   date: Date;
   today: boolean;
+  /** A day before today. */
+  past: boolean;
   /** A day of the work week. */
   work: boolean;
   /** Saturday or Sunday (by the locale's week). */

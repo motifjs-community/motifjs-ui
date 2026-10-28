@@ -3,14 +3,32 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tokens as designTokens } from '@motifx-community/design-system';
+import { defaultIdentity, identities, tokens as designTokens } from '@motifx-community/design-system';
 import { describe, expect, it } from 'vitest';
-import { LAYER, SCOPES, componentTokens, identities, identityScope, referenceOf, render, renderCss, renderIdentity } from '../scripts/build-tokens.mjs';
+import {
+  DEFAULT_LANGUAGE,
+  LAYER,
+  SCOPES,
+  componentTokens,
+  identityScope,
+  languageValues,
+  languages,
+  referenceOf,
+  render,
+  renderCss,
+  renderLanguage,
+  renderPlaces,
+  renderSlots,
+  renderUnits,
+  schema,
+} from '../scripts/build-tokens.mjs';
 import { componentTokens as generated } from '../src/generated/tokens';
 
 const root = fileURLToPath(new URL('..', import.meta.url)); // the repo root, whatever the working directory
 const read = (file: string) => readFileSync(join(root, file), 'utf8');
 const pathOf = (t: { path: string[] }) => t.path.join('.');
+const varOf = (path: string) => `--mx-${path.replace(/\./g, '-')}`;
+const slotOf = (path: string) => `--_${path.replace(/\./g, '-')}`;
 
 /** Every hand-written CSS file of the kit: components and base; not the generated one, not the import list. */
 function kitCss(): string[] {
@@ -30,54 +48,88 @@ function kitCss(): string[] {
 }
 
 describe('component tokens', () => {
-  it('reference design-system tokens only, with matching types', async () => {
-    const tokens = await componentTokens();
-    for (const t of tokens) {
-      const ref = referenceOf(t);
-      if (ref) expect(ref in designTokens, `${pathOf(t)} references ${ref}`).toBe(true);
+  it("every language gives every token of the schema a value (a unit's token it does not write stays unset), and nothing else", () => {
+    expect(languages()[0]).toBe(DEFAULT_LANGUAGE);
+    const names = [...schema().tokens.keys()].sort();
+    for (const language of languages()) expect([...languageValues(language).keys()].sort(), language).toEqual(names);
+  });
+
+  it('has a language for every design language of the design system, and no other: a new one is its folder in both', () => {
+    expect([...languages()].sort()).toEqual([...identities].sort());
+    expect(DEFAULT_LANGUAGE).toBe(defaultIdentity);
+  });
+
+  it('reference design-system tokens only, with matching types, in every language', async () => {
+    for (const language of languages()) {
+      for (const t of await componentTokens(language)) {
+        const ref = referenceOf(t);
+        if (ref) expect(ref in designTokens, `${language} ${pathOf(t)} references ${ref}`).toBe(true);
+      }
     }
   });
 
   it('are written as var() chains inside @layer mx.components', async () => {
     const css = await render('mx/components-css');
     expect(LAYER).toBe('mx.components');
-    // Until a component has tokens the file holds only its header.
-    if (!(await componentTokens()).length) return void expect(css).toMatch(/^\/\*[^\n]*\*\/\n$/);
     expect(css).toMatch(/^\/\*[^\n]*\*\/\n@layer mx\.components \{\n {2}:root, \[data-theme\], \[data-identity\], \[data-density\] \{\n( {4}--mx-[\w-]+: [^\n]+;\n)+ {2}\}\n\}\n$/);
     expect(SCOPES).toBe(':root, [data-theme], [data-identity], [data-density]');
     // Only component tokens are written; the design system's layers come from its own stylesheet.
     expect(css).not.toContain('--mx-color-gray-');
   });
 
-  it('a design language maps only existing component tokens, to design-system tokens of the same type', async () => {
-    expect(identities()).toContain('material');
-    for (const language of identities()) {
-      const mapped = await componentTokens(language);
-      expect(mapped.length, language).toBeGreaterThan(0);
-      for (const t of mapped) {
-        const ref = referenceOf(t);
-        if (ref) expect(ref in designTokens, `${language} ${pathOf(t)} references ${ref}`).toBe(true);
-        expect(pathOf(t) in generated, `${language} ${pathOf(t)}`).toBe(true);
-      }
-    }
-  });
-
-  it("writes a language's mapping under its scope, theme and density scopes inside it included", async () => {
-    const css = await renderIdentity('material');
+  it('writes every other language under its scope, theme and density scopes inside it included', async () => {
+    const css = await renderLanguage('material');
     expect(identityScope('material')).toBe('[data-identity="material"], :where([data-identity="material"]) :is([data-theme], [data-density])');
     expect(css).toContain(`  ${identityScope('material')} {\n`);
-    expect(css).toContain('--mx-button-radius: var(--mx-radius-full);');
-    expect(css).toContain('--mx-field-height-md: var(--mx-control-height-lg);');
-    // The base block stays first, so a language's block wins by source order at the same weight.
+    expect(css).toContain('--mx-slider-knob-bg: var(--mx-color-accent-solid);');
+    // The default block stays first, so a language's block wins by source order at the same weight.
     const whole = await renderCss();
     expect(whole.indexOf(SCOPES)).toBeLessThan(whole.indexOf(identityScope('material')));
   });
 
+  it("takes every token of a component in a slot on the component's root", () => {
+    const css = renderSlots();
+    const placeTokens = new Set(schema().places.flatMap((p) => p.tokens.map((t) => `${p.component}.${p.place}.${t}`)));
+    for (const [component, selector] of schema().selectors) {
+      expect(css, component).toContain(`  ${selector} {\n`);
+      for (const path of schema().tokens.keys()) {
+        if (path.split('.')[0] !== component || placeTokens.has(path)) continue;
+        expect(css).toContain(`${slotOf(path)}: var(${varOf(path)});`);
+      }
+    }
+  });
+
+  it("points a part's slots at a place's tokens inside its selector", () => {
+    const css = renderPlaces();
+    for (const p of schema().places) {
+      expect(css, `${p.component}.${p.place}`).toContain(`  ${p.selector} {\n`);
+      for (const t of p.tokens) expect(css).toContain(`${slotOf(`${p.part}.${t}`)}: var(${varOf(`${p.component}.${p.place}.${t}`)});`);
+    }
+  });
+
+  it('paints every unit a language writes at its selector, and each state written at the state\'s selector', () => {
+    const css = renderUnits();
+    const { units, tokens } = schema();
+    for (const u of units) {
+      const written = [...tokens.keys()].filter((p) => p.startsWith(`${u.component}.${u.unit}.`));
+      const rest = written.filter((p) => p.split('.').length === 3);
+      if (rest.length) expect(css, `${u.component}.${u.unit}`).toContain(`  ${u.selector} {\n`);
+      for (const s of u.states) {
+        if (written.some((p) => p.split('.')[2] === s.name)) expect(css, `${u.component}.${u.unit}.${s.name}`).toContain(`  ${s.selector} {\n`);
+      }
+    }
+    // A value a language writes is read through its slot, with a fallback at the end of the chain; the rest is the
+    // schema's default (or a frame's style) drawn as it is.
+    for (const line of css.split('\n').filter((l) => l.startsWith('    '))) expect(line).toMatch(/^ {4}[\w-]+: (var\(--_[\w-]+, .+\)|[^;]+);$/);
+  });
+
   it('generated files match the source', async () => {
     expect(read('src/generated/components.css')).toBe(await renderCss());
+    expect(read('src/generated/slots.css')).toBe(renderSlots());
+    expect(read('src/generated/places.css')).toBe(renderPlaces());
+    expect(read('src/generated/units.css')).toBe(renderUnits());
     expect(read('src/generated/tokens.ts')).toBe(await render('mx/components-ts'));
-    const names = (await componentTokens()).map(pathOf).sort();
-    expect(Object.keys(generated).sort()).toEqual(names);
+    expect(Object.keys(generated).sort()).toEqual([...schema().tokens.keys()].sort());
   });
 });
 
@@ -90,11 +142,12 @@ describe('kit CSS', () => {
 
   it('every file sits in @layer mx.components', () => {
     for (const file of files) {
-      expect(read(file), file).toMatch(/^(\/\*[\s\S]*?\*\/\s*)?@layer mx\.components \{/);
+      // Registered properties (`@property`) stand before it: they are not layered.
+      expect(read(file), file).toMatch(/^(\/\*[\s\S]*?\*\/\s*)?(@property [\w-]+ \{[^}]*\}\s*)*@layer mx\.components \{/);
     }
   });
 
-  it('uses only tokens that exist: the design system\'s or this kit\'s component tokens', () => {
+  it("uses only tokens that exist: the design system's or this kit's component tokens", () => {
     const known = new Set<string>([
       ...Object.values(designTokens).map((t) => t.cssVar),
       ...Object.values(generated as Record<string, { cssVar: string }>).map((t) => t.cssVar),
@@ -107,16 +160,42 @@ describe('kit CSS', () => {
   });
 
   // A component's look is its own: every value it paints with is one of its component tokens, so a
-  // design language can restyle that one component (tokens/component/identity/<language>/). Only the
+  // design language can restyle that one component (tokens/languages/<language>/). Only the
   // motion and the stacking order come straight from the design system: they are not a component's look.
   const sharedFamilies = /^--mx-(motion|z)-/;
 
-  it('paints only with component tokens (the motion and the stacking order aside)', () => {
-    const own = new Set(Object.values(generated as Record<string, { cssVar: string }>).map((t) => t.cssVar));
+  it('paints only with slots (the motion and the stacking order aside)', () => {
     for (const file of files) {
-      const direct = [...read(file).matchAll(/var\((--mx-[\w-]+)/g)].map((m) => m[1]).filter((name) => !own.has(name) && !sharedFamilies.test(name));
-      expect(direct, `${file} reads design-system tokens directly`).toEqual([]);
+      const direct = [...read(file).matchAll(/var\((--mx-[\w-]+)/g)].map((m) => m[1]).filter((name) => !sharedFamilies.test(name));
+      expect(direct, `${file} reads tokens instead of its slots`).toEqual([]);
     }
+  });
+
+  // A slot is a component's token taken in on the component's root: `--_<component>-<token>`.
+  const slots = new Set(
+    [...schema().tokens.keys()].filter((path) => schema().selectors.has(path.split('.')[0])).map(slotOf),
+  );
+  const slotLike = (name: string) => [...schema().selectors.keys()].some((component) => name.startsWith(`--_${component}-`));
+  // A unit's slot is there only where a language writes the token; layout may read one with a fallback.
+  const unitSlot = (name: string) => schema().units.some((u) => name.startsWith(`--_${u.component}-${u.unit}-`));
+
+  it('reads only slots that exist', () => {
+    for (const file of files) {
+      for (const [, name] of read(file).matchAll(/var\((--_[\w-]+)/g)) {
+        if (slotLike(name) && !unitSlot(name)) expect(slots.has(name), `${file} reads ${name}`).toBe(true);
+      }
+    }
+  });
+
+  it('declares no slot and no private property named like one: slots are only the generated ones', () => {
+    for (const file of files) {
+      for (const [, name] of read(file).matchAll(/^\s*(--_[\w-]+)\s*:/gm)) expect(slotLike(name), `${file} declares ${name}`).toBe(false);
+    }
+  });
+
+  it('reaches its own parts only: after `X >`, a :where() holds one step', () => {
+    // `X > :where(A > B) > C` asks for an element that is a B in an A and also X's child: never what was meant.
+    for (const file of files) expect(read(file).match(/> :where\([^)]*>[^)]*\)/g) ?? [], file).toEqual([]);
   });
 
   it('writes no lengths by hand where the look is decided (borders, outlines, shadows, corners, spacing, type)', () => {
@@ -131,34 +210,21 @@ describe('kit CSS', () => {
     }
   });
 
-  it('draws keyboard focus with the component\'s own focus tokens', () => {
+  it("draws keyboard focus with the component's own focus tokens", () => {
     for (const file of files) {
       for (const [, selector, body] of read(file).matchAll(/([^{}]*:focus-visible[^{}]*)\{([^{}]*)\}/g)) {
         for (const [, prop, value] of body.matchAll(/^\s*(outline[a-z-]*|box-shadow)\s*:\s*([^;]+);/gm)) {
-          for (const [, name] of value.matchAll(/var\((--mx-[\w-]+)/g)) {
-            expect(/-focus-(width|offset|color|halo)$/.test(name), `${file} ${selector.trim()} ${prop} uses ${name}`).toBe(true);
+          // Slots of the component's focus ring; a private property is a shadow the part keeps under the ring.
+          for (const [, name] of value.matchAll(/var\((--_[\w-]+)/g)) {
+            if (slotLike(name)) expect(/-focus-(width|offset|color|halo)$/.test(name), `${file} ${selector.trim()} ${prop} uses ${name}`).toBe(true);
           }
         }
       }
     }
   });
 
-  it('a design language\'s own stylesheet styles nothing outside that language', () => {
-    const dir = join(root, 'src/styles/identity');
-    if (!existsSync(dir)) return;
-    for (const name of readdirSync(dir).filter((f) => f.endsWith('.css'))) {
-      const language = name.replace(/\.css$/, '');
-      const css = readFileSync(join(dir, name), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-      const scope = new RegExp(`^(:where\\()?\\[data-identity=(["'])${language}\\2\\]`);
-      for (const [, selectors] of css.matchAll(/([^{}@;]+)\{[^{}]*\}/g)) {
-        // A selector list splits at its own commas, not at those inside :not(…) or :is(…).
-        let depth = 0;
-        const list = [...selectors].map((c) => (c === '(' ? (depth++, c) : c === ')' ? (depth--, c) : c === ',' && depth === 0 ? '|' : c)).join('');
-        for (const selector of list.split('|').map((s) => s.replace(/\s+/g, ' ').trim()).filter(Boolean)) {
-          expect(scope.test(selector), `${name}: ${selector}`).toBe(true);
-        }
-      }
-    }
+  it('a design language is its token files only: no stylesheet of its own', () => {
+    expect(existsSync(join(root, 'src/styles/identity'))).toBe(false);
   });
 
   it('the shipped stylesheet imports the design system first, then only this kit', () => {
@@ -166,8 +232,15 @@ describe('kit CSS', () => {
     const imports = [...index.matchAll(/^@import '([^']+)';$/gm)].map((m) => m[1]);
     expect(imports[0]).toBe('@motifx-community/design-system/styles.css');
     for (const spec of imports.slice(1)) expect(spec.startsWith('.'), spec).toBe(true);
+    expect(imports).toContain('../generated/slots.css');
+    // The units' paint after every component (their CSS only places the units), the places last.
+    expect(imports.slice(-2)).toEqual(['../generated/units.css', '../generated/places.css']);
     // Nothing but imports: a rule between them would break postcss-import in the app's bundler.
-    const statements = index.replace(/\/\*[\s\S]*?\*\//g, '').trim().split('\n');
+    const statements = index
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .trim()
+      .split('\n')
+      .filter((l) => l.trim());
     expect(statements.every((l) => l.startsWith('@import '))).toBe(true);
   });
 });

@@ -77,7 +77,9 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     this.buttons.element.className = 'mx-data-grid__form-buttons';
     const busy = () => model.state.busy;
     this.saveButton = new Button({ text: () => model.text('gridSave'), tone: 'accent', enabled: () => !busy() });
-    this.cancelButton = new Button({ text: () => model.text('gridCancelEdit'), variant: 'outline', enabled: () => !busy() });
+    this.cancelButton = new Button({ text: () => model.text('gridCancelEdit'), enabled: () => !busy() });
+    this.saveButton.element.classList.add('mx-data-grid__apply');
+    this.cancelButton.element.classList.add('mx-data-grid__dismiss');
     this.saveButton.element.addEventListener('click', () => host.save());
     this.cancelButton.element.addEventListener('click', () => host.cancel());
     this.buttons.controls.add(this.saveButton, this.cancelButton);

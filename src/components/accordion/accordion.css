@@ -1,150 +1,104 @@
 /* Accordion. The look binds to data-variant / data-size / data-chevron on the root and to
    data-expanded on each item. A section opens by growing its grid row from 0fr to 1fr, so its
    height animates without being measured; a closed one is visibility: hidden, out of reach of
-   Tab and screen readers. Reduced motion zeroes the durations. */
+   Tab and screen readers. Reduced motion zeroes the durations. Its look is its units' (units.css: the
+   container and the items per variant, the header, its icon, the chevron and its plate, the section);
+   this file only places them, by the size class's values (--_height, --_padding, …). The rules reach
+   only this accordion's own items (`>`), never those of an accordion inside a section. */
 @layer mx.components {
   .mx-accordion {
     display: flex;
     flex-direction: column;
     inline-size: 100%;
     min-inline-size: 0;
-    color: var(--mx-accordion-fg);
-    --_line: var(--mx-accordion-border-width) solid var(--mx-accordion-border);
   }
 
   .mx-accordion[data-size='sm'] {
-    --_height: var(--mx-accordion-height-sm);
-    --_padding: var(--mx-accordion-padding-sm);
-    --_font-size: var(--mx-accordion-font-size-sm);
-    --_line-height: var(--mx-accordion-line-height-sm);
+    --_height: var(--_accordion-height-sm);
+    --_padding: var(--_accordion-padding-sm);
+    --_body-padding: var(--_accordion-body-padding-inline-sm);
+    --_font-size: var(--_accordion-font-size-sm);
+    --_line-height: var(--_accordion-line-height-sm);
   }
 
   .mx-accordion[data-size='md'] {
-    --_height: var(--mx-accordion-height-md);
-    --_padding: var(--mx-accordion-padding-md);
-    --_font-size: var(--mx-accordion-font-size-md);
-    --_line-height: var(--mx-accordion-line-height-md);
+    --_height: var(--_accordion-height-md);
+    --_padding: var(--_accordion-padding-md);
+    --_body-padding: var(--_accordion-body-padding-inline-md);
+    --_font-size: var(--_accordion-font-size-md);
+    --_line-height: var(--_accordion-line-height-md);
   }
 
   .mx-accordion[data-size='lg'] {
-    --_height: var(--mx-accordion-height-lg);
-    --_padding: var(--mx-accordion-padding-lg);
-    --_font-size: var(--mx-accordion-font-size-lg);
-    --_line-height: var(--mx-accordion-line-height-lg);
+    --_height: var(--_accordion-height-lg);
+    --_padding: var(--_accordion-padding-lg);
+    --_body-padding: var(--_accordion-body-padding-inline-lg);
+    --_font-size: var(--_accordion-font-size-lg);
+    --_line-height: var(--_accordion-line-height-lg);
   }
 
-  /* Variants. */
-
-  .mx-accordion[data-variant='list'] {
-    overflow: hidden;
-    background: var(--mx-accordion-bg);
-    border: var(--_line);
-    border-radius: var(--mx-accordion-radius);
-  }
-
-  .mx-accordion[data-variant='list'] > .mx-accordion__item + .mx-accordion__item {
-    border-block-start: var(--_line);
-  }
-
-  .mx-accordion[data-variant='separated'] {
-    gap: var(--mx-accordion-card-gap);
-  }
-
+  /* A list and each separated card clip their items to their corners. */
+  .mx-accordion[data-variant='list'],
   .mx-accordion[data-variant='separated'] > .mx-accordion__item {
     overflow: hidden;
-    background: var(--mx-accordion-bg);
-    border: var(--_line);
-    border-radius: var(--mx-accordion-radius);
   }
 
-  .mx-accordion[data-variant='flush'] > .mx-accordion__item {
-    border-block-end: var(--_line);
-  }
-
-  /* The header. */
-
-  .mx-accordion__heading {
+  :where(.mx-accordion > .mx-accordion__item) > .mx-accordion__heading {
     margin: 0;
   }
 
-  .mx-accordion__header {
+  :where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading) > .mx-accordion__header {
     appearance: none;
     display: flex;
     align-items: center;
-    gap: var(--mx-accordion-gap);
     inline-size: 100%;
-    min-block-size: var(--_height);
-    margin: 0;
-    padding-block: 0;
-    padding-inline: var(--_padding);
     font: inherit;
-    font-size: var(--_font-size);
-    font-weight: var(--mx-accordion-font-weight);
-    line-height: var(--_line-height);
     text-align: start;
-    color: var(--mx-accordion-header-fg);
-    background: transparent;
-    border: 0;
-    cursor: default;
     transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-accordion__header:hover:not(:disabled, [aria-disabled='true']) {
-    background: var(--mx-accordion-header-bg-hover);
-  }
-
-  .mx-accordion__header:active:not(:disabled, [aria-disabled='true']) {
-    background: var(--mx-accordion-header-bg-active);
-  }
-
-  .mx-accordion__header:disabled {
-    color: var(--mx-accordion-header-fg-disabled);
-  }
-
-  /* Inside a box that clips its corners: the ring is drawn inside the header. */
-  .mx-accordion__header:focus-visible {
-    outline: var(--mx-accordion-focus-width) solid var(--mx-accordion-focus-color);
-    outline-offset: calc(var(--mx-accordion-focus-width) * -1);
-    box-shadow: var(--mx-accordion-focus-halo);
-  }
-
-  .mx-accordion__label {
+  :where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading > .mx-accordion__header) > .mx-accordion__label {
     flex: 1 1 auto;
     min-inline-size: 0;
   }
 
-  .mx-accordion__icon {
+  :where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading > .mx-accordion__header) > .mx-accordion__icon {
     display: inline-flex;
     flex: none;
-    inline-size: var(--mx-accordion-icon-size);
-    block-size: var(--mx-accordion-icon-size);
   }
 
-  .mx-accordion__icon > :is(img, svg, .mx-glyph) {
+  :where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading > .mx-accordion__header) > .mx-accordion__icon > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
   }
 
-  .mx-accordion__chevron {
-    color: var(--mx-accordion-chevron-fg);
+  :where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading > .mx-accordion__header) > :where(.mx-accordion__plate) > .mx-accordion__chevron {
     transition: rotate var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
   }
 
-  .mx-accordion[data-chevron='start'] .mx-accordion__chevron {
+  .mx-accordion[data-chevron='start'] > :where(.mx-accordion__item) > :where(.mx-accordion__heading) > :where(.mx-accordion__header) > .mx-accordion__plate {
     order: -1;
   }
 
-  .mx-accordion[data-chevron='none'] .mx-accordion__chevron {
+  .mx-accordion[data-chevron='none'] > :where(.mx-accordion__item) > :where(.mx-accordion__heading) > :where(.mx-accordion__header) > .mx-accordion__plate {
     display: none;
   }
 
-  .mx-accordion__item[data-expanded] > .mx-accordion__heading .mx-accordion__chevron {
-    rotate: 180deg;
+  /* The chevron's plate: the chevron is centred in it, and a plate larger than the chevron reaches out into the
+     header's padding by equal margins, so the header keeps its layout. (The header is not positioned: a
+     positioned header would lose the text's subpixel antialiasing.) */
+  :where(.mx-accordion > .mx-accordion__item > .mx-accordion__heading > .mx-accordion__header) > .mx-accordion__plate {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    margin: calc((var(--_accordion-chevron-size) - var(--_accordion-chevron-plate-size)) / 2);
+    pointer-events: none;
+    transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
   /* The section. */
 
-  .mx-accordion__region {
+  :where(.mx-accordion > .mx-accordion__item) > .mx-accordion__region {
     display: grid;
     grid-template-rows: 0fr;
     visibility: hidden;
@@ -153,7 +107,7 @@
       visibility 0s linear var(--mx-motion-duration-normal);
   }
 
-  .mx-accordion__item[data-expanded] > .mx-accordion__region {
+  :where(.mx-accordion) > .mx-accordion__item[data-expanded] > .mx-accordion__region {
     grid-template-rows: 1fr;
     visibility: visible;
     transition:
@@ -163,24 +117,23 @@
 
   /* No block padding here: a closed row of 0 height would keep it. The space above and
      below the content is drawn inside, where the row clips it. */
-  .mx-accordion__body {
+  :where(.mx-accordion > .mx-accordion__item > .mx-accordion__region) > .mx-accordion__body {
     min-block-size: 0;
     overflow: hidden;
-    padding-inline: var(--_padding);
   }
 
-  .mx-accordion__body::before,
-  .mx-accordion__body::after {
+  :where(.mx-accordion > .mx-accordion__item > .mx-accordion__region) > .mx-accordion__body::before,
+  :where(.mx-accordion > .mx-accordion__item > .mx-accordion__region) > .mx-accordion__body::after {
     content: '';
     display: block;
-    block-size: var(--mx-accordion-content-padding);
+    block-size: var(--_accordion-content-padding);
   }
 
-  .mx-accordion__body > :first-child {
+  :where(.mx-accordion > .mx-accordion__item > .mx-accordion__region) > .mx-accordion__body > :first-child {
     margin-block-start: 0;
   }
 
-  .mx-accordion__body > :last-child {
+  :where(.mx-accordion > .mx-accordion__item > .mx-accordion__region) > .mx-accordion__body > :last-child {
     margin-block-end: 0;
   }
 }

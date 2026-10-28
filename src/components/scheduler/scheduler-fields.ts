@@ -18,4 +18,12 @@ export interface SchedulerFields {
   disabled: string;
   /** Default `'visible'`: `false` leaves it out. */
   visible: string;
+  /** Default `'allowDrag'`: `false` keeps it in place, whatever `editing` says. */
+  allowDrag: string;
+  /** Default `'allowResize'`. */
+  allowResize: string;
+  /** Default `'allowEdit'`: `false` opens no form for it. */
+  allowEdit: string;
+  /** Default `'allowDelete'`. */
+  allowDelete: string;
 }

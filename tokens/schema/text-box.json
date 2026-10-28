@@ -1,0 +1,22 @@
+{
+  "text-box": {
+    "$description": "TextBox: the password button and its glyph, beyond the field.",
+    "$selector": ".mx-text-box",
+    "$units": {
+      "reveal": {
+        "$description": "The password button (a field button: its hover, pressed and focus are the field's `button`); `shown` while the text shows.",
+        "selector": ".mx-text-box__reveal",
+        "states": {
+          "shown": ".mx-text-box__reveal[aria-pressed='true']"
+        }
+      },
+      "reveal-glyph": {
+        "$description": "The password button's glyph: the text hidden (rest) or shown (`shown`).",
+        "selector": ".mx-text-box__reveal > .mx-glyph",
+        "states": {
+          "shown": ".mx-text-box__reveal[aria-pressed='true'] > .mx-glyph"
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import type { Bind, Event as MotifEvent, IBaseProp } from '@motifx/core';
 import { checkMark, dashMark } from '../../core/glyphs';
+import { LanguageLook } from '../../core/language-look';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import type { CheckBoxProps } from './check-box-props';
 import { ToggleField } from './ToggleField';
@@ -25,8 +26,14 @@ interface Drawn {
  * terms.value = true;
  */
 export class CheckBox extends ToggleField<boolean | null, CheckBoxProps> {
+  /** Where the design language puts the focus ring: around the box, or around the box and its caption. */
+  private readonly focusLook = new LanguageLook(this.element, { scope: '--_checkbox-focus-scope' }, () => {
+    this.element.dataset.focusScope = this.focusLook.get('scope') ?? 'box';
+  });
+
   constructor(props?: IBaseProp<CheckBoxProps>) {
     super(props);
+    this.motif.setDisposable(this.focusLook.watch());
     const own = (this.props ?? {}) as CheckBoxProps;
     this.element.classList.add('mx-check-box');
     this.inputElement.classList.add('mx-check-box__input');
@@ -66,6 +73,11 @@ export class CheckBox extends ToggleField<boolean | null, CheckBoxProps> {
         undefined,
         disposables,
       );
+  }
+
+  override onMounted(): void {
+    super.onMounted();
+    this.focusLook.read();
   }
 
   protected emptyValue(): boolean | null {

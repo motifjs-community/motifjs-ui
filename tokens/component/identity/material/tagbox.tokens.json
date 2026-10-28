@@ -1,9 +1,0 @@
-{
-  "tagbox": {
-    "$description": "Material chips: 8 corners.",
-    "tag-radius": {
-      "$type": "dimension",
-      "$value": "{radius.sm}"
-    }
-  }
-}

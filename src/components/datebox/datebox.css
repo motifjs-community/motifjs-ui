@@ -1,25 +1,10 @@
-/* DateBox: the field with a mask, the calendar and the times on a popup. */
+/* DateBox: the field with a mask, the calendar and the times on a popup. The calendar is a place.
+   Only the layout is here: the list of times is a unit of the date box's schema (`$units`), painted
+   by units.css. */
 @layer mx.components {
   .mx-date-box__popup {
     display: flex;
     align-items: stretch;
-    gap: var(--mx-date-box-popup-gap);
-  }
-
-  .mx-date-box__times {
-    min-inline-size: var(--mx-date-box-times-width);
-    max-block-size: var(--mx-date-box-times-height);
-  }
-
-  .mx-date-box__popup > .mx-calendar + .mx-date-box__times {
-    padding-inline-start: var(--mx-date-box-times-padding);
-    border-inline-start: var(--mx-date-box-divider-width) solid var(--mx-date-box-divider);
-  }
-
-  /* The times list scrolls: its ring is drawn inside it. */
-  .mx-date-box__times:focus-visible {
-    outline: var(--mx-date-box-focus-width) solid var(--mx-date-box-focus-color);
-    outline-offset: calc(-1 * var(--mx-date-box-focus-width));
-    box-shadow: var(--mx-date-box-focus-halo);
+    gap: var(--_date-box-popup-gap);
   }
 }

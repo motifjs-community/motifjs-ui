@@ -88,12 +88,11 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['menubar.height, menubar.padding, menubar.gap, menubar.radius, menubar.background', 'The bar.'],
-  ['menubar.item-height, menubar.item-padding, menubar.item-gap, menubar.item-radius', 'A top item.'],
-  ['menubar.item-highlight, menubar.item-open, menubar.icon-size', 'Its hover and open fills, its icon.'],
-  ['menu.item-*, menu.icon-size, menu.separator-*', 'Menu items (shared with Button’s menu).'],
-  ['menu.shortcut-gap, menu.shortcut-color, menu.arrow-size', 'The shortcut text and the submenu arrow.'],
-  ['menu.description-font-size, menu.description-color', 'An item’s description.'],
+  ['menubar.height, menubar.item-height', 'The heights of the bar and of a top item.'],
+  ['menubar.bar, menubar.item, menubar.icon, menubar.mnemonic', 'Units: the bar; a top item with its box per state (`hover`, `pressed`, `open`, `disabled`, `focus`); its icon; its access key’s mark (`shown`).'],
+  ['menu.item, menu.item-height, menu.item-white-space', 'Menu items (shared with Button’s menu): the item unit in each state (`highlight`, `pressed`, `focus`, `checked`, `disabled`, `first`, `last`, each tone and `<tone>-highlight`), the row height, whether a text wraps.'],
+  ['menu.panel, menu.check, menu.icon, menu.check-mark, menu.radio-mark, menu.separator', 'Units: the column of items, the leading mark and icon, the check and radio marks, the line between groups.'],
+  ['menu.label, menu.description, menu.shortcut, menu.arrow', 'Units: an item’s text, its description, the shortcut and the submenu arrow.'],
 ];
 
 export default function MenusPage() {

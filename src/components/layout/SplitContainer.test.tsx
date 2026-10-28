@@ -58,7 +58,7 @@ describe('SplitContainer', () => {
     expect(splitter.getAttribute('aria-label')).toBe('Resize');
     expect(splitter.tabIndex).toBe(0);
     expect(el.style.gridTemplateColumns).toBe(
-      'clamp(100px, 240px, calc(100% - 50px - var(--mx-layout-splitter-size))) var(--mx-layout-splitter-size) minmax(0, 1fr)',
+      'clamp(100px, 240px, calc(100% - 50px - var(--_layout-splitter-size))) var(--_layout-splitter-size) minmax(0, 1fr)',
     );
   });
 
@@ -69,13 +69,13 @@ describe('SplitContainer', () => {
     page(split);
     await tick();
     expect(split.second.element.textContent).toBe('Output');
-    expect(split.element.style.gridTemplateRows).toContain('calc((100% - var(--mx-layout-splitter-size)) * 0.3)');
+    expect(split.element.style.gridTemplateRows).toContain('calc((100% - var(--_layout-splitter-size)) * 0.3)');
     expect(split.splitterElement.getAttribute('aria-orientation')).toBe('horizontal');
     expect(split.splitterElement.getAttribute('aria-valuenow')).toBe('30');
     split.fixedPanel = 'second';
     split.position = 120;
     expect(split.element.style.gridTemplateRows).toBe(
-      'minmax(0, 1fr) var(--mx-layout-splitter-size) clamp(0px, 120px, calc(100% - 0px - var(--mx-layout-splitter-size)))',
+      'minmax(0, 1fr) var(--_layout-splitter-size) clamp(0px, 120px, calc(100% - 0px - var(--_layout-splitter-size)))',
     );
     split.orientation = 'horizontal';
     expect(split.element.style.gridTemplateRows).toBe('');
@@ -152,7 +152,7 @@ describe('SplitContainer', () => {
     expect(split.first.element.inert).toBe(true);
     expect(document.activeElement).toBe(splitter);
     expect(splitter.getAttribute('aria-valuenow')).toBe('0');
-    expect(split.element.style.gridTemplateColumns).toBe('0px var(--mx-layout-splitter-size) minmax(0, 1fr)');
+    expect(split.element.style.gridTemplateColumns).toBe('0px var(--_layout-splitter-size) minmax(0, 1fr)');
     press(splitter, 'Enter');
     expect(split.collapsed).toBe('none');
     expect(split.position).toBe('40%');

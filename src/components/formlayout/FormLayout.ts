@@ -231,7 +231,8 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
         if (e.byUser && data) data[field] = e.value;
       },
       validationGroup: this.formParts.group,
-      labelMode: () => this.getProperty<FieldLabelMode | undefined>('labelMode') ?? 'top',
+      // Not given: the field takes the design language's default.
+      labelMode: () => this.getProperty<FieldLabelMode | undefined>('labelMode'),
       readOnly: () => !!this.getProperty<boolean>('readOnly') || read(item.readOnly) === true,
       stretch: true,
       ...item.editorProps,

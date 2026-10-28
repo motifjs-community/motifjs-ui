@@ -187,7 +187,7 @@ export class ActionSheet extends BottomSheet {
     list.onChosen((e) => this.chosen(e));
     const cancelRow = doc.createElement('div');
     cancelRow.className = 'mx-action-sheet__cancel';
-    const cancel = new Button({ variant: 'outline', size: 'lg', stretch: true });
+    const cancel = new Button({ stretch: true });
     cancel.element.addEventListener('click', () => this.close('button'));
     this.contentElement.append(message);
     this.panelElement.append(cancelRow);

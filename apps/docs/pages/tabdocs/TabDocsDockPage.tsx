@@ -123,8 +123,8 @@ const STYLING = [
   ['.mx-tabdocs__group[data-compact], [data-title], [data-scroll-buttons], [data-tab-size], [data-bar-close]', 'A group\'s bar: compact, one document as a title, with scroll buttons, how its tabs are sized, with a close button of its own (`.mx-tabdocs__bar-close`).'],
   ['.mx-tabdocs__scrollbar, .mx-tabdocs__thumb, .mx-tabdocs__count', 'The thin scrollbar of a strip without scroll buttons, and the count on its "…" button.'],
   ['.mx-tabdocs__group[data-bar-size]', 'The size of its toolbar\'s buttons: `normal` or `small`.'],
-  ['tabdocs.scrollbar-*, title-*, count-*, tab-title-min-width, bar-button-*, bar-icon-size', 'Their tokens; the ends of a small toolbar leave room for the focus ring (`focus-width`, `focus-offset`).'],
-  ['tabdocs.window-*, area-*, panel-*, autohide-*, guide-*', 'Their tokens.'],
+  ['tabdocs.scrollbar, thumb, count; bar-button-*, bar-icon-size, title-min', 'Their units, and the small toolbar\'s sizes; its ends leave room for the focus ring (`focus-width`, `focus-offset`).'],
+  ['tabdocs.window, area, autohide, autohide-tab, autohide-indicator, guide, guide-icon', 'Their units (a folded area: `folded`, `folded-left` …; a guide: `edge`, `pointed`); `floating-min-*`, `folded-tab-height`, `guide-room`, `guide-spacing` are sizes.'],
 ];
 
 export default function TabDocsDockPage() {

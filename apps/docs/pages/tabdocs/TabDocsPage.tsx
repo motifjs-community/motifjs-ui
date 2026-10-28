@@ -129,18 +129,12 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['tabdocs.bg, tabdocs.group-bg, tabdocs.bar-bg', 'Behind the groups; a group\'s content; the strip.'],
-  ['tabdocs.tab-*', 'A tab: height, padding, gap, type, the line between tabs, the colors at rest, under the pointer and active.'],
-  ['tabdocs.indicator-width, -color, -color-inactive', 'The bar on the active tab: the accent in the active group.'],
-  ['tabdocs.close-*, tabdocs.dirty-*', 'The close button and the dot of unsaved changes.'],
-  ['tabdocs.badge-*, tabdocs.icon-size, tabdocs.description-*', 'The other parts of a tab; `badge-dot-*` for a badge that is a dot.'],
-  ['tabdocs.tone-warning-*, -danger-*, -success-*, -accent-*', 'The title and badge colours of a tone.'],
-  ['tabdocs.pin-*, tabdocs.letter-font-weight, tabdocs.pinned-row-*', 'The pin mark, the first letter of a compact pinned tab, the line under the pinned row.'],
-  ['tabdocs.scroll-*', 'The scroll buttons of a strip that does not fit.'],
-  ['tabdocs.list-*', 'The lists of documents: their width, the note after a title, the dot of unsaved changes.'],
-  ['tabdocs.sash-*', 'The splitter: its size, its line at rest and under the pointer.'],
-  ['tabdocs.empty-*', 'The text of an empty group.'],
-  ['tabdocs.focus-width, -color, -halo', 'The keyboard focus ring of tabs, panels and splitters.'],
+  ['tabdocs.manager, group, bar, pinned, panel, empty', 'Units: behind the groups, a group, its strip and the line under it, the pinned tabs\' row, a panel, an empty group\'s text.'],
+  ['tabdocs.tab, indicator, title, letter, pin, description, icon, badge, close, dirty', 'Units: a tab (`hover`, `selected`, `before-selected`, `focus`, `dragging`, `title` …; its end side is the line between tabs), the bar on it (`selected`, `active` in the active group), its parts in their tones.'],
+  ['tabdocs.scroll, scroll-icon, scrollbar, thumb, count, sash, sash-line', 'Units: the scroll buttons, the thin scrollbar, the count on "…", a splitter and its line (`across`, `active`).'],
+  ['tabdocs.tabs-height, tab-inset, tab-spacing, title-max, title-min, icon-room, close-room, pin-room, sash-thickness', 'Sizes the layout counts with (a shrinking tab keeps its icon, its close button and a few letters).'],
+  ['tabdocs.indicator-inset, indicator-inset-start, indicator-inset-end', 'Where the bar on a tab stands.'],
+  ['tabdocs.focus-width, focus-offset, touch-*', 'The ring\'s room at a small toolbar\'s ends; the sizes for a finger.'],
 ];
 
 export default function TabDocsPage() {

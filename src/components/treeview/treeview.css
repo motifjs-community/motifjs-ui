@@ -2,41 +2,53 @@
    data-selected, data-expanded, data-branch, data-state (checked | unchecked | mixed),
    data-loading, data-error and data-disabled on each item. An item holds its row and, while it is
    open, a group of its children; --_level (set on the item) indents the row. Only the row is
-   painted, so the hover, the selection and the focus ring stay one row high. */
+   painted, so the hover, the selection and the focus ring stay one row high. Only the layout and the
+   lines are here: every other piece's look is a unit of the tree's schema (`$units`), painted by
+   units.css from the language's tokens. A tree in a tree's row (a template) takes its own: the rules
+   that hang on the root's attributes reach the rows through private properties set on the root. */
 @layer mx.components {
   .mx-tree-view {
     display: flex;
     flex-direction: column;
-    gap: var(--mx-treeview-search-gap);
     min-inline-size: 0;
     min-block-size: 0;
-    color: var(--mx-treeview-fg);
-    font-size: var(--_font-size);
-    line-height: var(--_line-height);
+
+    --_tree-row-size: auto;
+    --_tree-lines: none;
+  }
+
+  /* A long tree counts rows of one height. */
+  .mx-tree-view[data-windowed] {
+    --_tree-row-size: var(--_row);
+  }
+
+  /* Lines under each parent's arrow, one per level above the row. */
+  .mx-tree-view[data-lines] {
+    --_tree-lines: '';
   }
 
   .mx-tree-view[data-size='sm'] {
-    --_row: var(--mx-treeview-row-height-sm);
-    --_padding: var(--mx-treeview-padding-sm);
-    --_indent: var(--mx-treeview-indent-sm);
-    --_font-size: var(--mx-treeview-font-size-sm);
-    --_line-height: var(--mx-treeview-line-height-sm);
+    --_row: var(--_treeview-row-height-sm);
+    --_padding: var(--_treeview-padding-sm);
+    --_indent: var(--_treeview-indent-sm);
+    --_font-size: var(--_treeview-font-size-sm);
+    --_line-height: var(--_treeview-line-height-sm);
   }
 
   .mx-tree-view[data-size='md'] {
-    --_row: var(--mx-treeview-row-height-md);
-    --_padding: var(--mx-treeview-padding-md);
-    --_indent: var(--mx-treeview-indent-md);
-    --_font-size: var(--mx-treeview-font-size-md);
-    --_line-height: var(--mx-treeview-line-height-md);
+    --_row: var(--_treeview-row-height-md);
+    --_padding: var(--_treeview-padding-md);
+    --_indent: var(--_treeview-indent-md);
+    --_font-size: var(--_treeview-font-size-md);
+    --_line-height: var(--_treeview-line-height-md);
   }
 
   .mx-tree-view[data-size='lg'] {
-    --_row: var(--mx-treeview-row-height-lg);
-    --_padding: var(--mx-treeview-padding-lg);
-    --_indent: var(--mx-treeview-indent-lg);
-    --_font-size: var(--mx-treeview-font-size-lg);
-    --_line-height: var(--mx-treeview-line-height-lg);
+    --_row: var(--_treeview-row-height-lg);
+    --_padding: var(--_treeview-padding-lg);
+    --_indent: var(--_treeview-indent-lg);
+    --_font-size: var(--_treeview-font-size-lg);
+    --_line-height: var(--_treeview-line-height-lg);
   }
 
   .mx-tree-view__search {
@@ -54,19 +66,15 @@
     display: none;
   }
 
-  .mx-tree-view__empty {
-    padding: var(--_padding);
-    color: var(--mx-treeview-empty-fg);
-  }
-
   .mx-tree-view__space {
     flex: none;
   }
 
   /* A row. */
 
+  /* Its own block, so the row's space above and below (`row-spacing`) counts in its height. */
   .mx-tree-view__item {
-    display: block;
+    display: flow-root;
   }
 
   /* The ring goes on the row, not around the open branch under it. */
@@ -79,74 +87,45 @@
     position: relative;
     display: flex;
     align-items: center;
-    gap: var(--mx-treeview-gap);
-    min-block-size: var(--_row);
-    padding-inline: calc(var(--_padding) + (var(--_level) - 1) * var(--_indent)) var(--_padding);
-    border-radius: var(--mx-treeview-radius);
-    cursor: default;
     user-select: none;
     transition: background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  /* A long tree counts rows of one height. */
-  .mx-tree-view[data-windowed] .mx-tree-view__row {
-    block-size: var(--_row);
-  }
-
-  /* A selected row keeps the language's selection look under the pointer. */
-  .mx-tree-view__item:not([data-disabled], [data-selected]) > .mx-tree-view__row:hover {
-    background: var(--mx-treeview-hover);
-  }
-
-  .mx-tree-view__item[data-selected] > .mx-tree-view__row {
-    color: var(--mx-treeview-selected-text);
-    background: var(--mx-treeview-selected);
-    box-shadow:
-      inset 0 0 0 var(--mx-treeview-selected-border-width) var(--mx-treeview-selected-border),
-      var(--mx-treeview-selected-effect);
-  }
-
+  /* The selection mark (the `indicator` unit): centred along the row by layout, on the side its margins leave. */
   .mx-tree-view__item[data-selected] > .mx-tree-view__row::before {
     content: '';
     position: absolute;
-    inset-block: calc(50% - var(--mx-treeview-indicator-length) / 2);
-    inset-inline-start: 0;
-    inline-size: var(--mx-treeview-indicator-width);
-    background: var(--mx-treeview-indicator-color);
-    border-radius: var(--mx-treeview-indicator-radius);
-  }
-
-  .mx-tree-view__item:focus-visible > .mx-tree-view__row {
-    outline: var(--mx-treeview-focus-width) solid var(--mx-treeview-focus-color);
-    outline-offset: calc(var(--mx-treeview-focus-width) * -1);
-    box-shadow: var(--mx-treeview-focus-halo);
-  }
-
-  .mx-tree-view__item[data-disabled] > .mx-tree-view__row {
-    color: var(--mx-treeview-row-fg-disabled);
-  }
-
-  /* Lines under each parent's arrow, one per level above the row. */
-  .mx-tree-view[data-lines] .mx-tree-view__row::after {
-    content: '';
-    position: absolute;
     inset-block: 0;
-    inset-inline-start: calc(var(--_padding) + (var(--mx-treeview-expander-size) - var(--mx-treeview-line-width)) / 2);
+    inset-inline: 0;
+  }
+
+  /* The lines (content while the root has data-lines), and an elbow from the parent's line to the
+     row. They span the row's space too, so they run on between plates. */
+  .mx-tree-view__row::after {
+    --_towards: to right;
+    --_elbow: linear-gradient(var(--_treeview-elbow-color), var(--_treeview-elbow-color));
+
+    content: var(--_tree-lines);
+    position: absolute;
+    inset-block: calc(var(--_treeview-row-spacing) / -2);
+    inset-inline-start: calc(var(--_padding) + (var(--_treeview-expander-plate) - var(--_treeview-line-width)) / 2);
     inline-size: calc((var(--_level) - 1) * var(--_indent));
-    background: repeating-linear-gradient(
-      to right,
-      var(--mx-treeview-line-color) 0 var(--mx-treeview-line-width),
-      transparent var(--mx-treeview-line-width) var(--_indent)
-    );
+    background:
+      repeating-linear-gradient(
+        var(--_towards),
+        var(--_treeview-line-color) 0 var(--_treeview-line-width),
+        transparent var(--_treeview-line-width) var(--_indent)
+      ),
+      var(--_elbow) left calc((var(--_level) - 2) * var(--_indent)) center / var(--_treeview-elbow-length) var(--_treeview-line-width) no-repeat;
     pointer-events: none;
   }
 
-  .mx-tree-view[data-lines]:dir(rtl) .mx-tree-view__row::after {
-    background: repeating-linear-gradient(
-      to left,
-      var(--mx-treeview-line-color) 0 var(--mx-treeview-line-width),
-      transparent var(--mx-treeview-line-width) var(--_indent)
-    );
+  .mx-tree-view__row:dir(rtl)::after {
+    --_towards: to left;
+
+    background-position:
+      0 0,
+      right calc((var(--_level) - 2) * var(--_indent)) center;
   }
 
   /* The arrow. */
@@ -155,9 +134,6 @@
     display: inline-grid;
     flex: none;
     place-items: center;
-    inline-size: var(--mx-treeview-expander-size);
-    block-size: var(--mx-treeview-expander-size);
-    color: var(--mx-treeview-expander-fg);
   }
 
   .mx-tree-view__expander > * {
@@ -174,26 +150,21 @@
   }
 
   .mx-tree-view__item[data-expanded] > .mx-tree-view__row > .mx-tree-view__expander > .mx-glyph {
-    rotate: 90deg;
+    rotate: var(--_treeview-expander-rotate-open);
   }
 
-  .mx-tree-view:dir(rtl) .mx-tree-view__expander > .mx-glyph {
+  .mx-tree-view__expander > .mx-glyph:dir(rtl) {
     scale: -1 1;
   }
 
-  .mx-tree-view:dir(rtl) .mx-tree-view__item[data-expanded] > .mx-tree-view__row > .mx-tree-view__expander > .mx-glyph {
-    rotate: -90deg;
+  .mx-tree-view__item[data-expanded] > .mx-tree-view__row > .mx-tree-view__expander > .mx-glyph:dir(rtl) {
+    rotate: calc(-1 * var(--_treeview-expander-rotate-open));
   }
 
   .mx-tree-view__item[data-loading] > .mx-tree-view__row > .mx-tree-view__expander::after {
     content: '';
     grid-area: 1 / 1;
-    inline-size: var(--mx-treeview-spinner-size);
-    block-size: var(--mx-treeview-spinner-size);
-    border: var(--mx-treeview-spinner-width) solid currentColor;
-    border-inline-end-color: transparent;
-    border-radius: var(--mx-treeview-spinner-radius);
-    animation: mx-tree-view-spin calc(var(--mx-motion-duration-slow) * 3) linear infinite;
+    animation: mx-tree-view-spin var(--_treeview-spinner-duration) linear infinite;
   }
 
   @keyframes mx-tree-view-spin {
@@ -205,64 +176,22 @@
   /* The check box. */
 
   .mx-tree-view__check {
-    --_fill: var(--mx-treeview-check-bg);
-    --_fill-hover: var(--mx-treeview-check-bg-hover);
-    --_stroke: var(--mx-treeview-check-border);
-    --_stroke-edge: var(--mx-treeview-check-edge);
-
     display: inline-grid;
     flex: none;
     place-items: center;
-    inline-size: var(--mx-treeview-check-size);
-    block-size: var(--mx-treeview-check-size);
-    color: var(--mx-treeview-check-mark);
-    background: var(--_fill);
-    border: var(--mx-treeview-check-border-width) solid var(--_stroke);
-    border-radius: var(--mx-treeview-check-radius);
-    box-shadow:
-      var(--mx-treeview-check-shadow),
-      0 var(--mx-treeview-check-edge-width) 0 var(--_stroke-edge);
     transition:
       background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
       border-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-tree-view__check:hover {
-    background: var(--_fill-hover);
-  }
-
-  .mx-tree-view__item:is([data-state='checked'], [data-state='mixed']) > .mx-tree-view__row > .mx-tree-view__check {
-    --_fill: var(--mx-treeview-checked-bg);
-    --_fill-hover: var(--mx-treeview-checked-bg-hover);
-    --_stroke: var(--mx-treeview-checked-border);
-    --_stroke-edge: var(--mx-treeview-checked-edge);
-  }
-
-  .mx-tree-view__item[data-disabled] > .mx-tree-view__row > .mx-tree-view__check {
-    --_fill: var(--mx-treeview-check-bg-disabled);
-    --_fill-hover: var(--_fill);
-    --_stroke: var(--mx-treeview-check-border-disabled);
-    --_stroke-edge: var(--_stroke);
-
-    color: var(--mx-treeview-check-mark-disabled);
-    box-shadow: none;
-  }
-
-  .mx-tree-view__item[data-disabled]:is([data-state='checked'], [data-state='mixed']) > .mx-tree-view__row > .mx-tree-view__check {
-    --_fill: var(--mx-treeview-checked-bg-disabled);
-    --_stroke: transparent;
-  }
-
   .mx-tree-view__check > .mx-glyph {
     grid-area: 1 / 1;
-    inline-size: var(--mx-treeview-check-mark-size);
-    block-size: var(--mx-treeview-check-mark-size);
     opacity: 0;
     transition: opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
   }
 
-  .mx-tree-view__item[data-state='checked'] > .mx-tree-view__row .mx-tree-view__check-mark,
-  .mx-tree-view__item[data-state='mixed'] > .mx-tree-view__row .mx-tree-view__dash-mark {
+  .mx-tree-view__item[data-state='checked'] > .mx-tree-view__row > :where(.mx-tree-view__check) > .mx-tree-view__check-mark,
+  .mx-tree-view__item[data-state='mixed'] > .mx-tree-view__row > :where(.mx-tree-view__check) > .mx-tree-view__dash-mark {
     opacity: 1;
   }
 
@@ -271,8 +200,6 @@
   .mx-tree-view__icon {
     display: inline-flex;
     flex: none;
-    inline-size: var(--mx-treeview-icon-size);
-    block-size: var(--mx-treeview-icon-size);
   }
 
   .mx-tree-view__icon > :is(img, svg, .mx-glyph) {
@@ -292,22 +219,11 @@
     display: inline-flex;
     flex: none;
     align-items: center;
-    gap: var(--mx-treeview-gap);
-    font-size: var(--mx-treeview-error-font-size);
-    color: var(--mx-treeview-error-fg);
   }
 
   .mx-tree-view__retry {
     appearance: none;
     margin: 0;
-    padding-block: 0;
-    padding-inline: var(--mx-treeview-retry-padding);
     font: inherit;
-    color: var(--mx-treeview-retry-fg);
-    text-decoration: underline;
-    background: none;
-    border: 0;
-    border-radius: var(--mx-treeview-retry-radius);
-    cursor: pointer;
   }
 }

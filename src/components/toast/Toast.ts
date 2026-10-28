@@ -37,6 +37,8 @@ interface Parts {
   /** Milliseconds left while the timer is stopped. */
   remaining: number;
   startedAt: number;
+  /** The timer line running out with the time left (a piece a design language may show). */
+  line: Animation | undefined;
   closedEmitter: Emitter<ToastCloseReason>;
   closed: Promise<ToastCloseReason>;
   resolve: (reason: ToastCloseReason) => void;
@@ -173,6 +175,8 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     const parts = this.parts;
     clearTimeout(parts.timer);
     parts.timer = undefined;
+    parts.line?.cancel();
+    parts.line = undefined;
     parts.remaining = this.peekProperty<number>('duration') ?? 5000;
     if (!parts.toaster?.paused) this.resume();
   }
@@ -184,6 +188,7 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     clearTimeout(parts.timer);
     parts.timer = undefined;
     parts.remaining -= performance.now() - parts.startedAt;
+    parts.line?.pause();
   }
 
   /** @internal */
@@ -192,6 +197,8 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     if (parts.timer !== undefined || parts.closing || parts.remaining <= 0 || !parts.toaster?.isShowing(this)) return;
     parts.startedAt = performance.now();
     parts.timer = setTimeout(() => this.close('timeout'), parts.remaining);
+    parts.line ??= this.element.animate?.([{ scale: '1 1' }, { scale: '0 1' }], { duration: parts.remaining, fill: 'forwards', pseudoElement: '::after' });
+    parts.line?.play();
   }
 
   /** The words a screen reader says when it appears. */
@@ -239,6 +246,7 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
       timer: undefined,
       remaining: 0,
       startedAt: 0,
+      line: undefined,
       closedEmitter: new Emitter(),
       closed,
       resolve,
@@ -272,7 +280,10 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
       return;
     }
     if (icon === undefined) {
-      parts.icon.replaceChildren(GLYPHS[tone]?.() ?? infoMark());
+      // The tone's glyph: a design language may draw another one (the toast's tone icon tokens).
+      const mark = GLYPHS[tone]?.() ?? infoMark();
+      mark.classList.add('mx-toast__mark');
+      parts.icon.replaceChildren(mark);
       return;
     }
     const shown = iconNode(icon);
@@ -289,7 +300,8 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
       return;
     }
     if (!parts.action) {
-      const button = new Button({ variant: 'outline', size: 'sm' });
+      // Its variant and size are the toast's action place's.
+      const button = new Button();
       button.element.classList.add('mx-toast__action');
       button.element.addEventListener('click', () => this.runAction());
       this.controls.add(button);
@@ -315,7 +327,7 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
       return;
     }
     if (parts.close) return;
-    const button = new Button({ variant: 'ghost', size: 'sm', icon: dismissMark() });
+    const button = new Button({ icon: dismissMark() });
     button.element.classList.add('mx-toast__close');
     const stop = effect(() => button.element.setAttribute('aria-label', uiLocale.strings.close));
     button.motif.setDisposable(stop);

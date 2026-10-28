@@ -1,0 +1,243 @@
+{
+  "slider": {
+    "$description": "Slider: a track of segments, the thumbs, the marks and the value bubble.",
+    "$selector": ".mx-slider",
+    "hit-size": { "$type": "dimension" },
+    "vertical-length": { "$type": "dimension" },
+    "track-gap": { "$type": "dimension", "$description": "Space between a segment and the thumb beside it, on both sides (0: the track runs on under the thumb)." },
+    "origin-gap": { "$type": "dimension", "$description": "Space between the active and the inactive segment at a centred slider's origin." },
+    "stop-inset": { "$type": "dimension", "$description": "From the end of the track to the dot." },
+    "tick-length": { "$type": "dimension" },
+    "tick-width": { "$type": "dimension" },
+    "tick-offset": { "$type": "dimension", "$description": "Moves the marks toward the track (negative) or away from it." },
+    "tick-gap": { "$type": "dimension" },
+    "tick-label-width": { "$type": "dimension" },
+    "tick-label-room": { "$type": "dimension", "$description": "With step labels: the least room at each end of the track, so the first and the last label are not cut (the knob's half-width stands if it is more)." },
+    "tick-line-height": { "$type": "dimension" },
+    "bubble-gap": { "$type": "dimension" },
+    "bubble-arrow-size": { "$type": "dimension", "$description": "The arrow's side (a square turned on its corner, half of it showing)." },
+    "track-thickness": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "active-thickness": {
+      "sm": { "$type": "dimension", "$description": "The active segment (from the start or the origin to the value), per size; `track-thickness` is the inactive one." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "thumb-width": {
+      "sm": { "$type": "dimension", "$description": "The thumb along the track (`thumb-height`: across it), per size; then per state." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "thumb-height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "thumb-core-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "$places": {
+      "field": {
+        "$description": "The field under a slider: no text-field box.",
+        "selector": ".mx-slider",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "label-mode",
+          "padding.sm",
+          "padding.md",
+          "padding.lg",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "border-width",
+          "box.radius",
+          "box.shadow",
+          "box.focus.shadow",
+          "box.cursor",
+          "frame.display",
+          "indicator.display",
+          "box.disabled.bg",
+          "box.disabled.shadow",
+          "padding-start.sm",
+          "padding-start.md",
+          "padding-start.lg",
+          "padding-end.sm",
+          "padding-end.md",
+          "padding-end.lg",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "box.invalid-focus.shadow",
+          "box.readonly-focus.shadow",
+          "box.readonly-invalid-focus.shadow"
+        ]
+      }
+    },
+    "$units": {
+      "track": {
+        "$description": "The inactive track: the segment before the active one and the one after it (a gap between a segment and a thumb: `track-gap`).",
+        "selector": ".mx-slider__segment",
+        "turn": {
+          "where": ".mx-slider[data-orientation='vertical']",
+          "what": [
+            "size",
+            "radius",
+            "margin",
+            "padding",
+            "border"
+          ]
+        },
+        "states": {
+          "before": ".mx-slider__segment[data-side='before']",
+          "after": ".mx-slider__segment[data-side='after']",
+          "hover": ".mx-slider:not([data-readonly], [data-disabled]) .mx-slider__control:hover .mx-slider__segment",
+          "focus": ".mx-slider:not([data-readonly], [data-disabled]) .mx-slider__control:has(.mx-slider__thumb:focus-visible) .mx-slider__segment",
+          "pressed": ".mx-slider[data-dragging]:not([data-readonly], [data-disabled]) .mx-slider__segment",
+          "readonly": ".mx-slider[data-readonly] .mx-slider__segment",
+          "disabled": ".mx-slider[data-disabled] .mx-slider__segment"
+        }
+      },
+      "active": {
+        "$description": "The active segment: from the start or the origin to the value, or between the two thumbs of a range.",
+        "selector": ".mx-slider__fill",
+        "turn": {
+          "where": ".mx-slider[data-orientation='vertical']",
+          "what": [
+            "size",
+            "radius",
+            "margin",
+            "padding",
+            "border"
+          ]
+        },
+        "states": {
+          "from-start": ".mx-slider__rail[data-from='start'] > .mx-slider__fill",
+          "to-end": ".mx-slider__rail[data-to='end'] > .mx-slider__fill",
+          "hover": ".mx-slider:not([data-readonly], [data-disabled]) .mx-slider__control:hover .mx-slider__fill",
+          "focus": ".mx-slider:not([data-readonly], [data-disabled]) .mx-slider__control:has(.mx-slider__thumb:focus-visible) .mx-slider__fill",
+          "pressed": ".mx-slider[data-dragging]:not([data-readonly], [data-disabled]) .mx-slider__fill",
+          "readonly": ".mx-slider[data-readonly] .mx-slider__fill",
+          "disabled": ".mx-slider[data-disabled] .mx-slider__fill"
+        }
+      },
+      "stop": {
+        "$description": "A dot at an outer end of the track where an inactive segment ends; `active` once the active segment reaches it.",
+        "selector": ".mx-slider__rail::before, .mx-slider__rail::after",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "active": ".mx-slider__rail[data-start-active]::before, .mx-slider__rail[data-end-active]::after",
+          "disabled": ".mx-slider[data-disabled] .mx-slider__rail::before, .mx-slider[data-disabled] .mx-slider__rail::after"
+        }
+      },
+      "halo": {
+        "$description": "A halo centred on the thumb, under the knob (a state layer: its opacity per state).",
+        "selector": ".mx-slider__halo",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "hover": ".mx-slider:not([data-readonly], [data-disabled]) .mx-slider__thumb:hover > .mx-slider__halo",
+          "focus": ".mx-slider__thumb:focus-visible > .mx-slider__halo",
+          "pressed": ".mx-slider:not([data-readonly], [data-disabled]) .mx-slider__thumb[data-dragging] > .mx-slider__halo"
+        }
+      },
+      "knob": {
+        "$description": "The knob a thumb shows: lying, its width runs along the track and its height across it.",
+        "selector": ".mx-slider__knob",
+        "defaults": {
+          "width": "var(--_thumb-w)",
+          "height": "var(--_thumb-h)"
+        },
+        "turn": {
+          "where": ".mx-slider[data-orientation='vertical']",
+          "what": [
+            "size"
+          ]
+        },
+        "states": {
+          "hover": ".mx-slider:not([data-readonly], [data-disabled]) .mx-slider__thumb:hover > .mx-slider__knob",
+          "focus": ".mx-slider__thumb:focus-visible > .mx-slider__knob",
+          "pressed": ".mx-slider:not([data-readonly], [data-disabled]) .mx-slider__thumb[data-dragging] > .mx-slider__knob",
+          "readonly": ".mx-slider[data-readonly] .mx-slider__knob",
+          "disabled": ".mx-slider[data-disabled] .mx-slider__knob"
+        }
+      },
+      "core": {
+        "$description": "A part inside the knob (a dot), centred in it.",
+        "selector": ".mx-slider__core",
+        "defaults": {
+          "display": "block",
+          "size": "var(--_core)"
+        },
+        "states": {
+          "hover": ".mx-slider:not([data-readonly], [data-disabled]) .mx-slider__thumb:hover .mx-slider__core",
+          "focus": ".mx-slider__thumb:focus-visible .mx-slider__core",
+          "pressed": ".mx-slider:not([data-readonly], [data-disabled]) .mx-slider__thumb[data-dragging] .mx-slider__core",
+          "readonly": ".mx-slider[data-readonly] .mx-slider__core",
+          "disabled": ".mx-slider[data-disabled] .mx-slider__core"
+        }
+      },
+      "bubble": {
+        "$description": "The value over a thumb.",
+        "selector": ".mx-slider__bubble"
+      },
+      "bubble-arrow": {
+        "$description": "An arrow from the bubble to its thumb: a square turned on its corner, the half out of the bubble showing.",
+        "selector": ".mx-slider__bubble::after",
+        "defaults": {
+          "display": "none",
+          "size": "var(--_slider-bubble-arrow-size)"
+        }
+      },
+      "tick": {
+        "$description": "A step's mark (`first`, `last`: the marks at the ends, where a stop dot may stand instead): lying, its width runs along the track and its height across it.",
+        "selector": ".mx-slider__tick[data-mark]::before",
+        "defaults": {
+          "display": "block",
+          "width": "var(--_slider-tick-width)",
+          "height": "var(--_slider-tick-length)"
+        },
+        "turn": {
+          "where": ".mx-slider[data-orientation='vertical']",
+          "what": [
+            "size",
+            "radius"
+          ]
+        },
+        "states": {
+          "first": ".mx-slider__tick:first-child[data-mark]::before",
+          "last": ".mx-slider__tick:last-child[data-mark]::before",
+          "active": ".mx-slider__tick[data-mark][data-active]::before",
+          "disabled": ".mx-slider[data-disabled] .mx-slider__tick[data-mark]::before"
+        }
+      },
+      "tick-label": {
+        "$description": "A step's label.",
+        "selector": ".mx-slider__tick-label",
+        "defaults": {
+          "line-height": "var(--_slider-tick-line-height)"
+        },
+        "states": {
+          "disabled": ".mx-slider[data-disabled] .mx-slider__tick-label"
+        }
+      },
+      "ring": {
+        "$description": "A ring around the whole control while a thumb has the keys (outside it by negative margins).",
+        "selector": ".mx-slider__control::after",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "focus": ".mx-slider__control:has(.mx-slider__thumb:focus-visible)::after"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "switch": {
+    "$description": "Switch: a track with a thumb that slides (its halo and icon), and the on / off texts.",
+    "$selector": ".mx-switch",
+    "thumb-inset": { "$type": "dimension" },
+    "gap": { "$type": "dimension" },
+    "text-padding": { "$type": "dimension" },
+    "track-width": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "track-height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "font-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "thumb-stretch": { "$type": "dimension", "$description": "How much longer the pressed thumb grows toward where it will go (0: it keeps its shape)." },
+    "thumb-size": {
+      "sm": { "$type": "dimension", "$description": "The thumb when off (its middle stays where the inset puts it), per size." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "thumb-size-checked": {
+      "sm": { "$type": "dimension", "$description": "The thumb when on." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "thumb-size-hover": {
+      "sm": { "$type": "dimension", "$description": "The thumb under the pointer." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "thumb-size-pressed": {
+      "sm": { "$type": "dimension", "$description": "The thumb while pressed." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "$units": {
+      "track": {
+        "$description": "The track: off at rest, `checked` (on), `invalid` (off); each under the pointer (`-hover`) and pressed (`-pressed`), under the keys (`focus`), and disabled (`disabled`, `checked-disabled`). Read only, it does not follow the pointer.",
+        "selector": ".mx-switch__input",
+        "defaults": {
+          "min-width": "var(--_track-width)",
+          "height": "var(--_track-height)",
+          "margin": "0px",
+          "cursor": "default"
+        },
+        "states": {
+          "checked": ".mx-switch[data-state='checked'] .mx-switch__input",
+          "invalid": ".mx-switch[data-invalid]:not([data-state='checked']) .mx-switch__input",
+          "hover": ".mx-switch[data-state='unchecked']:not([data-readonly], [data-disabled]) .mx-switch__input:hover",
+          "checked-hover": {
+            "selector": ".mx-switch[data-state='checked']:not([data-readonly], [data-disabled]) .mx-switch__input:hover",
+            "from": "checked"
+          },
+          "pressed": ".mx-switch[data-state='unchecked']:not([data-readonly], [data-disabled]) .mx-switch__input:active",
+          "checked-pressed": {
+            "selector": ".mx-switch[data-state='checked']:not([data-readonly], [data-disabled]) .mx-switch__input:active",
+            "from": "checked"
+          },
+          "focus": ".mx-switch__input:focus-visible",
+          "disabled": ".mx-switch[data-disabled][data-state='unchecked'] .mx-switch__input",
+          "checked-disabled": {
+            "selector": ".mx-switch[data-disabled][data-state='checked'] .mx-switch__input",
+            "from": "checked"
+          }
+        }
+      },
+      "thumb": {
+        "$description": "The thumb: off at rest, `checked`, under the pointer (`hover`, `checked-hover`), pressed, under the keys (`focus`), disabled (`disabled`, `checked-disabled`). Its size and place are the layout's (the size class's, per state).",
+        "selector": ".mx-switch__thumb",
+        "defaults": {
+          "margin": "0px"
+        },
+        "states": {
+          "checked": ".mx-switch[data-state='checked'] .mx-switch__thumb",
+          "hover": ".mx-switch[data-state='unchecked']:not([data-readonly], [data-disabled]) .mx-switch__input:hover ~ .mx-switch__thumb",
+          "checked-hover": {
+            "selector": ".mx-switch[data-state='checked']:not([data-readonly], [data-disabled]) .mx-switch__input:hover ~ .mx-switch__thumb",
+            "from": "checked"
+          },
+          "pressed": ".mx-switch:not([data-readonly]) .mx-switch__input:active ~ .mx-switch__thumb",
+          "focus": ".mx-switch__input:focus-visible ~ .mx-switch__thumb",
+          "disabled": ".mx-switch[data-disabled][data-state='unchecked'] .mx-switch__thumb",
+          "checked-disabled": {
+            "selector": ".mx-switch[data-disabled][data-state='checked'] .mx-switch__thumb",
+            "from": "checked"
+          }
+        }
+      },
+      "halo": {
+        "$description": "A halo centred on the thumb, under it and over the track (a state layer: its colour per value, its opacity per state). None unless a language shows it.",
+        "selector": ".mx-switch__thumb::before",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "checked": ".mx-switch[data-state='checked'] .mx-switch__thumb::before",
+          "hover": ".mx-switch:not([data-readonly], [data-disabled]) .mx-switch__input:hover ~ .mx-switch__thumb::before",
+          "focus": ".mx-switch:not([data-disabled]) .mx-switch__input:focus-visible ~ .mx-switch__thumb::before",
+          "pressed": ".mx-switch:not([data-readonly]) .mx-switch__input:active ~ .mx-switch__thumb::before"
+        }
+      },
+      "thumb-icon": {
+        "$description": "An icon centred in the thumb (`icon`, drawn in `bg`): `checked`, `disabled`. None unless a language shows it.",
+        "selector": ".mx-switch__thumb::after",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "checked": ".mx-switch[data-state='checked'] .mx-switch__thumb::after",
+          "disabled": ".mx-switch[data-disabled] .mx-switch__thumb::after"
+        }
+      },
+      "text": {
+        "$description": "The on / off text inside the track, on the side the thumb is not on: off at rest, `checked`, `disabled`, `checked-disabled`.",
+        "selector": ".mx-switch[data-state-text='inside'] .mx-switch__text",
+        "defaults": {
+          "margin": "0px",
+          "white-space": "nowrap"
+        },
+        "states": {
+          "checked": ".mx-switch[data-state-text='inside'][data-state='checked'] .mx-switch__text",
+          "disabled": ".mx-switch[data-state-text='inside'][data-disabled][data-state='unchecked'] .mx-switch__text",
+          "checked-disabled": {
+            "selector": ".mx-switch[data-state-text='inside'][data-disabled][data-state='checked'] .mx-switch__text",
+            "from": "checked"
+          }
+        }
+      },
+      "side-text": {
+        "$description": "The on / off text beside the track, as large as the caption: `disabled`.",
+        "selector": ".mx-switch[data-state-text='beside'] .mx-switch__text",
+        "defaults": {
+          "margin-block": "0px",
+          "margin-start": "var(--_gap)",
+          "margin-end": "0px",
+          "font-size": "var(--_text-size)",
+          "white-space": "nowrap"
+        },
+        "states": {
+          "disabled": ".mx-switch[data-state-text='beside'][data-disabled] .mx-switch__text"
+        }
+      }
+    }
+  }
+}
