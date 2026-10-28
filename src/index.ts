@@ -125,6 +125,17 @@ export type { RecurrenceFrequency } from './parts/recurrence/recurrence-frequenc
 export type { RecurrenceDatesOptions } from './parts/recurrence/recurrence-dates-options';
 export type { RuleWeekday } from './parts/recurrence/rule-weekday';
 export type { RuleDate } from './parts/recurrence/rule-date';
+export { parseICalendar } from './parts/icalendar/parse-icalendar';
+export { writeICalendar } from './parts/icalendar/write-icalendar';
+export { icalendarMoment } from './parts/icalendar/icalendar-moment';
+export { timeZoneLines } from './parts/icalendar/time-zone-lines';
+export type { ICalendar } from './parts/icalendar/icalendar';
+export type { ICalendarEvent } from './parts/icalendar/icalendar-event';
+export type { ICalendarDate } from './parts/icalendar/icalendar-date';
+export type { ICalendarProperty } from './parts/icalendar/icalendar-property';
+export type { ICalendarTimeZone } from './parts/icalendar/icalendar-time-zone';
+export type { ICalendarObservance } from './parts/icalendar/icalendar-observance';
+export type { ICalendarWriteOptions } from './parts/icalendar/icalendar-write-options';
 export { functionValue } from './core/function-value';
 export { enStrings, trStrings, uiLocale } from './core/ui-locale';
 export type { UiStrings } from './core/ui-strings';

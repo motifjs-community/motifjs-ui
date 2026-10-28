@@ -1,0 +1,122 @@
+import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
+import { sources } from '../../shared/sources';
+import PhoneFrame from './examples/PhoneFrame';
+import Presentations from './examples/Presentations';
+import Touch from './examples/Touch';
+
+const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
+
+const WAYS = [
+  ['Desktop', 'As it is: the bar with Today, the steps, the date and a button per view; the tooltip next to the appointment, the form in a window.'],
+  ['Tablet', 'As on a desktop, its view kept (a week, as tablet calendars open); on a touch screen everything a finger taps is larger.'],
+  ['Phone', 'The agenda (a day when the views have no agenda). The bar holds Today as an icon, the month (opening the calendar) and one menu of the views; a swipe moves between days. The tooltip is an action sheet, the form a sheet from the bottom. A narrower ruler, resource column and time column, so a week still fits the screen; every view works.'],
+];
+
+const GESTURES = [
+  ['Tap an appointment', 'Its tooltip (an action sheet on a phone): Edit, Delete.'],
+  ['Hold an appointment, then drag', 'Lifts it after a moment and moves it; the page does not scroll while it is lifted. Let go where it may go.'],
+  ['Let go of a lifted appointment', 'It stays selected with a handle in the middle of its start and its end; drag a handle to resize it. A tap elsewhere puts it down.'],
+  ['Swipe sideways over the view', 'The next or the previous days. A view that can still scroll that way (a wide week, a timeline) scrolls first; at its end the swipe moves on.'],
+  ['Pinch', 'Zooms the hours of the day views and the cells of a timeline (`timeZoom`, 0.5 to 4).'],
+  ['Tap a free cell, then tap it again', 'Selects it, then opens the form for a new appointment there.'],
+  ['Scroll', 'Native scrolling, as everywhere on the page.'],
+];
+
+const PROPS = [
+  ['presentation', "`Bind<'auto' | 'desktop' | 'tablet' | 'phone'>`", "`'auto'`", 'How it shows itself: by its own width, or always one way. The appointments, the views and the date stay the same.'],
+  ['phoneWidth', '`Bind<number>`', '`560`', 'Under this width (of the scheduler, not of the screen) `auto` shows it as on a phone, whatever the pointer.'],
+  ['tabletWidth', '`Bind<number>`', '`1024`', 'Under this width `auto` shows it as on a tablet, on a touch screen (see `tabletWhen`).'],
+  ['tabletWhen', "`Bind<'touch' | 'width'>`", "`'touch'`", "`'touch'`: as on a tablet only when the screen's pointer is a finger (`(pointer: coarse)`, followed live); `'width'`: the width alone."],
+  ['phoneView', '`Bind<string | null>`', "`'agenda'`", 'The view (by name or type) it shows as on a phone; a day when the views have none of it. Going back, it shows the view it had, unless the user chose another. `null` keeps the view.'],
+  ['tabletView', '`Bind<string | null>`', '`null`', 'The same, as on a tablet; `null` keeps the view.'],
+  ['swipeNavigation', '`Bind<boolean>`', '`true`', 'A finger swiping sideways goes to the next or the previous days.'],
+  ['pinchZoom', '`Bind<boolean>`', '`true`', 'Two fingers zoom the time scale.'],
+  ['timeZoom', '`Bind<number>`', '`1`', 'How far the time scale is zoomed: 1 as the design language sizes it, 0.5 to 4.'],
+  ['onPresentationChanging', '`(e: SchedulerPresentationChangingEventArgs) => void`', '—', '`{ from, to, width, cancel }`: refused, it keeps showing as it does until the width or the setting changes again.'],
+  ['onPresentationChanged', '`(e: SchedulerPresentationChangedEventArgs) => void`', '—', '`{ from, to, width }`.'],
+  ['onTimeZoomChanging', '`(e: TimeZoomChangingEventArgs) => void`', '—', '`{ from, to, cancel }`, as two fingers start to zoom; refused, the page zooms instead.'],
+  ['onTimeZoomChanged', '`(e: TimeZoomChangedEventArgs) => void`', '—', '`{ from, to }`, when the fingers let go.'],
+  ['onFormOpening', '`(e: FormOpeningEventArgs) => void`', '—', '`e.form` is the window, or on a phone the `BottomSheet` the form comes up in.'],
+];
+
+const MEMBERS = [['currentPresentation', 'read-only, reactive', "How it shows itself now: `'desktop'`, `'tablet'` or `'phone'`."]];
+
+export default function SchedulerMobilePage() {
+  return (
+    <>
+      <p class="lead">
+        On a tablet and a phone the scheduler keeps its appointments, views and date and shows them another way: a phone gets
+        the agenda, a compact bar and sheets from the bottom; a finger lifts, resizes, swipes and pinches.
+      </p>
+
+      <Section anchor="import" title="Import">
+        <Code
+          code={`
+import { Scheduler, type SchedulerPresentation } from '@motifx-community/ui';
+`}
+        />
+      </Section>
+
+      <Section anchor="ways" title="Three ways to show one scheduler">
+        <ApiTable head={['Presentation', 'What shows']} rows={WAYS} />
+        <Example files={code('Presentations.tsx', 'sample-appointments.ts')}>
+          <Presentations />
+        </Example>
+      </Section>
+
+      <Section anchor="width" title="By its own width">
+        <p>
+          <Rich text="With `presentation: 'auto'` (the default) it watches its own width and the screen's pointer, as the [TabDocumentManager](/tabdocs/mobile) does: under `phoneWidth` (560) as on a phone, under `tabletWidth` (1024) as on a tablet on a touch screen. Phones are 360 to 430 pixels wide." />
+        </p>
+        <Example files={code('PhoneFrame.tsx', 'sample-appointments.ts')}>
+          <PhoneFrame />
+        </Example>
+      </Section>
+
+      <Section anchor="touch" title="A finger">
+        <p>
+          <Rich text="The listeners are on the scheduler before a finger lands, so a lifted appointment, a swipe and a pinch keep the page still; anything else scrolls natively. After a drag no click follows, and nothing a finger touched stays looking hovered. Open this page on a phone, or with the browser's touch emulation." />
+        </p>
+        <ApiTable head={['Gesture', 'What it does']} rows={GESTURES} />
+        <Example files={code('Touch.tsx', 'sample-appointments.ts')}>
+          <Touch />
+        </Example>
+      </Section>
+
+      <Section anchor="a11y" title="Accessibility">
+        <ApiTable
+          head={['Topic', 'How']}
+          rows={[
+            ['Without gestures', 'Everything a gesture does has a button or a key: the month opens the calendar, the arrows move the focused appointment (Shift: its end), N and P the days.'],
+            ['Sheets', 'The tooltip and the form are dialogs: focus moves in and back, Escape and the back button close them.'],
+            ['Sizes', 'On a touch screen the bar, the agenda rows and the lines of the month take the language’s large control height.'],
+          ]}
+        />
+      </Section>
+
+      <Section anchor="styling" title="Styling">
+        <ApiTable
+          head={['Hook', 'What it is']}
+          rows={[
+            ['scheduler.bar `phone`', 'Unit: the bar as on a phone.'],
+            ['scheduler.appointment `lifted`, `selected`', 'Unit states: the appointment a finger holds, and the one it let go (with its handles).'],
+            ['scheduler.resize-grip (`active`)', 'Unit: a handle, in the middle of an edge; down the side of a bar it is turned.'],
+            ['scheduler.swipe-edge (`ready`), swipe-icon (`previous`, `ready`)', 'Units: the mark at the side the next days come from while swiping.'],
+            ['touch-target, touch-lane-size, phone-ruler-width, phone-column-min-width, phone-timeline-resource-width, phone-bar-size, swipe-inset, grip-ring, grip-ring-mix', 'Plain tokens.'],
+            ['today-icon-button, view-menu-button, tooltip-sheet, form-sheet', 'Places: the kit’s buttons and sheets inside.'],
+          ]}
+        />
+      </Section>
+
+      <Section anchor="api" title="API reference">
+        <h3>Props</h3>
+        <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
+        <h3>Members</h3>
+        <ApiTable head={['Member', 'Returns', 'Description']} rows={MEMBERS} />
+        <p>
+          <Rich text="The sheets are the kit's [BottomSheet](/bottomsheet) and [ActionSheet](/actionsheet)." />
+        </p>
+      </Section>
+    </>
+  );
+}

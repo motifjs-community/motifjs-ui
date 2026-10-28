@@ -487,6 +487,7 @@ export interface UiStrings {
   schedulerBlockedTime: string;
   schedulerOffHours: string;
   schedulerNotFree: string;
+  schedulerImported: string;
   recurrenceRepeat: string;
   recurrenceNever: string;
   recurrenceDaily: string;

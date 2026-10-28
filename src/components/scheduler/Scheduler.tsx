@@ -3,11 +3,14 @@ import type { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
 import { deepActiveElement } from '../../core/focus';
 import { fillTemplate } from '../../core/fill-template';
-import { chevronEnd, chevronStart } from '../../core/glyphs';
+import { calendarMark, chevronEnd, chevronStart } from '../../core/glyphs';
+import { ResizeWatch } from '../../core/resize-watch';
+import { onLookChanged } from '../../core/look-watch';
 import { pageLocale } from '../../core/page-locale';
 import { uiLocale } from '../../core/ui-locale';
 import type { UiStrings } from '../../core/ui-strings';
 import { Popup } from '../../parts/popup/Popup';
+import type { MenuItem } from '../../parts/menu/menu-item';
 import { firstDayOfWeek as localeFirstDay } from '../../parts/dates/first-day-of-week';
 import { sameDay } from '../../parts/dates/same-day';
 import { TimeZone } from '../../parts/dates/time-zone';
@@ -82,6 +85,23 @@ import { TimeView } from './view/TimeView';
 import { AgendaView } from './view/AgendaView';
 import { TimelineView } from './view/TimelineView';
 import type { TimelineScroll } from './view/timeline-scroll';
+import { SchedulerTouch } from './view/SchedulerTouch';
+import type { SchedulerPresentation } from './scheduler-presentation';
+import type { SchedulerPresentationKind } from './scheduler-presentation-kind';
+import type { SchedulerTabletWhen } from './scheduler-tablet-when';
+import type { SchedulerPresentationChangingEventArgs } from './presentation-changing-event-args';
+import type { SchedulerPresentationChangedEventArgs } from './presentation-changed-event-args';
+import type { TimeZoomChangingEventArgs } from './time-zoom-changing-event-args';
+import type { TimeZoomChangedEventArgs } from './time-zoom-changed-event-args';
+import type { ICalendarExportOptions } from './icalendar-export-options';
+import type { ICalendarExportingEventArgs } from './icalendar-exporting-event-args';
+import type { ICalendarExportedEventArgs } from './icalendar-exported-event-args';
+import type { ICalendarImportingEventArgs } from './icalendar-importing-event-args';
+import type { ICalendarImportedEventArgs } from './icalendar-imported-event-args';
+import type { ICalendarImportResult } from './icalendar-import-result';
+import type { PrintingEventArgs } from './printing-event-args';
+import type { PrintedEventArgs } from './printed-event-args';
+import { ICalendarBridge } from './model/ICalendarBridge';
 
 const OWN = [
   'appointments',
@@ -134,7 +154,20 @@ const OWN = [
   'snapMinutes',
   'minDuration',
   'tooltip',
+  'presentation',
+  'tabletWidth',
+  'phoneWidth',
+  'tabletWhen',
+  'phoneView',
+  'tabletView',
+  'swipeNavigation',
+  'pinchZoom',
+  'timeZoom',
 ] as const;
+
+/** How far two fingers zoom the time scale, out and in. */
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 4;
 
 const DEFAULT_EDITING: SchedulerEditing = {
   allowAdding: true,
@@ -227,6 +260,17 @@ interface Parts<T> {
     saving: string[];
     /** A timeline row's sizes in pixels, measured by the timeline view. */
     lines: { lane: number; gap: number; min: number };
+    presentation: SchedulerPresentationKind;
+    /** The screen's pointer is a finger. */
+    coarse: boolean;
+    /** It is being printed: everything is built, nothing scrolls. */
+    printing: boolean;
+    /** A finger swiping sideways: how far, which way, and whether letting go now moves on. */
+    swipe: { active: boolean; x: number; next: boolean; ready: boolean };
+    /** The appointment a finger lifted last (by its id): it shows its handles. */
+    touchSelected: string;
+    /** The size of the bar's buttons as on a phone, as the design language says (`phone-bar-size`). */
+    phoneBarSize: 'sm' | 'md' | 'lg';
   };
   store: AppointmentStore<T>;
   editor: AppointmentEditor<T>;
@@ -262,6 +306,26 @@ interface Parts<T> {
   selectionChanged: Emitter<SelectionChangedEventArgs<T>>;
   contentReady: Emitter<ContentReadyEventArgs<T>>;
   moreOpening: Emitter<MoreOpeningEventArgs<T>>;
+  presentationChanging: Emitter<SchedulerPresentationChangingEventArgs<T>>;
+  presentationChanged: Emitter<SchedulerPresentationChangedEventArgs<T>>;
+  timeZoomChanging: Emitter<TimeZoomChangingEventArgs<T>>;
+  timeZoomChanged: Emitter<TimeZoomChangedEventArgs<T>>;
+  icalendarExporting: Emitter<ICalendarExportingEventArgs<T>>;
+  icalendarExported: Emitter<ICalendarExportedEventArgs<T>>;
+  icalendarImporting: Emitter<ICalendarImportingEventArgs<T>>;
+  icalendarImported: Emitter<ICalendarImportedEventArgs<T>>;
+  printing: Emitter<PrintingEventArgs<T>>;
+  printed: Emitter<PrintedEventArgs<T>>;
+  touch: SchedulerTouch;
+  icalendar: ICalendarBridge<T>;
+  /** The scheduler's width, as measured last. */
+  width: number;
+  sizeWatch: ResizeWatch | null;
+  /** The view it had before a presentation changed it, and the one it changed to. */
+  viewBefore: string | null;
+  viewSet: string | null;
+  /** The cell a finger pressed was the one selected already: letting it go opens the form. */
+  tapAgain: boolean;
 }
 
 /**
@@ -313,6 +377,16 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       [own.onResizeEnd, parts.events.resizeEnd as Emitter<never>],
       [own.onSeriesAsking, parts.events.seriesAsking as Emitter<never>],
       [own.onSeriesAnswered, parts.events.seriesAnswered as Emitter<never>],
+      [own.onPresentationChanging, parts.presentationChanging as Emitter<never>],
+      [own.onPresentationChanged, parts.presentationChanged as Emitter<never>],
+      [own.onTimeZoomChanging, parts.timeZoomChanging as Emitter<never>],
+      [own.onTimeZoomChanged, parts.timeZoomChanged as Emitter<never>],
+      [own.onICalendarExporting, parts.icalendarExporting as Emitter<never>],
+      [own.onICalendarExported, parts.icalendarExported as Emitter<never>],
+      [own.onICalendarImporting, parts.icalendarImporting as Emitter<never>],
+      [own.onICalendarImported, parts.icalendarImported as Emitter<never>],
+      [own.onPrinting, parts.printing as Emitter<never>],
+      [own.onPrinted, parts.printed as Emitter<never>],
     ];
     for (const [handler, emitter] of on) if (handler) emitter.event(handler);
     this.motif.setDisposable(() => {
@@ -320,6 +394,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       parts.drag.dispose();
       parts.editor.dispose();
       parts.stopSource?.();
+      parts.sizeWatch?.disconnect();
       for (const stop of parts.stopKeys) stop();
       for (const [, emitter] of on) emitter.dispose();
     });
@@ -661,8 +736,74 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     this.assignProperty('tooltip', value, Boolean);
   }
 
+  /** How it shows itself: by its own width (`'auto'`), or always as on a desktop, a tablet or a phone. */
+  get presentation(): SchedulerPresentation {
+    return this.getProperty<SchedulerPresentation | undefined>('presentation') ?? 'auto';
+  }
+  set presentation(value: Bind<SchedulerPresentation>) {
+    this.assignProperty('presentation', value);
+  }
+  get tabletWidth(): number {
+    return this.getProperty<number | undefined>('tabletWidth') ?? 1024;
+  }
+  set tabletWidth(value: Bind<number>) {
+    this.assignProperty('tabletWidth', value, Number);
+  }
+  get phoneWidth(): number {
+    return this.getProperty<number | undefined>('phoneWidth') ?? 560;
+  }
+  set phoneWidth(value: Bind<number>) {
+    this.assignProperty('phoneWidth', value, Number);
+  }
+  /** When `'auto'` shows it as on a tablet: on a touch screen under `tabletWidth`, or under it whatever the pointer. */
+  get tabletWhen(): SchedulerTabletWhen {
+    return this.getProperty<SchedulerTabletWhen | undefined>('tabletWhen') ?? 'touch';
+  }
+  set tabletWhen(value: Bind<SchedulerTabletWhen>) {
+    this.assignProperty('tabletWhen', value);
+  }
+  /** The view it shows as on a phone, by name or type (the agenda, else a day); `null` keeps the view. */
+  get phoneView(): string | null {
+    const value = this.getProperty<string | null | undefined>('phoneView');
+    return value === undefined ? 'agenda' : value || null;
+  }
+  set phoneView(value: Bind<string | null>) {
+    this.assignProperty('phoneView', value);
+  }
+  /** The view it shows as on a tablet, by name or type; `null` keeps the view. */
+  get tabletView(): string | null {
+    return this.getProperty<string | null | undefined>('tabletView') || null;
+  }
+  set tabletView(value: Bind<string | null>) {
+    this.assignProperty('tabletView', value);
+  }
+  get swipeNavigation(): boolean {
+    return this.getProperty<boolean | undefined>('swipeNavigation') ?? true;
+  }
+  set swipeNavigation(value: Bind<boolean>) {
+    this.assignProperty('swipeNavigation', value, Boolean);
+  }
+  get pinchZoom(): boolean {
+    return this.getProperty<boolean | undefined>('pinchZoom') ?? true;
+  }
+  set pinchZoom(value: Bind<boolean>) {
+    this.assignProperty('pinchZoom', value, Boolean);
+  }
+  /** How far the time scale is zoomed, from 0.5 to 4. */
+  get timeZoom(): number {
+    const value = Number(this.getProperty<number | undefined>('timeZoom') ?? 1);
+    return Number.isFinite(value) ? Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, value)) : 1;
+  }
+  set timeZoom(value: Bind<number>) {
+    this.assignProperty('timeZoom', value, Number);
+  }
+
   // State.
 
+  /** How it shows itself now: `presentation`, or by its width when that is `'auto'`. Reactive. */
+  get currentPresentation(): SchedulerPresentationKind {
+    return this.parts.version.presentation;
+  }
   /** The days on screen, `end` not included. Reactive. */
   get visibleRange(): SchedulerRange {
     return this.parts.model.range();
@@ -767,6 +908,36 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
   get onSeriesAnswered(): MotifEvent<SeriesAnsweredEventArgs<T>> {
     return this.parts.events.seriesAnswered.event;
+  }
+  get onPresentationChanging(): MotifEvent<SchedulerPresentationChangingEventArgs<T>> {
+    return this.parts.presentationChanging.event;
+  }
+  get onPresentationChanged(): MotifEvent<SchedulerPresentationChangedEventArgs<T>> {
+    return this.parts.presentationChanged.event;
+  }
+  get onTimeZoomChanging(): MotifEvent<TimeZoomChangingEventArgs<T>> {
+    return this.parts.timeZoomChanging.event;
+  }
+  get onTimeZoomChanged(): MotifEvent<TimeZoomChangedEventArgs<T>> {
+    return this.parts.timeZoomChanged.event;
+  }
+  get onICalendarExporting(): MotifEvent<ICalendarExportingEventArgs<T>> {
+    return this.parts.icalendarExporting.event;
+  }
+  get onICalendarExported(): MotifEvent<ICalendarExportedEventArgs<T>> {
+    return this.parts.icalendarExported.event;
+  }
+  get onICalendarImporting(): MotifEvent<ICalendarImportingEventArgs<T>> {
+    return this.parts.icalendarImporting.event;
+  }
+  get onICalendarImported(): MotifEvent<ICalendarImportedEventArgs<T>> {
+    return this.parts.icalendarImported.event;
+  }
+  get onPrinting(): MotifEvent<PrintingEventArgs<T>> {
+    return this.parts.printing.event;
+  }
+  get onPrinted(): MotifEvent<PrintedEventArgs<T>> {
+    return this.parts.printed.event;
   }
 
   // Methods.
@@ -942,6 +1113,69 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     }));
   }
 
+  /**
+   * Writes the appointments as an iCalendar file (RFC 5545): those of the days shown, all the ones
+   * loaded, or those of a range; a series goes whole with its rule, the times left out and the
+   * occurrences changed apart, each zone used with its definition. Asks `onICalendarExporting`
+   * first; `null` when it said no.
+   */
+  exportICalendar(options: ICalendarExportOptions<T> = {}): string | null {
+    const parts = this.parts;
+    const asked = options.range;
+    const range = asked === 'all' ? null : asked && asked !== 'visible' ? asked : this.visibleRange;
+    const appointments = options.appointments ? [...options.appointments] : parts.icalendar.appointmentsIn(range);
+    const e: ICalendarExportingEventArgs<T> = { appointments, range, cancel: false, source: this };
+    parts.icalendarExporting.fire(e);
+    if (e.cancel) return null;
+    const text = parts.icalendar.write(e.appointments, options.name ?? (this.text || this.textOf('schedulerLabel')));
+    parts.icalendarExported.fire({ text, appointments: e.appointments, source: this });
+    return text;
+  }
+
+  /**
+   * Reads an iCalendar file in: each event becomes an appointment added through the data layer (the
+   * array, or the data source's adapter) as any other is, with `onAppointmentAdding` first; an event
+   * whose UID is an appointment's key already changes that one. Asks `onICalendarImporting` first;
+   * `null` when it said no.
+   */
+  async importICalendar(text: string): Promise<ICalendarImportResult<T> | null> {
+    const parts = this.parts;
+    const appointments = parts.icalendar.read(text);
+    const e: ICalendarImportingEventArgs<T> = { text, appointments, cancel: false, source: this };
+    parts.icalendarImporting.fire(e);
+    if (e.cancel) return null;
+    const result = await parts.icalendar.save(e.appointments);
+    parts.icalendarImported.fire({ ...result, source: this });
+    this.say(this.textOf('schedulerImported', { count: result.added.length + result.updated.length }));
+    return result;
+  }
+
+  /**
+   * Prints the scheduler alone: the days shown, every row and column built and nothing scrolled,
+   * the colours kept, the bar left out. Asks `onPrinting` first; `false` when it said no. (The
+   * browser's own print prints it the same way, beside the rest of the page.)
+   */
+  async print(): Promise<boolean> {
+    const parts = this.parts;
+    const e: PrintingEventArgs<T> = { cancel: false, source: this };
+    parts.printing.fire(e);
+    if (e.cancel) return false;
+    const doc = this.element.ownerDocument;
+    const view = doc.defaultView;
+    if (!view) return false;
+    doc.documentElement.toggleAttribute('data-mx-print-one', true);
+    this.element.toggleAttribute('data-print-one', true);
+    parts.version.printing = true;
+    // Built whole before the page is laid out for paper.
+    await new Promise<void>((done) => view.requestAnimationFrame(() => done()));
+    try {
+      view.print();
+    } finally {
+      this.printDone();
+    }
+    return true;
+  }
+
   /** The text for `key`: the scheduler's own `texts`, else `uiLocale`'s, filled in. */
   textOf(key: keyof UiStrings, values?: Record<string, unknown>): string {
     const text = this.texts[key] ?? uiLocale.strings[key];
@@ -956,6 +1190,12 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     this.attr.add({ role: 'group' });
     this.bindings.watch(() => this.element.setAttribute('aria-label', this.text || this.textOf('schedulerLabel')));
     this.bindings.watch(() => this.element.setAttribute('data-view', this.resolveView().type));
+    this.bindings.watch(() => this.element.setAttribute('data-presentation', this.parts.version.presentation));
+    this.bindings.watch(() => this.element.toggleAttribute('data-printing', this.parts.version.printing));
+    this.bindings.watch(() => {
+      const zoom = this.timeZoom;
+      untracked(() => (zoom === 1 ? this.element.style.removeProperty('--_zoom') : this.element.style.setProperty('--_zoom', String(zoom))));
+    });
   }
 
   override onConfig() {
@@ -970,16 +1210,19 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     this.bindings.watch(() => this.followFocus());
     this.bindings.watch(() => this.watchContent());
     this.bindings.watch(() => this.scrollOnShow());
+    for (const name of ['presentation', 'tabletWidth', 'phoneWidth', 'tabletWhen'] as const) this.observeProperty(name, () => this.resolvePresentation());
+    this.watchPointer();
+    this.watchPrint();
+    // Set as one way, it is that way from the start; by its width, once it is measured.
+    this.resolvePresentation();
   }
 
   override onMounted() {
-    // A finger dragging an appointment must not scroll the page: the listener has to be there before the finger lands.
-    const drag = this.parts.drag;
-    const hold = (e: TouchEvent) => {
-      if (drag.active) e.preventDefault();
-    };
-    this.element.addEventListener('touchmove', hold, { passive: false });
-    this.motif.setDisposable(() => this.element.removeEventListener('touchmove', hold));
+    // The finger's listeners are there before a finger lands: only then can a drag, a swipe or a pinch keep the page still.
+    this.motif.setDisposable(this.parts.touch.attach());
+    this.watchSize();
+    this.readLook();
+    this.motif.setDisposable(onLookChanged(() => this.readLook()));
   }
 
   override view() {
@@ -987,18 +1230,47 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const host = parts.host;
     const t = (key: keyof UiStrings, values?: Record<string, unknown>) => this.textOf(key, values);
     const kind = () => viewKind(this.resolveView().type);
+    const phone = () => parts.version.presentation === 'phone';
+    const swipe = parts.version.swipe;
     return (
       <>
-        <Toolbar class="mx-scheduler__bar" label={() => this.text || t('schedulerLabel')} size="sm" x-display={() => this.toolbar}>
-          <Button class="mx-scheduler__today" text={() => t('today')} onclick={() => this.changeDate(this.today(), true)} />
+        <Toolbar
+          class="mx-scheduler__bar"
+          label={() => this.text || t('schedulerLabel')}
+          size={() => (phone() ? parts.version.phoneBarSize : parts.version.coarse ? 'lg' : 'sm')}
+          x-display={() => this.toolbar && !parts.version.printing}
+        >
+          <Button class="mx-scheduler__today" text={() => t('today')} x-display={() => !phone()} onclick={() => this.changeDate(this.today(), true)} />
+          <Button
+            class="mx-scheduler__today-icon"
+            icon={calendarMark()}
+            hint={() => t('today')}
+            x-display={phone}
+            onclick={() => this.changeDate(this.today(), true)}
+          />
+          {/* A phone moves by a swipe and the month's calendar, as phone calendars do: no steps there. */}
           <Button
             class="mx-scheduler__step"
             icon={chevronStart()}
             hint={() => t('schedulerPrevious')}
+            x-display={() => !phone()}
             onclick={() => this.step(-1, true)}
           />
-          <Button class="mx-scheduler__step" icon={chevronEnd()} hint={() => t('schedulerNext')} onclick={() => this.step(1, true)} />
-          <Button class="mx-scheduler__title" text={() => this.rangeText()} dropDown={parts.picker} ref={(b: Button) => (parts.title = b)} />
+          <Button
+            class="mx-scheduler__step"
+            icon={chevronEnd()}
+            hint={() => t('schedulerNext')}
+            x-display={() => !phone()}
+            onclick={() => this.step(1, true)}
+          />
+          <Button
+            class="mx-scheduler__title"
+            text={() => (phone() ? this.phoneTitle() : this.rangeText())}
+            hint={() => (phone() ? this.rangeText() : '')}
+            dropDown={parts.picker}
+            data-overflow={() => (phone() ? 'never' : null)}
+            ref={(b: Button) => (parts.title = b)}
+          />
           {this.viewList().map((view) => (
             <Button
               key={view.name}
@@ -1006,11 +1278,25 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
               toggle
               pressed={() => this.currentView === view.name}
               text={() => this.viewText(view)}
+              x-display={() => !phone()}
               onclick={() => this.changeView(view.name, true)}
             />
           ))}
+          <Button
+            class="mx-scheduler__view-menu"
+            text={() => this.viewText(this.currentViewOf() ?? { type: 'week' })}
+            hint={() => t('schedulerViews')}
+            menu={() => this.viewMenu()}
+            data-overflow="never"
+            x-display={phone}
+          />
         </Toolbar>
-        <div class="mx-scheduler__content" aria-busy={() => (this.loading ? 'true' : null)}>
+        <div
+          class="mx-scheduler__content"
+          aria-busy={() => (this.loading ? 'true' : null)}
+          data-swiping={() => swipe.active || null}
+          style={() => (swipe.active ? { '--_swipe': `${swipe.x}px` } : {})}
+        >
           {() => {
             switch (kind()) {
               case 'month':
@@ -1029,6 +1315,15 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
           <div class="mx-scheduler__state" data-tone="danger" role="alert" x-display={() => parts.version.status === 'error'}>
             <span>{() => t('loadFailed')}</span>
             <Button text={() => t('retry')} onclick={() => void this.dataSource?.retry()} />
+          </div>
+          <div
+            class="mx-scheduler__swipe-edge"
+            aria-hidden="true"
+            data-side={() => (swipe.next ? 'next' : 'previous')}
+            data-ready={() => swipe.ready || null}
+            x-display={() => swipe.active}
+          >
+            <span class="mx-glyph mx-scheduler__swipe-icon" />
           </div>
         </div>
         <div class="mx-scheduler__live mx-sr-only" aria-live="polite" role="status">
@@ -1065,6 +1360,12 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       draft: null,
       saving: [],
       lines: { lane: 0, gap: 0, min: 0 },
+      presentation: 'desktop',
+      coarse: coarsePointer(),
+      printing: false,
+      swipe: { active: false, x: 0, next: true, ready: false },
+      touchSelected: '',
+      phoneBarSize: 'lg',
     }) as Parts<T>['version'];
     const more = reactive({ date: null, items: [] }) as MoreListState<T>;
     const zone = () => TimeZone.of(this.timeZone);
@@ -1120,6 +1421,21 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       selectionChanged: new Emitter(),
       contentReady: new Emitter(),
       moreOpening: new Emitter(),
+      presentationChanging: new Emitter(),
+      presentationChanged: new Emitter(),
+      timeZoomChanging: new Emitter(),
+      timeZoomChanged: new Emitter(),
+      icalendarExporting: new Emitter(),
+      icalendarExported: new Emitter(),
+      icalendarImporting: new Emitter(),
+      icalendarImported: new Emitter(),
+      printing: new Emitter(),
+      printed: new Emitter(),
+      width: 0,
+      sizeWatch: null,
+      viewBefore: null,
+      viewSet: null,
+      tapAgain: false,
       events: {
         adding: new Emitter(),
         added: new Emitter(),
@@ -1165,14 +1481,47 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       tooltip: () => this.tooltip,
       text: (key, values) => this.textOf(key, values),
       say: (text) => this.say(text),
-      setDraft: (draft) => (version.draft = draft),
+      setDraft: (draft) => {
+        version.draft = draft;
+        // A finger lifted it: once let go it stays selected, with its handles.
+        if (draft?.touch) version.touchSelected = model.idOf(draft.item);
+      },
       root: () => this.element,
       scroller: () => parts.scroller,
       rtl: () => this.isRtl(),
       keys: () => this.keys,
       saving: version.saving,
+      presentation: () => version.presentation,
     });
     parts.drag = new AppointmentDrag<T>(parts.editor);
+    parts.touch = new SchedulerTouch({
+      root: () => this.element,
+      scroller: () => parts.scroller,
+      kind: () => parts.model.kind,
+      dragging: () => parts.drag.active,
+      swipeNavigation: () => this.swipeNavigation,
+      pinchZoom: () => this.pinchZoom,
+      rtl: () => this.isRtl(),
+      zoom: () => this.timeZoom,
+      zoomChanging: (from, to) => {
+        const e: TimeZoomChangingEventArgs<T> = { from, to, cancel: false, source: this };
+        parts.timeZoomChanging.fire(e);
+        return !e.cancel;
+      },
+      setZoom: (zoom) => this.changeProperty('timeZoom', Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom))),
+      zoomChanged: (from, to) => parts.timeZoomChanged.fire({ from, to, source: this }),
+      swiping: (x, next, ready) => Object.assign(version.swipe, { active: x !== null, x: x ?? 0, next, ready }),
+      step: (by) => this.step(by, true),
+    });
+    parts.icalendar = new ICalendarBridge<T>({
+      model,
+      store: parts.store,
+      editor: parts.editor,
+      fields: () => this.fields,
+      items: () => this.items(),
+      timeZone: () => this.timeZone,
+      hasSource: () => !!this.dataSource,
+    });
     return parts;
   }
 
@@ -1227,12 +1576,20 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       dragging: () => !!parts.version.draft,
       agendaKey: (e) => this.agendaKey(e),
       cellPointerDown: (place, e) => this.cellPointerDown(place, e),
-      cellClick: (place, e) => this.fireCell(parts.cellClick, place, e),
+      cellClick: (place, e) => this.clickCell(place, e),
       cellDblClick: (place, e) => this.openCell(place, e),
       appointmentClick: (piece, e) => this.clickAppointment(piece, e),
       appointmentDblClick: (piece, e) => this.openAppointment(piece, e),
       appointmentKey: (piece, e) => this.appointmentKey(piece, e),
-      appointmentPointerDown: (piece, mode, e) => parts.drag.begin(piece.item, mode, e, piece.group),
+      appointmentPointerDown: (piece, mode, e) => {
+        // A finger resizes only the appointment it lifted (by its handles, at once); an edge of another one is a long press to move it.
+        const touch = e.pointerType === 'touch';
+        const selected = touch && parts.version.touchSelected === parts.model.idOf(piece.item);
+        if (touch && !selected) parts.version.touchSelected = '';
+        parts.drag.begin(piece.item, touch && !selected ? 'move' : mode, e, piece.group, selected && mode !== 'move');
+      },
+      touchSelected: (item) => parts.version.touchSelected !== '' && parts.version.touchSelected === parts.model.idOf(item),
+      liftedByTouch: () => !!parts.version.draft?.touch,
       appointmentBlur: (piece, e) => {
         const to = e.relatedTarget;
         const id = `${parts.model.idOf(piece.item)}@`;
@@ -1408,6 +1765,124 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     });
   }
 
+  /** Shows it as `presentation` says, or by its width; asks `onPresentationChanging` first. */
+  private resolvePresentation(): void {
+    const parts = this.parts;
+    untracked(() => {
+      const set = this.presentation;
+      const width = parts.width || (this.element.isConnected ? this.element.getBoundingClientRect().width : 0);
+      let to: SchedulerPresentationKind;
+      if (set !== 'auto') to = set;
+      else if (!(width > 0)) return;
+      else if (width < this.phoneWidth) to = 'phone';
+      // A tablet is a narrow scheduler on a touch screen; with a mouse it stays a desktop (unless `tabletWhen` says width alone).
+      else to = width < this.tabletWidth && (this.tabletWhen === 'width' || parts.version.coarse) ? 'tablet' : 'desktop';
+      const from = parts.version.presentation;
+      if (to === from) return;
+      const e: SchedulerPresentationChangingEventArgs<T> = { from, to, width: Math.round(width), cancel: false, source: this };
+      parts.presentationChanging.fire(e);
+      if (e.cancel) return;
+      parts.drag.cancel();
+      parts.editor.hideTooltip();
+      parts.version.touchSelected = '';
+      parts.version.presentation = to;
+      this.showViewOf(to);
+      parts.presentationChanged.fire({ from, to, width: e.width, source: this });
+    });
+  }
+
+  /** The view a presentation shows: back to the one it had before, unless the user chose another; then the presentation's own. */
+  private showViewOf(kind: SchedulerPresentationKind): void {
+    const parts = this.parts;
+    if (parts.viewSet && parts.viewBefore && this.currentView === parts.viewSet) this.changeView(parts.viewBefore, false);
+    parts.viewSet = parts.viewBefore = null;
+    const name = this.presentationView(kind);
+    const before = this.currentView;
+    if (!name || name === before) return;
+    if (this.changeView(name, false)) {
+      parts.viewBefore = before;
+      parts.viewSet = name;
+    }
+  }
+
+  /** The view a presentation asks for, by name or type, among the views; a phone without it shows a day. */
+  private presentationView(kind: SchedulerPresentationKind): string | null {
+    const asked = kind === 'phone' ? this.phoneView : kind === 'tablet' ? this.tabletView : null;
+    if (!asked) return null;
+    const list = this.viewList();
+    const found = list.find((v) => v.name === asked) ?? list.find((v) => v.type === asked);
+    if (found) return found.name;
+    return kind === 'phone' ? (list.find((v) => v.type === 'day')?.name ?? null) : null;
+  }
+
+  /** The views as the phone's bar lists them, the one shown checked. */
+  private viewMenu(): MenuItem[] {
+    return this.viewList().map((view) => ({
+      text: () => this.viewText(view),
+      group: 'view',
+      checked: () => this.currentView === view.name,
+      click: () => this.changeView(view.name, true),
+    }));
+  }
+
+  /** A screen that gets or loses its touch (a tablet with a keyboard and a mouse) may show it another way. */
+  private watchPointer(): void {
+    const media = this.element.ownerDocument.defaultView?.matchMedia?.('(pointer: coarse)');
+    if (!media?.addEventListener) return;
+    const changed = () => {
+      this.parts.version.coarse = media.matches;
+      this.resolvePresentation();
+    };
+    media.addEventListener('change', changed);
+    this.motif.setDisposable(() => media.removeEventListener('change', changed));
+  }
+
+  private watchSize(): void {
+    const parts = this.parts;
+    parts.sizeWatch ??= new ResizeWatch(() => {
+      const width = this.element.getBoundingClientRect().width;
+      if (Math.round(width) === Math.round(parts.width)) return;
+      parts.width = width;
+      this.resolvePresentation();
+    });
+    parts.sizeWatch.observe(this.element);
+    parts.width = this.element.getBoundingClientRect().width;
+    this.resolvePresentation();
+  }
+
+  /** What the design language says in values the code reads: the size of the phone's bar. */
+  private readLook(): void {
+    const view = this.element.ownerDocument.defaultView;
+    const size = view?.getComputedStyle(this.element).getPropertyValue('--_scheduler-phone-bar-size').trim();
+    const version = this.parts.version;
+    const next = size === 'sm' || size === 'md' ? size : 'lg';
+    if (version.phoneBarSize !== next) version.phoneBarSize = next;
+  }
+
+  /** The browser's print (and `print()`) lays it out whole for paper. */
+  private watchPrint(): void {
+    const view = this.element.ownerDocument.defaultView;
+    if (!view) return;
+    const before = () => (this.parts.version.printing = true);
+    const after = () => this.printDone();
+    view.addEventListener('beforeprint', before);
+    view.addEventListener('afterprint', after);
+    this.motif.setDisposable(() => {
+      view.removeEventListener('beforeprint', before);
+      view.removeEventListener('afterprint', after);
+    });
+  }
+
+  private printDone(): void {
+    const parts = this.parts;
+    if (!parts.version.printing) return;
+    parts.version.printing = false;
+    const one = this.element.hasAttribute('data-print-one');
+    this.element.removeAttribute('data-print-one');
+    if (one) this.element.ownerDocument.documentElement.removeAttribute('data-mx-print-one');
+    parts.printed.fire({ source: this });
+  }
+
   private viewList(): (SchedulerView<T> & { name: string })[] {
     return this.views.map((v) => (typeof v === 'string' ? { type: v, name: v } : { ...v, name: v.name ?? v.type }));
   }
@@ -1441,7 +1916,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       // A timeline has a row per group and the agenda a list: neither stands them under the dates.
       groupByDate: groups.length > 0 && (kind === 'time' || kind === 'month') && own(view.groupByDate, this.groupByDate),
       agendaDuration: Math.max(1, Math.round(own(view.agendaDuration, this.agendaDuration))),
-      scrolling: own(view.scrolling, this.scrolling),
+      // On paper every row and cell is there.
+      scrolling: this.parts.version.printing ? 'standard' : own(view.scrolling, this.scrolling),
     };
   }
 
@@ -1467,6 +1943,15 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       start: zone.date(TimeZone.wallOfLocal(dates[0])),
       end: zone.date(TimeZone.wallOfLocal(dates[dates.length - 1]) + 86_400_000),
     };
+  }
+
+  /** The title as on a phone: the month of the first day shown, with its year when that is not this year (as phone calendars write it). */
+  private phoneTitle(): string {
+    const parts = this.parts;
+    const start = parts.model.range().start;
+    const zone = parts.model.zone;
+    const sameYear = zone.toLocal(start).getFullYear() === zone.toLocal(new Date(parts.model.state.now)).getFullYear();
+    return sameYear ? parts.format.month(start) : parts.format.monthYear(start);
   }
 
   private rangeText(): string {
@@ -1556,6 +2041,17 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   private cellPointerDown(place: CellPlace, e: PointerEvent): void {
     if (e.button !== 0) return;
     const parts = this.parts;
+    parts.version.touchSelected = '';
+    if (e.pointerType === 'touch') {
+      // A finger selects one cell (moving it scrolls or swipes); a tap on the cell selected already opens the form.
+      const model = parts.model;
+      const selection = model.selection();
+      const cell = model.cellOf(place);
+      parts.tapAgain = !!selection && !!cell && selection.start.getTime() === cell.start.getTime() && selection.end.getTime() === cell.end.getTime() && selection.allDay === cell.allDay;
+      model.focusCell(place);
+      return;
+    }
+    parts.tapAgain = false;
     parts.model.focusCell(place, e.shiftKey);
     parts.selecting = true;
     const doc = this.element.ownerDocument;
@@ -1605,10 +2101,21 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return !e.cancel;
   }
 
-  /** A click on an appointment (not the end of a drag): the event, then its tooltip. */
+  /** A click on cells (not the end of a swipe): the event; a finger's second tap on the cell opens the form. */
+  private clickCell(place: CellPlace, e: MouseEvent): void {
+    const parts = this.parts;
+    if (parts.touch.justSwiped) return;
+    if (!this.fireCell(parts.cellClick, place, e)) return;
+    if (!parts.tapAgain) return;
+    parts.tapAgain = false;
+    this.openCell(place, e);
+  }
+
+  /** A click on an appointment (not the end of a drag or a swipe): the event, then its tooltip. */
   private clickAppointment(piece: AnyPiece<T>, e: MouseEvent | KeyboardEvent): void {
     const parts = this.parts;
-    if (parts.drag.justEnded) return;
+    if (parts.drag.justEnded || parts.touch.justSwiped) return;
+    if (parts.version.touchSelected && parts.version.touchSelected !== parts.model.idOf(piece.item)) parts.version.touchSelected = '';
     const box = e.currentTarget as HTMLElement | null;
     if (!this.fireAppointment(parts.appointmentClick, piece, e)) return;
     if (this.tooltip && box) parts.editor.showTooltip(piece.item, box);
@@ -1617,13 +2124,15 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   /** A double click (or Enter) on an appointment: the event, then its form. */
   private openAppointment(piece: AnyPiece<T>, e: MouseEvent | KeyboardEvent): void {
     const parts = this.parts;
-    if (parts.drag.justEnded) return;
+    if (parts.drag.justEnded || parts.editor.formOpen) return;
     if (this.fireAppointment(parts.appointmentDblClick, piece, e)) void parts.editor.openForm(piece.item);
   }
 
   /** A double click (or Enter) on cells: the event, then the form for a new appointment there (the selection when the cell is in it). */
   private openCell(place: CellPlace, e: MouseEvent | KeyboardEvent): void {
     const parts = this.parts;
+    // A finger's double tap is two taps and a double click: one form.
+    if (parts.editor.formOpen) return;
     if (!this.fireCell(parts.cellDblClick, place, e) || !parts.editor.canAdd()) return;
     const model = parts.model;
     const selection = model.selection();
@@ -2020,4 +2529,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     for (let i = 0; i < slots.length; i++) if (slots[i].minutes <= minutes) slot = i;
     return { column: column.index, slot };
   }
+}
+
+/** Whether the screen's pointer is a finger. */
+function coarsePointer(): boolean {
+  return typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
 }

@@ -81,6 +81,8 @@ export function AppointmentBox<T>(props: Props<T>) {
     return group ? { ...group.values } : null;
   };
   const resizable = () => !piece.draft && host.canResize(piece.item) && (isTimed(piece) || isLine(piece) || !piece.timed);
+  /** The handles a finger resizes the appointment it lifted by. */
+  const grips = () => host.touchSelected(piece.item);
   const press = (mode: DragMode) => (e: PointerEvent) => {
     // A press on an appointment selects no cells.
     e.stopPropagation();
@@ -99,6 +101,8 @@ export function AppointmentBox<T>(props: Props<T>) {
       data-past={() => (host.dimPast() && piece.end.getTime() <= host.model.state.now) || null}
       data-disabled={() => piece.disabled || null}
       data-draft={() => piece.draft || null}
+      data-lifted={() => (piece.draft && host.liftedByTouch()) || null}
+      data-selected={() => (!piece.draft && host.touchSelected(piece.item)) || null}
       data-invalid={() => piece.invalid || null}
       data-copy={() => (piece.draft && piece.id.includes('~copy')) || null}
       data-saving={() => host.isSaving(piece.item) || null}
@@ -115,7 +119,9 @@ export function AppointmentBox<T>(props: Props<T>) {
       onkeydown={(e: KeyboardEvent) => host.appointmentKey(piece, e)}
       onfocusout={(e: FocusEvent) => host.appointmentBlur(piece, e)}
     >
-      <div class="mx-scheduler__resize" data-edge="start" aria-hidden="true" x-display={() => resizable() && !piece.before} onpointerdown={press('start')} />
+      <div class="mx-scheduler__resize" data-edge="start" aria-hidden="true" x-display={() => resizable() && !piece.before} onpointerdown={press('start')}>
+        <span class="mx-scheduler__resize-grip" x-display={grips} />
+      </div>
       {host.template() ? (
         <div class="mx-scheduler__appointment-content">
           {host.template()!(context())}
@@ -137,7 +143,9 @@ export function AppointmentBox<T>(props: Props<T>) {
         data-mark={() => (piece.exception ? 'exception' : 'series')}
         x-display={() => host.recurrenceMarks() && (piece.series || piece.exception)}
       />
-      <div class="mx-scheduler__resize" data-edge="end" aria-hidden="true" x-display={() => resizable() && !piece.after} onpointerdown={press('end')} />
+      <div class="mx-scheduler__resize" data-edge="end" aria-hidden="true" x-display={() => resizable() && !piece.after} onpointerdown={press('end')}>
+        <span class="mx-scheduler__resize-grip" x-display={grips} />
+      </div>
     </div>
   );
 }

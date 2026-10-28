@@ -15,6 +15,9 @@ import { formItems } from './form-items';
 import type { ResourceKind } from './model/ResourceKind';
 import type { Resources } from './model/Resources';
 import { Stack } from '../layout/Stack';
+import { ActionSheet } from '../actionsheet/ActionSheet';
+import { BottomSheet } from '../sheet/BottomSheet';
+import type { SchedulerPresentationKind } from './scheduler-presentation-kind';
 import type { AppointmentAddedEventArgs } from './appointment-added-event-args';
 import type { AppointmentAddingEventArgs } from './appointment-adding-event-args';
 import type { AppointmentDeletedEventArgs } from './appointment-deleted-event-args';
@@ -109,6 +112,8 @@ export interface EditorHost<T> {
   keys(): SchedulerKeys;
   /** Ids of the appointments being saved. */
   saving: string[];
+  /** How the scheduler shows itself now: on a phone the form and the tooltip come up from the bottom. */
+  presentation(): SchedulerPresentationKind;
 }
 
 /**
@@ -123,6 +128,8 @@ export class AppointmentEditor<T> implements DragHost<T> {
   private readonly tooltipState = reactive({ item: null }) as TooltipState<T>;
   /** The id of the appointment whose tooltip is showing ('' for none). */
   private readonly opened = reactive({ id: '' });
+  private formShown = false;
+  private tooltipSheet: ActionSheet | BottomSheet | null = null;
   /** Moving or resizing by the keys: the draft so far, and the group it left and the one it is in (-1 without groups). */
   private keyDraft: { mode: DragMode; draft: Draft<T>; from: number; group: number } | null = null;
   private readonly series: SeriesEdit<T>;
@@ -350,6 +357,11 @@ export class AppointmentEditor<T> implements DragHost<T> {
 
   // The form.
 
+  /** The appointment form is open. */
+  get formOpen(): boolean {
+    return this.formShown;
+  }
+
   /** Opens the form for an appointment, or for a new one at `cell`; resolves when it closes. */
   async openForm(item: T | null, cell: SchedulerCell | null = null): Promise<void> {
     const { scheduler } = this.host;
@@ -389,12 +401,18 @@ export class AppointmentEditor<T> implements DragHost<T> {
     const order = ['text', 'start', 'end', 'timeZone', 'allDay', ...kinds.map((k) => k.field), 'recurrenceRule', 'description'];
     const items = formItems(settings.items ?? order, builtIns, context);
     const title = settings.title;
-    const form = new MxForm({
-      title: () => (title === undefined ? t(item ? 'schedulerEditAppointment' : 'schedulerNewAppointment') : typeof title === 'function' && title.length > 0 ? (title as (f: AppointmentFormContext<T>) => string)(context) : (read(title as Bind<string>) ?? '')),
-      width: settings.width ?? 'var(--_scheduler-editor-width)',
-      modal: true,
-    });
-    form.class.add('mx-scheduler__form');
+    const titleText = () =>
+      title === undefined
+        ? t(item ? 'schedulerEditAppointment' : 'schedulerNewAppointment')
+        : typeof title === 'function' && title.length > 0
+          ? (title as (f: AppointmentFormContext<T>) => string)(context)
+          : (read(title as Bind<string>) ?? '');
+    // On a phone the form is a sheet from the bottom, as tall as the screen allows.
+    const phone = this.host.presentation() === 'phone';
+    const form = phone
+      ? new BottomSheet({ title: titleText, detents: ['full'], showClose: true, dragContent: false })
+      : new MxForm({ title: titleText, width: settings.width ?? 'var(--_scheduler-editor-width)', modal: true });
+    form.class.add(phone ? 'mx-scheduler__form-sheet' : 'mx-scheduler__form');
     const e: FormOpeningEventArgs<T> = { appointment: item, data, items, form, cancel: false, source: scheduler };
     this.host.events.formOpening.fire(e);
     if (e.cancel) {
@@ -402,14 +420,20 @@ export class AppointmentEditor<T> implements DragHost<T> {
       return;
     }
     let layout: FormLayout<AppointmentFormData> | null = null;
+    let result = 'cancel';
+    const close = (how: string) => {
+      result = how;
+      if (form instanceof MxForm) form.close(how);
+      else form.close('button');
+    };
     const save = async () => {
-      if (layout && (await layout.validate({ focus: true })).valid) form.close('ok');
+      if (layout && (await layout.validate({ focus: true })).valid) close('ok');
     };
     form.content = (
       <FormLayout<AppointmentFormData>
         data={data}
         items={e.items}
-        columns={settings.columns ?? 2}
+        columns={settings.columns ?? (phone ? 1 : 2)}
         minColumnWidth={settings.minColumnWidth ?? ''}
         labelMode={settings.labelMode}
         ref={(c: FormLayout<AppointmentFormData>) => (layout = c)}
@@ -424,15 +448,25 @@ export class AppointmentEditor<T> implements DragHost<T> {
           text={() => t('schedulerDelete')}
           tone="danger"
           visible={() => !!item && this.canDelete(item)}
-          onclick={() => form.close('delete')}
+          onclick={() => close('delete')}
         />
         <Button text={() => t('schedulerSave')} tone="accent" ref={(b: Button) => (ok = b)} onclick={() => void save()} />
-        <Button text={() => t('cancel')} ref={(b: Button) => (cancel = b)} onclick={() => form.close('cancel')} />
+        <Button text={() => t('cancel')} ref={(b: Button) => (cancel = b)} onclick={() => close('cancel')} />
       </Stack>
     );
-    form.acceptButton = ok;
-    form.cancelButton = cancel;
-    const result = await form.showDialog(scheduler);
+    this.formShown = true;
+    try {
+      if (form instanceof MxForm) {
+        form.acceptButton = ok;
+        form.cancelButton = cancel;
+        result = String((await form.showDialog(scheduler)) ?? 'cancel');
+      } else {
+        const closed = new Promise<void>((done) => form.onClosed(() => done()));
+        if (form.show(scheduler)) await closed;
+      }
+    } finally {
+      this.formShown = false;
+    }
     if (result === 'delete' && item) {
       await this.remove(item, true);
       return;
@@ -666,9 +700,9 @@ export class AppointmentEditor<T> implements DragHost<T> {
   // The tooltip.
 
   showTooltip(item: T, anchor: HTMLElement): void {
-    const popup = this.tooltip();
     this.tooltipState.item = item;
-    popup.open(anchor);
+    if (this.host.presentation() === 'phone') this.showSheet(item);
+    else this.tooltip().open(anchor);
     this.opened.id = this.host.model.idOf(item);
   }
 
@@ -679,17 +713,56 @@ export class AppointmentEditor<T> implements DragHost<T> {
 
   hideTooltip(): void {
     if (this.tooltipPopup?.isOpen) this.tooltipPopup.close();
+    if (this.tooltipSheet?.isOpen) this.tooltipSheet.close();
   }
 
-  private tooltip(): Popup {
-    if (this.tooltipPopup) return this.tooltipPopup;
-    const popup = new Popup();
-    popup.matchWidth = false;
-    popup.class.add('mx-scheduler__tooltip-popup');
+  /**
+   * A phone's tooltip: an action sheet from the bottom with the appointment's text, its time and how
+   * it repeats, and Edit and Delete; with a tooltip template, a sheet with the template in it.
+   */
+  private showSheet(item: T): void {
+    this.tooltipSheet?.close();
     const view = this.host.view;
+    const template = view.tooltipTemplate();
+    const t = (key: keyof UiStrings) => this.host.text(key);
+    let sheet: ActionSheet | BottomSheet;
+    if (template) {
+      sheet = new BottomSheet({ title: () => this.textOf(item), detents: ['fit', 'full'] });
+      sheet.content = <div class="mx-scheduler__tooltip-own">{template(this.tooltipContext(() => sheet.close()))}</div>;
+    } else {
+      const repeats = view.recurrenceText(item);
+      sheet = new ActionSheet({
+        title: () => this.textOf(item),
+        message: () => [this.timeText(item), repeats && this.host.text('schedulerRepeats', { rule: repeats })].filter(Boolean).join(' · '),
+        items: [
+          { text: () => t('schedulerEdit'), visible: () => this.canEdit(item), click: () => void this.openForm(item) },
+          { text: () => t('schedulerDelete'), tone: 'danger', visible: () => this.canDelete(item), click: () => void this.remove(item, true) },
+        ],
+      });
+    }
+    sheet.class.add('mx-scheduler__tooltip-sheet');
+    sheet.onClosed(() => {
+      if (this.tooltipSheet !== sheet) return;
+      this.tooltipSheet = null;
+      this.opened.id = '';
+    });
+    this.tooltipSheet = sheet;
+    sheet.show(this.host.scheduler);
+  }
+
+  /** An appointment's time as its tooltip says it. */
+  private timeText(item: T): string {
+    const view = this.host.view;
+    const time = view.model.timeOf(item);
+    if (!time) return '';
+    return time.allDay ? view.format.range('day', time.start, time.end) : `${view.format.fullDate(time.start)}, ${view.format.timeRange(time.start, time.end)}`;
+  }
+
+  /** What a tooltip template is given, for the appointment shown; `close` closes what it is in. */
+  private tooltipContext(close: () => void): TooltipTemplateContext<T> {
     const state = this.tooltipState;
     const editor = this;
-    const context: TooltipTemplateContext<T> = {
+    return {
       get appointment() {
         return state.item;
       },
@@ -697,9 +770,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
         return state.item ? editor.textOf(state.item) : '';
       },
       get time() {
-        const time = state.item ? view.model.timeOf(state.item) : null;
-        if (!time) return '';
-        return time.allDay ? view.format.range('day', time.start, time.end) : `${view.format.fullDate(time.start)}, ${view.format.timeRange(time.start, time.end)}`;
+        return state.item ? editor.timeText(state.item) : '';
       },
       get canEdit() {
         return !!state.item && editor.canEdit(state.item);
@@ -712,11 +783,21 @@ export class AppointmentEditor<T> implements DragHost<T> {
       },
       remove: () => {
         const item = state.item;
-        popup.close();
+        close();
         if (item) void this.remove(item, true);
       },
-      close: () => popup.close(),
+      close,
     };
+  }
+
+  private tooltip(): Popup {
+    if (this.tooltipPopup) return this.tooltipPopup;
+    const popup = new Popup();
+    popup.matchWidth = false;
+    popup.class.add('mx-scheduler__tooltip-popup');
+    const view = this.host.view;
+    const state = this.tooltipState;
+    const context = this.tooltipContext(() => popup.close());
     popup.controls.add(
       <>
         {view.tooltipTemplate() ? (

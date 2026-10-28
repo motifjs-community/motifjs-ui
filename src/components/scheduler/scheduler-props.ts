@@ -34,6 +34,18 @@ import type { SeriesAskingEventArgs } from './series-asking-event-args';
 import type { SeriesEditMode } from './series-edit-mode';
 import type { ViewChangedEventArgs } from './view-changed-event-args';
 import type { ViewChangingEventArgs } from './view-changing-event-args';
+import type { SchedulerPresentation } from './scheduler-presentation';
+import type { SchedulerTabletWhen } from './scheduler-tablet-when';
+import type { SchedulerPresentationChangingEventArgs } from './presentation-changing-event-args';
+import type { SchedulerPresentationChangedEventArgs } from './presentation-changed-event-args';
+import type { TimeZoomChangingEventArgs } from './time-zoom-changing-event-args';
+import type { TimeZoomChangedEventArgs } from './time-zoom-changed-event-args';
+import type { ICalendarExportingEventArgs } from './icalendar-exporting-event-args';
+import type { ICalendarExportedEventArgs } from './icalendar-exported-event-args';
+import type { ICalendarImportingEventArgs } from './icalendar-importing-event-args';
+import type { ICalendarImportedEventArgs } from './icalendar-imported-event-args';
+import type { PrintingEventArgs } from './printing-event-args';
+import type { PrintedEventArgs } from './printed-event-args';
 
 /** Props of `Scheduler`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
 export interface SchedulerProps<T> extends ControlProps, SchedulerTemplates<T> {
@@ -137,6 +149,28 @@ export interface SchedulerProps<T> extends ControlProps, SchedulerTemplates<T> {
   minDuration?: Bind<number>;
   /** A click on an appointment shows its tooltip (text, time, Edit, Delete). Default `true`. */
   tooltip?: Bind<boolean>;
+  /**
+   * How it shows itself: `'auto'` by its own width (under `phoneWidth` as on a phone, under
+   * `tabletWidth` as on a tablet, else as on a desktop), or always one way. The appointments, the
+   * views and the date stay the same.
+   */
+  presentation?: Bind<SchedulerPresentation>;
+  /** Under this width, in pixels of the scheduler, `'auto'` shows it as on a tablet (on a touch screen, see `tabletWhen`). Default 1024. */
+  tabletWidth?: Bind<number>;
+  /** Under this width, in pixels of the scheduler, `'auto'` shows it as on a phone, whatever the pointer. Default 560. */
+  phoneWidth?: Bind<number>;
+  /** When `'auto'` shows it as on a tablet: `'touch'`, under `tabletWidth` on a screen whose pointer is a finger; `'width'`, under `tabletWidth` whatever the pointer. Default `'touch'`. */
+  tabletWhen?: Bind<SchedulerTabletWhen>;
+  /** The view (by name or type) it shows when it turns into a phone, if it has one: the agenda, else a day. `null` keeps the view. Default `'agenda'`. */
+  phoneView?: Bind<string | null>;
+  /** The view (by name or type) it shows when it turns into a tablet, if it has one. `null` (default) keeps the view. */
+  tabletView?: Bind<string | null>;
+  /** A finger swiping sideways over the view goes to the next or the previous days. Default `true`. */
+  swipeNavigation?: Bind<boolean>;
+  /** Two fingers zoom the time scale: the hours of the day views, the cells of a timeline. Default `true`. */
+  pinchZoom?: Bind<boolean>;
+  /** How far the time scale is zoomed: 1 as the design language sizes it, from 0.5 to 4. Two fingers change it. Default 1. */
+  timeZoom?: Bind<number>;
   onViewChanging?: (e: ViewChangingEventArgs<T>) => void;
   onViewChanged?: (e: ViewChangedEventArgs<T>) => void;
   onDateChanging?: (e: DateChangingEventArgs<T>) => void;
@@ -164,4 +198,14 @@ export interface SchedulerProps<T> extends ControlProps, SchedulerTemplates<T> {
   onResizeEnd?: (e: DragEventArgs<T>) => void;
   onSeriesAsking?: (e: SeriesAskingEventArgs<T>) => void;
   onSeriesAnswered?: (e: SeriesAnsweredEventArgs<T>) => void;
+  onPresentationChanging?: (e: SchedulerPresentationChangingEventArgs<T>) => void;
+  onPresentationChanged?: (e: SchedulerPresentationChangedEventArgs<T>) => void;
+  onTimeZoomChanging?: (e: TimeZoomChangingEventArgs<T>) => void;
+  onTimeZoomChanged?: (e: TimeZoomChangedEventArgs<T>) => void;
+  onICalendarExporting?: (e: ICalendarExportingEventArgs<T>) => void;
+  onICalendarExported?: (e: ICalendarExportedEventArgs<T>) => void;
+  onICalendarImporting?: (e: ICalendarImportingEventArgs<T>) => void;
+  onICalendarImported?: (e: ICalendarImportedEventArgs<T>) => void;
+  onPrinting?: (e: PrintingEventArgs<T>) => void;
+  onPrinted?: (e: PrintedEventArgs<T>) => void;
 }

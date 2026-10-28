@@ -540,6 +540,12 @@
     --mx-scheduler-timeline-lane-size: 1.75rem;
     --mx-scheduler-timeline-row-min-height: 3rem;
     --mx-scheduler-agenda-time-width: 9rem;
+    --mx-scheduler-phone-bar-size: lg;
+    --mx-scheduler-grip-ring-mix: 100;
+    --mx-scheduler-touch-lane-size: 1.75rem;
+    --mx-scheduler-phone-ruler-width: 3rem;
+    --mx-scheduler-phone-column-min-width: 2.5rem;
+    --mx-scheduler-phone-timeline-resource-width: 6rem;
     --mx-scheduler-appointment-tint: 22;
     --mx-scheduler-appointment-tint-hover: 32;
     --mx-scheduler-appointment-past-tint: 8;
@@ -591,6 +597,12 @@
     --mx-scheduler-form-delete-variant: outline;
     --mx-scheduler-tooltip-popup-surface-padding-inline: initial;
     --mx-scheduler-more-popup-surface-padding-inline: initial;
+    --mx-scheduler-today-icon-button-variant: ghost;
+    --mx-scheduler-view-menu-button-variant: ghost;
+    --mx-scheduler-scheduler-print-radius: 0px;
+    --mx-scheduler-scheduler-print-border-width: 0px;
+    --mx-scheduler-bar-phone-border-bottom-width: initial;
+    --mx-scheduler-bar-phone-bg: initial;
     --mx-scheduler-day-number-scale-min-width: 1.5rem;
     --mx-scheduler-day-number-scale-height: 1.5rem;
     --mx-scheduler-day-number-agenda-min-width: 2rem;
@@ -615,6 +627,8 @@
     --mx-scheduler-appointment-saving-cursor: progress;
     --mx-scheduler-appointment-line-before-radius-start: 0px;
     --mx-scheduler-appointment-line-after-radius-end: 0px;
+    --mx-scheduler-appointment-lifted-opacity: 1;
+    --mx-scheduler-appointment-lifted-scale: 1.02;
     --mx-scheduler-appointment-content-gap: 0.125rem;
     --mx-scheduler-tooltip-width: 18rem;
     --mx-scheduler-series-mark-display: block;
@@ -653,6 +667,15 @@
     --mx-scheduler-agenda-dot-size: 0.625rem;
     --mx-scheduler-agenda-dot-width: initial;
     --mx-scheduler-agenda-dot-height: initial;
+    --mx-scheduler-resize-grip-width: 0.75rem;
+    --mx-scheduler-resize-grip-height: 0.75rem;
+    --mx-scheduler-resize-grip-active-scale: 1.25;
+    --mx-scheduler-resize-grip-shadow: initial;
+    --mx-scheduler-swipe-edge-width: 2.5rem;
+    --mx-scheduler-swipe-edge-height: 2.5rem;
+    --mx-scheduler-swipe-icon-display: block;
+    --mx-scheduler-swipe-icon-icon: var(--mx-icon-chevron-end);
+    --mx-scheduler-swipe-icon-previous-icon: var(--mx-icon-chevron-start);
     --mx-sheet-inset: 0px;
     --mx-sheet-peek-height: 6rem;
     --mx-sheet-close-button-variant: ghost;
@@ -1675,6 +1698,8 @@
     --mx-scheduler-resize-size: var(--mx-space-2);
     --mx-scheduler-resize-size-touch: var(--mx-space-4);
     --mx-scheduler-state-inset: var(--mx-space-2);
+    --mx-scheduler-touch-target: var(--mx-control-height-lg);
+    --mx-scheduler-swipe-inset: var(--mx-space-3);
     --mx-scheduler-appointment-top-width: var(--mx-border-width-1);
     --mx-scheduler-appointment-end-width: var(--mx-border-width-1);
     --mx-scheduler-appointment-bottom-width: var(--mx-border-width-1);
@@ -1686,6 +1711,8 @@
     --mx-scheduler-title-button-face-font-weight: var(--mx-font-weight-semibold);
     --mx-scheduler-tooltip-popup-surface-padding-block: var(--mx-space-1);
     --mx-scheduler-more-popup-surface-padding-block: var(--mx-space-1);
+    --mx-scheduler-tooltip-sheet-body-padding: var(--mx-space-2);
+    --mx-scheduler-form-sheet-body-padding: var(--mx-space-4);
     --mx-scheduler-scheduler-border-width: var(--mx-border-width-1);
     --mx-scheduler-scheduler-border-color: var(--mx-color-stroke-card);
     --mx-scheduler-scheduler-radius: var(--mx-radius-md);
@@ -1843,6 +1870,13 @@
     --mx-scheduler-agenda-text-font-weight: var(--mx-font-weight-medium);
     --mx-scheduler-agenda-empty-padding: var(--mx-space-6);
     --mx-scheduler-agenda-empty-font-size: var(--mx-font-size-body);
+    --mx-scheduler-resize-grip-radius: var(--mx-radius-full);
+    --mx-scheduler-resize-grip-border-width: var(--mx-border-width-2);
+    --mx-scheduler-swipe-edge-radius: var(--mx-radius-full);
+    --mx-scheduler-swipe-edge-border-width: var(--mx-border-width-1);
+    --mx-scheduler-swipe-edge-border-color: var(--mx-color-stroke-card);
+    --mx-scheduler-swipe-icon-width: var(--mx-icon-size-md);
+    --mx-scheduler-swipe-icon-height: var(--mx-icon-size-md);
     --mx-sheet-font-family: var(--mx-font-family-sans);
     --mx-sheet-top-gap: var(--mx-space-10);
     --mx-sheet-handle-area: var(--mx-space-6);
@@ -2729,6 +2763,7 @@
     --mx-recurrence-editor-day-button-face-outline-toggled-hover-bg: var(--mx-color-accent-solid-hover);
     --mx-recurrence-editor-days-label-color: var(--mx-color-fg-primary);
     --mx-recurrence-editor-summary-color: var(--mx-color-fg-secondary);
+    --mx-scheduler-grip-ring: var(--mx-color-accent-solid);
     --mx-scheduler-appointment-default: var(--mx-color-accent-solid);
     --mx-scheduler-appointment-surface: var(--mx-color-bg-surface);
     --mx-scheduler-appointment-foreground: var(--mx-color-fg-primary);
@@ -2763,6 +2798,8 @@
     --mx-scheduler-appointment-focus-outline-color: var(--mx-focus-ring-color);
     --mx-scheduler-appointment-draft-shadow: var(--mx-elevation-popup);
     --mx-scheduler-appointment-invalid-outline-color: var(--mx-color-danger-solid);
+    --mx-scheduler-appointment-lifted-shadow: var(--mx-elevation-dialog);
+    --mx-scheduler-appointment-selected-shadow: var(--mx-elevation-card);
     --mx-scheduler-tooltip-detail-color: var(--mx-color-fg-secondary);
     --mx-scheduler-tooltip-repeat-color: var(--mx-color-fg-secondary);
     --mx-scheduler-more-color: var(--mx-color-fg-secondary);
@@ -2798,6 +2835,12 @@
     --mx-scheduler-agenda-time-color: var(--mx-color-fg-secondary);
     --mx-scheduler-agenda-text-color: var(--mx-color-fg-primary);
     --mx-scheduler-agenda-empty-color: var(--mx-color-fg-secondary);
+    --mx-scheduler-resize-grip-bg: var(--mx-color-bg-surface);
+    --mx-scheduler-swipe-edge-bg: var(--mx-color-bg-surface);
+    --mx-scheduler-swipe-edge-color: var(--mx-color-fg-secondary);
+    --mx-scheduler-swipe-edge-shadow: var(--mx-elevation-card);
+    --mx-scheduler-swipe-edge-ready-bg: var(--mx-color-accent-solid);
+    --mx-scheduler-swipe-edge-ready-color: var(--mx-color-accent-on-solid);
     --mx-sheet-panel-bg: var(--mx-color-bg-surface);
     --mx-sheet-panel-shadow: var(--mx-elevation-dialog);
     --mx-sheet-panel-color: var(--mx-color-fg-primary);
@@ -3178,6 +3221,7 @@
     --mx-scheduler-tooltip-button-variant: solid;
     --mx-scheduler-form-delete-variant: solid;
     --mx-scheduler-cell-today-bg: initial;
+    --mx-scheduler-appointment-lifted-scale: initial;
     --mx-scheduler-group-header-inner-color: initial;
     --mx-scheduler-group-swatch-width: 0.625rem;
     --mx-scheduler-group-swatch-height: 0.625rem;
@@ -3185,6 +3229,8 @@
     --mx-scheduler-agenda-dot-width: 0.25rem;
     --mx-scheduler-agenda-dot-height: 1.25rem;
     --mx-scheduler-agenda-dot-size: initial;
+    --mx-scheduler-resize-grip-width: 0.625rem;
+    --mx-scheduler-resize-grip-height: 0.625rem;
     --mx-sheet-list-box-box-disabled-shadow: 0px 0px 0px 0px rgb(0 0 0 / 0);
     --mx-slider-tick-length: 0.25rem;
     --mx-slider-tick-label-room: 16px;
@@ -3353,6 +3399,9 @@
     --mx-scheduler-agenda-weekday-font-size: var(--mx-font-size-body);
     --mx-scheduler-agenda-dot-radius: var(--mx-radius-sm);
     --mx-scheduler-agenda-text-font-weight: var(--mx-font-weight-regular);
+    --mx-scheduler-resize-grip-border-width: var(--mx-border-width-1);
+    --mx-scheduler-swipe-edge-radius: var(--mx-radius-md);
+    --mx-scheduler-swipe-edge-border-color: var(--mx-color-stroke-surface);
     --mx-slider-active-disabled-bg: var(--mx-color-fill-accent-disabled);
     --mx-slider-core-disabled-bg: var(--mx-color-fill-accent-disabled);
     --mx-slider-bubble-border-width: var(--mx-border-width-1);
@@ -3429,6 +3478,8 @@
     --mx-listbox-field-box-invalid-hover-bg: var(--mx-color-bg-card);
     --mx-listbox-field-box-invalid-focus-bg: var(--mx-color-bg-card);
     --mx-lookup-header-color: var(--mx-color-fg-primary);
+    --mx-scheduler-appointment-lifted-shadow: var(--mx-elevation-popup);
+    --mx-scheduler-swipe-edge-shadow: var(--mx-elevation-popup);
     --mx-slider-bubble-color: var(--mx-color-fg-primary);
     --mx-slider-bubble-bg: var(--mx-color-bg-surface);
     --mx-slider-bubble-shadow: var(--mx-elevation-tooltip);
@@ -3530,6 +3581,8 @@
     --mx-scheduler-group-swatch-height: 0.625rem;
     --mx-scheduler-tooltip-resource-label-font-weight: initial;
     --mx-scheduler-agenda-dot-size: 0.75rem;
+    --mx-scheduler-swipe-edge-border-width: initial;
+    --mx-scheduler-swipe-edge-border-color: initial;
     --mx-sheet-list-box-box-disabled-shadow: 0px 0px 0px 0px rgb(0 0 0 / 0);
     --mx-switch-track-height-md: 1.375rem;
     --mx-tabdocs-indicator-height: 3px;
@@ -3663,6 +3716,9 @@
     --mx-listbox-field-box-focus-bg: var(--mx-color-fill-control-default);
     --mx-listbox-field-box-invalid-focus-bg: var(--mx-color-fill-control-default);
     --mx-listbox-field-frame-focus-border-color: var(--mx-color-accent-solid);
+    --mx-scheduler-appointment-lifted-shadow: var(--mx-elevation-popup);
+    --mx-scheduler-swipe-edge-bg: var(--mx-color-accent-subtle);
+    --mx-scheduler-swipe-edge-shadow: var(--mx-elevation-popup);
     --mx-recurrence-editor-day-button-face-toggled-bg: var(--mx-color-selection-bg);
     --mx-recurrence-editor-day-button-face-toggled-color: var(--mx-color-selection-fg);
     --mx-recurrence-editor-day-button-face-toggled-hover-bg: var(--mx-color-selection-bg);
@@ -3670,6 +3726,7 @@
     --mx-recurrence-editor-day-button-face-outline-toggled-color: var(--mx-color-selection-fg);
     --mx-recurrence-editor-day-button-face-outline-toggled-border-color: var(--mx-color-selection-bg);
     --mx-recurrence-editor-day-button-face-outline-toggled-hover-bg: var(--mx-color-selection-bg);
+    --mx-scheduler-swipe-edge-color: var(--mx-color-accent-on-subtle);
   }
 }
 
@@ -3700,12 +3757,16 @@
     --mx-scheduler-timeline-cell-width: 4.5rem;
     --mx-scheduler-timeline-lane-size: 2rem;
     --mx-scheduler-timeline-row-min-height: 3.25rem;
+    --mx-scheduler-bar-phone-border-bottom-width: 0px;
+    --mx-scheduler-appointment-lifted-scale: 1.03;
     --mx-scheduler-group-header-inner-color: initial;
     --mx-scheduler-group-header-border-bottom-width: initial;
     --mx-scheduler-resource-swatch-width: 0.625rem;
     --mx-scheduler-resource-swatch-height: 0.625rem;
     --mx-scheduler-tooltip-resource-label-font-weight: initial;
     --mx-scheduler-resource-cell-inner-color: initial;
+    --mx-scheduler-swipe-edge-border-width: initial;
+    --mx-scheduler-swipe-edge-border-color: initial;
     --mx-scheduler-unavailable-display: initial;
     --mx-scheduler-unavailable-image: initial;
     --mx-treeview-spinner-duration: 960ms;
@@ -3754,11 +3815,16 @@
     --mx-listbox-field-box-invalid-hover-bg: var(--mx-color-fill-control-tertiary);
     --mx-listbox-field-box-invalid-focus-bg: var(--mx-color-fill-control-tertiary);
     --mx-listbox-field-frame-focus-border-color: var(--mx-color-accent-solid);
+    --mx-scheduler-appointment-lifted-shadow: var(--mx-elevation-window);
+    --mx-scheduler-appointment-selected-shadow: var(--mx-elevation-popup);
     --mx-scheduler-group-header-color: var(--mx-color-fg-secondary);
     --mx-scheduler-resource-cell-color: var(--mx-color-fg-secondary);
     --mx-scheduler-scale-upper-color: var(--mx-color-fg-secondary);
     --mx-scheduler-agenda-resource-color: var(--mx-color-fg-secondary);
     --mx-scheduler-agenda-weekday-color: var(--mx-color-fg-secondary);
+    --mx-scheduler-resize-grip-shadow: var(--mx-elevation-card);
+    --mx-scheduler-swipe-edge-shadow: var(--mx-elevation-window);
+    --mx-scheduler-swipe-edge-ready-bg: var(--mx-color-accent-subtle);
     --mx-tabdocs-menu-search-box-bg: var(--mx-color-fill-control-tertiary);
     --mx-recurrence-editor-day-button-face-toggled-bg: var(--mx-color-selection-bg);
     --mx-recurrence-editor-day-button-face-toggled-color: var(--mx-color-selection-fg);
@@ -3766,6 +3832,7 @@
     --mx-recurrence-editor-day-button-face-outline-toggled-bg: var(--mx-color-selection-bg);
     --mx-recurrence-editor-day-button-face-outline-toggled-color: var(--mx-color-selection-fg);
     --mx-recurrence-editor-day-button-face-outline-toggled-hover-bg: var(--mx-color-selection-bg);
+    --mx-scheduler-swipe-edge-ready-color: var(--mx-color-accent-on-subtle);
   }
 }
 
@@ -3984,6 +4051,7 @@
     --mx-recurrence-editor-day-button-variant: outline;
     --mx-recurrence-editor-day-button-size: md;
     --mx-scheduler-timeline-resource-width: 11rem;
+    --mx-scheduler-phone-bar-size: md;
     --mx-scheduler-appointment-tint: 100;
     --mx-scheduler-appointment-tint-hover: 100;
     --mx-scheduler-appointment-past-tint: 100;
@@ -3999,10 +4067,12 @@
     --mx-scheduler-tooltip-popup-surface-padding-inline: 0px;
     --mx-scheduler-more-popup-surface-padding-block: 0px;
     --mx-scheduler-more-popup-surface-padding-inline: 0px;
+    --mx-scheduler-bar-phone-border-bottom-width: 0px;
     --mx-scheduler-day-number-agenda-min-width: 2.5rem;
     --mx-scheduler-day-number-agenda-height: 2.5rem;
     --mx-scheduler-cell-blocked-bg: initial;
     --mx-scheduler-cell-today-bg: initial;
+    --mx-scheduler-appointment-lifted-scale: 1.03;
     --mx-scheduler-group-header-padding: initial;
     --mx-scheduler-group-header-border-bottom-width: initial;
     --mx-scheduler-group-swatch-width: 0.625rem;
@@ -4014,6 +4084,10 @@
     --mx-scheduler-agenda-group-first-border-top-width: initial;
     --mx-scheduler-agenda-weekday-text-transform: uppercase;
     --mx-scheduler-agenda-dot-size: 0.75rem;
+    --mx-scheduler-swipe-edge-width: 3rem;
+    --mx-scheduler-swipe-edge-height: 3rem;
+    --mx-scheduler-swipe-edge-border-width: initial;
+    --mx-scheduler-swipe-edge-border-color: initial;
     --mx-scheduler-series-mark-display: initial;
     --mx-scheduler-series-mark-width: initial;
     --mx-scheduler-series-mark-margin-start: initial;
@@ -4563,8 +4637,10 @@
     --mx-scheduler-chip-background: var(--mx-color-accent-solid);
     --mx-scheduler-chip-color: var(--mx-color-accent-on-solid);
     --mx-scheduler-scheduler-bg: var(--mx-color-bg-canvas);
+    --mx-scheduler-bar-phone-bg: var(--mx-color-bg-canvas);
     --mx-scheduler-head-bg: var(--mx-color-bg-canvas);
     --mx-scheduler-weekdays-bg: var(--mx-color-bg-canvas);
+    --mx-scheduler-appointment-selected-shadow: var(--mx-elevation-popup);
     --mx-scheduler-more-item-color: var(--mx-color-accent-on-solid);
     --mx-scheduler-more-time-color: var(--mx-color-accent-on-solid);
     --mx-scheduler-resource-cell-bg: var(--mx-color-bg-canvas);
@@ -4572,6 +4648,8 @@
     --mx-scheduler-scale-bg: var(--mx-color-bg-canvas);
     --mx-scheduler-scale-upper-color: var(--mx-color-fg-secondary);
     --mx-scheduler-agenda-weekday-color: var(--mx-color-fg-secondary);
+    --mx-scheduler-swipe-edge-color: var(--mx-color-fg-primary);
+    --mx-scheduler-swipe-edge-shadow: var(--mx-elevation-popup);
     --mx-sheet-panel-bg: var(--mx-color-bg-layer);
     --mx-sheet-panel-shadow: var(--mx-elevation-card);
     --mx-slider-track-disabled-bg: var(--mx-color-fill-control-disabled);
@@ -4651,6 +4729,7 @@
     --mx-menubar-item-open-color: var(--mx-color-selection-fg);
     --mx-progress-rest-bg: var(--mx-color-selection-bg);
     --mx-progress-ring-color: var(--mx-color-selection-bg);
+    --mx-scheduler-swipe-edge-bg: var(--mx-color-bg-container-high);
     --mx-slider-track-bg: var(--mx-color-selection-bg);
     --mx-slider-tick-bg: var(--mx-color-selection-fg);
     --mx-slider-stop-bg: var(--mx-color-selection-fg);

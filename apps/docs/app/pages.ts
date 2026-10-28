@@ -109,6 +109,8 @@ export const GROUPS = [
       { id: 'scheduler-timeline', label: 'Timeline', title: 'Scheduler: Timeline', path: '/scheduler/timeline', related: ['scheduler-resources', 'scheduler-big-data', 'scheduler'] },
       { id: 'scheduler-agenda', label: 'Agenda', title: 'Scheduler: Agenda', path: '/scheduler/agenda', related: ['scheduler', 'scheduler-resources', 'listbox'] },
       { id: 'scheduler-big-data', label: 'Big data', title: 'Scheduler: Big data', path: '/scheduler/big-data', related: ['scheduler-timeline', 'scheduler-resources', 'datagrid'] },
+      { id: 'scheduler-mobile', label: 'Tablet and phone', title: 'Scheduler: Tablet and phone', path: '/scheduler/mobile', related: ['scheduler', 'tabdocs-mobile', 'bottomsheet'] },
+      { id: 'scheduler-icalendar', label: 'iCalendar and print', title: 'Scheduler: iCalendar and print', path: '/scheduler/icalendar', related: ['scheduler-recurrence', 'scheduler', 'scheduler-editing'] },
     ],
   },
   {

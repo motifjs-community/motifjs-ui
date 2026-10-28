@@ -54,6 +54,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   'scheduler-timeline': () => import('../pages/scheduler/SchedulerTimelinePage'),
   'scheduler-agenda': () => import('../pages/scheduler/SchedulerAgendaPage'),
   'scheduler-big-data': () => import('../pages/scheduler/SchedulerBigDataPage'),
+  'scheduler-mobile': () => import('../pages/scheduler/SchedulerMobilePage'),
+  'scheduler-icalendar': () => import('../pages/scheduler/SchedulerICalendarPage'),
   datagrid: () => import('../pages/datagrid/DataGridPage'),
   'datagrid-editing': () => import('../pages/datagrid/DataGridEditingPage'),
   'datagrid-forms': () => import('../pages/datagrid/DataGridFormsPage'),

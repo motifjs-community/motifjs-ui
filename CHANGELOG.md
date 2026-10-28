@@ -1558,6 +1558,70 @@ mentioned further down.
 - Docs pages `/scheduler/timeline`, `/scheduler/agenda`, `/scheduler/big-data`; `e2e/checks/63-scheduler-timeline.mjs`,
   `64-scheduler-agenda.mjs`, `65-scheduler-big-data.mjs` (the numbers against limits).
 
+### Scheduler, milestone 6: tablet, phone, touch, iCalendar and print
+
+- **Presentation by screen, the same model** (as the TabDocumentManager): `presentation: 'auto' | 'desktop' |
+  'tablet' | 'phone'`, `phoneWidth` (560), `tabletWidth` (1024), `tabletWhen` (`'touch'`: under `tabletWidth` only on
+  a screen whose pointer is a finger, `(pointer: coarse)` followed live; `'width'`), `currentPresentation`,
+  `onPresentationChanging` (cancellable) and `onPresentationChanged`. The appointments, views and date stay; only
+  how they show changes.
+- **As on a phone:** `phoneView` (default `'agenda'`, a day when the views have none; `null` keeps the view; going
+  back it shows the view it had, unless the user chose another), `tabletView` (default `null`). The bar is compact:
+  the month as the title (with its year when it is not this year; the calendar opens from it), Today as an icon, one
+  menu of the views; no steps (a swipe and the month's calendar move, as phone calendars do; N and P still work).
+  The tooltip is an `ActionSheet` (the text, the time and how it repeats; Edit, Delete; with a tooltip template a
+  `BottomSheet` holding it), the form a full-height `BottomSheet` in one column (`FormOpeningEventArgs.form` is the
+  sheet there). A narrower ruler and resource column so a week fits; the agenda writes a row's time under its text.
+  Every view works at every size.
+- **Touch** (`SchedulerTouch`, every listener on the scheduler before a finger lands):
+  - a long press lifts an appointment (the `lifted` state) and drags it; let go, it stays selected with a handle in
+    the middle of its start and its end edge (`resize-grip`); a finger on a handle resizes at once; a tap elsewhere
+    puts it down. On another appointment an edge is a long press to move it, not a resize;
+  - `swipeNavigation` (default `true`): a swipe sideways goes to the next or the previous days (mirrored right to
+    left) past a quarter of the view or as a flick; a view that can still scroll that way scrolls first. The view
+    follows the finger and an edge mark (`swipe-edge`) shows where the next days come from, `ready` when letting go
+    moves on;
+  - `pinchZoom` (default `true`) zooms the time scale: the hours of the day
+    views (the time between the fingers stays there) and the cells of a timeline. `timeZoom` (0.5 to 4) is the
+    setting it writes; `onTimeZoomChanging` (cancellable, the page zooms instead) and `onTimeZoomChanged`;
+  - scrolling stays native; no click after a drag or a swipe; a long press opens no page menu; `data-touch` marks the
+    scheduler while a finger is in use, so no hover look stays after a touch (the hover states and rules are written
+    `:where(.mx-scheduler:not([data-touch]))`, the same specificity);
+  - a finger selects one cell; a second tap on it opens the form for a new appointment (a double tap opens one form).
+  - On a touch screen the bar takes the language's large buttons (`phone-bar-size` as on a phone: Material's top app
+    bar takes its 40 px buttons), the agenda rows `touch-target`, the lines of the month and the all-day panel
+    `touch-lane-size`.
+- **iCalendar (RFC 5545):** `exportICalendar({ range: 'visible' | 'all' | { start, end }, appointments, name })` returns
+  the text; `importICalendar(text)` resolves to `{ added, updated, failed }`. Events `onICalendarExporting`
+  (cancellable, `appointments` changeable), `onICalendarExported`, `onICalendarImporting` (cancellable, the values read
+  changeable), `onICalendarImported`. Written: `UID` (the key), `DTSTAMP`, `DTSTART` / `DTEND` with `TZID` (all-day as
+  `VALUE=DATE`), `SUMMARY`, `DESCRIPTION`, `RRULE` (a wall clock `UNTIL` in UTC), `EXDATE`, `RECURRENCE-ID` (an
+  occurrence changed apart, under its series' UID: the left-out time of the series nearest to it), a `VTIMEZONE` for
+  each zone used. Read: the same, folded lines, escaped text, `TZID` (an IANA name, else the file's `VTIMEZONE`, as
+  Windows zone names), UTC and floating times, `DURATION`, a cancelled occurrence left out of its series. Import
+  goes through the editor and the store: `onAppointmentAdding` first, a data source gets the adds through its
+  adapter; an event whose UID is an appointment's key changes it.
+- **The iCalendar part** (`src/parts/icalendar/`, DOM-free, exported): `parseICalendar`, `writeICalendar`,
+  `timeZoneLines` (a zone's `VTIMEZONE` from `Intl`: a yearly `RRULE` when every change follows one, else `RDATE`s),
+  `icalendarMoment`, and the types `ICalendar`, `ICalendarEvent`, `ICalendarDate`, `ICalendarProperty`,
+  `ICalendarTimeZone`, `ICalendarObservance`, `ICalendarWriteOptions`.
+- **Print:** a print stylesheet and `print()` (`onPrinting` cancellable, `onPrinted`). On paper (the browser's print
+  too: `beforeprint`) the scheduler is built whole (a virtual view turns standard), nothing scrolls, every hour, row
+  and column shows, a week of the month, a timeline row, an agenda day and an appointment are not split between
+  pages, the colours are kept (`print-color-adjust: exact`), the bar and the now line are left out. `print()` prints
+  this scheduler alone (`data-mx-print-one` on the page while the dialog is open).
+- Units `resize-grip` (`active`; turned down the side of a bar), `swipe-edge` (`ready`), `swipe-icon` (`previous`,
+  `ready`); new states: the appointment's `lifted`, `selected`, `print`, the bar's `phone`, the scheduler's `print`.
+  Plain tokens `touch-target`, `touch-lane-size`, `phone-ruler-width`, `phone-column-min-width`,
+  `phone-timeline-resource-width`, `phone-bar-size`, `swipe-inset`, `grip-ring`, `grip-ring-mix`. Places
+  `today-icon-button`, `view-menu-button`, `tooltip-sheet`, `form-sheet`.
+- Docs pages `/scheduler/mobile` (presentations, a phone-sized frame, a finger) and `/scheduler/icalendar` (export,
+  import, print); `e2e/checks/66-scheduler-mobile.mjs`, `67-scheduler-icalendar.mjs`.
+- **Memory:** a `Button` disposes its `dropDown` content with itself. Until its popup first opened the content was in
+  no tree, so nothing disposed it: the scheduler's date calendar kept the whole scheduler (its model, every
+  appointment) after the page was left, 13–18 MB a visit on the big-data page. A sweep of every docs page now finds
+  no growth over 0.5 MB a visit.
+
 ### Design languages, step 1: what lets a language change everything
 
 Any design system, or a new version of one, is added as files only and looks like its source.

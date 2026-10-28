@@ -49,6 +49,8 @@ interface Press<T> {
   atDay: Date | null;
   group: number;
   started: boolean;
+  /** A finger pressed it. */
+  touch: boolean;
   touchTimer?: ReturnType<typeof setTimeout>;
 }
 
@@ -78,8 +80,11 @@ export class AppointmentDrag<T> {
     return Date.now() - this.endedAt < 300;
   }
 
-  /** A press on an appointment (or on one of its edges) in a group: it becomes a drag once the pointer moves. */
-  begin(item: T, mode: DragMode, e: PointerEvent, group = -1): void {
+  /**
+   * A press on an appointment (or on one of its edges) in a group: it becomes a drag once the pointer
+   * moves; a finger's once it is held (`now`: a handle, once it moves).
+   */
+  begin(item: T, mode: DragMode, e: PointerEvent, group = -1, now = false): void {
     if (e.button !== 0 || this.press) return;
     const time = this.host.model.timeOf(item);
     if (!time) return;
@@ -97,13 +102,14 @@ export class AppointmentDrag<T> {
       atDay: cell?.day ?? null,
       group,
       started: false,
+      touch: e.pointerType === 'touch',
     };
     const doc = this.host.root().ownerDocument;
     doc.addEventListener('pointermove', this.onMove);
     doc.addEventListener('pointerup', this.onUp);
     doc.addEventListener('pointercancel', this.onCancel);
     doc.addEventListener('keydown', this.onKey, true);
-    if (e.pointerType === 'touch') {
+    if (e.pointerType === 'touch' && !now) {
       this.press.touchTimer = setTimeout(() => this.start(), LONG_PRESS);
     }
   }
@@ -172,7 +178,7 @@ export class AppointmentDrag<T> {
       clearTimeout(press.touchTimer);
       press.touchTimer = undefined;
     }
-    const draft: Draft<T> = { item: press.item, start: press.start, end: press.end, allDay: press.allDay, copy: false, invalid: false };
+    const draft: Draft<T> = { item: press.item, start: press.start, end: press.end, allDay: press.allDay, copy: false, invalid: false, touch: press.touch };
     if (!this.host.starting(press.mode, draft)) {
       this.stop();
       return false;
@@ -211,7 +217,7 @@ export class AppointmentDrag<T> {
     // Moved into another group, it takes that group's resources.
     const model = this.host.model;
     const resources = press.mode === 'move' ? model.movedValues(press.item, model.state.groups[press.group] ?? null, model.groupOf(cell.column)) : null;
-    const draft: Draft<T> = { item: press.item, ...next, copy, invalid: false, resources };
+    const draft: Draft<T> = { item: press.item, ...next, copy, invalid: false, resources, touch: press.touch };
     const current = this.draft;
     if (current && same(current, draft)) return;
     draft.invalid = !this.host.over(press.mode, draft);

@@ -21,6 +21,15 @@
     "timeline-lane-size": { "$type": "dimension", "$description": "A lane of a timeline row: an appointment's height there (the lanes stand `lane-gap` apart)." },
     "timeline-row-min-height": { "$type": "dimension", "$description": "The least height of a timeline row, with no appointment in it." },
     "agenda-time-width": { "$type": "dimension", "$description": "The agenda's time column, the rows' times lined up in it." },
+    "touch-target": { "$type": "dimension", "$description": "The least height of what a finger taps (an agenda row), on a screen whose pointer is a finger." },
+    "touch-lane-size": { "$type": "dimension", "$description": "A line of the month and the all-day panel on a screen whose pointer is a finger (`lane-size` elsewhere)." },
+    "phone-ruler-width": { "$type": "dimension", "$description": "The time ruler as on a phone." },
+    "phone-column-min-width": { "$type": "dimension", "$description": "The least width of a day column as on a phone: a week fits the screen." },
+    "phone-timeline-resource-width": { "$type": "dimension", "$description": "A level of a timeline's resource column as on a phone." },
+    "phone-bar-size": { "$type": "keyword", "$description": "The size of the bar's buttons as on a phone (sm, md or lg): as large as a finger needs, small enough for the month, Today and the views to fit." },
+    "swipe-inset": { "$type": "dimension", "$description": "How far the swipe's edge mark stands from the side of the view." },
+    "grip-ring": { "$type": "color", "$description": "The ring of a finger's handle where the appointment's own colour is not mixed in." },
+    "grip-ring-mix": { "$type": "number", "$description": "How much of the appointment's own colour its handles' ring takes (100: all of it)." },
     "appointment-default": { "$type": "color" },
     "appointment-surface": { "$type": "color" },
     "appointment-tint": { "$type": "number" },
@@ -156,16 +165,54 @@
           "surface.padding-block",
           "surface.padding-inline"
         ]
+      },
+      "today-icon-button": {
+        "$description": "Today as on a phone: an icon in the bar.",
+        "selector": ".mx-scheduler__bar > .mx-scheduler__today-icon",
+        "part": "button",
+        "tokens": [
+          "variant"
+        ]
+      },
+      "view-menu-button": {
+        "$description": "The views as on a phone: one button in the bar with the view shown, opening a menu of them.",
+        "selector": ".mx-scheduler__bar > .mx-scheduler__view-menu",
+        "part": "button",
+        "tokens": [
+          "variant"
+        ]
+      },
+      "tooltip-sheet": {
+        "$description": "The tooltip as on a phone: an action sheet (or, with a tooltip template, a sheet) from the bottom.",
+        "selector": ".mx-scheduler__tooltip-sheet",
+        "part": "sheet",
+        "tokens": [
+          "body.padding"
+        ]
+      },
+      "form-sheet": {
+        "$description": "The appointment form as on a phone: a sheet from the bottom, as tall as the screen allows.",
+        "selector": ".mx-scheduler__form-sheet",
+        "part": "sheet",
+        "tokens": [
+          "body.padding"
+        ]
       }
     },
     "$units": {
       "scheduler": {
-        "$description": "The whole scheduler: its frame, corners, fill and text.",
-        "selector": ".mx-scheduler"
+        "$description": "The whole scheduler: its frame, corners, fill and text; on paper (`print`).",
+        "selector": ".mx-scheduler",
+        "states": {
+          "print": ".mx-scheduler[data-printing]"
+        }
       },
       "bar": {
-        "$description": "The bar over the views (the kit's toolbar): Today, the steps, the title, the views; a line under it.",
-        "selector": ".mx-scheduler .mx-scheduler__bar"
+        "$description": "The bar over the views (the kit's toolbar): Today, the steps, the title, the views; a line under it. As on a phone (`phone`): the month, Today as an icon, the steps and a menu of the views.",
+        "selector": ".mx-scheduler .mx-scheduler__bar",
+        "states": {
+          "phone": ".mx-scheduler[data-presentation='phone'] .mx-scheduler__bar"
+        }
       },
       "head": {
         "$description": "The day views' head: the dates and the all-day panel; a line under it.",
@@ -251,7 +298,7 @@
           },
           "blocked": ".mx-scheduler .mx-scheduler__cell[data-blocked]",
           "past": ".mx-scheduler .mx-scheduler__cell[data-past]",
-          "hover": ".mx-scheduler .mx-scheduler__cell:hover",
+          "hover": ".mx-scheduler:where(:not([data-touch])) .mx-scheduler__cell:hover",
           "selected": ".mx-scheduler .mx-scheduler__cell[aria-selected='true']",
           "focus": ".mx-scheduler__cell:focus-visible"
         }
@@ -324,7 +371,30 @@
           "line-after": {
             "selector": ".mx-scheduler__appointment[data-kind='line'][data-after]",
             "from": "line"
-          }
+          },
+          "lifted": {
+            "selector": ".mx-scheduler__appointment[data-lifted]",
+            "from": "draft"
+          },
+          "selected": ".mx-scheduler__appointment[data-selected]",
+          "print": ".mx-scheduler[data-printing] .mx-scheduler__appointment"
+        }
+      },
+      "resize-grip": {
+        "$description": "A handle of the appointment a finger lifted (`selected`), in the middle of its start and its end edge: across a day's box (`start`, `end`), down the side of a bar or a timeline's box (`side`). A finger on it resizes the appointment at once (`active` while it does).",
+        "selector": ".mx-scheduler__resize-grip",
+        "turn": {
+          "where": ".mx-scheduler__appointment:is([data-kind='bar'], [data-kind='chip'], [data-kind='line'])",
+          "what": [
+            "size",
+            "radius",
+            "margin",
+            "padding",
+            "border"
+          ]
+        },
+        "states": {
+          "active": ".mx-scheduler__appointment[data-draft] .mx-scheduler__resize-grip"
         }
       },
       "appointment-content": {
@@ -342,7 +412,7 @@
         "$description": "An appointment's time (`hover`: the box under the pointer, its fill deeper; `open`: while its tooltip shows). Its colour is the plain `appointment-time-tone*`, read on the fill.",
         "selector": ".mx-scheduler__appointment-time",
         "states": {
-          "hover": ".mx-scheduler__appointment:hover .mx-scheduler__appointment-time",
+          "hover": ":where(.mx-scheduler:not([data-touch])) .mx-scheduler__appointment:hover .mx-scheduler__appointment-time",
           "open": ".mx-scheduler__appointment[data-open] .mx-scheduler__appointment-time"
         }
       },
@@ -430,7 +500,7 @@
           "cursor": "pointer"
         },
         "states": {
-          "hover": ".mx-scheduler__more:hover",
+          "hover": ":where(.mx-scheduler:not([data-touch])) .mx-scheduler__more:hover",
           "focus": ".mx-scheduler__more:focus-visible"
         }
       },
@@ -450,7 +520,7 @@
           "cursor": "pointer"
         },
         "states": {
-          "hover": ".mx-scheduler__more-item:hover",
+          "hover": ":where(.mx-scheduler:not([data-touch])) .mx-scheduler__more-item:hover",
           "focus": ".mx-scheduler__more-item:focus-visible"
         }
       },
@@ -635,7 +705,7 @@
           "cursor": "default"
         },
         "states": {
-          "hover": ".mx-scheduler__agenda-row:hover",
+          "hover": ":where(.mx-scheduler:not([data-touch])) .mx-scheduler__agenda-row:hover",
           "selected": ".mx-scheduler__agenda-row[aria-selected='true']",
           "open": ".mx-scheduler__agenda-row[data-open]",
           "focus": ".mx-scheduler__agenda-row:focus-visible",
@@ -665,6 +735,24 @@
       "agenda-empty": {
         "$description": "What the agenda says when its days have no appointments.",
         "selector": ".mx-scheduler__agenda-empty"
+      },
+      "swipe-edge": {
+        "$description": "The mark at the side of the view while a finger swipes sideways, where the next (or the previous) days come from; `ready`: letting go now moves on.",
+        "selector": ".mx-scheduler__swipe-edge",
+        "states": {
+          "ready": ".mx-scheduler__swipe-edge[data-ready]"
+        }
+      },
+      "swipe-icon": {
+        "$description": "The glyph in the swipe's edge mark (by its `icon`): toward the end for the next days, the start for the previous ones (`previous`); `ready` as its mark.",
+        "selector": ".mx-scheduler__swipe-icon",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "previous": ".mx-scheduler__swipe-edge[data-side='previous'] > .mx-scheduler__swipe-icon",
+          "ready": ".mx-scheduler__swipe-edge[data-ready] > .mx-scheduler__swipe-icon"
+        }
       },
       "state": {
         "$description": "What the scheduler says while it loads or failed (`danger`).",

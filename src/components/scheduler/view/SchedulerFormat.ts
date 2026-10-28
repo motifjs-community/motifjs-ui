@@ -56,6 +56,11 @@ export class SchedulerFormat {
     return this.get('monthYear', { month: 'long', year: 'numeric' }).format(date);
   }
 
+  /** "October" */
+  month(date: Date): string {
+    return this.get('monthName', { month: 'long' }).format(date);
+  }
+
   /** "27 Oct" */
   monthDay(date: Date): string {
     return this.get('monthDay', { day: 'numeric', month: 'short' }).format(date);

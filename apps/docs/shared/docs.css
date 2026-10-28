@@ -796,6 +796,23 @@ ul.docs-list {
   inline-size: 100%;
 }
 
+/* A frame the size of a phone, its corner dragged to change its width. */
+.sched-phone-frame {
+  box-sizing: border-box;
+  inline-size: 390px;
+  max-inline-size: 100%;
+  min-inline-size: 18rem;
+  block-size: 44rem;
+  overflow: hidden;
+  resize: horizontal;
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  border-radius: var(--mx-radius-lg);
+}
+
+.sched-phone-frame > .mx-scheduler {
+  block-size: 100%;
+}
+
 .sched-log {
   min-block-size: var(--mx-font-line-body);
   margin: 0;

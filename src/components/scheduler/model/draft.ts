@@ -10,4 +10,6 @@ export interface Draft<T> {
   invalid: boolean;
   /** Moved to another group: the values its resource fields would get, by field. */
   resources?: Record<string, unknown> | null;
+  /** A finger lifted it (a long press, or a handle). */
+  touch?: boolean;
 }

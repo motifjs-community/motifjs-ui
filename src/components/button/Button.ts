@@ -105,6 +105,9 @@ export class Button extends Control<HTMLElement, ButtonProps> {
       const parts = this.parts;
       parts.releaseIcon();
       parts.stopArrowLabel?.();
+      // The drop-down content goes with the button: until its popup first opens it is in no tree.
+      const content = this.peekProperty<ComponentBase | null>('dropDown');
+      if (content && !content.isDisposed) content.dispose();
     });
   }
 

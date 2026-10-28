@@ -494,6 +494,26 @@
     --_popup-surface-padding-inline: var(--mx-scheduler-more-popup-surface-padding-inline);
   }
 
+  /* scheduler: today-icon-button — Today as on a phone: an icon in the bar. */
+  .mx-scheduler__bar > .mx-scheduler__today-icon {
+    --_button-variant: var(--mx-scheduler-today-icon-button-variant);
+  }
+
+  /* scheduler: view-menu-button — The views as on a phone: one button in the bar with the view shown, opening a menu of them. */
+  .mx-scheduler__bar > .mx-scheduler__view-menu {
+    --_button-variant: var(--mx-scheduler-view-menu-button-variant);
+  }
+
+  /* scheduler: tooltip-sheet — The tooltip as on a phone: an action sheet (or, with a tooltip template, a sheet) from the bottom. */
+  .mx-scheduler__tooltip-sheet {
+    --_sheet-body-padding: var(--mx-scheduler-tooltip-sheet-body-padding);
+  }
+
+  /* scheduler: form-sheet — The appointment form as on a phone: a sheet from the bottom, as tall as the screen allows. */
+  .mx-scheduler__form-sheet {
+    --_sheet-body-padding: var(--mx-scheduler-form-sheet-body-padding);
+  }
+
   /* sheet: close-button — The close button in the header. */
   .mx-bottom-sheet__tools > .mx-bottom-sheet__close {
     --_button-variant: var(--mx-sheet-close-button-variant);
