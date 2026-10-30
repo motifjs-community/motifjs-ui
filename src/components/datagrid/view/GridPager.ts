@@ -327,7 +327,7 @@ export class GridPager<T> extends Component<HTMLElement> {
     const total = count(this.host.total());
     const values = { 0: page, 1: pages, 2: total, page, count: pages, total };
     const own = grid.settings.get('pagerInfoText');
-    return own ? fillTemplate(own, values) : grid.text('gridPageOf', values);
+    return own ? fillTemplate(own, values) : grid.text('gridPageOf', { page, count: pages, total: this.host.total() });
   }
 
   /** Page buttons: first, last, `pagerNeighbors` on each side of the current one, with gaps; the same item for the same page. */

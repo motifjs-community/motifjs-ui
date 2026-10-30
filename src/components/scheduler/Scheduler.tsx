@@ -4,7 +4,7 @@ import { Control } from '../../core/control';
 import { follow } from '../../core/follow';
 import { every } from '../../core/every';
 import { deepActiveElement } from '../../core/focus';
-import { fillTemplate } from '../../core/fill-template';
+import { fillText } from '../../core/fill-text';
 import { givenField, givenList, givenValue } from '../../core/given-field';
 import { later } from '../../core/later';
 import { nextFrame } from '../../core/next-frame';
@@ -1316,7 +1316,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   /** The text for `key`: the scheduler's own `texts`, else `uiLocale`'s, filled in. */
   textOf(key: keyof UiStrings, values?: Record<string, unknown>): string {
     const text = this.texts[key] ?? uiLocale.strings[key];
-    return values ? fillTemplate(text, values) : text;
+    return fillText(text, this.locale, values);
   }
 
   // The rest.

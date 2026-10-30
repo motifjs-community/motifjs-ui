@@ -20,7 +20,7 @@ const GLYPHS: Partial<Record<MessageBoxTone, () => HTMLSpanElement>> = {
 
 function buttonOf(button: NonNullable<MessageBoxOptions['buttons']>[number]): MessageBoxButton {
   if (typeof button !== 'string') return button;
-  return { text: () => uiLocale.strings[button], result: button };
+  return { text: uiLocale.strings[button], result: button };
 }
 
 /**

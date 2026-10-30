@@ -3,6 +3,7 @@ import { FocusContainer } from '../../core/container';
 import { follow } from '../../core/follow';
 import { deepActiveElement } from '../../core/focus';
 import { fillTemplate } from '../../core/fill-template';
+import { fillText } from '../../core/fill-text';
 import { functionValue } from '../../core/function-value';
 import { givenValue } from '../../core/given-field';
 import { addShortcut } from '../../core/keyboard';
@@ -126,6 +127,7 @@ import type { TabPresentationKind } from './tab-presentation-kind';
 import { TabPresenter } from './TabPresenter';
 import type { TabNarrowBars } from './tab-narrow-bars';
 import type { TabTabletWhen } from './tab-tablet-when';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = [
   'closeButton',
@@ -499,14 +501,16 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     MANAGERS.add(this);
     // Built later than made: core has just put the groups at the root, back into their splits.
     this.motif.on('x:built', () => untracked(() => this.renderTree()));
+    const stopLanguage = onLanguage(this, () => this.renderTexts());
     const stopTexts = follow(
       this,
       'texts',
-      () => [uiLocale.strings, this.getProperty('texts'), this.groups],
+      () => [this.getProperty('texts'), this.groups],
       () => this.renderTexts(),
     );
     this.motif.setDisposable(() => {
       stopTexts();
+      stopLanguage();
       parts.presenter.dispose();
       MANAGERS.delete(this);
       parts.moveKeys?.end(false);
@@ -2146,7 +2150,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   /** @internal A text for this manager: `texts` first, then `uiLocale`. Reactive. */
   textOf(key: keyof UiStrings, values?: Record<string, unknown>): string {
     const t = givenValue<string | undefined>(this.texts, key) ?? uiLocale.strings[key];
-    return values ? fillTemplate(t, values) : t;
+    return fillText(t, uiLocale.locale, values);
   }
 
   /** @internal The key that closes a focused tab, as `aria-keyshortcuts` writes it. Reactive. */

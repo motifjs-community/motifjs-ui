@@ -1,5 +1,6 @@
-import { createSignal, Emitter, type Event as MotifEvent } from '@motifx/core';
-import { directionOf, format } from '@motifx-community/i18n';
+import { Emitter, type Event as MotifEvent } from '@motifx/core';
+import { directionOf } from '@motifx-community/i18n';
+import { fillText } from './fill-text';
 import type { UiLocaleChangedEventArgs } from './ui-locale-changed-event-args';
 import type { UiPack } from './ui-pack';
 import type { UiPackModule } from './ui-pack-module';
@@ -21,8 +22,6 @@ export class UiLocale {
   /** Languages the loader has no pack for: not asked again. */
   private readonly missing = new Set<string>();
   private readonly changed = new Emitter<UiLocaleChangedEventArgs>();
-  /** For the app's own bindings (`{() => uiLocale.strings.close}`); the kit's controls never read it tracked. */
-  private readonly version = createSignal(0);
   private turn = 0;
 
   constructor(
@@ -35,9 +34,8 @@ export class UiLocale {
     this.ready = this.use(locale).catch(() => {});
   }
 
-  /** The locale in use (`'tr-TR'`). An app's binding reading it follows a change. */
+  /** The locale in use (`'tr-TR'`). A change is told by `onChanged`; nothing follows it. */
   get locale(): string {
-    void this.version.value;
     return this.current.locale;
   }
 
@@ -51,7 +49,6 @@ export class UiLocale {
    * (`uiLocale.strings = { ...uiLocale.strings, close: 'Kapat' }`). The set is kept as given.
    */
   get strings(): UiStrings {
-    void this.version.value;
     return this.current.strings;
   }
   set strings(value: UiStrings) {
@@ -87,14 +84,13 @@ export class UiLocale {
   /** A text of the kit with its values filled in (ICU: `{count, plural, one {# row} other {# rows}}`). */
   text(key: keyof UiStrings, values?: Record<string, unknown>): string {
     const message = this.current.strings[key];
-    return /[{']/.test(message) ? format(message, this.current.locale, values) : message;
+    return fillText(message, this.current.locale, values);
   }
 
   private apply(locale: string, strings: UiStrings) {
     const previous = this.current.locale;
     if (locale === previous && strings === this.current.strings) return;
     this.current = { locale, strings };
-    this.version.value = this.version.peek() + 1;
     this.changed.fire({ locale, previous });
   }
 

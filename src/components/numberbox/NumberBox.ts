@@ -1,5 +1,4 @@
 import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
-import { follow } from '../../core/follow';
 import { chevronDown, chevronUp, dashMark, plusMark } from '../../core/glyphs';
 import { LanguageLook } from '../../core/language-look';
 import { uiLocale } from '../../core/ui-locale';
@@ -10,6 +9,7 @@ import { addDecimal, roundDecimal, shiftDecimal } from './decimal-math';
 import type { NumberBoxProps } from './number-box-props';
 import { checkedLocale, isPartialNumber, parseNumber, plainNumber } from './number-text';
 import type { SpinLayout } from './spin-layout';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = [
   'min',
@@ -89,6 +89,8 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
 
     for (const name of ['min', 'max'] as const) this.observeProperty(name, () => this.renderRange());
     for (const name of SHOWN) this.observeProperty(name, () => this.renderShown());
+    // The kit's language: how the number is written.
+    onLanguage(this, () => this.renderShown());
     this.observeProperty('decimals', () => this.roundStored());
     this.observeProperty('showSpinButtons', () => this.renderSpin());
     this.observeProperty('spinLayout', () => this.renderSpin());
@@ -607,7 +609,8 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
       parts.up = this.spinButton(1);
       parts.down = this.spinButton(-1);
       const { up, down } = parts;
-      parts.stopSpinLabels = follow(this, 'spinLabels', () => uiLocale.strings, (strings) => {
+      parts.stopSpinLabels = onLanguage(this, () => {
+        const strings = uiLocale.strings;
         up.setAttribute('aria-label', strings.increase);
         down.setAttribute('aria-label', strings.decrease);
       });

@@ -16,6 +16,7 @@ import { Popup } from '../../parts/popup/Popup';
 import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
 import { TextBox } from '../textbox/TextBox';
 import type { DropDownProps } from './drop-down-props';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = ['items', 'dataSource', 'placeholder', 'searchEnabled', 'searchMode', 'searchDelay', 'clearButton', 'matchWidth'] as const;
 
@@ -511,8 +512,10 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     this.controls.add(popup);
     if (this.peekProperty('searchEnabled')) {
       const search = new TextBox({ type: 'search', labelMode: 'hidden', stretch: true, autocomplete: 'off' });
-      search.label = () => uiLocale.strings.search;
-      search.placeholder = () => uiLocale.strings.search;
+      onLanguage(search, () => {
+        search.label = uiLocale.strings.search;
+        search.placeholder = uiLocale.strings.search;
+      });
       search.element.classList.add('mx-drop-down__search');
       search.onValueChanged((e) => {
         parts.filter = e.value;

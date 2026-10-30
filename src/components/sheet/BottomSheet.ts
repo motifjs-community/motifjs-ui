@@ -1,5 +1,4 @@
 import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
-import { follow } from '../../core/follow';
 import { ResizeWatch } from '../../core/resize-watch';
 import { uiLocale } from '../../core/ui-locale';
 import { cssLength } from '../../parts/overlay/css-length';
@@ -9,6 +8,7 @@ import type { BottomSheetDetent } from './bottom-sheet-detent';
 import type { BottomSheetProps } from './bottom-sheet-props';
 import type { DetentChangedEventArgs } from './detent-changed-event-args';
 import type { DetentChangingEventArgs } from './detent-changing-event-args';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = ['detents', 'detent', 'showHandle', 'draggable', 'dragContent', 'swipeToClose', 'flickSpeed', 'topGap'] as const;
 
@@ -79,7 +79,7 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
     this.observeProperty<boolean | undefined>('showHandle', (on) => (parts.handle.hidden = on === false));
     this.observeProperty('detents', () => this.isOpen && this.placePanel());
     this.observeProperty('topGap', () => this.isOpen && this.placePanel());
-    parts.stopTexts = follow(this, 'texts', () => uiLocale.strings, () => this.renderHandle());
+    parts.stopTexts = onLanguage(this, () => this.renderHandle());
     this.listenDrag();
     // Whether the content scrolls is known once a change of height has run.
     this.panelElement.addEventListener('transitionend', (e) => e.target === this.panelElement && e.propertyName === 'block-size' && this.updateBodyFocus());

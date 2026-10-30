@@ -133,8 +133,7 @@ export class ActionRunner<T> {
 
   private announce(text: string, total: number, done: number, failed: number, canceled: boolean) {
     const model = this.model;
-    const n = (value: number) => model.formatter.count(value);
-    const values = { action: text, count: n(total), total: n(total), done: n(done), failed: n(failed) };
+    const values = { action: text, count: total, total, done, failed };
     if (canceled) model.announce(model.text('gridActionStopped', values));
     else if (!failed) model.announce(model.text('gridActionDone', values));
     else if (!done) model.announce(model.text('gridActionFailed', values));

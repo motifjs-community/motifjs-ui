@@ -1,6 +1,5 @@
 import { Component, type Bind, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { follow } from '../../core/follow';
 import { controlOf } from '../../core/control-map';
 import { deepActiveElement } from '../../core/focus';
 import { addShortcut } from '../../core/keyboard';
@@ -10,6 +9,7 @@ import { Toast } from './Toast';
 import type { ToastPosition } from './toast-position';
 import type { ToastProps } from './toast-props';
 import type { ToasterProps } from './toaster-props';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = ['position', 'max', 'hotkey', 'pauseOnHover'] as const;
 
@@ -85,7 +85,9 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     const el = this.element;
     const parts = this.parts;
-    const stopName = follow(this, 'name', () => this.text || uiLocale.strings.notifications, (label) => el.setAttribute('aria-label', label));
+    const drawName = () => el.setAttribute('aria-label', this.text || uiLocale.strings.notifications);
+    const stopName = onLanguage(this, drawName);
+    this.observeProperty('text', drawName);
     this.observeProperty('hotkey', () => this.renderHotkey());
     this.observeProperty('max', () => this.fill());
     this.observeProperty('pauseOnHover', () => this.updatePause());

@@ -1,5 +1,6 @@
 import { reactive } from '@motifx/core';
 import { Button, DataGrid, enStrings, Stack, trStrings, uiLocale } from '@motifx-community/ui';
+import { kitTexts } from '../../../shared/kit-texts';
 import type { Order } from './order';
 import { columns } from './orders';
 
@@ -16,7 +17,7 @@ export default function Localization() {
       <Stack orientation="horizontal" wrap align="center">
         <Button text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')} variant="outline" onclick={toggle} />
         <span>
-          New row reads <output class="dg-text">{() => uiLocale.strings.gridNewRow}</output>
+          New row reads <output class="dg-text">{() => kitTexts.strings.gridNewRow}</output>
         </span>
       </Stack>
       <DataGrid

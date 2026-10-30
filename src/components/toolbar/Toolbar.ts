@@ -25,6 +25,7 @@ import type { ToolbarItemType } from './toolbar-item-type';
 import type { ToolbarOrientation } from './toolbar-orientation';
 import type { ToolbarOverflow } from './toolbar-overflow';
 import type { ToolbarProps } from './toolbar-props';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = ['items', 'orientation', 'size', 'buttonVariant', 'overflow'] as const;
 
@@ -477,7 +478,8 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     more.element.setAttribute('data-idle', '');
     this.controls.add(more);
     const face = more.element.querySelector<HTMLElement>('.mx-button__main') ?? more.element;
-    parts.stopMoreLabel = follow(this, 'moreLabel', () => uiLocale.strings.moreOptions, (label) => {
+    parts.stopMoreLabel = onLanguage(this, () => {
+      const label = uiLocale.strings.moreOptions;
       face.setAttribute('aria-label', label);
       face.title = label;
     });

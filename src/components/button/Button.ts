@@ -3,7 +3,6 @@ import type { Bind, ComponentBase, IBaseProp } from '@motifx/core';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
 import { registerControl } from '../../core/control-map';
-import { follow } from '../../core/follow';
 import { focusInitial, isFocusable } from '../../core/focus';
 import { chevronDown } from '../../core/glyphs';
 import { givenField, givenList } from '../../core/given-field';
@@ -18,6 +17,7 @@ import type { ButtonProps } from './button-props';
 import type { ButtonSize } from './button-size';
 import type { ButtonTone } from './button-tone';
 import type { ButtonVariant } from './button-variant';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = [
   'variant',
@@ -514,7 +514,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
       arrow.addEventListener('keydown', (e) => this.arrowKeyDown(e));
       parts.face.after(arrow);
       registerControl(arrow, this);
-      parts.stopArrowLabel = follow(this, 'arrowLabel', () => uiLocale.strings.moreOptions, (label) => arrow.setAttribute('aria-label', label));
+      parts.stopArrowLabel = onLanguage(this, () => arrow.setAttribute('aria-label', uiLocale.strings.moreOptions));
       parts.arrow = arrow;
     } else if (!split && parts.arrow) {
       parts.stopArrowLabel?.();

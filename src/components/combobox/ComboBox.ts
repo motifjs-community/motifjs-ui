@@ -1,6 +1,5 @@
 import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import type { data } from '@motifx-community/data';
-import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
 import { chevronDown } from '../../core/glyphs';
 import type { IconSource } from '../../core/icon-source';
@@ -14,6 +13,7 @@ import { readItemField } from '../../parts/list/read-item-field';
 import { Popup } from '../../parts/popup/Popup';
 import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
 import type { ComboBoxProps } from './combo-box-props';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = [
   'items',
@@ -90,7 +90,7 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     this.observeProperty<readonly T[] | undefined>('items', (items) => {
       if (!this.peekProperty('dataSource')) parts.items.setArray(items ?? []);
     });
-    parts.stopLabels = follow(this, 'labels', () => uiLocale.strings.moreOptions, (label) => parts.arrow?.setAttribute('aria-label', label));
+    parts.stopLabels = onLanguage(this, () => parts.arrow?.setAttribute('aria-label', uiLocale.strings.moreOptions));
     this.listen();
     this.motif.setDisposable(() => {
       parts.stopLabels?.();

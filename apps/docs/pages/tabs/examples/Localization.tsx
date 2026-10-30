@@ -1,5 +1,6 @@
 import { reactive } from '@motifx/core';
 import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the texts of every component on the page, the tabs' close button included. */
 export default function Localization() {
@@ -12,7 +13,7 @@ export default function Localization() {
     <>
       <Button text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')} variant="outline" onclick={toggle} />
       <span>
-        The close button reads <output class="tabs-close-name">{() => uiLocale.strings.close}</output>
+        The close button reads <output class="tabs-close-name">{() => kitTexts.strings.close}</output>
       </span>
     </>
   );

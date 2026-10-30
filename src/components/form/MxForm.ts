@@ -1,6 +1,5 @@
 import { Application, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey } from '../../core/access-key';
-import { follow } from '../../core/follow';
 import { FocusContainer } from '../../core/container';
 import type { Control } from '../../core/control';
 import { controlOf } from '../../core/control-map';
@@ -27,6 +26,7 @@ import type { FormProps } from './form-props';
 import type { FormResult } from './form-result';
 import type { FormStartPosition } from './form-start-position';
 import type { FormWindowState } from './form-window-state';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = [
   'value',
@@ -717,9 +717,10 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     this.orderTools();
     this.renderToolLook();
     if (!parts.stopLabels && (parts.minimize || parts.maximize || parts.close)) {
-      parts.stopLabels = follow(this, 'toolLabels', () => uiLocale.strings, (strings) =>
-        this.labelTools(strings.minimize, strings.maximize, strings.restore, strings.close),
-      );
+      parts.stopLabels = onLanguage(this, () => {
+        const strings = uiLocale.strings;
+        this.labelTools(strings.minimize, strings.maximize, strings.restore, strings.close);
+      });
     } else if (parts.stopLabels) {
       const strings = uiLocale.strings;
       this.labelTools(strings.minimize, strings.maximize, strings.restore, strings.close);

@@ -199,7 +199,7 @@ export class ActionSets<T> {
   /** The name a screen reader gives the action: its text and how many rows it runs on. */
   spokenLabel(entry: ActionEntry<T>): string {
     if (entry.count < 2) return entry.text;
-    return this.model.text('gridActionCountLabel', { text: entry.text, count: this.model.formatter.count(entry.count) });
+    return this.model.text('gridActionCountLabel', { text: entry.text, count: entry.count });
   }
 
   /** What the bars act on, in words ("Actions for 3 selected rows"); `''` for nothing. Reactive. */
@@ -210,7 +210,7 @@ export class ActionSets<T> {
     if (target.kind === 'rows' && target.from === 'focused') return model.text('gridActionsForRow');
     const count = target.kind === 'rows' ? target.rows.length : target.count;
     if (count === 1) return model.text('gridActionsForSelectedRow');
-    return model.text('gridActionsForSelectedRows', { count: model.formatter.count(count) });
+    return model.text('gridActionsForSelectedRows', { count });
   }
 
   /** A row with its state, as its actions see it. */

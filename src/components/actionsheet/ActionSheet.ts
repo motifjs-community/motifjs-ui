@@ -1,5 +1,4 @@
 import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
-import { follow } from '../../core/follow';
 import { chevronDown } from '../../core/glyphs';
 import { givenField, givenList, givenValue } from '../../core/given-field';
 import { uiLocale } from '../../core/ui-locale';
@@ -12,6 +11,7 @@ import { Button } from '../button/Button';
 import type { BottomSheetDetent } from '../sheet/bottom-sheet-detent';
 import { BottomSheet } from '../sheet/BottomSheet';
 import type { ActionSheetProps } from './action-sheet-props';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = ['items', 'message', 'showCancel', 'cancelText'] as const;
 
@@ -62,15 +62,14 @@ export class ActionSheet extends BottomSheet {
     this.observeProperty('items', () => {
       if (this.isOpen && parts.levels.length <= 1) this.showLevel([this.peekProperty<readonly MenuItem[]>('items') ?? NO_ITEMS]);
     });
-    parts.stopTexts = follow(
-      this,
-      'texts',
-      () => ({ strings: uiLocale.strings, own: this.getProperty<string | undefined>('cancelText') }),
-      ({ strings, own }) => {
-        parts.cancel.text = (own || strings.cancel).replace(/&/g, '&&');
-        if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) this.panelElement.setAttribute('aria-label', strings.actionSheetLabel);
-      },
-    );
+    // The kit's language, or another cancel text: the texts are written again.
+    const drawTexts = () => {
+      const strings = uiLocale.strings;
+      parts.cancel.text = (this.peekProperty<string | undefined>('cancelText') || strings.cancel).replace(/&/g, '&&');
+      if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) this.panelElement.setAttribute('aria-label', strings.actionSheetLabel);
+    };
+    parts.stopTexts = onLanguage(this, drawTexts);
+    this.observeProperty('cancelText', drawTexts);
     this.motif.setDisposable(() => {
       parts.stopTexts?.();
       for (const resolve of parts.waiters.splice(0)) resolve(null);
@@ -221,7 +220,7 @@ export class ActionSheet extends BottomSheet {
       parts.list.setItems(items);
       return;
     }
-    const back = lineAfter<MenuItem>({ text: () => uiLocale.strings.back, icon: () => backMark(), data: BACK });
+    const back = lineAfter<MenuItem>({ text: uiLocale.strings.back, icon: () => backMark(), data: BACK });
     parts.list.setItems([back, ...givenList(items)]);
   }
 

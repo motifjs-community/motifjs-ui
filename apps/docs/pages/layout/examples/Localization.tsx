@@ -1,5 +1,6 @@
 import { reactive } from '@motifx/core';
 import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the texts of the kit; the splitters on the page take the new name at once. */
 export default function Localization() {
@@ -12,7 +13,7 @@ export default function Localization() {
     <>
       <Button text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')} variant="outline" onclick={toggle} />
       <span>
-        The splitter is named <output class="layout-resize">{() => uiLocale.strings.resize}</output>
+        The splitter is named <output class="layout-resize">{() => kitTexts.strings.resize}</output>
       </span>
     </>
   );

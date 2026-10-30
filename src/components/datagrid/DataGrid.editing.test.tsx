@@ -548,7 +548,7 @@ describe('save modes', () => {
     await vi.waitFor(() => expect(grid.errorCount).toBe(1));
     expect(adapter.calls).toEqual(['update', 'update']);
     expect(rowEl(grid, 1).dataset.status).toBe('failed');
-    expect(grid.element.querySelector('.mx-data-grid__errors')!.textContent).toContain('1 rows with errors');
+    expect(grid.element.querySelector('.mx-data-grid__errors')!.textContent).toContain('1 row with errors');
     expect(grid.goToNextError()).toBe(true);
     expect(where().row).toBe(1);
     await grid.dispose();

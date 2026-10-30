@@ -1,6 +1,6 @@
 import { Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { fillTemplate } from '../../core/fill-template';
+import { fillText } from '../../core/fill-text';
 import { nextId } from '../../core/next-id';
 import { uiLocale } from '../../core/ui-locale';
 import type { UiStrings } from '../../core/ui-strings';
@@ -402,6 +402,6 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
 
   private textOf(key: keyof UiStrings, values?: Record<string, unknown>): string {
     const text = this.texts[key] ?? uiLocale.strings[key];
-    return values ? fillTemplate(text, values) : text;
+    return fillText(text, this.locale, values);
   }
 }

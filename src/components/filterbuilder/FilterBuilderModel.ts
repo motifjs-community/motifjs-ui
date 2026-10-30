@@ -1,8 +1,7 @@
 import { reactive, untracked } from '@motifx/core';
 import { data } from '@motifx-community/data';
-import { fillTemplate } from '../../core/fill-template';
+import { fillText } from '../../core/fill-text';
 import { givenField, givenList, givenValue } from '../../core/given-field';
-import { pageLocale } from '../../core/page-locale';
 import { uiLocale } from '../../core/ui-locale';
 import type { UiStrings } from '../../core/ui-strings';
 import { KeyedItems } from '../../parts/data/KeyedItems';
@@ -82,11 +81,11 @@ export class FilterBuilderModel {
 
   text(key: keyof UiStrings, values?: Record<string, unknown>): string {
     const t = givenValue<string | undefined>(this.options().texts, key) ?? uiLocale.strings[key];
-    return values ? fillTemplate(t, values) : t;
+    return fillText(t, this.locale, values);
   }
 
   get locale(): string {
-    return this.options().locale || pageLocale();
+    return this.options().locale || uiLocale.locale;
   }
 
   fields(): readonly FilterBuilderField[] {

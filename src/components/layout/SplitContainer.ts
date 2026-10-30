@@ -2,7 +2,6 @@ import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifE
 import { FocusContainer } from '../../core/container';
 import { registerControl } from '../../core/control-map';
 import { deepActiveElement } from '../../core/focus';
-import { follow } from '../../core/follow';
 import { nextId } from '../../core/next-id';
 import { uiLocale } from '../../core/ui-locale';
 import type { LayoutOrientation } from './layout-orientation';
@@ -11,6 +10,7 @@ import type { SplitContainerProps } from './split-container-props';
 import type { SplitPanel } from './split-panel';
 import type { SplitPosition } from './split-position';
 import type { SplitterMovedEventArgs } from './splitter-moved-event-args';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = ['orientation', 'position', 'fixedPanel', 'firstMinSize', 'secondMinSize', 'collapsed', 'resizable', 'collapsible', 'step', 'splitterLabel'] as const;
 
@@ -92,12 +92,9 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     // Added to the container itself from code: into the first empty pane.
     void this.motif.on('controladded', (_sender, e: { control: ComponentBase }) => this.route(e.control), false);
 
-    const stopLabel = follow(
-      this,
-      'splitterLabel',
-      () => this.getProperty<string | undefined>('splitterLabel') || uiLocale.strings.resize,
-      (label) => parts.splitter.element.setAttribute('aria-label', label),
-    );
+    const drawLabel = () => parts.splitter.element.setAttribute('aria-label', this.peekProperty<string | undefined>('splitterLabel') || uiLocale.strings.resize);
+    const stopLabel = onLanguage(this, drawLabel);
+    this.observeProperty('splitterLabel', drawLabel);
     this.listen();
     this.motif.setDisposable(() => {
       stopLabel();

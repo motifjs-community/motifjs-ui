@@ -31,6 +31,7 @@ import type { TreeViewLoadChildren } from './tree-view-load-children';
 import type { TreeViewProps } from './tree-view-props';
 import type { TreeViewSelectionChangedEventArgs } from './tree-view-selection-changed-event-args';
 import type { TreeViewSelectionMode } from './tree-view-selection-mode';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = [
   'items',
@@ -199,8 +200,8 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     this.listen();
     // The tree follows the items, every field it reads of them and the props that say how.
     this.watchItems();
-    const stopTexts = follow(this, 'texts', () => uiLocale.strings, (strings) => {
-      parts.empty.textContent = strings.noItems;
+    const stopTexts = onLanguage(this, () => {
+      parts.empty.textContent = uiLocale.strings.noItems;
       for (const error of parts.body.querySelectorAll<HTMLElement>('.mx-tree-view__error')) this.fillError(error);
     });
     this.takeExpanded(this.peekProperty('expandedKeys'));
@@ -1362,8 +1363,10 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     if (parts.search) return;
     // Its variant and label mode come from its place (treeview.search).
     const search = new TextBox({ type: 'search', stretch: true, autocomplete: 'off' });
-    search.label = () => uiLocale.strings.search;
-    search.placeholder = () => uiLocale.strings.search;
+    onLanguage(search, () => {
+      search.label = uiLocale.strings.search;
+      search.placeholder = uiLocale.strings.search;
+    });
     search.element.classList.add('mx-tree-view__search');
     search.value = this.peekProperty<string>('searchValue') ?? '';
     search.onValueChanged((e) => this.changeProperty('searchValue', e.value ?? ''));

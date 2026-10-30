@@ -1,5 +1,4 @@
 import { read, untracked, type Bind, type IBaseProp } from '@motifx/core';
-import { follow } from '../../core/follow';
 import { LanguageLook } from '../../core/language-look';
 import { uiLocale } from '../../core/ui-locale';
 import { Field } from '../../parts/field/Field';
@@ -7,6 +6,7 @@ import type { SliderOrientation } from './slider-orientation';
 import type { SliderProps } from './slider-props';
 import type { SliderShowValue } from './slider-show-value';
 import type { SliderValue } from './slider-value';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = [
   'min',
@@ -130,6 +130,7 @@ export class Slider extends Field<SliderValue, SliderProps> {
     this.observeProperty('tickLabels', () => this.renderTicks());
     this.observeProperty('format', () => this.renderFormat());
     this.observeProperty('locale', () => this.renderFormat());
+    onLanguage(this, () => this.renderFormat());
     this.observeProperty('valueText', () => this.draw());
     this.observeProperty<SliderShowValue>('showValue', (show) => (this.element.dataset.showValue = show ?? 'never'));
     this.observeProperty('name', () => this.renderInputs());
@@ -263,7 +264,7 @@ export class Slider extends Field<SliderValue, SliderProps> {
     const parts = this.sliderParts;
     if (!parts.formatter) {
       const options = this.peekProperty<Intl.NumberFormatOptions | null>('format') ?? undefined;
-      const locale = this.peekProperty<string>('locale') || document.documentElement.lang || undefined;
+      const locale = this.peekProperty<string>('locale') || uiLocale.locale;
       try {
         parts.formatter = new Intl.NumberFormat(locale, options);
       } catch {
@@ -531,7 +532,7 @@ export class Slider extends Field<SliderValue, SliderProps> {
     parts.thumbs[1].hidden = !range;
     if (range && !parts.stopNames) {
       // The thumb names come from uiLocale.
-      parts.stopNames = follow(this, 'names', () => uiLocale.strings, () => this.renderNames());
+      parts.stopNames = onLanguage(this, () => this.renderNames());
     } else if (!range && parts.stopNames) {
       parts.stopNames();
       parts.stopNames = null;

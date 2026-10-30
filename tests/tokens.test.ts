@@ -25,7 +25,8 @@ import {
 import { componentTokens as generated } from '../src/generated/tokens';
 
 const root = fileURLToPath(new URL('..', import.meta.url)); // the repo root, whatever the working directory
-const read = (file: string) => readFileSync(join(root, file), 'utf8');
+// The working tree may hold CRLF (core.autocrlf): compared by content, not by line ends.
+const read = (file: string) => readFileSync(join(root, file), 'utf8').replace(/\r\n/g, '\n');
 const pathOf = (t: { path: string[] }) => t.path.join('.');
 const varOf = (path: string) => `--mx-${path.replace(/\./g, '-')}`;
 const slotOf = (path: string) => `--_${path.replace(/\./g, '-')}`;

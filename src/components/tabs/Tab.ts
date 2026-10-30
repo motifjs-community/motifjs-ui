@@ -1,7 +1,6 @@
 import { read, type Bind, type IBaseProp } from '@motifx/core';
 import { parseAccessKey, renderAccessKey, setAccessKeyAttribute } from '../../core/access-key';
 import { Control } from '../../core/control';
-import { follow } from '../../core/follow';
 import { registerControl } from '../../core/control-map';
 import { dismissMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
@@ -11,6 +10,7 @@ import { uiLocale } from '../../core/ui-locale';
 import { PanelContent } from './PanelContent';
 import type { TabProps } from './tab-props';
 import type { Tabs } from './Tabs';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = ['key', 'icon', 'badge', 'hint', 'closable', 'lazy', 'keepAlive'] as const;
 
@@ -242,7 +242,7 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
         parts.owner?.close(this, true, e);
       });
       parts.header.append(close);
-      parts.stopCloseHint = follow(this, 'closeHint', () => uiLocale.strings.close, (hint) => (close.title = hint));
+      parts.stopCloseHint = onLanguage(this, () => (close.title = uiLocale.strings.close));
       parts.close = close;
       setAccessKeyAttribute(parts.header, null, 'Delete');
     } else if (!on && parts.close) {

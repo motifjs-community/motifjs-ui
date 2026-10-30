@@ -177,6 +177,7 @@ import { OPERATOR_TEXTS } from './view/operator-texts';
 import { COLUMN_FEATURES } from './model/column-feature-names';
 import { givenList } from '../../core/given-field';
 import { readField } from './model/read-field';
+import { onLanguage } from '../../core/on-language';
 
 /** How a move ends: on the target cell, optionally with its editor open. */
 interface GoToCellOptions {
@@ -560,7 +561,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     // The grid's `reState()`: what it was given is read again, as every control reads its props again.
     onReState(this, () => this.readGivenAgain());
     // The kit's texts in another language: what the grid writes of them is drawn again.
-    follow(this, 'uiTexts', () => uiLocale.strings, () => {
+    onLanguage(this, () => {
       this.model.notices.tell('texts');
       this.model.notices.flush();
     });
@@ -2528,7 +2529,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       content.html = e.html;
     }
     this.writeClipboard(content);
-    const count = model.formatter.count(content.cells || content.rows);
+    const count = content.cells || content.rows;
     model.announce(content.cells ? model.text('gridCopiedCells', { count }) : content.rows ? model.text('gridCopiedRows', { count }) : model.text('gridCopiedCell'));
     return content.text;
   }
@@ -2563,7 +2564,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const one = !!box && lines.length === 1 && lines[0].length === 1;
     const result = one ? this.clipboard.fill(lines[0][0]) : this.clipboard.paste(text, rowIndex, field);
     this.saveWritten(result, activeId);
-    model.announce(result.cells ? model.text('gridPasted', { count: model.formatter.count(result.cells) }) : model.text('gridNothingPasted'));
+    model.announce(result.cells ? model.text('gridPasted', { count: result.cells }) : model.text('gridNothingPasted'));
     return result.cells;
   }
 
@@ -3122,8 +3123,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       const panel = this.exportPanel;
       const count = (n: number) => model.formatter.count(n);
       return panel.kind === 'action'
-        ? model.text('gridActionProgress', { done: count(panel.loaded), total: count(panel.total) })
-        : model.text('gridExportProgress', { loaded: count(panel.loaded), total: count(panel.total) });
+        ? model.text('gridActionProgress', { done: panel.loaded, total: panel.total })
+        : model.text('gridExportProgress', { loaded: panel.loaded, total: panel.total });
     };
     const cancel = new Button({});
     cancel.element.classList.add('mx-data-grid__export-cancel');
@@ -3260,16 +3261,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       const summary = this.cellSummaryText();
       kept(parts.bar, settings.get('rowCount') || st.failedBlocks > 0 || model.showsPager() || showErrors || showSelected || this.bottomShown() || summary !== '');
       kept(parts.count, settings.get('rowCount'));
-      text(parts.count, st.status !== 'ready' ? '' : model.mode === 'infinite' && model.data.knownCount === undefined ? t('gridRecordsLoaded', { count: count(this.total) }) : t('gridRecords', { count: count(this.totalCount()) }));
+      text(parts.count, st.status !== 'ready' ? '' : model.mode === 'infinite' && model.data.knownCount === undefined ? t('gridRecordsLoaded', { count: this.total }) : t('gridRecords', { count: this.totalCount() }));
       kept(parts.selected, showSelected);
-      text(parts.selected, t('gridSelectedCount', { count: count(this.selectedCount) }));
+      text(parts.selected, t('gridSelectedCount', { count: this.selectedCount }));
       kept(parts.cells, summary !== '');
       text(parts.cells, summary);
       kept(parts.someFailed, st.failedBlocks > (more === 'failed' ? 1 : 0));
       if (parts.someFailedText.data !== t('gridSomeRowsFailed')) parts.someFailedText.data = t('gridSomeRowsFailed');
       parts.someRetry.text = t('retry');
       kept(parts.errors, showErrors);
-      const errors = t('gridSaveErrors', { count: count(model.stats.failed) });
+      const errors = t('gridSaveErrors', { count: model.stats.failed });
       if (parts.errorsText.data !== errors) parts.errorsText.data = errors;
       parts.nextError.text = t('gridNextError');
 
@@ -5302,7 +5303,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       sel.byDrag = false;
     }
     this.rowDragBefore = null;
-    model.announce(kept ? model.text('gridRowsSelected', { count: model.formatter.count(this.selectedCount) }) : model.text('gridDragSelectCanceled'));
+    model.announce(kept ? model.text('gridRowsSelected', { count: this.selectedCount }) : model.text('gridDragSelectCanceled'));
   }
 
   /** A drag over the cells starts at a cell: a range from it, alone or after the others, or the last range extended to it. */
@@ -5482,7 +5483,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       result.cells += fillable.length;
     });
     this.saveWritten(result, activeId);
-    model.announce(model.text('gridCellsCleared', { count: model.formatter.count(result.cells) }));
+    model.announce(model.text('gridCellsCleared', { count: result.cells }));
   }
 
   /** After cells were written (paste, Delete): rows other than the active one are saved as the save mode says, the active one stays in edit. */
@@ -5511,8 +5512,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (!n) model.announce(model.text('gridCellSelectionCleared'));
     else if (n === 1) {
       const { rows, columns } = r.size();
-      model.announce(model.text('gridCellsSelected', { rows: count(rows), columns: count(columns) }));
-    } else model.announce(model.text('gridCellRangesSelected', { count: count(r.count()), ranges: count(n) }));
+      model.announce(model.text('gridCellsSelected', { rows, columns }));
+    } else model.announce(model.text('gridCellRangesSelected', { count: r.count(), ranges: n }));
   }
 
   /** The summary of the selected cells, worked out once per change, and the column all its numbers come from (for their format). */
@@ -5728,7 +5729,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private askDelete(count: number): Promise<boolean> {
     const { model } = this;
     if (this.deleteConfirmed || !model.settings.get('confirmDelete') || model.saveMode === 'batch') return Promise.resolve(true);
-    const text = count > 1 ? model.text('gridConfirmDeleteRows', { count: model.formatter.count(count) }) : model.text('gridConfirmDelete');
+    const text = count > 1 ? model.text('gridConfirmDeleteRows', { count }) : model.text('gridConfirmDelete');
     return confirm(text, { title: model.text('gridConfirmDeleteTitle'), buttons: ['yes', 'no'], host: this });
   }
 
@@ -5879,7 +5880,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       // Rows in memory come at once: a stop asked for meanwhile still stops it.
       controller.signal.throwIfAborted();
       const count = 'fields' in result ? result.rows.length : result.rows.filter((r) => r.rowType === 'data').length;
-      model.announce(model.text('gridExported', { count: model.formatter.count(count) }));
+      model.announce(model.text('gridExported', { count }));
       return { result, options };
     } catch (error) {
       const aborted = controller.signal.aborted;

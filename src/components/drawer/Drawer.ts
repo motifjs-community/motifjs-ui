@@ -7,6 +7,7 @@ import { SwipeTracker } from '../../parts/overlay/swipe-tracker';
 import type { DrawerMode } from './drawer-mode';
 import type { DrawerProps } from './drawer-props';
 import type { DrawerSide } from './drawer-side';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = ['side', 'mode', 'size', 'edgeSwipe', 'edgeSize', 'swipeToClose', 'flickSpeed'] as const;
 
@@ -58,6 +59,7 @@ export class Drawer extends OverlayPanel<DrawerProps> {
     if (own.pushTarget !== undefined) this.setProperty('pushTarget', own.pushTarget);
     this.observeProperty('side', () => this.renderSide());
     this.observeProperty('mode', () => this.renderSide());
+    onLanguage(this, () => this.renderSide());
     this.observeProperty('size', () => this.renderSize());
     this.observeProperty('edgeSwipe', () => this.renderEdge());
     this.observeProperty('container', () => this.renderEdge());
@@ -184,8 +186,7 @@ export class Drawer extends OverlayPanel<DrawerProps> {
     const el = this.element;
     el.dataset.side = this.logicalSide();
     el.dataset.mode = this.peekProperty<DrawerMode>('mode') ?? 'over';
-    const strings = untracked(() => uiLocale.strings);
-    if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) this.panelElement.setAttribute('aria-label', strings.drawerLabel);
+    if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) this.panelElement.setAttribute('aria-label', uiLocale.strings.drawerLabel);
   }
 
   private renderSize(): void {

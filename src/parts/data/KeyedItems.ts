@@ -1,8 +1,8 @@
 import { Emitter, type Event as MotifEvent } from '@motifx/core';
 import { data } from '@motifx-community/data';
-import { pageLocale } from '../../core/page-locale';
 import type { KeyedItem } from './keyed-item';
 import type { TextSearch } from './text-search';
+import { uiLocale } from '../../core/ui-locale';
 
 type Source = data.DataSource<any, any> | readonly unknown[];
 
@@ -141,7 +141,7 @@ export class KeyedItems<T = unknown> {
 
   /** Items among those known whose text is exactly `text` (case aside, in the locale). */
   findLoadedByText(text: string, search: TextSearch<T>): T[] {
-    const locale = search.locale ?? pageLocale();
+    const locale = search.locale ?? uiLocale.locale;
     const pool = this.inMemory ? (this.source as readonly T[]) : [...this.entries.values()].filter((e) => e.item !== undefined).map((e) => e.item as T);
     const seen = new Set<string>();
     const out: T[] = [];
@@ -160,7 +160,7 @@ export class KeyedItems<T = unknown> {
     const known = this.findLoadedByText(text, search);
     if (known.length || this.inMemory || !text.trim()) return known;
     const { items } = await this.search(text.trim(), search, 0, Math.max(1, this.pasteSearchLimit));
-    const locale = search.locale ?? pageLocale();
+    const locale = search.locale ?? uiLocale.locale;
     return items.filter((item) => sameText(search.textOf(item), text, locale));
   }
 
@@ -171,7 +171,7 @@ export class KeyedItems<T = unknown> {
   async search(text: string, search: TextSearch<T>, skip = 0, take = 100): Promise<{ items: T[]; total: number }> {
     const now = this.searchInMemory(text, search, skip, take);
     if (now) return now;
-    const locale = search.locale ?? pageLocale();
+    const locale = search.locale ?? uiLocale.locale;
     const lower = text.trim().toLocaleLowerCase(locale);
     const holds = (item: T) => !lower || search.textOf(item).toLocaleLowerCase(locale).includes(lower);
     const adapter = this.adapter!;
@@ -192,7 +192,7 @@ export class KeyedItems<T = unknown> {
   /** `search` at once, for items in an array; `null` for items that come from a source. */
   searchInMemory(text: string, search: TextSearch<T>, skip = 0, take = 100): { items: T[]; total: number } | null {
     if (!this.inMemory) return null;
-    const locale = search.locale ?? pageLocale();
+    const locale = search.locale ?? uiLocale.locale;
     const lower = text.trim().toLocaleLowerCase(locale);
     const test = search.filter ? data.createRowFilter<T>(search.filter, { locale }) : null;
     const all = (this.source as readonly T[]).filter(

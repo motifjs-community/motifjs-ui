@@ -1,6 +1,5 @@
 import type { Bind, IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { follow } from '../../core/follow';
 import type { ControlSize } from '../../core/control-size';
 import { LanguageLook } from '../../core/language-look';
 import { nextId } from '../../core/next-id';
@@ -11,6 +10,7 @@ import type { ProgressShape } from './progress-shape';
 import type { ProgressTone } from './progress-tone';
 import { ProgressWave, type WaveLook } from './ProgressWave';
 import { easing } from './wave-geometry';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = ['value', 'min', 'max', 'shape', 'labelPosition', 'showValue', 'locale', 'tone', 'size', 'stretch'] as const;
 
@@ -81,10 +81,13 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
 
     this.observeProperty<string>('text', (text) => this.renderLabel(text));
     for (const name of ['value', 'min', 'max', 'showValue', 'valueText'] as const) this.observeProperty(name, () => this.renderValue());
-    this.observeProperty('locale', () => {
+    // Its own locale or the kit's language: how the percentage is written.
+    const drawLocale = () => {
       this.parts.percent = null;
       this.renderValue();
-    });
+    };
+    this.observeProperty('locale', drawLocale);
+    onLanguage(this, drawLocale);
     for (const name of LOOK) this.observeProperty(name, () => this.renderLook());
     this.motif.setDisposable(() => {
       this.parts.stopName?.();
@@ -227,7 +230,7 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
       this.element.setAttribute('aria-labelledby', parts.label.id);
     } else {
       this.element.removeAttribute('aria-labelledby');
-      parts.stopName ??= follow(this, 'name', () => uiLocale.strings.loading, (label) => this.element.setAttribute('aria-label', label));
+      parts.stopName ??= onLanguage(this, () => this.element.setAttribute('aria-label', uiLocale.strings.loading));
     }
     this.renderHead();
   }
@@ -268,7 +271,7 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
   private formatPercent(fraction: number): string {
     const parts = this.parts;
     if (!parts.percent) {
-      const locale = this.peekProperty<string>('locale') || document.documentElement.lang || undefined;
+      const locale = this.peekProperty<string>('locale') || uiLocale.locale;
       try {
         parts.percent = new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 });
       } catch {

@@ -1,6 +1,5 @@
 import type { Bind, ComponentBase, IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { follow } from '../../core/follow';
 import type { ControlSize } from '../../core/control-size';
 import { deepActiveElement, focusInitial, isFocusable } from '../../core/focus';
 import { nextId } from '../../core/next-id';
@@ -8,6 +7,7 @@ import { uiLocale } from '../../core/ui-locale';
 import type { ProgressTone } from './progress-tone';
 import type { SpinnerLabelPosition } from './spinner-label-position';
 import type { SpinnerProps } from './spinner-props';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = ['labelPosition', 'size', 'tone', 'contained', 'delay'] as const;
 
@@ -184,7 +184,7 @@ export class Spinner extends Control<HTMLDivElement, SpinnerProps> {
       this.element.setAttribute('aria-labelledby', parts.label.id);
     } else {
       this.element.removeAttribute('aria-labelledby');
-      parts.stopName ??= follow(this, 'name', () => uiLocale.strings.loading, (label) => this.element.setAttribute('aria-label', label));
+      parts.stopName ??= onLanguage(this, () => this.element.setAttribute('aria-label', uiLocale.strings.loading));
     }
   }
 

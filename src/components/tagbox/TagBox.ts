@@ -1,6 +1,5 @@
 import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import type { data } from '@motifx-community/data';
-import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
 import { checkMark, chevronDown, dashMark, dismissMark } from '../../core/glyphs';
 import type { IconSource } from '../../core/icon-source';
@@ -21,6 +20,7 @@ import { selectAllRow, type SelectAllRow } from '../listbox/select-all-row';
 import { selectAllState } from '../listbox/select-all-state';
 import { ValueItems } from '../listbox/value-items';
 import type { TagBoxProps } from './tag-box-props';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = [
   'items',
@@ -116,7 +116,8 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     this.observeProperty<readonly T[] | undefined>('items', (items) => {
       if (!this.peekProperty('dataSource')) parts.items.setArray(items ?? []);
     });
-    const stopLocale = follow(this, 'texts', () => uiLocale.strings, (strings) => {
+    const stopLocale = onLanguage(this, () => {
+      const strings = uiLocale.strings;
       parts.arrow?.setAttribute('aria-label', strings.moreOptions);
       parts.clear?.setAttribute('aria-label', strings.clear);
       this.renderTags();

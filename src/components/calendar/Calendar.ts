@@ -1,9 +1,7 @@
 import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
-import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
 import { chevronDown } from '../../core/glyphs';
-import { pageLocale } from '../../core/page-locale';
 import { uiLocale } from '../../core/ui-locale';
 import { addDays } from '../../parts/dates/add-days';
 import { addMonths } from '../../parts/dates/add-months';
@@ -14,6 +12,7 @@ import { sameDay } from '../../parts/dates/same-day';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import type { CalendarProps } from './calendar-props';
 import type { CalendarView } from './calendar-view';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = ['value', 'min', 'max', 'firstDayOfWeek', 'locale', 'showWeekNumbers', 'showOtherMonths', 'showTodayButton', 'currentView', 'minView'] as const;
 
@@ -58,6 +57,8 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
       if (value) parts.focused = dayStart(value);
     });
     for (const name of DRAWN) this.observeProperty(name, () => this.render());
+    // The kit's language: the month's names, the first day of the week.
+    onLanguage(this, () => this.render());
     this.observeProperty<CalendarView | undefined>('currentView', (view) => {
       if (!view) return;
       parts.view = view;
@@ -66,18 +67,17 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     parts.ready = true;
     this.render();
     this.observeProperty<boolean>('showTodayButton', (on) => this.renderToday(!!on));
-    // The texts follow uiLocale.
-    const stopTexts = follow(
-      this,
-      'texts',
-      () => ({ strings: uiLocale.strings, view: this.getProperty<CalendarView | undefined>('shownView') ?? 'month' }),
-      ({ strings, view }) => {
-        const [back, forward] = view === 'month' ? [strings.previousMonth, strings.nextMonth] : view === 'year' ? [strings.previousYear, strings.nextYear] : [strings.previousYears, strings.nextYears];
-        parts.previous.setAttribute('aria-label', back);
-        parts.next.setAttribute('aria-label', forward);
-        if (parts.today) parts.today.textContent = strings.today;
-      },
-    );
+    // The kit's language, or another view: the buttons' names are written again.
+    const drawTexts = () => {
+      const strings = uiLocale.strings;
+      const view = this.peekProperty<CalendarView | undefined>('shownView') ?? 'month';
+      const [back, forward] = view === 'month' ? [strings.previousMonth, strings.nextMonth] : view === 'year' ? [strings.previousYear, strings.nextYear] : [strings.previousYears, strings.nextYears];
+      parts.previous.setAttribute('aria-label', back);
+      parts.next.setAttribute('aria-label', forward);
+      if (parts.today) parts.today.textContent = strings.today;
+    };
+    const stopTexts = onLanguage(this, drawTexts);
+    this.observeProperty('shownView', drawTexts);
     parts.grid.addEventListener('keydown', (e) => this.keyDown(e));
     parts.grid.addEventListener('click', (e) => this.clicked(e));
     parts.previous.addEventListener('click', () => this.page(-1));
@@ -125,7 +125,7 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     this.assignProperty('firstDayOfWeek', value);
   }
   get locale(): string {
-    return this.getProperty<string | undefined>('locale') || pageLocale();
+    return this.getProperty<string | undefined>('locale') || uiLocale.locale;
   }
   set locale(value: Bind<string>) {
     this.assignProperty('locale', value);
@@ -245,7 +245,7 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
   }
 
   private get currentLocale(): string {
-    return this.peekProperty<string>('locale') || pageLocale();
+    return this.peekProperty<string>('locale') || uiLocale.locale;
   }
 
   private get rtl(): boolean {

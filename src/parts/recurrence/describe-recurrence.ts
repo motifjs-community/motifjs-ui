@@ -1,4 +1,4 @@
-import { fillTemplate } from '../../core/fill-template';
+import { fillText } from '../../core/fill-text';
 import type { UiStrings } from '../../core/ui-strings';
 import type { RecurrenceRule } from './recurrence-rule';
 
@@ -37,7 +37,7 @@ const monthName = (locale: string, month: number) => new Intl.DateTimeFormat(loc
  */
 export function describeRecurrence(rule: RecurrenceRule | null, start: Date | null, options: DescribeRecurrenceOptions): string {
   const { locale, strings } = options;
-  const t = (key: keyof UiStrings, values: Record<string, unknown> = {}) => fillTemplate(strings[key], values);
+  const t = (key: keyof UiStrings, values: Record<string, unknown> = {}) => fillText(strings[key], locale, values);
   if (!rule) return t('recurrenceSummaryNever');
   const [one, many] = EVERY[rule.frequency];
   let text = rule.interval > 1 ? t(many, { n: rule.interval }) : t(one);

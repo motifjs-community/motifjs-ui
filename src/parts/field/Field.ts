@@ -26,6 +26,7 @@ import { sameAsWritten } from './same-as-written';
 import type { ValidateOn } from './validate-on';
 import type { ValidatedEventArgs } from './validated-event-args';
 import type { ValueChangedEventArgs } from './value-changed-event-args';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = [
   'labelMode',
@@ -142,13 +143,10 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
       e.preventDefault();
       this.focus();
     });
-    // Follows the help text, the error and `uiLocale`.
-    parts.stopMessage = follow(
-      this,
-      'message',
-      () => this.validationMessage || (this.getProperty<string | undefined>('helpText') ?? ''),
-      (text) => this.renderMessage(text),
-    );
+    // Follows the help text, the error and a rule's message given as a function; in the kit's language again when it changes.
+    const message = () => this.validationMessage || (this.getProperty<string | undefined>('helpText') ?? '');
+    parts.stopMessage = follow(this, 'message', message, (text) => this.renderMessage(text));
+    onLanguage(this, () => this.renderMessage(message()));
     this.motif.setDisposable(() => {
       parts.stopMessage?.();
       parts.stopClearLabel?.();
@@ -472,7 +470,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
       clear(e);
       this.focus();
     });
-    parts.stopClearLabel = follow(this, 'clearLabel', () => uiLocale.strings.clear, (label) => button.setAttribute('aria-label', label));
+    parts.stopClearLabel = onLanguage(this, () => button.setAttribute('aria-label', uiLocale.strings.clear));
     this.area('tools').prepend(button);
     parts.clear = button;
   }

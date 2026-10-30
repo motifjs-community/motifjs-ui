@@ -1,5 +1,6 @@
 import { reactive } from '@motifx/core';
 import { Button, enStrings, Slider, trStrings, uiLocale } from '@motifx-community/ui';
+import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the names of the thumbs; the price slider writes its numbers in the chosen language. */
 export default function Localization() {
@@ -12,7 +13,7 @@ export default function Localization() {
     <>
       <Button text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')} variant="outline" onclick={toggle} />
       <span>
-        The start thumb is named <output class="sl-minimum">{() => uiLocale.strings.minimum}</output>
+        The start thumb is named <output class="sl-minimum">{() => kitTexts.strings.minimum}</output>
       </span>
       <Slider
         label={() => (s.lang === 'en' ? 'Price' : 'Fiyat')}

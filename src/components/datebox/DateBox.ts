@@ -1,8 +1,6 @@
 import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
-import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
 import { calendarMark, clockMark } from '../../core/glyphs';
-import { pageLocale } from '../../core/page-locale';
 import { uiLocale } from '../../core/ui-locale';
 import type { DateKind } from '../../parts/dates/date-kind';
 import { datePatternOf } from '../../parts/dates/date-pattern-of';
@@ -18,6 +16,7 @@ import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
 import type { ValidationRule } from '../../parts/validation/validation-rule';
 import { Calendar } from '../calendar/Calendar';
 import type { DateBoxProps } from './date-box-props';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = [
   'type',
@@ -70,6 +69,8 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     if (own.disabledDates !== undefined) this.bindProperty('disabledDates', functionValue(own.disabledDates));
 
     for (const name of ['type', 'locale', 'showSeconds'] as const) this.observeProperty(name, () => this.renderPattern());
+    // The kit's language: the date's pattern and how it is written.
+    onLanguage(this, () => this.renderPattern());
     this.observeProperty<string>('placeholder', (text) => {
       if (text) this.inputElement.placeholder = text;
       else this.inputElement.removeAttribute('placeholder');
@@ -81,15 +82,14 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     this.observeProperty('disabledDates', () => this.syncPicker());
     this.listen();
     const parts = this.dateParts;
-    parts.stopLabels = follow(
-      this,
-      'labels',
-      () => (this.getProperty<DateKind | undefined>('type') === 'time' ? uiLocale.strings.chooseTime : uiLocale.strings.chooseDate),
-      (label) => {
-        parts.toggle?.setAttribute('aria-label', label);
-        parts.popup?.element.setAttribute('aria-label', label);
-      },
-    );
+    // The kit's language, or another kind of box: the button and the popup are named again.
+    const drawLabels = () => {
+      const label = this.peekProperty<DateKind | undefined>('type') === 'time' ? uiLocale.strings.chooseTime : uiLocale.strings.chooseDate;
+      parts.toggle?.setAttribute('aria-label', label);
+      parts.popup?.element.setAttribute('aria-label', label);
+    };
+    parts.stopLabels = onLanguage(this, drawLabels);
+    this.observeProperty('type', drawLabels);
     this.motif.setDisposable(() => {
       parts.mask.destroy();
       parts.stopLabels?.();
@@ -123,7 +123,7 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     this.assignProperty('disabledDates', functionValue(value));
   }
   get locale(): string {
-    return this.getProperty<string | undefined>('locale') || pageLocale();
+    return this.getProperty<string | undefined>('locale') || uiLocale.locale;
   }
   set locale(value: Bind<string>) {
     this.assignProperty('locale', value);
@@ -284,7 +284,7 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
   private get dateParts(): Parts {
     const self = this as unknown as { [PARTS]?: Parts };
     if (!self[PARTS]) {
-      const pattern = datePatternOf(pageLocale(), 'date');
+      const pattern = datePatternOf(uiLocale.locale, 'date');
       self[PARTS] = {
         mask: new InputMask(this.focusElement as HTMLInputElement, { mask: pattern.mask }),
         pattern,
@@ -304,7 +304,7 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
   private renderPattern(): void {
     const parts = this.dateParts;
     const kind = this.peekProperty<DateKind>('type') ?? 'date';
-    parts.pattern = datePatternOf(this.peekProperty<string>('locale') || pageLocale(), kind, !!this.peekProperty('showSeconds'));
+    parts.pattern = datePatternOf(this.peekProperty<string>('locale') || uiLocale.locale, kind, !!this.peekProperty('showSeconds'));
     parts.mask.update({ mask: parts.pattern.mask });
     this.element.dataset.type = kind;
     this.renderToggle();
@@ -357,7 +357,7 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     const format = this.peekProperty<Intl.DateTimeFormatOptions | null>('displayFormat');
     const input = this.inputElement;
     if (!value || !format || document.activeElement === input || this.dateParts.unfinished) return;
-    input.value = new Intl.DateTimeFormat(this.peekProperty<string>('locale') || pageLocale(), format).format(value);
+    input.value = new Intl.DateTimeFormat(this.peekProperty<string>('locale') || uiLocale.locale, format).format(value);
   }
 
   private renderToggle(): void {
@@ -436,7 +436,7 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     }
     if (kind !== 'date' && !parts.times) {
       const times = new OptionList<Date>();
-      const format = new Intl.DateTimeFormat(this.peekProperty<string>('locale') || pageLocale(), { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+      const format = new Intl.DateTimeFormat(this.peekProperty<string>('locale') || uiLocale.locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
       times.textOf = (time) => format.format(time);
       times.isSelected = (time) => {
         const value = this.peekValue();

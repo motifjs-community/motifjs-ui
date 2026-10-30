@@ -1,7 +1,6 @@
 import { effect, reactive, read, untracked, type IDisposable } from '@motifx/core';
 import { data } from '@motifx-community/data';
-import { fillTemplate } from '../../../core/fill-template';
-import { pageLocale } from '../../../core/page-locale';
+import { fillText } from '../../../core/fill-text';
 import { uiLocale } from '../../../core/ui-locale';
 import type { UiStrings } from '../../../core/ui-strings';
 import type { DataGridProps } from '../data-grid-props';
@@ -470,11 +469,11 @@ export class GridModel<T> {
 
   text(key: keyof UiStrings, values?: Record<string, unknown>): string {
     const t = read(this.props.texts)?.[key] ?? uiLocale.strings[key];
-    return values ? fillTemplate(t, values) : t;
+    return fillText(t, this.formatter.locale, values);
   }
 
   get formatter(): CellFormatter {
-    const locale = read(this.props.locale) || pageLocale();
+    const locale = read(this.props.locale) || uiLocale.locale;
     if (this.formatterCache?.locale !== locale) this.formatterCache = new CellFormatter(
         locale,
         () => [this.text('yes'), this.text('no')],

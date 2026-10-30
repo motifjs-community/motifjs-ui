@@ -176,7 +176,7 @@ export class GridSearch<T> {
       sub.dispose();
       if (this.loaded === sub) this.loaded = null;
       const model = this.model;
-      model.announce(model.text('gridSearchResults', { count: model.formatter.count(model.dataTotal) }));
+      model.announce(model.text('gridSearchResults', { count: model.dataTotal }));
     });
     this.loaded = sub;
   }

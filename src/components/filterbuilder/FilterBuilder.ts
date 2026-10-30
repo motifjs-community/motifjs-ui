@@ -34,6 +34,7 @@ import { FilterBuilderModel } from './FilterBuilderModel';
 import type { FilterBuilderOperation } from './filter-builder-operation';
 import type { FilterBuilderProps } from './filter-builder-props';
 import type { FilterBuilderValueChangedEventArgs } from './filter-builder-value-changed-event-args';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = ['value', 'fields', 'customOperations', 'groupOperations', 'maxGroupLevel', 'allowHierarchicalFields', 'label', 'texts', 'locale', 'size', 'addKeys', 'removeKeys'] as const;
 
@@ -144,6 +145,8 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     );
     parts.ready = true;
     this.draw(false);
+    // The kit's language: the texts and how values are written.
+    onLanguage(this, () => parts.ready && this.draw(this.focusWithin));
     queueMicrotask(() => {
       for (const name of ['aria-label', 'aria-labelledby', 'aria-describedby']) {
         const value = this.element.getAttribute(name);

@@ -1,5 +1,6 @@
 import { reactive } from '@motifx/core';
 import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the texts of every field on the page; a required message already shown follows too. */
 export default function Localization() {
@@ -12,7 +13,7 @@ export default function Localization() {
     <>
       <Button text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')} variant="outline" onclick={toggle} />
       <span>
-        Required reads <output>{() => uiLocale.strings.required}</output>
+        Required reads <output>{() => kitTexts.strings.required}</output>
       </span>
     </>
   );

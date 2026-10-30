@@ -1,6 +1,5 @@
 import { onLookChanged } from '../../core/look-watch';
 import { Component, Emitter, type Event as MotifEvent } from '@motifx/core';
-import { follow } from '../../core/follow';
 import { checkMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
@@ -12,6 +11,7 @@ import type { ItemSource } from './item-source';
 import type { ListMove } from './list-move';
 import type { OptionChosenEventArgs } from './option-chosen-event-args';
 import { readItemField } from './read-item-field';
+import { onLanguage } from '../../core/on-language';
 
 type Row = { header: string } | { index: number };
 
@@ -79,7 +79,8 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
       cancelAnimationFrame(this.frame);
       this.frame = requestAnimationFrame(() => this.drawWindow());
     });
-    const stopEmpty = follow(this, 'empty', () => this.emptyText?.() ?? uiLocale.strings.noItems, (text) => (this.empty.textContent = text));
+    // Drawn again with the list; in the kit's language again when it changes.
+    const stopEmpty = onLanguage(this, () => (this.empty.textContent = this.emptyText?.() ?? uiLocale.strings.noItems));
     // Another design language, theme or density: the rows have another height.
     const stopLook = onLookChanged(() => {
       this.rowHeight = 0;

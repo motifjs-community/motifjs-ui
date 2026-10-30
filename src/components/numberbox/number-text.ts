@@ -1,3 +1,4 @@
+import { uiLocale } from '../../core/ui-locale';
 // Numbers as people type them in a locale: its decimal and group separators and its digits.
 
 interface Separators {
@@ -35,8 +36,7 @@ function separatorsOf(locale: string): Separators {
 
 /** The locale itself when it is valid, else the page's. */
 export function checkedLocale(locale: string | null | undefined): string {
-  const page = (typeof document !== 'undefined' && document.documentElement.lang) || (typeof navigator !== 'undefined' && navigator.language) || 'en';
-  for (const candidate of [locale, page]) {
+  for (const candidate of [locale, uiLocale.locale]) {
     if (!candidate) continue;
     try {
       if (Intl.NumberFormat.supportedLocalesOf(candidate).length) return candidate;

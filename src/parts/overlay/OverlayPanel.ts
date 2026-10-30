@@ -1,6 +1,5 @@
 import { Application, Emitter, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey } from '../../core/access-key';
-import { follow } from '../../core/follow';
 import { holdBackButton } from '../../core/back-button';
 import { FocusContainer } from '../../core/container';
 import type { Control } from '../../core/control';
@@ -21,6 +20,7 @@ import type { OverlayContainer } from './overlay-container';
 import type { OverlayEventArgs } from './overlay-event-args';
 import type { OverlayOpeningEventArgs } from './overlay-opening-event-args';
 import type { OverlayPanelProps } from './overlay-panel-props';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = [
   'value',
@@ -674,7 +674,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
       button.element.addEventListener('click', () => this.closeBy('button'));
       this.placeIn(button, parts.tools);
       parts.close = button;
-      parts.stopLabel = follow(this, 'closeLabel', () => uiLocale.strings.close, (label) => button.element.setAttribute('aria-label', label));
+      parts.stopLabel = onLanguage(this, () => button.element.setAttribute('aria-label', uiLocale.strings.close));
     }
     this.renderHeader();
   }

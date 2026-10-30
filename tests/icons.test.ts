@@ -10,7 +10,8 @@ const kit = JSON.parse(readFileSync(join(root, 'tokens/icons/kit.icons.json'), '
 
 describe('icons', () => {
   it('the generated stylesheet is the one the icon files make', () => {
-    expect(readFileSync(join(root, 'src/generated/icons.css'), 'utf8')).toBe(renderIcons());
+    // Compared by content: the working tree may hold CRLF (core.autocrlf).
+    expect(readFileSync(join(root, 'src/generated/icons.css'), 'utf8').replace(/\r\n/g, '\n')).toBe(renderIcons());
   });
 
   it('every glyph helper names an icon of the kit, and draws it as a span', () => {

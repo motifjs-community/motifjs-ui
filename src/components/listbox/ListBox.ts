@@ -1,6 +1,5 @@
 import { untracked, type Bind, type IBaseProp } from '@motifx/core';
 import type { data } from '@motifx-community/data';
-import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
 import { checkMark, dashMark } from '../../core/glyphs';
 import type { IconSource } from '../../core/icon-source';
@@ -21,6 +20,7 @@ import type { ListSelectionMode } from './list-selection-mode';
 import { selectAllRow, type SelectAllRow } from './select-all-row';
 import { selectAllState } from './select-all-state';
 import { ValueItems } from './value-items';
+import { onLanguage } from '../../core/on-language';
 
 const OWN = [
   'items',
@@ -94,7 +94,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     this.observeProperty<readonly T[] | undefined>('items', (items) => {
       if (!this.peekProperty('dataSource')) parts.items.setArray(items ?? []);
     });
-    const stopLocale = follow(this, 'texts', () => uiLocale.strings.selectAll, () => this.drawList());
+    const stopLocale = onLanguage(this, () => this.drawList());
     parts.items.onChanged(() => this.drawList(false));
     this.listen();
     this.motif.on('x:built', () => this.placeSearch());
@@ -401,8 +401,10 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     }
     if (parts.search) return;
     const search = new TextBox({ type: 'search', labelMode: 'hidden', stretch: true, autocomplete: 'off' });
-    search.label = () => uiLocale.strings.search;
-    search.placeholder = () => uiLocale.strings.search;
+    onLanguage(search, () => {
+      search.label = uiLocale.strings.search;
+      search.placeholder = uiLocale.strings.search;
+    });
     search.element.classList.add('mx-list-box__search');
     search.onValueChanged((e) => this.searchFor(e.value));
     search.inputElement.setAttribute('aria-controls', parts.list.element.id);

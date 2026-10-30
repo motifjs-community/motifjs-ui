@@ -1,5 +1,5 @@
 import { read } from '@motifx/core';
-import { fillTemplate } from '../../core/fill-template';
+import { fillText } from '../../core/fill-text';
 import { uiLocale } from '../../core/ui-locale';
 import type { UiStrings } from '../../core/ui-strings';
 import type { ValidationMessage } from './validation-message';
@@ -23,7 +23,7 @@ function matches(pattern: RegExp | string, text: string): boolean {
 }
 
 function show(bound: number | Date): string {
-  return bound instanceof Date ? bound.toLocaleDateString() : bound.toLocaleString();
+  return bound instanceof Date ? bound.toLocaleDateString(uiLocale.locale) : bound.toLocaleString(uiLocale.locale);
 }
 
 function sizeOf(value: unknown): number {
@@ -35,7 +35,7 @@ function emptyLike(value: unknown): boolean {
 }
 
 function message(rule: ValidationRule<never>, key: keyof UiStrings, values: Record<string, unknown> = {}): ValidationMessage {
-  return () => fillTemplate(read(rule.message) ?? uiLocale.strings[key], values);
+  return () => fillText(read(rule.message) ?? uiLocale.strings[key], uiLocale.locale, values);
 }
 
 async function failure<T>(rule: ValidationRule<T>, value: T, empty: boolean): Promise<ValidationMessage | null> {
