@@ -1,4 +1,5 @@
-import { ComponentBase, effect, untracked } from '@motifx/core';
+import { ComponentBase, untracked } from '@motifx/core';
+import { put } from '../../../core/draw-parts';
 import { moreMark } from '../../../core/glyphs';
 import { isNode } from '../../../core/node-kind';
 import type { BandCellContext } from '../band-cell-context';
@@ -12,7 +13,8 @@ import type { HeaderRow } from './HeaderRow';
  * its columns (`aria-colindex` of its first one, `aria-colspan`), the places over other columns
  * empty. Over a pinned column no band covers stands an empty piece that stays with it. Plain
  * elements in the head's row group, before the header row. Dragging a band's header moves the band,
- * with its columns, among the columns and bands beside it; its menu button opens its menu.
+ * with its columns, among the columns and bands beside it; its menu button opens its menu. It
+ * follows nothing: each band's header draws itself again whenever the grid tells a change.
  */
 export class BandRows<T> {
   readonly rows: HTMLDivElement[] = [];
@@ -22,6 +24,8 @@ export class BandRows<T> {
   /** The empty pieces over pinned columns, by row and field. */
   private readonly fillers: Map<string, HTMLDivElement>[] = [];
   private readonly stops: (() => void)[] = [];
+  /** What draws each band's header, by band. */
+  private readonly drawers = new Map<string, () => void>();
   private head: HTMLElement | null = null;
 
   constructor(
@@ -36,6 +40,14 @@ export class BandRows<T> {
     indicator.setAttribute('aria-hidden', 'true');
     indicator.hidden = true;
     this.indicator = indicator;
+    this.stops.push(grid.notices.on(() => this.draw()));
+  }
+
+  /** Draws every band's header as the grid is now. */
+  draw() {
+    untracked(() => {
+      for (const draw of this.drawers.values()) draw();
+    });
   }
 
   /** The header element of a band, while it shows. */
@@ -158,16 +170,17 @@ export class BandRows<T> {
       } else if (isNode(content)) title.append(content);
       else if (content !== undefined && content !== null) title.append(String(content));
     }
-    this.stops.push(
-      effect(() => {
-        const text = cols.title(id);
-        if (own) cell.setAttribute('aria-label', text);
-        else title.textContent = text;
-        title.style.textAlign = cols.bandAlign(id);
-        button.hidden = !host.hasMenu(id);
-        button.setAttribute('aria-label', grid.text('gridColumnMenu', { title: text }));
-      }),
-    );
+    const draw = () => {
+      const text = cols.title(id);
+      if (own) put(cell, 'aria-label', text);
+      else if (title.textContent !== text) title.textContent = text;
+      if (title.style.textAlign !== cols.bandAlign(id)) title.style.textAlign = cols.bandAlign(id);
+      const menu = host.hasMenu(id);
+      if (button.hidden === menu) button.hidden = !menu;
+      put(button, 'aria-label', grid.text('gridColumnMenu', { title: text }));
+    };
+    this.drawers.set(id, draw);
+    untracked(draw);
     button.addEventListener('pointerdown', (e) => e.stopPropagation());
     button.addEventListener('click', (e) => {
       e.stopPropagation();

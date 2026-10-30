@@ -24,7 +24,7 @@ import { Button } from '../button/Button';
 import { Calendar } from '../calendar/Calendar';
 import { Spinner } from '../progress/Spinner';
 import { Toolbar } from '../toolbar/Toolbar';
-import { flag, put, shown, text } from './view/draw-parts';
+import { flag, put, shown, text } from '../../core/draw-parts';
 import { KeyedParts } from './view/KeyedParts';
 import type { AppointmentAddedEventArgs } from './appointment-added-event-args';
 import type { AppointmentAddingEventArgs } from './appointment-adding-event-args';

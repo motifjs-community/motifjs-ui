@@ -77,6 +77,9 @@ export class GridData<T> {
   private shown: [number, number] = [0, 0];
   private readonly partLoaded: (skip: number, count: number) => void;
 
+  /** Tells that fields of `state` changed (the grid tells its views). */
+  private readonly changed: (...fields: (keyof DataState & string)[]) => void;
+
   constructor(options: GridDataOptions<T>) {
     const source = options.source;
     this.source = source;
@@ -90,6 +93,7 @@ export class GridData<T> {
     this.paged = source.loadMode === 'page' || options.paged;
     this.infinite = !this.paged && !!options.infinite;
     this.partLoaded = options.partLoaded ?? (() => {});
+    this.changed = options.changed ?? (() => {});
     const chosen = options.chosenPageSize ?? null;
     this.size = source.loadMode === 'all' || (chosen !== null && source.loadMode === 'page') ? Math.max(0, Math.floor(chosen ?? options.pageSize)) : chosen ?? source.pageSize;
     // Before the first load a source that loads pages only keeps the size.
@@ -111,6 +115,7 @@ export class GridData<T> {
             this.rowsChanged();
           }
           this.state.edits++;
+          this.changed('edits');
         });
         options.edited(e);
       }),
@@ -202,6 +207,7 @@ export class GridData<T> {
     this.failed = false;
     this.ensureParts(true);
     untracked(() => this.state.version++);
+    this.changed('version');
     return true;
   }
 
@@ -442,6 +448,7 @@ export class GridData<T> {
   regroupView() {
     this.view = null;
     untracked(() => this.state.version++);
+    this.changed('version');
   }
 
   /** Loads again, keeping the position; saved new rows leave where they were entered and take their place among the rows. */
@@ -454,6 +461,7 @@ export class GridData<T> {
     if (this.failed) {
       this.failed = false;
       untracked(() => this.state.version++);
+      this.changed('version');
     }
     if (this.groupMode && this.groupState === 'error') this.reloadGroups();
     else void this.source.retry();
@@ -599,6 +607,7 @@ export class GridData<T> {
     this.shownRows = null;
     this.savedKeys = null;
     this.state.version++;
+    this.changed('version');
   }
 
   private updateStatus() {
@@ -607,6 +616,7 @@ export class GridData<T> {
     if (this.groupMode === 'memory' && this.source.loadMode !== 'all') status = this.groupState;
     else if (this.groupMode && this.groupState !== 'ready') status = this.groupState;
     if (st.status !== status) st.status = status;
+    this.changed('status');
   }
 
   private sourceChanged(reason: data.DataSourceChange<T>['reason']) {
@@ -619,6 +629,7 @@ export class GridData<T> {
       else if (reason === 'loaded') this.sourceStatus = 'ready';
       else if (reason === 'failed' && s.status === 'error') this.sourceStatus = 'error';
       st.failedBlocks = s.failedBlocks;
+      this.changed('failedBlocks');
       // Infinite: a new query starts from the first part; a part that came (or failed) shows.
       if (reason === 'query' || reason === 'cleared') this.startOver();
       else if (reason === 'loaded' || reason === 'failed' || reason === 'rows') this.takePart();

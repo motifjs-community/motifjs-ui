@@ -1,4 +1,5 @@
 import { Component, untracked } from '@motifx/core';
+import { mark, put } from '../../../core/draw-parts';
 import { FILTER_ROW, type GridModel } from '../model/GridModel';
 import { FilterCell } from './FilterCell';
 import { placeInOrder } from './place-in-order';
@@ -19,16 +20,26 @@ export class FilterRow<T> extends Component<HTMLDivElement> {
   override onConfigured() {
     const grid = this.grid;
     this.class.add('mx-data-grid__row mx-data-grid__row--filter');
-    this.attr.add({
-      role: 'row',
-      'aria-rowindex': () => String(grid.columns.bandDepth() + 2),
-      hidden: () => (grid.showsFilterRow() ? null : ''),
-      'data-active': () => (grid.state.activeRow === FILTER_ROW ? '' : null),
-    });
+    this.element.setAttribute('role', 'row');
     for (const field of grid.columns.state.order) if (grid.columnWindow.has(field)) this.makeCell(field);
+    this.motif.setDisposable(grid.notices.on(() => this.draw()));
     this.motif.setDisposable(() => {
       for (const c of this.filterCells.values()) c.dispose();
     });
+    this.draw();
+  }
+
+  /** Draws the row and its cells as the grid is now. */
+  draw() {
+    if (this.isDisposed) return;
+    untracked(() => {
+      const { grid } = this;
+      const el = this.element;
+      put(el, 'aria-rowindex', String(grid.columns.bandDepth() + 2));
+      mark(el, 'hidden', !grid.showsFilterRow());
+      mark(el, 'data-active', grid.state.activeRow === FILTER_ROW);
+    });
+    for (const cell of this.filterCells.values()) cell.draw();
   }
 
   /** Puts the cells in display order, numbers the visible ones and makes the editors the row needs now; while columns are virtual, only the columns drawn have their cell in the row. */

@@ -9,6 +9,7 @@ const OPTIONS = [
   ['masterDetail.autoExpandAll', '`Bind<boolean>`', '`false`', 'Every row starts open. Changing it, `enabled` or `template` opens or closes every row again.'],
   ['masterDetail.canExpand', '`Bind<boolean> | (row) => boolean`', '`true`', 'Whether a row has details; a row without has no arrow, and `expandRow` leaves it closed. New rows not saved yet have none.'],
   ['masterDetail.keepDetails', '`Bind<boolean>`', '`true`', 'A closed row keeps what its details hold and shows it as it was when it opens again; off, closing disposes it.'],
+  ['masterDetail.keepAcrossPages', '`Bind<boolean>`', '`false`', 'Paged grid: the details of the page left keep what they hold while the user pages (up to `keepLimit`); off, another page or page size disposes them, and they are made again when their page shows. A row stays open either way.'],
   ['masterDetail.keepLimit', '`Bind<number>`', '`100`', 'Details out of view that keep their content (open ones, and closed ones with `keepDetails`); past it the ones seen longest ago are disposed, and made again when they show.'],
   ['masterDetail.height', '`Bind<number> | (row) => number`', 'the content’s', 'A height of their own in pixels, the content scrolling inside; a function gives each row its own.'],
   ['masterDetail.estimatedHeight', '`Bind<number>`', '`200`', 'What details count as before they are drawn and measured, while none is; then the average of those measured. Only the scroll bar uses it.'],

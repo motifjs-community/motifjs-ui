@@ -10,6 +10,13 @@ export function flag(el: HTMLElement, name: string, on: unknown): void {
   } else if (el.hasAttribute(name)) el.removeAttribute(name);
 }
 
+/** An attribute there with no value, or taken away. */
+export function mark(el: HTMLElement, name: string, on: unknown): void {
+  if (on) {
+    if (el.getAttribute(name) !== '') el.setAttribute(name, '');
+  } else if (el.hasAttribute(name)) el.removeAttribute(name);
+}
+
 /** An attribute written as it is, or taken away when there is none. */
 export function put(el: HTMLElement, name: string, value: string | null | undefined): void {
   if (value === null || value === undefined || value === '') {
@@ -42,4 +49,35 @@ export function part<E extends HTMLElement = HTMLElement>(parent: ComponentBase,
   if (className) c.element.className = className;
   parent.controls.add(c);
   return c;
+}
+
+const placeholders = new WeakMap<Element, Comment>();
+
+/**
+ * In the page or not, in its place: taken out, a placeholder keeps its place, and it comes back there. For a part
+ * whose parent is not changed while it is out (what `x-display` does for JSX).
+ */
+export function kept(el: HTMLElement, on: boolean): void {
+  const holder = placeholders.get(el);
+  if (on) {
+    if (holder?.parentNode) holder.replaceWith(el);
+    return;
+  }
+  if (!el.parentNode) return;
+  const mark = holder ?? document.createComment('');
+  placeholders.set(el, mark);
+  el.replaceWith(mark);
+}
+
+const handed = new WeakMap<object, { value: unknown }>();
+
+/**
+ * The value of a control the user changes too (a box, a list, a check box): given only when it is not the one given
+ * last, so what the user typed or picked since stays until the value itself changes.
+ */
+export function handOver<V>(control: { value: V }, value: V): void {
+  const last = handed.get(control);
+  if (last && Object.is(last.value, value)) return;
+  handed.set(control, { value });
+  control.value = value;
 }

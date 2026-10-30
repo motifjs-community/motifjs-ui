@@ -15,6 +15,11 @@ import type { RangeLook } from './range-look';
  * `state.version`. The last range is the one a Shift extension and the keys change.
  */
 export class CellRanges<T> {
+  /** Called when the state changed (the grid tells its views). */
+  notify: ((name: string) => void) | null = null;
+  private tell() {
+    this.notify?.('ranges');
+  }
   readonly state = reactive({ version: 0 });
   /** The change being made comes from a range drawn with the pointer. */
   byDrag = false;
@@ -281,6 +286,7 @@ export class CellRanges<T> {
   private changed() {
     this.found = null;
     untracked(() => this.state.version++);
+    this.tell();
     this.changedEmitter.fire(this.toPublic());
   }
 }

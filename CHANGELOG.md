@@ -6,6 +6,39 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### DataGrid: drawn by hand, with nothing followed inside
+
+- What changes in the grid is told where it is changed (`GridNotices`, once a turn); the rows, the header, the
+  filter row, the totals, the group rows and footers, the toolbar, the bottom bar, the pager, the filter panel,
+  the band headers, the group panel, the edit and adaptive forms and the filter builder window draw again what a
+  change concerns. No JSX, no bindings and no effects of its own inside; what comes in from outside is the
+  developer's data, props (a function among them followed by one binding per source) and `reState()`. The state
+  the API calls "reactive" stays so for the app's own bindings.
+- Datagrid page: bindings 1,306 → 87, live effects 2,285 → 579, effects run while it opens 2,478 → 346; a sort
+  runs none (was 140). Every write is made only when its value changed.
+- Widening a column no longer has the whole page's style worked out again at each step (the grid's column sheet
+  is written only when its rules change): 60–110 ms per step → no long task.
+- `onRowPrepared` of the total row comes when what its cells show changed, not on every change of the grid.
+- A value the user changes too (the search box, the pager's page box and size list, the filter row's editors,
+  the filter panel's check box) is given again only when the grid's value changed, so what is typed stays.
+
+### DataGrid: `masterDetail.keepAcrossPages`
+
+- A paged grid disposes the details of the page left when the page or the page size changes, and makes them again
+  when their page shows; a row stays open. `keepAcrossPages: true` keeps them while the user pages, up to
+  `keepLimit`. Closing a row keeps its details with `keepDetails` (the default) and disposes them without it.
+
+### Focus: a control hidden or disabled while focused does not scroll the page
+
+- Focus moved off a control that is hidden or disabled goes to the next one without scrolling (the page jumped
+  after the first "Save changes" of a batch-edited grid).
+
+### FormLayout: a field not shown is not checked
+
+- A field whose item is not shown (`visible: false`) is left out of `validate()` and `isValid`, its message cleared;
+  shown again, it is checked again. A field on a tab not chosen is still checked. The Scheduler form of "Fields for
+  one appointment" saves again (its required "Guests" stopped it while hidden).
+
 ### Properties: a function prop follows through the component's bindings; `x-model` mirrors the state
 
 - A property given as a function is followed by a binding of the component (`follow`, `PropBinding`): a reactive

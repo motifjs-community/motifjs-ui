@@ -36,6 +36,8 @@ export interface GridDataOptions<T> {
   createRow?: () => Partial<T>;
   validateRow: data.ChangeTrackerOptions<T, unknown>['validateRow'];
   state: DataState;
+  /** Fields of `state` were changed: the grid tells its views. */
+  changed?: (...fields: (keyof DataState & string)[]) => void;
   /** The tracker told something; the grid keeps its new-row area in step. */
   edited: (change: data.ChangeTrackerChange<T>) => void;
 }

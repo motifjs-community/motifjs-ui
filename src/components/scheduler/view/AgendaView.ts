@@ -2,7 +2,7 @@ import { Component } from '@motifx/core';
 import { onReState } from '../../../core/on-re-state';
 import type { AgendaDay } from '../model/agenda-day';
 import type { AgendaPiece } from '../model/agenda-piece';
-import { css, flag, part, put, shown, text } from './draw-parts';
+import { css, flag, part, put, shown, text } from '../../../core/draw-parts';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 

@@ -6,7 +6,7 @@ import { ResizeWatch } from '../../../core/resize-watch';
 import type { CellTemplateContext } from '../cell-template-context';
 import type { ModelChange } from '../model/SchedulerModel';
 import type { TimelineRow } from '../model/timeline-row';
-import { css, put } from './draw-parts';
+import { css, put } from '../../../core/draw-parts';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 import { TimelineLine } from './TimelineLine';

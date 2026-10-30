@@ -237,4 +237,30 @@ describe('FormLayout', () => {
     await settle();
     expect(tabs[1].getAttribute('aria-selected')).toBe('true');
   });
+  it('does not check a field whose item is not shown: a required one hidden lets the form through, shown it stops it', async () => {
+    const data = reactive({ name: 'Ada', catering: false, guests: null as number | null });
+    let form!: FormLayout<typeof data>;
+    page(
+      <FormLayout
+        ref={(f: FormLayout<typeof data>) => (form = f)}
+        data={data}
+        items={[
+          { field: 'name', required: true },
+          { field: 'catering', editor: 'checkbox' },
+          { field: 'guests', editor: 'number', required: true, visible: () => data.catering },
+        ]}
+      />,
+    );
+    await settle();
+    expect((await form.validate()).valid).toBe(true);
+    data.catering = true;
+    await settle();
+    const shown = await form.validate();
+    expect(shown.valid).toBe(false);
+    expect(shown.invalid.map((t) => t.element)).toEqual([form.editorOf('guests')!.element]);
+    data.catering = false;
+    await settle();
+    expect((await form.validate()).valid).toBe(true);
+    expect(form.isValid).toBe(true);
+  });
 });

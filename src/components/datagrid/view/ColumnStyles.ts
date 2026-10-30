@@ -13,6 +13,8 @@ const escapeAttr = (v: string) => v.replace(/["\\]/g, '\\$&');
  */
 export class ColumnStyles<T> {
   private css = '';
+  /** The text the sheet holds: written again only when it changes, since writing a sheet has every element's style worked out again. */
+  private written: string | null = null;
   private sheet: CSSStyleSheet | null = null;
   private root: Document | ShadowRoot | null = null;
   private styleEl: HTMLStyleElement | null = null;
@@ -96,6 +98,7 @@ export class ColumnStyles<T> {
   }
 
   private drop() {
+    this.written = null;
     if (this.sheet && this.root) this.root.adoptedStyleSheets = this.root.adoptedStyleSheets.filter((s) => s !== this.sheet);
     this.styleEl?.remove();
     this.sheet = null;
@@ -104,6 +107,8 @@ export class ColumnStyles<T> {
   }
 
   private apply() {
+    if (this.css === this.written || (!this.sheet && !this.styleEl)) return;
+    this.written = this.css;
     if (this.sheet) this.sheet.replaceSync(this.css);
     else if (this.styleEl) this.styleEl.textContent = this.css;
   }

@@ -274,6 +274,29 @@ describe('master-detail rows', () => {
     expect(disposed).toBe(3);
   });
 
+  it('disposes the details of the page left, or keeps them with keepAcrossPages; a row stays open', async () => {
+    const { grid } = make({ mode: 'paged', pageSize: 5 });
+    await settle();
+    grid.expandRow(1);
+    await settle();
+    expect(made).toBe(1);
+    grid.page = 1;
+    await settle();
+    expect(disposed).toBe(1);
+    grid.page = 0;
+    await settle();
+    expect(grid.isRowExpanded(1)).toBe(true);
+    expect(made).toBe(2);
+    grid.masterDetail.keepAcrossPages = true;
+    grid.page = 1;
+    await settle();
+    grid.page = 0;
+    await settle();
+    expect(disposed).toBe(1);
+    expect(made).toBe(2);
+    await grid.dispose();
+  });
+
   it('keeps the open rows by key across sort and filter; a row filtered out takes its details with it', async () => {
     const { grid } = make({ settings: { filterRow: true } });
     await settle();

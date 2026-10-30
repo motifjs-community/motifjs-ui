@@ -1,4 +1,4 @@
-import { ComponentBase, createSignal, effect, read, untracked } from '@motifx/core';
+import { ComponentBase, createSignal, read, untracked } from '@motifx/core';
 import type { CellContext } from '../cell-context';
 import type { GridAction } from '../grid-action';
 import type { GridColumn } from '../grid-column';
@@ -30,9 +30,10 @@ const STATUS_TEXT = {
 /**
  * One pooled row of the body, drawn without components: a row element with a cell element per
  * column. It is built once and then shows other rows while the user scrolls; `use` changes what it
- * shows and two effects draw it again: one for the row's look, one for its cells. Cells show the
- * unsaved edit of their row when there is one. The selection check box and the action buttons are
- * plain elements too; only a column's own `cell` content is a component.
+ * shows and draws it. It follows nothing: the body has it draw a part again (`drawLook`, `drawCells`,
+ * `drawRanges`, `drawActions`) when the grid tells what changed. Cells show the unsaved edit of their
+ * row when there is one. The selection check box and the action buttons are plain elements too; only
+ * a column's own `cell` content is a component.
  */
 export class GridRow<T> {
   readonly element: HTMLDivElement;
@@ -46,9 +47,8 @@ export class GridRow<T> {
   rowId: string | undefined;
   /** The buttons of the actions cell, while the grid has actions. */
   readonly actions: RowActions<T> | null = null;
+  /** Grows when the row shows another one or is drawn again: what a column's own cell content reads follows it. */
   private readonly shown = createSignal(0);
-  /** Grows when cells come or go while columns are virtual: the cells are drawn again. */
-  private readonly columnsShown = createSignal(0);
   private readonly texts = new Map<string, Text>();
   /** Components of the columns' own cell contents, by field. */
   private readonly contents = new Map<string, ComponentBase>();
@@ -56,7 +56,6 @@ export class GridRow<T> {
   private readonly marked = new Map<string, { nodes: ChildNode[]; key: string }>();
   /** Whether the search marks cells now (read when the cells are drawn). */
   private searching = false;
-  private readonly stops: (() => void)[] = [];
   private readonly check: HTMLSpanElement;
   private readonly expand: HTMLSpanElement;
   /** The "…" of the adaptive detail. */
@@ -80,15 +79,18 @@ export class GridRow<T> {
     this.more.replaceChildren(moreMark());
     // The grid's own columns always have their cells; a virtual column gets them while it is drawn.
     for (const field of model.columns.state.order) if (model.columns.isInternal(field) || model.columnWindow.has(field)) el.append(this.makeCell(field));
-    this.stops.push(
-      effect(() => this.drawLook()),
-      effect(() => this.drawCells()),
-      effect(() => this.drawRanges()),
-    );
-    if (model.columns.actionsWanted()) {
-      this.actions = new RowActions<T>(this.cells.get(ACTIONS_FIELD)!, widths);
-      this.stops.push(effect(() => this.drawActions()));
-    }
+    if (model.columns.actionsWanted()) this.actions = new RowActions<T>(this.cells.get(ACTIONS_FIELD)!, widths);
+    this.draw();
+  }
+
+  /** Draws all of the row as it is. */
+  draw() {
+    untracked(() => {
+      this.drawLook();
+      this.drawCells();
+      this.drawRanges();
+      if (this.actions) this.drawActions();
+    });
   }
 
   /** Shows grid row `index` at `top`. Visibility and position change at once, so a cell can take focus right after. */
@@ -98,6 +100,7 @@ export class GridRow<T> {
       this.row = row;
       this.rowId = rowId;
       this.shown.value = this.shown.peek() + 1;
+      this.draw();
     }
     this.element.hidden = false;
     this.element.style.transform = `translateY(${top}px)`;
@@ -124,6 +127,7 @@ export class GridRow<T> {
   /** Draws the row again as it is. */
   redraw() {
     this.shown.value = this.shown.peek() + 1;
+    this.draw();
   }
 
   /** Back to the pool, hidden. */
@@ -133,6 +137,7 @@ export class GridRow<T> {
       this.row = undefined;
       this.rowId = undefined;
       this.shown.value = this.shown.peek() + 1;
+      this.draw();
     }
     this.element.hidden = true;
   }
@@ -160,7 +165,11 @@ export class GridRow<T> {
       else cell.remove();
     }
     placeInOrder(this.element, desired);
-    if (made || !drawn.all) this.columnsShown.value = this.columnsShown.peek() + 1;
+    if (made || !drawn.all)
+      untracked(() => {
+        this.drawCells();
+        this.drawRanges();
+      });
   }
 
   /** Keys of a lookup source came: the lookup cells that show one of them are drawn again (all of them for `null`). */
@@ -195,7 +204,6 @@ export class GridRow<T> {
   }
 
   dispose() {
-    for (const stop of this.stops) stop();
     this.model.actionSets.markRow(this, false, false);
   }
 
@@ -280,8 +288,8 @@ export class GridRow<T> {
     };
   }
 
-  private drawLook() {
-    void this.shown.value;
+  /** The row's own marks: its place, odd, active, status, selection, drag and the messages of its cells. */
+  drawLook() {
     const model = this.model;
     const el = this.element;
     const { index, rowId } = this;
@@ -351,9 +359,7 @@ export class GridRow<T> {
    * the ranges, `data-run` with the edges of the run, and `aria-selected` while cells can be
    * selected. Only what changed is written; the cells' text is left alone.
    */
-  private drawRanges() {
-    void this.shown.value;
-    void this.columnsShown.value;
+  drawRanges() {
     const { index } = this;
     const look = this.model.cellRanges.look;
     const loaded = index >= 0 && this.row !== undefined;
@@ -382,8 +388,8 @@ export class GridRow<T> {
     }
   }
 
-  private drawActions() {
-    void this.shown.value;
+  drawActions() {
+    if (!this.actions) return;
     const model = this.model;
     const sets = model.actionSets;
     const { row, rowId, index } = this;
@@ -418,9 +424,8 @@ export class GridRow<T> {
     return { action, row, state, text, hint: readField(action, 'hint') ?? (showText ? '' : text), disabled, hasIcon, showText, menu: this.model.actionSets.menuOf(action) };
   }
 
-  private drawCells() {
-    void this.shown.value;
-    void this.columnsShown.value;
+  /** The cells' texts, their search marks, and whether they are changed, busy or in error. */
+  drawCells() {
     const model = this.model;
     void model.state.edits;
     void model.state.version;

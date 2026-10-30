@@ -1,4 +1,4 @@
-import { effect, untracked } from '@motifx/core';
+import { untracked } from '@motifx/core';
 import { chevronDown, chevronUp } from '../../../core/glyphs';
 import { nextId } from '../../../core/next-id';
 import type { GridModel } from '../model/GridModel';
@@ -8,7 +8,8 @@ import type { GroupPanelHost } from './group-panel-host';
  * The group panel at the start of the toolbar: a chip per grouped column, in order, or a line that
  * says where to drop a header. A chip turns the order of its groups (click, Enter), ungroups (Delete,
  * or dragged back onto the headers) and moves along the panel (dragged, or Shift + Left / Right);
- * the toolbar's arrow keys go from chip to chip. Headers dropped on it group by their column.
+ * the toolbar's arrow keys go from chip to chip. Headers dropped on it group by their column. It
+ * follows nothing: it draws itself again whenever the grid tells a change.
  */
 export class GroupPanel<T> {
   readonly element: HTMLDivElement;
@@ -37,7 +38,8 @@ export class GroupPanel<T> {
     this.drop.hidden = true;
     el.append(this.empty, this.hint, this.drop);
     this.element = el;
-    this.stops.push(effect(() => this.draw()));
+    this.stops.push(model.notices.on(() => this.draw()));
+    this.draw();
   }
 
   /** Whether headers can be dropped here now: the panel shows and dragging is on. */
@@ -105,6 +107,10 @@ export class GroupPanel<T> {
   }
 
   private draw() {
+    untracked(() => this.drawPanel());
+  }
+
+  private drawPanel() {
     const { model } = this;
     const items = model.groups.items;
     const cols = model.columns;

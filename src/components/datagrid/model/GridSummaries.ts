@@ -47,6 +47,11 @@ interface Edits<T> {
  * shows it. Unsaved changes count while `recalculateWhileEditing` is on; saved ones always do.
  */
 export class GridSummaries<T> {
+  /** Called when the state changed (the grid tells its views). */
+  notify: ((name: string) => void) | null = null;
+  private tell() {
+    this.notify?.('summaries');
+  }
   readonly state = reactive({ status: 'ready' as 'loading' | 'ready' | 'error', version: 0 });
   /** The grid, which `calculateCustomSummary` receives as `component`. */
   component: unknown = null;
@@ -64,6 +69,7 @@ export class GridSummaries<T> {
     summary: Bind<GridSummary<T>> | undefined,
   ) {
     this.given.value = summary;
+    this.tell();
   }
 
   /** The `summary` prop as given (a value or a function). */
@@ -73,6 +79,7 @@ export class GridSummaries<T> {
 
   set value(summary: Bind<GridSummary<T>> | undefined) {
     this.given.value = summary;
+    this.tell();
   }
 
   /** The summary as it reads now. Reactive. */
@@ -81,9 +88,15 @@ export class GridSummaries<T> {
     return read(this.given.value) ?? {};
   }
 
+  /** How many times `reread()` was called: what works the values out reads them again when it grows. */
+  get rereads(): number {
+    return this.look.peek();
+  }
+
   /** The items and the rows are read again, and the values worked out again: something was changed in place. */
   reread() {
     this.look.value = this.look.peek() + 1;
+    this.tell();
   }
 
   /** The values of `totalItems`, in order. Reactive. */
@@ -105,6 +118,16 @@ export class GridSummaries<T> {
   }
 
   /** Whether each open group ends with a footer row. Reactive. */
+  /** Everything read of the summary as it is given, as text: what the grid follows of the functions in it. */
+  givenKey(): string {
+    const c = this.config();
+    const item = (i: PlacedItem) => {
+      const own = i.item;
+      return [i.type, i.field, i.place, i.name, i.footer, i.align, i.visible, readField(own, 'displayFormat'), readField(own, 'alignment'), readField(own, 'cssClass'), readField(own, 'skipEmptyValues'), givenValue(own, 'valueFormat')];
+    };
+    return JSON.stringify([this.totalItems().map(item), this.groupItems().map(item), readField(c, 'recalculateWhileEditing'), readField(c, 'skipEmptyValues'), readField(c, 'texts')]);
+  }
+
   hasFooters(): boolean {
     return this.groupItems().some((i) => i.visible && i.footer);
   }
@@ -156,6 +179,7 @@ export class GridSummaries<T> {
     if (!gridData) return;
     this.groupCache = new WeakMap();
     untracked(() => this.state.version++);
+    this.tell();
     const items = untracked(() => this.totalItems());
     const source = gridData.source;
     const server = items.length && source.loadMode !== 'all' ? untracked(() => this.serverItems(items, source.adapter)) : null;
@@ -172,6 +196,7 @@ export class GridSummaries<T> {
       return;
     }
     untracked(() => (this.state.status = 'loading'));
+    this.tell();
     const work = server ? source.loadSummary(server) : gridData.everyRow(this.model.settings.get('groupLoadPageSize')).then((rows) => this.compute(items, rows, undefined, true));
     work.then(
       (values) => {
@@ -180,6 +205,7 @@ export class GridSummaries<T> {
       (error: unknown) => {
         if (generation !== this.generation || data.isAbortError(error)) return;
         untracked(() => (this.state.status = 'error'));
+        this.tell();
         const ev = this.model.events;
         ev.tell(ev.dataErrorOccurred, () => ({ error: data.DataError.from(error, 'load'), operation: 'load' as const }));
       },
@@ -286,6 +312,7 @@ export class GridSummaries<T> {
     untracked(() => {
       this.totals.value = values;
       this.state.status = 'ready';
+      this.tell();
     });
     const ev = this.model.events;
     ev.tell(ev.summaryChanged, () => ({ total: values, editing }));

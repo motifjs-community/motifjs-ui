@@ -1,7 +1,7 @@
 import { Component } from '@motifx/core';
 import { givenField } from '../../../core/given-field';
 import type { SchedulerFields } from '../scheduler-fields';
-import { css, part, text } from './draw-parts';
+import { css, part, text } from '../../../core/draw-parts';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 

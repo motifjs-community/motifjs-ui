@@ -17,6 +17,11 @@ interface Snapshot {
  */
 export class RowSelection {
   /** `run`: the grid rows a drag is selecting now (first and last), while it runs. */
+  /** Called when the state changed (the grid tells its views). */
+  notify: ((name: string) => void) | null = null;
+  private tell() {
+    this.notify?.('selection');
+  }
   readonly state = reactive({ version: 0, all: false, run: null as { top: number; bottom: number } | null });
   /** The change being made comes from rows selected by dragging over them. */
   byDrag = false;
@@ -86,6 +91,7 @@ export class RowSelection {
     this.keys = new Map([[id, key]]);
     this.except = new Map();
     this.state.all = false;
+    this.tell();
     this.changed();
   }
 
@@ -107,6 +113,7 @@ export class RowSelection {
     this.keys = keys;
     this.except = except;
     if (this.state.all !== base.all) untracked(() => (this.state.all = base.all));
+    this.tell();
     this.changed();
   }
 
@@ -127,6 +134,7 @@ export class RowSelection {
     this.except = new Map(saved.except);
     this.filter = saved.filter;
     untracked(() => (this.state.all = saved.all));
+    this.tell();
     this.setAnchor(saved.anchor);
     this.changed();
   }
@@ -138,6 +146,7 @@ export class RowSelection {
     this.except = new Map();
     this.filter = filter;
     this.state.all = true;
+    this.tell();
     this.setAnchor(-1);
     this.changed();
   }
@@ -148,6 +157,7 @@ export class RowSelection {
     this.keys = new Map();
     this.except = new Map();
     this.state.all = false;
+    this.tell();
     this.setAnchor(-1);
     this.changed();
   }
@@ -160,6 +170,7 @@ export class RowSelection {
     this.keys = next;
     this.except = new Map();
     this.state.all = false;
+    this.tell();
     this.setAnchor(-1);
     this.changed();
   }
@@ -218,10 +229,12 @@ export class RowSelection {
         this.anchorIndex = before.anchor;
         this.base = before.base;
         untracked(() => (this.state.all = before.all));
+        this.tell();
         return false;
       }
     }
     untracked(() => this.state.version++);
+    this.tell();
     this.changedEmitter.fire(this.snapshot());
     return true;
   }

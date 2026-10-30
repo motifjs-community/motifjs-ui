@@ -55,10 +55,13 @@ export class RowDragOptions<T> {
   readonly view: GridRowDragging<T>;
   /** Called after a value is assigned through `view`. */
   changed: ((key: string, value: unknown, previous: unknown) => void) | null = null;
+  /** Called when a value changed (the grid tells its views). */
+  notify: ((name: string) => void) | null = null;
 
   constructor(given: GridRowDragging<T> | undefined) {
     this.values = new Switches<RowDraggingValues>(KEYS, DEFAULTS, given ?? {});
     this.values.changed = (key, value, previous) => this.changed?.(key, value, previous);
+    this.values.notify = () => this.notify?.('rowDrag');
     for (const name of HANDLERS) {
       const handler = givenValue(given, name);
       if (handler !== undefined) (this.handlers as Record<string, unknown>)[name] = handler;

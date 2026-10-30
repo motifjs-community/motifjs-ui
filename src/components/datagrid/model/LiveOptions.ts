@@ -7,6 +7,11 @@ import { reactive, untracked } from '@motifx/core';
 export class LiveOptions<T extends object> {
   readonly view: T;
   private readonly raw: Record<PropertyKey, unknown> = {};
+  /** Called when the state changed (the grid tells its views). */
+  notify: ((name: string) => void) | null = null;
+  private tell() {
+    this.notify?.('live');
+  }
   private readonly version = reactive({ n: 0 });
 
   constructor(given: object | undefined) {
@@ -42,5 +47,6 @@ export class LiveOptions<T extends object> {
   /** What reads the options reads them again: a value was changed in place. */
   touch() {
     untracked(() => this.version.n++);
+    this.tell();
   }
 }

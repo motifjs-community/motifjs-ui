@@ -9,6 +9,7 @@ const KEYS: (keyof MasterDetailValues<unknown>)[] = [
   'template',
   'canExpand',
   'keepDetails',
+  'keepAcrossPages',
   'height',
   'estimatedHeight',
   'keepLimit',
@@ -22,6 +23,7 @@ const DEFAULTS: Partial<MasterDetailValues<unknown>> = {
   autoExpandAll: false,
   canExpand: true,
   keepDetails: true,
+  keepAcrossPages: false,
   estimatedHeight: 200,
   keepLimit: 100,
   columnWidth: 36,
@@ -37,6 +39,11 @@ const DEFAULTS: Partial<MasterDetailValues<unknown>> = {
 export class DetailRows<T> {
   readonly options: Switches<MasterDetailValues<T>>;
   /** Raised when rows open or close. Reactive. */
+  /** Called when the state changed (the grid tells its views). */
+  notify: ((name: string) => void) | null = null;
+  private tell() {
+    this.notify?.('details');
+  }
   readonly state = reactive({ version: 0 });
   private all = false;
   /** Rows that differ from `all`: key text → key. */
@@ -44,6 +51,7 @@ export class DetailRows<T> {
 
   constructor(given: GridMasterDetail<T> | undefined) {
     this.options = new Switches<MasterDetailValues<T>>(KEYS as (keyof MasterDetailValues<T>)[], DEFAULTS as Partial<MasterDetailValues<T>>, given ?? {});
+    this.options.notify = () => this.tell();
     this.all = untracked(() => this.options.get('autoExpandAll'));
   }
 
@@ -91,6 +99,7 @@ export class DetailRows<T> {
     if (open === this.all) this.toggled.delete(id);
     else this.toggled.set(id, key);
     this.state.version++;
+    this.tell();
     return true;
   }
 
@@ -100,6 +109,7 @@ export class DetailRows<T> {
     this.all = open;
     this.toggled.clear();
     this.state.version++;
+    this.tell();
   }
 
   /** Back to `autoExpandAll`. */
@@ -107,5 +117,6 @@ export class DetailRows<T> {
     this.all = untracked(() => this.options.get('autoExpandAll'));
     this.toggled.clear();
     this.state.version++;
+    this.tell();
   }
 }

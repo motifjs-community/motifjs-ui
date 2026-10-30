@@ -2,7 +2,7 @@ import { Component } from '@motifx/core';
 import { givenField } from '../../../core/given-field';
 import { pencilMark, trashMark } from '../../../core/glyphs';
 import { Button } from '../../button/Button';
-import { css, flag, part, shown, text } from './draw-parts';
+import { css, flag, part, shown, text } from '../../../core/draw-parts';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 

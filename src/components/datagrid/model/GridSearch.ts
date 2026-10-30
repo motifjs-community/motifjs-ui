@@ -23,6 +23,11 @@ const LOOKUP_LIMIT = 100;
  */
 export class GridSearch<T> {
   /** `text` is the box's text; `applied` the text whose filter is on the rows. */
+  /** Called when the state changed (the grid tells its views). */
+  notify: ((name: string) => void) | null = null;
+  private tell() {
+    this.notify?.('search');
+  }
   readonly state = reactive({ text: '', applied: '' });
   private timer: ReturnType<typeof setTimeout> | undefined;
   private run = 0;
@@ -45,9 +50,11 @@ export class GridSearch<T> {
         // The box shows the text it had.
         this.state.text = text;
         this.state.text = previous;
+        this.tell();
         return;
       }
       this.state.text = text;
+      this.tell();
       this.onTextChanged?.(text);
     }
     const delay = typed ? Math.max(0, this.model.settings.get('searchDelay')) : 0;
@@ -61,6 +68,7 @@ export class GridSearch<T> {
    */
   start(text: string) {
     this.state.text = text;
+    this.tell();
     const marks = new Map<string, Mark>();
     const filter = this.filterFor(text, marks);
     if (filter instanceof Promise) {
@@ -69,6 +77,7 @@ export class GridSearch<T> {
     }
     this.marks = marks;
     this.state.applied = filter ? text.trim() : '';
+    this.tell();
     this.model.filters.setSearch(filter);
   }
 
@@ -147,6 +156,7 @@ export class GridSearch<T> {
       if (run !== this.run || this.disposed) return;
       this.marks = marks;
       this.state.applied = filter ? text.trim() : '';
+      this.tell();
       this.model.filters.setSearch(filter);
       this.model.queueFilter();
       this.announceWhenLoaded(filter !== null);

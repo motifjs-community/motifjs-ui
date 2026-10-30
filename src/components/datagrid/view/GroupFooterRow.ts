@@ -1,4 +1,4 @@
-import { createSignal, effect, untracked } from '@motifx/core';
+import { untracked } from '@motifx/core';
 import type { GridModel } from '../model/GridModel';
 import type { GroupNode } from '../model/group-node';
 import { fillSummaryCell } from './summary-cell';
@@ -8,6 +8,8 @@ import { placeInOrder } from './place-in-order';
  * One pooled footer row of a group: after the group's rows, a cell per column with the group items
  * shown in the footer (`showInGroupFooter`), on one line each. Made once and reused for other groups
  * while the user scrolls, like the other rows. The row itself takes focus, as a group row's cell does.
+ * It follows nothing: it is drawn when it shows another group, and the body draws it again when the
+ * grid tells a change it reads.
  */
 export class GroupFooterRow<T> {
   readonly element: HTMLDivElement;
@@ -15,8 +17,6 @@ export class GroupFooterRow<T> {
   /** Grid index; -1 while the row is not used. */
   index = -1;
   node: GroupNode | null = null;
-  private readonly shown = createSignal(0);
-  private readonly stop: () => void;
 
   constructor(private readonly model: GridModel<T>) {
     const el = document.createElement('div');
@@ -26,7 +26,7 @@ export class GroupFooterRow<T> {
     el.hidden = true;
     this.element = el;
     for (const field of model.columns.state.order) this.addColumn(field);
-    this.stop = effect(() => this.draw());
+    this.draw();
   }
 
   /** A column's cell (one added at run time too; placed by the next `arrange`). */
@@ -51,14 +51,14 @@ export class GroupFooterRow<T> {
     if (this.index !== index || this.node !== node) {
       this.index = index;
       this.node = node;
-      this.shown.value = this.shown.peek() + 1;
+      this.draw();
     }
     this.element.hidden = false;
     this.element.style.transform = `translateY(${top}px)`;
   }
 
   redraw() {
-    this.shown.value = this.shown.peek() + 1;
+    this.draw();
   }
 
   /** Back to the pool, hidden. */
@@ -66,7 +66,7 @@ export class GroupFooterRow<T> {
     if (this.index !== -1 || this.node !== null) {
       this.index = -1;
       this.node = null;
-      this.shown.value = this.shown.peek() + 1;
+      this.draw();
     }
     this.element.hidden = true;
   }
@@ -93,12 +93,14 @@ export class GroupFooterRow<T> {
     if (!drawn.all) this.redraw();
   }
 
-  dispose() {
-    this.stop();
+  dispose() {}
+
+  /** Draws the row as the grid is now. */
+  draw() {
+    untracked(() => this.drawRow());
   }
 
-  private draw() {
-    void this.shown.value;
+  private drawRow() {
     const { model, node, index, element } = this;
     if (!node || index < 0) {
       element.removeAttribute('aria-rowindex');
@@ -115,6 +117,6 @@ export class GroupFooterRow<T> {
     const some = !model.columnWindow.all;
     for (const [field, cell] of this.cells) if (!some || cell.parentElement === element) fillSummaryCell(cell, parts.get(field) ?? [], separator);
     const ev = model.events;
-    if (ev.listened(ev.rowPrepared)) untracked(() => ev.rowPrepared.fire({ row: undefined, rowIndex: index, rowType: 'groupFooter', groupKey: [...node.path], isSelected: false, element }));
+    if (ev.listened(ev.rowPrepared)) ev.rowPrepared.fire({ row: undefined, rowIndex: index, rowType: 'groupFooter', groupKey: [...node.path], isSelected: false, element });
   }
 }

@@ -21,7 +21,7 @@ import type { RadioItem } from '../radiogroup/radio-item';
 import { RadioGroup } from '../radiogroup/RadioGroup';
 import { RecurrenceDraft, type DraftContext, type DraftState } from './model/RecurrenceDraft';
 import type { RecurrenceEditorProps } from './recurrence-editor-props';
-import { part, shown } from './view/draw-parts';
+import { part, shown } from '../../core/draw-parts';
 
 const OWN = ['value', 'start', 'allDay', 'timeZone', 'frequencies', 'firstDayOfWeek', 'summary', 'readOnly', 'locale', 'texts'] as const;
 

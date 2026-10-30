@@ -63,6 +63,7 @@ export class ActionRunner<T> {
       if (waiting) return;
       waiting = true;
       st.acting = true;
+      model.stateChanged('acting');
       if (total > 1 && settings.get('actionsProgress')) panel = this.panel.open(model.text('gridActionRunning', { action: entry.text }), () => controller.abort());
     };
     const e: GridActionRun = {
@@ -116,7 +117,10 @@ export class ActionRunner<T> {
     } finally {
       if (this.controller === controller) this.controller = null;
       if (panel) this.panel.close();
-      if (waiting) st.acting = false;
+      if (waiting) {
+        st.acting = false;
+        model.stateChanged('acting');
+      }
     }
     const canceled = controller.signal.aborted && done + failed < total;
     if (total > 1 || failed > 0 || canceled) this.announce(entry.text, total, done, failed, canceled);

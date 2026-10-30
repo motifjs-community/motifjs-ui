@@ -4,6 +4,7 @@ import { ExtraHeights } from '../model/ExtraHeights';
 import type { GridModel } from '../model/GridModel';
 import type { GroupNode } from '../model/group-node';
 import { ScrollGeometry } from '../model/ScrollGeometry';
+import { GROUP_FOOTER, GROUP_LOOK, GROUP_SUMMARY, GROUP_TEXT, ROW_CELLS, ROW_ACTIONS, ROW_LOOK, ROW_RANGES } from './row-notices';
 import type { ActionWidths } from './ActionWidths';
 import type { DetailHost } from './detail-host';
 import { DetailRow } from './DetailRow';
@@ -56,6 +57,8 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   private extrasFor = '';
   /** The data the kept details were last checked against. */
   private checkedFor = '';
+  /** The page (and page size) of a paged grid the details were last tidied for. */
+  private pageFor: string | null = null;
   private detailObserver: ResizeWatch | null = null;
   /** The adaptive detail of the row that has it open, while it is laid out. */
   private adaptive: DetailRow<T> | null = null;
@@ -85,7 +88,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
 
   override onConfigured() {
     this.class.add('mx-data-grid__body');
-    this.attr.add({ role: 'rowgroup' });
+    this.element.setAttribute('role', 'rowgroup');
     this.motif.setDisposable(() => {
       for (const row of this.pool) row.dispose();
       for (const row of this.groupPool) row.dispose();
@@ -95,6 +98,8 @@ export class GridBody<T> extends Component<HTMLDivElement> {
       this.details.clear();
       this.adaptive?.dispose();
     });
+    // The rows follow nothing: told what changed, the parts of them that read it are drawn again.
+    this.motif.setDisposable(this.grid.notices.on((told) => this.drawTold(told)));
     this.grid.ariaRowIndex = (i) => this.ariaRowIndex(i);
     this.grid.openDetailCount = () => untracked(() => (this.openExtras()?.size ?? 0) + (this.adaptiveLocal() >= 0 ? 1 : 0));
     // Lookup keys came: only the cells that show them are drawn again.
@@ -558,6 +563,37 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.relayout(true);
   }
 
+  /** The rows drawn now draw again the parts that read what was told. */
+  private drawTold(told: ReadonlySet<string>) {
+    const any = (names: ReadonlySet<string>) => [...told].some((name) => names.has(name));
+    const look = any(ROW_LOOK);
+    const cells = any(ROW_CELLS);
+    const ranges = any(ROW_RANGES);
+    const actions = any(ROW_ACTIONS);
+    const groupLook = any(GROUP_LOOK);
+    const groupText = any(GROUP_TEXT);
+    const groupSummary = any(GROUP_SUMMARY);
+    const footer = any(GROUP_FOOTER);
+    untracked(() => {
+      if (look || cells || ranges || actions) {
+        for (const row of this.byIndex.values()) {
+          if (look) row.drawLook();
+          if (cells) row.drawCells();
+          if (ranges) row.drawRanges();
+          if (actions) row.drawActions();
+        }
+      }
+      if (groupLook || groupText || groupSummary) {
+        for (const row of this.groupsByIndex.values()) {
+          if (groupLook) row.drawLook();
+          if (groupText) row.drawText();
+          if (groupSummary) row.drawSummary();
+        }
+      }
+      if (footer) for (const row of this.footersByIndex.values()) row.draw();
+    });
+  }
+
   /** A column added at run time: every pooled row gets its cell. */
   addColumn(field: string) {
     for (const row of this.pool) row.addColumn(field);
@@ -789,7 +825,10 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     return fresh;
   }
 
-  /** Disposes the details not wanted any more: closed ones (without `keepDetails`), those whose row is gone, the ones seen longest ago past `keepLimit`. */
+  /**
+   * Disposes the details not wanted any more: closed ones (without `keepDetails`), those of the page left (without
+   * `keepAcrossPages`), those whose row is gone, the ones seen longest ago past `keepLimit`.
+   */
   private tidyDetails(drawn: Set<DetailRow<T>>) {
     const grid = this.grid;
     const details = grid.details;
@@ -802,11 +841,14 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     const check = data !== this.checkedFor;
     this.checkedFor = data;
     const keep = details.options.get('keepDetails');
+    const page = grid.mode === 'paged' ? `${st.page}|${st.pageSize}` : null;
+    const pageLeft = this.pageFor !== null && page !== this.pageFor && !details.options.get('keepAcrossPages');
+    this.pageFor = page;
     const kept: DetailRow<T>[] = [];
     for (const detail of [...this.details.values()]) {
       if (drawn.has(detail)) continue;
       // The row left the data (filtered out, deleted, not loaded any more): its details go with it.
-      if ((!keep && !details.isOpen(detail.id)) || (check && grid.data.rowByKey(detail.key) === undefined)) this.dropDetail(detail);
+      if ((!keep && !details.isOpen(detail.id)) || pageLeft || (check && grid.data.rowByKey(detail.key) === undefined)) this.dropDetail(detail);
       else kept.push(detail);
     }
     const limit = Math.max(0, Math.floor(details.options.get('keepLimit')));

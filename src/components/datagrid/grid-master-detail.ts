@@ -18,6 +18,12 @@ export interface GridMasterDetail<T> {
   canExpand?: Bind<boolean> | ((row: T) => boolean);
   /** A closed row keeps what its details hold, and shows it as it was when it opens again; off, closing disposes it. Default `true`. */
   keepDetails?: Bind<boolean>;
+  /**
+   * Paged grid: the details of the rows of the page left keep what they hold while the user pages, up to `keepLimit`;
+   * off, another page or page size disposes them, and they are made again when their page shows (a row stays open).
+   * Default `false`.
+   */
+  keepAcrossPages?: Bind<boolean>;
   /** Height of the details in pixels, the content scrolling inside; a function of the row gives each row its own. Default: as tall as the content. */
   height?: Bind<number | undefined> | ((row: T) => number);
   /** Height details count at before they are drawn and measured, while none is; then the average of those measured. Default `200`. */

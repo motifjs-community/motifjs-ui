@@ -14,6 +14,8 @@ export class Switches<T extends object> {
   readonly view: T;
   /** Called after a value is assigned through `view`, with the value read before and after. */
   changed: ((key: keyof T & string, value: unknown, previous: unknown) => void) | null = null;
+  /** Called when a value changed or was touched (the grid tells its views). */
+  notify: ((name: string) => void) | null = null;
   private readonly raw: Record<string, unknown> = {};
   private readonly versions: Record<string, number>;
 
@@ -64,10 +66,29 @@ export class Switches<T extends object> {
   /** What reads `key` reads it again: its value was changed in place. */
   touch(key: keyof T & string) {
     untracked(() => this.versions[key]++);
+    this.notify?.('settings');
   }
 
   /** What reads any value reads it again. */
   touchAll() {
     for (const key of this.keys) this.touch(key);
+  }
+
+  /**
+   * The keys given as functions (a getter, `() => state.width`) with what they return now: whoever calls this follows
+   * what they read. A value assigned later is told (`notify`), not followed.
+   */
+  givenValues(): Map<string, unknown> {
+    const values = new Map<string, unknown>();
+    for (const key of this.keys) {
+      const value = this.raw[key];
+      if (typeof value === 'function' && value.length === 0) values.set(key, value());
+    }
+    return values;
+  }
+
+  /** Touches the keys whose given function returns another value than before. */
+  touchChanged(before: ReadonlyMap<string, unknown>, now: ReadonlyMap<string, unknown>) {
+    for (const [key, value] of now) if (before.has(key) && !Object.is(before.get(key), value)) this.touch(key as keyof T & string);
   }
 }

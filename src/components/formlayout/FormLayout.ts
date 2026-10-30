@@ -6,6 +6,7 @@ import type { FieldLabelMode } from '../../parts/field/field-label-mode';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import { ValidationGroup } from '../../parts/validation/ValidationGroup';
 import type { ValidationResult } from '../../parts/validation/validation-result';
+import type { ValidationTarget } from '../../parts/validation/validation-target';
 import { Button } from '../button/Button';
 import { CheckBox } from '../checkbox/CheckBox';
 import { ComboBox } from '../combobox/ComboBox';
@@ -34,6 +35,8 @@ const PARTS = Symbol('mx.formlayout');
 
 interface Parts {
   group: ValidationGroup;
+  /** The fields of the items not shown now: out of the group until they are shown again. */
+  resting: Set<ValidationTarget>;
   made: ComponentBase[];
   editors: Map<string, ComponentBase>;
   stops: (() => void)[];
@@ -165,6 +168,7 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
   }
 
   get isValid(): boolean {
+    this.restHidden();
     return this.formParts.group.isValid;
   }
 
@@ -175,6 +179,7 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
 
   /** Checks every field; the first one that failed gets focus (its tab shown first) unless `focus` is `false`. */
   async validate(options?: { focus?: boolean }): Promise<ValidationResult> {
+    this.restHidden();
     const result = await this.formParts.group.validate({ focus: false });
     if (options?.focus !== false) {
       for (const target of result.invalid) {
@@ -227,10 +232,33 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     return result.valid;
   }
 
+  /**
+   * A field of an item that is not shown (`visible: false`) is not checked: it leaves the group with its message
+   * cleared, and comes back once its item is shown. A field on a tab not chosen is still checked.
+   */
+  private restHidden(): void {
+    const { group, resting } = this.formParts;
+    const hidden = (target: ValidationTarget) => !!target.element.closest('.mx-form-layout__item[hidden]');
+    for (const target of group.targets) {
+      if (!hidden(target)) continue;
+      group.remove(target);
+      target.resetValidation();
+      resting.add(target);
+    }
+    for (const target of resting) {
+      if (!this.element.contains(target.element)) resting.delete(target);
+      else if (!hidden(target)) {
+        resting.delete(target);
+        group.add(target);
+      }
+    }
+  }
+
   private get formParts(): Parts {
     const self = this as unknown as { [PARTS]?: Parts };
     return (self[PARTS] ??= {
       group: new ValidationGroup(),
+      resting: new Set(),
       made: [],
       editors: new Map(),
       stops: [],

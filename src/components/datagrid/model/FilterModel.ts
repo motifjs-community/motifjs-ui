@@ -23,6 +23,11 @@ const key = (e: unknown) => JSON.stringify(e ?? null);
  */
 export class FilterModel<T> {
   /** `fields` grows when a column's filter comes or goes; `search` and `extra` count changes of the other parts. */
+  /** Called when the state changed (the grid tells its views). */
+  notify: ((name: string) => void) | null = null;
+  private tell() {
+    this.notify?.('filters');
+  }
   readonly state = reactive({ fields: 0, search: 0, extra: 0, enabled: true });
   /** The last change came from typing: wait `filterDelay` before applying it. */
   typed = false;
@@ -51,6 +56,7 @@ export class FilterModel<T> {
   update(field: string, change: Partial<ColumnFilter>, typed = false) {
     this.typed = typed;
     this.state.enabled = true;
+    this.tell();
     const next: ColumnFilter = { ...this.byField.get(field), ...change };
     for (const key of Object.keys(next) as (keyof ColumnFilter)[]) if (next[key] === undefined) delete next[key];
     this.put(field, next);
@@ -62,6 +68,7 @@ export class FilterModel<T> {
     if (!f) return;
     this.typed = false;
     this.state.enabled = true;
+    this.tell();
     if (part === 'all') this.put(field, f.op ? { op: f.op } : {});
     else if (part === 'row') this.update(field, { value: undefined, value2: undefined });
     else this.update(field, { values: undefined });
@@ -82,6 +89,7 @@ export class FilterModel<T> {
     this.putAll(next);
     this.setExtra([]);
     this.state.enabled = true;
+    this.tell();
   }
 
   /** The search panel's filter, joined to the others (AND); `null` takes it away. */
@@ -89,6 +97,7 @@ export class FilterModel<T> {
     this.typed = false;
     this.searchPart = filter;
     this.state.search++;
+    this.tell();
   }
 
   /** The search panel's filter now. Reactive. */
@@ -144,6 +153,7 @@ export class FilterModel<T> {
   set enabled(on: boolean) {
     this.typed = false;
     this.state.enabled = on;
+    this.tell();
   }
 
   /** The conditions of the filter value no column shows (with `sync` off, the whole filter value). Reactive. */
@@ -179,6 +189,7 @@ export class FilterModel<T> {
   setFilterValue(value: data.FilterExpression | null) {
     this.typed = false;
     this.state.enabled = true;
+    this.tell();
     if (!this.sync()) return this.setExtra(value ? [value] : []);
     const items = !value ? [] : !data.isCondition(value) && 'and' in value ? value.and : [value];
     const next: Record<string, ColumnFilter> = {};
@@ -204,6 +215,7 @@ export class FilterModel<T> {
   restoreValue(extra: data.FilterExpression | null, enabled: boolean) {
     this.setExtra(extra ? (!data.isCondition(extra) && 'and' in extra ? [...extra.and] : [extra]) : []);
     this.state.enabled = enabled;
+    this.tell();
   }
 
   /** The filter value goes; with `sync`, so do the columns' filters (their conditions stay). */
@@ -212,12 +224,14 @@ export class FilterModel<T> {
     else {
       this.setExtra([]);
       this.state.enabled = true;
+      this.tell();
     }
   }
 
   private setExtra(items: data.FilterExpression[]) {
     this.extraItems = items;
     untracked(() => this.state.extra++);
+    this.tell();
   }
 
   /** Every column's filter, followed: which columns have one and what each holds. */
@@ -241,6 +255,7 @@ export class FilterModel<T> {
     const version = this.versionOf(field);
     version.value = version.peek() + 1;
     if (had !== !!f) untracked(() => this.state.fields++);
+    this.tell();
   }
 
   /** Every column's filter at once: the ones left out go. */

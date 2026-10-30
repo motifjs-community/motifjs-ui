@@ -22,6 +22,7 @@ import { ActionSets } from './ActionSets';
 import { CellFormatter } from './CellFormatter';
 import { CellRules } from './CellRules';
 import { cellValue } from './cell-value';
+import { GridNotices } from './GridNotices';
 import { ColumnModel } from './ColumnModel';
 import { ColumnWindow } from './ColumnWindow';
 import { DEFAULT_SETTINGS } from './default-settings';
@@ -98,6 +99,12 @@ export class GridModel<T> {
   readonly settings: Switches<GridSettings>;
   /** Every event of the grid. */
   readonly events = new GridEvents<T>();
+  /** What changed in the grid's state, told to the views (see `GridNotices`). */
+  readonly notices = new GridNotices();
+  /** Tells the views that fields of `state` changed (`grid.` and the field). */
+  stateChanged(...fields: (keyof GridState & string)[]): void {
+    for (const field of fields) this.notices.tell(`grid.${field}`);
+  }
   readonly state: GridState = reactive({
     sort: [],
     page: 0,
@@ -215,6 +222,7 @@ export class GridModel<T> {
     this.columns.hiddenByGroup = (field) => this.groups.isGrouped(field) && !this.columns.can(field, 'showWhenGrouped');
     const sort = (layout?.sort ?? props.sort ?? []).filter((s) => this.columns.defs.has(s.field) && !this.groups.isGrouped(s.field));
     this.state.sort = sort.map((s) => ({ ...s }));
+    this.stateChanged('sort');
     this.columns.statusWanted = () => this.stats.changed > 0 || this.stats.failed > 0 || this.state.added > 0;
     this.columns.actionsWanted = () => props.actions !== undefined;
     this.columns.actionsInRow = () => this.actionSets.inRow();
@@ -256,11 +264,15 @@ export class GridModel<T> {
     this.lookups = new LookupTexts<T>(() => this.formatter.locale, { missing: () => this.text('gridLookupMissing') });
     this.search = new GridSearch<T>(this);
     this.summaries = new GridSummaries<T>(this, props.summary);
+    // Every part tells its changes here; the views hear them once a turn.
+    const tell = (name: string) => this.notices.tell(name);
+    for (const part of [this.columns, this.settings, this.selection, this.cellRanges, this.filters, this.search, this.groups, this.summaries, this.details, this.adaptive, this.actionSets, this.rowDrag]) part.notify = tell;
     const searchText = stored ? stored.searchText : read(props.searchText);
     if (searchText) this.search.start(searchText);
     if (stored?.pageSize !== undefined) this.chosenPageSize = stored.pageSize;
     this.connect();
     this.state.activeField = this.columns.visibleData()[0] ?? '';
+    this.stateChanged('activeField');
     this.lastLayout = this.layout;
   }
 
@@ -297,6 +309,7 @@ export class GridModel<T> {
       st.page = 0;
       // A given source's sort is the grid's while the grid has none.
       if (given && !st.sort.length) st.sort = this.gridSort(given.sort);
+      this.stateChanged('added', 'session', 'editing', 'busy', 'page', 'sort');
       const source = given ?? this.ownSource();
       this.data = new GridData<T>({
         source,
@@ -318,11 +331,13 @@ export class GridModel<T> {
         createRow: () => this.initialRow ?? props.newRow?.create?.() ?? {},
         validateRow: (row, context) => this.checkRow(row, context),
         state: st,
+        changed: (...fields) => this.stateChanged(...fields),
         edited: (change) => this.edited(change),
       });
       st.page = this.data.sourcePage;
       st.pageSize = this.data.pageSize;
       st.connection++;
+      this.stateChanged('page', 'pageSize', 'connection');
       this.listenToData();
       this.summaries.connect(this.data);
     });
@@ -657,10 +672,12 @@ export class GridModel<T> {
     const { events } = this;
     if (!events.ask(events.pageChanging, () => ({ page: p, previous, cancel: false }))) return false;
     this.state.page = p;
+    this.stateChanged('page');
     this.data.setPage(p);
     // A range belongs to the rows it was drawn over, which the page takes away.
     this.cellRanges.reset();
     if (moveActive && this.state.activeRow >= 0) this.state.activeRow = this.firstRow();
+    this.stateChanged('activeRow');
     events.tell(events.pageChanged, () => ({ page: p, previous }));
     return true;
   }
@@ -684,6 +701,7 @@ export class GridModel<T> {
     this.state.page = 0;
     this.generation++;
     if (this.state.activeRow >= 0) this.state.activeRow = this.firstRow();
+    this.stateChanged('pageSize', 'page', 'activeRow');
     this.onQueryChange?.();
     if (page !== 0) events.tell(events.pageChanged, () => ({ page: 0, previous: page }));
     events.tell(events.pageSizeChanged, () => ({ pageSize: next, previous }));
@@ -778,6 +796,7 @@ export class GridModel<T> {
       this.addedRows.splice(at, 0, { rowId, row });
       this.state.added = this.addedRows.length;
       if (this.state.activeRow >= i) this.state.activeRow++;
+      this.stateChanged('added', 'activeRow');
     });
     return i;
   }
@@ -791,6 +810,7 @@ export class GridModel<T> {
       this.addedRows.splice(k, 1);
       this.state.added = this.addedRows.length;
       if (this.state.activeRow > i) this.state.activeRow--;
+      this.stateChanged('added', 'activeRow');
     });
     return i;
   }
@@ -1091,6 +1111,7 @@ export class GridModel<T> {
     const row = rowId ? (this.edit(rowId)?.row ?? this.addedRows.find((a) => a.rowId === rowId)?.row ?? given) : undefined;
     this.data.tracker.currentRow = row ?? null;
     untracked(() => this.state.edits++);
+    this.stateChanged('session', 'edits');
   }
 
   // Actions, selection, filters.
@@ -1245,6 +1266,7 @@ export class GridModel<T> {
       this.onBeforeQueryChange?.();
       this.appliedFilter = key;
       this.state.page = 0;
+      this.stateChanged('page');
       this.generation++;
       this.selection.filterChanged();
       this.data.setFilter(data.and(this.baseFilter, own));
@@ -1297,6 +1319,7 @@ export class GridModel<T> {
     this.onBeforeQueryChange?.();
     this.state.sort = next;
     this.state.page = 0;
+    this.stateChanged('sort', 'page');
     this.generation++;
     this.data.setSort(this.sourceSort(next));
     this.onQueryChange?.();
@@ -1367,6 +1390,7 @@ export class GridModel<T> {
     this.generation++;
     const sort = st.sort.filter((s) => !this.groups.isGrouped(s.field));
     if (sort.length !== st.sort.length) st.sort = sort;
+    this.stateChanged('page', 'sort');
     untracked(() => this.data.setGrouping(this.groups.levels(), { sort: this.sourceSort(st.sort) }));
     this.keepActiveFieldVisible();
     this.onQueryChange?.();
@@ -1576,6 +1600,7 @@ export class GridModel<T> {
     const own = footer ? view.placeOfFooter(footer.id) : -1;
     const place = own >= 0 ? own : group ? view.placeOfGroup(group.id) : view.shownPlaceOfRow(d);
     if (place >= 0 && this.viewOfData(place) !== i) st.activeRow = this.viewOfData(place);
+    this.stateChanged('activeRow');
   }
 
   /** The user changed the layout: told before (`onLayoutChanging` may put the one before back) and after. */
@@ -1622,12 +1647,17 @@ export class GridModel<T> {
     // A band header left out: its first column shown, else the first data column.
     const under = cols.isBand(field) ? cols.leavesIn(field, visible)[0] : undefined;
     this.state.activeField = under ?? cols.visibleData()[0] ?? visible[0] ?? '';
+    this.stateChanged('activeField');
   }
 
   /** Polite screen reader announcement; the same text twice is announced twice. */
   announce(text: string) {
     this.state.announcement = '';
-    queueMicrotask(() => (this.state.announcement = text));
+    this.stateChanged('announcement');
+    queueMicrotask(() => {
+      this.state.announcement = text;
+      this.stateChanged('announcement');
+    });
   }
 
   dispose() {
@@ -1811,11 +1841,15 @@ export class GridModel<T> {
       if (!busy) this.busyCells.set(rowId, (busy = new Set()));
       busy.add(field);
       untracked(() => this.state.edits++);
+      this.stateChanged('edits');
     }
     const done = () => {
       set.delete(work);
       if (!set.size) this.settling.delete(rowId);
-      if (field && this.busyCells.get(rowId)?.delete(field)) untracked(() => this.state.edits++);
+      if (field && this.busyCells.get(rowId)?.delete(field)) {
+        untracked(() => this.state.edits++);
+        this.stateChanged('edits');
+      }
     };
     work.then(done, done);
   }

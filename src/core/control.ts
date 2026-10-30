@@ -396,7 +396,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
       void this.motif.show();
       return;
     }
-    rescueTarget(this.element)?.focus();
+    rescueTarget(this.element)?.focus({ preventScroll: true });
     void this.motif.hide();
   }
 

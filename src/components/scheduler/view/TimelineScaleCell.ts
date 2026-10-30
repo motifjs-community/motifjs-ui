@@ -1,7 +1,7 @@
 import { Component } from '@motifx/core';
 import { onReState } from '../../../core/on-re-state';
 import type { ScaleCell } from '../model/scale-cell';
-import { css, flag, put, text } from './draw-parts';
+import { css, flag, put, text } from '../../../core/draw-parts';
 import type { SchedulerHost } from './scheduler-host';
 
 interface Props<T> {

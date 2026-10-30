@@ -15,6 +15,11 @@ import { readField } from './read-field';
  * apart, by id, so they stay as they are while the rows load again. Reads are reactive.
  */
 export class GridGroups<T> {
+  /** Called when the state changed (the grid tells its views). */
+  notify: ((name: string) => void) | null = null;
+  private tell() {
+    this.notify?.('groups');
+  }
   readonly state = reactive({ items: [] as data.GroupItem[], version: 0 });
   /** Groups opened or closed against their level's default, by id, with their level. */
   private readonly toggled = new Map<string, number>();
@@ -85,6 +90,7 @@ export class GridGroups<T> {
       this.levelDefaults.clear();
     }
     this.state.items = next;
+    this.tell();
     return true;
   }
 
@@ -151,6 +157,7 @@ export class GridGroups<T> {
 
   private changed() {
     untracked(() => this.state.version++);
+    this.tell();
   }
 }
 

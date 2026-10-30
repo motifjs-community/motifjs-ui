@@ -7,6 +7,7 @@ export interface MasterDetailValues<T> {
   template: ((ctx: DetailContext<T>) => unknown) | undefined;
   canExpand: boolean | ((row: T) => boolean);
   keepDetails: boolean;
+  keepAcrossPages: boolean;
   height: number | ((row: T) => number) | undefined;
   estimatedHeight: number;
   keepLimit: number;

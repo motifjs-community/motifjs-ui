@@ -1,4 +1,4 @@
-import { effect, untracked } from '@motifx/core';
+import { untracked } from '@motifx/core';
 import { scrollStep } from '../../../parts/drag/scroll-step';
 import { ACTIONS_FIELD, ADAPTIVE_FIELD, DRAG_FIELD, EXPAND_FIELD, SELECT_FIELD } from '../model/ColumnModel';
 import type { GridModel } from '../model/GridModel';
@@ -104,13 +104,15 @@ export class DragSelect<T> {
       if (this.pressed?.started && e.cancelable) e.preventDefault();
     };
     let held = false;
-    const stop = effect(() => {
+    const hold = () => {
       const want = this.model.settings.get('dragSelectionTouch') === 'longPress';
       if (want === held) return;
       held = want;
       if (want) rows.addEventListener('touchmove', touchMove, { passive: false });
       else rows.removeEventListener('touchmove', touchMove);
-    });
+    };
+    untracked(hold);
+    const stop = this.model.notices.on(() => untracked(hold));
     return () => {
       stop();
       rows.removeEventListener('touchmove', touchMove);

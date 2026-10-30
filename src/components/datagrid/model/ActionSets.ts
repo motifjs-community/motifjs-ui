@@ -19,6 +19,11 @@ import { readField } from './read-field';
  */
 export class ActionSets<T> {
   /** `version` grows on `refresh()`: the actions are asked again. */
+  /** Called when the state changed (the grid tells its views). */
+  notify: ((name: string) => void) | null = null;
+  private tell() {
+    this.notify?.('actions');
+  }
   private readonly marks = reactive({ inRow: 0, never: 0, version: 0 });
   private readonly drawn = new Map<object, { inRow: boolean; never: boolean }>();
 
@@ -32,6 +37,7 @@ export class ActionSets<T> {
   /** The rows and the bars ask their actions again: what an action or the `actions` function reads changed. */
   refresh() {
     untracked(() => this.marks.version++);
+    this.tell();
   }
 
   /** The action of an entry of the `actions` prop. */
@@ -85,8 +91,8 @@ export class ActionSets<T> {
 
   /** A drawn row tells what its actions hold (with `actions` as a function the grid learns it from the rows). */
   markRow(holder: object, inRow: boolean, never: boolean) {
-    const before = this.drawn.get(holder);
-    if (before?.inRow === inRow && before?.never === never) return;
+    const before = this.drawn.get(holder) ?? { inRow: false, never: false };
+    if (before.inRow === inRow && before.never === never) return;
     if (inRow || never) this.drawn.set(holder, { inRow, never });
     else this.drawn.delete(holder);
     let rows = 0;
@@ -95,10 +101,13 @@ export class ActionSets<T> {
       if (m.inRow) rows++;
       if (m.never) nevers++;
     }
+    // Told only when the counts changed: a row drawn again with the same actions changes nothing.
+    if (this.marks.inRow === rows && this.marks.never === nevers) return;
     untracked(() => {
-      if (this.marks.inRow !== rows) this.marks.inRow = rows;
-      if (this.marks.never !== nevers) this.marks.never = nevers;
+      this.marks.inRow = rows;
+      this.marks.never = nevers;
     });
+    this.tell();
   }
 
   /** What the bars act on now, by `actionsTarget`. Reactive. */

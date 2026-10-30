@@ -60,6 +60,8 @@ export class ColumnModel<T> {
   readonly bands = new Map<string, BandNode<T>>();
   /** Each column's and band's own feature switches; a value left unset follows the grid's settings. */
   readonly features = new Map<string, Switches<ColumnFeatures>>();
+  /** Called when the state above changed (the grid tells its views). */
+  notify: ((name: string) => void) | null = null;
   readonly state = reactive({
     order: [] as string[],
     width: {} as Record<string, number>,
@@ -112,7 +114,7 @@ export class ColumnModel<T> {
     this.defs.set(ACTIONS_FIELD, { field: ACTIONS_FIELD, title: '' });
     this.defs.set(EXPAND_FIELD, { field: EXPAND_FIELD, title: '', align: 'center' });
     this.defs.set(ADAPTIVE_FIELD, { field: ADAPTIVE_FIELD, title: '', align: 'center' });
-    for (const field of INTERNAL) this.features.set(field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, LOCKED));
+    for (const field of INTERNAL) this.features.set(field, this.makeFeatures(LOCKED));
     for (const field of INTERNAL) this.given.push(field);
     this.take(columns, null);
     this.reset();
@@ -160,6 +162,7 @@ export class ColumnModel<T> {
     }
     s.order = this.together(order);
     s.revision++;
+    this.tell();
   }
 
   /** Takes a data column out, with its layout; its band keeps its other columns. */
@@ -182,6 +185,7 @@ export class ColumnModel<T> {
     delete s.sticky[field];
     this.keepOneShown();
     s.revision++;
+    this.tell();
   }
 
   /** Another definition for a column; its layout and feature switches stay. */
@@ -190,6 +194,7 @@ export class ColumnModel<T> {
     if (this.isInternal(field) || !this.defs.has(field)) throw new Error(`[motifx-ui] DataGrid: unknown column "${field}"`);
     this.defs.set(field, column);
     this.state.revision++;
+    this.tell();
   }
 
   /** Columns the grid adds itself: row status, selection, expand, actions, the "…" column. */
@@ -354,6 +359,7 @@ export class ColumnModel<T> {
     s.flex = flex;
     s.hidden = hidden;
     s.sticky = sticky;
+    this.tell();
   }
 
   zoneOf(field: string): ColumnZone {
@@ -507,6 +513,7 @@ export class ColumnModel<T> {
     const w = this.clampWidth(field, px);
     this.state.width[field] = w;
     this.state.flex[field] = 0;
+    this.tell();
     return w;
   }
 
@@ -552,6 +559,7 @@ export class ColumnModel<T> {
     this.state.width[next] = Math.round(total) - w;
     this.state.flex[field] = 0;
     this.state.flex[next] = 0;
+    this.tell();
     return w;
   }
 
@@ -632,6 +640,7 @@ export class ColumnModel<T> {
       order.splice(last + 1, 0, ...block);
     } else order.push(...block);
     this.state.order = order;
+    this.tell();
     return true;
   }
 
@@ -646,6 +655,7 @@ export class ColumnModel<T> {
     if (hidden && !this.listedData().some((f) => f !== id && !this.isUnder(f, id))) return false;
     if (!!this.state.hidden[id] === hidden) return false;
     this.state.hidden[id] = hidden;
+    this.tell();
     return true;
   }
 
@@ -655,6 +665,7 @@ export class ColumnModel<T> {
     const top = this.topOf(id);
     if ((this.state.sticky[top] ?? null) === side) return false;
     this.state.sticky[top] = side;
+    this.tell();
     return true;
   }
 
@@ -698,6 +709,7 @@ export class ColumnModel<T> {
       if (!this.bandOf(b.name)) s.sticky[b.name] = b.sticky ?? null;
     }
     this.keepOneShown();
+    this.tell();
   }
 
   /**
@@ -806,7 +818,7 @@ export class ColumnModel<T> {
           const id = item.name ?? `band-${at}`;
           if (this.defs.has(id) || this.bands.has(id)) throw new Error(`[motifx-ui] DataGrid: duplicate band or column name "${id}"`);
           this.bands.set(id, { id, def: item, children: [] });
-          this.features.set(id, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, item));
+          this.features.set(id, this.makeFeatures(item));
           this.adopt(id, parent);
           placed.push({ id, item });
           walk(item.columns ?? [], id, at);
@@ -814,7 +826,7 @@ export class ColumnModel<T> {
         }
         this.check(item);
         this.defs.set(item.field, item);
-        this.features.set(item.field, new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, item));
+        this.features.set(item.field, this.makeFeatures(item));
         this.given.push(item.field);
         this.adopt(item.field, parent);
         placed.push({ id: item.field, item });
@@ -849,6 +861,17 @@ export class ColumnModel<T> {
     if (parent) this.bands.get(parent)!.children.push(id);
   }
 
+  private tell() {
+    this.notify?.('columns');
+  }
+
+  /** A column's (or band's) own feature switches; a change to them is a change of the columns. */
+  private makeFeatures(given: object): Switches<ColumnFeatures> {
+    const features = new Switches<ColumnFeatures>(COLUMN_FEATURES, {}, given);
+    features.notify = () => this.tell();
+    return features;
+  }
+
   /** At least one data column stays shown. */
   private keepOneShown() {
     if (this.listedData().length > 0) return;
@@ -857,6 +880,7 @@ export class ColumnModel<T> {
     if (!first) return;
     s.hidden[first] = false;
     for (let up = this.owners.get(first); up; up = this.owners.get(up)) s.hidden[up] = false;
+    this.tell();
   }
 
   private check(column: GridColumn<T>) {

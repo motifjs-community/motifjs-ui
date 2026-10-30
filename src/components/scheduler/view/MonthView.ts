@@ -8,7 +8,7 @@ import type { StripPiece } from '../model/strip-piece';
 import type { StripRow } from '../model/strip-row';
 import { AppointmentBox } from './AppointmentBox';
 import { cellWords } from './cell-words';
-import { css, flag, part, put, shown, text } from './draw-parts';
+import { css, flag, part, put, shown, text } from '../../../core/draw-parts';
 import { GroupHeads } from './GroupHeads';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';

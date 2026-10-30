@@ -13,7 +13,7 @@ import { AppointmentBox } from './AppointmentBox';
 import { CellWriter } from './CellWriter';
 import type { CellSpot } from './cell-spot';
 import { cellWords } from './cell-words';
-import { css, flag, part, put, shown, text } from './draw-parts';
+import { css, flag, part, put, shown, text } from '../../../core/draw-parts';
 import { GroupHeads } from './GroupHeads';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';

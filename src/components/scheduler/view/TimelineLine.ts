@@ -10,7 +10,7 @@ import { dayCells } from '../model/view-kind';
 import { AppointmentBox } from './AppointmentBox';
 import { CellWriter } from './CellWriter';
 import { cellWords } from './cell-words';
-import { css, flag, part, put, shown, text } from './draw-parts';
+import { css, flag, part, put, shown, text } from '../../../core/draw-parts';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 

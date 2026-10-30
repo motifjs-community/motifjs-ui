@@ -1,8 +1,10 @@
 import { onLookChanged } from '../../core/look-watch';
-import { Emitter, reactive, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, Emitter, motifFragment, reactive, read, safeCall, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { css, kept, mark, put, text } from '../../core/draw-parts';
 import { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
 import { follow } from '../../core/follow';
+import { uiLocale } from '../../core/ui-locale';
 import { onReState } from '../../core/on-re-state';
 import { focusableIn, nextTabbable, tabbableIn } from '../../core/focus';
 import { checkMark, dismissMark, pencilMark, trashMark, undoMark } from '../../core/glyphs';
@@ -187,6 +189,46 @@ interface GoToCellOptions {
 const hasKeys = (o: object) => Object.keys(o).length > 0;
 
 /** Keys that move the active cell; with Shift they extend the cell range. */
+/** The fields of a column that change how it shows, besides its feature switches; followed when given as functions. */
+const COLUMN_LOOK = ['title', 'hidingPriority', 'resizeMode', 'columnRenderingMode', 'headerFilterInterval', 'autoExpandGroup', 'groupExpandMode', 'editOnKeyPress', 'startEditAction'] as const;
+
+/** The grid's own parts around the rows, kept to draw them again (see `drawShell`). */
+interface Shell {
+  vp: HTMLDivElement;
+  foot: HTMLDivElement;
+  overlay: HTMLDivElement;
+  loading: HTMLDivElement;
+  empty: HTMLDivElement;
+  failed: HTMLDivElement;
+  spinner: Spinner;
+  emptyText: HTMLSpanElement;
+  clear: Button;
+  failedText: HTMLSpanElement;
+  retry: Button;
+  more: HTMLDivElement;
+  moreSpinner: Spinner;
+  moreFailed: HTMLSpanElement;
+  moreRetry: Button;
+  exporting: HTMLDivElement;
+  progress: ProgressBar;
+  cancel: Button;
+  bar: HTMLDivElement;
+  count: HTMLSpanElement;
+  selected: HTMLSpanElement;
+  cells: HTMLSpanElement;
+  someFailed: HTMLSpanElement;
+  someFailedText: Text;
+  someRetry: Button;
+  errors: HTMLSpanElement;
+  errorsText: Text;
+  nextError: Button;
+  live: HTMLDivElement;
+  error: HTMLDivElement;
+}
+
+/** The notices of the sets of options the grid follows (see `followGiven`). */
+const GIVEN_NOTICES: ReadonlySet<string> = new Set(['settings', 'columns', 'rowDrag', 'details', 'adaptive', 'toolbar', 'form', 'popup', 'filterBuilderPopup', 'export']);
+
 const MOVE_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown']);
 
 /** Column options that are the grid's state, not fields of the column's definition. */
@@ -251,7 +293,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private readonly exports = new Set<AbortController>();
   private readonly exportSwitches: Switches<ExportValues>;
   /** The panel over the rows while an export with `loadPanel` runs, or an action works on several rows. */
-  private readonly exportPanel = reactive({ shown: false, kind: 'export' as 'export' | 'action', text: '', progress: true, cancel: true, loaded: 0, total: 0 });
+  /** Stops following the options given as functions (see `followGiven`). */
+  private stopGiven: (() => void) | null = null;
+  /** The panel of a long export or action: plain, drawn again (`drawShell`) where it changes. */
+  private readonly exportPanel = { shown: false, kind: 'export' as 'export' | 'action', text: '', progress: true, cancel: true, loaded: 0, total: 0 };
   private stopPanelExport: (() => void) | null = null;
   private readonly runner: ActionRunner<T>;
   /** The actions of the target rows in the bottom bar, on a kit toolbar of their own. */
@@ -410,6 +455,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         p.total = 0;
         p.shown = true;
         this.stopPanelExport = stop;
+        this.drawShell();
         return true;
       },
       progress: (done, total) => this.showProgress(done, total),
@@ -417,9 +463,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         if (this.exportPanel.kind !== 'action') return;
         this.exportPanel.shown = false;
         this.stopPanelExport = null;
+        this.drawShell();
       },
     });
-    this.bottomBar = new Toolbar({ label: () => model.actionSets.targetLabel() || model.text('gridActions'), size: 'sm' });
+    this.bottomBar = new Toolbar({ size: 'sm' });
     this.bottomBar.element.classList.add('mx-data-grid__bar-actions');
     const bottomActions: BarButtons<T> = new BarButtons<T>(model, 'bottom', {
       run: (entry) => void this.startEntry(entry, 'bottom'),
@@ -431,7 +478,6 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     });
     this.bottomActions = bottomActions;
     this.bottomBar.controls.add(bottomActions.menuButton);
-    this.bottomBar.visible = () => this.bottomShown();
     this.motif.setDisposable(() => bottomActions.dispose());
     const ev = model.events;
     model.selection.onChanged((selection) => ev.selectionChanged.fire({ selection, byDrag: model.selection.byDrag }));
@@ -477,21 +523,26 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     });
     this.toolbarSwitches = new Switches<ToolbarValues>(['visible', 'items'], {}, own.toolbar ?? {});
     this.toolbarSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `toolbar.${name}`, value, previous }));
+    this.toolbarSwitches.notify = () => model.notices.tell('toolbar');
     this.formSwitches = new Switches<FormValues>(['items', 'colCount', 'minColWidth', 'labelMode'], { colCount: 2, labelMode: 'top' }, own.form ?? {});
     this.formSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `form.${name}`, value, previous }));
+    this.formSwitches.notify = () => model.notices.tell('form');
     this.popupSwitches = new Switches<PopupValues>(
       ['title', 'showTitle', 'width', 'height', 'resizable', 'movable', 'showCloseButton', 'showMaximize', 'fullScreen'],
       { showTitle: true, resizable: true, movable: true, showCloseButton: true, showMaximize: false, fullScreen: false },
       own.popup ?? {},
     );
     this.popupSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `popup.${name}`, value, previous }));
+    this.popupSwitches.notify = () => model.notices.tell('popup');
     this.builderPopupSwitches = new Switches<PopupValues>(
       ['title', 'showTitle', 'width', 'height', 'resizable', 'movable', 'showCloseButton', 'showMaximize', 'fullScreen'],
       { showTitle: true, resizable: true, movable: true, showCloseButton: true, showMaximize: false, fullScreen: false },
       own.filterBuilderPopup ?? {},
     );
     this.builderPopupSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `filterBuilderPopup.${name}`, value, previous }));
+    this.builderPopupSwitches.notify = () => model.notices.tell('filterBuilderPopup');
     this.builderOptions = new LiveOptions<GridFilterBuilderOptions>(own.filterBuilder);
+    this.builderOptions.notify = (name) => model.notices.tell(name);
     this.builderWindow = new FilterBuilderWindow<T>(model, {
       owner: this,
       options: this.builderOptions.view,
@@ -508,10 +559,28 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.motif.setDisposable(() => lookupTexts.dispose());
     // The grid's `reState()`: what it was given is read again, as every control reads its props again.
     onReState(this, () => this.readGivenAgain());
+    // The kit's texts in another language: what the grid writes of them is drawn again.
+    follow(this, 'uiTexts', () => uiLocale.strings, () => {
+      this.model.notices.tell('texts');
+      this.model.notices.flush();
+    });
     this.exportSwitches = new Switches<ExportValues>(['formats', 'allowExportSelectedData', 'texts'], {}, own.export ?? {});
     this.exportSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `export.${name}`, value, previous }));
+    this.exportSwitches.notify = () => model.notices.tell('export');
     model.details.options.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `masterDetail.${name}`, value, previous }));
     model.adaptive.options.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `adaptiveDetail.${name}`, value, previous }));
+    this.followGiven();
+    // Another value assigned to an option, or other columns: what is followed is read again.
+    this.motif.setDisposable(model.notices.on((told) => [...told].some((name) => GIVEN_NOTICES.has(name)) && this.followGiven()));
+    this.motif.setDisposable(() => this.stopGiven?.());
+    // The parts around the rows are drawn again on every change the grid tells, and on another label.
+    this.motif.setDisposable(
+      model.notices.on(() => {
+        this.drawRoot();
+        this.drawBars();
+        this.drawShell();
+      }),
+    );
     this.topBar = new GridToolbar<T>(
       model,
       this.toolbarSwitches,
@@ -536,7 +605,23 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       },
       this,
     );
+    this.observeProperty('text', () => {
+      this.drawBars();
+      this.drawShell();
+      this.pager.draw();
+    });
     untracked(() => model.columnWindow.update(model.columns.visible(), 0, 0, [model.state.activeField]));
+  }
+
+  /** The toolbar and the bottom bar as the grid is now. */
+  private drawBars() {
+    if (this.isDisposed) return;
+    this.topBar.draw();
+    this.bottomActions.draw();
+    untracked(() => {
+      this.bottomBar.label = this.model.actionSets.targetLabel() || this.model.text('gridActions');
+      this.bottomBar.visible = this.bottomShown();
+    });
   }
 
   // Public API.
@@ -1379,11 +1464,38 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    */
   private readGivenAgain() {
     const { model } = this;
-    const holders = [model.settings, model.details.options, model.adaptive.options, model.rowDrag.values, this.formSwitches, this.popupSwitches, this.builderPopupSwitches];
-    for (const switches of [...holders, ...model.columns.features.values()]) switches.touchAll();
+    for (const switches of this.givenHolders()) if (switches !== this.toolbarSwitches && switches !== this.exportSwitches) switches.touchAll();
     this.builderOptions.touch();
     this.model.summaries.reread();
     this.repaint();
+  }
+
+  /** Every set of options the grid was given: its own, its parts', each column's. */
+  private givenHolders(): Switches<object>[] {
+    const { model } = this;
+    const own = [model.settings, model.details.options, model.adaptive.options, model.rowDrag.values, this.toolbarSwitches, this.formSwitches, this.popupSwitches, this.builderPopupSwitches, this.exportSwitches];
+    return [...own, ...model.columns.features.values()] as unknown as Switches<object>[];
+  }
+
+  /**
+   * The options given as functions (`actionsWidth: () => state.width`) are the developer's live values: followed here
+   * together (a reactive source by itself, plain data on `reState()`); a value that changed touches its key, and the grid
+   * tells it. Made again when the columns change, each column having its own.
+   */
+  private followGiven() {
+    this.stopGiven?.();
+    const holders = this.givenHolders();
+    let before: Map<string, unknown>[] | null = null;
+    this.stopGiven = follow(
+      this,
+      'givenFunctions',
+      () => holders.map((holder) => holder.givenValues()),
+      (now) => {
+        const last = before;
+        before = now;
+        if (last) now.forEach((values, i) => holders[i].touchChanged(last[i], values));
+      },
+    );
   }
 
   repaint() {
@@ -1707,6 +1819,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         (a, b) => a.type === b.type && sameList(a.values, b.values),
       );
     }
+    // What the column shows, given as functions (its title, …): read again when they read otherwise, and told.
+    const shown = COLUMN_LOOK.filter((key) => typeof col[key] === 'function');
+    if (shown.length) watch('columnLook', () => shown.map((key) => readField(col, key)), () => model.notices.tell('columns'), sameList);
     if (stops.length) this.columnWatches.set(col.field, stops);
   }
 
@@ -2547,24 +2662,20 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const { model } = this;
     const settings = model.settings;
     this.class.add('mx-data-grid');
-    this.attr.add({
-      'data-grid-id': this.gridId,
-      'data-mode': () => model.mode,
-      'data-striped': () => (settings.get('striped') ? '' : null),
-      'data-header-buttons': () => settings.get('headerButtons'),
-      'data-selection': () => (settings.get('selection') === 'none' ? null : settings.get('selection')),
-      // While there are no rows to show, the body keeps room for the message (`emptyRows`).
-      'data-state': () => (model.state.status === 'loading' ? 'loading' : model.state.status === 'error' ? 'error' : model.count === 0 ? 'empty' : null),
-    });
-    this.bindings.watch(() => this.element.style.setProperty('--_empty-rows', String(Math.max(0, settings.get('emptyRows')))));
+    this.element.setAttribute('data-grid-id', this.gridId);
+    this.drawRoot();
+    // What the grid does about a change in its state: checked on every turn the grid tells changes, before the views draw.
+    this.motif.setDisposable(
+      model.notices.before(() => {
+        for (const check of this.reactions) safeCall(check, 'DataGrid');
+      }),
+    );
 
     // Filters: applied at once, or after a typing pause; a feature switched off takes its filter out.
-    this.bindings.watch(() => {
-      void model.filters.expression();
-      void model.filters.filterValue();
-      void model.filters.enabled;
-      untracked(() => model.queueFilter());
-    });
+    this.whenChanged(
+      () => [JSON.stringify(model.filters.expression()), JSON.stringify(model.filters.filterValue()), model.filters.enabled],
+      () => model.queueFilter(),
+    );
 
     // The search text and the filter value the app follows; the columns searched changed: search again.
     const searchProp = this.props.searchText;
@@ -2573,84 +2684,67 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (typeof filterValueProp === 'function') this.filterValue = filterValueProp;
     const filterEnabledProp = this.props.filterEnabled;
     if (typeof filterEnabledProp === 'function') this.filterEnabled = filterEnabledProp;
-    let firstFields = true;
-    this.bindings.watch(() => {
-      void model.search.fields().join('\n');
-      if (firstFields) {
-        firstFields = false;
-        return;
-      }
-      untracked(() => model.search.refresh());
-    });
+    this.whenChanged(
+      () => [model.search.fields().join('\n')],
+      (first) => !first && model.search.refresh(),
+    );
 
     // What the bars' actions act on is said politely when it changes (not when the grid starts).
     let barTarget: string | null = null;
-    this.bindings.watch(() => {
-      const text = this.barShown() ? model.actionSets.targetLabel() : '';
-      untracked(() => {
+    this.whenChanged(
+      () => [this.barShown() ? model.actionSets.targetLabel() : ''],
+      () => {
+        const text = this.barShown() ? model.actionSets.targetLabel() : '';
         if (barTarget !== null && text && text !== barTarget) model.announce(text);
         barTarget = text;
-      });
-    });
+      },
+    );
 
     // Keys of the selected rows given by the app.
-    this.bindings.watch(() => {
-      const keys = read(this.props.selectedKeys);
-      if (keys === undefined) return;
-      const list = givenList(keys);
-      untracked(() => (this.selectedKeys = list));
+    follow(this, 'selectedKeys', () => read(this.props.selectedKeys), (keys) => {
+      if (keys !== undefined) this.selectedKeys = givenList(keys);
     });
 
     // The cell ranges given by the app; another cell selection mode keeps what it allows.
-    this.bindings.watch(() => {
-      const ranges = read(this.props.cellRanges);
-      if (ranges === undefined) return;
-      const list = givenList(ranges);
-      untracked(() => (this.cellRanges = list));
+    follow(this, 'cellRanges', () => read(this.props.cellRanges), (ranges) => {
+      if (ranges !== undefined) this.cellRanges = givenList(ranges);
     });
-    this.bindings.watch(() => {
-      const mode = settings.get('cellSelection');
-      untracked(() => {
+    this.whenChanged(
+      () => [settings.get('cellSelection')],
+      () => {
+        const mode = settings.get('cellSelection');
         const r = model.cellRanges;
         if (mode === 'none') r.reset();
         else if (mode === 'single' && r.entries.length > 1) r.set(r.entries.slice(-1));
-      });
-    });
+      },
+    );
 
     // The data props: other data, another mode or save mode starts again; another `pageSize` wins
     // over the size the user chose.
-    let first = true;
-    let lastPageSize = read(this.props.pageSize);
-    this.bindings.watch(() => {
-      const props = this.props;
-      void read(props.dataSource);
-      void read(props.mode);
-      const pageSize = read(props.pageSize);
-      void read(props.saveMode);
-      if (first) {
-        first = false;
-        return;
-      }
-      untracked(() => {
-        if (pageSize !== lastPageSize) model.chosenPageSize = null;
-        lastPageSize = pageSize;
+    let given: unknown[] | null = null;
+    follow(
+      this,
+      'dataProps',
+      () => [read(this.props.dataSource), read(this.props.mode), read(this.props.pageSize), read(this.props.saveMode)],
+      (now) => {
+        const last = given;
+        given = now;
+        if (!last || now.every((value, i) => Object.is(value, last[i]))) return;
+        if (now[2] !== last[2]) model.chosenPageSize = null;
         this.closeForm(false);
         this.closeEditor();
         this.pendingInvalid = null;
         model.connect();
         this.body.toStart();
-      });
-    });
+      },
+    );
 
     // Another edit mode: an open form closes, and to or from 'batch' the data starts again with that save mode.
-    let firstEditMode = true;
-    this.bindings.watch(() => {
-      const mode = settings.get('editMode');
-      if (firstEditMode) {
-        firstEditMode = false;
-        return;
-      }
-      untracked(() => {
+    this.whenChanged(
+      () => [settings.get('editMode')],
+      (first) => {
+        if (first) return;
+        const mode = settings.get('editMode');
         if (this.formEdit && (mode === 'form' || mode === 'popup' ? mode !== this.formEdit.mode : true)) this.dropForm();
         if (model.wantedSaveMode() === model.data.tracker.saveMode) return;
         this.closeForm(false);
@@ -2658,44 +2752,30 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         this.pendingInvalid = null;
         model.connect();
         this.body.toStart();
-      });
-    });
+      },
+    );
 
     // Rows in memory: a new array loads again; a change in place shows after `refresh()`.
     let firstRows = true;
-    this.bindings.watch(() => {
-      void read(this.props.rows);
+    follow(this, 'rows', () => read(this.props.rows), () => {
       if (firstRows) {
         firstRows = false;
         return;
       }
-      untracked(() => {
-        if (!read(this.props.dataSource)) void model.data.source.reload();
-      });
+      if (!read(this.props.dataSource)) void model.data.source.reload();
     });
 
     // Open groups: the list follows the switches (autoExpandAll, a column's autoExpandGroup).
-    let firstOpen = true;
-    this.bindings.watch(() => {
-      void model.groups.track();
-      if (firstOpen) {
-        firstOpen = false;
-        return;
-      }
-      untracked(() => model.data.regroupView());
-    });
+    this.whenChanged(
+      () => [model.groups.track()],
+      (first) => !first && model.data.regroupView(),
+    );
 
     // Who groups and how every row loads for it: grouped again when they change.
-    let firstRemote = true;
-    this.bindings.watch(() => {
-      void settings.get('remoteGrouping');
-      void settings.get('groupLoadPageSize');
-      if (firstRemote) {
-        firstRemote = false;
-        return;
-      }
-      untracked(() => model.regroupWithSettings());
-    });
+    this.whenChanged(
+      () => [settings.get('remoteGrouping'), settings.get('groupLoadPageSize')],
+      (first) => !first && model.regroupWithSettings(),
+    );
 
     // The functions of the columns the app follows (`groupIndex`, `filterValues`, `filterType`).
     for (const col of model.columns.definitions()) this.watchColumn(col);
@@ -2705,157 +2785,194 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
     // Summaries: other items or other ways to work them out start again; group items a server
     // cannot compute group the rows in memory; footer rows come and go with their items.
-    let firstSummary = true;
+    let firstGiven = true;
+    follow(this, 'summary', () => model.summaries.givenKey(), () => {
+      if (firstGiven) firstGiven = false;
+      else model.notices.tell('summaries');
+    });
     let lastServer = '';
     let lastFooters = false;
-    this.bindings.watch(() => {
-      const s = model.summaries;
-      void s.signature();
-      const server = JSON.stringify(s.serverItems(s.groupItems(), model.data.source.adapter));
-      const footers = s.hasFooters();
-      if (firstSummary) {
-        firstSummary = false;
+    this.whenChanged(
+      () => {
+        const s = model.summaries;
+        return [s.value, s.rereads, s.signature(), JSON.stringify(s.serverItems(s.groupItems(), model.data.source.adapter)), s.hasFooters()];
+      },
+      (first) => {
+        const s = model.summaries;
+        const server = JSON.stringify(s.serverItems(s.groupItems(), model.data.source.adapter));
+        const footers = s.hasFooters();
+        if (!first) {
+          s.refresh();
+          if (server !== lastServer) model.regroupWithSettings();
+          else if (footers !== lastFooters) model.data.regroupView();
+        }
         lastServer = server;
         lastFooters = footers;
-        return;
-      }
-      untracked(() => {
-        s.refresh();
-        if (server !== lastServer) model.regroupWithSettings();
-        else if (footers !== lastFooters) model.data.regroupView();
-        lastServer = server;
-        lastFooters = footers;
-      });
-    });
+      },
+    );
 
     // Master-detail: turning it on or off, `autoExpandAll` or another template open or close every
     // row again; another template makes the details again.
-    let firstDetails = true;
     let lastTemplate: unknown;
-    this.bindings.watch(() => {
-      const options = model.details.options;
-      void options.get('enabled');
-      void options.get('autoExpandAll');
-      const template = options.get('template');
-      if (firstDetails) {
-        firstDetails = false;
+    this.whenChanged(
+      () => {
+        const options = model.details.options;
+        return [options.get('enabled'), options.get('autoExpandAll'), options.get('template')];
+      },
+      (first) => {
+        const template = model.details.options.get('template');
+        if (!first) {
+          this.leaveDetails();
+          if (template !== lastTemplate) this.body.dropDetails();
+          model.details.reset();
+          this.body.refreshDetails();
+        }
         lastTemplate = template;
-        return;
-      }
-      untracked(() => {
-        this.leaveDetails();
-        if (template !== lastTemplate) this.body.dropDetails();
-        lastTemplate = template;
-        model.details.reset();
-        this.body.refreshDetails();
-      });
-    });
+      },
+    );
 
     // What the details' rows and heights depend on: they are found and laid out again.
-    let firstDetailOptions = true;
-    this.bindings.watch(() => {
-      const options = model.details.options;
-      void options.get('canExpand');
-      void options.get('height');
-      void options.get('estimatedHeight');
-      void options.get('keepDetails');
-      void options.get('keepLimit');
-      if (firstDetailOptions) {
-        firstDetailOptions = false;
-        return;
-      }
-      untracked(() => this.body.refreshDetails());
-    });
+    this.whenChanged(
+      () => {
+        const options = model.details.options;
+        return [options.get('canExpand'), options.get('height'), options.get('estimatedHeight'), options.get('keepDetails'), options.get('keepAcrossPages'), options.get('keepLimit')];
+      },
+      (first) => !first && this.body.refreshDetails(),
+    );
 
     // Order or visibility changed: reorder cells, renumber, keep the active column visible.
-    this.bindings.watch(() => {
-      const visible = model.columns.visible();
-      const filterRow = model.showsFilterRow();
-      untracked(() => {
+    this.whenChanged(
+      () => {
+        const cols = model.columns;
+        const visible = cols.visible();
+        return [visible.join('\n'), visible.map((f) => cols.zoneOf(f)).join('\n'), JSON.stringify(cols.hasBands ? cols.shownBands(visible) : []), model.showsFilterRow()];
+      },
+      () => {
+        const visible = model.columns.visible();
         this.findColumns(visible);
-        this.arrangeColumns(visible, filterRow);
+        this.arrangeColumns(visible, model.showsFilterRow());
         model.keepActiveFieldVisible();
         this.syncTabStop();
-      });
-    });
+      },
+    );
 
     // Virtual columns: other widths, another width of the viewport or other settings draw other columns.
-    this.bindings.watch(() => {
-      const visible = model.columns.visible();
-      void model.columns.template(visible);
-      void model.columns.anyVirtual(visible);
-      void settings.get('extraColumns');
-      void model.state.width;
-      untracked(() => this.updateColumns());
-    });
+    this.whenChanged(
+      () => {
+        const visible = model.columns.visible();
+        return [visible.join('\n'), model.columns.template(visible), model.columns.anyVirtual(visible), settings.get('extraColumns'), model.state.width];
+      },
+      () => this.updateColumns(),
+    );
 
     // Sizes and sticky offsets: CSS only, no row is touched.
-    this.bindings.watch(() => {
-      const visible = model.columns.visible();
-      const template = model.columns.template(visible);
-      const offsets = model.columns.stickyOffsets(visible);
-      const align = new Map<string, string>();
-      for (const f of visible) align.set(f, model.columns.align(f));
-      const bands = model.columns.hasBands ? model.columns.shownBands(visible) : [];
-      const placed = model.columns.anyVirtual(visible);
-      untracked(() => {
-        this.viewportEl?.style.setProperty('--_columns', template);
-        this.styles.update(visible, offsets, align, bands, placed);
-      });
-    });
+    this.whenChanged(
+      () => {
+        const cols = model.columns;
+        const visible = cols.visible();
+        return [JSON.stringify([visible, cols.template(visible), [...cols.stickyOffsets(visible)], visible.map((f) => cols.align(f)), cols.hasBands ? cols.shownBands(visible) : [], cols.anyVirtual(visible)])];
+      },
+      () => {
+        const cols = model.columns;
+        const visible = cols.visible();
+        const align = new Map<string, string>();
+        for (const f of visible) align.set(f, cols.align(f));
+        this.viewportEl?.style.setProperty('--_columns', cols.template(visible));
+        this.styles.update(visible, cols.stickyOffsets(visible), align, cols.hasBands ? cols.shownBands(visible) : [], cols.anyVirtual(visible));
+      },
+    );
 
     // The columns the width hides: worked out from the widths kept and the viewport's width only, so
     // hiding them cannot feed back into it.
-    this.bindings.watch(() => {
-      const hidden = model.columns.fitWidth(model.state.width);
-      untracked(() => {
+    this.whenChanged(
+      () => [model.columns.fitWidth(model.state.width).join('\n')],
+      () => {
+        const hidden = model.columns.fitWidth(model.state.width);
         const cols = model.columns;
         if (hidden.join('\n') !== cols.state.adaptive.join('\n')) cols.state.adaptive = hidden;
-      });
-    });
+        this.model.notices.tell('columns');
+      },
+    );
 
     // No column hidden any more: the adaptive detail closes.
-    this.bindings.watch(() => {
-      const none = model.columns.state.adaptive.length === 0;
-      if (!none || model.adaptive.state.rowId === null) return;
-      untracked(() => {
+    this.whenChanged(
+      () => [model.columns.state.adaptive.length === 0, model.adaptive.state.rowId],
+      () => {
+        if (model.columns.state.adaptive.length > 0 || model.adaptive.state.rowId === null) return;
         this.leaveAdaptive();
         model.adaptive.close();
         this.body.relayout(true);
-      });
-    });
+      },
+    );
 
     // An adaptive detail editing opened closes when the row is left.
-    this.bindings.watch(() => {
-      const session = model.state.session;
-      const a = model.adaptive.state;
-      if (!a.auto || a.rowId === null || session === a.rowId) return;
-      untracked(() => {
+    this.whenChanged(
+      () => {
+        const a = model.adaptive.state;
+        return [model.state.session, a.auto, a.rowId];
+      },
+      () => {
+        const a = model.adaptive.state;
+        if (!a.auto || a.rowId === null || model.state.session === a.rowId) return;
         const i = model.adaptiveIndex();
         if (i < 0 || !this.toggleAdaptive(i, false)) {
           model.adaptive.close();
           this.body.relayout(true);
         }
-      });
-    });
+      },
+    );
 
     // Rows arrived, the total changed, rows were added, sizes, the page or the page size changed: lay the body out again.
-    this.bindings.watch(() => {
-      const st = model.state;
-      void st.version;
-      void st.status;
-      void st.connection;
-      void st.added;
-      void st.rowHeight;
-      void st.viewport;
-      void st.page;
-      void st.pageSize;
-      untracked(() => {
+    this.whenChanged(
+      () => {
+        const st = model.state;
+        return [st.version, st.status, st.connection, st.added, st.rowHeight, st.viewport, st.page, st.pageSize];
+      },
+      () => {
         if (this.updates > 0) this.relayoutWaiting = true;
         else this.layOut();
         // Rows that were loading under a drag selection came.
         this.dragSelect.refresh();
+      },
+    );
+  }
+
+  /** What the grid does when a part of its state is no longer what it was (see `whenChanged`). */
+  private readonly reactions: (() => void)[] = [];
+
+  /**
+   * Runs `run` now, then whenever one of the values `values` reads is not what it read last: checked on every turn the
+   * grid tells changes, before the views draw. Nothing is followed.
+   */
+  private whenChanged(values: () => readonly unknown[], run: (first: boolean) => void) {
+    let last: readonly unknown[] | null = null;
+    const check = () =>
+      untracked(() => {
+        const now = values();
+        if (last && now.every((value, i) => Object.is(value, last![i]))) return;
+        const first = last === null;
+        last = now;
+        run(first);
       });
+    this.reactions.push(check);
+    check();
+  }
+
+  /** The grid's own element as the grid is now: its mode, look and state. */
+  private drawRoot() {
+    if (this.isDisposed) return;
+    untracked(() => {
+      const { model } = this;
+      const settings = model.settings;
+      const el = this.element;
+      const status = model.state.status;
+      put(el, 'data-mode', model.mode);
+      mark(el, 'data-striped', settings.get('striped'));
+      put(el, 'data-header-buttons', settings.get('headerButtons'));
+      put(el, 'data-selection', settings.get('selection') === 'none' ? null : settings.get('selection'));
+      // While there are no rows to show, the body keeps room for the message (`emptyRows`).
+      put(el, 'data-state', status === 'loading' ? 'loading' : status === 'error' ? 'error' : model.count === 0 ? 'empty' : null);
+      css(el, '--_empty-rows', String(Math.max(0, settings.get('emptyRows'))));
     });
   }
 
@@ -2869,6 +2986,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   override onBuilt() {
+    // Drawn once all of it is in the grid: a part not wanted now is taken out of its place.
+    this.drawShell();
     this.topBar.arrange();
     // Header cells and rows are built in definition order; put them in display order.
     const visible = this.model.columns.visible();
@@ -2916,147 +3035,247 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.dispose();
   }
 
+  /** The grid's own parts around the rows, made once in `view` and drawn by `drawShell`. */
+  private shell: Shell | null = null;
+
   override view() {
     const { model } = this;
-    const st = model.state;
     const settings = model.settings;
-    const t = (key: Parameters<typeof model.text>[0], values?: Record<string, unknown>) => model.text(key, values);
-    const count = (n: number) => model.formatter.count(n);
-    const overlay = (): 'loading' | 'error' | 'empty' | null =>
-      st.status === 'loading' ? 'loading' : st.status === 'error' ? 'error' : model.count === 0 ? 'empty' : null;
-    const showErrors = () => settings.get('errorSummary') && model.stats.failed > 0;
-    const showSelected = () => settings.get('selection') !== 'none' && settings.get('selectedCount') && this.selectedCount > 0;
-    const panel = this.exportPanel;
-    const acting = () => panel.kind === 'action';
-    const keepFocus = (e: Event) => e.preventDefault();
-    return (
-      <>
-        {this.topBar.bar}
-        <div class="mx-data-grid__main">
-          <div
-            class="mx-data-grid__viewport"
-            role={() => (model.groups.any ? 'treegrid' : 'grid')}
-            ref={(c) => {
-              this.viewportEl = c.element as HTMLDivElement;
-              this.motif.setDisposable(this.dragSelect.holdTouch(this.viewportEl));
-            }}
-            aria-label={() => this.text || t('gridLabel')}
-            aria-rowcount={() => {
-              void model.details.state.version;
-              void model.adaptive.state.rowId;
-              void model.columns.state.adaptive;
-              // Infinite: unknown until the last part came.
-              return st.status === 'loading' || !model.data.ended ? -1 : model.count + model.headRows + (model.summaries.showsTotal() ? 1 : 0) + model.openDetailCount();
-            }}
-            aria-multiselectable={() => (settings.get('selection') === 'multiple' || settings.get('cellSelection') !== 'none' ? 'true' : null)}
-            aria-colcount={() => model.columns.visible().length}
-            aria-busy={() => (st.status === 'loading' || st.busy ? 'true' : null)}
-            onscroll={() => {
-              this.columnsScrolled();
-              this.body.onScroll();
-              this.tip.hide();
-              this.syncTabStop();
-            }}
-            onkeydown={(e: KeyboardEvent) => this.onKey(e)}
-            onfocusin={(e: FocusEvent) => this.onFocusIn(e)}
-            onfocusout={(e: FocusEvent) => this.onFocusOut(e)}
-            onpaste={(e: ClipboardEvent) => this.onPaste(e)}
-            onpointerdown={(e: PointerEvent) => this.onPointerDown(e)}
-            onclick={(e: MouseEvent) => this.onClick(e)}
-            ondblclick={(e: MouseEvent) => this.onDoubleClick(e)}
-            oncontextmenu={(e: MouseEvent) => this.onContextMenu(e)}
-            onpointermove={(e: PointerEvent) => {
-              if (this.body.detailOf(e.target as Element)) this.tip.hide();
-              else if (settings.get('tooltips')) this.tip.hover(e);
-            }}
-            onpointerleave={() => this.tip.hide()}
-          >
-            <div class="mx-data-grid__head" role="rowgroup" ref={(c) => (this.headEl = c.element as HTMLDivElement)}>
-              {this.header}
-              {this.filterRow}
-            </div>
-            {this.body}
-            <div
-              class="mx-data-grid__foot"
-              role="rowgroup"
-              aria-label={() => t('gridTotalSummary')}
-              hidden={() => !model.summaries.showsTotal()}
-              ref={(c) => (this.footEl = c.element as HTMLDivElement)}
-            >
-              {this.totalRow}
-            </div>
-          </div>
-          <div class="mx-data-grid__overlay" x-display={() => overlay() !== null}>
-            <div class="mx-data-grid__state" x-display={() => overlay() === 'loading'}>
-              <Spinner size="sm" label={() => t('loading')} />
-            </div>
-            <div class="mx-data-grid__state" x-display={() => overlay() === 'empty'}>
-              <span>{() => (model.isFiltered() ? t('gridNoMatches') : t('gridNoRows'))}</span>
-              <Button class="mx-data-grid__clear-filters" text={() => t('gridClearFilters')} visible={() => model.isFiltered()} onclick={() => this.clearFilters()} />
-            </div>
-            <div class="mx-data-grid__state" data-tone="danger" role="alert" x-display={() => overlay() === 'error'}>
-              <span>{() => t('loadFailed')}</span>
-              <Button text={() => t('retry')} onclick={() => this.retry()} />
-            </div>
-          </div>
-          <div class="mx-data-grid__load-more" role="status" data-state={() => model.moreState()} x-display={() => model.moreState() !== null}>
-            <Spinner size="sm" label={() => t('gridLoadingMore')} visible={() => model.moreState() === 'loading'} />
-            <span x-display={() => model.moreState() === 'failed'}>{() => t('gridLoadMoreFailed')}</span>
-            <Button text={() => t('retry')} visible={() => model.moreState() === 'failed'} onclick={() => this.retry()} />
-          </div>
-          <div class="mx-data-grid__export-panel" x-display={() => this.exportPanel.shown}>
-            <ProgressBar
-              class="mx-data-grid__export-progress"
-              label={() => panel.text || t('gridExporting')}
-              value={() => (panel.progress && panel.total > 0 ? panel.loaded : null)}
-              max={() => Math.max(1, panel.total)}
-              showValue={() => panel.progress && panel.total > 0}
-              valueText={() =>
-                acting() ? t('gridActionProgress', { done: count(panel.loaded), total: count(panel.total) }) : t('gridExportProgress', { loaded: count(panel.loaded), total: count(panel.total) })
-              }
-              size="sm"
-              stretch
-            />
-            <Button
-              class="mx-data-grid__export-cancel"
-              text={() => (acting() ? t('gridActionStop') : t('gridExportCancel'))}
-              visible={() => panel.cancel}
-              onclick={() => this.stopPanelExport?.()}
-            />
-          </div>
-          <div class="mx-data-grid__probe" aria-hidden="true" ref={(c) => (this.probeEl = c.element as HTMLDivElement)} />
-          <div class="mx-data-grid__measure" aria-hidden="true" ref={(c) => (this.measureEl = c.element as HTMLDivElement)} />
-        </div>
-        {this.filterPanel}
-        <div class="mx-data-grid__bar" x-display={() => settings.get('rowCount') || st.failedBlocks > 0 || model.showsPager() || showErrors() || showSelected() || this.bottomShown() || this.cellSummaryText() !== ''}>
-          {this.bottomBar}
-          <span class="mx-data-grid__count" x-display={() => settings.get('rowCount')}>
-            {() => (st.status !== 'ready' ? '' : model.mode === 'infinite' && model.data.knownCount === undefined ? t('gridRecordsLoaded', { count: count(this.total) }) : t('gridRecords', { count: count(this.totalCount()) }))}
-          </span>
-          <span class="mx-data-grid__selected" x-display={showSelected}>
-            {() => t('gridSelectedCount', { count: count(this.selectedCount) })}
-          </span>
-          <span class="mx-data-grid__cell-summary" x-display={() => this.cellSummaryText() !== ''}>
-            {() => this.cellSummaryText()}
-          </span>
-          <span class="mx-data-grid__note" data-tone="danger" role="status" x-display={() => st.failedBlocks > (model.moreState() === 'failed' ? 1 : 0)}>
-            {() => t('gridSomeRowsFailed')}
-            <Button text={() => t('retry')} onclick={() => this.retry()} />
-          </span>
-          <span class="mx-data-grid__note mx-data-grid__errors" data-tone="danger" role="status" x-display={showErrors}>
-            {() => t('gridSaveErrors', { count: count(model.stats.failed) })}
-            <Button text={() => t('gridNextError')} on:pointerdown={keepFocus} onclick={() => this.goToNextError()} />
-          </span>
-          {this.pager}
-        </div>
-        <div class="mx-data-grid__live" aria-live="polite">
-          {() => st.announcement}
-        </div>
-        <div class="mx-data-grid__live" id={model.errorId}>
-          {() => (st.activeRow >= 0 ? model.error(model.rowIdAt(st.activeRow), st.activeField) : '')}
-        </div>
-      </>
-    );
+    const div = (className: string, parent?: ComponentBase) => {
+      const c = new Component<HTMLDivElement>('div');
+      c.element.className = className;
+      parent?.controls.add(c);
+      return c;
+    };
+    const span = (className: string, parent: ComponentBase) => {
+      const c = new Component<HTMLSpanElement>('span');
+      c.element.className = className;
+      parent.controls.add(c);
+      return c;
+    };
+
+    const main = div('mx-data-grid__main');
+    const viewport = div('mx-data-grid__viewport', main);
+    const vp = viewport.element;
+    this.viewportEl = vp;
+    this.motif.setDisposable(this.dragSelect.holdTouch(vp));
+    vp.addEventListener('scroll', () => {
+      this.columnsScrolled();
+      this.body.onScroll();
+      this.tip.hide();
+      this.syncTabStop();
+    });
+    vp.addEventListener('keydown', (e) => this.onKey(e));
+    vp.addEventListener('focusin', (e) => this.onFocusIn(e));
+    vp.addEventListener('focusout', (e) => this.onFocusOut(e));
+    vp.addEventListener('paste', (e) => this.onPaste(e));
+    vp.addEventListener('pointerdown', (e) => this.onPointerDown(e));
+    vp.addEventListener('click', (e) => this.onClick(e));
+    vp.addEventListener('dblclick', (e) => this.onDoubleClick(e));
+    vp.addEventListener('contextmenu', (e) => this.onContextMenu(e));
+    vp.addEventListener('pointermove', (e) => {
+      if (this.body.detailOf(e.target as Element)) this.tip.hide();
+      else if (settings.get('tooltips')) this.tip.hover(e);
+    });
+    vp.addEventListener('pointerleave', () => this.tip.hide());
+    const head = div('mx-data-grid__head', viewport);
+    head.element.setAttribute('role', 'rowgroup');
+    this.headEl = head.element;
+    head.controls.add(this.header, this.filterRow);
+    viewport.controls.add(this.body);
+    const foot = div('mx-data-grid__foot', viewport);
+    foot.element.setAttribute('role', 'rowgroup');
+    this.footEl = foot.element;
+    foot.controls.add(this.totalRow);
+
+    const overlay = div('mx-data-grid__overlay', main);
+    const loading = div('mx-data-grid__state', overlay);
+    const spinner = new Spinner({ size: 'sm' });
+    loading.controls.add(spinner);
+    const empty = div('mx-data-grid__state', overlay);
+    const emptyText = span('', empty);
+    const clear = new Button({});
+    clear.element.classList.add('mx-data-grid__clear-filters');
+    clear.motif.on('click', () => this.clearFilters());
+    empty.controls.add(clear);
+    const failed = div('mx-data-grid__state', overlay);
+    failed.element.dataset.tone = 'danger';
+    failed.element.setAttribute('role', 'alert');
+    const failedText = span('', failed);
+    const retry = new Button({});
+    retry.motif.on('click', () => this.retry());
+    failed.controls.add(retry);
+
+    const more = div('mx-data-grid__load-more', main);
+    more.element.setAttribute('role', 'status');
+    const moreSpinner = new Spinner({ size: 'sm' });
+    more.controls.add(moreSpinner);
+    const moreFailed = span('', more);
+    const moreRetry = new Button({});
+    moreRetry.motif.on('click', () => this.retry());
+    more.controls.add(moreRetry);
+
+    const exporting = div('mx-data-grid__export-panel', main);
+    const progress = new ProgressBar({ size: 'sm', stretch: true });
+    progress.element.classList.add('mx-data-grid__export-progress');
+    progress.valueText = () => {
+      const panel = this.exportPanel;
+      const count = (n: number) => model.formatter.count(n);
+      return panel.kind === 'action'
+        ? model.text('gridActionProgress', { done: count(panel.loaded), total: count(panel.total) })
+        : model.text('gridExportProgress', { loaded: count(panel.loaded), total: count(panel.total) });
+    };
+    const cancel = new Button({});
+    cancel.element.classList.add('mx-data-grid__export-cancel');
+    cancel.motif.on('click', () => this.stopPanelExport?.());
+    exporting.controls.add(progress, cancel);
+    const probe = div('mx-data-grid__probe', main);
+    probe.element.setAttribute('aria-hidden', 'true');
+    this.probeEl = probe.element;
+    const measure = div('mx-data-grid__measure', main);
+    measure.element.setAttribute('aria-hidden', 'true');
+    this.measureEl = measure.element;
+
+    const bar = div('mx-data-grid__bar');
+    bar.controls.add(this.bottomBar);
+    const count = span('mx-data-grid__count', bar);
+    const selected = span('mx-data-grid__selected', bar);
+    const cells = span('mx-data-grid__cell-summary', bar);
+    const someFailed = span('mx-data-grid__note', bar);
+    someFailed.element.dataset.tone = 'danger';
+    someFailed.element.setAttribute('role', 'status');
+    const someFailedText = document.createTextNode('');
+    someFailed.element.append(someFailedText);
+    const someRetry = new Button({});
+    someRetry.motif.on('click', () => this.retry());
+    someFailed.controls.add(someRetry);
+    const errors = span('mx-data-grid__note mx-data-grid__errors', bar);
+    errors.element.dataset.tone = 'danger';
+    errors.element.setAttribute('role', 'status');
+    const errorsText = document.createTextNode('');
+    errors.element.append(errorsText);
+    const nextError = new Button({});
+    nextError.motif.on('pointerdown', (_, e) => e.preventDefault());
+    nextError.motif.on('click', () => this.goToNextError());
+    errors.controls.add(nextError);
+    bar.controls.add(this.pager);
+
+    const live = div('mx-data-grid__live');
+    live.element.setAttribute('aria-live', 'polite');
+    const error = div('mx-data-grid__live');
+    error.element.id = model.errorId;
+
+    this.shell = {
+      vp,
+      foot: foot.element,
+      overlay: overlay.element,
+      loading: loading.element,
+      empty: empty.element,
+      failed: failed.element,
+      spinner,
+      emptyText: emptyText.element,
+      clear,
+      failedText: failedText.element,
+      retry,
+      more: more.element,
+      moreSpinner,
+      moreFailed: moreFailed.element,
+      moreRetry,
+      exporting: exporting.element,
+      progress,
+      cancel,
+      bar: bar.element,
+      count: count.element,
+      selected: selected.element,
+      cells: cells.element,
+      someFailed: someFailed.element,
+      someFailedText,
+      someRetry,
+      errors: errors.element,
+      errorsText,
+      nextError,
+      live: live.element,
+      error: error.element,
+    };
+    const all = motifFragment();
+    all.controls.add(this.topBar.bar, main, this.filterPanel, bar, live, error);
+    return all;
+  }
+
+  /** The grid's own parts as the grid is now: what the rows' box says of them, the states, the bar, the live regions. */
+  private drawShell() {
+    const parts = this.shell;
+    if (!parts || this.isDisposed) return;
+    untracked(() => {
+      const { model } = this;
+      const st = model.state;
+      const settings = model.settings;
+      const t = (key: Parameters<typeof model.text>[0], values?: Record<string, unknown>) => model.text(key, values);
+      const count = (n: number) => model.formatter.count(n);
+      const vp = parts.vp;
+      put(vp, 'role', model.groups.any ? 'treegrid' : 'grid');
+      put(vp, 'aria-label', this.text || t('gridLabel'));
+      // Infinite: unknown until the last part came.
+      put(vp, 'aria-rowcount', String(st.status === 'loading' || !model.data.ended ? -1 : model.count + model.headRows + (model.summaries.showsTotal() ? 1 : 0) + model.openDetailCount()));
+      put(vp, 'aria-multiselectable', settings.get('selection') === 'multiple' || settings.get('cellSelection') !== 'none' ? 'true' : null);
+      put(vp, 'aria-colcount', String(model.columns.visible().length));
+      put(vp, 'aria-busy', st.status === 'loading' || st.busy ? 'true' : null);
+      put(parts.foot, 'aria-label', t('gridTotalSummary'));
+      parts.foot.hidden = !model.summaries.showsTotal();
+
+      const overlay = st.status === 'loading' ? 'loading' : st.status === 'error' ? 'error' : model.count === 0 ? 'empty' : null;
+      kept(parts.overlay, overlay !== null);
+      kept(parts.loading, overlay === 'loading');
+      kept(parts.empty, overlay === 'empty');
+      kept(parts.failed, overlay === 'error');
+      parts.spinner.label = t('loading');
+      text(parts.emptyText, model.isFiltered() ? t('gridNoMatches') : t('gridNoRows'));
+      parts.clear.text = t('gridClearFilters');
+      parts.clear.visible = model.isFiltered();
+      text(parts.failedText, t('loadFailed'));
+      parts.retry.text = t('retry');
+
+      const more = model.moreState();
+      put(parts.more, 'data-state', more);
+      kept(parts.more, more !== null);
+      parts.moreSpinner.label = t('gridLoadingMore');
+      parts.moreSpinner.visible = more === 'loading';
+      kept(parts.moreFailed, more === 'failed');
+      text(parts.moreFailed, t('gridLoadMoreFailed'));
+      parts.moreRetry.text = t('retry');
+      parts.moreRetry.visible = more === 'failed';
+
+      const panel = this.exportPanel;
+      const acting = panel.kind === 'action';
+      kept(parts.exporting, panel.shown);
+      parts.progress.label = panel.text || t('gridExporting');
+      parts.progress.value = panel.progress && panel.total > 0 ? panel.loaded : null;
+      parts.progress.max = Math.max(1, panel.total);
+      parts.progress.showValue = panel.progress && panel.total > 0;
+      parts.cancel.text = acting ? t('gridActionStop') : t('gridExportCancel');
+      parts.cancel.visible = panel.cancel;
+
+      const showErrors = settings.get('errorSummary') && model.stats.failed > 0;
+      const showSelected = settings.get('selection') !== 'none' && settings.get('selectedCount') && this.selectedCount > 0;
+      const summary = this.cellSummaryText();
+      kept(parts.bar, settings.get('rowCount') || st.failedBlocks > 0 || model.showsPager() || showErrors || showSelected || this.bottomShown() || summary !== '');
+      kept(parts.count, settings.get('rowCount'));
+      text(parts.count, st.status !== 'ready' ? '' : model.mode === 'infinite' && model.data.knownCount === undefined ? t('gridRecordsLoaded', { count: count(this.total) }) : t('gridRecords', { count: count(this.totalCount()) }));
+      kept(parts.selected, showSelected);
+      text(parts.selected, t('gridSelectedCount', { count: count(this.selectedCount) }));
+      kept(parts.cells, summary !== '');
+      text(parts.cells, summary);
+      kept(parts.someFailed, st.failedBlocks > (more === 'failed' ? 1 : 0));
+      if (parts.someFailedText.data !== t('gridSomeRowsFailed')) parts.someFailedText.data = t('gridSomeRowsFailed');
+      parts.someRetry.text = t('retry');
+      kept(parts.errors, showErrors);
+      const errors = t('gridSaveErrors', { count: count(model.stats.failed) });
+      if (parts.errorsText.data !== errors) parts.errorsText.data = errors;
+      parts.nextError.text = t('gridNextError');
+
+      text(parts.live, st.announcement);
+      text(parts.error, st.activeRow >= 0 ? model.error(model.rowIdAt(st.activeRow), st.activeField) : '');
+    });
   }
 
   // Elements, measuring.
@@ -3101,12 +3320,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const width = vp.clientWidth;
     if (width !== state.width) state.width = width;
     if (viewport > 0 && !state.measured) state.measured = true;
+    this.model.stateChanged('viewport', 'width', 'measured');
     const fixed = this.model.fixedRowHeight;
     const h = fixed ?? this.probeEl?.offsetHeight ?? 0;
     if (h > 0 && h !== state.rowHeight) {
       // Another density: the action buttons are measured again.
       this.widths.clear();
       state.rowHeight = h;
+      this.model.stateChanged('rowHeight');
     }
   }
 
@@ -3122,16 +3343,19 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (this.activeRowId?.startsWith('+')) {
       const i = model.indexOfKey(this.activeRowId);
       if (i >= 0 && i !== st.activeRow) st.activeRow = i;
+      this.model.stateChanged('activeRow');
     }
     if (!st.touched) {
       const next = st.status === 'ready' && model.reachable() > 0 ? model.firstRow() : HEADER_ROW;
       if (st.activeRow !== next) st.activeRow = next;
+      this.model.stateChanged('activeRow');
       return;
     }
     if (st.status !== 'ready') return;
     if (st.activeRow >= 0 && !model.hasRow(st.activeRow)) {
       const last = model.lastRow();
       st.activeRow = last < 0 ? HEADER_ROW : model.mode !== 'paged' ? Math.min(st.activeRow, last) : model.firstRow();
+      this.model.stateChanged('activeRow');
     }
     if (this.formEdit?.mode === 'form' && this.body.formIndex() < 0) this.closeForm(false);
     // The editor belongs to its row; if that row is no longer where the editor is, finish it.
@@ -3191,6 +3415,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const shifted = moved || st.activeField !== field;
     if (moved) st.activeRow = row;
     if (st.activeField !== field) st.activeField = field;
+    this.model.stateChanged('touched', 'activeRow', 'activeField');
     this.activeRowId = row >= 0 ? model.rowIdAt(row) : undefined;
     // In single selection the selection follows the active row.
     if (moved && row >= 0 && model.settings.get('selection') === 'single') this.selectOnly(row);
@@ -3363,6 +3588,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.editTarget = { rowId, row, field };
     this.editorPrepared(field, row, entered, !!rec?.isNew, editor, 'cell');
     st.editing = { rowId, field };
+    this.model.stateChanged('editing');
     model.setSession(rowId);
     if (this.pendingInvalid === rowId) this.pendingInvalid = null;
     this.tip.hide();
@@ -3504,8 +3730,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     let ok = true;
     if (result !== true) {
       st.busy = true;
+      this.model.stateChanged('busy');
       ok = await result;
       st.busy = false;
+      this.model.stateChanged('busy');
       if (this.isDisposed) return ok;
     }
     if (this.formEdit !== fe) return ok;
@@ -3596,6 +3824,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.editor = null;
     this.editTarget = null;
     this.model.state.editing = null;
+    this.model.stateChanged('editing');
     if (hadFocus) cell?.focus({ preventScroll: true });
     ed.dispose();
   }
@@ -3820,8 +4049,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       return true;
     }
     st.busy = true;
+    this.model.stateChanged('busy');
     void result.then((ok) => {
       st.busy = false;
+      this.model.stateChanged('busy');
       if (this.isDisposed) return;
       if (ok) {
         then(-1);
@@ -4388,6 +4619,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const isNew = model.isNew(rowId);
     if (!model.columns.state.adaptive.some((f) => model.columns.canFill(f, row, isNew))) return;
     if (this.toggleAdaptive(i, true)) a.state.auto = true;
+    this.model.notices.tell('adaptive');
   }
 
   /** The adaptive detail's form under grid row `i`, while it is drawn. */
@@ -4565,6 +4797,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const { model } = this;
     const cols = model.columns;
     model.state.adjust = { kind, field, original: kind === 'move' ? [...cols.state.order] : { width: { ...cols.state.width }, flex: { ...cols.state.flex } } };
+    this.model.stateChanged('adjust');
     if (kind === 'resize') {
       // Steps start from the widths on screen: a flexing column is wider than its setting.
       const shown = this.header.shownWidth(field);
@@ -4581,6 +4814,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const adjust = this.model.state.adjust;
     if (!adjust) return;
     this.model.state.adjust = null;
+    this.model.stateChanged('adjust');
     const cols = this.model.columns;
     if (!keep) {
       if (adjust.kind === 'move') cols.state.order = adjust.original as string[];
@@ -4589,6 +4823,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         cols.state.width = width;
         cols.state.flex = flex;
       }
+      this.model.notices.tell('columns');
       return;
     }
     this.model.layoutChanged();
@@ -5053,12 +5288,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     }
     const run = sel.state.run;
     if (run?.top !== top || run.bottom !== bottom) sel.state.run = { top, bottom };
+    this.model.notices.tell('selection');
   }
 
   private finishRowDrag(kept: boolean) {
     const { model } = this;
     const sel = model.selection;
     sel.state.run = null;
+    this.model.notices.tell('selection');
     if (!kept && this.rowDragBefore) {
       sel.byDrag = true;
       sel.restore(this.rowDragBefore);
@@ -5632,6 +5869,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (options.signal?.aborted) stop();
     this.exports.add(controller);
     model.state.exporting = true;
+    this.model.stateChanged('exporting');
     model.announce(model.text('gridExporting'));
     const panel = this.openExportPanel(options.loadPanel, stop);
     const told = options.onProgress;
@@ -5654,8 +5892,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       if (panel && this.stopPanelExport === stop) {
         this.stopPanelExport = null;
         this.exportPanel.shown = false;
+        this.drawShell();
       }
       if (!this.isDisposed) model.state.exporting = this.exports.size > 0;
+      this.model.stateChanged('exporting');
     }
   }
 
@@ -5671,12 +5911,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     p.total = 0;
     p.shown = true;
     this.stopPanelExport = stop;
+    this.drawShell();
     return true;
   }
 
   private showProgress(loaded: number, total: number) {
     this.exportPanel.loaded = loaded;
     this.exportPanel.total = total;
+    this.drawShell();
   }
 
   /** A column's width on screen: its header cell's, else the width the grid keeps for it. */

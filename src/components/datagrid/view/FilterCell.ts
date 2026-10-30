@@ -1,5 +1,6 @@
-import { Component, effect, reactive, type ComponentBase } from '@motifx/core';
+import { Component, untracked, type ComponentBase } from '@motifx/core';
 import { data } from '@motifx-community/data';
+import { handOver } from '../../../core/draw-parts';
 import { DateBox } from '../../datebox/DateBox';
 import { DropDown } from '../../dropdown/DropDown';
 import type { DropDownItem } from '../../dropdown/drop-down-item';
@@ -16,20 +17,25 @@ import { readField } from '../model/read-field';
 
 const text = (v: unknown) => (typeof v === 'string' ? v : v === undefined || v === null ? '' : String(v));
 const num = (v: unknown) => (typeof v === 'number' && !Number.isNaN(v) ? v : null);
+const same = (a: readonly unknown[], b: readonly unknown[]) => a.length === b.length && a.every((v, i) => Object.is(v, b[i]));
 
 /**
  * One cell of the filter row: a condition button (by the column type; none for a check box column)
  * and the kit's editor for the value — a `TextBox`, `NumberBox` or `DateBox`, two of them for
  * "between", none for "empty" and "not empty", a `DropDown` for list and yes/no columns. The editors
  * are bound to the grid's filters both ways and are out of the Tab order: the grid is one tab stop.
+ * It follows nothing: the filter row draws it again (`draw`) whenever the grid tells a change.
  */
 export class FilterCell<T> {
   /** The condition button; `null` for a check box column. */
   readonly condition: HTMLButtonElement | null;
   readonly editors: Field<any>[] = [];
+  /** What `draw` does, part by part. */
+  private readonly drawers: (() => void)[] = [];
   private readonly stops: (() => void)[] = [];
   /** Holds the editors; it goes with the cell. */
   private readonly holder: Component<HTMLDivElement>;
+  private disposed = false;
 
   constructor(
     private readonly model: GridModel<T>,
@@ -57,75 +63,94 @@ export class FilterCell<T> {
     const common = { labelMode: 'hidden' as const, size: 'sm' as const, tabStop: false };
     const firstLabel = () => model.text(between() ? 'gridFilterFrom' : 'gridFilterFor', { title: title() });
     const secondLabel = () => model.text('gridFilterTo', { title: title() });
-    const locale = () => model.formatter.locale;
     if (col.lookup) this.editors.push(this.lookupList(firstLabel, get, set));
     else switch (col.type) {
       case 'number':
         for (const key of ['value', 'value2'] as const) {
-          this.editors.push(
-            new NumberBox({
-              ...common,
-              label: key === 'value' ? firstLabel : secondLabel,
-              locale,
-              showSpinButtons: false,
-              align: 'end',
-              visible: key === 'value' ? () => !blank() : between,
-              value: () => num(get()[key]),
-              onValueChanged: (e) => e.byUser && set({ [key]: e.value }, true),
-            }),
-          );
+          const editor = new NumberBox({
+            ...common,
+            showSpinButtons: false,
+            align: 'end',
+            onValueChanged: (e) => e.byUser && set({ [key]: e.value }, true),
+          });
+          this.drawers.push(() => {
+            editor.label = key === 'value' ? firstLabel() : secondLabel();
+            editor.locale = model.formatter.locale;
+            editor.visible = key === 'value' ? !blank() : between();
+            handOver(editor, num(get()[key]));
+          });
+          this.editors.push(editor);
         }
         break;
       case 'date':
         for (const key of ['value', 'value2'] as const) {
-          this.editors.push(
-            new DateBox({
-              ...common,
-              label: key === 'value' ? firstLabel : secondLabel,
-              locale,
-              visible: key === 'value' ? () => !blank() : between,
-              value: () => data.toDate(get()[key]),
-              onValueChanged: (e) => e.byUser && set({ [key]: e.value }, false),
-            }),
-          );
+          const editor = new DateBox({
+            ...common,
+            onValueChanged: (e) => e.byUser && set({ [key]: e.value }, false),
+          });
+          this.drawers.push(() => {
+            editor.label = key === 'value' ? firstLabel() : secondLabel();
+            editor.locale = model.formatter.locale;
+            editor.visible = key === 'value' ? !blank() : between();
+            handOver(editor, data.toDate(get()[key]));
+          });
+          this.editors.push(editor);
         }
         break;
       case 'boolean':
-      case 'list':
-        this.editors.push(
-          new DropDown<DropDownItem, unknown>({
-            ...common,
-            label: firstLabel,
-            items: () => this.choices(),
-            visible: () => !blank(),
-            value: () => (get().value === undefined ? null : get().value),
-            onValueChanged: (e) => e.byUser && set({ value: e.value ?? undefined }, false),
-          }),
-        );
+      case 'list': {
+        const editor = new DropDown<DropDownItem, unknown>({
+          ...common,
+          onValueChanged: (e) => e.byUser && set({ value: e.value ?? undefined }, false),
+        });
+        let shown: unknown[] = [];
+        this.drawers.push(() => {
+          editor.label = firstLabel();
+          const choices = this.choices();
+          const now = choices.flatMap((c) => [c.value, c.text]);
+          if (!same(now, shown)) {
+            shown = now;
+            editor.items = choices;
+          }
+          editor.visible = !blank();
+          handOver(editor, get().value === undefined ? null : get().value);
+        });
+        this.editors.push(editor);
         break;
-      default:
-        this.editors.push(
-          new TextBox({
-            ...common,
-            label: firstLabel,
-            spellcheck: false,
-            autocomplete: 'off',
-            visible: () => !blank(),
-            value: () => text(get().value),
-            onValueChanged: (e) => e.byUser && set({ value: e.value || undefined }, true),
-          }),
-        );
+      }
+      default: {
+        const editor = new TextBox({
+          ...common,
+          spellcheck: false,
+          autocomplete: 'off',
+          onValueChanged: (e) => e.byUser && set({ value: e.value || undefined }, true),
+        });
+        this.drawers.push(() => {
+          editor.label = firstLabel();
+          editor.visible = !blank();
+          handOver(editor, text(get().value));
+        });
+        this.editors.push(editor);
+      }
     }
     if (this.condition) box.append(this.condition);
     for (const editor of this.editors) {
       editor.element.setAttribute('data-in-filter', '');
       holder.controls.add(editor);
     }
-    this.stops.push(
-      effect(() => {
-        box.hidden = !model.columns.can(field, 'filterRow');
-      }),
-    );
+    this.drawers.push(() => {
+      const hidden = !model.columns.can(field, 'filterRow');
+      if (box.hidden !== hidden) box.hidden = hidden;
+    });
+    this.draw();
+  }
+
+  /** Draws the editors and the condition as the column's filter is now. */
+  draw() {
+    if (this.disposed) return;
+    untracked(() => {
+      for (const draw of this.drawers) draw();
+    });
   }
 
   /** The element that takes the keys of an editor (its input or its list's field). */
@@ -153,6 +178,7 @@ export class FilterCell<T> {
   }
 
   dispose() {
+    this.disposed = true;
     for (const stop of this.stops) stop();
     if (!this.holder.isDisposed) void this.holder.dispose({ skipLeaveTransition: true });
   }
@@ -165,40 +191,55 @@ export class FilterCell<T> {
     const model = this.model;
     const col = model.columns.get(this.field);
     const values = model.values.lookups.source(this.field, 'all');
-    const look = reactive({ opened: false, texts: 0 });
+    let opened = false;
     let loadedWith = '';
-    const texts = model.lookups.onChanged(() => look.texts++);
+    let source: unknown = undefined;
+    let shown: unknown[] = [];
+    const texts = model.lookups.onChanged(() => {
+      shown = [];
+      this.draw();
+    });
     this.stops.push(() => {
       texts.dispose();
       const adapter = values.adapter;
       values.dispose();
       adapter.dispose();
     });
-    return new DropDown<GridFilterValue, unknown>({
+    const list = new DropDown<GridFilterValue, unknown>({
       labelMode: 'hidden',
       size: 'sm',
       tabStop: false,
-      label,
       searchEnabled: true,
       textField: 'text',
       valueField: 'value',
-      placeholder: () => model.text('gridAll'),
-      dataSource: () => (look.opened ? values : null),
-      // Until it opens, the field shows the chosen key's text alone.
-      items: () => {
-        void look.texts;
-        const value = get().value;
-        return data.isEmpty(value) ? [] : [{ value, text: model.lookups.textOfKey(col, value) }];
-      },
-      value: () => (get().value === undefined ? null : get().value),
       onValueChanged: (e) => e.byUser && set({ value: e.value ?? undefined }, false),
       onOpened: () => {
         const filter = JSON.stringify(model.values.lookups.otherFilter(this.field));
-        if (look.opened && filter !== loadedWith) void values.reload();
+        if (opened && filter !== loadedWith) void values.reload();
         loadedWith = filter;
-        look.opened = true;
+        if (opened) return;
+        opened = true;
+        this.draw();
       },
     });
+    this.drawers.push(() => {
+      list.label = label();
+      list.placeholder = model.text('gridAll');
+      if (source !== (opened ? values : null)) {
+        source = opened ? values : null;
+        list.dataSource = opened ? values : null;
+      }
+      // Until it opens, the field shows the chosen key's text alone.
+      const value = get().value;
+      const items = data.isEmpty(value) ? [] : [{ value, text: model.lookups.textOfKey(col, value) }];
+      const now = items.flatMap((i) => [i.value, i.text]);
+      if (!same(now, shown)) {
+        shown = now;
+        list.items = items;
+      }
+      handOver(list, value === undefined ? null : value);
+    });
+    return list;
   }
 
   /** The choices of a list or yes/no column; "All" first stands for no filter. */
@@ -221,16 +262,15 @@ export class FilterCell<T> {
     mark.className = 'mx-data-grid__condition-mark';
     mark.setAttribute('aria-hidden', 'true');
     button.append(mark);
-    this.stops.push(
-      effect(() => {
-        const op = model.filters.operator(this.field);
-        mark.textContent = OPERATOR_MARKS[op];
-        const label = model.text('gridFilterCondition', { operator: model.text(OPERATOR_TEXTS[op]), title: readField(model.columns.get(this.field), 'title') ?? '' });
-        button.setAttribute('aria-label', label);
-        button.dataset.hint = label;
-        button.toggleAttribute('data-set', model.filters.isActive(this.field));
-      }),
-    );
+    this.drawers.push(() => {
+      const op = model.filters.operator(this.field);
+      if (mark.textContent !== OPERATOR_MARKS[op]) mark.textContent = OPERATOR_MARKS[op];
+      const label = model.text('gridFilterCondition', { operator: model.text(OPERATOR_TEXTS[op]), title: readField(model.columns.get(this.field), 'title') ?? '' });
+      if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
+      if (button.dataset.hint !== label) button.dataset.hint = label;
+      const set = model.filters.isActive(this.field);
+      if (button.hasAttribute('data-set') !== set) button.toggleAttribute('data-set', set);
+    });
     return button;
   }
 }

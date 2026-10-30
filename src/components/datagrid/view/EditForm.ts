@@ -1,4 +1,5 @@
-import { Component, effect, read, untracked } from '@motifx/core';
+import { Component, untracked } from '@motifx/core';
+import { put } from '../../../core/draw-parts';
 import { Button } from '../../button/Button';
 import type { FormItem } from '../../formlayout/form-item';
 import { FormLayout } from '../../formlayout/FormLayout';
@@ -21,6 +22,9 @@ interface Placed<T> {
   editor: CellEditor<T> | null;
   /** The value the editor was made with. */
   value: unknown;
+  /** The form draws the editor's label mode and message, unless the app gives them. */
+  drawsLabelMode: boolean;
+  drawsError: boolean;
 }
 
 /**
@@ -29,7 +33,8 @@ interface Placed<T> {
  * and label. The fields stand for the row's draft: a value is written when its field is left or an
  * item is picked, the grid's checks show their messages on the fields, and a field whose value
  * changed through another one (`setCellValue`) is made again. Save and Cancel are its own buttons,
- * under the fields or in the window that holds the form.
+ * under the fields or in the window that holds the form. It follows nothing of the grid: it draws
+ * itself again whenever the grid tells a change.
  */
 export class EditForm<T> extends Component<HTMLDivElement> {
   readonly layout: FormLayout;
@@ -38,6 +43,10 @@ export class EditForm<T> extends Component<HTMLDivElement> {
   readonly saveButton: Button;
   readonly cancelButton: Button;
   private readonly placed = new Map<string, Placed<T>>();
+  private readonly message: HTMLDivElement;
+  private readonly isNew: boolean;
+  /** The `items` option the fields were laid out from, as text; `null` before the first time. */
+  private itemsFrom: string | null = null;
 
   constructor(
     private readonly model: GridModel<T>,
@@ -53,32 +62,15 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     const message = el.appendChild(document.createElement('div'));
     message.className = 'mx-data-grid__form-message';
     message.setAttribute('role', 'alert');
-    this.motif.setDisposable(
-      effect(() => {
-        void model.state.edits;
-        const text = model.edit(rowId)?.errors[''] ?? '';
-        message.textContent = text;
-        message.hidden = !text;
-      }),
-    );
-    this.layout = new FormLayout({
-      items: () => {
-        const given = settings.get('items');
-        return untracked(() => this.items(given));
-      },
-      columns: () => settings.get('colCount'),
-      minColumnWidth: () => settings.get('minColWidth') ?? '',
-      labelMode: () => settings.get('labelMode'),
-    });
-    const isNew = model.isNew(rowId);
-    this.motif.setDisposable(effect(() => this.layout.element.setAttribute('aria-label', model.text(isNew ? 'gridNewRowTitle' : 'gridEditRowTitle'))));
+    this.message = message;
+    this.isNew = model.isNew(rowId);
+    this.layout = new FormLayout({});
     this.controls.add(this.layout);
 
     this.buttons = new Component<HTMLDivElement>('div');
     this.buttons.element.className = 'mx-data-grid__form-buttons';
-    const busy = () => model.state.busy;
-    this.saveButton = new Button({ text: () => model.text('gridSave'), tone: 'accent', enabled: () => !busy() });
-    this.cancelButton = new Button({ text: () => model.text('gridCancelEdit'), enabled: () => !busy() });
+    this.saveButton = new Button({ tone: 'accent' });
+    this.cancelButton = new Button({});
     this.saveButton.element.classList.add('mx-data-grid__apply');
     this.cancelButton.element.classList.add('mx-data-grid__dismiss');
     this.saveButton.element.addEventListener('click', () => host.save());
@@ -120,16 +112,51 @@ export class EditForm<T> extends Component<HTMLDivElement> {
         }
       });
     }
-    // Values written some other way (an async `setCellValue`): the fields follow.
-    this.motif.setDisposable(
-      effect(() => {
-        void model.state.edits;
-        untracked(() => this.follow());
-      }),
-    );
+    this.motif.setDisposable(model.notices.on(() => this.draw()));
     this.motif.setDisposable(() => {
       for (const p of this.placed.values()) p.editor?.dispose();
     });
+    this.draw();
+  }
+
+  /** Draws the form as the grid and the row's draft are now; values written some other way (an async `setCellValue`) remake their fields. */
+  draw() {
+    if (this.isDisposed) return;
+    untracked(() => {
+      const { model, rowId, settings, layout } = this;
+      const text = model.edit(rowId)?.errors[''] ?? '';
+      if (this.message.textContent !== text) this.message.textContent = text;
+      if (this.message.hidden !== !text) this.message.hidden = !text;
+      const given = settings.get('items');
+      const from = JSON.stringify(given ?? null);
+      if (from !== this.itemsFrom) {
+        this.itemsFrom = from;
+        layout.items = this.items(given);
+      }
+      layout.columns = settings.get('colCount');
+      layout.minColumnWidth = settings.get('minColWidth') ?? '';
+      const labelMode = settings.get('labelMode');
+      layout.labelMode = labelMode;
+      put(layout.element as HTMLElement, 'aria-label', model.text(this.isNew ? 'gridNewRowTitle' : 'gridEditRowTitle'));
+      const busy = model.state.busy;
+      this.saveButton.text = model.text('gridSave');
+      this.saveButton.enabled = !busy;
+      this.cancelButton.text = model.text('gridCancelEdit');
+      this.cancelButton.enabled = !busy;
+      for (const [field, p] of this.placed) {
+        const editor = p.editor?.editor as unknown as Record<string, unknown> | null | undefined;
+        if (!editor) continue;
+        if (p.drawsLabelMode && 'labelMode' in editor) editor.labelMode = labelMode;
+        if (p.drawsError && 'error' in editor) editor.error = model.error(rowId, field) || null;
+      }
+      this.follow();
+    });
+  }
+
+  /** Lays the fields out again from the `items` option: what it holds changed in a way its text does not show. */
+  relayout() {
+    this.itemsFrom = null;
+    this.draw();
   }
 
   /** Focuses a field's editor, else the first one that can be filled in. */
@@ -211,7 +238,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     const holder = new Component<HTMLDivElement>('div');
     holder.element.className = 'mx-data-grid__form-field';
     holder.element.dataset.field = field;
-    this.placed.set(field, { holder, item: given, editor: null, value: undefined });
+    this.placed.set(field, { holder, item: given, editor: null, value: undefined, drawsLabelMode: true, drawsError: true });
     return {
       colSpan: given.colSpan ?? own.colSpan,
       visible: given.visible ?? own.visible,
@@ -237,21 +264,21 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     const own = col.formItem ?? {};
     const given = p.item;
     const fillable = model.columns.canFill(field, row, isNew);
+    const theirs = { ...own.editorOptions, ...given.editorProps } as Record<string, unknown>;
+    p.drawsLabelMode = theirs.labelMode === undefined;
+    p.drawsError = theirs.error === undefined;
     const props: Record<string, unknown> = {
       label: given.label ?? own.label ?? col.title,
-      labelMode: () => this.settings.get('labelMode'),
+      labelMode: this.settings.get('labelMode'),
       helpText: given.helpText ?? own.helpText,
       required: model.isRequired(col),
-      readOnly: () => !fillable || readField(given, 'readOnly') === true,
+      // The app's own function is followed by the field itself.
+      readOnly: typeof given.readOnly === 'function' ? () => !fillable || readField(given, 'readOnly') === true : !fillable || given.readOnly === true,
       enabled: given.enabled,
       validateOn: 'manual',
-      error: () => {
-        void model.state.edits;
-        return model.error(rowId, field) || null;
-      },
+      error: model.error(rowId, field) || null,
       stretch: true,
-      ...own.editorOptions,
-      ...given.editorProps,
+      ...theirs,
     };
     for (const key of Object.keys(props)) if (props[key] === undefined) delete props[key];
     const editor = new CellEditor<T>(

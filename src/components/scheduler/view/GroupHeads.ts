@@ -3,7 +3,7 @@ import { onReState } from '../../../core/on-re-state';
 import type { HeaderCell } from '../model/header-cell';
 import type { HeaderRow } from '../model/header-row';
 import type { ResourceHeaderContext } from '../resource-header-context';
-import { css, part, put, shown, text } from './draw-parts';
+import { css, part, put, shown, text } from '../../../core/draw-parts';
 import { KeyedParts } from './KeyedParts';
 import type { SchedulerHost } from './scheduler-host';
 

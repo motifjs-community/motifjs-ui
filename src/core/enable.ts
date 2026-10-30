@@ -151,7 +151,8 @@ export function disableSubtree(root: HTMLElement): () => void {
   for (const el of disableables(root)) if (!inWindowBelow(el, root)) cover(el, root);
   for (const type of BLOCKED_EVENTS) root.addEventListener(type, block, true);
   observeAll();
-  rescue?.focus();
+  // The page is not scrolled to it: the user did not move there (as the focus guard's rescue).
+  rescue?.focus({ preventScroll: true });
 
   let released = false;
   return () => {

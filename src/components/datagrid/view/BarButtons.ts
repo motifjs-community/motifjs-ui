@@ -1,4 +1,4 @@
-import { createSignal, effect, untracked } from '@motifx/core';
+import { untracked } from '@motifx/core';
 import { moreMark } from '../../../core/glyphs';
 import type { MenuItem } from '../../../parts/menu/menu-item';
 import { Button } from '../../button/Button';
@@ -17,14 +17,19 @@ const faceOf = (button: Button): HTMLElement =>
  * The actions of the target rows in the toolbar or the bottom bar, as kit buttons the bar holds
  * (so its arrow keys and its "more" menu treat them as its own): one button per action, in order,
  * and one "Actions" menu button for those that go into a menu (`actionsDisplay: 'menu'`, an action's
- * `menu: 'always'`). Buttons are made as more are needed and kept, hidden while unused.
+ * `menu: 'always'`). Buttons are made as more are needed and kept, hidden while unused. It follows
+ * nothing: the bar that holds it draws it again (`draw`) whenever the grid tells a change.
  */
 export class BarButtons<T> {
   /** The action buttons, in order. */
   readonly buttons: Button[] = [];
   readonly menuButton: Button;
-  private readonly shownSignal = createSignal<Shown<T>>({ buttons: [], menu: [] });
-  private readonly stops: (() => void)[] = [];
+  private current: Shown<T> = { buttons: [], menu: [] };
+  /** The menu's items as they were last given to the menu button. */
+  private menuSeen: unknown[] | null = null;
+  /** The icon each button shows, as it was last given. */
+  private readonly icons = new WeakMap<Button, unknown>();
+  private disposed = false;
 
   constructor(
     private readonly model: GridModel<T>,
@@ -39,36 +44,14 @@ export class BarButtons<T> {
       describedBy?: string;
     },
   ) {
-    const sets = model.actionSets;
-    const visible = () => options.visible?.() ?? true;
-    this.menuButton = new Button({
-      text: () => model.text('gridActions'),
-      icon: () => moreMark(),
-      menu: () => this.shown().menu.map((e) => this.menuItem(e)),
-      enabled: () => !model.state.acting,
-    });
+    this.menuButton = new Button({ icon: moreMark(), menu: [] });
     this.menuButton.element.classList.add('mx-data-grid__bar-menu');
-    this.follow(this.menuButton, () => ({ shown: this.shown().menu.length > 0 && visible(), label: this.shown().menu.length ? sets.targetLabel() : null, id: null }));
-    this.stops.push(
-      effect(() => {
-        const display = model.settings.get('actionsDisplay');
-        const entries = sets.barEntries(location);
-        const menu = entries.filter((e) => {
-          const m = sets.menuOf(e.action);
-          return m === 'always' || (display === 'menu' && m !== 'never');
-        });
-        const buttons = entries.filter((e) => !menu.includes(e));
-        untracked(() => {
-          this.shownSignal.value = { buttons, menu };
-          while (this.buttons.length < buttons.length) this.addButton();
-        });
-      }),
-    );
+    this.draw();
   }
 
-  /** What shows now. Reactive. */
+  /** What shows now. */
   shown(): Shown<T> {
-    return this.shownSignal.value;
+    return this.current;
   }
 
   /** The buttons and the menu button, in the order they stand. */
@@ -77,66 +60,80 @@ export class BarButtons<T> {
   }
 
   dispose() {
-    for (const stop of this.stops.splice(0)) stop();
+    this.disposed = true;
+  }
+
+  /** Draws the buttons and the menu button as the target rows and their actions are now. */
+  draw() {
+    if (this.disposed) return;
+    untracked(() => {
+      const { model, options } = this;
+      const sets = model.actionSets;
+      const display = model.settings.get('actionsDisplay');
+      const entries = sets.barEntries(this.location);
+      const menu = entries.filter((e) => {
+        const m = sets.menuOf(e.action);
+        return m === 'always' || (display === 'menu' && m !== 'never');
+      });
+      const buttons = entries.filter((e) => !menu.includes(e));
+      this.current = { buttons, menu };
+      while (this.buttons.length < buttons.length) this.addButton();
+      const visible = options.visible?.() ?? true;
+      const acting = model.state.acting;
+      const showsText = (e: ActionEntry<T>) => e.action.showText ?? (e.action.icon === undefined || e.action.icon === null);
+      this.buttons.forEach((button, i) => {
+        const e = buttons[i] as ActionEntry<T> | undefined;
+        button.text = e && showsText(e) ? sets.label(e) : '';
+        const icon = e && e.action.icon !== undefined ? readField(e.action, 'icon') : null;
+        if (!this.icons.has(button) || !Object.is(this.icons.get(button), icon)) {
+          this.icons.set(button, icon);
+          button.icon = icon ?? null;
+        }
+        button.hint = !e ? '' : (readField(e.action, 'hint') ?? (showsText(e) ? '' : sets.label(e)));
+        button.tone = e?.action.tone ?? 'standard';
+        button.enabled = !!e && !e.disabled && !acting;
+        this.look(button, !!e && visible, e && e.count > 1 ? sets.spokenLabel(e) : null, e?.action.id ?? null);
+      });
+      const m = this.menuButton;
+      m.text = model.text('gridActions');
+      const items = menu.flatMap((e) => [sets.label(e), e.action.icon, e.action.hint, e.action.tone, e.disabled, e.action.beginGroup, e.action.id]);
+      if (!this.menuSeen || items.length !== this.menuSeen.length || items.some((v, i) => !Object.is(v, this.menuSeen![i]))) {
+        this.menuSeen = items;
+        m.menu = menu.map((e) => this.menuItem(e));
+      }
+      m.enabled = !acting;
+      this.look(m, menu.length > 0 && visible, menu.length ? sets.targetLabel() : null, null);
+    });
   }
 
   private addButton() {
     const model = this.model;
-    const sets = model.actionSets;
     const i = this.buttons.length;
-    const at = () => this.shown().buttons[i] as ActionEntry<T> | undefined;
-    const showsText = (e: ActionEntry<T>) => e.action.showText ?? (e.action.icon === undefined || e.action.icon === null);
-    const button = new Button({
-      text: () => {
-        const e = at();
-        return e && showsText(e) ? sets.label(e) : '';
-      },
-      icon: () => {
-        const e = at();
-        return e && e.action.icon !== undefined ? readField(e.action, 'icon') : null;
-      },
-      hint: () => {
-        const e = at();
-        if (!e) return '';
-        return readField(e.action, 'hint') ?? (showsText(e) ? '' : sets.label(e));
-      },
-      tone: () => at()?.action.tone ?? 'standard',
-      enabled: () => !!at() && !at()!.disabled && !model.state.acting,
-      focusableWhenDisabled: true,
-    });
+    const button = new Button({ focusableWhenDisabled: true });
     button.element.classList.add('mx-data-grid__bar-action');
     button.element.addEventListener('click', () => {
-      const e = this.shown().buttons[i];
+      const e = this.current.buttons[i];
       if (e && !e.disabled && !model.state.acting) this.options.run(e);
-    });
-    this.follow(button, () => {
-      const e = at();
-      return { shown: !!e && (this.options.visible?.() ?? true), label: e && e.count > 1 ? sets.spokenLabel(e) : null, id: e?.action.id ?? null };
     });
     this.buttons.push(button);
     this.options.added(button);
   }
 
   /**
-   * Shows or hides a button, and writes its spoken name, what it acts on and its action's id, as
-   * they change. Hidden with the attribute: the button keeps its place among the bar's children.
+   * Shows or hides a button, and writes its spoken name, what it acts on and its action's id. Hidden
+   * with the attribute: the button keeps its place among the bar's children.
    */
-  private follow(button: Button, look: () => { shown: boolean; label: string | null; id: string | null }) {
+  private look(button: Button, shown: boolean, label: string | null, id: string | null) {
     const describedBy = this.options.describedBy;
-    this.stops.push(
-      effect(() => {
-        const { shown, label, id } = look();
-        untracked(() => {
-          button.element.hidden = !shown;
-          const face = faceOf(button);
-          if (label) face.setAttribute('aria-label', label);
-          else face.removeAttribute('aria-label');
-          if (describedBy) face.setAttribute('aria-describedby', describedBy);
-          if (id) button.element.dataset.action = id;
-          else delete button.element.dataset.action;
-        });
-      }),
-    );
+    if (button.element.hidden === shown) button.element.hidden = !shown;
+    const face = faceOf(button);
+    if (label) {
+      if (face.getAttribute('aria-label') !== label) face.setAttribute('aria-label', label);
+    } else if (face.hasAttribute('aria-label')) face.removeAttribute('aria-label');
+    if (describedBy && face.getAttribute('aria-describedby') !== describedBy) face.setAttribute('aria-describedby', describedBy);
+    if (id) {
+      if (button.element.dataset.action !== id) button.element.dataset.action = id;
+    } else if (button.element.dataset.action !== undefined) delete button.element.dataset.action;
   }
 
   private menuItem(e: ActionEntry<T>): MenuItem {

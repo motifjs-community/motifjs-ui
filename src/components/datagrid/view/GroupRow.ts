@@ -1,4 +1,4 @@
-import { ComponentBase, createSignal, effect, untracked } from '@motifx/core';
+import { ComponentBase, createSignal, untracked } from '@motifx/core';
 import { chevronEnd } from '../../../core/glyphs';
 import { isNode } from '../../../core/node-kind';
 import type { GroupCellContext } from '../group-cell-context';
@@ -13,7 +13,8 @@ import { fillSummaryCell } from './summary-cell';
  * (`alignByColumn`) get cells of their own under their columns, and the group's cell ends before
  * the first of them. Like the data rows it is made once and shows other groups while the user
  * scrolls; a column's own `groupCell` content is made the first time the row shows a group of that
- * column, and kept.
+ * column, and kept. It follows nothing: it is drawn when it shows another group, and the body draws
+ * again the parts that read what the grid tells (`drawLook`, `drawText`, `drawSummary`).
  */
 export class GroupRow<T> {
   readonly element: HTMLDivElement;
@@ -21,6 +22,7 @@ export class GroupRow<T> {
   /** Grid index; -1 while the row is not used. */
   index = -1;
   node: GroupNode | null = null;
+  /** Grows with each other group shown: what a column's own content reads of its context follows it. */
   private readonly shown = createSignal(0);
   private readonly text: HTMLSpanElement;
   private readonly caption = document.createTextNode('');
@@ -32,7 +34,6 @@ export class GroupRow<T> {
   /** Columns' own contents, by field, and those that are components. */
   private readonly own = new Map<string, HTMLElement>();
   private readonly contents = new Map<string, ComponentBase>();
-  private readonly stops: (() => void)[] = [];
 
   constructor(
     private readonly model: GridModel<T>,
@@ -68,11 +69,16 @@ export class GroupRow<T> {
     el.append(cell);
     this.element = el;
     this.cell = cell;
-    this.stops.push(
-      effect(() => this.drawLook()),
-      effect(() => this.drawText()),
-      effect(() => this.drawSummary()),
-    );
+    this.draw();
+  }
+
+  /** Draws the whole row as the grid is now. */
+  draw() {
+    untracked(() => {
+      this.drawLook();
+      this.drawText();
+      this.drawSummary();
+    });
   }
 
   /** Shows the group at grid row `index`, at `top`. */
@@ -81,6 +87,7 @@ export class GroupRow<T> {
       this.index = index;
       this.node = node;
       this.shown.value = this.shown.peek() + 1;
+      this.draw();
     }
     this.element.hidden = false;
     this.element.style.transform = `translateY(${top}px)`;
@@ -89,6 +96,7 @@ export class GroupRow<T> {
   /** Draws the row again as it is. */
   redraw() {
     this.shown.value = this.shown.peek() + 1;
+    this.draw();
   }
 
   /** Back to the pool, hidden. */
@@ -97,6 +105,7 @@ export class GroupRow<T> {
       this.index = -1;
       this.node = null;
       this.shown.value = this.shown.peek() + 1;
+      this.draw();
     }
     this.element.hidden = true;
   }
@@ -109,7 +118,7 @@ export class GroupRow<T> {
 
   /** Lookup keys came: the text is drawn again when it shows one. */
   drawLookup() {
-    if (this.node && this.model.columns.defs.get(this.node.field)?.lookup) this.shown.value = this.shown.peek() + 1;
+    if (this.node && this.model.columns.defs.get(this.node.field)?.lookup) this.redraw();
   }
 
   /** A column taken out, or made again: its aligned cell and its own content go. */
@@ -124,12 +133,9 @@ export class GroupRow<T> {
     this.redraw();
   }
 
-  dispose() {
-    for (const stop of this.stops) stop();
-  }
+  dispose() {}
 
-  private drawLook() {
-    void this.shown.value;
+  drawLook() {
     const { model, node, index, element } = this;
     if (!node || index < 0) {
       element.removeAttribute('aria-rowindex');
@@ -137,8 +143,6 @@ export class GroupRow<T> {
     }
     element.setAttribute('aria-rowindex', String(model.ariaRowIndex(index)));
     element.setAttribute('aria-level', String(node.level + 1));
-    void model.groups.state.version;
-    void model.state.version;
     const open = model.groups.isExpanded(node);
     element.toggleAttribute('data-locked', !model.canCollapse(node));
     element.dataset.expand = model.expandModeOf(node);
@@ -147,15 +151,14 @@ export class GroupRow<T> {
     element.toggleAttribute('data-active', model.state.activeRow === index);
     element.style.setProperty('--_level', String(node.level));
     const ev = model.events;
-    if (ev.listened(ev.rowPrepared)) untracked(() => ev.rowPrepared.fire({ row: undefined, rowIndex: index, rowType: 'group', groupKey: [...node.path], isSelected: false, element }));
+    if (ev.listened(ev.rowPrepared)) ev.rowPrepared.fire({ row: undefined, rowIndex: index, rowType: 'group', groupKey: [...node.path], isSelected: false, element });
   }
 
   /**
    * Group summary items: after the count, or under their columns (`alignByColumn`), not under the
    * first column, which holds the text, nor under a column that does not show.
    */
-  private drawSummary() {
-    void this.shown.value;
+  drawSummary() {
     const { model, node, visible } = this;
     const inText: string[] = [];
     let aligned = new Map<string, SummaryPart[]>();
@@ -197,8 +200,7 @@ export class GroupRow<T> {
     for (const [field, cell] of this.aligned) if (!aligned.has(field)) cell.hidden = true;
   }
 
-  private drawText() {
-    void this.shown.value;
+  drawText() {
     const { model, node } = this;
     if (!node) return;
     const col = model.columns.defs.get(node.field);

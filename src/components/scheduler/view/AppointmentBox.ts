@@ -5,7 +5,7 @@ import type { LinePiece } from '../model/line-piece';
 import type { StripPiece } from '../model/strip-piece';
 import type { TimedPiece } from '../model/timed-piece';
 import type { DragMode } from './AppointmentDrag';
-import { css, flag, part, put, shown, text } from './draw-parts';
+import { css, flag, part, put, shown, text } from '../../../core/draw-parts';
 import type { SchedulerHost } from './scheduler-host';
 
 type Piece<T> = TimedPiece<T> | StripPiece<T> | LinePiece<T>;
