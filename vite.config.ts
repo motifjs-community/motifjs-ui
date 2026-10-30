@@ -30,7 +30,7 @@ export default defineConfig({
       // @motifx/core and the design system are peers: bundling core would mean
       // two reactivity engines, bundling the token map a second copy of it.
       // ExcelJS and jsPDF are the app's: the excel and pdf entries only write to what they are given.
-      external: [/^@motifx\/core/, /^@motifx-community\/design-system/, /^@motifx-community\/data/, /^exceljs/, /^jspdf/],
+      external: [/^@motifx\/core/, /^@motifx-community\/design-system/, /^@motifx-community\/data/, /^@motifx-community\/i18n/, /^exceljs/, /^jspdf/],
     },
     sourcemap: true,
     minify: false,

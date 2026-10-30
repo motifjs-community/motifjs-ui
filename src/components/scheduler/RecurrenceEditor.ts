@@ -1,9 +1,7 @@
 import { Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
 import { fillTemplate } from '../../core/fill-template';
-import { follow } from '../../core/follow';
 import { nextId } from '../../core/next-id';
-import { pageLocale } from '../../core/page-locale';
 import { uiLocale } from '../../core/ui-locale';
 import type { UiStrings } from '../../core/ui-strings';
 import { firstDayOfWeek as localeFirstDay } from '../../parts/dates/first-day-of-week';
@@ -174,7 +172,7 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
     this.assignProperty('readOnly', value, Boolean);
   }
   get locale(): string {
-    return this.getProperty<string | undefined>('locale') || pageLocale();
+    return this.getProperty<string | undefined>('locale') || uiLocale.locale;
   }
   set locale(value: Bind<string>) {
     this.assignProperty('locale', value);
@@ -209,7 +207,8 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
     for (const name of ['value', 'start', 'allDay', 'timeZone', 'firstDayOfWeek', 'locale'] as const) this.observeProperty(name, () => this.readValue());
     for (const name of ['text', 'summary', 'texts', 'readOnly', 'frequencies'] as const) this.observeProperty(name, () => this.show());
     this.parts.editors = this.makeEditors();
-    follow(this, 'uiTexts', () => uiLocale.strings, () => this.show());
+    const language = uiLocale.onChanged(() => this.show());
+    this.motif.setDisposable(() => language.dispose());
     this.show();
   }
 

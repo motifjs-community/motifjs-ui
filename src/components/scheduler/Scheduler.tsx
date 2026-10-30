@@ -11,7 +11,6 @@ import { nextFrame } from '../../core/next-frame';
 import { calendarMark, chevronEnd, chevronStart } from '../../core/glyphs';
 import { ResizeWatch } from '../../core/resize-watch';
 import { onLookChanged } from '../../core/look-watch';
-import { pageLocale } from '../../core/page-locale';
 import { uiLocale } from '../../core/ui-locale';
 import type { UiStrings } from '../../core/ui-strings';
 import { Popup } from '../../parts/popup/Popup';
@@ -648,7 +647,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     this.assignProperty('toolbar', value, Boolean);
   }
   get locale(): string {
-    return this.getProperty<string | undefined>('locale') || pageLocale();
+    return this.getProperty<string | undefined>('locale') || uiLocale.locale;
   }
   set locale(value: Bind<string>) {
     this.assignProperty('locale', value);
@@ -1370,11 +1369,14 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     for (const [name, step] of Object.entries(MODEL_STEPS)) this.observeProperty(name, () => parts.model.update(step));
     this.observeProperty('resources', () => parts.resources.listChanged());
     // What the parts drawn by hand show of the options and the texts: each draws itself again, nothing follows it.
-    for (const name of ['editing', 'recurrenceMarks', 'dimPast', 'locale'] as const) this.observeProperty(name, () => this.drawAgain());
+    for (const name of ['editing', 'recurrenceMarks', 'dimPast'] as const) this.observeProperty(name, () => this.drawAgain());
+    // Another locale (its own, or the kit's language): the first day of the week, the formats and the texts.
+    this.observeProperty('locale', () => this.languageChanged());
     // A template given or taken away: each part drawn by hand that uses it fills its content again.
     for (const name of ['appointmentTemplate', 'dataCellTemplate', 'dateCellTemplate', 'timeCellTemplate', 'resourceHeaderTemplate'] as const)
       this.observeProperty(name, () => this.drawAgain());
-    follow(this, 'uiTexts', () => uiLocale.strings, () => this.drawAgain());
+    const language = uiLocale.onChanged(() => this.languageChanged());
+    this.motif.setDisposable(() => language.dispose());
     // A resource kind's field given as a function (`useColorAsDefault: () => …`) is the developer's live value: followed
     // here, the kinds are read again when one of them reads otherwise.
     let kindValues: unknown[] | null = null;
@@ -1612,7 +1614,15 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return self[PARTS];
   }
 
+  /** The language or the locale changed: the weeks are laid out again from their first day, and everything drawn again. */
+  private languageChanged(): void {
+    if (this.isDisposed) return;
+    this.parts.model.update('groups');
+    this.drawAgain();
+  }
+
   private drawAgain(): void {
+    this.drawBar();
     for (const draw of this.parts.drawn) draw();
   }
 

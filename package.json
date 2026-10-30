@@ -41,6 +41,7 @@
       "import": "./dist/pdf/index.js"
     },
     "./styles.css": "./dist/styles.css",
+    "./locales/*": "./dist/locales/*",
     "./package.json": "./package.json"
   },
   "files": [
@@ -52,7 +53,7 @@
     "dev": "vite apps/docs --port 4500",
     "tokens": "node scripts/build-tokens.mjs && node scripts/build-icons.mjs && node scripts/build-shapes.mjs",
     "language": "node scripts/new-language.mjs",
-    "build": "npm run tokens && vite build && tsc -p tsconfig.build.json && node scripts/build-css.mjs",
+    "build": "npm run tokens && vite build && tsc -p tsconfig.build.json && node scripts/build-css.mjs && node scripts/copy-locales.mjs",
     "docs:build": "npm run tokens && vite build apps/docs",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -69,6 +70,7 @@
   "peerDependencies": {
     "@motifx-community/data": "0.x",
     "@motifx-community/design-system": "0.x",
+    "@motifx-community/i18n": "0.x",
     "@motifx/core": "^1.2.0-rc.23",
     "exceljs": "^4.4.0",
     "jspdf": "^4.2.1"
@@ -84,6 +86,7 @@
   "devDependencies": {
     "@motifx-community/data": "file:../motifjs-data",
     "@motifx-community/design-system": "file:../motifjs-design-system",
+    "@motifx-community/i18n": "file:../motifjs-i18n",
     "@motifx/compiler": "1.2.0-rc.23",
     "@motifx/core": "1.2.0-rc.23",
     "@types/node": "^24.19.1",

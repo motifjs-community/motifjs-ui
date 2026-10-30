@@ -13,6 +13,12 @@ const THEMES: { id: ThemeChoice; label: string }[] = [
   { id: 'high-contrast', label: 'High contrast' },
 ];
 
+/** The languages the kit ships a pack for. */
+const LANGUAGES: { id: string; label: string }[] = [
+  { id: 'en', label: 'English' },
+  { id: 'tr', label: 'Türkçe' },
+];
+
 /** Every design language the design system ships, the default one first: a new one shows up here by itself. */
 const STYLES: { id: IdentityName | 'default'; label: string }[] = [defaultIdentity, ...identities.filter((id) => id !== defaultIdentity)].map((id) => ({
   id: id === defaultIdentity ? 'default' : id,
@@ -159,6 +165,12 @@ export class DocsLayout extends Component<HTMLDivElement> {
               size="sm"
               variant="ghost"
               menu={THEMES.map((t) => ({ text: t.label, checked: () => settings.theme === t.id, click: () => (settings.theme = t.id) }))}
+            />
+            <Button
+              text="Language"
+              size="sm"
+              variant="ghost"
+              menu={LANGUAGES.map((l) => ({ text: l.label, checked: () => settings.language === l.id, click: () => (settings.language = l.id) }))}
             />
             <Button text="Compact" size="sm" variant="ghost" toggle x-model={() => settings.compact} />
             <Button text="RTL" size="sm" variant="ghost" toggle x-model={() => settings.rtl} />

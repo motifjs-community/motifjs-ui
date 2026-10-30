@@ -9,6 +9,15 @@ import {
   type IdentityName,
   type ThemeChoice,
 } from '@motifx-community/design-system';
+import { uiLocale } from '@motifx-community/ui';
+
+function stored(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
 
 function store(key: string, value: string | null): void {
   try {
@@ -19,14 +28,19 @@ function store(key: string, value: string | null): void {
   }
 }
 
-/** The reader's choices for the whole site: design language, theme, density and direction, kept between visits. */
+/** The reader's choices for the whole site: design language, theme, density, the controls' language and direction, kept between visits. */
 export class SiteSettings {
   private readonly state = reactive({
     identity: getIdentity(),
     theme: getTheme(),
     compact: getDensity() === 'compact',
     rtl: document.documentElement.dir === 'rtl',
+    language: stored('mx-docs-language') ?? 'en',
   });
+
+  constructor() {
+    if (this.state.language !== 'en') this.language = this.state.language;
+  }
 
   get identity(): IdentityName | 'default' {
     return this.state.identity;
@@ -53,6 +67,17 @@ export class SiteSettings {
     this.state.compact = on;
     setDensity(on ? 'compact' : 'default');
     store('mx-docs-density', on ? 'compact' : null);
+  }
+
+  /** The language the kit's controls write in (`uiLocale`); its pack is loaded the first time. */
+  get language(): string {
+    return this.state.language;
+  }
+  set language(code: string) {
+    this.state.language = code;
+    document.documentElement.lang = code;
+    void uiLocale.use(code);
+    store('mx-docs-language', code === 'en' ? null : code);
   }
 
   get rtl(): boolean {

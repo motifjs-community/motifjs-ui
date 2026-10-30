@@ -138,4 +138,10 @@ export type { ICalendarObservance } from './parts/icalendar/icalendar-observance
 export type { ICalendarWriteOptions } from './parts/icalendar/icalendar-write-options';
 export { functionValue } from './core/function-value';
 export { enStrings, trStrings, uiLocale } from './core/ui-locale';
+export { UiLocale } from './core/UiLocale';
+export type { UiPack } from './core/ui-pack';
+export type { UiPackModule } from './core/ui-pack-module';
+export type { UiLocaleChangedEventArgs } from './core/ui-locale-changed-event-args';
+export { connectI18n } from './core/connect-i18n';
+export type { LocaleSource } from './core/locale-source';
 export type { UiStrings } from './core/ui-strings';

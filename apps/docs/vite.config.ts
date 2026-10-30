@@ -9,6 +9,7 @@ const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 // the dev server has to be allowed to serve files from its real path.
 const designSystem = dirname(createRequire(import.meta.url).resolve('@motifx-community/design-system/package.json'));
 const dataLayer = dirname(createRequire(import.meta.url).resolve('@motifx-community/data/package.json'));
+const i18n = dirname(createRequire(import.meta.url).resolve('@motifx-community/i18n/package.json'));
 
 // The docs import the package by its published name, resolved to the source,
 // so the pages always run against the current code without a build step.
@@ -36,7 +37,7 @@ export default defineConfig({
     rolldownOptions: { transform: { jsx: { runtime: 'classic', pragma: 'h', pragmaFrag: 'Fragment' } } },
   },
   server: {
-    fs: { allow: [searchForWorkspaceRoot(here('.')), designSystem, dataLayer] },
+    fs: { allow: [searchForWorkspaceRoot(here('.')), designSystem, dataLayer, i18n] },
   },
   build: {
     outDir: 'dist',
