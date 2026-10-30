@@ -41,9 +41,14 @@ const Swatch = (props: { value: string }) => (
 
 function Value(props: { type: string; value: string | number }) {
   return (
-    <span class="value-cell">
-      {props.type === 'color' && <Swatch value={String(props.value)} />}
-      <code>{String(props.value)}</code>
+    <span class="value-cell" onConfig={(sender)=>{
+        if (props.type === 'color'){
+          sender.controls.add(<Swatch value={String(props.value)} />)
+        } 
+        sender.controls.add(<code>{String(props.value)}</code>);
+    }}>
+      {/* {props.type === 'color' && <Swatch value={String(props.value)} />}
+      <code>{String(props.value)}</code> */}
     </span>
   );
 }
@@ -76,14 +81,14 @@ export default function TokensPage() {
             </thead>
             <tbody>
               {componentDocs.map((t) => (
-                <tr key={t.name}>
+                <tr>
                   <td>
                     <code>{t.name}</code>
                   </td>
                   <td>
                     <code>{t.cssVar}</code>
                   </td>
-                  <td>{t.ref ? <code>{`{${t.ref}}`}</code> : <span>—</span>}</td>
+                  <td><code>{t.ref}</code></td>
                   <td>
                     <Value type={t.type} value={t.value} />
                   </td>
@@ -113,7 +118,7 @@ export default function TokensPage() {
             </thead>
             <tbody>
               {semantic.map(([name, t]) => (
-                <tr key={name}>
+                <tr>
                   <td>
                     <code>{name}</code>
                   </td>
@@ -153,7 +158,7 @@ export default function TokensPage() {
             </thead>
             <tbody>
               {density.map(([name, t]) => (
-                <tr key={name}>
+                <tr>
                   <td>
                     <code>{name}</code>
                   </td>
