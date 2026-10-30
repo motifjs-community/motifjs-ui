@@ -1,5 +1,6 @@
 import { Component, reactive } from '@motifx/core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dataKinds } from '../../../tests/data-kinds';
 import { mountHost, tick } from '../../../tests/helpers';
 import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
 import { ValidationGroup } from '../../parts/validation/ValidationGroup';
@@ -75,6 +76,31 @@ describe('RadioGroup', () => {
     expect(g.inputs.map((i) => i.checked)).toEqual([true, false, false]);
   });
 
+  it('reads functions over plain data again on reState, and writes a value set from code to x-model', async () => {
+    const plain = { size: 'M', large: 'Large', canXl: false };
+    const items = [{ value: 'S', text: 'Small' }, { value: 'L', text: () => plain.large }, { value: 'XL', text: 'Extra', enabled: () => plain.canXl }];
+    const s = reactive({ size: 'S' });
+    let g!: RadioGroup<string>;
+    let m!: RadioGroup<string>;
+    const host = page(
+      <RadioGroup ref={(x: RadioGroup<string>) => (g = x)} items={items} value={() => plain.size} />,
+      <RadioGroup ref={(x: RadioGroup<string>) => (m = x)} items={['S', 'M', 'L']} x-model={() => s.size} />,
+    );
+    await settle();
+    Object.assign(plain, { size: 'L', large: 'Big', canXl: true });
+    await settle();
+    expect(texts(g)).toEqual(['Small', 'Large', 'Extra']);
+    host.reState();
+    expect(texts(g)).toEqual(['Small', 'Big', 'Extra']);
+    expect(g.inputs.map((i) => i.checked)).toEqual([false, true, false]);
+    expect(g.inputs[2].disabled).toBe(false);
+    g.inputs[0].click();
+    expect(plain.size).toBe('L');
+    expect(Object.keys(items[1])).toEqual(['value', 'text']);
+    m.value = 'L';
+    expect(s.size).toBe('L');
+  });
+
   it('moves and chooses with the arrow keys, wrapping and skipping disabled and hidden items', async () => {
     const s = reactive({ v: 1 as number | null });
     const items: RadioItem<number>[] = [
@@ -117,38 +143,57 @@ describe('RadioGroup', () => {
     expect(s.v).toBe('a');
   });
 
-  it('follows items given as a function, their fields included, and keeps focus where it is', async () => {
-    const plans = reactive([
-      { id: 1, name: 'Free', open: true },
-      { id: 2, name: 'Pro', open: true },
-    ]);
-    const s = reactive({ plan: 2 });
-    let g!: RadioGroup<number>;
-    page(
-      <RadioGroup
-        ref={(x: RadioGroup<number>) => (g = x)}
-        items={() => plans}
-        itemText={(p) => (p as { name: string }).name}
-        itemValue="id"
-        x-model={() => s.plan}
-      />,
-    );
-    await settle();
-    expect(texts(g)).toEqual(['Free', 'Pro']);
-    g.focus();
-    const focused = document.activeElement;
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('shows items changed in place after refresh(), keeping focus where it is', async () => {
+      const plans = make([
+        { id: 1, name: 'Free', open: true },
+        { id: 2, name: 'Pro', open: true },
+      ]);
+      const s = reactive({ plan: 2 });
+      let g!: RadioGroup<number>;
+      page(
+        <RadioGroup
+          ref={(x: RadioGroup<number>) => (g = x)}
+          items={() => plans}
+          itemText={(p) => (p as { name: string }).name}
+          itemValue="id"
+          x-model={() => s.plan}
+        />,
+      );
+      await settle();
+      expect(texts(g)).toEqual(['Free', 'Pro']);
+      g.focus();
+      const focused = document.activeElement;
 
-    plans.push({ id: 3, name: 'Team', open: true });
-    plans[1].name = 'Pro+';
-    await settle();
-    expect(texts(g)).toEqual(['Free', 'Pro+', 'Team']);
-    expect(document.activeElement).toBe(focused);
-    expect(g.inputs[1].checked).toBe(true);
+      plans.push({ id: 3, name: 'Team', open: true });
+      plans[1].name = 'Pro+';
+      await settle();
+      expect(texts(g)).toEqual(['Free', 'Pro']);
+      g.refresh();
+      await settle();
+      expect(texts(g)).toEqual(['Free', 'Pro+', 'Team']);
+      expect(document.activeElement).toBe(focused);
+      expect(g.inputs[1].checked).toBe(true);
 
-    plans.splice(0, 1);
-    await settle();
-    expect(texts(g)).toEqual(['Pro+', 'Team']);
-    expect(g.inputs[0].checked).toBe(true);
+      plans.splice(0, 1);
+      g.refresh();
+      await settle();
+      expect(texts(g)).toEqual(['Pro+', 'Team']);
+      expect(g.inputs[0].checked).toBe(true);
+    });
+
+    it('gives back the very item that is its own value', async () => {
+      const sizes = make([{ text: 'Small' }, { text: 'Large' }]);
+      const changed = vi.fn();
+      let g!: RadioGroup<{ text: string }>;
+      page(<RadioGroup ref={(x: RadioGroup<{ text: string }>) => (g = x)} items={sizes} onValueChanged={changed} />);
+      await settle();
+      g.inputs[1].click();
+      await settle();
+      expect(g.value).toBe(sizes[1]);
+      expect(changed.mock.calls[0][0].value).toBe(sizes[1]);
+      expect(changed).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('reads per-item hint, help text and enabled live', async () => {

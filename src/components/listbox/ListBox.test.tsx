@@ -1,9 +1,10 @@
 import { Component, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
 import { ListBox } from './ListBox';
+import { dataKinds } from '../../../tests/data-kinds';
 
 let hosts: Component[] = [];
 
@@ -91,6 +92,30 @@ describe('ListBox', () => {
     s.city = 'Antalya';
     await settle();
     expect(selected(c)).toEqual(['Antalya']);
+  });
+
+  it('reads functions over plain data again on reState, and writes a value set from code to x-model', async () => {
+    const plain = { items: ['Red', 'Green'], value: 'Red' };
+    const given = plain.items;
+    const s = reactive({ color: null as string | null });
+    let l!: ListBox<string, string>;
+    let m!: ListBox<string, string>;
+    const host = page(
+      <ListBox ref={(x: ListBox<string, string>) => (l = x)} items={() => plain.items} value={() => plain.value} />,
+      <ListBox ref={(x: ListBox<string, string>) => (m = x)} items={['Red', 'Green', 'Blue']} x-model={() => s.color} />,
+    );
+    await settle();
+    plain.items = ['Red', 'Green', 'Blue'];
+    plain.value = 'Blue';
+    await settle();
+    expect(texts(l)).toEqual(['Red', 'Green']);
+    host.reState();
+    await settle();
+    expect(texts(l)).toEqual(['Red', 'Green', 'Blue']);
+    expect(option(l, 'Blue').getAttribute('aria-selected')).toBe('true');
+    expect(given).toEqual(['Red', 'Green']);
+    m.value = 'Green';
+    expect(s.color).toBe('Green');
   });
 
   it('chooses with Space only when selection does not follow focus', async () => {
@@ -279,5 +304,44 @@ describe('ListBox', () => {
     c.readOnly = false;
     c.enabled = false;
     expect(listOf(c).getAttribute('aria-disabled')).toBe('true');
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('gives back the very items, and shows a change in place after refresh()', async () => {
+      const people = make([{ name: 'Ada' }, { name: 'Linus' }, { name: 'Grace' }]);
+      const form = reactive({ picked: [] as { name: string }[] });
+      const changed = vi.fn();
+      let c!: ListBox<{ name: string }, { name: string }>;
+      page(
+        <ListBox
+          ref={(x: ListBox<{ name: string }, { name: string }>) => (c = x)}
+          items={people}
+          textField="name"
+          selectionMode="multiple"
+          x-model={() => form.picked}
+          onValueChanged={changed}
+        />,
+      );
+      await settle();
+      changed.mockClear();
+      click(option(c, 'Linus'));
+      await settle();
+      expect((c.value as unknown[])[0]).toBe(people[1]);
+      expect(c.selectedItems[0]).toBe(people[1]);
+      expect(changed).toHaveBeenCalledTimes(1);
+      expect(changed.mock.calls[0][0].value[0]).toBe(people[1]);
+      expect(selected(c)).toEqual(['Linus']);
+
+      people[0].name = 'Ada L.';
+      people.push({ name: 'Ken' });
+      people.splice(2, 1);
+      await settle();
+      expect(texts(c)).toEqual(['Ada', 'Linus', 'Grace']);
+      c.refresh();
+      await settle();
+      expect(texts(c)).toEqual(['Ada L.', 'Linus', 'Ken']);
+      expect(selected(c)).toEqual(['Linus']);
+      expect(c.selectedItem).toBe(people[1]);
+    });
   });
 });

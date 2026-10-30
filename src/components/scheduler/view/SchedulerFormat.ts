@@ -8,6 +8,8 @@ import type { SchedulerViewType } from '../scheduler-view-type';
 export class SchedulerFormat {
   private made = '';
   private formats: Record<string, Intl.DateTimeFormat> = {};
+  /** Time ranges written already (every box writes one, again each time it is drawn). */
+  private ranges = new Map<string, string>();
 
   constructor(
     private readonly locale: () => string,
@@ -22,6 +24,7 @@ export class SchedulerFormat {
     if (id !== this.made) {
       this.made = id;
       this.formats = {};
+      this.ranges.clear();
     }
     return (this.formats[`${name}|${zone}`] ??= new Intl.DateTimeFormat(locale, { ...options, timeZone: zone || undefined }));
   }
@@ -74,7 +77,14 @@ export class SchedulerFormat {
   /** "09:00 – 10:30" */
   timeRange(start: Date, end: Date, zone?: string): string {
     const format = this.get('time', { hour: 'numeric', minute: '2-digit' }, zone);
-    return start.getTime() === end.getTime() ? format.format(start) : format.formatRange(start, end);
+    const key = `${start.getTime()}|${end.getTime()}|${zone ?? ''}`;
+    let text = this.ranges.get(key);
+    if (text === undefined) {
+      if (this.ranges.size >= 5000) this.ranges.clear();
+      text = start.getTime() === end.getTime() ? format.format(start) : format.formatRange(start, end);
+      this.ranges.set(key, text);
+    }
+    return text;
   }
 
   /** "9 AM" or "09", the label of the hour row `minutes` after midnight. */

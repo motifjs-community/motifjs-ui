@@ -161,4 +161,29 @@ describe('Calendar', () => {
     c.goTo(day(1999, 12, 31));
     expect(title(c)).toBe('1990 – 1999');
   });
+
+  it('reads functions over plain data again on reState, and writes a day set from code to x-model', async () => {
+    const first = day(2026, 3, 10);
+    const plain = { value: first, min: null as Date | null };
+    const s = reactive({ day: null as Date | null });
+    let c!: Calendar;
+    let m!: Calendar;
+    const host = page(
+      <Calendar ref={(x: Calendar) => (c = x)} locale="en-GB" value={() => plain.value} min={() => plain.min} />,
+      <Calendar ref={(x: Calendar) => (m = x)} locale="en-GB" x-model={() => s.day} />,
+    );
+    await settle();
+    Object.assign(plain, { value: day(2026, 5, 20), min: day(2026, 5, 1) });
+    await settle();
+    expect(title(c)).toBe('March 2026');
+    host.reState();
+    expect(title(c)).toBe('May 2026');
+    expect(c.min?.getTime()).toBe(day(2026, 5, 1).getTime());
+    expect(first.getTime()).toBe(day(2026, 3, 10).getTime());
+    m.value = day(2026, 7, 4);
+    expect(s.day?.getTime()).toBe(day(2026, 7, 4).getTime());
+    s.day = day(2026, 8, 1);
+    await settle();
+    expect(title(m)).toBe('August 2026');
+  });
 });

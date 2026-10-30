@@ -1,5 +1,6 @@
-import { Application, effect, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Application, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey } from '../../core/access-key';
+import { follow } from '../../core/follow';
 import { FocusContainer } from '../../core/container';
 import type { Control } from '../../core/control';
 import { controlOf } from '../../core/control-map';
@@ -716,10 +717,9 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     this.orderTools();
     this.renderToolLook();
     if (!parts.stopLabels && (parts.minimize || parts.maximize || parts.close)) {
-      parts.stopLabels = effect(() => {
-        const strings = uiLocale.strings;
-        this.labelTools(strings.minimize, strings.maximize, strings.restore, strings.close);
-      });
+      parts.stopLabels = follow(this, 'toolLabels', () => uiLocale.strings, (strings) =>
+        this.labelTools(strings.minimize, strings.maximize, strings.restore, strings.close),
+      );
     } else if (parts.stopLabels) {
       const strings = uiLocale.strings;
       this.labelTools(strings.minimize, strings.maximize, strings.restore, strings.close);
@@ -912,6 +912,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     else el.show();
     this.setProperty('isModal', modal);
     this.setProperty('open', true);
+    if (!this.peekProperty('value')) this.bindings.writeModel(true);
     this.syncProperty('value', true);
     if (this.startPosition === 'manual') this.placeAtProps();
     else this.center();

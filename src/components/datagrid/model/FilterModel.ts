@@ -1,4 +1,4 @@
-import { reactive, untracked } from '@motifx/core';
+import { createSignal, reactive, untracked, type Signal } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import type { ColumnFilter } from '../column-filter';
 import type { GridFilterOperator } from '../grid-filter-operator';
@@ -22,8 +22,8 @@ const key = (e: unknown) => JSON.stringify(e ?? null);
  * columns that can show its conditions. Reads are reactive per column.
  */
 export class FilterModel<T> {
-  /** `search` and `extra` count changes of the parts kept outside (they may hold dates). */
-  readonly state = reactive({ columns: {} as Record<string, ColumnFilter>, search: 0, extra: 0, enabled: true });
+  /** `fields` grows when a column's filter comes or goes; `search` and `extra` count changes of the other parts. */
+  readonly state = reactive({ fields: 0, search: 0, extra: 0, enabled: true });
   /** The last change came from typing: wait `filterDelay` before applying it. */
   typed = false;
   /** How a column's header filter value filters when not by being equal (a range, an expression); the grid gives it. */
@@ -35,48 +35,51 @@ export class FilterModel<T> {
   private extraItems: data.FilterExpression[] = [];
   /** The header filter part each column last wrote into the filter value, to know it again. */
   private readonly written = new Map<string, { key: string; values: unknown[]; filterType?: 'exclude' }>();
+  /** Each column's filter; the values in it are kept as they were given. */
+  private readonly byField = new Map<string, ColumnFilter>();
+  /** Grows when a column's filter changes. */
+  private readonly versions = new Map<string, Signal<number>>();
 
   constructor(private readonly columns: ColumnModel<T>) {}
 
   get(field: string): ColumnFilter | undefined {
-    return this.state.columns[field];
+    void this.versionOf(field).value;
+    return this.byField.get(field);
   }
 
   /** Changes part of a column's filter. `typed` waits a moment before the grid applies it. */
   update(field: string, change: Partial<ColumnFilter>, typed = false) {
     this.typed = typed;
     this.state.enabled = true;
-    const next: ColumnFilter = { ...this.state.columns[field], ...change };
+    const next: ColumnFilter = { ...this.byField.get(field), ...change };
     for (const key of Object.keys(next) as (keyof ColumnFilter)[]) if (next[key] === undefined) delete next[key];
-    this.state.columns[field] = next;
+    this.put(field, next);
   }
 
   /** Takes the filter row's value (or the header filter's values) of a column away; its condition stays. */
   clear(field: string, part: 'row' | 'values' | 'all' = 'all') {
-    const f = this.state.columns[field];
+    const f = this.byField.get(field);
     if (!f) return;
     this.typed = false;
     this.state.enabled = true;
-    if (part === 'all') this.state.columns[field] = f.op ? { op: f.op } : {};
+    if (part === 'all') this.put(field, f.op ? { op: f.op } : {});
     else if (part === 'row') this.update(field, { value: undefined, value2: undefined });
     else this.update(field, { values: undefined });
   }
 
   /** Forgets a column's filter, its condition too (the column went away). */
   drop(field: string) {
-    if (!(field in untracked(() => this.state.columns))) return;
+    if (!this.byField.has(field)) return;
     this.typed = false;
-    const next = { ...untracked(() => this.state.columns) };
-    delete next[field];
-    this.state.columns = next;
+    this.put(field, undefined);
   }
 
   /** Every column's filter and the filter value's own conditions go; the conditions chosen in the filter row stay. */
   clearAll() {
     this.typed = false;
     const next: Record<string, ColumnFilter> = {};
-    for (const [field, f] of Object.entries(untracked(() => ({ ...this.state.columns })))) if (f.op) next[field] = { op: f.op };
-    this.state.columns = next;
+    for (const [field, f] of this.byField) if (f.op) next[field] = { op: f.op };
+    this.putAll(next);
     this.setExtra([]);
     this.state.enabled = true;
   }
@@ -97,7 +100,7 @@ export class FilterModel<T> {
   /** A copy of the filters that do something. */
   toFilters(): GridFilters {
     const out: GridFilters = {};
-    for (const [field, f] of Object.entries(this.state.columns)) {
+    for (const [field, f] of this.entries()) {
       if (!this.rowPart(field, f) && !this.valuesPart(field, f)) continue;
       out[field] = { ...f, values: f.values ? [...f.values] : undefined };
       if (!out[field].values) delete out[field].values;
@@ -109,17 +112,17 @@ export class FilterModel<T> {
     this.typed = false;
     const next: Record<string, ColumnFilter> = {};
     for (const [field, f] of Object.entries(filters)) if (this.columns.defs.has(field) && !this.columns.isInternal(field)) next[field] = { ...f };
-    this.state.columns = next;
+    this.putAll(next);
   }
 
   /** Whether the column filters rows now (row part or values part). */
   isActive(field: string): boolean {
-    const f = this.state.columns[field];
+    const f = this.get(field);
     return !!f && (!!this.rowPart(field, f) || !!this.valuesPart(field, f));
   }
 
   hasValues(field: string): boolean {
-    const f = this.state.columns[field];
+    const f = this.get(field);
     return !!f && !!this.valuesPart(field, f);
   }
 
@@ -128,7 +131,7 @@ export class FilterModel<T> {
     const enabled = this.state.enabled;
     if (enabled && this.extra()) return true;
     if (!enabled && this.sync()) return false;
-    for (const field of Object.keys(this.state.columns)) if (this.isActive(field)) return true;
+    for (const [field] of this.entries()) if (this.isActive(field)) return true;
     return false;
   }
 
@@ -157,7 +160,7 @@ export class FilterModel<T> {
   filterValue(): data.FilterExpression | null {
     if (!this.sync()) return this.extra();
     const parts: (data.FilterExpression | null)[] = [];
-    for (const [field, f] of Object.entries(this.state.columns)) {
+    for (const [field, f] of this.entries()) {
       if (!this.columns.defs.has(field)) continue;
       parts.push(this.rowCondition(field, f));
       const values = this.valuesPart(field, f);
@@ -179,7 +182,7 @@ export class FilterModel<T> {
     if (!this.sync()) return this.setExtra(value ? [value] : []);
     const items = !value ? [] : !data.isCondition(value) && 'and' in value ? value.and : [value];
     const next: Record<string, ColumnFilter> = {};
-    for (const [field, f] of Object.entries(untracked(() => ({ ...this.state.columns })))) if (f.op) next[field] = { op: f.op };
+    for (const [field, f] of this.byField) if (f.op) next[field] = { op: f.op };
     const taken = new Set<string>();
     const rest: data.FilterExpression[] = [];
     for (const item of items) {
@@ -193,7 +196,7 @@ export class FilterModel<T> {
       for (const k of Object.keys(f) as (keyof ColumnFilter)[]) if (f[k] === undefined) delete f[k];
       next[part.field] = f;
     }
-    this.state.columns = next;
+    this.putAll(next);
     this.setExtra(rest);
   }
 
@@ -214,7 +217,36 @@ export class FilterModel<T> {
 
   private setExtra(items: data.FilterExpression[]) {
     this.extraItems = items;
-    this.state.extra++;
+    untracked(() => this.state.extra++);
+  }
+
+  /** Every column's filter, followed: which columns have one and what each holds. */
+  private entries(): [string, ColumnFilter][] {
+    void this.state.fields;
+    for (const field of this.byField.keys()) void this.versionOf(field).value;
+    return [...this.byField];
+  }
+
+  private versionOf(field: string) {
+    let version = this.versions.get(field);
+    if (!version) this.versions.set(field, (version = createSignal(0)));
+    return version;
+  }
+
+  /** Sets a column's filter, or takes it away (`undefined`); what reads it reads it again. */
+  private put(field: string, f: ColumnFilter | undefined) {
+    const had = this.byField.has(field);
+    if (f) this.byField.set(field, f);
+    else this.byField.delete(field);
+    const version = this.versionOf(field);
+    version.value = version.peek() + 1;
+    if (had !== !!f) untracked(() => this.state.fields++);
+  }
+
+  /** Every column's filter at once: the ones left out go. */
+  private putAll(next: Record<string, ColumnFilter>) {
+    for (const field of [...this.byField.keys()]) if (!Object.hasOwn(next, field)) this.put(field, undefined);
+    for (const [field, f] of Object.entries(next)) this.put(field, f);
   }
 
   /** Where a condition of a filter value shows: a column's filter row, or its header filter. */
@@ -284,7 +316,7 @@ export class FilterModel<T> {
   /** The condition of a column's filter row: its own, else the column's default. */
   operator(field: string): GridFilterOperator {
     const ops = this.operators(field);
-    const set = this.state.columns[field]?.op;
+    const set = this.get(field)?.op;
     if (set && ops.includes(set)) return set;
     const own = this.columns.defs.get(field)?.filterOperator;
     return own && ops.includes(own) ? own : (ops[0] ?? '=');
@@ -299,7 +331,7 @@ export class FilterModel<T> {
     const parts: (data.FilterExpression | null)[] = [];
     const enabled = this.state.enabled;
     if (enabled || !this.sync()) {
-      for (const [field, f] of Object.entries(this.state.columns)) {
+      for (const [field, f] of this.entries()) {
         if (!this.columns.defs.has(field) || field === skipColumn) continue;
         parts.push(this.rowPart(field, f));
         if (field !== skipValuesOf) parts.push(this.valuesPart(field, f));

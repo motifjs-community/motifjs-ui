@@ -1,9 +1,10 @@
 import { Component, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { DropDown } from '../dropdown/DropDown';
 import { Lookup } from './Lookup';
+import { dataKinds } from '../../../tests/data-kinds';
 
 let hosts: Component[] = [];
 
@@ -88,5 +89,60 @@ describe('DropDown and Lookup over a data source', () => {
     expect(s.id).toBe(49);
     await settle();
     expect(shownText(l)).toBe('Company 49');
+  });
+
+  it('reads columns given as a function over plain data again on reState', async () => {
+    const city = { field: 'city', caption: 'City' };
+    const plain = { columns: [{ field: 'company', caption: 'Company' }] as { field: string; caption: string }[], headers: true };
+    let d!: Lookup<{ id: number; company: string; city: string }, number>;
+    const host = page(
+      <Lookup
+        ref={(x: Lookup<{ id: number; company: string; city: string }, number>) => (d = x)}
+        items={[{ id: 1, company: 'Acme', city: 'Paris' }]}
+        textField="company"
+        valueField="id"
+        columns={() => plain.columns}
+        showColumnHeaders={() => plain.headers}
+      />,
+    );
+    await settle();
+    d.open();
+    await settle();
+    const header = () => Array.from(d.element.querySelectorAll('.mx-lookup__header .mx-lookup__cell')).map((c) => c.textContent);
+    expect(header()).toEqual(['Company']);
+    plain.columns = [...plain.columns, city];
+    await settle();
+    expect(header()).toEqual(['Company']);
+    host.reState();
+    await settle();
+    expect(header()).toEqual(['Company', 'City']);
+    plain.headers = false;
+    host.reState();
+    expect(d.element.querySelector<HTMLElement>('.mx-lookup__header')!.hidden).toBe(true);
+    expect(city).toEqual({ field: 'city', caption: 'City' });
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('reads its columns and items again on refresh()', async () => {
+      const columns = make([{ field: 'company', caption: 'Company' }, { field: 'city', caption: 'City' }]);
+      const items = make([{ id: 1, company: 'Acme', city: 'Paris' }]);
+      let d!: Lookup<{ id: number; company: string; city: string }, number>;
+      page(<Lookup ref={(x: Lookup<{ id: number; company: string; city: string }, number>) => (d = x)} items={items} textField="company" valueField="id" columns={columns} value={1} />);
+      await settle();
+      d.open();
+      await settle();
+      const header = () => Array.from(d.element.querySelectorAll('.mx-lookup__header .mx-lookup__cell')).map((c) => c.textContent);
+      expect(header()).toEqual(['Company', 'City']);
+      expect(d.selectedItem).toBe(items[0]);
+      columns[1].caption = 'Town';
+      items[0].company = 'Acme Inc.';
+      await settle();
+      expect(header()).toEqual(['Company', 'City']);
+      d.refresh();
+      await settle();
+      expect(header()).toEqual(['Company', 'Town']);
+      expect(shownText(d)).toBe('Acme Inc.');
+      expect(options(d)[0].textContent).toBe('Acme Inc.Paris');
+    });
   });
 });

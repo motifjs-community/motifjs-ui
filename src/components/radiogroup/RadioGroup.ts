@@ -1,5 +1,7 @@
-import { effect, read, untracked, type Bind, type IBaseProp } from '@motifx/core';
+import { untracked, type Bind, type IBaseProp } from '@motifx/core';
 import { registerControl } from '../../core/control-map';
+import { follow } from '../../core/follow';
+import { givenField, givenList } from '../../core/given-field';
 import { LanguageLook } from '../../core/language-look';
 import { deepActiveElement, isFocusable } from '../../core/focus';
 import { nextId } from '../../core/next-id';
@@ -140,6 +142,15 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
     return this.focusElement;
   }
 
+  /**
+   * Reads the items again after they were changed in place: their texts, values and states. Your items may be
+   * plain or reactive; the group reads them as they are.
+   */
+  override refresh(): void {
+    super.refresh();
+    this.renderItems();
+  }
+
   /** The native radios, in the order of the items. */
   get inputs(): readonly HTMLInputElement[] {
     return this.radioParts.rows.map((row) => row.input);
@@ -203,28 +214,30 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
   private renderItems(): void {
     const parts = this.radioParts;
     parts.stopItems?.();
-    const items = this.peekProperty<readonly unknown[]>('items') ?? [];
+    const items = givenList(this.peekProperty<readonly unknown[]>('items'));
     const textField = this.peekProperty<ItemField<unknown>>('itemText');
     const valueField = this.peekProperty<ItemField<unknown>>('itemValue');
-    // Reading the items is followed; drawing them is not.
-    parts.stopItems = effect(() => {
-      const looks = items.map((item) => this.lookOf(item, textField, valueField));
-      untracked(() => this.drawItems(looks));
-    });
+    // The items' own functions are followed; the list, the fields and drawing are not.
+    parts.stopItems = follow(
+      this,
+      'items',
+      () => items.map((item) => this.lookOf(item, textField, valueField)),
+      (looks) => this.drawItems(looks),
+    );
   }
 
   private lookOf(item: unknown, textField: ItemField<unknown> | undefined, valueField: ItemField<unknown> | undefined): Look {
     const fields = item !== null && typeof item === 'object' ? (item as RadioItem<unknown>) : null;
     // An object without a value of its own is its own value.
-    const value = fields && valueField === undefined && !('value' in fields) ? item : readItemField(item, valueField, 'value');
+    const value = fields && valueField === undefined && !untracked(() => 'value' in fields) ? item : readItemField(item, valueField, 'value');
     const text = fields || textField !== undefined ? readItemField(item, textField, 'text') : item;
     return {
       value,
       text: String(text ?? value ?? ''),
-      hint: read(fields?.hint) ?? '',
-      helpText: read(fields?.helpText) ?? '',
-      enabled: read(fields?.enabled) !== false,
-      visible: read(fields?.visible) !== false,
+      hint: givenField<string | undefined>(fields, 'hint') ?? '',
+      helpText: givenField<string | undefined>(fields, 'helpText') ?? '',
+      enabled: givenField(fields, 'enabled') !== false,
+      visible: givenField(fields, 'visible') !== false,
     };
   }
 

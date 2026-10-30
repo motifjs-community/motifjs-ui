@@ -21,8 +21,10 @@ const DEFAULTS: Partial<AdaptiveDetailValues> = {
  */
 export class AdaptiveRow {
   readonly options: Switches<AdaptiveDetailValues>;
-  /** `rowId` of the open row, `key` its data key; `auto` when editing opened it. Reactive. */
-  readonly state = reactive({ rowId: null as string | null, key: undefined as unknown, auto: false });
+  /** `rowId` of the open row; `auto` when editing opened it. Reactive. */
+  readonly state = reactive({ rowId: null as string | null, auto: false });
+  /** The data key of the open row, as the data has it; it changes with `state.rowId`. */
+  key: unknown = undefined;
 
   constructor(given: GridAdaptiveDetail | undefined) {
     this.options = new Switches<AdaptiveDetailValues>(KEYS, DEFAULTS, given ?? {});
@@ -34,16 +36,16 @@ export class AdaptiveRow {
 
   open(rowId: string, key: unknown, auto = false) {
     const s = this.state;
+    this.key = key;
     s.rowId = rowId;
-    s.key = key;
     s.auto = auto;
   }
 
   close() {
     const s = this.state;
     if (s.rowId === null) return;
+    this.key = undefined;
     s.rowId = null;
-    s.key = undefined;
     s.auto = false;
   }
 }

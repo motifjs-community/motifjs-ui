@@ -5,6 +5,7 @@ import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import { Slider } from './Slider';
 import type { SliderValue } from './slider-value';
+import { dataKinds } from '../../../tests/data-kinds';
 
 let hosts: Component[] = [];
 
@@ -113,6 +114,32 @@ describe('Slider', () => {
     expect(b.value).toBe(40);
     b.value = 33;
     expect(b.value).toBe(40);
+  });
+
+  it('reads functions over plain data again on reState, writes a value set from code to x-model, and keeps your array', async () => {
+    const plain = { v: 20, max: 100 };
+    const s = reactive({ v: 10 });
+    const pair: [number, number] = [3, 1];
+    let b!: Slider;
+    let m!: Slider;
+    let r!: Slider;
+    const host = page(
+      <Slider ref={(x: Slider) => (b = x)} value={() => plain.v} max={() => plain.max} />,
+      <Slider ref={(x: Slider) => (m = x)} x-model={() => s.v} />,
+      <Slider ref={(x: Slider) => (r = x)} range max={5} value={pair} />,
+    );
+    await settle();
+    Object.assign(plain, { v: 60, max: 50 });
+    await settle();
+    expect(now(b)).toBe(20);
+    host.reState();
+    expect(now(b)).toBe(50);
+    expect(thumb(b).getAttribute('aria-valuemax')).toBe('50');
+    expect(plain.v).toBe(60);
+    m.value = 70;
+    expect(s.v).toBe(70);
+    expect(r.value).toEqual([1, 3]);
+    expect(pair).toEqual([3, 1]);
   });
 
   it('reads the bounds of the props before the value, whatever their order', async () => {
@@ -360,5 +387,22 @@ describe('Slider', () => {
     b.value = 30;
     await settle();
     expect(thumb(b).hasAttribute('aria-invalid')).toBe(false);
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('reads a range given by a getter as it is: a change in place waits for a new value', async () => {
+      const range = make<[number, number]>([20, 80]);
+      let s!: Slider;
+      page(<Slider ref={(x: Slider) => (s = x)} range value={() => range} />);
+      await settle();
+      expect(s.value).toBe(range);
+      range[0] = 30;
+      await settle();
+      expect(thumb(s, 0).getAttribute('aria-valuenow')).toBe('20');
+      s.value = [range[0], range[1]];
+      await settle();
+      expect(s.value).toEqual([30, 80]);
+      expect(thumb(s, 0).getAttribute('aria-valuenow')).toBe('30');
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dataKinds } from '../../../tests/data-kinds';
 import { mountHost, tick } from '../../../tests/helpers';
 import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
 import { DropDown } from './DropDown';
@@ -60,6 +61,34 @@ describe('DropDown', () => {
     await settle();
     expect(shownText(coded)).toBe('M');
     expect(coded.selectedItem).toBe('M');
+  });
+
+  it('reads functions over plain data again on reState: the field, the open list and its items', async () => {
+    const plain = { city: 'Bursa', items: ['Ankara', 'Bursa'], placeholder: 'Pick' };
+    const given = plain.items;
+    const s = reactive({ city: 'Ankara' as string | null });
+    let d!: DropDown<string, string>;
+    let m!: DropDown<string, string>;
+    const host = page(
+      <DropDown ref={(x: DropDown<string, string>) => (d = x)} items={() => plain.items} value={() => plain.city} placeholder={() => plain.placeholder} />,
+      <DropDown ref={(x: DropDown<string, string>) => (m = x)} items={CITIES} x-model={() => s.city} />,
+    );
+    await settle();
+    d.open();
+    await settle();
+    plain.items = ['Ankara', 'Bursa', 'Konya'];
+    plain.city = 'Konya';
+    await settle();
+    expect(shownText(d)).toBe('Bursa');
+    host.reState();
+    await settle();
+    expect(shownText(d)).toBe('Konya');
+    expect(options(d).map((o) => o.textContent)).toEqual(['Ankara', 'Bursa', 'Konya']);
+    expect(given).toEqual(['Ankara', 'Bursa']);
+    m.value = 'İzmir';
+    expect(s.city).toBe('İzmir');
+    m.clear();
+    expect(s.city).toBeNull();
   });
 
   it('opens with the keyboard on the chosen item and chooses with Enter', async () => {
@@ -207,18 +236,56 @@ describe('DropDown', () => {
     expect(d.element.querySelector('.mx-list__empty')!.textContent).toBe('Öğe yok');
   });
 
-  it('follows items that change, open or closed', async () => {
-    const s = reactive({ items: [{ value: 1, text: 'One' }, { value: 2, text: 'Two' }] });
+  it('follows items given anew', async () => {
+    const s = reactive({ items: [{ value: 1, text: 'One' }] });
     let d!: DropDown<{ value: number; text: string }, number>;
     page(<DropDown ref={(x: DropDown<{ value: number; text: string }, number>) => (d = x)} items={() => s.items} value={2} />);
     await settle();
-    s.items[1].text = 'Deux';
+    s.items = [{ value: 1, text: 'One' }, { value: 2, text: 'Two' }];
     await settle();
-    expect(shownText(d)).toBe('Deux');
-    d.open();
-    s.items.push({ value: 3, text: 'Three' });
-    await settle();
-    expect(options(d).map((o) => o.textContent)).toEqual(['One', 'Deux', 'Three']);
+    expect(shownText(d)).toBe('Two');
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('gives back the very items, and shows a change in place after refresh()', async () => {
+      const items = make([{ value: 1, text: 'One' }, { value: 2, text: 'Two' }]);
+      const changed = vi.fn();
+      let d!: DropDown<{ value: number; text: string }, number>;
+      page(<DropDown ref={(x: DropDown<{ value: number; text: string }, number>) => (d = x)} items={items} value={2} onValueChanged={changed} />);
+      await settle();
+      expect(d.selectedItem).toBe(items[1]);
+      d.open();
+      options(d)[0].click();
+      await settle();
+      expect(d.value).toBe(1);
+      expect(d.selectedItem).toBe(items[0]);
+      expect(changed).toHaveBeenCalledTimes(1);
+      items[0].text = 'Un';
+      items.push({ value: 3, text: 'Three' });
+      await settle();
+      expect(shownText(d)).toBe('One');
+      d.refresh();
+      await settle();
+      expect(shownText(d)).toBe('Un');
+      d.open();
+      expect(options(d).map((o) => o.textContent)).toEqual(['Un', 'Two', 'Three']);
+    });
+
+    it('keeps an object value it wrote to a reactive model as the very item', async () => {
+      const items = make([{ name: 'Ada' }, { name: 'Linus' }]);
+      const form = reactive({ person: null as { name: string } | null });
+      const changed = vi.fn();
+      let d!: DropDown<{ name: string }, { name: string }>;
+      page(<DropDown ref={(x: DropDown<{ name: string }, { name: string }>) => (d = x)} items={items} textField="name" x-model={() => form.person} onValueChanged={changed} />);
+      await settle();
+      d.open();
+      options(d)[1].click();
+      await settle();
+      expect(d.value).toBe(items[1]);
+      expect(d.selectedItem).toBe(items[1]);
+      expect(shownText(d)).toBe('Linus');
+      expect(changed).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('empties with its clear button or Escape, and is checked when required', async () => {

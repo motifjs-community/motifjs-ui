@@ -1,4 +1,3 @@
-import { reactive } from '@motifx/core';
 import { describe, expect, it } from 'vitest';
 import type { SchedulerFields } from '../scheduler-fields';
 import type { SchedulerResource } from '../scheduler-resource';
@@ -70,13 +69,13 @@ const people = [
 ];
 
 function model(items: Item[], settings: Partial<ResolvedView> = {}, kinds: SchedulerResource<unknown>[] = []) {
-  const state = reactive({
+  const state = {
     items,
     view: view(settings),
     date: at(28, 0),
     draft: null as Draft<Item> | null,
     lines: { lane: 20, gap: 2, min: 30 },
-  });
+  };
   const resources = new Resources(() => kinds);
   const m = new SchedulerModel<Item>({
     date: () => state.date,
@@ -204,13 +203,15 @@ describe('timeline layout', () => {
     await tick();
     const green = m.state.rows[1].pieces;
     const piece = m.state.rows[0].pieces[0];
-    state.draft = { item: m.state.rows[0].pieces[0].item, start: at(26, 12), end: at(26, 13), allDay: false, copy: false, invalid: false };
+    state.draft = { item: m.itemOf(m.state.rows[0].pieces[0]), start: at(26, 12), end: at(26, 13), allDay: false, copy: false, invalid: false };
+    m.update();
     await tick();
     expect(m.state.rows[0].pieces[0]).toBe(piece);
     expect(piece.from).toBe(4);
     expect(m.state.rows[1].pieces).toBe(green);
     // To the other room: the piece leaves its row, the other row grows a lane.
     state.draft = { ...state.draft, resources: { roomId: 2 } };
+    m.update();
     await tick();
     expect(m.state.rows[0].pieces.length).toBe(0);
     expect(m.state.rows[1].pieces.map((p) => p.text)).toEqual(['B', 'A']);
@@ -248,10 +249,12 @@ describe('timeline layout', () => {
     expect(m.virtual).toBe(false);
     expect(m.shownTicks().length).toBe(70);
     state.view = view({ scrolling: 'auto', cellDuration: 5 });
+    m.update();
     await tick();
     // 7 days of 120 cells, one row: under the mark still.
     expect(m.virtual).toBe(false);
     state.view = view({ scrolling: 'virtual' });
+    m.update();
     await tick();
     expect(m.virtual).toBe(true);
     m.dispose();

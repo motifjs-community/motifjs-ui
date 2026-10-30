@@ -38,6 +38,11 @@ export class TotalRow<T> extends Component<HTMLDivElement> {
     this.bindings.watch(() => this.draw());
   }
 
+  /** Writes the items again (`grid.repaint()`). */
+  redraw() {
+    this.version.value = this.version.peek() + 1;
+  }
+
   /** A column's cell (one added at run time too; placed by the next `arrange`). */
   addColumn(field: string) {
     if (this.isConfigured) this.makeCell(field);

@@ -1,4 +1,3 @@
-import { reactive } from '@motifx/core';
 import { describe, expect, it } from 'vitest';
 import type { SchedulerFields } from '../scheduler-fields';
 import { placeLanes } from './place-lanes';
@@ -55,12 +54,12 @@ const at = (day: number, hour: number, minute = 0) => new Date(2026, 9, day, hou
 const tick = () => Promise.resolve();
 
 function model(items: Item[], settings: Partial<ResolvedView> = {}, room = { month: Infinity, allDay: Infinity }) {
-  const state = reactive({
+  const state = {
     items,
     view: view(settings),
     room,
     date: at(28, 0),
-  });
+  };
   const m = new SchedulerModel<Item>({
     date: () => state.date,
     items: () => state.items,
@@ -119,14 +118,14 @@ describe('layout', () => {
   });
 
   it('places timed appointments in their day columns and keeps each piece as the same object', async () => {
-    const items = reactive([
+    const items = [
       { id: 1, text: 'Standup', startDate: at(28, 9), endDate: at(28, 10) },
       { id: 2, text: 'Review', startDate: at(28, 9, 30), endDate: at(28, 11) },
-    ]) as Item[];
+    ] as Item[];
     const { m } = model(items);
     await tick();
     const wednesday = m.state.timed.filter((p) => p.column === 2);
-    expect(wednesday.map((p) => p.item.text)).toEqual(['Standup', 'Review']);
+    expect(wednesday.map((p) => m.itemOf(p).text)).toEqual(['Standup', 'Review']);
     const standup = wednesday[0];
     expect(standup.top).toBeCloseTo(9 / 24);
     expect(standup.height).toBeCloseTo(1 / 24);
@@ -134,7 +133,11 @@ describe('layout', () => {
     items[1].startDate = at(28, 14);
     items[1].endDate = at(28, 15);
     await tick();
-    expect(m.state.timed.find((p) => p.item.text === 'Standup')).toBe(standup);
+    // Read as it is: the change shows once the model is told.
+    expect([standup.left, standup.width]).toEqual([0, 0.5]);
+    m.refresh();
+    await tick();
+    expect(m.state.timed.find((p) => m.itemOf(p).text === 'Standup')).toBe(standup);
     expect([standup.left, standup.width]).toEqual([0, 1]);
   });
 
@@ -151,9 +154,9 @@ describe('layout', () => {
       },
     ]);
     await tick();
-    expect(m.state.timed.filter((p) => p.column === 2).map((p) => [p.item.text, p.before, p.after])).toEqual([['Night', false, true]]);
-    expect(m.state.timed.filter((p) => p.column === 3).map((p) => [p.item.text, p.before, p.after])).toEqual([['Night', true, false]]);
-    expect(m.state.allDay.pieces.map((p) => [p.item.text, p.first, p.span])).toEqual([
+    expect(m.state.timed.filter((p) => p.column === 2).map((p) => [m.itemOf(p).text, p.before, p.after])).toEqual([['Night', false, true]]);
+    expect(m.state.timed.filter((p) => p.column === 3).map((p) => [m.itemOf(p).text, p.before, p.after])).toEqual([['Night', true, false]]);
+    expect(m.state.allDay.pieces.map((p) => [m.itemOf(p).text, p.first, p.span])).toEqual([
       ['Trip', 1, 4],
       ['Holiday', 3, 1],
     ]);
@@ -178,6 +181,7 @@ describe('layout', () => {
       name: 'month',
       maxAppointmentsPerCell: 4,
     });
+    m.update();
     await tick();
     expect(week.more[day]).toBe(0);
   });
@@ -217,7 +221,7 @@ describe('layout', () => {
       },
     ]);
     await tick();
-    expect(m.state.shown.map((i) => i.text)).toEqual(['Shown']);
+    expect(m.shown().map((i) => i.text)).toEqual(['Shown']);
     expect(m.appointmentsIn(at(28, 9, 30), at(28, 9, 45)).map((i) => i.text)).toEqual(['Shown']);
     expect(m.appointmentsIn(at(28, 10), at(28, 11))).toEqual([]);
   });

@@ -42,6 +42,7 @@ const METHODS = [
   ['open(), close()', '`boolean`, `void`', 'Opens the list (`false` when disabled or read-only); closes it.'],
   ['clear()', '`void`', 'Removes every tag.'],
   ['selectAllItems()', '`Promise<void>`', 'Chooses every item the list shows, up to `maxSelected` (a data source: after their values load).'],
+  ['refresh()', '`void`', 'Your items may be plain or reactive; the box reads them as they are. After changing them in place, call `refresh()`. The tags, the open list and `selectedItems` follow.'],
   ['validate(), resetValidation(), focus()', '', 'See TextBox.'],
 ];
 

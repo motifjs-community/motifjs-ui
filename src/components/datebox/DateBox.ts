@@ -1,4 +1,5 @@
-import { effect, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
 import { calendarMark, clockMark } from '../../core/glyphs';
 import { pageLocale } from '../../core/page-locale';
@@ -80,12 +81,15 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     this.observeProperty('disabledDates', () => this.syncPicker());
     this.listen();
     const parts = this.dateParts;
-    parts.stopLabels = effect(() => {
-      const strings = uiLocale.strings;
-      const time = this.getProperty<DateKind | undefined>('type') === 'time';
-      parts.toggle?.setAttribute('aria-label', time ? strings.chooseTime : strings.chooseDate);
-      parts.popup?.element.setAttribute('aria-label', time ? strings.chooseTime : strings.chooseDate);
-    });
+    parts.stopLabels = follow(
+      this,
+      'labels',
+      () => (this.getProperty<DateKind | undefined>('type') === 'time' ? uiLocale.strings.chooseTime : uiLocale.strings.chooseDate),
+      (label) => {
+        parts.toggle?.setAttribute('aria-label', label);
+        parts.popup?.element.setAttribute('aria-label', label);
+      },
+    );
     this.motif.setDisposable(() => {
       parts.mask.destroy();
       parts.stopLabels?.();

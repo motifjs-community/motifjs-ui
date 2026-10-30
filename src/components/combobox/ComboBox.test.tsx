@@ -1,10 +1,11 @@
 import { Component, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { Autocomplete } from './Autocomplete';
 import { ComboBox } from './ComboBox';
+import { dataKinds } from '../../../tests/data-kinds';
 
 let hosts: Component[] = [];
 
@@ -71,6 +72,32 @@ describe('ComboBox', () => {
     s.city = 'Bursa';
     await settle();
     expect(input.value).toBe('Bursa');
+  });
+
+  it('reads functions over plain data again on reState, and writes a value set from code to x-model', async () => {
+    const plain = { items: ['Ankara', 'Bursa'], city: 'Ankara' };
+    const given = plain.items;
+    const s = reactive({ city: null as string | null });
+    let c!: ComboBox<string, string>;
+    let m!: ComboBox<string, string>;
+    const host = page(
+      <ComboBox ref={(x: ComboBox<string, string>) => (c = x)} items={() => plain.items} value={() => plain.city} />,
+      <ComboBox ref={(x: ComboBox<string, string>) => (m = x)} items={CITIES} x-model={() => s.city} />,
+    );
+    await settle();
+    plain.items = ['Ankara', 'Bursa', 'Bolu'];
+    plain.city = 'Bolu';
+    await settle();
+    expect(c.inputElement.value).toBe('Ankara');
+    host.reState();
+    await settle();
+    expect(c.inputElement.value).toBe('Bolu');
+    c.inputElement.focus();
+    type(c, 'b');
+    expect(options(c)).toEqual(['Bursa', 'Bolu']);
+    expect(given).toEqual(['Ankara', 'Bursa']);
+    m.value = 'Bursa';
+    expect(s.city).toBe('Bursa');
   });
 
   it('shows the text of an object value given before its items', async () => {
@@ -159,5 +186,42 @@ describe('ComboBox', () => {
     type(a, 'anything');
     press(a.inputElement, 'Enter');
     expect(s.q).toBe('anything');
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('gives back the very items, and shows a change in place after refresh()', async () => {
+      const cities = make([{ id: 1, name: 'Ankara' }, { id: 2, name: 'Bursa' }]);
+      const form = reactive({ city: null as { id: number; name: string } | null });
+      const changed = vi.fn();
+      let c!: ComboBox<{ id: number; name: string }, { id: number; name: string }>;
+      page(
+        <ComboBox
+          ref={(x: ComboBox<{ id: number; name: string }, { id: number; name: string }>) => (c = x)}
+          items={cities}
+          textField="name"
+          x-model={() => form.city}
+          onValueChanged={changed}
+        />,
+      );
+      await settle();
+      changed.mockClear();
+      c.open();
+      c.element.querySelectorAll<HTMLElement>('[role="option"]')[1].click();
+      await settle();
+      expect(c.value).toBe(cities[1]);
+      expect(changed).toHaveBeenCalledTimes(1);
+      expect(changed.mock.calls[0][0].value).toBe(cities[1]);
+      expect(c.inputElement.value).toBe('Bursa');
+
+      cities[1].name = 'Bursa (TR)';
+      cities.push({ id: 3, name: 'Konya' });
+      await settle();
+      expect(c.inputElement.value).toBe('Bursa');
+      c.refresh();
+      await settle();
+      expect(c.inputElement.value).toBe('Bursa (TR)');
+      c.open();
+      expect(options(c)).toEqual(['Ankara', 'Bursa (TR)', 'Konya']);
+    });
   });
 });

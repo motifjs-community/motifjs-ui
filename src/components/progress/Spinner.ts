@@ -1,5 +1,6 @@
-import { effect, type Bind, type ComponentBase, type IBaseProp } from '@motifx/core';
+import type { Bind, ComponentBase, IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
+import { follow } from '../../core/follow';
 import type { ControlSize } from '../../core/control-size';
 import { deepActiveElement, focusInitial, isFocusable } from '../../core/focus';
 import { nextId } from '../../core/next-id';
@@ -183,7 +184,7 @@ export class Spinner extends Control<HTMLDivElement, SpinnerProps> {
       this.element.setAttribute('aria-labelledby', parts.label.id);
     } else {
       this.element.removeAttribute('aria-labelledby');
-      parts.stopName ??= effect(() => this.element.setAttribute('aria-label', uiLocale.strings.loading));
+      parts.stopName ??= follow(this, 'name', () => uiLocale.strings.loading, (label) => this.element.setAttribute('aria-label', label));
     }
   }
 

@@ -1,9 +1,13 @@
-import { Component, effect, Emitter, read, untracked, type Bind, type ComponentBase, type Event as MotifEvent } from '@motifx/core';
+import { Component, Emitter, read, type Bind, type ComponentBase, type Event as MotifEvent } from '@motifx/core';
+import { follow } from '../../core/follow';
+import { givenField, givenList, givenValue } from '../../core/given-field';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { checkMark, chevronEnd, radioMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
+import type { IconSource } from '../../core/icon-source';
 import { isNode } from '../../core/node-kind';
 import { Popup } from '../popup/Popup';
+import { hasLineAfter } from './line-after';
 import type { MenuItem } from './menu-item';
 import type { MenuItemClickEventArgs } from './menu-item-click-event-args';
 
@@ -68,6 +72,7 @@ export class MenuList extends Component<HTMLDivElement> {
   /** An item with `items` opens its submenu at its side; `false` reports it as chosen instead, for an owner that shows the submenu itself. */
   openSubmenus = true;
 
+  private given: Bind<readonly MenuItem[]> | undefined;
   private entries: Entry[] = [];
   private releases: (() => void)[] = [];
   private stopDrawing: (() => void) | null = null;
@@ -98,31 +103,45 @@ export class MenuList extends Component<HTMLDivElement> {
     });
   }
 
-  /** Shows the visible ones of `items`, and draws them again when a function in an item reads something that changes. */
+  /**
+   * Shows the visible ones of `items`, and draws them again when a function in an item reads something that
+   * changes, or on `reState()`. The items and their fields are read as they are: after changing them in place,
+   * call `refresh`.
+   */
   setItems(items: Bind<readonly MenuItem[]>): void {
     this.stopDrawing?.();
-    // Reading the items is followed; drawing them (focus, icon components) is not.
-    this.stopDrawing = effect(() => {
-      const looks = (read(items) ?? []).map((item): ItemLook => {
-        const group = read(item.group);
-        const children = read(item.items);
+    this.given = items;
+    // The getter and the items' own functions are followed; the list and the fields are not, nor is drawing.
+    this.stopDrawing = follow(this, 'items', () => {
+      const looks = givenList(read(items)).map((item): ItemLook => {
+        const group = givenField<string | undefined>(item, 'group');
+        const children = givenList(givenField<readonly MenuItem[] | undefined>(item, 'items'));
         return {
           item,
-          visible: read(item.visible) !== false,
-          beginGroup: !!read(item.beginGroup),
-          text: read(item.text) ?? '',
-          hint: read(item.hint),
-          checked: read(item.checked),
+          visible: givenField(item, 'visible') !== false,
+          beginGroup: !!givenField(item, 'beginGroup'),
+          text: givenField<string | undefined>(item, 'text') ?? '',
+          hint: givenField<string | undefined>(item, 'hint'),
+          checked: givenField<boolean | undefined>(item, 'checked'),
           radio: !!group,
-          enabled: read(item.enabled) !== false,
-          shortcut: read(item.shortcut) ?? '',
-          description: read(item.description) ?? '',
-          tone: read(item.tone) ?? 'standard',
-          submenu: !!children && children.some((child) => read(child.visible) !== false),
+          enabled: givenField(item, 'enabled') !== false,
+          shortcut: givenField<string | undefined>(item, 'shortcut') ?? '',
+          description: givenField<string | undefined>(item, 'description') ?? '',
+          tone: givenField<string | undefined>(item, 'tone') ?? 'standard',
+          submenu: children.some((child) => givenField(child, 'visible') !== false),
         };
       });
-      untracked(() => this.draw(looks));
-    });
+      return looks;
+    }, (looks) => this.draw(looks));
+  }
+
+  /** Reads the items again, and those of an open submenu: after they were changed in place. */
+  refresh(): void {
+    if (this.given !== undefined) this.setItems(this.given);
+    const sub = this.sub;
+    if (!sub?.entry) return;
+    sub.list.given = givenValue<Bind<readonly MenuItem[]> | undefined>(sub.entry.item, 'items') ?? [];
+    sub.list.refresh();
   }
 
   get itemCount(): number {
@@ -161,9 +180,10 @@ export class MenuList extends Component<HTMLDivElement> {
     this.clear();
     let checks = false;
     let icons = false;
+    let newGroup = false;
     for (const look of looks) {
       if (!look.visible) continue;
-      if (look.beginGroup && this.entries.length) {
+      if ((look.beginGroup || newGroup) && this.entries.length) {
         const line = this.element.ownerDocument.createElement('div');
         line.className = 'mx-menu__separator';
         line.setAttribute('role', 'separator');
@@ -183,6 +203,7 @@ export class MenuList extends Component<HTMLDivElement> {
         label.after(' ', description);
       }
       this.element.append(element);
+      newGroup = hasLineAfter(look.item);
       this.entries.push({
         item: look.item,
         element,
@@ -227,7 +248,7 @@ export class MenuList extends Component<HTMLDivElement> {
     if (look.checked) check.append(look.radio && this.radioMark === 'dot' ? radioMark() : checkMark());
     const icon = element.appendChild(this.element.ownerDocument.createElement('span'));
     icon.className = 'mx-menu__icon';
-    const source = look.item.icon === undefined ? null : read(look.item.icon);
+    const source = givenField<IconSource | null | undefined>(look.item, 'icon');
     if (source) {
       const shown = iconNode(source);
       icon.append(shown.node);
@@ -281,7 +302,7 @@ export class MenuList extends Component<HTMLDivElement> {
     const sub = (this.sub ??= this.createSubmenu());
     if (sub.entry !== entry) {
       if (sub.entry) sub.popup.close('code');
-      sub.list.setItems(entry.item.items ?? []);
+      sub.list.setItems(givenValue<Bind<readonly MenuItem[]> | undefined>(entry.item, 'items') ?? []);
     }
     this.showSubmenu(entry);
     if (focus) sub.list.focusItem(focus);

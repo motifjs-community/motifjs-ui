@@ -22,6 +22,7 @@ const MEMBERS = [
   ['open(byKeyboard?)', '`boolean`', 'Opens it; `byKeyboard` puts focus on the first item, else on the list as a menu the pointer opened.'],
   ['chosenItem', 'read-only', 'The item chosen the last time it was open.'],
   ['menu', 'read-only', 'Its `MenuList`.'],
+  ['refresh()', '`void`', 'Your items may be plain or reactive; the sheet reads them as they are. After changing them in place, call `refresh()`. The level shown follows.'],
   ['ContextMenu presentation', "`Bind<'menu' | 'sheet' | 'auto'>`", "On `ContextMenu`, default `'menu'`. `'sheet'` opens its items in an action sheet; `'auto'` does when a finger opened it (a long press), or on a screen with only a coarse pointer when not opened by a key. `onOpening`, `onItemClick` and `onClosed` work the same; `actionSheet` is the sheet."],
 ];
 

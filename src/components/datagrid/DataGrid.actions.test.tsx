@@ -1,5 +1,5 @@
-import { reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dataKinds } from '../../../tests/data-kinds';
 import { mount } from '../../../tests/helpers';
 import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
@@ -51,9 +51,19 @@ afterEach(() => {
 });
 
 describe('DataGrid row actions', () => {
-  it('draws each row its own buttons, follows what the function reads, and names the ready ones', async () => {
-    const state = reactive({ rows: makeRows(4) });
-    const grid = await make({ rows: () => state.rows, actions: (row, s) => (s.isRemoved ? ['restore'] : [approve, print, 'remove']) } as Partial<DataGridProps<Row>>);
+  it.each(dataKinds)('draws each row its own buttons, asks again on refreshActions(), and names the ready ones (%s data)', async (_, kind) => {
+    const rows = kind(makeRows(4));
+    const asked: Row[] = [];
+    const grid = await make(
+      {
+        actions: (row, s) => {
+          asked.push(row);
+          return s.isRemoved ? ['restore'] : [approve, print, 'remove'];
+        },
+      } as Partial<DataGridProps<Row>>,
+      rows,
+    );
+    expect(asked).toContain(rows[0]);
     expect(visibleHeaders(grid).at(-1)).toBe('mx:actions');
     expect(ids(grid, 0)).toEqual(['approve', 'print', 'remove']);
     expect(ids(grid, 1)).toEqual(['print', 'remove']);
@@ -65,10 +75,15 @@ describe('DataGrid row actions', () => {
     expect(buttons(grid, 0)[0].textContent).toBe('Approve');
     buttons(grid, 0)[0].click();
     await settle();
-    expect(state.rows[0].done).toBe(true);
+    expect(rows[0].done).toBe(true);
+    // The row is read as it is: the change shows once the actions are asked again.
+    expect(ids(grid, 0)).toEqual(['approve', 'print', 'remove']);
+    grid.refreshActions();
+    await settle();
     expect(ids(grid, 0)).toEqual(['print', 'remove']);
     buttons(grid, 1)[0].click();
-    expect(print.onclick).toHaveBeenCalledWith(state.rows[1], expect.objectContaining({ index: 1, isNew: false, isRemoved: false }));
+    expect(print.onclick).toHaveBeenCalledWith(rows[1], expect.objectContaining({ index: 1, isNew: false, isRemoved: false }));
+    expect(vi.mocked(print.onclick!).mock.calls.at(-1)![0]).toBe(rows[1]);
     await grid.dispose();
   });
 

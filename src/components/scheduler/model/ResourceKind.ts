@@ -1,4 +1,4 @@
-import { read } from '@motifx/core';
+import { givenField, givenList } from '../../../core/given-field';
 import type { SchedulerResource } from '../scheduler-resource';
 import { sameValue } from './same-value';
 
@@ -9,61 +9,81 @@ export interface OwnWork {
   days?: readonly number[];
 }
 
-/** A resource kind with its settings decided: its items and how to read them. Every read is followed. */
+/**
+ * A resource kind with its settings decided: its items and how to read them. The items and their
+ * fields are read as they are (plain or reactive alike); a change in place reaches it through the
+ * scheduler's refresh.
+ */
 export class ResourceKind<R = unknown> {
+  /** The items by their value, made again when the list read is another one. */
+  private indexed: readonly R[] | null = null;
+  private byValue = new Map<string, R>();
+
   constructor(
     readonly def: SchedulerResource<R>,
     private readonly rows: () => readonly R[],
   ) {}
 
   get field(): string {
-    return this.def.field;
+    return givenField<string>(this.def, 'field');
   }
   get label(): string {
-    return (this.def.label === undefined ? '' : read(this.def.label)) || this.def.field;
+    return givenField<string | undefined>(this.def, 'label') || this.field;
   }
   get multiple(): boolean {
-    return !!read(this.def.allowMultiple);
+    return !!givenField(this.def, 'allowMultiple');
   }
   get useColorAsDefault(): boolean {
-    return !!read(this.def.useColorAsDefault);
+    return !!givenField(this.def, 'useColorAsDefault');
   }
+  /** Its items, as a list of the kit's own (the items themselves in it). Reactive: follows the scheduler's refresh. */
   get items(): readonly R[] {
     return this.rows();
   }
 
   valueOf(item: R): unknown {
-    return field(item, this.def.valueExpr ?? 'id');
+    return givenField(item, this.expr('valueExpr', 'id'));
   }
   textOf(item: R): string {
-    const text = field(item, this.def.displayExpr ?? 'text');
+    const text = givenField(item, this.expr('displayExpr', 'text'));
     return text === undefined || text === null ? String(this.valueOf(item) ?? '') : String(text);
   }
   colorOf(item: R | undefined): string {
-    const color = item === undefined ? undefined : field(item, this.def.colorExpr ?? 'color');
+    const color = item === undefined ? undefined : givenField(item, this.expr('colorExpr', 'color'));
     return typeof color === 'string' ? color : '';
   }
   /** The value of its item of the kind above it, when the kind says where (`parentExpr`). */
   parentOf(item: R): unknown {
-    return this.def.parentExpr ? field(item, this.def.parentExpr) : undefined;
+    const name = givenField<string | undefined>(this.def, 'parentExpr');
+    return name ? givenField(item, name) : undefined;
   }
   workOf(item: R | undefined): OwnWork {
     if (item === undefined) return {};
-    const start = field(item, this.def.workStartHourExpr ?? 'workStartHour');
-    const end = field(item, this.def.workEndHourExpr ?? 'workEndHour');
-    const days = field(item, this.def.workDaysExpr ?? 'workDays');
+    const start = givenField(item, this.expr('workStartHourExpr', 'workStartHour'));
+    const end = givenField(item, this.expr('workEndHourExpr', 'workEndHour'));
+    const days = givenField(item, this.expr('workDaysExpr', 'workDays'));
     return {
       start: typeof start === 'number' ? start : undefined,
       end: typeof end === 'number' ? end : undefined,
-      days: Array.isArray(days) ? (days as number[]) : undefined,
+      days: Array.isArray(days) ? givenList(days as number[]) : undefined,
     };
   }
   /** The item with this value. */
   find(value: unknown): R | undefined {
-    return this.items.find((item) => sameValue(this.valueOf(item), value));
+    const items = this.items;
+    if (value === undefined || value === null) return items.find((item) => sameValue(this.valueOf(item), value));
+    if (items !== this.indexed) {
+      this.indexed = items;
+      this.byValue = new Map();
+      for (const item of items) {
+        const own = this.valueOf(item);
+        if (own !== undefined && own !== null && !this.byValue.has(String(own))) this.byValue.set(String(own), item);
+      }
+    }
+    return this.byValue.get(String(value));
   }
-}
 
-function field<R>(item: R, name: string): unknown {
-  return (item as Record<string, unknown> | null)?.[name];
+  private expr(name: keyof SchedulerResource<R>, fallback: string): string {
+    return givenField<string | undefined>(this.def, name) ?? fallback;
+  }
 }

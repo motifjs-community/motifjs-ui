@@ -1,4 +1,4 @@
-import { Component, effect, reactive, read, type ComponentBase } from '@motifx/core';
+import { Component, effect, reactive, type ComponentBase } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { DateBox } from '../../datebox/DateBox';
 import { DropDown } from '../../dropdown/DropDown';
@@ -12,6 +12,7 @@ import type { GridModel } from '../model/GridModel';
 import { optionOf } from '../model/option-of';
 import { createActionButton } from './action-button';
 import { OPERATOR_MARKS, OPERATOR_TEXTS } from './operator-texts';
+import { readField } from '../model/read-field';
 
 const text = (v: unknown) => (typeof v === 'string' ? v : v === undefined || v === null ? '' : String(v));
 const num = (v: unknown) => (typeof v === 'number' && !Number.isNaN(v) ? v : null);
@@ -224,7 +225,7 @@ export class FilterCell<T> {
       effect(() => {
         const op = model.filters.operator(this.field);
         mark.textContent = OPERATOR_MARKS[op];
-        const label = model.text('gridFilterCondition', { operator: model.text(OPERATOR_TEXTS[op]), title: read(model.columns.get(this.field).title) ?? '' });
+        const label = model.text('gridFilterCondition', { operator: model.text(OPERATOR_TEXTS[op]), title: readField(model.columns.get(this.field), 'title') ?? '' });
         button.setAttribute('aria-label', label);
         button.dataset.hint = label;
         button.toggleAttribute('data-set', model.filters.isActive(this.field));

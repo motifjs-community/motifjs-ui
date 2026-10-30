@@ -1,9 +1,10 @@
 import { Component, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
 import { TagBox } from './TagBox';
+import { dataKinds } from '../../../tests/data-kinds';
 
 let hosts: Component[] = [];
 
@@ -87,6 +88,28 @@ describe('TagBox', () => {
     await settle();
     expect(tagTexts(c)).toEqual(['Rust', 'HTML']);
     expect(checked(c)).toEqual(['HTML', 'Rust']);
+  });
+
+  it('reads functions over plain data again on reState, and writes a value set from code to x-model', async () => {
+    const plain = { value: ['Ankara'] as string[] };
+    const s = reactive({ cities: [] as string[] });
+    let b!: TagBox<string, string>;
+    let m!: TagBox<string, string>;
+    const host = page(
+      <TagBox ref={(x: TagBox<string, string>) => (b = x)} items={['Ankara', 'Bursa', 'İzmir']} value={() => plain.value} />,
+      <TagBox ref={(x: TagBox<string, string>) => (m = x)} items={['Ankara', 'Bursa', 'İzmir']} x-model={() => s.cities} />,
+    );
+    await settle();
+    const tags = (t: TagBox<string, string>) => Array.from(t.element.querySelectorAll('.mx-tag-box__tag-text')).map((e) => e.textContent);
+    expect(tags(b)).toEqual(['Ankara']);
+    plain.value = ['Ankara', 'Bursa'];
+    await settle();
+    expect(tags(b)).toEqual(['Ankara']);
+    host.reState();
+    await settle();
+    expect(tags(b)).toEqual(['Ankara', 'Bursa']);
+    m.value = ['İzmir'];
+    expect([...s.cities]).toEqual(['İzmir']);
   });
 
   it('removes tags with Backspace, their buttons and the keys on a focused tag', async () => {
@@ -237,5 +260,38 @@ describe('TagBox', () => {
     expect(c.opened).toBe(true);
     press(c.inputElement, 'Escape');
     expect(c.opened).toBe(false);
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('gives back the very items, and shows a change in place after refresh()', async () => {
+      const skills = make([{ name: 'CSS' }, { name: 'HTML' }]);
+      const form = reactive({ picked: [] as { name: string }[] });
+      const changed = vi.fn();
+      let c!: TagBox<{ name: string }, { name: string }>;
+      page(<TagBox ref={(x: TagBox<{ name: string }, { name: string }>) => (c = x)} items={skills} textField="name" x-model={() => form.picked} onValueChanged={changed} />);
+      await settle();
+      changed.mockClear();
+      c.open();
+      option(c, 'HTML').click();
+      await settle();
+      expect(c.value[0]).toBe(skills[1]);
+      expect(c.selectedItems[0]).toBe(skills[1]);
+      expect(changed).toHaveBeenCalledTimes(1);
+      expect(tagTexts(c)).toEqual(['HTML']);
+
+      skills[1].name = 'HTML5';
+      skills.push({ name: 'Rust' });
+      await settle();
+      expect(tagTexts(c)).toEqual(['HTML']);
+      c.refresh();
+      await settle();
+      expect(tagTexts(c)).toEqual(['HTML5']);
+      expect(texts(c)).toEqual(['CSS', 'HTML5', 'Rust']);
+      expect(checked(c)).toEqual(['HTML5']);
+      option(c, 'HTML5').click();
+      await settle();
+      expect(c.value).toEqual([]);
+      expect(tagTexts(c)).toEqual([]);
+    });
   });
 });

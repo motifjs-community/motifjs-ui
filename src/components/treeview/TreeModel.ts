@@ -1,3 +1,4 @@
+import { givenList } from '../../core/given-field';
 import type { TreeCheckState } from './tree-check-state';
 import type { TreeFields } from './tree-fields';
 import type { TreeNode } from './tree-node';
@@ -25,7 +26,8 @@ export class TreeModel<T> {
   }
 
   /** Children that just loaded. */
-  setChildren(node: TreeNode<T>, items: readonly T[]): void {
+  setChildren(node: TreeNode<T>, given: readonly T[]): void {
+    const items = givenList(given);
     this.loaded.set(node.key, items);
     node.children = this.readNested(items, node);
   }
@@ -135,17 +137,18 @@ export class TreeModel<T> {
   }
 
   private readNested(items: readonly T[], parent: TreeNode<T> | null): TreeNode<T>[] {
-    return items.map((item) => {
+    return givenList(items).map((item) => {
       const node = this.create(item, parent);
       const own = this.fields!.children(item);
-      const children = Array.isArray(own) ? (own as readonly T[]) : this.loaded.get(node.key);
+      const children = Array.isArray(own) ? givenList(own as readonly T[]) : this.loaded.get(node.key);
       if (children) node.children = this.readNested(children, node);
       else if (!node.lazy) node.children = [];
       return node;
     });
   }
 
-  private readFlat(items: readonly T[]): TreeNode<T>[] {
+  private readFlat(given: readonly T[]): TreeNode<T>[] {
+    const items = givenList(given);
     const nodes = items.map((item) => this.create(item, null));
     const roots: TreeNode<T>[] = [];
     nodes.forEach((node, index) => {

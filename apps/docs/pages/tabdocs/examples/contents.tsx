@@ -21,16 +21,34 @@ export interface Customer {
   city: string;
 }
 
-/** A form over a reactive customer: what is typed goes straight into it. */
+/** The forms open over each customer: a copy of a document has a form of its own over the same object. */
+const formsOf = new WeakMap<Customer, Set<FormLayout<Customer>>>();
+
+/**
+ * A form over a customer: what is typed goes straight into it. The form reads the object as it is, so the other forms
+ * over the same customer are told to read the field again.
+ */
 export function customerForm(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
     { field: 'email', label: 'Email', editor: 'email' },
     { field: 'city', label: 'City' },
   ];
+  const forms = formsOf.get(customer) ?? new Set<FormLayout<Customer>>();
+  formsOf.set(customer, forms);
   return (
     <div style="padding: var(--mx-space-4); max-inline-size: 32rem">
-      <FormLayout data={customer} items={items} />
+      <FormLayout<Customer>
+        data={customer}
+        items={items}
+        ref={(form: FormLayout<Customer>) => {
+          forms.add(form);
+          form.motif.setDisposable(() => forms.delete(form));
+        }}
+        onFieldChanged={(e) => {
+          for (const other of forms) if (other.data === e.data && !other.isDisposed) other.refreshField(e.field);
+        }}
+      />
     </div>
   );
 }

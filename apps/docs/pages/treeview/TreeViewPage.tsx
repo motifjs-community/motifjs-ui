@@ -13,7 +13,7 @@ import SizesAndLines from './examples/SizesAndLines';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['items', '`Bind<readonly T[]>`', '`[]`', 'Nested items (a `children` array) or flat ones (a `parentId`). A function is followed, and so are changes inside a reactive array.'],
+  ['items', '`Bind<readonly T[]>`', '`[]`', 'Nested items (a `children` array) or flat ones (a `parentId`). A function is followed; items changed in place show after `refresh()`.'],
   ['textField, keyField, childrenField, parentField', '`Bind<ItemField<T>>`', "`'text'`, `'id'`, `'children'`, `'parentId'`", 'A property name or a function `(item) => …`. An item without a key is its own key. `parentField` (or items with a `parentId`) makes the list flat.'],
   ['iconField, enabledField, expandedField, hasChildrenField', '`Bind<ItemField<T>>`', "`'icon'`, `'enabled'`, `'expanded'`, `'hasChildren'`", 'Per item: an icon, a row that cannot be selected or checked, a row open from the start (a change there opens or closes it), a row that has no children to load.'],
   ['loadChildren', '`Bind<(item) => Promise<T[]>>`', '—', 'Loads a row\'s children when it is first opened; the row is busy meanwhile and offers a retry when it fails.'],
@@ -49,6 +49,8 @@ const METHODS = [
   ['filter(text)', '`void`', 'Sets `searchValue`.'],
   ['scrollTo(key), focusNode(key)', '`boolean`', 'Opens the row\'s parents and scrolls it into view (and focuses it).'],
   ['reload(key?)', '`void`', 'Loads a row\'s children again (all loaded children without a key).'],
+  ['refresh()', '`void`', 'Your items may be plain or reactive; the tree reads them as they are. After changing them in place, call `refresh()`. Which items there are, their children, texts and states are read again; children that loaded stay.'],
+  ['refreshItem(key)', '`void`', 'Draws one row again after its item was changed in place: its text, icon and state. `refresh()` for its children.'],
   ['itemOf(key)', '`T | undefined`', 'The item with that key.'],
   ['focus()', '`boolean`', 'Focuses the row Tab reaches.'],
 ];
@@ -120,7 +122,7 @@ import { TreeView } from '@motifx-community/ui';
 
       <Section anchor="ways" title="From JSX and from code">
         <p>
-          <Rich text="Items are objects with a `children` array (or a `parentId`, see below). `value` is the selected row's key and `x-model` binds it two-way. Created with `new`, the tree is filled and driven from code; a reactive array given as `items` is followed when it changes in place." />
+          <Rich text="Items are objects with a `children` array (or a `parentId`, see below). `value` is the selected row's key and `x-model` binds it two-way. Created with `new`, the tree is filled and driven from code; items changed in place, plain or reactive, show after `refresh()` (`refreshItem(key)` for one row)." />
         </p>
         <Example files={code('FromCode.tsx', 'project.ts', 'entry.ts')} stack>
           <FromCode />

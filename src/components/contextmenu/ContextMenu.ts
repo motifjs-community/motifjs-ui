@@ -1,7 +1,9 @@
-import { effect, Emitter, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
+import { follow } from '../../core/follow';
 import { deepActiveElement, isFocusable } from '../../core/focus';
+import { givenField, givenList } from '../../core/given-field';
 import { isElement, isHtmlElement, isNode } from '../../core/node-kind';
 import { MenuList } from '../../parts/menu/MenuList';
 import type { MenuItem } from '../../parts/menu/menu-item';
@@ -182,6 +184,16 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     this.parts.sheet?.close();
   }
 
+  /**
+   * Reads the items of the open menu again (an open submenu too) after they were changed in place. Your items may
+   * be plain or reactive; the menu reads them as they are.
+   */
+  refresh(): void {
+    const parts = this.parts;
+    if (parts.popup?.isOpen) parts.list?.refresh();
+    parts.sheet?.refresh();
+  }
+
   /** The action sheet it shows its items in, once it has shown them there. */
   get actionSheet(): ActionSheet | null {
     return this.parts.sheet;
@@ -237,10 +249,12 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
       this.attach(this.element.parentElement);
       return;
     }
-    parts.stopTarget = effect(() => {
-      const target = read(source);
-      untracked(() => this.attach(target ? (isElement(target) ? target : (target.element as Element)) : null));
-    });
+    parts.stopTarget = follow(
+      this,
+      'target',
+      () => read(source),
+      (target) => this.attach(target ? (isElement(target) ? target : (target.element as Element)) : null),
+    );
   }
 
   private attach(element: Element | null): void {
@@ -298,7 +312,7 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
       source: this,
     };
     untracked(() => parts.opening.fire(args));
-    if (args.cancel || !args.items.some((item) => untracked(() => read(item.visible)) !== false)) return false;
+    if (args.cancel || !givenList(args.items).some((item) => untracked(() => givenField(item, 'visible')) !== false)) return false;
     event.preventDefault();
     event.stopPropagation();
     this.host(target.ownerDocument);

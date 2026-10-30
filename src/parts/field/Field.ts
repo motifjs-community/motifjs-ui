@@ -1,9 +1,11 @@
 import { LanguageLook } from '../../core/language-look';
-import { effect, Emitter, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { afterPress } from '../../core/after-press';
 import { Control } from '../../core/control';
+import { follow } from '../../core/follow';
 import type { ControlSize } from '../../core/control-size';
+import { givenField, givenList, givenValue } from '../../core/given-field';
 import { dismissMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
@@ -20,6 +22,7 @@ import type { FieldButton } from './field-button';
 import type { FieldLabelMode } from './field-label-mode';
 import type { FieldProps } from './field-props';
 import type { FieldVariant } from './field-variant';
+import { sameAsWritten } from './same-as-written';
 import type { ValidateOn } from './validate-on';
 import type { ValidatedEventArgs } from './validated-event-args';
 import type { ValueChangedEventArgs } from './value-changed-event-args';
@@ -73,6 +76,8 @@ interface Parts {
   leaveGroup: (() => void) | null;
   lastValue: unknown;
   userChange: boolean;
+  /** The value just written to `x-model`, which hands it back once, as the model holds it. */
+  echo: { value: unknown } | null;
   /** The user changed the value since the last reset. */
   dirty: boolean;
   /** A check ran and its outcome shows: later changes are checked at once. */
@@ -138,10 +143,12 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
       this.focus();
     });
     // Follows the help text, the error and `uiLocale`.
-    parts.stopMessage = effect(() => {
-      const text = this.validationMessage || (this.getProperty<string | undefined>('helpText') ?? '');
-      untracked(() => this.renderMessage(text));
-    });
+    parts.stopMessage = follow(
+      this,
+      'message',
+      () => this.validationMessage || (this.getProperty<string | undefined>('helpText') ?? ''),
+      (text) => this.renderMessage(text),
+    );
     this.motif.setDisposable(() => {
       parts.stopMessage?.();
       parts.stopClearLabel?.();
@@ -161,7 +168,10 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     return (value === undefined ? this.emptyValue() : value) as T;
   }
   set value(value: Bind<T>) {
-    untracked(() => this.assignProperty<T>('value', value, (v) => this.normalizeValue(v)));
+    const before = this.peekValue();
+    untracked(() => this.assignProperty<T>('value', value, (v) => this.takeEcho(v) ?? this.normalizeValue(v)));
+    // A value set from code shows in `x-model` too, so the model and the field never differ.
+    if (typeof value !== 'function' && !this.sameValue(this.peekValue(), before)) this.writeBack(this.peekValue());
   }
   get label(): string {
     return this.text;
@@ -376,9 +386,29 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
       parts.userChange = false;
     }
     parts.dirty = true;
-    this.bindings.writeModel(next);
+    this.writeBack(next);
     parts.valueChanged.fire({ value: next, previousValue: previous, byUser: true, source: this, event });
     if (parts.shown || this.peekProperty('validateOn') === 'input') void this.validate();
+  }
+
+  /** Writes the value to `x-model`, if there is one. */
+  protected writeBack(value: T): void {
+    const parts = this.parts;
+    if (!this.bindings.writeModel(value)) return;
+    // `x-model` hands the value back on the next update; a reactive model gives its own copy of an object then,
+    // and the value stays the one chosen.
+    const echo = (parts.echo = { value });
+    queueMicrotask(() => {
+      if (parts.echo === echo) parts.echo = null;
+    });
+  }
+
+  /**
+   * Reads your data again after it was changed in place (the field's buttons here; a list its items). Your data
+   * may be plain or reactive; the field reads it as it is.
+   */
+  refresh(): void {
+    this.renderButtons();
   }
 
   /** A place in the box for the subclass's own parts (a clear button, a drop-down arrow). */
@@ -396,6 +426,13 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     else parts.box.append(area);
     parts.areas.set(name, area);
     return area;
+  }
+
+  /** Takes a place out of the box; `area` makes a new one when it is wanted again. */
+  protected removeArea(name: BoxArea): void {
+    const parts = this.parts;
+    parts.areas.get(name)?.remove();
+    parts.areas.delete(name);
   }
 
   /** A short text at the end of the line under the box, e.g. `12/50`; `''` removes it. */
@@ -435,7 +472,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
       clear(e);
       this.focus();
     });
-    parts.stopClearLabel = effect(() => button.setAttribute('aria-label', uiLocale.strings.clear));
+    parts.stopClearLabel = follow(this, 'clearLabel', () => uiLocale.strings.clear, (label) => button.setAttribute('aria-label', label));
     this.area('tools').prepend(button);
     parts.clear = button;
   }
@@ -514,12 +551,23 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
       leaveGroup: null,
       lastValue: NONE,
       userChange: false,
+      echo: null,
       dirty: false,
       shown: false,
       run: 0,
       valueChanged: new Emitter(),
       validated: new Emitter(),
     };
+  }
+
+  /** `x-model` handing back the value the field just wrote: the written value, not the model's copy. */
+  private takeEcho(value: T): T | undefined {
+    const parts = this.parts;
+    const echo = parts.echo;
+    if (!echo) return undefined;
+    parts.echo = null;
+    const written = echo.value as T;
+    return sameAsWritten(value, written) ? written : undefined;
   }
 
   private valueStored(value: T | undefined): void {
@@ -529,7 +577,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     parts.lastValue = current;
     this.renderValue(current);
     this.element.toggleAttribute('data-filled', !this.isEmptyValue(current));
-    if (parts.userChange || previous === NONE) return;
+    if (parts.userChange || previous === NONE || this.sameValue(current, previous as T)) return;
     parts.valueChanged.fire({ value: current, previousValue: previous, byUser: false, source: this });
     if (parts.shown) void this.validate();
   }
@@ -649,25 +697,25 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     const parts = this.parts;
     parts.stopButtons?.();
     parts.stopButtons = null;
-    const list = this.peekProperty<readonly FieldButton[]>('buttons') ?? [];
+    const list = givenList(this.peekProperty<readonly FieldButton[]>('buttons'));
     if (!list.length) {
       this.drawButtons([]);
       return;
     }
-    // Reading the buttons is followed; drawing them is not.
-    parts.stopButtons = effect(() => {
-      const looks = list.map((button) => ({
+    // The buttons' own functions are followed; the list, the fields and drawing are not.
+    parts.stopButtons = follow(this, 'buttons', () => {
+      const looks = givenList(list).map((button) => ({
         button,
-        visible: read(button.visible) !== false,
-        enabled: read(button.enabled) !== false,
-        tabStop: read(button.tabStop) !== false,
-        start: read(button.position) === 'start',
-        text: read(button.text) ?? '',
-        hint: read(button.hint) ?? '',
-        icon: button.icon === undefined ? undefined : read(button.icon),
+        visible: givenField(button, 'visible') !== false,
+        enabled: givenField(button, 'enabled') !== false,
+        tabStop: givenField(button, 'tabStop') !== false,
+        start: givenField(button, 'position') === 'start',
+        text: givenField<string | undefined>(button, 'text') ?? '',
+        hint: givenField<string | undefined>(button, 'hint') ?? '',
+        icon: givenField<IconSource | undefined>(button, 'icon'),
       }));
-      untracked(() => this.drawButtons(looks.filter((look) => look.visible)));
-    });
+      return looks.filter((look) => look.visible);
+    }, (looks) => this.drawButtons(looks));
   }
 
   private drawButtons(
@@ -698,7 +746,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
         parts.releaseButtons.push(shown.release);
       }
       if (look.text) element.append(look.text);
-      element.addEventListener('click', (event) => look.button.click?.({ button: look.button, source: this, event }));
+      element.addEventListener('click', (event) => givenValue<FieldButton['click']>(look.button, 'click')?.({ button: look.button, source: this, event }));
       this.area(look.start ? 'start' : 'end').append(element);
     }
   }

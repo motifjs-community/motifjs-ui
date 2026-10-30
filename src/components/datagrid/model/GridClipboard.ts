@@ -171,9 +171,8 @@ export class GridClipboard<T> {
   private lookupKey(rowId: string, row: T, field: string, text: string): EditorValue | Promise<EditorValue> {
     const { model } = this;
     const col = model.columns.get(field);
-    const merged = { ...(row as object), ...(model.edit(rowId)?.draft ?? {}) } as T;
     const shown = text.trim();
-    return model.lookups.parse(col, text, merged, { none: model.text('gridLookupNoMatch', { text: shown }), several: model.text('gridLookupSeveral', { text: shown }) });
+    return model.lookups.parse(col, text, row, model.enteredOf(rowId, row), { none: model.text('gridLookupNoMatch', { text: shown }), several: model.text('gridLookupSeveral', { text: shown }) });
   }
 
   /** The selected rows in the grid's order; `null` without a multiple selection, `'all'` for "all" over data that loads in parts. */

@@ -149,6 +149,40 @@ describe('MxForm', () => {
     expect(form.isOpen).toBe(false);
   });
 
+  it('x-model follows it opened and closed from code, so the model can close and open it again', async () => {
+    const s = reactive({ open: false });
+    let form!: MxForm;
+    const host = page(<MxForm ref={(f: MxForm) => (form = f)} title="Find" x-model={() => s.open} />);
+    await settle();
+    form.show(host);
+    await opened(form);
+    expect(s.open).toBe(true);
+    s.open = false;
+    await settle();
+    expect(form.isOpen).toBe(false);
+    form.show(host);
+    await opened(form);
+    form.close();
+    expect(s.open).toBe(false);
+    s.open = true;
+    await settle();
+    expect(form.isOpen).toBe(true);
+  });
+
+  it('reads functions over plain data again on reState: its title and its tools', async () => {
+    const plain = { title: 'Find', maximize: false };
+    let form!: MxForm;
+    const host = page(<MxForm ref={(f: MxForm) => (form = f)} title={() => plain.title} showMaximize={() => plain.maximize} value />);
+    await opened(form);
+    expect(form.element.querySelector('.mx-form__title')!.textContent).toBe('Find');
+    Object.assign(plain, { title: 'Find and replace', maximize: true });
+    await settle();
+    expect(form.element.querySelector('.mx-form__title')!.textContent).toBe('Find');
+    host.reState();
+    expect(form.element.querySelector('.mx-form__title')!.textContent).toBe('Find and replace');
+    expect(tools(form).some((b) => b.getAttribute('aria-label') === 'Maximize')).toBe(true);
+  });
+
   it('from JSX: modal, and open from the start', async () => {
     const s = reactive({ open: true });
     let form!: MxForm;

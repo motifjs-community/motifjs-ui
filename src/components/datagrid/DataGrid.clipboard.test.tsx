@@ -187,7 +187,7 @@ describe('paste', () => {
     const second = clipboardEvent('paste', { 'text/plain': 'C1\nC2\nC3' });
     cell.dispatchEvent(second.event);
     await tick();
-    expect(grid.changes.added.map((r) => r.name)).toEqual(['C2', 'C3']);
+    expect(grid.changes.added.map((r) => r.changed.name)).toEqual(['C2', 'C3']);
 
     grid.settings.paste = false;
     cellOf(grid, 0, 'name').focus();

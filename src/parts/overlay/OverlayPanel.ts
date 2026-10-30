@@ -1,5 +1,6 @@
-import { Application, effect, Emitter, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Application, Emitter, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey } from '../../core/access-key';
+import { follow } from '../../core/follow';
 import { holdBackButton } from '../../core/back-button';
 import { FocusContainer } from '../../core/container';
 import type { Control } from '../../core/control';
@@ -383,6 +384,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     }
     if (this.closeOnBack) parts.releaseBack = holdBackButton(el.ownerDocument.defaultView, () => this.closeFromBack(), 1);
     this.setProperty('open', true);
+    if (!this.peekProperty('value')) this.bindings.writeModel(true);
     this.syncProperty('value', true);
     if (this.focusOnOpen) this.focusFirst();
     this.afterSlide(() => parts.opened.fire({ source: this }));
@@ -672,7 +674,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
       button.element.addEventListener('click', () => this.closeBy('button'));
       this.placeIn(button, parts.tools);
       parts.close = button;
-      parts.stopLabel = effect(() => button.element.setAttribute('aria-label', uiLocale.strings.close));
+      parts.stopLabel = follow(this, 'closeLabel', () => uiLocale.strings.close, (label) => button.element.setAttribute('aria-label', label));
     }
     this.renderHeader();
   }

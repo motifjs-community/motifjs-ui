@@ -1,8 +1,10 @@
-import { Component, ComponentBase, effect, Emitter, Transporter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, ComponentBase, Emitter, Transporter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { FocusContainer } from '../../core/container';
+import { follow } from '../../core/follow';
 import { deepActiveElement } from '../../core/focus';
 import { fillTemplate } from '../../core/fill-template';
 import { functionValue } from '../../core/function-value';
+import { givenValue } from '../../core/given-field';
 import { addShortcut } from '../../core/keyboard';
 import { nextId } from '../../core/next-id';
 import { isElement, isNode } from '../../core/node-kind';
@@ -497,12 +499,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     MANAGERS.add(this);
     // Built later than made: core has just put the groups at the root, back into their splits.
     this.motif.on('x:built', () => untracked(() => this.renderTree()));
-    const stopTexts = effect(() => {
-      void uiLocale.strings;
-      void this.getProperty('texts');
-      void this.groups;
-      untracked(() => this.renderTexts());
-    });
+    const stopTexts = follow(
+      this,
+      'texts',
+      () => [uiLocale.strings, this.getProperty('texts'), this.groups],
+      () => this.renderTexts(),
+    );
     this.motif.setDisposable(() => {
       stopTexts();
       parts.presenter.dispose();
@@ -2143,7 +2145,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   /** @internal A text for this manager: `texts` first, then `uiLocale`. Reactive. */
   textOf(key: keyof UiStrings, values?: Record<string, unknown>): string {
-    const t = this.texts[key] ?? uiLocale.strings[key];
+    const t = givenValue<string | undefined>(this.texts, key) ?? uiLocale.strings[key];
     return values ? fillTemplate(t, values) : t;
   }
 

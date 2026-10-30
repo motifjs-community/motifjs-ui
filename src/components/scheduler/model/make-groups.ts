@@ -1,3 +1,4 @@
+import { givenField, givenList } from '../../../core/given-field';
 import type { GroupResource } from './group-resource';
 import type { ResourceKind } from './ResourceKind';
 import { sameValue } from './same-value';
@@ -18,31 +19,33 @@ export interface BaseWork {
 export function makeGroups(kinds: readonly ResourceKind<unknown>[], base: BaseWork): Omit<SchedulerGroup, 'index'>[] {
   if (!kinds.length) return [];
   const out: Omit<SchedulerGroup, 'index'>[] = [];
-  const walk = (level: number, path: GroupResource[]) => {
+  // The items along the path: their work time is read here, the groups keep only their values.
+  const walk = (level: number, path: GroupResource[], items: unknown[]) => {
     if (level === kinds.length) {
-      out.push(groupOf(kinds, path, base));
+      out.push(groupOf(kinds, path, items, base));
       return;
     }
     const kind = kinds[level];
     const parent = path[level - 1];
+    const nested = !!parent && !!givenField(kind.def, 'parentExpr');
     for (const item of kind.items) {
-      if (parent && kind.def.parentExpr && !sameValue(kind.parentOf(item), parent.value)) continue;
+      if (nested && !sameValue(kind.parentOf(item), parent.value)) continue;
       const value = kind.valueOf(item);
-      walk(level + 1, [...path, { field: kind.field, value, item, text: kind.textOf(item), color: kind.colorOf(item) }]);
+      walk(level + 1, [...path, { field: kind.field, value, text: kind.textOf(item), color: kind.colorOf(item) }], [...items, item]);
     }
   };
-  walk(0, []);
+  walk(0, [], []);
   return out;
 }
 
-function groupOf(kinds: readonly ResourceKind<unknown>[], path: GroupResource[], base: BaseWork): Omit<SchedulerGroup, 'index'> {
+function groupOf(kinds: readonly ResourceKind<unknown>[], path: GroupResource[], items: unknown[], base: BaseWork): Omit<SchedulerGroup, 'index'> {
   const values: Record<string, unknown> = {};
   for (const step of path) values[step.field] = step.value;
   let start: number | undefined;
   let end: number | undefined;
   let days: readonly number[] | undefined;
   for (let level = path.length - 1; level >= 0; level--) {
-    const own = kinds[level].workOf(path[level].item);
+    const own = kinds[level].workOf(items[level]);
     start ??= own.start;
     end ??= own.end;
     days ??= own.days;
@@ -53,6 +56,6 @@ function groupOf(kinds: readonly ResourceKind<unknown>[], path: GroupResource[],
     path,
     workStart: start ?? base.start,
     workEnd: end ?? base.end,
-    workDays: days ?? base.days,
+    workDays: days ?? givenList(base.days),
   };
 }

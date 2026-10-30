@@ -11,7 +11,7 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 
 const PROPS = [
   ['value', '`Bind<V | null>`', '`null`', 'The value of the chosen item. `x-model` binds it two-way.'],
-  ['items', '`Bind<readonly T[]>`', '`[]`', 'Plain values, `DropDownItem`s (`{ value, text, icon?, group?, enabled? }`) or objects of your own. A function is followed, and so are changes inside a reactive array.'],
+  ['items', '`Bind<readonly T[]>`', '`[]`', 'Plain values, `DropDownItem`s (`{ value, text, icon?, group?, enabled? }`) or objects of your own. A function is followed; items changed in place show after `refresh()`.'],
   ['textField / valueField', '`Bind<ItemField<T>>`', "`'text'` / `'value'`", 'A property name or a function `(item) => …`. Without `valueField` an object with a `value` gives that, anything else is its own value.'],
   ['iconField, groupField, enabledField', '`Bind<ItemField<T>>`', '—', 'An icon per option; options with the same group follow each other under its name; options that cannot be chosen.'],
   ['placeholder', '`Bind<string>`', "`''`", 'Shown while nothing is chosen.'],
@@ -34,6 +34,7 @@ const METHODS = [
   ['open(search?)', '`boolean`', 'Opens the list; `search` starts the search box with that text. `false` when disabled or read-only.'],
   ['close()', '`void`', 'Closes it; focus goes back to the field.'],
   ['clear()', '`void`', 'Empties the value.'],
+  ['refresh()', '`void`', 'Your items may be plain or reactive; the drop-down reads them as they are. After changing them in place, call `refresh()`. The field\'s text and the open list follow.'],
   ['validate(), resetValidation(), focus()', '', 'See TextBox.'],
 ];
 
@@ -121,7 +122,7 @@ import { DropDown, type DropDownItem } from '@motifx-community/ui';
 
       <Section anchor="live" title="Items that change">
         <p>
-          <Rich text="`items` given as a function is followed, and so are changes inside a reactive array: the open list and the field show them at once." />
+          <Rich text="`items` given as a function is followed: a new list shows at once. Your items may be plain or reactive; the drop-down reads them as they are, so after changing them in place, call `refresh()`: the open list and the field show the change." />
         </p>
         <Example files={code('LiveItems.tsx')}>
           <LiveItems />

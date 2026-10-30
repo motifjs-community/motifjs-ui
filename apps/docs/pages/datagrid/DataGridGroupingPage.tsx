@@ -40,7 +40,7 @@ export default function DataGridGroupingPage() {
         <ApiTable
           head={['Field', 'What it does']}
           rows={[
-            ['totalItems, groupItems', 'The items of the row of totals and of each group; a function is followed.'],
+            ['totalItems, groupItems', 'The items of the row of totals and of each group; a function is followed. The items are kept as given: after a change in place call `grid.refreshSummary()`.'],
             ['calculateCustomSummary', '`(e) => void` with `{ name, summaryProcess, value, totalValue, groupIndex, component }`: one function for every `custom` item; set `e.totalValue` at `start`, fold `e.value` (the column’s value, or the row without a column) into it at each `calculate`, adjust it at `finalize`.'],
             ['recalculateWhileEditing', '`false`: the values follow unsaved edits, new rows and rows marked for deletion. Off, they change once the changes are saved.'],
             ['skipEmptyValues', '`true`: empty values (`null`, `undefined`, `\'\'`) are left out of what the browser works out; off, `sum` and `avg` count them as 0. An item can set its own.'],

@@ -27,9 +27,11 @@ export default function FromCode() {
     );
     host?.controls.add(scheduler);
   };
-  const tomorrowMorning = () => {
+  // The work week shows Monday to Friday: the next of those days.
+  const nextWorkday = () => {
     const t = new Date();
-    const start = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1, 9);
+    let start = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1, 9);
+    while (start.getDay() === 0 || start.getDay() === 6) start = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1, 9);
     scheduler?.showDate(start);
     scheduler?.selectCells({
       start,
@@ -44,7 +46,7 @@ export default function FromCode() {
         <Button text="Create" variant="outline" onclick={make} />
         <Button text="Previous" variant="outline" onclick={() => scheduler?.previous()} />
         <Button text="Next" variant="outline" onclick={() => scheduler?.next()} />
-        <Button text="Select tomorrow 9:00–10:30" variant="outline" onclick={tomorrowMorning} />
+        <Button text="Select the next workday 9:00–10:30" variant="outline" onclick={nextWorkday} />
         <Button text="Month" variant="outline" onclick={() => scheduler?.showView('month')} />
       </div>
       <p class="sched-log" role="status">

@@ -78,6 +78,30 @@ describe('CheckBox', () => {
     expect(b.inputElement.checked).toBe(true);
   });
 
+  it('reads functions over plain data again on reState, and writes a value set from code to x-model', async () => {
+    const plain = { on: false, label: 'Remember me' };
+    const s = reactive({ on: false });
+    let b!: CheckBox;
+    let m!: CheckBox;
+    const host = page(
+      <CheckBox ref={(x: CheckBox) => (b = x)} value={() => plain.on} label={() => plain.label} />,
+      <CheckBox ref={(x: CheckBox) => (m = x)} x-model={() => s.on} />,
+    );
+    await settle();
+    Object.assign(plain, { on: true, label: 'Keep me signed in' });
+    await settle();
+    expect(b.inputElement.checked).toBe(false);
+    host.reState();
+    expect(b.inputElement.checked).toBe(true);
+    expect(b.element.textContent).toContain('Keep me signed in');
+    b.inputElement.click();
+    expect(plain.on).toBe(true);
+    m.value = true;
+    expect(s.on).toBe(true);
+    m.toggle();
+    expect(s.on).toBe(false);
+  });
+
   it('shows null as indeterminate and cycles three states on request', async () => {
     const s = reactive({ all: null as boolean | null, three: false });
     let b!: CheckBox;

@@ -5,6 +5,7 @@ import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
 import { Button } from './Button';
+import { dataKinds } from '../../../tests/data-kinds';
 
 let hosts: Component[] = [];
 
@@ -125,6 +126,18 @@ describe('Button', () => {
     expect(b.pressed).toBe(false);
     b.toggle = false;
     expect(b.element.hasAttribute('aria-pressed')).toBe(false);
+  });
+
+  it('writes a pressed state set from code to x-model too', async () => {
+    const s = reactive({ bold: false });
+    let b!: Button;
+    page(<Button ref={(x: Button) => (b = x)} text="Bold" toggle x-model={() => s.bold} />);
+    await settle();
+    b.pressed = true;
+    expect(s.bold).toBe(true);
+    s.bold = false;
+    await settle();
+    expect(b.pressed).toBe(false);
   });
 
   it('ignores presses while busy, keeps its content and shows a spinner', async () => {
@@ -487,6 +500,25 @@ describe('Button with a menu', () => {
     expect(arrow(b)).not.toBeNull();
   });
 
+  it('reads functions over plain data again on reState: its props and the items of the open menu', async () => {
+    const plain = { text: 'Edit', name: 'Bob', canDelete: false };
+    const b = new Button({
+      text: () => plain.text,
+      menu: [{ text: () => `Rename ${plain.name}…` }, { text: 'Delete', enabled: () => plain.canDelete }],
+    });
+    const host = page(b);
+    await settle();
+    b.open();
+    Object.assign(plain, { text: 'Change', name: 'Ann', canDelete: true });
+    await settle();
+    expect(items(b)[0].textContent).toBe('Rename Bob…');
+    host.reState();
+    expect(b.element.textContent).toContain('Change');
+    expect(items(b)[0].textContent).toBe('Rename Ann…');
+    expect(items(b)[1].hasAttribute('aria-disabled')).toBe(false);
+    expect(plain).toEqual({ text: 'Change', name: 'Ann', canDelete: true });
+  });
+
   it('does not report menu clicks as clicks of the button', async () => {
     const clicked = vi.fn();
     const b = new Button({ text: 'Save', split: true, menu: [{ text: 'Save as…' }] });
@@ -496,5 +528,25 @@ describe('Button with a menu', () => {
     b.open();
     items(b)[0].click();
     expect(clicked).not.toHaveBeenCalled();
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('gives back the very menu items, and shows a change in place after refresh()', async () => {
+      const menu = make<MenuItem[]>([{ text: 'Save as' }, { text: 'Export' }]);
+      const clicked: unknown[] = [];
+      let b!: Button;
+      page(<Button ref={(x: Button) => (b = x)} text="Save" split menu={menu} onItemClick={(e: MenuItemClickEventArgs) => void clicked.push(e.item)} />);
+      await settle();
+      b.open();
+      const labels = () => items(b).map((i) => i.querySelector('.mx-menu__label')!.textContent);
+      menu[0].text = 'Save a copy';
+      menu.push({ text: 'Print' });
+      await settle();
+      expect(labels()).toEqual(['Save as', 'Export']);
+      b.refresh();
+      expect(labels()).toEqual(['Save a copy', 'Export', 'Print']);
+      items(b)[2].click();
+      expect(clicked[0]).toBe(menu[2]);
+    });
   });
 });

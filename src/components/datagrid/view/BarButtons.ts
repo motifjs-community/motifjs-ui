@@ -1,10 +1,11 @@
-import { createSignal, effect, read, untracked } from '@motifx/core';
+import { createSignal, effect, untracked } from '@motifx/core';
 import { moreMark } from '../../../core/glyphs';
 import type { MenuItem } from '../../../parts/menu/menu-item';
 import { Button } from '../../button/Button';
 import type { GridActionLocation } from '../grid-action-location';
 import type { ActionEntry } from '../model/action-entry';
 import type { GridModel } from '../model/GridModel';
+import { readField } from '../model/read-field';
 
 type Shown<T> = { buttons: ActionEntry<T>[]; menu: ActionEntry<T>[] };
 
@@ -92,12 +93,12 @@ export class BarButtons<T> {
       },
       icon: () => {
         const e = at();
-        return e && e.action.icon !== undefined ? read(e.action.icon) : null;
+        return e && e.action.icon !== undefined ? readField(e.action, 'icon') : null;
       },
       hint: () => {
         const e = at();
         if (!e) return '';
-        return read(e.action.hint) ?? (showsText(e) ? '' : sets.label(e));
+        return readField(e.action, 'hint') ?? (showsText(e) ? '' : sets.label(e));
       },
       tone: () => at()?.action.tone ?? 'standard',
       enabled: () => !!at() && !at()!.disabled && !model.state.acting,

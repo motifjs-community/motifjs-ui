@@ -15,6 +15,8 @@ import { createExpandButton, setExpandButton } from './expand-button';
 import { placeInOrder } from './place-in-order';
 import type { ResolvedAction } from './resolved-action';
 import { RowActions } from './RowActions';
+import { givenValue } from '../../../core/given-field';
+import { readField } from '../model/read-field';
 
 const NO_RANGES: [number, number][] = [];
 
@@ -408,11 +410,12 @@ export class GridRow<T> {
   }
 
   private resolve(action: GridAction<T>, row: T, state: RowState): ResolvedAction<T> {
-    const text = read(action.text) ?? '';
+    const text = readField(action, 'text') ?? '';
     const hasIcon = action.icon !== undefined && action.icon !== null;
     const showText = action.showText ?? !hasIcon;
-    const disabled = typeof action.disabled === 'function' ? action.disabled(row, state) : !!action.disabled;
-    return { action, row, state, text, hint: read(action.hint) ?? (showText ? '' : text), disabled, hasIcon, showText, menu: this.model.actionSets.menuOf(action) };
+    const given = givenValue<GridAction<T>['disabled']>(action, 'disabled');
+    const disabled = typeof given === 'function' ? !!untracked(() => given(row, state)) : !!given;
+    return { action, row, state, text, hint: readField(action, 'hint') ?? (showText ? '' : text), disabled, hasIcon, showText, menu: this.model.actionSets.menuOf(action) };
   }
 
   private drawCells() {

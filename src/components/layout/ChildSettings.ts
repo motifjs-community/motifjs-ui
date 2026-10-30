@@ -1,4 +1,5 @@
-import { effect, untracked, type Bind, type ComponentBase } from '@motifx/core';
+import type { Bind, ComponentBase } from '@motifx/core';
+import { follow } from '../../core/follow';
 
 /** What a container does with its children's settings. */
 interface ChildSettingsHandler {
@@ -94,12 +95,10 @@ export class ChildSettings {
       return;
     }
     let first = true;
-    const stop = effect(() => {
-      const next = (value as () => unknown)();
-      untracked(() => {
-        values.set(name, next);
-        if (!first && !this.reading) this.handler.changed(child, child.element as HTMLElement);
-      });
+    // One of the child's bindings: the child's or the page's `reState()` reads it again.
+    const stop = follow(child, name, value as () => unknown, (next) => {
+      values.set(name, next);
+      if (!first && !this.reading) this.handler.changed(child, child.element as HTMLElement);
     });
     first = false;
     stops.set(name, stop);

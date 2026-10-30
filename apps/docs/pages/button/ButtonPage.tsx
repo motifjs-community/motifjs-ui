@@ -43,6 +43,7 @@ const PROPERTIES = [
 const METHODS = [
   ['open()', '`boolean`', 'Opens the menu or drop-down with focus on its first item; `false` when there is nothing to open, or it is disabled or busy.'],
   ['close()', '`void`', 'Closes it; focus inside goes back to the part that opened it.'],
+  ['refresh()', '`void`', 'Your menu items may be plain or reactive; the button reads them as they are. After changing them in place, call `refresh()`. An open menu shows the change at once.'],
   ['focus()', '`boolean`', 'Focuses the button (its main part with a menu).'],
 ];
 
@@ -213,7 +214,7 @@ import { Button, type MenuItem } from '@motifx-community/ui';
 
       <Section anchor="i18n" title="Localization">
         <p>
-          <Rich text="The only text a button writes itself is the name of a split button's arrow. It comes from `uiLocale.strings`, which starts with the page's `lang` (English and Turkish ship) and can be set to any `UiStrings`; every button follows at once." />
+          <Rich text="The only text a button writes itself is the name of a split button's arrow. It comes from `uiLocale.strings`, which starts with the page's `lang` (English and Turkish ship) and can be set to any `UiStrings`; every button follows at once. The set is kept as it is given: to change one text, assign a new set (`uiLocale.strings = { ...uiLocale.strings, moreOptions: 'Mehr' }`); a text changed inside the set is not seen." />
         </p>
         <Example files={code('Localization.tsx')}>
           <Localization />

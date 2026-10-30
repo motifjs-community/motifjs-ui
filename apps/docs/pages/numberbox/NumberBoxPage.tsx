@@ -20,7 +20,7 @@ const PROPS = [
   ['wheel', '`Bind<boolean>`', '`false`', 'The mouse wheel changes the value while the field has focus.'],
   ['format', '`Bind<Intl.NumberFormatOptions>`', '`{}`', 'How the value shows without focus: `{ style: \'currency\', currency: \'TRY\' }`, `{ style: \'percent\' }`, `{ minimumFractionDigits: 2 }`…'],
   ['locale', '`Bind<string>`', 'the page `lang`', 'The locale of the format and of what is typed.'],
-  ['decimals', '`Bind<number | null>`', '`null`', 'Digits kept after the point when a value is entered (rounded half away from zero).'],
+  ['decimals', '`Bind<number | null>`', '`null`', 'Digits after the point: every value is rounded to them (half away from zero), wherever it comes from, and shown with exactly that many while the field is not edited.'],
   ['clamp', '`Bind<boolean>`', '`true`', 'A value outside `min` / `max` is brought inside when entered; `false` leaves it to the range check.'],
   ['allowEmpty', '`Bind<boolean>`', '`true`', 'An empty field is `null`; `false` puts `min` (or 0) in its place when the field is left.'],
   ['updateOn', "`Bind<'input' | 'change'>`", "`'input'`", '`input`: the value changes as soon as the text is a whole number in range; `change`: when the field is left or Enter is pressed.'],
@@ -148,7 +148,7 @@ import { NumberBox, type NumberBoxProps } from '@motifx-community/ui';
 
       <Section anchor="decimals" title="Decimals and empty">
         <p>
-          <Rich text="`decimals` rounds what is entered and limits the digits shown. An empty field is `null`; with `allowEmpty={false}` it gets `min` (or 0) when the field is left." />
+          <Rich text="`decimals` rounds every value, the one given as well as the one entered, and shows exactly that many digits while the field is not edited (`72.50`); `format` can show them otherwise. An empty field is `null`; with `allowEmpty={false}` it gets `min` (or 0) when the field is left." />
         </p>
         <Example files={code('DecimalsAndEmpty.tsx')}>
           <DecimalsAndEmpty />

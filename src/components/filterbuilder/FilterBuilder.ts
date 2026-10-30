@@ -1,4 +1,6 @@
-import { Component, effect, Emitter, reactive, read, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, Emitter, reactive, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { follow } from '../../core/follow';
+import { givenField } from '../../core/given-field';
 import { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
@@ -128,13 +130,18 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     this.observeProperty<data.FilterExpression | null | undefined>('value', (value) => this.takeValue(value ?? null));
     this.takeValue(this.peekProperty<data.FilterExpression | null>('value') ?? null);
     this.listen();
-    // What the rows show: a change of any of it draws them again.
-    const stopDrawing = effect(() => {
-      this.watchOptions();
-      untracked(() => {
+    // What the rows show: a change of any of it draws them again (a new value each read, so each read draws).
+    const stopDrawing = follow(
+      this,
+      'drawing',
+      () => {
+        this.watchOptions();
+        return {};
+      },
+      () => {
         if (parts.ready) this.draw(this.focusWithin);
-      });
-    });
+      },
+    );
     parts.ready = true;
     this.draw(false);
     queueMicrotask(() => {
@@ -160,7 +167,11 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     return this.getProperty<data.FilterExpression | null | undefined>('value') ?? null;
   }
   set value(value: Bind<data.FilterExpression | null>) {
+    const before = this.parts.value;
     this.assignProperty('value', value);
+    // A filter set from code shows in `x-model` too, so the model and the builder never differ.
+    const now = this.parts.value;
+    if (typeof value !== 'function' && !this.parts.model.same(now, before)) this.bindings.writeModel(now);
   }
   get fields(): readonly FilterBuilderField[] {
     return this.getProperty<readonly FilterBuilderField[] | undefined>('fields') ?? [];
@@ -238,6 +249,23 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
   get filterText(): string {
     void this.parts.version.n;
     return this.parts.model.treeText(this.parts.root);
+  }
+
+  /**
+   * Reads the options (fields, custom operations) and the value again after they were changed in place, and draws
+   * the rows again. Your fields and value may be plain or reactive; the builder reads them as they are.
+   */
+  refresh(): void {
+    const parts = this.parts;
+    untracked(() => {
+      if (!parts.model.same(parts.model.toExpression(parts.root), parts.value)) {
+        this.stopEditor(false, false);
+        parts.root = parts.model.fromExpression(parts.value);
+        parts.focus = null;
+      }
+      parts.version.n++;
+      this.draw(this.focusWithin);
+    });
   }
 
   /** The logic behind the builder: operations of a field, texts, the tree of an expression. */
@@ -518,15 +546,11 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
   /** Reads what the rows show, so the drawing effect follows it. */
   private watchOptions() {
     const model = this.parts.model;
+    // The props and the options' own functions are followed; the lists and the fields are read again by `refresh`.
     for (const field of model.fields()) {
-      read(field.caption);
-      read(field.dataType);
-      read(field.filterOperations);
-      read(field.defaultOperation);
-      read(field.trueText);
-      read(field.falseText);
+      for (const key of ['caption', 'dataType', 'filterOperations', 'defaultOperation', 'trueText', 'falseText'] as const) givenField(field, key);
     }
-    for (const op of model.customOperations()) read(op.caption);
+    for (const op of model.customOperations()) givenField(op, 'caption');
     model.groupOperations();
     model.maxGroupLevel();
     model.text('filterBuilderAnd');
@@ -652,7 +676,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
         }
         list = items;
       }
-      const own = read(f.caption);
+      const own = givenField<string | undefined>(f, 'caption');
       list.push(leaf(f, own || model.caption(f.dataField).split('.').pop()!));
     }
     return top;
@@ -900,7 +924,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     const model = parts.model;
     const caption = model.caption(c.field);
     const label = model.text(part === 'from' ? 'filterBuilderFrom' : part === 'to' ? 'filterBuilderTo' : 'filterBuilderValueOf', { field: caption });
-    const options: Record<string, unknown> = { labelMode: 'hidden', size: this.size, label, tabStop: false, ...(read(field.editorOptions) ?? {}) };
+    const options: Record<string, unknown> = { labelMode: 'hidden', size: this.size, label, tabStop: false, ...(givenField<Record<string, unknown> | undefined>(field, 'editorOptions') ?? {}) };
     const e: FilterBuilderEditorPreparingEventArgs = { field, operation: c.operation, value, condition: c, part, options, editor: null, setValue, source: this, cancel: false };
     parts.editorPreparing.fire(e);
     if (e.cancel) return null;
@@ -919,11 +943,11 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     const locale = model.locale;
     const lookup = field.lookup;
     if (lookup) {
-      const source = read(lookup.dataSource);
+      const source = givenField<data.DataSource<unknown, unknown> | readonly unknown[]>(lookup, 'dataSource');
       const from = Array.isArray(source) ? { items: source } : { dataSource: source };
       const fields = { valueField: lookup.valueField, textField: lookup.textField };
       if (many) return new TagBox<unknown, unknown>({ ...from, ...fields, ...options, value: Array.isArray(value) ? [...value] : [], onValueChanged } as never);
-      return new DropDown<unknown, unknown>({ ...from, ...fields, searchEnabled: true, clearButton: !!read(lookup.allowClearing), ...options, value: empty(value) ? null : value, onValueChanged } as never);
+      return new DropDown<unknown, unknown>({ ...from, ...fields, searchEnabled: true, clearButton: !!givenField(lookup, 'allowClearing'), ...options, value: empty(value) ? null : value, onValueChanged } as never);
     }
     if (many) {
       const parse = (text: string): unknown => {

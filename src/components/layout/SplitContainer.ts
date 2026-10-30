@@ -1,7 +1,8 @@
-import { Component, effect, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { FocusContainer } from '../../core/container';
 import { registerControl } from '../../core/control-map';
 import { deepActiveElement } from '../../core/focus';
+import { follow } from '../../core/follow';
 import { nextId } from '../../core/next-id';
 import { uiLocale } from '../../core/ui-locale';
 import type { LayoutOrientation } from './layout-orientation';
@@ -91,10 +92,12 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     // Added to the container itself from code: into the first empty pane.
     void this.motif.on('controladded', (_sender, e: { control: ComponentBase }) => this.route(e.control), false);
 
-    const stopLabel = effect(() => {
-      const label = this.getProperty<string | undefined>('splitterLabel');
-      parts.splitter.element.setAttribute('aria-label', label || uiLocale.strings.resize);
-    });
+    const stopLabel = follow(
+      this,
+      'splitterLabel',
+      () => this.getProperty<string | undefined>('splitterLabel') || uiLocale.strings.resize,
+      (label) => parts.splitter.element.setAttribute('aria-label', label),
+    );
     this.listen();
     this.motif.setDisposable(() => {
       stopLabel();
@@ -125,7 +128,11 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     return this.getProperty<SplitPosition | undefined>('position') ?? '50%';
   }
   set position(value: Bind<SplitPosition>) {
+    const before = this.peekProperty<SplitPosition>('position');
     this.assignProperty('position', value);
+    // A position set from code shows in `x-model` too, so the model and the splitter never differ.
+    const now = this.peekProperty<SplitPosition>('position');
+    if (typeof value !== 'function' && now !== before) this.bindings.writeModel(now);
   }
   /** `position`, for `x-model`. */
   get value(): SplitPosition {

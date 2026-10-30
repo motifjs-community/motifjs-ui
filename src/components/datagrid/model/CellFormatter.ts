@@ -1,3 +1,4 @@
+import { untracked } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { parseNumber } from '../../numberbox/number-text';
 import type { GridColumn } from '../grid-column';
@@ -38,7 +39,8 @@ export class CellFormatter {
   /** Display text of a cell; `v` is the value to show (the unsaved edit, when there is one). */
   text<T>(col: GridColumn<T>, row: T | undefined, v: unknown): string {
     if (row === undefined || row === null) return '';
-    if (typeof col.format === 'function') return col.format(v, row);
+    const format = col.format;
+    if (typeof format === 'function') return untracked(() => format(v, row));
     if (data.isEmpty(v)) return '';
     switch (col.type) {
       case 'number':

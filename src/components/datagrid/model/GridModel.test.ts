@@ -60,7 +60,7 @@ describe('GridModel edits', () => {
 
   it('runs validateRow: a message per field, or one for the whole row', async () => {
     const { m, rows, idOf } = await model({
-      validateRow: (r) => (r.qty > 10 ? { qty: 'Too many', other: 'Hidden field' } : r.name === 'x' ? 'Bad row' : null),
+      validateRow: (_r, { getValue }) => ((getValue('qty') as number) > 10 ? { qty: 'Too many', other: 'Hidden field' } : getValue('name') === 'x' ? 'Bad row' : null),
     });
     const r = rows[0];
     const id = idOf(r);
@@ -77,7 +77,7 @@ describe('GridModel edits', () => {
   it('gives no message on a cell the user cannot fill, required or not', async () => {
     const { m } = await model({
       columns: [columns[0], { ...columns[1], creatable: false }, columns[2]],
-      validateRow: (r) => (r.qty > 10 ? { name: 'Name too short for this' } : null),
+      validateRow: (_r, { getValue }) => ((getValue('qty') as number) > 10 ? { name: 'Name too short for this' } : null),
     });
     const i = m.insertAdded(0, { qty: 11 });
     const id = m.rowIdAt(i)!;

@@ -1,7 +1,9 @@
 import { onLookChanged } from '../../core/look-watch';
-import { effect, Emitter, reactive, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, reactive, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
+import { follow } from '../../core/follow';
+import { onReState } from '../../core/on-re-state';
 import { focusableIn, nextTabbable, tabbableIn } from '../../core/focus';
 import { checkMark, dismissMark, pencilMark, trashMark, undoMark } from '../../core/glyphs';
 import { fillTemplate } from '../../core/fill-template';
@@ -130,6 +132,7 @@ import { GridClipboard } from './model/GridClipboard';
 import { GridExport } from './model/GridExport';
 import { FILTER_ROW, GridModel, HEADER_ROW } from './model/GridModel';
 import type { GroupNode } from './model/group-node';
+import { LiveOptions } from './model/LiveOptions';
 import { Switches } from './model/Switches';
 import { ActionWidths } from './view/ActionWidths';
 import { BarButtons } from './view/BarButtons';
@@ -170,6 +173,8 @@ import { MenuPopup } from './view/MenuPopup';
 import { TotalRow } from './view/TotalRow';
 import { OPERATOR_TEXTS } from './view/operator-texts';
 import { COLUMN_FEATURES } from './model/column-feature-names';
+import { givenList } from '../../core/given-field';
+import { readField } from './model/read-field';
 
 /** How a move ends: on the target cell, optionally with its editor open. */
 interface GoToCellOptions {
@@ -281,7 +286,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** The filter panel under the rows, the filter builder's window and its options. */
   private readonly filterPanel: FilterPanel<T>;
   private readonly builderWindow: FilterBuilderWindow<T>;
-  private readonly builderOptions: GridFilterBuilderOptions;
+  private readonly builderOptions: LiveOptions<GridFilterBuilderOptions>;
   private readonly builderPopupSwitches: Switches<PopupValues>;
   /** Bumped when texts of lookup keys arrive: the panel's text reads them. */
   private readonly lookupTexts = reactive({ n: 0 });
@@ -486,10 +491,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       own.filterBuilderPopup ?? {},
     );
     this.builderPopupSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `filterBuilderPopup.${name}`, value, previous }));
-    this.builderOptions = reactive({ ...(own.filterBuilder ?? {}) }) as GridFilterBuilderOptions;
+    this.builderOptions = new LiveOptions<GridFilterBuilderOptions>(own.filterBuilder);
     this.builderWindow = new FilterBuilderWindow<T>(model, {
       owner: this,
-      options: this.builderOptions,
+      options: this.builderOptions.view,
       popup: this.builderPopupSwitches,
       returnFocus: () => this.filterPanel.textButton?.focus(),
     });
@@ -501,6 +506,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     });
     const lookupTexts = model.lookups.onChanged(() => this.lookupTexts.n++);
     this.motif.setDisposable(() => lookupTexts.dispose());
+    // The grid's `reState()`: what it was given is read again, as every control reads its props again.
+    onReState(this, () => this.readGivenAgain());
     this.exportSwitches = new Switches<ExportValues>(['formats', 'allowExportSelectedData', 'texts'], {}, own.export ?? {});
     this.exportSwitches.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `export.${name}`, value, previous }));
     model.details.options.changed = (name, value, previous) => ev.tell(ev.optionChanged, () => ({ name: `masterDetail.${name}`, value, previous }));
@@ -522,7 +529,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         runBarAction: (entry, location) => void this.startEntry(entry, location),
         prepare: (items) => {
           if (!ev.listened(ev.toolbarPreparing)) return items;
-          const e = { items: [...items] };
+          const e = { items: givenList(items) };
           untracked(() => ev.toolbarPreparing.fire(e));
           return e.items;
         },
@@ -711,7 +718,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.model.stats.changed > 0;
   }
 
-  /** The unsaved changes, as copies: new rows, updated rows (with what changed) and deleted rows. */
+  /** The unsaved changes: new rows, updated rows (the row itself and what changed) and deleted rows. */
   get changes(): GridChanges<T> {
     void this.model.state.edits;
     return this.model.data.changes();
@@ -727,12 +734,18 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.resetLayout();
   }
 
-  /** Loads the rows again, keeping the position, and the texts of the lookup columns; saved new rows leave the new-row area and take their place among the rows. */
+  /**
+   * Loads the rows again, keeping the position, and the texts of the lookup columns; saved new rows
+   * leave the new-row area and take their place among the rows. Everything that shows the app's data
+   * is read again too (`repaint()`), and the summaries are worked out again.
+   */
   refresh() {
     this.dropForm();
     this.leave();
     this.model.refreshLookups();
     this.model.data.refresh();
+    this.model.summaries.reread();
+    this.repaint();
   }
 
   /** Forgets the texts of the lookup columns and asks for the ones on the screen again. */
@@ -1354,9 +1367,43 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.layOut();
   }
 
-  /** Draws the rows on the screen again (after the app changed what a template or `onRowPrepared` reads), without loading. */
+  /**
+   * Draws again what shows the app's data, without loading: the rows, their details and adaptive
+   * detail, the group rows and footers, the totals, the bars and their actions. Your data may be
+   * plain or reactive; the grid reads it as it is, so after changing it in place call this (or
+   * `repaintRows(keys)` for some rows, `refresh()` to load again).
+   */
+  /**
+   * What `reState()` does here: the options given (the grid's, its parts', the columns') are read again, and
+   * what shows the app's data is drawn again (`repaint()`). Nothing is loaded.
+   */
+  private readGivenAgain() {
+    const { model } = this;
+    const holders = [model.settings, model.details.options, model.adaptive.options, model.rowDrag.values, this.formSwitches, this.popupSwitches, this.builderPopupSwitches];
+    for (const switches of [...holders, ...model.columns.features.values()]) switches.touchAll();
+    this.builderOptions.touch();
+    this.model.summaries.reread();
+    this.repaint();
+  }
+
   repaint() {
+    this.toolbarSwitches.touchAll();
+    this.exportSwitches.touchAll();
+    this.topBar.redraw();
+    this.model.actionSets.refresh();
+    if (untracked(() => this.model.summaries.showsTotal())) this.totalRow.redraw();
     this.body.repaint();
+  }
+
+  /** Draws again the rows with these keys (and their details), after their data was changed in place; the other rows stay as they are. */
+  repaintRows(keys: readonly unknown[]) {
+    const adapter = this.model.data.source.adapter;
+    this.body.repaintRows(new Set(givenList(keys).map((key) => adapter.keyString(key))));
+  }
+
+  /** Asks every row and bar for its actions again: what the `actions` function, an action's `visible` or `disabled` reads was changed in place. */
+  refreshActions() {
+    this.model.actionSets.refresh();
   }
 
   /** The whole filter of the rows: the source's own, the filter row, the header filters and the search. Reactive. */
@@ -1627,33 +1674,37 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private watchColumn(col: GridColumn<T>) {
     const { model } = this;
     const stops: (() => void)[] = [];
-    const follow = <V,>(get: () => V, apply: (value: V) => void) => {
+    // The first value is the one the column was added with; a later one that is the same changes nothing, so a
+    // `reState()` keeps what the user did since.
+    const watch = <V,>(name: string, get: () => V, apply: (value: V) => void, same: (a: V, b: V) => boolean = Object.is) => {
       let first = true;
+      let last: V;
       stops.push(
-        effect(() => {
-          const value = get();
-          if (first) {
-            first = false;
-            return;
-          }
-          untracked(() => apply(value));
+        follow(this, name, get, (value) => {
+          if (!first && same(value, last)) return;
+          const was = first;
+          first = false;
+          last = value;
+          if (!was) apply(value);
         }),
       );
     };
     const index = col.groupIndex;
     if (typeof index === 'function') {
-      follow(index, (at) => {
+      watch('groupIndex', index, (at) => {
         if (typeof at === 'number' && at >= 0) model.groupBy(col.field, at);
         else model.ungroup(col.field);
       });
     }
     if (typeof col.filterValues === 'function' || typeof col.filterType === 'function') {
-      follow(
+      watch(
+        'filterValues',
         () => {
-          const values = read(col.filterValues);
-          return { values: values ? [...values] : undefined, type: read(col.filterType) };
+          const values = readField(col, 'filterValues');
+          return { values: values ? givenList(values) : undefined, type: readField(col, 'filterType') };
         },
         ({ values, type }) => model.setFilterValues(col.field, values, type),
+        (a, b) => a.type === b.type && sameList(a.values, b.values),
       );
     }
     if (stops.length) this.columnWatches.set(col.field, stops);
@@ -1944,12 +1995,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       untracked(() => this.takeFilterValue(value));
       return;
     }
-    const stop = effect(() => {
-      const next = value();
-      untracked(() => this.takeFilterValue(next));
-    });
-    this.stopFilterValueBinding = stop;
-    this.motif.setDisposable(stop);
+    this.stopFilterValueBinding = follow(this, 'filterValue', value, (next) => this.takeFilterValue(next));
   }
 
   /** Whether the filter value applies (the filter panel's check box). Reactive; a function is followed. */
@@ -1963,12 +2009,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.model.filters.enabled = value !== false;
       return;
     }
-    const stop = effect(() => {
-      const on = value() !== false;
-      untracked(() => on !== this.model.filters.enabled && (this.model.filters.enabled = on));
-    });
-    this.stopFilterEnabledBinding = stop;
-    this.motif.setDisposable(stop);
+    this.stopFilterEnabledBinding = follow(
+      this,
+      'filterEnabled',
+      () => value() !== false,
+      (on) => on !== this.model.filters.enabled && (this.model.filters.enabled = on),
+    );
   }
 
   /** The filter value as the filter panel writes it: `[City] Equals 'Ankara' And …` with the columns' titles and texts. Reactive. */
@@ -1984,7 +2030,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /** The filter builder the filter panel opens, live: `grid.filterBuilder.maxGroupLevel = 1`; a function is followed. */
   get filterBuilder(): GridFilterBuilderOptions {
-    return this.builderOptions;
+    return this.builderOptions.view;
   }
 
   /** The window the filter builder opens in, live: `grid.filterBuilderPopup.width = '50rem'`; a function is followed. */
@@ -2049,12 +2095,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       this.searchByText(text);
       return;
     }
-    const stop = effect(() => {
-      const value = text() ?? '';
-      untracked(() => value !== this.model.search.state.text && this.searchByText(value));
-    });
-    this.stopSearchBinding = stop;
-    this.motif.setDisposable(stop);
+    this.stopSearchBinding = follow(
+      this,
+      'searchText',
+      () => text() ?? '',
+      (value) => value !== this.model.search.state.text && this.searchByText(value),
+    );
   }
 
   /** Searches for a text at once, as the search panel does after a typing pause; `''` stops searching. */
@@ -2304,7 +2350,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /**
    * The summaries: `totalItems` in the row under the rows, `groupItems` in group rows and footers. A
-   * function is followed; so is every field of the items.
+   * function is followed, and so is a function in a field of an item; after a change in place (an
+   * item's field, the items, the rows' values) call `refreshSummary()`.
    */
   get summary(): GridSummary<T> {
     return this.model.summaries.config();
@@ -2331,6 +2378,11 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /** `'loading'` while a server works out the totals (or every row loads for them), `'error'` when that failed. */
   get summaryStatus(): 'loading' | 'ready' | 'error' {
     return this.model.summaries.state.status;
+  }
+
+  /** Reads the summary items again and works the values out again (after a change in place). */
+  refreshSummary() {
+    this.model.summaries.reread();
   }
 
   /** Raised when the summary values were worked out again. */
@@ -2545,7 +2597,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.bindings.watch(() => {
       const keys = read(this.props.selectedKeys);
       if (keys === undefined) return;
-      const list = [...keys];
+      const list = givenList(keys);
       untracked(() => (this.selectedKeys = list));
     });
 
@@ -2553,7 +2605,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.bindings.watch(() => {
       const ranges = read(this.props.cellRanges);
       if (ranges === undefined) return;
-      const list = [...ranges];
+      const list = givenList(ranges);
       untracked(() => (this.cellRanges = list));
     });
     this.bindings.watch(() => {
@@ -2609,10 +2661,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       });
     });
 
-    // Rows in memory: follow push/splice (length) and a new array.
+    // Rows in memory: a new array loads again; a change in place shows after `refresh()`.
     let firstRows = true;
     this.bindings.watch(() => {
-      void read(this.props.rows)?.length;
+      void read(this.props.rows);
       if (firstRows) {
         firstRows = false;
         return;
@@ -3298,14 +3350,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     const col = model.columns.get(field);
     const value = model.value(rowId, row, col);
     const typed = col.type === 'date' || col.type === 'boolean' ? undefined : initialText;
-    const merged = { ...(row as object), ...(rec?.draft ?? {}) } as T;
-    if (!model.events.ask(model.events.editingStart, () => ({ field, row: merged, rowIndex: i, isNew: !!rec?.isNew, cancel: false }))) return false;
-    const prepare = (options: Record<string, unknown>) => {
-      const e: GridEditorPreparingEventArgs<T> = { field, row: { ...merged }, isNew: !!rec?.isNew, options, cancel: false };
-      model.events.editorPreparing.fire(e);
-      return !e.cancel;
-    };
-    const editor = new CellEditor<T>(model, col, merged, value, typed, { commit: () => this.finishEdit('none'), cancel: () => this.cancelEdit() }, this.body, prepare);
+    const entered = model.enteredOf(rowId, row);
+    if (!model.events.ask(model.events.editingStart, () => ({ field, row, values: { ...entered.values }, getValue: entered.getValue, rowIndex: i, isNew: !!rec?.isNew, cancel: false }))) return false;
+    const prepare = (options: Record<string, unknown>) => this.editorPreparing(field, row, entered, !!rec?.isNew, options);
+    const editor = new CellEditor<T>(model, col, row, entered, value, typed, { commit: () => this.finishEdit('none'), cancel: () => this.cancelEdit() }, this.body, prepare);
     if (editor.cancelled) {
       editor.dispose();
       return false;
@@ -3313,7 +3361,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     cell.append(editor.element);
     this.editor = editor;
     this.editTarget = { rowId, row, field };
-    this.editorPrepared(field, merged, !!rec?.isNew, editor, 'cell');
+    this.editorPrepared(field, row, entered, !!rec?.isNew, editor, 'cell');
     st.editing = { rowId, field };
     model.setSession(rowId);
     if (this.pendingInvalid === rowId) this.pendingInvalid = null;
@@ -3323,10 +3371,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return true;
   }
 
+  /** `onEditorPreparing` for an editor about to be made: whether it may be. */
+  private editorPreparing(field: string, row: T, entered: data.RowCheckContext<T>, isNew: boolean, options: Record<string, unknown>): boolean {
+    const e: GridEditorPreparingEventArgs<T> = { field, row, values: { ...entered.values }, getValue: entered.getValue, isNew, options, cancel: false };
+    this.model.events.editorPreparing.fire(e);
+    return !e.cancel;
+  }
+
   /** `onEditorPrepared` for an editor just made. */
-  private editorPrepared(field: string, row: T, isNew: boolean, editor: CellEditor<T>, place: 'cell' | 'form' | 'adaptive') {
+  private editorPrepared(field: string, row: T, entered: data.RowCheckContext<T>, isNew: boolean, editor: CellEditor<T>, place: 'cell' | 'form' | 'adaptive') {
     const ev = this.model.events;
-    ev.tell(ev.editorPrepared, () => ({ field, row: { ...row }, isNew, editor: editor.editor, element: editor.element, place }));
+    ev.tell(ev.editorPrepared, () => ({ field, row, values: { ...entered.values }, getValue: entered.getValue, isNew, editor: editor.editor, element: editor.element, place }));
   }
 
   /** Whether an element is inside the edit form shown in place of a row. */
@@ -3351,8 +3406,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (this.formEdit?.rowId === rowId) return this.formEdit.form.focus(field);
     if (!model.columns.listedData().some((f) => model.columns.canFill(f, row, isNew))) return false;
     if (this.formEdit && !this.cancelForm(false)) return false;
-    const merged = { ...(row as object), ...(rec?.draft ?? {}) } as T;
-    if (!model.events.ask(model.events.editingStart, () => ({ field: '', row: merged, rowIndex: i, isNew, cancel: false }))) return false;
+    if (!model.events.ask(model.events.editingStart, () => {
+        const entered = model.enteredOf(rowId, row);
+        return { field: '', row, values: entered.values, getValue: entered.getValue, rowIndex: i, isNew, cancel: false };
+      })) return false;
     this.closeEditor();
     model.setSession(rowId, row);
     if (this.pendingInvalid === rowId) this.pendingInvalid = null;
@@ -3366,12 +3423,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       {
         save: () => void this.saveForm(),
         cancel: () => this.cancelForm(true),
-        prepare: (f, r, n, options) => {
-          const e: GridEditorPreparingEventArgs<T> = { field: f, row: { ...r }, isNew: n, options, cancel: false };
-          model.events.editorPreparing.fire(e);
-          return !e.cancel;
-        },
-        prepared: (f, r, n, editor) => this.editorPrepared(f, r, n, editor, 'form'),
+        prepare: (f, r, c, n, options) => this.editorPreparing(f, r, c, n, options),
+        prepared: (f, r, c, n, editor) => this.editorPrepared(f, r, c, n, editor, 'form'),
       },
       mode === 'form',
     );
@@ -3407,11 +3460,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     });
     win.element.classList.add('mx-data-grid__popup');
     // Without the title shown, the window still has its name.
-    win.motif.setDisposable(
-      effect(() => {
-        if (p.get('showTitle')) win.element.removeAttribute('aria-label');
-        else win.element.setAttribute('aria-label', title());
-      }),
+    follow(
+      win,
+      'name',
+      () => (p.get('showTitle') ? null : title()),
+      (name) => {
+        if (name === null) win.element.removeAttribute('aria-label');
+        else win.element.setAttribute('aria-label', name);
+      },
     );
     win.onShown(() => form.focus(this.model.state.activeField));
     // Closed by the user some other way (the close button): as Cancel, which may keep it open.
@@ -4349,12 +4405,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
         const i = model.adaptiveIndex();
         if (i >= 0) this.backToRow(i);
       },
-      prepare: (field, r, isNew, options) => {
-        const e: GridEditorPreparingEventArgs<T> = { field, row: { ...r }, isNew, options, cancel: false };
-        model.events.editorPreparing.fire(e);
-        return !e.cancel;
-      },
-      prepared: (field, r, isNew, editor) => this.editorPrepared(field, r, isNew, editor, 'adaptive'),
+      prepare: (field, r, c, isNew, options) => this.editorPreparing(field, r, c, isNew, options),
+      prepared: (field, r, c, isNew, editor) => this.editorPrepared(field, r, c, isNew, editor, 'adaptive'),
       // Its editors edit the row as its cells do: the row becomes the one being edited.
       begin: () => {
         const st = model.state;
@@ -5801,4 +5853,9 @@ function textWidth(el: HTMLElement): number {
   range.selectNodeContents(el);
   const w = range.getBoundingClientRect?.().width ?? 0;
   return w || el.scrollWidth;
+}
+
+function sameList(a: readonly unknown[] | undefined, b: readonly unknown[] | undefined): boolean {
+  if (!a || !b) return a === b;
+  return a.length === b.length && a.every((value, i) => Object.is(value, b[i]));
 }

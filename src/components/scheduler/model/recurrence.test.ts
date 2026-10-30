@@ -1,4 +1,3 @@
-import { reactive } from '@motifx/core';
 import { describe, expect, it } from 'vitest';
 import { TimeZone } from '../../../parts/dates/time-zone';
 import type { SchedulerFields } from '../scheduler-fields';
@@ -49,7 +48,7 @@ const tick = async () => {
 };
 
 function model(items: Item[], date: Date, zone = berlin, type: ResolvedView['type'] = 'week') {
-  const state = reactive({ items, date, zone: zone.name });
+  const state = { items, date, zone: zone.name };
   const m = new SchedulerModel<Item>({
     date: () => state.date,
     items: () => state.items,
@@ -71,7 +70,7 @@ const minutes = (piece: { top: number; height: number }) => [Math.round(piece.to
 
 describe('series in the layout', () => {
   it('a series shows its occurrences in the days shown, each the same object while it stays, flagged as a series', async () => {
-    const items = reactive([
+    const items = [
       {
         id: 1,
         text: 'Standup',
@@ -79,27 +78,33 @@ describe('series in the layout', () => {
         endDate: on(berlin, 2026, 10, 5, 9, 15),
         recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,WE,FR',
       },
-    ]) as Item[];
+    ] as Item[];
     const { m, state } = model(items, new Date(2026, 9, 28));
     await tick();
     expect(m.state.timed.map((p) => p.column)).toEqual([0, 2, 4]);
     expect(m.state.timed.every((p) => p.series && !p.exception)).toBe(true);
     expect(minutes(m.state.timed[0])).toEqual([540, 15]);
     const first = m.state.timed[0];
-    const occurrence = first.item;
+    const occurrence = m.itemOf(first);
     expect(m.occurrenceOf(occurrence)?.series).toBe(m.seriesOf(occurrence));
     items[0].text = 'Daily';
     await tick();
+    expect(first.text).toBe('Standup');
+    const version = first.version;
+    m.refresh(items[0]);
+    await tick();
     expect(m.state.timed[0]).toBe(first);
+    expect(first.version).toBeGreaterThan(version);
     expect(first.text).toBe('Daily');
     state.date = new Date(2026, 10, 4);
+    m.update();
     await tick();
     expect(m.state.timed.map((p) => p.column)).toEqual([0, 2, 4]);
     expect(m.appointmentsIn(on(berlin, 2026, 10, 1), on(berlin, 2026, 11, 1)).length).toBe(12);
   });
 
   it('times in the exception field are left out; an occurrence changed apart shows marked as one', async () => {
-    const items = reactive([
+    const items = [
       {
         id: 1,
         text: 'Review',
@@ -109,7 +114,7 @@ describe('series in the layout', () => {
         recurrenceException: '20261026T090000Z',
       },
       { id: 2, text: 'Review (moved)', startDate: on(berlin, 2026, 10, 27, 14), endDate: on(berlin, 2026, 10, 27, 15), recurrenceId: 1 },
-    ]) as Item[];
+    ] as Item[];
     const { m } = model(items, new Date(2026, 9, 28));
     await tick();
     expect(m.state.timed.map((p) => [p.column, p.text, p.series, p.exception])).toEqual([[1, 'Review (moved)', false, true]]);
@@ -144,9 +149,11 @@ describe('series in the layout', () => {
     await tick();
     expect(minutes(m.state.timed[0])).toEqual([900, 60]);
     state.date = new Date(2026, 2, 9);
+    m.update();
     await tick();
     expect(minutes(m.state.timed[0])).toEqual([840, 60]);
     state.date = new Date(2026, 2, 30);
+    m.update();
     await tick();
     expect(minutes(m.state.timed[0])).toEqual([900, 60]);
   });
@@ -189,6 +196,7 @@ describe('summer time in the layout', () => {
     expect([forward.column, ...minutes(forward)]).toEqual([6, 60, 180]);
     expect((forward.end.getTime() - forward.start.getTime()) / MINUTE).toBe(120);
     state.date = new Date(2026, 10, 1);
+    m.update();
     await tick();
     const back = m.state.timed[0];
     expect([back.text, back.column, ...minutes(back)]).toEqual(['Back', 6, 90, 60]);
@@ -201,6 +209,7 @@ describe('summer time in the layout', () => {
     await tick();
     expect(m.state.timed[0].column).toBe(1);
     state.zone = tokyo.name;
+    m.update();
     await tick();
     expect([m.state.timed[0].column, ...minutes(m.state.timed[0])]).toEqual([2, 300, 60]);
     expect(m.state.days[0].date.toISOString()).toBe('2026-10-25T15:00:00.000Z');
@@ -209,9 +218,9 @@ describe('summer time in the layout', () => {
 
 describe('series edits', () => {
   function setup(rule = 'FREQ=WEEKLY;BYDAY=MO,WE', exceptions = '') {
-    const items = reactive([
+    const items = [
       { id: 1, text: 'Sync', startDate: on(berlin, 2026, 10, 5, 9), endDate: on(berlin, 2026, 10, 5, 10), recurrenceRule: rule, recurrenceException: exceptions },
-    ]) as Item[];
+    ] as Item[];
     const { m } = model(items, new Date(2026, 9, 28));
     const edit = new SeriesEdit<Item>({
       fields: () => FIELDS,

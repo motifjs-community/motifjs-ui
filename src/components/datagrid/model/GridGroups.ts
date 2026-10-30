@@ -6,6 +6,7 @@ import type { ColumnModel } from './ColumnModel';
 import type { GroupLevel } from './group-level';
 import type { GroupNode } from './group-node';
 import type { Switches } from './Switches';
+import { readField } from './read-field';
 
 /**
  * What the rows are grouped by, in order, and which groups are open. A level opens its groups by
@@ -144,7 +145,7 @@ export class GridGroups<T> {
     const set = this.levelDefaults.get(level);
     if (set !== undefined) return set;
     const field = this.state.items[level]?.field;
-    const own = field ? read(this.columns.get(field).autoExpandGroup) : undefined;
+    const own = field ? readField(this.columns.get(field), 'autoExpandGroup') : undefined;
     return typeof own === 'boolean' ? own : this.settings.get('autoExpandAll');
   }
 

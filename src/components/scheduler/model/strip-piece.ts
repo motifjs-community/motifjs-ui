@@ -1,7 +1,8 @@
 /** An all-day or multi-day appointment drawn as a bar over a row of days (the all-day panel, a week of the month). */
 export interface StripPiece<T> {
   id: string;
-  item: T;
+  /** Moves on when its appointment was read again (a refresh, an edit) or is another object: what shows it reads it again. The appointment itself is the model's `itemOf(piece)`. */
+  version: number;
   /** The first column of the row it covers, and how many; the group's index (-1 without groups). */
   first: number;
   span: number;

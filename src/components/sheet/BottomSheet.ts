@@ -1,4 +1,5 @@
-import { effect, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { follow } from '../../core/follow';
 import { ResizeWatch } from '../../core/resize-watch';
 import { uiLocale } from '../../core/ui-locale';
 import { cssLength } from '../../parts/overlay/css-length';
@@ -78,10 +79,7 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
     this.observeProperty<boolean | undefined>('showHandle', (on) => (parts.handle.hidden = on === false));
     this.observeProperty('detents', () => this.isOpen && this.placePanel());
     this.observeProperty('topGap', () => this.isOpen && this.placePanel());
-    parts.stopTexts = effect(() => {
-      void uiLocale.strings;
-      untracked(() => this.renderHandle());
-    });
+    parts.stopTexts = follow(this, 'texts', () => uiLocale.strings, () => this.renderHandle());
     this.listenDrag();
     // Whether the content scrolls is known once a change of height has run.
     this.panelElement.addEventListener('transitionend', (e) => e.target === this.panelElement && e.propertyName === 'block-size' && this.updateBodyFocus());

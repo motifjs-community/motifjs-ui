@@ -69,7 +69,7 @@
   "peerDependencies": {
     "@motifx-community/data": "0.x",
     "@motifx-community/design-system": "0.x",
-    "@motifx/core": "^1.2.0-rc.22",
+    "@motifx/core": "^1.2.0-rc.23",
     "exceljs": "^4.4.0",
     "jspdf": "^4.2.1"
   },
@@ -84,8 +84,8 @@
   "devDependencies": {
     "@motifx-community/data": "file:../motifjs-data",
     "@motifx-community/design-system": "file:../motifjs-design-system",
-    "@motifx/compiler": "1.2.0-rc.22",
-    "@motifx/core": "1.2.0-rc.22",
+    "@motifx/compiler": "1.2.0-rc.23",
+    "@motifx/core": "1.2.0-rc.23",
     "@types/node": "^24.19.1",
     "axe-core": "^4.11.0",
     "exceljs": "^4.4.0",

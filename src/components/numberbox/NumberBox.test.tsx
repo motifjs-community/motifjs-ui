@@ -124,6 +124,85 @@ describe('NumberBox', () => {
     ]);
   });
 
+  it('rounds a value given with more decimals than asked from the start, and writes it to x-model', async () => {
+    const s = reactive({ weight: 72.456 as number | null });
+    const plain = { weight: 72.456 };
+    let n!: NumberBox;
+    let p!: NumberBox;
+    page(
+      <NumberBox ref={(x: NumberBox) => (n = x)} decimals={1} locale="en" x-model={() => s.weight} />,
+      <NumberBox ref={(x: NumberBox) => (p = x)} decimals={1} locale="en" value={() => plain.weight} />,
+    );
+    await settle();
+    expect(n.value).toBe(72.5);
+    expect(s.weight).toBe(72.5);
+    expect(input(n).value).toBe('72.5');
+    expect(p.value).toBe(72.5);
+    expect(plain.weight).toBe(72.456);
+    n.decimals = 0;
+    expect(n.value).toBe(73);
+    expect(s.weight).toBe(73);
+  });
+
+  it('shows exactly decimals digits while not edited, the plain number while edited, unless format says otherwise', async () => {
+    let n!: NumberBox;
+    let f!: NumberBox;
+    page(
+      <NumberBox ref={(x: NumberBox) => (n = x)} decimals={2} locale="en" value={72.5} />,
+      <NumberBox ref={(x: NumberBox) => (f = x)} decimals={2} format={{ minimumFractionDigits: 0 }} locale="en" value={72.5} />,
+    );
+    await settle();
+    expect(input(n).value).toBe('72.50');
+    expect(input(f).value).toBe('72.5');
+    input(n).focus();
+    await settle();
+    expect(input(n).value).toBe('72.5');
+    input(n).blur();
+    await settle();
+    expect(input(n).value).toBe('72.50');
+  });
+
+  it('shows its spin buttons again after they were switched off', async () => {
+    const s = reactive({ spin: true });
+    let n!: NumberBox;
+    page(<NumberBox ref={(x: NumberBox) => (n = x)} showSpinButtons={() => s.spin} />);
+    await settle();
+    s.spin = false;
+    await settle();
+    expect(n.element.querySelector('.mx-number-box__step')).toBeNull();
+    s.spin = true;
+    await settle();
+    expect(spinButton(n, 'up').isConnected).toBe(true);
+    expect(n.element.querySelectorAll('.mx-number-box__step')).toHaveLength(2);
+    n.spinLayout = 'inline';
+    expect(n.element.querySelectorAll('.mx-number-box__step')).toHaveLength(2);
+  });
+
+  it('reads functions over plain data again on reState, and writes steps and values from code to x-model', async () => {
+    const plain = { n: 5, max: 10, step: 1 };
+    const s = reactive({ qty: 1 as number | null });
+    let n!: NumberBox;
+    let q!: NumberBox;
+    const host = page(
+      <NumberBox ref={(x: NumberBox) => (n = x)} locale="en" value={() => plain.n} max={() => plain.max} step={() => plain.step} />,
+      <NumberBox ref={(x: NumberBox) => (q = x)} locale="en" x-model={() => s.qty} />,
+    );
+    await settle();
+    Object.assign(plain, { n: 8, max: 20, step: 5 });
+    await settle();
+    expect(input(n).value).toBe('5');
+    host.reState();
+    expect(input(n).value).toBe('8');
+    expect(n.max).toBe(20);
+    n.stepUp();
+    expect(n.value).toBe(13);
+    expect(plain.n).toBe(8);
+    q.stepUp();
+    expect(s.qty).toBe(2);
+    q.value = 9;
+    expect(s.qty).toBe(9);
+  });
+
   it('commits when the field is left with updateOn="change", rounded and kept in range', async () => {
     const s = reactive({ n: 1 as number | null });
     let n!: NumberBox;

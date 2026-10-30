@@ -32,6 +32,7 @@ export default function RowReorder() {
             const to = s.rows.indexOf(e.toItemData as Task);
             s.rows.splice(from, 1);
             s.rows.splice(to, 0, e.itemData);
+            e.component.refresh();
           },
         }}
       />

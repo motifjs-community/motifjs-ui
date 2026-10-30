@@ -251,7 +251,6 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
       } finally {
         this.parts.byUser = false;
       }
-      this.bindings.writeModel(this.value);
     });
   }
 
@@ -371,15 +370,16 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
   private syncValue(): void {
     const parts = this.parts;
     if (parts.applying || !parts.ready) return;
+    const before = this.peekProperty<readonly (string | number)[] | null | undefined>('value');
+    const now = untracked(() => this.value);
     parts.syncing = true;
     try {
-      this.changeProperty(
-        'value',
-        untracked(() => this.value),
-      );
+      this.changeProperty('value', now);
     } finally {
       parts.syncing = false;
     }
+    // `x-model` hears every change of what is open, from wherever it comes.
+    if (!sameKeys(before, now)) this.bindings.writeModel(now);
   }
 
   // Keys.
@@ -444,4 +444,8 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
       for (const item of items) item.renderOuter(level, region, this.locked(item));
     });
   }
+}
+
+function sameKeys(a: readonly (string | number)[] | null | undefined, b: readonly (string | number)[]): boolean {
+  return !!a && a.length === b.length && a.every((key, i) => key === b[i]);
 }

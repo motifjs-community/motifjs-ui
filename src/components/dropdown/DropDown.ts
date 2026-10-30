@@ -1,5 +1,6 @@
-import { effect, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import type { data } from '@motifx-community/data';
+import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
 import { chevronDown } from '../../core/glyphs';
 import type { IconSource } from '../../core/icon-source';
@@ -8,6 +9,8 @@ import { DataItems } from '../../parts/data/DataItems';
 import { Field } from '../../parts/field/Field';
 import type { ItemField } from '../../parts/list/item-field';
 import { OptionList } from '../../parts/list/OptionList';
+import { givenList } from '../../core/given-field';
+import { itemOwnValue } from '../../parts/list/item-own-value';
 import { readItemField } from '../../parts/list/read-item-field';
 import { Popup } from '../../parts/popup/Popup';
 import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
@@ -71,19 +74,28 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     const parts = this.dropParts;
     const chevron = this.area('actions').appendChild(chevronDown());
     chevron.classList.add('mx-drop-down__chevron');
-    // The field follows the items, the value and the texts it reads.
-    const stopField = effect(() => {
-      const items = this.items;
-      const value = this.value;
-      const placeholder = this.getProperty<string | undefined>('placeholder') ?? '';
-      const template = this.getProperty<Template<T>>('fieldTemplate');
-      void this.getProperty('textField');
-      void this.getProperty('valueField');
-      void this.getProperty('chosenTick');
-      const item = this.itemOfValue(items, value);
-      const text = item === undefined ? (value == null ? '' : String(value)) : this.itemText(item);
-      untracked(() => this.renderField(item, text, placeholder, template));
-    });
+    // The field follows the items given, the value and its own props; the items' fields are read as they are.
+    const stopField = follow(
+      this,
+      'field',
+      () => {
+        void this.getProperty('textField');
+        void this.getProperty('valueField');
+        void this.getProperty('chosenTick');
+        void this.getProperty('refreshed');
+        return {
+          items: this.items,
+          value: this.value,
+          placeholder: this.getProperty<string | undefined>('placeholder') ?? '',
+          template: this.getProperty<Template<T>>('fieldTemplate'),
+        };
+      },
+      ({ items, value, placeholder, template }) => {
+        const item = this.itemOfValue(items, value);
+        const text = item === undefined ? (value == null ? '' : String(value)) : this.itemText(item);
+        this.renderField(item, text, placeholder, template);
+      },
+    );
     this.observeProperty('dataSource', () => this.renderSource());
     // A value field by name lets a value on no loaded page be asked for by that field.
     this.observeProperty<ItemField<T> | undefined>('valueField', (field) => (parts.source.valueField = typeof field === 'string' ? field : undefined));
@@ -194,7 +206,10 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   /** The item whose value is the value, when it is known. */
   get selectedItem(): T | undefined {
     void this.getProperty('chosenTick');
-    return this.itemOfValue(this.items, this.value);
+    void this.getProperty('refreshed');
+    const items = this.items;
+    const value = this.value;
+    return untracked(() => this.itemOfValue(items, value));
   }
 
   /** Whether the list is open. Reactive. Setting it opens or closes it. */
@@ -252,6 +267,20 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     this.commit(null);
   }
 
+  /**
+   * Reads the items again after they were changed in place: the field's text and the open list. Your items may be
+   * plain or reactive; the drop-down reads them as they are.
+   */
+  override refresh(): void {
+    super.refresh();
+    const parts = this.dropParts;
+    this.setProperty('refreshed', (this.peekProperty<number>('refreshed') ?? 0) + 1);
+    if (parts.popup?.isOpen) {
+      this.drawList();
+      parts.popup.place();
+    }
+  }
+
   /** For subclasses: the popup and its list were made (e.g. to add a header above the list). */
   protected popupCreated(_popup: Popup, _list: OptionList<T>): void {}
 
@@ -307,7 +336,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   private itemValue(item: T): unknown {
     const field = this.peekProperty<ItemField<T>>('valueField');
     if (field !== undefined) return readItemField(item, field, 'value');
-    return item !== null && typeof item === 'object' && 'value' in item ? (item as { value: unknown }).value : item;
+    return itemOwnValue(item);
   }
 
   private indexOfValue(): number {
@@ -327,7 +356,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   private itemOfValue(items: readonly T[], value: V | null): T | undefined {
     const parts = this.dropParts;
     const same = (item: T) => this.sameValue(this.itemValue(item) as V | null, value);
-    if (!parts.source.dataSource) return items.find(same);
+    if (!parts.source.dataSource) return givenList(items).find(same);
     if (value === null || value === undefined) return undefined;
     if (parts.chosen !== undefined && same(parts.chosen)) return parts.chosen;
     const near = parts.source.findLoaded(value, (item) => this.itemValue(item), (a, b) => this.sameValue(a as V, b as V));
@@ -372,7 +401,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   }
 
   private visibleItems(): readonly T[] {
-    const items = this.peekProperty<readonly T[]>('items') ?? [];
+    const items = givenList(this.peekProperty<readonly T[]>('items'));
     const filter = this.dropParts.filter.trim().toLocaleLowerCase();
     if (!filter) return items;
     const starts = this.peekProperty('searchMode') === 'startswith';
@@ -530,18 +559,15 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   private watchList(): void {
     const parts = this.dropParts;
     parts.stopList?.();
-    parts.stopList = effect(() => {
-      const items = this.items;
-      for (const item of items) this.itemText(item);
-      void this.getProperty('textField');
-      void this.getProperty('iconField');
-      void this.getProperty('groupField');
-      void this.getProperty('itemTemplate');
-      untracked(() => {
+    parts.stopList = follow(
+      this,
+      'list',
+      () => [this.items, this.getProperty('textField'), this.getProperty('iconField'), this.getProperty('groupField'), this.getProperty('itemTemplate')],
+      () => {
         this.drawList();
         parts.popup?.place();
-      });
-    });
+      },
+    );
   }
 
   private drawList(): void {

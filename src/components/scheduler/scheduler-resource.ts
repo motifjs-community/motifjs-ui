@@ -13,7 +13,7 @@ export interface SchedulerResource<R = Record<string, unknown>> {
   field: string;
   /** What it is called: the form's label, and how the cells and the tooltip name it. Default: the field. */
   label?: Bind<string>;
-  /** The items, in memory or from a data source (loaded once, then followed). */
+  /** The items, in memory or from a data source (loaded once, then followed); plain or reactive, read as they are: after changing them in place, call the scheduler's `refreshResources()`. */
   items?: Bind<readonly R[] | data.DataSource<R, unknown> | null>;
   /** The item field of its value. Default `'id'`. */
   valueExpr?: string;

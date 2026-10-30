@@ -290,7 +290,7 @@ describe('lookup columns: setCellValue and onEditorPreparing', () => {
         values.cityId = null;
       },
     },
-    { field: 'cityId', title: 'City', lookup: { dataSource: CITIES, valueField: 'id', textField: 'name', filter: (row) => (row ? data.where('stateId', '=', row.stateId) : null) } },
+    { field: 'cityId', title: 'City', lookup: { dataSource: CITIES, valueField: 'id', textField: 'name', filter: (row, { getValue }) => (row ? data.where('stateId', '=', getValue('stateId')) : null) } },
   ];
   const makeAddresses = (rows: Address[], more: Partial<DataGridProps<Address>> = {}) => {
     const grid = mount(
@@ -301,7 +301,7 @@ describe('lookup columns: setCellValue and onEditorPreparing', () => {
         columns: addressColumns,
         settings: { editable: true },
         onEditorPreparing: (e) => {
-          if (e.field === 'cityId') e.options.enabled = e.row.stateId !== null;
+          if (e.field === 'cityId') e.options.enabled = e.getValue('stateId') !== null;
         },
         ...more,
       }),

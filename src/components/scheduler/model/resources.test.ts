@@ -1,4 +1,3 @@
-import { reactive } from '@motifx/core';
 import { describe, expect, it } from 'vitest';
 import type { SchedulerBlockedTime } from '../scheduler-blocked-time';
 import type { SchedulerFields } from '../scheduler-fields';
@@ -58,7 +57,7 @@ function model(
   settings: Partial<ResolvedView> = {},
   more: { resources?: SchedulerResource<unknown>[]; blocked?: SchedulerBlockedTime[]; overlap?: boolean | TimeRule<Item>; offHours?: boolean } = {},
 ) {
-  const state = reactive({
+  const state = {
     items,
     resources: more.resources ?? [
       { field: 'roomId', label: 'Room', items: rooms },
@@ -80,7 +79,7 @@ function model(
     blocked: more.blocked ?? [],
     overlap: more.overlap ?? true,
     offHours: more.offHours ?? true,
-  });
+  };
   const resources = new Resources(() => state.resources as SchedulerResource<unknown>[]);
   const m = new SchedulerModel<Item>({
     date: () => at(28, 0),
@@ -99,7 +98,7 @@ function model(
     allowOffHours: () => state.offHours,
   });
   m.start();
-  return { m, state };
+  return { m, state, resources };
 }
 
 const meeting = (id: number, day: number, from: number, to: number, more: Partial<Item> = {}): Item => ({ id, text: `M${id}`, startDate: at(day, from), endDate: at(day, to), ...more });
@@ -107,14 +106,15 @@ const meeting = (id: number, day: number, from: number, to: number, more: Partia
 describe('resources', () => {
   it('colour an appointment: its own first, then the kind marked to colour, else the first kind with a colour', async () => {
     const items = [meeting(1, 27, 9, 10, { roomId: 2, ownerIds: [1] }), meeting(2, 27, 11, 12, { roomId: 2, color: '#000000' }), meeting(3, 27, 13, 14, { ownerIds: [3] })];
-    const { m, state } = model(items);
+    const { m, state, resources } = model(items);
     await tick();
-    const color = (id: number) => m.state.timed.find((p) => p.item.id === id)!.color;
+    const color = (id: number) => m.state.timed.find((p) => m.itemOf(p).id === id)!.color;
     expect([color(1), color(2), color(3)]).toEqual(['#2e7d32', '#000000', '#6a1b9a']);
     state.resources = [
       { field: 'roomId', items: rooms },
       { field: 'ownerIds', items: people, allowMultiple: true, useColorAsDefault: true },
     ];
+    resources.listChanged();
     await tick();
     expect([color(1), color(2), color(3)]).toEqual(['#ad1457', '#000000', '#6a1b9a']);
   });
@@ -142,6 +142,7 @@ describe('resources', () => {
     expect(m.state.columns[7].edge).toBe('outer');
     expect(m.state.dates).toHaveLength(14);
     state.view = { ...state.view, groupByDate: true };
+    m.update();
     await tick();
     expect(order().slice(0, 4)).toEqual(['Blue26', 'Green26', 'Blue27', 'Green27']);
     expect(m.state.columns.slice(0, 3).map((c) => c.edge)).toEqual(['', 'inner', 'outer']);
@@ -157,12 +158,12 @@ describe('resources', () => {
     ];
     const { m } = model([meeting(1, 28, 9, 10, { roomId: 1, ownerIds: [1, 2] }), meeting(2, 28, 9, 10, { roomId: 1 })], { groups: ['ownerIds'], type: 'day' }, { resources });
     await tick();
-    expect(m.state.timed.map((p) => [p.item.id, p.column, p.group, p.color])).toEqual([
+    expect(m.state.timed.map((p) => [m.itemOf(p).id, p.column, p.group, p.color])).toEqual([
       [1, 0, 0, '#ad1457'],
       [1, 1, 1, '#ef6c00'],
     ]);
     // Without a value of the field it is grouped by, an appointment is in no group.
-    expect(m.state.shown.map((i) => i.id)).toEqual([1]);
+    expect(m.shown().map((i) => i.id)).toEqual([1]);
   });
 
   it('cut a bar over the groups under each date into a piece per day', async () => {
@@ -171,6 +172,7 @@ describe('resources', () => {
     await tick();
     expect(m.state.allDay.pieces.map((p) => [p.first, p.span, p.before, p.after])).toEqual([[1, 2, false, false]]);
     state.view = { ...state.view, groupByDate: true };
+    m.update();
     await tick();
     expect(m.state.allDay.pieces.map((p) => [p.first, p.span, p.before, p.after])).toEqual([
       [2, 1, false, true],
@@ -258,6 +260,7 @@ describe('availability', () => {
     // Without groups, every appointment counts.
     state.view = { ...state.view, groups: [] };
     state.overlap = false;
+    m.update();
     await tick();
     expect(m.check(moving, at(27, 9, 30), at(27, 10, 30), false).check.overlapping.map((i) => i.id)).toEqual([1, 2]);
   });

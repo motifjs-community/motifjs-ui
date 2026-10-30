@@ -1,5 +1,7 @@
-import { Component, effect, read, untracked, type Bind, type ComponentBase, type IBaseProp } from '@motifx/core';
+import { Component, createSignal, untracked, type Bind, type ComponentBase, type IBaseProp, type Signal } from '@motifx/core';
 import { Control } from '../../core/control';
+import { follow } from '../../core/follow';
+import { givenField, givenList, givenValue } from '../../core/given-field';
 import type { FieldLabelMode } from '../../parts/field/field-label-mode';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import { ValidationGroup } from '../../parts/validation/ValidationGroup';
@@ -22,6 +24,7 @@ import { TextBox } from '../textbox/TextBox';
 import type { FormEditorFactory } from './form-editor-factory';
 import type { FormItem } from './form-item';
 import type { FormLayoutProps } from './form-layout-props';
+import type { FormTab } from './form-tab';
 
 type Props = Record<string, unknown>;
 
@@ -36,7 +39,20 @@ interface Parts {
   stops: (() => void)[];
   /** The tabs of the form, so a check can show the tab of the field that failed. */
   tabs: Tabs[];
+  /** Every item drawn, in order: `refresh` draws the form again only when they are no longer the same. */
+  drawn: object[];
+  /** The item of each field's editor. */
+  fieldItems: Map<string, FormItem>;
+  /** Bumped by `refresh`: the items' fields and the data are read again. */
+  version: Signal<number>;
+  /** Bumped by `refreshField`, by field. */
+  fieldVersions: Map<string, Signal<number>>;
+  /** The items and the data the form was made of: a `reState()` that finds the same ones makes nothing again. */
+  madeOf: { items: unknown; data: unknown } | null;
 }
+
+/** Props an editor takes from its item, given again by `refresh`. */
+const ITEM_PROPS = ['label', 'required', 'rules', 'helpText', 'enabled'] as const;
 
 /**
  * Lays out the fields of a data object: each item a field with its editor (chosen by name, by the
@@ -91,12 +107,17 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     });
     this.motif.on('x:built', () => {
       // Items and data: what the form is made of.
-      const stop = effect(() => {
-        void this.getProperty('items');
-        void this.getProperty('data');
-        untracked(() => this.render());
-      });
-      this.motif.setDisposable(stop);
+      follow(
+        this,
+        'form',
+        () => ({ items: this.getProperty('items'), data: this.getProperty('data') }),
+        (now) => {
+          const was = this.formParts.madeOf;
+          if (was && was.items === now.items && was.data === now.data) return;
+          this.formParts.madeOf = now;
+          this.render();
+        },
+      );
     });
     this.motif.setDisposable(() => this.clear());
   }
@@ -168,6 +189,36 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     this.formParts.group.reset();
   }
 
+  /**
+   * Reads your data object and the items again after they were changed in place: every editor's value, the items'
+   * texts and states, and the layout when items were added or removed. Your data and items may be plain or
+   * reactive; the form reads them as they are.
+   */
+  refresh(): void {
+    const parts = this.formParts;
+    const items = this.peekProperty<readonly FormItem[]>('items') ?? [];
+    const now = this.flatten(items);
+    if (now.length !== parts.drawn.length || now.some((item, i) => item !== parts.drawn[i])) {
+      untracked(() => this.render());
+      return;
+    }
+    for (const [field, item] of parts.fieldItems) {
+      const editor = parts.editors.get(field) as unknown as Record<string, unknown> | undefined;
+      if (!editor) continue;
+      for (const key of ITEM_PROPS) {
+        const value = givenValue(item, key);
+        if (value !== undefined && key in editor) editor[key] = value;
+      }
+    }
+    parts.version.value = parts.version.peek() + 1;
+  }
+
+  /** Reads one field of your data object again, after it was changed in place. */
+  refreshField(field: string): void {
+    const version = this.formParts.fieldVersions.get(field);
+    if (version) version.value = version.peek() + 1;
+  }
+
   /** Checks every field, then reports the form as sent (`onValidSubmit`) or not (`onInvalidSubmit`). */
   async submit(event: Event = new Event('submit')): Promise<boolean> {
     const result = await this.validate();
@@ -178,7 +229,31 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
 
   private get formParts(): Parts {
     const self = this as unknown as { [PARTS]?: Parts };
-    return (self[PARTS] ??= { group: new ValidationGroup(), made: [], editors: new Map(), stops: [], tabs: [] });
+    return (self[PARTS] ??= {
+      group: new ValidationGroup(),
+      made: [],
+      editors: new Map(),
+      stops: [],
+      tabs: [],
+      drawn: [],
+      fieldItems: new Map(),
+      version: createSignal(0),
+      fieldVersions: new Map(),
+      madeOf: null,
+    });
+  }
+
+  /** The items and every item inside them (groups, tabs), in order. */
+  private flatten(items: readonly FormItem[], into: object[] = []): object[] {
+    for (const item of givenList(items)) {
+      into.push(item);
+      this.flatten(givenValue<readonly FormItem[] | undefined>(item, 'items') ?? [], into);
+      for (const page of givenList(givenValue<readonly FormTab[] | undefined>(item, 'tabs'))) {
+        into.push(page);
+        this.flatten(givenValue<readonly FormItem[]>(page, 'items') ?? [], into);
+      }
+    }
+    return into;
   }
 
   private clear(): void {
@@ -186,6 +261,8 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     for (const stop of parts.stops.splice(0)) stop();
     for (const made of parts.made.splice(0)) if (!made.isDisposed) void made.dispose();
     parts.editors.clear();
+    parts.fieldItems.clear();
+    parts.fieldVersions.clear();
     parts.tabs.length = 0;
   }
 
@@ -200,10 +277,11 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
   private render(): void {
     this.clear();
     const items = this.peekProperty<readonly FormItem[]>('items') ?? [];
+    this.formParts.drawn = this.flatten(items);
     this.element.querySelector(':scope > .mx-form-layout__grid')?.remove();
     const grid = this.element.appendChild(document.createElement('div'));
     grid.className = 'mx-form-layout__grid';
-    for (const item of items) this.place(item, grid);
+    for (const item of givenList(items)) this.place(item, grid);
   }
 
   private place(item: FormItem, host: HTMLElement): void {
@@ -212,7 +290,18 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     cell.className = 'mx-form-layout__item';
     if (item.colSpan === 'all') cell.dataset.span = 'all';
     else if (item.colSpan && item.colSpan > 1) cell.style.setProperty('--_form-span', String(item.colSpan));
-    if (item.visible !== undefined) parts.stops.push(effect(() => (cell.hidden = read(item.visible) === false)));
+    // The items' own functions are followed; their fields are read again by `refresh`.
+    parts.stops.push(
+      follow(
+        this,
+        'itemVisible',
+        () => {
+          void parts.version.value;
+          return givenField(item, 'visible') === false;
+        },
+        (hidden) => (cell.hidden = hidden),
+      ),
+    );
 
     if (item.items) {
       const group = cell.appendChild(document.createElement('fieldset'));
@@ -221,12 +310,22 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
       if (item.group !== undefined) {
         const legend = group.appendChild(document.createElement('legend'));
         legend.className = 'mx-form-layout__caption';
-        parts.stops.push(effect(() => (legend.textContent = read(item.group) ?? '')));
+        parts.stops.push(
+          follow(
+            this,
+            'groupCaption',
+            () => {
+              void parts.version.value;
+              return givenField<string | undefined>(item, 'group') ?? '';
+            },
+            (caption) => (legend.textContent = caption),
+          ),
+        );
       }
       const inner = group.appendChild(document.createElement('div'));
       inner.className = 'mx-form-layout__grid';
       if (item.columns) inner.style.setProperty('--_form-columns', String(item.columns));
-      for (const child of item.items) this.place(child, inner);
+      for (const child of givenList(item.items)) this.place(child, inner);
       return;
     }
     if (item.tabs) {
@@ -248,7 +347,7 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     const parts = this.formParts;
     const tabs = new Tabs({ lazy: false, label: item.label });
     tabs.class.add('mx-form-layout__tabs');
-    for (const page of item.tabs!) {
+    for (const page of givenList(item.tabs)) {
       const tab = new Tab({
         title: page.title,
         visible: page.visible,
@@ -256,7 +355,7 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
           const panel = new Component<HTMLDivElement>('div');
           panel.element.className = 'mx-form-layout__grid';
           if (page.columns) panel.element.style.setProperty('--_form-columns', String(page.columns));
-          for (const child of page.items) this.place(child, panel.element);
+          for (const child of givenList(page.items)) untracked(() => this.place(child, panel.element));
           return panel;
         },
       });
@@ -274,23 +373,40 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
   }
 
   private editor(item: FormItem): ComponentBase {
+    const parts = this.formParts;
     const field = item.field!;
-    const value = () => (this.getProperty<T | null | undefined>('data') as Record<string, unknown> | null | undefined)?.[field];
+    const version = createSignal(0);
+    parts.fieldVersions.set(field, version);
+    parts.fieldItems.set(field, item);
+    // The data object given is followed; its field is read as it is, again on `refresh` and `refreshField`.
+    const value = () => {
+      const data = this.getProperty<T | null | undefined>('data');
+      void parts.version.value;
+      void version.value;
+      return givenValue(data, field);
+    };
     const name = item.editor ?? this.editorFor(untracked(value));
     const factory = typeof name === 'function' ? name : (FormLayout.editors.get(name) ?? FormLayout.editors.get('text')!);
     const props: Props = {
       label: item.label ?? field,
       value,
-      onValueChanged: (e: ValueChangedEventArgs<unknown>) => {
-        const data = this.peekProperty<T | null>('data') as Record<string, unknown> | null;
-        if (e.byUser && data) data[field] = e.value;
-      },
       validationGroup: this.formParts.group,
       // Not given: the field takes the design language's default.
       labelMode: () => this.getProperty<FieldLabelMode | undefined>('labelMode'),
-      readOnly: () => !!this.getProperty<boolean>('readOnly') || read(item.readOnly) === true,
+      readOnly: () => {
+        void parts.version.value;
+        return !!this.getProperty<boolean>('readOnly') || givenField(item, 'readOnly') === true;
+      },
       stretch: true,
       ...item.editorProps,
+      // The item's own handler runs too, between the field written and the change told.
+      onValueChanged: (e: ValueChangedEventArgs<unknown>) => {
+        const data = this.peekProperty<T | null>('data') as Record<string, unknown> | null;
+        const told = e.byUser && !!data;
+        if (told) data![field] = e.value;
+        (item.editorProps?.onValueChanged as ((e: ValueChangedEventArgs<unknown>) => void) | undefined)?.(e);
+        if (told) this.props?.onFieldChanged?.({ field, value: e.value, data: data as T });
+      },
     };
     for (const key of ['required', 'rules', 'helpText', 'enabled'] as const) if (item[key] !== undefined) props[key] = item[key];
     const editor = factory(props);

@@ -2,7 +2,7 @@ import type { DataGrid } from './DataGrid';
 
 /** What `masterDetail.template` gets for a row. */
 export interface DetailContext<T> {
-  /** The row; reactive (a refresh that loads the row again gives the new object). */
+  /** The row itself; read again in getters when the row shows another object (a refresh that loads it again), and on `grid.repaint()`. */
   readonly row: T;
   /** The row's key. */
   readonly key: unknown;

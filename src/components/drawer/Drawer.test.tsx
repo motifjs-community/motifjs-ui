@@ -81,6 +81,18 @@ describe('Drawer', () => {
     expect(reasons).toEqual(['escape', 'scrim']);
   });
 
+  it('x-model follows it opened from code, so the model can close it', async () => {
+    const state = reactive({ open: false });
+    let drawer!: Drawer;
+    page(<Drawer ref={(d: Drawer) => (drawer = d)} title="Navigation" x-model={() => state.open} />);
+    await settle();
+    drawer.open();
+    expect(state.open).toBe(true);
+    state.open = false;
+    await settle();
+    expect(drawer.isOpen).toBe(false);
+  });
+
   it('names its side for the reading direction: left is the end in a right-to-left page', async () => {
     const drawer = new Drawer({ side: 'left' });
     page(drawer);

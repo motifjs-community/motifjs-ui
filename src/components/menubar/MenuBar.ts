@@ -1,7 +1,10 @@
-import { effect, Emitter, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { accessKeyToken, parseAccessKey, renderAccessKey, setAccessKeyAttribute } from '../../core/access-key';
 import { Control } from '../../core/control';
+import { follow } from '../../core/follow';
+import { givenField, givenList, givenValue } from '../../core/given-field';
 import { iconNode } from '../../core/icon-node';
+import type { IconSource } from '../../core/icon-source';
 import { addShortcut, installKeyboard } from '../../core/keyboard';
 import { isNode } from '../../core/node-kind';
 import { MenuList } from '../../parts/menu/MenuList';
@@ -69,7 +72,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
       if (label) parts.bar.setAttribute('aria-label', label);
       else parts.bar.removeAttribute('aria-label');
     });
-    this.observeProperty('items', () => this.follow());
+    this.observeProperty('items', () => this.followItems());
     this.observeProperty<boolean>('focusOnF10', (on) => this.renderF10(!!on));
     this.observeProperty<boolean>('openOnHover', (on) => {
       if (parts.list) parts.list.openOnHover = on !== false;
@@ -136,6 +139,15 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     this.parts.popup?.close('code');
   }
 
+  /**
+   * Reads the items again after they were changed in place: the bar, the open menu and its submenus. Your items
+   * may be plain or reactive; the bar reads them as they are.
+   */
+  refresh(): void {
+    this.followItems();
+    if (this.parts.popup?.isOpen) this.parts.list?.refresh();
+  }
+
   /** The top item Tab reaches. */
   protected override get focusElement(): HTMLElement {
     return this.stop()?.element ?? this.parts.bar;
@@ -177,25 +189,26 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     };
   }
 
-  /** Draws the items again whenever a function in one of them reads something that changes. */
-  private follow(): void {
+  /** Draws the items again whenever a function in one of them reads something that changes, or on `reState()`. */
+  private followItems(): void {
     const parts = this.parts;
     parts.stopDrawing?.();
     const items = this.peekProperty<readonly MenuItem[]>('items') ?? [];
-    parts.stopDrawing = effect(() => {
-      const looks = items.map((item): ItemLook => {
-        const children = read(item.items);
+    // The items' own functions are followed; the list and the fields are not.
+    parts.stopDrawing = follow(this, 'items', () => {
+      const looks = givenList(items).map((item): ItemLook => {
+        const children = givenList(givenField<readonly MenuItem[] | undefined>(item, 'items'));
         return {
           item,
-          visible: read(item.visible) !== false,
-          text: read(item.text) ?? '',
-          hint: read(item.hint),
-          enabled: read(item.enabled) !== false,
-          submenu: !!children && children.some((child) => read(child.visible) !== false),
+          visible: givenField(item, 'visible') !== false,
+          text: givenField<string | undefined>(item, 'text') ?? '',
+          hint: givenField<string | undefined>(item, 'hint'),
+          enabled: givenField(item, 'enabled') !== false,
+          submenu: children.some((child) => givenField(child, 'visible') !== false),
         };
       });
-      untracked(() => this.draw(looks));
-    });
+      return looks;
+    }, (looks) => this.draw(looks));
   }
 
   private draw(looks: readonly ItemLook[]): void {
@@ -219,7 +232,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
       }
       if (!look.enabled) element.setAttribute('aria-disabled', 'true');
       if (look.hint) element.title = look.hint;
-      const source = look.item.icon === undefined ? null : read(look.item.icon);
+      const source = givenField<IconSource | null | undefined>(look.item, 'icon');
       if (source) {
         const icon = element.appendChild(document.createElement('span'));
         icon.className = 'mx-menubar__icon';
@@ -278,7 +291,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     if (parts.open !== entry) {
       list.closeSubmenu();
       parts.open?.element.setAttribute('aria-expanded', 'false');
-      list.setItems(entry.item.items ?? []);
+      list.setItems(givenValue<Bind<readonly MenuItem[]> | undefined>(entry.item, 'items') ?? []);
     }
     parts.open = entry;
     parts.current = entry.item;
@@ -312,7 +325,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
 
   private chosen(e: MenuItemClickEventArgs): void {
     this.close();
-    e.item.click?.(e);
+    givenValue<MenuItem['click']>(e.item, 'click')?.(e);
     this.parts.itemClick.fire(e);
   }
 
@@ -354,7 +367,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     }
     this.close();
     const args: MenuItemClickEventArgs = { item: entry.item, source: this, event: e };
-    entry.item.click?.(args);
+    givenValue<MenuItem['click']>(entry.item, 'click')?.(args);
     this.parts.itemClick.fire(args);
   }
 

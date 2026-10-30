@@ -1,4 +1,5 @@
-import { effect, untracked } from '@motifx/core';
+import { untracked } from '@motifx/core';
+import { follow } from '../../core/follow';
 import { iconNode } from '../../core/icon-node';
 import { isChord } from '../../core/keyboard';
 import { nextId } from '../../core/next-id';
@@ -49,16 +50,19 @@ export class AutoHideStrip {
     area.element.addEventListener('pointerenter', () => clearTimeout(this.leaveTimer));
     area.element.addEventListener('pointerleave', () => untracked(() => this.hoverOff()));
     this.stops.push(
-      effect(() => {
-        // On a tablet every dock area shows this way, in a drawer or a sheet; on a phone none does.
-        const presentation = manager.currentPresentation;
-        const folded = presentation === 'tablet' ? manager.toolStripShown(area) : presentation === 'desktop' && area.autoHidden;
-        const groups = area.groups.map((g) => ({ docs: g.documents, active: g.activeDocument }));
-        const open = area.isOpen;
-        const label = manager.textOf(AREA_TEXTS[area.side]);
-        for (const g of groups) for (const d of g.docs) void d.title, void d.icon;
-        untracked(() => this.render(folded, groups, open, label));
-      }),
+      follow(
+        manager,
+        'strip',
+        () => {
+          // On a tablet every dock area shows this way, in a drawer or a sheet; on a phone none does.
+          const presentation = manager.currentPresentation;
+          const folded = presentation === 'tablet' ? manager.toolStripShown(area) : presentation === 'desktop' && area.autoHidden;
+          const groups = area.groups.map((g) => ({ docs: g.documents, active: g.activeDocument }));
+          for (const g of groups) for (const d of g.docs) void d.title, void d.icon;
+          return { folded, groups, open: area.isOpen, label: manager.textOf(AREA_TEXTS[area.side]) };
+        },
+        ({ folded, groups, open, label }) => this.render(folded, groups, open, label),
+      ),
     );
   }
 

@@ -1,3 +1,5 @@
+import { later } from '../../../core/later';
+import { nextFrame } from '../../../core/next-frame';
 import type { Draft } from '../model/draft';
 import type { ResolvedView } from '../model/resolved-view';
 import type { SchedulerModel } from '../model/SchedulerModel';
@@ -51,7 +53,7 @@ interface Press<T> {
   started: boolean;
   /** A finger pressed it. */
   touch: boolean;
-  touchTimer?: ReturnType<typeof setTimeout>;
+  touchTimer?: () => void;
 }
 
 /**
@@ -64,7 +66,7 @@ export class AppointmentDrag<T> {
   private press: Press<T> | null = null;
   private draft: Draft<T> | null = null;
   private last: { x: number; y: number; copy: boolean } | null = null;
-  private frame = 0;
+  private stopScroll: (() => void) | null = null;
   /** The click that ends a drag is not a click on the appointment. */
   private endedAt = 0;
 
@@ -110,7 +112,7 @@ export class AppointmentDrag<T> {
     doc.addEventListener('pointercancel', this.onCancel);
     doc.addEventListener('keydown', this.onKey, true);
     if (e.pointerType === 'touch' && !now) {
-      this.press.touchTimer = setTimeout(() => this.start(), LONG_PRESS);
+      this.press.touchTimer = later(() => this.start(), LONG_PRESS);
     }
   }
 
@@ -175,7 +177,7 @@ export class AppointmentDrag<T> {
     const press = this.press;
     if (!press) return false;
     if (press.touchTimer) {
-      clearTimeout(press.touchTimer);
+      press.touchTimer();
       press.touchTimer = undefined;
     }
     const draft: Draft<T> = { item: press.item, start: press.start, end: press.end, allDay: press.allDay, copy: false, invalid: false, touch: press.touch };
@@ -191,12 +193,12 @@ export class AppointmentDrag<T> {
 
   private stop(): void {
     const press = this.press;
-    if (press?.touchTimer) clearTimeout(press.touchTimer);
+    press?.touchTimer?.();
     this.press = null;
     this.draft = null;
     this.last = null;
-    cancelAnimationFrame(this.frame);
-    this.frame = 0;
+    this.stopScroll?.();
+    this.stopScroll = null;
     const doc = this.host.root().ownerDocument;
     doc.removeEventListener('pointermove', this.onMove);
     doc.removeEventListener('pointerup', this.onUp);
@@ -319,9 +321,10 @@ export class AppointmentDrag<T> {
 
   /** Near an edge of the scroll box it scrolls, a frame at a time, and the draft follows. */
   private scrollNearEdges(): void {
-    if (this.frame) return;
+    if (this.stopScroll) return;
+    const view = this.host.root().ownerDocument.defaultView;
     const tick = () => {
-      this.frame = 0;
+      this.stopScroll = null;
       const scroller = this.host.scroller();
       const last = this.last;
       if (!scroller || !last || !this.press?.started) return;
@@ -336,9 +339,9 @@ export class AppointmentDrag<T> {
       scroller.scrollLeft += right;
       if (scroller.scrollTop === top && scroller.scrollLeft === left) return;
       this.follow();
-      this.frame = requestAnimationFrame(tick);
+      this.stopScroll = nextFrame(tick, view);
     };
-    this.frame = requestAnimationFrame(tick);
+    this.stopScroll = nextFrame(tick, view);
   }
 }
 

@@ -1,4 +1,5 @@
-import { Application, Component, effect, read, type ComponentBase } from '@motifx/core';
+import { Application, Component, read, type ComponentBase } from '@motifx/core';
+import { follow } from '../../core/follow';
 import { cautionMark, dangerMark, infoMark, successMark } from '../../core/glyphs';
 import { nextId } from '../../core/next-id';
 import { uiLocale } from '../../core/ui-locale';
@@ -51,7 +52,7 @@ export function messageBox(options: MessageBoxOptions): Promise<FormResult> {
   text.className = 'mx-message-box__text';
   text.id = nextId('message-text');
   body.element.append(text);
-  body.motif.setDisposable(effect(() => (text.textContent = read(options.text))));
+  follow(body, 'text', () => read(options.text), (value) => (text.textContent = value));
 
   const row = new Component<HTMLDivElement>('div');
   row.element.className = 'mx-message-box__buttons';

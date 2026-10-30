@@ -32,8 +32,8 @@ const columns: GridColumn<Branch>[] = [
       valueField: 'id',
       textField: 'name',
       allowClearing: true,
-      // The districts of the row's province; every district for the filter lists.
-      filter: (row) => (row ? data.where('province', '=', row.province) : null),
+      // The districts of the province entered (else the row's); every district for the filter lists.
+      filter: (row, { getValue }) => (row ? data.where('province', '=', getValue('province')) : null),
     },
   },
 ];
@@ -52,7 +52,7 @@ export default function Cascade() {
       settings={{ editable: true, addRows: true, filterRow: true, headerFilter: true }}
       newRow={{ create: () => ({ id: Math.max(0, ...branches.map((b) => b.id)) + 1, province: null, district: null }) }}
       onEditorPreparing={(e) => {
-        if (e.field === 'district') e.options.enabled = e.row.province !== null;
+        if (e.field === 'district') e.options.enabled = e.getValue('province') !== null;
       }}
     />
   );

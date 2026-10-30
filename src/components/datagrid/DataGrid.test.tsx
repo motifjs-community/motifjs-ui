@@ -289,18 +289,21 @@ describe('DataGrid', () => {
     await grid.dispose();
   });
 
-  it('follows push on a reactive local array, and changes of its rows', async () => {
+  it('loads a new array of a reactive prop; a push into the array shows after refresh()', async () => {
     const state = reactive({ rows: makeRows(3) });
     const grid = mount(new DataGrid<Row>({ rowKey: 'id', columns, rows: () => state.rows }));
     layout(grid);
     await settle();
     state.rows.push({ id: 99, name: 'New', amount: 1 });
     await settle();
+    expect(grid.total).toBe(3);
+    grid.refresh();
+    await settle();
     expect(grid.total).toBe(4);
-    expect(rowEls(grid)).toHaveLength(4);
-    state.rows[0].name = 'Changed';
-    await tick();
-    expect(cellText(rowEls(grid)[0], 'name')).toBe('Changed');
+    state.rows = makeRows(2);
+    await settle();
+    expect(grid.total).toBe(2);
+    expect(rowEls(grid)).toHaveLength(2);
     await grid.dispose();
   });
 

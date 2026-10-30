@@ -1,4 +1,3 @@
-import { read } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import type { GridColumn } from '../grid-column';
 import type { GridFilterValue } from '../grid-filter-value';
@@ -11,6 +10,7 @@ import type { ValueList } from './value-list';
 import type { ValueLoader } from './value-loader';
 import { ValueIntervals } from './ValueIntervals';
 import { ValueListAdapter } from './ValueListAdapter';
+import { readField } from './read-field';
 
 /** Asked for at once when every value is wanted. */
 const ALL = 1_000_000;
@@ -60,7 +60,7 @@ export class FilterValues<T> {
     void this.model.columns.state.revision;
     const col = this.model.columns.get(field);
     if (col.lookup || col.headerFilterItems) return null;
-    return ValueIntervals.of(col.type, read(col.headerFilterInterval), this.model.settings.get('headerFilterDateInterval'));
+    return ValueIntervals.of(col.type, readField(col, 'headerFilterInterval'), this.model.settings.get('headerFilterDateInterval'));
   }
 
   /** A list of values, or a tree (date parts, ranges in more than one level). Reactive. */

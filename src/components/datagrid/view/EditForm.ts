@@ -8,6 +8,7 @@ import type { Switches } from '../model/Switches';
 import { CellEditor } from './CellEditor';
 import type { EditFormHost } from './edit-form-host';
 import type { FormValues } from './form-values';
+import { readField } from '../model/read-field';
 
 /** Where Enter saves the form: one-line fields, not buttons, check boxes or multi-line text. */
 const ENTER_FIELDS =
@@ -231,7 +232,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     const col = model.columns.get(field);
     const rec = model.edit(rowId);
     const isNew = !!rec?.isNew;
-    const merged = { ...(row as object), ...(rec?.draft ?? {}) } as T;
+    const entered = model.enteredOf(rowId, row);
     const value = model.value(rowId, row, col);
     const own = col.formItem ?? {};
     const given = p.item;
@@ -241,7 +242,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
       labelMode: () => this.settings.get('labelMode'),
       helpText: given.helpText ?? own.helpText,
       required: model.isRequired(col),
-      readOnly: () => !fillable || read(given.readOnly) === true,
+      readOnly: () => !fillable || readField(given, 'readOnly') === true,
       enabled: given.enabled,
       validateOn: 'manual',
       error: () => {
@@ -256,12 +257,13 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     const editor = new CellEditor<T>(
       model,
       col,
-      merged,
+      row,
+      entered,
       value,
       undefined,
       { commit: () => this.keep(field), cancel: () => this.host.cancel() },
       p.holder,
-      (options) => this.host.prepare(field, merged, isNew, options),
+      (options) => this.host.prepare(field, row, entered, isNew, options),
       props,
     );
     p.value = value;
@@ -270,7 +272,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
       return;
     }
     p.editor = editor;
-    this.host.prepared(field, merged, isNew, editor);
+    this.host.prepared(field, row, entered, isNew, editor);
   }
 
   /** Fields whose value in the draft is not the one their editor was made with are made again. */

@@ -1,10 +1,12 @@
 import { onLookChanged } from '../../core/look-watch';
-import { Component, effect, Emitter, type Event as MotifEvent } from '@motifx/core';
+import { Component, Emitter, type Event as MotifEvent } from '@motifx/core';
+import { follow } from '../../core/follow';
 import { checkMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
 import { nextId } from '../../core/next-id';
 import { isElement } from '../../core/node-kind';
+import { givenList } from '../../core/given-field';
 import { uiLocale } from '../../core/ui-locale';
 import type { ItemSource } from './item-source';
 import type { ListMove } from './list-move';
@@ -77,7 +79,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
       cancelAnimationFrame(this.frame);
       this.frame = requestAnimationFrame(() => this.drawWindow());
     });
-    const stopEmpty = effect(() => (this.empty.textContent = this.emptyText?.() ?? uiLocale.strings.noItems));
+    const stopEmpty = follow(this, 'empty', () => this.emptyText?.() ?? uiLocale.strings.noItems, (text) => (this.empty.textContent = text));
     // Another design language, theme or density: the rows have another height.
     const stopLook = onLookChanged(() => {
       this.rowHeight = 0;
@@ -92,7 +94,9 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     });
   }
 
-  setItems(items: readonly T[]): void {
+  /** The items as they are now; give them again after they changed. */
+  setItems(given: readonly T[]): void {
+    const items = givenList(given);
     this.size = items.length;
     this.itemAt = (index) => items[index];
     this.ensure = null;

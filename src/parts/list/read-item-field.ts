@@ -1,10 +1,13 @@
-import { read } from '@motifx/core';
+import { untracked } from '@motifx/core';
+import { givenField } from '../../core/given-field';
 import type { ItemField } from './item-field';
 
-/** Reads `field` of `item`; a primitive item is its own value and text. A `Bind` there is read too. */
+/**
+ * Reads `field` of `item`, untracked; a primitive item is its own value and text. A `Bind` there is called and
+ * followed. A field given as a function reads the item itself, so it runs untracked too.
+ */
 export function readItemField<T>(item: T, field: ItemField<T> | undefined, fallback: string): unknown {
-  if (typeof field === 'function') return field(item);
+  if (typeof field === 'function') return untracked(() => field(item));
   if (item === null || typeof item !== 'object') return item;
-  const value = (item as Record<string, unknown>)[field ?? fallback];
-  return typeof value === 'function' ? read(value as () => unknown) : value;
+  return givenField(item, field ?? fallback);
 }

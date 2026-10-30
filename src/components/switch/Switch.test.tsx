@@ -72,6 +72,24 @@ describe('Switch', () => {
     ]);
   });
 
+  it('reads a function over plain data again on reState, and writes a value set from code to x-model', async () => {
+    const plain = { on: false };
+    const s = reactive({ on: false });
+    let sw!: Switch;
+    let m!: Switch;
+    const host = page(<Switch ref={(x: Switch) => (sw = x)} value={() => plain.on} />, <Switch ref={(x: Switch) => (m = x)} x-model={() => s.on} />);
+    await settle();
+    plain.on = true;
+    await settle();
+    expect(sw.inputElement.checked).toBe(false);
+    host.reState();
+    expect(sw.inputElement.checked).toBe(true);
+    sw.inputElement.click();
+    expect(plain.on).toBe(true);
+    m.value = true;
+    expect(s.on).toBe(true);
+  });
+
   it('flips with Enter as well as with Space, not when read-only', async () => {
     const s = reactive({ on: false, ro: false });
     let sw!: Switch;

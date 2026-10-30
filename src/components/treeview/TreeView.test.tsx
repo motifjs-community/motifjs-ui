@@ -1,5 +1,6 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dataKinds } from '../../../tests/data-kinds';
 import { mountHost, tick } from '../../../tests/helpers';
 import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
 import { TreeView } from './TreeView';
@@ -130,24 +131,85 @@ describe('TreeView', () => {
     expect(texts(plain)).toEqual(['One', 'Two']);
   });
 
-  it('follows a getter, a reactive array changing in place and the fields of an item', async () => {
-    const s = reactive({ items: files(), extra: true });
+  it('follows a getter and the functions in an item', async () => {
+    const s = reactive({ extra: true, name: 'src' });
+    const items = files();
+    items[0].text = (() => s.name) as unknown as string;
     let t!: TreeView<Folder>;
-    page(<TreeView ref={(x: TreeView<Folder>) => (t = x)} items={() => (s.extra ? s.items : s.items.slice(0, 1))} expandedKeys={['docs']} />);
+    page(<TreeView ref={(x: TreeView<Folder>) => (t = x)} items={() => (s.extra ? items : items.slice(0, 1))} expandedKeys={['docs']} />);
     await settle();
     expect(texts(t)).toEqual(['src', 'docs', 'readme.md', 'package.json']);
-    s.items[1].children!.push({ id: 'guide', text: 'guide.md' });
-    await settle();
-    expect(texts(t)).toEqual(['src', 'docs', 'readme.md', 'guide.md', 'package.json']);
-    s.items[0].text = 'source';
+    s.name = 'source';
     await settle();
     expect(texts(t)[0]).toBe('source');
-    s.items[0].expanded = true;
-    await settle();
-    expect(texts(t).slice(0, 3)).toEqual(['source', 'app.ts', 'lib']);
     s.extra = false;
     await settle();
-    expect(texts(t)).toEqual(['source', 'app.ts', 'lib']);
+    expect(texts(t)).toEqual(['source']);
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('shows items changed in place after refresh() and refreshItem()', async () => {
+      const items = make(files());
+      let t!: TreeView<Folder>;
+      page(<TreeView ref={(x: TreeView<Folder>) => (t = x)} items={items} expandedKeys={['docs']} />);
+      await settle();
+      expect(texts(t)).toEqual(['src', 'docs', 'readme.md', 'package.json']);
+      items[1].children!.push({ id: 'guide', text: 'guide.md' });
+      items[0].text = 'source';
+      await settle();
+      expect(texts(t)).toEqual(['src', 'docs', 'readme.md', 'package.json']);
+      t.refreshItem('src');
+      expect(texts(t)[0]).toBe('source');
+      t.refresh();
+      await settle();
+      expect(texts(t)).toEqual(['source', 'docs', 'readme.md', 'guide.md', 'package.json']);
+      items[0].expanded = true;
+      t.refresh();
+      await settle();
+      expect(texts(t).slice(0, 3)).toEqual(['source', 'app.ts', 'lib']);
+    });
+
+    it('gives back the very items, in events, getters and keyless values', async () => {
+      const items = make([{ text: 'One' }, { text: 'Two' }]);
+      const form = reactive({ item: null as unknown });
+      const changed = vi.fn();
+      let t!: TreeView<{ text: string }>;
+      page(<TreeView ref={(x: TreeView<{ text: string }>) => (t = x)} items={items} x-model={() => form.item} onSelectionChanged={changed} />);
+      await settle();
+      row(t, 'Two').click();
+      await settle();
+      expect(t.value).toBe(items[1]);
+      expect(t.selectedItems[0]).toBe(items[1]);
+      expect(t.itemOf(items[1])).toBe(items[1]);
+      expect(changed.mock.calls[0][0].items[0]).toBe(items[1]);
+      expect(row(t, 'Two').getAttribute('aria-selected')).toBe('true');
+    });
+  });
+
+  it('reads functions over plain data again on reState, and writes a selection set from code to x-model', async () => {
+    const plain = { name: 'app.ts', items: files() };
+    plain.items[0].children![0].text = (() => plain.name) as unknown as string;
+    const s = reactive({ file: null as unknown });
+    let t!: TreeView<Folder>;
+    let m!: TreeView<Folder>;
+    const host = page(
+      <TreeView ref={(x: TreeView<Folder>) => (t = x)} items={() => plain.items} expandedKeys={['src']} />,
+      <TreeView ref={(x: TreeView<Folder>) => (m = x)} items={files()} x-model={() => s.file} />,
+    );
+    await settle();
+    expect(texts(t)).toContain('app.ts');
+    plain.name = 'main.ts';
+    plain.items = [...plain.items, { id: 'license', text: 'LICENSE' }];
+    await settle();
+    expect(texts(t)).not.toContain('main.ts');
+    host.reState();
+    await settle();
+    expect(texts(t)).toContain('main.ts');
+    expect(texts(t)).toContain('LICENSE');
+    m.value = 'docs';
+    expect(s.file).toBe('docs');
+    m.select('package');
+    expect(s.file).toBe('package');
   });
 
   it('selects one row, two-way with x-model, and reports it', async () => {

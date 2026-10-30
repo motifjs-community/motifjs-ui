@@ -1,5 +1,6 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dataKinds } from '../../../tests/data-kinds';
 import { mountHost, tick } from '../../../tests/helpers';
 import { CheckBox } from '../checkbox/CheckBox';
 import { DateBox } from '../datebox/DateBox';
@@ -30,64 +31,101 @@ function type(input: HTMLInputElement, text: string) {
 }
 
 describe('FormLayout', () => {
-  it('picks an editor for each field by the type of its value and binds it both ways', async () => {
-    const order = reactive({ customer: 'Ada', amount: 12, paid: false, due: new Date(2026, 9, 25) });
-    let form!: FormLayout<typeof order>;
-    page(
-      <FormLayout
-        ref={(f: FormLayout<typeof order>) => (form = f)}
-        data={order}
-        columns={2}
-        items={[{ field: 'customer', label: '&Customer' }, { field: 'amount', label: 'Amount' }, { field: 'paid', label: 'Paid' }, { field: 'due', label: 'Due' }]}
-      />,
-    );
-    await settle();
-    expect(form.element.tagName).toBe('FORM');
-    expect(form.editorOf('customer')).toBeInstanceOf(TextBox);
-    expect(form.editorOf('amount')).toBeInstanceOf(NumberBox);
-    expect(form.editorOf('paid')).toBeInstanceOf(CheckBox);
-    expect(form.editorOf('due')).toBeInstanceOf(DateBox);
-    const customer = form.editorOf('customer') as TextBox;
-    expect(customer.value).toBe('Ada');
-    type(customer.inputElement, 'Grace');
-    expect(order.customer).toBe('Grace');
-    order.amount = 40;
-    await settle();
-    expect((form.editorOf('amount') as NumberBox).value).toBe(40);
-    expect(form.element.querySelectorAll('.mx-form-layout__item').length).toBe(4);
-  });
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('picks an editor for each field by the type of its value and binds it both ways', async () => {
+      const order = make({ customer: 'Ada', amount: 12, paid: false, due: new Date(2026, 9, 25) });
+      let form!: FormLayout<typeof order>;
+      page(
+        <FormLayout
+          ref={(f: FormLayout<typeof order>) => (form = f)}
+          data={order}
+          columns={2}
+          items={[{ field: 'customer', label: '&Customer' }, { field: 'amount', label: 'Amount' }, { field: 'paid', label: 'Paid' }, { field: 'due', label: 'Due' }]}
+        />,
+      );
+      await settle();
+      expect(form.element.tagName).toBe('FORM');
+      expect(form.editorOf('customer')).toBeInstanceOf(TextBox);
+      expect(form.editorOf('amount')).toBeInstanceOf(NumberBox);
+      expect(form.editorOf('paid')).toBeInstanceOf(CheckBox);
+      expect(form.editorOf('due')).toBeInstanceOf(DateBox);
+      const customer = form.editorOf('customer') as TextBox;
+      expect(customer.value).toBe('Ada');
+      type(customer.inputElement, 'Grace');
+      expect(order.customer).toBe('Grace');
+      // A change in place shows after the form reads it again, for one field or all of them.
+      order.amount = 40;
+      order.paid = true;
+      await settle();
+      expect((form.editorOf('amount') as NumberBox).value).toBe(12);
+      form.refreshField('amount');
+      await settle();
+      expect((form.editorOf('amount') as NumberBox).value).toBe(40);
+      expect((form.editorOf('paid') as CheckBox).value).toBe(false);
+      form.refresh();
+      await settle();
+      expect((form.editorOf('paid') as CheckBox).value).toBe(true);
+      expect(form.data).toBe(order);
+      expect(form.element.querySelectorAll('.mx-form-layout__item').length).toBe(4);
+    });
 
-  it('checks every field when sent and reports the outcome', async () => {
-    const user = reactive({ name: '', email: 'ada@' });
-    const onSubmit = vi.fn();
-    const onInvalid = vi.fn();
-    let form!: FormLayout<typeof user>;
-    page(
-      <FormLayout
-        ref={(f: FormLayout<typeof user>) => (form = f)}
-        data={user}
-        onValidSubmit={onSubmit}
-        onInvalidSubmit={onInvalid}
-        items={[
-          { field: 'name', label: 'Name', required: true },
-          { field: 'email', label: 'Email', editor: 'email' },
-          { button: { text: 'Send', submit: true } },
-        ]}
-      />,
-    );
-    await settle();
-    const send = form.element.querySelector<HTMLButtonElement>('button[type="submit"]')!;
-    expect(send.textContent).toBe('Send');
-    form.element.dispatchEvent(new Event('submit', { cancelable: true }));
-    await new Promise((done) => setTimeout(done, 10));
-    expect(onInvalid).toHaveBeenCalledTimes(1);
-    expect(onInvalid.mock.calls[0][0].invalid.length).toBe(2);
-    expect(document.activeElement).toBe((form.editorOf('name') as TextBox).inputElement);
-    user.name = 'Ada';
-    user.email = 'ada@motif.dev';
-    await settle();
-    expect(await form.submit()).toBe(true);
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ data: user }));
+    it('checks every field when sent and reports the outcome', async () => {
+      const user = make({ name: '', email: 'ada@' });
+      const onSubmit = vi.fn();
+      const onInvalid = vi.fn();
+      let form!: FormLayout<typeof user>;
+      page(
+        <FormLayout
+          ref={(f: FormLayout<typeof user>) => (form = f)}
+          data={user}
+          onValidSubmit={onSubmit}
+          onInvalidSubmit={onInvalid}
+          items={[
+            { field: 'name', label: 'Name', required: true },
+            { field: 'email', label: 'Email', editor: 'email' },
+            { button: { text: 'Send', submit: true } },
+          ]}
+        />,
+      );
+      await settle();
+      const send = form.element.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      expect(send.textContent).toBe('Send');
+      form.element.dispatchEvent(new Event('submit', { cancelable: true }));
+      await new Promise((done) => setTimeout(done, 10));
+      expect(onInvalid).toHaveBeenCalledTimes(1);
+      expect(onInvalid.mock.calls[0][0].invalid.length).toBe(2);
+      expect(document.activeElement).toBe((form.editorOf('name') as TextBox).inputElement);
+      user.name = 'Ada';
+      user.email = 'ada@motif.dev';
+      form.refresh();
+      await settle();
+      expect(await form.submit()).toBe(true);
+      expect(onSubmit.mock.calls[0][0].data).toBe(user);
+    });
+
+    it('reads the items again on refresh: their texts in place, new ones drawn', async () => {
+      const data = make({ city: 'Ankara', zip: '06000' });
+      const items = make([{ field: 'city', label: 'City' }] as { field: string; label: string; visible?: boolean }[]);
+      let form!: FormLayout<typeof data>;
+      page(<FormLayout ref={(f: FormLayout<typeof data>) => (form = f)} data={data} items={items} />);
+      await settle();
+      const city = form.editorOf('city') as TextBox;
+      items[0].label = 'Town';
+      items.push({ field: 'zip', label: 'Zip' });
+      await settle();
+      expect(city.label).toBe('City');
+      expect(form.editorOf('zip')).toBeUndefined();
+      form.refresh();
+      await settle();
+      expect((form.editorOf('city') as TextBox).label).toBe('Town');
+      expect((form.editorOf('zip') as TextBox).value).toBe('06000');
+      const zip = form.editorOf('zip');
+      items[1].visible = false;
+      form.refresh();
+      await settle();
+      expect(form.editorOf('zip')).toBe(zip);
+      expect((form.editorOf('zip') as TextBox).element.closest<HTMLElement>('.mx-form-layout__item')!.hidden).toBe(true);
+    });
   });
 
   it('lays out groups, spans, hidden items and a read-only form, and follows new items', async () => {
@@ -120,6 +158,33 @@ describe('FormLayout', () => {
     await settle();
     expect(form.editorOf('city')).toBeUndefined();
     expect(form.element.querySelector('label')!.textContent).toBe('Zip code');
+  });
+
+  it('reads functions over plain data again on reState without making the form again', async () => {
+    const plain = { showNote: false, caption: 'Address' };
+    const data = { city: 'Ankara', note: '' };
+    const items = [
+      { group: () => plain.caption, items: [{ field: 'city', label: 'City' }] },
+      { field: 'note', label: 'Note', visible: () => plain.showNote },
+    ];
+    let form!: FormLayout<typeof data>;
+    const host = page(<FormLayout ref={(f: FormLayout<typeof data>) => (form = f)} data={() => data} items={() => items} />);
+    await settle();
+    const city = form.editorOf('city') as TextBox;
+    city.inputElement.focus();
+    Object.assign(plain, { showNote: true, caption: 'Where' });
+    data.city = 'Bursa';
+    await settle();
+    expect(city.inputElement.value).toBe('Ankara');
+    host.reState();
+    await settle();
+    expect(form.editorOf('city')).toBe(city);
+    expect(document.activeElement).toBe(city.inputElement);
+    expect(city.inputElement.value).toBe('Bursa');
+    expect(form.element.querySelector('legend')!.textContent).toBe('Where');
+    expect((form.editorOf('note')!.element as HTMLElement).closest<HTMLElement>('.mx-form-layout__item')!.hidden).toBe(false);
+    type(city.inputElement, 'İzmir');
+    expect(data.city).toBe('İzmir');
   });
 
   it('takes editors of your own', async () => {

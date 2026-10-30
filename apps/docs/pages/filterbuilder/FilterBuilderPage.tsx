@@ -74,6 +74,7 @@ const METHODS = [
   ['openEditor(condition), closeEditor(keep?)', '`boolean`, `void`', 'The value editor, from code.'],
   ['focusItem(item, part?), focus()', '`boolean`', "A row's button (`'remove'`, `'group'`, `'add'`, `'field'`, `'operation'`, `'value'`); the tree's Tab stop."],
   ['getFilterExpression()', '`data.FilterExpression | null`', 'The value.'],
+  ['refresh()', '`void`', 'Your fields and value may be plain or reactive; the builder reads them as they are. After changing them in place, call `refresh()`. The rows are drawn again; a value changed in place is read into the tree.'],
 ];
 
 const EVENTS = [

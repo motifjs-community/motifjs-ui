@@ -5,7 +5,7 @@ import type { Scheduler } from './Scheduler';
 export interface AppointmentFormContext<T = unknown> {
   /** `null` for a new one. */
   appointment: T | null;
-  /** The values in the form (its resource fields too), reactive: a function reading them is followed. */
+  /** The values in the form (its resource fields too): a function reading them is read again when a field changes. */
   data: AppointmentFormData;
   isNew: boolean;
   source: Scheduler<T>;

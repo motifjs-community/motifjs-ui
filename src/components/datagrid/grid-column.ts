@@ -1,4 +1,5 @@
 import type { Bind } from '@motifx/core';
+import type { data } from '@motifx-community/data';
 import type { CellContext } from './cell-context';
 import type { ColumnResizeMode } from './column-resize-mode';
 import type { ColumnType } from './column-type';
@@ -113,8 +114,11 @@ export interface GridColumn<T = any> {
   filterType?: Bind<'include' | 'exclude'>;
   /** An empty value stops the row from being saved. */
   required?: boolean;
-  /** Checks a value; return the message to show, or nothing. `row` has the unsaved edits applied. */
-  validate?: (value: unknown, row: T) => string | null | undefined;
+  /**
+   * Checks a value; return the message to show, or nothing. `row` is the row itself; `context` has
+   * the values entered and not saved yet (`values`) and `getValue(field)`, the value a field is saved with.
+   */
+  validate?: (value: unknown, row: T, context: data.RowCheckContext<T>) => string | null | undefined;
   /**
    * the standard rule set, checked after `required` and `validate`: `required`, `numeric`, `range`,
    * `stringLength`, `pattern`, `email`, `compare`, `custom` and `async`. A value is checked when it is
@@ -123,8 +127,8 @@ export interface GridColumn<T = any> {
   validationRules?: readonly GridValidationRule<T>[];
   /** How the column shows in the edit form (`editMode` `'form'` or `'popup'`). */
   formItem?: GridColumnFormItem;
-  /** Choices of a `list` column: an array, or a function of the row (may return a promise). */
-  options?: readonly ListOption[] | ((row: T) => readonly ListOption[] | Promise<readonly ListOption[]>);
+  /** Choices of a `list` column: an array, or a function of the row and its entered values (`context.getValue(field)`; may return a promise). */
+  options?: readonly ListOption[] | ((row: T, context: data.RowCheckContext<T>) => readonly ListOption[] | Promise<readonly ListOption[]>);
   /**
    * A custom editor, made when the cell is edited: a `Field` (its `value` is read), or any component
    * that calls `ctx.setValue`.
@@ -147,9 +151,11 @@ export interface GridColumn<T = any> {
   /**
    * Called when the user commits a value into a cell (editor, paste, Delete), before it is written.
    * `values` starts as `{ [field]: value }`; change it to write other fields too (clear the city when
-   * the state changes). May return a promise: the cell shows that it is busy until it settles.
+   * the state changes). `row` is the row itself; `context` has the values entered so far
+   * (`context.values`, `context.getValue(field)`). May return a promise: the cell shows that it is
+   * busy until it settles.
    */
-  setCellValue?: (values: Record<string, unknown>, value: unknown, row: T) => void | Promise<void>;
+  setCellValue?: (values: Record<string, unknown>, value: unknown, row: T, context: data.RowCheckContext<T>) => void | Promise<void>;
   /** The filter row and header filter of a lookup column list only the keys of rows the other filters leave. Overrides the grid's `syncLookupFilterValues`. */
   syncLookupFilterValues?: Bind<boolean>;
   /** The search panel looks in this column. Default: on, unless the column turns its own filters off. */

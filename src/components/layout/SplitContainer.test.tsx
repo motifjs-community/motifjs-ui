@@ -122,6 +122,34 @@ describe('SplitContainer', () => {
     expect(moves.at(-1)).toMatchObject({ position: 300, byUser: false });
   });
 
+  it('writes a position set from code to x-model, and reads one over plain data again on reState', async () => {
+    const s = reactive({ width: 200 as number | string });
+    const plain = { width: 120 as number | string };
+    let split!: SplitContainer;
+    let p!: SplitContainer;
+    const host = page(
+      <SplitContainer ref={(x: SplitContainer) => (split = x)} fixedPanel="first" x-model={() => s.width}>
+        <Panel />
+        <Panel />
+      </SplitContainer>,
+      <SplitContainer ref={(x: SplitContainer) => (p = x)} fixedPanel="first" position={() => plain.width}>
+        <Panel />
+        <Panel />
+      </SplitContainer>,
+    );
+    await tick();
+    split.position = 260;
+    expect(s.width).toBe(260);
+    s.width = 200;
+    await tick();
+    expect(split.position).toBe(200);
+    plain.width = 180;
+    await tick();
+    expect(p.position).toBe(120);
+    host.reState();
+    expect(p.position).toBe(180);
+  });
+
   it('keeps a share when no pane is fixed, and reads the keys the other way round in RTL', async () => {
     const split = new SplitContainer({ step: 60 });
     split.controls.add(new Panel(), new Panel());

@@ -11,7 +11,7 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 
 const PROPS = [
   ['value', '`Bind<T | null>`', '`null`', 'The value of the chosen item; `null` when none is chosen. `x-model` binds it two-way.'],
-  ['items', '`Bind<readonly (RadioItem<T> | T)[]>`', '`[]`', 'The options. A function of a reactive array is followed: items added, removed or changed show at once.'],
+  ['items', '`Bind<readonly (RadioItem<T> | T)[]>`', '`[]`', 'The options. A function is followed: a new list shows at once; items changed in place show after `refresh()`.'],
   ['itemText', '`string | (item) => unknown`', "`'text'`", 'Where an item keeps its text, for objects of your own shape. A reader, not a binding.'],
   ['itemValue', '`string | (item) => T`', "`'value'`", 'Where an item keeps its value. An object without one is its own value.'],
   ['label', '`Bind<string>`', "`''`", 'The caption of the group; `&Name` makes Alt+N focus it. The same property as `text`.'],
@@ -48,6 +48,7 @@ const METHODS = [
   ['focus()', '`boolean`', 'Focuses the chosen option, or the first one that can be chosen.'],
   ['validate()', '`Promise<boolean>`', 'Checks the value and shows the outcome.'],
   ['resetValidation()', '`void`', 'Hides the outcome of earlier checks.'],
+  ['refresh()', '`void`', 'Your items may be plain or reactive; the group reads them as they are. After changing them in place, call `refresh()`. Their texts, values and states are read again; focus stays where it is.'],
 ];
 
 const EVENTS = [
@@ -118,7 +119,7 @@ import { RadioGroup, type RadioItem } from '@motifx-community/ui';
 
       <Section anchor="data" title="Items from data">
         <p>
-          <Rich text="Objects of your own shape take `itemText` and `itemValue` (a property name or a function). Given as a function of a reactive array, the list is followed: add, remove or rename and the options change at once, focus and choice kept." />
+          <Rich text="Objects of your own shape take `itemText` and `itemValue` (a property name or a function). Plain or reactive, the items are read as they are: after adding, removing or renaming some in place, `refresh()` shows them, focus and choice kept." />
         </p>
         <Example files={code('FromData.tsx')} stack>
           <FromData />

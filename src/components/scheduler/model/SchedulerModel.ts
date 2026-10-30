@@ -1,4 +1,5 @@
-import { effect, reactive, untracked } from '@motifx/core';
+import { untracked } from '@motifx/core';
+import { givenField, givenList } from '../../../core/given-field';
 import { dayStart } from '../../../parts/dates/day-start';
 import { TimeZone } from '../../../parts/dates/time-zone';
 import type { SchedulerBlockedTime } from '../scheduler-blocked-time';
@@ -8,11 +9,11 @@ import type { SchedulerRange } from '../scheduler-range';
 import type { SchedulerTimeCheck } from '../scheduler-time-check';
 import type { AgendaDay } from './agenda-day';
 import type { AgendaPiece } from './agenda-piece';
+import type { AnyPiece } from './any-piece';
 import { blockedSpans, type BlockedSpan } from './blocked-spans';
 import type { CellPlace } from './cell-place';
 import type { ColumnEdge } from './column-edge';
 import type { DayBlock } from './day-block';
-import type { GroupResource } from './group-resource';
 import type { Draft } from './draft';
 import type { HeaderCell } from './header-cell';
 import type { HeaderRow } from './header-row';
@@ -50,7 +51,21 @@ const VIRTUAL_CELLS = 2000;
 /** A rule of the developer's: whether an appointment may be at a time. */
 export type TimeRule<T> = (check: SchedulerTimeCheck<T>) => boolean;
 
-/** What the model reads from its scheduler. Each is read in an effect, so a reactive source is followed. */
+/**
+ * The steps the model works its state out in, in order: a step uses what the ones before it wrote.
+ * `update(step)` asks for that step and every one after it.
+ */
+const STEPS = ['groups', 'days', 'slots', 'ticks', 'rows', 'blocks', 'collect', 'layout'] as const;
+export type ModelStep = (typeof STEPS)[number];
+
+/**
+ * What changed, told to the views (`onChanged`): `layout` after a step ran (the days, the columns,
+ * the pieces; the focus may have moved with them), `focus` when the focus or the selection moved,
+ * `window` when a big view's window moved, `now` when the clock moved on.
+ */
+export type ModelChange = 'layout' | 'focus' | 'window' | 'now';
+
+/** What the model reads from its scheduler, when it works its state out. Nothing is followed: the scheduler says what changed with `update`. */
 export interface SchedulerModelOptions<T> {
   /** The date the view is built around. */
   date: () => Date;
@@ -101,6 +116,15 @@ interface Entry<T> {
   disabled: boolean;
   series: boolean;
   exception: boolean;
+  /** Moves on when the appointment is read again by a refresh or an edit (for an occurrence: its series). */
+  version: number;
+}
+
+/** What was written last into a piece kept, besides its own fields: its appointment, and that one's version then. */
+interface Written<T> {
+  values: Record<string, unknown>;
+  item: T;
+  version: number;
 }
 
 interface ModelState<T> {
@@ -122,8 +146,12 @@ interface ModelState<T> {
   /** The cell with keyboard focus, and the other end of the selection. */
   focus: CellPlace;
   anchor: CellPlace | null;
-  /** The appointments shown, in time order. */
-  shown: T[];
+  /** Moves on each time the appointments shown (`shown()`) change. */
+  shownVersion: number;
+  /** Moves on each time the appointments are to be read again (a refresh, an edit). */
+  changes: number;
+  /** Moves on each time everything is read again (`refresh()` with no appointment): what the developer gave besides the appointments, the blocked times, is read again too. */
+  refreshed: number;
   /** A timeline's cells along the time, its rows (a group each), and the heads over the cells: days or months over hours or days. */
   ticks: TimeTick[];
   rows: TimelineRow<T>[];
@@ -147,6 +175,11 @@ interface ModelState<T> {
  * is free. Days and hours are on the scheduler's clock (its time zone): an appointment is placed
  * by its wall clock times there, so on the day summer time changes an hour is skipped or doubled,
  * and a box never ends before its end's row nor shows shorter than it lasts.
+ *
+ * The appointments and their fields are read as they are, plain or reactive, and read again on
+ * `refresh` (the scheduler's, its edits, its data source's changes). Nothing in the model is
+ * reactive and nothing is followed: its state is plain, worked out when `update` asks for it, and
+ * what changed is told to `onChanged` listeners, which draw it.
  */
 export class SchedulerModel<T> {
   readonly state: ModelState<T>;
@@ -168,14 +201,27 @@ export class SchedulerModel<T> {
   private timedRaw: { pieces: TimedPiece<T>[]; columns: number[] } = { pieces: [], columns: [] };
   /** The appointments shown, as written last. */
   private shownRaw: T[] = [];
-  /** What was written last into each piece kept, and into each timeline row's list. */
-  private readonly written = new WeakMap<object, object>();
+  /**
+   * What was written last into each piece kept, by the piece's id: a piece may come back as another object than
+   * the one made (a list that wraps what it is given), its id is its own.
+   */
+  private readonly written = new Map<string, Written<T>>();
   private readonly rowPieces = new WeakMap<object, LinePiece<T>[]>();
   /** What a timeline row was laid out from last: a row whose appointments read the same is not laid out again. */
   private readonly rowMarks = new WeakMap<object, { settings: string; mark: string; items: unknown[] }>();
   private zoneNow: TimeZone | null = null;
   private nextId = 0;
+  /** How many times every appointment, and each one (by itself, or by its series), was read again. */
+  private everything = 0;
+  private readonly touched = new WeakMap<object, number>();
   private readonly stops: (() => void)[] = [];
+  /** The first step to work out again (`STEPS.length`: none), and whether a run is waiting. */
+  private dirty: number = STEPS.length;
+  private queued = false;
+  /** The view's settings as read for the code running now (see `view`). */
+  private viewNow: ResolvedView | null = null;
+  private started = false;
+  private readonly listeners = new Set<(change: ModelChange) => void>();
   /** The appointments of the days shown, read once for every layout until they change (a drag only adds its draft). */
   private base: Entry<T>[] = [];
   private baseById = new Map<string, Entry<T>>();
@@ -193,7 +239,7 @@ export class SchedulerModel<T> {
       zone: () => this.zone,
       idOf: (item) => this.idOf(item),
     });
-    this.state = reactive({
+    this.state = {
       now: Date.now(),
       days: [],
       groups: [],
@@ -214,41 +260,149 @@ export class SchedulerModel<T> {
       weeks: [],
       focus: { column: 0, slot: 0 },
       anchor: null,
-      shown: [],
       ticks: [],
       rows: [],
       upper: [],
       lower: [],
       agenda: [],
-      window: { first: 0, count: 64 },
+      // Until the view measures what is in view (when it is on the page): a screen's worth on most screens.
+      window: { first: 0, count: 16 },
       revision: 0,
       look: 0,
-    }) as ModelState<T>;
+      shownVersion: 0,
+      changes: 0,
+      refreshed: 0,
+    } as ModelState<T>;
   }
 
-  /** Starts following the options; call `dispose` to stop. */
+  /** Works everything out once and from then on when asked (`update`); call `dispose` to stop. */
   start(): void {
-    if (this.stops.length) return;
-    if (this.options.resources) this.stops.push(this.options.resources.follow());
-    this.stops.push(effect(() => this.fillGroups()));
-    this.stops.push(effect(() => this.fillDays()));
-    this.stops.push(effect(() => this.fillSlots()));
-    this.stops.push(effect(() => this.fillTicks()));
-    this.stops.push(effect(() => this.fillRows()));
-    this.stops.push(effect(() => this.fillBlocks()));
-    this.stops.push(effect(() => this.collect()));
-    this.stops.push(effect(() => this.layout()));
+    if (this.started) return;
+    this.started = true;
+    const resources = this.options.resources;
+    if (resources) {
+      this.stops.push(resources.follow());
+      this.stops.push(resources.onChanged(() => this.update('groups')));
+    }
+    this.dirty = 0;
+    this.flush();
   }
 
   dispose(): void {
+    this.started = false;
     for (const stop of this.stops.splice(0)) stop();
   }
 
-  get view(): ResolvedView {
-    return this.options.view();
+  /**
+   * Asks for `step` and every step after it to be worked out again (an option changed, the
+   * appointments, a measure, a drag): once, in the next microtask, however many ask before then.
+   */
+  update(step: ModelStep = 'groups'): void {
+    this.viewNow = null;
+    this.dirty = Math.min(this.dirty, STEPS.indexOf(step));
+    if (this.queued || !this.started) return;
+    this.queued = true;
+    queueMicrotask(() => {
+      this.queued = false;
+      this.flush();
+    });
   }
 
-  /** The layout the view uses. Reactive. */
+  /** Works out now what was asked for: for code that needs the result at once. */
+  flush(): void {
+    if (!this.started || this.dirty >= STEPS.length) return;
+    const from = this.dirty;
+    this.dirty = STEPS.length;
+    untracked(() => {
+      for (let i = from; i < STEPS.length; i++) this.work(STEPS[i]);
+    });
+    this.tell('layout');
+  }
+
+  /** Calls `listener` with what changed (see `ModelChange`); returns the function that stops it. */
+  onChanged(listener: (change: ModelChange) => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private tell(change: ModelChange): void {
+    for (const listener of [...this.listeners]) listener(change);
+  }
+
+  private work(step: ModelStep): void {
+    switch (step) {
+      case 'groups':
+        return this.fillGroups();
+      case 'days':
+        return this.fillDays();
+      case 'slots':
+        return this.fillSlots();
+      case 'ticks':
+        return this.fillTicks();
+      case 'rows':
+        return this.fillRows();
+      case 'blocks':
+        return this.fillBlocks();
+      case 'collect':
+        return this.collect();
+      case 'layout':
+        return this.layout();
+    }
+  }
+
+  /** Moves now on (the scheduler's clock): the days are worked out again when today is another day. */
+  setNow(now: number): void {
+    const before = this.todayWall();
+    this.state.now = now;
+    if (this.todayWall() !== before) this.update('days');
+    else this.tell('now');
+  }
+
+  /**
+   * Reads the appointments again: what changed in them in place shows. With `item`, that one's
+   * boxes (an occurrence's: its series') read it again; without, every box does.
+   */
+  refresh(item: T | null = null): void {
+    const own = item === null ? null : (this.occurrences.infoOf(item)?.series ?? item);
+    if (own !== null && typeof own === 'object') this.touched.set(own, (this.touched.get(own) ?? 0) + 1);
+    else {
+      this.everything++;
+      this.state.refreshed++;
+    }
+    this.state.changes++;
+    // Without an appointment the blocked times are read again too.
+    this.update(own === null ? 'blocks' : 'collect');
+  }
+
+  /** The appointments shown, in time order */
+  shown(): readonly T[] {
+    void this.state.shownVersion;
+    return this.shownRaw;
+  }
+
+  /** The appointment a piece shows. */
+  itemOf(piece: AnyPiece<T>): T {
+    void piece.version;
+    return this.written.get(piece.id)!.item;
+  }
+
+  /** How many times an appointment was read again (for an occurrence: its series). */
+  private versionOf(item: T): number {
+    const own = this.occurrences.infoOf(item)?.series ?? item;
+    return this.everything + (own !== null && typeof own === 'object' ? (this.touched.get(own) ?? 0) : 0);
+  }
+
+  get view(): ResolvedView {
+    // Read once for the code running now: every change of a setting asks for an `update`, which reads them again, and
+    // the next turn of the page reads them again too.
+    if (!this.viewNow) {
+      this.viewNow = this.options.view();
+      queueMicrotask(() => (this.viewNow = null));
+    }
+    return this.viewNow;
+  }
+
+  /** The layout the view uses */
   get kind(): ViewKind {
     return viewKind(this.view.type);
   }
@@ -263,7 +417,7 @@ export class SchedulerModel<T> {
     return this.fieldsNow ?? this.options.fields();
   }
 
-  /** Whether the view builds only what is in view: set so, or (`'auto'`) its cells are many. Reactive. */
+  /** Whether the view builds only what is in view: set so, or (`'auto'`) its cells are many */
   get virtual(): boolean {
     const mode = this.view.scrolling ?? 'auto';
     if (mode !== 'auto') return mode === 'virtual';
@@ -278,10 +432,12 @@ export class SchedulerModel<T> {
     const at = Math.max(0, Math.floor(first));
     const size = Math.max(1, Math.ceil(count));
     const now = this.state.window;
-    if (now.first !== at || now.count !== size) this.state.window = { first: at, count: size };
+    if (now.first === at && now.count === size) return;
+    this.state.window = { first: at, count: size };
+    this.tell('window');
   }
 
-  /** The columns the day views build: all of them, or the window's. Reactive. */
+  /** The columns the day views build: all of them, or the window's */
   shownColumns(): SchedulerColumn[] {
     const columns = this.state.columns;
     if (this.kind !== 'time' || !this.virtual) return columns;
@@ -289,14 +445,14 @@ export class SchedulerModel<T> {
     return columns.slice(first, first + count);
   }
 
-  /** Whether a run of columns (`first`, `span`) is in what the day views build. Reactive. */
+  /** Whether a run of columns (`first`, `span`) is in what the day views build */
   columnsShown(first: number, span: number): boolean {
     if (this.kind !== 'time' || !this.virtual) return true;
     const { first: from, count } = this.state.window;
     return first < from + count && first + span > from;
   }
 
-  /** The timed pieces the day views build. Reactive. */
+  /** The timed pieces the day views build */
   shownTimed(): TimedPiece<T>[] {
     const timed = this.state.timed;
     if (this.kind !== 'time' || !this.virtual) return timed;
@@ -306,7 +462,7 @@ export class SchedulerModel<T> {
     return pieces.filter((_, i) => columns[i] >= first && columns[i] < first + count);
   }
 
-  /** Of heads over runs of columns, in the order of their first column, the ones in what the day views build. Reactive. */
+  /** Of heads over runs of columns, in the order of their first column, the ones in what the day views build */
   shownHeads<H extends { first: number; span: number }>(heads: readonly H[]): readonly H[] {
     if (this.kind !== 'time' || !this.virtual) return heads;
     const { first, count } = this.state.window;
@@ -323,7 +479,7 @@ export class SchedulerModel<T> {
     return heads.slice(lo, end);
   }
 
-  /** The cells along a timeline's time it builds. Reactive. */
+  /** The cells along a timeline's time it builds */
   shownTicks(): TimeTick[] {
     const ticks = this.state.ticks;
     if (!this.virtual) return ticks;
@@ -331,14 +487,14 @@ export class SchedulerModel<T> {
     return ticks.slice(first, first + count);
   }
 
-  /** Whether a run of a timeline's cells (`from`, `span`, shares of a cell too) is in what it builds. Reactive. */
+  /** Whether a run of a timeline's cells (`from`, `span`, shares of a cell too) is in what it builds */
   ticksShown(from: number, span: number): boolean {
     if (!this.virtual) return true;
     const { first, count } = this.state.window;
     return from < first + count && from + span > first;
   }
 
-  /** Where now is along a timeline, in cells; `null` when it is not in the days and hours shown. Reactive. */
+  /** Where now is along a timeline, in cells; `null` when it is not in the days and hours shown */
   nowTick(): number | null {
     const today = this.todayWall();
     const day = this.state.days.findIndex((d) => d.wall === today);
@@ -358,22 +514,22 @@ export class SchedulerModel<T> {
     return { from, to, step: Math.max(5, Math.min(240, Math.round(view.cellDuration))) };
   }
 
-  /** Whether the columns are grouped. Reactive. */
+  /** Whether the columns are grouped */
   get grouped(): boolean {
     return this.state.groups.length > 0;
   }
 
-  /** The dates stand over the groups: by date, or with a single day. Reactive. */
+  /** The dates stand over the groups: by date, or with a single day */
   get datesFirst(): boolean {
     return this.state.groups.length > 0 && (this.view.groupByDate || this.state.days.length === 1);
   }
 
-  /** The columns of a row of the month (a week), or of the day views. Reactive. */
+  /** The columns of a row of the month (a week), or of the day views */
   get perRow(): number {
     return this.view.type === 'month' ? 7 * Math.max(1, this.state.groups.length) : this.state.columns.length;
   }
 
-  /** The days shown, `end` not included. Reactive. */
+  /** The days shown, `end` not included */
   range(): SchedulerRange {
     const days = this.state.days;
     const zone = this.zone;
@@ -384,22 +540,22 @@ export class SchedulerModel<T> {
     return { start: days[0].date, end: zone.date(days[days.length - 1].wall + DAY) };
   }
 
-  /** Today's start, in milliseconds. Reactive. */
+  /** Today's start, in milliseconds */
   today(): number {
     return this.zone.moment(this.todayWall());
   }
 
-  /** Today's start on the wall clock. Reactive. */
+  /** Today's start on the wall clock */
   todayWall(): number {
     return Math.floor(this.zone.wall(this.state.now) / DAY) * DAY;
   }
 
-  /** The columns of today, empty when it is not shown. Reactive. */
+  /** The columns of today, empty when it is not shown */
   todayColumns(): SchedulerColumn[] {
     return this.shownColumns().filter((c) => c.day.today);
   }
 
-  /** Where now is in a day column (0–1), or `null` outside the hours shown. Reactive. */
+  /** Where now is in a day column (0–1), or `null` outside the hours shown */
   nowAt(): number | null {
     const view = this.view;
     const minutes = (this.zone.wall(this.state.now) - this.todayWall()) / MINUTE;
@@ -412,7 +568,7 @@ export class SchedulerModel<T> {
   idOf(item: T): string {
     const occurrence = this.occurrences.infoOf(item);
     if (occurrence) return occurrence.id;
-    const key = (item as Record<string, unknown>)?.[this.fields().key];
+    const key = givenField(item, this.fields().key);
     if (key !== undefined && key !== null) return `k${String(key)}`;
     const object = item as unknown as object;
     let id = this.ids.get(object);
@@ -423,11 +579,10 @@ export class SchedulerModel<T> {
   /** An appointment's start and end, `end` never before `start`. */
   timeOf(item: T): { start: Date; end: Date; allDay: boolean } | null {
     const fields = this.fields();
-    const record = item as Record<string, unknown>;
-    const start = toDate(record[fields.start]);
+    const start = toDate(givenField(item, fields.start));
     if (!start) return null;
-    const end = toDate(record[fields.end]) ?? start;
-    const allDay = !!record[fields.allDay];
+    const end = toDate(givenField(item, fields.end)) ?? start;
+    const allDay = !!givenField(item, fields.allDay);
     const to = end < start ? start : end;
     if (!allDay) return { start, end: to, allDay };
     // An all-day appointment covers its days whole: the days of its fields, on the scheduler's clock.
@@ -452,14 +607,14 @@ export class SchedulerModel<T> {
     if (occurrence) return occurrence.series;
     if (this.occurrences.ruleOf(item)) return item;
     const fields = this.options.fields();
-    const id = (item as Record<string, unknown>)?.[fields.recurrenceId];
+    const id = givenField(item, fields.recurrenceId);
     if (id === undefined || id === null || id === '') return null;
-    return this.options.items().find((other) => (other as Record<string, unknown>)?.[fields.key] === id) ?? null;
+    return givenList(this.options.items()).find((other) => givenField(other, fields.key) === id) ?? null;
   }
 
   /** Whether an appointment is an occurrence changed apart from its series. */
   isException(item: T): boolean {
-    const id = (item as Record<string, unknown>)?.[this.fields().recurrenceId];
+    const id = givenField(item, this.fields().recurrenceId);
     return !this.occurrences.infoOf(item) && id !== undefined && id !== null && id !== '';
   }
 
@@ -472,7 +627,7 @@ export class SchedulerModel<T> {
 
   // Groups and resources.
 
-  /** The group of a column, `null` without groups. Reactive. */
+  /** The group of a column, `null` without groups */
   groupOf(column: number): SchedulerGroup | null {
     return this.state.columns[column]?.group ?? null;
   }
@@ -481,15 +636,14 @@ export class SchedulerModel<T> {
   movedValues(item: T, from: SchedulerGroup | null, to: SchedulerGroup | null): Record<string, unknown> | null {
     if (!to || !from || to === from) return null;
     const resources = this.options.resources;
-    const record = item as Record<string, unknown>;
     const out: Record<string, unknown> = {};
     for (const [field, value] of Object.entries(to.values)) {
       const old = from.values[field];
       if (sameValue(old, value)) continue;
       const kind = resources?.kind(field);
-      const current = record?.[field];
+      const current = givenField(item, field);
       if (kind?.multiple || Array.isArray(current)) {
-        const list = Array.isArray(current) ? current : current === undefined || current === null || current === '' ? [] : [current];
+        const list = Array.isArray(current) ? givenList(current as unknown[]) : current === undefined || current === null || current === '' ? [] : [current];
         const kept = list.filter((v) => !sameValue(v, old) && !sameValue(v, value));
         const at = list.findIndex((v) => sameValue(v, old));
         kept.splice(at < 0 ? kept.length : Math.min(at, kept.length), 0, value);
@@ -505,7 +659,7 @@ export class SchedulerModel<T> {
    * another appointment of its groups unless allowed; a rule of the developer's decides it all.
    */
   check(item: T, start: Date, end: Date, allDay: boolean, resources: Record<string, unknown> | null = null): { free: boolean; check: SchedulerTimeCheck<T> } {
-    const merged = { ...(item as object), ...(resources ?? {}) };
+    const merged = untracked(() => ({ ...(item as object), ...(resources ?? {}) }));
     const values = this.options.resources?.allValuesOf(merged) ?? {};
     const shown: Record<string, unknown> = {};
     for (const field of Object.keys(values)) shown[field] = (merged as Record<string, unknown>)[field];
@@ -522,9 +676,11 @@ export class SchedulerModel<T> {
       .filter((e) => !this.grouped || groups.some((g) => inGroup(e.values, g)))
       .map((e) => e.item);
     const until = Math.max(we, ws + 1);
-    const blocked = blockedSpans(this.options.blockedTimes?.() ?? [], ws, until, zone)
-      .filter((span) => span.start < until && span.end > ws && blockFor(span.block, values))
-      .map((span) => span.block);
+    const blocked = untracked(() =>
+      blockedSpans(this.options.blockedTimes?.() ?? [], ws, until, zone)
+        .filter((span) => span.start < until && span.end > ws && blockFor(span.block, values))
+        .map((span) => span.block),
+    );
     const offHours = this.offHours(ws, we, allDay, values, groups);
     const check: SchedulerTimeCheck<T> = { appointment: item, start, end, allDay, resources: shown, overlapping, blocked: [...new Set(blocked)], offHours };
     const rule = this.options.allowOverlap?.() ?? true;
@@ -584,7 +740,7 @@ export class SchedulerModel<T> {
     };
   }
 
-  /** The cells between the anchor and the focus, as one time in the anchor's group; `null` without a selection. Reactive. */
+  /** The cells between the anchor and the focus, as one time in the anchor's group; `null` without a selection */
   selection(): SchedulerCell | null {
     const anchor = this.state.anchor;
     if (!anchor) return null;
@@ -601,7 +757,7 @@ export class SchedulerModel<T> {
     return a.start <= b.start ? { start: a.start, end: b.end, allDay: false, resources: a.resources } : { start: b.start, end: a.end, allDay: false, resources: a.resources };
   }
 
-  /** Whether a cell is in the selection. Reactive. */
+  /** Whether a cell is in the selection */
   isSelected(column: number, slot: number): boolean {
     const selection = this.selection();
     if (!selection) return false;
@@ -613,7 +769,7 @@ export class SchedulerModel<T> {
     return cell.start >= selection.start && cell.end <= selection.end;
   }
 
-  /** The blocked time a cell is in, or `null`. Reactive. */
+  /** The blocked time a cell is in, or `null` */
   blockAt(column: number, slot: number): DayBlock | null {
     const col = this.state.columns[column];
     if (!col) return null;
@@ -634,20 +790,23 @@ export class SchedulerModel<T> {
     const anchor = extend && this.state.anchor ? this.state.anchor : { column, slot };
     this.state.focus = { column, slot };
     this.state.anchor = anchor;
+    this.tell('focus');
   }
 
   clearSelection(): void {
+    if (!this.state.anchor) return;
     this.state.anchor = null;
+    this.tell('focus');
   }
 
-  // Effects.
+  // The steps.
 
   private fillGroups(): void {
     const view = this.options.view();
     const resources = this.options.resources;
     const hours = this.options.workHours?.() ?? { start: 9, end: 17 };
     const kinds = view.groups.map((field) => resources?.kind(field)).filter((k) => !!k);
-    const made = makeGroups(kinds, { ...hours, days: this.options.workDays() });
+    const made = makeGroups(kinds, { ...hours, days: givenList(this.options.workDays()) });
     untracked(() => {
       const groups = this.state.groups;
       made.forEach((values, index) => {
@@ -806,7 +965,7 @@ export class SchedulerModel<T> {
           for (const name of ['first', 'span', 'edge', 'day'] as const) if (known[name] !== cell[name]) (known as unknown as Record<string, unknown>)[name] = cell[name];
           return known;
         }
-        const made = reactive(cell) as HeaderCell;
+        const made = cell as HeaderCell;
         this.headCache.set(key, made);
         return made;
       });
@@ -954,8 +1113,7 @@ export class SchedulerModel<T> {
           assign(row, values as TimelineRow<T>);
           if (row.starts.join() !== starts.join()) row.starts = starts;
         } else {
-          // A store of its own, as a piece is: in development DevTools then finds what changes in it at once.
-          rows.push(reactive({ ...values, starts, pieces: [], lanes: 0, height: 0, more: [], moreLane: 0 }) as TimelineRow<T>);
+          rows.push({ ...values, starts, pieces: [], lanes: 0, height: 0, more: [], moreLane: 0 } as TimelineRow<T>);
         }
       });
       if (rows.length > list.length) rows.splice(list.length);
@@ -966,7 +1124,8 @@ export class SchedulerModel<T> {
   private fillBlocks(): void {
     const view = this.options.view();
     const blocks = this.options.blockedTimes?.() ?? [];
-    if (!blocks.length) {
+    void this.state.refreshed;
+    if (!untracked(() => blocks.length)) {
       // None: no column is read one by one.
       void this.state.columns.length;
       untracked(() => {
@@ -992,11 +1151,9 @@ export class SchedulerModel<T> {
   /** Reads the appointments of the days shown (without a draft): every layout places them from here until they change. */
   private collect(): void {
     const days = this.state.days.map((d) => d.wall);
-    // The colours resources give: which kind colours, and its items' colours.
-    for (const kind of this.options.resources?.kinds() ?? []) {
-      void kind.useColorAsDefault;
-      for (const item of kind.items) void kind.valueOf(item), void kind.colorOf(item);
-    }
+    void this.state.changes;
+    // The colours resources give: which kind colours (a function there is followed), read again with their items.
+    for (const kind of this.options.resources?.kinds() ?? []) void kind.useColorAsDefault, void kind.items;
     const zone = this.zone;
     const entries = days.length ? this.read(zone.date(days[0]), zone.date(days[days.length - 1] + DAY), null) : [];
     untracked(() => {
@@ -1026,10 +1183,7 @@ export class SchedulerModel<T> {
     const rows = kind === 'timeline' ? this.state.rows.map((r) => r) : [];
     const ticks = kind === 'timeline' ? this.state.ticks.length : 0;
     const metrics = kind === 'timeline' ? (this.options.lineMetrics?.() ?? { lane: 0, gap: 0, min: 0 }) : null;
-    for (const kind of this.options.resources?.kinds() ?? []) {
-      void kind.useColorAsDefault;
-      for (const item of kind.items) void kind.colorOf(item);
-    }
+    for (const kind of this.options.resources?.kinds() ?? []) void kind.useColorAsDefault, void kind.items;
     if (!days.length || !count) return;
     const kinds = this.options.resources?.kinds() ?? null;
     untracked(() => {
@@ -1121,15 +1275,15 @@ export class SchedulerModel<T> {
           this.state.timed = pieces;
           this.clearAgenda();
         }
-        for (const id of this.timedCache.keys()) if (!timed.has(id)) this.timedCache.delete(id);
+        for (const id of this.timedCache.keys()) if (!timed.has(id)) this.drop(this.timedCache, id);
         this.clearLines();
       }
-      for (const id of this.stripCache.keys()) if (!strip.has(id)) this.stripCache.delete(id);
+      for (const id of this.stripCache.keys()) if (!strip.has(id)) this.drop(this.stripCache, id);
       const grouped = groups.length > 0;
       const shown = entries.filter((e) => !e.draft && (!grouped || this.groupsOf(e, groups, view).length > 0)).map((e) => e.item);
       if (!sameList(this.shownRaw, shown)) {
-        this.state.shown = shown;
         this.shownRaw = shown;
+        this.state.shownVersion++;
       }
       this.kindsNow = null;
     });
@@ -1253,11 +1407,11 @@ export class SchedulerModel<T> {
         invalid: false,
         values: resources?.allValuesOf(item) ?? {},
         ...this.lookOf(item),
+        version: this.versionOf(item),
       });
     };
-    for (const item of this.options.items()) {
-      const record = item as Record<string, unknown>;
-      if (record?.[fields.visible] === false) continue;
+    for (const item of givenList(this.options.items())) {
+      if (givenField(item, fields.visible) === false) continue;
       if (this.occurrences.ruleOf(item)) for (const occurrence of this.occurrences.of(item, from.getTime(), to.getTime())) add(occurrence);
       else add(item);
     }
@@ -1278,20 +1432,20 @@ export class SchedulerModel<T> {
       allDay: draft.allDay,
       draft: true,
       invalid: draft.invalid,
-      values: this.options.resources?.allValuesOf({ ...(draft.item as object), ...(draft.resources ?? {}) }) ?? {},
+      values: this.options.resources?.allValuesOf(untracked(() => ({ ...(draft.item as object), ...(draft.resources ?? {}) }))) ?? {},
       ...this.lookOf(draft.item),
+      version: this.versionOf(draft.item),
     };
   }
 
   private lookOf(item: T): { text: string; color: string; disabled: boolean; series: boolean; exception: boolean } {
     const fields = this.fields();
-    const record = item as Record<string, unknown>;
-    const text = record?.[fields.text];
-    const color = record?.[fields.color];
+    const text = givenField(item, fields.text);
+    const color = givenField(item, fields.color);
     return {
       text: text === undefined || text === null ? '' : String(text),
       color: typeof color === 'string' ? color : '',
-      disabled: !!record?.[fields.disabled],
+      disabled: !!givenField(item, fields.disabled),
       series: !!this.occurrences.infoOf(item),
       exception: this.isException(item),
     };
@@ -1353,9 +1507,8 @@ export class SchedulerModel<T> {
       // The n-th column of the appointment: its first piece stays the same object wherever it moves.
       const n = counts.get(span.id) ?? 0;
       counts.set(span.id, n + 1);
-      const values: TimedPiece<T> = {
+      const values: Omit<TimedPiece<T>, 'version'> = {
         id: `${span.id}@${n}`,
-        item: span.entry.item,
         column: column.index,
         group: group?.index ?? -1,
         start: span.s,
@@ -1375,7 +1528,7 @@ export class SchedulerModel<T> {
         exception: span.entry.exception,
       };
       seen.add(values.id);
-      return this.keep(this.timedCache, values);
+      return this.keep(this.timedCache, values, span.entry);
     });
   }
 
@@ -1441,9 +1594,8 @@ export class SchedulerModel<T> {
         for (let d = span.first; d <= span.last; d++) {
           if (d < span.last && own[d + 1].at === own[d].at + 1) continue;
           const part = start === span.first ? '' : `/${start - span.first}`;
-          const values: StripPiece<T> = {
+          const values: Omit<StripPiece<T>, 'version'> = {
             id: `${span.id}#${row.index}${tag}${group ? `:${group.index}` : ''}${part}`,
-            item: entry.item,
             first: own[start].at,
             span: d - start + 1,
             group: group?.index ?? -1,
@@ -1463,7 +1615,7 @@ export class SchedulerModel<T> {
             exception: entry.exception,
           };
           seen.add(values.id);
-          pieces.push(this.keep(this.stripCache, values));
+          pieces.push(this.keep(this.stripCache, values, entry));
           start = d + 1;
         }
       }
@@ -1489,7 +1641,7 @@ export class SchedulerModel<T> {
     const group = row.group;
     let mark = `${row.key}|${group?.index ?? -1}`;
     for (const e of entries) {
-      mark += `|${e.id}~${e.ws}~${e.we}~${+e.allDay}${+e.draft}${+e.invalid}${+e.disabled}${+e.series}${+e.exception}~${e.text}~${this.colorIn(e, group)}`;
+      mark += `|${e.id}~${e.ws}~${e.we}~${+e.allDay}${+e.draft}${+e.invalid}${+e.disabled}${+e.series}${+e.exception}~${e.version}~${e.text}~${this.colorIn(e, group)}`;
     }
     return mark;
   }
@@ -1512,9 +1664,8 @@ export class SchedulerModel<T> {
       const hidden = lane >= limit;
       if (hidden) for (let d = Math.floor(span.start / per); d < Math.min(days, Math.ceil(span.end / per)); d++) more[d]++;
       const entry = span.entry;
-      const values: LinePiece<T> = {
+      const values: Omit<LinePiece<T>, 'version'> = {
         id: `${span.id}@r${row.index}`,
-        item: entry.item,
         group: group?.index ?? -1,
         start: entry.start,
         end: entry.end,
@@ -1533,11 +1684,11 @@ export class SchedulerModel<T> {
         series: entry.series,
         exception: entry.exception,
       };
-      return this.keep(this.lineCache, values);
+      return this.keep(this.lineCache, values, entry);
     });
     const kept = new Set(pieces.map((p) => p.id));
     const before = this.rowPieces.get(row) ?? [];
-    for (const piece of before) if (!kept.has(piece.id)) this.lineCache.delete(piece.id);
+    for (const piece of before) if (!kept.has(piece.id)) this.drop(this.lineCache, piece.id);
     const shown = Math.min(count, limit);
     const lines = shown + (more.some((n) => n > 0) ? 1 : 0);
     if (!sameList(before, pieces)) {
@@ -1624,9 +1775,8 @@ export class SchedulerModel<T> {
           if (!(entry.ws < end && (entry.we > day.wall || (zero && entry.ws >= day.wall)))) continue;
           const before = entry.ws < day.wall;
           const after = entry.we > end;
-          const values: AgendaPiece<T> = {
+          const values: Omit<AgendaPiece<T>, 'version'> = {
             id: `${entry.id}@a${day.index}${group ? `:${group.index}` : ''}`,
-            item: entry.item,
             group: group?.index ?? -1,
             start: before ? zone.date(day.wall) : entry.start,
             end: after ? zone.date(end) : entry.end,
@@ -1642,7 +1792,7 @@ export class SchedulerModel<T> {
             exception: entry.exception,
           };
           seen.add(values.id);
-          items.push(this.keep(this.agendaCache, values));
+          items.push(this.keep(this.agendaCache, values, entry));
         }
         if (!items.length) continue;
         // The ones that take the day first, then in time order.
@@ -1656,19 +1806,20 @@ export class SchedulerModel<T> {
           assign(made, values as AgendaDay<T>);
           if (!sameList(made.items, items)) made.items = items;
         } else {
-          made = reactive({ ...values, items }) as AgendaDay<T>;
+          made = { ...values, items } as AgendaDay<T>;
           this.agendaDays.set(key, made);
         }
         out.push(made);
       }
     }
-    for (const id of this.agendaCache.keys()) if (!seen.has(id)) this.agendaCache.delete(id);
+    for (const id of this.agendaCache.keys()) if (!seen.has(id)) this.drop(this.agendaCache, id);
     for (const key of this.agendaDays.keys()) if (!seenDays.has(key)) this.agendaDays.delete(key);
     if (!sameList(this.state.agenda, out)) this.state.agenda = out;
   }
 
   private clearAgenda(): void {
     if (this.state.agenda.length) this.state.agenda = [];
+    for (const id of this.agendaCache.keys()) this.written.delete(id);
     this.agendaCache.clear();
     this.agendaDays.clear();
   }
@@ -1679,15 +1830,27 @@ export class SchedulerModel<T> {
       row.pieces = [];
       this.rowPieces.set(row, []);
     }
+    for (const id of this.lineCache.keys()) this.written.delete(id);
     this.lineCache.clear();
   }
 
-  /** The cached piece with the new values written into it (only what changed), or a new one. */
-  private keep<P extends { id: string }>(cache: Map<string, P>, values: P): P {
+  /**
+   * The cached piece with the new values written into it (only what changed), or a new one. The
+   * piece holds the kit's own values only; its appointment is kept beside it, plain, and its
+   * `version` moves on when that is read again or is another object.
+   */
+  /** A piece no longer kept, and what was written into it. */
+  private drop(cache: Map<string, unknown>, id: string): void {
+    cache.delete(id);
+    this.written.delete(id);
+  }
+
+  private keep<P extends { id: string; version: number }>(cache: Map<string, P>, values: Omit<P, 'version'>, entry: Entry<T>): P {
     const known = cache.get(values.id);
     if (known) {
       // Told apart from what was written last (kept plain): a read of the piece itself would cost as much again.
-      const last = this.written.get(known) as Record<string, unknown>;
+      const written = this.written.get(known.id)!;
+      const last = written.values;
       const target = known as unknown as Record<string, unknown>;
       for (const [key, value] of Object.entries(values as unknown as Record<string, unknown>)) {
         const old = last[key];
@@ -1696,10 +1859,15 @@ export class SchedulerModel<T> {
           last[key] = value;
         }
       }
+      if (written.item !== entry.item || written.version !== entry.version) {
+        written.item = entry.item;
+        written.version = entry.version;
+        known.version++;
+      }
       return known;
     }
-    const piece = reactive(values) as P;
-    this.written.set(piece, { ...values });
+    const piece = { ...values, version: 0 } as unknown as P;
+    this.written.set(values.id, { values: { ...values }, item: entry.item, version: entry.version });
     cache.set(values.id, piece);
     return piece;
   }
@@ -1781,9 +1949,9 @@ function sameHead(key: string, a: unknown, b: unknown): boolean {
     return Object.keys(x).length === Object.keys(y).length && Object.keys(x).every((k) => sameValue(x[k], y[k]));
   }
   if (key === 'resource') {
-    const x = a as GroupResource;
-    const y = b as GroupResource;
-    return x.field === y.field && sameValue(x.value, y.value) && x.item === y.item && x.text === y.text && x.color === y.color;
+    const x = a as NonNullable<HeaderCell['resource']>;
+    const y = b as NonNullable<HeaderCell['resource']>;
+    return x.field === y.field && sameValue(x.value, y.value) && x.text === y.text && x.color === y.color;
   }
   return false;
 }

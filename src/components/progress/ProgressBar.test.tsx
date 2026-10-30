@@ -131,6 +131,21 @@ describe('ProgressBar', () => {
     expect(p.element.hasAttribute('aria-label')).toBe(false);
   });
 
+  it('reads functions over plain data again on reState: its value and its label', async () => {
+    const plain = { value: 10, label: '' };
+    let p!: ProgressBar;
+    const host = page(<ProgressBar ref={(x: ProgressBar) => (p = x)} value={() => plain.value} label={() => plain.label} showValue locale="en" />);
+    await settle();
+    expect(p.element.getAttribute('aria-label')).toBe('Loading…');
+    Object.assign(plain, { value: 40, label: 'Copying' });
+    await settle();
+    expect(shown(p).textContent).toBe('10%');
+    host.reState();
+    expect(shown(p).textContent).toBe('40%');
+    expect(p.element.hasAttribute('aria-label')).toBe(false);
+    expect(p.element.getAttribute('aria-labelledby')).toBeTruthy();
+  });
+
   it('writes the value its own way, rounded down by default', async () => {
     const p = new ProgressBar({ value: 99.6, showValue: true, locale: 'en' });
     page(p);

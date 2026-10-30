@@ -1,5 +1,6 @@
-import { Component, effect, untracked, type ComponentBase } from '@motifx/core';
+import { Component, untracked, type ComponentBase } from '@motifx/core';
 import { setAccessKeyAttribute } from '../../core/access-key';
+import { follow } from '../../core/follow';
 import { focusableIn, isFocusable } from '../../core/focus';
 import { dismissMark, pinMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
@@ -201,37 +202,40 @@ export class DocumentTab {
     return doc.description ? `${doc.title} — ${doc.description}` : '';
   }
 
-  private watch(fn: () => void): void {
-    this.stops.push(effect(fn));
+  /** Follows `read` with a binding of the manager: a `reState()` of the manager or the page reads it again. */
+  private watch<V>(read: () => V, write: (value: V) => void): void {
+    this.stops.push(follow(this.manager, 'tab', read, write));
   }
 
   private render(): void {
     const doc = this.document;
-    this.watch(() => {
-      const title = doc.title;
-      untracked(() => {
+    this.watch(
+      () => doc.title,
+      (title) => {
         this.label.textContent = title;
         this.letter.textContent = Array.from(title.trim())[0]?.toLocaleUpperCase() ?? '';
         this.manager.tabChanged(this);
-      });
-    });
-    this.watch(() => {
-      const text = this.manager.showsDescription(doc) ? doc.description : '';
-      untracked(() => this.renderDescription(text));
-    });
-    this.watch(() => {
-      const tone = doc.tone;
-      untracked(() => {
+      },
+    );
+    this.watch(
+      () => (this.manager.showsDescription(doc) ? doc.description : ''),
+      (text) => this.renderDescription(text),
+    );
+    this.watch(
+      () => doc.tone,
+      (tone) => {
         if (tone) this.header.dataset.tone = tone;
         else this.header.removeAttribute('data-tone');
-      });
-    });
-    this.watch(() => {
-      const pinned = doc.pinned;
-      const preview = doc.preview;
-      const text = pinned ? this.manager.textOf('tabDocsPinState') : preview ? this.manager.textOf('tabDocsPreviewState') : '';
-      const unpin = this.manager.textOf('tabDocsUnpin');
-      untracked(() => {
+      },
+    );
+    this.watch(
+      () => {
+        const pinned = doc.pinned;
+        const preview = doc.preview;
+        const text = pinned ? this.manager.textOf('tabDocsPinState') : preview ? this.manager.textOf('tabDocsPreviewState') : '';
+        return { pinned, preview, text, unpin: this.manager.textOf('tabDocsUnpin') };
+      },
+      ({ pinned, preview, text, unpin }) => {
         const header = this.header;
         const was = header.hasAttribute('data-pinned');
         header.toggleAttribute('data-pinned', pinned);
@@ -241,29 +245,31 @@ export class DocumentTab {
         this.pin.title = unpin;
         if (was !== pinned) this.manager.pinChanged(this);
         this.manager.tabChanged(this);
-      });
-    });
-    this.watch(() => {
-      const dirty = doc.dirty;
-      untracked(() => {
+      },
+    );
+    this.watch(
+      () => doc.dirty,
+      (dirty) => {
         if (dirty && doc.preview) this.manager.keepByChange(doc);
-      });
-    });
-    this.watch(() => {
-      const icon = doc.icon;
-      untracked(() => this.renderIcon(icon));
-    });
-    this.watch(() => {
-      const badge = doc.badge;
-      untracked(() => this.renderBadge(badge));
-    });
-    this.watch(() => {
-      const dirty = doc.dirty;
-      const closable = doc.closable && (!doc.pinned || this.manager.closeButtonOnPinned);
-      const mode = this.manager.closeButton;
-      const text = this.manager.textOf('tabDocsUnsaved');
-      const closeHint = this.manager.textOf('close');
-      untracked(() => {
+      },
+    );
+    this.watch(
+      () => doc.icon,
+      (icon) => this.renderIcon(icon),
+    );
+    this.watch(
+      () => doc.badge,
+      (badge) => this.renderBadge(badge),
+    );
+    this.watch(
+      () => ({
+        dirty: doc.dirty,
+        closable: doc.closable && (!doc.pinned || this.manager.closeButtonOnPinned),
+        mode: this.manager.closeButton,
+        text: this.manager.textOf('tabDocsUnsaved'),
+        closeHint: this.manager.textOf('close'),
+      }),
+      ({ dirty, closable, mode, text, closeHint }) => {
         const header = this.header;
         header.toggleAttribute('data-dirty', dirty);
         this.unsaved.textContent = `, ${text}`;
@@ -272,26 +278,26 @@ export class DocumentTab {
         else header.removeAttribute('data-close');
         this.close.title = closeHint;
         this.manager.tabChanged(this);
-      });
-    });
-    this.watch(() => {
-      const key = doc.closable ? this.manager.closeKeyHint() : null;
-      untracked(() => {
+      },
+    );
+    this.watch(
+      () => (doc.closable ? this.manager.closeKeyHint() : null),
+      (key) => {
         setAccessKeyAttribute(this.header, this.closeKey, key);
         this.closeKey = key;
-      });
-    });
-    this.watch(() => {
-      const text = this.tooltipText();
-      untracked(() => this.renderTooltip(text));
-    });
-    this.watch(() => {
-      const lifetime = doc.contentLifetime ?? this.manager.contentLifetime;
-      untracked(() => {
+      },
+    );
+    this.watch(
+      () => this.tooltipText(),
+      (text) => this.renderTooltip(text),
+    );
+    this.watch(
+      () => doc.contentLifetime ?? this.manager.contentLifetime,
+      (lifetime) => {
         if (lifetime === 'keep') this.build();
         else if (lifetime === 'dispose' && !this.shown) this.release();
-      });
-    });
+      },
+    );
   }
 
   private renderTooltip(text: string): void {

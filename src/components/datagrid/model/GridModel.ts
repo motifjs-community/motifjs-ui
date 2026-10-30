@@ -50,6 +50,8 @@ import { RowSelection } from './RowSelection';
 import { CellRanges } from './CellRanges';
 import { sameValue } from './same-value';
 import { Switches } from './Switches';
+import { givenList, givenValue } from '../../../core/given-field';
+import { readField } from './read-field';
 
 /** `activeRow` value of the header row. Rows are 0…count-1. */
 export const HEADER_ROW = -1;
@@ -469,7 +471,7 @@ export class GridModel<T> {
 
   /** The tracker's id of a row: its key as text, or `+1`, `+2` … for a row added in the grid. */
   rowIdOf(row: T): string {
-    return this.data.idOf(row);
+    return untracked(() => this.data.idOf(row));
   }
 
   // Row numbering.
@@ -732,7 +734,8 @@ export class GridModel<T> {
 
   /** Grid index of the row whose adaptive detail is open, while it is loaded (or at `hint`); -1 for none. */
   adaptiveIndex(hint = -1): number {
-    const { rowId, key } = this.adaptive.state;
+    const rowId = this.adaptive.state.rowId;
+    const key = this.adaptive.key;
     if (rowId === null) return -1;
     if (hint >= 0 && this.rowIdAt(hint) === rowId) return hint;
     const i = this.indexOfKey(rowId);
@@ -749,7 +752,8 @@ export class GridModel<T> {
 
   /** Opens a new row at position `k` of the new-row area; rows after it move down, the active row with them. `values` count as entered. Returns its grid index. */
   insertAdded(k: number, values?: Partial<T>): number {
-    const e = { data: { ...(this.props.newRow?.create?.() ?? {}) } as Partial<T>, values: { ...(values ?? {}) } as Partial<T>, cancel: false };
+    const create = this.props.newRow?.create;
+    const e = { data: (create ? untracked(() => create()) : {}) as Partial<T>, values: { ...(values ?? {}) } as Partial<T>, cancel: false };
     const { events } = this;
     if (events.listened(events.initNewRow)) {
       events.initNewRow.fire(e);
@@ -875,16 +879,31 @@ export class GridModel<T> {
     if (index >= 0) this.lastSeen.set(rowId, { index, generation: this.generation });
     const col = this.columns.defs.get(field);
     if (!col || this.columns.isInternal(field)) return;
-    const rec = this.edit(rowId);
-    const full = { ...(row as object), ...(rec?.draft ?? {}) } as T;
+    const entered = this.enteredOf(rowId, row);
     const shown = this.value(rowId, row, col);
-    const message = this.fieldMessage(col, shown, full);
+    const message = this.fieldMessage(col, shown, row, entered);
     if (message) {
       tracker.setError(row, field, message);
       return;
     }
     if (col.lookup && !data.isEmpty(value)) this.checkKey(rowId, row, col, value);
-    if (this.rules.has(col)) this.checkRules(rowId, row, col, shown, full);
+    if (this.rules.has(col)) this.checkRules(rowId, row, col, shown, entered);
+  }
+
+  /** The values entered in a row and not saved yet, by field: a copy of its draft (the row itself does not hold them). */
+  valuesOf(rowId: string | undefined): Partial<T> {
+    return { ...(this.edit(rowId)?.draft ?? {}) } as Partial<T>;
+  }
+
+  /** What the column's callbacks get besides the row itself: the values entered (`values`), `isNew`, and `getValue(field)`. */
+  enteredOf(rowId: string | undefined, row: T | null | undefined): data.RowCheckContext<T> {
+    const values = this.valuesOf(rowId);
+    const own = values as Record<string, unknown>;
+    return {
+      values,
+      isNew: this.isNew(rowId),
+      getValue: (field) => (Object.hasOwn(own, field) ? own[field] : row === null || row === undefined ? undefined : untracked(() => data.getField(row, field))),
+    };
   }
 
   /** A column has `validationRules`. */
@@ -899,13 +918,13 @@ export class GridModel<T> {
   }
 
   /** Checks a written value against the column's rules; the message shows when they are done (the row waits for them). */
-  private checkRules(rowId: string, row: T, col: GridColumn<T>, value: unknown, full: T) {
+  private checkRules(rowId: string, row: T, col: GridColumn<T>, value: unknown, entered: data.RowCheckContext<T>) {
     const known = this.rules.known(rowId, col, value);
     if (known !== undefined) {
       if (known) this.data.tracker.setError(row, col.field, known);
       return;
     }
-    const work = this.rules.check(rowId, col, value, full).then((message) => {
+    const work = this.rules.check(rowId, col, value, row, entered).then((message) => {
       const rec = this.edit(rowId);
       if (!message || !rec || rec.removed || !sameValue(this.value(rowId, row, col), value) || rec.errors[col.field]) return;
       this.data.tracker.setError(row, col.field, message);
@@ -930,7 +949,8 @@ export class GridModel<T> {
     const fail = (error: unknown) => this.setError(row, field, (error as Error | undefined)?.message || this.text('invalid'));
     let result: void | Promise<void>;
     try {
-      result = col.setCellValue(values, value, { ...(row as object), ...(this.edit(rowId)?.draft ?? {}) } as T);
+      const set = col.setCellValue;
+      result = untracked(() => set(values, value, row, this.enteredOf(rowId, row)));
     } catch (error) {
       fail(error);
       return;
@@ -1099,7 +1119,7 @@ export class GridModel<T> {
   selectId(row: T | undefined): string | undefined {
     if (row === undefined || row === null) return undefined;
     const adapter = this.data.source.adapter;
-    return adapter.keys.hasKey(row) ? adapter.keyString(adapter.keyOf(row)) : undefined;
+    return untracked(() => (adapter.keys.hasKey(row) ? adapter.keyString(adapter.keyOf(row)) : undefined));
   }
 
   /** What a row is going through, for its actions. Reactive. */
@@ -1126,19 +1146,23 @@ export class GridModel<T> {
 
   /** The `actions` prop when it is a list; `null` when it is a function (or not given). */
   get actionList(): readonly GridActionItem<T>[] | null {
+    void this.actionSets.version;
     const given = this.props.actions;
-    return given && typeof given !== 'function' ? given : null;
+    return given && typeof given !== 'function' ? givenList(given) : null;
   }
 
   /** The actions a row shows, in order: names turned into the ready actions, the hidden ones left out. Reactive. */
   rowActions(row: T, state: RowState): GridAction<T>[] {
+    void this.actionSets.version;
     const given = this.props.actions;
-    const items = (typeof given === 'function' ? given(row, state) : given) ?? [];
+    // The row and the actions are the app's: read as they are, asked again on `refreshActions()`.
+    const items = givenList(typeof given === 'function' ? untracked(() => given(row, state)) : given);
     const out: GridAction<T>[] = [];
     for (const item of items) {
       const action = this.actionSets.resolve(item);
       if (!action) continue;
-      const visible = typeof action.visible === 'function' ? action.visible(row, state) : action.visible;
+      const shown = givenValue<GridAction<T>['visible']>(action, 'visible');
+      const visible = typeof shown === 'function' ? untracked(() => shown(row, state)) : shown;
       if (visible !== false) out.push(action);
     }
     return out;
@@ -1318,7 +1342,7 @@ export class GridModel<T> {
   columnGroups(): data.GroupItem[] {
     const out: { field: string; at: number }[] = [];
     for (const col of this.columns.definitions()) {
-      const at = read(col.groupIndex);
+      const at = readField(col, 'groupIndex');
       if (typeof at === 'number' && at >= 0) out.push({ field: col.field, at });
     }
     out.sort((a, b) => a.at - b.at);
@@ -1384,7 +1408,7 @@ export class GridModel<T> {
 
   /** How a group opens: its column's `groupExpandMode`, else the grid's. */
   expandModeOf(node: GroupNode): 'button' | 'rowClick' {
-    return read(this.columns.defs.get(node.field)?.groupExpandMode) ?? this.settings.get('groupExpandMode');
+    return readField(this.columns.defs.get(node.field), 'groupExpandMode') ?? this.settings.get('groupExpandMode');
   }
 
   /** The grid's own content for group rows (`groupCell` prop), used by columns without one. */
@@ -1410,7 +1434,7 @@ export class GridModel<T> {
       const col = this.columns.get(field);
       this.tellFeatures(field);
       this.startFilterValues(col);
-      const at = read(col.groupIndex);
+      const at = readField(col, 'groupIndex');
       if (typeof at === 'number' && at >= 0) this.groupBy(field, at);
     }
     this.keepActiveFieldVisible();
@@ -1442,13 +1466,14 @@ export class GridModel<T> {
 
   /** The header filter's values of a column and whether they keep or leave out rows; none takes that part of its filter away. */
   setFilterValues(field: string, values: readonly unknown[] | undefined, type: 'include' | 'exclude' = 'include') {
-    this.filters.update(field, { values: values?.length ? [...values] : undefined, filterType: type === 'exclude' ? 'exclude' : undefined });
+    const list = givenList(values);
+    this.filters.update(field, { values: list.length ? list : undefined, filterType: type === 'exclude' ? 'exclude' : undefined });
   }
 
   /** A column's own `filterValues` and `filterType`, where the filters say nothing of its values. */
   private startFilterValues(col: GridColumn<T>) {
-    const values = read(col.filterValues);
-    const type = read(col.filterType);
+    const values = readField(col, 'filterValues');
+    const type = readField(col, 'filterType');
     if ((values === undefined && type === undefined) || this.filters.get(col.field)?.values) return;
     this.setFilterValues(col.field, values, type);
   }
@@ -1687,45 +1712,32 @@ export class GridModel<T> {
       },
       fields,
     );
-    return new data.DataSource<T, unknown>({ adapter: adapter as unknown as data.DataAdapter<T, unknown>, loadMode: 'all', sort: this.state.sort, filter: this.filters.expression() });
+    return new data.DataSource<T, unknown>({ adapter: adapter as unknown as data.DataAdapter<T, unknown>, loadMode: 'all', sort: this.state.sort.map((s) => ({ ...s })), filter: this.filters.expression() });
   }
 
-  /** The id of a row the tracker checks (it gives a copy with the edits applied). */
-  private idOfChecked(row: T, isNew: boolean): string | undefined {
-    if (this.checking) return this.checking;
-    if (!isNew) return this.rowIdOf(row);
-    const keys = Object.keys(row as object);
-    const same = (a: AddedRow<T>) => {
-      const rec = this.edit(a.rowId);
-      if (!rec?.isNew) return false;
-      const full = { ...(a.row as object), ...rec.draft } as Record<string, unknown>;
-      return Object.keys(full).length === keys.length && keys.every((k) => Object.is(full[k], (row as Record<string, unknown>)[k]));
-    };
-    return this.addedRows.find(same)?.rowId;
-  }
-
-  /** The grid's checks of a row, as the tracker runs them before it is saved. */
-  private checkRow(row: T, context: { isNew: boolean; changed: readonly string[] }): Record<string, string> {
+  /** The grid's checks of a row, as the tracker runs them before it is saved: the row itself, the values entered in `context`. */
+  private checkRow(row: T, context: data.RowCheckContext<T> & { readonly changed: readonly string[] }): Record<string, string> {
+    const rowId = this.checking ?? this.rowIdOf(row);
     const fields = this.columns.listedData().filter((f) => this.columns.canFill(f, row, context.isNew));
-    const rowId = this.idOfChecked(row, context.isNew);
     const found: Record<string, string> = {};
     let waiting = false;
     for (const field of fields) {
       if (!context.isNew && !context.changed.includes(field)) continue;
       const col = this.columns.get(field);
-      const value = cellValue(col, row);
-      let message = this.fieldMessage(col, value, row);
-      if (!message && rowId !== undefined && this.rules.has(col)) {
+      const value = this.value(rowId, row, col);
+      let message = this.fieldMessage(col, value, row, context);
+      if (!message && this.rules.has(col)) {
         const known = this.rules.known(rowId, col, value);
         if (known === undefined) {
           waiting = true;
-          this.settle(rowId, this.rules.check(rowId, col, value, row), this.rules.waits(col) ? field : undefined);
+          this.settle(rowId, this.rules.check(rowId, col, value, row, context), this.rules.waits(col) ? field : undefined);
         } else message = known;
       }
       if (message) found[field] = message;
     }
     let whole = '';
-    const own = this.props.validateRow?.(row, context);
+    const validateRow = this.props.validateRow;
+    const own = validateRow ? untracked(() => validateRow(row, context)) : undefined;
     if (typeof own === 'string' && own) whole = own;
     else if (own && typeof own === 'object') {
       for (const [field, message] of Object.entries(own)) {
@@ -1738,7 +1750,7 @@ export class GridModel<T> {
     const errors: Record<string, string> = {};
     for (const field of fields) if (found[field]) errors[field] = found[field];
     if (whole) errors[''] = whole;
-    if (rowId === undefined || !this.events.listened(this.events.rowValidating)) return errors;
+    if (!this.events.listened(this.events.rowValidating)) return errors;
     // `onRowValidating` comes once the cells are checked, once per round; its answer is kept for the round.
     const kept = this.rowChecks.get(rowId);
     if (kept?.round === this.rules.round) return kept.errors;
@@ -1747,6 +1759,8 @@ export class GridModel<T> {
     const e: GridRowValidatingEventArgs<T> = {
       key: context.isNew || !adapter.keys.hasKey(row) ? undefined : adapter.keyOf(row),
       row,
+      values: { ...context.values },
+      getValue: (field) => context.getValue(field),
       isNew: context.isNew,
       changed: context.changed,
       errors: { ...errors },
@@ -1768,10 +1782,11 @@ export class GridModel<T> {
     return out;
   }
 
-  private fieldMessage(col: GridColumn<T>, value: unknown, row: T): string {
+  private fieldMessage(col: GridColumn<T>, value: unknown, row: T, entered: data.RowCheckContext<T>): string {
     if (col.required && data.isEmpty(value)) return this.text('required');
     if (col.lookup && this.lookups.isMissing(col, value)) return this.text('gridLookupMissing');
-    return col.validate?.(value, row) || '';
+    const validate = col.validate;
+    return (validate && untracked(() => validate(value, row, entered))) || '';
   }
 
   /** A lookup key not known yet is asked for; one the source does not have stops the row from being saved. */

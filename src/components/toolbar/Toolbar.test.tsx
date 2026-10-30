@@ -5,9 +5,12 @@ import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import { TextBox } from '../textbox/TextBox';
 import type { ToolbarItem } from './toolbar-item';
+import type { ToolbarItemType } from './toolbar-item-type';
 import type { ToolbarItemClickEventArgs } from './toolbar-item-click-event-args';
 import { Toolbar } from './Toolbar';
 import { ToolbarSeparator } from './ToolbarSeparator';
+import { dataKinds } from '../../../tests/data-kinds';
+import type { MenuItem } from '../../parts/menu/menu-item';
 
 let hosts: Component[] = [];
 
@@ -311,6 +314,29 @@ describe('Toolbar', () => {
     expect(t.controlOf(a)).toBe(t.controlOf(s.items[1]));
   });
 
+  it('reads functions over plain data again on reState: the item list, an item\'s type and its fields', async () => {
+    const plain = { items: [{ text: 'A' }] as ToolbarItem[], save: 'Save', kind: 'button' as ToolbarItemType, shown: false };
+    const saveItem: ToolbarItem = { text: () => plain.save, type: () => plain.kind };
+    plain.items = [saveItem, { text: 'B', visible: () => plain.shown }];
+    const given = JSON.stringify(plain.items.map((item) => Object.keys(item)));
+    const t = new Toolbar({ items: () => plain.items });
+    const host = page(t);
+    await settle();
+    expect(faces(t).map((f) => f.textContent)).toEqual(['Save']);
+    Object.assign(plain, { save: 'Store', kind: 'toggle', shown: true });
+    await settle();
+    expect(faces(t).map((f) => f.textContent)).toEqual(['Save']);
+    host.reState();
+    await settle();
+    expect(faces(t).map((f) => f.textContent)).toEqual(['Store', 'B']);
+    expect(faces(t)[0].hasAttribute('aria-pressed')).toBe(true);
+    plain.items = [{ text: 'Z' }, ...plain.items];
+    t.reState();
+    await settle();
+    expect(faces(t).map((f) => f.textContent)).toEqual(['Z', 'Store', 'B']);
+    expect(JSON.stringify(plain.items.slice(1).map((item) => Object.keys(item)))).toBe(given);
+  });
+
   it('keeps an item hidden from the start out of sight, made with new and added later, in its place when shown', async () => {
     const s = reactive({ shown: false });
     const t = new Toolbar({ items: [{ text: 'A' }, { text: 'B', visible: () => s.shown }, { text: 'C' }] });
@@ -329,5 +355,51 @@ describe('Toolbar', () => {
     page(built);
     await settle();
     expect(faces(built).map((f) => f.textContent)).toEqual(['Y']);
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('gives back the very items, and shows a change in place after refresh()', async () => {
+      const pressed: unknown[] = [];
+      const items = make<ToolbarItem[]>([{ text: 'Save', click: (e) => pressed.push(e.item) }, { text: 'Print' }]);
+      const t = new Toolbar({ items });
+      page(t);
+      await settle();
+      faces(t)[0].click();
+      expect(pressed[0]).toBe(items[0]);
+      const save = t.controlOf(items[0]);
+
+      items[0].text = 'Save all';
+      items.push({ text: 'Share' });
+      await settle();
+      expect(faces(t).map((f) => f.textContent)).toEqual(['Save', 'Print']);
+      t.refresh();
+      await settle();
+      expect(faces(t).map((f) => f.textContent)).toEqual(['Save all', 'Print', 'Share']);
+      expect(t.controlOf(items[0])).toBe(save);
+      items.splice(1, 1);
+      t.refresh();
+      await settle();
+      expect(faces(t).map((f) => f.textContent)).toEqual(['Save all', 'Share']);
+    });
+
+    it('moves a split button into the "more" menu with its very menu items, after a line', async () => {
+      const chosen: unknown[] = [];
+      const menu = make<MenuItem[]>([{ text: 'Save as', click: (e) => chosen.push(e.item) }, { text: 'Save a copy' }]);
+      let t!: Toolbar;
+      page(
+        <Toolbar ref={(x: Toolbar) => (t = x)}>
+          <Button text="Save" split menu={menu} data-overflow="always" />
+        </Toolbar>,
+      );
+      await settle();
+      moreFace(t).click();
+      press('ArrowDown');
+      press('ArrowRight');
+      await settle();
+      const sub = Array.from(document.querySelectorAll<HTMLElement>('.mx-menu')).at(-1)!;
+      expect(Array.from(sub.children).map((el) => el.className)).toEqual(['mx-menu__item', 'mx-menu__separator', 'mx-menu__item', 'mx-menu__item']);
+      sub.querySelectorAll<HTMLElement>('.mx-menu__item')[1].click();
+      expect(chosen[0]).toBe(menu[0]);
+    });
   });
 });

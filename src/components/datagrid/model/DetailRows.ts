@@ -76,7 +76,7 @@ export class DetailRows<T> {
   canExpand(row: T): boolean {
     if (!this.on) return false;
     const can = this.options.get('canExpand');
-    return typeof can === 'function' ? !!can(row) : can !== false;
+    return typeof can === 'function' ? !!untracked(() => can(row)) : can !== false;
   }
 
   /** Whether the row with this key text is open. Reactive. */

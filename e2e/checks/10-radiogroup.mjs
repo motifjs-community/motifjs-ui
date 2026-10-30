@@ -37,7 +37,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   await plans.getByRole('radio', { name: 'Pro — 12 €' }).focus();
   await data.getByRole('button', { name: 'Add a plan' }).click();
   await data.getByRole('button', { name: 'Raise prices' }).click();
-  check('items given as a function are followed', (await plans.getByRole('radio').count()) === 4 && (await plans.getByRole('radio', { name: 'Pro — 13 €' }).isChecked()));
+  check('items changed in place show after refresh()', (await plans.getByRole('radio').count()) === 4 && (await plans.getByRole('radio', { name: 'Pro — 13 €' }).isChecked()));
   await plans.getByRole('radio', { name: 'Plan 4 — 61 €' }).click();
   check('itemValue gives the value', (await page.locator('.rg-plan').textContent()) === 'value: 4');
 

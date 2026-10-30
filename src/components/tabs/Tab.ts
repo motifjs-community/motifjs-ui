@@ -1,6 +1,7 @@
-import { effect, read, type Bind, type IBaseProp } from '@motifx/core';
+import { read, type Bind, type IBaseProp } from '@motifx/core';
 import { parseAccessKey, renderAccessKey, setAccessKeyAttribute } from '../../core/access-key';
 import { Control } from '../../core/control';
+import { follow } from '../../core/follow';
 import { registerControl } from '../../core/control-map';
 import { dismissMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
@@ -241,7 +242,7 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
         parts.owner?.close(this, true, e);
       });
       parts.header.append(close);
-      parts.stopCloseHint = effect(() => (close.title = uiLocale.strings.close));
+      parts.stopCloseHint = follow(this, 'closeHint', () => uiLocale.strings.close, (hint) => (close.title = hint));
       parts.close = close;
       setAccessKeyAttribute(parts.header, null, 'Delete');
     } else if (!on && parts.close) {

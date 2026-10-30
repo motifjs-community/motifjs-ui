@@ -1,5 +1,6 @@
-import { Application, createSignal, effect, untracked } from '@motifx/core';
+import { Application, createSignal, untracked } from '@motifx/core';
 import { registerControl } from '../../core/control-map';
+import { follow } from '../../core/follow';
 import { mirrorPage } from '../../core/mirror-page';
 import { nextId } from '../../core/next-id';
 import { connectDocument } from '../../core/page-documents';
@@ -77,12 +78,14 @@ export class TabBrowserWindow {
     });
     // The title follows the active document.
     this.stops.push(
-      effect(() => {
-        const title = owner.windowTitleOf(this);
-        untracked(() => {
+      follow(
+        owner,
+        'windowTitle',
+        () => owner.windowTitleOf(this),
+        (title) => {
           if (doc.title !== title) doc.title = title;
-        });
-      }),
+        },
+      ),
     );
   }
 

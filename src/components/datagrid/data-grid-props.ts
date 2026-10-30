@@ -100,8 +100,10 @@ export interface DataGridProps<T> extends ControlProps {
    */
   columns: GridColumnItem<T>[];
   /**
-   * Rows in memory. The grid puts them in a `DataSource` over an `ArrayAdapter` itself: `push`,
-   * `splice` and a new array are followed, and saved edits, new rows and deletions go into the array.
+   * Rows in memory, plain or reactive: the grid reads them as they are and gives back the same
+   * objects. It puts them in a `DataSource` over an `ArrayAdapter` itself; a new array (or a function
+   * that returns one) loads again, and after a change in place (`push`, `splice`, a field) call
+   * `grid.refresh()` or `grid.repaintRows(keys)`. Saved edits, new rows and deletions go into the array.
    */
   rows?: Bind<T[]>;
   /** Rows from the data layer, any adapter. `'blocks'` loads where the virtual list looks, `'page'` shows pages. Wins over `rows`. */
@@ -165,15 +167,19 @@ export interface DataGridProps<T> extends ControlProps {
    * change it later through `grid.rowDragging`.
    */
   rowDragging?: GridRowDragging<T>;
-  /** Checks a whole row before it is saved: a message per field, or one message for the row. */
+  /**
+   * Checks a whole row before it is saved: a message per field, or one message for the row. `row` is
+   * the row itself; `context.values` holds the values entered and not saved yet, `context.getValue(field)`
+   * the value a field is saved with (the entered one, else the row's), `changed` the fields entered.
+   */
   validateRow?: (
     row: T,
-    context: { isNew: boolean; changed: readonly string[] },
+    context: data.RowCheckContext<T> & { readonly changed: readonly string[] },
   ) => Readonly<Record<string, string | null | undefined>> | string | null | undefined | void;
   /**
    * The buttons of each row, in order of importance: those that do not fit go into the row's
-   * "more" menu. A function of the row and its state is followed: when what it reads changes, the
-   * row's buttons change. Strings name the grid's own actions (`'edit'`, `'remove'`, `'restore'`,
+   * "more" menu. A function of the row and its state is asked again when the row's state changes
+   * (edited, saved, selected) and on `refreshActions()`. Strings name the grid's own actions (`'edit'`, `'remove'`, `'restore'`,
    * `'save'`, `'cancel'`).
    */
   actions?: readonly GridActionItem<T>[] | ((row: T, state: RowState) => readonly GridActionItem<T>[]);

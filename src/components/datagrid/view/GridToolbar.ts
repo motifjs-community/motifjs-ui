@@ -1,4 +1,4 @@
-import { ComponentBase, effect, read, untracked } from '@motifx/core';
+import { ComponentBase, createSignal, effect, untracked } from '@motifx/core';
 import { columnsMark, downloadMark, plusMark, saveMark, searchMark, undoMark } from '../../../core/glyphs';
 import { isHtmlElement, isNode } from '../../../core/node-kind';
 import { Button } from '../../button/Button';
@@ -11,6 +11,8 @@ import type { Switches } from '../model/Switches';
 import { BarButtons } from './BarButtons';
 import type { ToolbarHost } from './toolbar-host';
 import type { ToolbarValues } from './toolbar-values';
+import { givenList, givenValue } from '../../../core/given-field';
+import { readField } from '../model/read-field';
 
 /** The grid's own items, in the order they take when the app does not list them. */
 const ORDER: readonly GridToolbarItemName[] = ['groupPanel', 'rowActions', 'addRowButton', 'saveButton', 'revertButton', 'exportButton', 'columnChooserButton', 'searchPanel'];
@@ -39,6 +41,8 @@ export class GridToolbar<T> {
   private readonly spacer: HTMLElement;
   private readonly ids = new WeakMap<object, string>();
   private nextId = 0;
+  /** Grows on `redraw()`: the app's items are read again. */
+  private readonly look = createSignal(0);
   /** The list last placed, to place again when the row actions get another button. */
   private placed: { list: readonly Entry[]; after: readonly boolean[] } | null = null;
 
@@ -62,13 +66,18 @@ export class GridToolbar<T> {
     const stop = effect(() => {
       const list = this.entries();
       // The group panel and the row actions start the bar, the grid's other items end it.
-      const after = list.map((e) => (read(e.item.location) ?? (e.name === 'groupPanel' || e.name === 'rowActions' ? 'before' : 'after')) !== 'before');
+      const after = list.map((e) => (this.field(e.item, 'location') ?? (e.name === 'groupPanel' || e.name === 'rowActions' ? 'before' : 'after')) !== 'before');
       untracked(() => this.place(list, after));
     });
     owner.motif.setDisposable(() => {
       stop();
       for (const made of this.made.values()) for (const s of made.stops) s();
     });
+  }
+
+  /** The app's items are read again: the list, and what each shows (`grid.repaint()`). */
+  redraw() {
+    this.look.value = this.look.peek() + 1;
   }
 
   /** The control made for an item (`'searchPanel'`, `'exportButton'`, or a name of the app's own), while it is in the bar. */
@@ -85,7 +94,7 @@ export class GridToolbar<T> {
   shown(): boolean {
     const visible = this.options.get('visible');
     if (typeof visible === 'boolean') return visible;
-    return this.entries().some((e) => read(e.item.visible) !== false && (e.name !== 'rowActions' || this.host.barEntries().length > 0));
+    return this.entries().some((e) => this.field(e.item, 'visible') !== false && (e.name !== 'rowActions' || this.host.barEntries().length > 0));
   }
 
   /** Whether one of the grid's items has its feature on. Reactive. */
@@ -112,23 +121,31 @@ export class GridToolbar<T> {
 
   /** The items of the bar now, in order. Reactive. */
   private entries(): Entry[] {
+    void this.look.value;
     const given = this.host.prepare(this.options.get('items') ?? ORDER.filter((name) => this.has(name)));
     const out: Entry[] = [];
-    for (const x of given) {
+    // The app's items are read as they are; a change in place shows after `grid.repaint()`.
+    for (const x of givenList(given)) {
       const item = typeof x === 'string' ? (isOwnName(x) ? PLAIN : { name: x }) : x;
-      const name = typeof x === 'string' ? x : x.name;
+      const name = typeof x === 'string' ? x : givenValue<string | undefined>(x, 'name');
       if (isOwnName(name)) {
         // One of the grid's items whose feature is off stays out.
         if (this.has(name) && !out.some((e) => e.key === name)) {
-          const shape = name === 'exportButton' && !item.click ? (this.host.exportCommands().length > 1 ? 'menu' : 'plain') : undefined;
+          const shape = name === 'exportButton' && !givenValue(item, 'click') ? (this.host.exportCommands().length > 1 ? 'menu' : 'plain') : undefined;
           out.push({ key: name, name, item, shape });
         }
         continue;
       }
-      if (!item.content && item.text === undefined && item.icon === undefined) continue;
+      if (!givenValue(item, 'content') && givenValue(item, 'text') === undefined && givenValue(item, 'icon') === undefined) continue;
       out.push({ key: name ?? this.idOf(item), name: null, item });
     }
     return out;
+  }
+
+  /** A field of an item, read as it is; read again on `redraw()`. */
+  private field<K extends keyof GridToolbarItem>(item: GridToolbarItem, key: K) {
+    void this.look.value;
+    return readField(item, key);
   }
 
   private idOf(item: object): string {
@@ -184,14 +201,14 @@ export class GridToolbar<T> {
     const grid = this.host.grid;
     const own = name ? this.ownButton(name) : null;
     const menu = shape === 'menu' ? () => this.host.exportCommands().map((c) => ({ text: c.text, enabled: c.enabled, click: () => c.run() })) : undefined;
-    const text = () => read(item.text) ?? own?.text() ?? '';
-    const iconOnly = () => (read(item.showText) ?? (name ? 'inMenu' : 'always')) === 'inMenu' && (item.icon !== undefined || !!own);
+    const text = () => this.field(item, 'text') ?? own?.text() ?? '';
+    const iconOnly = () => (this.field(item, 'showText') ?? (name ? 'inMenu' : 'always')) === 'inMenu' && (item.icon !== undefined || !!own);
     const button = new Button({
       text: () => (iconOnly() ? '' : text()),
-      hint: () => read(item.hint) ?? (iconOnly() ? text() : ''),
-      icon: () => (item.icon !== undefined ? read(item.icon) : own?.icon()),
-      enabled: () => read(item.enabled) !== false && (own?.enabled() ?? true),
-      visible: () => read(item.visible) !== false,
+      hint: () => this.field(item, 'hint') ?? (iconOnly() ? text() : ''),
+      icon: () => (item.icon !== undefined ? this.field(item, 'icon') : own?.icon()),
+      enabled: () => this.field(item, 'enabled') !== false && (own?.enabled() ?? true),
+      visible: () => this.field(item, 'visible') !== false,
       busy: () => !!own?.busy?.(),
       ...(menu ? { menu } : {}),
     });
@@ -244,9 +261,9 @@ export class GridToolbar<T> {
       placeholder: () => settings.get('searchPlaceholder') || model.text('gridSearchPlaceholder'),
       icon: () => searchMark(),
       clearButton: true,
-      hint: () => read(item.hint) ?? '',
-      enabled: () => read(item.enabled) !== false,
-      visible: () => read(item.visible) !== false,
+      hint: () => this.field(item, 'hint') ?? '',
+      enabled: () => this.field(item, 'enabled') !== false,
+      visible: () => this.field(item, 'visible') !== false,
       value: () => search.state.text,
       onValueChanged: (e) => {
         if (!e.byUser) return;
@@ -266,7 +283,7 @@ export class GridToolbar<T> {
   private makeGroupPanel(item: GridToolbarItem): Made {
     const element = this.host.groupPanel().element;
     const visible = effect(() => {
-      const on = read(item.visible) !== false;
+      const on = this.field(item, 'visible') !== false;
       untracked(() => element.toggleAttribute('hidden', !on));
     });
     return { item, control: null, element, stops: [visible, this.followOverflow(element, item, 'never')] };
@@ -286,7 +303,7 @@ export class GridToolbar<T> {
     let made: Made | null = null;
     const group = new BarButtons<T>(this.model, 'toolbar', {
       run: (entry) => this.host.runBarAction(entry, 'toolbar'),
-      visible: () => read(item.visible) !== false,
+      visible: () => this.field(item, 'visible') !== false,
       describedBy: element.id,
       added: (button) => {
         stops.push(this.followOverflow(button.element, item, 'auto'));
@@ -315,7 +332,7 @@ export class GridToolbar<T> {
       else if (content !== undefined && content !== null) element.textContent = String(content);
     }
     const visible = effect(() => {
-      const on = read(item.visible) !== false;
+      const on = this.field(item, 'visible') !== false;
       untracked(() => element.toggleAttribute('hidden', !on));
     });
     return { item, control, element, stops: [visible, this.followOverflow(element, item, 'never')] };
@@ -324,7 +341,7 @@ export class GridToolbar<T> {
   /** Writes whether the element may go into the "more" menu where the toolbar reads it, and lays the bar out again when it changes. */
   private followOverflow(element: HTMLElement, item: GridToolbarItem, fallback: 'auto' | 'always' | 'never'): () => void {
     return effect(() => {
-      const value = read(item.overflow) ?? fallback;
+      const value = this.field(item, 'overflow') ?? fallback;
       untracked(() => {
         if (element.dataset.overflow === value) return;
         element.dataset.overflow = value;

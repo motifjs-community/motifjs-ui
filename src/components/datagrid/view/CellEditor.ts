@@ -1,4 +1,4 @@
-import { Component, ComponentBase, read } from '@motifx/core';
+import { Component, ComponentBase, read, untracked } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { CheckBox } from '../../checkbox/CheckBox';
 import { ComboBox } from '../../combobox/ComboBox';
@@ -20,6 +20,7 @@ import { sameValue } from '../model/same-value';
 import type { EditorHost } from './editor-host';
 import type { EditorKind } from './editor-kind';
 import type { EditorValue } from './editor-value';
+import { readField } from '../model/read-field';
 
 /** Rows of a lookup editor's list asked for at a time. */
 
@@ -55,7 +56,10 @@ export class CellEditor<T> {
   constructor(
     private readonly model: GridModel<T>,
     readonly column: GridColumn<T>,
+    /** The row itself. */
     private readonly row: T,
+    /** The values entered in the row when the editor is made. */
+    private readonly entered: data.RowCheckContext<T>,
     private readonly value: unknown,
     private readonly initialText: string | undefined,
     private readonly host: EditorHost,
@@ -78,6 +82,8 @@ export class CellEditor<T> {
       }
       const ctx: EditorContext<T> = {
         row,
+        values: entered.values,
+        getValue: entered.getValue,
         column,
         lookup: column.lookup,
         value,
@@ -242,7 +248,7 @@ export class CellEditor<T> {
 
   private cellOptions(): Options {
     const col = this.column;
-    const label = read(col.title) ?? '';
+    const label = readField(col, 'title') ?? '';
     const align = this.model.columns.align(col.field);
     const value = this.value;
     const common = { label, labelMode: 'hidden' as const };
@@ -293,7 +299,7 @@ export class CellEditor<T> {
       this.loadingOptions = true;
       list.readOnly = true;
       void Promise.resolve()
-        .then(() => source(this.row))
+        .then(() => untracked(() => source(this.row, this.entered)))
         .catch(() => [] as readonly ListOption[])
         .then((choices) => {
           if (list.isDisposed) return;
@@ -315,10 +321,10 @@ export class CellEditor<T> {
     const lookup = col.lookup!;
     const lookups = this.model.lookups;
     const items = lookups.items(col);
-    const source = read(lookup.dataSource);
-    const search = lookups.search(col, this.row);
+    const source = readField(lookup, 'dataSource');
+    const search = lookups.search(col, this.row, this.entered);
     const options: Options = {
-      label: read(col.title) ?? '',
+      label: readField(col, 'title') ?? '',
       labelMode: 'hidden',
       value: data.isEmpty(this.value) ? null : this.value,
       textField: (item: unknown) => lookups.textOf(col, item),

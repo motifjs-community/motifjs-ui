@@ -1,5 +1,6 @@
+import { follow } from '../../core/follow';
 import { onLookChanged } from '../../core/look-watch';
-import { createSignal, effect, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp, type Signal } from '@motifx/core';
+import { createSignal, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp, type Signal } from '@motifx/core';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
 import { deepActiveElement } from '../../core/focus';
@@ -11,6 +12,8 @@ import { nextId } from '../../core/next-id';
 import { isElement } from '../../core/node-kind';
 import { uiLocale } from '../../core/ui-locale';
 import type { ItemField } from '../../parts/list/item-field';
+import { givenList } from '../../core/given-field';
+import { sameAsWritten } from '../../parts/field/same-as-written';
 import { readItemField } from '../../parts/list/read-item-field';
 import { TextBox } from '../textbox/TextBox';
 import type { TreeCheckState } from './tree-check-state';
@@ -108,6 +111,8 @@ interface Parts<T> {
   ready: boolean;
   /** A key list storage is being brought in step: not a value to apply. */
   syncing: boolean;
+  /** The value just written to `x-model`: the bound getter may hand it back once, as the model holds it. */
+  echo: { value: unknown } | null;
   expanding: Emitter<TreeViewExpandingEventArgs<T>>;
   collapsing: Emitter<TreeViewExpandingEventArgs<T>>;
   expanded$: Emitter<TreeViewExpandedEventArgs<T>>;
@@ -194,18 +199,15 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     this.listen();
     // The tree follows the items, every field it reads of them and the props that say how.
     this.watchItems();
-    const stopTexts = effect(() => {
-      const strings = uiLocale.strings;
-      untracked(() => {
-        parts.empty.textContent = strings.noItems;
-        for (const error of parts.body.querySelectorAll<HTMLElement>('.mx-tree-view__error')) this.fillError(error);
-      });
+    const stopTexts = follow(this, 'texts', () => uiLocale.strings, (strings) => {
+      parts.empty.textContent = strings.noItems;
+      for (const error of parts.body.querySelectorAll<HTMLElement>('.mx-tree-view__error')) this.fillError(error);
     });
     this.takeExpanded(this.peekProperty('expandedKeys'));
     this.takeChecked(this.peekProperty('checkedKeys'));
     this.takeValue(this.peekProperty('value'));
     parts.ready = true;
-    this.redraw();
+    untracked(() => this.redraw());
     // Names written on the component's tag belong to the tree inside it.
     queueMicrotask(() => {
       for (const name of ['aria-label', 'aria-labelledby', 'aria-describedby']) {
@@ -309,7 +311,11 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     return this.valueNow();
   }
   set value(value: Bind<unknown>) {
+    const before = untracked(() => this.valueNow());
     this.assignProperty('value', value);
+    // A selection set from code shows in `x-model` too, so the model and the tree never differ.
+    const now = untracked(() => this.valueNow());
+    if (typeof value !== 'function' && !sameAsWritten(now, before)) this.writeBack(now);
   }
   /** The selected items, in tree order. Reactive. */
   get selectedItems(): T[] {
@@ -523,6 +529,32 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     });
   }
 
+  /**
+   * Reads the items again after they were changed in place: which there are, their children, texts and states.
+   * Children that loaded stay. Your items may be plain or reactive; the tree reads them as they are.
+   */
+  refresh(): void {
+    const parts = this.parts;
+    parts.version.value = parts.version.peek() + 1;
+  }
+
+  /** Draws one row again after its item was changed in place: its text, icon and state (`refresh` for its children). */
+  refreshItem(key: unknown): void {
+    untracked(() => {
+      const parts = this.parts;
+      const node = parts.model.node(key);
+      const el = node && parts.elements.get(node);
+      const at = node && parts.index.get(node);
+      if (!node || !el || at === undefined) return;
+      const focused = deepActiveElement() === el;
+      this.forget(el);
+      const fresh = this.itemElement(parts.rows[at]);
+      el.replaceWith(fresh);
+      this.renderRoving();
+      if (focused) fresh.focus({ preventScroll: true });
+    });
+  }
+
   /** Loads a row's children again (all loaded children without a key) and reads the items again. */
   reload(key?: unknown): void {
     const parts = this.parts;
@@ -550,7 +582,9 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     // Read again now, not on the next update: `tree.items = …; tree.expand(…)` finds the new rows.
     if (name === 'items' || (FUNCTIONS as readonly string[]).includes(name)) this.watchItems();
     untracked(() => {
-      if (name === 'value') this.takeValue(value);
+      if (name === 'value') {
+        if (!this.isEcho(value)) this.takeValue(value);
+      }
       else if (name === 'expandedKeys') {
         this.takeExpanded(value);
         this.redraw();
@@ -606,6 +640,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
         typedAt: 0,
         ready: false,
         syncing: false,
+        echo: null,
         expanding: new Emitter(),
         collapsing: new Emitter(),
         expanded$: new Emitter(),
@@ -675,11 +710,15 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
   private watchItems(): void {
     const parts = this.parts;
     parts.stopItems();
-    parts.stopItems = effect(() => {
-      void parts.version.value;
-      const opens = this.readItems();
-      untracked(() => this.itemsChanged(opens));
-    });
+    parts.stopItems = follow(
+      this,
+      'items',
+      () => {
+        void parts.version.value;
+        return this.readItems();
+      },
+      (opens) => this.itemsChanged(opens),
+    );
   }
 
   /** Reads the items and every field of them, tracked; returns the `expanded` fields. */
@@ -687,7 +726,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     const parts = this.parts;
     const items = this.items;
     for (const name of FUNCTIONS) void this.getProperty(name);
-    const flat = this.peekProperty('parentField') !== undefined || items.some((item) => ownField(item, undefined, 'parentId') !== undefined);
+    const flat = this.peekProperty('parentField') !== undefined || givenList(items).some((item) => ownField(item, undefined, 'parentId') !== undefined);
     parts.model.read(items, this.fields(), flat, !!this.peekProperty('loadChildren'));
     return this.touch(parts.model.roots);
   }
@@ -726,14 +765,34 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
   private watch(node: TreeNode<T>): void {
     const parts = this.parts;
     let first = true;
-    const stop = effect(() => {
-      const list = parts.model.loaded.get(node.key) ?? [];
-      for (let i = 0; i < list.length; i++) void list[i];
-      this.touch(node.children ?? []);
-      if (first) first = false;
-      else untracked(() => (parts.version.value = parts.version.peek() + 1));
-    });
+    const stop = follow(
+      this,
+      'children',
+      () => this.touch(node.children ?? []),
+      () => {
+        if (first) first = false;
+        else parts.version.value = parts.version.peek() + 1;
+      },
+    );
     parts.watchers.push(stop);
+  }
+
+  /** Writes the selection to `x-model`, if there is one. */
+  private writeBack(value: unknown): void {
+    const parts = this.parts;
+    if (!this.bindings.writeModel(value)) return;
+    const echo = (parts.echo = { value });
+    queueMicrotask(() => {
+      if (parts.echo === echo) parts.echo = null;
+    });
+  }
+
+  /** The value just written, handed back by a reactive model as its own copy: the selection stays. */
+  private isEcho(value: unknown): boolean {
+    const parts = this.parts;
+    const echo = parts.echo;
+    parts.echo = null;
+    return !!echo && sameAsWritten(value, echo.value);
   }
 
   private takeValue(value: unknown): void {
@@ -872,7 +931,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     this.renderStates();
     const value = this.valueNow();
     this.sync('value', value);
-    if (write) this.bindings.writeModel(value);
+    if (write) this.writeBack(value);
     if (this.live) parts.selectionChanged.fire({ value, items: this.itemsOf(next), byUser, source: this, event });
   }
 

@@ -1,10 +1,10 @@
-import { read } from '@motifx/core';
 import type { GridActionRanEventArgs } from '../grid-action-ran-event-args';
 import type { GridActionRun } from '../grid-action-run';
 import type { GridSelection } from '../grid-selection';
 import type { ActionEntry } from './action-entry';
 import type { GridModel } from './GridModel';
 import type { RunPanel } from './run-panel';
+import { readField } from './read-field';
 
 type Place = GridActionRun['location'];
 
@@ -90,7 +90,7 @@ export class ActionRunner<T> {
       } else if (action.onclickMany && (rows.length > 1 || !action.onclick)) {
         await whole(() => action.onclickMany!(rows, e));
       } else if (action.onclick) {
-        const stopOnError = read(action.stopOnError) ?? settings.get('actionsStopOnError');
+        const stopOnError = readField(action, 'stopOnError') ?? settings.get('actionsStopOnError');
         for (const it of entry.items) {
           if (controller.signal.aborted) break;
           let ok = true;

@@ -1,4 +1,5 @@
 import type { Bind } from '@motifx/core';
+import type { data } from '@motifx-community/data';
 import type { GridValidationCallbackArgs } from './grid-validation-callback-args';
 
 /**
@@ -16,10 +17,10 @@ export type GridValidationRule<T = any> =
   /** A string pattern is found anywhere in the value, as `new RegExp(pattern)` would. */
   | { type: 'pattern'; pattern: Bind<RegExp | string>; message?: Bind<string>; ignoreEmptyValue?: boolean }
   | { type: 'email'; message?: Bind<string>; ignoreEmptyValue?: boolean }
-  /** The value compared with what `comparisonTarget` returns (a repeated password). Default `'=='`. */
+  /** The value compared with what `comparisonTarget` returns (a repeated password: `context.getValue('password')`). Default `'=='`. */
   | {
       type: 'compare';
-      comparisonTarget: (row: T) => unknown;
+      comparisonTarget: (row: T, context: data.RowCheckContext<T>) => unknown;
       comparisonType?: '==' | '!=' | '===' | '!==' | '<' | '<=' | '>' | '>=';
       message?: Bind<string>;
       ignoreEmptyValue?: boolean;

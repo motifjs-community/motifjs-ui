@@ -1,5 +1,6 @@
-import { effect, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import type { data } from '@motifx-community/data';
+import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
 import { checkMark, chevronDown, dashMark, dismissMark } from '../../core/glyphs';
 import type { IconSource } from '../../core/icon-source';
@@ -9,6 +10,7 @@ import { Field } from '../../parts/field/Field';
 import type { ItemField } from '../../parts/list/item-field';
 import type { OptionChosenEventArgs } from '../../parts/list/option-chosen-event-args';
 import { OptionList } from '../../parts/list/OptionList';
+import { itemOwnValue } from '../../parts/list/item-own-value';
 import { readItemField } from '../../parts/list/read-item-field';
 import { Popup } from '../../parts/popup/Popup';
 import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
@@ -110,29 +112,21 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     });
     for (const name of LIST_LOOK) this.observeProperty(name, () => this.listChanged());
     for (const name of TAG_LOOK) this.observeProperty(name, () => this.renderTags());
-    // Items in memory are followed, a reactive array changing in place too.
-    const stopItems = effect(() => {
-      const items = this.getProperty<readonly T[] | undefined>('items') ?? [];
-      for (const item of items) this.itemText(item);
-      untracked(() => {
-        if (!this.peekProperty('dataSource')) parts.items.setArray(items);
-      });
+    // Items given anew are shown; items changed in place wait for `refresh`.
+    this.observeProperty<readonly T[] | undefined>('items', (items) => {
+      if (!this.peekProperty('dataSource')) parts.items.setArray(items ?? []);
     });
-    const stopLocale = effect(() => {
-      const strings = uiLocale.strings;
-      untracked(() => {
-        parts.arrow?.setAttribute('aria-label', strings.moreOptions);
-        parts.clear?.setAttribute('aria-label', strings.clear);
-        this.renderTags();
-        this.listChanged();
-      });
+    const stopLocale = follow(this, 'texts', () => uiLocale.strings, (strings) => {
+      parts.arrow?.setAttribute('aria-label', strings.moreOptions);
+      parts.clear?.setAttribute('aria-label', strings.clear);
+      this.renderTags();
+      this.listChanged();
     });
     parts.items.onChanged(() => this.itemsChanged());
     this.listen();
     parts.ready = true;
-    this.renderValue(this.peekValue());
+    untracked(() => this.renderValue(this.peekValue()));
     this.motif.setDisposable(() => {
-      stopItems();
       stopLocale();
       clearTimeout(parts.timer);
       for (const release of parts.releaseTags.splice(0)) release();
@@ -348,6 +342,20 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     this.tagParts.popup?.close('code');
   }
 
+  /**
+   * Reads the items again after they were changed in place: the tags, the open list, the chosen items. Your items
+   * may be plain or reactive; the box reads them as they are.
+   */
+  override refresh(): void {
+    super.refresh();
+    const parts = this.tagParts;
+    parts.known.clear();
+    if (parts.items.dataSource) this.itemsChanged();
+    else parts.items.setArray(this.peekProperty<readonly T[]>('items') ?? []);
+    this.renderValue(this.peekValue());
+    this.setProperty('found', (this.peekProperty<number>('found') ?? 0) + 1);
+  }
+
   /** Removes every tag. */
   clear(): void {
     this.commit([]);
@@ -410,7 +418,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
   protected itemValue(item: T): unknown {
     const field = this.peekProperty<ItemField<T>>('valueField');
     if (field !== undefined) return readItemField(item, field, 'value');
-    return item !== null && typeof item === 'object' && 'value' in item ? (item as { value: unknown }).value : item;
+    return itemOwnValue(item);
   }
 
   /** The text of a tag whose value has no item. */

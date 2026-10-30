@@ -1,4 +1,4 @@
-import { reactive, read } from '@motifx/core';
+import { reactive, untracked } from '@motifx/core';
 import type { BandLayout } from '../band-layout';
 import type { ColumnFeatures } from '../column-features';
 import type { ColumnLayout } from '../column-layout';
@@ -15,6 +15,7 @@ import type { ColumnZone } from './column-zone';
 import { DEFAULT_SETTINGS } from './default-settings';
 import type { StickyOffset } from './sticky-offset';
 import { Switches } from './Switches';
+import { readField } from './read-field';
 
 /**
  * Field of the row status column: added by the grid, always first, not part of the layout, and shown
@@ -216,7 +217,7 @@ export class ColumnModel<T> {
   title(field: string): string {
     void this.state.revision;
     const def = this.defs.get(field) ?? this.bands.get(field)?.def;
-    return def ? (read(def.title) ?? '') : '';
+    return def ? (readField(def, 'title') ?? '') : '';
   }
 
   /** Alignment of the column's cells: its own, else by type. */
@@ -228,7 +229,7 @@ export class ColumnModel<T> {
 
   /** Where a band's caption sits: its own, else the `bandAlign` setting. */
   bandAlign(id: string): 'start' | 'center' | 'end' {
-    return read(this.bands.get(id)?.def.align) ?? this.settings.get('bandAlign');
+    return readField(this.bands.get(id)?.def, 'align') ?? this.settings.get('bandAlign');
   }
 
   /** Whether the user may use `feature` on this column or band: its own value, else the grid's. */
@@ -262,7 +263,7 @@ export class ColumnModel<T> {
   /** Whether a cell can be edited in `row`: the column's own value or row function, else the grid's setting (columns with a `value` reader only when they say so). */
   canEdit(field: string, row: T): boolean {
     const own = this.ownRule(field, 'editable');
-    if (typeof own === 'function') return !!own(row);
+    if (typeof own === 'function') return !!untracked(() => own(row));
     if (own !== undefined) return own;
     return this.settings.get('editable') && !this.get(field).value;
   }
@@ -271,10 +272,10 @@ export class ColumnModel<T> {
   canCreate(field: string, row: T): boolean {
     if (this.isInternal(field)) return false;
     const creatable = this.ownRule(field, 'creatable');
-    if (typeof creatable === 'function') return !!creatable(row);
+    if (typeof creatable === 'function') return !!untracked(() => creatable(row));
     if (creatable !== undefined) return creatable;
     const editable = this.ownRule(field, 'editable');
-    if (typeof editable === 'function') return !!editable(row);
+    if (typeof editable === 'function') return !!untracked(() => editable(row));
     if (editable !== undefined) return editable;
     return this.settings.get('creatable') && !this.get(field).value;
   }
@@ -511,13 +512,13 @@ export class ColumnModel<T> {
 
   /** How the column's edge is dragged: its own mode, else the grid's. */
   resizeModeOf(field: string): ColumnResizeMode {
-    return read(this.get(field).resizeMode) ?? this.settings.get('resizeMode');
+    return readField(this.get(field), 'resizeMode') ?? this.settings.get('resizeMode');
   }
 
   /** Whether a column gets cells only while it is in view: its own `columnRenderingMode`, else the grid's. The grid's own columns always have theirs. Reactive. */
   isVirtual(field: string): boolean {
     if (this.isInternal(field)) return false;
-    return (read(this.get(field).columnRenderingMode) ?? this.settings.get('columnRenderingMode')) === 'virtual';
+    return (readField(this.get(field), 'columnRenderingMode') ?? this.settings.get('columnRenderingMode')) === 'virtual';
   }
 
   /** Whether some visible column is virtual. Reactive. */
@@ -710,7 +711,7 @@ export class ColumnModel<T> {
     const priority = new Map<string, number>();
     for (const f of this.state.order) {
       if (this.isInternal(f)) continue;
-      const p = read(this.defs.get(f)?.hidingPriority);
+      const p = readField(this.defs.get(f), 'hidingPriority');
       if (typeof p === 'number' && Number.isFinite(p)) priority.set(f, p);
     }
     if ((!priority.size && !this.settings.get('columnHidingEnabled')) || width <= 0) return [];

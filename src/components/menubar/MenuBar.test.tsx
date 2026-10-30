@@ -4,6 +4,7 @@ import { mountHost, tick } from '../../../tests/helpers';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
 import { MenuBar } from './MenuBar';
+import { dataKinds } from '../../../tests/data-kinds';
 
 let hosts: Component[] = [];
 
@@ -222,6 +223,28 @@ describe('MenuBar', () => {
     expect(tops(b)[0].getAttribute('aria-expanded')).toBe('true');
   });
 
+  it('reads functions over plain data again on reState: its items and the open menu', async () => {
+    const plain = { edit: true, title: 'File', undo: 'Undo' };
+    const items: MenuItem[] = [
+      { text: () => plain.title, items: [{ text: 'New' }] },
+      { text: 'Edit', visible: () => plain.edit, items: [{ text: () => plain.undo }] },
+    ];
+    const b = new MenuBar({ items });
+    const host = page(b);
+    await settle();
+    b.open(1);
+    Object.assign(plain, { title: 'Document', undo: 'Undo typing' });
+    await settle();
+    expect(names(tops(b))).toEqual(['File', 'Edit']);
+    host.reState();
+    expect(names(tops(b))).toEqual(['Document', 'Edit']);
+    expect(names(menuItems(b))).toEqual(['Undo typing']);
+    plain.edit = false;
+    host.reState();
+    expect(names(tops(b))).toEqual(['Document']);
+    expect(Object.keys(items[1])).toEqual(['text', 'visible', 'items']);
+  });
+
   it('closes its menu and ignores presses while disabled', async () => {
     const b = new MenuBar({ items: menus([]) });
     page(b);
@@ -242,5 +265,29 @@ describe('MenuBar', () => {
     expect(tops(b).map((t) => t.tabIndex)).toEqual([-1, -1, -1]);
     b.tabStop = true;
     expect(tops(b)[0].tabIndex).toBe(0);
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('gives back the very items, and shows a change in place after refresh()', async () => {
+      const list = make<MenuItem[]>([{ text: 'File', items: [{ text: 'New' }, { text: 'Open' }] }, { text: 'Help' }]);
+      const clicked: unknown[] = [];
+      let bar!: MenuBar;
+      page(<MenuBar ref={(b: MenuBar) => (bar = b)} items={list} onItemClick={(e: MenuItemClickEventArgs) => void clicked.push(e.item)} />);
+      await settle();
+      bar.open(0);
+      const file = list[0].items as MenuItem[];
+      list[1].text = 'About';
+      file[1].text = 'Open…';
+      file.push({ text: 'Close' });
+      await settle();
+      expect(names(tops(bar))).toEqual(['File', 'Help']);
+      expect(names(menuItems(bar))).toEqual(['New', 'Open']);
+      bar.refresh();
+      expect(names(tops(bar))).toEqual(['File', 'About']);
+      expect(names(menuItems(bar))).toEqual(['New', 'Open…', 'Close']);
+      expect(bar.openItem).toBe(list[0]);
+      menuItems(bar)[2].click();
+      expect(clicked[0]).toBe(file[2]);
+    });
   });
 });

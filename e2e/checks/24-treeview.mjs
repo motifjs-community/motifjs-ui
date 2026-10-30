@@ -28,7 +28,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('the focus ring shows on the row for the keyboard', await item(ways, 'package.json').locator(':scope > .mx-tree-view__row').evaluate((el) => getComputedStyle(el).outlineStyle === 'solid'));
   await page.getByRole('button', { name: 'Add a product from code' }).click();
   await page.waitForTimeout(100);
-  check('a reactive array changed in place is drawn again', (await page.getByRole('treeitem', { name: 'Product 1' }).count()) === 1);
+  check('items changed in place are drawn again on refresh()', (await page.getByRole('treeitem', { name: 'Product 1' }).count()) === 1);
 
   const lazy = page.locator('.tv-lazy');
   await item(lazy, 'My disk').locator(':scope > .mx-tree-view__row > .mx-tree-view__expander').click();

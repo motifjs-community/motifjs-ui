@@ -8,8 +8,12 @@ import type { GridLookup } from './grid-lookup';
  * takes the text to show for the key.
  */
 export interface EditorContext<T> {
-  /** The row with the unsaved edits applied (a copy). */
+  /** The row itself. */
   readonly row: T;
+  /** The values entered and not saved yet, by field (`{}` while there are none); the row itself does not hold them. */
+  readonly values: Readonly<Partial<T>>;
+  /** The value a field is saved with: the entered one when there is one, else the row's. */
+  getValue(field: string): unknown;
   readonly column: GridColumn<T>;
   /** The column's lookup, when it has one. */
   readonly lookup: GridLookup<T> | undefined;

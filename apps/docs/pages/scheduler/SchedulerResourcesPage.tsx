@@ -28,7 +28,7 @@ const PROPS = [
 const RESOURCE = [
   ['field', '`string`', '—', 'The appointment field that holds the item’s value (`roomId`), or a list of them (`ownerIds`).'],
   ['label', '`Bind<string>`', 'the field', 'The form’s label; how the cells and the tooltip name the kind.'],
-  ['items', '`Bind<R[] \\| DataSource<R> \\| null>`', '`[]`', 'The items, in memory or from a data source (loaded once, then followed).'],
+  ['items', '`Bind<R[] \\| DataSource<R> \\| null>`', '`[]`', 'The items, in memory or from a data source (loaded once, then followed). Your data may be plain or reactive; the component reads it as it is. After changing it in place, call `refreshResources()` (or `refresh()`).'],
   ['valueExpr, displayExpr, colorExpr', '`string`', "`'id'`, `'text'`, `'color'`", 'The item fields of its value, its name and its colour.'],
   ['allowMultiple', '`Bind<boolean>`', '`false`', 'An appointment may have several: the field holds a list, the form has a tag box.'],
   ['useColorAsDefault', '`Bind<boolean>`', '`false`', 'Appointments take this kind’s colour (else the first kind whose item has one). Their own `color` wins.'],
@@ -39,6 +39,7 @@ const RESOURCE = [
 const METHODS = [
   ['checkTime(appointment, start, end, options?)', 'Whether it may be there (`free`) and what is there: `overlapping`, `blocked`, `offHours`. `options`: `allDay`, `resources` (the values it would have).'],
   ['resourcesOf(appointment)', 'Its items by kind: `{ field, label, items: { value, text, color, item }[] }[]`.'],
+  ['refreshResources()', 'Reads the items again, after you changed them in place.'],
   ['rangeFilter(range, fields, { resources })', 'The data layer’s filter for a range, now also for the resources shown (`{ roomId: [1, 2] }`, fields of one value).'],
 ];
 

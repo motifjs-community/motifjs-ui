@@ -3,6 +3,7 @@ import { enStrings } from '../../../core/ui-locale';
 import type { GridColumn } from '../grid-column';
 import type { GridValidationRule } from '../grid-validation-rule';
 import { CellRules } from './CellRules';
+import { nothingEntered } from './nothing-entered';
 
 type Row = { name: string; pin: string; again: string; age: number | null };
 
@@ -11,7 +12,7 @@ const column = (validationRules: GridValidationRule<Row>[]): GridColumn<Row> => 
 const row: Row = { name: '', pin: '1234', again: '1234', age: 30 };
 
 async function messageOf(value: unknown, list: GridValidationRule<Row>[], r = rules(), id = '1') {
-  return r.check(id, column(list), value, row);
+  return r.check(id, column(list), value, row, nothingEntered(row));
 }
 
 describe('CellRules', () => {
@@ -80,7 +81,7 @@ describe('CellRules', () => {
   it('keeps what it found per value; reevaluate (async by default) runs again each round', async () => {
     const r = rules();
     const col = column([{ type: 'custom', validationCallback: ({ value }) => value === 'ok' }]);
-    await r.check('1', col, 'bad', row);
+    await r.check('1', col, 'bad', row, nothingEntered(row));
     expect(r.known('1', col, 'bad')).toBe('The value is not valid.');
     expect(r.known('1', col, 'ok')).toBeUndefined();
     expect(r.known('2', col, 'bad')).toBeUndefined();
@@ -88,13 +89,13 @@ describe('CellRules', () => {
     expect(r.known('1', col, 'bad')).toBe('The value is not valid.');
 
     const server = column([{ type: 'async', validationCallback: () => Promise.resolve(true) }]);
-    await r.check('1', server, 'a', row);
+    await r.check('1', server, 'a', row, nothingEntered(row));
     expect(r.known('1', server, 'a')).toBe('');
     r.round++;
     expect(r.known('1', server, 'a')).toBeUndefined();
 
     const once = column([{ type: 'async', validationCallback: () => Promise.resolve(true), reevaluate: false }]);
-    await r.check('1', once, 'a', row);
+    await r.check('1', once, 'a', row, nothingEntered(row));
     r.round++;
     expect(r.known('1', once, 'a')).toBe('');
     r.forget('1');

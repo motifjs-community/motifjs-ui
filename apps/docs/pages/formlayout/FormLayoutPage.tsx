@@ -71,6 +71,8 @@ FormLayout.editors.set('color', (props) => new ColorPicker(props));
           rows={[
             ['validate(), resetValidation(), submit()', 'Check every field, hide the outcome, send the form.'],
             ['editorOf(field)', 'The editor of a field.'],
+            ['refresh()', 'Your data object and items may be plain or reactive; the form reads them as they are. After changing them in place, call `refresh()`. Every editor reads its value again, the items their texts and states; items added or removed draw the form again.'],
+            ['refreshField(field)', 'Reads one field of the data object again, after it was changed in place.'],
             ['validationGroup, isValid', 'The group the fields are checked in.'],
             ['FormLayout.editors', 'The editors known by name.'],
           ]}

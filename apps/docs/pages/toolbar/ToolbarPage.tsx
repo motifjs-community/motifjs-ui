@@ -38,6 +38,7 @@ const PROPERTIES = [
 const METHODS = [
   ['controlOf(item)', '`Control | null`', 'The control made for an item of `items`.'],
   ['updateOverflow()', '`void`', 'Works out again what fits, e.g. after a control changed its width.'],
+  ['refresh()', '`void`', 'Your items may be plain or reactive; the toolbar reads them as they are. After changing them in place, call `refresh()`. The list and each item\'s fields are read again; the controls made for items that stay are kept.'],
   ['focus()', '`boolean`', 'Focuses the control Tab reaches.'],
 ];
 

@@ -91,6 +91,7 @@ import { data } from '@motifx-community/data';
             ['selectedItem', 'The item of the value, when known.'],
             ['listItems', 'The `DataItems` the list shows (what the last search matched).'],
             ['opened, open(), close(), clear()', 'The list and the value.'],
+            ['refresh()', 'Your items may be plain or reactive; the box reads them as they are. After changing them in place, call `refresh()`. The open list and the text of the value follow. Autocomplete has it too.'],
             ['onValueChanged, onOpened, onClosed, onValidated', 'As for DropDown.'],
           ]}
         />

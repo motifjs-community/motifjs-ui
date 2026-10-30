@@ -353,7 +353,8 @@ describe('TabDocumentManager: new browser windows', () => {
     const probe = new Probe('div');
     m.open(new TabDocument({ title: 'Probe', content: () => probe }), { group: w.groups[0] });
     await settle();
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    // The new window mounts in a later task: waited for, at most a second, however busy the machine is.
+    for (let i = 0; i < 100 && mounted === 0; i++) await new Promise((resolve) => setTimeout(resolve, 10));
     expect(probe.element.ownerDocument).toBe(m.views[0].document);
     expect(mounted).toBe(1);
   });

@@ -64,6 +64,7 @@ const METHODS = [
   ['focus()', '`boolean`', 'Focuses the input.'],
   ['select()', '`void`', 'Selects the whole text.'],
   ['clear()', '`void`', 'Empties the field as its clear button does.'],
+  ['refresh()', '`void`', 'Your `buttons` may be plain or reactive; the field reads them as they are. After changing them in place, call `refresh()`. Every editor has it; a list editor reads its items again too.'],
 ];
 
 const EVENTS = [

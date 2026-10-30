@@ -47,11 +47,11 @@ import type { ICalendarImportedEventArgs } from './icalendar-imported-event-args
 import type { PrintingEventArgs } from './printing-event-args';
 import type { PrintedEventArgs } from './printed-event-args';
 
-/** Props of `Scheduler`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `Scheduler`: the shared `ControlProps` plus its own. Each one is also a settable property: setting it updates the scheduler. */
 export interface SchedulerProps<T> extends ControlProps, SchedulerTemplates<T> {
   /** Names the scheduler for screen readers. The same property as `text`. */
   label?: Bind<string>;
-  /** The appointments, in memory. A reactive array of reactive objects is followed: a change moves the appointment. */
+  /** The appointments, in memory: plain or reactive, read as they are. After changing them in place, call `refresh()`. */
   appointments?: Bind<readonly T[]>;
   /**
    * The appointments from a data source of `@motifx-community/data`, in place of `appointments`. Make it

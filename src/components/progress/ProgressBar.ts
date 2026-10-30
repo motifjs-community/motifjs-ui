@@ -1,5 +1,6 @@
-import { effect, type Bind, type IBaseProp } from '@motifx/core';
+import type { Bind, IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
+import { follow } from '../../core/follow';
 import type { ControlSize } from '../../core/control-size';
 import { LanguageLook } from '../../core/language-look';
 import { nextId } from '../../core/next-id';
@@ -226,7 +227,7 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
       this.element.setAttribute('aria-labelledby', parts.label.id);
     } else {
       this.element.removeAttribute('aria-labelledby');
-      parts.stopName ??= effect(() => this.element.setAttribute('aria-label', uiLocale.strings.loading));
+      parts.stopName ??= follow(this, 'name', () => uiLocale.strings.loading, (label) => this.element.setAttribute('aria-label', label));
     }
     this.renderHead();
   }

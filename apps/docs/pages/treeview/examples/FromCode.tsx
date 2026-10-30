@@ -5,7 +5,7 @@ import { project } from './project';
 
 const BOX = 'inline-size: 100%; max-inline-size: 26rem; background: var(--mx-color-bg-card)';
 
-/** A tree bound with x-model, and a tree made with `new` whose reactive items change in place. */
+/** A tree bound with x-model, and a tree made with `new` whose items change in place and are read again on `refresh()`. */
 export default function FromCode() {
   const s = reactive({ file: 'tree' as unknown, clicked: '' });
   const menu = reactive<Entry[]>([
@@ -20,6 +20,7 @@ export default function FromCode() {
   const addProduct = () => {
     added++;
     menu[1].children!.push({ id: `p${added}`, text: `Product ${added}` });
+    tree.refresh();
     tree.expand('products');
   };
 

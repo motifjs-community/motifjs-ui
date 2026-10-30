@@ -1,3 +1,5 @@
+import { untracked } from '@motifx/core';
+import { givenValue } from '../../../core/given-field';
 import type { AppointmentStore } from './AppointmentStore';
 import type { SeriesPlan } from './series-plan';
 import type { SeriesRun } from './series-run';
@@ -43,12 +45,11 @@ export class SeriesWriter<T> {
     const item = write.appointment as T;
     if (write.kind === 'add') return { write, added: await this.store.add(write.appointment as Partial<T>) };
     if (write.kind === 'update') {
-      const record = item as Record<string, unknown>;
-      const before = Object.fromEntries(Object.keys(write.changes ?? {}).map((key) => [key, copy(record[key])])) as Partial<T>;
+      const before = Object.fromEntries(Object.keys(write.changes ?? {}).map((key) => [key, copy(givenValue(item, key))])) as Partial<T>;
       await this.store.update(item, write.changes ?? {});
       return { write, before };
     }
-    const deleted = { ...(item as object) } as Partial<T>;
+    const deleted = untracked(() => ({ ...(item as object) })) as Partial<T>;
     await this.store.remove(item);
     return { write, deleted };
   }

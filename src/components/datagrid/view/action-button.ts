@@ -1,6 +1,6 @@
-import { read } from '@motifx/core';
 import { iconNode } from '../../../core/icon-node';
 import type { ResolvedAction } from './resolved-action';
+import { readField } from '../model/read-field';
 
 const releases = new WeakMap<HTMLElement, () => void>();
 
@@ -30,7 +30,7 @@ export function fillActionButton<T>(button: HTMLButtonElement, a: ResolvedAction
     releases.get(button)?.();
     releases.delete(button);
     button.replaceChildren();
-    const icon = a.hasIcon ? read(a.action.icon) : null;
+    const icon = a.hasIcon ? readField(a.action, 'icon') : null;
     if (icon) {
       const holder = document.createElement('span');
       holder.className = 'mx-button__icon';

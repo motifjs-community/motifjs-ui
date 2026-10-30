@@ -12,6 +12,7 @@ import { FilterBuilder } from './FilterBuilder';
 import type { FilterBuilderCustomOperation } from './filter-builder-custom-operation';
 import type { FilterBuilderField } from './filter-builder-field';
 import { filterText } from './filter-text';
+import { dataKinds } from '../../../tests/data-kinds';
 
 let hosts: Component[] = [];
 
@@ -111,6 +112,38 @@ describe('FilterBuilder', () => {
     expect(face(r[0], 'add').getAttribute('aria-haspopup')).toBe('menu');
     expect(b.value).toEqual(value);
     expect(b.filterText).toBe("[City] Equals 'Ankara' And ([Amount] Is greater than '100' Or [Amount] Is between('1', '5')) And Not ([Paid] Equals 'true' And [Note] Is blank)");
+  });
+
+  it('reads functions over plain data again on reState, and writes what code changes to x-model', async () => {
+    const plain = { caption: 'City', value: data.where('city', '=', 'Ankara') as data.FilterExpression | null };
+    const given = plain.value;
+    const own: FilterBuilderField[] = [{ dataField: 'city', caption: () => plain.caption }, { dataField: 'amount', caption: 'Amount', dataType: 'number' }];
+    const s = reactive({ filter: null as data.FilterExpression | null });
+    let b!: FilterBuilder;
+    let m!: FilterBuilder;
+    const host = page(
+      <FilterBuilder ref={(x: FilterBuilder) => (b = x)} fields={own} value={() => plain.value} />,
+      <FilterBuilder ref={(x: FilterBuilder) => (m = x)} fields={fields} x-model={() => s.filter} />,
+    );
+    await settle();
+    expect(rows(b).map(rowText)).toEqual(['And', 'City Equals Ankara']);
+    plain.caption = 'Town';
+    plain.value = data.where('amount', '>', 5);
+    await settle();
+    expect(rows(b).map(rowText)).toEqual(['And', 'City Equals Ankara']);
+    host.reState();
+    await settle();
+    expect(rows(b).map(rowText)).toEqual(['And', 'Amount Is greater than 5']);
+    b.value = data.where('city', '=', 'Bursa');
+    await settle();
+    expect(rows(b).map(rowText)).toEqual(['And', 'Town Equals Bursa']);
+    expect(given).toEqual(data.where('city', '=', 'Ankara'));
+    const chosen = data.where('amount', '>', 9);
+    m.value = chosen;
+    expect(s.filter).toEqual(chosen);
+    m.clear();
+    await settle();
+    expect(s.filter).toBeNull();
   });
 
   it('adds conditions and groups with the mouse, and the value follows', async () => {
@@ -618,5 +651,30 @@ describe('FilterBuilder', () => {
     expect(b.openEditor(c)).toBe(false);
     const f = face(rows(b)[1], 'field');
     expect(f.disabled || f.getAttribute('aria-disabled') === 'true').toBe(true);
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('keeps the value it was given, and shows fields and a value changed in place after refresh()', async () => {
+      const own = make<FilterBuilderField[]>([
+        { dataField: 'city', caption: 'City' },
+        { dataField: 'amount', caption: 'Amount', dataType: 'number' },
+      ]);
+      const value = make(data.where('city', '=', 'Ankara') as data.FilterExpression) as data.FilterExpression & { value: unknown };
+      let b!: FilterBuilder;
+      page(<FilterBuilder ref={(x: FilterBuilder) => (b = x)} fields={own} value={value} />);
+      await settle();
+      expect(b.value).toBe(value);
+      expect(rows(b).map(rowText)).toEqual(['And', 'City Equals Ankara']);
+      own[0].caption = 'Town';
+      own.push({ dataField: 'note', caption: 'Note' });
+      value.value = 'Bursa';
+      await settle();
+      expect(rows(b).map(rowText)).toEqual(['And', 'City Equals Ankara']);
+      b.refresh();
+      await settle();
+      expect(rows(b).map(rowText)).toEqual(['And', 'Town Equals Bursa']);
+      face(rows(b)[1], 'field').click();
+      expect(menuItems(rows(b)[1], 'field').map((i) => i.textContent!.trim())).toEqual(['Town', 'Amount', 'Note']);
+    });
   });
 });

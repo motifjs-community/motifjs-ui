@@ -6,6 +6,87 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Properties: a function prop follows through the component's bindings; `x-model` mirrors the state
+
+- A property given as a function is followed by a binding of the component (`follow`, `PropBinding`): a reactive
+  source updates it by itself, plain data shows on the developer's `reState()`. The value is handed on only when it
+  differs from the last one read, so a change the user made stays across a `reState()`; a property set from code
+  stops following its function. `refreshProps()` is gone (one way, not two).
+- `x-model` shows the component's state on every path: the user, code (`value`, `pressed`, `position`, a tab or a
+  panel chosen from code), the component's own rules (a mask, `decimals`, `min`/`max`) and a cancelled close.
+- NumberBox rounds its value to `decimals` and shows that many digits; its spin buttons come back after `none`.
+  Calendar shows the month of a value given from anywhere.
+- Every docs page's components converted; `onReState(component, run)` for parts drawn by hand.
+
+### Scheduler: drawn by hand, with nothing followed inside
+
+- The views (timeline, day and week, month, agenda), the appointment boxes, the tooltip, the "+N more" list, the
+  toolbar, the recurrence editor and the series question are made in code and drawn by hand: no JSX, no bindings,
+  no inner `reState()`. What comes in from outside is the developer's data, props and `reState()`.
+- Effects on the timeline page 10,860 → those of the example templates only; resizing an appointment runs nothing
+  reactive (was 1,353 to 1,598 runs); scrolling a big timeline: script, style, layout and paint all below before.
+  Every write is made only when its value changed.
+- Big views open faster: the view's settings are read once per turn, the week of many groups builds the columns in
+  view first and the ones on each side in the frames after (big-data example: first box 950 → ~430 ms, dev).
+- Fixed: "On a date" in the recurrence editor jumped back to "Never" (it comes with a date three months after the
+  start); a focused box taken away threw in `itemOf`, and its focus going with it took a move by the keys back;
+  rows of cells gone with other hours were written again (MJX208); a virtual timeline row let go after its view
+  threw, and so did a scroll coming after it; a box waiting for its store shows it locked again; `selectCells` right
+  after `showDate` finds the cells of the new days; a resource kind's field given as a function
+  (`useColorAsDefault: () => …`) is followed again.
+- Docs: "From code" selects the next workday (the work week has no Saturday); the two copies of a TabDocs document
+  read a field again when the other one changes it. Tests: the back-button session waits for its history moves
+  between tests (`backButtonSettled`), a new window's `onMounted` is waited for.
+
+### Lists, menus, forms, trees and the filter builder: the developer's data as given
+
+- The items of ListBox, DropDown, Lookup, ComboBox, Autocomplete, TagBox, RadioGroup, Toolbar, MenuBar,
+  ContextMenu, ActionSheet and a Button's menu, a field's `buttons`, FormLayout's `data` and `items`, TreeView's
+  items, FilterBuilder's fields and value and a document's `actions` may be plain or reactive: they are read as
+  they are and come back as the very objects given, in events, templates, getters and `x-model`.
+- Their fields are read untracked: a change made in place shows after the new `refresh()`, the same for both
+  kinds; a list given anew (or by a function that returns a new one) shows at once, and a function in an item's
+  field is still followed. New: `refresh()` on every list and menu control, Field (its buttons), FormLayout
+  (with `refreshField(field)`), TreeView (with `refreshItem(key)`) and FilterBuilder.
+- An object value written to a reactive `x-model` stays the very item: the model's copy handed back is not taken
+  in its place and reports no second change.
+- A submenu in an ActionSheet and a split button's menu in the toolbar's "more" menu no longer copy the first item
+  to draw the line before it.
+- `uiLocale` keeps the set it is given as it is: to change a text, assign a new set
+  (`uiLocale.strings = { ...uiLocale.strings, close: 'Kapat' }`); a text changed inside the set is not seen.
+- A property's drawing and its `normalize` run untracked, so a setter called inside an app's own watch adds
+  nothing to it, and a Slider range given by a getter is not followed by its numbers changing in place.
+
+### Scheduler: the developer's data as given
+
+- The appointments and the resource items may be plain or reactive: the Scheduler reads them as they are and never
+  wraps, copies or marks them. Events, templates, getters (`shownAppointments`, `seriesOf`, `resourcesOf`) and the
+  tooltip hand back the very objects given; its reactive state holds only its own values (a piece's appointment is
+  `itemOf(piece)`; the tooltip, the "+N more" list and a drag keep theirs in plain fields; occurrences are plain objects).
+- Their fields are read untracked: a change made in place shows after `refresh()`, `refreshAppointment(item)` or
+  `refreshResources()`, the same for both kinds; its own edits and a data source's changes show at once.
+- Delete, a drag, the form and the series edits work on a plain array; an appointment without a key has one id.
+- `addAppointment(values)` stores the object given, not a copy.
+
+### DataGrid: the developer's data as given
+
+- Rows, columns, actions, toolbar and form items, summary items, filter values and the options of `settings`,
+  `toolbar`, `export`, `form`, `popup`, `filterBuilder`, `masterDetail`, `adaptiveDetail` and `rowDragging` may be
+  plain or reactive: the grid keeps them as given and hands back the very objects (`grid.toolbar.items` is your
+  array, `rowDragging.data` your object). Its reactive state holds only its own values, with a counter per option.
+- Their fields are read untracked: a change made in place shows after `refresh()`, `repaint()`, `repaintRows(keys)`,
+  `refreshSummary()` or `refreshActions()`, the same for both kinds. A new array given to `rows` (or returned by
+  its function) still loads again; a `push` or `splice` into it now needs `refresh()`.
+- New: `repaintRows(keys)`, `refreshSummary()`, `refreshActions()`. `repaint()` draws the details, the adaptive
+  detail, the totals, the toolbar and the actions again too; `refresh()` reads everything again.
+- The editing events (`onEditingStart`, `onEditorPreparing`, `onEditorPrepared`, `onRowValidating`) get the row
+  itself in `row` and the values entered apart in `values`, with `getValue(field)`; no merged copy, so a class
+  instance keeps its prototype. The same for a custom editor's context, `setCellValue(values, value, row, context)`,
+  `validate(value, row, context)`, `validateRow(row, { values, getValue, isNew, changed })`, `options(row, context)`,
+  `lookup.filter(row, context)`, `comparisonTarget(row, context)` and `validationCallback({ …, context })`.
+- `grid.changes` lists `added` and `updated` as `{ row, changed }`: the row itself and the values entered.
+  `RowChange.original` is gone (it was the same row). Summaries that follow unsaved edits read them beside the rows.
+
 ### Scheduler: smooth scrolling in big views
 
 - The cells of a timeline row and of the day views have no bindings of their own: a cell is written once when it

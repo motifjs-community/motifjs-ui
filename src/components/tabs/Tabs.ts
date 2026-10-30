@@ -221,7 +221,10 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
   /** Selects a tab (or the tab at an index) from code; `false` when it is hidden or not here. */
   select(tab: Tab | number): boolean {
     const target = typeof tab === 'number' ? this.tabsNow()[tab] : tab;
-    return !!target && untracked(() => this.choose(target, false));
+    if (!target) return false;
+    // A tab chosen from code takes the place of one the model is still waiting for.
+    this.parts.wanted = null;
+    return untracked(() => this.choose(target, false));
   }
 
   /** Closes a tab as the user would: `onClose` can cancel it. */
@@ -402,7 +405,8 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
     this.renderRoving();
     this.syncSelection();
     if (tab) this.reveal(tab.headerElement);
-    if (byUser) this.bindings.writeModel(this.value);
+    // `x-model` hears every change of the selection, except while it waits for a tab it asked for.
+    if (byUser || !parts.wanted) this.bindings.writeModel(this.value);
     parts.selectionChanged.fire({ tab, index, previousTab: previous, previousIndex, byUser, source: this, event });
     return true;
   }

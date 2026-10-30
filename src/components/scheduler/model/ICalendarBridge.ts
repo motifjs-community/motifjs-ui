@@ -1,3 +1,4 @@
+import { givenField, givenList } from '../../../core/given-field';
 import { TimeZone } from '../../../parts/dates/time-zone';
 import type { ICalendarDate } from '../../../parts/icalendar/icalendar-date';
 import type { ICalendarEvent } from '../../../parts/icalendar/icalendar-event';
@@ -48,7 +49,7 @@ export class ICalendarBridge<T> {
   /** The appointments with a part in `range` (a series with an occurrence in it), or all of them. */
   appointmentsIn(range: SchedulerRange | null): T[] {
     const { model, fields } = this.options;
-    const all = this.options.items().filter((item) => (item as Row)?.[fields().visible] !== false);
+    const all = givenList(this.options.items()).filter((item) => givenField(item, fields().visible) !== false);
     if (!range) return [...all];
     const from = range.start.getTime();
     const to = range.end.getTime();
@@ -130,7 +131,7 @@ export class ICalendarBridge<T> {
       const seriesUid = this.seriesUids.get(values);
       if (seriesUid !== undefined && keys.has(seriesUid)) row[f.recurrenceId] = keys.get(seriesUid);
       const key = row[f.key];
-      const existing = key === undefined ? undefined : this.options.items().find((item) => (item as Row)?.[f.key] === key);
+      const existing = key === undefined ? undefined : givenList(this.options.items()).find((item) => givenField(item, f.key) === key);
       if (existing) {
         if (await editor.update(existing, values, false)) result.updated.push(existing);
         else result.failed.push(values);
@@ -161,21 +162,21 @@ export class ICalendarBridge<T> {
   private eventOf(item: T, claimed: Set<string>): ICalendarEvent | null {
     const { model, store } = this.options;
     const f = this.options.fields();
-    const row = item as Row;
-    const start = toDate(row[f.start]);
+    const row = (name: string) => givenField(item, name);
+    const start = toDate(row(f.start));
     if (!start) return null;
-    const end = toDate(row[f.end]) ?? start;
-    const allDay = !!row[f.allDay];
-    const zone = String(row[f.startTimeZone] || this.options.timeZone() || TimeZone.localName());
-    const endZone = String(row[f.endTimeZone] || zone);
+    const end = toDate(row(f.end)) ?? start;
+    const allDay = !!row(f.allDay);
+    const zone = String(row(f.startTimeZone) || this.options.timeZone() || TimeZone.localName());
+    const endZone = String(row(f.endTimeZone) || zone);
     const at = (moment: Date, name: string): ICalendarDate => ({ time: TimeZone.of(name).wall(moment), utc: false, dateOnly: false, zone: name });
     const day = (local: Date): ICalendarDate => ({ time: TimeZone.wallOfLocal(local), utc: false, dateOnly: true, zone: '' });
     const event: ICalendarEvent = {
       uid: String(store.keyOf(item) ?? ''),
       start: allDay ? day(start) : at(start, zone),
       end: allDay ? day(end > start ? end : new Date(start.getTime() + 86_400_000)) : at(end < start ? start : end, endZone),
-      summary: String(row[f.text] ?? ''),
-      description: String(row[f.description] ?? ''),
+      summary: String(row(f.text) ?? ''),
+      description: String(row(f.description) ?? ''),
       location: '',
       rule: '',
       exceptions: [],
@@ -191,7 +192,7 @@ export class ICalendarBridge<T> {
       // With a time and a zone, the RFC wants UNTIL in UTC.
       if (rule.until && !rule.until.utc && !rule.until.dateOnly && !allDay) rule.until = { time: TimeZone.of(zone).moment(rule.until.time), utc: true, dateOnly: false };
       event.rule = formatRecurrenceRule(rule);
-      event.exceptions = readRuleDates(row[f.recurrenceException]).map((d) =>
+      event.exceptions = readRuleDates(row(f.recurrenceException)).map((d) =>
         allDay ? { time: d.utc ? model.zone.wall(d.time) : d.time, utc: false, dateOnly: true, zone: '' } : { ...d, dateOnly: false, zone: d.utc ? '' : zone },
       );
     }
@@ -209,12 +210,12 @@ export class ICalendarBridge<T> {
   private replaced(series: T, start: Date, allDay: boolean, claimed: Set<string>): ICalendarDate {
     const { model } = this.options;
     const f = this.options.fields();
-    const row = series as Row;
-    const zone = String(row[f.startTimeZone] || this.options.timeZone() || TimeZone.localName());
+    const row = (name: string) => givenField(series, name);
+    const zone = String(row(f.startTimeZone) || this.options.timeZone() || TimeZone.localName());
     const clock = TimeZone.of(zone);
     const key = String(this.options.store.keyOf(series));
     let best: { date: ICalendarDate; far: number; id: string } | null = null;
-    for (const d of readRuleDates(row[f.recurrenceException])) {
+    for (const d of readRuleDates(row(f.recurrenceException))) {
       const moment = d.utc ? d.time : allDay || d.dateOnly ? model.zone.moment(d.time) : clock.moment(d.time);
       const id = `${key}|${moment}`;
       if (claimed.has(id)) continue;

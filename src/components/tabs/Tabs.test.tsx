@@ -179,6 +179,50 @@ describe('Tabs', () => {
     expect(shownPanel(t)).toBe(t.tabs[0].element);
   });
 
+  it('writes every change of the selection to x-model, but not over a tab the model still waits for', async () => {
+    const s = reactive({ page: 'later' as string | number });
+    let t!: Tabs;
+    page(
+      <Tabs ref={(x: Tabs) => (t = x)} x-model={() => s.page}>
+        <Tab key="general" title="General" />
+        <Tab key="advanced" title="Advanced" />
+      </Tabs>,
+    );
+    await settle();
+    expect(t.selectedIndex).toBe(0);
+    expect(s.page).toBe('later');
+    t.add(new Tab({ key: 'later', title: 'Later' }));
+    await settle();
+    expect(t.value).toBe('later');
+    t.select(1);
+    expect(s.page).toBe('advanced');
+    t.tabs[1].visible = false;
+    await settle();
+    expect(s.page).toBe(t.value);
+    expect(t.value).not.toBe('advanced');
+  });
+
+  it('reads functions over plain data again on reState', async () => {
+    const plain = { page: 'general', title: 'About' };
+    let t!: Tabs;
+    const host = page(
+      <Tabs ref={(x: Tabs) => (t = x)} value={() => plain.page}>
+        <Tab key="general" title="General" />
+        <Tab key="about" title={() => plain.title} />
+      </Tabs>,
+    );
+    await settle();
+    Object.assign(plain, { page: 'about', title: 'About us' });
+    await settle();
+    expect(t.value).toBe('general');
+    host.reState();
+    await settle();
+    expect(t.value).toBe('about');
+    expect(titles(t)).toEqual(['General', 'About us']);
+    headers(t)[0].click();
+    expect(plain.page).toBe('about');
+  });
+
   it('follows selectedIndex and every prop given as a function', async () => {
     const s = reactive({
       index: 1,

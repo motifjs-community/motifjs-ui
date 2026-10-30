@@ -301,6 +301,7 @@ describe('DataGrid row drag and drop', () => {
           seen.push(`reorder ${e.fromIndex} ${e.toIndex}`);
           state.rows.splice(e.fromIndex, 1);
           state.rows.splice(e.toIndex, 0, e.itemData);
+          e.component.refresh();
         },
       },
     });

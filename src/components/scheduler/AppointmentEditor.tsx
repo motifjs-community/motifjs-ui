@@ -1,4 +1,6 @@
-import { reactive, read, type Bind, type Emitter } from '@motifx/core';
+import { Component, read, untracked, type Bind, type ComponentBase, type Emitter } from '@motifx/core';
+import { givenField, givenList, givenValue } from '../../core/given-field';
+import { nextFrame } from '../../core/next-frame';
 import type { UiStrings } from '../../core/ui-strings';
 import { addDays } from '../../parts/dates/add-days';
 import { dayStart } from '../../parts/dates/day-start';
@@ -50,7 +52,7 @@ import type { SeriesAnsweredEventArgs } from './series-answered-event-args';
 import type { SeriesAskingEventArgs } from './series-asking-event-args';
 import type { SeriesEditMode } from './series-edit-mode';
 import type { DragHost, DragMode } from './view/AppointmentDrag';
-import { AppointmentTooltip, type TooltipState } from './view/AppointmentTooltip';
+import { AppointmentTooltip } from './view/AppointmentTooltip';
 import type { TooltipTemplateContext } from './tooltip-template-context';
 import { askSeriesScope } from './view/ask-series-scope';
 import type { SchedulerHost } from './view/scheduler-host';
@@ -114,6 +116,8 @@ export interface EditorHost<T> {
   saving: string[];
   /** How the scheduler shows itself now: on a phone the form and the tooltip come up from the bottom. */
   presentation(): SchedulerPresentationKind;
+  /** Draws the view again: what a box shows of its appointment changed here (its tooltip opened or closed). */
+  redraw(): void;
 }
 
 /**
@@ -125,9 +129,11 @@ export interface EditorHost<T> {
  */
 export class AppointmentEditor<T> implements DragHost<T> {
   private tooltipPopup: Popup | null = null;
-  private readonly tooltipState = reactive({ item: null }) as TooltipState<T>;
+  /** The appointment the tooltip shows, the object itself. */
+  private readonly tooltipState: { value: T | null } = { value: null };
+  private tooltipView: AppointmentTooltip<T> | null = null;
   /** The id of the appointment whose tooltip is showing ('' for none). */
-  private readonly opened = reactive({ id: '' });
+  private openedId = '';
   private formShown = false;
   private tooltipSheet: ActionSheet | BottomSheet | null = null;
   /** Moving or resizing by the keys: the draft so far, and the group it left and the one it is in (-1 without groups). */
@@ -136,6 +142,10 @@ export class AppointmentEditor<T> implements DragHost<T> {
   private readonly writer: SeriesWriter<T>;
 
   constructor(private readonly host: EditorHost<T>) {
+    // An appointment read again (an edit, a refresh) shows again in its open tooltip.
+    host.model.onChanged((change) => {
+      if (change === 'layout' && this.openedId) this.drawTooltip();
+    });
     this.writer = new SeriesWriter(host.store);
     this.series = new SeriesEdit<T>({
       fields: () => host.fields(),
@@ -148,12 +158,12 @@ export class AppointmentEditor<T> implements DragHost<T> {
 
   private own(item: T, field: keyof SchedulerFields): boolean | undefined {
     const name = this.host.fields()[field];
-    const value = (item as Record<string, unknown>)?.[name];
+    const value = givenField(item, name);
     if (typeof value === 'boolean') return value;
     let allowed: boolean | undefined;
     for (const { items } of this.host.resources.itemsOf(item)) {
       for (const resource of items) {
-        const says = (resource.item as Record<string, unknown> | undefined)?.[name];
+        const says = givenField(resource.item, name);
         if (says === false) return false;
         if (says === true) allowed = true;
       }
@@ -162,7 +172,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
   }
 
   private locked(item: T): boolean {
-    return !!(item as Record<string, unknown>)?.[this.host.fields().disabled] || this.isSaving(item);
+    return !!givenField(item, this.host.fields().disabled) || this.isSaving(item);
   }
 
   canDrag(item: T): boolean {
@@ -187,10 +197,10 @@ export class AppointmentEditor<T> implements DragHost<T> {
 
   // Writing.
 
-  /** Adds an appointment (asking `onAppointmentAdding` first); resolves to it, or `null` when it was not added. */
+  /** Adds an appointment, the object given itself (asking `onAppointmentAdding` first); resolves to it, or `null` when it was not added. */
   async add(values: Partial<T>, byUser = false): Promise<T | null> {
     const { events, scheduler } = this.host;
-    const e: AppointmentAddingEventArgs<T> = { appointment: { ...values }, byUser, cancel: false, source: scheduler };
+    const e: AppointmentAddingEventArgs<T> = { appointment: values, byUser, cancel: false, source: scheduler };
     events.adding.fire(e);
     if (!(await allowed(e))) return null;
     try {
@@ -214,7 +224,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
     const series = this.host.model.occurrenceOf(item)?.series ?? null;
     if (series) {
       // A new rule cannot be one occurrence's own.
-      const scopes = (changes as Record<string, unknown>)[this.host.fields().recurrenceRule] !== undefined ? SCOPES.slice(1) : SCOPES;
+      const scopes = givenValue(changes, this.host.fields().recurrenceRule) !== undefined ? SCOPES.slice(1) : SCOPES;
       scope = scope ?? (await this.scopeFor(item, 'update', byUser, scopes));
       if (!scope) return false;
     }
@@ -222,7 +232,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
     events.updating.fire(e);
     if (!(await allowed(e))) return false;
     const id = this.host.model.idOf(series ?? item);
-    this.host.saving.push(id);
+    this.save(id);
     try {
       let added: T | null = null;
       if (series && scope) {
@@ -265,7 +275,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
     events.deleting.fire(e);
     if (!(await allowed(e))) return false;
     const id = this.host.model.idOf(series ?? item);
-    this.host.saving.push(id);
+    this.save(id);
     try {
       if (series && scope) {
         // The occurrences changed apart go with the series, loaded or not.
@@ -287,9 +297,17 @@ export class AppointmentEditor<T> implements DragHost<T> {
     }
   }
 
+  /** An appointment waits for its store: its boxes show it locked until `unsave`. */
+  private save(id: string): void {
+    this.host.saving.push(id);
+    this.host.redraw();
+  }
+
   private unsave(id: string): void {
     const at = this.host.saving.indexOf(id);
-    if (at >= 0) this.host.saving.splice(at, 1);
+    if (at < 0) return;
+    this.host.saving.splice(at, 1);
+    this.host.redraw();
   }
 
   /** A change to a series that did not go through: `onDataError` says what was saved and whether it was taken back. */
@@ -371,30 +389,31 @@ export class AppointmentEditor<T> implements DragHost<T> {
     const editing = this.host.editing();
     const settings = editing.form ?? {};
     const model = this.host.model;
-    const record = (item ?? {}) as Record<string, unknown>;
+    // The appointment's fields as they are (a reactive one's too), read once for the form.
+    const record = (name: string) => (item ? givenField(item, name) : undefined);
     const time = item ? model.timeOf(item) : null;
     const start = time?.start ?? cell?.start ?? new Date();
     const end = time?.end ?? cell?.end ?? new Date(start.getTime() + this.host.resolvedView().cellDuration * MINUTE);
     const allDay = time?.allDay ?? cell?.allDay ?? false;
     const series = item ? model.seriesOf(item) : null;
-    const startZone = String(record[fields.startTimeZone] ?? '');
-    const endZone = String(record[fields.endTimeZone] ?? '');
+    const startZone = String(record(fields.startTimeZone) ?? '');
+    const endZone = String(record(fields.endTimeZone) ?? '');
     const kinds = this.host.resources.kinds();
     // An all-day appointment ends at the start of the day after; the form shows its last day.
-    const data = reactive({
-      text: String(record[fields.text] ?? ''),
+    const data = {
+      text: String(record(fields.text) ?? ''),
       start: allDay ? model.zone.toLocal(start) : this.zoneOf(startZone).toLocal(start),
       end: allDay ? addDays(dayStart(model.zone.toLocal(end)), -1) : this.zoneOf(endZone || startZone).toLocal(end),
       allDay,
-      description: String(record[fields.description] ?? ''),
-      recurrenceRule: String(((series ?? record) as Record<string, unknown>)[fields.recurrenceRule] ?? ''),
+      description: String(record(fields.description) ?? ''),
+      recurrenceRule: String((series ? givenField(series, fields.recurrenceRule) : record(fields.recurrenceRule)) ?? ''),
       startTimeZone: startZone,
       endTimeZone: endZone,
       // The end has a zone of its own only when it differs from the start's.
       separateEndZone: !!endZone && endZone !== startZone,
       // Each resource: the appointment's own, or (a new one) the cell's group's.
-      ...Object.fromEntries(kinds.map((kind) => [kind.field, this.resourceValue(kind, item ? record[kind.field] : cell?.resources?.[kind.field])])),
-    }) as AppointmentFormData;
+      ...Object.fromEntries(kinds.map((kind) => [kind.field, this.resourceValue(kind, item ? record(kind.field) : cell?.resources?.[kind.field])])),
+    } as AppointmentFormData;
     const t = (key: keyof UiStrings, values?: Record<string, unknown>) => this.host.text(key, values);
     const context: AppointmentFormContext<T> = { appointment: item, data, isNew: !item, source: scheduler };
     const builtIns = this.formBuiltIns(item, data, editing, start);
@@ -437,6 +456,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
         minColumnWidth={settings.minColumnWidth ?? ''}
         labelMode={settings.labelMode}
         ref={(c: FormLayout<AppointmentFormData>) => (layout = c)}
+        onFieldChanged={() => this.formChanged(layout)}
       />
     );
     let ok: Button | null = null;
@@ -589,6 +609,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
             visible: () => editing.allowRecurrence && !exception,
             template: () => (
               <RecurrenceEditor
+                ref={(r: RecurrenceEditor) => (this.recurrence = { editor: r, data })}
                 class="mx-scheduler__recurrence"
                 x-model={() => data.recurrenceRule}
                 start={() => (data.start instanceof Date ? data.start : null)}
@@ -630,10 +651,10 @@ export class AppointmentEditor<T> implements DragHost<T> {
     };
   }
 
-  /** A resource field's value in the form: a list for a kind of several, one value or `null` otherwise. */
+  /** A resource field's value in the form: a list of the form's own for a kind of several, one value or `null` otherwise. */
   private resourceValue(kind: ResourceKind<unknown>, value: unknown): unknown {
-    const list = Array.isArray(value) ? value : value === undefined || value === null || value === '' ? [] : [value];
-    return kind.multiple ? [...list] : (list[0] ?? null);
+    const list = Array.isArray(value) ? givenList(value) : value === undefined || value === null || value === '' ? [] : [value];
+    return kind.multiple ? list : (list[0] ?? null);
   }
 
   /** A zone by its name, or the scheduler's. */
@@ -670,7 +691,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
     const fields = this.host.fields();
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(values)) {
-      const old = ((key === fields.recurrenceRule && series ? series : item) as Record<string, unknown>)[key];
+      const old = givenField(key === fields.recurrenceRule && series ? series : item, key);
       if (!sameValue(old, value)) out[key] = value;
     }
     return out as Partial<T>;
@@ -683,7 +704,8 @@ export class AppointmentEditor<T> implements DragHost<T> {
     const end = data.end instanceof Date ? data.end : start;
     const own = ['text', 'start', 'end', 'allDay', 'description', 'recurrenceRule', 'startTimeZone', 'endTimeZone', 'separateEndZone'];
     const out: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(data)) if (!own.includes(key)) out[key] = value;
+    // A list the form holds is the form's own (reactive): the appointment gets a plain one.
+    for (const [key, value] of Object.entries(data)) if (!own.includes(key)) out[key] = Array.isArray(value) ? givenList(value) : value;
     out[fields.text] = data.text;
     out[fields.description] = data.description;
     if (editing.allowRecurrence) out[fields.recurrenceRule] = String(data.recurrenceRule ?? '');
@@ -697,18 +719,92 @@ export class AppointmentEditor<T> implements DragHost<T> {
     return out as Partial<T>;
   }
 
+  /** The recurrence editor of the form open, and the form's data. */
+  private recurrence: { editor: RecurrenceEditor; data: AppointmentFormData } | null = null;
+
+  /** The user changed a field: the form shows what follows from it (which fields show, the recurrence's start, day and clock). */
+  private formChanged(layout: FormLayout<AppointmentFormData> | null): void {
+    layout?.refresh();
+    const recurrence = this.recurrence;
+    if (!recurrence || recurrence.editor.isDisposed) return;
+    const { editor, data } = recurrence;
+    editor.start = data.start instanceof Date ? data.start : null;
+    editor.allDay = !!data.allDay;
+    editor.timeZone = data.startTimeZone ? String(data.startTimeZone) : this.host.model.zone.name || null;
+  }
+
   // The tooltip.
 
   showTooltip(item: T, anchor: HTMLElement): void {
-    this.tooltipState.item = item;
+    this.tooltipState.value = item;
     if (this.host.presentation() === 'phone') this.showSheet(item);
-    else this.tooltip().open(anchor);
-    this.opened.id = this.host.model.idOf(item);
+    else {
+      const popup = this.tooltip();
+      this.drawTooltip();
+      popup.open(anchor);
+    }
+    this.setOpened(this.host.model.idOf(item));
   }
 
-  /** Its tooltip is showing. Reactive. */
+  /** The appointment whose tooltip shows ('' for none); its box shows it. */
+  private setOpened(id: string): void {
+    if (this.openedId === id) return;
+    this.openedId = id;
+    this.host.redraw();
+  }
+
+  /**
+   * The tooltip shows its appointment again: another one, or its fields read again. The built-in one draws itself; a
+   * template's content is made again (it reads the appointment as it is then); a phone's sheet gets its texts again.
+   */
+  private drawTooltip(): void {
+    const popup = this.tooltipPopup;
+    if (popup) {
+      const template = this.host.view.tooltipTemplate();
+      if (template !== this.tooltipTemplate || template) this.fillTooltip(popup, template);
+      else this.tooltipView?.refresh();
+    }
+    this.drawSheet?.();
+  }
+
+  /** The template the popup's content was made with (`null`: the built-in tooltip). */
+  private tooltipTemplate: unknown = undefined;
+  /** The content of the popup now. */
+  private tooltipContent: ComponentBase | null = null;
+  /** Writes the phone's sheet again, while one is open. */
+  private drawSheet: (() => void) | null = null;
+
+  private fillTooltip(popup: Popup, template: ReturnType<SchedulerHost<T>['tooltipTemplate']>): void {
+    this.tooltipTemplate = template;
+    if (this.tooltipContent) popup.controls.remove(this.tooltipContent);
+    this.tooltipView = null;
+    if (template) {
+      const own = new Component<HTMLDivElement>('div');
+      own.element.className = 'mx-scheduler__tooltip-own';
+      own.controls.add(template(this.tooltipContext(() => popup.close())));
+      this.tooltipContent = own;
+    } else {
+      const state = this.tooltipState;
+      const view = new AppointmentTooltip<T>({
+        host: this.host.view,
+        item: () => state.value,
+        canEdit: (item: T) => this.canEdit(item),
+        canDelete: (item: T) => this.canDelete(item),
+        edit: (item: T) => void this.openForm(item),
+        remove: (item: T) => {
+          popup.close();
+          void this.remove(item, true);
+        },
+      });
+      this.tooltipView = view;
+      this.tooltipContent = view;
+    }
+    popup.controls.add(this.tooltipContent);
+  }
+
+  /** Its tooltip is showing. */
   isOpen(item: T): boolean {
-    return this.opened.id !== '' && this.opened.id === this.host.model.idOf(item);
+    return this.openedId !== '' && this.openedId === this.host.model.idOf(item);
   }
 
   hideTooltip(): void {
@@ -726,25 +822,42 @@ export class AppointmentEditor<T> implements DragHost<T> {
     const template = view.tooltipTemplate();
     const t = (key: keyof UiStrings) => this.host.text(key);
     let sheet: ActionSheet | BottomSheet;
+    // Its fields are read as they are: written once, and again when the tooltip is drawn again.
     if (template) {
-      sheet = new BottomSheet({ title: () => this.textOf(item), detents: ['fit', 'full'] });
-      sheet.content = <div class="mx-scheduler__tooltip-own">{template(this.tooltipContext(() => sheet.close()))}</div>;
+      const own = new BottomSheet({ title: this.textOf(item), detents: ['fit', 'full'] });
+      sheet = own;
+      own.content = this.tooltipOwn(template, () => own.close());
+      this.drawSheet = () => {
+        own.title = this.textOf(item);
+        own.content = this.tooltipOwn(template, () => own.close());
+      };
     } else {
-      const repeats = view.recurrenceText(item);
-      sheet = new ActionSheet({
-        title: () => this.textOf(item),
-        message: () => [this.timeText(item), repeats && this.host.text('schedulerRepeats', { rule: repeats })].filter(Boolean).join(' · '),
-        items: [
-          { text: () => t('schedulerEdit'), visible: () => this.canEdit(item), click: () => void this.openForm(item) },
-          { text: () => t('schedulerDelete'), tone: 'danger', visible: () => this.canDelete(item), click: () => void this.remove(item, true) },
-        ],
-      });
+      const values = () => {
+        const repeats = view.recurrenceText(item);
+        return {
+          title: this.textOf(item),
+          message: [this.timeText(item), repeats && this.host.text('schedulerRepeats', { rule: repeats })].filter(Boolean).join(' · '),
+          items: [
+            { text: t('schedulerEdit'), visible: this.canEdit(item), click: () => void this.openForm(item) },
+            { text: t('schedulerDelete'), tone: 'danger' as const, visible: this.canDelete(item), click: () => void this.remove(item, true) },
+          ],
+        };
+      };
+      const actions = new ActionSheet(values());
+      sheet = actions;
+      this.drawSheet = () => {
+        const now = values();
+        actions.title = now.title;
+        actions.message = now.message;
+        actions.items = now.items;
+      };
     }
     sheet.class.add('mx-scheduler__tooltip-sheet');
     sheet.onClosed(() => {
       if (this.tooltipSheet !== sheet) return;
       this.tooltipSheet = null;
-      this.opened.id = '';
+      this.drawSheet = null;
+      this.setOpened('');
     });
     this.tooltipSheet = sheet;
     sheet.show(this.host.scheduler);
@@ -762,27 +875,34 @@ export class AppointmentEditor<T> implements DragHost<T> {
   private tooltipContext(close: () => void): TooltipTemplateContext<T> {
     const state = this.tooltipState;
     const editor = this;
+    // Read as they are, again when the tooltip is drawn again.
+    const shown = () => state.value;
     return {
       get appointment() {
-        return state.item;
+        return shown();
       },
       get text() {
-        return state.item ? editor.textOf(state.item) : '';
+        const item = shown();
+        return item ? editor.textOf(item) : '';
       },
       get time() {
-        return state.item ? editor.timeText(state.item) : '';
+        const item = shown();
+        return item ? editor.timeText(item) : '';
       },
       get canEdit() {
-        return !!state.item && editor.canEdit(state.item);
+        const item = shown();
+        return !!item && editor.canEdit(item);
       },
       get canDelete() {
-        return !!state.item && editor.canDelete(state.item);
+        const item = shown();
+        return !!item && editor.canDelete(item);
       },
       edit: () => {
-        if (state.item) void this.openForm(state.item);
+        const item = state.value;
+        if (item) void this.openForm(item);
       },
       remove: () => {
-        const item = state.item;
+        const item = state.value;
         close();
         if (item) void this.remove(item, true);
       },
@@ -790,34 +910,20 @@ export class AppointmentEditor<T> implements DragHost<T> {
     };
   }
 
+  /** A tooltip template's content in the phone's sheet. */
+  private tooltipOwn(template: NonNullable<ReturnType<SchedulerHost<T>['tooltipTemplate']>>, close: () => void): ComponentBase {
+    const own = new Component<HTMLDivElement>('div');
+    own.element.className = 'mx-scheduler__tooltip-own';
+    own.controls.add(template(this.tooltipContext(close)));
+    return own;
+  }
+
   private tooltip(): Popup {
     if (this.tooltipPopup) return this.tooltipPopup;
     const popup = new Popup();
     popup.matchWidth = false;
     popup.class.add('mx-scheduler__tooltip-popup');
-    const view = this.host.view;
-    const state = this.tooltipState;
-    const context = this.tooltipContext(() => popup.close());
-    popup.controls.add(
-      <>
-        {view.tooltipTemplate() ? (
-          <div class="mx-scheduler__tooltip-own">{view.tooltipTemplate()!(context)}</div>
-        ) : (
-          <AppointmentTooltip<T>
-            host={view}
-            state={state}
-            canEdit={(item: T) => this.canEdit(item)}
-            canDelete={(item: T) => this.canDelete(item)}
-            edit={(item: T) => void this.openForm(item)}
-            remove={(item: T) => {
-              popup.close();
-              void this.remove(item, true);
-            }}
-          />
-        )}
-      </>,
-    );
-    popup.onClosed(() => (this.opened.id = ''));
+    popup.onClosed(() => this.setOpened(''));
     this.host.scheduler.controls.add(popup);
     this.tooltipPopup = popup;
     return popup;
@@ -827,7 +933,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
 
   /** The keys of a focused appointment; `true` when one was used. */
   key(piece: AnyPiece<T>, e: KeyboardEvent): boolean {
-    const item = piece.item;
+    const item = this.host.model.itemOf(piece);
     const moving = this.keyDraft;
     if (moving && moving.draft.item !== item) this.cancelKeys();
     if (e.key === 'Escape' && this.keyDraft) {
@@ -922,7 +1028,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
       if (mine(root.ownerDocument.activeElement)) return;
       const box = [...root.querySelectorAll<HTMLElement>('.mx-scheduler__appointment')].find(mine);
       if (box) box.focus();
-      else if (tries++ < 4) requestAnimationFrame(look);
+      else if (tries++ < 4) nextFrame(look, root.ownerDocument.defaultView);
     };
     queueMicrotask(look);
   }
@@ -1044,7 +1150,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
   /** A copy of an appointment's fields without its key (a new one gets its own): a copy of an occurrence happens once. */
   private copyOf(item: T): Partial<T> {
     const fields = this.host.fields();
-    const copy = { ...(item as object) } as Record<string, unknown>;
+    const copy = untracked(() => ({ ...(item as object) })) as Record<string, unknown>;
     delete copy[fields.key];
     delete copy[fields.recurrenceRule];
     delete copy[fields.recurrenceException];
@@ -1053,7 +1159,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
   }
 
   private textOf(item: T | Partial<T>): string {
-    const value = (item as Record<string, unknown>)?.[this.host.fields().text];
+    const value = givenField(item, this.host.fields().text);
     return value === undefined || value === null || value === '' ? this.host.text('schedulerNoTitle') : String(value);
   }
 

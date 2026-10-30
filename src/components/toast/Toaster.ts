@@ -1,5 +1,6 @@
-import { Component, effect, type Bind, type IBaseProp } from '@motifx/core';
+import { Component, type Bind, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
+import { follow } from '../../core/follow';
 import { controlOf } from '../../core/control-map';
 import { deepActiveElement } from '../../core/focus';
 import { addShortcut } from '../../core/keyboard';
@@ -84,7 +85,7 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     const el = this.element;
     const parts = this.parts;
-    const stopName = effect(() => el.setAttribute('aria-label', this.text || uiLocale.strings.notifications));
+    const stopName = follow(this, 'name', () => this.text || uiLocale.strings.notifications, (label) => el.setAttribute('aria-label', label));
     this.observeProperty('hotkey', () => this.renderHotkey());
     this.observeProperty('max', () => this.fill());
     this.observeProperty('pauseOnHover', () => this.updatePause());

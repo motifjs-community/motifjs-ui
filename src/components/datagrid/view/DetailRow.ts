@@ -1,6 +1,7 @@
 import { ComponentBase, createSignal, untracked } from '@motifx/core';
 import type { DetailContext } from '../detail-context';
 import type { GridModel } from '../model/GridModel';
+import { AdaptiveForm } from './AdaptiveForm';
 import type { DetailHost } from './detail-host';
 import { isNode } from '../../../core/node-kind';
 
@@ -91,10 +92,16 @@ export class DetailRow<T> {
     if (this.cell.getAttribute('aria-colspan') !== span) this.cell.setAttribute('aria-colspan', span);
     // A height of its own: the content scrolls inside.
     const fixed = this.kind === 'detail' ? this.model.details.options.get('height') : undefined;
-    const height = typeof fixed === 'function' ? fixed(row) : fixed;
+    const height = typeof fixed === 'function' ? untracked(() => fixed(row)) : fixed;
     const size = height === undefined ? '' : `${Math.max(0, height)}px`;
     if (this.cell.style.blockSize !== size) this.cell.style.blockSize = size;
     this.cell.toggleAttribute('data-fixed', height !== undefined);
+  }
+
+  /** What the content reads of the row through its context is read again (`grid.repaint()`); its adaptive form draws its texts again. */
+  redraw() {
+    this.version.value = this.version.peek() + 1;
+    if (this.content instanceof AdaptiveForm) this.content.redraw();
   }
 
   /** Out of view: kept, not drawn. */

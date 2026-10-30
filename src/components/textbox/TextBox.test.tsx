@@ -6,6 +6,8 @@ import type { ValueChangedEventArgs } from '../../parts/field/value-changed-even
 import { validateFields } from '../../parts/validation/validate-fields';
 import { ValidationGroup } from '../../parts/validation/ValidationGroup';
 import { TextBox } from './TextBox';
+import { dataKinds } from '../../../tests/data-kinds';
+import type { FieldButton } from '../../parts/field/field-button';
 
 let hosts: Component[] = [];
 
@@ -97,6 +99,18 @@ describe('TextBox', () => {
     expect(input(b).value).toBe('Linus');
   });
 
+  it('writes a value set from code to x-model too, so the model can change it back', async () => {
+    const s = reactive({ name: 'Ada' });
+    let b!: TextBox;
+    page(<TextBox ref={(x: TextBox) => (b = x)} x-model={() => s.name} />);
+    await settle();
+    b.value = 'Code';
+    expect(s.name).toBe('Code');
+    s.name = 'Ada';
+    await settle();
+    expect(input(b).value).toBe('Ada');
+  });
+
   it('follows getter props and reports who changed the value', async () => {
     const s = reactive({ size: 'sm' as 'sm' | 'lg', value: 'a' });
     const seen: ValueChangedEventArgs<string>[] = [];
@@ -112,6 +126,30 @@ describe('TextBox', () => {
       ['a', 'b', false],
       ['b', 'bc', true],
     ]);
+  });
+
+  it('reads functions over plain data again on reState: value, help text and its buttons', async () => {
+    const plain = { value: 'a', help: 'Your name', can: false };
+    const go: FieldButton = { text: 'Go', enabled: () => plain.can };
+    const seen: ValueChangedEventArgs<string>[] = [];
+    let b!: TextBox;
+    const host = page(
+      <TextBox ref={(x: TextBox) => (b = x)} value={() => plain.value} helpText={() => plain.help} buttons={[go]} onValueChanged={(e) => seen.push(e)} />,
+    );
+    await settle();
+    const button = () => b.element.querySelector<HTMLButtonElement>('.mx-field__end button')!;
+    expect(button().disabled).toBe(true);
+    Object.assign(plain, { value: 'b', help: 'As on your card', can: true });
+    await settle();
+    expect(input(b).value).toBe('a');
+    host.reState();
+    expect(input(b).value).toBe('b');
+    expect(message(b)).toBe('As on your card');
+    expect(button().disabled).toBe(false);
+    expect(seen.map((e) => [e.previousValue, e.value, e.byUser])).toEqual([['a', 'b', false]]);
+    type(b, 'bc');
+    expect(plain.value).toBe('b');
+    expect(Object.keys(go)).toEqual(['text', 'enabled']);
   });
 
   it('changes the value when the field is left with updateOn="change"', async () => {
@@ -408,5 +446,24 @@ describe('TextBox', () => {
     b.value = '06xy99z';
     expect(b.value).toBe('06XY99');
     expect(input(b).value).toBe('06 XY 99');
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('reads its buttons as they are, again on refresh(), and gives back the very button', async () => {
+      const clicked: unknown[] = [];
+      const buttons = make<FieldButton[]>([{ text: 'Go', click: (e) => void clicked.push(e.button) }]);
+      let t!: TextBox;
+      page(<TextBox ref={(x: TextBox) => (t = x)} label="Site" buttons={buttons} />);
+      await settle();
+      const faces = () => Array.from(t.element.querySelectorAll<HTMLButtonElement>('.mx-field__button'));
+      buttons[0].text = 'Open';
+      buttons.push({ text: 'Copy' });
+      await settle();
+      expect(faces().map((b) => b.textContent)).toEqual(['Go']);
+      t.refresh();
+      expect(faces().map((b) => b.textContent)).toEqual(['Open', 'Copy']);
+      faces()[0].click();
+      expect(clicked[0]).toBe(buttons[0]);
+    });
   });
 });

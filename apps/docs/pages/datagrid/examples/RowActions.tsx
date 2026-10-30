@@ -9,6 +9,7 @@ const WIDTHS = [100, 140, 260];
 /** Buttons per row from a function of the row and its state; the rest go into "more". */
 export default function RowActions() {
   const s = reactive({ orders: makeOrders(30), at: 'end' as 'start' | 'end', sticky: true, width: 260, note: '' });
+  let grid: DataGrid<Order> | null = null;
 
   const approve: GridAction<Order> = {
     id: 'approve',
@@ -17,6 +18,8 @@ export default function RowActions() {
     visible: (row) => row.status === 'Draft',
     onclick: (row) => {
       row.status = 'Approved';
+      // The grid reads the row as it is: draw it again, its buttons with it.
+      grid?.repaintRows([row.id]);
       s.note = `Order ${row.id} approved`;
     },
   };
@@ -45,6 +48,7 @@ export default function RowActions() {
         saveMode="batch"
         actions={(_row: Order, state) => (state.isRemoved ? ['restore'] : [approve, 'edit', 'remove', print, mail])}
         settings={{ editable: true, actionsPosition: () => s.at, actionsSticky: () => s.sticky, actionsWidth: () => s.width }}
+        ref={(g: DataGrid<Order>) => (grid = g)}
       />
       <output class="dg-action-note">{() => s.note}</output>
     </>

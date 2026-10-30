@@ -6,6 +6,7 @@ import { windowStack } from '../../core/window-stack';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { ContextMenu } from '../contextmenu/ContextMenu';
 import { ActionSheet } from './ActionSheet';
+import { dataKinds } from '../../../tests/data-kinds';
 
 let hosts: Component[] = [];
 
@@ -55,6 +56,24 @@ describe('ActionSheet', () => {
     expect(sheet.isOpen).toBe(false);
     expect(log).toEqual(['delete', 'event Delete']);
     expect(sheet.chosenItem).toBe(list[2]);
+  });
+
+  it('reads functions over plain data again on reState: its texts and its items', async () => {
+    const plain = { cancel: 'Never mind', message: 'Pick one', label: 'Share' };
+    const list: MenuItem[] = [{ text: () => plain.label }, { text: 'Delete' }];
+    const sheet = new ActionSheet({ message: () => plain.message, cancelText: () => plain.cancel });
+    const host = page(sheet);
+    await settle();
+    void sheet.choose(list);
+    expect(cancel(sheet).textContent).toBe('Never mind');
+    Object.assign(plain, { cancel: 'Not now', message: 'Choose', label: 'Send' });
+    await settle();
+    expect(cancel(sheet).textContent).toBe('Never mind');
+    host.reState();
+    expect(cancel(sheet).textContent).toBe('Not now');
+    expect(sheet.element.querySelector('.mx-action-sheet__message')!.textContent).toBe('Choose');
+    expect(names(sheet)).toEqual(['Send', 'Delete']);
+    sheet.close();
   });
 
   it('resolves with null when closed without a choice; a key opening it focuses the first item', async () => {
@@ -124,5 +143,30 @@ describe('ActionSheet', () => {
     menu.close();
     target.dispatchEvent(Object.assign(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 0, clientX: 5, clientY: 5 }), { pointerType: 'touch' }));
     expect(sheet.isOpen).toBe(true);
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('gives back the very items, a submenu after a line, and shows a change in place after refresh()', async () => {
+      const list = make<MenuItem[]>([{ text: 'Move to', items: [{ text: 'Group 1' }, { text: 'Group 2' }] }, { text: 'Close' }]);
+      const clicked: unknown[] = [];
+      const sheet = new ActionSheet({ items: list, onItemClick: (e) => void clicked.push(e.item) });
+      page(sheet);
+      await settle();
+      const done = sheet.choose();
+      items(sheet)[0].click();
+      const list2 = sheet.element.querySelector('.mx-action-sheet__list')!;
+      expect(Array.from(list2.children).map((el) => el.className)).toEqual(['mx-menu__item', 'mx-menu__separator', 'mx-menu__item', 'mx-menu__item']);
+      const children = list[0].items as MenuItem[];
+      children[0].text = 'Team 1';
+      children.push({ text: 'Group 3' });
+      await settle();
+      expect(names(sheet)).toEqual(['Back', 'Group 1', 'Group 2']);
+      sheet.refresh();
+      expect(names(sheet)).toEqual(['Back', 'Team 1', 'Group 2', 'Group 3']);
+      items(sheet)[1].click();
+      expect(await done).toBe(children[0]);
+      expect(sheet.chosenItem).toBe(children[0]);
+      expect(clicked[0]).toBe(children[0]);
+    });
   });
 });

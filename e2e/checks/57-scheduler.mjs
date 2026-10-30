@@ -233,7 +233,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   await coded.waitFor();
   const turkish = await coded.locator('.mx-scheduler__weekday').first().textContent();
   check('made with new and added from code, in its own locale', (await coded.locator('.mx-scheduler__date').count()) === 5 && /Pzt/.test(turkish), turkish);
-  await made.getByRole('button', { name: 'Select tomorrow 9:00–10:30' }).click();
+  await made.getByRole('button', { name: 'Select the next workday 9:00–10:30' }).click();
   await page.waitForTimeout(150);
   check(
     '…its methods select a time',

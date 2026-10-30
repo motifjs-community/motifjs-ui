@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { backButtonHolders } from '../../core/back-button';
+import { backButtonHolders, backButtonSettled } from '../../core/back-button';
 import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import { TextBox } from '../textbox/TextBox';
@@ -13,6 +13,8 @@ afterEach(async () => {
   vi.restoreAllMocks();
   uiLocale.strings = enStrings;
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
+  // A sheet closed here takes its history entry back: the next test starts once that has come.
+  await until(() => backButtonSettled(window));
   while (windowStack.top()) windowStack.remove(windowStack.top()!);
   document.body.innerHTML = '';
 });
@@ -56,7 +58,6 @@ function drag(el: Element, from: number, points: number[], stepMs = 16) {
   fire('pointerup', points[points.length - 1] ?? from);
 }
 
-/** Waits until `ok()` holds (history moves in a later task), at most half a second. */
 /** Waits for a condition, up to 3 s: jsdom's history.back() can take its time when the machine is busy. */
 async function until(ok: () => boolean) {
   for (let i = 0; i < 300 && !ok(); i++) await new Promise((r) => setTimeout(r, 10));

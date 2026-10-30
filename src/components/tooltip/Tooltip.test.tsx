@@ -137,6 +137,23 @@ describe('Tooltip', () => {
     expect(tip.open()).toBe(false);
   });
 
+  it('reads functions over plain data again on reState', async () => {
+    const plain = { text: 'One', placement: 'top' as 'top' | 'bottom' };
+    const target = document.createElement('button');
+    let tip!: Tooltip;
+    const host = page(<Tooltip ref={(t: Tooltip) => (tip = t)} target={target} text={() => plain.text} placement={() => plain.placement} />);
+    document.body.append(target);
+    await settle();
+    tip.open();
+    Object.assign(plain, { text: 'Two', placement: 'bottom' });
+    await settle();
+    expect(tip.element.textContent).toBe('One');
+    host.reState();
+    await settle();
+    expect(tip.element.textContent).toBe('Two');
+    expect(tip.element.dataset.side).toBe('bottom');
+  });
+
   it('can be hovered: the pointer moves onto it without closing it', async () => {
     const target = document.createElement('button');
     let tip!: Tooltip;

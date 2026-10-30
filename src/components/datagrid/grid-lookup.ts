@@ -18,8 +18,11 @@ export interface GridLookup<T = any> {
   textField?: string | ((item: any) => string);
   /** Fields the editor and the text search look in. Default: `textField` when it is a field. */
   searchFields?: readonly string[];
-  /** Narrows the items for a row (cascading lists: the cities of the row's state). `null` row: every item (filter lists). */
-  filter?: (row: T | null) => data.FilterExpression | null | undefined;
+  /**
+   * Narrows the items for a row (cascading lists: the cities of the row's state, `context.getValue('state')`,
+   * which is the value entered when there is one). `null` row: every item (filter lists).
+   */
+  filter?: (row: T | null, context: data.RowCheckContext<T>) => data.FilterExpression | null | undefined;
   /** A clear button in the editor, so the cell can be emptied. Default `false`. */
   allowClearing?: Bind<boolean>;
   /** `'batch'` (default): the unknown keys on screen in one request (`valueField in [...]`, at most `batchSize` keys each). `'byKey'`: one request per key, for services that only fetch one item by key. */

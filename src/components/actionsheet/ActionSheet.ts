@@ -1,6 +1,9 @@
-import { effect, Emitter, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { follow } from '../../core/follow';
 import { chevronDown } from '../../core/glyphs';
+import { givenField, givenList, givenValue } from '../../core/given-field';
 import { uiLocale } from '../../core/ui-locale';
+import { lineAfter } from '../../parts/menu/line-after';
 import { MenuList } from '../../parts/menu/MenuList';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
@@ -59,14 +62,15 @@ export class ActionSheet extends BottomSheet {
     this.observeProperty('items', () => {
       if (this.isOpen && parts.levels.length <= 1) this.showLevel([this.peekProperty<readonly MenuItem[]>('items') ?? NO_ITEMS]);
     });
-    parts.stopTexts = effect(() => {
-      const strings = uiLocale.strings;
-      const own = this.getProperty<string | undefined>('cancelText');
-      untracked(() => {
+    parts.stopTexts = follow(
+      this,
+      'texts',
+      () => ({ strings: uiLocale.strings, own: this.getProperty<string | undefined>('cancelText') }),
+      ({ strings, own }) => {
         parts.cancel.text = (own || strings.cancel).replace(/&/g, '&&');
         if (!this.peekProperty<string>('text') && !this.peekProperty<string>('label')) this.panelElement.setAttribute('aria-label', strings.actionSheetLabel);
-      });
-    });
+      },
+    );
     this.motif.setDisposable(() => {
       parts.stopTexts?.();
       for (const resolve of parts.waiters.splice(0)) resolve(null);
@@ -127,6 +131,18 @@ export class ActionSheet extends BottomSheet {
   /** An item was chosen, after the sheet closed and the item's own `click` ran. */
   get onItemClick(): MotifEvent<MenuItemClickEventArgs> {
     return this.actions.itemClick.event;
+  }
+
+  /**
+   * Reads the items again (the level shown too) after they were changed in place. Your items may be plain or
+   * reactive; the sheet reads them as they are.
+   */
+  refresh(): void {
+    const parts = this.actions;
+    if (!this.isOpen) return;
+    const levels = parts.levels.length ? parts.levels.slice() : [NO_ITEMS];
+    levels[0] = this.peekProperty<readonly MenuItem[]>('items') ?? NO_ITEMS;
+    this.showLevel(levels);
   }
 
   /** Opens it; `byKeyboard` puts focus on the first item (else on the list, as a menu opened by the pointer does). */
@@ -205,20 +221,20 @@ export class ActionSheet extends BottomSheet {
       parts.list.setItems(items);
       return;
     }
-    const back: MenuItem = { text: () => uiLocale.strings.back, icon: () => backMark(), data: BACK };
-    parts.list.setItems([back, ...items.map((item, i) => (i === 0 ? { ...item, beginGroup: true } : item))]);
+    const back = lineAfter<MenuItem>({ text: () => uiLocale.strings.back, icon: () => backMark(), data: BACK });
+    parts.list.setItems([back, ...givenList(items)]);
   }
 
   private chosen(e: MenuItemClickEventArgs): void {
     const parts = this.actions;
     const item = e.item;
-    if (item.data === BACK) {
+    if (givenValue(item, 'data') === BACK) {
       this.showLevel(parts.levels.slice(0, -1));
       parts.list.focusItem('first');
       return;
     }
-    const children = read(item.items);
-    if (children?.some((child) => read(child.visible) !== false)) {
+    const children = givenField<readonly MenuItem[] | undefined>(item, 'items') ?? NO_ITEMS;
+    if (givenList(children).some((child) => givenField(child, 'visible') !== false)) {
       this.showLevel([...parts.levels, children]);
       parts.list.focusItem('first');
       return;

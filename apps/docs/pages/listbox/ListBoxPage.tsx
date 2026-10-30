@@ -39,6 +39,7 @@ const METHODS = [
   ['selectAllItems()', '`Promise<void>`', 'Multiple: chooses every item the list shows (a data source: after their values load).'],
   ['clear()', '`void`', 'Chooses nothing.'],
   ['scrollToItem(item)', '`void`', 'Brings an item into view and highlights it.'],
+  ['refresh()', '`void`', 'Your items may be plain or reactive; the list reads them as they are. After changing them in place, call `refresh()`. It reads which items there are, their texts and values, and the chosen ones again.'],
   ['validate(), resetValidation(), focus()', '', 'See TextBox.'],
 ];
 

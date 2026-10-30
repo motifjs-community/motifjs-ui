@@ -3,6 +3,7 @@ import type { FieldLabelMode } from '../../../parts/field/field-label-mode';
 import type { FormItem } from '../../formlayout/form-item';
 import type { GridAdaptiveFormOptions } from '../grid-adaptive-form-options';
 import type { GridModel } from '../model/GridModel';
+import { givenList } from '../../../core/given-field';
 import { Switches } from '../model/Switches';
 import type { AdaptiveFormHost } from './adaptive-form-host';
 import { EditForm } from './EditForm';
@@ -16,8 +17,11 @@ import type { FormValues } from './form-values';
  */
 export class AdaptiveForm<T> extends Component<HTMLDivElement> {
   readonly form: EditForm<T>;
-  private readonly shape = reactive({ items: [] as (string | FormItem)[], colCount: 2, minColWidth: undefined as string | undefined, labelMode: 'side' as FieldLabelMode });
-  /** Grows when texts of lookup keys arrive. */
+  /** How the form is laid out; `items` grows when `this.items` is set anew. */
+  private readonly shape = reactive({ items: 0, colCount: 2, minColWidth: undefined as string | undefined, labelMode: 'side' as FieldLabelMode });
+  /** The form items: column names, and the app's own items from `onAdaptiveDetailRowPreparing`, kept as they are. */
+  private items: (string | FormItem)[] = [];
+  /** Grows when texts of lookup keys arrive, and on `redraw()`. */
   private readonly texts = reactive({ n: 0 });
 
   constructor(
@@ -33,7 +37,10 @@ export class AdaptiveForm<T> extends Component<HTMLDivElement> {
     this.motif.setDisposable(effect(() => this.lay()));
     const shape = this.shape;
     const settings = new Switches<FormValues>(['items', 'colCount', 'minColWidth', 'labelMode'], {}, {
-      items: () => shape.items,
+      items: () => {
+        void shape.items;
+        return this.items;
+      },
       colCount: () => shape.colCount,
       minColWidth: () => shape.minColWidth,
       labelMode: () => shape.labelMode,
@@ -50,6 +57,11 @@ export class AdaptiveForm<T> extends Component<HTMLDivElement> {
       const next = e.relatedTarget as Node | null;
       if (holder?.dataset.field && !(next && holder.contains(next))) host.kept(holder.dataset.field);
     });
+  }
+
+  /** The texts of the columns are read again from the row (`grid.repaint()`). */
+  redraw() {
+    untracked(() => this.texts.n++);
   }
 
   /** Focuses its first editor; `false` when it has none. */
@@ -77,13 +89,14 @@ export class AdaptiveForm<T> extends Component<HTMLDivElement> {
         chosen = e.formOptions;
       }
       const isColumn = (f: string) => cols.defs.has(f) && !cols.isInternal(f);
-      const items = chosen.items.map((item) => {
+      const items = givenList(chosen.items).map((item) => {
         if (typeof item !== 'string' || !isColumn(item)) return item;
         const editor = fill.get(item) ?? (editors && cols.canFill(item, row, isNew));
         return editor ? item : this.textItem(item);
       });
       const shape = this.shape;
-      shape.items = items;
+      this.items = items;
+      shape.items++;
       shape.colCount = chosen.colCount;
       shape.minColWidth = chosen.minColWidth;
       shape.labelMode = chosen.labelMode;

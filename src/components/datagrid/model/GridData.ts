@@ -526,13 +526,19 @@ export class GridData<T> {
     return rowId === undefined ? undefined : this.tracker.editById(rowId);
   }
 
-  /** The unsaved changes, as copies. */
+  /** The unsaved changes: the rows themselves, with the changed values beside them. */
   changes(): GridChanges<T> {
     const out: GridChanges<T> = { added: [], updated: [], removed: [], count: 0 };
-    for (const change of this.tracker.changes()) {
-      if (change.type === 'insert') out.added.push(change.data as T);
-      else if (change.type === 'update') out.updated.push({ row: { ...(change.original as object), ...change.data } as T, changed: change.data, original: change.original as T });
-      else out.removed.push(change.original as T);
+    const tracker = this.tracker;
+    for (const row of tracker.pendingRows()) {
+      const rec = tracker.editOf(row);
+      if (!rec) continue;
+      if (rec.removed) {
+        if (rec.isNew) continue;
+        out.removed.push(rec.row);
+      } else if (rec.isNew) out.added.push({ row: rec.row, changed: { ...rec.draft } as Partial<T> });
+      else if (Object.keys(rec.draft).length) out.updated.push({ row: rec.row, changed: { ...rec.draft } as Partial<T> });
+      else continue;
       out.count++;
     }
     return out;

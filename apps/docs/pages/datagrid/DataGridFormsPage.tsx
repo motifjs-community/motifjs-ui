@@ -46,16 +46,16 @@ const RULES = [
   ['stringLength', '`min`, `max`, `trim` (`true`), `ignoreEmptyValue` (`false`)', 'The length of the text.'],
   ['pattern', '`pattern` (`Bind<RegExp | string>`), `ignoreEmptyValue` (`true`)', 'Matches; a string is found anywhere in the value, as `new RegExp(pattern)` does.'],
   ['email', '`ignoreEmptyValue` (`true`)', 'An e-mail address.'],
-  ['compare', "`comparisonTarget(row)`, `comparisonType` (`'=='`, `'!='`, `'==='`, `'!=='`, `'<'`, `'<='`, `'>'`, `'>='`), `ignoreEmptyValue` (`false`)", 'The value against what the function returns (another field of the row); checked on every check of the row.'],
-  ['custom', '`validationCallback({ value, row, column, rule })`, `ignoreEmptyValue` (`false`), `reevaluate` (`false`)', '`true` passes, `false` fails with `message`, a string fails with that text.'],
+  ['compare', "`comparisonTarget(row, context)` (`context.getValue('password')`: the entered value, else the row's), `comparisonType` (`'=='`, `'!='`, `'==='`, `'!=='`, `'<'`, `'<='`, `'>'`, `'>='`), `ignoreEmptyValue` (`false`)", 'The value against what the function returns (another field of the row); checked on every check of the row.'],
+  ['custom', '`validationCallback({ value, row, context, column, rule })` (`row` is the row itself, `context` the values entered: `values`, `getValue(field)`), `ignoreEmptyValue` (`false`), `reevaluate` (`false`)', '`true` passes, `false` fails with `message`, a string fails with that text.'],
   ['async', '`validationCallback(…)` returning a promise, `ignoreEmptyValue` (`false`), `reevaluate` (`true`)', 'The answer: `true`, `false`, a message or `{ isValid, message }`; a rejection fails with its message. The row waits for it before it is sent; its cell shows that it is busy.'],
 ];
 
 const EVENTS = [
-  ['onEditingStart', '`{ field, row, rowIndex, isNew, cancel }`', 'A cell editor, or the form of a row (`field` `\'\'`), is about to open; `cancel` keeps the row as it is.'],
-  ['onEditorPreparing', '`{ field, row, isNew, options, cancel }`', 'Before an editor of a cell or of a form field is made: change its props; `cancel` leaves a field out of the form.'],
-  ['onEditorPrepared', "`{ field, row, isNew, editor, element, place: 'cell' | 'form' }`", 'An editor was made.'],
-  ['onRowValidating', '`{ key, row, isNew, changed, errors, isValid, errorText, cancel }`', 'A row is checked before it is saved, after its cells (and their async rules): add or take out messages in `errors` (by field, `\'\'` the row), or `isValid = false` with `errorText`. Once per check of the row.'],
+  ['onEditingStart', '`{ field, row, values, getValue, rowIndex, isNew, cancel }`', 'A cell editor, or the form of a row (`field` `\'\'`), is about to open; `cancel` keeps the row as it is. `row` is the row itself (a class instance stays one); `values` holds what was entered and not saved yet, `getValue(field)` the entered value else the row’s.'],
+  ['onEditorPreparing', '`{ field, row, values, getValue, isNew, options, cancel }`', 'Before an editor of a cell or of a form field is made: change its props; `cancel` leaves a field out of the form.'],
+  ['onEditorPrepared', "`{ field, row, values, getValue, isNew, editor, element, place: 'cell' | 'form' }`", 'An editor was made.'],
+  ['onRowValidating', '`{ key, row, values, getValue, isNew, changed, errors, isValid, errorText, cancel }`', 'A row is checked before it is saved, after its cells (and their async rules): add or take out messages in `errors` (by field, `\'\'` the row), or `isValid = false` with `errorText`. Once per check of the row.'],
   ['onInitNewRow, onSaving, onRowInserting, onRowUpdating, onEditCanceling …', 'see [Events](/datagrid/layout#events)', 'The same in every edit mode: Save in a form is a save, Cancel a cancel.'],
 ];
 

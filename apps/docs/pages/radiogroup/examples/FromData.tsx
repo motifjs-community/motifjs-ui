@@ -7,7 +7,7 @@ interface Plan {
   price: number;
 }
 
-/** Options from a live list of your own objects: added and renamed ones show at once. */
+/** Options from a list of your own objects: after adding or changing some in place, `refresh()` shows them. */
 export default function FromData() {
   const s = reactive({ plan: 2 as number | null });
   const plans = reactive<Plan[]>([
@@ -16,11 +16,20 @@ export default function FromData() {
     { id: 3, name: 'Team', price: 30 },
   ]);
 
-  const addPlan = () => plans.push({ id: plans.length + 1, name: `Plan ${plans.length + 1}`, price: plans.length * 20 });
+  let group!: RadioGroup<number>;
+  const addPlan = () => {
+    plans.push({ id: plans.length + 1, name: `Plan ${plans.length + 1}`, price: plans.length * 20 });
+    group.refresh();
+  };
+  const raisePrices = () => {
+    for (const p of plans) p.price += 1;
+    group.refresh();
+  };
 
   return (
     <>
       <RadioGroup
+        ref={(g: RadioGroup<number>) => (group = g)}
         label="&Plan"
         class="rg-plans"
         items={() => plans}
@@ -30,7 +39,7 @@ export default function FromData() {
       />
       <Stack orientation="horizontal" wrap align="center">
         <Button text="Add a plan" variant="outline" enabled={() => plans.length < 6} onclick={addPlan} />
-        <Button text="Raise prices" variant="outline" onclick={() => plans.forEach((p) => (p.price += 1))} />
+        <Button text="Raise prices" variant="outline" onclick={raisePrices} />
         <output class="rg-plan">{() => `value: ${String(s.plan)}`}</output>
       </Stack>
     </>

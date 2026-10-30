@@ -1,15 +1,18 @@
 import { onLookChanged } from '../../core/look-watch';
-import { effect, Emitter, read, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
 import { controlOf } from '../../core/control-map';
+import { follow } from '../../core/follow';
 import type { ControlSize } from '../../core/control-size';
 import type { IconSource } from '../../core/icon-source';
 import { deepActiveElement, focusableIn, isShown } from '../../core/focus';
+import { givenField, givenList, givenValue } from '../../core/given-field';
 import { moreMark } from '../../core/glyphs';
 import { isNode } from '../../core/node-kind';
 import { ResizeWatch } from '../../core/resize-watch';
 import { uiLocale } from '../../core/ui-locale';
+import { lineAfter } from '../../parts/menu/line-after';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { Button } from '../button/Button';
 import type { ButtonProps } from '../button/button-props';
@@ -51,7 +54,7 @@ interface Parts {
   current: HTMLElement | null;
   more: Button | null;
   stopMoreLabel: (() => void) | null;
-  refreshQueued: boolean;
+  restyleQueued: boolean;
   layoutQueued: boolean;
   /** The size the overflow was worked out for. */
   laidOut: number;
@@ -93,7 +96,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     this.observeProperty('orientation', () => this.renderLook());
     this.observeProperty('size', () => this.renderLook());
     this.observeProperty('overflow', () => this.renderLook());
-    this.observeProperty('items', () => this.follow());
+    this.observeProperty('items', () => this.followItems());
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.label !== undefined) this.bindProperty('text', own.label);
     if (own.onItemClick) this.onItemClick(own.onItemClick);
@@ -164,6 +167,15 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     this.layout();
   }
 
+  /**
+   * Reads the items again after they were changed in place: the list, and each item's fields. Your items may be
+   * plain or reactive; the toolbar reads them as they are.
+   */
+  refresh(): void {
+    for (const [item, made] of this.parts.made) this.fill(item, made);
+    this.followItems();
+  }
+
   /** The control Tab reaches. */
   protected override get focusElement(): HTMLElement {
     return this.parts.current ?? this.stops()[0] ?? this.element;
@@ -171,7 +183,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
 
   protected override applyProperty(name: string, value: unknown): void {
     if (name === 'tabStop') {
-      this.queueRefresh();
+      this.queueRestyle();
       return;
     }
     super.applyProperty(name, value);
@@ -194,22 +206,30 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       current: null,
       more: null,
       stopMoreLabel: null,
-      refreshQueued: false,
+      restyleQueued: false,
       layoutQueued: false,
       laidOut: -1,
       itemClick: new Emitter(),
     };
   }
 
-  /** Makes the controls of `items` again when the list, an item's type or its overflow changes. */
-  private follow(): void {
+  /** Makes the controls of `items` again when the list, an item's type or its overflow changes, or on `reState()`. */
+  private followItems(): void {
     const parts = this.parts;
     parts.stopItems?.();
     const items = this.peekProperty<readonly ToolbarItem[]>('items') ?? [];
-    parts.stopItems = effect(() => {
-      const wanted = items.map((item) => ({ item, type: read(item.type) ?? 'button', overflow: read(item.overflow) ?? 'auto' }));
-      untracked(() => this.place(wanted));
-    });
+    // The getter and the items' own functions are followed; the list and the fields are not.
+    parts.stopItems = follow(
+      this,
+      'items',
+      () =>
+        givenList(items).map((item) => ({
+          item,
+          type: givenField<ToolbarItemType | undefined>(item, 'type') ?? 'button',
+          overflow: givenField<ToolbarItemOverflow | undefined>(item, 'overflow') ?? 'auto',
+        })),
+      (wanted) => this.place(wanted),
+    );
   }
 
   private place(wanted: readonly { item: ToolbarItem; type: ToolbarItemType; overflow: ToolbarItemOverflow }[]): void {
@@ -231,29 +251,50 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       else if (this.controls.items.indexOf(control) !== index) this.controls.moveToIndex(control, index);
       index++;
     }
-    this.queueRefresh();
+    this.queueRestyle();
     this.queueLayout();
   }
 
   private make(item: ToolbarItem, type: ToolbarItemType): Control {
-    if (type === 'separator') return new ToolbarSeparator({ visible: item.visible });
-    const props: ButtonProps = { text: item.text, icon: item.icon, hint: item.hint, tone: item.tone, enabled: item.enabled, visible: item.visible };
+    const field = <K extends keyof ToolbarItem>(name: K) => givenValue<ToolbarItem[K]>(item, name);
+    if (type === 'separator') return new ToolbarSeparator({ visible: field('visible') });
+    const props: ButtonProps = { text: field('text'), icon: field('icon'), hint: field('hint'), tone: field('tone'), enabled: field('enabled'), visible: field('visible') };
     if (type === 'toggle') {
       props.toggle = true;
-      props.pressed = item.pressed;
+      props.pressed = field('pressed');
     }
-    if (type === 'menu') props.menu = item.menu ?? [];
+    if (type === 'menu') props.menu = field('menu') ?? [];
     const button = new Button(props);
     this.adopt(button);
     if (type !== 'menu') button.element.addEventListener('click', (e) => this.itemPressed(item, button, e));
     return button;
   }
 
+  /** Gives a made control the item's fields again, as they are now. */
+  private fill(item: ToolbarItem, made: Made): void {
+    const field = <K extends keyof ToolbarItem>(name: K) => givenValue<ToolbarItem[K]>(item, name);
+    made.control.visible = field('visible') ?? true;
+    if (!(made.control instanceof Button)) return;
+    const button = made.control;
+    button.text = field('text') ?? '';
+    button.icon = (field('icon') ?? null) as Bind<IconSource | null>;
+    button.hint = field('hint') ?? '';
+    button.tone = field('tone') ?? 'standard';
+    button.enabled = field('enabled') ?? true;
+    const pressed = field('pressed');
+    if (made.type === 'toggle' && pressed !== undefined) button.pressed = pressed;
+    if (made.type === 'menu') {
+      button.menu = field('menu') ?? [];
+      button.refresh();
+    }
+  }
+
   private itemPressed(item: ToolbarItem, button: Button, event: Event): void {
     const args: ToolbarItemClickEventArgs = { item, source: this, event };
-    item.click?.(args);
+    givenValue<ToolbarItem['click']>(item, 'click')?.(args);
     // A press set the toggle's own state; one bound to the app follows the app again.
-    if (typeof item.pressed === 'function') button.pressed = item.pressed;
+    const pressed = givenValue<ToolbarItem['pressed']>(item, 'pressed');
+    if (typeof pressed === 'function') button.pressed = pressed;
     this.parts.itemClick.fire(args);
   }
 
@@ -306,17 +347,17 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     return [...all.filter((el) => !more.contains(el)), ...all.filter((el) => more.contains(el))];
   }
 
-  private queueRefresh(): void {
+  private queueRestyle(): void {
     const parts = this.parts;
-    if (parts.refreshQueued) return;
-    parts.refreshQueued = true;
+    if (parts.restyleQueued) return;
+    parts.restyleQueued = true;
     queueMicrotask(() => {
-      parts.refreshQueued = false;
-      if (!this.isDisposed) untracked(() => this.refresh());
+      parts.restyleQueued = false;
+      if (!this.isDisposed) untracked(() => this.restyle());
     });
   }
 
-  private refresh(): void {
+  private restyle(): void {
     const parts = this.parts;
     const more = parts.more?.element;
     if (more && this.element.lastElementChild !== more) this.element.append(more);
@@ -344,7 +385,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     data.size = this.peekProperty<ControlSize>('size') ?? 'md';
     data.overflow = this.peekProperty<ToolbarOverflow>('overflow') ?? 'menu';
     this.element.setAttribute('aria-orientation', orientation);
-    this.queueRefresh();
+    this.queueRestyle();
     this.queueLayout();
   }
 
@@ -436,12 +477,9 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     more.element.setAttribute('data-idle', '');
     this.controls.add(more);
     const face = more.element.querySelector<HTMLElement>('.mx-button__main') ?? more.element;
-    parts.stopMoreLabel = effect(() => {
-      const label = uiLocale.strings.moreOptions;
-      untracked(() => {
-        face.setAttribute('aria-label', label);
-        face.title = label;
-      });
+    parts.stopMoreLabel = follow(this, 'moreLabel', () => uiLocale.strings.moreOptions, (label) => {
+      face.setAttribute('aria-label', label);
+      face.title = label;
     });
     parts.more = more;
     return more;
@@ -478,7 +516,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       // Controls added from code, disabled, hidden: the arrows and Tab follow. A control that takes another size
       // (its look read once it is in the page) changes what fits.
       const observer = new MutationObserver((records) => {
-        this.queueRefresh();
+        this.queueRestyle();
         if (records.some((r) => (r.type === 'childList' && r.target === this.element) || r.attributeName === 'data-size' || r.attributeName === 'data-variant')) this.queueLayout();
       });
       observer.observe(this.element, {
@@ -559,7 +597,7 @@ function menuItemOf(button: Button): MenuItem {
   const name = () => button.text || face.getAttribute('aria-label') || button.hint || face.textContent?.trim() || '';
   const press = () => face.click();
   if (button.hasMenu && button.split) {
-    return { text: name, icon: () => iconCopy(button.icon), hint: () => button.hint, tone: () => button.tone, enabled: () => button.isEnabled, items: () => [{ text: name, click: press }, ...button.menu.map((item, i) => (i ? item : { ...item, beginGroup: true }))] };
+    return { text: name, icon: () => iconCopy(button.icon), hint: () => button.hint, tone: () => button.tone, enabled: () => button.isEnabled, items: () => [lineAfter<MenuItem>({ text: name, click: press }), ...givenList(button.menu)] };
   }
   if (button.hasMenu) {
     return { text: name, icon: () => iconCopy(button.icon), hint: () => button.hint, tone: () => button.tone, enabled: () => button.isEnabled, items: () => button.menu };

@@ -1,4 +1,5 @@
-import { effect, read, untracked, type Bind, type IBaseProp } from '@motifx/core';
+import { read, untracked, type Bind, type IBaseProp } from '@motifx/core';
+import { follow } from '../../core/follow';
 import { LanguageLook } from '../../core/language-look';
 import { uiLocale } from '../../core/ui-locale';
 import { Field } from '../../parts/field/Field';
@@ -305,9 +306,10 @@ export class Slider extends Field<SliderValue, SliderProps> {
       end = Math.min(max, start + gap);
       start = Math.max(min, Math.min(start, end - gap));
     }
+    // The array given comes back as it is; the one held stays when the same pair comes in another form.
+    if (Array.isArray(value) && value[0] === start && value[1] === end) return value;
     const current = this.peekProperty<SliderValue>('value');
     if (Array.isArray(current) && current[0] === start && current[1] === end) return current;
-    if (Array.isArray(value) && value[0] === start && value[1] === end) return value;
     return [start, end];
   }
 
@@ -529,10 +531,7 @@ export class Slider extends Field<SliderValue, SliderProps> {
     parts.thumbs[1].hidden = !range;
     if (range && !parts.stopNames) {
       // The thumb names come from uiLocale.
-      parts.stopNames = effect(() => {
-        void uiLocale.strings;
-        untracked(() => this.renderNames());
-      });
+      parts.stopNames = follow(this, 'names', () => uiLocale.strings, () => this.renderNames());
     } else if (!range && parts.stopNames) {
       parts.stopNames();
       parts.stopNames = null;

@@ -1,4 +1,4 @@
-import { reactive, read, untracked } from '@motifx/core';
+import { reactive, untracked } from '@motifx/core';
 import type { BuiltInAction } from '../built-in-action';
 import type { GridAction } from '../grid-action';
 import type { GridActionItem } from '../grid-action-item';
@@ -7,6 +7,8 @@ import type { RowState } from '../row-state';
 import type { ActionEntry } from './action-entry';
 import type { ActionTarget } from './action-target';
 import type { GridModel } from './GridModel';
+import { givenValue } from '../../../core/given-field';
+import { readField } from './read-field';
 
 /**
  * Which rows the toolbar and the bottom bar act on, and the actions those rows share: one row's
@@ -16,10 +18,21 @@ import type { GridModel } from './GridModel';
  * an action sits in the row.
  */
 export class ActionSets<T> {
-  private readonly marks = reactive({ inRow: 0, never: 0 });
+  /** `version` grows on `refresh()`: the actions are asked again. */
+  private readonly marks = reactive({ inRow: 0, never: 0, version: 0 });
   private readonly drawn = new Map<object, { inRow: boolean; never: boolean }>();
 
   constructor(private readonly model: GridModel<T>) {}
+
+  /** Grows when the actions are asked again (`refresh()`). Reactive. */
+  get version(): number {
+    return this.marks.version;
+  }
+
+  /** The rows and the bars ask their actions again: what an action or the `actions` function reads changed. */
+  refresh() {
+    untracked(() => this.marks.version++);
+  }
 
   /** The action of an entry of the `actions` prop. */
   resolve(item: GridActionItem<T>): GridAction<T> | undefined {
@@ -27,15 +40,15 @@ export class ActionSets<T> {
   }
 
   locationOf(action: GridAction<T>): GridActionLocation {
-    return read(action.location) ?? this.model.settings.get('actionsLocation');
+    return readField(action, 'location') ?? this.model.settings.get('actionsLocation');
   }
 
   menuOf(action: GridAction<T>): 'auto' | 'always' | 'never' {
-    return read(action.menu) ?? 'auto';
+    return readField(action, 'menu') ?? 'auto';
   }
 
   inContextMenu(action: GridAction<T>): boolean {
-    return read(action.contextMenu) ?? this.model.settings.get('actionsContextMenu');
+    return readField(action, 'contextMenu') ?? this.model.settings.get('actionsContextMenu');
   }
 
   /** Whether some action sits in the row: the column shows while one does. Reactive. */
@@ -144,7 +157,7 @@ export class ActionSets<T> {
       const it = items[0];
       return lists[0].map((action) => ({
         action,
-        text: read(action.text) ?? '',
+        text: readField(action, 'text') ?? '',
         count: 1,
         disabled: isDisabled(action, it.row, it.state),
         items: [{ ...it, action }],
@@ -156,20 +169,20 @@ export class ActionSets<T> {
     const out: ActionEntry<T>[] = [];
     for (const action of lists[0]) {
       const own = [action, ...others.map((m) => m.get(action.id))];
-      if (own.some((a) => !a || read(a.multiple) === false)) continue;
+      if (own.some((a) => !a || readField(a, 'multiple') === false)) continue;
       const all = items.map((it, i) => ({ ...it, action: own[i]! }));
       const on = all.filter((x) => !isDisabled(x.action, x.row, x.state));
-      const any = (read(action.multipleEnabled) ?? this.model.settings.get('actionsMultipleEnabled')) === 'any';
+      const any = (readField(action, 'multipleEnabled') ?? this.model.settings.get('actionsMultipleEnabled')) === 'any';
       const disabled = any ? on.length === 0 : on.length < all.length;
       const runOn = any && on.length ? on : all;
-      out.push({ action, text: read(action.text) ?? '', count: runOn.length, disabled, items: runOn, selection: null, fromSelection });
+      out.push({ action, text: readField(action, 'text') ?? '', count: runOn.length, disabled, items: runOn, selection: null, fromSelection });
     }
     return out;
   }
 
   /** A row's text with the count of rows it runs on, as the buttons and menus show it. */
   label(entry: ActionEntry<T>): string {
-    const show = read(entry.action.showCount) ?? this.model.settings.get('actionsShowCount');
+    const show = readField(entry.action, 'showCount') ?? this.model.settings.get('actionsShowCount');
     if (!show || entry.count < 2) return entry.text;
     return this.model.text('gridActionCount', { text: entry.text, count: this.model.formatter.count(entry.count) });
   }
@@ -206,8 +219,8 @@ export class ActionSets<T> {
     const out: ActionEntry<T>[] = [];
     for (const item of this.model.actionList ?? []) {
       const action = this.resolve(item);
-      if (!action?.onclickSelection || !keep(action) || action.visible === false || read(action.multiple) === false) continue;
-      out.push({ action, text: read(action.text) ?? '', count: target.count, disabled: action.disabled === true, items: [], selection: target.selection, fromSelection: true });
+      if (!action?.onclickSelection || !keep(action) || action.visible === false || readField(action, 'multiple') === false) continue;
+      out.push({ action, text: readField(action, 'text') ?? '', count: target.count, disabled: action.disabled === true, items: [], selection: target.selection, fromSelection: true });
     }
     return out;
   }
@@ -218,5 +231,6 @@ function runs<T>(action: GridAction<T>): boolean {
 }
 
 function isDisabled<T>(action: GridAction<T>, row: T, state: RowState): boolean {
-  return typeof action.disabled === 'function' ? action.disabled(row, state) : !!action.disabled;
+  const disabled = givenValue<GridAction<T>['disabled']>(action, 'disabled');
+  return typeof disabled === 'function' ? !!untracked(() => disabled(row, state)) : !!disabled;
 }

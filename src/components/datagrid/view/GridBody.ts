@@ -540,11 +540,21 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     el?.setAttribute('data-drop-target', '');
   }
 
-  /** Draws every row in use again. */
+  /** Draws every row in use again, with the rows' details and adaptive detail. */
   repaint() {
     for (const row of this.byIndex.values()) row.redraw();
     for (const row of this.groupsByIndex.values()) row.redraw();
     for (const row of this.footersByIndex.values()) row.redraw();
+    for (const detail of this.details.values()) detail.redraw();
+    this.adaptive?.redraw();
+    this.relayout(true);
+  }
+
+  /** Draws the rows with these ids again (their key as text), with their details and adaptive detail; the others stay as they are. */
+  repaintRows(ids: ReadonlySet<string>) {
+    for (const row of this.byIndex.values()) if (row.rowId !== undefined && ids.has(row.rowId)) row.redraw();
+    for (const [id, detail] of this.details) if (ids.has(id)) detail.redraw();
+    if (this.adaptive && ids.has(this.adaptive.id)) this.adaptive.redraw();
     this.relayout(true);
   }
 

@@ -14,6 +14,8 @@ import type { GridModel } from './GridModel';
 import type { GroupNode } from './group-node';
 import type { PlacedItem } from './placed-item';
 import type { SummaryPart } from './summary-part';
+import { givenList, givenValue } from '../../../core/given-field';
+import { readField } from './read-field';
 
 const TEXT_KEYS: Record<keyof GridSummaryTexts, keyof UiStrings> = {
   sum: 'gridSummarySum',
@@ -33,7 +35,8 @@ type Steps<T> = { -readonly [K in keyof GridCustomSummaryInfo<T>]: GridCustomSum
 interface Edits<T> {
   drafts: Map<string, Readonly<Record<string, unknown>>>;
   removed: Set<string>;
-  added: T[];
+  /** New rows and their values. */
+  added: { row: T; draft: Readonly<Record<string, unknown>> }[];
 }
 
 /**
@@ -49,6 +52,8 @@ export class GridSummaries<T> {
   component: unknown = null;
   private readonly given = createSignal<Bind<GridSummary<T>> | undefined>(undefined);
   private readonly totals = createSignal<readonly unknown[]>([]);
+  /** Grows on `reread()`: the items are read again. */
+  private readonly look = createSignal(0);
   private data: GridData<T> | null = null;
   private subscriptions: IDisposable[] = [];
   private generation = 0;
@@ -72,7 +77,13 @@ export class GridSummaries<T> {
 
   /** The summary as it reads now. Reactive. */
   config(): GridSummary<T> {
+    void this.look.value;
     return read(this.given.value) ?? {};
+  }
+
+  /** The items and the rows are read again, and the values worked out again: something was changed in place. */
+  reread() {
+    this.look.value = this.look.peek() + 1;
   }
 
   /** The values of `totalItems`, in order. Reactive. */
@@ -81,11 +92,11 @@ export class GridSummaries<T> {
   }
 
   totalItems(): PlacedItem[] {
-    return this.place(read(this.config().totalItems) ?? [], 'totalSummary');
+    return this.place(readField(this.config(), 'totalItems') ?? [], 'totalSummary');
   }
 
   groupItems(): PlacedItem[] {
-    return this.place(read(this.config().groupItems) ?? [], 'groupSummary');
+    return this.place(readField(this.config(), 'groupItems') ?? [], 'groupSummary');
   }
 
   /** Whether the row of totals shows: an item is visible. Reactive. */
@@ -101,9 +112,9 @@ export class GridSummaries<T> {
   /** What the values depend on (not how they show), as text: a change means working them out again. */
   signature(): string {
     const c = this.config();
-    const part = (items: PlacedItem[]) => items.map((i) => [i.type, i.field, i.name, read(i.item.skipEmptyValues)]);
+    const part = (items: PlacedItem[]) => items.map((i) => [i.type, i.field, i.name, readField(i.item, 'skipEmptyValues')]);
     const s = this.model.settings;
-    return JSON.stringify([part(this.totalItems()), part(this.groupItems()), read(c.recalculateWhileEditing), read(c.skipEmptyValues), s.get('remoteSummary'), s.get('groupLoadPageSize')]);
+    return JSON.stringify([part(this.totalItems()), part(this.groupItems()), readField(c, 'recalculateWhileEditing'), readField(c, 'skipEmptyValues'), s.get('remoteSummary'), s.get('groupLoadPageSize')]);
   }
 
   /** The items as a server is asked for them, or `null` when the browser has to work them out. */
@@ -215,7 +226,7 @@ export class GridSummaries<T> {
     if (value === undefined || value === null || (typeof value === 'number' && Number.isNaN(value))) return '';
     const valueText = this.format(i, value);
     if (i.item.customizeText) return i.item.customizeText({ value, valueText });
-    const pattern = read(i.item.displayFormat) ?? this.pattern(i.type, otherColumn && i.field !== undefined);
+    const pattern = readField(i.item, 'displayFormat') ?? this.pattern(i.type, otherColumn && i.field !== undefined);
     return fillTemplate(pattern, { 0: valueText, 1: i.field === undefined ? '' : this.title(i.field) });
   }
 
@@ -223,7 +234,7 @@ export class GridSummaries<T> {
   part(i: PlacedItem, value: unknown, otherColumn: boolean): SummaryPart | null {
     const text = this.text(i, value, otherColumn);
     if (!text) return null;
-    return { text, label: otherColumn ? text : this.text(i, value, true), align: read(i.item.alignment) ?? undefined, cssClass: read(i.item.cssClass) ?? undefined };
+    return { text, label: otherColumn ? text : this.text(i, value, true), align: readField(i.item, 'alignment') ?? undefined, cssClass: readField(i.item, 'cssClass') ?? undefined };
   }
 
   /** The parts of the visible items, by the column each shows under. Reactive. */
@@ -247,18 +258,18 @@ export class GridSummaries<T> {
   }
 
   private place(items: readonly GridGroupSummaryItem[], setting: 'totalSummary' | 'groupSummary'): PlacedItem[] {
-    return items.map((item, index) => {
-      const field = read(item.column) ?? undefined;
+    return givenList(items).map((item, index) => {
+      const field = readField(item, 'column') ?? undefined;
       return {
         index,
         item,
-        type: read(item.summaryType) ?? 'count',
+        type: readField(item, 'summaryType') ?? 'count',
         field,
-        place: read(item.showInColumn) ?? field,
-        name: read(item.name) ?? undefined,
-        footer: !!read(item.showInGroupFooter),
-        align: !!read(item.alignByColumn),
-        visible: read(item.visible) ?? this.model.settings.get(setting),
+        place: readField(item, 'showInColumn') ?? field,
+        name: readField(item, 'name') ?? undefined,
+        footer: !!readField(item, 'showInGroupFooter'),
+        align: !!readField(item, 'alignByColumn'),
+        visible: readField(item, 'visible') ?? this.model.settings.get(setting),
       };
     });
   }
@@ -268,7 +279,7 @@ export class GridSummaries<T> {
   }
 
   private followsEdits(): boolean {
-    return !!untracked(() => read(this.config().recalculateWhileEditing));
+    return !!untracked(() => readField(this.config(), 'recalculateWhileEditing'));
   }
 
   private setTotal(values: readonly unknown[], editing: boolean) {
@@ -284,6 +295,8 @@ export class GridSummaries<T> {
   private compute(items: readonly PlacedItem[], rows: readonly T[], groupIndex: number | undefined, withNew: boolean): unknown[] {
     const edits = this.followsEdits() ? this.edits() : null;
     let list: readonly T[] = rows;
+    // The rows stay as they are; their unsaved values are read beside them.
+    const drafts = new Map<T, Readonly<Record<string, unknown>>>();
     if (edits) {
       const tracker = this.data!.tracker;
       const out: T[] = [];
@@ -291,18 +304,29 @@ export class GridSummaries<T> {
         const id = tracker.rowIdOf(row);
         if (edits.removed.has(id)) continue;
         const draft = edits.drafts.get(id);
-        out.push(draft ? ({ ...(row as object), ...draft } as T) : row);
+        if (draft) drafts.set(row, draft);
+        out.push(row);
       }
-      if (withNew) out.push(...edits.added);
+      if (withNew) {
+        for (const added of edits.added) {
+          drafts.set(added.row, added.draft);
+          out.push(added.row);
+        }
+      }
       list = out;
     }
     const columns = this.model.columns;
     const readerOf = (field: string) => {
       const col = columns.defs.get(field);
-      return col && !columns.isInternal(field) ? (row: unknown) => cellValue(col, row as T) : (row: unknown) => data.getField(row, field);
+      const own = col && !columns.isInternal(field) ? (row: unknown) => cellValue(col, row as T) : (row: unknown) => untracked(() => data.getField(row, field));
+      if (!drafts.size) return own;
+      return (row: unknown) => {
+        const draft = drafts.get(row as T);
+        return draft && Object.hasOwn(draft, field) ? draft[field] : own(row);
+      };
     };
-    const skipAll = untracked(() => read(this.config().skipEmptyValues)) ?? true;
-    const skips = untracked(() => items.map((i) => read(i.item.skipEmptyValues) ?? skipAll));
+    const skipAll = untracked(() => readField(this.config(), 'skipEmptyValues')) ?? true;
+    const skips = untracked(() => items.map((i) => readField(i.item, 'skipEmptyValues') ?? skipAll));
     const adapter = this.data!.source.adapter;
     const ctx: data.EvaluateContext = { fields: adapter.fields, locale: this.model.formatter.locale, summaryValue: readerOf };
     const builtIn = items.filter((i) => i.type !== 'custom' && (i.type === 'count' || i.field !== undefined));
@@ -345,7 +369,7 @@ export class GridSummaries<T> {
       const rec = tracker.editOf(row);
       if (!rec) continue;
       if (rec.isNew) {
-        if (!rec.removed) edits.added.push({ ...(rec.row as object), ...rec.draft } as T);
+        if (!rec.removed) edits.added.push({ row: rec.row, draft: rec.draft });
       } else if (rec.removed) edits.removed.add(rec.rowId);
       else edits.drafts.set(rec.rowId, rec.draft);
     }
@@ -355,7 +379,7 @@ export class GridSummaries<T> {
   private pattern(type: GridSummaryType, otherColumn: boolean): string {
     if (type === 'custom') return '{0}';
     const key: keyof GridSummaryTexts = otherColumn && type !== 'count' ? `${type}OtherColumn` : type;
-    return read(this.config().texts)?.[key] ?? this.model.text(TEXT_KEYS[key]);
+    return readField(this.config(), 'texts')?.[key] ?? this.model.text(TEXT_KEYS[key]);
   }
 
   private title(field: string): string {
@@ -365,7 +389,7 @@ export class GridSummaries<T> {
 
   private format(i: PlacedItem, value: unknown): string {
     const formatter = this.model.formatter;
-    const given = i.item.valueFormat;
+    const given = givenValue<typeof i.item.valueFormat>(i.item, 'valueFormat');
     if (typeof given === 'function' && given.length > 0) return (given as (v: unknown) => string)(value);
     const options = read(given as Bind<Intl.NumberFormatOptions | Intl.DateTimeFormatOptions | undefined>);
     const col = i.field !== undefined && !this.model.columns.isInternal(i.field) ? this.model.columns.defs.get(i.field) : undefined;

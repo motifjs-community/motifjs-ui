@@ -1,5 +1,6 @@
-import { effect, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
+import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
 import { chevronDown } from '../../core/glyphs';
 import { pageLocale } from '../../core/page-locale';
@@ -52,9 +53,10 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     if (own.disabledDates !== undefined) this.bindProperty('disabledDates', functionValue(own.disabledDates));
     if (own.onValueChanged) this.onValueChanged(own.onValueChanged);
     const parts = this.parts;
-    const value = this.peekProperty<Date | null>('value');
-    if (value) parts.focused = dayStart(value);
-
+    // A new value, from wherever it comes, shows its month.
+    this.observeProperty<Date | null>('value', (value) => {
+      if (value) parts.focused = dayStart(value);
+    });
     for (const name of DRAWN) this.observeProperty(name, () => this.render());
     this.observeProperty<CalendarView | undefined>('currentView', (view) => {
       if (!view) return;
@@ -65,14 +67,17 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     this.render();
     this.observeProperty<boolean>('showTodayButton', (on) => this.renderToday(!!on));
     // The texts follow uiLocale.
-    const stopTexts = effect(() => {
-      const strings = uiLocale.strings;
-      const view = this.getProperty<CalendarView | undefined>('shownView') ?? 'month';
-      const [back, forward] = view === 'month' ? [strings.previousMonth, strings.nextMonth] : view === 'year' ? [strings.previousYear, strings.nextYear] : [strings.previousYears, strings.nextYears];
-      parts.previous.setAttribute('aria-label', back);
-      parts.next.setAttribute('aria-label', forward);
-      if (parts.today) parts.today.textContent = strings.today;
-    });
+    const stopTexts = follow(
+      this,
+      'texts',
+      () => ({ strings: uiLocale.strings, view: this.getProperty<CalendarView | undefined>('shownView') ?? 'month' }),
+      ({ strings, view }) => {
+        const [back, forward] = view === 'month' ? [strings.previousMonth, strings.nextMonth] : view === 'year' ? [strings.previousYear, strings.nextYear] : [strings.previousYears, strings.nextYears];
+        parts.previous.setAttribute('aria-label', back);
+        parts.next.setAttribute('aria-label', forward);
+        if (parts.today) parts.today.textContent = strings.today;
+      },
+    );
     parts.grid.addEventListener('keydown', (e) => this.keyDown(e));
     parts.grid.addEventListener('click', (e) => this.clicked(e));
     parts.previous.addEventListener('click', () => this.page(-1));
@@ -88,9 +93,12 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     return this.getProperty<Date | null | undefined>('value') ?? null;
   }
   set value(value: Bind<Date | null>) {
+    const before = this.peekProperty<Date | null>('value') ?? null;
     this.assignProperty('value', value, (v) => (v instanceof Date && !isNaN(+v) ? v : null));
-    const date = this.peekProperty<Date | null>('value');
+    const date = this.peekProperty<Date | null>('value') ?? null;
     if (date) this.goTo(date);
+    // A day set from code shows in `x-model` too, so the model and the calendar never differ.
+    if (typeof value !== 'function' && date !== before) this.bindings.writeModel(date);
   }
   get min(): Date | null {
     return this.getProperty<Date | null | undefined>('min') ?? null;

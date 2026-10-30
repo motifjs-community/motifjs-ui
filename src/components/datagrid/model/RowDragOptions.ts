@@ -1,5 +1,6 @@
 import type { GridRowDragging } from '../grid-row-dragging';
 import type { RowDraggingValues } from './row-dragging-values';
+import { givenValue } from '../../../core/given-field';
 import { Switches } from './Switches';
 
 const KEYS: (keyof RowDraggingValues)[] = [
@@ -58,7 +59,10 @@ export class RowDragOptions<T> {
   constructor(given: GridRowDragging<T> | undefined) {
     this.values = new Switches<RowDraggingValues>(KEYS, DEFAULTS, given ?? {});
     this.values.changed = (key, value, previous) => this.changed?.(key, value, previous);
-    for (const name of HANDLERS) if (given?.[name] !== undefined) (this.handlers as Record<string, unknown>)[name] = given[name];
+    for (const name of HANDLERS) {
+      const handler = givenValue(given, name);
+      if (handler !== undefined) (this.handlers as Record<string, unknown>)[name] = handler;
+    }
     const handlerNames = new Set<string>(HANDLERS);
     const values = this.values.view as unknown as Record<string, unknown>;
     this.view = new Proxy({} as GridRowDragging<T>, {

@@ -1,4 +1,4 @@
-import { read } from '@motifx/core';
+import { untracked } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import type { UiStrings } from '../../../core/ui-strings';
 import { checkRules } from '../../../parts/validation/check-rules';
@@ -6,6 +6,7 @@ import type { ValidationRule } from '../../../parts/validation/validation-rule';
 import type { GridColumn } from '../grid-column';
 import type { GridValidationRule } from '../grid-validation-rule';
 import { sameValue } from './same-value';
+import { readField } from './read-field';
 
 /** Rules an empty value passes unless they say otherwise. */
 const PASS_EMPTY = new Set<string>(['numeric', 'range', 'pattern', 'email']);
@@ -72,7 +73,7 @@ export class CellRules<T> {
   }
 
   /** Checks the value against the column's rules: the ones in order, then the `async` ones together. A check of the same value still running is shared. */
-  check(rowId: string, col: GridColumn<T>, value: unknown, row: T): Promise<string> {
+  check(rowId: string, col: GridColumn<T>, value: unknown, row: T, context: data.RowCheckContext<T>): Promise<string> {
     let byField = this.running.get(rowId);
     const same = byField?.get(col.field);
     if (same && sameValue(same.value, value)) {
@@ -81,7 +82,7 @@ export class CellRules<T> {
     }
     if (!byField) this.running.set(rowId, (byField = new Map()));
     const run = { value, round: this.round, done: Promise.resolve('') };
-    run.done = this.checkNow(col, value, row).then((message) => {
+    run.done = this.checkNow(col, value, row, context).then((message) => {
       if (byField.get(col.field) === run) byField.delete(col.field);
       this.keep(rowId, col, value, run.round, message);
       return message;
@@ -109,22 +110,22 @@ export class CellRules<T> {
     byField.set(col.field, { value, round, message, always });
   }
 
-  private async checkNow(col: GridColumn<T>, value: unknown, row: T): Promise<string> {
+  private async checkNow(col: GridColumn<T>, value: unknown, row: T, context: data.RowCheckContext<T>): Promise<string> {
     const rules = col.validationRules ?? [];
     let message = '';
     for (const rule of rules) {
       if (rule.type === 'async') continue;
-      message = await this.one(rule, value, row, col);
+      message = await this.one(rule, value, row, context, col);
       if (message) break;
     }
     if (!message) {
-      const found = await Promise.all(rules.filter((r) => r.type === 'async').map((r) => this.one(r, value, row, col)));
+      const found = await Promise.all(rules.filter((r) => r.type === 'async').map((r) => this.one(r, value, row, context, col)));
       message = found.find(Boolean) ?? '';
     }
     return message;
   }
 
-  private async one(rule: GridValidationRule<T>, value: unknown, row: T, col: GridColumn<T>): Promise<string> {
+  private async one(rule: GridValidationRule<T>, value: unknown, row: T, context: data.RowCheckContext<T>, col: GridColumn<T>): Promise<string> {
     const trims = (rule.type === 'required' || rule.type === 'stringLength') && rule.trim !== false;
     const shown = trims && typeof value === 'string' ? value.trim() : value;
     const empty = data.isEmpty(shown);
@@ -134,13 +135,13 @@ export class CellRules<T> {
       case 'numeric':
         return this.run(value, { type: 'custom', ignoreEmpty: false, check: isNumeric, message: this.message(rule, 'gridInvalidNumber') }, false);
       case 'range':
-        if (empty) return read(rule.message) ?? this.text('invalid');
+        if (empty) return readField(rule, 'message') ?? this.text('invalid');
         return this.run(value, { type: 'range', min: rule.min, max: rule.max, message: rule.message }, false);
       case 'stringLength':
         return this.run(textOf(shown), { type: 'length', min: rule.min, max: rule.max, message: rule.message }, false);
       case 'pattern': {
         const pattern = () => {
-          const p = read(rule.pattern);
+          const p = readField(rule, 'pattern');
           return typeof p === 'string' ? new RegExp(p) : p;
         };
         return this.run(textOf(value), { type: 'pattern', pattern, message: this.message(rule, 'invalidFormat') }, false);
@@ -149,14 +150,14 @@ export class CellRules<T> {
         return this.run(textOf(value), { type: 'email', message: this.message(rule, 'invalidEmail') }, false);
       case 'compare': {
         const same = COMPARE[rule.comparisonType ?? '=='] ?? COMPARE['=='];
-        return this.run(value, { type: 'custom', ignoreEmpty: false, check: (v) => same(v, rule.comparisonTarget(row)), message: this.message(rule, 'noMatch') }, false);
+        return this.run(value, { type: 'custom', ignoreEmpty: false, check: (v) => same(v, untracked(() => rule.comparisonTarget(row, context))), message: this.message(rule, 'noMatch') }, false);
       }
       case 'custom':
-        return this.run(value, { type: 'custom', ignoreEmpty: false, check: (v) => rule.validationCallback({ value: v, row, column: col, rule }), message: this.message(rule, 'invalid') }, false);
+        return this.run(value, { type: 'custom', ignoreEmpty: false, check: (v) => untracked(() => rule.validationCallback({ value: v, row, context, column: col, rule })), message: this.message(rule, 'invalid') }, false);
       case 'async': {
         const check = async (v: unknown) => {
           try {
-            const result = await rule.validationCallback({ value: v, row, column: col, rule });
+            const result = await untracked(() => rule.validationCallback({ value: v, row, context, column: col, rule }));
             if (result && typeof result === 'object') return result.isValid ? true : result.message || false;
             return result;
           } catch (error) {
@@ -170,7 +171,7 @@ export class CellRules<T> {
 
   /** The rule's own message, else the grid's text (its `texts`, then `uiLocale`). */
   private message(rule: GridValidationRule<T>, key: keyof UiStrings): () => string {
-    return () => read(rule.message) ?? this.text(key);
+    return () => readField(rule, 'message') ?? this.text(key);
   }
 
   private async run(value: unknown, rule: ValidationRule<any>, empty: boolean): Promise<string> {

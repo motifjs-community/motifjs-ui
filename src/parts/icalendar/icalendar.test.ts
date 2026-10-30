@@ -102,7 +102,8 @@ const EASTERN = [
   'END:VTIMEZONE',
 ];
 
-describe('parseICalendar: the examples of RFC 5545', () => {
+// Zones are worked out through Intl year by year, which takes a while when the other test files run too.
+describe('parseICalendar: the examples of RFC 5545', { timeout: 30_000 }, () => {
   it('reads the VEVENT examples of 3.6.1', () => {
     const read = parseICalendar(
       calendar(

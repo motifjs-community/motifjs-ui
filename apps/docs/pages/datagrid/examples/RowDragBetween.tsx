@@ -13,13 +13,19 @@ export default function RowDragBetween() {
     const add = (e: GridRowDropEventArgs<Task>) => {
       const at = e.toItemData ? rows().indexOf(e.toItemData) : rows().length;
       rows().splice(at, 0, e.itemData);
+      e.component.refresh();
     };
-    const remove = (e: GridRowDropEventArgs<Task>) => rows().splice(rows().indexOf(e.itemData), 1);
+    // The grids read the arrays as they are: each loads its own again after the change.
+    const remove = (e: GridRowDropEventArgs<Task>) => {
+      rows().splice(rows().indexOf(e.itemData), 1);
+      e.component.refresh();
+    };
     const reorder = (e: GridRowDropEventArgs<Task>) => {
       const from = rows().indexOf(e.itemData);
       const to = rows().indexOf(e.toItemData as Task);
       rows().splice(from, 1);
       rows().splice(to, 0, e.itemData);
+      e.component.refresh();
     };
     return (
       <DataGrid

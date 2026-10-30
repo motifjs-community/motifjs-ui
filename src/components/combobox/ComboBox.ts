@@ -1,5 +1,6 @@
-import { effect, Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import type { data } from '@motifx-community/data';
+import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
 import { chevronDown } from '../../core/glyphs';
 import type { IconSource } from '../../core/icon-source';
@@ -8,6 +9,7 @@ import { DataItems } from '../../parts/data/DataItems';
 import { Field } from '../../parts/field/Field';
 import type { ItemField } from '../../parts/list/item-field';
 import { OptionList } from '../../parts/list/OptionList';
+import { itemOwnValue } from '../../parts/list/item-own-value';
 import { readItemField } from '../../parts/list/read-item-field';
 import { Popup } from '../../parts/popup/Popup';
 import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
@@ -84,21 +86,13 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     this.observeProperty('searchMode', (mode) => (parts.items.searchMode = mode === 'startswith' ? 'startswith' : 'contains'));
     parts.items.textOf = (item) => this.itemText(item);
     parts.items.onChanged(() => this.itemsChanged());
-    // Items in memory are followed, a reactive array changing in place too.
-    const stopItems = effect(() => {
-      const items = this.getProperty<readonly T[] | undefined>('items') ?? [];
-      for (const item of items) this.itemText(item);
-      untracked(() => {
-        if (!this.peekProperty('dataSource')) parts.items.setArray(items);
-      });
+    // Items given anew are shown; items changed in place wait for `refresh`.
+    this.observeProperty<readonly T[] | undefined>('items', (items) => {
+      if (!this.peekProperty('dataSource')) parts.items.setArray(items ?? []);
     });
-    parts.stopLabels = effect(() => {
-      const strings = uiLocale.strings;
-      parts.arrow?.setAttribute('aria-label', strings.moreOptions);
-    });
+    parts.stopLabels = follow(this, 'labels', () => uiLocale.strings.moreOptions, (label) => parts.arrow?.setAttribute('aria-label', label));
     this.listen();
     this.motif.setDisposable(() => {
-      stopItems();
       parts.stopLabels?.();
       clearTimeout(parts.timer);
       parts.items.dispose();
@@ -267,6 +261,18 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     this.choose(undefined, null);
   }
 
+  /**
+   * Reads the items again after they were changed in place: the open list and the text of the value. Your items
+   * may be plain or reactive; the box reads them as they are.
+   */
+  override refresh(): void {
+    super.refresh();
+    const parts = this.comboParts;
+    if (parts.items.dataSource) this.itemsChanged();
+    else parts.items.setArray(this.peekProperty<readonly T[]>('items') ?? []);
+    if (!parts.editing) this.renderValue(this.peekValue());
+  }
+
   protected createControl(): HTMLElement {
     const input = document.createElement('input');
     input.type = 'text';
@@ -318,7 +324,7 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
   protected itemValue(item: T): unknown {
     const field = this.peekProperty<ItemField<T>>('valueField');
     if (field !== undefined) return readItemField(item, field, 'value');
-    return item !== null && typeof item === 'object' && 'value' in item ? (item as { value: unknown }).value : item;
+    return itemOwnValue(item);
   }
 
   /** The value of text that matches no item, with `acceptCustomValue`. */

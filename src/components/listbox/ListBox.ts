@@ -1,5 +1,6 @@
-import { effect, untracked, type Bind, type IBaseProp } from '@motifx/core';
+import { untracked, type Bind, type IBaseProp } from '@motifx/core';
 import type { data } from '@motifx-community/data';
+import { follow } from '../../core/follow';
 import { functionValue } from '../../core/function-value';
 import { checkMark, dashMark } from '../../core/glyphs';
 import type { IconSource } from '../../core/icon-source';
@@ -9,6 +10,7 @@ import { Field } from '../../parts/field/Field';
 import type { ItemField } from '../../parts/list/item-field';
 import type { OptionChosenEventArgs } from '../../parts/list/option-chosen-event-args';
 import { OptionList } from '../../parts/list/OptionList';
+import { itemOwnValue } from '../../parts/list/item-own-value';
 import { readItemField } from '../../parts/list/read-item-field';
 import { TextBox } from '../textbox/TextBox';
 import { allValues } from './all-values';
@@ -88,25 +90,17 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
       this.renderValue(this.peekValue());
     });
     for (const name of LOOK) this.observeProperty(name, () => this.drawList());
-    // Items in memory are followed, a reactive array changing in place too.
-    const stopItems = effect(() => {
-      const items = this.getProperty<readonly T[] | undefined>('items') ?? [];
-      for (const item of items) this.itemText(item);
-      untracked(() => {
-        if (!this.peekProperty('dataSource')) parts.items.setArray(items);
-      });
+    // Items given anew are shown; items changed in place wait for `refresh`.
+    this.observeProperty<readonly T[] | undefined>('items', (items) => {
+      if (!this.peekProperty('dataSource')) parts.items.setArray(items ?? []);
     });
-    const stopLocale = effect(() => {
-      void uiLocale.strings.selectAll;
-      untracked(() => this.drawList());
-    });
+    const stopLocale = follow(this, 'texts', () => uiLocale.strings.selectAll, () => this.drawList());
     parts.items.onChanged(() => this.drawList(false));
     this.listen();
     this.motif.on('x:built', () => this.placeSearch());
     parts.ready = true;
-    this.drawList();
+    untracked(() => this.drawList());
     this.motif.setDisposable(() => {
-      stopItems();
       stopLocale();
       clearTimeout(parts.timer);
       parts.items.dispose();
@@ -254,6 +248,20 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     this.commit(this.emptyValue());
   }
 
+  /**
+   * Reads the items again after they were changed in place: which there are, their texts and values, the chosen
+   * ones. Your items may be plain or reactive; the list reads them as they are.
+   */
+  override refresh(): void {
+    super.refresh();
+    const parts = this.listParts;
+    parts.known.clear();
+    if (!parts.items.dataSource) parts.items.setArray(this.peekProperty<readonly T[]>('items') ?? []);
+    this.drawList();
+    this.renderValue(this.peekValue());
+    this.setProperty('found', (this.peekProperty<number>('found') ?? 0) + 1);
+  }
+
   /** Scrolls an item into view and highlights it. */
   scrollToItem(item: T): void {
     const list = this.listParts.list;
@@ -295,7 +303,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
   protected itemValue(item: T): unknown {
     const field = this.peekProperty<ItemField<T>>('valueField');
     if (field !== undefined) return readItemField(item, field, 'value');
-    return item !== null && typeof item === 'object' && 'value' in item ? (item as { value: unknown }).value : item;
+    return itemOwnValue(item);
   }
 
   private get listParts(): Parts<T> {

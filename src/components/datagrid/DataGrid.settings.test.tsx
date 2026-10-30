@@ -87,6 +87,33 @@ describe('settings', () => {
     await grid.dispose();
   });
 
+  it('reads what it was given as functions over plain data again on reState: rows, settings, a column, the search', async () => {
+    const plain = { rows: [] as Row[], empty: 3, title: 'Name', search: '', items: [{ name: 'hello', text: 'Hello' }] as { name: string; text: string }[] };
+    const own: GridColumn<Row>[] = [columns[0], { field: 'name', title: () => plain.title }, columns[2]];
+    const grid = make({ rows: () => plain.rows, columns: own, settings: { emptyRows: () => plain.empty }, searchText: () => plain.search, toolbar: { items: () => plain.items } });
+    await settle();
+    const header = () => Array.from(grid.element.querySelectorAll('.mx-data-grid__header-cell')).map((c) => c.textContent);
+    expect(grid.element.style.getPropertyValue('--_empty-rows')).toBe('3');
+    const bar = () => [...grid.element.querySelectorAll('.mx-data-grid__toolbar button')].map((b) => b.textContent);
+    expect(bar()).toEqual(['Hello']);
+    Object.assign(plain, { empty: 6, title: 'Full name', items: [...plain.items, { name: 'more', text: 'More' }] });
+    await settle();
+    expect(grid.element.style.getPropertyValue('--_empty-rows')).toBe('3');
+    expect(bar()).toEqual(['Hello']);
+    grid.reState();
+    await settle();
+    expect(grid.element.style.getPropertyValue('--_empty-rows')).toBe('6');
+    expect(header().some((t) => t?.includes('Full name'))).toBe(true);
+    expect(bar()).toEqual(['Hello', 'More']);
+    plain.rows = makeRows(3);
+    plain.search = 'Name 2';
+    grid.reState();
+    await settle();
+    expect(grid.total).toBe(1);
+    expect(cellOf(grid, 0, 'name').textContent).toBe('Name 2');
+    await grid.dispose();
+  });
+
   it('marks a grid with no rows to show and gives it emptyRows of room, live', async () => {
     const s = reactive({ rows: [] as Row[] });
     const grid = make({ rows: () => s.rows });

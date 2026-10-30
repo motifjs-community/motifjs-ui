@@ -1,4 +1,7 @@
-import { effect, read, type Bind, type IBaseProp } from '@motifx/core';
+import type { Bind, IBaseProp } from '@motifx/core';
+import { follow } from '../../core/follow';
+import { givenField, givenList, givenValue } from '../../core/given-field';
+import type { ItemField } from '../../parts/list/item-field';
 import type { OptionList } from '../../parts/list/OptionList';
 import { readItemField } from '../../parts/list/read-item-field';
 import type { Popup } from '../../parts/popup/Popup';
@@ -53,6 +56,15 @@ export class Lookup<T = unknown, V = unknown> extends DropDown<T, V> {
     this.assignProperty('popupWidth', value);
   }
 
+  /**
+   * Reads the items and the columns again after they were changed in place. Your items and columns may be plain or
+   * reactive; the lookup reads them as they are.
+   */
+  override refresh(): void {
+    this.applyColumns();
+    super.refresh();
+  }
+
   protected override popupCreated(popup: Popup, list: OptionList<T>): void {
     const parts = this.lookupParts;
     const header = document.createElement('div');
@@ -61,13 +73,21 @@ export class Lookup<T = unknown, V = unknown> extends DropDown<T, V> {
     list.element.before(header);
     popup.element.classList.add('mx-lookup__popup');
     parts.header = header;
-    parts.stopHeader = effect(() => {
-      const columns = this.getProperty<readonly LookupColumn<T>[] | undefined>('columns') ?? [];
-      const shown = columns.length > 0 && this.getProperty<boolean | undefined>('showColumnHeaders') !== false;
-      const cells = columns.map((column) => this.cell(read(column.caption) ?? '', column));
-      header.hidden = !shown;
-      header.replaceChildren(...cells);
-    });
+    // The columns given and their own functions are followed; the list and the fields are not.
+    parts.stopHeader = follow(
+      this,
+      'header',
+      () => {
+        void this.getProperty('refreshed');
+        const columns = givenList(this.getProperty<readonly LookupColumn<T>[] | undefined>('columns'));
+        const shown = columns.length > 0 && this.getProperty<boolean | undefined>('showColumnHeaders') !== false;
+        return { shown, cells: columns.map((column) => this.cell(givenField<string | undefined>(column, 'caption') ?? '', column)) };
+      },
+      ({ shown, cells }) => {
+        header.hidden = !shown;
+        header.replaceChildren(...cells);
+      },
+    );
   }
 
   private get lookupParts(): Parts {
@@ -77,13 +97,13 @@ export class Lookup<T = unknown, V = unknown> extends DropDown<T, V> {
 
   /** The columns lay out every row (and the header) on one grid. */
   private applyColumns(): void {
-    const columns = this.peekProperty<readonly LookupColumn<T>[]>('columns') ?? [];
-    this.element.style.setProperty('--_columns', columns.map((c) => read(c.width) ?? '1fr').join(' '));
+    const columns = givenList(this.peekProperty<readonly LookupColumn<T>[]>('columns'));
+    this.element.style.setProperty('--_columns', columns.map((c) => givenField<string | undefined>(c, 'width') ?? '1fr').join(' '));
     this.element.toggleAttribute('data-columns', columns.length > 0);
     this.itemTemplate = columns.length
       ? (item: T, host: HTMLElement) => {
           host.classList.add('mx-lookup__row');
-          host.replaceChildren(...columns.map((column) => this.cell(String(readItemField(item, column.field, 'text') ?? ''), column)));
+          host.replaceChildren(...columns.map((column) => this.cell(String(readItemField(item, givenValue<ItemField<T>>(column, 'field'), 'text') ?? ''), column)));
         }
       : null;
   }
@@ -91,7 +111,7 @@ export class Lookup<T = unknown, V = unknown> extends DropDown<T, V> {
   private cell(text: string, column: LookupColumn<T>): HTMLSpanElement {
     const cell = document.createElement('span');
     cell.className = 'mx-lookup__cell';
-    cell.dataset.align = read(column.align) ?? 'start';
+    cell.dataset.align = givenField<string | undefined>(column, 'align') ?? 'start';
     cell.textContent = text;
     return cell;
   }

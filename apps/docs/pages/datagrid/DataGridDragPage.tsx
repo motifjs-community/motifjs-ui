@@ -53,7 +53,7 @@ const KEYS = [
 ];
 
 const RULES = [
-  ['The data', 'The grid moves nothing itself (as in the standard grid): `onReorder` and `onAdd` / `onRemove` move the row in your array or tell the server. Rows in memory given as a reactive array follow a `splice`; a server reloads with `refresh()`.'],
+  ['The data', 'The grid moves nothing itself (as in the standard grid): `onReorder` and `onAdd` / `onRemove` move the row in your array or tell the server. The grid reads your rows as they are, plain or reactive: after the move call `e.component.refresh()` (rows in memory and a server alike).'],
   ['Sorted, filtered, grouped', 'Rows can be dragged as they are shown; the indexes are the shown ones. A list the user orders by hand usually turns `sortable` off; while grouped the keys move a row within its group, and only data rows are dragged (not group rows, new rows or rows still loading).'],
   ['Virtual and paged', 'The rows under the pointer are the pooled rows drawn now; near the edges the rows scroll and the new ones take the marks. Paged, a row moves within its page; the indexes count across pages.'],
   ['Screen readers', 'The drag icon cell is named “Drag to move the row” with the keys in `aria-keyshortcuts`; drops and key moves are announced politely.'],

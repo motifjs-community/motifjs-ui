@@ -55,6 +55,22 @@ describe('Grid', () => {
     expect(wide.style.gridRowEnd).toBe('');
   });
 
+  it('reads the cell of a child given as a function over plain data again on reState', async () => {
+    const plain = { row: 1, column: 1 };
+    const grid = new Grid({ columns: 3 });
+    const host = page(grid);
+    const child = new Button({ text: 'Cell', row: () => plain.row, column: () => plain.column });
+    grid.controls.add(child);
+    await tick();
+    expect(child.element.style.gridRowStart).toBe('1');
+    Object.assign(plain, { row: 2, column: 3 });
+    await tick();
+    expect(child.element.style.gridRowStart).toBe('1');
+    host.reState();
+    expect(child.element.style.gridRowStart).toBe('2');
+    expect(child.element.style.gridColumnStart).toBe('3');
+  });
+
   it('places children added later and follows getter props', async () => {
     const s = reactive({ columns: 2 as number | string, row: 1 });
     const grid = new Grid({ columns: () => s.columns, flow: 'column dense', autoRows: 48, padding: 8 });

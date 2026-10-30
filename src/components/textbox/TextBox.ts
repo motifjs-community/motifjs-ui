@@ -1,5 +1,6 @@
-import { effect, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import type { InputMode } from '../../core/input-mode';
+import { follow } from '../../core/follow';
 import { eyeClosed, eyeOpen } from '../../core/glyphs';
 import { uiLocale } from '../../core/ui-locale';
 import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
@@ -374,7 +375,7 @@ export class TextBox extends Field<string, TextBoxProps> {
       button.type = 'button';
       button.className = 'mx-field__button mx-text-box__reveal';
       button.addEventListener('click', () => this.toggleReveal());
-      parts.stopRevealLabel = effect(() => button.setAttribute('aria-label', uiLocale.strings.showPassword));
+      parts.stopRevealLabel = follow(this, 'revealLabel', () => uiLocale.strings.showPassword, (label) => button.setAttribute('aria-label', label));
       this.area('tools').append(button);
       parts.reveal = button;
     }

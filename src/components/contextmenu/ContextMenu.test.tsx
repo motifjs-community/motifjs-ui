@@ -4,6 +4,8 @@ import { mountHost, tick } from '../../../tests/helpers';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
 import { attachContextMenu } from './attach-context-menu';
 import { ContextMenu } from './ContextMenu';
+import { dataKinds } from '../../../tests/data-kinds';
+import type { MenuItem } from '../../parts/menu/menu-item';
 
 let hosts: Component[] = [];
 
@@ -249,6 +251,22 @@ describe('ContextMenu', () => {
     expect(rightClick(b)).toBe(false);
   });
 
+  it('reads a target given as a function over plain data again on reState', async () => {
+    const plain = { second: false };
+    let a!: HTMLElement;
+    let b!: HTMLElement;
+    const menu = new ContextMenu({ items: [{ text: 'One' }], target: () => (plain.second ? b : a) });
+    const host = page(<div ref={(c: Component<HTMLElement>) => (a = c.element)} />, <div ref={(c: Component<HTMLElement>) => (b = c.element)} />, menu);
+    await settle();
+    expect(menu.target).toBe(a);
+    plain.second = true;
+    await settle();
+    expect(menu.target).toBe(a);
+    host.reState();
+    expect(menu.target).toBe(b);
+    expect(rightClick(b)).toBe(true);
+  });
+
   it('opens from code at a point or at an element', async () => {
     const menu = new ContextMenu({ items: [{ text: 'One' }] });
     page(<button class="go">Go</button>, menu);
@@ -276,5 +294,27 @@ describe('ContextMenu', () => {
     const fixed = attachContextMenu(ul, [{ text: 'Same' }]);
     expect(rightClick(ul)).toBe(true);
     fixed();
+  });
+
+  describe.each(dataKinds)('%s data', (_, make) => {
+    it('gives back the very items, and shows a change in place after refresh()', async () => {
+      const target = document.createElement('div');
+      target.tabIndex = 0;
+      document.body.append(target);
+      const list = make<MenuItem[]>([{ text: 'Copy' }, { text: 'Delete' }]);
+      const clicked: unknown[] = [];
+      const menu = new ContextMenu({ target, items: list, onItemClick: (e) => void clicked.push(e.item) });
+      page(menu);
+      await settle();
+      rightClick(target);
+      list[0].text = 'Copy link';
+      list.push({ text: 'Share' });
+      await settle();
+      expect(names(menu)).toEqual(['Copy', 'Delete']);
+      menu.refresh();
+      expect(names(menu)).toEqual(['Copy link', 'Delete', 'Share']);
+      items(menu)[2].click();
+      expect(clicked[0]).toBe(list[2]);
+    });
   });
 });

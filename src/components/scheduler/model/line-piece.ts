@@ -1,7 +1,8 @@
 /** An appointment in a row of a timeline, on its lane (stacked under the ones at the same time). Kept while it stays on screen. */
 export interface LinePiece<T> {
   id: string;
-  item: T;
+  /** Moves on when its appointment was read again (a refresh, an edit) or is another object: what shows it reads it again. The appointment itself is the model's `itemOf(piece)`. */
+  version: number;
   /** The row it is in (its group's index, -1 without groups). */
   group: number;
   /** The appointment's time (its box may show only part of it). */

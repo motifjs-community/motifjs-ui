@@ -12,6 +12,7 @@ import type { Occurrences } from './Occurrences';
 import type { SeriesPlan } from './series-plan';
 import type { SeriesScope } from './series-scope';
 import { toDate } from './to-date';
+import { givenField } from '../../../core/given-field';
 
 const DAY = 86_400_000;
 
@@ -54,7 +55,7 @@ export class SeriesEdit<T> {
     const next = this.copy(occurrence);
     const rule = this.options.occurrences.ruleOf(series)!;
     next[fields.recurrenceRule] = formatRecurrenceRule(this.rest(series, info, rule));
-    next[fields.recurrenceException] = filterRuleDates((series as Record<string, unknown>)[fields.recurrenceException], (d) => !this.before(d, info, series));
+    next[fields.recurrenceException] = filterRuleDates(givenField(series, fields.recurrenceException), (d) => !this.before(d, info, series));
     Object.assign(next, own);
     if (own[fields.recurrenceRule] === undefined) {
       const days = this.dayShift(occurrence, changes);
@@ -72,14 +73,14 @@ export class SeriesEdit<T> {
     if (scope === 'occurrence') return { add: [], update: [{ item: series, changes: this.leaveOut(series, info) }], remove: [] };
     if (scope === 'series') return { add: [], update: [], remove: [series, ...exceptions] };
     const start = this.options.fields().start;
-    const later = exceptions.filter((e) => (toDate((e as Record<string, unknown>)[start])?.getTime() ?? 0) >= info.start.getTime());
+    const later = exceptions.filter((e) => (toDate(givenField(e, start))?.getTime() ?? 0) >= info.start.getTime());
     return { add: [], update: [{ item: series, changes: this.ended(series, info, this.options.occurrences.ruleOf(series)!) }], remove: later };
   }
 
   // Inside.
 
   private allDay(item: T): boolean {
-    return !!(item as Record<string, unknown>)?.[this.options.fields().allDay];
+    return !!givenField(item, this.options.fields().allDay);
   }
 
   /** A wall clock time of a start or an end: an all-day one's by its fields, a timed one's on the series' clock. */
@@ -88,7 +89,7 @@ export class SeriesEdit<T> {
   }
 
   private isFirst(info: OccurrenceInfo<T>): boolean {
-    const start = toDate((info.series as Record<string, unknown>)[this.options.fields().start]);
+    const start = toDate(givenField(info.series, this.options.fields().start));
     if (!start) return true;
     return this.allDay(info.series) ? dayStart(start).getTime() === dayStart(info.start).getTime() : start.getTime() === info.start.getTime();
   }
@@ -109,12 +110,12 @@ export class SeriesEdit<T> {
 
   private leaveOut(series: T, info: OccurrenceInfo<T>): Partial<T> {
     const field = this.options.fields().recurrenceException;
-    return { [field]: addRuleDate((series as Record<string, unknown>)[field], this.dateOf(info)) } as Partial<T>;
+    return { [field]: addRuleDate(givenField(series, field), this.dateOf(info)) } as Partial<T>;
   }
 
   /** How many times the rule happens before an occurrence (they count, left out or not). */
   private countBefore(series: T, info: OccurrenceInfo<T>, rule: RecurrenceRule): number {
-    const start = toDate((series as Record<string, unknown>)[this.options.fields().start])!;
+    const start = toDate(givenField(series, this.options.fields().start))!;
     const allDay = this.allDay(series);
     const zone = this.options.occurrences.zoneOf(series);
     const first = this.wallOf(start, allDay, zone);
@@ -130,7 +131,7 @@ export class SeriesEdit<T> {
       ends.until = this.allDay(series)
         ? { time: TimeZone.wallOfLocal(dayStart(info.start)) - DAY, utc: false, dateOnly: true }
         : { time: info.start.getTime() - 1000, utc: true, dateOnly: false };
-    const exceptions = filterRuleDates((series as Record<string, unknown>)[fields.recurrenceException], (d) => this.before(d, info, series));
+    const exceptions = filterRuleDates(givenField(series, fields.recurrenceException), (d) => this.before(d, info, series));
     return { [fields.recurrenceRule]: formatRecurrenceRule(ends), [fields.recurrenceException]: exceptions } as Partial<T>;
   }
 
@@ -144,12 +145,11 @@ export class SeriesEdit<T> {
   private dayShift(occurrence: T, changes: Partial<T>): number {
     const fields = this.options.fields();
     const own = changes as Record<string, unknown>;
-    const record = occurrence as Record<string, unknown>;
-    const from = toDate(record[fields.start]);
-    const to = toDate(own[fields.start] ?? record[fields.start]);
+    const from = toDate(givenField(occurrence, fields.start));
+    const to = toDate(own[fields.start] ?? givenField(occurrence, fields.start));
     if (!from || !to) return 0;
     const zone = this.options.occurrences.zoneOf(occurrence);
-    const allDay = !!record[fields.allDay];
+    const allDay = !!givenField(occurrence, fields.allDay);
     const nowAllDay = own[fields.allDay] === undefined ? allDay : !!own[fields.allDay];
     return Math.floor(this.wallOf(to, nowAllDay, zone) / DAY) - Math.floor(this.wallOf(from, allDay, zone) / DAY);
   }
@@ -160,15 +160,14 @@ export class SeriesEdit<T> {
     const own = changes as Record<string, unknown>;
     const out: Record<string, unknown> = { ...own };
     if (own[fields.start] === undefined && own[fields.end] === undefined && own[fields.allDay] === undefined) return out as Partial<T>;
-    const record = occurrence as Record<string, unknown>;
     const zone = this.options.occurrences.zoneOf(series);
-    const wasAllDay = !!record[fields.allDay];
+    const wasAllDay = !!givenField(occurrence, fields.allDay);
     const allDay = own[fields.allDay] === undefined ? wasAllDay : !!own[fields.allDay];
-    const from = toDate(record[fields.start])!;
-    const start = toDate(own[fields.start] ?? record[fields.start])!;
-    const end = toDate(own[fields.end] ?? record[fields.end]) ?? start;
+    const from = toDate(givenField(occurrence, fields.start))!;
+    const start = toDate(own[fields.start] ?? givenField(occurrence, fields.start))!;
+    const end = toDate(own[fields.end] ?? givenField(occurrence, fields.end)) ?? start;
     const shift = this.wallOf(start, allDay, zone) - this.wallOf(from, wasAllDay, zone);
-    const seriesStart = toDate((series as Record<string, unknown>)[fields.start])!;
+    const seriesStart = toDate(givenField(series, fields.start))!;
     const first = this.wallOf(seriesStart, this.allDay(series), zone) + shift;
     out[fields.start] = allDay ? TimeZone.localOfWall(first) : zone.date(first);
     out[fields.end] = allDay

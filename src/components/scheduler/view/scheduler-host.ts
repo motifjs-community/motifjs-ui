@@ -56,11 +56,13 @@ export interface SchedulerHost<T> {
   appointmentKey(piece: AnyPiece<T>, e: KeyboardEvent): void;
   appointmentPointerDown(piece: AnyPiece<T>, mode: DragMode, e: PointerEvent): void;
   /** Focus left an appointment: a move by the keys goes back (not when it goes to another box of the same appointment). */
-  appointmentBlur(piece: AnyPiece<T>, e: FocusEvent): void;
+  appointmentBlur(item: T, e: FocusEvent): void;
   /** A finger lifted this appointment last: it shows its handles. */
   touchSelected(item: T): boolean;
   /** The appointment being moved was lifted by a finger. */
   liftedByTouch(): boolean;
+  /** Keeps how a part drawn by hand draws itself, to draw it again when an option or a text it shows changes; returns what forgets it. */
+  keepDrawn(draw: () => void): () => void;
   canDrag(item: T): boolean;
   canResize(item: T): boolean;
   isSaving(item: T): boolean;

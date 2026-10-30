@@ -1,4 +1,4 @@
-import { Emitter, read, type Event as MotifEvent, type IDisposable } from '@motifx/core';
+import { Emitter, untracked, type Event as MotifEvent, type IDisposable } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { KeyedItems } from '../../../parts/data/KeyedItems';
 import type { TextSearch } from '../../../parts/data/text-search';
@@ -6,6 +6,9 @@ import type { GridColumn } from '../grid-column';
 import type { EditorValue } from '../view/editor-value';
 import { cellValue } from './cell-value';
 import type { LookupCell } from './lookup-cell';
+import { givenField } from '../../../core/given-field';
+import { nothingEntered } from './nothing-entered';
+import { readField } from './read-field';
 
 /**
  * The texts of the grid's lookup columns: a cell's key turned into the text of its item, through the
@@ -32,7 +35,7 @@ export class LookupTexts<T> {
   items(col: GridColumn<T>): KeyedItems<any> | null {
     const lookup = col.lookup;
     if (!lookup) return null;
-    const source = read(lookup.dataSource);
+    const source = readField(lookup, 'dataSource');
     if (!source) return null;
     const items = KeyedItems.of<any>(source, lookup.valueField);
     if (lookup.resolve) items.resolve = lookup.resolve;
@@ -46,19 +49,20 @@ export class LookupTexts<T> {
   /** The text of an item: `textField`, else its `text`, else its value. */
   textOf(col: GridColumn<T>, item: unknown): string {
     const field = col.lookup?.textField;
-    if (typeof field === 'function') return String(field(item) ?? '');
-    if (field) return String(data.getField(item, field) ?? '');
-    if (item !== null && typeof item === 'object' && 'text' in item) return String(read((item as { text: unknown }).text as () => unknown) ?? '');
+    if (typeof field === 'function') return String(untracked(() => field(item)) ?? '');
+    if (field) return String(untracked(() => data.getField(item, field)) ?? '');
+    if (item !== null && typeof item === 'object' && 'text' in item) return String(givenField(item, 'text') ?? '');
     const items = this.items(col);
     const value = items ? items.valueOf(item) : item;
     return value === null || value === undefined ? '' : String(value);
   }
 
-  /** How the column's items are searched by text. */
-  search(col: GridColumn<T>, row: T | null = null): TextSearch<any> {
+  /** How the column's items are searched by text; `entered` holds the values entered in the row. */
+  search(col: GridColumn<T>, row: T | null = null, entered: data.RowCheckContext<T> = nothingEntered(row)): TextSearch<any> {
     const lookup = col.lookup!;
     const fields = lookup.searchFields ?? (typeof lookup.textField === 'string' ? [lookup.textField] : []);
-    return { textOf: (item) => this.textOf(col, item), searchFields: fields, filter: lookup.filter?.(row) ?? null, locale: this.locale() };
+    const filter = lookup.filter ? untracked(() => lookup.filter!(row, entered)) : null;
+    return { textOf: (item) => this.textOf(col, item), searchFields: fields, filter: filter ?? null, locale: this.locale() };
   }
 
   /**
@@ -71,7 +75,8 @@ export class LookupTexts<T> {
     const chosen = this.chosen.get(col.field)?.get(KeyedItems.keyString(value));
     if (chosen !== undefined) return { text: chosen, state: 'found' };
     if (col.textFrom && !edited) {
-      const text = typeof col.textFrom === 'function' ? col.textFrom(row) : data.getField(row, col.textFrom);
+      const from = col.textFrom;
+      const text = untracked(() => (typeof from === 'function' ? from(row) : data.getField(row, from)));
       return { text: text === null || text === undefined ? '' : String(text), state: 'found' };
     }
     return this.keyText(col, value, ask);
@@ -120,15 +125,15 @@ export class LookupTexts<T> {
     return known?.state === 'missing' && !known.failed;
   }
 
-  /** Asks for the keys of the given rows (the unsaved edits left aside) in the lookup columns; resolves when all of them are known. */
-  async load(cols: readonly GridColumn<T>[], rows: readonly T[]): Promise<void> {
+  /** Asks for the keys of the given rows in the lookup columns (as `valueOf` reads them: by default the unsaved edits left aside); resolves when all of them are known. */
+  async load(cols: readonly GridColumn<T>[], rows: readonly T[], valueOf: (row: T, col: GridColumn<T>) => unknown = (row, col) => cellValue(col, row)): Promise<void> {
     const waits: Promise<void>[] = [];
     for (const col of cols) {
       const items = this.items(col);
       if (!items) continue;
       const keys = new Set<unknown>();
       for (const row of rows) {
-        const value = cellValue(col, row);
+        const value = valueOf(row, col);
         if (!data.isEmpty(value)) keys.add(value);
       }
       waits.push(items.request(keys));
@@ -140,12 +145,12 @@ export class LookupTexts<T> {
    * A pasted or typed text read as a key: the one item whose text it is (case aside), among the items
    * known, else asked from the source. None, or several, is a message.
    */
-  parse(col: GridColumn<T>, text: string, row: T | null, messages: { none: string; several: string }): EditorValue | Promise<EditorValue> {
+  parse(col: GridColumn<T>, text: string, row: T | null, entered: data.RowCheckContext<T>, messages: { none: string; several: string }): EditorValue | Promise<EditorValue> {
     const plain = text.trim();
     if (!plain) return { ok: true, value: null };
     const items = this.items(col);
     if (!items) return { ok: false, message: messages.none };
-    const search = this.search(col, row);
+    const search = this.search(col, row, entered);
     const pick = (found: unknown[]): EditorValue => {
       if (found.length !== 1) return { ok: false, message: found.length ? messages.several : messages.none };
       const value = items.valueOf(found[0]);
@@ -182,7 +187,7 @@ export class LookupTexts<T> {
 
   /** Rows in memory sort this lookup column by the text shown: every key of the rows must be known first. */
   sortsByText(col: GridColumn<T>): boolean {
-    return !!col.lookup && !col.sortField && !col.textFrom && read(col.lookup.sortBy) === 'text';
+    return !!col.lookup && !col.sortField && !col.textFrom && readField(col.lookup, 'sortBy') === 'text';
   }
 
   /** The field a server sorts by for this column: `sortField`, the field of `textFrom`, else the column's own. */

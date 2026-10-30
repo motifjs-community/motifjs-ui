@@ -48,7 +48,8 @@ export default async function ({ page, base, check, axeSource, box }) {
     await page.waitForTimeout(150);
     marks.push(
       await recurring.evaluate((el, i) => {
-        const found = [...el.querySelectorAll('.mx-scheduler__mark')];
+        // A box that is not of a series keeps its mark hidden.
+        const found = [...el.querySelectorAll('.mx-scheduler__mark:not([hidden])')];
         const drawn = found.filter((m) => getComputedStyle(m).display !== 'none' && m.getBoundingClientRect().width > 0);
         // Drawn ones: a glyph, centred on the first line of the box's text.
         const off = drawn.map((m) => {

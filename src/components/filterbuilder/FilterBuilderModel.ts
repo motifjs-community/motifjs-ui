@@ -1,6 +1,7 @@
-import { reactive, read, untracked } from '@motifx/core';
+import { reactive, untracked } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { fillTemplate } from '../../core/fill-template';
+import { givenField, givenList, givenValue } from '../../core/given-field';
 import { pageLocale } from '../../core/page-locale';
 import { uiLocale } from '../../core/ui-locale';
 import type { UiStrings } from '../../core/ui-strings';
@@ -13,6 +14,7 @@ import type { FilterBuilderDataType } from './filter-builder-data-type';
 import type { FilterBuilderField } from './filter-builder-field';
 import type { FilterBuilderGroup } from './filter-builder-group';
 import type { FilterBuilderGroupOperation } from './filter-builder-group-operation';
+import type { FilterBuilderLookup } from './filter-builder-lookup';
 import type { FilterBuilderItem } from './filter-builder-item';
 import type { FilterBuilderModelOptions } from './filter-builder-model-options';
 import type { FilterBuilderOperation } from './filter-builder-operation';
@@ -79,7 +81,7 @@ export class FilterBuilderModel {
   constructor(private readonly options: () => FilterBuilderModelOptions) {}
 
   text(key: keyof UiStrings, values?: Record<string, unknown>): string {
-    const t = this.options().texts?.[key] ?? uiLocale.strings[key];
+    const t = givenValue<string | undefined>(this.options().texts, key) ?? uiLocale.strings[key];
     return values ? fillTemplate(t, values) : t;
   }
 
@@ -88,11 +90,11 @@ export class FilterBuilderModel {
   }
 
   fields(): readonly FilterBuilderField[] {
-    return this.options().fields ?? [];
+    return givenList(this.options().fields);
   }
 
   field(dataField: string): FilterBuilderField | undefined {
-    return this.fields().find((f) => f.dataField === dataField);
+    return this.fields().find((f) => givenValue(f, 'dataField') === dataField);
   }
 
   /** A field the builder does not know still reads: a plain text field of that name. */
@@ -102,24 +104,24 @@ export class FilterBuilderModel {
 
   caption(dataField: string): string {
     const field = this.field(dataField);
-    return (field && read(field.caption)) || words(dataField);
+    return (field && givenField<string | undefined>(field, 'caption')) || words(dataField);
   }
 
   dataType(field: FilterBuilderField): FilterBuilderDataType {
-    return read(field.dataType) ?? 'string';
+    return givenField<FilterBuilderDataType | undefined>(field, 'dataType') ?? 'string';
   }
 
   customOperations(): readonly FilterBuilderCustomOperation[] {
-    return this.options().customOperations ?? [];
+    return givenList(this.options().customOperations);
   }
 
   customOperation(name: FilterBuilderOperation): FilterBuilderCustomOperation | undefined {
-    return this.customOperations().find((op) => op.name === name);
+    return this.customOperations().find((op) => givenValue(op, 'name') === name);
   }
 
   groupOperations(): readonly FilterBuilderGroupOperation[] {
-    const own = this.options().groupOperations;
-    return own?.length ? own : GROUP_OPS;
+    const own = givenList(this.options().groupOperations);
+    return own.length ? own : GROUP_OPS;
   }
 
   maxGroupLevel(): number | null {
@@ -129,8 +131,8 @@ export class FilterBuilderModel {
 
   /** The operations a field offers, in order: its own `filterOperations`, else by its type and the custom operations for that type. */
   operations(field: FilterBuilderField): FilterBuilderOperation[] {
-    const own = read(field.filterOperations);
-    const list = own?.length ? own : this.typeOperations(field);
+    const own = givenList(givenField<readonly FilterBuilderOperation[] | undefined>(field, 'filterOperations'));
+    const list = own.length ? own : this.typeOperations(field);
     const out: FilterBuilderOperation[] = [];
     for (const op of list) {
       const name = ALIASES[op] ?? op;
@@ -142,25 +144,26 @@ export class FilterBuilderModel {
   /** The operations of a field's type, with the custom operations for that type: what a field without `filterOperations` offers. */
   typeOperations(field: FilterBuilderField): FilterBuilderOperation[] {
     const type = this.dataType(field);
-    return [...defaultOperations(type, !!field.lookup), ...this.customOperations().filter((op) => op.dataTypes?.includes(type)).map((op) => op.name)];
+    const custom = this.customOperations().filter((op) => givenList(givenValue<readonly FilterBuilderDataType[] | undefined>(op, 'dataTypes')).includes(type));
+    return [...defaultOperations(type, !!givenValue(field, 'lookup')), ...custom.map((op) => givenValue<string>(op, 'name'))];
   }
 
   defaultOperation(field: FilterBuilderField): FilterBuilderOperation {
     const ops = this.operations(field);
-    const own = read(field.defaultOperation);
+    const own = givenField<FilterBuilderOperation | undefined>(field, 'defaultOperation');
     const name = own ? (ALIASES[own] ?? own) : undefined;
     return name && ops.includes(name) ? name : (ops[0] ?? '=');
   }
 
   hasValue(op: FilterBuilderOperation): boolean {
     const custom = this.customOperation(op);
-    if (custom) return custom.hasValue !== false;
+    if (custom) return givenValue(custom, 'hasValue') !== false;
     return op !== 'isblank' && op !== 'isnotblank';
   }
 
   operationText(op: FilterBuilderOperation): string {
     const custom = this.customOperation(op);
-    if (custom) return read(custom.caption);
+    if (custom) return givenField<string>(custom, 'caption');
     const key = OPERATION_TEXTS[op as data.FilterOperator];
     return key ? this.text(key) : op;
   }
@@ -179,7 +182,7 @@ export class FilterBuilderModel {
   newCondition(dataField?: string): FilterBuilderCondition | null {
     const field = dataField ? this.field(dataField) : this.fields()[0];
     if (!field) return null;
-    return { kind: 'condition', field: field.dataField, operation: this.defaultOperation(field), value: undefined, parent: null };
+    return { kind: 'condition', field: givenValue<string>(field, 'dataField'), operation: this.defaultOperation(field), value: undefined, parent: null };
   }
 
   /** How deep an item sits: the root is 0. */
@@ -245,8 +248,9 @@ export class FilterBuilderModel {
     if (!this.isComplete(c)) return null;
     const custom = this.customOperation(c.operation);
     if (custom) {
-      const e = custom.calculateFilterExpression(c.value, this.fieldOrPlain(c.field));
-      if (e && typeof e === 'object') written.set(e, { name: custom.name, field: c.field, value: c.value });
+      const calculate = givenValue<FilterBuilderCustomOperation['calculateFilterExpression']>(custom, 'calculateFilterExpression');
+      const e = calculate(c.value, this.fieldOrPlain(c.field));
+      if (e && typeof e === 'object') written.set(e, { name: givenValue<string>(custom, 'name'), field: c.field, value: c.value });
       return e ?? null;
     }
     const op = c.operation as data.FilterOperator;
@@ -286,8 +290,8 @@ export class FilterBuilderModel {
     const known = written.get(e);
     if (known && this.customOperation(known.name)) return known;
     for (const op of this.customOperations()) {
-      const found = op.readFilterExpression?.(e);
-      if (found) return { name: op.name, field: found.field, value: found.value };
+      const found = givenValue<FilterBuilderCustomOperation['readFilterExpression']>(op, 'readFilterExpression')?.(e);
+      if (found) return { name: givenValue<string>(op, 'name'), field: found.field, value: found.value };
     }
     return null;
   }
@@ -298,7 +302,8 @@ export class FilterBuilderModel {
   formatValue(field: FilterBuilderField, value: unknown, operation?: FilterBuilderOperation): string {
     const valueText = this.plainText(field, value);
     const custom = operation ? this.customOperation(operation) : undefined;
-    const customize = custom?.customizeText ?? field.customizeText;
+    const customize =
+      givenValue<FilterBuilderField['customizeText']>(custom, 'customizeText') ?? givenValue<FilterBuilderField['customizeText']>(field, 'customizeText');
     return customize ? customize({ value, valueText, field }) : valueText;
   }
 
@@ -345,10 +350,11 @@ export class FilterBuilderModel {
 
   private plainText(field: FilterBuilderField, v: unknown): string {
     if (empty(v)) return '';
-    if (typeof field.format === 'function') return field.format(v);
-    if (field.lookup) return this.lookupText(field, v);
+    const given = givenValue<FilterBuilderField['format']>(field, 'format');
+    if (typeof given === 'function') return given(v);
+    if (givenValue(field, 'lookup')) return this.lookupText(field, v);
     const type = this.dataType(field);
-    const format = field.format as Intl.NumberFormatOptions & Intl.DateTimeFormatOptions | undefined;
+    const format = given as Intl.NumberFormatOptions & Intl.DateTimeFormatOptions | undefined;
     switch (type) {
       case 'number':
         return typeof v === 'number' ? new Intl.NumberFormat(this.locale, format).format(v) : String(v);
@@ -360,7 +366,9 @@ export class FilterBuilderModel {
         return new Intl.DateTimeFormat(this.locale, options as Intl.DateTimeFormatOptions).format(d);
       }
       case 'boolean':
-        return v ? read(field.trueText) || this.text('filterBuilderTrue') : read(field.falseText) || this.text('filterBuilderFalse');
+        return v
+          ? givenField<string | undefined>(field, 'trueText') || this.text('filterBuilderTrue')
+          : givenField<string | undefined>(field, 'falseText') || this.text('filterBuilderFalse');
       default:
         return String(v);
     }
@@ -368,18 +376,19 @@ export class FilterBuilderModel {
 
   /** A lookup value's text; one not known yet is asked for, and the texts are drawn again when it comes. */
   private lookupText(field: FilterBuilderField, v: unknown): string {
-    const lookup = field.lookup!;
-    const source = read(lookup.dataSource);
+    const lookup = givenValue<FilterBuilderLookup>(field, 'lookup');
+    const source = givenField<data.DataSource<any, any> | readonly unknown[] | undefined>(lookup, 'dataSource');
     if (!source) return String(v);
     void this.state.texts;
-    const items = KeyedItems.of<unknown>(source, lookup.valueField);
+    const items = KeyedItems.of<unknown>(source, givenValue<string | undefined>(lookup, 'valueField'));
     const known = items.get(v);
     if (!known) {
       void items.request([v]).then(() => untracked(() => this.state.texts++));
       return String(v);
     }
     if (known.state !== 'found') return known.text ?? String(v);
-    const text = typeof lookup.textField === 'function' ? lookup.textField(known.item) : readItemField(known.item, lookup.textField, 'text');
+    const textField = givenValue<FilterBuilderLookup['textField']>(lookup, 'textField');
+    const text = typeof textField === 'function' ? untracked(() => textField(known.item)) : readItemField(known.item, textField, 'text');
     return empty(text) ? String(v) : String(text);
   }
 }

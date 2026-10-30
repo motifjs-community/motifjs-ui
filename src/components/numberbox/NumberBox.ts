@@ -1,4 +1,5 @@
-import { effect, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { follow } from '../../core/follow';
 import { chevronDown, chevronUp, dashMark, plusMark } from '../../core/glyphs';
 import { LanguageLook } from '../../core/language-look';
 import { uiLocale } from '../../core/ui-locale';
@@ -88,6 +89,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
 
     for (const name of ['min', 'max'] as const) this.observeProperty(name, () => this.renderRange());
     for (const name of SHOWN) this.observeProperty(name, () => this.renderShown());
+    this.observeProperty('decimals', () => this.roundStored());
     this.observeProperty('showSpinButtons', () => this.renderSpin());
     this.observeProperty('spinLayout', () => this.renderSpin());
     this.observeProperty<boolean>('wheel', (on) => this.renderWheel(!!on));
@@ -268,7 +270,20 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
   protected override normalizeValue(value: number | null): number | null {
     if (value === null || value === undefined || (value as unknown) === '') return null;
     const n = typeof value === 'number' ? value : Number(value);
-    return Number.isFinite(n) ? n : null;
+    if (!Number.isFinite(n)) return null;
+    // The value has the decimals asked for, wherever it comes from.
+    const decimals = finite(this.peekProperty('decimals'));
+    return decimals === null ? n : roundDecimal(n, Math.max(0, decimals));
+  }
+
+  /** `decimals` changed: the value takes it, and `x-model` gets the rounded value. */
+  private roundStored(): void {
+    const stored = this.peekProperty<number | null>('value');
+    if (typeof stored !== 'number') return;
+    const next = this.normalizeValue(stored);
+    if (next === stored) return;
+    this.changeProperty('value', next);
+    this.writeBack(next);
   }
 
   protected renderValue(value: number | null): void {
@@ -337,8 +352,12 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     if (parts.formatter && parts.formatKey === key) return parts.formatter;
     const options: Intl.NumberFormatOptions = { ...format };
     if (options.maximumFractionDigits === undefined && options.maximumSignificantDigits === undefined) {
-      if (decimals !== null) options.maximumFractionDigits = Math.min(20, Math.max(0, decimals));
-      else if (options.style !== 'currency') options.maximumFractionDigits = 20;
+      if (decimals !== null) {
+        const digits = Math.min(20, Math.max(0, decimals));
+        options.maximumFractionDigits = digits;
+        // While it is not edited the number shows that many digits: 72.50.
+        if (options.minimumFractionDigits === undefined) options.minimumFractionDigits = digits;
+      } else if (options.style !== 'currency') options.maximumFractionDigits = 20;
     }
     let formatter: Intl.NumberFormat;
     try {
@@ -578,7 +597,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     if (!show) {
       this.stopRepeat();
       parts.stopSpinLabels?.();
-      parts.spin?.remove();
+      if (parts.spin) this.removeArea('actions');
       parts.spin = parts.up = parts.down = parts.stopSpinLabels = null;
       return;
     }
@@ -588,9 +607,9 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
       parts.up = this.spinButton(1);
       parts.down = this.spinButton(-1);
       const { up, down } = parts;
-      parts.stopSpinLabels = effect(() => {
-        up.setAttribute('aria-label', uiLocale.strings.increase);
-        down.setAttribute('aria-label', uiLocale.strings.decrease);
+      parts.stopSpinLabels = follow(this, 'spinLabels', () => uiLocale.strings, (strings) => {
+        up.setAttribute('aria-label', strings.increase);
+        down.setAttribute('aria-label', strings.decrease);
       });
     }
     const { spin, up, down } = parts as { spin: HTMLSpanElement; up: HTMLButtonElement; down: HTMLButtonElement };

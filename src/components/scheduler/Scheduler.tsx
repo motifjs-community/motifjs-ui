@@ -1,8 +1,13 @@
-import { effect, Emitter, reactive, read, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Component, Emitter, read, untracked, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import type { data } from '@motifx-community/data';
 import { Control } from '../../core/control';
+import { follow } from '../../core/follow';
+import { every } from '../../core/every';
 import { deepActiveElement } from '../../core/focus';
 import { fillTemplate } from '../../core/fill-template';
+import { givenField, givenList, givenValue } from '../../core/given-field';
+import { later } from '../../core/later';
+import { nextFrame } from '../../core/next-frame';
 import { calendarMark, chevronEnd, chevronStart } from '../../core/glyphs';
 import { ResizeWatch } from '../../core/resize-watch';
 import { onLookChanged } from '../../core/look-watch';
@@ -19,6 +24,8 @@ import { Button } from '../button/Button';
 import { Calendar } from '../calendar/Calendar';
 import { Spinner } from '../progress/Spinner';
 import { Toolbar } from '../toolbar/Toolbar';
+import { flag, put, shown, text } from './view/draw-parts';
+import { KeyedParts } from './view/KeyedParts';
 import type { AppointmentAddedEventArgs } from './appointment-added-event-args';
 import type { AppointmentAddingEventArgs } from './appointment-adding-event-args';
 import type { AppointmentClickEventArgs } from './appointment-click-event-args';
@@ -54,7 +61,7 @@ import type { OverlapMode } from './model/overlap-mode';
 import type { ResolvedView } from './model/resolved-view';
 import { Resources } from './model/Resources';
 import { sameValue } from './model/same-value';
-import { SchedulerModel } from './model/SchedulerModel';
+import { SchedulerModel, type ModelChange, type ModelStep } from './model/SchedulerModel';
 import { rangeFilter } from './model/range-filter';
 import type { SeriesScope } from './model/series-scope';
 import { stepDate, viewDates } from './model/view-dates';
@@ -165,6 +172,39 @@ const OWN = [
   'timeZoom',
 ] as const;
 
+/**
+ * The props the model works from, and the step a change of each starts at (the steps after it run
+ * too): the model follows nothing, a prop's change is said here.
+ */
+const MODEL_STEPS: Partial<Record<(typeof OWN)[number], ModelStep>> = {
+  views: 'groups',
+  currentView: 'groups',
+  startDayHour: 'groups',
+  endDayHour: 'groups',
+  cellDuration: 'groups',
+  allDayPanel: 'groups',
+  maxAppointmentsPerCell: 'groups',
+  agendaDuration: 'groups',
+  scrolling: 'groups',
+  groups: 'groups',
+  groupByDate: 'groups',
+  workDays: 'groups',
+  workStartHour: 'groups',
+  workEndHour: 'groups',
+  firstDayOfWeek: 'groups',
+  isHoliday: 'groups',
+  timeZone: 'groups',
+  phoneView: 'groups',
+  tabletView: 'groups',
+  currentDate: 'days',
+  blockedTimes: 'blocks',
+  appointments: 'collect',
+  dataSource: 'collect',
+  fields: 'collect',
+  overlapMode: 'layout',
+  allDayLines: 'layout',
+};
+
 /** How far two fingers zoom the time scale, out and in. */
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 4;
@@ -245,18 +285,34 @@ const DEFAULT_VIEWS: readonly SchedulerViewType[] = ['day', 'week', 'workWeek', 
 
 const PARTS = Symbol('mx.scheduler');
 
+/** The root's parts drawn by hand: the bar's buttons and the content's states. */
+interface RootParts {
+  today: Button;
+  todayIcon: Button;
+  previous: Button;
+  next: Button;
+  title: Button;
+  viewMenu: Button;
+  views: KeyedParts<SchedulerView & { name: string }, Button>;
+  loading: Component<HTMLDivElement>;
+  spinner: Spinner;
+  failed: Component<HTMLDivElement>;
+  failedText: HTMLElement;
+  retry: Button;
+}
+
 interface Parts<T> {
   model: SchedulerModel<T>;
   resources: Resources;
   format: SchedulerFormat;
   host: SchedulerHost<T>;
-  /** Changes of the rows (the data source's, or the array's in place) to read them again; the draft; the appointments being saved. */
+  /** How each part drawn by hand (an appointment box, a head cell) draws itself: called again when an option it shows changes. */
+  drawn: Set<() => void>;
+  /** The data source's status; the appointments being saved. */
   version: {
-    rows: number;
     status: string;
     monthRoom: number;
     said: string;
-    draft: Draft<T> | null;
     saving: string[];
     /** A timeline row's sizes in pixels, measured by the timeline view. */
     lines: { lane: number; gap: number; min: number };
@@ -272,18 +328,36 @@ interface Parts<T> {
     /** The size of the bar's buttons as on a phone, as the design language says (`phone-bar-size`). */
     phoneBarSize: 'sm' | 'md' | 'lg';
   };
+  /** The appointment being moved or resized, where it would go: in a signal, so the appointment in it stays the object it is. */
+  draft: { value: Draft<T> | null };
   store: AppointmentStore<T>;
   editor: AppointmentEditor<T>;
   drag: AppointmentDrag<T>;
   events: EditorEvents<T>;
-  more: MoreListState<T>;
+  more: { value: MoreListState<T> };
   morePopup: Popup | null;
+  /** What the "+N more" popup shows now, what its template is given, and what a choice in it does. */
+  moreContent: ComponentBase | null;
+  moreContext: MoreListContext<T> | null;
+  moreChoose: ((item: T, event: MouseEvent) => void) | null;
   picker: Calendar | null;
   title: Button | null;
   scroller: HTMLElement | null;
   timeline: TimelineScroll | null;
-  /** The agenda's focused row, by its piece's id. */
-  agendaFocus: { id: string };
+  /** The agenda's focused row, by its piece's id; `drawn` draws the agenda again after it moved. */
+  agendaFocus: { id: string; drawn: () => void };
+  /** The parts drawn by hand by name: the bar, the content (the view in it), the view shown, the swipe's edge, the spoken text. */
+  bar: Toolbar | null;
+  content: ComponentBase | null;
+  viewNow: (ComponentBase & { draw(): void }) | null;
+  /** The kind of view shown, and the root's parts drawn by hand. */
+  viewKind: string;
+  root: RootParts | null;
+  swipeEdge: ComponentBase | null;
+  live: ComponentBase | null;
+  /** The filter last given to the data source, and what the content was last told for. */
+  lastFilter: string;
+  lastContent: string;
   /** The view whose hours were scrolled to last, so a new date does not scroll again. */
   scrolledFor: string;
   /** A press is selecting cells. */
@@ -295,6 +369,8 @@ interface Parts<T> {
   stopSource: (() => void) | null;
   stopKeys: (() => void)[];
   lastSelection: string;
+  /** The selection is told once the moves of this turn are done. */
+  selectionQueued: boolean;
   viewChanging: Emitter<ViewChangingEventArgs<T>>;
   viewChanged: Emitter<ViewChangedEventArgs<T>>;
   dateChanging: Emitter<DateChangingEventArgs<T>>;
@@ -330,8 +406,10 @@ interface Parts<T> {
 
 /**
  * A scheduler: appointments over days and hours, in day, week, work week and month views. The
- * appointments come from an array (a reactive one is followed) or a `DataSource`; the fields it
- * reads are options. It moves by day, week or month (today, previous, next, a date chosen from a
+ * appointments come from an array or a `DataSource`; the fields it reads are options. The array
+ * and the appointments may be plain or reactive: they are read as they are, the objects handed
+ * back are the ones given, and a change made in place shows after `refresh()` (its own edits and
+ * the data source's changes show at once). It moves by day, week or month (today, previous, next, a date chosen from a
  * calendar), selects cells with the pointer and the keyboard, places appointments at the same
  * time side by side, shows all-day and multi-day ones as bars, and what does not fit a month day
  * as "+N more". Resources colour the appointments and split the columns into groups (nested, or
@@ -818,12 +896,40 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
   /** The appointments in the days shown, in time order. Reactive. */
   get shownAppointments(): readonly T[] {
-    return this.parts.model.state.shown;
+    return this.parts.model.shown();
   }
   /** Whether the data source is loading. Reactive. */
   get loading(): boolean {
-    void this.parts.version.status;
     return this.dataSource?.status === 'loading';
+  }
+
+  /** The data source's status: the content shows loading or a failure. */
+  private setStatus(status: string): void {
+    const version = this.parts.version;
+    if (version.status === status) return;
+    version.status = status as typeof version.status;
+    this.drawStates();
+  }
+
+  /** The appointment a finger selected ('' for none): its box shows its handles. */
+  private setTouchSelected(id: string): void {
+    const version = this.parts.version;
+    if (version.touchSelected === id) return;
+    version.touchSelected = id;
+    this.drawAgain();
+  }
+
+  /** A swipe between dates: the content follows the finger and the edge shows what comes. */
+  private drawSwipe(x: number | null, next: boolean, ready: boolean): void {
+    const parts = this.parts;
+    Object.assign(parts.version.swipe, { active: x !== null, x: x ?? 0, next, ready });
+    const content = parts.content?.element as HTMLElement | undefined;
+    if (content) {
+      content.toggleAttribute('data-swiping', x !== null);
+      if (x === null) content.style.removeProperty('--_swipe');
+      else content.style.setProperty('--_swipe', `${x}px`);
+    }
+    this.drawSwipeEdge();
   }
 
   // Events.
@@ -1009,11 +1115,43 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   /** The appointment with this key (the `key` field), among the ones loaded. */
   findAppointment(key: unknown): T | undefined {
     const field = this.fields.key;
-    return this.items().find((item) => (item as Record<string, unknown>)?.[field] === key);
+    return givenList(this.items()).find((item) => givenField(item, field) === key);
   }
+
+  /**
+   * Reads the appointments and the resources again: what was changed in them in place shows. The
+   * scheduler reads the data as it is, plain or reactive alike, so a change made outside it (not
+   * through its methods, its form or its data source) shows after this.
+   */
+  refresh(): void {
+    this.parts.resources.refresh();
+    this.parts.model.refresh();
+  }
+  /** Reads one appointment again (for an occurrence: its series): what was changed in it in place shows. */
+  refreshAppointment(appointment: T): void {
+    this.parts.model.refresh(appointment);
+  }
+  /** Reads the resources again: their items, and what was changed in them in place. */
+  refreshResources(): void {
+    this.parts.resources.refresh();
+  }
+  /** What the resource kinds' fields given as functions read now. */
+  private resourceFieldValues(): unknown[] {
+    const values: unknown[] = [];
+    for (const def of givenList(this.resources)) {
+      for (const key of ['label', 'items', 'allowMultiple', 'useColorAsDefault'] as const) {
+        const value = givenValue<unknown>(def, key);
+        if (typeof value === 'function') values.push((value as () => unknown)());
+      }
+    }
+    return values;
+  }
+
   /** Selects cells from `start` to `end` (in the days shown), or none with `null`. */
   selectCells(cell: SchedulerCell | null): boolean {
     const model = this.parts.model;
+    // A date or a view asked for just before is worked out first: the cells are found in the days shown then.
+    model.flush();
     if (!cell) {
       model.clearSelection();
       return true;
@@ -1165,9 +1303,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     if (!view) return false;
     doc.documentElement.toggleAttribute('data-mx-print-one', true);
     this.element.toggleAttribute('data-print-one', true);
-    parts.version.printing = true;
+    this.setPrinting(true);
     // Built whole before the page is laid out for paper.
-    await new Promise<void>((done) => view.requestAnimationFrame(() => done()));
+    await new Promise<void>((done) => nextFrame(done, view));
     try {
       view.print();
     } finally {
@@ -1188,28 +1326,68 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     this.class.add('mx-scheduler');
     // A group, not a landmark: a page may hold many schedulers.
     this.attr.add({ role: 'group' });
-    this.bindings.watch(() => this.element.setAttribute('aria-label', this.text || this.textOf('schedulerLabel')));
-    this.bindings.watch(() => this.element.setAttribute('data-view', this.resolveView().type));
-    this.bindings.watch(() => this.element.setAttribute('data-presentation', this.parts.version.presentation));
-    this.bindings.watch(() => this.element.toggleAttribute('data-printing', this.parts.version.printing));
-    this.bindings.watch(() => {
+    for (const name of ['text', 'timeZoom'] as const) this.observeProperty(name, () => this.drawRoot());
+    for (const name of ['text', 'toolbar', 'views'] as const) this.observeProperty(name, () => this.drawBar());
+  }
+
+  /** What the scheduler's own element says: its name, the view's type, how it shows, the zoom. */
+  private drawRoot(): void {
+    untracked(() => {
+      const version = this.parts.version;
+      put(this.element, 'aria-label', this.text || this.textOf('schedulerLabel'));
+      put(this.element, 'data-view', this.resolveView().type);
+      put(this.element, 'data-presentation', version.presentation);
+      this.element.toggleAttribute('data-printing', version.printing);
       const zoom = this.timeZoom;
-      untracked(() => (zoom === 1 ? this.element.style.removeProperty('--_zoom') : this.element.style.setProperty('--_zoom', String(zoom))));
+      if (zoom === 1) this.element.style.removeProperty('--_zoom');
+      else this.element.style.setProperty('--_zoom', String(zoom));
     });
+  }
+
+  /** What the model tells: the bar and the root after a layout, and what follows the content, the selection and the focus. */
+  private modelChanged(change: ModelChange): void {
+    if (this.isDisposed) return;
+    const parts = this.parts;
+    if (change === 'layout') {
+      this.drawRoot();
+      this.drawBar();
+      this.drawContent();
+      this.filterSource();
+      this.watchContent();
+      this.scrollOnShow();
+    }
+    if (change === 'layout' || change === 'focus') {
+      this.selectionSoon();
+      this.followFocus();
+    }
   }
 
   override onConfig() {
     const parts = this.parts;
     parts.model.start();
-    const clock = setInterval(() => (parts.model.state.now = Date.now()), 30_000);
-    this.motif.setDisposable(() => clearInterval(clock));
-    this.bindings.watch(() => this.followSource(this.dataSource));
-    this.bindings.watch(() => this.filterSource());
-    this.bindings.watch(() => this.bindKeys(this.keys));
-    this.bindings.watch(() => this.watchSelection());
-    this.bindings.watch(() => this.followFocus());
-    this.bindings.watch(() => this.watchContent());
-    this.bindings.watch(() => this.scrollOnShow());
+    this.makeRoot();
+    this.motif.setDisposable(parts.model.onChanged((change) => this.modelChanged(change)));
+    for (const [name, step] of Object.entries(MODEL_STEPS)) this.observeProperty(name, () => parts.model.update(step));
+    this.observeProperty('resources', () => parts.resources.listChanged());
+    // What the parts drawn by hand show of the options and the texts: each draws itself again, nothing follows it.
+    for (const name of ['editing', 'recurrenceMarks', 'dimPast', 'locale'] as const) this.observeProperty(name, () => this.drawAgain());
+    // A template given or taken away: each part drawn by hand that uses it fills its content again.
+    for (const name of ['appointmentTemplate', 'dataCellTemplate', 'dateCellTemplate', 'timeCellTemplate', 'resourceHeaderTemplate'] as const)
+      this.observeProperty(name, () => this.drawAgain());
+    follow(this, 'uiTexts', () => uiLocale.strings, () => this.drawAgain());
+    // A resource kind's field given as a function (`useColorAsDefault: () => …`) is the developer's live value: followed
+    // here, the kinds are read again when one of them reads otherwise.
+    let kindValues: unknown[] | null = null;
+    follow(this, 'resourceFields', () => this.resourceFieldValues(), (now) => {
+      const before = kindValues;
+      kindValues = now;
+      if (before && (before.length !== now.length || now.some((value, i) => !Object.is(value, before[i])))) parts.resources.refresh();
+    });
+    this.motif.setDisposable(every(() => parts.model.setNow(Date.now()), 30_000));
+    this.observeProperty('dataSource', () => this.followSource(this.dataSource));
+    for (const name of ['dataSource', 'remoteFiltering'] as const) this.observeProperty(name, () => this.filterSource());
+    this.observeProperty('keys', () => this.bindKeys(this.keys));
+    this.modelChanged('layout');
     for (const name of ['presentation', 'tabletWidth', 'phoneWidth', 'tabletWhen'] as const) this.observeProperty(name, () => this.resolvePresentation());
     this.watchPointer();
     this.watchPrint();
@@ -1225,112 +1403,195 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     this.motif.setDisposable(onLookChanged(() => this.readLook()));
   }
 
-  override view() {
+  /**
+   * The root's parts, made once (no binding in them): the bar and its buttons, the content with the view and its states,
+   * the text read out. What they show is drawn by hand (`drawAll`).
+   */
+  private makeRoot(): void {
     const parts = this.parts;
-    const host = parts.host;
-    const t = (key: keyof UiStrings, values?: Record<string, unknown>) => this.textOf(key, values);
-    const kind = () => viewKind(this.resolveView().type);
-    const phone = () => parts.version.presentation === 'phone';
-    const swipe = parts.version.swipe;
-    return (
-      <>
-        <Toolbar
-          class="mx-scheduler__bar"
-          label={() => this.text || t('schedulerLabel')}
-          size={() => (phone() ? parts.version.phoneBarSize : parts.version.coarse ? 'lg' : 'sm')}
-          x-display={() => this.toolbar && !parts.version.printing}
-        >
-          <Button class="mx-scheduler__today" text={() => t('today')} x-display={() => !phone()} onclick={() => this.changeDate(this.today(), true)} />
-          <Button
-            class="mx-scheduler__today-icon"
-            icon={calendarMark()}
-            hint={() => t('today')}
-            x-display={phone}
-            onclick={() => this.changeDate(this.today(), true)}
-          />
-          {/* A phone moves by a swipe and the month's calendar, as phone calendars do: no steps there. */}
-          <Button
-            class="mx-scheduler__step"
-            icon={chevronStart()}
-            hint={() => t('schedulerPrevious')}
-            x-display={() => !phone()}
-            onclick={() => this.step(-1, true)}
-          />
-          <Button
-            class="mx-scheduler__step"
-            icon={chevronEnd()}
-            hint={() => t('schedulerNext')}
-            x-display={() => !phone()}
-            onclick={() => this.step(1, true)}
-          />
-          <Button
-            class="mx-scheduler__title"
-            text={() => (phone() ? this.phoneTitle() : this.rangeText())}
-            hint={() => (phone() ? this.rangeText() : '')}
-            dropDown={parts.picker}
-            data-overflow={() => (phone() ? 'never' : null)}
-            ref={(b: Button) => (parts.title = b)}
-          />
-          {this.viewList().map((view) => (
-            <Button
-              key={view.name}
-              class="mx-scheduler__view-button"
-              toggle
-              pressed={() => this.currentView === view.name}
-              text={() => this.viewText(view)}
-              x-display={() => !phone()}
-              onclick={() => this.changeView(view.name, true)}
-            />
-          ))}
-          <Button
-            class="mx-scheduler__view-menu"
-            text={() => this.viewText(this.currentViewOf() ?? { type: 'week' })}
-            hint={() => t('schedulerViews')}
-            menu={() => this.viewMenu()}
-            data-overflow="never"
-            x-display={phone}
-          />
-        </Toolbar>
-        <div
-          class="mx-scheduler__content"
-          aria-busy={() => (this.loading ? 'true' : null)}
-          data-swiping={() => swipe.active || null}
-          style={() => (swipe.active ? { '--_swipe': `${swipe.x}px` } : {})}
-        >
-          {() => {
-            switch (kind()) {
-              case 'month':
-                return <MonthView host={host} />;
-              case 'timeline':
-                return <TimelineView host={host} />;
-              case 'agenda':
-                return <AgendaView host={host} focus={parts.agendaFocus} />;
-              default:
-                return <TimeView host={host} />;
-            }
-          }}
-          <div class="mx-scheduler__state" x-display={() => this.loading}>
-            <Spinner size="sm" label={() => t('loading')} />
-          </div>
-          <div class="mx-scheduler__state" data-tone="danger" role="alert" x-display={() => parts.version.status === 'error'}>
-            <span>{() => t('loadFailed')}</span>
-            <Button text={() => t('retry')} onclick={() => void this.dataSource?.retry()} />
-          </div>
-          <div
-            class="mx-scheduler__swipe-edge"
-            aria-hidden="true"
-            data-side={() => (swipe.next ? 'next' : 'previous')}
-            data-ready={() => swipe.ready || null}
-            x-display={() => swipe.active}
-          >
-            <span class="mx-glyph mx-scheduler__swipe-icon" />
-          </div>
-        </div>
-        <div class="mx-scheduler__live mx-sr-only" aria-live="polite" role="status">
-          {() => parts.version.said}
-        </div>
-      </>
+    const bar = new Toolbar({});
+    bar.element.classList.add('mx-scheduler__bar');
+    const content = new Component<HTMLDivElement>('div');
+    content.element.className = 'mx-scheduler__content';
+    const live = new Component<HTMLDivElement>('div');
+    live.element.className = 'mx-scheduler__live mx-sr-only';
+    live.element.setAttribute('aria-live', 'polite');
+    live.element.setAttribute('role', 'status');
+    parts.bar = bar;
+    parts.content = content;
+    parts.live = live;
+    this.controls.add(bar, content, live);
+    const button = (className: string, props: ConstructorParameters<typeof Button>[0] = {}) => {
+      const b = new Button(props);
+      b.element.classList.add(...className.split(' '));
+      bar.controls.add(b);
+      return b;
+    };
+    const today = button('mx-scheduler__today');
+    today.motif.on('click', () => this.changeDate(this.today(), true));
+    const todayIcon = button('mx-scheduler__today-icon', { icon: calendarMark() });
+    todayIcon.motif.on('click', () => this.changeDate(this.today(), true));
+    // A phone moves by a swipe and the month's calendar, as phone calendars do: no steps there.
+    const previous = button('mx-scheduler__step', { icon: chevronStart() });
+    previous.motif.on('click', () => this.step(-1, true));
+    const next = button('mx-scheduler__step', { icon: chevronEnd() });
+    next.motif.on('click', () => this.step(1, true));
+    const title = button('mx-scheduler__title', { dropDown: parts.picker });
+    parts.title = title;
+    const viewMenu = button('mx-scheduler__view-menu', { menu: [] });
+    put(viewMenu.element, 'data-overflow', 'never');
+    const views = new KeyedParts<SchedulerView & { name: string }, Button>(
+      bar,
+      (view) => view.name,
+      (view) => {
+        const b = new Button({ toggle: true });
+        b.element.classList.add('mx-scheduler__view-button');
+        b.motif.on('click', () => {
+          const name = this.viewOfButton.get(b);
+          if (name !== undefined) this.changeView(name, true);
+        });
+        return b;
+      },
+      () => {},
+      () => 5,
     );
+    const loading = new Component<HTMLDivElement>('div');
+    loading.element.className = 'mx-scheduler__state';
+    const spinner = new Spinner({ size: 'sm' });
+    loading.controls.add(spinner);
+    const failed = new Component<HTMLDivElement>('div');
+    failed.element.className = 'mx-scheduler__state';
+    put(failed.element, 'data-tone', 'danger');
+    failed.element.setAttribute('role', 'alert');
+    const failedText = new Component<HTMLSpanElement>('span');
+    failed.controls.add(failedText);
+    const retry = new Button();
+    retry.motif.on('click', () => void this.dataSource?.retry());
+    failed.controls.add(retry);
+    const edge = new Component<HTMLDivElement>('div');
+    edge.element.className = 'mx-scheduler__swipe-edge';
+    edge.element.setAttribute('aria-hidden', 'true');
+    const icon = new Component<HTMLSpanElement>('span');
+    icon.element.className = 'mx-glyph mx-scheduler__swipe-icon';
+    edge.controls.add(icon);
+    content.controls.add(loading, failed, edge);
+    parts.swipeEdge = edge;
+    parts.root = { today, todayIcon, previous, next, title, viewMenu, views, loading, spinner, failed, failedText: failedText.element, retry };
+    this.drawStates();
+    this.drawSwipeEdge();
+    this.drawLive();
+  }
+
+  /** The view each view button stands for, as last drawn. */
+  private readonly viewOfButton = new WeakMap<Button, string>();
+
+  /** All of the root, as the scheduler is now. */
+  private drawAll(): void {
+    this.drawBar();
+    this.drawContent();
+    this.drawStates();
+    this.drawSwipeEdge();
+    this.drawLive();
+    this.parts.viewNow?.draw();
+  }
+
+  /** The bar: its name, its size, its buttons for the view and the presentation shown. */
+  private drawBar(): void {
+    const parts = this.parts;
+    const root = parts.root;
+    const bar = parts.bar;
+    if (!root || !bar || this.isDisposed) return;
+    untracked(() => {
+      const t = (key: keyof UiStrings) => this.textOf(key);
+      const version = parts.version;
+      const phone = version.presentation === 'phone';
+      bar.label = this.text || t('schedulerLabel');
+      bar.size = phone ? version.phoneBarSize : version.coarse ? 'lg' : 'sm';
+      bar.visible = this.toolbar && !version.printing;
+      root.today.text = t('today');
+      root.today.visible = !phone;
+      root.todayIcon.hint = t('today');
+      root.todayIcon.visible = phone;
+      root.previous.hint = t('schedulerPrevious');
+      root.previous.visible = !phone;
+      root.next.hint = t('schedulerNext');
+      root.next.visible = !phone;
+      root.title.text = phone ? this.phoneTitle() : this.rangeText();
+      root.title.hint = phone ? this.rangeText() : '';
+      put(root.title.element, 'data-overflow', phone ? 'never' : null);
+      const list = this.viewList();
+      root.views.show(list);
+      for (const view of list) {
+        const b = root.views.get(view.name);
+        if (!b) continue;
+        this.viewOfButton.set(b, view.name);
+        b.pressed = this.currentView === view.name;
+        b.text = this.viewText(view);
+        b.visible = !phone;
+      }
+      root.viewMenu.text = this.viewText(this.currentViewOf() ?? { type: 'week' });
+      root.viewMenu.hint = t('schedulerViews');
+      root.viewMenu.menu = this.viewMenu();
+      root.viewMenu.visible = phone;
+    });
+  }
+
+  /** The view shown in the content: made again only when its kind changes. */
+  private drawContent(): void {
+    const parts = this.parts;
+    const content = parts.content;
+    if (!content || this.isDisposed) return;
+    untracked(() => {
+      const kind = viewKind(this.resolveView().type);
+      if (kind === parts.viewKind && parts.viewNow) return;
+      parts.viewKind = kind;
+      const old = parts.viewNow;
+      const host = parts.host;
+      const view =
+        kind === 'month'
+          ? new MonthView<T>({ host })
+          : kind === 'timeline'
+            ? new TimelineView<T>({ host })
+            : kind === 'agenda'
+              ? new AgendaView<T>({ host, focus: parts.agendaFocus })
+              : new TimeView<T>({ host });
+      parts.viewNow = view;
+      if (old) content.controls.remove(old);
+      content.controls.add(0, view);
+    });
+  }
+
+  /** Loading, a failure to load: shown over the content. */
+  private drawStates(): void {
+    const parts = this.parts;
+    const root = parts.root;
+    if (!root || this.isDisposed) return;
+    untracked(() => {
+      const t = (key: keyof UiStrings) => this.textOf(key);
+      const loading = this.loading;
+      if (parts.content) flag(parts.content.element, 'aria-busy', loading);
+      shown(root.loading.element, loading);
+      root.spinner.label = t('loading');
+      shown(root.failed.element, parts.version.status === 'error');
+      text(root.failedText, t('loadFailed'));
+      root.retry.text = t('retry');
+    });
+  }
+
+  /** The swipe's edge: shown while a finger swipes between dates, on the side what comes is on. */
+  private drawSwipeEdge(): void {
+    const edge = this.parts.swipeEdge?.element as HTMLElement | undefined;
+    if (!edge) return;
+    const swipe = this.parts.version.swipe;
+    put(edge, 'data-side', swipe.next ? 'next' : 'previous');
+    flag(edge, 'data-ready', swipe.ready);
+    shown(edge, swipe.active);
+  }
+
+  /** The text read out last. */
+  private drawLive(): void {
+    const live = this.parts.live?.element as HTMLElement | undefined;
+    if (live) text(live, this.parts.version.said);
   }
 
   // Inside.
@@ -1351,13 +1612,15 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return self[PARTS];
   }
 
+  private drawAgain(): void {
+    for (const draw of this.parts.drawn) draw();
+  }
+
   private createParts(): Parts<T> {
-    const version = reactive({
-      rows: 0,
+    const version = {
       status: 'ready',
       monthRoom: Infinity,
       said: '',
-      draft: null,
       saving: [],
       lines: { lane: 0, gap: 0, min: 0 },
       presentation: 'desktop',
@@ -1366,8 +1629,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       swipe: { active: false, x: 0, next: true, ready: false },
       touchSelected: '',
       phoneBarSize: 'lg',
-    }) as Parts<T>['version'];
-    const more = reactive({ date: null, items: [] }) as MoreListState<T>;
+    } as Parts<T>['version'];
+    const more: Parts<T>['more'] = { value: { date: null, items: [] } };
+    const draft: Parts<T>['draft'] = { value: null };
     const zone = () => TimeZone.of(this.timeZone);
     const format = new SchedulerFormat(() => this.locale, zone);
     const resources = new Resources(() => this.resources);
@@ -1381,7 +1645,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       isHoliday: () => this.isHoliday,
       overlapMode: () => this.overlapMode,
       room: () => ({ month: version.monthRoom, allDay: this.allDayLines + 1 }),
-      draft: () => version.draft,
+      draft: () => draft.value,
       zone,
       resources,
       workHours: () => ({ start: this.workStartHour, end: this.workEndHour }),
@@ -1396,12 +1660,26 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       format,
       version,
       more,
+      draft,
       morePopup: null,
+      moreContent: null,
+      moreContext: null,
+      moreChoose: null,
       picker: null,
       title: null,
       scroller: null,
       timeline: null,
-      agendaFocus: reactive({ id: '' }),
+      agendaFocus: { id: '', drawn: () => {} },
+      bar: null,
+      content: null,
+      viewNow: null,
+      viewKind: '',
+      root: null,
+      swipeEdge: null,
+      live: null,
+      drawn: new Set(),
+      lastFilter: '',
+      lastContent: '',
       scrolledFor: '',
       selecting: false,
       focusWhenShown: false,
@@ -1410,6 +1688,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       stopSource: null,
       stopKeys: [],
       lastSelection: '',
+      selectionQueued: false,
       viewChanging: new Emitter(),
       viewChanged: new Emitter(),
       dateChanging: new Emitter(),
@@ -1460,7 +1739,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       appointments: () => this.appointments,
       source: () => this.dataSource,
       keyField: () => this.fields.key,
-      changed: () => version.rows++,
+      changed: (item) => model.refresh(item),
     });
     parts.editor = new AppointmentEditor<T>({
       scheduler: this,
@@ -1481,10 +1760,11 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       tooltip: () => this.tooltip,
       text: (key, values) => this.textOf(key, values),
       say: (text) => this.say(text),
-      setDraft: (draft) => {
-        version.draft = draft;
+      setDraft: (next) => {
+        draft.value = next;
+        model.update('layout');
         // A finger lifted it: once let go it stays selected, with its handles.
-        if (draft?.touch) version.touchSelected = model.idOf(draft.item);
+        if (next?.touch) this.setTouchSelected(model.idOf(next.item));
       },
       root: () => this.element,
       scroller: () => parts.scroller,
@@ -1492,6 +1772,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       keys: () => this.keys,
       saving: version.saving,
       presentation: () => version.presentation,
+      redraw: () => parts.viewNow?.draw(),
     });
     parts.drag = new AppointmentDrag<T>(parts.editor);
     parts.touch = new SchedulerTouch({
@@ -1510,7 +1791,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       },
       setZoom: (zoom) => this.changeProperty('timeZoom', Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom))),
       zoomChanged: (from, to) => parts.timeZoomChanged.fire({ from, to, source: this }),
-      swiping: (x, next, ready) => Object.assign(version.swipe, { active: x !== null, x: x ?? 0, next, ready }),
+      swiping: (x, next, ready) => this.drawSwipe(x, next, ready),
       step: (by) => this.step(by, true),
     });
     parts.icalendar = new ICalendarBridge<T>({
@@ -1562,18 +1843,22 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       recurrenceMarks: () => this.recurrenceMarks,
       recurrenceText: (item) => this.recurrenceText(item),
       zoneOf: (item) => {
-        const name = (item as Record<string, unknown>)?.[this.fields.startTimeZone];
+        const name = givenField(item, this.fields.startTimeZone);
         return typeof name === 'string' && name !== (this.timeZone ?? '') ? name : '';
       },
       setMonthRoom: (lines) => {
-        if (parts.version.monthRoom !== lines) parts.version.monthRoom = lines;
+        if (parts.version.monthRoom === lines) return;
+        parts.version.monthRoom = lines;
+        parts.model.update('layout');
       },
       setLineMetrics: (metrics) => {
         const now = parts.version.lines;
-        if (now.lane !== metrics.lane || now.gap !== metrics.gap || now.min !== metrics.min) parts.version.lines = metrics;
+        if (now.lane === metrics.lane && now.gap === metrics.gap && now.min === metrics.min) return;
+        parts.version.lines = metrics;
+        parts.model.update('layout');
       },
       setTimeline: (timeline) => (parts.timeline = timeline),
-      dragging: () => !!parts.version.draft,
+      dragging: () => !!parts.draft.value,
       agendaKey: (e) => this.agendaKey(e),
       cellPointerDown: (place, e) => this.cellPointerDown(place, e),
       cellClick: (place, e) => this.clickCell(place, e),
@@ -1584,15 +1869,20 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       appointmentPointerDown: (piece, mode, e) => {
         // A finger resizes only the appointment it lifted (by its handles, at once); an edge of another one is a long press to move it.
         const touch = e.pointerType === 'touch';
-        const selected = touch && parts.version.touchSelected === parts.model.idOf(piece.item);
-        if (touch && !selected) parts.version.touchSelected = '';
-        parts.drag.begin(piece.item, touch && !selected ? 'move' : mode, e, piece.group, selected && mode !== 'move');
+        const item = parts.model.itemOf(piece);
+        const selected = touch && parts.version.touchSelected === parts.model.idOf(item);
+        if (touch && !selected) this.setTouchSelected('');
+        parts.drag.begin(item, touch && !selected ? 'move' : mode, e, piece.group, selected && mode !== 'move');
       },
       touchSelected: (item) => parts.version.touchSelected !== '' && parts.version.touchSelected === parts.model.idOf(item),
-      liftedByTouch: () => !!parts.version.draft?.touch,
-      appointmentBlur: (piece, e) => {
+      liftedByTouch: () => !!parts.draft.value?.touch,
+      keepDrawn: (draw) => {
+        parts.drawn.add(draw);
+        return () => parts.drawn.delete(draw);
+      },
+      appointmentBlur: (item, e) => {
         const to = e.relatedTarget;
-        const id = `${parts.model.idOf(piece.item)}@`;
+        const id = `${parts.model.idOf(item)}@`;
         if (to instanceof HTMLElement && (to.dataset.piece ?? '').startsWith(id)) return;
         parts.editor.cancelKeys();
       },
@@ -1614,11 +1904,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     };
   }
 
-  /** The appointments loaded: the data source's rows, else the array. Reactive. */
+  /** The appointments loaded: the data source's rows, else the array. Reactive: follows the prop, not what is in the list. */
   private items(): readonly T[] {
-    const parts = this.parts;
     const source = this.dataSource;
-    void parts.version.rows;
     return source ? source.rows : this.appointments;
   }
 
@@ -1635,11 +1923,11 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       if (source.loadMode !== 'all')
         console.warn(`Scheduler: its data source loads '${source.loadMode}'; make it with loadMode: 'all' so every appointment of the days shown comes.`);
       const listening = source.onChanged(() => {
-        parts.version.rows++;
-        parts.version.status = source.status;
+        parts.model.refresh();
+        this.setStatus(source.status);
       });
       parts.stopSource = () => listening.dispose();
-      parts.version.status = source.status;
+      this.setStatus(source.status);
     });
   }
 
@@ -1660,7 +1948,12 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       }
       // A series that began before the days shown may still happen in them.
       const span = rangeFilter(range, fields, { resources });
-      void source.setFilter(parts.baseFilter ? { and: [parts.baseFilter, span] } : span);
+      const filter = parts.baseFilter ? { and: [parts.baseFilter, span] } : span;
+      // Given once for what it is: a load the filter brings lays out again, and would give it again.
+      const key = JSON.stringify(filter);
+      if (key === parts.lastFilter) return;
+      parts.lastFilter = key;
+      void source.setFilter(filter);
     });
   }
 
@@ -1701,6 +1994,17 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     });
   }
 
+  /** One step (a key, `selectCells`) may move the focus more than once: the selection it ends on is told, once. */
+  private selectionSoon(): void {
+    const parts = this.parts;
+    if (parts.selectionQueued) return;
+    parts.selectionQueued = true;
+    queueMicrotask(() => {
+      parts.selectionQueued = false;
+      if (!this.isDisposed) this.watchSelection();
+    });
+  }
+
   private watchSelection(): void {
     const selection = this.parts.model.selection();
     const id = selection ? `${selection.start.getTime()}-${selection.end.getTime()}-${selection.allDay}` : '';
@@ -1724,10 +2028,13 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
 
   private watchContent(): void {
     const parts = this.parts;
-    const shown = parts.model.state.shown;
+    const shown = parts.model.shown();
     const range = parts.model.range();
     if (this.loading) return;
-    untracked(() => queueMicrotask(() => !this.isDisposed && parts.contentReady.fire({ range, appointments: shown, source: this })));
+    const told = `${parts.model.state.shownVersion}|${range.start.getTime()}|${range.end.getTime()}`;
+    if (told === parts.lastContent) return;
+    parts.lastContent = told;
+    queueMicrotask(() => !this.isDisposed && parts.contentReady.fire({ range, appointments: shown, source: this }));
   }
 
   /** When a view with hours shows (not on every date), it scrolls to `scrollHour`: the work start, or now on today. */
@@ -1761,7 +2068,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
         } else this.scrollToTime(at);
       };
       if (parts.scroller) go();
-      else setTimeout(go, 0);
+      else later(go);
     });
   }
 
@@ -1786,6 +2093,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       parts.editor.hideTooltip();
       parts.version.touchSelected = '';
       parts.version.presentation = to;
+      parts.model.update('groups');
+      this.drawRoot();
+      this.drawAll();
       this.showViewOf(to);
       parts.presentationChanged.fire({ from, to, width: e.width, source: this });
     });
@@ -1831,6 +2141,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     if (!media?.addEventListener) return;
     const changed = () => {
       this.parts.version.coarse = media.matches;
+      this.drawBar();
       this.resolvePresentation();
     };
     media.addEventListener('change', changed);
@@ -1856,14 +2167,16 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const size = view?.getComputedStyle(this.element).getPropertyValue('--_scheduler-phone-bar-size').trim();
     const version = this.parts.version;
     const next = size === 'sm' || size === 'md' ? size : 'lg';
-    if (version.phoneBarSize !== next) version.phoneBarSize = next;
+    if (version.phoneBarSize === next) return;
+    version.phoneBarSize = next;
+    this.drawBar();
   }
 
   /** The browser's print (and `print()`) lays it out whole for paper. */
   private watchPrint(): void {
     const view = this.element.ownerDocument.defaultView;
     if (!view) return;
-    const before = () => (this.parts.version.printing = true);
+    const before = () => this.setPrinting(true);
     const after = () => this.printDone();
     view.addEventListener('beforeprint', before);
     view.addEventListener('afterprint', after);
@@ -1873,10 +2186,20 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     });
   }
 
+  /** On paper a big view is built whole: the view is worked out again for it, and back after. */
+  private setPrinting(on: boolean): void {
+    const parts = this.parts;
+    if (parts.version.printing === on) return;
+    parts.version.printing = on;
+    parts.model.update('groups');
+    this.drawRoot();
+    this.drawAll();
+  }
+
   private printDone(): void {
     const parts = this.parts;
     if (!parts.version.printing) return;
-    parts.version.printing = false;
+    this.setPrinting(false);
     const one = this.element.hasAttribute('data-print-one');
     this.element.removeAttribute('data-print-one');
     if (one) this.element.ownerDocument.documentElement.removeAttribute('data-mx-print-one');
@@ -1898,7 +2221,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const view = this.currentViewOf() ?? { type: 'week' as const, name: 'week' };
     const own = <V,>(value: Bind<V> | undefined, fallback: V): V => (value === undefined ? fallback : (read(value) ?? fallback));
     const start = own(view.startDayHour, this.startDayHour);
-    const kinds = this.resources.map((r) => r.field);
+    const kinds = givenList(this.resources).map((r) => givenField<string>(r, 'field'));
     const groups = own<readonly string[]>(view.groups, this.groups).filter((field, i, list) => kinds.includes(field) && list.indexOf(field) === i);
     const kind = viewKind(view.type);
     const startDate = own<Date | null>(view.startDate, null);
@@ -2035,13 +2358,17 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     if (!untracked(() => this.announce)) return;
     const version = this.parts.version;
     version.said = '';
-    queueMicrotask(() => (version.said = text));
+    this.drawLive();
+    queueMicrotask(() => {
+      version.said = text;
+      this.drawLive();
+    });
   }
 
   private cellPointerDown(place: CellPlace, e: PointerEvent): void {
     if (e.button !== 0) return;
     const parts = this.parts;
-    parts.version.touchSelected = '';
+    this.setTouchSelected('');
     if (e.pointerType === 'touch') {
       // A finger selects one cell (moving it scrolls or swipes); a tap on the cell selected already opens the form.
       const model = parts.model;
@@ -2089,7 +2416,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   private fireAppointment(emitter: Emitter<AppointmentClickEventArgs<T>>, piece: AnyPiece<T>, event: MouseEvent | KeyboardEvent): boolean {
     const group = this.parts.model.state.groups[piece.group];
     const e: AppointmentClickEventArgs<T> = {
-      appointment: piece.item,
+      appointment: this.parts.model.itemOf(piece),
       start: piece.start,
       end: piece.end,
       group: group ? { ...group.values } : null,
@@ -2115,17 +2442,18 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   private clickAppointment(piece: AnyPiece<T>, e: MouseEvent | KeyboardEvent): void {
     const parts = this.parts;
     if (parts.drag.justEnded || parts.touch.justSwiped) return;
-    if (parts.version.touchSelected && parts.version.touchSelected !== parts.model.idOf(piece.item)) parts.version.touchSelected = '';
+    const item = parts.model.itemOf(piece);
+    if (parts.version.touchSelected && parts.version.touchSelected !== parts.model.idOf(item)) this.setTouchSelected('');
     const box = e.currentTarget as HTMLElement | null;
     if (!this.fireAppointment(parts.appointmentClick, piece, e)) return;
-    if (this.tooltip && box) parts.editor.showTooltip(piece.item, box);
+    if (this.tooltip && box) parts.editor.showTooltip(item, box);
   }
 
   /** A double click (or Enter) on an appointment: the event, then its form. */
   private openAppointment(piece: AnyPiece<T>, e: MouseEvent | KeyboardEvent): void {
     const parts = this.parts;
     if (parts.drag.justEnded || parts.editor.formOpen) return;
-    if (this.fireAppointment(parts.appointmentDblClick, piece, e)) void parts.editor.openForm(piece.item);
+    if (this.fireAppointment(parts.appointmentDblClick, piece, e)) void parts.editor.openForm(parts.model.itemOf(piece));
   }
 
   /** A double click (or Enter) on cells: the event, then the form for a new appointment there (the selection when the cell is in it). */
@@ -2183,9 +2511,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     };
     parts.moreOpening.fire(e);
     if (e.cancel) return;
-    parts.more.date = day;
-    parts.more.items = items;
+    parts.more.value = { date: day, items };
     const popup = this.morePopup();
+    this.drawMorePopup();
     popup.open(anchor);
     queueMicrotask(() => (popup.element.querySelector('button') as HTMLElement | null)?.focus());
   }
@@ -2213,25 +2541,43 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const more = parts.more;
     const context: MoreListContext<T> = {
       get date() {
-        return more.date;
+        return more.value.date;
       },
       get appointments() {
-        return more.items;
+        return more.value.items;
       },
       choose: (item, event) => choose(item, event as MouseEvent),
     };
-    popup.controls.add(
-      <>
-        {parts.host.moreTemplate() ? (
-          <div class="mx-scheduler__more-own">{parts.host.moreTemplate()!(context)}</div>
-        ) : (
-          <MoreList host={parts.host} state={parts.more} choose={choose} />
-        )}
-      </>,
-    );
+    parts.moreContext = context;
+    parts.moreChoose = choose;
     this.controls.add(popup);
     parts.morePopup = popup;
     return popup;
+  }
+
+  /**
+   * What the "+N more" popup shows: the template's content, made again each time it opens (it reads the day and the
+   * appointments as they are then), else the list, drawn again.
+   */
+  private drawMorePopup(): void {
+    const parts = this.parts;
+    const popup = parts.morePopup;
+    if (!popup || !parts.moreContext || !parts.moreChoose) return;
+    const template = parts.host.moreTemplate();
+    if (!template && parts.moreContent instanceof MoreList) {
+      parts.moreContent.draw();
+      return;
+    }
+    if (parts.moreContent) popup.controls.remove(parts.moreContent);
+    if (template) {
+      const own = new Component<HTMLDivElement>('div');
+      own.element.className = 'mx-scheduler__more-own';
+      own.controls.add(template(parts.moreContext));
+      parts.moreContent = own;
+    } else {
+      parts.moreContent = new MoreList<T>({ host: parts.host, state: parts.more, choose: parts.moreChoose });
+    }
+    popup.controls.add(parts.moreContent);
   }
 
   /** Arrows, Home, End, PageUp and PageDown move over the cells (Shift selects); Enter and Space are a double click and a click. */
@@ -2359,13 +2705,15 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       case 'Delete':
       case 'Backspace':
         e.preventDefault();
-        if (parts.editor.canDelete(piece.item)) void parts.editor.remove(piece.item, true);
+        const item = parts.model.itemOf(piece);
+        if (parts.editor.canDelete(item)) void parts.editor.remove(item, true);
         return;
       default:
         return;
     }
     e.preventDefault();
     focus.id = rows[next].id;
+    focus.drawn();
     queueMicrotask(() => [...this.element.querySelectorAll<HTMLElement>('.mx-scheduler__agenda-row')].find((el) => el.dataset.piece === focus.id)?.focus());
   }
 
@@ -2481,7 +2829,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       const now = model.state.focus;
       const cell = this.element.querySelector<HTMLElement>(`[data-cell="${now.column}:${now.slot}"]`);
       if (cell) cell.focus({ preventScroll: !model.virtual ? false : true });
-      else if (tries++ < 4) requestAnimationFrame(find);
+      else if (tries++ < 4) nextFrame(find, this.element.ownerDocument.defaultView);
     };
     queueMicrotask(find);
   }

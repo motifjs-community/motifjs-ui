@@ -1,9 +1,11 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dataKinds } from '../../../tests/data-kinds';
 import { mountHost, tick } from '../../../tests/helpers';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { TabDocument } from './TabDocument';
 import { TabDocumentManager } from './TabDocumentManager';
+import type { ToolbarItem } from '../toolbar/toolbar-item';
 import type { TabDocumentManagerProps } from './tab-document-manager-props';
 
 let hosts: Component[] = [];
@@ -106,6 +108,24 @@ describe('TabDocumentManager: preview tabs', () => {
     expect(seen).toEqual(['A (user)', 'B', 'C', 'E']);
     await settle();
     expect(live(m)).toBe('E kept open');
+  });
+
+  it('reads document props and its own settings given as functions over plain data again on reState', async () => {
+    const plain = { title: 'Report', dirty: false, badge: 0 as number | null, size: 'fit' as 'fit' | 'fixed' };
+    const m = manager({ tabSize: () => plain.size });
+    const report = m.open(doc('x', { id: 'report', title: () => plain.title, dirty: () => plain.dirty, badge: () => plain.badge }))!;
+    await settle();
+    expect(titles(m)).toEqual(['Report']);
+    Object.assign(plain, { title: 'Report 2026', dirty: true, badge: 3, size: 'fixed' });
+    await settle();
+    expect(header(m, 'Report')).toBeTruthy();
+    m.reState();
+    await settle();
+    expect(report.title).toBe('Report 2026');
+    const tab = header(m, 'Report 2026');
+    expect(tab.hasAttribute('data-dirty')).toBe(true);
+    expect(tab.querySelector('.mx-tabdocs__badge')!.textContent).toBe('3');
+    expect(m.tabSize).toBe('fixed');
   });
 
   it('previewTabs off opens every document to stay; opening a preview again with preview: false keeps it', () => {
@@ -663,5 +683,25 @@ describe('TabDocumentManager: keys', () => {
     press('w');
     await settle();
     expect(titles(m)).toEqual(['A']);
+  });
+});
+
+describe.each(dataKinds)('TabDocumentManager: %s data', (_, make) => {
+  it("reads a document's actions as they are: a list given anew shows, and the item comes back as it was given", async () => {
+    const clicked: unknown[] = [];
+    const actions = make<ToolbarItem[]>([{ text: 'Format', click: (e) => void clicked.push(e.item) }]);
+    const m = manager();
+    const a = m.open(doc('A', { actions }))!;
+    await settle();
+    const bar = () => Array.from(m.groups[0].element.querySelectorAll<HTMLElement>('.mx-tabdocs__actions .mx-button')).map((b) => b.textContent);
+    expect(bar()).toContain('Format');
+    actions.push({ text: 'Lint' });
+    await settle();
+    expect(bar()).not.toContain('Lint');
+    a.actions = [...actions];
+    await settle();
+    expect(bar()).toContain('Lint');
+    Array.from(m.groups[0].element.querySelectorAll<HTMLElement>('.mx-tabdocs__actions .mx-button')).find((b) => b.textContent === 'Format')!.click();
+    expect(clicked[0]).toBe(actions[0]);
   });
 });

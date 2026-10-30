@@ -1,4 +1,4 @@
-import { reactive } from '@motifx/core';
+import { createSignal } from '@motifx/core';
 import type { UiStrings } from './ui-strings';
 
 export const enStrings: UiStrings = {
@@ -1073,10 +1073,19 @@ function stringsOf(lang: string): UiStrings {
   return /^tr\b/i.test(lang) ? trStrings : enStrings;
 }
 
+const current = createSignal<UiStrings>(stringsOf(typeof document === 'undefined' ? '' : document.documentElement.lang));
+
 /**
- * The texts the controls write, reactive: assign another set and every control follows
- * (`uiLocale.strings = trStrings`, or your own `UiStrings`). It starts with the page's `lang`.
+ * The texts the controls write: assign another set and every control follows (`uiLocale.strings = trStrings`, or
+ * your own `UiStrings`). The set is kept as given, so a change is made by assigning a new set
+ * (`uiLocale.strings = { ...uiLocale.strings, close: 'Kapat' }`), not by changing a text in it. It starts with the
+ * page's `lang`.
  */
-export const uiLocale = reactive({
-  strings: stringsOf(typeof document === 'undefined' ? '' : document.documentElement.lang),
-});
+export const uiLocale = {
+  get strings(): UiStrings {
+    return current.value;
+  },
+  set strings(value: UiStrings) {
+    current.value = value;
+  },
+};

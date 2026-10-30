@@ -44,6 +44,7 @@ const METHODS = [
   ['MenuBar.close()', '`void`', 'Closes the open menu.'],
   ['ContextMenu.open(at, target?)', '`boolean`', 'Opens it from code, at `{ x, y }` or at an element.'],
   ['ContextMenu.close()', '`void`', 'Closes it.'],
+  ['MenuBar.refresh(), ContextMenu.refresh()', '`void`', 'Your items may be plain or reactive; the menu reads them as they are. After changing them in place, call `refresh()`. The bar, the open menu and its submenus follow.'],
   ['attachContextMenu(target, items)', '`() => void`', 'Gives an element or component a menu; `items` can be a function of the opening (`e.target`). Returns the remover.'],
 ];
 

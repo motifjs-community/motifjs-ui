@@ -1,5 +1,6 @@
 import { Emitter, type Event as MotifEvent, type IDisposable } from '@motifx/core';
 import type { data } from '@motifx-community/data';
+import { givenList } from '../../core/given-field';
 import type { ItemSource } from '../list/item-source';
 import { KeyedItems } from './KeyedItems';
 
@@ -26,10 +27,10 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
 
   readonly onChanged: MotifEvent<void> = this.changedEmitter.event;
 
-  /** Items in memory; the search runs over them here. */
+  /** Items in memory, read as they are now; the search runs over them here. Call it again after they changed. */
   setArray(items: readonly T[]): void {
     this.detach();
-    this.array = items;
+    this.array = givenList(items);
     this.filter();
     this.changedEmitter.fire();
   }

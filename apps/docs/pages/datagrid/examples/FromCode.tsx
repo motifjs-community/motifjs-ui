@@ -9,7 +9,11 @@ export default function FromCode() {
   let grid: DataGrid<Order> | null = null;
   let host: Stack | null = null;
 
-  const pushOrder = () => s.orders.push({ ...makeOrders(1)[0], id: s.orders.length + 1, customer: 'Pushed' });
+  // The grid reads the array as it is: after a push it loads it again.
+  const pushOrder = () => {
+    s.orders.push({ ...makeOrders(1)[0], id: s.orders.length + 1, customer: 'Pushed' });
+    grid?.refresh();
+  };
 
   const addGrid = () => {
     if (!host) return;

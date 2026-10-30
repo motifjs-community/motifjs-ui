@@ -28,8 +28,14 @@ export class CellWriter<K> {
     });
   }
 
-  delete(id: number): void {
-    this.cells.delete(id);
+  /** Every cell went (they are made again). */
+  clear(): void {
+    this.cells.clear();
+  }
+
+  /** A cell went: let go of it (not of another made for the same place since). */
+  delete(id: number, c: ComponentBase): void {
+    if (this.cells.get(id)?.c === c) this.cells.delete(id);
   }
 
   /** Every cell's key, to see which show something else now (`write` them). */

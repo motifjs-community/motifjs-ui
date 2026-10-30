@@ -300,7 +300,7 @@ export class GridExport<T> {
     const { model } = this;
     const grouped = view ? model.groups.fields().map((f) => model.columns.get(f)) : [];
     const lookups = [...cols, ...grouped].filter((c, i, all) => c.lookup && !c.textFrom && all.indexOf(c) === i);
-    if (lookups.length) await model.lookups.load(lookups, rows.map((row) => ({ ...(row as object), ...(model.edit(model.rowIdOf(row))?.draft ?? {}) }) as T));
+    if (lookups.length) await model.lookups.load(lookups, rows, (row, col) => model.value(model.rowIdOf(row), row, col));
   }
 
   /** Saves text as a file through a link the browser downloads. */

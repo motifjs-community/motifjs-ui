@@ -10,6 +10,12 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 /** The actions of the selected rows in the toolbar or the bottom bar; several rows share the ones they all have. */
 export default function BarActions() {
   const s = reactive({ orders: makeOrders(40), location: 'toolbar' as GridActionLocation, menu: false, note: '' });
+  let grid: DataGrid<Order> | null = null;
+  // The grid reads the rows as they are: after a change in place it draws them again and asks their actions again.
+  const changed = (rows: readonly Order[]) => {
+    grid?.repaintRows(rows.map((row) => row.id));
+    grid?.refreshActions();
+  };
 
   const approve: GridAction<Order> = {
     id: 'approve',
@@ -20,10 +26,12 @@ export default function BarActions() {
     onclickMany: async (rows) => {
       await wait(300);
       for (const row of rows) row.status = 'Approved';
+      changed(rows);
       s.note = `${rows.length} orders approved`;
     },
     onclick: (row) => {
       row.status = 'Approved';
+      changed([row]);
       s.note = `Order ${row.id} approved`;
     },
   };
@@ -59,6 +67,7 @@ export default function BarActions() {
         onActionRan={(e) => {
           if (e.canceled) s.note = `${e.action.id}: stopped after ${e.done} rows`;
         }}
+        ref={(g: DataGrid<Order>) => (grid = g)}
       />
       <output class="dg-bar-note">{() => s.note}</output>
     </>

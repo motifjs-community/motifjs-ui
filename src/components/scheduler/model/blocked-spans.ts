@@ -1,3 +1,4 @@
+import { untracked } from '@motifx/core';
 import { dayStart } from '../../../parts/dates/day-start';
 import { TimeZone } from '../../../parts/dates/time-zone';
 import { parseRecurrenceRule } from '../../../parts/recurrence/parse-recurrence-rule';
@@ -13,8 +14,16 @@ export interface BlockedSpan {
   block: SchedulerBlockedTime;
 }
 
-/** The times the blocked times take between two wall clock times (a repeating one, each time it happens there). */
+/**
+ * The times the blocked times take between two wall clock times (a repeating one, each time it happens there). The
+ * blocked times are the developer's and are read as they are (untracked): a new list given shows, a change in place
+ * after the scheduler's refresh.
+ */
 export function blockedSpans(blocks: readonly SchedulerBlockedTime[], from: number, to: number, zone: TimeZone): BlockedSpan[] {
+  return untracked(() => spansOf(blocks, from, to, zone));
+}
+
+function spansOf(blocks: readonly SchedulerBlockedTime[], from: number, to: number, zone: TimeZone): BlockedSpan[] {
   const out: BlockedSpan[] = [];
   for (const block of blocks) {
     if (!(block.start instanceof Date) || !(block.end instanceof Date)) continue;

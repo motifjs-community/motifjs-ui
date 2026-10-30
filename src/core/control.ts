@@ -1,4 +1,5 @@
-import { Component, createSignal, effect, untracked, type Bind, type IBaseProp, type Signal } from '@motifx/core';
+import { Component, createSignal, untracked, type Bind, type IBaseProp, type Signal } from '@motifx/core';
+import { follow } from './follow';
 import { registerControl } from './control-map';
 import { disableSubtree, rescueTarget } from './enable';
 import { deepActiveElement, isFocusable } from './focus';
@@ -31,8 +32,8 @@ interface Slot {
   value: unknown;
   /** Change counter that reactive readers track; created on the first read. */
   version?: Signal<number>;
-  /** Stops the effect of a getter prop; a value set in code replaces the binding. */
-  stop?: () => void;
+  /** Stops the binding that follows a getter prop; a value set in code replaces it. */
+  unfollow?: () => void;
   /** Subclass renderers registered with `observeProperty`. */
   appliers?: ((value: unknown) => void)[];
 }
@@ -61,11 +62,12 @@ const DEFAULTS: Record<string, unknown> = { text: '', enabled: true, visible: tr
  *   getter keeps the property in sync with the state.
  * - Every property can be set from code, with a value (`ctrl.enabled = false`:
  *   it replaces a getter given before, the code owns the value from then on) or
- *   with a function (`ctrl.enabled = () => !state.busy`: bound and followed).
+ *   with a function (`ctrl.enabled = () => !state.busy`: bound and followed; over plain data, read again on
+ *   `reState()`).
  * - Every property is reactive to read: `{() => ctrl.text}` or a watch follows it.
  *
  * Cost model: a property nobody set or bound costs nothing; a plain value is
- * written to the DOM once; only a getter prop creates an effect; the change
+ * written to the DOM once; only a getter prop creates a binding; the change
  * counter readers track is created on the first read.
  *
  * Subclasses render `text` (and their own properties built on the same
@@ -98,6 +100,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     super(...(args as [IBaseProp<TProps>?, IBaseProp<TProps>?]));
     registerControl(this.element, this);
     installFocusGuard();
+     
     const props = (this.props ?? {}) as ControlProps;
     for (const name of ['text', 'enabled', 'visible', 'tabStop', 'tabIndex'] as const) {
       if (props[name] !== undefined) this.bindProperty(name, props[name]);
@@ -274,8 +277,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   /** Sets a property from code: replaces a getter prop bound to it, then stores and renders. */
   protected setProperty(name: string, value: unknown): void {
     const slot = this.slot(name);
-    slot.stop?.();
-    slot.stop = undefined;
+    this.unbind(slot);
     this.store(name, slot, value);
   }
 
@@ -291,31 +293,34 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   protected assignProperty<T>(name: string, value: Bind<T>, normalize: (value: T) => unknown = (v) => v): void {
     if (typeof value === 'function') {
       const get = value as () => T;
-      this.bindProperty(name, () => normalize(get()));
+      // Only the getter is followed: what `normalize` reads of its value is not.
+      this.bindProperty(name, () => {
+        const got = get();
+        return untracked(() => normalize(got));
+      });
     } else {
       this.setProperty(name, normalize(value));
     }
   }
 
   /**
-   * Binds a property to a prop: a getter becomes one effect that keeps it in
-   * sync, a plain value is stored once. Subclasses call this for their own
-   * properties, typically from the constructor.
+   * Binds a property to a prop: a getter is read now and followed by a component binding, so it follows reactive
+   * data by itself and plain data on `reState()`. A plain value is stored once. Subclasses call
+   * this for their own properties, typically from the constructor.
    */
   protected bindProperty(name: string, prop: Bind<unknown>): void {
     const slot = this.slot(name);
-    slot.stop?.();
-    slot.stop = undefined;
+    this.unbind(slot);
     if (typeof prop !== 'function') {
       this.store(name, slot, prop);
       return;
     }
-    const stop = effect(() => {
-      const value = (prop as () => unknown)();
-      untracked(() => this.store(name, slot, value));
-    });
-    slot.stop = stop;
-    this.motif.setDisposable(stop);
+    slot.unfollow = follow(this, name, prop as () => unknown, (value) => this.store(name, slot, value));
+  }
+
+  private unbind(slot: Slot): void {
+    slot.unfollow?.();
+    slot.unfollow = undefined;
   }
 
   /**
@@ -326,7 +331,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   protected observeProperty<T>(name: string, apply: (value: T) => void): void {
     const slot = this.slot(name);
     (slot.appliers ??= []).push(apply as (value: unknown) => void);
-    apply(slot.value as T);
+    untracked(() => apply(slot.value as T));
   }
 
   private slot(name: string): Slot {
@@ -339,8 +344,11 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   private store(name: string, slot: Slot, value: unknown): void {
     if (Object.is(slot.value, value)) return;
     slot.value = value;
-    this.applyProperty(name, value);
-    if (slot.appliers) for (const apply of slot.appliers) apply(value);
+    // Drawing follows nothing: a setter may be called from inside the caller's own watch.
+    untracked(() => {
+      this.applyProperty(name, value);
+      if (slot.appliers) for (const apply of slot.appliers) apply(value);
+    });
     if (slot.version) slot.version.value = slot.version.peek() + 1;
   }
 

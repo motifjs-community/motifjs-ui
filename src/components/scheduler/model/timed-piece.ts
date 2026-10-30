@@ -1,7 +1,8 @@
 /** The part of an appointment shown in one day column, placed by the overlap layout. Kept while it stays on screen. */
 export interface TimedPiece<T> {
   id: string;
-  item: T;
+  /** Moves on when its appointment was read again (a refresh, an edit) or is another object: what shows it reads it again. The appointment itself is the model's `itemOf(piece)`. */
+  version: number;
   /** The column it stands in (a day, in a group), and the group's index (-1 without groups). */
   column: number;
   group: number;

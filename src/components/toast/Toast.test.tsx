@@ -245,6 +245,37 @@ describe('Toast', () => {
     expect(closeButton(t)!.getAttribute('aria-label')).toBe('Kapat');
   });
 
+  it('a toaster is named by its text, else from uiLocale, and reads both over plain data again on reState', async () => {
+    const plain = { name: 'Uploads', max: 1 };
+    let toaster!: Toaster;
+    const host = page(<Toaster ref={(t: Toaster) => (toaster = t)} position="top-start" text={() => plain.name} max={() => plain.max} />);
+    await settle();
+    expect(toaster.element.getAttribute('aria-label')).toBe('Uploads');
+    plain.name = '';
+    await settle();
+    expect(toaster.element.getAttribute('aria-label')).toBe('Uploads');
+    host.reState();
+    expect(toaster.element.getAttribute('aria-label')).toBe('Notifications');
+    uiLocale.strings = trStrings;
+    await settle();
+    expect(toaster.element.getAttribute('aria-label')).toBe('Bildirimler');
+    plain.max = 3;
+    host.reState();
+    expect(toaster.max).toBe(3);
+  });
+
+  it('a toast reads functions over plain data again on reState', async () => {
+    const plain = { text: '10%', title: 'Upload' };
+    const t = new Toast({ text: () => plain.text, title: () => plain.title, duration: 0 });
+    toast.show(t);
+    Object.assign(plain, { text: '55%', title: 'Uploading' });
+    await settle();
+    expect(t.element.querySelector('.mx-toast__text')!.textContent).toBe('10%');
+    Toaster.default.reState();
+    expect(t.element.querySelector('.mx-toast__text')!.textContent).toBe('55%');
+    expect(t.element.querySelector('.mx-toast__title')!.textContent).toBe('Uploading');
+  });
+
   it('Toaster.default can be your own; the one made before goes when it is empty', async () => {
     toast.info('first').close();
     const made = Toaster.default;

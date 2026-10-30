@@ -1,4 +1,4 @@
-import { reactive } from '@motifx/core';
+import { errorHandler, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mount } from '../../../tests/helpers';
@@ -67,27 +67,37 @@ describe('Scheduler', () => {
     expect(s.visibleRange).toEqual({ start: at(26, 0), end: at(2 + 31, 0) });
   });
 
-  it('follows a reactive array: a moved appointment keeps its box', async () => {
-    const list = reactive([{ id: 1, text: 'Standup', startDate: at(28, 9), endDate: at(28, 10) }]) as Meeting[];
-    const s = make({ appointments: list });
-    await tick();
-    const box = boxes(s)[0];
-    list[0].startDate = at(29, 9);
-    list[0].endDate = at(29, 10);
-    await tick();
-    expect(boxes(s)[0]).toBe(box);
-    expect(box.style.getPropertyValue('--_column')).toBe('3');
-    list.push({
-      id: 2,
-      text: 'Review',
-      startDate: at(29, 9, 30),
-      endDate: at(29, 11),
+  for (const kind of ['plain', 'reactive'] as const) {
+    it(`reads a ${kind} array as it is: a change in place shows after refresh(), the moved appointment keeping its box`, async () => {
+      const given: Meeting[] = [{ id: 1, text: 'Standup', startDate: at(28, 9), endDate: at(28, 10) }];
+      const list = kind === 'plain' ? given : (reactive(given) as Meeting[]);
+      const s = make({ appointments: list });
+      await tick();
+      const box = boxes(s)[0];
+      list[0].startDate = at(29, 9);
+      list[0].endDate = at(29, 10);
+      await tick();
+      expect(box.style.getPropertyValue('--_column')).toBe('2');
+      s.refreshAppointment(list[0]);
+      await tick();
+      expect(boxes(s)[0]).toBe(box);
+      expect(box.style.getPropertyValue('--_column')).toBe('3');
+      list.push({
+        id: 2,
+        text: 'Review',
+        startDate: at(29, 9, 30),
+        endDate: at(29, 11),
+      });
+      await tick();
+      expect(boxes(s).map(textOf)).toEqual(['Standup']);
+      s.refresh();
+      await tick();
+      expect(boxes(s).map(textOf)).toEqual(['Standup', 'Review']);
+      expect(boxes(s)[0]).toBe(box);
+      expect(box.style.getPropertyValue('--_width')).toBe('0.5');
+      expect(s.shownAppointments[0]).toBe(list[0]);
     });
-    await tick();
-    expect(boxes(s).map(textOf)).toEqual(['Standup', 'Review']);
-    expect(boxes(s)[0]).toBe(box);
-    expect(box.style.getPropertyValue('--_width')).toBe('0.5');
-  });
+  }
 
   it('moves by its view, asks first, and tells what it shows', async () => {
     const asked: string[] = [];
@@ -243,5 +253,23 @@ describe('Scheduler', () => {
     await tick();
     expect(s.element.querySelector('.mx-scheduler__all-day-label')?.textContent).toBe('Whole day');
     expect(s.element.getAttribute('aria-label')).toBe('Scheduler');
+  });
+
+  it('rows of cells that go with other hours leave nothing behind: drawn again, only the cells on the page are written', async () => {
+    const errors: unknown[] = [];
+    const stop = errorHandler.addListener((e) => errors.push(e));
+    const s = make({ cellDuration: 30, startDayHour: 8, endDayHour: 18 });
+    await tick();
+    const cells = () => s.element.querySelectorAll('.mx-scheduler__cells .mx-scheduler__cell').length;
+    const before = cells();
+    s.cellDuration = 60;
+    await tick();
+    s.startDayHour = 10;
+    await tick();
+    s.reState();
+    await tick();
+    stop();
+    expect(errors).toEqual([]);
+    expect(cells()).toBe((before / 20) * 8);
   });
 });

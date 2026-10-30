@@ -60,6 +60,32 @@ describe('DateBox', () => {
     expect(b.inputElement.value).toBe('02.01.2027');
   });
 
+  it('reads functions over plain data again on reState, writes a date set from code to x-model, and never changes your dates', async () => {
+    const first = day(2026, 3, 1);
+    const plain = { day: first, type: 'date' as 'date' | 'datetime' };
+    const s = reactive({ day: null as Date | null });
+    let b!: DateBox;
+    let m!: DateBox;
+    const host = page(
+      <DateBox ref={(x: DateBox) => (b = x)} locale="tr-TR" value={() => plain.day} type={() => plain.type} />,
+      <DateBox ref={(x: DateBox) => (m = x)} locale="tr-TR" x-model={() => s.day} />,
+    );
+    await settle();
+    plain.day = day(2026, 4, 2);
+    await settle();
+    expect(b.inputElement.value).toBe('01.03.2026');
+    host.reState();
+    expect(b.inputElement.value).toBe('02.04.2026');
+    plain.type = 'datetime';
+    host.reState();
+    expect(b.type).toBe('datetime');
+    expect(first.getTime()).toBe(day(2026, 3, 1).getTime());
+    const chosen = day(2026, 5, 3);
+    m.value = chosen;
+    expect(s.day?.getTime()).toBe(chosen.getTime());
+    expect(chosen.getTime()).toBe(day(2026, 5, 3).getTime());
+  });
+
   it('refuses a date that does not exist and says so when checked', async () => {
     let b!: DateBox;
     page(<DateBox ref={(x: DateBox) => (b = x)} locale="tr-TR" value={day(2026, 1, 1)} />);

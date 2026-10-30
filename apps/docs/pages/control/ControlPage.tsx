@@ -45,7 +45,7 @@ const PROTECTED = [
   ['focusElement', 'Getter: the element that takes focus; the root by default. Composite controls override it. It runs from the constructor, so derive it from `this.element`.'],
   ['observeProperty(name, apply)', 'Renders a property without an effect: `apply` runs now and on every change, from a getter prop or from code.'],
   ['getProperty(name) / setProperty(name, value)', 'The storage behind the shared properties, for your own: tracked read, and set-from-code (which replaces a bound getter).'],
-  ['bindProperty(name, prop)', 'Binds one of your own props: a getter becomes one effect, a value is stored once. Call it from your constructor.'],
+  ['bindProperty(name, prop)', 'Binds one of your own props: a getter is read now and followed by a binding of the control (so `reState()` reads it again), a value is stored once. Call it from your constructor.'],
   ['applyProperty(name, value) / peekProperty(name)', 'Render your own properties without an effect: override `applyProperty` (call `super`); read the current value untracked with `peekProperty`. Can run from the constructor: touch only `this.element`.'],
   ['setAccessKey(key)', 'Declares the access key parsed from `&Text` (`parseAccessKey`): written to `aria-keyshortcuts` as `Alt+K`, which is how Alt+K finds the control.'],
 ];
@@ -59,9 +59,9 @@ const DISABLED = [
 ];
 
 const COST = [
-  ['A property nobody set, bound or read', 'Nothing: no storage, no DOM write, no effect.'],
+  ['A property nobody set, bound or read', 'Nothing: no storage, no DOM write, no binding.'],
   ['A plain value (`enabled={false}`, `new Badge({ text })`)', 'Stored and written to the DOM once.'],
-  ['A getter (`enabled={() => !state.busy}`)', 'One effect for that property, stopped when the control is disposed or another value or function is set.'],
+  ['A getter (`enabled={() => !state.busy}`)', 'One binding for that property, stopped when the control is disposed or another value or function is set.'],
   ['Reading a property', 'A small change counter, created the first time someone reads it.'],
   ['Setting from code', 'A direct DOM write; readers are notified through the counter.'],
   ['`enabled = false`', 'One pass over the control\'s subtree, plus one shared observer while anything is disabled (it disappears when nothing is).'],
@@ -116,6 +116,12 @@ unread.text = () => \`Unread (\${this.mail.count})\`; // a function is followed
         <ul class="docs-list">
           <li>
             <Rich text="A prop is a value or a function. A function of a reactive object (`enabled={() => !state.busy}`) keeps the property in step with it; this is how MotifJS keeps a prop live." />
+          </li>
+          <li>
+            <Rich text="Your data is used as you give it: the control never makes it reactive, never copies or changes it. Over plain data the function is read again when you call `reState()` on the control or on anything it sits in; you choose which kind of data to give." />
+          </li>
+          <li>
+            <Rich text="With `x-model` the model always shows the control's state: a change by the user, by your code (`ctrl.value = …`, `select()`, `show()`) or by a rule you gave (`decimals`, a mask, `min` / `max`) is written back to it." />
           </li>
           <li>
             <Rich text="A property set from code takes the same: a function (`ctrl.enabled = () => !state.busy`) is bound in place of what was there and followed; a value (`ctrl.enabled = false`) drops what was bound, and from then on the code owns it." />

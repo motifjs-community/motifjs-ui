@@ -39,6 +39,7 @@ import { Lookup, type LookupColumn } from '@motifx-community/ui';
             ['popupWidth', '`Bind<string>`', '`lookup.popup-width`', 'The least width of the list.'],
             ['searchEnabled', '`Bind<boolean>`', '`true`', 'A search box above the list (DropDown has it off by default).'],
             ['everything of DropDown', '', '', '`items`, `dataSource`, `textField`, `valueField`, `searchDelay`, `clearButton`, validation, keyboard…'],
+            ['refresh()', '', '', 'Your items and columns may be plain or reactive; the lookup reads them as they are. After changing them in place, call `refresh()`.'],
           ]}
         />
       </Section>

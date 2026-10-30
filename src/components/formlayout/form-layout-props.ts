@@ -18,6 +18,8 @@ export interface FormLayoutProps<T extends object> extends ControlProps {
   readOnly?: Bind<boolean>;
   /** The form was sent and every field passed. */
   onValidSubmit?: (e: { data: T | null; event: Event }) => void;
+  /** After the user changed a field and its value was written into the data object: the place to show what follows from it (`refresh()`). */
+  onFieldChanged?: (e: { field: string; value: unknown; data: T }) => void;
   /** The form was sent and a field failed. */
   onInvalidSubmit?: (e: ValidationResult) => void;
 }

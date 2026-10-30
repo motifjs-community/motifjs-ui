@@ -20,7 +20,7 @@ const PROPS = [
     'appointments',
     '`Bind<readonly T[]>`',
     '`[]`',
-    'The appointments in memory. A reactive array of reactive objects is followed: a changed time moves the appointment.',
+    'The appointments in memory. Your data may be plain or reactive; the component reads it as it is. After changing it in place, call `refresh()`. Its own edits (the form, a drag, the methods) show at once.',
   ],
   ['dataSource', '`Bind<DataSource | null>`', '`null`', 'The appointments from `@motifx-community/data`, in place of `appointments`.'],
   ['remoteFiltering', '`Bind<boolean>`', '`true`', 'Asks the data source for the days shown only (a filter on the start and end fields, added to its own).'],
@@ -75,6 +75,9 @@ const MEMBERS = [
   ['scrollToTime(hour, minute?)', 'Scrolls the day columns to a time of day.'],
   ['selectCells(cell | null)', 'Selects the cells of a time in the days shown.'],
   ['appointmentsIn(start, end), findAppointment(key)', 'The appointments in a time; one by its key.'],
+  ['refresh()', 'Reads the appointments and the resources again. Your data may be plain or reactive; the component reads it as it is. After changing it in place, call `refresh()`.'],
+  ['refreshAppointment(appointment)', 'Reads one appointment again (an occurrence: its series), after you changed it in place.'],
+  ['refreshResources()', 'Reads the resources again: their items, after you changed them in place.'],
   ['visibleRange, resolvedView, selectedCells, shownAppointments, loading', 'Reactive state.'],
   ['textOf(key, values?)', 'A text of `uiLocale` or `texts`, filled in.'],
 ];

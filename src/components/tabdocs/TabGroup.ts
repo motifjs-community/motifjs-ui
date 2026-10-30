@@ -1,6 +1,8 @@
-import { Component, effect, read, Transporter, untracked, type Bind } from '@motifx/core';
+import { Component, Transporter, untracked, type Bind } from '@motifx/core';
 import { FocusContainer } from '../../core/container';
+import { follow } from '../../core/follow';
 import { deepActiveElement, isShown } from '../../core/focus';
+import { givenField, givenList, givenValue } from '../../core/given-field';
 import { chevronDown, dismissMark, gripMark, lockMark, maximizeMark, moreMark, pinMark, restoreMark, splitMark } from '../../core/glyphs';
 import { nextId } from '../../core/next-id';
 import { isElement, isNode } from '../../core/node-kind';
@@ -103,21 +105,26 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     // The items read the group, so they come once its parts are in place. A compact bar keeps the
     // buttons it names and the app's that ask to stay; the others are in the "…" menu.
     parts.actions.items = () => {
-      const app = [...this.appItems(), ...(this.activeDocument?.actions ?? [])];
+      // The documents' and the app's lists are read as they are; a list given anew is followed.
+      const app = [...givenList(this.appItems()), ...givenList(this.activeDocument?.actions)];
       const kept = this.look().buttons;
       if (kept === 'all') return [parts.grip, ...app, ...parts.own];
       const named = new Map(parts.named.map(([name, item]) => [item, name]));
       return [parts.grip, ...app.filter(staysOut), ...parts.own.filter((item) => !named.has(item) || kept.includes(named.get(item)!))];
     };
     this.listen();
-    const stopLook = effect(() => {
-      const look = this.look();
-      // A tablet's strip that holds the tabs of groups folded into it is no title.
-      const title = look.singleTabTitle && this.documents.length === 1 && !manager.groupHasGuests(this);
-      const close = manager.groupActions && (!!this.dockArea || !!this.window) && (look.buttons === 'all' || look.buttons.includes('close'));
-      untracked(() => this.renderLook(look, title, close));
-    });
-    this.motif.setDisposable(stopLook);
+    follow(
+      this,
+      'look',
+      () => {
+        const look = this.look();
+        // A tablet's strip that holds the tabs of groups folded into it is no title.
+        const title = look.singleTabTitle && this.documents.length === 1 && !manager.groupHasGuests(this);
+        const close = manager.groupActions && (!!this.dockArea || !!this.window) && (look.buttons === 'all' || look.buttons.includes('close'));
+        return { look, title, close };
+      },
+      ({ look, title, close }) => this.renderLook(look, title, close),
+    );
     this.observeProperty('locked', () =>
       untracked(() => {
         const n = manager.groups.indexOf(this);
@@ -294,7 +301,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
       if (kept === 'all') return [];
       // The lock mark has its command in the menu already.
       const own = parts.named.filter(([name]) => name !== 'lock' && !kept.includes(name)).map(([, item]) => item);
-      const app = [...this.appItems(), ...(this.activeDocument?.actions ?? [])].filter((item) => !staysOut(item));
+      const app = [...givenList(this.appItems()), ...givenList(this.activeDocument?.actions)].filter((item) => !staysOut(item));
       const line: ToolbarItem[] = own.length && app.length ? [{ type: 'separator' }] : [];
       return menuItemsOf([...own, ...line, ...app], parts.actions);
     });
@@ -945,7 +952,7 @@ function isRtl(el: Element): boolean {
 
 /** An app's button that asks to stay in the toolbar. */
 function staysOut(item: ToolbarItem): boolean {
-  return read(item.overflow) === 'never';
+  return givenField(item, 'overflow') === 'never';
 }
 
 /** Toolbar buttons as menu items: their names, icons, states and menus; a separator starts a group. */
@@ -953,24 +960,25 @@ function menuItemsOf(items: readonly ToolbarItem[], toolbar: Toolbar): MenuItem[
   const out: MenuItem[] = [];
   let group = false;
   for (const item of items) {
-    const type = read(item.type) ?? 'button';
+    const type = givenField<ToolbarItem['type']>(item, 'type') ?? 'button';
     if (type === 'separator') {
       group = out.length > 0;
       continue;
     }
+    const field = <K extends keyof ToolbarItem>(name: K) => givenValue<ToolbarItem[K]>(item, name);
     const entry: MenuItem = {
-      text: () => read(item.text) || read(item.hint) || '',
-      icon: item.icon,
-      hint: item.hint,
-      tone: item.tone,
-      enabled: item.enabled,
-      visible: item.visible,
+      text: () => givenField<string | undefined>(item, 'text') || givenField<string | undefined>(item, 'hint') || '',
+      icon: field('icon'),
+      hint: field('hint'),
+      tone: field('tone'),
+      enabled: field('enabled'),
+      visible: field('visible'),
       beginGroup: group,
-      data: item.data,
+      data: field('data'),
     };
-    if (type === 'menu') entry.items = item.menu ?? [];
-    else entry.click = (e) => item.click?.({ item, source: toolbar, event: e.event });
-    if (type === 'toggle') entry.checked = () => !!read(item.pressed);
+    if (type === 'menu') entry.items = field('menu') ?? [];
+    else entry.click = (e) => givenValue<ToolbarItem['click']>(item, 'click')?.({ item, source: toolbar, event: e.event });
+    if (type === 'toggle') entry.checked = () => !!givenField(item, 'pressed');
     out.push(entry);
     group = false;
   }

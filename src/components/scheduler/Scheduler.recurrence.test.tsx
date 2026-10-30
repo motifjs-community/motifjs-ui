@@ -1,4 +1,4 @@
-import { reactive } from '@motifx/core';
+import { Component, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { mount } from '../../../tests/helpers';
@@ -84,7 +84,7 @@ describe('Scheduler: series', () => {
     expect(s.occurrencesOf(s.seriesOf(occurrence)!, at(1, 0), at(31, 0)).length).toBe(12);
     s.recurrenceMarks = false;
     await tick();
-    expect(shown[0].querySelector('.mx-scheduler__mark')).toBeNull();
+    expect(shown[0].querySelector<HTMLElement>('.mx-scheduler__mark')!.hidden).toBe(true);
   });
 
   it('this occurrence, by the keys: it is asked, the occurrence goes apart and its time is left out of the series', async () => {
@@ -357,5 +357,72 @@ describe('RecurrenceEditor', () => {
     expect(changes).toHaveLength(1);
     expect(editor.summaryText).toBe('Every month, by a rule of its own');
     await editor.dispose();
+  });
+
+  it('shows the editors a rule wants when it changes, and keeps a pick of the user', async () => {
+    const changes: string[] = [];
+    const editor = mount(
+      new RecurrenceEditor({ value: 'FREQ=MONTHLY;BYMONTHDAY=15', start: new Date(2026, 9, 26, 9), locale: 'en-GB', onValueChanged: (e) => changes.push(e.value) }),
+    );
+    await tick();
+    const field = editor.element.querySelector<HTMLElement>('.mx-recurrence-editor__days-field')!;
+    // A control that is not shown is out of the page.
+    const weekdayShown = () => !!editor.element.querySelector('.mx-recurrence-editor__weekday');
+    expect(field.hidden).toBe(true);
+    editor.value = 'FREQ=WEEKLY;BYDAY=MO';
+    await tick();
+    expect(field.hidden).toBe(false);
+    expect([...field.querySelectorAll('.mx-recurrence-editor__day')].filter((d) => d.hasAttribute('data-pressed'))).toHaveLength(1);
+    editor.value = 'FREQ=MONTHLY;BYMONTHDAY=15';
+    await tick();
+    expect(field.hidden).toBe(true);
+    expect(weekdayShown()).toBe(false);
+    const byWeekday = editor.element.querySelectorAll<HTMLInputElement>('.mx-recurrence-editor__by input')[1];
+    byWeekday.checked = true;
+    byWeekday.dispatchEvent(new Event('change', { bubbles: true }));
+    await tick();
+    expect(changes).toEqual(['FREQ=MONTHLY;BYDAY=4MO']);
+    expect(byWeekday.checked).toBe(true);
+    expect(weekdayShown()).toBe(true);
+    await editor.dispose();
+  });
+
+  it('"on a date" stays chosen: it comes with a date three months after the start', async () => {
+    const changes: string[] = [];
+    const editor = mount(
+      new RecurrenceEditor({ value: 'FREQ=DAILY;COUNT=5', start: new Date(2026, 9, 26, 9), allDay: true, locale: 'en-GB', onValueChanged: (e) => changes.push(e.value) }),
+    );
+    await tick();
+    const until = editor.element.querySelectorAll<HTMLInputElement>('.mx-recurrence-editor__end input')[2];
+    until.checked = true;
+    until.dispatchEvent(new Event('change', { bubbles: true }));
+    await tick();
+    expect(changes).toEqual(['FREQ=DAILY;UNTIL=20270126']);
+    expect(until.checked).toBe(true);
+    expect(editor.element.querySelector('.mx-recurrence-editor__until')).not.toBeNull();
+    await editor.dispose();
+  });
+
+  it('reads a rule over plain data again on reState, and writes a rule set from code to x-model', async () => {
+    const plain = { rule: 'FREQ=DAILY' };
+    const state = reactive({ rule: '' });
+    const host = mount(new Component<HTMLDivElement>('div'));
+    let editor!: RecurrenceEditor;
+    let bound!: RecurrenceEditor;
+    host.controls.add(
+      <RecurrenceEditor ref={(x: RecurrenceEditor) => (editor = x)} value={() => plain.rule} start={new Date(2026, 9, 26, 9)} locale="en-GB" />,
+      <RecurrenceEditor ref={(x: RecurrenceEditor) => (bound = x)} x-model={() => state.rule} start={new Date(2026, 9, 26, 9)} locale="en-GB" />,
+    );
+    await tick();
+    expect(editor.summaryText).toBe('Every day');
+    plain.rule = 'FREQ=WEEKLY;BYDAY=MO';
+    await tick();
+    expect(editor.summaryText).toBe('Every day');
+    host.reState();
+    await tick();
+    expect(editor.summaryText).toBe('Every week on Monday');
+    bound.value = 'FREQ=MONTHLY;BYMONTHDAY=15';
+    expect(state.rule).toBe('FREQ=MONTHLY;BYMONTHDAY=15');
+    await host.dispose();
   });
 });

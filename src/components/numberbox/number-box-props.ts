@@ -21,7 +21,10 @@ export interface NumberBoxProps extends FieldProps<number | null> {
   format?: Bind<Intl.NumberFormatOptions>;
   /** The locale of the format and of what is typed. Default the page's `lang`. */
   locale?: Bind<string>;
-  /** Digits kept after the decimal point when a value is entered. Default: as typed. */
+  /**
+   * Digits after the decimal point: every value is rounded to them (entered, given or set from code, written back
+   * to `x-model`), and shown with exactly that many while the field is not edited. Default: as given.
+   */
   decimals?: Bind<number | null>;
   /** A value outside `min` / `max` is brought inside when entered. Default `true`; `false` leaves it to the range check. */
   clamp?: Bind<boolean>;

@@ -1,5 +1,6 @@
-import { effect, Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
+import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
+import { follow } from '../../core/follow';
 import { cautionMark, dangerMark, dismissMark, infoMark, successMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
@@ -329,8 +330,7 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     if (parts.close) return;
     const button = new Button({ icon: dismissMark() });
     button.element.classList.add('mx-toast__close');
-    const stop = effect(() => button.element.setAttribute('aria-label', uiLocale.strings.close));
-    button.motif.setDisposable(stop);
+    follow(button, 'label', () => uiLocale.strings.close, (label) => button.element.setAttribute('aria-label', label));
     button.element.addEventListener('click', () => this.close('button'));
     this.controls.add(button);
     parts.close = button;

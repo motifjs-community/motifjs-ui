@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../tests/helpers';
 import { TestButton } from '../../tests/controls';
 import { Control } from './control';
+import { follow } from './follow';
 
 let hosts: Component[] = [];
 
@@ -50,6 +51,113 @@ describe('Control properties', () => {
     await tick();
     stop();
     expect(seen).toEqual(['One', 'Two']);
+  });
+
+  it('reads a getter prop over plain data again on reState, from the control or the page', async () => {
+    const plain = { text: 'One', busy: false };
+    const b = new TestButton({ text: () => plain.text, enabled: () => !plain.busy });
+    const host = page(b);
+    await tick();
+    plain.text = 'Two';
+    b.reState();
+    expect(b.element.textContent).toBe('Two');
+    plain.busy = true;
+    host.reState();
+    expect(b.element.disabled).toBe(true);
+  });
+
+  it('has the value of a getter prop before it is built', () => {
+    const plain = { text: 'One' };
+    const b = new TestButton({ text: () => plain.text });
+    expect(b.isBuilt).toBe(false);
+    expect(b.text).toBe('One');
+  });
+
+  it('follows reactive data only once it is built, and from then on by itself', async () => {
+    const state = reactive({ text: 'One' });
+    const b = new TestButton({ text: () => state.text });
+    state.text = 'Two';
+    await tick();
+    expect(b.text).toBe('One');
+    page(b);
+    await tick();
+    expect(b.text).toBe('Two');
+    state.text = 'Three';
+    await tick();
+    expect(b.element.textContent).toBe('Three');
+  });
+
+  it('reaches the controls inside, through components that are not controls', async () => {
+    const plain = { text: 'One' };
+    const b = new TestButton({ text: () => plain.text });
+    const between = new Component<HTMLDivElement>('div');
+    const panel = new Panel();
+    page(panel);
+    panel.controls.add(between);
+    between.controls.add(b);
+    await tick();
+    plain.text = 'Two';
+    panel.reState();
+    expect(b.element.textContent).toBe('Two');
+  });
+
+  it('draws once when the data is reactive and reState is called as well', async () => {
+    const state = reactive({ text: 'One' });
+    const b = new TestButton({ text: () => state.text });
+    page(b);
+    await tick();
+    let drawn = 0;
+    const target = b as unknown as { applyProperty(name: string, value: unknown): void };
+    const draw = target.applyProperty.bind(b);
+    target.applyProperty = (name: string, value: unknown) => {
+      if (name === 'text') drawn++;
+      draw(name, value);
+    };
+    state.text = 'Two';
+    await tick();
+    b.reState();
+    expect(b.element.textContent).toBe('Two');
+    expect(drawn).toBe(1);
+  });
+
+  it('does not run a following that was stopped during the same reState', async () => {
+    const plain = { stop: false };
+    const seen: string[] = [];
+    const host = page();
+    await tick();
+    let stopSecond = () => {};
+    follow(host, 'first', () => plain.stop, (stop) => {
+      seen.push(`first ${stop}`);
+      if (stop) stopSecond();
+    });
+    stopSecond = follow(host, 'second', () => plain.stop, (stop) => void seen.push(`second ${stop}`));
+    plain.stop = true;
+    host.reState();
+    expect(seen).toEqual(['first false', 'second false', 'first true']);
+  });
+
+  it('keeps what the user changed across a reState while your value stays the same, and takes a new one', async () => {
+    const plain = { text: 'One' };
+    const b = new TestButton({ text: () => plain.text });
+    const host = page(b);
+    await tick();
+    (b as unknown as { changeProperty(name: string, value: unknown): void }).changeProperty('text', 'Typed');
+    host.reState();
+    expect(b.text).toBe('Typed');
+    plain.text = 'Two';
+    host.reState();
+    expect(b.text).toBe('Two');
+  });
+
+  it('stops reading the getter once a value is set from code', async () => {
+    const plain = { text: 'One' };
+    const b = new TestButton({ text: () => plain.text });
+    page(b);
+    await tick();
+    b.text = 'Code';
+    plain.text = 'Two';
+    b.reState();
+    expect(b.text).toBe('Code');
   });
 
   it('follows a getter prop, and a value set from code replaces that binding', async () => {
@@ -260,5 +368,35 @@ describe('Control focus', () => {
     await settle();
     expect(b.element.tabIndex).toBe(-1);
     expect(b.focus()).toBe(true);
+  });
+
+  it('draws a property it is given without following what drawing reads, and runs `normalize` the same way', async () => {
+    const s = reactive({ n: 0, list: [1, 2] });
+    class Counter extends Control<HTMLDivElement> {
+      constructor() {
+        super();
+        this.observeProperty('text', () => void s.n);
+      }
+      set items(value: unknown) {
+        this.assignProperty('items', value as () => number[], (list) => list.map((x) => x));
+      }
+      get items(): number[] {
+        return this.getProperty('items');
+      }
+    }
+    const c = new Counter();
+    let runs = 0;
+    const stop = effect(() => {
+      runs++;
+      c.text = 'a';
+    });
+    c.items = () => s.list;
+    s.n++;
+    s.list.push(3);
+    await tick();
+    await tick();
+    expect(runs).toBe(1);
+    expect(c.items).toEqual([1, 2]);
+    stop();
   });
 });

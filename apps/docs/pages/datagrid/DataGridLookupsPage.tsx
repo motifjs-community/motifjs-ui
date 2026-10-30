@@ -9,7 +9,7 @@ const LOOKUP_FIELDS = [
   ['dataSource', '`Bind<DataSource | unknown[]>`: the items, searched and resolved on their own service, or an array in memory.'],
   ['valueField, textField', 'The field that matches the cell value (default: the source’s key; an array of plain values: the value); the text shown, a field or `(item) => text` (default: the value).'],
   ['searchFields', 'Fields the editor and the text searches look in. Default: `textField` when it is a field.'],
-  ['filter', '`(row) => FilterExpression`: narrows the items for a row (cascading lists); `null` row: the filter lists.'],
+  ['filter', '`(row, context) => FilterExpression`: narrows the items for a row (cascading lists: `context.getValue(\'province\')`, the value entered, else the row’s); `null` row: the filter lists.'],
   ['allowClearing', '`Bind<boolean>`: a clear button in the editor. Default `false`.'],
   ['resolve, batchSize', '`\'batch\'` (default: keys in one request, `batchSize` 100 each) or `\'byKey\'` (one request per key).'],
   ['sortBy', '`Bind<\'key\' | \'text\'>`: rows in memory sorted by the key (default) or by the text shown.'],
@@ -32,7 +32,7 @@ export default function DataGridLookupsPage() {
           <Lookups />
         </Example>
         <p>
-          <Rich text="Editing opens a `DropDown` with search (or `editor: 'combobox'`, or the kit's `Lookup` with columns) over a data source of its own on the same adapter, so its search never moves a source the page shows. Typing on the cell opens the list and searches what was typed; the picked text shows at once. `filter(row)` narrows the list for the row, `setCellValue` writes other fields with the value — here a new province empties the district — and `onEditorPreparing` changes the editor's props: the district waits for a province." />
+          <Rich text="Editing opens a `DropDown` with search (or `editor: 'combobox'`, or the kit's `Lookup` with columns) over a data source of its own on the same adapter, so its search never moves a source the page shows. Typing on the cell opens the list and searches what was typed; the picked text shows at once. `filter(row, context)` narrows the list for the row (by `context.getValue`, so a province just picked counts), `setCellValue` writes other fields with the value — here a new province empties the district — and `onEditorPreparing` changes the editor's props: the district waits for a province (`e.getValue('province')`)." />
         </p>
         <Example files={code('Cascade.tsx', 'places.ts')} stack>
           <Cascade />

@@ -4,7 +4,7 @@ import type { UiStrings } from '../../core/ui-strings';
 import type { RecurrenceFrequency } from '../../parts/recurrence/recurrence-frequency';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 
-/** Props of `RecurrenceEditor`. Each one is also a settable, reactive property. */
+/** Props of `RecurrenceEditor`. Each one is also a settable property: setting it updates the editor. */
 export interface RecurrenceEditorProps extends ControlProps {
   /** Names the editor for screen readers. The same property as `text`. */
   label?: Bind<string>;

@@ -1,7 +1,7 @@
-import { effect, reactive, read, untracked } from '@motifx/core';
 import type { data } from '@motifx-community/data';
+import { givenField, givenList } from '../../../core/given-field';
 import type { SchedulerResource } from '../scheduler-resource';
-import type { GroupResource } from './group-resource';
+import type { ResourceEntry } from './resource-entry';
 import { ResourceKind } from './ResourceKind';
 import type { SchedulerGroup } from './scheduler-group';
 
@@ -14,19 +14,26 @@ function isSource(value: unknown): value is Source {
 
 /**
  * The resource kinds of a scheduler: their items (an array, or a data source loaded once and then
- * followed), the values an appointment has of each, and the colour they give it.
+ * followed), the values an appointment has of each, and the colour they give it. The items and
+ * their fields are read as they are, plain or reactive: a change in place shows after `refresh()`.
+ * Nothing here follows anything: a change is said (`refresh()`, `listChanged()`, a data source's
+ * change) and told to `onChanged` listeners.
  */
 export class Resources {
   private readonly made = new WeakMap<SchedulerResource<unknown>, ResourceKind<unknown>>();
-  private readonly version = reactive({ rows: 0 });
+  /** Moves on each time the items are to be read again. */
+  private rows = 0;
+  private readonly listeners = new Set<() => void>();
+  /** Each kind's items as read last, and when. */
+  private readonly lastRows = new WeakMap<SchedulerResource<unknown>, { from: unknown; version: number; rows: readonly unknown[] }>();
   private readonly followed = new Map<Source, () => void>();
   private stop: (() => void) | null = null;
 
   constructor(private readonly list: () => readonly SchedulerResource<unknown>[]) {}
 
-  /** The kinds, in the order given. Reactive. */
+  /** The kinds, in the order given. */
   kinds(): ResourceKind<unknown>[] {
-    return this.list().map((def) => {
+    return givenList(this.list()).map((def) => {
       let kind = this.made.get(def);
       if (!kind) this.made.set(def, (kind = new ResourceKind(def, () => this.rowsOf(def))));
       return kind;
@@ -37,10 +44,28 @@ export class Resources {
     return this.kinds().find((k) => k.field === field);
   }
 
+  /** Reads the items again: a change to them in place shows. */
+  refresh(): void {
+    this.rows++;
+    this.changed();
+  }
+
+  /** The list of kinds was given anew: its data sources are loaded and followed, the rest let go. */
+  listChanged(): void {
+    if (this.stop) this.sync(this.sources());
+    this.changed();
+  }
+
+  /** Calls `listener` after the kinds or their items change; returns the function that stops it. */
+  onChanged(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
   /** The values an appointment has of a field: a list for a kind with several, one or none otherwise. */
   valuesOf(item: unknown, field: string): unknown[] {
-    const value = (item as Record<string, unknown> | null)?.[field];
-    if (Array.isArray(value)) return value.filter((v) => !blank(v));
+    const value = givenField(item, field);
+    if (Array.isArray(value)) return givenList(value).filter((v) => !blank(v));
     return blank(value) ? [] : [value];
   }
 
@@ -69,7 +94,7 @@ export class Resources {
   }
 
   /** The items of an appointment, by kind, in the kinds' order (the ones it has). */
-  itemsOf(item: unknown): { kind: ResourceKind<unknown>; items: GroupResource[] }[] {
+  itemsOf(item: unknown): { kind: ResourceKind<unknown>; items: ResourceEntry[] }[] {
     return this.kinds()
       .map((kind) => ({
         kind,
@@ -81,28 +106,37 @@ export class Resources {
       .filter((entry) => entry.items.length);
   }
 
-  /** Loads each data source once and follows its changes; call the result to stop. */
+  /** Loads each data source once and listens for its changes; call the result to stop. */
   follow(): () => void {
     if (this.stop) return this.stop;
-    const run = effect(() => {
-      const sources = this.list()
-        .map((def) => read(def.items))
-        .filter(isSource);
-      untracked(() => this.sync(sources));
-    });
     this.stop = () => {
-      run();
       this.sync([]);
       this.stop = null;
     };
+    this.sync(this.sources());
     return this.stop;
   }
 
+  private sources(): Source[] {
+    return givenList(this.list())
+      .map((def) => givenField(def, 'items'))
+      .filter(isSource);
+  }
+
+  private changed(): void {
+    for (const listener of [...this.listeners]) listener();
+  }
+
+  /** A kind's items, as a list of the kit's own: read again when the list is another one, or after `refresh()`. */
   private rowsOf(def: SchedulerResource<unknown>): readonly unknown[] {
-    const items = read(def.items);
-    if (!isSource(items)) return items ?? [];
-    void this.version.rows;
-    return items.rows;
+    const items = givenField<readonly unknown[] | Source | null | undefined>(def, 'items');
+    const version = this.rows;
+    const from = isSource(items) ? items.rows : items;
+    const last = this.lastRows.get(def);
+    if (last && last.from === from && last.version === version) return last.rows;
+    const rows = givenList(from);
+    this.lastRows.set(def, { from, version, rows });
+    return rows;
   }
 
   private sync(sources: Source[]): void {
@@ -113,7 +147,10 @@ export class Resources {
     }
     for (const source of sources) {
       if (this.followed.has(source)) continue;
-      const listening = source.onChanged(() => this.version.rows++);
+      const listening = source.onChanged(() => {
+        this.rows++;
+        this.changed();
+      });
       this.followed.set(source, () => listening.dispose());
       if (source.status === 'idle') void source.load();
     }

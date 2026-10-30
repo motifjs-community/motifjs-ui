@@ -1,4 +1,3 @@
-import { reactive } from '@motifx/core';
 import { dayStart } from '../../../parts/dates/day-start';
 import { TimeZone } from '../../../parts/dates/time-zone';
 import { formatRecurrenceRule } from '../../../parts/recurrence/format-recurrence-rule';
@@ -57,7 +56,7 @@ export class RecurrenceDraft {
   private base: RecurrenceRule | null = null;
 
   constructor() {
-    this.state = reactive({
+    this.state = {
       frequency: 'never',
       interval: 1,
       days: [0, 1, 2, 3, 4, 5, 6].map((day) => ({ day, on: false })),
@@ -69,7 +68,7 @@ export class RecurrenceDraft {
       end: 'never',
       count: 10,
       until: null,
-    }) as DraftState;
+    };
   }
 
   /** A text of every choice: it changes when (and only when) a choice does. */
@@ -89,7 +88,8 @@ export class RecurrenceDraft {
     const s = this.state;
     const start = context.start ?? new Date();
     const order = [0, 1, 2, 3, 4, 5, 6].map((i) => (i + context.firstDayOfWeek) % 7);
-    if (s.days.map((d) => d.day).join() !== order.join()) s.days = order.map((day) => ({ day, on: false }));
+    // The same seven days in the week's order: what shows them keeps them.
+    s.days.forEach((d, i) => (d.day = order[i]));
     s.frequency = rule?.frequency ?? 'never';
     s.interval = rule?.interval ?? 1;
     const plain = rule?.weekdays.filter((w) => !w.nth).map((w) => w.day) ?? [];
@@ -141,6 +141,9 @@ export class RecurrenceDraft {
       if (s.frequency === 'yearly') rule.months = [s.month];
     } else if (base?.frequency === 'daily') rule.weekdays = base.weekdays;
     if (s.end === 'count') rule.count = Math.max(1, Math.round(s.count) || 1);
+    // "On a date" chosen before a date is: it ends three months after the start (as "after" starts at 10 times), or
+    // the rule would be written without an end and read back as "never".
+    if (s.end === 'until' && !s.until) s.until = new Date(start.getFullYear(), start.getMonth() + 3, start.getDate());
     if (s.end === 'until' && s.until) {
       const day = TimeZone.wallOfLocal(dayStart(s.until));
       rule.until = context.allDay ? { time: day, utc: false, dateOnly: true } : { time: context.zone.moment(day + DAY - 1000), utc: true, dateOnly: false };

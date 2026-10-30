@@ -1,4 +1,4 @@
-import { read, type ComponentBase } from '@motifx/core';
+import type { ComponentBase } from '@motifx/core';
 import { MenuList } from '../../../parts/menu/MenuList';
 import type { MenuItem } from '../../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../../parts/menu/menu-item-click-event-args';
@@ -8,6 +8,7 @@ import type { ColumnFeatures } from '../column-features';
 import type { GridModel } from '../model/GridModel';
 import type { ColumnNode } from './column-node';
 import type { HeaderHost } from './header-host';
+import { readField } from '../model/read-field';
 
 /** Items of the column list: choosing one keeps the menu open. */
 const KEEP_OPEN = Symbol('keep open');
@@ -103,7 +104,7 @@ export class ColumnMenu<T> {
   /** Whether the menu of a column or band would have anything in it. */
   hasEntries(field: string): boolean {
     let any = false;
-    for (const item of this.items(field)) any = read(item.visible) !== false || any;
+    for (const item of this.items(field)) any = readField(item, 'visible') !== false || any;
     return any;
   }
 
@@ -313,7 +314,7 @@ export class ColumnMenu<T> {
 
   /** The groups' items in one list, a line before the first item that shows in each group after the first one that shows. */
   private grouped(groups: MenuItem[][]): MenuItem[] {
-    const firstShown = (group: MenuItem[]) => group.find((item) => read(item.visible) !== false);
+    const firstShown = (group: MenuItem[]) => group.find((item) => readField(item, 'visible') !== false);
     const items: MenuItem[] = [];
     groups.forEach((group) => {
       for (const item of group) {

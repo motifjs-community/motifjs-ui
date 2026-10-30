@@ -1,10 +1,12 @@
 import { LanguageLook } from '../../core/language-look';
-import { effect, read, type Bind, type ComponentBase, type IBaseProp } from '@motifx/core';
+import type { Bind, ComponentBase, IBaseProp } from '@motifx/core';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
 import { registerControl } from '../../core/control-map';
+import { follow } from '../../core/follow';
 import { focusInitial, isFocusable } from '../../core/focus';
 import { chevronDown } from '../../core/glyphs';
+import { givenField, givenList } from '../../core/given-field';
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
 import { uiLocale } from '../../core/ui-locale';
@@ -171,7 +173,11 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     return !!this.getProperty<boolean>('pressed');
   }
   set pressed(value: Bind<boolean>) {
+    const before = !!this.peekProperty('pressed');
     this.assignProperty('pressed', value, Boolean);
+    // A state set from code shows in `x-model` too, so the model and the button never differ.
+    const now = !!this.peekProperty('pressed');
+    if (typeof value !== 'function' && now !== before) this.bindings.writeModel(now);
   }
   get busy(): boolean {
     return !!this.getProperty<boolean>('busy');
@@ -236,6 +242,15 @@ export class Button extends Control<HTMLElement, ButtonProps> {
 
   close(): void {
     this.parts.popup?.close('code');
+  }
+
+  /**
+   * Reads the menu again after its items were changed in place: the open menu shows them at once. Your items may
+   * be plain or reactive; the button reads them as they are.
+   */
+  refresh(): void {
+    this.refill();
+    if (this.parts.popup?.isOpen) this.parts.list?.refresh();
   }
 
   // Focus and keys.
@@ -499,7 +514,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
       arrow.addEventListener('keydown', (e) => this.arrowKeyDown(e));
       parts.face.after(arrow);
       registerControl(arrow, this);
-      parts.stopArrowLabel = effect(() => arrow.setAttribute('aria-label', uiLocale.strings.moreOptions));
+      parts.stopArrowLabel = follow(this, 'arrowLabel', () => uiLocale.strings.moreOptions, (label) => arrow.setAttribute('aria-label', label));
       parts.arrow = arrow;
     } else if (!split && parts.arrow) {
       parts.stopArrowLabel?.();
@@ -558,7 +573,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     const parts = this.parts;
     const content = this.peekProperty<ComponentBase | null>('dropDown') ?? null;
     const items = this.peekProperty<readonly MenuItem[]>('menu') ?? [];
-    if (!content && !items.some((item) => read(item.visible) !== false)) return false;
+    if (!content && !givenList(items).some((item) => givenField(item, 'visible') !== false)) return false;
     const popup = (parts.popup ??= this.createPopup());
     if (content) {
       if (parts.list) popup.controls.remove(parts.list);

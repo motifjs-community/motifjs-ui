@@ -49,6 +49,12 @@ export function backButtonHolders(view: Window): number {
   return sessions.get(view)?.holders.length ?? 0;
 }
 
+/** Whether every history move of ours in a window has come back (none taken back or waiting): for tests and diagnostics. */
+export function backButtonSettled(view: Window): boolean {
+  const session = sessions.get(view);
+  return !session || (session.skips === 0 && session.waiting === 0);
+}
+
 function sessionOf(view: Window): Session {
   let session = sessions.get(view);
   if (session) return session;

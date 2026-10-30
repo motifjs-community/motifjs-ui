@@ -87,6 +87,29 @@ describe('TextArea', () => {
     ]);
   });
 
+  it('reads functions over plain data again on reState, and clear() writes the empty text to x-model', async () => {
+    const plain = { text: 'a', rows: 2, help: 'Notes' };
+    const s = reactive({ note: 'kept' });
+    let t!: TextArea;
+    let m!: TextArea;
+    const host = page(
+      <TextArea ref={(x: TextArea) => (t = x)} value={() => plain.text} rows={() => plain.rows} helpText={() => plain.help} />,
+      <TextArea ref={(x: TextArea) => (m = x)} x-model={() => s.note} />,
+    );
+    await settle();
+    Object.assign(plain, { text: 'b', rows: 4, help: 'Anything else' });
+    await settle();
+    expect(area(t).value).toBe('a');
+    host.reState();
+    expect(area(t).value).toBe('b');
+    expect(area(t).rows).toBe(4);
+    expect(message(t)).toBe('Anything else');
+    type(t, 'typed');
+    expect(plain.text).toBe('b');
+    m.clear();
+    expect(s.note).toBe('');
+  });
+
   it('reports Ctrl+Enter and Cmd+Enter; Enter alone is a new line', async () => {
     const onEnter = vi.fn();
     const s = reactive({ text: '' });

@@ -131,6 +131,41 @@ describe('Accordion', () => {
     expect(open(a)).toEqual([false, false, false]);
   });
 
+  it('writes what is opened from code to x-model too, and reads functions over plain data again on reState', async () => {
+    const s = reactive({ open: [] as (string | number)[] });
+    const plain = { open: ['payment'] as (string | number)[], title: 'Payment' };
+    let a!: Accordion;
+    let p!: Accordion;
+    const host = page(
+      <Accordion ref={(x: Accordion) => (a = x)} multiple x-model={() => s.open}>
+        <AccordionItem key="shipping" title="Shipping" />
+        <AccordionItem key="payment" title="Payment" />
+      </Accordion>,
+      <Accordion ref={(x: Accordion) => (p = x)} value={() => plain.open}>
+        <AccordionItem key="shipping" title="Shipping" />
+        <AccordionItem key="payment" title={() => plain.title} />
+      </Accordion>,
+    );
+    await settle();
+    a.expandAll();
+    expect([...s.open]).toEqual(['shipping', 'payment']);
+    a.items[0].collapse();
+    expect([...s.open]).toEqual(['payment']);
+    a.collapseAll();
+    expect([...s.open]).toEqual([]);
+
+    expect(open(p)).toEqual([false, true]);
+    Object.assign(plain, { open: ['shipping'], title: 'Paying' });
+    await settle();
+    expect(open(p)).toEqual([false, true]);
+    host.reState();
+    await settle();
+    expect(open(p)).toEqual([true, false]);
+    expect(headers(p)[1].textContent).toContain('Paying');
+    headers(p)[1].click();
+    expect(plain.open).toEqual(['shipping']);
+  });
+
   it('fires cancelable events for the user, and reports every change', async () => {
     const expanded = vi.fn();
     const collapsed = vi.fn();
