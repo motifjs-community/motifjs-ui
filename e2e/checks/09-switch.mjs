@@ -4,6 +4,8 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.evaluate(() => document.documentElement.removeAttribute('data-density'));
   const ways = page.locator('section[aria-labelledby="ways"]');
   const wifi = ways.getByRole('switch', { name: 'Wi-Fi' });
+  // The page draws its sections after `load`.
+  await wifi.first().waitFor();
   check('it is a switch named by its caption, on', (await wifi.count()) === 1 && (await wifi.isChecked()));
   const thumb = ways.locator('.mx-switch__thumb').first();
   const onAt = (await box(thumb)).left;

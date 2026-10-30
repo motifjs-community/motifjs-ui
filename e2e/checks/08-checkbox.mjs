@@ -4,6 +4,8 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.evaluate(() => document.documentElement.removeAttribute('data-density'));
   const ways = page.locator('section[aria-labelledby="ways"]');
   const remember = ways.getByRole('checkbox', { name: 'Remember me' });
+  // The page draws its sections after `load`.
+  await remember.first().waitFor();
   check('it is a native checkbox named by its caption', (await remember.count()) === 1 && (await remember.isChecked()));
   await ways.getByText('Remember me', { exact: true }).click();
   check('a click on the caption toggles it and writes back through x-model', !(await remember.isChecked()) && (await ways.locator('.mx-field__message').first().textContent()) === 'You sign in every time.');

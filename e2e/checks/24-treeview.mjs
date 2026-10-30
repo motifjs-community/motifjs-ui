@@ -7,6 +7,8 @@ export default async function ({ page, base, check, axeSource, box }) {
 
   const ways = page.locator('.tv-ways');
   const tree = ways.getByRole('tree', { name: 'Project files' });
+  // The page draws its sections after `load`.
+  await tree.first().waitFor();
   check('a tree named by its label, with one Tab stop', (await tree.count()) === 1 && (await ways.locator('[role="treeitem"][tabindex="0"]').count()) === 1);
   check('the row in value is selected', (await item(ways, 'TreeView.ts').getAttribute('aria-selected')) === 'true');
   await item(ways, 'docs').locator(':scope > .mx-tree-view__row > .mx-tree-view__text').click();

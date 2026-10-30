@@ -6,6 +6,8 @@ export default async function ({ page, base, check, axeSource, box }) {
   const ways = page.locator('section[aria-labelledby="ways"]');
   const sizes = ways.getByRole('radiogroup', { name: 'Size' });
   const radio = (name) => sizes.getByRole('radio', { name, exact: true });
+  // The page draws its sections after `load`.
+  await sizes.first().waitFor();
   check('a radiogroup named by its label, with native radios', (await sizes.count()) === 1 && (await sizes.getByRole('radio').count()) === 4 && (await radio('M').isChecked()));
 
   await page.locator('section[aria-labelledby="import"] pre').focus();
