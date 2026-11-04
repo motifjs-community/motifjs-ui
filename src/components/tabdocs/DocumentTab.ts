@@ -11,6 +11,7 @@ import type { ContentLifetime } from './content-lifetime';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
+import { uiLocale } from '../../core/ui-locale';
 
 /**
  * An open document in the manager: its tab in a group's strip and its panel. Both move with it from
@@ -213,7 +214,7 @@ export class DocumentTab {
       () => doc.title,
       (title) => {
         this.label.textContent = title;
-        this.letter.textContent = Array.from(title.trim())[0]?.toLocaleUpperCase() ?? '';
+        this.letter.textContent = Array.from(title.trim())[0]?.toLocaleUpperCase(uiLocale.locale) ?? '';
         this.manager.tabChanged(this);
       },
     );

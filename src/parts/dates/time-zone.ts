@@ -84,7 +84,7 @@ export class TimeZone {
   /** Minutes the clock is ahead of UTC at a moment (east positive). */
   offset(moment: number | Date): number {
     const time = typeof moment === 'number' ? moment : moment.getTime();
-    if (!this.name) return -new Date(time).getTimezoneOffset();
+    if (!this.name) return 0 - new Date(time).getTimezoneOffset();
     const at = Math.floor(time / MINUTE);
     let offset = this.offsets.get(at);
     if (offset !== undefined) return offset;

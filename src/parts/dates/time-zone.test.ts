@@ -75,6 +75,6 @@ describe('TimeZone', () => {
     expect(TimeZone.names()).toContain('Europe/Istanbul');
     expect(TimeZone.names()).toContain('UTC');
     const now = Date.now();
-    expect(TimeZone.local.wall(now) - now).toBe(-new Date(now).getTimezoneOffset() * 60_000);
+    expect(TimeZone.local.wall(now) - now).toBe(0 - new Date(now).getTimezoneOffset() * 60_000);
   });
 });

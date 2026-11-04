@@ -5,6 +5,7 @@ import { Popup } from '../../parts/popup/Popup';
 import { TextBox } from '../textbox/TextBox';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
+import { foldText } from '../../core/fold-text';
 
 /**
  * A menu of documents, for the group's "…" button (a search above the documents, a few commands
@@ -158,8 +159,8 @@ export class DocumentList {
 
   /** Draws the documents whose title has `text`, or a dimmed "No items" when none has. */
   private showDocuments(text: string): void {
-    const query = text.trim().toLocaleLowerCase();
-    this.shown = query ? this.documents.filter((d) => d.title.toLocaleLowerCase().includes(query)) : [...this.documents];
+    const query = foldText(text.trim());
+    this.shown = query ? this.documents.filter((d) => foldText(d.title).includes(query)) : [...this.documents];
     const items = this.shown.map((doc) => this.menuItem(doc));
     if (!items.length) items.push({ text: this.manager.textOf('noItems'), enabled: false });
     this.documentMenu.setItems(items);

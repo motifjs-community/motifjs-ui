@@ -1,4 +1,5 @@
 import type { DataItems } from '../../parts/data/DataItems';
+import { foldText } from '../../core/fold-text';
 
 /**
  * The values of every item the list shows, the search applied: at once for items in memory; with a
@@ -9,9 +10,9 @@ export function allValues<T>(items: DataItems<T>, valueOf: (item: T) => unknown,
   const source = items.dataSource;
   const values = (rows: readonly T[]) => rows.filter(enabledOf).map(valueOf);
   if (!source || source.loadMode === 'all') return values(items.loaded);
-  const text = items.searchText.trim().toLocaleLowerCase();
+  const text = foldText(items.searchText.trim());
   return source.adapter.load({ filter: source.filter, sort: source.sort, params: source.params }).then((result) => {
-    const rows = text ? result.rows.filter((row) => items.textOf(row).toLocaleLowerCase().includes(text)) : result.rows;
+    const rows = text ? result.rows.filter((row) => foldText(items.textOf(row)).includes(text)) : result.rows;
     return values(rows);
   });
 }

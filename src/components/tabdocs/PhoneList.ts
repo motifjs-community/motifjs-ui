@@ -10,6 +10,7 @@ import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 import type { TabPresenter } from './TabPresenter';
+import { foldText } from '../../core/fold-text';
 
 /** How far, in pixels, a finger moves before it is a swipe or a scroll. */
 const SLOP = 8;
@@ -82,7 +83,7 @@ export class PhoneList {
     search.placeholder = () => manager.textOf('tabDocsPhoneSearch');
     search.element.classList.add('mx-tabdocs__list-search');
     search.onValueChanged((e) => {
-      this.query = (e.value ?? '').trim().toLocaleLowerCase();
+      this.query = foldText((e.value ?? '').trim());
       this.filter();
     });
     this.sections = doc.createElement('div');
@@ -262,7 +263,7 @@ export class PhoneList {
       for (const doc of group.documents) {
         const row = this.rows.get(doc);
         if (!row) continue;
-        const hit = !q || doc.title.toLocaleLowerCase().includes(q) || (doc.description ?? '').toLocaleLowerCase().includes(q);
+        const hit = !q || foldText(doc.title).includes(q) || foldText(doc.description ?? '').includes(q);
         row.element.hidden = !hit;
         if (hit) shown++;
       }

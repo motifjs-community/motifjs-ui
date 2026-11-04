@@ -12,6 +12,7 @@ import type { MenuItem } from '../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
 import { Popup } from '../../parts/popup/Popup';
 import type { MenuBarProps } from './menu-bar-props';
+import { foldText } from '../../core/fold-text';
 
 const OWN = ['items', 'focusOnF10', 'openOnHover'] as const;
 
@@ -249,7 +250,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
         installKeyboard();
       }
       parts.bar.append(element);
-      parts.entries.push({ item: look.item, element, enabled: look.enabled, submenu: look.submenu, text: parsed.text.toLocaleLowerCase() });
+      parts.entries.push({ item: look.item, element, enabled: look.enabled, submenu: look.submenu, text: foldText(parsed.text) });
     }
     this.renderRoving();
     if (focused >= 0) parts.entries[Math.min(focused, parts.entries.length - 1)]?.element.focus();
@@ -405,7 +406,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
         break;
       default: {
         if (!entry || e.key.length !== 1 || e.key === ' ') return;
-        const letter = e.key.toLocaleLowerCase();
+        const letter = foldText(e.key);
         const at = entries.indexOf(entry);
         for (let step = 1; step <= entries.length; step++) {
           const candidate = entries[(at + step) % entries.length];

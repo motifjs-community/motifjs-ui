@@ -4,6 +4,7 @@ import { isElement } from '../../core/node-kind';
 import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabPresenter } from './TabPresenter';
+import { uiLocale } from '../../core/ui-locale';
 
 /**
  * The bar at the bottom of a phone: a button for each tool of the dock areas, which opens its area in
@@ -74,7 +75,7 @@ export class PhoneTools {
       mark.append(shown.node);
       release = shown.release;
     } else {
-      mark.textContent = Array.from(title.trim())[0]?.toLocaleUpperCase() ?? '';
+      mark.textContent = Array.from(title.trim())[0]?.toLocaleUpperCase(uiLocale.locale) ?? '';
     }
     const label = owner.createElement('span');
     label.className = 'mx-tabdocs__phone-tool-label';

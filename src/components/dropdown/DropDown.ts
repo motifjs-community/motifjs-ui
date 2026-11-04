@@ -17,6 +17,7 @@ import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
 import { TextBox } from '../textbox/TextBox';
 import type { DropDownProps } from './drop-down-props';
 import { onLanguage } from '../../core/on-language';
+import { foldText } from '../../core/fold-text';
 
 const OWN = ['items', 'dataSource', 'valueText', 'placeholder', 'searchEnabled', 'searchMode', 'searchDelay', 'clearButton', 'matchWidth'] as const;
 
@@ -444,11 +445,11 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
 
   private visibleItems(): readonly T[] {
     const items = givenList(this.peekProperty<readonly T[]>('items'));
-    const filter = this.dropParts.filter.trim().toLocaleLowerCase();
+    const filter = foldText(this.dropParts.filter.trim());
     if (!filter) return items;
     const starts = this.peekProperty('searchMode') === 'startswith';
     return items.filter((item) => {
-      const text = this.itemText(item).toLocaleLowerCase();
+      const text = foldText(this.itemText(item));
       return starts ? text.startsWith(filter) : text.includes(filter);
     });
   }

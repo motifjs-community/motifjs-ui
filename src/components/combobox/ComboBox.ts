@@ -14,6 +14,7 @@ import { Popup } from '../../parts/popup/Popup';
 import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
 import type { ComboBoxProps } from './combo-box-props';
 import { onLanguage } from '../../core/on-language';
+import { foldText } from '../../core/fold-text';
 
 const OWN = [
   'items',
@@ -398,8 +399,8 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
       this.choose(undefined, null, event);
       return;
     }
-    const lower = text.toLocaleLowerCase();
-    const match = parts.items.loaded.find((item) => this.itemText(item).toLocaleLowerCase() === lower && this.canChoose(item));
+    const lower = foldText(text);
+    const match = parts.items.loaded.find((item) => foldText(this.itemText(item)) === lower && this.canChoose(item));
     if (match !== undefined) this.choose(match, this.itemValue(match) as V, event);
     else if (this.peekProperty('acceptCustomValue')) this.choose(undefined, this.customValue(text), event);
     else this.renderValue(this.peekValue());
