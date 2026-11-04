@@ -6,6 +6,40 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0-beta.0] - 2026-10-30
+
+The first preview on npm (`npm i @motifx-community/ui@beta`). The package also carries its documentation for
+readers that are not a browser: a Markdown page per component in `docs/`, an index in `llms.txt` and every page in
+`llms-full.txt`.
+
+### New components
+
+- `Badge`: a text, a count (`max` → `99+`, hidden at 0 unless `showZero`) or a dot, in six tones and three looks;
+  on a corner of what it is in (`position`, `Badge.attach`), the anchor's frame stepped over; the count in the kit's
+  language.
+- `Avatar` and `AvatarGroup`: a picture, else initials (in the capitals of the kit's language), else a person icon;
+  a tone of the language's or one taken from the name (`tone: 'auto'`); circle or square; a presence dot. A group
+  stacks or spreads its avatars and counts the rest (`max`, `total`, `+N`), from JSX lists too.
+- `Chip` and `ChipGroup`: an icon or an avatar before the text, removable (its button, Delete / Backspace), pressable
+  or selectable, six tones; a group selects one or several (`x-model`), one Tab stop, the arrow keys between chips.
+- `Card`: a picture, a header (avatar, title, subtitle, action), content and actions; vertical or horizontal;
+  clickable, a link through its title (`href`, `rel="router"`), selectable with a check box.
+- `Skeleton`: lines, a block or a circle while `loading`, then the content; a wave or a pulse that reduced motion
+  keeps still.
+- `ButtonGroup`: the kit's buttons attached, a segmented choice (`single`, `multiple`, `x-model`) or actions.
+- `Rating`: stars or icons of your own, halves, a preview under the pointer, read-only; a field (label, rules).
+- `ColorPicker` and `ColorBox`: an area of saturation and brightness, hue and opacity strips, hex and channel inputs,
+  presets, a colour from the screen; the box applies at once or on OK.
+- `Breadcrumb`: links (the router's too) or buttons, the current page last, the steps that do not fit in a menu.
+- `Pagination`: the grid's pager as a component of its own: page sizes, info, steps, page buttons, compact when it
+  does not fit.
+- The design system's opaque neutral fill (`color.fill.neutral`) for marks on any surface; kit glyphs `person`,
+  `star`, `star-filled`, `eyedropper`, `slash`.
+
+### Changed
+
+- `Badge.attach` takes a component only: the badge becomes one of its children and goes with it.
+
 ### DataGrid: drawn by hand, with nothing followed inside
 
 - What changes in the grid is told where it is changed (`GridNotices`, once a turn); the rows, the header, the
