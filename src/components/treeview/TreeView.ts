@@ -32,6 +32,7 @@ import type { TreeViewProps } from './tree-view-props';
 import type { TreeViewSelectionChangedEventArgs } from './tree-view-selection-changed-event-args';
 import type { TreeViewSelectionMode } from './tree-view-selection-mode';
 import { onLanguage } from '../../core/on-language';
+import { foldText } from '../../core/fold-text';
 
 const OWN = [
   'items',
@@ -1016,12 +1017,12 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     const parts = this.parts;
     const model = parts.model;
     if (refilter) {
-      const text = (this.peekProperty<string>('searchValue') ?? '').trim().toLocaleLowerCase();
+      const text = foldText((this.peekProperty<string>('searchValue') ?? '').trim());
       parts.filterText = text;
       if (text) {
         const starts = this.peekProperty('searchMode') === 'startswith';
         parts.shown = model.match((node) => {
-          const own = this.textOf(node.item).toLocaleLowerCase();
+          const own = foldText(this.textOf(node.item));
           return starts ? own.startsWith(text) : own.includes(text);
         });
         const shown = parts.shown;
@@ -1580,13 +1581,13 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     const now = Date.now();
     parts.typed = now - parts.typedAt < TYPING_MS ? parts.typed + key : key;
     parts.typedAt = now;
-    const text = parts.typed.toLocaleLowerCase();
+    const text = foldText(parts.typed);
     const rows = parts.rows;
     // A repeated letter goes on to the next row with it.
     const start = parts.typed.length > 1 ? at : at + 1;
     for (let step = 0; step < rows.length; step++) {
       const index = (start + step) % rows.length;
-      if (this.textOf(rows[index].node.item).toLocaleLowerCase().startsWith(text)) return index;
+      if (foldText(this.textOf(rows[index].node.item)).startsWith(text)) return index;
     }
     return -1;
   }

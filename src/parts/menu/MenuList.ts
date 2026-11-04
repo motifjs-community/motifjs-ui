@@ -10,6 +10,7 @@ import { Popup } from '../popup/Popup';
 import { hasLineAfter } from './line-after';
 import type { MenuItem } from './menu-item';
 import type { MenuItemClickEventArgs } from './menu-item-click-event-args';
+import { foldText } from '../../core/fold-text';
 
 /** An item's fields as read for one drawing. */
 interface ItemLook {
@@ -209,8 +210,8 @@ export class MenuList extends Component<HTMLDivElement> {
         element,
         enabled: look.enabled,
         submenu: look.submenu,
-        key: parsed.key?.toLocaleLowerCase() ?? null,
-        text: parsed.text.toLocaleLowerCase(),
+        key: parsed.key != null ? foldText(parsed.key) : null,
+        text: foldText(parsed.text),
       });
       checks ||= look.checked !== undefined || look.radio;
       icons ||= !!element.querySelector('.mx-menu__icon > *');
@@ -417,7 +418,7 @@ export class MenuList extends Component<HTMLDivElement> {
       }
       default: {
         if (e.key.length !== 1 || e.key === ' ') return;
-        const letter = e.key.toLocaleLowerCase();
+        const letter = foldText(e.key);
         const keyed = this.entries.find((entry) => entry.key === letter);
         if (keyed) {
           keyed.element.focus();

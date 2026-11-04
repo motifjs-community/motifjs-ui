@@ -1,4 +1,5 @@
 import type { MaskSlot } from './mask-slot';
+import { uiLocale } from '../../core/ui-locale';
 
 type Place = Extract<MaskSlot, { test: RegExp }>;
 
@@ -8,8 +9,8 @@ function accepts(place: Place, ch: string): boolean {
 }
 
 function cased(ch: string, transform: Place['transform']): string {
-  if (transform === 'upper') return ch.toLocaleUpperCase();
-  if (transform === 'lower') return ch.toLocaleLowerCase();
+  if (transform === 'upper') return ch.toLocaleUpperCase(uiLocale.locale);
+  if (transform === 'lower') return ch.toLocaleLowerCase(uiLocale.locale);
   return ch;
 }
 

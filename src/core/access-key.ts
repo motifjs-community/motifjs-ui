@@ -1,4 +1,5 @@
 import { isApplePlatform } from './platform';
+import { uiLocale } from './ui-locale';
 
 /** A control text with its access key: `&Dosya` → text `Dosya`, key `D` at index 0. */
 export interface ParsedAccessKey {
@@ -67,7 +68,7 @@ export function accessKeyModifiers(): string {
 
 /** The `aria-keyshortcuts` token for an access key: `Alt+D`, or `Control+Alt+D` on Apple platforms. */
 export function accessKeyToken(key: string): string {
-  return `${accessKeyModifiers()}+${key.toLocaleUpperCase()}`;
+  return `${accessKeyModifiers()}+${key.toLocaleUpperCase(uiLocale.locale)}`;
 }
 
 /** Adds or replaces this package's access key token in an element's `aria-keyshortcuts`, keeping the app's own. */

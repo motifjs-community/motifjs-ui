@@ -12,6 +12,7 @@ import type { ListMove } from './list-move';
 import type { OptionChosenEventArgs } from './option-chosen-event-args';
 import { readItemField } from './read-item-field';
 import { onLanguage } from '../../core/on-language';
+import { foldText } from '../../core/fold-text';
 
 type Row = { header: string } | { index: number };
 
@@ -200,14 +201,14 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     const now = Date.now();
     this.typed = now - this.typedAt < this.typingDelay ? this.typed + key : key;
     this.typedAt = now;
-    const text = this.typed.toLocaleLowerCase();
+    const text = foldText(this.typed);
     const n = this.size;
     // A repeated letter goes on to the next option with it.
     const start = this.typed.length > 1 ? Math.max(this.active, 0) : this.active + 1;
     for (let step = 0; step < n; step++) {
       const index = (start + step + n) % n;
       const item = this.itemAt(index);
-      if (item !== undefined && this.enabledOf(item) && this.textOf(item).toLocaleLowerCase().startsWith(text)) return index;
+      if (item !== undefined && this.enabledOf(item) && foldText(this.textOf(item)).startsWith(text)) return index;
     }
     return -1;
   }

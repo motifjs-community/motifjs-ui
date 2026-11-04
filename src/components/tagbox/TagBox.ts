@@ -21,6 +21,7 @@ import { selectAllState } from '../listbox/select-all-state';
 import { ValueItems } from '../listbox/value-items';
 import type { TagBoxProps } from './tag-box-props';
 import { onLanguage } from '../../core/on-language';
+import { foldText } from '../../core/fold-text';
 
 const OWN = [
   'items',
@@ -915,8 +916,8 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     }
     if (!text) return;
     e.preventDefault();
-    const lower = text.toLocaleLowerCase();
-    const match = parts.items.loaded.find((item) => this.itemText(item).toLocaleLowerCase() === lower && this.canChoose(item));
+    const lower = foldText(text);
+    const match = parts.items.loaded.find((item) => foldText(this.itemText(item)) === lower && this.canChoose(item));
     if (match !== undefined) this.toggle(match, e);
     else if (this.peekProperty('acceptCustomValue')) this.addCustom(text, e);
   }

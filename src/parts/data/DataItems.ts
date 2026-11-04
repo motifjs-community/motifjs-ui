@@ -4,6 +4,7 @@ import { givenList } from '../../core/given-field';
 import type { ItemSource } from '../list/item-source';
 import type { KeyedItem } from './keyed-item';
 import { KeyedItems } from './KeyedItems';
+import { foldText } from '../../core/fold-text';
 
 type Source<T> = data.DataSource<T, unknown>;
 
@@ -149,14 +150,14 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
   }
 
   private filter(): void {
-    const text = this.text.trim().toLocaleLowerCase();
+    const text = foldText(this.text.trim());
     if (!text) {
       this.shown = this.array;
       return;
     }
     const starts = this.searchMode === 'startswith';
     this.shown = this.array.filter((item) => {
-      const value = this.textOf(item).toLocaleLowerCase();
+      const value = foldText(this.textOf(item));
       return starts ? value.startsWith(text) : value.includes(text);
     });
   }

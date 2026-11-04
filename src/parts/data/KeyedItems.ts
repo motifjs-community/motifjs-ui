@@ -3,6 +3,7 @@ import { data } from '@motifx-community/data';
 import type { KeyedItem } from './keyed-item';
 import type { TextSearch } from './text-search';
 import { uiLocale } from '../../core/ui-locale';
+import { foldText } from '../../core/fold-text';
 
 type Source = data.DataSource<any, any> | readonly unknown[];
 
@@ -16,7 +17,7 @@ function keyString(key: unknown): string {
   return String(key);
 }
 
-const sameText = (a: string, b: string, locale: string) => a.trim().toLocaleLowerCase(locale) === b.trim().toLocaleLowerCase(locale);
+const sameText = (a: string, b: string, locale: string) => foldText(a.trim(), locale) === foldText(b.trim(), locale);
 
 /**
  * Items by key, from a data source of the data layer (any adapter) or an array: what a grid cell, a
@@ -182,8 +183,8 @@ export class KeyedItems<T = unknown> {
     const now = this.searchInMemory(text, search, skip, take);
     if (now) return now;
     const locale = search.locale ?? uiLocale.locale;
-    const lower = text.trim().toLocaleLowerCase(locale);
-    const holds = (item: T) => !lower || search.textOf(item).toLocaleLowerCase(locale).includes(lower);
+    const lower = foldText(text.trim(), locale);
+    const holds = (item: T) => !lower || foldText(search.textOf(item), locale).includes(lower);
     const adapter = this.adapter!;
     const fields = search.searchFields ?? [];
     if (lower && !fields.length) {
@@ -203,10 +204,10 @@ export class KeyedItems<T = unknown> {
   searchInMemory(text: string, search: TextSearch<T>, skip = 0, take = 100): { items: T[]; total: number } | null {
     if (!this.inMemory) return null;
     const locale = search.locale ?? uiLocale.locale;
-    const lower = text.trim().toLocaleLowerCase(locale);
+    const lower = foldText(text.trim(), locale);
     const test = search.filter ? data.createRowFilter<T>(search.filter, { locale }) : null;
     const all = (this.source as readonly T[]).filter(
-      (item) => (!lower || search.textOf(item).toLocaleLowerCase(locale).includes(lower)) && (!test || (item !== null && typeof item === 'object' && test(item))),
+      (item) => (!lower || foldText(search.textOf(item), locale).includes(lower)) && (!test || (item !== null && typeof item === 'object' && test(item))),
     );
     return { items: all.slice(skip, skip + take), total: all.length };
   }
