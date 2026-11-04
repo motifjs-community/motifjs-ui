@@ -84,7 +84,7 @@ export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> {
     this.motif.setDisposable(host.keepDrawn(() => this.draw()));
   }
 
-  override onMounted() {
+  override onConfig() {
     this.host.viewShown();
   }
 
