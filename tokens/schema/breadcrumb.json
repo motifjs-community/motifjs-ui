@@ -1,0 +1,65 @@
+{
+  "breadcrumb": {
+    "$description": "Breadcrumb: the way to the current page, each step a link or a button, the ones that do not fit in a menu.",
+    "$selector": ".mx-breadcrumb",
+    "font-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "padding": {
+      "sm": { "$type": "dimension", "$description": "Space at each end of a step's text." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "height": {
+      "sm": { "$type": "dimension", "$description": "A step." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "gap": { "$type": "dimension", "$description": "The space on each side of a divider." },
+    "divider-size": { "$type": "dimension", "$description": "The divider between steps." },
+    "$places": {
+      "more": {
+        "$description": "The button of the steps that do not fit: an icon without the menu arrow.",
+        "selector": ".mx-breadcrumb__more > .mx-button",
+        "part": "button",
+        "tokens": ["chevron.display"]
+      }
+    },
+    "$units": {
+      "link": {
+        "$description": "A step that can be pressed (a link or a button): `hover`, `pressed`, `focus`, `disabled`.",
+        "selector": ".mx-breadcrumb__link",
+        "defaults": {
+          "height": "var(--_height)",
+          "padding-inline": "var(--_padding)",
+          "font-size": "var(--_font-size)",
+          "margin": "0px",
+          "line-height": "1"
+        },
+        "states": {
+          "hover": ".mx-breadcrumb__link:not([aria-disabled='true']):hover",
+          "pressed": ".mx-breadcrumb__link:not([aria-disabled='true']):active",
+          "focus": ".mx-breadcrumb__link:focus-visible",
+          "disabled": ".mx-breadcrumb__link[aria-disabled='true']"
+        }
+      },
+      "current": {
+        "$description": "The current page, the last step.",
+        "selector": ".mx-breadcrumb__current",
+        "defaults": {
+          "height": "var(--_height)",
+          "padding-inline": "var(--_padding)",
+          "font-size": "var(--_font-size)",
+          "line-height": "1"
+        }
+      },
+      "divider": {
+        "$description": "The divider between steps (`icon` its shape).",
+        "selector": ".mx-breadcrumb__divider",
+        "defaults": { "size": "var(--_breadcrumb-divider-size)" }
+      }
+    }
+  }
+}

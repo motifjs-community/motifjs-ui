@@ -1,0 +1,18 @@
+{
+  "color-box": {
+    "$description": "Colour box: a field with the colour's hex, a swatch of it, and a colour picker in a popup.",
+    "$selector": ".mx-color-box",
+    "swatch-size": { "$type": "dimension", "$description": "The swatch of the value before the hex." },
+    "popup-gap": { "$type": "dimension", "$description": "The space around the picker in the popup and between OK and Cancel." },
+    "checker-size": { "$type": "dimension", "$description": "One square of the pattern under a see-through colour." },
+    "checker-light": { "$type": "color", "$description": "The light squares under a see-through colour." },
+    "checker-dark": { "$type": "color", "$description": "The dark squares under a see-through colour." },
+    "$units": {
+      "swatch": {
+        "$description": "The swatch of the value.",
+        "selector": ".mx-color-box__swatch",
+        "defaults": { "size": "var(--_color-box-swatch-size)" }
+      }
+    }
+  }
+}

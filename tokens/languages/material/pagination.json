@@ -1,0 +1,54 @@
+{
+  "pagination": {
+    "button-size": {
+      "$value": "sm"
+    },
+    "step-variant": {
+      "$value": "ghost"
+    },
+    "page-variant": {
+      "$value": "ghost"
+    },
+    "page-tone": {
+      "$value": "standard"
+    },
+    "current-variant": {
+      "$value": "solid"
+    },
+    "current-tone": {
+      "$value": "accent"
+    },
+    "gap": {
+      "$value": "{space.1}"
+    },
+    "step-overlap": {
+      "$value": {
+        "value": 0.375,
+        "unit": "rem"
+      }
+    },
+    "number-width": {
+      "$value": {
+        "value": 4,
+        "unit": "rem"
+      }
+    },
+    "size-width": {
+      "$value": {
+        "value": 5.5,
+        "unit": "rem"
+      }
+    },
+    "info": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-size": {
+        "$value": "{font.size.body}"
+      },
+      "padding-inline": {
+        "$value": "{space.2}"
+      }
+    }
+  }
+}

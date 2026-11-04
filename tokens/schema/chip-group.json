@@ -1,0 +1,7 @@
+{
+  "chip-group": {
+    "$description": "Chip group: chips in a row that wraps; none, one or several of them selected.",
+    "$selector": ".mx-chip-group",
+    "gap": { "$type": "dimension", "$description": "The space between chips, across and along." }
+  }
+}

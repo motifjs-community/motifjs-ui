@@ -1,0 +1,86 @@
+{
+  "rating": {
+    "$description": "Rating: a row of stars (or icons of your own) to give or show a score, whole or by halves.",
+    "$selector": ".mx-rating",
+    "tone": { "$type": "keyword", "$description": "The colour of the filled stars when none is given: accent, neutral." },
+    "size": {
+      "sm": { "$type": "dimension", "$description": "A star." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "gap": {
+      "sm": { "$type": "dimension", "$description": "The space between stars." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "$places": {
+      "field": {
+        "$description": "The field under a rating: no text-field box.",
+        "selector": ".mx-rating",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "label-mode",
+          "padding.sm",
+          "padding.md",
+          "padding.lg",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "border-width",
+          "box.radius",
+          "box.shadow",
+          "box.focus.shadow",
+          "box.cursor",
+          "frame.display",
+          "indicator.display",
+          "box.disabled.bg",
+          "box.disabled.shadow",
+          "padding-start.sm",
+          "padding-start.md",
+          "padding-start.lg",
+          "padding-end.sm",
+          "padding-end.md",
+          "padding-end.lg",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "box.invalid-focus.shadow",
+          "box.readonly-focus.shadow",
+          "box.readonly-invalid-focus.shadow"
+        ]
+      }
+    },
+    "$units": {
+      "stars": {
+        "$description": "The row of stars, which takes the focus: `focus`, `disabled`.",
+        "selector": ".mx-rating__stars",
+        "defaults": { "gap": "var(--_gap)" },
+        "states": {
+          "focus": ".mx-rating__stars:focus-visible",
+          "disabled": ".mx-rating[data-disabled] .mx-rating__stars"
+        }
+      },
+      "item": {
+        "$description": "One star, empty and filled together: how it grows under the pointer (`hover`).",
+        "selector": ".mx-rating__item",
+        "states": {
+          "hover": ".mx-rating:not([data-readonly], [data-disabled]) .mx-rating__item:hover"
+        }
+      },
+      "star": {
+        "$description": "An empty star (`icon` its shape).",
+        "selector": ".mx-rating__star",
+        "defaults": { "size": "var(--_size)" }
+      },
+      "fill": {
+        "$description": "The filled part of a star (`icon` its shape), in each tone: `accent`, `neutral`.",
+        "selector": ".mx-rating__fill",
+        "defaults": { "size": "var(--_size)" },
+        "states": {
+          "accent": ".mx-rating[data-tone='accent'] .mx-rating__fill",
+          "neutral": ".mx-rating[data-tone='neutral'] .mx-rating__fill"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+/* Rating: a row of stars in a field without a box. Only the layout is here: the row, each star and its fill are units
+   of the schema (`$units`), painted by units.css (shapes, colours, the focus ring). The fill lies over the empty star
+   and is cut to the share of it the value covers (`--_fill`), from the start side. */
+@layer mx.components {
+  .mx-rating[data-size='sm'] {
+    --_size: var(--_rating-size-sm);
+    --_gap: var(--_rating-gap-sm);
+  }
+
+  .mx-rating[data-size='md'] {
+    --_size: var(--_rating-size-md);
+    --_gap: var(--_rating-gap-md);
+  }
+
+  .mx-rating[data-size='lg'] {
+    --_size: var(--_rating-size-lg);
+    --_gap: var(--_rating-gap-lg);
+  }
+
+  .mx-rating__stars {
+    display: inline-flex;
+    align-items: center;
+    inline-size: max-content;
+  }
+
+  .mx-rating:not([data-readonly], [data-disabled]) .mx-rating__stars {
+    cursor: pointer;
+  }
+
+  .mx-rating__item {
+    display: grid;
+  }
+
+  .mx-rating__star,
+  .mx-rating__fill {
+    grid-area: 1 / 1;
+    mask: var(--_icon, none) center / contain no-repeat;
+  }
+
+  .mx-rating__fill {
+    clip-path: inset(0 calc(100% - var(--_fill, 0%)) 0 0);
+  }
+
+  .mx-rating__fill:dir(rtl) {
+    clip-path: inset(0 0 0 calc(100% - var(--_fill, 0%)));
+  }
+}

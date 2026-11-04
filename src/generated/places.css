@@ -29,6 +29,36 @@
     --_button-face-font-weight: var(--mx-actionsheet-cancel-button-face-font-weight);
   }
 
+  /* breadcrumb: more — The button of the steps that do not fit: an icon without the menu arrow. */
+  .mx-breadcrumb__more > .mx-button {
+    --_button-chevron-display: var(--mx-breadcrumb-more-chevron-display);
+  }
+
+  /* button-group: item — Each button of the group: its look when the group gives none, and the look of the chosen one. */
+  .mx-button-group > .mx-button {
+    --_button-variant: var(--mx-button-group-item-variant);
+    --_button-face-toggled-bg: var(--mx-button-group-item-face-toggled-bg);
+    --_button-face-toggled-color: var(--mx-button-group-item-face-toggled-color);
+    --_button-face-toggled-hover-bg: var(--mx-button-group-item-face-toggled-hover-bg);
+    --_button-face-outline-toggled-bg: var(--mx-button-group-item-face-outline-toggled-bg);
+    --_button-face-outline-toggled-color: var(--mx-button-group-item-face-outline-toggled-color);
+    --_button-face-outline-toggled-border-color: var(--mx-button-group-item-face-outline-toggled-border-color);
+    --_button-face-outline-toggled-hover-bg: var(--mx-button-group-item-face-outline-toggled-hover-bg);
+    --_button-face-ghost-toggled-bg: var(--mx-button-group-item-face-ghost-toggled-bg);
+    --_button-face-ghost-toggled-color: var(--mx-button-group-item-face-ghost-toggled-color);
+    --_button-face-ghost-toggled-hover-bg: var(--mx-button-group-item-face-ghost-toggled-hover-bg);
+  }
+
+  /* button-group: inner-start — The start corners of a button that touches the one before it. */
+  .mx-button-group[data-attached] > .mx-button:not(:first-child) {
+    --_button-face-radius-start: var(--mx-button-group-inner-start-face-radius-start);
+  }
+
+  /* button-group: inner-end — The end corners of a button that touches the one after it. */
+  .mx-button-group[data-attached] > .mx-button:not(:last-child) {
+    --_button-face-radius-end: var(--mx-button-group-inner-end-face-radius-end);
+  }
+
   /* checkbox: field — The field under a check box or a switch: the box and its caption side by side, no text-field frame. */
   .mx-toggle-field {
     --_field-variant: var(--mx-checkbox-field-variant);
@@ -425,6 +455,38 @@
     --_field-box-invalid-focus-shadow: var(--mx-radiogroup-field-box-invalid-focus-shadow);
     --_field-box-readonly-focus-shadow: var(--mx-radiogroup-field-box-readonly-focus-shadow);
     --_field-box-readonly-invalid-focus-shadow: var(--mx-radiogroup-field-box-readonly-invalid-focus-shadow);
+  }
+
+  /* rating: field — The field under a rating: no text-field box. */
+  .mx-rating {
+    --_field-variant: var(--mx-rating-field-variant);
+    --_field-label-mode: var(--mx-rating-field-label-mode);
+    --_field-padding-sm: var(--mx-rating-field-padding-sm);
+    --_field-padding-md: var(--mx-rating-field-padding-md);
+    --_field-padding-lg: var(--mx-rating-field-padding-lg);
+    --_field-box-bg: var(--mx-rating-field-box-bg);
+    --_field-box-hover-bg: var(--mx-rating-field-box-hover-bg);
+    --_field-box-focus-bg: var(--mx-rating-field-box-focus-bg);
+    --_field-border-width: var(--mx-rating-field-border-width);
+    --_field-box-radius: var(--mx-rating-field-box-radius);
+    --_field-box-shadow: var(--mx-rating-field-box-shadow);
+    --_field-box-focus-shadow: var(--mx-rating-field-box-focus-shadow);
+    --_field-box-cursor: var(--mx-rating-field-box-cursor);
+    --_field-frame-display: var(--mx-rating-field-frame-display);
+    --_field-indicator-display: var(--mx-rating-field-indicator-display);
+    --_field-box-disabled-bg: var(--mx-rating-field-box-disabled-bg);
+    --_field-box-disabled-shadow: var(--mx-rating-field-box-disabled-shadow);
+    --_field-padding-start-sm: var(--mx-rating-field-padding-start-sm);
+    --_field-padding-start-md: var(--mx-rating-field-padding-start-md);
+    --_field-padding-start-lg: var(--mx-rating-field-padding-start-lg);
+    --_field-padding-end-sm: var(--mx-rating-field-padding-end-sm);
+    --_field-padding-end-md: var(--mx-rating-field-padding-end-md);
+    --_field-padding-end-lg: var(--mx-rating-field-padding-end-lg);
+    --_field-box-invalid-hover-bg: var(--mx-rating-field-box-invalid-hover-bg);
+    --_field-box-invalid-focus-bg: var(--mx-rating-field-box-invalid-focus-bg);
+    --_field-box-invalid-focus-shadow: var(--mx-rating-field-box-invalid-focus-shadow);
+    --_field-box-readonly-focus-shadow: var(--mx-rating-field-box-readonly-focus-shadow);
+    --_field-box-readonly-invalid-focus-shadow: var(--mx-rating-field-box-readonly-invalid-focus-shadow);
   }
 
   /* recurrence-editor: day-button — A weekday button: its variant and size, its shape (corners, the least width, the room on its sides) and how a day that is on looks, for a solid and an outline button. */

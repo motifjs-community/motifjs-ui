@@ -1,0 +1,96 @@
+{
+  "avatar": {
+    "$description": "Avatar: someone's picture, else their initials, else a person icon; a presence dot on its lower corner.",
+    "$selector": ".mx-avatar",
+    "tone": { "$type": "keyword", "$description": "The tone it takes when none is given: standard, accent, info, success, caution, danger." },
+    "shape": { "$type": "keyword", "$description": "The shape it takes when none is given: circle, square." },
+    "size": {
+      "xs": { "$type": "dimension" },
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" },
+      "xl": { "$type": "dimension" }
+    },
+    "font-size": {
+      "xs": { "$type": "dimension", "$description": "The initials." },
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" },
+      "xl": { "$type": "dimension" }
+    },
+    "icon-size": {
+      "xs": { "$type": "dimension", "$description": "The person icon shown when there is no picture and no name." },
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" },
+      "xl": { "$type": "dimension" }
+    },
+    "status-size": {
+      "xs": { "$type": "dimension", "$description": "The presence dot, its ring included." },
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" },
+      "xl": { "$type": "dimension" }
+    },
+    "square-radius": {
+      "xs": { "$type": "dimension", "$description": "The corners of a square avatar." },
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" },
+      "xl": { "$type": "dimension" }
+    },
+    "$units": {
+      "avatar": {
+        "$description": "The avatar: the standard tone at rest, then each tone (accent, info, success, caution, danger). A picture covers it.",
+        "selector": ".mx-avatar",
+        "defaults": {
+          "size": "var(--_size)",
+          "font-size": "var(--_font-size)",
+          "radius": "var(--_radius)",
+          "line-height": "1"
+        },
+        "states": {
+          "accent": ".mx-avatar[data-tone='accent']",
+          "info": ".mx-avatar[data-tone='info']",
+          "success": ".mx-avatar[data-tone='success']",
+          "caution": ".mx-avatar[data-tone='caution']",
+          "danger": ".mx-avatar[data-tone='danger']"
+        }
+      },
+      "icon": {
+        "$description": "The person icon, drawn in the avatar's text colour.",
+        "selector": ".mx-avatar__icon",
+        "defaults": {
+          "size": "var(--_icon-size)"
+        }
+      },
+      "status": {
+        "$description": "The presence dot: `online`, `away`, `busy`, `offline`; its ring parts it from the avatar.",
+        "selector": ".mx-avatar__status",
+        "defaults": {
+          "size": "var(--_status-size)"
+        },
+        "states": {
+          "online": ".mx-avatar__status[data-status='online']",
+          "away": ".mx-avatar__status[data-status='away']",
+          "busy": ".mx-avatar__status[data-status='busy']",
+          "offline": ".mx-avatar__status[data-status='offline']"
+        }
+      },
+      "status-icon": {
+        "$description": "An icon inside the presence dot (`icon`, drawn in `bg`) per presence; none unless a language shows it, and none on the smallest avatar (`tiny`).",
+        "selector": ".mx-avatar__status::after",
+        "defaults": {
+          "display": "none"
+        },
+        "states": {
+          "online": ".mx-avatar__status[data-status='online']::after",
+          "away": ".mx-avatar__status[data-status='away']::after",
+          "busy": ".mx-avatar__status[data-status='busy']::after",
+          "offline": ".mx-avatar__status[data-status='offline']::after",
+          "tiny": ".mx-avatar[data-size='xs'] > .mx-avatar__status::after"
+        }
+      }
+    }
+  }
+}

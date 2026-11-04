@@ -1,0 +1,40 @@
+{
+  "button-group": {
+    "$description": "Button group: buttons that belong together, touching or apart; a segmented choice when it selects.",
+    "$selector": ".mx-button-group",
+    "attached": { "$type": "keyword", "$description": "Whether the buttons touch, sharing their edges, when not told: true, false." },
+    "gap": { "$type": "dimension", "$description": "The space between buttons that do not touch." },
+    "$places": {
+      "item": {
+        "$description": "Each button of the group: its look when the group gives none, and the look of the chosen one.",
+        "selector": ".mx-button-group > .mx-button",
+        "part": "button",
+        "tokens": [
+          "variant",
+          "face.toggled.bg",
+          "face.toggled.color",
+          "face.toggled-hover.bg",
+          "face.outline-toggled.bg",
+          "face.outline-toggled.color",
+          "face.outline-toggled.border-color",
+          "face.outline-toggled-hover.bg",
+          "face.ghost-toggled.bg",
+          "face.ghost-toggled.color",
+          "face.ghost-toggled-hover.bg"
+        ]
+      },
+      "inner-start": {
+        "$description": "The start corners of a button that touches the one before it.",
+        "selector": ".mx-button-group[data-attached] > .mx-button:not(:first-child)",
+        "part": "button",
+        "tokens": ["face.radius-start"]
+      },
+      "inner-end": {
+        "$description": "The end corners of a button that touches the one after it.",
+        "selector": ".mx-button-group[data-attached] > .mx-button:not(:last-child)",
+        "part": "button",
+        "tokens": ["face.radius-end"]
+      }
+    }
+  }
+}

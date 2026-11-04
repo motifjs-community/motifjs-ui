@@ -1,0 +1,82 @@
+/* Skeleton: one bone per line of text, or one block or circle, standing for what is loading. Only the layout and the
+   movement are here: the bone is a unit of its schema (`$units`), painted by units.css per shape. The wave is a band
+   of the bone's own colour sweeping across it; the pulse fades the bone in and out. Both last `duration`, which
+   follows the motion durations, so reduced motion keeps them still. Loaded, the content shows instead. */
+@layer mx.components {
+  .mx-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--_skeleton-line-gap);
+    inline-size: var(--_width, auto);
+  }
+
+  .mx-skeleton[data-shape='circle'] {
+    display: inline-flex;
+  }
+
+  .mx-skeleton:not([data-loading]) {
+    display: contents;
+  }
+
+  .mx-skeleton:not([data-loading]) > .mx-skeleton__bone,
+  .mx-skeleton[data-loading] > .mx-skeleton__content {
+    display: none;
+  }
+
+  .mx-skeleton__bone {
+    position: relative;
+    display: block;
+    overflow: clip;
+  }
+
+  .mx-skeleton[data-shape='text'] > .mx-skeleton__bone {
+    block-size: var(--_height, var(--_skeleton-line-height));
+  }
+
+  .mx-skeleton[data-shape='text'] > .mx-skeleton__bone:last-of-type:not(:first-of-type) {
+    inline-size: var(--_skeleton-last-line);
+  }
+
+  .mx-skeleton[data-shape='rect'] > .mx-skeleton__bone {
+    block-size: var(--_height, var(--_skeleton-rect-height));
+  }
+
+  .mx-skeleton[data-shape='circle'] > .mx-skeleton__bone {
+    inline-size: var(--_width, var(--_skeleton-circle-size));
+    block-size: var(--_width, var(--_skeleton-circle-size));
+  }
+
+  .mx-skeleton[data-animation='pulse'] > .mx-skeleton__bone {
+    animation: mx-skeleton-pulse var(--_skeleton-duration) var(--_skeleton-easing) infinite;
+  }
+
+  .mx-skeleton[data-animation='wave'] > .mx-skeleton__bone::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, currentcolor var(--_skeleton-wave-mix), transparent),
+      transparent
+    );
+    translate: -100% 0;
+    animation: mx-skeleton-wave var(--_skeleton-duration) linear infinite;
+  }
+
+  .mx-skeleton[data-animation='wave'] > .mx-skeleton__bone:dir(rtl)::after {
+    animation-direction: reverse;
+  }
+
+  @keyframes mx-skeleton-pulse {
+    50% {
+      opacity: var(--_skeleton-pulse-dim);
+    }
+  }
+
+  @keyframes mx-skeleton-wave {
+    to {
+      translate: 100% 0;
+    }
+  }
+}

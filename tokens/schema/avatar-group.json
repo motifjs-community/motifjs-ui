@@ -1,0 +1,27 @@
+{
+  "avatar-group": {
+    "$description": "Avatar group: avatars side by side or stacked over each other, with a `+N` for those not shown.",
+    "$selector": ".mx-avatar-group",
+    "layout": { "$type": "keyword", "$description": "The layout it takes when none is given: stack, spread." },
+    "overlap": {
+      "xs": { "$type": "dimension", "$description": "How far each stacked avatar goes under the one before it." },
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" },
+      "xl": { "$type": "dimension" }
+    },
+    "gap": {
+      "xs": { "$type": "dimension", "$description": "The space between spread avatars." },
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" },
+      "xl": { "$type": "dimension" }
+    },
+    "$units": {
+      "stacked": {
+        "$description": "Each avatar of a stack: the ring that parts it from the one it covers.",
+        "selector": ".mx-avatar-group[data-layout='stack'] > .mx-avatar"
+      }
+    }
+  }
+}

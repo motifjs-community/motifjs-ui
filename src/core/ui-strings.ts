@@ -42,6 +42,36 @@ export interface UiStrings {
   removeItem: string;
   /** `{count}` is the number of items not shown. */
   moreItems: string;
+  presenceOnline: string;
+  presenceAway: string;
+  presenceBusy: string;
+  presenceOffline: string;
+  /** `{name}` is the person's name, `{presence}` one of the presence texts. */
+  avatarPresence: string;
+  /** The check box of a selectable card; `{title}` is the card's title. */
+  cardSelect: string;
+  /** A rating's value for screen readers; `{value}` and `{max}` are numbers. */
+  ratingValue: string;
+  ratingNone: string;
+  /** A pagination's page sizes (the grid's pager says rows: `gridPageSize`). */
+  pagerPageSize: string;
+  breadcrumb: string;
+  /** The button of a breadcrumb's pages that do not fit. */
+  breadcrumbMore: string;
+  chooseColor: string;
+  colorArea: string;
+  /** `{s}` and `{v}` are percentages, from 0 to 100. */
+  colorAreaValue: string;
+  colorHue: string;
+  colorAlpha: string;
+  colorHex: string;
+  colorRed: string;
+  colorGreen: string;
+  colorBlue: string;
+  colorPresets: string;
+  colorPick: string;
+  /** `{count}` is how many avatars a group does not show. */
+  avatarGroupMore: string;
   required: string;
   invalidEmail: string;
   invalidUrl: string;

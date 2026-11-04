@@ -1,0 +1,55 @@
+{
+  "card": {
+    "$description": "Card: a surface holding one thing: a picture, a header (avatar, title, subtitle, an action), content and a row of actions.",
+    "$selector": ".mx-card",
+    "variant": { "$type": "keyword", "$description": "The look it takes when none is given: elevated, filled, outline." },
+    "footer-align": { "$type": "keyword", "$description": "Where the row of actions sits: start, end." },
+    "padding": {
+      "sm": { "$type": "dimension", "$description": "Space around the header, the content and the actions." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "gap": {
+      "sm": { "$type": "dimension", "$description": "Space between the header, the content and the actions." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "header-gap": { "$type": "dimension", "$description": "Space between the avatar, the titles and the action." },
+    "footer-gap": { "$type": "dimension", "$description": "Space between the actions." },
+    "media-width": { "$type": "dimension", "$description": "The picture's width when it stands at the start (horizontal)." },
+    "$units": {
+      "card": {
+        "$description": "The card, at rest, then `elevated`, `filled`, `outline`, `selected`, and `hover`, `pressed`, `focus` (clickable and link cards), `disabled`.",
+        "selector": ".mx-card",
+        "defaults": {
+          "margin": "0px",
+          "image": "linear-gradient(transparent, transparent)"
+        },
+        "states": {
+          "elevated": ".mx-card[data-variant='elevated']",
+          "filled": ".mx-card[data-variant='filled']",
+          "outline": ".mx-card[data-variant='outline']",
+          "selected": ".mx-card[data-variant][data-selected]",
+          "hover": ".mx-card[data-pressable]:not([data-disabled]):hover",
+          "pressed": ".mx-card[data-pressable]:not([data-disabled]):active",
+          "focus": ".mx-card:is(:focus-visible, :has(.mx-card__link:focus-visible))",
+          "disabled": ".mx-card[data-disabled]"
+        }
+      },
+      "title": {
+        "$description": "The title.",
+        "selector": ".mx-card__title",
+        "defaults": { "margin": "0px" }
+      },
+      "subtitle": {
+        "$description": "The line under the title.",
+        "selector": ".mx-card__subtitle",
+        "defaults": { "margin": "0px" }
+      },
+      "content": {
+        "$description": "The content's text.",
+        "selector": ".mx-card__content"
+      }
+    }
+  }
+}

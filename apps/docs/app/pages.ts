@@ -22,6 +22,7 @@ export const GROUPS = [
     section: 'Components',
     pages: [
       { id: 'button', label: 'Button', title: 'Button', path: '/button', related: ['control', 'keyboard', 'tokens'] },
+      { id: 'buttongroup', label: 'ButtonGroup', title: 'ButtonGroup', path: '/buttongroup', related: ['button', 'toolbar', 'radiogroup'] },
       { id: 'toolbar', label: 'Toolbar', title: 'Toolbar', path: '/toolbar', related: ['button', 'menus'] },
       { id: 'menus', label: 'MenuBar and ContextMenu', title: 'MenuBar and ContextMenu', path: '/menus', related: ['button', 'toolbar'] },
     ],
@@ -34,8 +35,10 @@ export const GROUPS = [
       { id: 'textarea', label: 'TextArea', title: 'TextArea', path: '/textarea', related: ['textbox', 'numberbox'] },
       { id: 'numberbox', label: 'NumberBox', title: 'NumberBox', path: '/numberbox', related: ['textbox', 'slider'] },
       { id: 'datebox', label: 'DateBox', title: 'DateBox', path: '/datebox', related: ['calendar', 'textbox'] },
+      { id: 'colorbox', label: 'ColorBox', title: 'ColorBox and ColorPicker', path: '/colorbox', related: ['textbox', 'datebox'] },
       { id: 'calendar', label: 'Calendar', title: 'Calendar', path: '/calendar', related: ['datebox'] },
       { id: 'slider', label: 'Slider', title: 'Slider', path: '/slider', related: ['numberbox', 'progress'] },
+      { id: 'rating', label: 'Rating', title: 'Rating', path: '/rating', related: ['slider', 'buttongroup'] },
     ],
   },
   {
@@ -60,10 +63,23 @@ export const GROUPS = [
     ],
   },
   {
+    title: 'Display',
+    section: 'Components',
+    pages: [
+      { id: 'badge', label: 'Badge', title: 'Badge', path: '/badge', related: ['button', 'avatar'] },
+      { id: 'avatar', label: 'Avatar', title: 'Avatar and AvatarGroup', path: '/avatar', related: ['badge', 'chip'] },
+      { id: 'chip', label: 'Chip', title: 'Chip and ChipGroup', path: '/chip', related: ['avatar', 'tagbox'] },
+      { id: 'card', label: 'Card', title: 'Card', path: '/card', related: ['avatar', 'skeleton'] },
+      { id: 'skeleton', label: 'Skeleton', title: 'Skeleton', path: '/skeleton', related: ['card', 'progress'] },
+    ],
+  },
+  {
     title: 'Navigation',
     section: 'Components',
     pages: [
       { id: 'tabs', label: 'Tabs', title: 'Tabs', path: '/tabs', related: ['accordion', 'keyboard'] },
+      { id: 'breadcrumb', label: 'Breadcrumb', title: 'Breadcrumb', path: '/breadcrumb', related: ['tabs', 'menus'] },
+      { id: 'pagination', label: 'Pagination', title: 'Pagination', path: '/pagination', related: ['datagrid', 'breadcrumb'] },
       { id: 'accordion', label: 'Accordion', title: 'Accordion', path: '/accordion', related: ['tabs'] },
       { id: 'window', label: 'Window', title: 'Window and dialog', path: '/window', related: ['button', 'keyboard'] },
       { id: 'bottomsheet', label: 'BottomSheet', title: 'BottomSheet', path: '/bottomsheet', related: ['drawer', 'actionsheet', 'window'] },

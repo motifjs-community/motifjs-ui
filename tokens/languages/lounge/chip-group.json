@@ -1,0 +1,7 @@
+{
+  "chip-group": {
+    "gap": {
+      "$value": "{space.2}"
+    }
+  }
+}

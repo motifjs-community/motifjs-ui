@@ -1,0 +1,69 @@
+{
+  "skeleton": {
+    "animation": {
+      "$value": "wave"
+    },
+    "duration": {
+      "$value": "calc({motion.duration.slow} * 6)"
+    },
+    "easing": {
+      "$value": "{motion.easing.standard}"
+    },
+    "wave-mix": {
+      "$value": "6%"
+    },
+    "pulse-dim": {
+      "$value": 0.55
+    },
+    "line-height": {
+      "$value": {
+        "value": 0.75,
+        "unit": "rem"
+      }
+    },
+    "line-gap": {
+      "$value": {
+        "value": 0.625,
+        "unit": "rem"
+      }
+    },
+    "last-line": {
+      "$value": "60%"
+    },
+    "circle-size": {
+      "$value": {
+        "value": 2.5,
+        "unit": "rem"
+      }
+    },
+    "rect-height": {
+      "$value": {
+        "value": 6,
+        "unit": "rem"
+      }
+    },
+    "bone": {
+      "bg": {
+        "$value": "{color.fill.neutral}"
+      },
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "text": {
+        "radius": {
+          "$value": "{radius.md}"
+        }
+      },
+      "rect": {
+        "radius": {
+          "$value": "{radius.md}"
+        }
+      },
+      "circle": {
+        "radius": {
+          "$value": "{radius.full}"
+        }
+      }
+    }
+  }
+}

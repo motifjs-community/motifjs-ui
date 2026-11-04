@@ -1,0 +1,49 @@
+/* Pagination: [sizes | size list] [info] [first] [previous] [pages | page box] [next] [last]. Only the layout is here:
+   the buttons are the kit's, their look the design language's (the schema's keywords); the info is a unit. The arrows
+   of the first and last steps go over each other by `step-overlap`, and turn round in RTL. */
+@layer mx.components {
+  .mx-pagination {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--_pagination-gap);
+    min-inline-size: 0;
+  }
+
+  .mx-pagination__sizes,
+  .mx-pagination__pages,
+  .mx-pagination__jump {
+    display: flex;
+    align-items: center;
+    gap: var(--_pagination-gap);
+  }
+
+  .mx-pagination__info,
+  .mx-pagination__jump {
+    white-space: nowrap;
+  }
+
+  .mx-pagination__gap {
+    padding-inline: var(--_pagination-gap);
+  }
+
+  .mx-pagination__number {
+    inline-size: var(--_pagination-number-width);
+  }
+
+  .mx-pagination__size-list {
+    inline-size: var(--_pagination-size-width);
+  }
+
+  .mx-pagination__step-icon {
+    display: inline-flex;
+  }
+
+  .mx-pagination__step-icon > .mx-glyph + .mx-glyph {
+    margin-inline-start: calc(-1 * var(--_pagination-step-overlap));
+  }
+
+  .mx-pagination__step:dir(rtl) .mx-pagination__step-icon {
+    scale: -1 1;
+  }
+}

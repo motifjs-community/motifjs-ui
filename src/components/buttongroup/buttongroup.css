@@ -1,0 +1,43 @@
+/* Button group: the kit's buttons in a row. Only the layout is here: each button's look in a group comes from the
+   group's places (places.css), which also take the corners off where two buttons touch. Touching buttons share one
+   frame line (each steps over the one before it by its frame); the chosen and the focused one are drawn above their
+   neighbours, so their whole frame shows. */
+@layer mx.components {
+  .mx-button-group {
+    display: inline-flex;
+    align-items: stretch;
+    vertical-align: middle;
+
+    --_z-raised: 1;
+    --_z-focus: 2;
+  }
+
+  .mx-button-group:not([data-attached]) {
+    gap: var(--_button-group-gap);
+  }
+
+  .mx-button-group[data-stretch] {
+    display: flex;
+  }
+
+  .mx-button-group[data-stretch] > .mx-button {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  .mx-button-group[data-attached] > .mx-button {
+    position: relative;
+  }
+
+  .mx-button-group[data-attached] > .mx-button + .mx-button {
+    margin-inline-start: calc(-1 * var(--_button-face-border-width, 0px));
+  }
+
+  .mx-button-group[data-attached] > .mx-button:has([aria-pressed='true']) {
+    z-index: var(--_z-raised);
+  }
+
+  .mx-button-group[data-attached] > .mx-button:focus-within {
+    z-index: var(--_z-focus);
+  }
+}

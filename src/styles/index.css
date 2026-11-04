@@ -29,6 +29,17 @@
 @import '../components/dropdown/dropdown.css';
 @import '../components/progress/progress.css';
 @import '../components/tooltip/tooltip.css';
+@import '../components/badge/badge.css';
+@import '../components/avatar/avatar.css';
+@import '../components/chip/chip.css';
+@import '../components/card/card.css';
+@import '../components/skeleton/skeleton.css';
+@import '../components/buttongroup/buttongroup.css';
+@import '../components/rating/rating.css';
+@import '../components/colorpicker/colorpicker.css';
+@import '../components/colorbox/colorbox.css';
+@import '../components/breadcrumb/breadcrumb.css';
+@import '../components/pagination/pagination.css';
 @import '../components/toast/toast.css';
 @import '../components/tabs/tabs.css';
 @import '../components/tabdocs/tabdocs.css';

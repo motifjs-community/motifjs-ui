@@ -1,0 +1,136 @@
+{
+  "breadcrumb": {
+    "font-size": {
+      "sm": {
+        "$value": "{font.size.caption}"
+      },
+      "md": {
+        "$value": "{font.size.body}"
+      },
+      "lg": {
+        "$value": {
+          "value": 1,
+          "unit": "rem"
+        }
+      }
+    },
+    "padding": {
+      "sm": {
+        "$value": {
+          "value": 0.375,
+          "unit": "rem"
+        }
+      },
+      "md": {
+        "$value": {
+          "value": 0.5,
+          "unit": "rem"
+        }
+      },
+      "lg": {
+        "$value": {
+          "value": 0.625,
+          "unit": "rem"
+        }
+      }
+    },
+    "height": {
+      "sm": {
+        "$value": {
+          "value": 1.5,
+          "unit": "rem"
+        }
+      },
+      "md": {
+        "$value": {
+          "value": 1.75,
+          "unit": "rem"
+        }
+      },
+      "lg": {
+        "$value": {
+          "value": 2.25,
+          "unit": "rem"
+        }
+      }
+    },
+    "gap": {
+      "$value": "{space.1}"
+    },
+    "divider-size": {
+      "$value": {
+        "value": 0.75,
+        "unit": "rem"
+      }
+    },
+    "link": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "radius": {
+        "$value": "{radius.full}"
+      },
+      "cursor": {
+        "$value": "pointer"
+      },
+      "hover": {
+        "bg": {
+          "$value": "{color.fill.subtle.secondary}"
+        },
+        "color": {
+          "$value": "{color.fg.primary}"
+        }
+      },
+      "pressed": {
+        "bg": {
+          "$value": "{color.fill.subtle.tertiary}"
+        }
+      },
+      "focus": {
+        "glow": {
+          "$value": "{focus.ring.halo}"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.offset}"
+        }
+      },
+      "disabled": {
+        "color": {
+          "$value": "{color.fg.disabled}"
+        },
+        "cursor": {
+          "$value": "default"
+        }
+      }
+    },
+    "current": {
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      }
+    },
+    "divider": {
+      "icon": {
+        "$value": "chevron-end"
+      },
+      "bg": {
+        "$value": "{color.fg.tertiary}"
+      }
+    },
+    "more": {
+      "chevron": {
+        "display": {
+          "$value": "none"
+        }
+      }
+    }
+  }
+}

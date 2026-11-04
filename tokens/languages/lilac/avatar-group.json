@@ -1,0 +1,64 @@
+{
+  "avatar-group": {
+    "layout": {
+      "$value": "stack"
+    },
+    "overlap": {
+      "xs": {
+        "$value": {
+          "value": 0.25,
+          "unit": "rem"
+        }
+      },
+      "sm": {
+        "$value": {
+          "value": 0.25,
+          "unit": "rem"
+        }
+      },
+      "md": {
+        "$value": {
+          "value": 0.375,
+          "unit": "rem"
+        }
+      },
+      "lg": {
+        "$value": {
+          "value": 0.5,
+          "unit": "rem"
+        }
+      },
+      "xl": {
+        "$value": {
+          "value": 0.75,
+          "unit": "rem"
+        }
+      }
+    },
+    "gap": {
+      "xs": {
+        "$value": "{space.1}"
+      },
+      "sm": {
+        "$value": "{space.1}"
+      },
+      "md": {
+        "$value": "{space.2}"
+      },
+      "lg": {
+        "$value": "{space.2}"
+      },
+      "xl": {
+        "$value": "{space.3}"
+      }
+    },
+    "stacked": {
+      "outline-width": {
+        "$value": "{border.width.2}"
+      },
+      "outline-color": {
+        "$value": "{color.bg.surface}"
+      }
+    }
+  }
+}

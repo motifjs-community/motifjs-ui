@@ -1,0 +1,80 @@
+/* Breadcrumb: a row of steps with a divider after each but the last, the menu of the steps that do not fit after the
+   first. Only the layout is here: a step, the current page and the divider are units of the schema (`$units`). The row
+   never wraps: steps that do not fit go into the menu, and a long text ends in an ellipsis. */
+@layer mx.components {
+  .mx-breadcrumb {
+    min-inline-size: 0;
+  }
+
+  .mx-breadcrumb[data-size='sm'] {
+    --_height: var(--_breadcrumb-height-sm);
+    --_padding: var(--_breadcrumb-padding-sm);
+    --_font-size: var(--_breadcrumb-font-size-sm);
+  }
+
+  .mx-breadcrumb[data-size='md'] {
+    --_height: var(--_breadcrumb-height-md);
+    --_padding: var(--_breadcrumb-padding-md);
+    --_font-size: var(--_breadcrumb-font-size-md);
+  }
+
+  .mx-breadcrumb[data-size='lg'] {
+    --_height: var(--_breadcrumb-height-lg);
+    --_padding: var(--_breadcrumb-padding-lg);
+    --_font-size: var(--_breadcrumb-font-size-lg);
+  }
+
+  .mx-breadcrumb__list {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    list-style: none;
+  }
+
+  .mx-breadcrumb__item {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--_breadcrumb-gap);
+    min-inline-size: 0;
+    margin-inline-end: var(--_breadcrumb-gap);
+  }
+
+  .mx-breadcrumb__item:last-child {
+    flex: 0 1 auto;
+    margin-inline-end: 0;
+  }
+
+  .mx-breadcrumb__link,
+  .mx-breadcrumb__current {
+    display: inline-flex;
+    box-sizing: border-box;
+    align-items: center;
+    gap: var(--_breadcrumb-gap);
+    min-inline-size: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: var(--_font-size);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .mx-breadcrumb__text {
+    overflow-x: clip;
+    overflow-y: visible;
+    text-overflow: ellipsis;
+  }
+
+  .mx-breadcrumb__link > :is(img, svg) {
+    inline-size: 1em;
+    block-size: 1em;
+  }
+
+  .mx-breadcrumb__divider:dir(rtl) {
+    scale: -1 1;
+  }
+}

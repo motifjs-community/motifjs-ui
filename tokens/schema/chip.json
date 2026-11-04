@@ -1,0 +1,105 @@
+{
+  "chip": {
+    "$description": "Chip: a short text with an icon or an avatar before it and a remove button after it; it can be pressed, selected or removed.",
+    "$selector": ".mx-chip",
+    "variant": { "$type": "keyword", "$description": "The look it takes when none is given: filled, outline." },
+    "check": { "$type": "keyword", "$description": "Whether a selected chip shows a check mark before its text: leading, none." },
+    "height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "font-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "padding": {
+      "sm": { "$type": "dimension", "$description": "Space between an edge and the text." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "icon-inset": {
+      "sm": { "$type": "dimension", "$description": "Space between the start edge and an icon or check mark." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "gap": {
+      "sm": { "$type": "dimension", "$description": "Space between the text and what is beside it." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "icon-size": {
+      "sm": { "$type": "dimension", "$description": "The icon and the check mark." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "avatar-size": {
+      "sm": { "$type": "dimension", "$description": "The avatar; it sits as far in from the edges as from the top and bottom." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "remove-size": {
+      "sm": { "$type": "dimension", "$description": "The remove button; it sits as far in from the end as from the top and bottom." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "$units": {
+      "chip": {
+        "$description": "The chip, filled at rest in the standard tone, then `outline`, each tone filled (`accent` … `danger`) and outlined (`outline-*`), `selected`, `hover`, `pressed` (pressable chips), `focus` and `disabled`.",
+        "selector": ".mx-chip",
+        "defaults": {
+          "height": "var(--_height)",
+          "padding-start": "var(--_start)",
+          "padding-end": "var(--_end)",
+          "gap": "var(--_gap)",
+          "font-size": "var(--_font-size)",
+          "line-height": "1",
+          "margin": "0px",
+          "image": "linear-gradient(transparent, transparent)"
+        },
+        "states": {
+          "outline": ".mx-chip[data-variant='outline']",
+          "accent": ".mx-chip[data-variant='filled'][data-tone='accent']",
+          "info": ".mx-chip[data-variant='filled'][data-tone='info']",
+          "success": ".mx-chip[data-variant='filled'][data-tone='success']",
+          "caution": ".mx-chip[data-variant='filled'][data-tone='caution']",
+          "danger": ".mx-chip[data-variant='filled'][data-tone='danger']",
+          "outline-accent": { "selector": ".mx-chip[data-variant='outline'][data-tone='accent']", "from": "outline" },
+          "outline-info": { "selector": ".mx-chip[data-variant='outline'][data-tone='info']", "from": "outline" },
+          "outline-success": { "selector": ".mx-chip[data-variant='outline'][data-tone='success']", "from": "outline" },
+          "outline-caution": { "selector": ".mx-chip[data-variant='outline'][data-tone='caution']", "from": "outline" },
+          "outline-danger": { "selector": ".mx-chip[data-variant='outline'][data-tone='danger']", "from": "outline" },
+          "selected": ".mx-chip[data-variant][data-selected]",
+          "hover": ".mx-chip[data-pressable]:not([data-disabled]):hover",
+          "pressed": ".mx-chip[data-pressable]:not([data-disabled]):active",
+          "focus": ".mx-chip:focus-visible",
+          "disabled": ".mx-chip[data-disabled]"
+        }
+      },
+      "icon": {
+        "$description": "The icon or the check mark before the text.",
+        "selector": ":is(.mx-chip__icon, .mx-chip__check)",
+        "defaults": {
+          "size": "var(--_icon-size)"
+        }
+      },
+      "avatar": {
+        "$description": "An avatar of the standard tone on a filled chip: it would take the chip's own fill, so it takes another.",
+        "selector": ".mx-chip[data-variant='filled']:not([data-selected]) > .mx-chip__avatar[data-tone='standard']"
+      },
+      "remove": {
+        "$description": "The remove button: `hover`, `pressed`.",
+        "selector": ".mx-chip__remove",
+        "defaults": {
+          "size": "var(--_remove-size)",
+          "image": "linear-gradient(transparent, transparent)"
+        },
+        "states": {
+          "hover": ".mx-chip:not([data-disabled]) > .mx-chip__remove:hover",
+          "pressed": ".mx-chip:not([data-disabled]) > .mx-chip__remove:active"
+        }
+      }
+    }
+  }
+}

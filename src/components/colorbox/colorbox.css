@@ -1,0 +1,32 @@
+/* Colour box: the swatch of the value before the hex, and the picker in the popup with OK and Cancel under it when the
+   colour is applied with buttons. The swatch is a unit of the schema; under a see-through colour lies a checker of the
+   language's two greys. */
+@layer mx.components {
+  .mx-color-box__swatch {
+    display: inline-block;
+    flex: none;
+    box-sizing: border-box;
+    background: linear-gradient(var(--_color), var(--_color)),
+      repeating-conic-gradient(var(--_color-box-checker-dark) 0 25%, var(--_color-box-checker-light) 0 50%) 0 0 /
+        calc(2 * var(--_color-box-checker-size)) calc(2 * var(--_color-box-checker-size));
+  }
+
+  .mx-color-box__popup {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: var(--_color-box-popup-gap);
+    padding: var(--_color-box-popup-gap);
+  }
+
+  .mx-color-box__popup > .mx-color-picker {
+    grid-column: 1 / -1;
+  }
+
+  .mx-color-box__popup:not([data-buttons]) > :is(.mx-color-box__ok, .mx-color-box__cancel) {
+    display: none;
+  }
+
+  .mx-color-box__cancel {
+    grid-column: 2;
+  }
+}

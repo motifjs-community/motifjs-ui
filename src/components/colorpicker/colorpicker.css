@@ -1,0 +1,96 @@
+/* Colour picker: the area, a row of [preview][strips][pick], the inputs, the presets. Only the layout is here: the
+   area, the strips, the handles, the preview and the presets are units of the schema (`$units`), painted by units.css.
+   The colours themselves (the hue under the area, the strips' gradients, the handles' fill) are the value, written on
+   the parts by the picker. A handle is centred on its point; under a see-through colour lies a checker of the
+   language's two greys. */
+@layer mx.components {
+  .mx-color-picker {
+    display: flex;
+    flex-direction: column;
+    gap: var(--_color-picker-gap);
+    inline-size: var(--_color-picker-width);
+    max-inline-size: 100%;
+
+    --_checker: repeating-conic-gradient(var(--_color-picker-checker-dark) 0 25%, var(--_color-picker-checker-light) 0 50%) 0 0 /
+      calc(2 * var(--_color-picker-checker-size)) calc(2 * var(--_color-picker-checker-size));
+  }
+
+  .mx-color-picker__area {
+    position: relative;
+    block-size: var(--_color-picker-area-height);
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  .mx-color-picker__row {
+    display: flex;
+    align-items: center;
+    gap: var(--_color-picker-gap);
+  }
+
+  .mx-color-picker__preview {
+    flex: none;
+    box-sizing: border-box;
+    background: linear-gradient(var(--_color), var(--_color)), var(--_checker);
+  }
+
+  .mx-color-picker__strips {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--_color-picker-gap);
+    min-inline-size: 0;
+  }
+
+  .mx-color-picker__strip {
+    position: relative;
+    block-size: var(--_color-picker-strip-height);
+    touch-action: none;
+    cursor: pointer;
+  }
+
+  .mx-color-picker__alpha {
+    background: var(--_shade), var(--_checker);
+  }
+
+  .mx-color-picker__thumb {
+    position: absolute;
+    box-sizing: border-box;
+    translate: -50% -50%;
+    pointer-events: none;
+  }
+
+  .mx-color-picker__pick {
+    flex: none;
+  }
+
+  /* The hex on a row of its own, the channels in even columns under it (three, or four with opacity). */
+  .mx-color-picker__inputs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--_color-picker-swatch-gap);
+  }
+
+  .mx-color-picker[data-alpha] > .mx-color-picker__inputs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .mx-color-picker__hex {
+    grid-column: 1 / -1;
+  }
+
+  .mx-color-picker__channel {
+    min-inline-size: 0;
+  }
+
+  .mx-color-picker__swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, var(--_color-picker-swatch-size));
+    gap: var(--_color-picker-swatch-gap);
+  }
+
+  .mx-color-picker__swatch {
+    box-sizing: border-box;
+    background: linear-gradient(var(--_color), var(--_color)), var(--_checker);
+  }
+}

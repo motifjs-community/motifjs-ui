@@ -1,0 +1,23 @@
+{
+  "pagination": {
+    "$description": "Pagination: the page sizes, where the page stands among them all, the first, previous, next and last steps and a button per page around the current one; compact when it does not fit.",
+    "$selector": ".mx-pagination",
+    "button-size": { "$type": "keyword", "$description": "The size of its buttons: sm, md, lg." },
+    "step-variant": { "$type": "keyword", "$description": "The look of the first, previous, next and last steps." },
+    "page-variant": { "$type": "keyword", "$description": "The look of a page button and of a page size." },
+    "page-tone": { "$type": "keyword", "$description": "The tone of a page button and of a page size." },
+    "current-variant": { "$type": "keyword", "$description": "The look of the current page and of the page size in use." },
+    "current-tone": { "$type": "keyword", "$description": "The tone of the current page and of the page size in use." },
+    "gap": { "$type": "dimension", "$description": "The space between its parts." },
+    "step-overlap": { "$type": "dimension", "$description": "How far the two arrows of the first and last steps go over each other." },
+    "number-width": { "$type": "dimension", "$description": "The page number box of the compact look." },
+    "size-width": { "$type": "dimension", "$description": "The drop-down of the page sizes in the compact look." },
+    "$units": {
+      "info": {
+        "$description": "Where the page stands: \"Page 3 of 12 (250 items)\".",
+        "selector": ".mx-pagination__info",
+        "defaults": { "margin": "0px" }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+export { Avatar } from './Avatar';
+export { AvatarGroup } from './AvatarGroup';
+export type { AvatarGroupLayout } from './avatar-group-layout';
+export type { AvatarGroupProps } from './avatar-group-props';
+export type { AvatarProps } from './avatar-props';
+export type { AvatarShape } from './avatar-shape';
+export type { AvatarSize } from './avatar-size';
+export type { AvatarStatus } from './avatar-status';
+export type { AvatarTone } from './avatar-tone';
+export { initialsOf } from './initials-of';
+export { toneOfName } from './tone-of-name';

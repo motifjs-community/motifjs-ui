@@ -1,0 +1,52 @@
+{
+  "color-box": {
+    "swatch-size": {
+      "$value": {
+        "value": 1.25,
+        "unit": "rem"
+      }
+    },
+    "popup-gap": {
+      "$value": "{space.3}"
+    },
+    "checker-size": {
+      "$value": {
+        "value": 0.25,
+        "unit": "rem"
+      }
+    },
+    "checker-light": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          1,
+          1
+        ],
+        "hex": "#ffffff"
+      }
+    },
+    "checker-dark": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.8,
+          0.8,
+          0.8
+        ],
+        "hex": "#cccccc"
+      }
+    },
+    "swatch": {
+      "radius": {
+        "$value": "{radius.full}"
+      },
+      "border-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.control.default}"
+      }
+    }
+  }
+}

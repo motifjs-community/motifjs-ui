@@ -1,0 +1,62 @@
+{
+  "badge": {
+    "$description": "Badge: a short text, a count or a dot, alone or on a corner of what it is in.",
+    "$selector": ".mx-badge",
+    "tone": { "$type": "keyword", "$description": "The tone it takes when none is given: standard, accent, info, success, caution, danger." },
+    "variant": { "$type": "keyword", "$description": "The look it takes when none is given: solid, subtle, outline." },
+    "offset": { "$type": "dimension", "$description": "How far a badge on a corner sits in from it (its middle on the corner at 0)." },
+    "height": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "dot-size": {
+      "sm": { "$type": "dimension", "$description": "The dot (a badge with nothing to say but that there is something)." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "font-size": {
+      "sm": { "$type": "dimension" },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "padding": {
+      "sm": { "$type": "dimension", "$description": "Space at each end of the text." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "$units": {
+      "badge": {
+        "$description": "The badge: solid at rest in the standard tone, then each look (solid, subtle, outline) in each tone (accent, info, success, caution, danger); `dot` when it has no text.",
+        "selector": ".mx-badge",
+        "defaults": {
+          "min-width": "var(--_height)",
+          "height": "var(--_height)",
+          "padding-inline": "var(--_padding)",
+          "font-size": "var(--_font-size)",
+          "margin": "0px"
+        },
+        "states": {
+          "accent": ".mx-badge[data-variant='solid'][data-tone='accent']",
+          "info": ".mx-badge[data-variant='solid'][data-tone='info']",
+          "success": ".mx-badge[data-variant='solid'][data-tone='success']",
+          "caution": ".mx-badge[data-variant='solid'][data-tone='caution']",
+          "danger": ".mx-badge[data-variant='solid'][data-tone='danger']",
+          "subtle": ".mx-badge[data-variant='subtle']",
+          "subtle-accent": { "selector": ".mx-badge[data-variant='subtle'][data-tone='accent']", "from": "subtle" },
+          "subtle-info": { "selector": ".mx-badge[data-variant='subtle'][data-tone='info']", "from": "subtle" },
+          "subtle-success": { "selector": ".mx-badge[data-variant='subtle'][data-tone='success']", "from": "subtle" },
+          "subtle-caution": { "selector": ".mx-badge[data-variant='subtle'][data-tone='caution']", "from": "subtle" },
+          "subtle-danger": { "selector": ".mx-badge[data-variant='subtle'][data-tone='danger']", "from": "subtle" },
+          "outline": ".mx-badge[data-variant='outline']",
+          "outline-accent": { "selector": ".mx-badge[data-variant='outline'][data-tone='accent']", "from": "outline" },
+          "outline-info": { "selector": ".mx-badge[data-variant='outline'][data-tone='info']", "from": "outline" },
+          "outline-success": { "selector": ".mx-badge[data-variant='outline'][data-tone='success']", "from": "outline" },
+          "outline-caution": { "selector": ".mx-badge[data-variant='outline'][data-tone='caution']", "from": "outline" },
+          "outline-danger": { "selector": ".mx-badge[data-variant='outline'][data-tone='danger']", "from": "outline" },
+          "dot": ".mx-badge[data-dot]"
+        }
+      }
+    }
+  }
+}

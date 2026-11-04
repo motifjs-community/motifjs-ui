@@ -1,0 +1,229 @@
+{
+  "avatar": {
+    "tone": {
+      "$value": "accent"
+    },
+    "shape": {
+      "$value": "circle"
+    },
+    "size": {
+      "xs": {
+        "$value": {
+          "value": 1.75,
+          "unit": "rem"
+        }
+      },
+      "sm": {
+        "$value": {
+          "value": 2.25,
+          "unit": "rem"
+        }
+      },
+      "md": {
+        "$value": {
+          "value": 2.75,
+          "unit": "rem"
+        }
+      },
+      "lg": {
+        "$value": {
+          "value": 3.75,
+          "unit": "rem"
+        }
+      },
+      "xl": {
+        "$value": {
+          "value": 5,
+          "unit": "rem"
+        }
+      }
+    },
+    "font-size": {
+      "xs": {
+        "$value": {
+          "value": 0.6875,
+          "unit": "rem"
+        }
+      },
+      "sm": {
+        "$value": {
+          "value": 0.8125,
+          "unit": "rem"
+        }
+      },
+      "md": {
+        "$value": {
+          "value": 0.9375,
+          "unit": "rem"
+        }
+      },
+      "lg": {
+        "$value": {
+          "value": 1.3125,
+          "unit": "rem"
+        }
+      },
+      "xl": {
+        "$value": {
+          "value": 1.75,
+          "unit": "rem"
+        }
+      }
+    },
+    "icon-size": {
+      "xs": {
+        "$value": {
+          "value": 1,
+          "unit": "rem"
+        }
+      },
+      "sm": {
+        "$value": {
+          "value": 1.25,
+          "unit": "rem"
+        }
+      },
+      "md": {
+        "$value": {
+          "value": 1.5,
+          "unit": "rem"
+        }
+      },
+      "lg": {
+        "$value": {
+          "value": 2.125,
+          "unit": "rem"
+        }
+      },
+      "xl": {
+        "$value": {
+          "value": 2.75,
+          "unit": "rem"
+        }
+      }
+    },
+    "status-size": {
+      "xs": {
+        "$value": {
+          "value": 0.5625,
+          "unit": "rem"
+        }
+      },
+      "sm": {
+        "$value": {
+          "value": 0.6875,
+          "unit": "rem"
+        }
+      },
+      "md": {
+        "$value": {
+          "value": 0.8125,
+          "unit": "rem"
+        }
+      },
+      "lg": {
+        "$value": {
+          "value": 1.0625,
+          "unit": "rem"
+        }
+      },
+      "xl": {
+        "$value": {
+          "value": 1.375,
+          "unit": "rem"
+        }
+      }
+    },
+    "square-radius": {
+      "xs": {
+        "$value": "{radius.sm}"
+      },
+      "sm": {
+        "$value": "{radius.sm}"
+      },
+      "md": {
+        "$value": "{radius.md}"
+      },
+      "lg": {
+        "$value": "{radius.lg}"
+      },
+      "xl": {
+        "$value": "{radius.xl}"
+      }
+    },
+    "avatar": {
+      "bg": {
+        "$value": "{color.fill.neutral}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.medium}"
+      },
+      "accent": {
+        "bg": {
+          "$value": "{color.accent.subtle}"
+        },
+        "color": {
+          "$value": "{color.accent.on-subtle}"
+        }
+      },
+      "success": {
+        "bg": {
+          "$value": "{color.success.subtle}"
+        },
+        "color": {
+          "$value": "{color.success.fg}"
+        }
+      },
+      "caution": {
+        "bg": {
+          "$value": "{color.caution.subtle}"
+        },
+        "color": {
+          "$value": "{color.caution.fg}"
+        }
+      },
+      "danger": {
+        "bg": {
+          "$value": "{color.danger.subtle}"
+        },
+        "color": {
+          "$value": "{color.danger.fg}"
+        }
+      }
+    },
+    "status": {
+      "radius": {
+        "$value": "{radius.full}"
+      },
+      "border-width": {
+        "$value": "{border.width.2}"
+      },
+      "border-color": {
+        "$value": "{color.bg.surface}"
+      },
+      "online": {
+        "bg": {
+          "$value": "{color.success.solid}"
+        }
+      },
+      "away": {
+        "bg": {
+          "$value": "{color.caution.solid}"
+        }
+      },
+      "busy": {
+        "bg": {
+          "$value": "{color.danger.solid}"
+        }
+      },
+      "offline": {
+        "bg": {
+          "$value": "{color.fg.tertiary}"
+        }
+      }
+    }
+  }
+}

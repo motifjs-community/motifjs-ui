@@ -1,0 +1,28 @@
+{
+  "skeleton": {
+    "$description": "Skeleton: the shape of what is loading (lines of text, a block, a circle), until it is there.",
+    "$selector": ".mx-skeleton",
+    "animation": { "$type": "keyword", "$description": "How it moves when not told: wave, pulse, none." },
+    "duration": { "$type": "duration", "$description": "One wave or pulse; follows the motion durations, so reduced motion keeps it still." },
+    "easing": { "$type": "cubicBezier", "$description": "The pace of a pulse." },
+    "wave-mix": { "$type": "keyword", "$description": "How much of the bone's colour the wave mixes in at its brightest (a percentage)." },
+    "pulse-dim": { "$type": "number", "$description": "The opacity a pulse fades the bone to." },
+    "line-height": { "$type": "dimension", "$description": "The height of a line of text." },
+    "line-gap": { "$type": "dimension", "$description": "The space between lines." },
+    "last-line": { "$type": "keyword", "$description": "How much of the width the last of several lines takes (a percentage)." },
+    "circle-size": { "$type": "dimension", "$description": "A circle given no size." },
+    "rect-height": { "$type": "dimension", "$description": "A block given no height." },
+    "$units": {
+      "bone": {
+        "$description": "One shape: `text` (a line), `rect` (a block), `circle`. Its `color` is the colour the wave and the pulse mix in.",
+        "selector": ".mx-skeleton__bone",
+        "defaults": { "margin": "0px" },
+        "states": {
+          "text": ".mx-skeleton[data-shape='text'] > .mx-skeleton__bone",
+          "rect": ".mx-skeleton[data-shape='rect'] > .mx-skeleton__bone",
+          "circle": ".mx-skeleton[data-shape='circle'] > .mx-skeleton__bone"
+        }
+      }
+    }
+  }
+}

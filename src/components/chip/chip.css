@@ -1,0 +1,133 @@
+/* Chip: [check | icon | avatar] text [remove]. Only the layout is here: the chip, its icon and its remove button are
+   units of its schema (`$units`), painted by units.css per look and state. An avatar and the remove button sit as far
+   in from the edge as from the top and bottom, so a round one is concentric with a round chip. A group lays its chips
+   in a row that wraps. */
+@layer mx.components {
+  .mx-chip {
+    display: inline-flex;
+    flex: none;
+    box-sizing: border-box;
+    align-items: center;
+    max-inline-size: 100%;
+    vertical-align: middle;
+    white-space: nowrap;
+    user-select: none;
+
+    --_start: var(--_padding);
+    --_end: var(--_padding);
+    --_frame: var(--_chip-chip-border-width, 0px);
+  }
+
+  .mx-chip[data-size='sm'] {
+    --_height: var(--_chip-height-sm);
+    --_font-size: var(--_chip-font-size-sm);
+    --_padding: var(--_chip-padding-sm);
+    --_inset: var(--_chip-icon-inset-sm);
+    --_gap: var(--_chip-gap-sm);
+    --_icon-size: var(--_chip-icon-size-sm);
+    --_avatar: var(--_chip-avatar-size-sm);
+    --_remove-size: var(--_chip-remove-size-sm);
+  }
+
+  .mx-chip[data-size='md'] {
+    --_height: var(--_chip-height-md);
+    --_font-size: var(--_chip-font-size-md);
+    --_padding: var(--_chip-padding-md);
+    --_inset: var(--_chip-icon-inset-md);
+    --_gap: var(--_chip-gap-md);
+    --_icon-size: var(--_chip-icon-size-md);
+    --_avatar: var(--_chip-avatar-size-md);
+    --_remove-size: var(--_chip-remove-size-md);
+  }
+
+  .mx-chip[data-size='lg'] {
+    --_height: var(--_chip-height-lg);
+    --_font-size: var(--_chip-font-size-lg);
+    --_padding: var(--_chip-padding-lg);
+    --_inset: var(--_chip-icon-inset-lg);
+    --_gap: var(--_chip-gap-lg);
+    --_icon-size: var(--_chip-icon-size-lg);
+    --_avatar: var(--_chip-avatar-size-lg);
+    --_remove-size: var(--_chip-remove-size-lg);
+  }
+
+  /* What leads and what ends: the frame is counted in, so the avatar and the remove button are centred. */
+  .mx-chip[data-lead='icon'] {
+    --_start: var(--_inset);
+  }
+
+  .mx-chip[data-lead='avatar'] {
+    --_start: calc((var(--_height) - var(--_avatar)) / 2 - var(--_frame));
+  }
+
+  .mx-chip[data-removable] {
+    --_end: calc((var(--_height) - var(--_remove-size)) / 2 - var(--_frame));
+  }
+
+  .mx-chip[data-pressable] {
+    cursor: pointer;
+  }
+
+  .mx-chip[data-disabled] {
+    cursor: default;
+  }
+
+  /* The line is cut to the capitals, so the letters sit in the middle; only the inline end is clipped (for the
+     ellipsis), so the tails of g and y still show below the cut line. */
+  .mx-chip__text {
+    min-inline-size: 0;
+    overflow-x: clip;
+    overflow-y: visible;
+    text-overflow: ellipsis;
+    text-box: trim-both cap alphabetic;
+  }
+
+  .mx-chip__icon,
+  .mx-chip__check {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mx-chip__icon > :is(img, svg) {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .mx-chip:not([data-check]) > .mx-chip__check {
+    display: none;
+  }
+
+  /* The avatar takes the chip's size for it; its initials a share of it. */
+  .mx-chip > .mx-avatar.mx-chip__avatar {
+    --_size: var(--_avatar);
+    --_font-size: calc(var(--_avatar) * 0.42);
+    --_icon-size: calc(var(--_avatar) * 0.6);
+  }
+
+  .mx-chip__remove {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .mx-chip__remove > .mx-glyph {
+    inline-size: calc(var(--_remove-size) * 0.65);
+    block-size: calc(var(--_remove-size) * 0.65);
+  }
+
+  .mx-chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--_chip-group-gap);
+  }
+
+  .mx-chip-group[data-wrap='false'] {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+}

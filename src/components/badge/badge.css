@@ -1,0 +1,101 @@
+/* Badge: a pill with a short text or a count, or a dot. Only the layout is here: the badge is a unit of its schema
+   (`$units`), painted by units.css per look (solid, subtle, outline) and tone. On a corner (`data-position`) its
+   middle sits on the outer corner of its anchor (its border, measured, is stepped over), moved in by `offset`. */
+@layer mx.components {
+  .mx-badge {
+    display: inline-flex;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  .mx-badge[data-size='sm'] {
+    --_height: var(--_badge-height-sm);
+    --_dot: var(--_badge-dot-size-sm);
+    --_font-size: var(--_badge-font-size-sm);
+    --_padding: var(--_badge-padding-sm);
+  }
+
+  .mx-badge[data-size='md'] {
+    --_height: var(--_badge-height-md);
+    --_dot: var(--_badge-dot-size-md);
+    --_font-size: var(--_badge-font-size-md);
+    --_padding: var(--_badge-padding-md);
+  }
+
+  .mx-badge[data-size='lg'] {
+    --_height: var(--_badge-height-lg);
+    --_dot: var(--_badge-dot-size-lg);
+    --_font-size: var(--_badge-font-size-lg);
+    --_padding: var(--_badge-padding-lg);
+  }
+
+  .mx-badge[data-dot] {
+    --_height: var(--_dot);
+    --_padding: 0px;
+
+    min-inline-size: var(--_dot);
+    inline-size: var(--_dot);
+  }
+
+  .mx-badge[data-empty] {
+    display: none;
+  }
+
+  /* The badge sits above the rest of what its anchor holds. */
+  .mx-badge-anchor {
+    position: relative;
+
+    --_z-badge: 1;
+  }
+
+  .mx-badge[data-position] {
+    position: absolute;
+    z-index: var(--_z-badge);
+    pointer-events: none;
+  }
+
+  .mx-badge[data-position='top-end'] {
+    inset-block-start: calc(var(--_badge-offset) - var(--_edge-top, 0px));
+    inset-inline-end: calc(var(--_badge-offset) - var(--_edge-end, 0px));
+    translate: 50% -50%;
+  }
+
+  .mx-badge[data-position='top-start'] {
+    inset-block-start: calc(var(--_badge-offset) - var(--_edge-top, 0px));
+    inset-inline-start: calc(var(--_badge-offset) - var(--_edge-start, 0px));
+    translate: -50% -50%;
+  }
+
+  .mx-badge[data-position='bottom-end'] {
+    inset-block-end: calc(var(--_badge-offset) - var(--_edge-bottom, 0px));
+    inset-inline-end: calc(var(--_badge-offset) - var(--_edge-end, 0px));
+    translate: 50% 50%;
+  }
+
+  .mx-badge[data-position='bottom-start'] {
+    inset-block-end: calc(var(--_badge-offset) - var(--_edge-bottom, 0px));
+    inset-inline-start: calc(var(--_badge-offset) - var(--_edge-start, 0px));
+    translate: -50% 50%;
+  }
+
+  .mx-badge[data-position='top-end']:dir(rtl) {
+    translate: -50% -50%;
+  }
+
+  .mx-badge[data-position='top-start']:dir(rtl) {
+    translate: 50% -50%;
+  }
+
+  .mx-badge[data-position='bottom-end']:dir(rtl) {
+    translate: -50% 50%;
+  }
+
+  .mx-badge[data-position='bottom-start']:dir(rtl) {
+    translate: 50% 50%;
+  }
+}

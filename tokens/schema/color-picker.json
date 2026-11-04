@@ -1,0 +1,50 @@
+{
+  "color-picker": {
+    "$description": "Colour picker: an area of saturation and brightness, a hue strip and an opacity strip, inputs for the channels, and preset colours.",
+    "$selector": ".mx-color-picker",
+    "width": { "$type": "dimension", "$description": "The width of the picker." },
+    "gap": { "$type": "dimension", "$description": "The space between its rows." },
+    "area-height": { "$type": "dimension", "$description": "The height of the saturation and brightness area." },
+    "strip-height": { "$type": "dimension", "$description": "The height of the hue and opacity strips." },
+    "thumb-size": { "$type": "dimension", "$description": "The handle moved on the area and the strips." },
+    "preview-size": { "$type": "dimension", "$description": "The square showing the colour beside the strips." },
+    "swatch-size": { "$type": "dimension", "$description": "A preset colour." },
+    "swatch-gap": { "$type": "dimension", "$description": "The space between preset colours." },
+    "checker-size": { "$type": "dimension", "$description": "One square of the pattern under a see-through colour." },
+    "checker-light": { "$type": "color", "$description": "The light squares under a see-through colour." },
+    "checker-dark": { "$type": "color", "$description": "The dark squares under a see-through colour." },
+    "$units": {
+      "area": {
+        "$description": "The saturation and brightness area.",
+        "selector": ".mx-color-picker__area"
+      },
+      "strip": {
+        "$description": "The hue strip and the opacity strip.",
+        "selector": ".mx-color-picker__strip"
+      },
+      "thumb": {
+        "$description": "The handle on the area and the strips: its ring, and `focus`.",
+        "selector": ".mx-color-picker__thumb",
+        "defaults": { "size": "var(--_color-picker-thumb-size)" },
+        "states": {
+          "focus": ".mx-color-picker__thumb:focus-visible"
+        }
+      },
+      "preview": {
+        "$description": "The square showing the colour.",
+        "selector": ".mx-color-picker__preview",
+        "defaults": { "size": "var(--_color-picker-preview-size)" }
+      },
+      "swatch": {
+        "$description": "A preset colour: `hover`, `selected`, `focus`.",
+        "selector": ".mx-color-picker__swatch",
+        "defaults": { "size": "var(--_color-picker-swatch-size)", "padding": "0px", "margin": "0px" },
+        "states": {
+          "hover": ".mx-color-picker__swatch:hover",
+          "selected": ".mx-color-picker__swatch[aria-pressed='true']",
+          "focus": ".mx-color-picker__swatch:focus-visible"
+        }
+      }
+    }
+  }
+}

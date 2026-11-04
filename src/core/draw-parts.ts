@@ -1,4 +1,6 @@
 import { Component, type ComponentBase } from '@motifx/core';
+import type { IconSource } from './icon-source';
+import { isNode } from './node-kind';
 
 // Each write below is made only when the value changed: an attribute, a style or a text written again with the same
 // value still has the browser work out the styles of what it touches again.
@@ -47,6 +49,31 @@ export function shown(el: HTMLElement | null, on: boolean): void {
 export function part<E extends HTMLElement = HTMLElement>(parent: ComponentBase, tag: string, className: string): Component<E> {
   const c = new Component<E>(tag);
   if (className) c.element.className = className;
+  parent.controls.add(c);
+  return c;
+}
+
+/** A glyph of the kit's set (`span.mx-glyph`, see `glyph`) as a part of `parent`. */
+export function glyphPart(parent: ComponentBase, name: string, className = ''): Component<HTMLSpanElement> {
+  const c = part<HTMLSpanElement>(parent, 'span', className ? `mx-glyph ${className}` : 'mx-glyph');
+  c.element.dataset.icon = name;
+  c.element.setAttribute('aria-hidden', 'true');
+  return c;
+}
+
+/**
+ * An icon as a child of `parent`: an `<img>` for an address (`alt` empty unless given), an element of your own
+ * taken in as a component, or the component itself. It goes with `parent`; dispose the one returned when the
+ * icon changes.
+ */
+export function iconPart(parent: ComponentBase, source: IconSource, alt = ''): ComponentBase {
+  if (typeof source === 'string') {
+    const img = part<HTMLImageElement>(parent, 'img', '');
+    img.element.src = source;
+    img.element.alt = alt;
+    return img;
+  }
+  const c = isNode(source) ? new Component(source as HTMLElement) : source;
   parent.controls.add(c);
   return c;
 }

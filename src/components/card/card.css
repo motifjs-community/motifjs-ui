@@ -1,0 +1,145 @@
+/* Card: [media] then a body of header (avatar, titles, action), content and footer (actions). Only the layout is
+   here: the card, its titles and its content are units of its schema (`$units`), painted by units.css per look and
+   state. The picture runs to the card's edges and takes its corners; standing at the start (horizontal) it is
+   `media-width` wide and as tall as the card. */
+@layer mx.components {
+  .mx-card {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    min-inline-size: 0;
+    overflow: clip;
+  }
+
+  .mx-card[data-orientation='horizontal'] {
+    flex-direction: row;
+  }
+
+  .mx-card[data-size='sm'] {
+    --_padding: var(--_card-padding-sm);
+    --_gap: var(--_card-gap-sm);
+  }
+
+  .mx-card[data-size='md'] {
+    --_padding: var(--_card-padding-md);
+    --_gap: var(--_card-gap-md);
+  }
+
+  .mx-card[data-size='lg'] {
+    --_padding: var(--_card-padding-lg);
+    --_gap: var(--_card-gap-lg);
+  }
+
+  .mx-card[data-pressable] {
+    cursor: pointer;
+  }
+
+  /* A link card: the title is the link, and its layer covers the card, so a press anywhere follows it; the card's own
+     buttons, its action and its check box sit above that layer. The card shows the focus, not the title. */
+  .mx-card[data-link],
+  .mx-card:has(> .mx-card__select:not([hidden])) {
+    position: relative;
+
+    --_z-link: 1;
+    --_z-above: 2;
+  }
+
+  .mx-card__link {
+    text-decoration: none;
+  }
+
+  .mx-card__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: var(--_z-link);
+  }
+
+  .mx-card__link:focus-visible {
+    outline-style: none;
+    box-shadow: none;
+  }
+
+  .mx-card[data-link] :is(.mx-card__action, .mx-card__footer, .mx-card__content :is(a, button, input, select, textarea)) {
+    position: relative;
+    z-index: var(--_z-above);
+  }
+
+  /* The check box of a selectable card, on its top end corner. */
+  .mx-card__select {
+    position: absolute;
+    inset-block-start: var(--_padding);
+    inset-inline-end: var(--_padding);
+    z-index: var(--_z-above);
+  }
+
+  .mx-card[data-disabled] {
+    cursor: default;
+  }
+
+  .mx-card__media {
+    display: block;
+    flex: none;
+  }
+
+  .mx-card__media > :is(img, video, svg, canvas) {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  .mx-card[data-orientation='horizontal'] > .mx-card__media {
+    inline-size: var(--_card-media-width);
+  }
+
+  .mx-card__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--_gap);
+    min-inline-size: 0;
+    padding: var(--_padding);
+  }
+
+  .mx-card__header {
+    display: flex;
+    align-items: center;
+    gap: var(--_card-header-gap);
+  }
+
+  .mx-card__heading {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .mx-card__title,
+  .mx-card__subtitle {
+    overflow-wrap: anywhere;
+  }
+
+  .mx-card__action {
+    display: flex;
+    flex: none;
+    align-items: center;
+  }
+
+  .mx-card__content {
+    min-inline-size: 0;
+  }
+
+  /* No content: no part, and no gap for it. */
+  .mx-card__content:empty {
+    display: none;
+  }
+
+  .mx-card__footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: var(--_card-footer-align);
+    gap: var(--_card-footer-gap);
+  }
+}

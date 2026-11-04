@@ -96,6 +96,9 @@ export const pinMark = (): HTMLSpanElement => glyph('pin');
 /** A padlock: closed to new things. */
 export const lockMark = (): HTMLSpanElement => glyph('lock');
 
+/** A head and shoulders: someone with no picture or name to show. */
+export const personMark = (): HTMLSpanElement => glyph('person');
+
 /** Two columns of dots: something to take hold of and drag. */
 export const gripMark = (): HTMLSpanElement => glyph('grip');
 

@@ -38,6 +38,11 @@
     --mx-icon-search: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M7%203a4%204%200%201%200%200%208a4%204%200%201%200%200-8zM10%2010l3.5%203.5%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
     --mx-icon-pin: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M6%202.5h4M7%202.5v4l-2.5%202.5h7l-2.5-2.5v-4M8%209v4.5%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
     --mx-icon-lock: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M4%207.5h8v6h-8zM5.75%207.5v-2a2.25%202.25%200%200%201%204.5%200v2%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    --mx-icon-person: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M8%202.75a2.5%202.5%200%201%200%200%205a2.5%202.5%200%201%200%200-5zM3%2013.5a5%205%200%200%201%2010%200%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    --mx-icon-slash: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M10.25%202.5L5.75%2013.5%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    --mx-icon-eyedropper: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M10.5%202.75l2.75%202.75M9.25%204l2.75%202.75M10.6%205.4L4.25%2011.75%203%2013l-.25-.25%201.25-1.25%206.35-6.35%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    --mx-icon-star: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M8%201.9l1.85%203.75%204.15.6-3%202.92.71%204.13L8%2011.35l-3.71%201.95.71-4.13-3-2.92%204.15-.6z%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    --mx-icon-star-filled: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M8%201.9l1.85%203.75%204.15.6-3%202.92.71%204.13L8%2011.35l-3.71%201.95.71-4.13-3-2.92%204.15-.6z%27%20fill%3D%27black%27%2F%3E%3C%2Fsvg%3E");
     --mx-icon-grip: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M5.25%204a.75%20.75%200%201%200%201.5%200a.75%20.75%200%201%200-1.5%200zM9.25%204a.75%20.75%200%201%200%201.5%200a.75%20.75%200%201%200-1.5%200zM5.25%208a.75%20.75%200%201%200%201.5%200a.75%20.75%200%201%200-1.5%200zM9.25%208a.75%20.75%200%201%200%201.5%200a.75%20.75%200%201%200-1.5%200zM5.25%2012a.75%20.75%200%201%200%201.5%200a.75%20.75%200%201%200-1.5%200zM9.25%2012a.75%20.75%200%201%200%201.5%200a.75%20.75%200%201%200-1.5%200z%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
     --mx-icon-dock-guide-center: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M2.5%202.5h11v11h-11zM5.5%205.5h5v5h-5z%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
     --mx-icon-dock-guide-left: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M2.5%202.5h11v11h-11zM6.5%202.5v11%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
@@ -139,6 +144,10 @@
     --_icon: var(--mx-icon-eye-open);
   }
 
+  .mx-glyph[data-icon='eyedropper'] {
+    --_icon: var(--mx-icon-eyedropper);
+  }
+
   .mx-glyph[data-icon='filter'] {
     --_icon: var(--mx-icon-filter);
   }
@@ -169,6 +178,10 @@
 
   .mx-glyph[data-icon='pencil'] {
     --_icon: var(--mx-icon-pencil);
+  }
+
+  .mx-glyph[data-icon='person'] {
+    --_icon: var(--mx-icon-person);
   }
 
   .mx-glyph[data-icon='pin'] {
@@ -203,8 +216,20 @@
     --_icon: var(--mx-icon-search);
   }
 
+  .mx-glyph[data-icon='slash'] {
+    --_icon: var(--mx-icon-slash);
+  }
+
   .mx-glyph[data-icon='split'] {
     --_icon: var(--mx-icon-split);
+  }
+
+  .mx-glyph[data-icon='star'] {
+    --_icon: var(--mx-icon-star);
+  }
+
+  .mx-glyph[data-icon='star-filled'] {
+    --_icon: var(--mx-icon-star-filled);
   }
 
   .mx-glyph[data-icon='success'] {

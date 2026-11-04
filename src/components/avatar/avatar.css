@@ -1,0 +1,150 @@
+/* Avatar: a picture, initials or a person icon in a circle or a square, and a presence dot on its lower
+   end corner. Only the layout is here: the avatar, its icon and its dot are units of its schema (`$units`),
+   painted by units.css per tone and presence. A group lays its avatars side by side or stacked, each
+   under the one before it by `overlap`. */
+@layer mx.components {
+  .mx-avatar {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  .mx-avatar[data-shape='circle'] {
+    --_radius: 50%;
+  }
+
+  .mx-avatar[data-size='xs'],
+  .mx-avatar-group[data-size='xs'] > .mx-avatar {
+    --_size: var(--_avatar-size-xs);
+    --_font-size: var(--_avatar-font-size-xs);
+    --_icon-size: var(--_avatar-icon-size-xs);
+    --_status-size: var(--_avatar-status-size-xs);
+    --_square-radius: var(--_avatar-square-radius-xs);
+  }
+
+  .mx-avatar[data-size='sm'],
+  .mx-avatar-group[data-size='sm'] > .mx-avatar {
+    --_size: var(--_avatar-size-sm);
+    --_font-size: var(--_avatar-font-size-sm);
+    --_icon-size: var(--_avatar-icon-size-sm);
+    --_status-size: var(--_avatar-status-size-sm);
+    --_square-radius: var(--_avatar-square-radius-sm);
+  }
+
+  .mx-avatar[data-size='md'],
+  .mx-avatar-group[data-size='md'] > .mx-avatar {
+    --_size: var(--_avatar-size-md);
+    --_font-size: var(--_avatar-font-size-md);
+    --_icon-size: var(--_avatar-icon-size-md);
+    --_status-size: var(--_avatar-status-size-md);
+    --_square-radius: var(--_avatar-square-radius-md);
+  }
+
+  .mx-avatar[data-size='lg'],
+  .mx-avatar-group[data-size='lg'] > .mx-avatar {
+    --_size: var(--_avatar-size-lg);
+    --_font-size: var(--_avatar-font-size-lg);
+    --_icon-size: var(--_avatar-icon-size-lg);
+    --_status-size: var(--_avatar-status-size-lg);
+    --_square-radius: var(--_avatar-square-radius-lg);
+  }
+
+  .mx-avatar[data-size='xl'],
+  .mx-avatar-group[data-size='xl'] > .mx-avatar {
+    --_size: var(--_avatar-size-xl);
+    --_font-size: var(--_avatar-font-size-xl);
+    --_icon-size: var(--_avatar-icon-size-xl);
+    --_status-size: var(--_avatar-status-size-xl);
+    --_square-radius: var(--_avatar-square-radius-xl);
+  }
+
+  .mx-avatar[data-shape='square'] {
+    --_radius: var(--_square-radius);
+  }
+
+  /* The initials' line is cut to their capitals, so the letters themselves sit in the middle. */
+  .mx-avatar__initials {
+    text-box: trim-both cap alphabetic;
+  }
+
+  /* The picture covers the avatar in its shape; the initials and the icon stay under it until it loads. */
+  .mx-avatar__image {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+  }
+
+  .mx-avatar__image[data-pending] {
+    visibility: hidden;
+  }
+
+  .mx-avatar__status {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    display: flex;
+    box-sizing: border-box;
+  }
+
+  .mx-avatar__status::after {
+    content: '';
+    flex: 1;
+    mask: var(--_icon, none) center / contain no-repeat;
+  }
+
+  .mx-avatar-group {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+  }
+
+  /* Each avatar goes under the one before it; the group's own start makes room for the first one's. */
+  .mx-avatar-group[data-layout='stack'] {
+    padding-inline-start: var(--_overlap);
+  }
+
+  .mx-avatar-group[data-layout='stack'] > .mx-avatar {
+    margin-inline-start: calc(-1 * var(--_overlap));
+  }
+  .mx-avatar-group[data-layout='spread'] {
+    gap: var(--_gap);
+  }
+
+  .mx-avatar-group[data-size='xs'] {
+    --_overlap: var(--_avatar-group-overlap-xs);
+    --_gap: var(--_avatar-group-gap-xs);
+  }
+
+  .mx-avatar-group[data-size='sm'] {
+    --_overlap: var(--_avatar-group-overlap-sm);
+    --_gap: var(--_avatar-group-gap-sm);
+  }
+
+  .mx-avatar-group[data-size='md'] {
+    --_overlap: var(--_avatar-group-overlap-md);
+    --_gap: var(--_avatar-group-gap-md);
+  }
+
+  .mx-avatar-group[data-size='lg'] {
+    --_overlap: var(--_avatar-group-overlap-lg);
+    --_gap: var(--_avatar-group-gap-lg);
+  }
+
+  .mx-avatar-group[data-size='xl'] {
+    --_overlap: var(--_avatar-group-overlap-xl);
+    --_gap: var(--_avatar-group-gap-xl);
+  }
+
+  .mx-avatar-group > [data-beyond] {
+    display: none;
+  }
+}

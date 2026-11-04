@@ -1,0 +1,73 @@
+{
+  "button-group": {
+    "attached": {
+      "$value": "true"
+    },
+    "gap": {
+      "$value": "{space.2}"
+    },
+    "item": {
+      "variant": {
+        "$value": "outline"
+      },
+      "face": {
+        "toggled": {
+          "bg": {
+            "$value": "{color.accent.solid}"
+          },
+          "color": {
+            "$value": "{color.accent.on-solid}"
+          }
+        },
+        "toggled-hover": {
+          "bg": {
+            "$value": "{color.accent.solid-hover}"
+          }
+        },
+        "outline-toggled": {
+          "bg": {
+            "$value": "{color.accent.solid}"
+          },
+          "color": {
+            "$value": "{color.accent.on-solid}"
+          },
+          "border-color": {
+            "$value": "{color.accent.solid}"
+          }
+        },
+        "outline-toggled-hover": {
+          "bg": {
+            "$value": "{color.accent.solid-hover}"
+          }
+        },
+        "ghost-toggled": {
+          "bg": {
+            "$value": "{color.accent.solid}"
+          },
+          "color": {
+            "$value": "{color.accent.on-solid}"
+          }
+        },
+        "ghost-toggled-hover": {
+          "bg": {
+            "$value": "{color.accent.solid-hover}"
+          }
+        }
+      }
+    },
+    "inner-start": {
+      "face": {
+        "radius-start": {
+          "$value": "{radius.none}"
+        }
+      }
+    },
+    "inner-end": {
+      "face": {
+        "radius-end": {
+          "$value": "{radius.none}"
+        }
+      }
+    }
+  }
+}
