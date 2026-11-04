@@ -80,8 +80,8 @@ export default function TokensPage() {
               </tr>
             </thead>
             <tbody>
-              {componentDocs.map((t) => (
-                <tr>
+              {componentDocs.map((t,i) => (
+                <tr key={i}>
                   <td>
                     <code>{t.name}</code>
                   </td>
@@ -118,7 +118,7 @@ export default function TokensPage() {
             </thead>
             <tbody>
               {semantic.map(([name, t]) => (
-                <tr>
+                <tr key={name}>
                   <td>
                     <code>{name}</code>
                   </td>
@@ -158,7 +158,7 @@ export default function TokensPage() {
             </thead>
             <tbody>
               {density.map(([name, t]) => (
-                <tr>
+                <tr key={name}>
                   <td>
                     <code>{name}</code>
                   </td>
