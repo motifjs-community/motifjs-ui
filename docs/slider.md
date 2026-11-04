@@ -1,6 +1,6 @@
 # Slider
 
-> Editors · @motifx-community/ui 0.1.0-beta.0
+> Editors · @motifx-community/ui 0.1.0-beta.1
 
 A value picked on a track by dragging a thumb or with the keys: one number, or a range with two thumbs. Steps, marks with labels, a value bubble, a vertical form and number formatting, with the label, help line and validation every field has.
 

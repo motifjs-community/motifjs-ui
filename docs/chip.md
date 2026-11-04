@@ -1,6 +1,6 @@
 # Chip and ChipGroup
 
-> Display · @motifx-community/ui 0.1.0-beta.0
+> Display · @motifx-community/ui 0.1.0-beta.1
 
 A short text with an icon or an avatar before it: a filter to turn on, a choice among a few, or something picked that can be removed. A group selects one or several and moves between them with the arrow keys.
 

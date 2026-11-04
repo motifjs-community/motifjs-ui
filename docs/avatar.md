@@ -1,6 +1,6 @@
 # Avatar and AvatarGroup
 
-> Display · @motifx-community/ui 0.1.0-beta.0
+> Display · @motifx-community/ui 0.1.0-beta.1
 
 Someone’s picture, or their initials, or a person icon, with their presence on its corner. A group stacks or spreads them and counts the ones it does not show.
 

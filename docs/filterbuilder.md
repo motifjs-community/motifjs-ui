@@ -1,6 +1,6 @@
 # FilterBuilder
 
-> Data · @motifx-community/ui 0.1.0-beta.0
+> Data · @motifx-community/ui 0.1.0-beta.1
 
 A filter builder lets people put a filter together by hand: groups joined by And, Or, Not And or Not Or, and conditions of a field, an operation and a value. Its value is the data layer's filter expression, so it goes to rows in memory and to every adapter as it is. The DataGrid opens it from its filter panel; on its own it serves a report screen or a saved search.
 

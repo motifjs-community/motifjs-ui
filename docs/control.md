@@ -1,6 +1,6 @@
 # Control
 
-> Foundations · @motifx-community/ui 0.1.0-beta.0
+> Foundations · @motifx-community/ui 0.1.0-beta.1
 
 The base of every control in the package. It gives each one the same `text`, `enabled`, `visible` and `tabStop`, and the same focus methods, whether the control is written in JSX and bound to state or created with `new` and changed from code.
 

@@ -1,6 +1,6 @@
 # Card
 
-> Display · @motifx-community/ui 0.1.0-beta.0
+> Display · @motifx-community/ui 0.1.0-beta.1
 
 A surface holding one thing: a picture, a header with an avatar and titles, content and a row of actions. Parts with nothing in them are left out.
 

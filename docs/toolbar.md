@@ -1,6 +1,6 @@
 # Toolbar
 
-> Buttons · @motifx-community/ui 0.1.0-beta.0
+> Buttons · @motifx-community/ui 0.1.0-beta.1
 
 A bar of commands: buttons, toggle buttons, menus and fields in groups between separators. It is one Tab stop and the arrow keys move inside it; items that do not fit move into a “more” menu at the end. Items come as data, as JSX children, or both.
 

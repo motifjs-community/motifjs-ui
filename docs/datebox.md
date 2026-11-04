@@ -1,6 +1,6 @@
 # DateBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.0
+> Editors · @motifx-community/ui 0.1.0-beta.1
 
 A date, a time or both. It is typed in the order of the locale through a mask, or picked from a calendar and a list of times; `min`, `max` and `disabledDates` limit both ways.
 

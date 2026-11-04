@@ -1,6 +1,6 @@
 # ProgressBar and Spinner
 
-> Feedback · @motifx-community/ui 0.1.0-beta.0
+> Feedback · @motifx-community/ui 0.1.0-beta.1
 
 ProgressBar shows how far some work is, as a line or a circle, or that it runs when that is not known. Spinner says "busy, wait": a turning ring, alone or over a panel while it loads, shown only after a delay so quick work does not flash it.
 

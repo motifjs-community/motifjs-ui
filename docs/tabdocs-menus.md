@@ -1,6 +1,6 @@
 # TabDocumentManager: Menus and keys
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.0
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.1
 
 The commands around the tabs: context menus on tabs and on the empty strip, a searchable list of a group's documents, the app's own toolbar buttons, the recently used list, back and forward, reopening what was closed, locked groups, and the keys for all of them.
 

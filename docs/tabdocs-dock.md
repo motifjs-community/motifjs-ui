@@ -1,6 +1,6 @@
 # TabDocumentManager: Dock and floating windows
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.0
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.1
 
 Documents and whole groups float in windows of their own in the page and dock again into the documents' groups or into dock areas around them, which fold to the manager's edge. The mouse, the keys and the code do the same, through the same events.
 

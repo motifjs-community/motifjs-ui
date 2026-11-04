@@ -1,6 +1,6 @@
 # Calendar
 
-> Editors · @motifx-community/ui 0.1.0-beta.0
+> Editors · @motifx-community/ui 0.1.0-beta.1
 
 A month of days to pick a date from, with a year and a decade view to get far quickly. It is the picker of DateBox, and it works on its own.
 

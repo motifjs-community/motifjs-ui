@@ -1,6 +1,6 @@
 # NumberBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.0
+> Editors · @motifx-community/ui 0.1.0-beta.1
 
 A number field: arrow keys, PageUp / PageDown and spin buttons that repeat while held, bounds, a step without float noise, a format for display (currency, percent) and typing in the locale’s own way.
 

@@ -1,6 +1,6 @@
 # TagBox
 
-> Data · @motifx-community/ui 0.1.0-beta.0
+> Data · @motifx-community/ui 0.1.0-beta.1
 
 Picks several items. The chosen ones are tags in the field, followed by a text input that searches the list; items come from memory or from a data source, and typed text can become a tag of its own.
 

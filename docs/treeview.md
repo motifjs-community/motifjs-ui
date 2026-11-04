@@ -1,6 +1,6 @@
 # TreeView
 
-> Data · @motifx-community/ui 0.1.0-beta.0
+> Data · @motifx-community/ui 0.1.0-beta.1
 
 A tree view shows items in a hierarchy. Rows open and close, are selected one or many at a time, can carry check boxes that add up to their parents, can be searched, and can load their children when they are first opened. Long trees draw only the rows in view.
 

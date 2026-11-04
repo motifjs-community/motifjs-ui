@@ -1,6 +1,6 @@
 # Scheduler: Recurrence and time zones
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.0
+> Scheduler · @motifx-community/ui 0.1.0-beta.1
 
 Appointments that repeat by an RFC 5545 rule, with times left out and occurrences changed apart; a question on what a change reaches; an editor of the rule; and the days on the clock of any time zone, summer time included.
 

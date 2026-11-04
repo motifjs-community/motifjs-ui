@@ -1,6 +1,6 @@
 # Tabs
 
-> Navigation · @motifx-community/ui 0.1.0-beta.0
+> Navigation · @motifx-community/ui 0.1.0-beta.1
 
 Tabs show one panel at a time under a strip of tabs: from JSX or from code, closable, with icons and badges, scroll buttons when the tabs do not fit, four placements and panels built when they are first shown.
 

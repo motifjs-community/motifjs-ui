@@ -1,6 +1,6 @@
 # Layout
 
-> Navigation · @motifx-community/ui 0.1.0-beta.0
+> Navigation · @motifx-community/ui 0.1.0-beta.1
 
 Containers that place controls: `Stack` (a row or a column), `Grid` (rows and columns), `Panel` (a plain box that can scroll), `GroupBox` (a titled frame), `DockPanel` (children stuck to its edges) and `SplitContainer` (two panes and a splitter). All of them are controls: they disable and hide what is inside, and lay out children added at any time.
 

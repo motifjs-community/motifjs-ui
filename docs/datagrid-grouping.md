@@ -1,6 +1,6 @@
 # DataGrid: Grouping and summaries
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.0
+> DataGrid · @motifx-community/ui 0.1.0-beta.1
 
 ## Grouping
 

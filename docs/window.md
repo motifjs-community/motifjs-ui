@@ -1,6 +1,6 @@
 # Window and dialog
 
-> Navigation · @motifx-community/ui 0.1.0-beta.0
+> Navigation · @motifx-community/ui 0.1.0-beta.1
 
 A window or a dialog on a native `<dialog>`: one form, shown modeless or modal by whoever shows it. It has a title bar, moves, resizes, minimizes and maximizes; Enter and Escape press its buttons; forms open forms. `messageBox` and `confirm` cover the common questions.
 

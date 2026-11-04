@@ -1,6 +1,6 @@
 # Scheduler: Agenda
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.0
+> Scheduler · @motifx-community/ui 0.1.0-beta.1
 
 The coming days as a list: each day with its appointments in time order, a day with none left out.
 

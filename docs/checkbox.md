@@ -1,6 +1,6 @@
 # CheckBox
 
-> Choice · @motifx-community/ui 0.1.0-beta.0
+> Choice · @motifx-community/ui 0.1.0-beta.1
 
 A checkbox with its caption: checked, unchecked or indeterminate, three states on request, read-only, required and checked with its group. A native checkbox underneath, drawn from the design tokens.
 

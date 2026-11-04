@@ -1,6 +1,6 @@
 # Switch
 
-> Choice · @motifx-community/ui 0.1.0-beta.0
+> Choice · @motifx-community/ui 0.1.0-beta.1
 
 An on / off switch with its caption: a track with a thumb that slides, an optional on / off text inside or next to it, read-only and required. A native checkbox with the switch role underneath.
 

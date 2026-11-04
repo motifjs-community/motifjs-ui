@@ -6,6 +6,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0-beta.1] - 2026-11-04
+
+### DropDown and Lookup: a value on no loaded page is asked for by key
+
+- A value whose item is on no loaded page of `dataSource` is asked for by key, in one request with the keys the
+  other fields and grids over the same source need at that moment. Meanwhile the field waits: `aria-busy`, a
+  spinner in the arrow's place (`.mx-drop-down__spinner`, `data-loading`), the list closed, never the key as its
+  text. A record that carries the name too gives it as `valueText`, and the field shows it at once. A key the
+  source does not have shows itself, muted and underlined (`data-missing`), its title says why (`notInList`);
+  when the request failed, opening the list asks again.
+- Units `drop-down.spinner` and `drop-down.spinner-shape` and the `missing` state of `drop-down.value`, drawn in
+  every language. The docs: "A value on no loaded page" on the Lookup page.
+
+### Scheduler
+
+- The agenda view tells the Scheduler it is shown as soon as it is configured: a view change made while focus is
+  in the Scheduler moves focus into the agenda, as into the other views.
+
 ## [0.1.0-beta.0] - 2026-10-30
 
 The first preview on npm (`npm i @motifx-community/ui@beta`). The package also carries its documentation for

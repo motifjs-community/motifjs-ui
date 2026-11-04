@@ -1,6 +1,6 @@
 # ComboBox and Autocomplete
 
-> Choice · @motifx-community/ui 0.1.0-beta.0
+> Choice · @motifx-community/ui 0.1.0-beta.1
 
 A text field with a list that follows what is typed. The items come from memory or from a data source of the data layer, searched on the server. `Autocomplete` is the free-text kind: the value is the text.
 

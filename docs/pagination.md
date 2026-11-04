@@ -1,6 +1,6 @@
 # Pagination
 
-> Navigation · @motifx-community/ui 0.1.0-beta.0
+> Navigation · @motifx-community/ui 0.1.0-beta.1
 
 Moving through pages of items: the sizes to choose from, where the page stands, the steps and a button per page around the current one. It turns compact when it does not fit. It looks and works as the grid’s pager.
 

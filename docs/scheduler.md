@@ -1,6 +1,6 @@
 # Scheduler
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.0
+> Scheduler · @motifx-community/ui 0.1.0-beta.1
 
 Appointments over days and hours: day, week, work week and month views, all-day and multi-day bars, appointments at the same time side by side, and "+N more" where a day is full. From an array or a data source, with every setting live.
 

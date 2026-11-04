@@ -1,6 +1,6 @@
 # Button
 
-> Buttons · @motifx-community/ui 0.1.0-beta.0
+> Buttons · @motifx-community/ui 0.1.0-beta.1
 
 A native `<button>` drawn from the design tokens: three variants, three tones, three sizes, an icon, an `&` access key. It can be a toggle, show that work is running, and open a menu or any content — from the whole button, or with `split` from an arrow next to it while the button keeps its own action.
 

@@ -1,6 +1,6 @@
 # Design tokens
 
-> Get started · @motifx-community/ui 0.1.0-beta.0
+> Get started · @motifx-community/ui 0.1.0-beta.1
 
 Five layers. The first four — primitives, the design language's own scales, semantic tokens per theme, density — come from `@motifx-community/design-system` and are listed here for reference. The fifth, the component tokens, is this kit's own: a knob per component, each referencing a design-system token, written in `@layer mx.components`. Every design language gives every one of them its own value.
 
@@ -1279,11 +1279,19 @@ Source: `tokens/schema/*.json` (names and types) and `tokens/languages/<language
 | `drop-down.search.variant` | `--mx-drop-down-search-variant` | `` | `outline` |
 | `drop-down.search.size` | `--mx-drop-down-search-size` | `` | `sm` |
 | `drop-down.value.placeholder.color` | `--mx-drop-down-value-placeholder-color` | `color.fg.secondary` | `#5e5c55` |
+| `drop-down.value.missing.color` | `--mx-drop-down-value-missing-color` | `color.fg.secondary` | `#5e5c55` |
+| `drop-down.value.missing.text-decoration` | `--mx-drop-down-value-missing-text-decoration` | `` | `underline` |
 | `drop-down.chevron.size` | `--mx-drop-down-chevron-size` | `icon.size.sm` | `0.75rem` |
 | `drop-down.chevron.color` | `--mx-drop-down-chevron-color` | `color.fg.secondary` | `#5e5c55` |
 | `drop-down.chevron.icon` | `--mx-drop-down-chevron-icon` | `` | `var(--mx-icon-chevron-down)` |
 | `drop-down.chevron.open.rotate` | `--mx-drop-down-chevron-open-rotate` | `` | `0.5turn` |
 | `drop-down.chevron.disabled.color` | `--mx-drop-down-chevron-disabled-color` | `color.fg.disabled` | `#a2a098` |
+| `drop-down.spinner.size` | `--mx-drop-down-spinner-size` | `icon.size.sm` | `0.75rem` |
+| `drop-down.spinner.border-width` | `--mx-drop-down-spinner-border-width` | `border.width.2` | `2px` |
+| `drop-down.spinner.border-end-color` | `--mx-drop-down-spinner-border-end-color` | `` | `rgb(0 0 0 / 0)` |
+| `drop-down.spinner.radius` | `--mx-drop-down-spinner-radius` | `radius.full` | `9999px` |
+| `drop-down.spinner.color` | `--mx-drop-down-spinner-color` | `color.fg.secondary` | `#5e5c55` |
+| `drop-down.spinner-shape.display` | `--mx-drop-down-spinner-shape-display` | `` | `initial` |
 | `field.width` | `--mx-field-width` | `` | `16rem` |
 | `field.variant` | `--mx-field-variant` | `` | `outline` |
 | `field.label-mode` | `--mx-field-label-mode` | `` | `top` |

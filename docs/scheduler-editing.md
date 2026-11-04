@@ -1,6 +1,6 @@
 # Scheduler: Editing
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.0
+> Scheduler · @motifx-community/ui 0.1.0-beta.1
 
 Appointments are added, moved, resized, copied and deleted with the pointer, the keys and code; every change asks its event first, can wait for a server, and goes back when saving fails.
 

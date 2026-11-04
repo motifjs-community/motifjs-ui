@@ -1,6 +1,6 @@
 # RadioGroup
 
-> Choice · @motifx-community/ui 0.1.0-beta.0
+> Choice · @motifx-community/ui 0.1.0-beta.1
 
 A set of options of which one is chosen: from plain values, from your own objects or from a live list; one under the other, side by side or in columns; options that are disabled, hidden or carry a help line; one Tab stop and the arrow keys.
 
