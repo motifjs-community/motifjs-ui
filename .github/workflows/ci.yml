@@ -5,9 +5,8 @@ on:
     branches: [main]
   pull_request:
 
-# The package depends on @motifx-community/design-system as a sibling checkout
-# (file:../motifjs-design-system) until it is published: both repositories are
-# checked out side by side and the design system is built first.
+# The design system, the translations and the data layer are dependencies by path (file:../…) until they are
+# published: the four repositories are checked out side by side and built in the order they depend on each other.
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -22,6 +21,14 @@ jobs:
         with:
           repository: motifjs-community/motifjs-design-system
           path: motifjs-design-system
+      - uses: actions/checkout@v4
+        with:
+          repository: motifjs-community/motifjs-i18n
+          path: motifjs-i18n
+      - uses: actions/checkout@v4
+        with:
+          repository: motifjs-community/motifjs-data
+          path: motifjs-data
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
@@ -29,23 +36,17 @@ jobs:
           cache-dependency-path: |
             motifjs-ui/package-lock.json
             motifjs-design-system/package-lock.json
-      - run: npm ci
+            motifjs-i18n/package-lock.json
+            motifjs-data/package-lock.json
+      - run: npm ci && npm run build
         working-directory: motifjs-design-system
-      - run: npm run build
-        working-directory: motifjs-design-system
+      - run: npm ci && npm run build
+        working-directory: motifjs-i18n
+      - run: npm ci && npm run build
+        working-directory: motifjs-data
       - run: npm ci
         working-directory: motifjs-ui
-      - run: npm run typecheck
-        working-directory: motifjs-ui
-      - run: npm run lint:jsx
-        working-directory: motifjs-ui
-      - run: npm run lint:css
-        working-directory: motifjs-ui
-      - run: npm test
-        working-directory: motifjs-ui
-      - run: npm run build
-        working-directory: motifjs-ui
-      - run: npm run docs:build
+      - run: npm run check
         working-directory: motifjs-ui
       - name: Package contents
         run: npm pack --dry-run
