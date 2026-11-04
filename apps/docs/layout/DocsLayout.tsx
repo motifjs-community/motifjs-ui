@@ -174,6 +174,9 @@ export class DocsLayout extends Component<HTMLDivElement> {
             />
             <Button text="Compact" size="sm" variant="ghost" toggle x-model={() => settings.compact} />
             <Button text="RTL" size="sm" variant="ghost" toggle x-model={() => settings.rtl} />
+            <a class="docs-topbar__link" href="https://motifjs.com">
+              motifjs.com
+            </a>
             <a class="docs-topbar__source" href="https://github.com/motifjs-community/motifjs-ui" aria-label="Source on GitHub">
               <SourceIcon />
             </a>

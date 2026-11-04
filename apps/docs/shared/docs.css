@@ -129,6 +129,19 @@
   block-size: var(--mx-icon-size-lg);
 }
 
+.docs-topbar__link {
+  padding: var(--mx-space-1) var(--mx-space-2);
+  font-size: var(--mx-font-size-caption);
+  color: var(--mx-color-fg-secondary);
+  text-decoration: none;
+  border-radius: var(--mx-radius-md);
+}
+
+.docs-topbar__link:hover {
+  color: var(--mx-color-fg-primary);
+  background: var(--mx-color-fill-subtle-secondary);
+}
+
 /* Side menu: a filter, the pages by group. */
 
 .docs-sidebar {

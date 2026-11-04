@@ -14,7 +14,7 @@
     "type": "git",
     "url": "git+https://github.com/motifjs-community/motifjs-ui.git"
   },
-  "homepage": "https://motifjs.com/docs/ui",
+  "homepage": "https://ui.motifjs.com",
   "bugs": {
     "url": "https://github.com/motifjs-community/motifjs-ui/issues"
   },
@@ -59,6 +59,7 @@
     "language": "node scripts/new-language.mjs",
     "build": "npm run tokens && vite build && tsc -p tsconfig.build.json && node scripts/build-css.mjs && node scripts/copy-locales.mjs",
     "docs:build": "npm run tokens && vite build apps/docs",
+    "docs:deploy": "npm run docs:build && node scripts/deploy-docs.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

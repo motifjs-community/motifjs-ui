@@ -1,5 +1,9 @@
 # @motifx-community/ui
 
+[![npm](https://img.shields.io/npm/v/@motifx-community/ui/beta?label=npm%20%40beta)](https://www.npmjs.com/package/@motifx-community/ui)
+[![CI](https://github.com/motifjs-community/motifjs-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/motifjs-community/motifjs-ui/actions/workflows/ci.yml)
+[![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 UI components for **MotifJS** (`@motifx/core`) that work the way desktop UI does: a component is an
 object you create when you need it, show anywhere, and close like a window — or write in JSX and
 bind to state. Everything is drawn from the [MotifJS design system](https://github.com/motifjs-community/motifjs-design-system)
@@ -8,6 +12,8 @@ overrides. This package adds the components and their component tokens, nothing 
 
 > **Preview** (`beta`): complete enough to build with; the API may still change before 1.0. Updates come as new
 > beta versions.
+
+The docs: [ui.motifjs.com](https://ui.motifjs.com). The same pages come with the package as Markdown, in `docs/`.
 
 ## Install
 
@@ -127,12 +133,12 @@ own components. A full page per component, `Control`, keyboard and focus, and a 
 
 ## Contributing
 
-The design system is a dependency by path until it is published: clone
-`motifjs-design-system` next to this repository and build it (`npm ci && npm run build` there), then
-`npm install` here links it. `npm run check` must stay green (typecheck, `motif-lint`, stylelint
-with the design system's shared config, tests, build, docs build). `npm run e2e` runs the
-real-browser checks (needs a local Chrome and `playwright-core`, see the script header).
-Discussions live in the main [motifjs repo](https://github.com/motifjsdev/motifjs).
+The design system, the translations and the data layer are dependencies by path until they are published: clone
+`motifjs-design-system`, `motifjs-i18n` and `motifjs-data` next to this repository and build each once, then
+`npm ci` here links them. `npm run check` must stay green (typecheck, `motif-lint`, stylelint with the design
+system's shared config, tests, build, docs build). The setup, the checks and the rules a change follows are in
+[CONTRIBUTING.md](CONTRIBUTING.md). Questions and ideas go to the
+[MotifJS discussions](https://github.com/motifjsdev/motifjs/discussions).
 
 ## License
 
