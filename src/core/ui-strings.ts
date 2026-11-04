@@ -9,6 +9,8 @@ export interface UiStrings {
   close: string;
   loading: string;
   noItems: string;
+  /** A value the list's source does not have. */
+  notInList: string;
   search: string;
   notifications: string;
   previousMonth: string;

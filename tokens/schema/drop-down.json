@@ -40,13 +40,14 @@
     },
     "$units": {
       "value": {
-        "$description": "The chosen item's text (with its icon), or the placeholder (`placeholder`) while nothing is chosen.",
+        "$description": "The chosen item's text (with its icon), the placeholder (`placeholder`) while nothing is chosen, or a key the data source does not have (`missing`, its title says why).",
         "selector": ".mx-drop-down__text",
         "defaults": {
           "gap": "var(--_field-gap)"
         },
         "states": {
           "placeholder": ".mx-drop-down__text[data-placeholder]",
+          "missing": ".mx-drop-down__text[data-missing]",
           "disabled": ".mx-drop-down[data-disabled] .mx-drop-down__text"
         }
       },
@@ -56,6 +57,18 @@
         "states": {
           "open": ".mx-drop-down[data-open] > :where(.mx-field__box) > * > .mx-drop-down__chevron",
           "disabled": ".mx-drop-down[data-disabled] > :where(.mx-field__box) > * > .mx-drop-down__chevron"
+        }
+      },
+      "spinner": {
+        "$description": "The ring that turns in the arrow's place while the value's item is asked for from the data source (`color`; the gap in the ring: one side of its frame).",
+        "selector": ".mx-drop-down__spinner"
+      },
+      "spinner-shape": {
+        "$description": "A shape in the spinner's place that becomes the next one, where the language draws the busy spinner as one (the spinner's shapes and timing, in the spinner's colour).",
+        "selector": ".mx-drop-down__spinner::before",
+        "defaults": {
+          "display": "none",
+          "bg": "currentcolor"
         }
       }
     }

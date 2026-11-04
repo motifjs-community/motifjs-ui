@@ -2,6 +2,7 @@ import { Component, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
+import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
 import { DropDown } from '../dropdown/DropDown';
 import { Lookup } from './Lookup';
 import { dataKinds } from '../../../tests/data-kinds';
@@ -11,6 +12,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
+  uiLocale.strings = enStrings;
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -37,6 +39,33 @@ const source = () =>
 const shownText = (d: { element: HTMLElement }) => d.element.querySelector('.mx-drop-down__text')!.textContent;
 const options = (d: { element: HTMLElement }) => Array.from(d.element.querySelectorAll<HTMLElement>('[role="option"]'));
 
+/** Answers a request by key (a filtered load) only when let go; `fail` makes the next one fail. */
+class HeldAdapter extends data.ArrayAdapter<Customer, number> {
+  fail = false;
+  private held: (() => void)[] = [];
+
+  constructor() {
+    super({ data: CUSTOMERS, key: 'id' });
+  }
+
+  override async load(options: data.LoadOptions = {}): Promise<data.LoadResult<Customer>> {
+    if (options.filter) {
+      await new Promise<void>((go) => this.held.push(go));
+      if (this.fail) {
+        this.fail = false;
+        throw new Error('offline');
+      }
+    }
+    return super.load(options);
+  }
+
+  letGo() {
+    for (const go of this.held.splice(0)) go();
+  }
+}
+
+const heldSource = (adapter: HeldAdapter) => new data.DataSource<Customer, number>({ adapter, loadMode: 'blocks', pageSize: 50 });
+
 describe('DropDown and Lookup over a data source', () => {
   it('shows a value on no loaded page, found by key', async () => {
     let d!: DropDown<Customer, number>;
@@ -53,6 +82,96 @@ describe('DropDown and Lookup over a data source', () => {
     await settle();
     d.open();
     expect(d.element.querySelector('[role="option"][data-active]')!.textContent).toBe('Company 7');
+  });
+
+  it('waits while the value is asked for by key: busy, closed, a spinner, never the key as its text', async () => {
+    const adapter = new HeldAdapter();
+    let d!: DropDown<Customer, number>;
+    page(<DropDown ref={(x: DropDown<Customer, number>) => (d = x)} label="Customer" dataSource={heldSource(adapter)} textField="company" valueField="id" value={420} clearButton />);
+    await settle();
+    const display = d.element.querySelector<HTMLElement>('[role="combobox"]')!;
+    const text = d.element.querySelector<HTMLElement>('.mx-drop-down__text')!;
+    expect(d.element.hasAttribute('data-loading')).toBe(true);
+    expect(display.getAttribute('aria-busy')).toBe('true');
+    expect(text.querySelector('.mx-sr-only')!.textContent).toBe('Loading…');
+    expect(text.textContent).not.toContain('420');
+    expect(text.hasAttribute('data-placeholder')).toBe(false);
+    expect(d.element.querySelector('.mx-drop-down__spinner')).not.toBeNull();
+    expect(d.open()).toBe(false);
+    display.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    expect(d.value).toBe(420);
+    // The wait's text is the kit's, in its language.
+    uiLocale.strings = trStrings;
+    await settle();
+    expect(text.querySelector('.mx-sr-only')!.textContent).toBe('Yükleniyor…');
+
+    adapter.letGo();
+    await settle();
+    expect(shownText(d)).toBe('Company 420');
+    expect(d.element.hasAttribute('data-loading')).toBe(false);
+    expect(display.hasAttribute('aria-busy')).toBe(false);
+    expect(d.open()).toBe(true);
+  });
+
+  it('shows valueText at once while the item is asked for, then the item', async () => {
+    const adapter = new HeldAdapter();
+    const order = reactive({ customer: 420 as number | null, customerName: 'Company 420 (saved)' });
+    let d!: DropDown<Customer, number>;
+    page(
+      <DropDown
+        ref={(x: DropDown<Customer, number>) => (d = x)}
+        dataSource={heldSource(adapter)}
+        textField="company"
+        valueField="id"
+        x-model={() => order.customer}
+        valueText={() => order.customerName}
+      />,
+    );
+    await settle();
+    expect(shownText(d)).toBe('Company 420 (saved)');
+    expect(d.element.hasAttribute('data-loading')).toBe(false);
+    expect(d.open()).toBe(true);
+    d.close();
+    adapter.letGo();
+    await settle();
+    expect(shownText(d)).toBe('Company 420');
+    expect(d.selectedItem?.id).toBe(420);
+  });
+
+  it('marks a key the data source does not have, with the reason as its title', async () => {
+    let d!: DropDown<Customer, number>;
+    page(<DropDown ref={(x: DropDown<Customer, number>) => (d = x)} dataSource={source()} textField="company" valueField="id" value={9999} />);
+    await settle();
+    const text = d.element.querySelector<HTMLElement>('.mx-drop-down__text')!;
+    expect(text.textContent).toBe('9999');
+    expect(text.hasAttribute('data-missing')).toBe(true);
+    expect(text.title).toBe('Not found in the list');
+    expect(d.element.hasAttribute('data-loading')).toBe(false);
+    d.value = 12;
+    await settle();
+    expect(text.textContent).toBe('Company 12');
+    expect(text.hasAttribute('data-missing')).toBe(false);
+    expect(text.hasAttribute('title')).toBe(false);
+  });
+
+  it('shows the key of a request that failed, and asks again when the list opens', async () => {
+    const adapter = new HeldAdapter();
+    adapter.fail = true;
+    let d!: DropDown<Customer, number>;
+    page(<DropDown ref={(x: DropDown<Customer, number>) => (d = x)} dataSource={heldSource(adapter)} textField="company" valueField="id" value={420} />);
+    await settle();
+    adapter.letGo();
+    await settle();
+    const text = d.element.querySelector<HTMLElement>('.mx-drop-down__text')!;
+    expect(text.textContent).toBe('420');
+    expect(text.hasAttribute('data-missing')).toBe(true);
+    expect(text.title).toBe('Could not load.');
+    expect(d.open()).toBe(true);
+    await settle();
+    adapter.letGo();
+    await settle();
+    expect(shownText(d)).toBe('Company 420');
+    expect(text.hasAttribute('data-missing')).toBe(false);
   });
 
   it('searches the data source from its search box and lists the rows in columns', async () => {

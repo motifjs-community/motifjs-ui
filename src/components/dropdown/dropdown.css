@@ -1,6 +1,8 @@
 /* DropDown: the field shows the chosen item; the list opens on a popup below it. The box's pointer
-   and the popup's search box are places. Only the layout is here: the chosen item's text and the
-   arrow are units of the drop-down's schema (`$units`), painted by units.css. */
+   and the popup's search box are places. Only the layout is here: the chosen item's text, the
+   arrow and the spinner are units of the drop-down's schema (`$units`), painted by units.css.
+   JS writes data-loading on the root while the value's item is asked for, data-missing on the
+   text when the data source does not have the key. */
 @layer mx.components {
   .mx-drop-down__display {
     display: flex;
@@ -27,6 +29,42 @@
 
   .mx-drop-down__chevron {
     transition: rotate var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+  }
+
+  /* While the value's item is asked for: the spinner in the arrow's place, no clear button. */
+  .mx-drop-down__spinner {
+    display: none;
+    position: relative;
+    flex: none;
+    animation: mx-drop-down-spin var(--_spinner-duration) linear infinite;
+  }
+
+  /* A shape that becomes the next one, where the language draws the spinner as one (the spinner's shapes). */
+  .mx-drop-down__spinner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    clip-path: var(--_spinner-shape-1);
+    animation: mx-spinner-morph var(--_spinner-morph-duration) infinite;
+  }
+
+  .mx-drop-down[data-loading] > :where(.mx-field__box) > * > .mx-drop-down__spinner {
+    display: block;
+  }
+
+  .mx-drop-down[data-loading] > :where(.mx-field__box) > * > :is(.mx-drop-down__chevron, .mx-drop-down__clear) {
+    display: none;
+  }
+
+  /* A key the data source does not have: the key itself, muted and underlined (`missing`); the title tells why. */
+  .mx-drop-down__text[data-missing] {
+    text-decoration-style: dotted;
+  }
+
+  @keyframes mx-drop-down-spin {
+    to {
+      rotate: 1turn;
+    }
   }
 
   /* The search box stays; the list scrolls. */

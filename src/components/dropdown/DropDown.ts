@@ -18,7 +18,7 @@ import { TextBox } from '../textbox/TextBox';
 import type { DropDownProps } from './drop-down-props';
 import { onLanguage } from '../../core/on-language';
 
-const OWN = ['items', 'dataSource', 'placeholder', 'searchEnabled', 'searchMode', 'searchDelay', 'clearButton', 'matchWidth'] as const;
+const OWN = ['items', 'dataSource', 'valueText', 'placeholder', 'searchEnabled', 'searchMode', 'searchDelay', 'clearButton', 'matchWidth'] as const;
 
 /** Props whose value may be a function of its own. */
 const FUNCTIONS = ['textField', 'valueField', 'iconField', 'groupField', 'enabledField', 'itemTemplate', 'fieldTemplate'] as const;
@@ -26,6 +26,9 @@ const FUNCTIONS = ['textField', 'valueField', 'iconField', 'groupField', 'enable
 type Template<T> = ((item: T, host: HTMLElement) => (() => void) | void) | null;
 
 const PARTS = Symbol('mx.dropdown');
+
+/** What the field shows: the value's item or text, a value whose item is still asked for, or a key the source does not have. */
+type ValueState = 'shown' | 'loading' | 'missing' | 'failed';
 
 interface Parts<T> {
   display: HTMLDivElement;
@@ -41,6 +44,9 @@ interface Parts<T> {
   /** The item of the value, kept when it is on no loaded page. */
   chosen: T | undefined;
   lookup: number;
+  state: ValueState;
+  spinner: HTMLSpanElement | null;
+  stopLanguage: (() => void) | null;
   timer: ReturnType<typeof setTimeout> | undefined;
   opened: Emitter<void>;
   closed: Emitter<PopupCloseReason>;
@@ -50,6 +56,10 @@ interface Parts<T> {
  * Picks one item from a list (the APG select-only combobox): the field shows the chosen item, the
  * list opens below it with the keyboard or a press, and can be searched. Items are plain values,
  * `DropDownItem`s or your own objects read through `textField` / `valueField`.
+ *
+ * From a data source, a value on no loaded page is asked for by key: meanwhile the field shows
+ * `valueText` when it is given, else it waits (a spinner in the arrow's place, the list closed).
+ * A key the source does not have shows itself, marked.
  *
  * @example
  * <DropDown label="&City" items={['Ankara', 'İstanbul', 'İzmir']} x-model={() => this.form.city} />
@@ -87,15 +97,12 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
         return {
           items: this.items,
           value: this.value,
+          valueText: this.getProperty<string | undefined>('valueText') ?? '',
           placeholder: this.getProperty<string | undefined>('placeholder') ?? '',
           template: this.getProperty<Template<T>>('fieldTemplate'),
         };
       },
-      ({ items, value, placeholder, template }) => {
-        const item = this.itemOfValue(items, value);
-        const text = item === undefined ? (value == null ? '' : String(value)) : this.itemText(item);
-        this.renderField(item, text, placeholder, template);
-      },
+      ({ items, value, valueText, placeholder, template }) => this.renderField(items, value, valueText, placeholder, template),
     );
     this.observeProperty('dataSource', () => this.renderSource());
     // A value field by name lets a value on no loaded page be asked for by that field.
@@ -107,6 +114,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
       clearTimeout(parts.timer);
       parts.source.dispose();
       parts.stopList?.();
+      parts.stopLanguage?.();
       parts.releaseField();
       parts.opened.dispose();
       parts.closed.dispose();
@@ -154,6 +162,12 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
   }
   set dataSource(value: Bind<data.DataSource<T, unknown> | null>) {
     this.assignProperty('dataSource', value);
+  }
+  get valueText(): string {
+    return this.getProperty<string | undefined>('valueText') ?? '';
+  }
+  set valueText(value: Bind<string>) {
+    this.assignProperty('valueText', value);
   }
   get searchDelay(): number {
     return this.getProperty<number | undefined>('searchDelay') ?? (this.dataSource ? 250 : 0);
@@ -232,8 +246,9 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
 
   /** Opens the list; `search` starts the search box with that text (or jumps to it without one). `false` when it cannot be used now. */
   open(search?: string): boolean {
-    if (!this.isEnabled || this.peekProperty('readOnly')) return false;
     const parts = this.dropParts;
+    if (!this.isEnabled || this.peekProperty('readOnly') || parts.state === 'loading') return false;
+    if (parts.state === 'failed') this.lookUp(this.peekValue() as V, true);
     const popup = (parts.popup ??= this.createPopup());
     if (popup.isOpen) return true;
     parts.filter = '';
@@ -322,6 +337,9 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
         source: new DataItems<T>(),
         chosen: undefined,
         lookup: 0,
+        state: 'shown',
+        spinner: null,
+        stopLanguage: null,
         timer: undefined,
         opened: new Emitter(),
         closed: new Emitter(),
@@ -362,13 +380,36 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     if (parts.chosen !== undefined && same(parts.chosen)) return parts.chosen;
     const near = parts.source.findLoaded(value, (item) => this.itemValue(item), (a, b) => this.sameValue(a as V, b as V));
     if (near !== undefined) return near;
+    // Known from an earlier request, here or in another list over the same source.
+    const known = parts.source.known(value);
+    if (known?.item !== undefined) return known.item;
+    if (known?.state !== 'found' && known?.state !== 'missing') this.lookUp(value);
+    return undefined;
+  }
+
+  /** Asks the data source for the item of `value` (`again`: after its request failed); the field shows the answer. */
+  private lookUp(value: V, again = false): void {
+    const parts = this.dropParts;
     const lookup = ++parts.lookup;
-    void parts.source.find(value, (item) => this.itemValue(item)).then((item) => {
-      if (lookup !== parts.lookup || this.isDisposed || item === undefined) return;
-      parts.chosen = item;
+    const asked = again ? parts.source.retry(value) : parts.source.find(value, (item) => this.itemValue(item));
+    void asked.then((item) => {
+      if (lookup !== parts.lookup || this.isDisposed) return;
+      if (item !== undefined) parts.chosen = item;
       this.setProperty('chosenTick', lookup);
     });
-    return undefined;
+  }
+
+  /** What the field shows for `value` and its text. */
+  private valueLook(items: readonly T[], value: V | null, valueText: string): { item?: T; text: string; state: ValueState } {
+    const item = this.itemOfValue(items, value);
+    if (item !== undefined) return { item, text: this.itemText(item), state: 'shown' };
+    if (value === null || value === undefined) return { text: '', state: 'shown' };
+    const parts = this.dropParts;
+    if (!parts.source.dataSource) return { text: String(value), state: 'shown' };
+    const known = parts.source.known(value);
+    if (known?.state === 'found') return { text: known.text ?? valueText, state: 'shown' };
+    if (known?.state === 'missing') return { text: valueText || String(value), state: known.failed ? 'failed' : 'missing' };
+    return valueText ? { text: valueText, state: 'shown' } : { text: '', state: 'loading' };
   }
 
   private renderSource(): void {
@@ -445,7 +486,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
       } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && e.key !== ' ') {
         if (!this.open()) return;
         this.typeAhead(e.key);
-      } else if (e.key === 'Escape' && this.peekProperty('clearButton') && !this.isEmptyValue(this.peekValue()) && !this.peekProperty('readOnly')) {
+      } else if (e.key === 'Escape' && this.peekProperty('clearButton') && !this.isEmptyValue(this.peekValue()) && !this.peekProperty('readOnly') && parts.state !== 'loading') {
         e.preventDefault();
         e.stopPropagation();
         this.commit(null, e);
@@ -594,22 +635,65 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     }
   }
 
-  private renderField(item: T | undefined, text: string, placeholder: string, template: Template<T>): void {
+  private renderField(items: readonly T[], value: V | null, valueText: string, placeholder: string, template: Template<T>): void {
     const parts = this.dropParts;
+    const { item, text, state } = this.valueLook(items, value, valueText);
     parts.releaseField();
     parts.releaseField = () => {};
-    const empty = item === undefined && !text;
+    parts.state = state;
+    const loading = state === 'loading';
+    const empty = item === undefined && !text && !loading;
     parts.text.toggleAttribute('data-placeholder', empty);
-    if (item !== undefined && template) {
+    parts.text.toggleAttribute('data-missing', state === 'missing' || state === 'failed');
+    this.element.toggleAttribute('data-loading', loading);
+    if (loading) parts.display.setAttribute('aria-busy', 'true');
+    else parts.display.removeAttribute('aria-busy');
+    if (state !== 'shown') this.followLanguage();
+    if (loading) {
+      const hidden = document.createElement('span');
+      hidden.className = 'mx-sr-only';
+      hidden.textContent = uiLocale.strings.loading;
+      parts.text.replaceChildren(hidden);
+      this.addSpinner();
+    } else if (item !== undefined && template) {
       parts.text.replaceChildren();
       parts.releaseField = template(item, parts.text) ?? (() => {});
     } else {
       parts.text.textContent = empty ? placeholder : text;
     }
+    if (state === 'missing' || state === 'failed') parts.text.title = state === 'failed' ? uiLocale.strings.loadFailed : uiLocale.strings.notInList;
+    else parts.text.removeAttribute('title');
     this.element.toggleAttribute('data-placeholder', !!placeholder);
   }
 
+  /** The texts of the wait and of a missing key are the kit's: the field draws them again when its language changes. */
+  private followLanguage(): void {
+    const parts = this.dropParts;
+    if (parts.stopLanguage) return;
+    const changed = uiLocale.onChanged(() => {
+      if (!this.isDisposed && parts.state !== 'shown') this.setProperty('refreshed', (this.peekProperty<number>('refreshed') ?? 0) + 1);
+    });
+    parts.stopLanguage = () => changed.dispose();
+  }
+
+  /** The spinner in the arrow's place while the value's item is asked for; made the first time it is needed. */
+  private addSpinner(): void {
+    const parts = this.dropParts;
+    if (parts.spinner) return;
+    const spinner = document.createElement('span');
+    spinner.className = 'mx-drop-down__spinner';
+    spinner.setAttribute('aria-hidden', 'true');
+    this.area('actions').append(spinner);
+    parts.spinner = spinner;
+  }
+
   private renderClear(): void {
-    this.showClearButton(!!this.peekProperty('clearButton'), (e) => this.commit(null, e), 'mx-drop-down__clear');
+    this.showClearButton(
+      !!this.peekProperty('clearButton'),
+      (e) => {
+        if (this.dropParts.state !== 'loading') this.commit(null, e);
+      },
+      'mx-drop-down__clear',
+    );
   }
 }

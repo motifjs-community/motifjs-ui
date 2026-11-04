@@ -131,6 +131,16 @@ export class KeyedItems<T = unknown> {
     return Promise.all(waits).then(() => undefined);
   }
 
+  /** Asks again for the keys whose last request failed (and for those never asked for). */
+  retry(keys: Iterable<unknown>): Promise<void> {
+    const list = [...keys];
+    for (const key of list) {
+      const ks = keyString(key);
+      if (this.entries.get(ks)?.failed) this.entries.delete(ks);
+    }
+    return this.request(list);
+  }
+
   /** Keeps what an editor chose for a key: its item, or its text. It shows at once, without a request. */
   remember(key: unknown, itemOrText: T | string) {
     if (key === null || key === undefined) return;

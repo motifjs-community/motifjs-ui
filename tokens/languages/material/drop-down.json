@@ -41,6 +41,10 @@
     "value": {
       "placeholder": {
         "color": { "$value": "{color.fg.secondary}" }
+      },
+      "missing": {
+        "color": { "$value": "{color.fg.secondary}" },
+        "text-decoration": { "$value": "underline" }
       }
     },
     "chevron": {
@@ -53,6 +57,13 @@
       "disabled": {
         "color": { "$value": "{color.fg.on-accent-disabled}" }
       }
+    },
+    "spinner": {
+      "size": { "$value": "{glyph.size}" },
+      "color": { "$value": "{color.fg.secondary}" }
+    },
+    "spinner-shape": {
+      "display": { "$value": "block" }
     }
   }
 }

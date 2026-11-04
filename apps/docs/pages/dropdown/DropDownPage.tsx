@@ -12,6 +12,9 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 const PROPS = [
   ['value', '`Bind<V | null>`', '`null`', 'The value of the chosen item. `x-model` binds it two-way.'],
   ['items', '`Bind<readonly T[]>`', '`[]`', 'Plain values, `DropDownItem`s (`{ value, text, icon?, group?, enabled? }`) or objects of your own. A function is followed; items changed in place show after `refresh()`.'],
+  ['dataSource', '`Bind<DataSource<T> | null>`', '`null`', 'Items from the data layer, loaded where the list is scrolled to and searched on its `searchFields`. Wins over `items`. A value on no loaded page is asked for by key; meanwhile the field waits (see Lookup).'],
+  ['valueText', '`Bind<string>`', "`''`", 'The value\'s text while its item is asked for from `dataSource`, shown at once instead of waiting (a record that carries the name: `valueText={() => order.customerName}`).'],
+  ['searchDelay', '`Bind<number>`', '`250` with a data source, else `0`', 'Milliseconds between the last key in the search box and the search.'],
   ['textField / valueField', '`Bind<ItemField<T>>`', "`'text'` / `'value'`", 'A property name or a function `(item) => …`. Without `valueField` an object with a `value` gives that, anything else is its own value.'],
   ['iconField, groupField, enabledField', '`Bind<ItemField<T>>`', '—', 'An icon per option; options with the same group follow each other under its name; options that cannot be chosen.'],
   ['placeholder', '`Bind<string>`', "`''`", 'Shown while nothing is chosen.'],
@@ -31,7 +34,7 @@ const PROPERTIES = [
 ];
 
 const METHODS = [
-  ['open(search?)', '`boolean`', 'Opens the list; `search` starts the search box with that text. `false` when disabled or read-only.'],
+  ['open(search?)', '`boolean`', 'Opens the list; `search` starts the search box with that text. `false` when disabled, read-only, or while the value\'s item is asked for.'],
   ['close()', '`void`', 'Closes it; focus goes back to the field.'],
   ['clear()', '`void`', 'Empties the value.'],
   ['refresh()', '`void`', 'Your items may be plain or reactive; the drop-down reads them as they are. After changing them in place, call `refresh()`. The field\'s text and the open list follow.'],
@@ -61,17 +64,20 @@ const A11Y = [
   ['Groups', 'Each group is `role="group"` named by its header.'],
   ['Long lists', 'Only the rows in view are drawn; each option says where it is with `aria-posinset` and `aria-setsize`.'],
   ['Search', 'The search box controls the list and names the highlighted option the same way.'],
+  ['Waiting', 'While the value\'s item is asked for, the combobox is `aria-busy` and its text says "Loading…" to screen readers; a key the source does not have carries the reason as its title.'],
 ];
 
 const HOOKS = [
-  ['.mx-drop-down', 'Added to the field. `data-open` while the list is open; the field attributes of TextBox.'],
-  ['.mx-drop-down__display, .mx-drop-down__text, .mx-drop-down__chevron', 'The combobox, the chosen text (`data-placeholder` when empty), the arrow.'],
+  ['.mx-drop-down', 'Added to the field. `data-open` while the list is open, `data-loading` while the value\'s item is asked for; the field attributes of TextBox.'],
+  ['.mx-drop-down__display, .mx-drop-down__text, .mx-drop-down__chevron', 'The combobox, the chosen text (`data-placeholder` when empty, `data-missing` for a key the source does not have), the arrow.'],
+  ['.mx-drop-down__spinner', 'The spinner in the arrow\'s place while the value\'s item is asked for.'],
   ['.mx-drop-down__popup, .mx-drop-down__search', 'The popup and its search box.'],
   ['.mx-list, .mx-list__item, .mx-list__header', 'The list (shared), its options (`data-active`, `data-selected`) and group headers.'],
 ];
 
 const TOKENS = [
   ['field.*', 'The field, as for TextBox.'],
+  ['drop-down.value, drop-down.chevron, drop-down.spinner, drop-down.spinner-shape', 'Units: the chosen text (`placeholder`, `missing`, `disabled`), the arrow (`open`, `disabled`), the ring that turns while the value\'s item is asked for and the shape a language may draw instead (with the spinner\'s shapes and timing).'],
   ['list.item-height, list.item', 'The options: their row height, and the item unit in each state (`hover`, `pressed`, `active`, `selected`, `selected-hover`, `selected-pressed`, `disabled`, `next`, `select-all`).'],
   ['list.indicator, list.check, list.mark, list.icon, list.text', 'Units: the bar on the chosen option (`multiple`), the check of a list of several choices and its mark, an icon, the text.'],
   ['list.container, list.group, list.header, list.select-all-divider, list.empty', 'Units: the list (its space and most height), a group, group headers, the line under "Select all", the empty text.'],
@@ -145,7 +151,7 @@ import { DropDown, type DropDownItem } from '@motifx-community/ui';
 
       <Section anchor="i18n" title="Localization">
         <p>
-          <Rich text="The search box, the clear button and the empty list text come from `uiLocale.strings`." />
+          <Rich text="The search box, the clear button, the empty list text, the wait (`loading`) and the reason a key is marked (`notInList`, `loadFailed`) come from `uiLocale.strings`." />
         </p>
         <Example files={code('Localization.tsx')}>
           <Localization />

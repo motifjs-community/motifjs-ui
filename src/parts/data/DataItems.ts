@@ -2,6 +2,7 @@ import { Emitter, type Event as MotifEvent, type IDisposable } from '@motifx/cor
 import type { data } from '@motifx-community/data';
 import { givenList } from '../../core/given-field';
 import type { ItemSource } from '../list/item-source';
+import type { KeyedItem } from './keyed-item';
 import { KeyedItems } from './KeyedItems';
 
 type Source<T> = data.DataSource<T, unknown>;
@@ -116,6 +117,20 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
   findLoaded(value: unknown, valueOf: (item: T) => unknown, same: (a: unknown, b: unknown) => boolean = Object.is): T | undefined {
     const pool = this.source ? this.loaded : this.array;
     return pool.find((item) => same(valueOf(item), value));
+  }
+
+  /** What is known of the item `find` asked the data source for: still asked for, found, or not in the source. */
+  known(value: unknown): KeyedItem<T> | undefined {
+    if (!this.source || value === null || value === undefined) return undefined;
+    return KeyedItems.of<T>(this.source, this.valueField).get(value);
+  }
+
+  /** Asks the data source again for the item of `value` after its request failed. */
+  async retry(value: unknown): Promise<T | undefined> {
+    if (!this.source || value === null || value === undefined) return undefined;
+    const known = KeyedItems.of<T>(this.source, this.valueField);
+    await known.retry([value]);
+    return known.get(value)?.item;
   }
 
   reload(): Promise<void> {

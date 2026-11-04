@@ -1,7 +1,7 @@
 {
   "spinner": {
     "$description": "Spinner: what turns (a ring, or a shape that becomes the next one), its container, its label, and the layer it covers a container with.",
-    "$selector": ".mx-spinner, .mx-button__spinner",
+    "$selector": ".mx-spinner, .mx-button__spinner, .mx-drop-down__spinner",
     "gap": { "$type": "dimension" },
     "cover-padding": { "$type": "dimension" },
     "cover-background": { "$type": "color" },

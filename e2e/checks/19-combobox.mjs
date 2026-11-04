@@ -50,4 +50,39 @@ export default async function ({ page, base, check, axeSource }) {
   check('…searches the data source', cities.length > 0 && cities.every((c) => c === 'Paris'), cities.slice(0, 3).join());
   await page.keyboard.press('Enter');
   check('…and Enter takes the row', (await page.locator('.lk-customer').textContent()) !== 'customer: C0042');
+
+  // A value on no loaded page: the field waits, a given text shows at once, a key the server does not have is marked.
+  await page.goto(base + 'lookup', { waitUntil: 'load' });
+  const fieldState = (selector) =>
+    page.evaluate((s) => {
+      const field = document.querySelector(s);
+      const text = field.querySelector('.mx-drop-down__text');
+      const spinner = field.querySelector('.mx-drop-down__spinner');
+      return {
+        loading: field.hasAttribute('data-loading'),
+        busy: field.querySelector('[role="combobox"]').getAttribute('aria-busy'),
+        text: text.textContent,
+        missing: text.hasAttribute('data-missing'),
+        title: text.title,
+        line: getComputedStyle(text).textDecorationLine,
+        spinner: spinner ? getComputedStyle(spinner).display : 'none',
+        chevron: getComputedStyle(field.querySelector('.mx-drop-down__chevron')).display,
+      };
+    }, selector);
+  await page.waitForFunction(() => document.querySelector('.lk-waits')?.hasAttribute('data-loading'));
+  const waiting = await fieldState('.lk-waits');
+  check('a value on no loaded page waits: busy, a spinner in the arrow\'s place, never its key', waiting.busy === 'true' && waiting.spinner !== 'none' && waiting.chevron === 'none' && waiting.text === 'Loading…', JSON.stringify(waiting));
+  const given = await fieldState('.lk-given');
+  check('…a record\'s own name shows at once (valueText)', !given.loading && given.text === 'Alfreds Trading 1500', JSON.stringify(given));
+  await page.waitForFunction(() => !document.querySelector('.lk-waits').hasAttribute('data-loading'), null, { timeout: 5000 });
+  const answered = await fieldState('.lk-waits');
+  check('…then shows its row', answered.text === 'Alfreds Trading 1500' && answered.busy === null && answered.chevron !== 'none', JSON.stringify(answered));
+  await page.waitForFunction(() => document.querySelector('.lk-missing .mx-drop-down__text')?.hasAttribute('data-missing'), null, { timeout: 5000 });
+  const missing = await fieldState('.lk-missing');
+  check('a key the server does not have shows itself, marked, with the reason', missing.text === '9999' && missing.line === 'underline' && missing.title === 'Not found in the list', JSON.stringify(missing));
+  await page.locator('.lk-another').click();
+  check('…another key waits again', (await fieldState('.lk-waits')).loading);
+  await page.addScriptTag({ content: axeSource });
+  const busy = await page.evaluate(async () => (await window.axe.run(document)).violations.map((v) => v.id));
+  check('axe clean while a lookup waits', busy.length === 0, busy.join(', '));
 }

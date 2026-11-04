@@ -10,6 +10,11 @@ export interface DropDownProps<T, V> extends FieldProps<V | null> {
   items?: Bind<readonly T[]>;
   /** Items from the data layer; the search box searches it (`searchFields`). Wins over `items`. */
   dataSource?: Bind<data.DataSource<T, unknown> | null>;
+  /**
+   * The value's text while its item is asked for from `dataSource` (the record often carries it:
+   * `valueText={() => order.customerName}`): the field shows it at once instead of waiting.
+   */
+  valueText?: Bind<string>;
   /** Milliseconds between the last key in the search box and a data source search. Default `250`. */
   searchDelay?: Bind<number>;
   /** Default `'text'` of an object item, the item itself otherwise. */

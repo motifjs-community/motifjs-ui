@@ -41,6 +41,10 @@
     "value": {
       "placeholder": {
         "color": { "$value": "{color.fg.secondary}" }
+      },
+      "missing": {
+        "color": { "$value": "{color.fg.secondary}" },
+        "text-decoration": { "$value": "underline" }
       }
     },
     "chevron": {
@@ -53,6 +57,13 @@
       "disabled": {
         "color": { "$value": "{color.fg.disabled}" }
       }
+    },
+    "spinner": {
+      "size": { "$value": "{glyph.size}" },
+      "border-width": { "$value": "{border.width.2}" },
+      "border-end-color": { "$value": {"colorSpace": "srgb", "components": [0,0,0], "alpha": 0} },
+      "radius": { "$value": "{radius.full}" },
+      "color": { "$value": "{color.fg.secondary}" }
     }
   }
 }
