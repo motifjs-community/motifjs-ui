@@ -32,57 +32,112 @@ import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/
 
       <Section anchor="today" title="What ships today">
         <p>
-          The components are being written one at a time; Button is the first. Under them is the base they all build on:
-          focus and the keyboard, and the shared parts a menu or a drop-down opens on.
+          More than fifty components, every one an object with the same base: focus and the keyboard, the right
+          roles and names for a screen reader, texts in English and Turkish that switch while the app runs, right to
+          left, and a look in each of the design system's five languages (Tactile, Lounge, Material, Fluent, Lilac)
+          painted from component tokens. Each has a page with live examples and its API.
         </p>
         <table class="token-table api-table">
           <thead>
             <tr>
-              <th>Part</th>
-              <th>What it is</th>
+              <th>Group</th>
+              <th>Components</th>
             </tr>
           </thead>
           <tbody>
             <tr>
+              <td>Buttons and commands</td>
               <td>
-                <a rel="router" href="/button">
-                  <code>Button</code>
-                </a>
-              </td>
-              <td>
-                Solid, outline and ghost in three tones and sizes, pressable; icon, <code>&amp;</code> access key, toggle,
-                busy; a menu or any content, from the whole button or with <code>split</code> from an arrow next to it.
+                <a rel="router" href="/button"><code>Button</code></a> (menu, split, toggle, busy),{' '}
+                <a rel="router" href="/buttongroup"><code>ButtonGroup</code></a>,{' '}
+                <a rel="router" href="/toolbar"><code>Toolbar</code></a>,{' '}
+                <a rel="router" href="/menus"><code>MenuBar</code> and <code>ContextMenu</code></a>
               </td>
             </tr>
             <tr>
+              <td>Editors</td>
               <td>
-                <code>Popup</code>, <code>MenuList</code>
-              </td>
-              <td>
-                The shared parts: a surface above the page that follows its anchor and closes on Escape or a press outside,
-                and a keyboard-driven list of commands.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <a rel="router" href="/control">
-                  <code>Control</code>
-                </a>
-              </td>
-              <td>
-                The base of every control: <code>text</code>, <code>enabled</code>, <code>visible</code>,{' '}
-                <code>tabStop</code> and focus, the same from JSX and from code.
+                <a rel="router" href="/textbox"><code>TextBox</code></a> (mask, validation),{' '}
+                <a rel="router" href="/textarea"><code>TextArea</code></a>,{' '}
+                <a rel="router" href="/numberbox"><code>NumberBox</code></a>,{' '}
+                <a rel="router" href="/datebox"><code>DateBox</code></a>,{' '}
+                <a rel="router" href="/daterangebox"><code>DateRangeBox</code></a>,{' '}
+                <a rel="router" href="/calendar"><code>Calendar</code></a>,{' '}
+                <a rel="router" href="/colorbox"><code>ColorBox</code> and <code>ColorPicker</code></a>,{' '}
+                <a rel="router" href="/slider"><code>Slider</code></a>,{' '}
+                <a rel="router" href="/rating"><code>Rating</code></a>,{' '}
+                <a rel="router" href="/fileuploader"><code>FileUploader</code></a>
               </td>
             </tr>
             <tr>
+              <td>Choice</td>
               <td>
-                <a rel="router" href="/keyboard">
-                  <code>FocusContainer</code>, <code>addShortcut</code>
-                </a>
+                <a rel="router" href="/checkbox"><code>CheckBox</code></a>,{' '}
+                <a rel="router" href="/switch"><code>Switch</code></a>,{' '}
+                <a rel="router" href="/radiogroup"><code>RadioGroup</code></a>,{' '}
+                <a rel="router" href="/dropdown"><code>DropDown</code></a>,{' '}
+                <a rel="router" href="/combobox"><code>ComboBox</code> and <code>Autocomplete</code></a>,{' '}
+                <a rel="router" href="/lookup"><code>Lookup</code></a>,{' '}
+                <a rel="router" href="/tagbox"><code>TagBox</code></a>,{' '}
+                <a rel="router" href="/listbox"><code>ListBox</code></a>
               </td>
+            </tr>
+            <tr>
+              <td>Display and feedback</td>
               <td>
-                Tab order, the active control of a container, <code>&amp;</code> access keys, shortcuts, and focus that
-                never falls to the page when a control goes away.
+                <a rel="router" href="/badge"><code>Badge</code></a>,{' '}
+                <a rel="router" href="/avatar"><code>Avatar</code> and <code>AvatarGroup</code></a>,{' '}
+                <a rel="router" href="/chip"><code>Chip</code> and <code>ChipGroup</code></a>,{' '}
+                <a rel="router" href="/card"><code>Card</code></a>,{' '}
+                <a rel="router" href="/skeleton"><code>Skeleton</code></a>,{' '}
+                <a rel="router" href="/progress"><code>ProgressBar</code> and <code>Spinner</code></a>,{' '}
+                <a rel="router" href="/loadpanel"><code>LoadPanel</code></a>,{' '}
+                <a rel="router" href="/tooltip"><code>Tooltip</code></a>,{' '}
+                <a rel="router" href="/popover"><code>Popover</code></a>,{' '}
+                <a rel="router" href="/toast"><code>Toast</code></a>
+              </td>
+            </tr>
+            <tr>
+              <td>Navigation and layers</td>
+              <td>
+                <a rel="router" href="/tabs"><code>Tabs</code></a>,{' '}
+                <a rel="router" href="/accordion"><code>Accordion</code></a>,{' '}
+                <a rel="router" href="/breadcrumb"><code>Breadcrumb</code></a>,{' '}
+                <a rel="router" href="/pagination"><code>Pagination</code></a>,{' '}
+                <a rel="router" href="/stepper"><code>Stepper</code></a>,{' '}
+                <a rel="router" href="/wizard"><code>Wizard</code></a>,{' '}
+                <a rel="router" href="/window"><code>Window</code> and dialog</a>,{' '}
+                <a rel="router" href="/bottomsheet"><code>BottomSheet</code></a>,{' '}
+                <a rel="router" href="/drawer"><code>Drawer</code></a>,{' '}
+                <a rel="router" href="/actionsheet"><code>ActionSheet</code></a>
+              </td>
+            </tr>
+            <tr>
+              <td>Layout</td>
+              <td>
+                <a rel="router" href="/layout"><code>Stack</code>, <code>Grid</code>, <code>DockPanel</code>, <code>Panel</code>, <code>GroupBox</code>, <code>SplitContainer</code></a>,{' '}
+                <a rel="router" href="/formlayout"><code>FormLayout</code></a>,{' '}
+                <a rel="router" href="/scrollview"><code>ScrollView</code></a> (pull to refresh, load more),{' '}
+                <a rel="router" href="/sortable"><code>Sortable</code></a>
+              </td>
+            </tr>
+            <tr>
+              <td>Data</td>
+              <td>
+                <a rel="router" href="/datagrid"><code>DataGrid</code></a> (virtual or paged, editing, filters, grouping, master-detail, export),{' '}
+                <a rel="router" href="/treeview"><code>TreeView</code></a>,{' '}
+                <a rel="router" href="/filterbuilder"><code>FilterBuilder</code></a>,{' '}
+                <a rel="router" href="/scheduler"><code>Scheduler</code></a> (day to timeline, recurrence, resources, iCalendar),{' '}
+                <a rel="router" href="/tabdocs"><code>TabDocumentManager</code></a> (tabs, split, dock, new windows); lists and grids read <code>@motifx-community/data</code> sources
+              </td>
+            </tr>
+            <tr>
+              <td>Base</td>
+              <td>
+                <a rel="router" href="/control"><code>Control</code></a>,{' '}
+                <a rel="router" href="/keyboard"><code>FocusContainer</code> and <code>addShortcut</code></a>,{' '}
+                <a rel="router" href="/language"><code>uiLocale</code></a>,{' '}
+                <a rel="router" href="/tokens">the component tokens</a>; <code>Popup</code> and <code>MenuList</code>, the shared parts a menu or a drop-down opens on
               </td>
             </tr>
           </tbody>
