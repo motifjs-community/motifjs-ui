@@ -627,6 +627,9 @@ export interface UiStrings {
   move: string;
   sizeNow: string;
   positionNow: string;
+  /** The speed dial and the validation summary. */
+  actions: string;
+  validationSummary: string;
   /** The sortable and the scroll view. */
   sortableMoved: string;
   scrollPullDown: string;

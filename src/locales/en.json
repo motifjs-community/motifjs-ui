@@ -606,5 +606,7 @@
   "tiles": "Tiles",
   "move": "Move",
   "sizeNow": "Width {width, number}, height {height, number}",
-  "positionNow": "Moved {x, number} across and {y, number} down"
+  "positionNow": "Moved {x, number} across and {y, number} down",
+  "actions": "Actions",
+  "validationSummary": "Please correct the following"
 }

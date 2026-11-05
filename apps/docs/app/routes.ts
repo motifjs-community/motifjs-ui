@@ -22,6 +22,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   tileview: () => import('../pages/tileview/TileViewPage'),
   resizable: () => import('../pages/resizable/ResizablePage'),
   draggable: () => import('../pages/draggable/DraggablePage'),
+  speeddial: () => import('../pages/speeddial/SpeedDialPage'),
+  validationsummary: () => import('../pages/validationsummary/ValidationSummaryPage'),
   wizard: () => import('../pages/wizard/WizardPage'),
   toolbar: () => import('../pages/toolbar/ToolbarPage'),
   menus: () => import('../pages/menus/MenusPage'),

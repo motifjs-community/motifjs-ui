@@ -1,0 +1,184 @@
+/* SpeedDial: the main button and the fan of actions next to it, fixed in a corner of the viewport or inline; the
+   fan runs up, down, to the start or to the end, and each action's label lies beside it on the side away from
+   the edge. Only the layout is here: the main button, its glyph and text, an action, its icon and its label are
+   units of the schema. */
+@layer mx.components {
+    .mx-speed-dial {
+        --_over: 1;
+
+        position: fixed;
+        z-index: var(--mx-z-toast, 1000);
+        display: flex;
+        box-sizing: border-box;
+        align-items: center;
+        gap: var(--_speed-dial-gap);
+    }
+
+    .mx-speed-dial[data-position='inline'] {
+        position: relative;
+        z-index: auto;
+        display: inline-flex;
+    }
+
+    .mx-speed-dial[data-position^='bottom'] {
+        inset-block-end: var(--_speed-dial-inset);
+    }
+
+    .mx-speed-dial[data-position^='top'] {
+        inset-block-start: var(--_speed-dial-inset);
+    }
+
+    .mx-speed-dial[data-position$='-end'] {
+        inset-inline-end: var(--_speed-dial-inset);
+    }
+
+    .mx-speed-dial[data-position$='-start'] {
+        inset-inline-start: var(--_speed-dial-inset);
+    }
+
+    /* The fan before the main button in the DOM: it runs away from the button whichever way. */
+    .mx-speed-dial[data-direction='up'] {
+        flex-direction: column;
+    }
+
+    .mx-speed-dial[data-direction='down'] {
+        flex-direction: column-reverse;
+    }
+
+    .mx-speed-dial[data-direction='start'] {
+        flex-direction: row;
+    }
+
+    .mx-speed-dial[data-direction='end'] {
+        flex-direction: row-reverse;
+    }
+
+    .mx-speed-dial__fan {
+        display: flex;
+        align-items: center;
+        transition:
+            opacity var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+            translate var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+            visibility 0s var(--mx-motion-duration-fast);
+    }
+
+    .mx-speed-dial[data-direction='up'] > .mx-speed-dial__fan {
+        flex-direction: column-reverse;
+    }
+
+    .mx-speed-dial[data-direction='down'] > .mx-speed-dial__fan {
+        flex-direction: column;
+    }
+
+    .mx-speed-dial[data-direction='start'] > .mx-speed-dial__fan {
+        flex-direction: row-reverse;
+    }
+
+    .mx-speed-dial[data-direction='end'] > .mx-speed-dial__fan {
+        flex-direction: row;
+    }
+
+    /* Closed, the fan is out of sight and a little towards the button; open, in its place. */
+    .mx-speed-dial:not([data-open]) > .mx-speed-dial__fan {
+        visibility: hidden;
+        opacity: 0;
+    }
+
+    .mx-speed-dial[data-direction='up']:not([data-open]) > .mx-speed-dial__fan {
+        translate: 0 25%;
+    }
+
+    .mx-speed-dial[data-direction='down']:not([data-open]) > .mx-speed-dial__fan {
+        translate: 0 -25%;
+    }
+
+    .mx-speed-dial[data-direction='start']:not([data-open]) > .mx-speed-dial__fan {
+        translate: 25% 0;
+    }
+
+    .mx-speed-dial[data-direction='end']:not([data-open]) > .mx-speed-dial__fan {
+        translate: -25% 0;
+    }
+
+    .mx-speed-dial[data-open] > .mx-speed-dial__fan {
+        transition-delay: 0s;
+    }
+
+    .mx-speed-dial__main,
+    .mx-speed-dial__action {
+        position: relative;
+        display: inline-flex;
+        flex: none;
+        box-sizing: border-box;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        appearance: none;
+    }
+
+    .mx-speed-dial__action[hidden],
+    .mx-speed-dial__main-text[hidden] {
+        display: none;
+    }
+
+    .mx-speed-dial__main-text {
+        white-space: nowrap;
+    }
+
+    .mx-speed-dial__action-face {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* An icon of the app's own takes the glyph's size. */
+    .mx-speed-dial__icon {
+        inline-size: var(--_speed-dial-action-icon-size, 1rem);
+        block-size: var(--_speed-dial-action-icon-size, 1rem);
+    }
+
+    /* The label beside an action, on the side away from the edge; over or under it when the fan lies. It is placed
+       from the action's padding box, so the action's border is added to the gap. */
+    .mx-speed-dial__label {
+        position: absolute;
+        z-index: var(--_over);
+        white-space: nowrap;
+        pointer-events: none;
+    }
+
+    .mx-speed-dial:not([data-labels]) .mx-speed-dial__label,
+    .mx-speed-dial:not([data-open]) .mx-speed-dial__label {
+        display: none;
+    }
+
+    .mx-speed-dial:is([data-direction='up'], [data-direction='down']) .mx-speed-dial__label {
+        inset-block-start: 50%;
+        translate: 0 -50%;
+    }
+
+    .mx-speed-dial:is([data-direction='up'], [data-direction='down']):is([data-position$='-end'], [data-position='inline']) .mx-speed-dial__label {
+        inset-inline-end: calc(100% + var(--_speed-dial-label-gap) + var(--_speed-dial-action-border-width, 0px));
+    }
+
+    .mx-speed-dial:is([data-direction='up'], [data-direction='down'])[data-position$='-start'] .mx-speed-dial__label {
+        inset-inline-start: calc(100% + var(--_speed-dial-label-gap) + var(--_speed-dial-action-border-width, 0px));
+    }
+
+    .mx-speed-dial:is([data-direction='start'], [data-direction='end']) .mx-speed-dial__label {
+        inset-inline-start: 50%;
+        translate: -50% 0;
+    }
+
+    .mx-speed-dial:is([data-direction='start'], [data-direction='end']):is([data-position^='bottom'], [data-position='inline']) .mx-speed-dial__label {
+        inset-block-end: calc(100% + var(--_speed-dial-label-gap) + var(--_speed-dial-action-border-width, 0px));
+    }
+
+    .mx-speed-dial:is([data-direction='start'], [data-direction='end'])[data-position^='top'] .mx-speed-dial__label {
+        inset-block-start: calc(100% + var(--_speed-dial-label-gap) + var(--_speed-dial-action-border-width, 0px));
+    }
+}

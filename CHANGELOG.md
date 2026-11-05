@@ -46,6 +46,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   may bring it back, `onDragEnded`. A target of the same `group` is marked while a drag is under way and while the
   draggable is over it, may refuse in `onDragEntering`, and is told in `onDropped` with the draggable's `data`.
 - Kit texts `move`, `sizeNow`, `positionNow` in English and Turkish.
+- `SpeedDial`: a round button fixed to a corner of the viewport (or inline) that fans out its actions, each a round
+  button with a glyph of the kit's set or an icon of your own and a label beside it; `direction` up, down, to the
+  start or the end; `open` and `x-model`; `extended` shows the text; with one action shown the main button does it
+  itself; a menu for the keys (the arrows along the fan, Home, End, Enter, Escape, a press outside closes);
+  `onOpened`, `onClosed`, `onActionClick`. Units in the five languages: Material's FAB and small FABs, round
+  buttons elsewhere.
+- `ValidationSummary`: the failed fields of a `ValidationGroup`, one line each with the field's label and its
+  message under a header, a live region; a press on a line focuses the field; it follows the group's members and
+  each field's validity, so a check, a pass or a reset draws it again; `header`, `showHeader`, `focusOnClick`,
+  `onItemClick`, `failed`, `count`.
+- Kit texts `actions`, `validationSummary` in English and Turkish.
 - Kit texts `gallery`, `gallerySlides`, `gallerySlideOf`, `galleryPrevious`, `galleryNext`, `galleryChoose`,
   `galleryPlay`, `galleryPause`, `multiView`, `multiViewPageOf` in English and Turkish; the `play` and `pause` glyphs.
 

@@ -1,0 +1,59 @@
+{
+  "speed-dial": {
+    "$description": "SpeedDial: a round button in a corner that fans out its actions, each a round button with a label beside it.",
+    "$selector": ".mx-speed-dial",
+    "inset": { "$type": "dimension", "$description": "From the edges of the viewport to the main button." },
+    "gap": { "$type": "dimension", "$description": "Between the main button and the actions, and between the actions." },
+    "label-gap": { "$type": "dimension", "$description": "Between an action and its label." },
+    "$units": {
+      "main": {
+        "$description": "The main button: `hover`, `pressed`, `focus`, `open` while the actions are out, `extended` when it shows its text.",
+        "selector": ".mx-speed-dial__main",
+        "defaults": { "cursor": "default" },
+        "states": {
+          "hover": ".mx-speed-dial:not([data-disabled]) > .mx-speed-dial__main:hover",
+          "pressed": { "selector": ".mx-speed-dial:not([data-disabled]) > .mx-speed-dial__main:active", "from": "hover" },
+          "focus": ".mx-speed-dial__main:focus-visible",
+          "open": ".mx-speed-dial[data-open] > .mx-speed-dial__main",
+          "extended": ".mx-speed-dial[data-extended] > .mx-speed-dial__main",
+          "disabled": ".mx-speed-dial[data-disabled] > .mx-speed-dial__main"
+        }
+      },
+      "main-glyph": {
+        "$description": "The glyph in the main button: `bg` its colour, `size` its size; `open` while the actions are out.",
+        "selector": ".mx-speed-dial__main-glyph",
+        "states": {
+          "open": ".mx-speed-dial[data-open] .mx-speed-dial__main-glyph"
+        }
+      },
+      "main-text": {
+        "$description": "The main button's text, when `extended`.",
+        "selector": ".mx-speed-dial__main-text"
+      },
+      "fan": {
+        "$description": "The row or column of actions.",
+        "selector": ".mx-speed-dial__fan",
+        "defaults": { "gap": "var(--_speed-dial-gap)" }
+      },
+      "action": {
+        "$description": "An action button: `hover`, `pressed`, `focus`, `disabled`.",
+        "selector": ".mx-speed-dial__action",
+        "defaults": { "cursor": "default" },
+        "states": {
+          "hover": ".mx-speed-dial__action:not([aria-disabled='true']):hover",
+          "pressed": { "selector": ".mx-speed-dial__action:not([aria-disabled='true']):active", "from": "hover" },
+          "focus": ".mx-speed-dial__action:focus-visible",
+          "disabled": ".mx-speed-dial__action[aria-disabled='true']"
+        }
+      },
+      "action-icon": {
+        "$description": "The glyph in an action (an icon of the app's own takes its size): `bg` its colour, `size` its size.",
+        "selector": ".mx-speed-dial__action-icon"
+      },
+      "label": {
+        "$description": "The label beside an action while the fan is open.",
+        "selector": ".mx-speed-dial__label"
+      }
+    }
+  }
+}

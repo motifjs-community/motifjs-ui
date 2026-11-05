@@ -32,6 +32,8 @@ export * from './components/splitter';
 export * from './components/tileview';
 export * from './components/resizable';
 export * from './components/draggable';
+export * from './components/speeddial';
+export * from './components/validationsummary';
 export * from './components/popover';
 export * from './components/loadpanel';
 export * from './components/daterangebox';

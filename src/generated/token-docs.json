@@ -20544,6 +20544,335 @@
     "value": 0.9
   },
   {
+    "name": "speed-dial.inset",
+    "cssVar": "--mx-speed-dial-inset",
+    "type": "dimension",
+    "ref": "space.6",
+    "value": "1.5rem"
+  },
+  {
+    "name": "speed-dial.gap",
+    "cssVar": "--mx-speed-dial-gap",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "speed-dial.label-gap",
+    "cssVar": "--mx-speed-dial-label-gap",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "speed-dial.main.size",
+    "cssVar": "--mx-speed-dial-main-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "3rem"
+  },
+  {
+    "name": "speed-dial.main.radius",
+    "cssVar": "--mx-speed-dial-main-radius",
+    "type": "dimension",
+    "ref": "radius.full",
+    "value": "9999px"
+  },
+  {
+    "name": "speed-dial.main.bg",
+    "cssVar": "--mx-speed-dial-main-bg",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "speed-dial.main.color",
+    "cssVar": "--mx-speed-dial-main-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "speed-dial.main.shadow",
+    "cssVar": "--mx-speed-dial-main-shadow",
+    "type": "shadow",
+    "ref": "shadow.4",
+    "value": "0px 2px 4px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "speed-dial.main.gap",
+    "cssVar": "--mx-speed-dial-main-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "speed-dial.main.hover.bg",
+    "cssVar": "--mx-speed-dial-main-hover-bg",
+    "type": "color",
+    "ref": "color.accent.solid-hover",
+    "value": "#b43f20"
+  },
+  {
+    "name": "speed-dial.main.hover.cursor",
+    "cssVar": "--mx-speed-dial-main-hover-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "pointer"
+  },
+  {
+    "name": "speed-dial.main.pressed.bg",
+    "cssVar": "--mx-speed-dial-main-pressed-bg",
+    "type": "color",
+    "ref": "color.accent.solid-hover",
+    "value": "#b43f20"
+  },
+  {
+    "name": "speed-dial.main.focus.glow",
+    "cssVar": "--mx-speed-dial-main-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "speed-dial.main.focus.outline-width",
+    "cssVar": "--mx-speed-dial-main-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "speed-dial.main.focus.outline-color",
+    "cssVar": "--mx-speed-dial-main-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "speed-dial.main.focus.outline-offset",
+    "cssVar": "--mx-speed-dial-main-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "speed-dial.main.disabled.opacity",
+    "cssVar": "--mx-speed-dial-main-disabled-opacity",
+    "type": "number",
+    "ref": "opacity.disabled",
+    "value": 0.5
+  },
+  {
+    "name": "speed-dial.main.extended.width",
+    "cssVar": "--mx-speed-dial-main-extended-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "auto"
+  },
+  {
+    "name": "speed-dial.main.extended.padding",
+    "cssVar": "--mx-speed-dial-main-extended-padding",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "speed-dial.main-glyph.size",
+    "cssVar": "--mx-speed-dial-main-glyph-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "1.25rem"
+  },
+  {
+    "name": "speed-dial.main-glyph.bg",
+    "cssVar": "--mx-speed-dial-main-glyph-bg",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "speed-dial.main-text.font-weight",
+    "cssVar": "--mx-speed-dial-main-text-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "speed-dial.action.size",
+    "cssVar": "--mx-speed-dial-action-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "2.25rem"
+  },
+  {
+    "name": "speed-dial.action.radius",
+    "cssVar": "--mx-speed-dial-action-radius",
+    "type": "dimension",
+    "ref": "radius.full",
+    "value": "9999px"
+  },
+  {
+    "name": "speed-dial.action.bg",
+    "cssVar": "--mx-speed-dial-action-bg",
+    "type": "color",
+    "ref": "color.fill.control.default",
+    "value": "#f5f4f0"
+  },
+  {
+    "name": "speed-dial.action.color",
+    "cssVar": "--mx-speed-dial-action-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "speed-dial.action.hover.bg",
+    "cssVar": "--mx-speed-dial-action-hover-bg",
+    "type": "color",
+    "ref": "color.fill.control.secondary",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "speed-dial.action.hover.cursor",
+    "cssVar": "--mx-speed-dial-action-hover-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "pointer"
+  },
+  {
+    "name": "speed-dial.action.pressed.bg",
+    "cssVar": "--mx-speed-dial-action-pressed-bg",
+    "type": "color",
+    "ref": "color.fill.control.tertiary",
+    "value": "#e1e0da"
+  },
+  {
+    "name": "speed-dial.action.focus.glow",
+    "cssVar": "--mx-speed-dial-action-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "speed-dial.action.focus.outline-width",
+    "cssVar": "--mx-speed-dial-action-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "speed-dial.action.focus.outline-color",
+    "cssVar": "--mx-speed-dial-action-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "speed-dial.action.focus.outline-offset",
+    "cssVar": "--mx-speed-dial-action-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "speed-dial.action.disabled.opacity",
+    "cssVar": "--mx-speed-dial-action-disabled-opacity",
+    "type": "number",
+    "ref": "opacity.disabled",
+    "value": 0.5
+  },
+  {
+    "name": "speed-dial.action.border-width",
+    "cssVar": "--mx-speed-dial-action-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "speed-dial.action.border-color",
+    "cssVar": "--mx-speed-dial-action-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "speed-dial.action.shadow",
+    "cssVar": "--mx-speed-dial-action-shadow",
+    "type": "shadow",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "speed-dial.action-icon.size",
+    "cssVar": "--mx-speed-dial-action-icon-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "1rem"
+  },
+  {
+    "name": "speed-dial.action-icon.bg",
+    "cssVar": "--mx-speed-dial-action-icon-bg",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "speed-dial.label.bg",
+    "cssVar": "--mx-speed-dial-label-bg",
+    "type": "color",
+    "ref": "color.bg.glass",
+    "value": "rgb(248 247 243 / 0.78)"
+  },
+  {
+    "name": "speed-dial.label.color",
+    "cssVar": "--mx-speed-dial-label-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "speed-dial.label.radius",
+    "cssVar": "--mx-speed-dial-label-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "speed-dial.label.padding",
+    "cssVar": "--mx-speed-dial-label-padding",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "speed-dial.label.font-size",
+    "cssVar": "--mx-speed-dial-label-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "speed-dial.label.shadow",
+    "cssVar": "--mx-speed-dial-label-shadow",
+    "type": "shadow",
+    "ref": "elevation.card",
+    "value": "0px 1px 2px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "speed-dial.label.border-width",
+    "cssVar": "--mx-speed-dial-label-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "speed-dial.label.border-color",
+    "cssVar": "--mx-speed-dial-label-border-color",
+    "type": "color",
+    "ref": "color.stroke.card",
+    "value": "rgb(0 0 0 / 0.08)"
+  },
+  {
     "name": "spinner.gap",
     "cssVar": "--mx-spinner-gap",
     "type": "dimension",
@@ -26891,6 +27220,146 @@
     "type": "keyword",
     "ref": null,
     "value": "underline"
+  },
+  {
+    "name": "validation-summary.gap",
+    "cssVar": "--mx-validation-summary-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "validation-summary.line-gap",
+    "cssVar": "--mx-validation-summary-line-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "validation-summary.box.bg",
+    "cssVar": "--mx-validation-summary-box-bg",
+    "type": "color",
+    "ref": "color.danger.subtle",
+    "value": "#fde7e9"
+  },
+  {
+    "name": "validation-summary.box.border-width",
+    "cssVar": "--mx-validation-summary-box-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "validation-summary.box.border-color",
+    "cssVar": "--mx-validation-summary-box-border-color",
+    "type": "color",
+    "ref": "color.danger.solid",
+    "value": "#b03659"
+  },
+  {
+    "name": "validation-summary.box.radius",
+    "cssVar": "--mx-validation-summary-box-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "validation-summary.box.padding",
+    "cssVar": "--mx-validation-summary-box-padding",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "validation-summary.icon.icon",
+    "cssVar": "--mx-validation-summary-icon-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-danger)"
+  },
+  {
+    "name": "validation-summary.icon.size",
+    "cssVar": "--mx-validation-summary-icon-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "1rem"
+  },
+  {
+    "name": "validation-summary.icon.bg",
+    "cssVar": "--mx-validation-summary-icon-bg",
+    "type": "color",
+    "ref": "color.danger.fg",
+    "value": "#b03659"
+  },
+  {
+    "name": "validation-summary.header.color",
+    "cssVar": "--mx-validation-summary-header-color",
+    "type": "color",
+    "ref": "color.danger.fg",
+    "value": "#b03659"
+  },
+  {
+    "name": "validation-summary.header.font-weight",
+    "cssVar": "--mx-validation-summary-header-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "validation-summary.item.color",
+    "cssVar": "--mx-validation-summary-item-color",
+    "type": "color",
+    "ref": "color.danger.fg",
+    "value": "#b03659"
+  },
+  {
+    "name": "validation-summary.item.radius",
+    "cssVar": "--mx-validation-summary-item-radius",
+    "type": "dimension",
+    "ref": "radius.xs",
+    "value": "0.25rem"
+  },
+  {
+    "name": "validation-summary.item.hover.text-decoration",
+    "cssVar": "--mx-validation-summary-item-hover-text-decoration",
+    "type": "keyword",
+    "ref": null,
+    "value": "underline"
+  },
+  {
+    "name": "validation-summary.item.hover.cursor",
+    "cssVar": "--mx-validation-summary-item-hover-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "pointer"
+  },
+  {
+    "name": "validation-summary.item.focus.glow",
+    "cssVar": "--mx-validation-summary-item-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "validation-summary.item.focus.outline-width",
+    "cssVar": "--mx-validation-summary-item-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "validation-summary.item.focus.outline-color",
+    "cssVar": "--mx-validation-summary-item-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "validation-summary.item.focus.outline-offset",
+    "cssVar": "--mx-validation-summary-item-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
   },
   {
     "name": "window.font-family",

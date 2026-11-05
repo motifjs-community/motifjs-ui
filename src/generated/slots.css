@@ -2696,6 +2696,56 @@
     --_sortable-ghost-opacity: var(--mx-sortable-ghost-opacity);
   }
 
+  .mx-speed-dial {
+    --_speed-dial-inset: var(--mx-speed-dial-inset);
+    --_speed-dial-gap: var(--mx-speed-dial-gap);
+    --_speed-dial-label-gap: var(--mx-speed-dial-label-gap);
+    --_speed-dial-main-size: var(--mx-speed-dial-main-size);
+    --_speed-dial-main-radius: var(--mx-speed-dial-main-radius);
+    --_speed-dial-main-bg: var(--mx-speed-dial-main-bg);
+    --_speed-dial-main-color: var(--mx-speed-dial-main-color);
+    --_speed-dial-main-shadow: var(--mx-speed-dial-main-shadow);
+    --_speed-dial-main-gap: var(--mx-speed-dial-main-gap);
+    --_speed-dial-main-hover-bg: var(--mx-speed-dial-main-hover-bg);
+    --_speed-dial-main-hover-cursor: var(--mx-speed-dial-main-hover-cursor);
+    --_speed-dial-main-pressed-bg: var(--mx-speed-dial-main-pressed-bg);
+    --_speed-dial-main-focus-glow: var(--mx-speed-dial-main-focus-glow);
+    --_speed-dial-main-focus-outline-width: var(--mx-speed-dial-main-focus-outline-width);
+    --_speed-dial-main-focus-outline-color: var(--mx-speed-dial-main-focus-outline-color);
+    --_speed-dial-main-focus-outline-offset: var(--mx-speed-dial-main-focus-outline-offset);
+    --_speed-dial-main-disabled-opacity: var(--mx-speed-dial-main-disabled-opacity);
+    --_speed-dial-main-extended-width: var(--mx-speed-dial-main-extended-width);
+    --_speed-dial-main-extended-padding: var(--mx-speed-dial-main-extended-padding);
+    --_speed-dial-main-glyph-size: var(--mx-speed-dial-main-glyph-size);
+    --_speed-dial-main-glyph-bg: var(--mx-speed-dial-main-glyph-bg);
+    --_speed-dial-main-text-font-weight: var(--mx-speed-dial-main-text-font-weight);
+    --_speed-dial-action-size: var(--mx-speed-dial-action-size);
+    --_speed-dial-action-radius: var(--mx-speed-dial-action-radius);
+    --_speed-dial-action-bg: var(--mx-speed-dial-action-bg);
+    --_speed-dial-action-color: var(--mx-speed-dial-action-color);
+    --_speed-dial-action-hover-bg: var(--mx-speed-dial-action-hover-bg);
+    --_speed-dial-action-hover-cursor: var(--mx-speed-dial-action-hover-cursor);
+    --_speed-dial-action-pressed-bg: var(--mx-speed-dial-action-pressed-bg);
+    --_speed-dial-action-focus-glow: var(--mx-speed-dial-action-focus-glow);
+    --_speed-dial-action-focus-outline-width: var(--mx-speed-dial-action-focus-outline-width);
+    --_speed-dial-action-focus-outline-color: var(--mx-speed-dial-action-focus-outline-color);
+    --_speed-dial-action-focus-outline-offset: var(--mx-speed-dial-action-focus-outline-offset);
+    --_speed-dial-action-disabled-opacity: var(--mx-speed-dial-action-disabled-opacity);
+    --_speed-dial-action-border-width: var(--mx-speed-dial-action-border-width);
+    --_speed-dial-action-border-color: var(--mx-speed-dial-action-border-color);
+    --_speed-dial-action-icon-size: var(--mx-speed-dial-action-icon-size);
+    --_speed-dial-action-icon-bg: var(--mx-speed-dial-action-icon-bg);
+    --_speed-dial-label-bg: var(--mx-speed-dial-label-bg);
+    --_speed-dial-label-color: var(--mx-speed-dial-label-color);
+    --_speed-dial-label-radius: var(--mx-speed-dial-label-radius);
+    --_speed-dial-label-padding: var(--mx-speed-dial-label-padding);
+    --_speed-dial-label-font-size: var(--mx-speed-dial-label-font-size);
+    --_speed-dial-label-shadow: var(--mx-speed-dial-label-shadow);
+    --_speed-dial-label-border-width: var(--mx-speed-dial-label-border-width);
+    --_speed-dial-label-border-color: var(--mx-speed-dial-label-border-color);
+    --_speed-dial-action-shadow: var(--mx-speed-dial-action-shadow);
+  }
+
   .mx-spinner, .mx-button__spinner, .mx-drop-down__spinner {
     --_spinner-gap: var(--mx-spinner-gap);
     --_spinner-cover-padding: var(--mx-spinner-cover-padding);
@@ -3555,6 +3605,29 @@
     --_treeview-retry-radius: var(--mx-treeview-retry-radius);
     --_treeview-retry-color: var(--mx-treeview-retry-color);
     --_treeview-retry-text-decoration: var(--mx-treeview-retry-text-decoration);
+  }
+
+  .mx-validation-summary {
+    --_validation-summary-gap: var(--mx-validation-summary-gap);
+    --_validation-summary-line-gap: var(--mx-validation-summary-line-gap);
+    --_validation-summary-box-bg: var(--mx-validation-summary-box-bg);
+    --_validation-summary-box-border-width: var(--mx-validation-summary-box-border-width);
+    --_validation-summary-box-border-color: var(--mx-validation-summary-box-border-color);
+    --_validation-summary-box-radius: var(--mx-validation-summary-box-radius);
+    --_validation-summary-box-padding: var(--mx-validation-summary-box-padding);
+    --_validation-summary-icon-icon: var(--mx-validation-summary-icon-icon);
+    --_validation-summary-icon-size: var(--mx-validation-summary-icon-size);
+    --_validation-summary-icon-bg: var(--mx-validation-summary-icon-bg);
+    --_validation-summary-header-color: var(--mx-validation-summary-header-color);
+    --_validation-summary-header-font-weight: var(--mx-validation-summary-header-font-weight);
+    --_validation-summary-item-color: var(--mx-validation-summary-item-color);
+    --_validation-summary-item-radius: var(--mx-validation-summary-item-radius);
+    --_validation-summary-item-hover-text-decoration: var(--mx-validation-summary-item-hover-text-decoration);
+    --_validation-summary-item-hover-cursor: var(--mx-validation-summary-item-hover-cursor);
+    --_validation-summary-item-focus-glow: var(--mx-validation-summary-item-focus-glow);
+    --_validation-summary-item-focus-outline-width: var(--mx-validation-summary-item-focus-outline-width);
+    --_validation-summary-item-focus-outline-color: var(--mx-validation-summary-item-focus-outline-color);
+    --_validation-summary-item-focus-outline-offset: var(--mx-validation-summary-item-focus-outline-offset);
   }
 
   .mx-form, .mx-message-box {

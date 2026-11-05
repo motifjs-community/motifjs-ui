@@ -6842,6 +6842,138 @@
     opacity: var(--_sortable-ghost-opacity, 1);
   }
 
+  .mx-speed-dial__main {
+    inline-size: var(--_speed-dial-main-size, auto);
+    block-size: var(--_speed-dial-main-size, auto);
+    gap: var(--_speed-dial-main-gap, normal);
+    background-color: var(--_speed-dial-main-bg, transparent);
+    border-start-start-radius: var(--_speed-dial-main-radius, 0px);
+    border-start-end-radius: var(--_speed-dial-main-radius, 0px);
+    border-end-start-radius: var(--_speed-dial-main-radius, 0px);
+    border-end-end-radius: var(--_speed-dial-main-radius, 0px);
+    box-shadow: 0 0 #0000, var(--_speed-dial-main-shadow, 0 0 #0000);
+    color: var(--_speed-dial-main-color, inherit);
+    outline-style: solid;
+    outline-width: 0px;
+    cursor: default;
+  }
+
+  .mx-speed-dial:not([data-disabled]) > .mx-speed-dial__main:hover {
+    background-color: var(--_speed-dial-main-hover-bg, var(--_speed-dial-main-bg, transparent));
+    cursor: var(--_speed-dial-main-hover-cursor, default);
+  }
+
+  .mx-speed-dial:not([data-disabled]) > .mx-speed-dial__main:active {
+    background-color: var(--_speed-dial-main-pressed-bg, var(--_speed-dial-main-hover-bg, var(--_speed-dial-main-bg, transparent)));
+  }
+
+  .mx-speed-dial__main:focus-visible {
+    box-shadow: var(--_speed-dial-main-focus-glow, 0 0 #0000), var(--_speed-dial-main-shadow, 0 0 #0000);
+    outline-width: var(--_speed-dial-main-focus-outline-width, 0px);
+    outline-color: var(--_speed-dial-main-focus-outline-color, currentcolor);
+    outline-offset: var(--_speed-dial-main-focus-outline-offset, 0px);
+  }
+
+  .mx-speed-dial[data-extended] > .mx-speed-dial__main {
+    inline-size: var(--_speed-dial-main-extended-width, var(--_speed-dial-main-size, auto));
+    padding-block-start: var(--_speed-dial-main-extended-padding, 0px);
+    padding-inline-end: var(--_speed-dial-main-extended-padding, 0px);
+    padding-block-end: var(--_speed-dial-main-extended-padding, 0px);
+    padding-inline-start: var(--_speed-dial-main-extended-padding, 0px);
+  }
+
+  .mx-speed-dial[data-disabled] > .mx-speed-dial__main {
+    opacity: var(--_speed-dial-main-disabled-opacity, 1);
+  }
+
+  .mx-speed-dial__main-glyph {
+    inline-size: var(--_speed-dial-main-glyph-size, auto);
+    block-size: var(--_speed-dial-main-glyph-size, auto);
+    background-color: var(--_speed-dial-main-glyph-bg, transparent);
+  }
+
+  .mx-speed-dial__main-text {
+    font-weight: var(--_speed-dial-main-text-font-weight, inherit);
+  }
+
+  .mx-speed-dial__fan {
+    gap: var(--_speed-dial-gap);
+  }
+
+  .mx-speed-dial__action {
+    inline-size: var(--_speed-dial-action-size, auto);
+    block-size: var(--_speed-dial-action-size, auto);
+    background-color: var(--_speed-dial-action-bg, transparent);
+    border-style: solid;
+    border-block-start-width: var(--_speed-dial-action-border-width, 0px);
+    border-inline-end-width: var(--_speed-dial-action-border-width, 0px);
+    border-block-end-width: var(--_speed-dial-action-border-width, 0px);
+    border-inline-start-width: var(--_speed-dial-action-border-width, 0px);
+    border-block-start-color: var(--_speed-dial-action-border-color, currentcolor);
+    border-inline-end-color: var(--_speed-dial-action-border-color, currentcolor);
+    border-block-end-color: var(--_speed-dial-action-border-color, currentcolor);
+    border-inline-start-color: var(--_speed-dial-action-border-color, currentcolor);
+    border-start-start-radius: var(--_speed-dial-action-radius, 0px);
+    border-start-end-radius: var(--_speed-dial-action-radius, 0px);
+    border-end-start-radius: var(--_speed-dial-action-radius, 0px);
+    border-end-end-radius: var(--_speed-dial-action-radius, 0px);
+    box-shadow: 0 0 #0000, var(--_speed-dial-action-shadow, 0 0 #0000);
+    color: var(--_speed-dial-action-color, inherit);
+    outline-style: solid;
+    outline-width: 0px;
+    cursor: default;
+  }
+
+  .mx-speed-dial__action:not([aria-disabled='true']):hover {
+    background-color: var(--_speed-dial-action-hover-bg, var(--_speed-dial-action-bg, transparent));
+    cursor: var(--_speed-dial-action-hover-cursor, default);
+  }
+
+  .mx-speed-dial__action:not([aria-disabled='true']):active {
+    background-color: var(--_speed-dial-action-pressed-bg, var(--_speed-dial-action-hover-bg, var(--_speed-dial-action-bg, transparent)));
+  }
+
+  .mx-speed-dial__action:focus-visible {
+    box-shadow: var(--_speed-dial-action-focus-glow, 0 0 #0000), var(--_speed-dial-action-shadow, 0 0 #0000);
+    outline-width: var(--_speed-dial-action-focus-outline-width, 0px);
+    outline-color: var(--_speed-dial-action-focus-outline-color, currentcolor);
+    outline-offset: var(--_speed-dial-action-focus-outline-offset, 0px);
+  }
+
+  .mx-speed-dial__action[aria-disabled='true'] {
+    opacity: var(--_speed-dial-action-disabled-opacity, 1);
+  }
+
+  .mx-speed-dial__action-icon {
+    inline-size: var(--_speed-dial-action-icon-size, auto);
+    block-size: var(--_speed-dial-action-icon-size, auto);
+    background-color: var(--_speed-dial-action-icon-bg, transparent);
+  }
+
+  .mx-speed-dial__label {
+    padding-block-start: var(--_speed-dial-label-padding, 0px);
+    padding-inline-end: var(--_speed-dial-label-padding, 0px);
+    padding-block-end: var(--_speed-dial-label-padding, 0px);
+    padding-inline-start: var(--_speed-dial-label-padding, 0px);
+    background-color: var(--_speed-dial-label-bg, transparent);
+    border-style: solid;
+    border-block-start-width: var(--_speed-dial-label-border-width, 0px);
+    border-inline-end-width: var(--_speed-dial-label-border-width, 0px);
+    border-block-end-width: var(--_speed-dial-label-border-width, 0px);
+    border-inline-start-width: var(--_speed-dial-label-border-width, 0px);
+    border-block-start-color: var(--_speed-dial-label-border-color, currentcolor);
+    border-inline-end-color: var(--_speed-dial-label-border-color, currentcolor);
+    border-block-end-color: var(--_speed-dial-label-border-color, currentcolor);
+    border-inline-start-color: var(--_speed-dial-label-border-color, currentcolor);
+    border-start-start-radius: var(--_speed-dial-label-radius, 0px);
+    border-start-end-radius: var(--_speed-dial-label-radius, 0px);
+    border-end-start-radius: var(--_speed-dial-label-radius, 0px);
+    border-end-end-radius: var(--_speed-dial-label-radius, 0px);
+    box-shadow: var(--_speed-dial-label-shadow, none);
+    color: var(--_speed-dial-label-color, inherit);
+    font-size: var(--_speed-dial-label-font-size, inherit);
+  }
+
   .mx-spinner[data-contained] .mx-spinner__box {
     padding-block-start: var(--_spinner-box-contained-padding, 0px);
     padding-inline-end: var(--_spinner-box-contained-padding, 0px);
@@ -8972,6 +9104,62 @@
     color: var(--_treeview-retry-color, inherit);
     text-decoration-line: var(--_treeview-retry-text-decoration, none);
     cursor: pointer;
+  }
+
+  .mx-validation-summary {
+    padding-block-start: var(--_validation-summary-box-padding, 0px);
+    padding-inline-end: var(--_validation-summary-box-padding, 0px);
+    padding-block-end: var(--_validation-summary-box-padding, 0px);
+    padding-inline-start: var(--_validation-summary-box-padding, 0px);
+    background-color: var(--_validation-summary-box-bg, transparent);
+    border-style: solid;
+    border-block-start-width: var(--_validation-summary-box-border-width, 0px);
+    border-inline-end-width: var(--_validation-summary-box-border-width, 0px);
+    border-block-end-width: var(--_validation-summary-box-border-width, 0px);
+    border-inline-start-width: var(--_validation-summary-box-border-width, 0px);
+    border-block-start-color: var(--_validation-summary-box-border-color, currentcolor);
+    border-inline-end-color: var(--_validation-summary-box-border-color, currentcolor);
+    border-block-end-color: var(--_validation-summary-box-border-color, currentcolor);
+    border-inline-start-color: var(--_validation-summary-box-border-color, currentcolor);
+    border-start-start-radius: var(--_validation-summary-box-radius, 0px);
+    border-start-end-radius: var(--_validation-summary-box-radius, 0px);
+    border-end-start-radius: var(--_validation-summary-box-radius, 0px);
+    border-end-end-radius: var(--_validation-summary-box-radius, 0px);
+  }
+
+  .mx-validation-summary__icon {
+    inline-size: var(--_validation-summary-icon-size, auto);
+    block-size: var(--_validation-summary-icon-size, auto);
+    background-color: var(--_validation-summary-icon-bg, transparent);
+    --_icon: var(--_validation-summary-icon-icon, none);
+  }
+
+  .mx-validation-summary__header-text {
+    color: var(--_validation-summary-header-color, inherit);
+    font-weight: var(--_validation-summary-header-font-weight, inherit);
+  }
+
+  .mx-validation-summary__item {
+    border-start-start-radius: var(--_validation-summary-item-radius, 0px);
+    border-start-end-radius: var(--_validation-summary-item-radius, 0px);
+    border-end-start-radius: var(--_validation-summary-item-radius, 0px);
+    border-end-end-radius: var(--_validation-summary-item-radius, 0px);
+    color: var(--_validation-summary-item-color, inherit);
+    outline-style: solid;
+    outline-width: 0px;
+    cursor: default;
+  }
+
+  .mx-validation-summary__item:hover {
+    text-decoration-line: var(--_validation-summary-item-hover-text-decoration, none);
+    cursor: var(--_validation-summary-item-hover-cursor, default);
+  }
+
+  .mx-validation-summary__item:focus-visible {
+    box-shadow: var(--_validation-summary-item-focus-glow, 0 0 #0000), 0 0 #0000;
+    outline-width: var(--_validation-summary-item-focus-outline-width, 0px);
+    outline-color: var(--_validation-summary-item-focus-outline-color, currentcolor);
+    outline-offset: var(--_validation-summary-item-focus-outline-offset, 0px);
   }
 
   .mx-form::backdrop {

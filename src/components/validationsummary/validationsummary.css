@@ -1,0 +1,48 @@
+/* ValidationSummary: a header with a glyph and a list of lines, one per failed field, out of sight while nothing
+   has failed. Only the layout is here: the box, the header and its glyph, a line are units of the schema. */
+@layer mx.components {
+    .mx-validation-summary {
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        min-inline-size: 0;
+        gap: var(--_validation-summary-gap);
+    }
+
+    .mx-validation-summary[hidden],
+    .mx-validation-summary[data-empty] {
+        display: none;
+    }
+
+    .mx-validation-summary__header {
+        display: flex;
+        align-items: center;
+        gap: var(--_validation-summary-gap);
+        margin: 0;
+    }
+
+    .mx-validation-summary__header[hidden] {
+        display: none;
+    }
+
+    .mx-validation-summary__list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--_validation-summary-line-gap);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .mx-validation-summary__item {
+        display: inline-block;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        appearance: none;
+    }
+}

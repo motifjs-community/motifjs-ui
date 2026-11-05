@@ -606,5 +606,7 @@
   "tiles": "Karolar",
   "move": "Taşı",
   "sizeNow": "Genişlik {width, number}, yükseklik {height, number}",
-  "positionNow": "Yana {x, number}, aşağı {y, number} taşındı"
+  "positionNow": "Yana {x, number}, aşağı {y, number} taşındı",
+  "actions": "Eylemler",
+  "validationSummary": "Lütfen şunları düzeltin"
 }

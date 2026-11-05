@@ -1,0 +1,31 @@
+{
+  "validation-summary": {
+    "$description": "ValidationSummary: the failed fields of a group, one line each under a header.",
+    "$selector": ".mx-validation-summary",
+    "gap": { "$type": "dimension", "$description": "Between the header and the list, and between the glyph and the header's text." },
+    "line-gap": { "$type": "dimension", "$description": "Between the lines." },
+    "$units": {
+      "box": {
+        "$description": "The summary's box.",
+        "selector": ".mx-validation-summary"
+      },
+      "icon": {
+        "$description": "The glyph before the header: `icon` its shape, `bg` its colour, `size` its size.",
+        "selector": ".mx-validation-summary__icon"
+      },
+      "header": {
+        "$description": "The header's text.",
+        "selector": ".mx-validation-summary__header-text"
+      },
+      "item": {
+        "$description": "A line, pressed to reach its field: `hover`, `focus`.",
+        "selector": ".mx-validation-summary__item",
+        "defaults": { "cursor": "default" },
+        "states": {
+          "hover": ".mx-validation-summary__item:hover",
+          "focus": ".mx-validation-summary__item:focus-visible"
+        }
+      }
+    }
+  }
+}

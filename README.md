@@ -41,12 +41,12 @@ each (`npm run dev`).
 
 | Group | Components |
 | --- | --- |
-| Buttons and commands | `Button` (menu, split, drop-down, toggle, busy), `ButtonGroup` (segmented choice), `Toolbar` (overflow menu), `MenuBar`, `ContextMenu` |
+| Buttons and commands | `Button` (menu, split, drop-down, toggle, busy), `ButtonGroup` (segmented choice), `Toolbar` (overflow menu), `MenuBar`, `ContextMenu`, `SpeedDial` (a fan of actions in a corner) |
 | Display | `Badge`, `Avatar`, `AvatarGroup`, `Chip`, `ChipGroup`, `Card`, `Skeleton`, `Gallery` (slides, dots, slideshow), `TileView` (tiles on a grid, chosen, reordered) |
 | Navigation | `Tabs`, `Accordion`, `Breadcrumb`, `Pagination`, `Stepper`, `Wizard`, `MultiView` (pages by swipe), `TabDocumentManager` |
 | More editors | `Rating`, `ColorBox`, `ColorPicker` |
 | Scheduling | `Scheduler` (day, week, month, timeline, agenda; recurrence, resources, iCalendar) |
-| Editors | `TextBox` (mask, validation), `TextArea` (auto-grow), `NumberBox` (locale formats, spin), `DateBox` (date, time, both), `DateRangeBox` (two months, presets, a span), `Calendar`, `Slider` (range), `FileUploader` (drop, limits, chunks, progress) |
+| Editors | `TextBox` (mask, validation), `TextArea` (auto-grow), `NumberBox` (locale formats, spin), `DateBox` (date, time, both), `DateRangeBox` (two months, presets, a span), `Calendar`, `Slider` (range), `FileUploader` (drop, limits, chunks, progress), `ValidationSummary` (the failed fields of a group, each a press away) |
 | Choice | `CheckBox` (three states), `Switch`, `RadioGroup`, `DropDown`, `ComboBox`, `Autocomplete`, `Lookup` (columns), `TagBox`, `ListBox` |
 | Data | `DataGrid` (virtual or paged, editing with three save modes, row actions, selection, filters, search panel, grouping with a group panel, toolbar, lookup columns, copy and paste, CSV and Excel export, kept layout), `TreeView` (lazy, check boxes, filter); lists and grids read `@motifx-community/data` sources |
 | Layout and windows | `Stack`, `Grid`, `DockPanel`, `Panel`, `GroupBox`, `SplitContainer`, `Splitter` (any number of panes, hidden from the handle), `ScrollView` (pull to refresh, load more), `Sortable` (drag or keys, lists of a group), `Resizable` (sides, corners, the keys on a grip), `Draggable` and `DropTarget` (anything moved, along an axis or inside a boundary, copies into targets), `FormLayout`, `Tabs`, `Accordion`, `MxForm` (window and modal form), `messageBox`, `confirm` |
