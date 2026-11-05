@@ -46,6 +46,8 @@
 @import '../components/loadpanel/loadpanel.css';
 @import '../components/daterangebox/daterangebox.css';
 @import '../components/fileuploader/fileuploader.css';
+@import '../components/sortable/sortable.css';
+@import '../components/scrollview/scrollview.css';
 @import '../components/toast/toast.css';
 @import '../components/tabs/tabs.css';
 @import '../components/tabdocs/tabdocs.css';

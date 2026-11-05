@@ -1,0 +1,55 @@
+/* Sortable: the items as they are, one under the other or side by side, a line where a drop would land, a copy of
+   the item after the pointer. Only the layout is here: the container, an item (dragged or not), the line and the copy
+   are units of the schema. */
+@layer mx.components {
+    .mx-sortable {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-inline-size: 0;
+    }
+
+    .mx-sortable[data-orientation='horizontal'] {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .mx-sortable__item {
+        touch-action: pan-y;
+    }
+
+    .mx-sortable[data-orientation='horizontal'] > .mx-sortable__item {
+        touch-action: pan-x;
+    }
+
+    .mx-sortable__item[data-dragging] {
+        pointer-events: none;
+    }
+
+    .mx-sortable__line {
+        position: absolute;
+        z-index: var(--mx-z-sticky);
+        pointer-events: none;
+    }
+
+    .mx-sortable:not([data-orientation='horizontal']) > .mx-sortable__line {
+        inset-inline: 0;
+        translate: 0 -50%;
+    }
+
+    .mx-sortable[data-orientation='horizontal'] > .mx-sortable__line {
+        inset-block: 0;
+        translate: -50% 0;
+    }
+
+    .mx-sortable[data-orientation='horizontal'] > .mx-sortable__line:dir(rtl) {
+        translate: 50% 0;
+    }
+
+    .mx-sortable__ghost {
+        position: fixed;
+        z-index: var(--mx-z-toast);
+        pointer-events: none;
+    }
+}

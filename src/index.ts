@@ -30,6 +30,8 @@ export * from './components/popover';
 export * from './components/loadpanel';
 export * from './components/daterangebox';
 export * from './components/fileuploader';
+export * from './components/sortable';
+export * from './components/scrollview';
 export * from './components/pagination';
 export * from './components/toast';
 export * from './components/tabs';

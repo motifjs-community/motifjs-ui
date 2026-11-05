@@ -50,6 +50,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   drawer: () => import('../pages/drawer/DrawerPage'),
   actionsheet: () => import('../pages/actionsheet/ActionSheetPage'),
   layout: () => import('../pages/layout/LayoutPage'),
+  scrollview: () => import('../pages/scrollview/ScrollViewPage'),
+  sortable: () => import('../pages/sortable/SortablePage'),
   formlayout: () => import('../pages/formlayout/FormLayoutPage'),
   treeview: () => import('../pages/treeview/TreeViewPage'),
   listbox: () => import('../pages/listbox/ListBoxPage'),

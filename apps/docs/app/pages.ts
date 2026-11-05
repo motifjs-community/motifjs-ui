@@ -93,6 +93,8 @@ export const GROUPS = [
       { id: 'drawer', label: 'Drawer', title: 'Drawer', path: '/drawer', related: ['bottomsheet', 'actionsheet', 'layout'] },
       { id: 'actionsheet', label: 'ActionSheet', title: 'ActionSheet', path: '/actionsheet', related: ['bottomsheet', 'menus', 'drawer'] },
       { id: 'layout', label: 'Layout', title: 'Layout', path: '/layout', related: ['tabs', 'accordion'] },
+      { id: 'scrollview', label: 'ScrollView', title: 'ScrollView', path: '/scrollview', related: ['layout', 'datagrid', 'progress'] },
+      { id: 'sortable', label: 'Sortable', title: 'Sortable', path: '/sortable', related: ['layout', 'treeview', 'chip'] },
       { id: 'formlayout', label: 'FormLayout', title: 'FormLayout', path: '/formlayout', related: ['textbox', 'dropdown'] },
     ],
   },

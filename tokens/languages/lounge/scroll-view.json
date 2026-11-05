@@ -1,0 +1,50 @@
+{
+  "scroll-view": {
+    "panel-height": {
+      "$value": {
+        "value": 3,
+        "unit": "rem"
+      }
+    },
+    "panel-gap": {
+      "$value": "{space.2}"
+    },
+    "box": {
+      "focus": {
+        "glow": {
+          "$value": "{focus.ring.halo}"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.offset}"
+        }
+      }
+    },
+    "pull": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "refreshing": {
+        "color": {
+          "$value": "{color.fg.primary}"
+        }
+      }
+    },
+    "bottom": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-size": {
+        "$value": "{font.size.caption}"
+      }
+    }
+  }
+}

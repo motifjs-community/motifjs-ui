@@ -608,4 +608,9 @@ export interface UiStrings {
   fileFailed: string;
   fileAborted: string;
   fileAbort: string;
+  /** The sortable and the scroll view. */
+  sortableMoved: string;
+  scrollPullDown: string;
+  scrollRelease: string;
+  scrollRefreshing: string;
 }

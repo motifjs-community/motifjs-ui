@@ -1,0 +1,35 @@
+{
+  "sortable": {
+    "$description": "Sortable: items put in order by dragging; a line where a drop would land, a copy after the pointer.",
+    "$selector": ".mx-sortable",
+    "gap": { "$type": "dimension", "$description": "Between the items." },
+    "$units": {
+      "container": {
+        "$description": "The list of items: `target` while a dragged item may land in it.",
+        "selector": ".mx-sortable",
+        "defaults": { "gap": "var(--_sortable-gap)" },
+        "states": {
+          "target": ".mx-sortable[data-drop-target]"
+        }
+      },
+      "item": {
+        "$description": "An item that can be moved (`sortable`), and the one being dragged (`dragging`: left faint in its place).",
+        "selector": ".mx-sortable__item",
+        "states": {
+          "sortable": ".mx-sortable[data-sortable] > .mx-sortable__item",
+          "dragging": ".mx-sortable__item[data-dragging]",
+          "focus": ".mx-sortable__item:focus-visible"
+        }
+      },
+      "line": {
+        "$description": "The line where a drop would land: its thickness is `height` (lying), its colour `bg`.",
+        "selector": ".mx-sortable__line",
+        "turn": { "where": ".mx-sortable[data-orientation='horizontal']", "what": ["size", "radius", "margin", "padding", "border"] }
+      },
+      "ghost": {
+        "$description": "The copy of the item after the pointer.",
+        "selector": ".mx-sortable__ghost"
+      }
+    }
+  }
+}

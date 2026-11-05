@@ -1,0 +1,37 @@
+{
+  "scroll-view": {
+    "$description": "ScrollView: content that scrolls in a box of its own, a pull-down panel above it and a loading panel under it.",
+    "$selector": ".mx-scroll-view",
+    "panel-height": { "$type": "dimension", "$description": "The pull-down and the loading panels." },
+    "panel-gap": { "$type": "dimension", "$description": "Between a panel's indicator and its text." },
+    "$units": {
+      "box": {
+        "$description": "The box that scrolls: `focus` when the keys put focus on it.",
+        "selector": ".mx-scroll-view",
+        "states": {
+          "focus": ".mx-scroll-view:focus-visible"
+        }
+      },
+      "pull": {
+        "$description": "The panel above the content, shown as it is pulled: `release` once far enough, `refreshing` while it refreshes.",
+        "selector": ".mx-scroll-view__pull",
+        "states": {
+          "release": ".mx-scroll-view[data-pull-state='release'] .mx-scroll-view__pull",
+          "refreshing": ".mx-scroll-view[data-pull-state='refreshing'] .mx-scroll-view__pull"
+        }
+      },
+      "pull-text": {
+        "$description": "The pull panel's text.",
+        "selector": ".mx-scroll-view__pull-text"
+      },
+      "bottom": {
+        "$description": "The panel under the content while more loads.",
+        "selector": ".mx-scroll-view__bottom"
+      },
+      "bottom-text": {
+        "$description": "The loading panel's text.",
+        "selector": ".mx-scroll-view__bottom-text"
+      }
+    }
+  }
+}

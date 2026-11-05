@@ -2371,6 +2371,20 @@
     --_scheduler-agenda-weekday-text-transform: var(--mx-scheduler-agenda-weekday-text-transform);
   }
 
+  .mx-scroll-view {
+    --_scroll-view-panel-height: var(--mx-scroll-view-panel-height);
+    --_scroll-view-panel-gap: var(--mx-scroll-view-panel-gap);
+    --_scroll-view-box-focus-glow: var(--mx-scroll-view-box-focus-glow);
+    --_scroll-view-box-focus-outline-width: var(--mx-scroll-view-box-focus-outline-width);
+    --_scroll-view-box-focus-outline-color: var(--mx-scroll-view-box-focus-outline-color);
+    --_scroll-view-box-focus-outline-offset: var(--mx-scroll-view-box-focus-outline-offset);
+    --_scroll-view-pull-color: var(--mx-scroll-view-pull-color);
+    --_scroll-view-pull-font-size: var(--mx-scroll-view-pull-font-size);
+    --_scroll-view-pull-refreshing-color: var(--mx-scroll-view-pull-refreshing-color);
+    --_scroll-view-bottom-color: var(--mx-scroll-view-bottom-color);
+    --_scroll-view-bottom-font-size: var(--mx-scroll-view-bottom-font-size);
+  }
+
   .mx-bottom-sheet {
     --_sheet-font-family: var(--mx-sheet-font-family);
     --_sheet-inset: var(--mx-sheet-inset);
@@ -2520,6 +2534,23 @@
     --_slider-stop-radius: var(--mx-slider-stop-radius);
     --_slider-stop-bg: var(--mx-slider-stop-bg);
     --_slider-stop-active-bg: var(--mx-slider-stop-active-bg);
+  }
+
+  .mx-sortable {
+    --_sortable-gap: var(--mx-sortable-gap);
+    --_sortable-container-target-bg: var(--mx-sortable-container-target-bg);
+    --_sortable-item-sortable-cursor: var(--mx-sortable-item-sortable-cursor);
+    --_sortable-item-dragging-opacity: var(--mx-sortable-item-dragging-opacity);
+    --_sortable-item-focus-glow: var(--mx-sortable-item-focus-glow);
+    --_sortable-item-focus-outline-width: var(--mx-sortable-item-focus-outline-width);
+    --_sortable-item-focus-outline-color: var(--mx-sortable-item-focus-outline-color);
+    --_sortable-item-focus-outline-offset: var(--mx-sortable-item-focus-outline-offset);
+    --_sortable-line-height: var(--mx-sortable-line-height);
+    --_sortable-line-radius: var(--mx-sortable-line-radius);
+    --_sortable-line-bg: var(--mx-sortable-line-bg);
+    --_sortable-ghost-radius: var(--mx-sortable-ghost-radius);
+    --_sortable-ghost-shadow: var(--mx-sortable-ghost-shadow);
+    --_sortable-ghost-opacity: var(--mx-sortable-ghost-opacity);
   }
 
   .mx-spinner, .mx-button__spinner, .mx-drop-down__spinner {

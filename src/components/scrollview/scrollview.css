@@ -1,0 +1,59 @@
+/* ScrollView: the box that scrolls, its content, a pull-down panel kept above the content and shown by moving the
+   content down, a panel under the content while more loads. Only the layout is here: the box, the two panels and
+   their texts are units of the schema. The scrollbars are the design system's; `data-bars` says when they show:
+   `always` as they are, `onScroll` and `onHover` with the thumb clear until scrolling or the pointer, `never` none. */
+@layer mx.components {
+    .mx-scroll-view {
+        position: relative;
+        box-sizing: border-box;
+        min-inline-size: 0;
+        min-block-size: 0;
+        overflow: auto;
+        overscroll-behavior: contain;
+    }
+
+    .mx-scroll-view[data-direction='vertical'] {
+        overflow-x: hidden;
+    }
+
+    .mx-scroll-view[data-direction='horizontal'] {
+        overflow-y: hidden;
+    }
+
+    .mx-scroll-view[data-bars='never'] {
+        scrollbar-width: none;
+    }
+
+    .mx-scroll-view[data-bars='never']::-webkit-scrollbar {
+        display: none;
+    }
+
+    .mx-scroll-view[data-bars='onScroll']:not([data-scrolling])::-webkit-scrollbar-thumb,
+    .mx-scroll-view[data-bars='onHover']:not(:hover, :focus-within)::-webkit-scrollbar-thumb {
+        background-color: transparent;
+    }
+
+    .mx-scroll-view__content {
+        min-inline-size: 100%;
+        transition: translate var(--mx-motion-duration-normal) var(--mx-motion-easing-out);
+    }
+
+    .mx-scroll-view[data-pulling] > .mx-scroll-view__content {
+        transition: none;
+    }
+
+    .mx-scroll-view__pull,
+    .mx-scroll-view__bottom {
+        display: flex;
+        box-sizing: border-box;
+        align-items: center;
+        justify-content: center;
+        gap: var(--_scroll-view-panel-gap);
+        block-size: var(--_scroll-view-panel-height);
+    }
+
+    /* Above the content, out of sight until the content is pulled down. */
+    .mx-scroll-view__pull {
+        margin-block-start: calc(-1 * var(--_scroll-view-panel-height));
+    }
+}

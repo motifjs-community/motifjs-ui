@@ -41,6 +41,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `Content-Range`, with progress) or by your own `upload`; cancel, retry and remove on each row; a field (label,
   `required`, rules); kit glyphs `upload` and `file`.
 - Kit texts for both, in English and Turkish.
+- `Sortable`: items the user puts in order by dragging them, with the pointer or a finger (a long press), or
+  with the keys (Ctrl + an arrow, Home, End; each move read out); a copy follows the pointer, a line shows where
+  it would land, the list scrolls near its edges; sortables of one `group` take each other's items; the items
+  are the JSX children, or `items` drawn with `itemTemplate` (the rows keyed by item, kept as the order
+  changes); a `handle` takes the drag and the keys; `onDragStarting`, `onDragChanging` and `onDragEnding` may
+  refuse; `onReorder`, `onRemove` and `onAdd` tell the indexes and the data stays yours; `move()` from code.
+  Units in the five languages: the list, an item, the line, the copy.
+- `ScrollView`: content that scrolls in a box of its own; the bars shown on scroll, on hover, always or never;
+  pull to refresh with a finger or the pointer (`onPullDown`, a promise or `release()`); more loaded near the
+  end (`onReachBottom`, `reachBottomOffset`, `release(true)` when there is no more; content that does not fill
+  the box asks at once, and again as it grows); `scrollTo`, `scrollBy`, `scrollToElement`, `onScrolled`.
+- Kit texts `sortableMoved`, `scrollPullDown`, `scrollRelease` and `scrollRefreshing` in English and Turkish.
 
 ### Language
 

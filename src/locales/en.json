@@ -586,5 +586,9 @@
   "fileUploaded": "Uploaded",
   "fileFailed": "Could not upload.",
   "fileAborted": "Cancelled",
-  "fileAbort": "Cancel the upload of {name}"
+  "fileAbort": "Cancel the upload of {name}",
+  "sortableMoved": "Moved to {index, number} of {count, number}",
+  "scrollPullDown": "Pull down to refresh",
+  "scrollRelease": "Release to refresh",
+  "scrollRefreshing": "Refreshing…"
 }

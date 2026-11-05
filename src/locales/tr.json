@@ -586,5 +586,9 @@
   "fileUploaded": "Yüklendi",
   "fileFailed": "Yüklenemedi.",
   "fileAborted": "İptal edildi",
-  "fileAbort": "{name} yüklemesini iptal et"
+  "fileAbort": "{name} yüklemesini iptal et",
+  "sortableMoved": "{count, number} içinde {index, number}. sıraya taşındı",
+  "scrollPullDown": "Yenilemek için aşağı çekin",
+  "scrollRelease": "Yenilemek için bırakın",
+  "scrollRefreshing": "Yenileniyor…"
 }
