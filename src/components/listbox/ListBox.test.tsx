@@ -2,7 +2,7 @@ import { Component, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { ListBox } from './ListBox';
 import { dataKinds } from '../../../tests/data-kinds';
 
@@ -11,7 +11,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -207,7 +207,7 @@ describe('ListBox', () => {
     click(option(c, 'Select all'));
     expect(c.value).toEqual([]);
 
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(texts(c)[0]).toBe('Tümünü seç');
     c.selectAll = false;

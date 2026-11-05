@@ -68,6 +68,7 @@
     "sizes": "node scripts/sizes.mjs",
     "e2e": "node e2e/docs-smoke.mjs",
     "llms": "node scripts/build-llms.mjs",
+    "locales": "node scripts/check-locales.mjs",
     "fingerprint": "node e2e/fingerprint.mjs",
     "fingerprint:compare": "node e2e/fingerprint-compare.mjs",
     "check": "npm run typecheck && npm run lint:jsx && npm run lint:css && npm test && npm run build && npm run docs:build",

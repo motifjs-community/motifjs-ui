@@ -1,5 +1,5 @@
 import { reactive } from '@motifx/core';
-import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** The name of a split button's arrow, from uiLocale: a shipped language or a text of your own. */
@@ -8,7 +8,7 @@ export default function Localization() {
 
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
 
   return (

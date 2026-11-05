@@ -1,5 +1,5 @@
 import { reactive } from '@motifx/core';
-import { Button, enStrings, toast, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, toast, uiLocale } from '@motifx-community/ui';
 
 /** Switches the names of the region and the close button. */
 export default function Localization() {
@@ -7,7 +7,7 @@ export default function Localization() {
 
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
 
   return (

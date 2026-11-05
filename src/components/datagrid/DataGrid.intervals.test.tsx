@@ -2,7 +2,7 @@ import { reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mount } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import type { ListBox } from '../listbox/ListBox';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
@@ -58,9 +58,9 @@ const listed = (grid: DataGrid<any>) => hf(grid).listBox.listItems.loaded.map((v
 type Node = { id: string; text: string; count?: number; children?: Node[] };
 const nodes = (list: readonly Node[], depth = 1): string[] => list.flatMap((n) => [`${n.text}:${n.count ?? ''}`, ...(depth > 1 && n.children ? nodes(n.children, depth - 1).map((t) => `  ${t}`) : [])]);
 
-afterEach(() => {
+afterEach(async () => {
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 describe('DataGrid header filter intervals and sources', () => {
@@ -162,7 +162,7 @@ describe('DataGrid header filter intervals and sources', () => {
     await open(grid, 'day');
     expect(listed(grid)).toHaveLength(9);
     hf(grid).close();
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     grid.settings.headerFilterDateInterval = 'quarter';
     const tr = await open(grid, 'day');
     expect(nodes(tr.tree.items, 2)[2]).toBe('  4. çeyrek:2');

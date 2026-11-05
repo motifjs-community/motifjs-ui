@@ -6,6 +6,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Language
+
+- A Language page in the docs: switching, the packs, a pack of your own, `connectI18n`, your own texts that follow,
+  a control's own `locale`, and what a pack is checked for.
+- `npm run locales` checks every pack against the built-in texts: every key, the same ICU arguments, `UiStrings` in
+  step with `en.json`; `npm run locales -- path/to/de.json` checks a pack of your own.
+- The Turkish pack is a chunk of the package, loaded when `uiLocale.use('tr')` first asks for it; it is no longer
+  in the main bundle.
+
+### Removed
+
+- `trStrings`. Switch with `await uiLocale.use('tr')`, or add the JSON from `@motifx-community/ui/locales/tr.json`
+  with `uiLocale.add('tr', pack)`.
+
 ## [0.1.0-beta.1] - 2026-11-04
 
 ### DropDown and Lookup: a value on no loaded page is asked for by key

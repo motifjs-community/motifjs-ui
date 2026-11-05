@@ -1,7 +1,7 @@
 import { Component, effect, reactive } from '@motifx/core';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import { Button } from '../button/Button';
 import { TextBox } from '../textbox/TextBox';
@@ -25,7 +25,7 @@ beforeAll(() => {
 let hosts: Component[] = [];
 
 afterEach(async () => {
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   while (windowStack.top()) windowStack.remove(windowStack.top()!);
   document.body.innerHTML = '';
@@ -531,7 +531,7 @@ describe('MxForm', () => {
     const form = new MxForm({ title: 'Lang', showMaximize: true });
     form.show(host);
     await settle();
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(tools(form).map((b) => b.getAttribute('aria-label'))).toEqual(['Büyüt', 'Kapat']);
   });
@@ -557,7 +557,7 @@ describe('messageBox and confirm', () => {
 
   it('Escape answers with the cancel button; texts follow uiLocale', async () => {
     const host = page();
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     const done = messageBox({ text: 'Kaydedilsin mi?', buttons: ['ok', 'cancel'], host });
     await settle();
     const form = host.controls.items.find((c) => c instanceof MxForm) as MxForm;

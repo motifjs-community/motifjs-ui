@@ -147,7 +147,7 @@ export type { ICalendarTimeZone } from './parts/icalendar/icalendar-time-zone';
 export type { ICalendarObservance } from './parts/icalendar/icalendar-observance';
 export type { ICalendarWriteOptions } from './parts/icalendar/icalendar-write-options';
 export { functionValue } from './core/function-value';
-export { enStrings, trStrings, uiLocale } from './core/ui-locale';
+export { enStrings, uiLocale } from './core/ui-locale';
 export { UiLocale } from './core/UiLocale';
 export type { UiPack } from './core/ui-pack';
 export type { UiPackModule } from './core/ui-pack-module';

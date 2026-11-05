@@ -2,7 +2,7 @@ import { Component, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { enStrings, uiLocale } from '../../core/ui-locale';
 import { DateBox } from '../datebox/DateBox';
 import { DropDown } from '../dropdown/DropDown';
 import { NumberBox } from '../numberbox/NumberBox';
@@ -20,7 +20,7 @@ afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
   document.documentElement.removeAttribute('dir');
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
   vi.restoreAllMocks();
 });
 
@@ -631,7 +631,7 @@ describe('FilterBuilder', () => {
   });
 
   it('writes its texts from uiLocale and from texts', async () => {
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     const b = new FilterBuilder({ fields, value: data.or(data.where('city', 'contains', 'an'), data.where('note', 'isnotblank')), texts: { filterBuilderLabel: 'Sipariş filtresi' } });
     page(b);
     await settle();

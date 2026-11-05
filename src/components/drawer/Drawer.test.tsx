@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import { Drawer } from './Drawer';
 
@@ -9,7 +9,7 @@ let hosts: Component[] = [];
 
 afterEach(async () => {
   vi.restoreAllMocks();
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   while (windowStack.top()) windowStack.remove(windowStack.top()!);
   document.body.innerHTML = '';
@@ -111,7 +111,7 @@ describe('Drawer', () => {
     drawer.size = 280;
     expect(drawer.panelElement.style.getPropertyValue('--_size')).toBe('280px');
     expect(drawer.panelElement.getAttribute('aria-label')).toBe('Side panel');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     drawer.side = 'top';
     expect(drawer.panelElement.getAttribute('aria-label')).toBe('Yan panel');
   });

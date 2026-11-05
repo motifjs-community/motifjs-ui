@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { enStrings, uiLocale } from '../../core/ui-locale';
 import { ProgressBar } from './ProgressBar';
 
 let hosts: Component[] = [];
@@ -9,7 +9,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -119,7 +119,7 @@ describe('ProgressBar', () => {
     page(<ProgressBar ref={(x: ProgressBar) => (p = x)} label={() => s.label} />);
     await settle();
     expect(p.element.getAttribute('aria-label')).toBe('Loading…');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(p.element.getAttribute('aria-label')).toBe('Yükleniyor…');
     s.label = 'Kopyalanıyor';

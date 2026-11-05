@@ -2,7 +2,7 @@ import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dataKinds } from '../../../tests/data-kinds';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { ValidationGroup } from '../../parts/validation/ValidationGroup';
 import { RadioGroup } from './RadioGroup';
 import type { RadioItem } from './radio-item';
@@ -13,7 +13,7 @@ afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
   document.documentElement.removeAttribute('dir');
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -281,7 +281,7 @@ describe('RadioGroup', () => {
     expect((await group.validate()).valid).toBe(false);
     expect(document.activeElement).toBe(g.inputs[0]);
     expect(g.listElement.getAttribute('aria-invalid')).toBe('true');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(g.element.querySelector('.mx-field__message')!.textContent).toBe('Bu alan zorunludur.');
     g.inputs[1].click();

@@ -1,5 +1,5 @@
 import { reactive } from '@motifx/core';
-import { Button, TagBox, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, TagBox, uiLocale } from '@motifx-community/ui';
 import { skills } from './skills';
 
 /** Switches the texts of every tag box on the page: remove buttons, “+3”, “Select all”. */
@@ -7,7 +7,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

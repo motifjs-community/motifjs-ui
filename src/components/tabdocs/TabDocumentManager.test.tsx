@@ -1,7 +1,7 @@
 import { Component, reactive, type ComponentBase } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { TabDocument } from './TabDocument';
 import { TabDocumentManager } from './TabDocumentManager';
 import type { TabDocumentManagerProps } from './tab-document-manager-props';
@@ -12,7 +12,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 async function settle() {
@@ -680,7 +680,7 @@ describe('TabDocumentManager: texts and announcements', () => {
     const m = manager({ texts: { tabDocsEmpty: 'Nothing here' } });
     const group = m.groups[0];
     expect(group.element.querySelector('.mx-tabdocs__empty')!.textContent).toBe('Nothing here');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(group.element.getAttribute('aria-label')).toBe('1. grup');
     m.texts = {};

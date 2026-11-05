@@ -1,7 +1,7 @@
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mount } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridColumn } from './grid-column';
@@ -98,10 +98,10 @@ const lines = (grid: DataGrid<any>) =>
 const short = (d: Date) => new Intl.DateTimeFormat('en-US', { dateStyle: 'short' }).format(d);
 const key = (el: Element, k: string, extra: KeyboardEventInit = {}) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...extra }));
 
-afterEach(() => {
+afterEach(async () => {
   document.body.innerHTML = '';
   localStorage.clear();
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 describe('total summary', () => {
@@ -194,7 +194,7 @@ describe('total summary', () => {
   });
 
   it('is turned off by the setting, an item turns itself back on, and the texts follow the locale', async () => {
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     const grid = await make({ settings: { totalSummary: false }, summary: { totalItems: [{ column: 'qty', summaryType: 'sum' }, { column: 'qty', summaryType: 'max', visible: true }] } });
     expect(totals(grid, 'qty')).toEqual(['En büyük: 120']);
     grid.settings.totalSummary = true;

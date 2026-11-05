@@ -1,5 +1,5 @@
 import { reactive } from '@motifx/core';
-import { Button, enStrings, messageBox, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, messageBox, uiLocale } from '@motifx-community/ui';
 
 /** Switches the names of the title bar buttons and of the message box buttons. */
 export default function Localization() {
@@ -7,7 +7,7 @@ export default function Localization() {
 
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
 
   const ask = () =>

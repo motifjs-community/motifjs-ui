@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { checkRules } from './check-rules';
 import type { ValidationRule } from './validation-rule';
 
-afterEach(() => {
-  uiLocale.strings = enStrings;
+afterEach(async () => {
+  await uiLocale.use('en');
 });
 
 async function messageOf<T>(value: T, rules: ValidationRule<T>[], empty = value === '' || value == null) {
@@ -50,7 +50,7 @@ describe('checkRules', () => {
   it('gives messages that follow uiLocale', async () => {
     const failed = await checkRules('', [{ type: 'required' }], true);
     expect(failed!()).toBe('This field is required.');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     expect(failed!()).toBe('Bu alan zorunludur.');
   });
 });

@@ -1,5 +1,5 @@
 import { reactive } from '@motifx/core';
-import { BottomSheet, Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { BottomSheet, Button, uiLocale } from '@motifx-community/ui';
 
 /** The handle's name and heights and the close button's name come from uiLocale. */
 export default function Localization() {
@@ -7,7 +7,7 @@ export default function Localization() {
 
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
 
   return (

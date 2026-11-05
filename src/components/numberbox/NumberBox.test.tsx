@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import { addDecimal, roundDecimal, shiftDecimal } from './decimal-math';
 import { NumberBox } from './NumberBox';
@@ -12,7 +12,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
   vi.useRealTimers();
 });
 
@@ -231,7 +231,7 @@ describe('NumberBox', () => {
     await settle();
     expect(n.isValid).toBe(false);
     expect(message(n)).toBe('Enter a value from 1 to 10.');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(message(n)).toBe('1 ile 10 arasında bir değer girin.');
   });
@@ -304,7 +304,7 @@ describe('NumberBox', () => {
     up.dispatchEvent(new MouseEvent('click', { detail: 0, bubbles: true }));
     expect(n.value).toBe(5);
     expect(up.disabled).toBe(true);
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await vi.advanceTimersByTimeAsync(0);
     expect(up.getAttribute('aria-label')).toBe('Artır');
   });

@@ -1,7 +1,7 @@
 import { Component, effect } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { TabDocument } from './TabDocument';
 import { TabDocumentManager } from './TabDocumentManager';
 import type { TabDocumentManagerProps } from './tab-document-manager-props';
@@ -22,7 +22,7 @@ afterEach(async () => {
   window.dispatchEvent(new MouseEvent('pointerdown'));
   document.body.innerHTML = '';
   rects.clear();
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
   vi.restoreAllMocks();
 });
 
@@ -364,7 +364,7 @@ describe('TabDocumentManager: hidden documents in the menus', () => {
   });
 
   it('says it in Turkish too', async () => {
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     const { m, left } = await ide();
     expect(nameOf(barClose(left))).toBe('Gizle: Outline');
     click(barClose(left));

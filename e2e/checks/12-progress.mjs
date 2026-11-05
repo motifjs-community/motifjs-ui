@@ -72,6 +72,8 @@ export default async function ({ page, base, check, axeSource, box }) {
 
   const i18n = page.locator('section[aria-labelledby="i18n"]');
   await i18n.getByRole('button', { name: 'Language: English' }).click();
+  // The pack of the language is loaded first.
+  await i18n.getByRole('progressbar', { name: 'Yükleniyor…' }).waitFor({ timeout: 3000 }).catch(() => {});
   check('uiLocale names the unlabelled ones, the locale writes the percent', (await i18n.getByRole('progressbar', { name: 'Yükleniyor…' }).getAttribute('aria-valuetext')) === '%40');
   await i18n.getByRole('button', { name: 'Dil: Türkçe' }).click();
 

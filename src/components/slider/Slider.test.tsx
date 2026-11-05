@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import { Slider } from './Slider';
 import type { SliderValue } from './slider-value';
@@ -12,7 +12,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -209,7 +209,7 @@ describe('Slider', () => {
     expect(s.price).toEqual([50, 70]);
     expect(b.element.querySelector<HTMLElement>('.mx-slider__rail')!.style.getPropertyValue('--_from')).toBe('50%');
 
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(start.getAttribute('aria-label')).toBe('En düşük');
 

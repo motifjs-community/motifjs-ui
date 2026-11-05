@@ -1,9 +1,10 @@
 import { effect } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { tick } from '../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from './ui-locale';
+import { enStrings, uiLocale } from './ui-locale';
 
-afterEach(() => {
+afterEach(async () => {
+  await uiLocale.use('en');
   uiLocale.strings = enStrings;
 });
 
@@ -13,9 +14,9 @@ describe('uiLocale', () => {
     const followed: string[] = [];
     const told = uiLocale.onChanged(() => seen.push(uiLocale.strings.close));
     const stop = effect(() => void followed.push(uiLocale.strings.close));
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await tick();
-    expect(uiLocale.strings).toBe(trStrings);
+    expect(uiLocale.strings.close).toBe('Kapat');
     const mine = { ...enStrings, close: 'Shut' };
     uiLocale.strings = mine;
     await tick();

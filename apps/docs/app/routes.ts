@@ -8,6 +8,7 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   tokens: () => import('../pages/tokens/TokensPage'),
   control: () => import('../pages/control/ControlPage'),
   keyboard: () => import('../pages/keyboard/KeyboardPage'),
+  language: () => import('../pages/language/LanguagePage'),
   button: () => import('../pages/button/ButtonPage'),
   buttongroup: () => import('../pages/buttongroup/ButtonGroupPage'),
   rating: () => import('../pages/rating/RatingPage'),

@@ -1,5 +1,5 @@
 import { reactive } from '@motifx/core';
-import { Button, enStrings, Slider, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, Slider, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the names of the thumbs; the price slider writes its numbers in the chosen language. */
@@ -7,7 +7,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

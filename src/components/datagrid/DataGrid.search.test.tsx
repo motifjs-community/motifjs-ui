@@ -2,7 +2,7 @@ import { data } from '@motifx-community/data';
 import { reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridColumn } from './grid-column';
@@ -102,10 +102,10 @@ const type = (input: HTMLInputElement, text: string) => {
   input.dispatchEvent(new Event('input', { bubbles: true }));
 };
 
-afterEach(() => {
+afterEach(async () => {
   document.body.innerHTML = '';
   localStorage.clear();
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 describe('search: the filter of each column type', () => {
@@ -367,7 +367,7 @@ describe('search: the box, the text, the saved layout', () => {
 
   it('takes the texts from uiLocale, live', async () => {
     const grid = await make({ settings: { searchPanel: true } });
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(searchInput(grid).placeholder).toBe('Ara…');
     grid.settings.searchPlaceholder = 'Sipariş ara';

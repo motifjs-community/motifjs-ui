@@ -2,7 +2,7 @@ import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dataKinds } from '../../../tests/data-kinds';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { TreeView } from './TreeView';
 import type { TreeViewExpandingEventArgs } from './tree-view-expanding-event-args';
 
@@ -21,7 +21,7 @@ afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
   document.documentElement.removeAttribute('dir');
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
   vi.restoreAllMocks();
 });
 
@@ -376,7 +376,7 @@ describe('TreeView', () => {
     const error = row(t, 'Root').querySelector('.mx-tree-view__error')!;
     expect(error.textContent).toBe('Could not load.Retry');
     expect(row(t, 'Root').getAttribute('aria-describedby')).toBe(error.id);
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(error.textContent).toBe('Yüklenemedi.Yeniden dene');
 
@@ -550,7 +550,7 @@ describe('TreeView', () => {
     page(t);
     const empty = t.element.querySelector('.mx-tree-view__empty')!;
     expect(empty.textContent).toBe('No items');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(empty.textContent).toBe('Öğe yok');
     expect(t.element.querySelector('.mx-tree-view__search input')!.getAttribute('placeholder')).toBe('Ara');

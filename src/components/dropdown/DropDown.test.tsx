@@ -2,7 +2,7 @@ import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dataKinds } from '../../../tests/data-kinds';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { DropDown } from './DropDown';
 
 let hosts: Component[] = [];
@@ -10,7 +10,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -231,7 +231,7 @@ describe('DropDown', () => {
     await settle();
     d.open();
     expect(d.element.querySelector('.mx-list__empty')!.textContent).toBe('No items');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(d.element.querySelector('.mx-list__empty')!.textContent).toBe('Öğe yok');
   });

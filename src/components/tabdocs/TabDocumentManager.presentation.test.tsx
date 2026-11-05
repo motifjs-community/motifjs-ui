@@ -2,7 +2,7 @@ import { Component } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { backButtonHolders } from '../../core/back-button';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import { TabDocument } from './TabDocument';
 import { TabDocumentManager } from './TabDocumentManager';
@@ -15,7 +15,7 @@ afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   while (windowStack.top()) windowStack.remove(windowStack.top()!);
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
   vi.restoreAllMocks();
   delete (window as { matchMedia?: unknown }).matchMedia;
 });
@@ -299,7 +299,7 @@ describe('TabDocumentManager presentations', () => {
     expect(m.findDocument('a')).toBe(null);
     expect(title.textContent).toBe('B');
     expect(count.textContent).toBe('2');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     m.activate(m.findDocument('c')!);
     await settle();
     expect(count.getAttribute('aria-label')).toBe('Açık belgeler: 2');

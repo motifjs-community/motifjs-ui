@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dataKinds } from '../../../tests/data-kinds';
 import { mount } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridAction } from './grid-action';
@@ -44,9 +44,9 @@ const approve: GridAction<Row> = { id: 'approve', text: 'Approve', visible: (row
 const print: GridAction<Row> = { id: 'print', text: 'Print', onclick: vi.fn() };
 const mail: GridAction<Row> = { id: 'mail', text: 'Mail', disabled: true, onclick: vi.fn() };
 
-afterEach(() => {
+afterEach(async () => {
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
   vi.restoreAllMocks();
 });
 
@@ -175,7 +175,7 @@ describe('DataGrid row actions', () => {
   });
 
   it('writes its texts from uiLocale', async () => {
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     const grid = await make({ actions: ['remove'] });
     expect(buttons(grid, 0)[0].getAttribute('aria-label')).toBe('Sil');
     expect(grid.element.querySelector('[role="columnheader"][data-field="mx:actions"]')!.textContent).toContain('İşlemler');

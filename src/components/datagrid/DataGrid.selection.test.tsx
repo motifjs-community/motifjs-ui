@@ -3,7 +3,7 @@ import { reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mount, mountHost } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridColumn } from './grid-column';
@@ -59,9 +59,9 @@ const click = (el: Element, init: MouseEventInit = {}) => el.dispatchEvent(new M
 const key = (el: Element, k: string, init: KeyboardEventInit = {}) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }));
 const headerCheck = (grid: DataGrid<any>) => grid.element.querySelector('[role="columnheader"][data-field="mx:select"] [role="checkbox"]') as HTMLElement;
 
-afterEach(() => {
+afterEach(async () => {
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 describe('DataGrid selection', () => {
@@ -244,7 +244,7 @@ describe('DataGrid selection', () => {
   });
 
   it('writes its texts from uiLocale', async () => {
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     const grid = await make();
     expect(headerCheck(grid).getAttribute('aria-label')).toBe('Tüm satırları seç');
     expect(cell(grid, 0, 'mx:select').querySelector('[role="checkbox"]')!.getAttribute('aria-label')).toBe('Satırı seç');

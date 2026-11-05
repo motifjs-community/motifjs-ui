@@ -1,13 +1,9 @@
 import en from '../locales/en.json';
-import tr from '../locales/tr.json';
 import { UiLocale } from './UiLocale';
 import type { UiStrings } from './ui-strings';
 
 /** The kit's built-in texts (English): what a language pack leaves out is shown in them. */
 export const enStrings: UiStrings = en;
-
-/** The Turkish pack. `uiLocale.use('tr')` loads it by itself; this is for code that assigns `uiLocale.strings`. */
-export const trStrings: UiStrings = tr;
 
 /** The page's language (`<html lang>`), else the browser's. */
 function startLocale(): string {

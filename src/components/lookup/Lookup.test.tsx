@@ -2,7 +2,7 @@ import { Component, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { DropDown } from '../dropdown/DropDown';
 import { Lookup } from './Lookup';
 import { dataKinds } from '../../../tests/data-kinds';
@@ -12,7 +12,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -101,7 +101,7 @@ describe('DropDown and Lookup over a data source', () => {
     display.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     expect(d.value).toBe(420);
     // The wait's text is the kit's, in its language.
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(text.querySelector('.mx-sr-only')!.textContent).toBe('Yükleniyor…');
 

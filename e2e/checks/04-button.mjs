@@ -95,5 +95,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.keyboard.press('Escape');
 
   await page.getByRole('button', { name: 'Language: English' }).click();
+  // The pack of the language is loaded first.
+  await page.getByRole('button', { name: 'Diğer seçenekler' }).waitFor({ timeout: 3000 }).catch(() => {});
   check('the arrow is named from uiLocale, live', (await page.getByRole('button', { name: 'Diğer seçenekler' }).count()) === 1);
 }

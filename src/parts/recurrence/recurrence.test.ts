@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { enStrings, trStrings } from '../../core/ui-locale';
+import { enStrings } from '../../core/ui-locale';
+import tr from '../../locales/tr.json';
 import { addRuleDate } from './add-rule-date';
 import { describeRecurrence } from './describe-recurrence';
 import { filterRuleDates } from './filter-rule-dates';
@@ -213,7 +214,7 @@ describe('recurrence rules: in words', () => {
     expect(say('FREQ=YEARLY')).toBe('Every year on 28 October');
     expect(say('FREQ=YEARLY;BYMONTH=11;BYDAY=-1FR')).toBe('Every year on the last Friday of November');
     expect(say('FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1')).toBe('Every month, by a rule of its own');
-    expect(say('FREQ=WEEKLY;BYDAY=MO,WE', null, 'tr-TR', trStrings)).toBe('Her hafta, Pazartesi ve Çarşamba');
-    expect(say('FREQ=MONTHLY;INTERVAL=2;BYDAY=2TU;COUNT=4', null, 'tr-TR', trStrings)).toBe('2 ayda bir, ayın ikinci Salı günü, 4 kez');
+    expect(say('FREQ=WEEKLY;BYDAY=MO,WE', null, 'tr-TR', tr)).toBe('Her hafta, Pazartesi ve Çarşamba');
+    expect(say('FREQ=MONTHLY;INTERVAL=2;BYDAY=2TU;COUNT=4', null, 'tr-TR', tr)).toBe('2 ayda bir, ayın ikinci Salı günü, 4 kez');
   });
 });

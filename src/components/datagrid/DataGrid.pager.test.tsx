@@ -1,7 +1,7 @@
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mount } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridColumn } from './grid-column';
@@ -52,9 +52,9 @@ const pageButtons = (grid: DataGrid<any>) => [...grid.element.querySelectorAll<H
 const shown = (el: Element | null) => !!el && (el as HTMLElement).style.display !== 'none' && !(el as HTMLElement).hidden;
 const key = (el: Element, k: string, init: KeyboardEventInit = {}) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }));
 
-afterEach(() => {
+afterEach(async () => {
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 describe('DataGrid pager', () => {
@@ -140,7 +140,7 @@ describe('DataGrid pager', () => {
     await settle();
     expect(pager(grid).getAttribute('aria-label')).toBe('Order pages');
     grid.settings.pagerInfoText = '';
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(info(grid)).toBe('Sayfa 1 / 5 (95 kayıt)');
     expect(grid.element.querySelector('.mx-data-grid__page')!.getAttribute('aria-label')).toBe('Sayfa 1');

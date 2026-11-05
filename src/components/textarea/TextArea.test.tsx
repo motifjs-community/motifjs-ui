@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import { TextArea } from './TextArea';
 
@@ -10,7 +10,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -148,7 +148,7 @@ describe('TextArea', () => {
     type(t, 'ab');
     expect(await t.validate()).toBe(false);
     expect(message(t)).toBe('Enter at least 3 characters.');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(message(t)).toBe('En az 3 karakter girin.');
     t.showCounter = false;
@@ -170,7 +170,7 @@ describe('TextArea', () => {
     expect(press(area(t), 'Escape')).toBe(true);
     expect(s.text).toBe('');
     expect(press(area(t), 'Escape')).toBe(false);
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(clear.getAttribute('aria-label')).toBe('Temizle');
     t.clearButton = false;

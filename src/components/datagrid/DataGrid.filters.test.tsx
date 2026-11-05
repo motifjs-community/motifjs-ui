@@ -1,7 +1,7 @@
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridColumn } from './grid-column';
@@ -80,9 +80,9 @@ async function openValues(grid: DataGrid<any>, field: string) {
   return { list, values: () => list.listItems.loaded.map((v: { text: string; count?: number }) => `${v.text}:${v.count ?? ''}`) as string[] };
 }
 
-afterEach(() => {
+afterEach(async () => {
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
   vi.useRealTimers();
 });
 
@@ -283,7 +283,7 @@ describe('DataGrid filters', () => {
   });
 
   it('writes its texts from uiLocale', async () => {
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     const grid = await make();
     expect(filterCell(grid, 'name').querySelector('.mx-data-grid__condition')!.getAttribute('aria-label')).toBe('Name koşulu: İçerir');
     expect(filterCell(grid, 'paid').textContent).toContain('(Tümü)');

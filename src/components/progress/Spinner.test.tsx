@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { Spinner } from './Spinner';
 
 let hosts: Component[] = [];
@@ -10,7 +10,7 @@ afterEach(async () => {
   vi.useRealTimers();
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -43,7 +43,7 @@ describe('Spinner', () => {
 
     expect(coded.element.getAttribute('aria-label')).toBe('Loading…');
     expect(coded.element.querySelector<HTMLElement>('.mx-spinner__label')!.hidden).toBe(true);
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(coded.element.getAttribute('aria-label')).toBe('Yükleniyor…');
     coded.label = 'Bekleyin';

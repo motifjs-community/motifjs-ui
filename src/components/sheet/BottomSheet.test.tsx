@@ -2,7 +2,7 @@ import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { backButtonHolders, backButtonSettled } from '../../core/back-button';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import { TextBox } from '../textbox/TextBox';
 import { BottomSheet } from './BottomSheet';
@@ -11,7 +11,7 @@ let hosts: Component[] = [];
 
 afterEach(async () => {
   vi.restoreAllMocks();
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   // A sheet closed here takes its history entry back: the next test starts once that has come.
   await until(() => backButtonSettled(window));
@@ -320,7 +320,7 @@ describe('BottomSheet', () => {
     sheet.open();
     expect(handle(sheet).getAttribute('aria-label')).toBe('Sheet height');
     expect(sheet.panelElement.getAttribute('aria-label')).toBe('Sheet');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(handle(sheet).getAttribute('aria-label')).toBe('Panel yüksekliği');
     expect(handle(sheet).getAttribute('aria-valuetext')).toBe('Yarım yükseklik');

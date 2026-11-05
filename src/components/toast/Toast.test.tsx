@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { toast } from './show-toast';
 import { Toast } from './Toast';
 import { Toaster } from './Toaster';
@@ -17,7 +17,7 @@ afterEach(async () => {
   await Toaster.default.dispose();
   vi.useRealTimers();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -239,7 +239,7 @@ describe('Toast', () => {
 
   it('names its parts from uiLocale', async () => {
     const t = toast.info('Merhaba', { duration: 0 });
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(region().getAttribute('aria-label')).toBe('Bildirimler');
     expect(closeButton(t)!.getAttribute('aria-label')).toBe('Kapat');
@@ -256,7 +256,7 @@ describe('Toast', () => {
     expect(toaster.element.getAttribute('aria-label')).toBe('Uploads');
     host.reState();
     expect(toaster.element.getAttribute('aria-label')).toBe('Notifications');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(toaster.element.getAttribute('aria-label')).toBe('Bildirimler');
     plain.max = 3;

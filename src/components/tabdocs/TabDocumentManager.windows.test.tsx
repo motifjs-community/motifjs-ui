@@ -2,7 +2,7 @@ import { Application, Component } from '@motifx/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { pageDocuments } from '../../core/page-documents';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { TabBrowserWindow } from './TabBrowserWindow';
 import { TabDocument } from './TabDocument';
 import { TabDocumentManager } from './TabDocumentManager';
@@ -30,7 +30,7 @@ afterEach(async () => {
   for (const f of frames.splice(0)) f.remove();
   document.body.innerHTML = '';
   rects.clear();
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
   vi.restoreAllMocks();
 });
 
@@ -456,7 +456,7 @@ describe('TabDocumentManager: new browser windows', () => {
   });
 
   it('says it in Turkish too', async () => {
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     const m = managerWith([['A', 'B']]);
     m.moveToNewWindow(m.findDocument('a')!);
     await settle();

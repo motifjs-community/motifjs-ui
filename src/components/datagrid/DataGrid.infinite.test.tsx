@@ -1,7 +1,7 @@
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mount } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './data-grid-props';
 import type { GridColumn } from './grid-column';
@@ -72,9 +72,9 @@ const more = (grid: DataGrid<any>) => grid.element.querySelector<HTMLElement>('.
 const shows = (el: HTMLElement | null) => !!el && el.style.display !== 'none';
 const key = (el: Element, k: string, init: KeyboardEventInit = {}) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }));
 
-afterEach(() => {
+afterEach(async () => {
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 describe('DataGrid infinite mode', () => {
@@ -232,7 +232,7 @@ describe('DataGrid infinite mode', () => {
   });
 
   it('takes its texts from uiLocale and keeps open details while parts come', async () => {
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     const adapter = new PartAdapter(makeRows(60));
     const { grid, toEnd } = serverGrid(adapter, { masterDetail: { enabled: true, height: 72, template: (ctx) => document.createTextNode(`detail ${ctx.key}`) } });
     await settle();

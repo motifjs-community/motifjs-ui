@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import { ValidationGroup } from '../../parts/validation/ValidationGroup';
 import { CheckBox } from './CheckBox';
@@ -11,7 +11,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -205,7 +205,7 @@ describe('CheckBox', () => {
     expect(message(b)).toBe('This field is required.');
     expect(b.inputElement.getAttribute('aria-invalid')).toBe('true');
 
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(message(b)).toBe('Bu alan zorunludur.');
 

@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { DateBox } from './DateBox';
 
 let hosts: Component[] = [];
@@ -9,7 +9,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -96,7 +96,7 @@ describe('DateBox', () => {
     expect(b.value).toEqual(day(2026, 1, 1));
     expect(await b.validate()).toBe(false);
     expect(b.validationMessage).toBe('Enter a valid date.');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(b.validationMessage).toBe('Geçerli bir tarih girin.');
   });

@@ -146,6 +146,8 @@ export default async function ({ page, base, check, axeSource, box }) {
   // Localization.
   const i18n = page.locator('section[aria-labelledby="i18n"]');
   await i18n.getByRole('button', { name: 'Language: English' }).click();
+  // The pack of the language is loaded first.
+  await page.waitForFunction((el) => el.getAttribute('aria-label') === 'Yeniden boyutlandır', await outerSplitter.elementHandle(), { timeout: 3000 }).catch(() => {});
   check('the splitter name follows uiLocale', (await outerSplitter.getAttribute('aria-label')) === 'Yeniden boyutlandır');
   await i18n.getByRole('button', { name: 'Dil: Türkçe' }).click();
 

@@ -15,6 +15,7 @@ export const GROUPS = [
     pages: [
       { id: 'control', label: 'Control', title: 'Control', path: '/control', related: ['keyboard', 'button'] },
       { id: 'keyboard', label: 'Keyboard and focus', title: 'Keyboard and focus', path: '/keyboard', related: ['control', 'button'] },
+      { id: 'language', label: 'Language', title: 'Language', path: '/language', related: ['keyboard', 'control', 'datebox'] },
     ],
   },
   {

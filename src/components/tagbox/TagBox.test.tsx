@@ -2,7 +2,7 @@ import { Component, reactive } from '@motifx/core';
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { TagBox } from './TagBox';
 import { dataKinds } from '../../../tests/data-kinds';
 
@@ -11,7 +11,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -242,7 +242,7 @@ describe('TagBox', () => {
     c.items = SKILLS;
     c.value = ['CSS', 'HTML'];
     expect(c.inputElement.hasAttribute('placeholder')).toBe(false);
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(tags(c)[0].querySelector('button')!.getAttribute('aria-label')).toBe('CSS öğesini kaldır');
     c.element.querySelector<HTMLButtonElement>('.mx-tag-box__clear')!.click();

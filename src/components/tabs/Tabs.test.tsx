@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { Tab } from './Tab';
 import { Tabs } from './Tabs';
 
@@ -11,7 +11,7 @@ afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
   document.documentElement.removeAttribute('dir');
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -441,7 +441,7 @@ describe('Tabs', () => {
     press('a', { altKey: true });
     expect(t.selectedIndex).toBe(1);
     expect(document.activeElement).toBe(headers(t)[1]);
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(headers(t)[0].querySelector<HTMLElement>('.mx-tabs__close')!.title).toBe('Kapat');
   });

@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
 import { Button } from './Button';
@@ -12,7 +12,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -406,7 +406,7 @@ describe('Button with a menu', () => {
     expect(face(b).hasAttribute('aria-haspopup')).toBe(false);
     expect(arrow(b)!.getAttribute('aria-haspopup')).toBe('menu');
     expect(arrow(b)!.getAttribute('aria-label')).toBe('More options');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(arrow(b)!.getAttribute('aria-label')).toBe('Diğer seçenekler');
 

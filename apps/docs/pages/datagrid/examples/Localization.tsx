@@ -1,5 +1,5 @@
 import { reactive } from '@motifx/core';
-import { Button, DataGrid, enStrings, Stack, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, DataGrid, Stack, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 import type { Order } from './order';
 import { columns } from './orders';
@@ -9,7 +9,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
 
   return (

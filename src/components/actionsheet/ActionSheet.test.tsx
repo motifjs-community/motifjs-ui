@@ -1,7 +1,7 @@
 import { Component } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { windowStack } from '../../core/window-stack';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import { ContextMenu } from '../contextmenu/ContextMenu';
@@ -11,7 +11,7 @@ import { dataKinds } from '../../../tests/data-kinds';
 let hosts: Component[] = [];
 
 afterEach(async () => {
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   while (windowStack.top()) windowStack.remove(windowStack.top()!);
   document.body.innerHTML = '';
@@ -110,7 +110,7 @@ describe('ActionSheet', () => {
     items(sheet)[1].click();
     expect(picked).toEqual(['1']);
     expect(sheet.isOpen).toBe(false);
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     sheet.open();
     items(sheet)[0].click();

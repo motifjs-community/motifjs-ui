@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import { TextBox } from '../textbox/TextBox';
 import type { ToolbarItem } from './toolbar-item';
@@ -17,7 +17,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -242,7 +242,7 @@ describe('Toolbar', () => {
     (document.activeElement as HTMLElement).click();
     expect(s.log).toEqual(['print', 'table']);
 
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(moreFace(t).getAttribute('aria-label')).toBe('Diğer seçenekler');
   });

@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { Button } from '../button/Button';
 import { Panel } from './Panel';
 import { SplitContainer } from './SplitContainer';
@@ -12,7 +12,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -218,7 +218,7 @@ describe('SplitContainer', () => {
     split.collapsible = false;
     expect(splitter.hasAttribute('tabindex')).toBe(false);
 
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await tick();
     expect(splitter.getAttribute('aria-label')).toBe('Yeniden boyutlandır');
     split.splitterLabel = 'Folders';

@@ -1,7 +1,7 @@
 import { Component, reactive } from '@motifx/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import { validateFields } from '../../parts/validation/validate-fields';
 import { ValidationGroup } from '../../parts/validation/ValidationGroup';
@@ -14,7 +14,7 @@ let hosts: Component[] = [];
 afterEach(async () => {
   for (const host of hosts.splice(0)) if (!host.isDisposed) await host.dispose();
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 function page(...children: Parameters<typeof mountHost>) {
@@ -234,7 +234,7 @@ describe('TextBox', () => {
     reveal.click();
     expect(input(b).type).toBe('text');
     expect(reveal.getAttribute('aria-pressed')).toBe('true');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(reveal.getAttribute('aria-label')).toBe('Parolayı göster');
     b.passwordReveal = false;
@@ -330,7 +330,7 @@ describe('TextBox', () => {
     type(b, '');
     await settle();
     expect(message(b)).toBe('This field is required.');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await settle();
     expect(message(b)).toBe('Bu alan zorunludur.');
   });

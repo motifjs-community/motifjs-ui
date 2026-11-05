@@ -2,7 +2,7 @@ import { ComponentBase, disposableCore, reactive, type IDisposable } from '@moti
 import { data } from '@motifx-community/data';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount, mountHost, tick } from '../../../tests/helpers';
-import { enStrings, trStrings, uiLocale } from '../../core/ui-locale';
+import { uiLocale } from '../../core/ui-locale';
 import { DataGrid } from './DataGrid';
 import type { GridColumn } from './grid-column';
 
@@ -104,9 +104,9 @@ const cellText = (row: HTMLElement, field: string) => row.querySelector(`[data-f
 const header = (grid: DataGrid<any>, f: string) => grid.element.querySelector(`[role="columnheader"][data-field="${f}"]`) as HTMLElement;
 const key = (el: Element, k: string, init: KeyboardEventInit = {}) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }));
 
-afterEach(() => {
+afterEach(async () => {
   document.body.innerHTML = '';
-  uiLocale.strings = enStrings;
+  await uiLocale.use('en');
 });
 
 describe('DataGrid', () => {
@@ -487,7 +487,7 @@ describe('DataGrid', () => {
     layout(grid);
     await settle();
     expect(grid.element.querySelector('[role="grid"]')!.getAttribute('aria-label')).toBe('Data grid');
-    uiLocale.strings = trStrings;
+    await uiLocale.use('tr');
     await tick();
     expect(grid.element.querySelector('[role="grid"]')!.getAttribute('aria-label')).toBe('Veri tablosu');
     expect(grid.element.querySelector('.mx-data-grid__count')!.textContent).toBe('3 kayıt');
