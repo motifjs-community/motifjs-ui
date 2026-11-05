@@ -1,7 +1,7 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Counts from './examples/Counts';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import OnCorner from './examples/OnCorner';
 import Sizes from './examples/Sizes';
 import Tones from './examples/Tones';
@@ -70,12 +70,12 @@ import { Badge } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function. Created with `new`, the same properties are set from code." />
+          <Rich text="Every prop takes a value or a function. Created with `new`, the same properties are set programmatically." />
         </p>
-        <Example files={code('FromCode.tsx')}>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')}>
+          <Programmatic />
         </Example>
       </Section>
 
@@ -93,7 +93,7 @@ import { Badge } from '@motifx-community/ui';
 
       <Section anchor="corner" title="On a corner">
         <p>
-          <Rich text="`position` puts the badge on a corner of what it is in. `Badge.attach` does it from code, on any component." />
+          <Rich text="`position` puts the badge on a corner of what it is in. `Badge.attach` does it programmatically, on any component." />
         </p>
         <Example files={code('OnCorner.tsx')}>
           <OnCorner />

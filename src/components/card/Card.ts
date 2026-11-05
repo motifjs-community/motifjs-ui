@@ -218,7 +218,7 @@ export class Card extends Control<HTMLDivElement, CardProps> {
     return this.selectedChanged.event;
   }
 
-  /** The part holding the content, for adding to it from code. */
+  /** The part holding the content, for adding to it programmatically. */
   get contentPart(): Component<HTMLDivElement> {
     return this.slots.content;
   }

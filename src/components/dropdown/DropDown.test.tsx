@@ -38,7 +38,7 @@ const popupShown = (d: { element: HTMLElement }) => !!d.element.querySelector('.
 const CITIES = ['Ankara', 'Bursa', 'İstanbul', 'İzmir', 'Konya'];
 
 describe('DropDown', () => {
-  it('is a labelled combobox showing the chosen item, the same from JSX and from code', async () => {
+  it('is a labelled combobox showing the chosen item, the same in JSX and programmatically', async () => {
     const s = reactive({ city: 'Bursa' as string | null });
     let jsx!: DropDown<string, string>;
     page(<DropDown ref={(d: DropDown<string, string>) => (jsx = d)} label="&City" items={CITIES} x-model={() => s.city} />);

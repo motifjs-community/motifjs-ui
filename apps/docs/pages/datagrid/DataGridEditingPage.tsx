@@ -88,7 +88,7 @@ export default function DataGridEditingPage() {
         <ApiTable
           head={['Member', 'Gets / returns', 'What it does']}
           rows={[
-            ['onActionRunning', '`{ action, rows, selection, location, cancel }`', 'An action is about to run (in a row, a bar, a row’s menu or from code); `cancel` keeps it from running. `rows` is empty for a selection that is not loaded.'],
+            ['onActionRunning', '`{ action, rows, selection, location, cancel }`', 'An action is about to run (in a row, a bar, a row’s menu or programmatically); `cancel` keeps it from running. `rows` is empty for a selection that is not loaded.'],
             ['onActionRan', '`{ action, rows, location, done, failed, canceled, errors }`', 'An action ran. Without a listener, what failed rows threw goes to the console.'],
             ['runAction(id, rows?)', '`Promise<GridActionRanEventArgs | null>`', 'Runs an action on `rows`, or on the rows the bars act on now, where it is visible and enabled; `null` when it is not there or was cancelled.'],
             ['actionTargets', '`T[]`, reactive', 'The rows the bars act on now; empty for a selection that is not loaded.'],

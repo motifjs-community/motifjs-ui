@@ -36,7 +36,7 @@ const pointer = (el: EventTarget, type: string, y: number, extra: PointerEventIn
     el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, clientX: 10, clientY: y, button: 0, pointerType: 'mouse', ...extra }));
 
 describe('ScrollView', () => {
-    it('is a focusable region with its content inside, the bars as told, and scrolls from code', async () => {
+    it('is a focusable region with its content inside, the bars as told, and scrolls programmatically', async () => {
         let view!: ScrollView;
         page(
             <ScrollView ref={(v: ScrollView) => (view = v)} label="Orders" showScrollbar="always" direction="both">
@@ -124,7 +124,7 @@ describe('ScrollView', () => {
         expect(view.isRefreshing).toBe(false);
         expect(view.content.element.style.translate).toBe('');
         expect(view.element.dataset.pullState).toBe(undefined);
-        // A short pull goes back; a promise ends a refresh started from code.
+        // A short pull goes back; a promise ends a refresh started programmatically.
         pointer(view.element, 'pointerdown', 10);
         pointer(window, 'pointermove', 30);
         pointer(window, 'pointerup', 30);

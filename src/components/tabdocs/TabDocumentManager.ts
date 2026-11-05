@@ -4143,7 +4143,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return true;
   }
 
-  /** Closes a new window from code or a menu: its documents go back, or close (those that stay keep it open). */
+  /** Closes a new window programmatically or a menu: its documents go back, or close (those that stay keep it open). */
   private async closeBrowserBy(w: TabBrowserWindow, byUser: boolean): Promise<boolean> {
     const parts = this.parts;
     if (!parts.browsers.includes(w)) return false;

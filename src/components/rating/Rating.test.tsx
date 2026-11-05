@@ -29,7 +29,7 @@ const fills = (r: Rating) => Array.from(r.element.querySelectorAll<HTMLElement>(
 const key = (r: Rating, name: string) => row(r).dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true }));
 
 describe('Rating', () => {
-  it('draws max stars filled to its value and says it, the same from JSX and from code', async () => {
+  it('draws max stars filled to its value and says it, the same in JSX and programmatically', async () => {
     let jsx!: Rating;
     page(<Rating ref={(r: Rating) => (jsx = r)} label="Your rating" value={3} />);
     const coded = new Rating({ max: 10, value: 7 });

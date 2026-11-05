@@ -69,7 +69,7 @@ describe('Tabs', () => {
     expect(t.tabs.map((x) => x.title)).toEqual(['&General', 'Advanced']);
   });
 
-  it('is complete from code: add, insert, remove, select', async () => {
+  it('is complete programmatically: add, insert, remove, select', async () => {
     const t = new Tabs({ label: 'Docs' });
     page(t);
     const log = t.add(new Tab({ title: 'Log', key: 'log' }));

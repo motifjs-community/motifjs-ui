@@ -2,7 +2,7 @@ import { ApiTable, Example, Rich, Section } from '../../shared/doc';
 import { slowAdapterFile } from '../../shared/slow-adapter-file';
 import { sources } from '../../shared/sources';
 import CustomForm from './examples/CustomForm';
-import EditFromCode from './examples/EditFromCode';
+import EditProgrammatically from './examples/EditProgrammatically';
 import Editing from './examples/Editing';
 import Rules from './examples/Rules';
 import Saving from './examples/Saving';
@@ -35,7 +35,7 @@ const EVENTS = [
 const METHODS = [
   ['addAppointment(values)', 'Adds where the appointments come from (pushed into the array, or inserted through the data source); resolves to it.'],
   ['updateAppointment(appointment, changes)', 'Changes its fields; resolves `false` when an event said no or saving failed.'],
-  ['deleteAppointment(appointment)', 'Deletes it (no question from code).'],
+  ['deleteAppointment(appointment)', 'Deletes it (no question programmatically).'],
   ['showAppointmentForm(appointment?, cell?)', 'The form for an appointment, or for a new one at `cell` (the selection by default).'],
   ['showTooltip(appointment, anchor?) / hideTooltip()', 'Its tooltip.'],
 ];
@@ -96,9 +96,9 @@ export default function SchedulerEditingPage() {
         </Example>
       </Section>
 
-      <Section anchor="code" title="From code">
-        <Example files={code('EditFromCode.tsx')}>
-          <EditFromCode />
+      <Section anchor="code" title="Programmatic use">
+        <Example files={code('EditProgrammatically.tsx')}>
+          <EditProgrammatically />
         </Example>
       </Section>
 

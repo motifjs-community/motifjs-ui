@@ -63,7 +63,7 @@ export default async function ({ page, base, check, axeSource }) {
   await settle();
   check("the browser's back closes it and stays on the page", await page.evaluate((p) => location.pathname === p && !document.querySelector('.mx-bottom-sheet[data-open]:not([data-contained])'), path));
   // The one made in code: show() into the page, disposed when it closes.
-  await ways.getByRole('button', { name: 'Share (from code)' }).click();
+  await ways.getByRole('button', { name: 'Share (programmatically)' }).click();
   await settle();
   const fit = await page.evaluate(() => {
     const panel = [...document.querySelectorAll('.mx-bottom-sheet[data-open] .mx-bottom-sheet__panel')].find((p) => p.textContent.includes('Anyone with the link'));
@@ -170,7 +170,7 @@ export default async function ({ page, base, check, axeSource }) {
   await page.keyboard.press('Escape');
   await settle();
   check('onClosing can keep it open', await page.evaluate(() => !!document.querySelector('section[aria-labelledby="events"] .mx-bottom-sheet[data-open]')));
-  // A click from code: the frame clips the sheet, and scrolling it into view would scroll the frame.
+  // A click programmatically: the frame clips the sheet, and scrolling it into view would scroll the frame.
   await events.getByRole('button', { name: 'Close by code' }).dispatchEvent('click');
   await settle();
   const log = await events.locator('output').textContent();

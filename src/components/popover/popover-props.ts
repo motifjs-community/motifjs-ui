@@ -13,7 +13,7 @@ export interface PopoverProps extends ControlProps {
     title?: Bind<string>;
     /** What screen readers call it when it has no title. */
     label?: Bind<string>;
-    /** Content from code, after the JSX children. */
+    /** Content programmatically, after the JSX children. */
     content?: Bind<ComponentBase | null | undefined>;
     /** Default `'click'`. */
     showOn?: Bind<PopoverShowOn>;

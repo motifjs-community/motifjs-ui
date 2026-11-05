@@ -81,7 +81,7 @@ describe('Drawer', () => {
     expect(reasons).toEqual(['escape', 'scrim']);
   });
 
-  it('x-model follows it opened from code, so the model can close it', async () => {
+  it('x-model follows it opened programmatically, so the model can close it', async () => {
     const state = reactive({ open: false });
     let drawer!: Drawer;
     page(<Drawer ref={(d: Drawer) => (drawer = d)} title="Navigation" x-model={() => state.open} />);

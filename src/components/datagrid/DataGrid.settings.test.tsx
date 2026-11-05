@@ -362,7 +362,7 @@ describe('settings', () => {
   });
 });
 
-describe('state and rows from code', () => {
+describe('state and rows programmatically', () => {
   it('reads the status, the load error, the editing cell and the export', async () => {
     const adapter = new RangeAdapter(10);
     const source = new data.DataSource<Row, number>({ adapter, loadMode: 'page', pageSize: 10 });
@@ -421,7 +421,7 @@ describe('state and rows from code', () => {
     await grid.dispose();
   });
 
-  it('moves the focus and opens editors from code', async () => {
+  it('moves the focus and opens editors programmatically', async () => {
     const grid = make({ rows: makeRows(3), settings: { editable: true } });
     await settle();
     expect(grid.focusCell(2, 'amount')).toBe(true);

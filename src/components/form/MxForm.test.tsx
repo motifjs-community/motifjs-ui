@@ -57,7 +57,7 @@ const closeButton = (f: MxForm) => f.element.querySelector<HTMLButtonElement>('.
 const content = (f: MxForm) => f.element.querySelector<HTMLElement>('.mx-form__content')!;
 
 describe('MxForm', () => {
-  it('shows modeless from code, in its host, named by its title', async () => {
+  it('shows modeless programmatically, in its host, named by its title', async () => {
     const host = page();
     const opener = document.createElement('button');
     document.body.append(opener);
@@ -149,7 +149,7 @@ describe('MxForm', () => {
     expect(form.isOpen).toBe(false);
   });
 
-  it('x-model follows it opened and closed from code, so the model can close and open it again', async () => {
+  it('x-model follows it opened and closed programmatically, so the model can close and open it again', async () => {
     const s = reactive({ open: false });
     let form!: MxForm;
     const host = page(<MxForm ref={(f: MxForm) => (form = f)} title="Find" x-model={() => s.open} />);
@@ -213,7 +213,7 @@ describe('MxForm', () => {
     expect(log).toEqual(['loaded', 'activate', 'shown', 'closed:cancel']);
   });
 
-  it('disposeOnClose: off keeps a form from code to show again', async () => {
+  it('disposeOnClose: off keeps a form programmatically to show again', async () => {
     const host = page();
     const form = new MxForm({ title: 'Again', disposeOnClose: false });
     void form.showDialog(host);

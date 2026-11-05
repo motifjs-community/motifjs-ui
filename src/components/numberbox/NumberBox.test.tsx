@@ -71,7 +71,7 @@ describe('decimal arithmetic', () => {
 });
 
 describe('NumberBox', () => {
-  it('is a labelled spin button, the same from JSX and from code', async () => {
+  it('is a labelled spin button, the same in JSX and programmatically', async () => {
     let jsx!: NumberBox;
     page(<NumberBox ref={(n: NumberBox) => (jsx = n)} label="&Amount" min={0} max={10} value={4} locale="en" class="extra" />);
     const coded = new NumberBox({ label: 'Count', locale: 'en' });
@@ -178,7 +178,7 @@ describe('NumberBox', () => {
     expect(n.element.querySelectorAll('.mx-number-box__step')).toHaveLength(2);
   });
 
-  it('reads functions over plain data again on reState, and writes steps and values from code to x-model', async () => {
+  it('reads functions over plain data again on reState, and writes steps and values programmatically to x-model', async () => {
     const plain = { n: 5, max: 10, step: 1 };
     const s = reactive({ qty: 1 as number | null });
     let n!: NumberBox;

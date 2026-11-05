@@ -4,7 +4,7 @@ import CompactBars from './examples/CompactBars';
 import DockIde from './examples/DockIde';
 import DockOptions from './examples/DockOptions';
 import DockSaveRestore from './examples/DockSaveRestore';
-import FloatFromCode from './examples/FloatFromCode';
+import FloatProgrammatically from './examples/FloatProgrammatically';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
@@ -149,8 +149,8 @@ export default function TabDocsDockPage() {
         <p>
           <Rich text="A window holds groups as the documents' area does, split and resized the same way. It moves by the empty part of its strips, resizes from its edges and corners, comes to the front when pressed, maximizes within the page, and a double click on its strip docks it back. Its documents keep their content: nothing is made again." />
         </p>
-        <Example files={code('FloatFromCode.tsx', 'files.tsx')} stack>
-          <FloatFromCode />
+        <Example files={code('FloatProgrammatically.tsx', 'files.tsx')} stack>
+          <FloatProgrammatically />
         </Example>
       </Section>
 

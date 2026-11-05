@@ -231,7 +231,7 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
         return this.changing.event;
     }
 
-    /** The pane in view changed, by the user, from code or by the slideshow (`byUser`). */
+    /** The pane in view changed, by the user, programmatically or by the slideshow (`byUser`). */
     get onSlideChanged(): MotifEvent<SlideChangedEventArgs> {
         return this.changed.event;
     }

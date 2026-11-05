@@ -285,7 +285,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   );
   check('an appointment locked by its own field cannot be taken', !(await boxOf(ruled, 'Lunch with Ana').evaluate((el) => el.hasAttribute('data-draggable'))));
 
-  // From code.
+  // Programmatically.
   const code = section('code');
   await code.getByRole('button', { name: 'Add tomorrow 11:00' }).click();
   await page.waitForTimeout(150);
@@ -294,7 +294,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   const said = await code.locator('.sched-log').textContent();
   await code.getByRole('button', { name: 'Delete it' }).click();
   await page.waitForTimeout(150);
-  check('add, change and delete from code', said === 'Moved an hour later' && (await code.locator('.sched-log').textContent()) === 'Deleted', said);
+  check('add, change and delete programmatically', said === 'Moved an hour later' && (await code.locator('.sched-log').textContent()) === 'Deleted', said);
   await code.getByRole('button', { name: 'New in the form' }).click();
   await form.waitFor();
   check('showAppointmentForm opens the form at the time given', /3:00|15:00/.test(await form.locator('input').nth(1).inputValue()));

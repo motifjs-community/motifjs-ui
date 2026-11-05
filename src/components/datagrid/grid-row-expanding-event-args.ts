@@ -1,7 +1,7 @@
 import type { EventArgs } from '@motifx/core';
 
 /**
- * A group, or a row's details (`masterDetail`), is about to open or close, by the user or from code;
+ * A group, or a row's details (`masterDetail`), is about to open or close, by the user or programmatically;
  * `cancel` keeps it as it is. `kind` tells which: a group's `key` is the values of the groups from the
  * top level down to it, a row's is the row's key.
  */

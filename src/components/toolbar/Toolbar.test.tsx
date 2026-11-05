@@ -56,7 +56,7 @@ function formatItems(s: { bold: boolean; italic: boolean; log: string[] }): Tool
 }
 
 describe('Toolbar', () => {
-  it('is a toolbar of buttons made from items, then its JSX children, the same from JSX and from code', async () => {
+  it('is a toolbar of buttons made from items, then its JSX children, the same in JSX and programmatically', async () => {
     const s = reactive({ bold: false, italic: true, log: [] as string[], label: 'Format' });
     let jsx!: Toolbar;
     page(
@@ -282,7 +282,7 @@ describe('Toolbar', () => {
     expect(t.element.dataset.overflow).toBe('wrap');
   });
 
-  it('follows controls added and disabled from code', async () => {
+  it('follows controls added and disabled programmatically', async () => {
     const t = new Toolbar({ items: [{ text: 'A' }] });
     page(t);
     await settle();

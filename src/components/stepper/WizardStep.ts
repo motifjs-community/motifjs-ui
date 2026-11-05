@@ -11,7 +11,7 @@ const TOLD = ['text', 'description', 'key', 'icon', 'optional', 'error', 'enable
 
 /**
  * One step of a {@link Wizard}: its entry in the stepper and its page. The JSX children are the page, built when
- * the step is first shown (see `lazy`); `content` makes it from code.
+ * the step is first shown (see `lazy`); `content` makes it programmatically.
  *
  * @example
  * <Wizard>

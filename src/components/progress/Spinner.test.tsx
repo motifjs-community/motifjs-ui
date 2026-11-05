@@ -24,7 +24,7 @@ async function settle() {
 }
 
 describe('Spinner', () => {
-  it('is a named progress indicator without a value, the same from JSX and from code', async () => {
+  it('is a named progress indicator without a value, the same in JSX and programmatically', async () => {
     let jsx!: Spinner;
     page(<Spinner ref={(x: Spinner) => (jsx = x)} label="Loading orders" size="lg" tone="neutral" class="extra" />);
     const coded = new Spinner();

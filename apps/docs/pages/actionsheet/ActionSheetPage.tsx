@@ -71,7 +71,7 @@ import { ActionSheet, type ActionSheetProps } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="choose" title="Choosing from code">
+      <Section anchor="choose" title="Choosing programmatically">
         <p>
           <Rich text="`choose()` opens it and resolves with the item chosen, or `null`. An item with `items` opens its submenu in place, with a way back." />
         </p>

@@ -37,7 +37,7 @@ const PARTS = Symbol('mx.accordion');
 
 /**
  * Sections that open and close under their headers, following the ARIA accordion pattern.
- * Items come as `<AccordionItem>` children or from code (`add`, `insert`, `remove`). One item is
+ * Items come as `<AccordionItem>` children or programmatically (`add`, `insert`, `remove`). One item is
  * open at a time unless `multiple`; `value` (two-way with `x-model`) lists the open items'
  * keys. Up and Down move between the headers, an item's `&` key opens or closes it, and a
  * section is built when it is first opened (`lazy`).
@@ -212,13 +212,13 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
     return true;
   }
 
-  /** Opens every item (with `multiple`), from code. */
+  /** Opens every item (with `multiple`), programmatically. */
   expandAll(): void {
     if (!this.peekProperty('multiple')) return;
     for (const item of this.itemsNow()) item.setExpanded(true);
   }
 
-  /** Closes every item, from code (with `collapsible` off, the first stays open). */
+  /** Closes every item, programmatically (with `collapsible` off, the first stays open). */
   collapseAll(): void {
     for (const item of this.itemsNow()) item.setExpanded(false);
     this.settle();

@@ -17,7 +17,7 @@ export interface FileUploaderProps extends FieldProps<readonly File[]> {
     maxFiles?: Bind<number | null>;
     /** Files may be dropped on the box. Default `true`. */
     allowDrop?: Bind<boolean>;
-    /** When files are uploaded: `instant` (as chosen), `button` (an Upload button), `manual` (`upload()` from code). Default `instant` with `uploadUrl` or `upload`, else `manual`. */
+    /** When files are uploaded: `instant` (as chosen), `button` (an Upload button), `manual` (`upload()` programmatically). Default `instant` with `uploadUrl` or `upload`, else `manual`. */
     uploadMode?: Bind<UploadMode>;
     /** Where files are sent, by the uploader itself (XMLHttpRequest, with progress). */
     uploadUrl?: Bind<string | null>;

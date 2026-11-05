@@ -27,7 +27,7 @@ export default function JsxAndCode() {
     <Stack ref={(c: Stack) => (host = c)} gap="sm">
       <Stack orientation="horizontal" wrap align="center">
         <Button text="Edit the name" variant="outline" onclick={() => (s.open = true)} />
-        <Button text="Share (from code)" variant="outline" onclick={share} />
+        <Button text="Share (programmatically)" variant="outline" onclick={share} />
         <output>{() => s.said || `Name: ${s.name}`}</output>
       </Stack>
       <BottomSheet title="Your name" showClose detents={['half', 'full']} x-model={() => s.open}>

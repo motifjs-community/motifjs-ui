@@ -226,13 +226,13 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('a template draws the appointments', cards > 0, `${cards}`);
   await axe('templates', section('templates').locator('.mx-scheduler'));
 
-  // From code.
+  // Programmatically.
   const made = section('code');
   await made.getByRole('button', { name: 'Create' }).click();
   const coded = made.locator('.mx-scheduler');
   await coded.waitFor();
   const turkish = await coded.locator('.mx-scheduler__weekday').first().textContent();
-  check('made with new and added from code, in its own locale', (await coded.locator('.mx-scheduler__date').count()) === 5 && /Pzt/.test(turkish), turkish);
+  check('made with new and added programmatically, in its own locale', (await coded.locator('.mx-scheduler__date').count()) === 5 && /Pzt/.test(turkish), turkish);
   await made.getByRole('button', { name: 'Select the next workday 9:00–10:30' }).click();
   await page.waitForTimeout(150);
   check(

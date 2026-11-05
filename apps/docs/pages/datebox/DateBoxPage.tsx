@@ -1,6 +1,6 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Limits from './examples/Limits';
 import Locales from './examples/Locales';
 import Localization from './examples/Localization';
@@ -55,9 +55,9 @@ import { DateBox } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
-        <Example files={code('FromCode.tsx')}>
-          <FromCode />
+      <Section anchor="ways" title="Declarative and programmatic">
+        <Example files={code('Programmatic.tsx')}>
+          <Programmatic />
         </Example>
       </Section>
 

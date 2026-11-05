@@ -26,7 +26,7 @@ async function settle() {
 const steps = (b: Breadcrumb) => Array.from(b.element.querySelectorAll<HTMLElement>('.mx-breadcrumb__item:not(.mx-breadcrumb__more)'));
 
 describe('Breadcrumb', () => {
-  it('draws links, buttons and the current page, the same from JSX and from code', async () => {
+  it('draws links, buttons and the current page, the same in JSX and programmatically', async () => {
     let jsx!: Breadcrumb;
     page(<Breadcrumb ref={(b: Breadcrumb) => (jsx = b)} rel="router" items={[{ text: 'Home', href: '/' }, 'Orders', { text: 'Order 42' }]} />);
     const coded = new Breadcrumb({ items: ['A', 'B'], lastIsCurrent: false });

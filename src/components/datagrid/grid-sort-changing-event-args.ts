@@ -5,6 +5,6 @@ import type { data } from '@motifx-community/data';
 export interface GridSortChangingEventArgs extends EventArgs {
   readonly sort: readonly data.SortItem[];
   readonly previous: readonly data.SortItem[];
-  /** The user changed it; `false` from code. */
+  /** The user changed it; `false` programmatically. */
   readonly byUser: boolean;
 }

@@ -18,7 +18,7 @@ function page(...children: Parameters<typeof mountHost>) {
 }
 
 describe('Panel', () => {
-  it('is a plain container from JSX and from code', async () => {
+  it('is a plain container in JSX and programmatically', async () => {
     let panel!: Panel;
     page(
       <Panel ref={(p: Panel) => (panel = p)} padding="md" variant="card">

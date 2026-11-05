@@ -61,7 +61,7 @@ describe('DockPanel', () => {
     expect(help.style.gridRow).toBe('');
   });
 
-  it('picks up children added and removed from code and follows getter docks', async () => {
+  it('picks up children added and removed programmatically and follows getter docks', async () => {
     const s = reactive({ side: 'start' as 'start' | 'end' });
     const dock = new DockPanel({ padding: 'sm' });
     page(dock);
@@ -96,7 +96,7 @@ describe('DockPanel', () => {
     expect(dock.element.style.gridTemplateColumns).toBe('minmax(0, 1fr)');
   });
 
-  it('anchors float children from code', async () => {
+  it('anchors float children programmatically', async () => {
     const dock = new DockPanel();
     const help = new Button({ text: 'Help', dock: 'float' });
     dock.controls.add(help);

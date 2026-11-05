@@ -35,7 +35,7 @@ this one after it.
 
 ## What is here
 
-Every component works from JSX (bound to state) and from code (`new X({...})`, added anywhere,
+Every component works from JSX (bound to state) and programmatically (`new X({...})`, added anywhere,
 changed later); every prop and property takes a value or a function. The docs site has a page for
 each (`npm run dev`).
 

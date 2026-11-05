@@ -329,7 +329,7 @@ describe('search: the box, the text, the saved layout', () => {
     await grid.dispose();
   });
 
-  it('follows a searchText function, and shows a text set from code in the box', async () => {
+  it('follows a searchText function, and shows a text set programmatically in the box', async () => {
     const state = reactive({ q: 'can' });
     const grid = await make({ settings: { searchPanel: true }, searchText: () => state.q });
     expect(ids(grid)).toEqual([5]);

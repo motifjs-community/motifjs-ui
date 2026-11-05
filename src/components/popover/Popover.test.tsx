@@ -70,7 +70,7 @@ describe('Popover', () => {
         expect(pop.isOpen).toBe(false);
     });
 
-    it('opens from code next to a plain element, closes on a press outside unless told not to, and on its close button', async () => {
+    it('opens programmatically next to a plain element, closes on a press outside unless told not to, and on its close button', async () => {
         const anchor = document.createElement('button');
         const other = document.createElement('input');
         document.body.append(anchor, other);

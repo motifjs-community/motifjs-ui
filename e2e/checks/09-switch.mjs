@@ -23,7 +23,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('Space flips it', !(await wifi.isChecked()));
   await ways.getByText('Wi-Fi', { exact: true }).click();
   check('a click on the caption flips it', await wifi.isChecked());
-  await ways.getByRole('button', { name: 'Add a switch from code' }).click();
+  await ways.getByRole('button', { name: 'Add a switch programmatically' }).click();
   await page.keyboard.press('Space');
   check('a switch created with new is added, focused and reports changes', (await page.locator('.sw-result').textContent()) === 'Feature 1: on');
 

@@ -5,7 +5,7 @@ const FOLDERS = ['Inbox', 'Drafts', 'Sent', 'Archive', 'Spam', 'Trash'];
 const FRAME = 'border: var(--mx-border-width-1) solid var(--mx-color-stroke-card); border-radius: var(--mx-radius-lg);';
 const LAYER = 'background: var(--mx-color-bg-layer);';
 
-/** A split container inside another: a position bound with x-model, minimum sizes, a fixed pane, and hiding a pane from code. */
+/** A split container inside another: a position bound with x-model, minimum sizes, a fixed pane, and hiding a pane programmatically. */
 export default function NestedSplit() {
   const s = reactive({ tree: 180 as SplitPosition, fixed: 'first' as SplitPanel, log: '' });
   let outer: SplitContainer | null = null;

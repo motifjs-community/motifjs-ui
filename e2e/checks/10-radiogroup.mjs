@@ -23,12 +23,12 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.keyboard.press('ArrowUp');
   check('↑ wraps back', await radio('XL').isChecked());
   await page.keyboard.press('Tab');
-  check('the next Tab leaves the group', await focused(ways.getByRole('button', { name: 'Add a group from code' })));
+  check('the next Tab leaves the group', await focused(ways.getByRole('button', { name: 'Add a group programmatically' })));
   await page.keyboard.press('Shift+Tab');
   check('Shift+Tab comes back to the chosen option', await focused(radio('XL')));
   await radio('M').click();
   check('a click chooses', (await radio('M').isChecked()) && !(await radio('M').evaluate((el) => el.matches(':focus-visible'))));
-  await ways.getByRole('button', { name: 'Add a group from code' }).click();
+  await ways.getByRole('button', { name: 'Add a group programmatically' }).click();
   const wrap = page.getByRole('radiogroup', { name: 'Gift wrap' });
   check('a group created with new is added and focused', await focused(wrap.getByRole('radio', { name: 'None' })));
   await page.keyboard.press('ArrowRight');

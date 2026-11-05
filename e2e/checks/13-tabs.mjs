@@ -24,9 +24,9 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.keyboard.up('Alt');
   check('access keys select tabs, and the panel keeps what was typed', (await name.inputValue()) === 'Ada' && (await general.getAttribute('aria-selected')) === 'true');
 
-  await ways.getByRole('button', { name: 'Add a report from code' }).click();
+  await ways.getByRole('button', { name: 'Add a report programmatically' }).click();
   const reports = ways.getByRole('tablist', { name: 'Reports' });
-  check('a tab added from code is selected', (await reports.getByRole('tab', { name: 'Report 1' }).getAttribute('aria-selected')) === 'true' && (await page.locator('.tabs-log').textContent()) === 'Selected “Report 1” from code.');
+  check('a tab added programmatically is selected', (await reports.getByRole('tab', { name: 'Report 1' }).getAttribute('aria-selected')) === 'true' && (await page.locator('.tabs-log').textContent()) === 'Selected “Report 1” programmatically.');
 
   const closable = page.locator('section[aria-labelledby="closable"]');
   const docs = closable.getByRole('tablist', { name: 'Documents' });

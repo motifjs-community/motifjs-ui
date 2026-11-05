@@ -34,7 +34,7 @@ export class GridSearch<T> {
   private marks = new Map<string, Mark>();
   private loaded: IDisposable | null = null;
   private disposed = false;
-  /** Called when the text changes (typed or set from code). */
+  /** Called when the text changes (typed or set programmatically). */
   onTextChanged: ((text: string) => void) | null = null;
 
   constructor(private readonly model: GridModel<T>) {}

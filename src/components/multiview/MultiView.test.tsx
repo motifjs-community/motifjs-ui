@@ -132,7 +132,7 @@ describe('MultiView', () => {
         expect(eager.views.map(v => v.contentBuilt)).toEqual([true, true]);
     });
 
-    it('views are added, inserted and removed from code; removing the one in sight moves to a neighbour', async () => {
+    it('views are added, inserted and removed programmatically; removing the one in sight moves to a neighbour', async () => {
         const m = new MultiView({ loop: false });
         page(m);
         await settle();

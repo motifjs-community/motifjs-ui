@@ -19,7 +19,7 @@ const PROPS = [
 
 const PROPERTIES = [
   ['every prop above', 'read/write', 'A value or a function, like the prop.'],
-  ['content', 'read-only', 'The part holding what shows once loaded, for adding to it from code.'],
+  ['content', 'read-only', 'The part holding what shows once loaded, for adding to it programmatically.'],
 ];
 
 const A11Y = [

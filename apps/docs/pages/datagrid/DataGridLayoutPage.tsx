@@ -101,13 +101,13 @@ const EVENTS = [
   ['onFocusedRowChanging / onFocusedRowChanged', '`{ rowIndex, previousRowIndex, row }` / `{ rowIndex, row, key }`', 'yes / —', 'The active row changes.'],
   ['onKeyHandling', '`{ event, rowIndex, field }`', 'yes', 'A key went down in the rows, an editor, the filter row or a group chip, before the grid handles it; cancel and handle it yourself. the standard calls it `onKeyDown`, a DOM event name in JSX.'],
   ['onOptionChanged', '`{ name, field?, value, previous }`', '', 'A setting was assigned: `grid.settings`, `columnSettings(field)` (with `field`), `toolbar` (`toolbar.visible`, `toolbar.items`), `columnOption` (with `field`); a column was added or taken out (`name: \'columns\'`, the fields).'],
-  ['onSortChanging / onSortChanged', '`{ sort, previous, byUser }`', 'yes / —', 'The sort is about to change, by the user or from code.'],
+  ['onSortChanging / onSortChanged', '`{ sort, previous, byUser }`', 'yes / —', 'The sort is about to change, by the user or programmatically.'],
   ['onFilterChanging / onFilterChanged', '`{ filters, previous }` / `{ filters, filter }`', 'yes / —', 'The filter row and header filters are about to apply; cancel puts the ones before back in the cells.'],
   ['onSearchTextChanging / onSearchTextChanged', '`{ text, previous }` / `{ text }`', 'yes / —', 'The search text is about to change; cancel keeps the one before in the box.'],
   ['onPageChanging / onPageChanged', '`{ page, previous }`', 'yes / —', 'Another page is about to show.'],
   ['onPageSizeChanging / onPageSizeChanged', '`{ pageSize, previous }`', 'yes / —', 'The rows per page are about to change (0: all); the grid goes back to the first page.'],
   ['onMoreRowsLoading / onMoreRowsLoaded', '`{ skip, take }` / `{ skip, count, ended }`', 'yes / —', 'Infinite mode: the next part of the rows is about to load; it came.'],
-  ['onSelectionChanging / onSelectionChanged', '`{ selection, previous }` / `{ selection }`', 'yes / —', 'The selection is about to change, by the user or from code.'],
+  ['onSelectionChanging / onSelectionChanged', '`{ selection, previous }` / `{ selection }`', 'yes / —', 'The selection is about to change, by the user or programmatically.'],
   ['onLayoutChanging / onLayoutChange', '`{ layout, previous }` / `layout`', 'yes / —', 'The user resized, moved, hid, pinned, sorted or reset; cancel puts the layout before back.'],
   ['onGroupingChanging / onGroupingChanged, onGroupDropping', 'see [Grouping](/datagrid/grouping#grouping)', 'yes', 'The grouping; a dropped header or chip.'],
   ['onRowExpanding / onRowExpanded, onRowCollapsing / onRowCollapsed', '`{ kind, key, row }`', 'yes / —', "A group (`kind: 'group'`) or a row's details (`kind: 'detail'`) open or close."],
@@ -174,7 +174,7 @@ export default function DataGridLayoutPage() {
 
       <Section anchor="events" title="Events">
         <p>
-          <Rich text="Every action of the user has an event, given as a prop or listened to with `grid.onX((e) => …)`; one that is about to happen (`…ing`) can be stopped with `e.cancel = true`, and most can change what happens (the values sent, the items of a menu, the text copied). Here amounts over 900 are drawn in bold, the rows get a menu of their own (right click, or Shift + F10), a change to “Cancelled” is not saved, and the list tells what happened. Methods do the same from code: `editCell`, `cellValue`, `navigateToRow`, `columnOption`, `state()` and the others in the [API reference](/datagrid/api#api)." />
+          <Rich text="Every action of the user has an event, given as a prop or listened to with `grid.onX((e) => …)`; one that is about to happen (`…ing`) can be stopped with `e.cancel = true`, and most can change what happens (the values sent, the items of a menu, the text copied). Here amounts over 900 are drawn in bold, the rows get a menu of their own (right click, or Shift + F10), a change to “Cancelled” is not saved, and the list tells what happened. Methods do the same programmatically: `editCell`, `cellValue`, `navigateToRow`, `columnOption`, `state()` and the others in the [API reference](/datagrid/api#api)." />
         </p>
         <Example files={withOrders('Events.tsx')} stack>
           <Events />

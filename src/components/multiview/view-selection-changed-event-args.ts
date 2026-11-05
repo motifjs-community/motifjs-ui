@@ -7,7 +7,7 @@ export interface ViewSelectionChangedEventArgs {
     /** `null` when there is none. */
     view: View | null;
     previous: number;
-    /** By a swipe, else from code. */
+    /** By a swipe, else programmatically. */
     byUser: boolean;
     source: MultiView;
 }

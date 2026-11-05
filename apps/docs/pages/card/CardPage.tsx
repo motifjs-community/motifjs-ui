@@ -1,7 +1,7 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Clickable from './examples/Clickable';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Links from './examples/Links';
 import Media from './examples/Media';
 import Sizes from './examples/Sizes';
@@ -32,7 +32,7 @@ const PROPS = [
 
 const PROPERTIES = [
   ['every prop above', 'read/write', 'A value or a function, like the prop.'],
-  ['contentPart', 'read-only', 'The part holding the content, for adding to it from code.'],
+  ['contentPart', 'read-only', 'The part holding the content, for adding to it programmatically.'],
   ['avatarControl', 'read-only', 'The avatar before the titles, when it has one.'],
 ];
 
@@ -76,12 +76,12 @@ import { Card } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function. Created with `new`, the same properties are set from code." />
+          <Rich text="Every prop takes a value or a function. Created with `new`, the same properties are set programmatically." />
         </p>
-        <Example files={code('FromCode.tsx')}>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')}>
+          <Programmatic />
         </Example>
       </Section>
 

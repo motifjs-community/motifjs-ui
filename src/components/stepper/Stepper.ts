@@ -179,7 +179,7 @@ export class Stepper extends Control<HTMLElement, StepperProps> {
         return this.changing.event;
     }
 
-    /** The current step changed, by the user or from code (`byUser`). */
+    /** The current step changed, by the user or programmatically (`byUser`). */
     get onStepChanged(): MotifEvent<StepChangedEventArgs> {
         return this.changed.event;
     }

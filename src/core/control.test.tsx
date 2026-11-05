@@ -43,7 +43,7 @@ describe('Control properties', () => {
     expect(c.tabStop).toBe(true);
   });
 
-  it('is reactive to read: an effect follows a property set from code', async () => {
+  it('is reactive to read: an effect follows a property set programmatically', async () => {
     const b = new TestButton({ text: 'One' });
     const seen: string[] = [];
     const stop = effect(() => void seen.push(b.text));
@@ -149,7 +149,7 @@ describe('Control properties', () => {
     expect(b.text).toBe('Two');
   });
 
-  it('stops reading the getter once a value is set from code', async () => {
+  it('stops reading the getter once a value is set programmatically', async () => {
     const plain = { text: 'One' };
     const b = new TestButton({ text: () => plain.text });
     page(b);
@@ -160,7 +160,7 @@ describe('Control properties', () => {
     expect(b.text).toBe('Code');
   });
 
-  it('follows a getter prop, and a value set from code replaces that binding', async () => {
+  it('follows a getter prop, and a value set programmatically replaces that binding', async () => {
     const state = reactive({ busy: false });
     const b = new TestButton({ enabled: () => !state.busy, text: 'Save' });
     page(b);
@@ -362,7 +362,7 @@ describe('Control focus', () => {
     expect(b.focus()).toBe(false);
   });
 
-  it('is focusable from code but not by Tab when tabStop is false', async () => {
+  it('is focusable programmatically but not by Tab when tabStop is false', async () => {
     const b = new TestButton({ text: 'Skip', tabStop: false });
     page(b);
     await settle();

@@ -2,7 +2,7 @@ import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Customers from './examples/Customers';
 import CustomTags from './examples/CustomTags';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Localization from './examples/Localization';
 import TeamList from './examples/TeamList';
 import Validation from './examples/Validation';
@@ -105,12 +105,12 @@ import { data } from '@motifx-community/data';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="`x-model` binds an array; every change writes a new one. Created with `new`, the same properties are set from code." />
+          <Rich text="`x-model` binds an array; every change writes a new one. Created with `new`, the same properties are set programmatically." />
         </p>
-        <Example files={code('FromCode.tsx', 'skills.ts')} stack>
-          <FromCode />
+        <Example files={code('Programmatic.tsx', 'skills.ts')} stack>
+          <Programmatic />
         </Example>
       </Section>
 

@@ -56,7 +56,7 @@ function press(el: Element, key: string) {
 }
 
 describe('TextBox', () => {
-  it('is a labelled input, the same from JSX and from code', async () => {
+  it('is a labelled input, the same in JSX and programmatically', async () => {
     let jsx!: TextBox;
     page(<TextBox ref={(b: TextBox) => (jsx = b)} label="&Name" placeholder="Your name" helpText="As on your ID" class="extra" />);
     const coded = new TextBox({ label: 'City' });
@@ -99,7 +99,7 @@ describe('TextBox', () => {
     expect(input(b).value).toBe('Linus');
   });
 
-  it('writes a value set from code to x-model too, so the model can change it back', async () => {
+  it('writes a value set programmatically to x-model too, so the model can change it back', async () => {
     const s = reactive({ name: 'Ada' });
     let b!: TextBox;
     page(<TextBox ref={(x: TextBox) => (b = x)} x-model={() => s.name} />);
@@ -438,7 +438,7 @@ describe('TextBox', () => {
     expect(input(b).value).toBe('(532) 123 45 67');
   });
 
-  it('shapes a value set from code and a mask set later', async () => {
+  it('shapes a value set programmatically and a mask set later', async () => {
     const b = new TextBox({ value: '34ab12', maskChars: { L: { test: /\p{L}/u, transform: 'upper' } } });
     page(b);
     b.mask = '00 LL 00';

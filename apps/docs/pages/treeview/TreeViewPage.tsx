@@ -2,7 +2,7 @@ import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import FileExplorer from './examples/FileExplorer';
 import FlatData from './examples/FlatData';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import LargeTree from './examples/LargeTree';
 import Localization from './examples/Localization';
 import Permissions from './examples/Permissions';
@@ -44,8 +44,8 @@ const PROPERTIES = [
 const METHODS = [
   ['expand(key), collapse(key)', '`boolean`', 'Opens / closes a row; children load first if they have to. The cancelable events run.'],
   ['expandAll(), collapseAll()', '`void`', 'Every row whose children are known. No event per row.'],
-  ['select(key), unselect(key), selectAll(), clearSelection()', '`void`', 'From code; `select` adds to the selection with `multiple`.'],
-  ['check(key, checked?), uncheck(key), checkAll(), uncheckAll()', '`void`', 'From code.'],
+  ['select(key), unselect(key), selectAll(), clearSelection()', '`void`', 'Programmatically; `select` adds to the selection with `multiple`.'],
+  ['check(key, checked?), uncheck(key), checkAll(), uncheckAll()', '`void`', 'Programmatically.'],
   ['filter(text)', '`void`', 'Sets `searchValue`.'],
   ['scrollTo(key), focusNode(key)', '`boolean`', 'Opens the row\'s parents and scrolls it into view (and focuses it).'],
   ['reload(key?)', '`void`', 'Loads a row\'s children again (all loaded children without a key).'],
@@ -120,12 +120,12 @@ import { TreeView } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Items are objects with a `children` array (or a `parentId`, see below). `value` is the selected row's key and `x-model` binds it two-way. Created with `new`, the tree is filled and driven from code; items changed in place, plain or reactive, show after `refresh()` (`refreshItem(key)` for one row)." />
+          <Rich text="Items are objects with a `children` array (or a `parentId`, see below). `value` is the selected row's key and `x-model` binds it two-way. Created with `new`, the tree is filled and driven programmatically; items changed in place, plain or reactive, show after `refresh()` (`refreshItem(key)` for one row)." />
         </p>
-        <Example files={code('FromCode.tsx', 'project.ts', 'entry.ts')} stack>
-          <FromCode />
+        <Example files={code('Programmatic.tsx', 'project.ts', 'entry.ts')} stack>
+          <Programmatic />
         </Example>
       </Section>
 
@@ -158,7 +158,7 @@ import { TreeView } from '@motifx-community/ui';
 
       <Section anchor="search" title="Search and filter">
         <p>
-          <Rich text="`searchEnabled` adds a search box; matches show with their parents, opened, and clearing the search brings the rows back as they were. `searchValue` (or `filter(text)`) filters from code; `searchMode` is `contains` or `startswith`." />
+          <Rich text="`searchEnabled` adds a search box; matches show with their parents, opened, and clearing the search brings the rows back as they were. `searchValue` (or `filter(text)`) filters programmatically; `searchMode` is `contains` or `startswith`." />
         </p>
         <Example files={code('Search.tsx', 'world.ts', 'entry.ts')} stack>
           <Search />

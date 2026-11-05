@@ -104,7 +104,7 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     this.assignProperty('value', value, (v) => (v instanceof Date && !isNaN(+v) ? v : null));
     const date = this.peekProperty<Date | null>('value') ?? null;
     if (date) this.goTo(date);
-    // A day set from code shows in `x-model` too, so the model and the calendar never differ.
+    // A day set programmatically shows in `x-model` too, so the model and the calendar never differ.
     if (typeof value !== 'function' && date !== before) this.bindings.writeModel(date);
   }
   get min(): Date | null {

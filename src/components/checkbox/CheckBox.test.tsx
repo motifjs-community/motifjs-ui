@@ -33,7 +33,7 @@ function press(el: Element, key: string, init: KeyboardEventInit = {}) {
 }
 
 describe('CheckBox', () => {
-  it('is a native checkbox with its caption, the same from JSX and from code', async () => {
+  it('is a native checkbox with its caption, the same in JSX and programmatically', async () => {
     let jsx!: CheckBox;
     page(<CheckBox ref={(b: CheckBox) => (jsx = b)} label="&Remember me" helpText="On this device" class="extra" />);
     const coded = new CheckBox({ label: 'Newsletter' });
@@ -78,7 +78,7 @@ describe('CheckBox', () => {
     expect(b.inputElement.checked).toBe(true);
   });
 
-  it('reads functions over plain data again on reState, and writes a value set from code to x-model', async () => {
+  it('reads functions over plain data again on reState, and writes a value set programmatically to x-model', async () => {
     const plain = { on: false, label: 'Remember me' };
     const s = reactive({ on: false });
     let b!: CheckBox;
@@ -179,7 +179,7 @@ describe('CheckBox', () => {
     expect(b.focus()).toBe(false);
   });
 
-  it('toggles from its access key and from code', async () => {
+  it('toggles from its access key and programmatically', async () => {
     const s = reactive({ on: false });
     let b!: CheckBox;
     page(<CheckBox ref={(x: CheckBox) => (b = x)} label="&Agree" x-model={() => s.on} />);

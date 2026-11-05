@@ -13,7 +13,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.waitForTimeout(300);
   const [bar, track] = [await box(upload.locator('.mx-progress__bar')), await box(upload.locator('.mx-progress__track'))];
   check('…up to the end, the bar filling the track', (await upload.locator('.mx-progress__value').textContent()) === '100%' && Math.abs(bar.width - track.width) < 0.5);
-  await ways.getByRole('button', { name: 'Add a bar from code' }).click();
+  await ways.getByRole('button', { name: 'Add a bar programmatically' }).click();
   check('a bar created with new is added', (await page.getByRole('progressbar', { name: 'Task 1' }).getAttribute('aria-valuenow')) === '25');
 
   const unknown = page.locator('section[aria-labelledby="indeterminate"]').getByRole('progressbar', { name: 'Preparing' });

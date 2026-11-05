@@ -2,7 +2,7 @@ import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { slowAdapterFile } from '../../shared/slow-adapter-file';
 import { sources } from '../../shared/sources';
 import CustomValues from './examples/CustomValues';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Products from './examples/Products';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
@@ -45,9 +45,9 @@ import { data } from '@motifx-community/data';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
-        <Example files={code('FromCode.tsx', 'cities.ts')}>
-          <FromCode />
+      <Section anchor="ways" title="Declarative and programmatic">
+        <Example files={code('Programmatic.tsx', 'cities.ts')}>
+          <Programmatic />
         </Example>
       </Section>
 

@@ -32,7 +32,7 @@ function press(el: Element, key: string, init: KeyboardEventInit = {}) {
 const texts = (s: Switch) => s.element.querySelector('.mx-switch__text')!;
 
 describe('Switch', () => {
-  it('is a native checkbox with role="switch", the same from JSX and from code', async () => {
+  it('is a native checkbox with role="switch", the same in JSX and programmatically', async () => {
     let jsx!: Switch;
     page(<Switch ref={(s: Switch) => (jsx = s)} label="&Wi-Fi" helpText="Joins known networks" />);
     const coded = new Switch({ label: 'Bluetooth' });
@@ -72,7 +72,7 @@ describe('Switch', () => {
     ]);
   });
 
-  it('reads a function over plain data again on reState, and writes a value set from code to x-model', async () => {
+  it('reads a function over plain data again on reState, and writes a value set programmatically to x-model', async () => {
     const plain = { on: false };
     const s = reactive({ on: false });
     let sw!: Switch;

@@ -100,7 +100,7 @@ export default async function ({ page, base, check, axeSource }) {
     await plans.getByRole('button', { name: 'Choose' }).first().click();
     check('the button in the pane works on its own', (await page.locator('.ga-plans-told').textContent()) === 'Starter chosen');
 
-    // From code: the app's own buttons move it.
+    // Programmatically: the app's own buttons move it.
     const rooms = page.locator('.ga-rooms');
     await rooms.scrollIntoViewIfNeeded();
     await page.getByRole('button', { name: 'Garden' }).click();

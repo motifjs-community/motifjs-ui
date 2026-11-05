@@ -24,7 +24,7 @@ async function settle() {
 }
 
 describe('Badge', () => {
-  it('shows a text, or a count up to max and max+ beyond it, the same from JSX and from code', async () => {
+  it('shows a text, or a count up to max and max+ beyond it, the same in JSX and programmatically', async () => {
     let jsx!: Badge;
     page(<Badge ref={(b: Badge) => (jsx = b)} text="New" tone="success" class="extra" />);
     const coded = new Badge({ count: 120 });

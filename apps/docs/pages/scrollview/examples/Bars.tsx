@@ -4,7 +4,7 @@ import { Button, ScrollView, Stack, type ScrollViewBars } from '@motifx-communit
 const LINES = Array.from({ length: 40 }, (_, i) => `Line ${i + 1} of a long text that needs a box of its own to scroll in.`);
 const MODES: ScrollViewBars[] = ['onScroll', 'onHover', 'always', 'never'];
 
-/** A box that scrolls, its bars shown as told; moved from code to a line and back to the top. */
+/** A box that scrolls, its bars shown as told; moved programmatically to a line and back to the top. */
 export default function Bars() {
     const s = reactive({ bars: 'onScroll' as ScrollViewBars, top: 0 });
     let view!: ScrollView;

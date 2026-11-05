@@ -9,7 +9,7 @@ export default async function ({ page, base, check, axeSource }) {
     check('the box scrolls its content, the bars shown on scroll', m.full > m.height && m.overflow === 'auto' && m.bars === 'onScroll', JSON.stringify(m));
     check('a focusable region named by its label', (await text.getAttribute('tabindex')) === '0' && (await text.getAttribute('aria-label')) === 'Long text');
 
-    // From code: to a line and back to the top; onScroll tells the position.
+    // Programmatically: to a line and back to the top; onScroll tells the position.
     await ways.getByRole('button', { name: 'Line 20' }).click();
     await page.waitForFunction(() => document.querySelector('.sv-text').scrollTop > 0);
     await page.waitForTimeout(700);

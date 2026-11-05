@@ -21,7 +21,7 @@ export default async function ({ page, base, check, axeSource, box }) {
     check('one Tab stop', stops === 1, String(stops));
     await ways.getByRole('button', { name: 'Next' }).click();
     await page.waitForFunction(() => document.querySelector('.st-told')?.textContent === 'Step 2', null, { timeout: 2000 }).catch(() => {});
-    check('next() from code tells the change', (await ways.locator('.st-told').textContent()) === 'Step 2');
+    check('next() programmatically tells the change', (await ways.locator('.st-told').textContent()) === 'Step 2');
 
     // The line sits on the indicators' middle, with the same gap at both ends.
     const geometry = await signUp.evaluate(nav => {

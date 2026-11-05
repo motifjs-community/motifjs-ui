@@ -216,7 +216,7 @@ describe('Toast', () => {
     expect(document.activeElement).toBe(origin);
   });
 
-  it('follows getter props, from JSX and from code', async () => {
+  it('follows getter props, in JSX and programmatically', async () => {
     const s = reactive({ percent: 10, title: 'Upload' });
     const t = new Toast({ text: () => `${s.percent}%`, title: () => s.title, duration: 0 });
     toast.show(t);

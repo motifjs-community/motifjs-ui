@@ -54,7 +54,7 @@ export class ChildSettings {
     return this.values.get(child)?.get(name);
   }
 
-  /** Sets a child's setting from code: a value, or a function that is followed. */
+  /** Sets a child's setting programmatically: a value, or a function that is followed. */
   set(child: ComponentBase, name: string, value: Bind<unknown>): void {
     if (!this.tracked.has(child)) return;
     this.bind(child, name, value);

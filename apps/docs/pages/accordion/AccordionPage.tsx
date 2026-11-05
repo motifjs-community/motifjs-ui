@@ -1,6 +1,6 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import LazySections from './examples/LazySections';
 import OneOrSeveral from './examples/OneOrSeveral';
 import VariantsAndSizes from './examples/VariantsAndSizes';
@@ -44,8 +44,8 @@ const PROPERTIES = [
 const METHODS = [
   ['add(item), insert(index, item)', '`AccordionItem`', 'Adds an item. An item of another `Accordion` moves here.'],
   ['remove(item)', '`boolean`', 'Removes the item and disposes it; focus inside moves to a neighbour.'],
-  ['expandAll(), collapseAll()', '`void`', 'From code. `expandAll` needs `multiple`; with `collapsible` off one item stays open.'],
-  ['AccordionItem.expand(), collapse()', '`boolean`', 'As a click would: the cancelable events run. `item.expanded = true` sets it from code.'],
+  ['expandAll(), collapseAll()', '`void`', 'Programmatically. `expandAll` needs `multiple`; with `collapsible` off one item stays open.'],
+  ['AccordionItem.expand(), collapse()', '`boolean`', 'As a click would: the cancelable events run. `item.expanded = true` sets it programmatically.'],
   ['focus()', '`boolean`', 'An item focuses its header.'],
 ];
 
@@ -101,12 +101,12 @@ import { Accordion, AccordionItem } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="An `<AccordionItem>`'s children are its section. `value` lists the open items' keys and `x-model` binds it two-way. Created with `new`, items are added and removed from code." />
+          <Rich text="An `<AccordionItem>`'s children are its section. `value` lists the open items' keys and `x-model` binds it two-way. Created with `new`, items are added and removed programmatically." />
         </p>
-        <Example files={code('FromCode.tsx')} stack>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')} stack>
+          <Programmatic />
         </Example>
       </Section>
 

@@ -90,7 +90,7 @@ export default function DataGridDragSelectPage() {
 
       <Section anchor="big" title="Over 100,000 rows">
         <p>
-          <Rich text="Ranges are marks on the cells drawn now: the pooled rows and, with virtual columns, the columns in view. Drawing one over 100,000 rows × 60 columns keeps the frame rate, and a change of a range writes only the marks that changed, never a cell's text. The buttons set ranges by key from code." />
+          <Rich text="Ranges are marks on the cells drawn now: the pooled rows and, with virtual columns, the columns in view. Drawing one over 100,000 rows × 60 columns keeps the frame rate, and a change of a range writes only the marks that changed, never a cell's text. The buttons set ranges by key programmatically." />
         </p>
         <Example files={code('CellRangesVirtual.tsx')} stack>
           <CellRangesVirtual />

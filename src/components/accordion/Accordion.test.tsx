@@ -131,7 +131,7 @@ describe('Accordion', () => {
     expect(open(a)).toEqual([false, false, false]);
   });
 
-  it('writes what is opened from code to x-model too, and reads functions over plain data again on reState', async () => {
+  it('writes what is opened programmatically to x-model too, and reads functions over plain data again on reState', async () => {
     const s = reactive({ open: [] as (string | number)[] });
     const plain = { open: ['payment'] as (string | number)[], title: 'Payment' };
     let a!: Accordion;
@@ -200,7 +200,7 @@ describe('Accordion', () => {
     expect(collapsed).toHaveBeenLastCalledWith(expect.objectContaining({ index: 1, byUser: false }));
   });
 
-  it('is complete from code: add, insert, remove, expand', async () => {
+  it('is complete programmatically: add, insert, remove, expand', async () => {
     const a = new Accordion({ variant: 'separated' });
     page(a);
     const two = a.add(new AccordionItem({ title: 'Two', key: 'two' }));

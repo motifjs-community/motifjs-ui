@@ -24,7 +24,7 @@ async function settle() {
 const part = (card: Card, name: string) => card.element.querySelector<HTMLElement>(`.mx-card__${name}`)!;
 
 describe('Card', () => {
-  it('shows its header and its JSX children, the same from code, and names itself by its title', async () => {
+  it('shows its header and its JSX children, the same programmatically, and names itself by its title', async () => {
     let jsx!: Card;
     page(
       <Card ref={(c: Card) => (jsx = c)} title="Ada Lovelace" subtitle="Mathematician" class="extra">

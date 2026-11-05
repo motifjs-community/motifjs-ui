@@ -1,7 +1,7 @@
 import { Code, Example, Rich, Section } from '../../shared/doc';
 import { slowAdapterFile } from '../../shared/slow-adapter-file';
 import { withOrders } from './code';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Pager from './examples/Pager';
 import Pages from './examples/Pages';
 import Virtual from './examples/Virtual';
@@ -25,12 +25,12 @@ import { data } from '@motifx-community/data';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
           <Rich text="Give rows in memory with `rows` and their key with `rowKey`; the grid puts them in a `DataSource` over an `ArrayAdapter` itself. Every prop takes a value or a function. Created with `new`, the grid is an object like any other: add it, sort it, ask it." />
         </p>
-        <Example files={withOrders('FromCode.tsx')} stack>
-          <FromCode />
+        <Example files={withOrders('Programmatic.tsx')} stack>
+          <Programmatic />
         </Example>
       </Section>
 
@@ -54,7 +54,7 @@ import { data } from '@motifx-community/data';
 
       <Section anchor="pager" title="Pager">
         <p>
-          <Rich text="The pager under the rows shows the page sizes (`pageSizeSelector`, the sizes of `allowedPageSizes`, `all` for one page with every row), “Page 3 of 12 (250 items)” (`pagerInfo`, `pagerInfoText` with `{0}`, `{1}`, `{2}`), the first, previous, next and last buttons (`pagerNavigation`) and the pages around the current one (`pagerNeighbors`). `pagerDisplayMode` picks its look: `full` with page buttons and the sizes as buttons, `compact` with a box for the page number and a drop-down of the sizes, `adaptive` (the default) full while it fits in the grid's width. The rows per page change from code with `pageSize(n)` too; either way `onPageSizeChanging` can keep the old size, the grid goes back to the first page, and with `layoutKey` the size is kept with the layout. PageUp and PageDown turn the page (`pageKeys`)." />
+          <Rich text="The pager under the rows shows the page sizes (`pageSizeSelector`, the sizes of `allowedPageSizes`, `all` for one page with every row), “Page 3 of 12 (250 items)” (`pagerInfo`, `pagerInfoText` with `{0}`, `{1}`, `{2}`), the first, previous, next and last buttons (`pagerNavigation`) and the pages around the current one (`pagerNeighbors`). `pagerDisplayMode` picks its look: `full` with page buttons and the sizes as buttons, `compact` with a box for the page number and a drop-down of the sizes, `adaptive` (the default) full while it fits in the grid's width. The rows per page change programmatically with `pageSize(n)` too; either way `onPageSizeChanging` can keep the old size, the grid goes back to the first page, and with `layoutKey` the size is kept with the layout. PageUp and PageDown turn the page (`pageKeys`)." />
         </p>
         <Example files={withOrders('Pager.tsx')} stack>
           <Pager />

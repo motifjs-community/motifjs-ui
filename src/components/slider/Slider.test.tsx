@@ -46,7 +46,7 @@ function pointer(s: Slider, type: string, clientX: number, target?: Element) {
 }
 
 describe('Slider', () => {
-  it('is a labelled slider thumb, the same from JSX and from code', async () => {
+  it('is a labelled slider thumb, the same in JSX and programmatically', async () => {
     let jsx!: Slider;
     page(<Slider ref={(x: Slider) => (jsx = x)} label="&Volume" value={30} helpText="Speakers only" class="extra" />);
     const coded = new Slider({ label: 'Zoom', min: 25, max: 400, step: 25 });
@@ -116,7 +116,7 @@ describe('Slider', () => {
     expect(b.value).toBe(40);
   });
 
-  it('reads functions over plain data again on reState, writes a value set from code to x-model, and keeps your array', async () => {
+  it('reads functions over plain data again on reState, writes a value set programmatically to x-model, and keeps your array', async () => {
     const plain = { v: 20, max: 100 };
     const s = reactive({ v: 10 });
     const pair: [number, number] = [3, 1];

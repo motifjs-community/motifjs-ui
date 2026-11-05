@@ -168,7 +168,7 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   }
 
   /**
-   * Opens the menu from code: at a point of the viewport, or at an element (its start corner,
+   * Opens the menu programmatically: at a point of the viewport, or at an element (its start corner,
    * below it). `target` is what `onOpening` and `targetElement` report; the target element by
    * default. Returns whether it opened.
    */

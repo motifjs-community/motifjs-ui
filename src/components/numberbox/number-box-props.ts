@@ -22,7 +22,7 @@ export interface NumberBoxProps extends FieldProps<number | null> {
   /** The locale of the format and of what is typed. Default the page's `lang`. */
   locale?: Bind<string>;
   /**
-   * Digits after the decimal point: every value is rounded to them (entered, given or set from code, written back
+   * Digits after the decimal point: every value is rounded to them (entered, given or set programmatically, written back
    * to `x-model`), and shown with exactly that many while the field is not edited. Default: as given.
    */
   decimals?: Bind<number | null>;

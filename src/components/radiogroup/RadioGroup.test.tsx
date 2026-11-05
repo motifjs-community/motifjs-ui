@@ -36,7 +36,7 @@ const texts = <T,>(g: RadioGroup<T>) => Array.from(g.element.querySelectorAll('.
 const stops = <T,>(g: RadioGroup<T>) => g.inputs.map((i) => i.tabIndex);
 
 describe('RadioGroup', () => {
-  it('is a labelled radiogroup of native radios, the same from JSX and from code', async () => {
+  it('is a labelled radiogroup of native radios, the same in JSX and programmatically', async () => {
     let jsx!: RadioGroup<string>;
     page(<RadioGroup ref={(g: RadioGroup<string>) => (jsx = g)} label="&Size" items={['S', 'M', 'L']} helpText="Pick one" />);
     const coded = new RadioGroup<string>({ label: 'Shipping', items: [{ value: 'std', text: 'Standard' }, { value: 'exp', text: 'Express' }] });
@@ -76,7 +76,7 @@ describe('RadioGroup', () => {
     expect(g.inputs.map((i) => i.checked)).toEqual([true, false, false]);
   });
 
-  it('reads functions over plain data again on reState, and writes a value set from code to x-model', async () => {
+  it('reads functions over plain data again on reState, and writes a value set programmatically to x-model', async () => {
     const plain = { size: 'M', large: 'Large', canXl: false };
     const items = [{ value: 'S', text: 'Small' }, { value: 'L', text: () => plain.large }, { value: 'XL', text: 'Extra', enabled: () => plain.canXl }];
     const s = reactive({ size: 'S' });

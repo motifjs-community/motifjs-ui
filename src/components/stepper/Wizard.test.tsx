@@ -105,7 +105,7 @@ describe('Wizard', () => {
         expect(faces(w)[0].dataset.status).toBe('error');
     });
 
-    it('is made from code with content factories, asks the step and onFinishing, then finishes with every step done', async () => {
+    it('is made programmatically with content factories, asks the step and onFinishing, then finishes with every step done', async () => {
         const made: string[] = [];
         const told: string[] = [];
         let allow = false;
@@ -136,7 +136,7 @@ describe('Wizard', () => {
         expect(faces(w).map(f => f.dataset.status)).toEqual(['done', 'done']);
     });
 
-    it('writes x-model, names steps by key, and takes steps added and removed from code', async () => {
+    it('writes x-model, names steps by key, and takes steps added and removed programmatically', async () => {
         const s = reactive({ at: 'a' as string | number | null });
         let w!: Wizard;
         page(

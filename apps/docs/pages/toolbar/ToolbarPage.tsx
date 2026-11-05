@@ -1,7 +1,7 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Editor from './examples/Editor';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Localization from './examples/Localization';
 import Overflow from './examples/Overflow';
 import SizeAndOrientation from './examples/SizeAndOrientation';
@@ -89,15 +89,15 @@ import { Toolbar, ToolbarSeparator, type ToolbarItem } from '@motifx-community/u
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="`items` describes the commands as data, each field a value or a function; JSX children (any control) come after them. From code, a toolbar is filled like any control: `toolbar.controls.add(button)`. Every prop is also a property." />
+          <Rich text="`items` describes the commands as data, each field a value or a function; JSX children (any control) come after them. Programmatically, a toolbar is filled like any control: `toolbar.controls.add(button)`. Every prop is also a property." />
         </p>
         <Example title="An editor toolbar" files={code('Editor.tsx', 'editor-items.tsx', 'draft.ts', 'icons.tsx')} stack>
           <Editor />
         </Example>
-        <Example title="Filled from code" files={code('FromCode.tsx')} stack>
-          <FromCode />
+        <Example title="Filled programmatically" files={code('Programmatic.tsx')} stack>
+          <Programmatic />
         </Example>
       </Section>
 

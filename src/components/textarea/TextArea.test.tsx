@@ -38,7 +38,7 @@ function press(el: Element, key: string, init: KeyboardEventInit = {}) {
 }
 
 describe('TextArea', () => {
-  it('is a labelled textarea, the same from JSX and from code', async () => {
+  it('is a labelled textarea, the same in JSX and programmatically', async () => {
     let jsx!: TextArea;
     page(<TextArea ref={(t: TextArea) => (jsx = t)} label="&Comment" placeholder="Say something" helpText="Be kind" class="extra" />);
     const coded = new TextArea({ label: 'Notes' });

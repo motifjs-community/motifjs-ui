@@ -1,16 +1,16 @@
 /** Real-browser checks of the control page. */
 export default async function ({ page, base, check }) {
   await page.goto(base + 'control', { waitUntil: 'load' });
-  await page.getByRole('button', { name: 'Add a button from code' }).click();
+  await page.getByRole('button', { name: 'Add a button programmatically' }).click();
   const added = page.getByRole('button', { name: 'Button 1', exact: true });
   check('a control created with new is added and shown', (await added.count()) === 1);
   await added.click();
-  check('its text set from code updates in place', (await page.getByRole('button', { name: 'Button 1 ✓' }).count()) === 1);
+  check('its text set programmatically updates in place', (await page.getByRole('button', { name: 'Button 1 ✓' }).count()) === 1);
 
   const nameBox = page.locator('input[name=panel-name]');
   await nameBox.focus();
   await page.getByRole('button', { name: 'Toggle panel enabled' }).evaluate((b) => {
-    // Toggle without moving focus first: what an app does from code.
+    // Toggle without moving focus first: what an app does programmatically.
     b.click();
   });
   check('a disabled panel disables the native input inside', await nameBox.isDisabled());

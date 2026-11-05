@@ -172,7 +172,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
   set value(value: Bind<data.FilterExpression | null>) {
     const before = this.parts.value;
     this.assignProperty('value', value);
-    // A filter set from code shows in `x-model` too, so the model and the builder never differ.
+    // A filter set programmatically shows in `x-model` too, so the model and the builder never differ.
     const now = this.parts.value;
     if (typeof value !== 'function' && !this.parts.model.same(now, before)) this.bindings.writeModel(now);
   }
@@ -523,7 +523,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     this.draw(focus || this.focusWithin);
   }
 
-  /** A value from the prop or from code: the tree is built again, unless it is the value the tree stands for already. */
+  /** A value from the prop or programmatically: the tree is built again, unless it is the value the tree stands for already. */
   private takeValue(value: data.FilterExpression | null) {
     const parts = this.parts;
     if (parts.ready && parts.model.same(value, parts.value)) return;

@@ -1,6 +1,6 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Looks from './examples/Looks';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
@@ -63,12 +63,12 @@ import { Pagination } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
           <Rich text="`x-model` binds the page; `onPageChanged` tells the page size too, so the data can be loaded for both." />
         </p>
-        <Example files={code('FromCode.tsx')}>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')}>
+          <Programmatic />
         </Example>
       </Section>
 

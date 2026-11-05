@@ -168,7 +168,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
   set value(value: Bind<T>) {
     const before = this.peekValue();
     untracked(() => this.assignProperty<T>('value', value, (v) => this.takeEcho(v) ?? this.normalizeValue(v)));
-    // A value set from code shows in `x-model` too, so the model and the field never differ.
+    // A value set programmatically shows in `x-model` too, so the model and the field never differ.
     if (typeof value !== 'function' && !this.sameValue(this.peekValue(), before)) this.writeBack(this.peekValue());
   }
   get label(): string {

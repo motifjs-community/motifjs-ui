@@ -19,7 +19,7 @@ function page(...children: Parameters<typeof mountHost>) {
 }
 
 describe('GroupBox', () => {
-  it('is a fieldset named by its legend, from JSX and from code', async () => {
+  it('is a fieldset named by its legend, in JSX and programmatically', async () => {
     let box!: GroupBox;
     page(
       <GroupBox ref={(b: GroupBox) => (box = b)} title="&Address" gap="xs" padding={12}>

@@ -2,7 +2,7 @@ import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { slowAdapterFile } from '../../shared/slow-adapter-file';
 import { sources } from '../../shared/sources';
 import Basics from './examples/Basics';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import FromSource from './examples/FromSource';
 import Templates from './examples/Templates';
 import Views from './examples/Views';
@@ -149,9 +149,9 @@ import { Scheduler } from '@motifx-community/ui';
         </Example>
       </Section>
 
-      <Section anchor="code" title="From code">
-        <Example files={code('FromCode.tsx')}>
-          <FromCode />
+      <Section anchor="code" title="Programmatic use">
+        <Example files={code('Programmatic.tsx')}>
+          <Programmatic />
         </Example>
       </Section>
 

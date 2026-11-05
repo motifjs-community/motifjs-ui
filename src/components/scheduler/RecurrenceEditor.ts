@@ -123,7 +123,7 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
   set value(value: Bind<string>) {
     const before = this.peekProperty<string>('value') ?? '';
     this.assignProperty('value', value, (v) => (typeof v === 'string' ? v : ''));
-    // A rule set from code shows in `x-model` too, so the model and the editor never differ.
+    // A rule set programmatically shows in `x-model` too, so the model and the editor never differ.
     const now = this.peekProperty<string>('value') ?? '';
     if (typeof value !== 'function' && now !== before) this.bindings.writeModel(now);
   }

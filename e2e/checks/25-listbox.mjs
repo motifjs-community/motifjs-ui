@@ -12,7 +12,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('the arrow keys move and choose in a single list', (await page.locator('.lb-city').textContent()) === 'city: İstanbul' && activeId === (await city.getByRole('option', { name: 'İstanbul' }).getAttribute('id')));
   await page.keyboard.press('k');
   check('typing a letter goes to the item starting with it', (await page.locator('.lb-city').textContent()) === 'city: Konya');
-  await ways.getByRole('button', { name: 'Add a list from code' }).click();
+  await ways.getByRole('button', { name: 'Add a list programmatically' }).click();
   check('a list created with new is added and focused', await page.getByRole('listbox', { name: 'Size 1' }).evaluate((el) => document.activeElement === el));
 
   const multiple = page.locator('section[aria-labelledby="multiple"]');

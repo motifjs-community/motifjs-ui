@@ -2,7 +2,7 @@ import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Basic from './examples/Basic';
 import CustomOperations from './examples/CustomOperations';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Limits from './examples/Limits';
 import Localization from './examples/Localization';
 
@@ -71,7 +71,7 @@ const METHODS = [
   ['setField(condition, dataField), setOperation(condition, op), setConditionValue(condition, value)', '`boolean`', 'An operation or value that no longer fits the new field is reset.'],
   ['setGroupOperation(group, op)', '`boolean`', ''],
   ['clear()', '`void`', 'Empties the tree.'],
-  ['openEditor(condition), closeEditor(keep?)', '`boolean`, `void`', 'The value editor, from code.'],
+  ['openEditor(condition), closeEditor(keep?)', '`boolean`, `void`', 'The value editor, programmatically.'],
   ['focusItem(item, part?), focus()', '`boolean`', "A row's button (`'remove'`, `'group'`, `'add'`, `'field'`, `'operation'`, `'value'`); the tree's Tab stop."],
   ['getFilterExpression()', '`data.FilterExpression | null`', 'The value.'],
   ['refresh()', '`void`', 'Your fields and value may be plain or reactive; the builder reads them as they are. After changing them in place, call `refresh()`. The rows are drawn again; a value changed in place is read into the tree.'],
@@ -148,12 +148,12 @@ import { FilterBuilder, filterText } from '@motifx-community/ui';
         </Example>
       </Section>
 
-      <Section anchor="code" title="From code, and the events">
+      <Section anchor="code" title="Programmatic use, and the events">
         <p>
           <Rich text="Every change the user makes is also a method (`addCondition`, `addGroup`, `removeItem`, `setField`, `setOperation`, `setConditionValue`, `setGroupOperation`, `clear`), and every change asks first: `onItemAdding`, `onItemRemoving` and `onItemChanging` can change it or cancel it, the `…ed` events and `onValueChanged` follow. Here the last condition of the root cannot be taken out." />
         </p>
-        <Example files={code('FromCode.tsx', 'sales.ts')} stack>
-          <FromCode />
+        <Example files={code('Programmatic.tsx', 'sales.ts')} stack>
+          <Programmatic />
         </Example>
       </Section>
 

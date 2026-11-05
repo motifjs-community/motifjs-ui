@@ -28,7 +28,7 @@ const key = (el: HTMLElement, name: string) => el.dispatchEvent(new KeyboardEven
 const part = (chip: Chip, name: string) => chip.element.querySelector<HTMLElement>(`.mx-chip__${name}`)!;
 
 describe('Chip', () => {
-  it('shows its text, the same from JSX and from code; a plain chip takes no focus', async () => {
+  it('shows its text, the same in JSX and programmatically; a plain chip takes no focus', async () => {
     let jsx!: Chip;
     page(<Chip ref={(c: Chip) => (jsx = c)} text="Vegan" class="extra" />);
     const coded = new Chip({ text: 'Beta', size: 'sm', variant: 'outline' });

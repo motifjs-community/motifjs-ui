@@ -128,14 +128,14 @@ describe('Splitter', () => {
         second.parentElement!.querySelector<HTMLButtonElement>('.mx-splitter__fold[data-side="after"]')!.click();
         expect(s.panes[2].collapsed).toBe(false);
         expect(told).toEqual(['0:true user', '0:false user']);
-        // From code any pane may be hidden; `collapsible` is about the handle.
+        // Programmatically any pane may be hidden; `collapsible` is about the handle.
         expect(s.panes[1].collapse()).toBe(true);
         expect(s.panes[1].expand()).toBe(true);
         expect(s.panes[0].collapse()).toBe(true);
         expect(s.panes[0].expand()).toBe(true);
     });
 
-    it('panes are added, inserted and removed from code; sizes given take the place of the panes’ own; vertical', async () => {
+    it('panes are added, inserted and removed programmatically; sizes given take the place of the panes’ own; vertical', async () => {
         const s = new Splitter({ orientation: 'vertical', sizes: [100, null, 200] });
         page(s);
         await settle();

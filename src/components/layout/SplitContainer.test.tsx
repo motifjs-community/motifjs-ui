@@ -62,7 +62,7 @@ describe('SplitContainer', () => {
     );
   });
 
-  it('is complete from code: panes, orientation, shares, a fixed second pane', async () => {
+  it('is complete programmatically: panes, orientation, shares, a fixed second pane', async () => {
     const split = new SplitContainer({ orientation: 'vertical', position: '30%' });
     split.first.controls.add(new Button({ text: 'Editor' }));
     split.controls.add(new Button({ text: 'Output' }));
@@ -122,7 +122,7 @@ describe('SplitContainer', () => {
     expect(moves.at(-1)).toMatchObject({ position: 300, byUser: false });
   });
 
-  it('writes a position set from code to x-model, and reads one over plain data again on reState', async () => {
+  it('writes a position set programmatically to x-model, and reads one over plain data again on reState', async () => {
     const s = reactive({ width: 200 as number | string });
     const plain = { width: 120 as number | string };
     let split!: SplitContainer;

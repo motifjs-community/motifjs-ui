@@ -22,7 +22,7 @@ const PROPS = [
 const MEMBERS = [
     ['onShown, onHidden', 'event', 'It came on the screen (after its delay); it went.'],
     ['onCancel', 'event', 'The Cancel button was pressed, or Escape; the panel hides after.'],
-    ['show(), hide(), cancel()', '`boolean` / `void`', 'From code; `show()` is `false` while it is shown or waiting for its delay.'],
+    ['show(), hide(), cancel()', '`boolean` / `void`', 'Programmatically; `show()` is `false` while it is shown or waiting for its delay.'],
     ['isShown', 'read-only', 'Whether it is on the screen now.'],
     ['spinner, cancelButton', 'read-only', 'The kit’s spinner and button in the pane.']
 ];
@@ -32,7 +32,7 @@ const BEHAVIOUR = [
     ['Over the page', 'Without a `target`, it covers the viewport and the rest of the page is inert.'],
     ['Focus', 'Focus that was under it waits on the panel (on the Cancel button when there is one) and goes back where it was when the panel hides.'],
     ['Delay', 'Quick work shows nothing: it comes after `delay`, and a hide before that cancels it.'],
-    ['Spinner.cover', 'The kit’s spinner covers a container from code in one call (`Spinner.cover`); the load panel is the component with the pane, the message, the delay and the button.']
+    ['Spinner.cover', 'The kit’s spinner covers a container programmatically in one call (`Spinner.cover`); the load panel is the component with the pane, the message, the delay and the button.']
 ];
 
 const A11Y = [
@@ -72,7 +72,7 @@ import { LoadPanel } from '@motifx-community/ui';
 
             <Section anchor="ways" title="Over a container">
                 <p>
-                    <Rich text="`target` names the component or element it covers; `value` (or `x-model`) shows and hides it, `show()` and `hide()` from code. `delay` keeps quick work from flashing it." />
+                    <Rich text="`target` names the component or element it covers; `value` (or `x-model`) shows and hides it, `show()` and `hide()` programmatically. `delay` keeps quick work from flashing it." />
                 </p>
                 <Example stack files={code('Container.tsx')}>
                     <Container />

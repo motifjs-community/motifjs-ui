@@ -85,7 +85,7 @@ describe('Tooltip', () => {
     expect(button.hasAttribute('aria-describedby')).toBe(false);
   });
 
-  it('works from code: new Tooltip with an element, open() and close(), properties set later', async () => {
+  it('works programmatically: new Tooltip with an element, open() and close(), properties set later', async () => {
     const target = document.createElement('span');
     target.textContent = 'Help';
     document.body.append(target);
@@ -256,7 +256,7 @@ describe('Tooltip', () => {
     expect(shown(tb)).toBe(false);
   });
 
-  it('showOn: focus ignores the pointer; manual shows only from code; touch never shows it', async () => {
+  it('showOn: focus ignores the pointer; manual shows only programmatically; touch never shows it', async () => {
     const s = reactive({ showOn: 'focus' as 'focus' | 'manual' | 'hover-focus' });
     const target = document.createElement('button');
     let tip!: Tooltip;
@@ -323,7 +323,7 @@ describe('Tooltip', () => {
     expect(tip.element.firstElementChild!.className).toBe('mx-tooltip__text');
   });
 
-  it('goes with a component target when made from code', async () => {
+  it('goes with a component target when made programmatically', async () => {
     const button = new Button({ text: 'Go' });
     page(button);
     const tip = new Tooltip({ target: button, text: 'Goes' });
@@ -427,7 +427,7 @@ describe('Tooltip', () => {
     expect(shown(tip)).toBe(false);
   });
 
-  it('made from code, it goes next to its target, never inside a button', () => {
+  it('made programmatically, it goes next to its target, never inside a button', () => {
     const panel = document.createElement('div');
     const button = document.createElement('button');
     const icon = document.createElement('span');

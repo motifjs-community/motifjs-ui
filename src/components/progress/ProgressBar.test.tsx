@@ -26,7 +26,7 @@ const done = (p: ProgressBar) => p.element.style.getPropertyValue('--_fraction')
 const shown = (p: ProgressBar) => p.element.querySelector<HTMLElement>('.mx-progress__value')!;
 
 describe('ProgressBar', () => {
-  it('is a labelled progress bar, the same from JSX and from code', async () => {
+  it('is a labelled progress bar, the same in JSX and programmatically', async () => {
     let jsx!: ProgressBar;
     page(<ProgressBar ref={(x: ProgressBar) => (jsx = x)} label="Uploading" value={40} showValue locale="en" class="extra" />);
     const coded = new ProgressBar({ label: 'Import', max: 8 });

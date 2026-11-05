@@ -72,7 +72,7 @@ function accepted(file: File, accept: string): boolean {
 
 /**
  * Files chosen with a button or dropped on the box, listed with their size and what happens to them: uploaded as
- * they come (`uploadUrl`, in one piece or in chunks, or your own `upload`), on an Upload button, or from code;
+ * they come (`uploadUrl`, in one piece or in chunks, or your own `upload`), on an Upload button, or programmatically;
  * progress, cancel, retry and remove on each. `accept`, `maxFileSize`, `minFileSize` and `maxFiles` turn files
  * away, each listed with the reason. The value is the files taken; `x-model` binds it.
  *

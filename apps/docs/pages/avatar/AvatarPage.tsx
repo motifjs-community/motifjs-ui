@@ -1,7 +1,7 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Content from './examples/Content';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Groups from './examples/Groups';
 import Sizes from './examples/Sizes';
 import Tones from './examples/Tones';
@@ -84,12 +84,12 @@ import { Avatar, AvatarGroup } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function. Created with `new`, the same properties are set from code." />
+          <Rich text="Every prop takes a value or a function. Created with `new`, the same properties are set programmatically." />
         </p>
-        <Example files={code('FromCode.tsx')}>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')}>
+          <Programmatic />
         </Example>
       </Section>
 

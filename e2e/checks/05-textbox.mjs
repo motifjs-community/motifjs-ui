@@ -11,7 +11,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.keyboard.type('Ada');
   await page.keyboard.press('Escape');
   check('Escape empties it too', (await nameField.inputValue()) === '');
-  await ways.getByRole('button', { name: 'Add a field from code' }).click();
+  await ways.getByRole('button', { name: 'Add a field programmatically' }).click();
   check('a field created with new is added and focused', await page.getByLabel('Field 1', { exact: true }).evaluate((el) => document.activeElement === el));
 
   const passwordCard = page.locator('section[aria-labelledby="password"]');

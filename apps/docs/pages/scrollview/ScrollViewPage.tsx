@@ -32,7 +32,7 @@ const MEMBERS = [
 ];
 
 const BEHAVIOUR = [
-    ['Scrolling', 'The box scrolls with the wheel, the keys when focused, a finger, and from code. `direction` locks the other axis; the page behind does not scroll on when the content ends.'],
+    ['Scrolling', 'The box scrolls with the wheel, the keys when focused, a finger, and programmatically. `direction` locks the other axis; the page behind does not scroll on when the content ends.'],
     ['Scrollbars', 'The design system’s bars. With `onScroll` the thumb shows while the content moves and goes a moment after; with `onHover` while the pointer is over the view or focus is in it; `always` leaves them; `never` hides them, the content still scrolls.'],
     ['Pull to refresh', 'From the top, with a finger or the pointer: the content comes down (harder the farther it goes) and the panel above it says to pull, then to release. Let go far enough it refreshes: the spinner turns until `release()` or the promise. A short pull goes back.'],
     ['Load more', 'Within `reachBottomOffset` of the end, `onReachBottom` is asked once; the panel under the content shows meanwhile. Released, the next reach asks again, until `release(true)`. Content that does not fill the box asks at once, and again as it grows.'],
@@ -64,7 +64,7 @@ export default function ScrollViewPage() {
         <>
             <p class="lead">
                 Content that scrolls in a box of its own: the bars shown as told, a pull from the top that asks for what is
-                new, a reach near the end that asks for more. Moved from code to a position or to an element.
+                new, a reach near the end that asks for more. Moved programmatically to a position or to an element.
             </p>
 
             <Section anchor="import" title="Import">
@@ -77,7 +77,7 @@ import { ScrollView } from '@motifx-community/ui';
 
             <Section anchor="ways" title="A box that scrolls">
                 <p>
-                    <Rich text="The JSX children are the content. `showScrollbar` says when the bars show; `scrollTo` and `scrollToElement` move the content from code, `onScrolled` tells where it stands." />
+                    <Rich text="The JSX children are the content. `showScrollbar` says when the bars show; `scrollTo` and `scrollToElement` move the content programmatically, `onScrolled` tells where it stands." />
                 </p>
                 <Example stack files={code('Bars.tsx')}>
                     <Bars />

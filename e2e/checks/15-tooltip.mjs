@@ -96,11 +96,11 @@ export default async function ({ page, base, check, axeSource, box }) {
   await showOn.scrollIntoViewIfNeeded();
   await page.waitForTimeout(300);
   await showOn.getByRole('button', { name: 'Show it' }).click();
-  check('a manual tooltip opens from code', (await openCount()) === 1 && (await open.textContent()) === 'Shown from code');
+  check('a manual tooltip opens programmatically', (await openCount()) === 1 && (await open.textContent()) === 'Shown programmatically');
   await page.waitForTimeout(400);
   check('…and stays while the pointer is elsewhere', (await openCount()) === 1);
   await showOn.getByRole('button', { name: 'Hide it' }).click();
-  check('…and closes from code', (await openCount()) === 0);
+  check('…and closes programmatically', (await openCount()) === 0);
 
   const many = page.locator('section[aria-labelledby="many"]');
   const before = await page.locator('.mx-tooltip').count();

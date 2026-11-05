@@ -6,7 +6,7 @@ export interface TileSelectionChangedEventArgs {
     indexes: number[];
     /** Their items as given. */
     items: unknown[];
-    /** By a press or a key, else from code. */
+    /** By a press or a key, else programmatically. */
     byUser: boolean;
     source: TileView;
 }

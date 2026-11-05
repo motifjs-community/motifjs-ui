@@ -1,12 +1,12 @@
 import { reactive } from '@motifx/core';
 import { Button, Popover, Stack, TextBox } from '@motifx-community/ui';
 
-/** A popover with a title, a close button and a small form; one made from code for a plain element. */
+/** A popover with a title, a close button and a small form; one made programmatically for a plain element. */
 export default function Basic() {
     const s = reactive({ open: false, name: 'Ada', saved: '' });
     let button!: Button;
     let link!: HTMLElement;
-    const coded = new Popover({ title: 'From code', content: new Button({ text: 'OK', variant: 'outline', onclick: () => coded.close() }) });
+    const coded = new Popover({ title: 'Programmatically', content: new Button({ text: 'OK', variant: 'outline', onclick: () => coded.close() }) });
 
     return (
         <Stack orientation="horizontal" wrap align="center">
@@ -28,7 +28,7 @@ export default function Basic() {
                     coded.toggle();
                 }}
             >
-                A popover from code
+                A popover programmatically
             </a>
         </Stack>
     );

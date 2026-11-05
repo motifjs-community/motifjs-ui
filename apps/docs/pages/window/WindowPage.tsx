@@ -120,9 +120,9 @@ import { MxForm, messageBox, confirm, type FormResult } from '@motifx-community/
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="In JSX, `x-model` shows the form while the value is true and writes `false` when the user closes it; it is hidden, not disposed, and lives with its parent. From code, a form (often a class with a `view()`) is shown with `show(host)` or `showDialog(host)`; it is added to the host and disposed when it closes." />
+          <Rich text="In JSX, `x-model` shows the form while the value is true and writes `false` when the user closes it; it is hidden, not disposed, and lives with its parent. Programmatically, a form (often a class with a `view()`) is shown with `show(host)` or `showDialog(host)`; it is added to the host and disposed when it closes." />
         </p>
         <Example files={code('JsxAndCode.tsx', 'RenameForm.tsx')}>
           <JsxAndCode />
@@ -158,7 +158,7 @@ import { MxForm, messageBox, confirm, type FormResult } from '@motifx-community/
 
       <Section anchor="events" title="Events">
         <p>
-          <Rich text="`onClosing` can keep the form open, here while it has changes; `reason` tells the user (close button, Escape) from code and from the owner going away." />
+          <Rich text="`onClosing` can keep the form open, here while it has changes; `reason` tells the user (close button, Escape) programmatically and from the owner going away." />
         </p>
         <Example files={code('Events.tsx')} stack>
           <Events />

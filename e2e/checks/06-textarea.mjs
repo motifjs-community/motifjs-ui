@@ -7,7 +7,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   const comment = ways.getByLabel('Comment', { exact: true });
   await comment.fill('Hello\nworld');
   check('typing writes back through x-model', (await ways.locator('.mx-field__message').first().textContent()) === '11 characters');
-  await ways.getByRole('button', { name: 'Add a note from code' }).click();
+  await ways.getByRole('button', { name: 'Add a note programmatically' }).click();
   check('a textarea created with new is added and focused', await page.getByLabel('Note 1', { exact: true }).evaluate((el) => document.activeElement === el));
 
   const grow = page.locator('section[aria-labelledby="grow"]');

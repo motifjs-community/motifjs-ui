@@ -95,7 +95,7 @@ export class Stack extends Control<HTMLDivElement, StackProps> {
     return (this.settings.get(child, 'grow') as boolean | number | undefined) ?? false;
   }
 
-  /** Sets a child's `grow` from code: a value, or a function that is followed. */
+  /** Sets a child's `grow` programmatically: a value, or a function that is followed. */
   setGrow(child: ComponentBase, grow: Bind<boolean | number>): void {
     this.settings.set(child, 'grow', grow);
   }

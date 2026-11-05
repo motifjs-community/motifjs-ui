@@ -6,7 +6,7 @@ export interface StepChangedEventArgs {
     /** The item as given; `null` when there is no current step. */
     item: unknown;
     previous: number;
-    /** By a press on a step, else from code. */
+    /** By a press on a step, else programmatically. */
     byUser: boolean;
     source: Stepper;
 }

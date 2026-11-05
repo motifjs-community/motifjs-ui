@@ -29,7 +29,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.waitForTimeout(50);
   check('the close button hides it (x-model false), the form stays in the page', (await page.locator('dialog.win-find').count()) === 1 && !(await find.evaluate((el) => el.open)));
 
-  // A modal form from code: top layer, inert page, Tab cycles, Escape cancels, focus returns.
+  // A modal form programmatically: top layer, inert page, Tab cycles, Escape cancels, focus returns.
   const renameButton = ways.getByRole('button', { name: 'Rename… (class, modal)' });
   await renameButton.click();
   const rename = page.getByRole('dialog', { name: 'Rename' });

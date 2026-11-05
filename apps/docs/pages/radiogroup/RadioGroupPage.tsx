@@ -1,6 +1,6 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import FromData from './examples/FromData';
 import Layout from './examples/Layout';
 import OptionDetails from './examples/OptionDetails';
@@ -108,12 +108,12 @@ import { RadioGroup, type RadioItem } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="A plain value is its own text. `x-model` binds the chosen value two-way. Created with `new`, the same properties are set from code." />
+          <Rich text="A plain value is its own text. `x-model` binds the chosen value two-way. Created with `new`, the same properties are set programmatically." />
         </p>
-        <Example files={code('FromCode.tsx')} stack>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')} stack>
+          <Programmatic />
         </Example>
       </Section>
 

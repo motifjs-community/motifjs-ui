@@ -29,7 +29,7 @@ describe('spaceValue', () => {
 });
 
 describe('Stack', () => {
-  it('lays out its JSX children and the ones added from code', async () => {
+  it('lays out its JSX children and the ones added programmatically', async () => {
     let stack!: Stack;
     page(
       <Stack ref={(s: Stack) => (stack = s)} orientation="horizontal" gap="sm" align="center" justify="end" class="extra">
@@ -58,7 +58,7 @@ describe('Stack', () => {
     expect(three.element.style.flexGrow).toBe('');
   });
 
-  it('is complete from code and follows getter props', async () => {
+  it('is complete programmatically and follows getter props', async () => {
     const s = reactive({ vertical: false, gap: 4 as number | string, grow: true });
     const stack = new Stack({ orientation: () => (s.vertical ? 'vertical' : 'horizontal'), gap: () => s.gap, wrap: true, reverse: true, inline: true, padding: 'xs md' });
     const child = new Button({ text: 'A', grow: () => s.grow });

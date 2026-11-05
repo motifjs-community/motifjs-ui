@@ -26,7 +26,7 @@ async function settle() {
 const bones = (s: Skeleton) => Array.from(s.element.querySelectorAll('.mx-skeleton__bone'));
 
 describe('Skeleton', () => {
-  it('draws a bone per line before its content, the same from JSX and from code', async () => {
+  it('draws a bone per line before its content, the same in JSX and programmatically', async () => {
     let jsx!: Skeleton;
     page(
       <Skeleton ref={(s: Skeleton) => (jsx = s)} lines={3} class="extra">

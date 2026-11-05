@@ -39,7 +39,7 @@ const items = (b: Button) => Array.from(b.element.querySelectorAll<HTMLButtonEle
 const shown = (b: Button) => !!popup(b) && !popup(b)!.hidden;
 
 describe('Button', () => {
-  it('is a native button with the look in data attributes, the same from JSX and from code', async () => {
+  it('is a native button with the look in data attributes, the same in JSX and programmatically', async () => {
     const s = reactive({ tone: 'standard' as 'standard' | 'accent' });
     let jsx!: Button;
     page(<Button ref={(b: Button) => (jsx = b)} text="&Save" tone={() => s.tone} class="extra" />);
@@ -68,7 +68,7 @@ describe('Button', () => {
     expect(coded.element.textContent).toBe('Retry (2)');
   });
 
-  it('takes DOM events from code as JSX does, once', async () => {
+  it('takes DOM events programmatically as JSX does, once', async () => {
     const fromCode = vi.fn();
     const fromJsx = vi.fn();
     const coded = new Button({ text: 'Code', onclick: fromCode } as never);
@@ -128,7 +128,7 @@ describe('Button', () => {
     expect(b.element.hasAttribute('aria-pressed')).toBe(false);
   });
 
-  it('writes a pressed state set from code to x-model too', async () => {
+  it('writes a pressed state set programmatically to x-model too', async () => {
     const s = reactive({ bold: false });
     let b!: Button;
     page(<Button ref={(x: Button) => (b = x)} text="Bold" toggle x-model={() => s.bold} />);
@@ -277,7 +277,7 @@ describe('Button', () => {
     expect([el.disabled, b.visible]).toEqual([true, false]);
   });
 
-  it('takes a value or a function from code too: a function is followed, a value replaces it', async () => {
+  it('takes a value or a function programmatically too: a function is followed, a value replaces it', async () => {
     const s = reactive({ title: 'Draft', tone: 'standard' as 'standard' | 'accent' });
     const b = new Button();
     page(b);

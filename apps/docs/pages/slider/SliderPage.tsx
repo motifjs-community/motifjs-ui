@@ -1,7 +1,7 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Centred from './examples/Centred';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Localization from './examples/Localization';
 import Range from './examples/Range';
 import States from './examples/States';
@@ -114,12 +114,12 @@ import { Slider, type SliderValue } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set from code." />
+          <Rich text="Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set programmatically." />
         </p>
-        <Example files={code('FromCode.tsx')} stack>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')} stack>
+          <Programmatic />
         </Example>
       </Section>
 

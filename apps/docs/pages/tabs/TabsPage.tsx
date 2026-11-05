@@ -1,7 +1,7 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Closable from './examples/Closable';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import IconsAndBadges from './examples/IconsAndBadges';
 import LazyPanels from './examples/LazyPanels';
 import Localization from './examples/Localization';
@@ -54,7 +54,7 @@ const METHODS = [
   ['add(tab)', '`Tab`', 'Adds a tab at the end. A tab of another `Tabs` moves here.'],
   ['insert(index, tab)', '`Tab`', 'Adds a tab at an index.'],
   ['remove(tab)', '`boolean`', 'Removes the tab and disposes it; no `onClose`. The selection and focus move to a neighbour.'],
-  ['select(tab | index)', '`boolean`', 'Selects a tab from code; `false` when it is hidden or not there.'],
+  ['select(tab | index)', '`boolean`', 'Selects a tab programmatically; `false` when it is hidden or not there.'],
   ['close(tab)', '`boolean`', 'Closes a tab as its close button does: `onClose` can cancel it.'],
   ['focus()', '`boolean`', 'Focuses the selected tab.'],
   ['Tab.select(), Tab.close(), Tab.focus()', '`boolean`', 'The same, from the tab.'],
@@ -106,7 +106,7 @@ export default function TabsPage() {
   return (
     <>
       <p class="lead">
-        Tabs show one panel at a time under a strip of tabs: from JSX or from code, closable, with icons and badges,
+        Tabs show one panel at a time under a strip of tabs: from JSX or programmatically, closable, with icons and badges,
         scroll buttons when the tabs do not fit, four placements and panels built when they are first shown.
       </p>
 
@@ -118,12 +118,12 @@ import { Tabs, Tab } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="A `<Tab>`'s children are its panel. `value` is the selected tab's `key` (else its index) and `x-model` binds it two-way. Created with `new`, tabs are added, inserted and removed from code." />
+          <Rich text="A `<Tab>`'s children are its panel. `value` is the selected tab's `key` (else its index) and `x-model` binds it two-way. Created with `new`, tabs are added, inserted and removed programmatically." />
         </p>
-        <Example files={code('FromCode.tsx')} stack>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')} stack>
+          <Programmatic />
         </Example>
       </Section>
 

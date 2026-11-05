@@ -94,7 +94,7 @@ describe('ListBox', () => {
     expect(selected(c)).toEqual(['Antalya']);
   });
 
-  it('reads functions over plain data again on reState, and writes a value set from code to x-model', async () => {
+  it('reads functions over plain data again on reState, and writes a value set programmatically to x-model', async () => {
     const plain = { items: ['Red', 'Green'], value: 'Red' };
     const given = plain.items;
     const s = reactive({ color: null as string | null });
@@ -278,7 +278,7 @@ describe('ListBox', () => {
     expect(option(c, 'Select all').getAttribute('aria-selected')).toBe('true');
   });
 
-  it('is complete from code: properties, height, required, empty text', async () => {
+  it('is complete programmatically: properties, height, required, empty text', async () => {
     const c = new ListBox<string, string>({ label: 'Pick' });
     page(c);
     await settle();

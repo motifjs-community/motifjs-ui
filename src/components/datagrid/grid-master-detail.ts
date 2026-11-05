@@ -8,7 +8,7 @@ import type { DetailContext } from './detail-context';
  * through `grid.masterDetail`.
  */
 export interface GridMasterDetail<T> {
-  /** The expand column: the user opens and closes the details. Off, they open from code only (`expandRow`). Default `false`. */
+  /** The expand column: the user opens and closes the details. Off, they open programmatically only (`expandRow`). Default `false`. */
   enabled?: Bind<boolean>;
   /** Every row starts open. Changing it, `enabled` or `template` opens or closes them all again. Default `false`. */
   autoExpandAll?: Bind<boolean>;

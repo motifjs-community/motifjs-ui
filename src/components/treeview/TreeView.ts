@@ -315,7 +315,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
   set value(value: Bind<unknown>) {
     const before = untracked(() => this.valueNow());
     this.assignProperty('value', value);
-    // A selection set from code shows in `x-model` too, so the model and the tree never differ.
+    // A selection set programmatically shows in `x-model` too, so the model and the tree never differ.
     const now = untracked(() => this.valueNow());
     if (typeof value !== 'function' && !sameAsWritten(now, before)) this.writeBack(now);
   }
@@ -467,7 +467,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     this.expansionChanged();
   }
 
-  /** Selects a row from code (`multiple`: adds it to the selection). */
+  /** Selects a row programmatically (`multiple`: adds it to the selection). */
   select(key: unknown): void {
     const parts = this.parts;
     untracked(() => this.setSelection(this.selectionMode === 'multiple' ? [...parts.selected, key] : [key], false));

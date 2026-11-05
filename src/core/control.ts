@@ -56,11 +56,11 @@ const DEFAULTS: Record<string, unknown> = { text: '', enabled: true, visible: tr
 /**
  * The base of every `@motifx-community/ui` control: the shared properties
  * (`text`, `enabled`, `visible`, `tabStop`) work the same whether the control
- * is written in JSX or created with `new` and changed from code.
+ * is written in JSX or created with `new` and changed programmatically.
  *
  * - A prop can be a value or a getter (`enabled={() => !state.busy}`); a
  *   getter keeps the property in sync with the state.
- * - Every property can be set from code, with a value (`ctrl.enabled = false`:
+ * - Every property can be set programmatically, with a value (`ctrl.enabled = false`:
  *   it replaces a getter given before, the code owns the value from then on) or
  *   with a function (`ctrl.enabled = () => !state.busy`: bound and followed; over plain data, read again on
  *   `reState()`).
@@ -109,7 +109,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     if (props.enabled === undefined && disabled !== undefined) {
       this.bindProperty('enabled', typeof disabled === 'function' ? () => !disabled() : !disabled);
     }
-    // DOM events given to `new X({ onclick })` from code; in JSX the compiler binds them itself.
+    // DOM events given to `new X({ onclick })` programmatically; in JSX the compiler binds them itself.
     for (const [name, handler] of Object.entries(props)) {
       if (/^on[a-z]+$/.test(name) && typeof handler === 'function') this.motif.on(name.slice(2), handler as (...args: unknown[]) => unknown);
     }
@@ -274,7 +274,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     return slot.value as T;
   }
 
-  /** Sets a property from code: replaces a getter prop bound to it, then stores and renders. */
+  /** Sets a property programmatically: replaces a getter prop bound to it, then stores and renders. */
   protected setProperty(name: string, value: unknown): void {
     const slot = this.slot(name);
     this.unbind(slot);
@@ -326,7 +326,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   /**
    * Renders a property without an effect: `apply` runs now with the current
    * value and again on every change, whether it comes from a getter prop or
-   * from code. E.g. `this.observeProperty('text', (t) => (label.data = t))`.
+   * programmatically. E.g. `this.observeProperty('text', (t) => (label.data = t))`.
    */
   protected observeProperty<T>(name: string, apply: (value: T) => void): void {
     const slot = this.slot(name);

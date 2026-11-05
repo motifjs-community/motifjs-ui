@@ -94,7 +94,7 @@ export class Skeleton extends Control<HTMLDivElement, SkeletonProps> {
     this.assignProperty('label', value);
   }
 
-  /** The part holding what shows once loaded, for adding to it from code. */
+  /** The part holding what shows once loaded, for adding to it programmatically. */
   get content(): Component<HTMLDivElement> {
     return this.contentPart;
   }

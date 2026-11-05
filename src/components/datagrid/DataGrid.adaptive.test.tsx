@@ -137,7 +137,7 @@ describe('adaptive columns', () => {
     expect(adaptiveRows(grid)).toHaveLength(0);
   });
 
-  it('opens and closes from the keys of the "…" cell and from code, telling it before (cancelable) and after', async () => {
+  it('opens and closes from the keys of the "…" cell and programmatically, telling it before (cancelable) and after', async () => {
     const { grid } = make({}, 400);
     await settle();
     const log: string[] = [];

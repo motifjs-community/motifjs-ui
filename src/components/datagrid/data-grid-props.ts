@@ -183,7 +183,7 @@ export interface DataGridProps<T> extends ControlProps {
    * `'save'`, `'cancel'`).
    */
   actions?: readonly GridActionItem<T>[] | ((row: T, state: RowState) => readonly GridActionItem<T>[]);
-  /** An action is about to run (in a row, a bar, a row's menu or from code): `e.cancel` keeps it from running. */
+  /** An action is about to run (in a row, a bar, a row's menu or programmatically): `e.cancel` keeps it from running. */
   onActionRunning?: (e: GridActionRunningEventArgs<T>) => void;
   /** An action ran: on how many rows it worked or failed, and whether it was stopped. */
   onActionRan?: (e: GridActionRanEventArgs<T>) => void;
@@ -210,7 +210,7 @@ export interface DataGridProps<T> extends ControlProps {
   searchText?: Bind<string>;
   /** The search text is about to change; `e.cancel` keeps the one before. */
   onSearchTextChanging?: (e: GridSearchTextChangingEventArgs) => void;
-  /** The search text changed (typed, or set from code). */
+  /** The search text changed (typed, or set programmatically). */
   onSearchTextChanged?: (e: GridSearchTextChangedEventArgs) => void;
   /**
    * Values of the rows under the filter and the search: a row of totals under the rows

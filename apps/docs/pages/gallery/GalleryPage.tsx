@@ -2,7 +2,7 @@ import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Basic from './examples/Basic';
 import Content from './examples/Content';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import PerPage from './examples/PerPage';
 import Slideshow from './examples/Slideshow';
 
@@ -25,7 +25,7 @@ const PROPS = [
 
 const MEMBERS = [
     ['onSlideChanging', 'event', 'The pane in view is about to change (`from`, `to`, `fromItem`, `toItem`, `byUser`); `cancel = true` keeps the one there.'],
-    ['onSlideChanged', 'event', 'The pane in view changed (`index`, `item`, `previous`, `byUser`: by a press, a swipe or a key, else from code or the slideshow).'],
+    ['onSlideChanged', 'event', 'The pane in view changed (`index`, `item`, `previous`, `byUser`: by a press, a swipe or a key, else programmatically or the slideshow).'],
     ['onItemClick', 'event', 'A press on a pane that was not a drag (`index`, `item`, `event`).'],
     ['selectedIndex', 'read-only', 'The index of the pane in view; -1 when there is none.'],
     ['count', 'read-only', 'How many panes there are.'],
@@ -117,12 +117,12 @@ import { Gallery } from '@motifx-community/ui';
                 </Example>
             </Section>
 
-            <Section anchor="fromcode" title="From code">
+            <Section anchor="programmatic" title="Programmatic use">
                 <p>
                     <Rich text="Made with `new`, moved with `next()`, `previous()` and `goTo()`; `showNavButtons` and `showIndicator` off leave the moving to your own buttons, `onSlideChanged` tells where it stands." />
                 </p>
-                <Example stack files={code('FromCode.tsx')}>
-                    <FromCode />
+                <Example stack files={code('Programmatic.tsx')}>
+                    <Programmatic />
                 </Example>
             </Section>
 

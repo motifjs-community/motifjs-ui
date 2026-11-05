@@ -3,7 +3,7 @@ import { sources } from '../../shared/sources';
 import Busy from './examples/Busy';
 import Disabled from './examples/Disabled';
 import DropDown from './examples/DropDown';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import IconAndChildren from './examples/IconAndChildren';
 import Localization from './examples/Localization';
 import Menu from './examples/Menu';
@@ -34,7 +34,7 @@ const PROPS = [
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'Set from code with a value or a function, like the prop: `b.tone = () => this.state.tone` is followed, `b.tone = \'accent\'` replaces it.'],
+  ['every prop above', 'read/write, reactive', 'Set programmatically with a value or a function, like the prop: `b.tone = () => this.state.tone` is followed, `b.tone = \'accent\'` replaces it.'],
   ['value', 'read/write', '`pressed`, for `x-model`.'],
   ['opened', 'read/write, reactive', 'Whether the menu or drop-down is open; setting it opens or closes it.'],
   ['hasMenu', 'read-only', 'Whether it was created with `split`, `menu` or `dropDown`.'],
@@ -121,12 +121,12 @@ import { Button, type MenuItem } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Both ways are complete. Every prop takes a value or a function; a function of a reactive object keeps the button in step with it. A property set from code takes the same." />
+          <Rich text="Both ways are complete. Every prop takes a value or a function; a function of a reactive object keeps the button in step with it. A property set programmatically takes the same." />
         </p>
-        <Example files={code('FromCode.tsx')}>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')}>
+          <Programmatic />
         </Example>
       </Section>
 

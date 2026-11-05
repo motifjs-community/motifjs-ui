@@ -1,7 +1,7 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Countries from './examples/Countries';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import LiveItems from './examples/LiveItems';
 import Localization from './examples/Localization';
 import LongList from './examples/LongList';
@@ -99,12 +99,12 @@ import { DropDown, type DropDownItem } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="`items` can be plain values; `x-model` binds the value. Created with `new`, the same properties are set from code." />
+          <Rich text="`items` can be plain values; `x-model` binds the value. Created with `new`, the same properties are set programmatically." />
         </p>
-        <Example files={code('FromCode.tsx', 'cities.ts')} stack>
-          <FromCode />
+        <Example files={code('Programmatic.tsx', 'cities.ts')} stack>
+          <Programmatic />
         </Example>
       </Section>
 

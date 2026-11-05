@@ -4,7 +4,7 @@ import type { Splitter } from './Splitter';
 export interface SplitterResizeEventArgs {
     handle: number;
     sizes: number[];
-    /** By a drag or a key, else from code. */
+    /** By a drag or a key, else programmatically. */
     byUser: boolean;
     source: Splitter;
     event?: Event;

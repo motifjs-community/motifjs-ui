@@ -61,14 +61,14 @@ export default async function ({ page, base, check, axeSource }) {
     // Off, the page out of sight is dropped at once; each of the two is made again when it comes back.
     check('with keep alive off, a page out of sight is dropped and made again', (await made.textContent()) === 'made 4 times' && (await page.locator('.mv-lazy-page').count()) === 1, `${await made.textContent()}, ${await page.locator('.mv-lazy-page').count()} pages`);
 
-    // From code: added, removed, around the ends.
+    // Programmatically: added, removed, around the ends.
     const coded = page.locator('.mv-coded');
     await coded.scrollIntoViewIfNeeded();
     const section = coded.locator('..');
     const toldOf = () => page.locator('.mv-coded-told').textContent();
     await section.getByRole('button', { name: 'Add a note' }).click();
     await page.waitForTimeout(450);
-    check('a note added from code comes into sight', (await toldOf()) === '3 notes, in sight: Note 3', await toldOf());
+    check('a note added programmatically comes into sight', (await toldOf()) === '3 notes, in sight: Note 3', await toldOf());
     await section.getByRole('button', { name: 'Next' }).click();
     await page.waitForTimeout(450);
     check('next on the last goes around to the first', (await toldOf()) === '3 notes, in sight: Note 1', await toldOf());

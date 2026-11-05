@@ -1,6 +1,6 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Overflow from './examples/Overflow';
 import Sizes from './examples/Sizes';
 
@@ -60,8 +60,8 @@ import { Breadcrumb } from '@motifx-community/ui';
         <p>
           <Rich text="A step with `href` is a link; `rel='router'` lets the MotifJS router take it. A step without one is a button: `onItemClick` tells it." />
         </p>
-        <Example files={code('FromCode.tsx')}>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')}>
+          <Programmatic />
         </Example>
       </Section>
 

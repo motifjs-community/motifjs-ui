@@ -109,7 +109,7 @@ describe('Scheduler: series', () => {
     ]);
   });
 
-  it('this and following, and the whole series, from code', async () => {
+  it('this and following, and the whole series, programmatically', async () => {
     const list = reactive([series()]) as Meeting[];
     const s = make({ appointments: list });
     await tick();
@@ -403,7 +403,7 @@ describe('RecurrenceEditor', () => {
     await editor.dispose();
   });
 
-  it('reads a rule over plain data again on reState, and writes a rule set from code to x-model', async () => {
+  it('reads a rule over plain data again on reState, and writes a rule set programmatically to x-model', async () => {
     const plain = { rule: 'FREQ=DAILY' };
     const state = reactive({ rule: '' });
     const host = mount(new Component<HTMLDivElement>('div'));

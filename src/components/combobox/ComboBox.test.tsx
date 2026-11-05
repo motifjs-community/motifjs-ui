@@ -74,7 +74,7 @@ describe('ComboBox', () => {
     expect(input.value).toBe('Bursa');
   });
 
-  it('reads functions over plain data again on reState, and writes a value set from code to x-model', async () => {
+  it('reads functions over plain data again on reState, and writes a value set programmatically to x-model', async () => {
     const plain = { items: ['Ankara', 'Bursa'], city: 'Ankara' };
     const given = plain.items;
     const s = reactive({ city: null as string | null });

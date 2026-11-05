@@ -2,7 +2,7 @@ import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Cover from './examples/Cover';
 import Delay from './examples/Delay';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Localization from './examples/Localization';
 import NotKnown from './examples/NotKnown';
 import Shapes from './examples/Shapes';
@@ -95,12 +95,12 @@ import { ProgressBar, Spinner, type ProgressTone } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function; a function of a reactive object keeps the bar in step with the work. Created with `new`, the same properties are set from code." />
+          <Rich text="Every prop takes a value or a function; a function of a reactive object keeps the bar in step with the work. Created with `new`, the same properties are set programmatically." />
         </p>
-        <Example files={code('FromCode.tsx')} stack>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')} stack>
+          <Programmatic />
         </Example>
       </Section>
 

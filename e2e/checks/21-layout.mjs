@@ -4,12 +4,12 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.evaluate(() => document.documentElement.removeAttribute('data-density'));
   const near = (a, b, d = 2) => Math.abs(a - b) <= d;
 
-  // From JSX and from code.
+  // From JSX and programmatically.
   const ways = page.locator('section[aria-labelledby="ways"]');
   for (let i = 0; i < 3; i++) await ways.getByRole('button', { name: 'Add a button' }).click();
   const third = ways.getByRole('button', { name: 'Button 3' });
   const [one, grown] = [await box(ways.getByRole('button', { name: 'Button 1' })), await box(third)];
-  check('buttons added from code join the stack; one with grow takes the free space', grown.width > one.width * 2, `${one.width} vs ${grown.width}`);
+  check('buttons added programmatically join the stack; one with grow takes the free space', grown.width > one.width * 2, `${one.width} vs ${grown.width}`);
   const coded = page.locator('.layout-coded');
   const [from, subject] = [await box(coded.locator('.mx-field').nth(0)), await box(coded.locator('.mx-field').nth(2))];
   check('a Grid built with new places its children (columnSpan from the child props)', subject.width > from.width * 1.8 && subject.top > from.top);
@@ -91,10 +91,10 @@ export default async function ({ page, base, check, axeSource, box }) {
   await dockCard.getByRole('button', { name: 'Sidebar: start' }).click();
   [side, content] = [await part('.layout-side'), await part('.layout-content')];
   check('a getter dock moves the sidebar to the end', near(side.right, frame.right, 2) && near(content.right, side.left, 1));
-  await dockCard.getByRole('button', { name: 'Notes panel from code' }).click();
+  await dockCard.getByRole('button', { name: 'Notes panel programmatically' }).click();
   const notes = await part('.layout-notes');
   [side, content] = [await part('.layout-side'), await part('.layout-content')];
-  check('a panel added from code docks too', near(notes.right, side.left, 1) && near(content.right, notes.left, 1));
+  check('a panel added programmatically docks too', near(notes.right, side.left, 1) && near(content.right, notes.left, 1));
   await page.evaluate(() => (document.documentElement.dir = 'rtl'));
   [frame, side] = [await box(shell), await part('.layout-side')];
   check('start and end follow the reading direction', near(side.left, frame.left, 2));

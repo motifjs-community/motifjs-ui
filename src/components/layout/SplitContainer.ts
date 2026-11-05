@@ -50,7 +50,7 @@ function sizeOf(position: SplitPosition): string {
  * Two panes, `first` and `second`, side by side or one over the other, with a splitter between
  * them that the pointer drags and the keys move (the ARIA window splitter pattern). The pane
  * named by `fixedPanel` keeps its size when the container is resized; `collapsed` hides one.
- * The first JSX child goes into the first pane, the second into the second one; from code, add
+ * The first JSX child goes into the first pane, the second into the second one; programmatically, add
  * to `split.first.controls` / `split.second.controls`.
  *
  * @example
@@ -89,7 +89,7 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     const [one, two, ...rest] = this.childs ?? [];
     if (one) first.controls.add(one);
     if (two) second.controls.add(two, ...rest);
-    // Added to the container itself from code: into the first empty pane.
+    // Added to the container itself programmatically: into the first empty pane.
     void this.motif.on('controladded', (_sender, e: { control: ComponentBase }) => this.route(e.control), false);
 
     const drawLabel = () => parts.splitter.element.setAttribute('aria-label', this.peekProperty<string | undefined>('splitterLabel') || uiLocale.strings.resize);
@@ -127,7 +127,7 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
   set position(value: Bind<SplitPosition>) {
     const before = this.peekProperty<SplitPosition>('position');
     this.assignProperty('position', value);
-    // A position set from code shows in `x-model` too, so the model and the splitter never differ.
+    // A position set programmatically shows in `x-model` too, so the model and the splitter never differ.
     const now = this.peekProperty<SplitPosition>('position');
     if (typeof value !== 'function' && now !== before) this.bindings.writeModel(now);
   }

@@ -16,7 +16,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `onSlideChanging` may refuse, `onSlideChanged`, `onItemClick`. A `region` with `aria-roledescription="carousel"`,
   the panes out of view hidden from readers and keys. Units in the five languages: the frame, a pane, its caption
   and texts, the side buttons and their arrows, the bar, the dots, the slideshow button and its glyph.
-- `MultiView` and `View`: pages side by side, one in sight, brought by a swipe or a drag, from code (`next()`,
+- `MultiView` and `View`: pages side by side, one in sight, brought by a swipe or a drag, programmatically (`next()`,
   `previous()`, `goTo()`, `add()`, `insert()`, `remove()`) or by a `Tabs`, a `Stepper` or buttons bound to the same
   `value`; `loop`, `animated`, `lazy` and `keepAlive` as in `Tabs` (the same panel content part); hidden and disabled
   views are skipped; `onSelecting` may refuse, `onSelectionChanged`.
@@ -26,7 +26,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   two that the pointer drags and the keys move (arrows by `step`, Home, End), resizing the two panes beside it; a
   pane is a `Panel` with `size` (pixels, a share, or an equal share of what is left), `minSize`, `maxSize`,
   `resizable`, and may be hidden from its handle (`collapsible`: a button on the handle, Enter, a double press);
-  `sizes` and `x-model` keep and restore a layout in pixels; panes added, inserted and removed from code, one may
+  `sizes` and `x-model` keep and restore a layout in pixels; panes added, inserted and removed programmatically, one may
   hold another splitter; `onResizing`, `onResized`, `onCollapsing` may refuse, `onCollapsed`. The handle looks as
   the `SplitContainer`’s does in every language.
 - `TileView`: tiles of `widthRatio` × `heightRatio` base cells (`baseItemWidth`, `baseItemHeight`) packed densely
@@ -63,13 +63,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `wizardFinish` in English and Turkish.
 - `Popover`: content next to the element it belongs to, with a title, a close button and an arrow where the
   design language draws one (Tactile, Fluent, Lilac); opened by a press on the target, by the pointer resting on it
-  (`showOn: 'hover'`, keyboard focus too) or from code; every placement of the kit's popups, a width of its own;
+  (`showOn: 'hover'`, keyboard focus too) or programmatically; every placement of the kit's popups, a width of its own;
   focus goes in and comes back; Escape, a press outside, focus leaving and the close button close it, and
   `onClosing` may keep it open; `value` and `x-model`.
 - `LoadPanel`: a loading layer over a container or the whole page: a shade, a pane with the kit's spinner and a
   message, a Cancel button (`onCancel`, Escape too); what is under it is inert and `aria-busy`, focus waits on the
   panel and comes back; `delay` keeps quick work from flashing it; `value` and `x-model`, `show()` and `hide()`.
-- `homeOf` in the core: where a surface made from code goes for its anchor (the tooltip's rule, now shared).
+- `homeOf` in the core: where a surface made programmatically goes for its anchor (the tooltip's rule, now shared).
 - `DateRangeBox`: a start and an end in one field, typed through two masks or picked on two months side by side
   (the first pick the start, the second the end, the pointer showing the range meanwhile), ready-made ranges
   (`presets`), `min`, `max`, `disabledDates`, the least and the most days a range may span (`minDays`, `maxDays`),
@@ -78,7 +78,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   language) and tells the day under the pointer (`onDayPointed`).
 - `FileUploader`: files chosen with a button or dropped on the box, listed with their size and what happens to
   them; `accept`, `maxFileSize`, `minFileSize` and `maxFiles` turn files away with the reason; uploaded as they come,
-  on an Upload button or from code, by the uploader itself (`uploadUrl`, in one piece or in chunks with
+  on an Upload button or programmatically, by the uploader itself (`uploadUrl`, in one piece or in chunks with
   `Content-Range`, with progress) or by your own `upload`; cancel, retry and remove on each row; a field (label,
   `required`, rules); kit glyphs `upload` and `file`.
 - Kit texts for both, in English and Turkish.
@@ -87,7 +87,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   it would land, the list scrolls near its edges; sortables of one `group` take each other's items; the items
   are the JSX children, or `items` drawn with `itemTemplate` (the rows keyed by item, kept as the order
   changes); a `handle` takes the drag and the keys; `onDragStarting`, `onDragChanging` and `onDragEnding` may
-  refuse; `onReorder`, `onRemove` and `onAdd` tell the indexes and the data stays yours; `move()` from code.
+  refuse; `onReorder`, `onRemove` and `onAdd` tell the indexes and the data stays yours; `move()` programmatically.
   Units in the five languages: the list, an item, the line, the copy.
 - `ScrollView`: content that scrolls in a box of its own; the bars shown on scroll, on hover, always or never;
   pull to refresh with a finger or the pointer (`onPullDown`, a promise or `release()`); more loaded near the
@@ -198,10 +198,10 @@ readers that are not a browser: a Markdown page per component in `docs/`, an ind
 
 - A property given as a function is followed by a binding of the component (`follow`, `PropBinding`): a reactive
   source updates it by itself, plain data shows on the developer's `reState()`. The value is handed on only when it
-  differs from the last one read, so a change the user made stays across a `reState()`; a property set from code
+  differs from the last one read, so a change the user made stays across a `reState()`; a property set programmatically
   stops following its function. `refreshProps()` is gone (one way, not two).
 - `x-model` shows the component's state on every path: the user, code (`value`, `pressed`, `position`, a tab or a
-  panel chosen from code), the component's own rules (a mask, `decimals`, `min`/`max`) and a cancelled close.
+  panel chosen programmatically), the component's own rules (a mask, `decimals`, `min`/`max`) and a cancelled close.
 - NumberBox rounds its value to `decimals` and shows that many digits; its spin buttons come back after `none`.
   Calendar shows the month of a value given from anywhere.
 - Every docs page's components converted; `onReState(component, run)` for parts drawn by hand.
@@ -222,7 +222,7 @@ readers that are not a browser: a Markdown page per component in `docs/`, an ind
   threw, and so did a scroll coming after it; a box waiting for its store shows it locked again; `selectCells` right
   after `showDate` finds the cells of the new days; a resource kind's field given as a function
   (`useColorAsDefault: () => …`) is followed again.
-- Docs: "From code" selects the next workday (the work week has no Saturday); the two copies of a TabDocs document
+- Docs: "Programmatically" selects the next workday (the work week has no Saturday); the two copies of a TabDocs document
   read a field again when the other one changes it. Tests: the back-button session waits for its history moves
   between tests (`backButtonSettled`), a new window's `onMounted` is waited for.
 
@@ -390,7 +390,7 @@ mentioned further down.
   access key or JSX children; `icon` (an address, an element or a component) at the start or end;
   `stretch`, `type`, `hint`; `toggle` / `pressed` with `x-model`; `busy` (spinner, presses ignored,
   size kept, `aria-busy`); `focusableWhenDisabled` (`aria-disabled`, stays in the Tab order). Every
-  prop is a value or a function and a settable, reactive property; set from code, a function is
+  prop is a value or a function and a settable, reactive property; set programmatically, a function is
   bound and followed too (`Control` setters as well: `ctrl.enabled = () => !state.busy`).
 - A menu: `menu` (items with icon, hint, enabled, visible, checked, beginGroup, each a value or a
   function the open menu follows; click, data) or any
@@ -549,7 +549,7 @@ mentioned further down.
   `gridSummarySeparator`, `gridTotalSummary` in en and tr.
 - Feedback: `ProgressBar`, `Spinner` (with `Spinner.cover`), `Tooltip` / `addTooltip`, `Toast` /
   `toast` / `Toaster`.
-- `Control` binds DOM events given from code (`new Button({ onclick })`); its private state getter is
+- `Control` binds DOM events given programmatically (`new Button({ onclick })`); its private state getter is
   `controlState`, so a subclass may have a `state` field.
 - Fixed: `Stack`, `Grid` and `DockPanel` overflowed the call stack when a child was added in their
   `ref`. `TreeView` reported a check again and again when `checkedKeys` was bound both ways with
@@ -810,7 +810,7 @@ mentioned further down.
 - Methods `expandRow(key)`, `collapseRow(key)`, `isRowExpanded(key)` (reactive), `expandAllRows()`,
   `collapseAllRows()`. The row events are the groups' ones, now with `kind: 'group' | 'detail'` (and
   `row` for details): `onRowExpanding` / `onRowCollapsing` (cancellable) and `onRowExpanded` /
-  `onRowCollapsed`, from the user and from code. `onRowPrepared` with `rowType: 'detail'`,
+  `onRowCollapsed`, from the user and programmatically. `onRowPrepared` with `rowType: 'detail'`,
   `getVisibleRows()` lists the details after their row. `GridRowExpandingEventArgs` and
   `GridRowExpandedEventArgs` are unions by `kind`: a handler that reads a group's `key` narrows first.
 - Keyboard and ARIA: Enter / Space and Right / Left on the expand cell, Tab into the row's details,
@@ -1402,7 +1402,7 @@ mentioned further down.
   no close button of its own (`data-bar-close`). `compactBarButtons` is now `'auto'` by default: an area
   keeps `['autoHide', 'close']`, a floating window `['closeWindow']`; a list is followed as it is in both,
   and an area's or a window's `barButtons` takes `'auto'` too. A floating window's close button now hides
-  the documents that cannot close instead of leaving the window open (`closeWindow` from code still
+  the documents that cannot close instead of leaving the window open (`closeWindow` programmatically still
   closes them all). Hidden documents: `hide(doc)` and `show(doc, { group, side, index, active, focus })`
   (also `TabDocument.hide()` / `show()`, and `open(doc)` shows a hidden one) put it back into the group
   it was hidden from, else its dock area (made again at its size, folded if it was), else a floating
@@ -1509,7 +1509,7 @@ mentioned further down.
   a range over 100,000 rows × 60 virtual columns: 60 fps inside the rows, 59 fps while scrolling
   past the bottom edge, no cell text written while only the range changed.
 - Docs: a new page “Selecting by dragging” (`/datagrid/drag-select`: rows in memory with grouping,
-  an editable sheet of orders, 100,000 rows × 60 virtual columns set from code), the API page's
+  an editable sheet of orders, 100,000 rows × 60 virtual columns set programmatically), the API page's
   rows and tokens; `e2e/checks/52-datagrid-drag-select.mjs`.
 - Touch on real phones (found on an Android phone, Chrome 155): a long press drag of a tab and the DataGrid's
   long press selection did nothing, because the browser decides when the finger lands whether the page may

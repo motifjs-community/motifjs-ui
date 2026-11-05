@@ -596,7 +596,7 @@ describe('FilterBuilder', () => {
     expect(b.value).toEqual(data.where('rating', '>=', 4));
   });
 
-  it('binds its value both ways with x-model and follows the value from code', async () => {
+  it('binds its value both ways with x-model and follows the value programmatically', async () => {
     const s = reactive({ filter: data.where('city', '=', 'Ankara') as data.FilterExpression | null });
     const b = (<FilterBuilder fields={fields} x-model={() => s.filter} />) as unknown as FilterBuilder;
     page(b);

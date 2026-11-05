@@ -113,7 +113,7 @@ export interface SchedulerProps<T> extends ControlProps, SchedulerTemplates<T> {
    * browser's. An appointment's own zone (`fields.startTimeZone`) is the one its series repeats in.
    */
   timeZone?: Bind<string | null>;
-  /** What changing or deleting an occurrence of a series reaches: `'ask'` (default) asks the user; from code it is the occurrence. */
+  /** What changing or deleting an occurrence of a series reaches: `'ask'` (default) asks the user; programmatically it is the occurrence. */
   seriesEdit?: Bind<SeriesEditMode>;
   /** Occurrences of a series, and ones changed apart from it, carry a mark where the design language draws one. Default `true`. */
   recurrenceMarks?: Bind<boolean>;

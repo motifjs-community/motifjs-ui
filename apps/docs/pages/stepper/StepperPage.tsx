@@ -1,6 +1,6 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Linear from './examples/Linear';
 import Orientations from './examples/Orientations';
 import Sizes from './examples/Sizes';
@@ -87,12 +87,12 @@ import { Stepper } from '@motifx-community/ui';
                 />
             </Section>
 
-            <Section anchor="ways" title="From JSX and from code">
+            <Section anchor="ways" title="Declarative and programmatic">
                 <p>
-                    <Rich text="The current step is `value`: a step’s `key`, else its index; `x-model` binds it two-way. From code, `next()`, `previous()` and `goTo()` move it and `onStepChanged` tells." />
+                    <Rich text="The current step is `value`: a step’s `key`, else its index; `x-model` binds it two-way. Programmatically, `next()`, `previous()` and `goTo()` move it and `onStepChanged` tells." />
                 </p>
-                <Example stack files={code('FromCode.tsx')}>
-                    <FromCode />
+                <Example stack files={code('Programmatic.tsx')}>
+                    <Programmatic />
                 </Example>
             </Section>
 

@@ -153,7 +153,7 @@ describe('TabDocumentManager: the close button of a dock area', () => {
     expect(g.element.hasAttribute('data-bar-close')).toBe(false);
     expect(barClose(g)).toBeNull();
     await m.closeWindow(w);
-    // From code every document closes, as before; from the button the tool is hidden.
+    // Programmatically every document closes, as before; from the button the tool is hidden.
     expect(m.findDocument('log')).toBeNull();
     const v = m.float(m.open(tool('Log2'))!, { x: 40, y: 50, width: 300, height: 200 })!;
     await settle();

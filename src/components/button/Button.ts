@@ -175,7 +175,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
   set pressed(value: Bind<boolean>) {
     const before = !!this.peekProperty('pressed');
     this.assignProperty('pressed', value, Boolean);
-    // A state set from code shows in `x-model` too, so the model and the button never differ.
+    // A state set programmatically shows in `x-model` too, so the model and the button never differ.
     const now = !!this.peekProperty('pressed');
     if (typeof value !== 'function' && now !== before) this.bindings.writeModel(now);
   }

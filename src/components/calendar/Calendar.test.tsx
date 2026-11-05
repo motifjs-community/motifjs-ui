@@ -151,7 +151,7 @@ describe('Calendar', () => {
     expect(c.value!.toDateString()).toBe(new Date().toDateString());
   });
 
-  it('works from code', async () => {
+  it('works programmatically', async () => {
     const c = new Calendar({ locale: 'en-GB' });
     page(c);
     c.value = day(2024, 2, 29);
@@ -162,7 +162,7 @@ describe('Calendar', () => {
     expect(title(c)).toBe('1990 – 1999');
   });
 
-  it('reads functions over plain data again on reState, and writes a day set from code to x-model', async () => {
+  it('reads functions over plain data again on reState, and writes a day set programmatically to x-model', async () => {
     const first = day(2026, 3, 10);
     const plain = { value: first, min: null as Date | null };
     const s = reactive({ day: null as Date | null });

@@ -1239,7 +1239,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.on(this.model.events.pasting);
   }
 
-  // State and rows from code.
+  // State and rows programmatically.
 
   /** `'loading'` until the rows arrive (again after a new query), `'error'` when the load failed, else `'ready'`. Reactive. */
   get status(): 'loading' | 'ready' | 'error' {
@@ -1442,7 +1442,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return ok;
   }
 
-  /** Starts changes made from code together: the rows are laid out once, at the last `endUpdate()`. */
+  /** Starts changes made programmatically together: the rows are laid out once, at the last `endUpdate()`. */
   beginUpdate() {
     this.updates++;
   }
@@ -1890,7 +1890,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * Runs an action from code, as a press does: on `rows`, or on the rows the bars act on now. Rows
+   * Runs an action programmatically, as a press does: on `rows`, or on the rows the bars act on now. Rows
    * share an action by its `id`; it runs only where it is visible and enabled for them. Resolves to
    * the outcome, or `null` when the action is not there or `onActionRunning` cancelled it.
    */
@@ -1906,7 +1906,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.runner.stop();
   }
 
-  /** Raised before an action runs (in a row, a bar, a row's menu or from code): `e.cancel` keeps it from running. */
+  /** Raised before an action runs (in a row, a bar, a row's menu or programmatically): `e.cancel` keeps it from running. */
   get onActionRunning(): MotifEvent<GridActionRunningEventArgs<T>> {
     return this.on(this.model.events.actionRunning);
   }
@@ -2224,7 +2224,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.search.setText(text ?? '');
   }
 
-  /** Raised when the search text changes: typed in the search box, or set from code. */
+  /** Raised when the search text changes: typed in the search box, or set programmatically. */
   get onSearchTextChanged(): MotifEvent<GridSearchTextChangedEventArgs> {
     return this.on(this.model.events.searchTextChanged);
   }
@@ -2275,7 +2275,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (this.model.groups.isGrouped(field) && this.model.groups.dirOf(field) !== dir) this.model.toggleGroupOrder(field, false);
   }
 
-  /** Raised before the grouping changes, by the user or from code: `e.cancel` keeps it. */
+  /** Raised before the grouping changes, by the user or programmatically: `e.cancel` keeps it. */
   get onGroupingChanging(): MotifEvent<GridGroupingChangingEventArgs> {
     return this.on(this.model.events.groupingChanging);
   }

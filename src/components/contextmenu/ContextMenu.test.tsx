@@ -267,7 +267,7 @@ describe('ContextMenu', () => {
     expect(rightClick(b)).toBe(true);
   });
 
-  it('opens from code at a point or at an element', async () => {
+  it('opens programmatically at a point or at an element', async () => {
     const menu = new ContextMenu({ items: [{ text: 'One' }] });
     page(<button class="go">Go</button>, menu);
     const go = document.querySelector<HTMLElement>('.go')!;

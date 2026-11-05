@@ -2,7 +2,7 @@ import { reactive, type Component } from '@motifx/core';
 import { Button, MxForm, Stack, TextBox, type FormResult } from '@motifx-community/ui';
 import { RenameForm } from './RenameForm';
 
-/** A modeless form in JSX shown through x-model, and a form class shown modal from code. */
+/** A modeless form in JSX shown through x-model, and a form class shown modal programmatically. */
 export default function JsxAndCode() {
   const s = reactive({ find: false, query: '', found: '', renamed: '' });
   let host: Component<HTMLDivElement> | null = null;

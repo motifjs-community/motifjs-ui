@@ -28,7 +28,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   const [srcRow, appRow] = [await box(textOf('src')), await box(textOf('main.ts'))];
   check('a child row is indented', appRow.left - srcRow.left > 10, `${appRow.left - srcRow.left}px`);
   check('the focus ring shows on the row for the keyboard', await item(ways, 'package.json').locator(':scope > .mx-tree-view__row').evaluate((el) => getComputedStyle(el).outlineStyle === 'solid'));
-  await page.getByRole('button', { name: 'Add a product from code' }).click();
+  await page.getByRole('button', { name: 'Add a product programmatically' }).click();
   await page.waitForTimeout(100);
   check('items changed in place are drawn again on refresh()', (await page.getByRole('treeitem', { name: 'Product 1' }).count()) === 1);
 

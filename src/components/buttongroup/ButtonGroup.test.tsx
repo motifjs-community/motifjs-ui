@@ -27,7 +27,7 @@ const press = (g: AnyGroup, i: number) => faces(g)[i].click();
 const key = (el: HTMLElement, name: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true }));
 
 describe('ButtonGroup', () => {
-  it('chooses one, the same from JSX and from code; the chosen one stays chosen unless allowEmpty', async () => {
+  it('chooses one, the same in JSX and programmatically; the chosen one stays chosen unless allowEmpty', async () => {
     let jsx!: ButtonGroup<unknown>;
     const seen: unknown[] = [];
     page(<ButtonGroup ref={(g: ButtonGroup<unknown>) => (jsx = g)} label="Align" items={['Left', 'Center', 'Right']} value="Left" onValueChanged={(e) => seen.push(e.value)} />);

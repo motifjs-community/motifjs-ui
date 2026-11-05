@@ -33,16 +33,16 @@ export default async function ({ page, base, check, axeSource }) {
     await page.waitForFunction(() => document.querySelector('.wz-result')?.textContent === 'Welcome, Ada.', null, { timeout: 2000 }).catch(() => {});
     check('finishing tells the app, every step done', (await ways.locator('.wz-result').textContent()) === 'Welcome, Ada.' && (await steps.evaluateAll(els => els.every(el => el.dataset.status === 'done'))));
 
-    // From code: factories build pages when first shown; a step added later takes its place.
+    // Programmatically: factories build pages when first shown; a step added later takes its place.
     const codeSection = page.locator('section[aria-labelledby="code"]');
     const coded = codeSection.locator('.mx-wizard').first();
     check('a page from a factory is built when first shown', (await coded.locator('.mx-wizard__page').nth(1).locator('p').count()) === 0);
     await codeSection.getByRole('button', { name: 'Add a step' }).click();
     await page.waitForTimeout(100);
-    check('a step added from code shows in the stepper', (await coded.getByRole('navigation').getByRole('button', { name: /Extra/ }).count()) === 1);
+    check('a step added programmatically shows in the stepper', (await coded.getByRole('navigation').getByRole('button', { name: /Extra/ }).count()) === 1);
     await codeSection.getByRole('button', { name: 'Go to Done' }).click();
     await page.waitForFunction(() => document.querySelector('.wz-told')?.textContent === 'Step 4: Done', null, { timeout: 2000 }).catch(() => {});
-    check('goTo from code tells the change', (await codeSection.locator('.wz-told').textContent()) === 'Step 4: Done');
+    check('goTo programmatically tells the change', (await codeSection.locator('.wz-told').textContent()) === 'Step 4: Done');
 
     // Standing: the stepper takes a column at the start, the pages beside it.
     const vertical = page.locator('section[aria-labelledby="vertical"] .mx-wizard');

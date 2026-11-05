@@ -1,6 +1,6 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Lazy from './examples/Lazy';
 import Pages from './examples/Pages';
 
@@ -26,7 +26,7 @@ const VIEW_PROPS = [
 
 const MEMBERS = [
     ['onSelecting', 'event', 'The view in sight is about to change (`from`, `to`, `fromView`, `toView`, `byUser`); `cancel = true` keeps the one there.'],
-    ['onSelectionChanged', 'event', 'The view in sight changed (`index`, `view`, `previous`, `byUser`: by a swipe, else from code).'],
+    ['onSelectionChanged', 'event', 'The view in sight changed (`index`, `view`, `previous`, `byUser`: by a swipe, else programmatically).'],
     ['views', 'read-only', 'The views in order, hidden ones too.'],
     ['selectedView, selectedIndex', 'read-only', 'The view in sight and its index; `null` and -1 when there is none.'],
     ['count', 'read-only', 'How many views there are.'],
@@ -88,12 +88,12 @@ import { MultiView, View } from '@motifx-community/ui';
                 </Example>
             </Section>
 
-            <Section anchor="fromcode" title="From code">
+            <Section anchor="programmatic" title="Programmatic use">
                 <p>
                     <Rich text="Made with `new`, views added with `add()` and `insert()`, removed with `remove()`; `loop` goes around the ends, `animated={false}` shows the next view at once." />
                 </p>
-                <Example stack files={code('FromCode.tsx')}>
-                    <FromCode />
+                <Example stack files={code('Programmatic.tsx')}>
+                    <Programmatic />
                 </Example>
             </Section>
 

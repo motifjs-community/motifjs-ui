@@ -33,7 +33,7 @@ function elementOf(target: TooltipTarget | null | undefined): HTMLElement | null
 
 /**
  * Content next to the element it belongs to: a title, a close button, anything in it. It opens on a press on its
- * target (`showOn: 'click'`), when the pointer rests on the target (`'hover'`) or from code; it follows the target
+ * target (`showOn: 'click'`), when the pointer rests on the target (`'hover'`) or programmatically; it follows the target
  * while the page scrolls, opens on the other side when there is no room, and points at the target with an arrow
  * where the design language draws one. Focus goes in when it opens by a press and back to the target when it
  * closes; Escape, a press outside, focus leaving and the close button close it.

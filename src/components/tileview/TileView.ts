@@ -238,7 +238,7 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
         return this.looks[index]?.key ?? index;
     }
 
-    /** Chooses a tile from code: the only one (`single`), or one more (`multiple`). */
+    /** Chooses a tile programmatically: the only one (`single`), or one more (`multiple`). */
     select(index: number): void {
         this.choose(index, false, this.selectionMode === 'multiple' ? 'add' : 'only');
     }

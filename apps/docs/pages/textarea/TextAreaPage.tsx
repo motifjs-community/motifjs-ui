@@ -3,7 +3,7 @@ import { sources } from '../../shared/sources';
 import AutoGrow from './examples/AutoGrow';
 import CounterAndLimits from './examples/CounterAndLimits';
 import CtrlEnter from './examples/CtrlEnter';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import LabelModes from './examples/LabelModes';
 import Localization from './examples/Localization';
 import Resize from './examples/Resize';
@@ -95,12 +95,12 @@ import { TextArea, type TextAreaProps } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function; `x-model` binds the text two-way. Created with `new`, the same properties are set from code." />
+          <Rich text="Every prop takes a value or a function; `x-model` binds the text two-way. Created with `new`, the same properties are set programmatically." />
         </p>
-        <Example files={code('FromCode.tsx')} stack>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')} stack>
+          <Programmatic />
         </Example>
       </Section>
 

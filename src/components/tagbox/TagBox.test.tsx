@@ -90,7 +90,7 @@ describe('TagBox', () => {
     expect(checked(c)).toEqual(['HTML', 'Rust']);
   });
 
-  it('reads functions over plain data again on reState, and writes a value set from code to x-model', async () => {
+  it('reads functions over plain data again on reState, and writes a value set programmatically to x-model', async () => {
     const plain = { value: ['Ankara'] as string[] };
     const s = reactive({ cities: [] as string[] });
     let b!: TagBox<string, string>;
@@ -234,7 +234,7 @@ describe('TagBox', () => {
     expect(options(c).length).toBeLessThan(100);
   });
 
-  it('is complete from code, follows uiLocale and checks required', async () => {
+  it('is complete programmatically, follows uiLocale and checks required', async () => {
     const c = new TagBox<string, string>({ label: 'Skills', placeholder: 'Pick some', clearButton: true });
     page(c);
     await settle();

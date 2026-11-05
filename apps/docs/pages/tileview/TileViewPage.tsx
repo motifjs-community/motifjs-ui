@@ -26,7 +26,7 @@ const MEMBERS = [
     ['selectedIndexes', 'read-only', 'The chosen tiles’ indexes, in tile order.'],
     ['count', 'read-only', 'How many tiles there are.'],
     ['isDragging', 'read-only', 'A tile is being dragged.'],
-    ['select(index)', '`void`', 'Chooses a tile from code: the only one (`single`), or one more (`multiple`).'],
+    ['select(index)', '`void`', 'Chooses a tile programmatically: the only one (`single`), or one more (`multiple`).'],
     ['indexOf(value), valueAt(index)', '`number`, `string | number`', 'Between a value (a key or an index) and a tile’s index.'],
     ['refresh()', '`void`', 'Reads the items again after they were changed in place.']
 ];

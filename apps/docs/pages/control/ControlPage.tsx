@@ -1,6 +1,6 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
-import AddFromCode from './examples/AddFromCode';
+import AddProgrammatically from './examples/AddProgrammatically';
 import EnabledPanel from './examples/EnabledPanel';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
@@ -15,7 +15,7 @@ const PROPS = [
 ];
 
 const PROPERTIES = [
-  ['text', '`string`', 'read/write, reactive', 'Set from code with a value or a function, like the prop (see "How a property gets its value").'],
+  ['text', '`string`', 'read/write, reactive', 'Set programmatically with a value or a function, like the prop (see "How a property gets its value").'],
   ['enabled', '`boolean`', 'read/write, reactive', 'This control\'s own value, as set or bound (like the HTML `disabled` attribute).'],
   ['isEnabled', '`boolean`', 'read-only, reactive', 'Whether it can be used now: enabled itself and in every control it sits in (like CSS `:enabled`). Windows shown inside do not inherit it.'],
   ['visible', '`boolean`', 'read/write, reactive', 'This control\'s own value; a hidden parent does not change it.'],
@@ -43,7 +43,7 @@ const CONTAINER = [
 const PROTECTED = [
   ['static elementTag', 'The root element. `div` unless the subclass sets another (`button` for a button).'],
   ['focusElement', 'Getter: the element that takes focus; the root by default. Composite controls override it. It runs from the constructor, so derive it from `this.element`.'],
-  ['observeProperty(name, apply)', 'Renders a property without an effect: `apply` runs now and on every change, from a getter prop or from code.'],
+  ['observeProperty(name, apply)', 'Renders a property without an effect: `apply` runs now and on every change, from a getter prop or programmatically.'],
   ['getProperty(name) / setProperty(name, value)', 'The storage behind the shared properties, for your own: tracked read, and set-from-code (which replaces a bound getter).'],
   ['bindProperty(name, prop)', 'Binds one of your own props: a getter is read now and followed by a binding of the control (so `reState()` reads it again), a value is stored once. Call it from your constructor.'],
   ['applyProperty(name, value) / peekProperty(name)', 'Render your own properties without an effect: override `applyProperty` (call `super`); read the current value untracked with `peekProperty`. Can run from the constructor: touch only `this.element`.'],
@@ -63,7 +63,7 @@ const COST = [
   ['A plain value (`enabled={false}`, `new Badge({ text })`)', 'Stored and written to the DOM once.'],
   ['A getter (`enabled={() => !state.busy}`)', 'One binding for that property, stopped when the control is disposed or another value or function is set.'],
   ['Reading a property', 'A small change counter, created the first time someone reads it.'],
-  ['Setting from code', 'A direct DOM write; readers are notified through the counter.'],
+  ['Setting programmatically', 'A direct DOM write; readers are notified through the counter.'],
   ['`enabled = false`', 'One pass over the control\'s subtree, plus one shared observer while anything is disabled (it disappears when nothing is).'],
 ];
 
@@ -74,7 +74,7 @@ export default function ControlPage() {
         The base of every control in the package. It gives each one the same{' '}
         <code>text</code>, <code>enabled</code>, <code>visible</code> and <code>tabStop</code>, and the same focus
         methods, whether the control is written in JSX and bound to state or created with <code>new</code> and changed
-        from code.
+        programmatically.
       </p>
 
       <Section anchor="import" title="Import">
@@ -89,7 +89,7 @@ import { Control, type ControlProps } from '@motifx-community/ui';
         </p>
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>Both ways are complete; the developer using the control decides.</p>
         <Code
           code={`
@@ -107,8 +107,8 @@ unread.text = () => \`Unread (\${this.mail.count})\`; // a function is followed
         <p>
           <code>Badge</code> is the control written in <a href="#own">Writing a control</a>.
         </p>
-        <Example files={code('AddFromCode.tsx')}>
-          <AddFromCode />
+        <Example files={code('AddProgrammatically.tsx')}>
+          <AddProgrammatically />
         </Example>
       </Section>
 
@@ -124,7 +124,7 @@ unread.text = () => \`Unread (\${this.mail.count})\`; // a function is followed
             <Rich text="With `x-model` the model always shows the control's state: a change by the user, by your code (`ctrl.value = …`, `select()`, `show()`) or by a rule you gave (`decimals`, a mask, `min` / `max`) is written back to it." />
           </li>
           <li>
-            <Rich text="A property set from code takes the same: a function (`ctrl.enabled = () => !state.busy`) is bound in place of what was there and followed; a value (`ctrl.enabled = false`) drops what was bound, and from then on the code owns it." />
+            <Rich text="A property set programmatically takes the same: a function (`ctrl.enabled = () => !state.busy`) is bound in place of what was there and followed; a value (`ctrl.enabled = false`) drops what was bound, and from then on the code owns it." />
           </li>
           <li>
             <Rich text="Every property is reactive to read: `{() => ctrl.text}` in JSX or a `bindings.watch` follows it, whichever way it changed." />

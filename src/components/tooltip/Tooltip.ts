@@ -25,7 +25,7 @@ interface Parts {
   anchor: Element | null;
   /** The element that carries `aria-describedby` while it is shown. */
   described: Element | null;
-  /** Created from code and put into the page by the tooltip itself. */
+  /** Created programmatically and put into the page by the tooltip itself. */
   placedItself: boolean;
   opened: Emitter<void>;
   closed: Emitter<void>;
@@ -52,7 +52,7 @@ function removeToken(el: Element, name: string, token: string): void {
 
 /**
  * A short description shown next to an element: after the pointer rests on it, when it gets
- * keyboard focus, or from code. The pointer can move onto the tooltip without closing it; Escape,
+ * keyboard focus, or programmatically. The pointer can move onto the tooltip without closing it; Escape,
  * a press, leaving focus and scrolling close it. One tooltip is open at a time on the page, and
  * all of them share one set of document listeners. It never takes focus and holds nothing
  * interactive; the target is described by it (`aria-describedby`) while it is shown.
@@ -247,7 +247,7 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
     parts.anchor = anchor;
     if (!anchor) return;
     linkTooltip(anchor, this);
-    // Created from code for a component: it goes with the component.
+    // Created programmatically for a component: it goes with the component.
     if (target && !isElement(target)) {
       target.motif.setDisposable(() => {
         if (!this.parent && this.peekProperty('target') === target) void this.dispose();

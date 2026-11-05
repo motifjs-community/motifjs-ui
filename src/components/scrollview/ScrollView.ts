@@ -25,7 +25,7 @@ interface Pull {
 /**
  * Content that scrolls in a box of its own, with the scrollbars shown as told (`showScrollbar`), a pull from the top
  * that asks for what is new (`pullToRefresh`, `onPullDown`) and a reach near the end that asks for more
- * (`loadOnReachBottom`, `onReachBottom`). `scrollTo`, `scrollBy` and `scrollToElement` move it from code.
+ * (`loadOnReachBottom`, `onReachBottom`). `scrollTo`, `scrollBy` and `scrollToElement` move it programmatically.
  *
  * @example
  * <ScrollView style="block-size: 20rem" pullToRefresh onPullDown={e => (e.promise = this.reload())} loadOnReachBottom onReachBottom={e => (e.promise = this.loadMore())}>

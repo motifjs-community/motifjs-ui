@@ -1,7 +1,7 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import DurationAndUpdate from './examples/DurationAndUpdate';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Localization from './examples/Localization';
 import OwnToaster from './examples/OwnToaster';
 import Positions from './examples/Positions';
@@ -86,7 +86,7 @@ export default function ToastPage() {
     <>
       <p class="lead">
         Short notifications at an edge of the window: four tones, an action such as Undo, a time of their own or none,
-        six positions and a limit on how many show at once. Called from code; a region of your own can sit in JSX.
+        six positions and a limit on how many show at once. Called programmatically; a region of your own can sit in JSX.
       </p>
 
       <Section anchor="import" title="Import">
@@ -97,12 +97,12 @@ import { toast, Toast, Toaster, type ToastTone, type ToastPosition } from '@moti
         />
       </Section>
 
-      <Section anchor="ways" title="From code and from JSX">
+      <Section anchor="ways" title="Programmatic and declarative">
         <p>
           <Rich text="`toast.show()` and its tone shortcuts return the `Toast`, an object you can `close()`, `update()` or await. They use `Toaster.default`, made in `document.body` the first time; an app can put a `Toaster` of its own where it wants it in JSX and make it the default." />
         </p>
-        <Example files={code('FromCode.tsx')}>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')}>
+          <Programmatic />
         </Example>
       </Section>
 

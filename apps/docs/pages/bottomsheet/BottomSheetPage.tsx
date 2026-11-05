@@ -103,9 +103,9 @@ import { BottomSheet, type BottomSheetDetent } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="In JSX, `x-model` opens and closes it with the state. From code, `show(host)` puts it in a component and disposes it when it closes; `open()` and `close()` work on one that stays. Without a `container` it opens over the whole page, in the browser's top layer." />
+          <Rich text="In JSX, `x-model` opens and closes it with the state. Programmatically, `show(host)` puts it in a component and disposes it when it closes; `open()` and `close()` work on one that stays. Without a `container` it opens over the whole page, in the browser's top layer." />
         </p>
         <Example files={code('JsxAndCode.tsx')}>
           <JsxAndCode />

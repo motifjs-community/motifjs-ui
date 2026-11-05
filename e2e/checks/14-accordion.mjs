@@ -35,9 +35,9 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.waitForTimeout(400);
   check('an access key opens its item', (await review.getAttribute('aria-expanded')) === 'true' && (await ways.locator('text=Ship to: Ankara').isVisible()));
 
-  await page.getByRole('button', { name: 'Add a question from code' }).click();
+  await page.getByRole('button', { name: 'Add a question programmatically' }).click();
   await page.waitForTimeout(400);
-  check('an item added from code opens', (await page.getByRole('button', { name: 'Question 1' }).getAttribute('aria-expanded')) === 'true' && (await page.locator('.acc-log').textContent()) === 'Opened “Question 1” from code.');
+  check('an item added programmatically opens', (await page.getByRole('button', { name: 'Question 1' }).getAttribute('aria-expanded')) === 'true' && (await page.locator('.acc-log').textContent()) === 'Opened “Question 1” programmatically.');
 
   const multiple = page.locator('section[aria-labelledby="multiple"]');
   const acc = multiple.locator('.acc-multiple');

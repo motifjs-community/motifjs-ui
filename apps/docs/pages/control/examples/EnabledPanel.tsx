@@ -1,6 +1,6 @@
 import { Button, Panel, Stack } from '@motifx-community/ui';
 
-/** A panel disabled and enabled from code: everything inside follows, and the inner button keeps its own `enabled`. */
+/** A panel disabled and enabled programmatically: everything inside follows, and the inner button keeps its own `enabled`. */
 export default function EnabledPanel() {
   let panel: Panel | null = null;
   let inner: Button | null = null;

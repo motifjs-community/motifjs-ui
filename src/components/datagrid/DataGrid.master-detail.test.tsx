@@ -207,7 +207,7 @@ describe('master-detail rows', () => {
     await grid.dispose();
   });
 
-  it('opens and closes from code, all at once, by autoExpandAll, and only rows that canExpand', async () => {
+  it('opens and closes programmatically, all at once, by autoExpandAll, and only rows that canExpand', async () => {
     const told: string[] = [];
     const { grid } = make({
       masterDetail: { enabled: true, template: (ctx) => new Detail(ctx), canExpand: (row: Row) => row.city !== 'izm' },

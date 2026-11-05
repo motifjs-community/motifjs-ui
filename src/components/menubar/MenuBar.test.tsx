@@ -52,7 +52,7 @@ function menus(log: string[]): MenuItem[] {
 }
 
 describe('MenuBar', () => {
-  it('is a menubar of top items with one Tab stop, the same from JSX and from code', async () => {
+  it('is a menubar of top items with one Tab stop, the same in JSX and programmatically', async () => {
     const s = reactive({ label: 'Main' });
     let jsx!: MenuBar;
     page(<MenuBar ref={(b: MenuBar) => (jsx = b)} label={() => s.label} items={menus([])} class="extra" />);

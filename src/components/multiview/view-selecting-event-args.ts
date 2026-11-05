@@ -9,7 +9,7 @@ export interface ViewSelectingEventArgs extends EventArgs {
     /** `null` when there was none. */
     fromView: View | null;
     toView: View;
-    /** By a swipe, else from code. */
+    /** By a swipe, else programmatically. */
     byUser: boolean;
     source: MultiView;
     event?: Event;

@@ -321,7 +321,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
 
   // Series.
 
-  /** What a change reaches: the setting's answer, the occurrence from code, else the user's answer. */
+  /** What a change reaches: the setting's answer, the occurrence programmatically, else the user's answer. */
   private async scopeFor(item: T, action: SeriesAction, byUser: boolean, scopes: readonly SeriesScope[]): Promise<SeriesScope | null> {
     const mode = this.host.seriesEdit();
     if (mode !== 'ask') return scopes.includes(mode) ? mode : scopes[scopes.length - 1];

@@ -60,7 +60,7 @@ describe('DateBox', () => {
     expect(b.inputElement.value).toBe('02.01.2027');
   });
 
-  it('reads functions over plain data again on reState, writes a date set from code to x-model, and never changes your dates', async () => {
+  it('reads functions over plain data again on reState, writes a date set programmatically to x-model, and never changes your dates', async () => {
     const first = day(2026, 3, 1);
     const plain = { day: first, type: 'date' as 'date' | 'datetime' };
     const s = reactive({ day: null as Date | null });
@@ -168,7 +168,7 @@ describe('DateBox', () => {
     expect(b.inputElement.value).toBe('25 October 2026');
   });
 
-  it('empties with its clear button or Escape, and works from code', async () => {
+  it('empties with its clear button or Escape, and works programmatically', async () => {
     const b = new DateBox({ locale: 'tr-TR', clearButton: true, type: 'time' });
     page(b);
     b.value = new Date(2026, 0, 1, 8, 30);

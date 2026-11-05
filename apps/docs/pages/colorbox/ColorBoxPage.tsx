@@ -1,7 +1,7 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Buttons from './examples/Buttons';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Picker from './examples/Picker';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
@@ -86,8 +86,8 @@ import { ColorBox, ColorPicker } from '@motifx-community/ui';
         <p>
           <Rich text="Type a hex or any `rgb(…)` form, or open the picker; the value is kept as hex. Every prop takes a value or a function." />
         </p>
-        <Example files={code('FromCode.tsx')}>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')}>
+          <Programmatic />
         </Example>
       </Section>
 

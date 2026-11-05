@@ -491,7 +491,7 @@ describe('grouping with the other features', () => {
 });
 
 describe('grouping options and events', () => {
-  it('tells every change of the grouping before (cancellable) and after, from the user and from code', async () => {
+  it('tells every change of the grouping before (cancellable) and after, from the user and programmatically', async () => {
     const told: string[] = [];
     const grid = await make({
       settings: { groupMenu: true },

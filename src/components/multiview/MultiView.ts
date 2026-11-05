@@ -12,8 +12,8 @@ import type { ViewSelectionChangedEventArgs } from "./view-selection-changed-eve
 const OWN = ['value', 'loop', 'swipeEnabled', 'animated', 'lazy', 'keepAlive', 'label'] as const;
 
 /**
- * Pages side by side, one in sight: the JSX `View` children, or views added from code. A swipe brings the next or
- * the previous one; from code `next()`, `previous()` and `goTo()` do, and a `Tabs`, a `Stepper` or buttons bound
+ * Pages side by side, one in sight: the JSX `View` children, or views added programmatically. A swipe brings the next or
+ * the previous one; programmatically `next()`, `previous()` and `goTo()` do, and a `Tabs`, a `Stepper` or buttons bound
  * to `value` drive it. A view is built when first shown (`lazy`) and kept (`keepAlive`), as the panels of `Tabs`.
  *
  * @example
@@ -132,7 +132,7 @@ export class MultiView extends Control<HTMLDivElement, MultiViewProps> {
         return this.selecting.event;
     }
 
-    /** The view in sight changed, by a swipe or from code (`byUser`). */
+    /** The view in sight changed, by a swipe or programmatically (`byUser`). */
     get onSelectionChanged(): MotifEvent<ViewSelectionChangedEventArgs> {
         return this.selectionChanged.event;
     }

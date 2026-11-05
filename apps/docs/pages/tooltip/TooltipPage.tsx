@@ -1,7 +1,7 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Delay from './examples/Delay';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import IconButtons from './examples/IconButtons';
 import ManyElements from './examples/ManyElements';
 import OnField from './examples/OnField';
@@ -83,12 +83,12 @@ import { Tooltip, addTooltip, type TooltipShowOn } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="In JSX a tooltip is placed anywhere and pointed at its `target`; where it sits does not matter. From code, `new Tooltip({ target, text })` needs nothing else: it puts itself into the page when it first shows, and goes when its target component does." />
+          <Rich text="In JSX a tooltip is placed anywhere and pointed at its `target`; where it sits does not matter. Programmatically, `new Tooltip({ target, text })` needs nothing else: it puts itself into the page when it first shows, and goes when its target component does." />
         </p>
-        <Example files={code('FromCode.tsx')}>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')}>
+          <Programmatic />
         </Example>
       </Section>
 

@@ -515,7 +515,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
       untracked(() => this.renderRoving());
     });
     if (typeof MutationObserver === 'function') {
-      // Controls added from code, disabled, hidden: the arrows and Tab follow. A control that takes another size
+      // Controls added programmatically, disabled, hidden: the arrows and Tab follow. A control that takes another size
       // (its look read once it is in the page) changes what fits.
       const observer = new MutationObserver((records) => {
         this.queueRestyle();

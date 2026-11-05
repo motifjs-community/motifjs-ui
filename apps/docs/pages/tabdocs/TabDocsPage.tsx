@@ -1,6 +1,6 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Options from './examples/Options';
 import Overview from './examples/Overview';
 import SaveRestore from './examples/SaveRestore';
@@ -174,12 +174,12 @@ import { TabDocument, TabDocumentManager } from '@motifx-community/ui';
         </Example>
       </Section>
 
-      <Section anchor="code" title="From code, and the events">
+      <Section anchor="code" title="Programmatic use, and the events">
         <p>
           <Rich text="Each thing the user does is also a method (`open`, `close`, `activate`, `split`, `move`, `closeGroup`, `focusGroup`, `maximizeGroup`, `restoreGroups`, `evenSizes`, `resizeGroup`), asks first through a cancelable `on…ing` event and reports through `on…ed`, with `byUser` telling the two apart." />
         </p>
-        <Example files={code('FromCode.tsx', 'contents.tsx')} stack>
-          <FromCode />
+        <Example files={code('Programmatic.tsx', 'contents.tsx')} stack>
+          <Programmatic />
         </Example>
       </Section>
 

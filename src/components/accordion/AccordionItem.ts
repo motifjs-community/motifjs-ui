@@ -92,7 +92,7 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
   set key(value: Bind<string>) {
     this.assignProperty('key', value, (v) => v ?? '');
   }
-  /** Whether the section is open. Setting it from code fires no cancelable event. Reactive. */
+  /** Whether the section is open. Setting it programmatically fires no cancelable event. Reactive. */
   get expanded(): boolean {
     return !!this.getProperty<boolean>('expanded');
   }

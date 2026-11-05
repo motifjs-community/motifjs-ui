@@ -41,7 +41,7 @@ describe('initialsOf', () => {
 });
 
 describe('Avatar', () => {
-  it('shows the initials of its name, the same from JSX and from code, else a person icon', async () => {
+  it('shows the initials of its name, the same in JSX and programmatically, else a person icon', async () => {
     let jsx!: Avatar;
     page(<Avatar ref={(a: Avatar) => (jsx = a)} name="Ada Lovelace" tone="accent" class="extra" />);
     const coded = new Avatar();

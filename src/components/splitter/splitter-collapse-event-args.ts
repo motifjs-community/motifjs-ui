@@ -7,7 +7,7 @@ export interface SplitterCollapseEventArgs extends EventArgs {
     pane: SplitPane;
     index: number;
     collapsed: boolean;
-    /** By a button on the handle or Enter on it, else from code. */
+    /** By a button on the handle or Enter on it, else programmatically. */
     byUser: boolean;
     source: Splitter;
     event?: Event;

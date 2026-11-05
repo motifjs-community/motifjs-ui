@@ -12,7 +12,7 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('a mouse click shows no focus ring', !(await remember.evaluate((el) => el.matches(':focus-visible'))));
   await page.keyboard.press('Space');
   check('Space toggles it', await remember.isChecked());
-  await ways.getByRole('button', { name: 'Add a checkbox from code' }).click();
+  await ways.getByRole('button', { name: 'Add a checkbox programmatically' }).click();
   check('a checkbox created with new is added and focused', await page.getByRole('checkbox', { name: 'Option 1' }).evaluate((el) => document.activeElement === el));
   await page.keyboard.press('Space');
   check('…and reports its changes', (await page.locator('.cb-result').textContent()) === 'Option 1: true');

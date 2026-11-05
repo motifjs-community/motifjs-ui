@@ -545,7 +545,7 @@ describe('TabDocumentManager: dragging a group', () => {
     expect(right.findDocument('c')!.manager).toBe(right);
   });
 
-  it('moveGroup and split(null) from code', async () => {
+  it('moveGroup and split(null) programmatically', async () => {
     const m = managerWith([['A'], ['B'], ['C']]);
     const [a, b, c] = m.groups;
     expect(m.moveGroup(a, c, 'down')).toBe(true);

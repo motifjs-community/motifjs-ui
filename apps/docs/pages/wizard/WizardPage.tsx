@@ -2,13 +2,13 @@ import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Basic from './examples/Basic';
 import Custom from './examples/Custom';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import Vertical from './examples/Vertical';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-    ['steps', '`readonly WizardStepProps[]`', '`[]`', 'Steps made from code, each as the props of a `WizardStep`; the JSX `WizardStep` children come first.'],
+    ['steps', '`readonly WizardStepProps[]`', '`[]`', 'Steps made programmatically, each as the props of a `WizardStep`; the JSX `WizardStep` children come first.'],
     ['value', '`Bind<string | number | null>`', '`0`', 'The current step: its `key`, else its index. `x-model` binds it two-way.'],
     ['linear', '`Bind<boolean>`', '`true`', 'A step is reached only after the ones before it; optional steps may be skipped.'],
     ['orientation', '`Bind<StepperOrientation>`', "`'horizontal'`", '`horizontal`: the stepper above the pages; `vertical`: beside them.'],
@@ -33,7 +33,7 @@ const STEP_PROPS = [
     ['validateFields', '`Bind<boolean>`', '`true`', 'The kit’s fields on the page are validated before the wizard moves on from it; the first invalid one takes focus.'],
     ['validate', '`() => boolean | Promise<boolean>`', '—', 'Asked after the fields; `false` keeps the page and marks the step.'],
     ['lazy, keepAlive', '`Bind<boolean | undefined>`', 'the wizard’s', 'See the wizard’s.'],
-    ['content', '`() => ComponentBase | ComponentBase[]`', '—', 'Makes the page from code, when the page is built.']
+    ['content', '`() => ComponentBase | ComponentBase[]`', '—', 'Makes the page programmatically, when the page is built.']
 ];
 
 const MEMBERS = [
@@ -43,7 +43,7 @@ const MEMBERS = [
     ['next(), previous(), goTo(step)', '`Promise<boolean>`', 'Next validates the page first and finishes on the last step; Back validates nothing; `goTo` validates when it goes forward.'],
     ['finish()', '`Promise<boolean>`', 'Validates the page, asks `onFinishing`, then finishes.'],
     ['leaveCheck()', '`Promise<boolean>`', 'Validates the current page the way Next does, without moving.'],
-    ['add(step), insert(index, step), remove(step)', '`WizardStep` / `boolean`', 'Steps from code; a step of another wizard moves here.'],
+    ['add(step), insert(index, step), remove(step)', '`WizardStep` / `boolean`', 'Steps programmatically; a step of another wizard moves here.'],
     ['stepper, steps, currentStep, selectedIndex', 'read-only', 'The `Stepper`, the `WizardStep`s in order, the current one and its index.'],
     ['isLast, isFinished', 'read-only', 'The current step is the last that can be gone to (Next finishes); the wizard finished.'],
     ['previousButton, nextButton', 'read-only', 'The kit’s buttons in the bar, for an icon or a look of your own.']
@@ -94,12 +94,12 @@ import { Wizard, WizardStep } from '@motifx-community/ui';
                 </Example>
             </Section>
 
-            <Section anchor="code" title="From code">
+            <Section anchor="code" title="Programmatic use">
                 <p>
                     <Rich text="`steps` makes the steps from props, each page from a `content` factory when it is first shown; `add`, `insert` and `remove` change them later. `next()`, `previous()`, `goTo()` and `finish()` move it." />
                 </p>
-                <Example stack files={code('FromCode.tsx')}>
-                    <FromCode />
+                <Example stack files={code('Programmatic.tsx')}>
+                    <Programmatic />
                 </Example>
             </Section>
 

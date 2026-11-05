@@ -10,7 +10,7 @@ import type { WizardStepProps } from './wizard-step-props';
 
 /** Props of `Wizard`. Each one is also a settable property; a function is followed. */
 export interface WizardProps extends ControlProps {
-    /** Steps made from code, each as the props of a `WizardStep` (`title`, `content`, …); the JSX `WizardStep` children come first. */
+    /** Steps made programmatically, each as the props of a `WizardStep` (`title`, `content`, …); the JSX `WizardStep` children come first. */
     steps?: readonly WizardStepProps[];
     /** The current step: its `key`, else its index. `x-model` binds it two-way. Default `0`. */
     value?: Bind<string | number | null>;

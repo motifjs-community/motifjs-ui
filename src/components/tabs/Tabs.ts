@@ -41,7 +41,7 @@ const PARTS = Symbol('mx.tabs');
 
 /**
  * Tabs: a strip of tabs and the panel of the selected one, following the ARIA tabs pattern.
- * Tabs come as `<Tab>` children or from code (`add`, `insert`, `remove`); `value` (two-way with
+ * Tabs come as `<Tab>` children or programmatically (`add`, `insert`, `remove`); `value` (two-way with
  * `x-model`) is the selected tab's `key`, else its index. Arrow keys move along the strip (and
  * select, with `activation="auto"`), Home and End go to the ends, Delete closes a closable tab,
  * a tab's `&` key selects it. Panels are built when first shown (`lazy`).
@@ -218,11 +218,11 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
     return true;
   }
 
-  /** Selects a tab (or the tab at an index) from code; `false` when it is hidden or not here. */
+  /** Selects a tab (or the tab at an index) programmatically; `false` when it is hidden or not here. */
   select(tab: Tab | number): boolean {
     const target = typeof tab === 'number' ? this.tabsNow()[tab] : tab;
     if (!target) return false;
-    // A tab chosen from code takes the place of one the model is still waiting for.
+    // A tab chosen programmatically takes the place of one the model is still waiting for.
     this.parts.wanted = null;
     return untracked(() => this.choose(target, false));
   }

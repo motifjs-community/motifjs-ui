@@ -1,7 +1,7 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import AppShell from './examples/AppShell';
-import FromCode from './examples/FromCode';
+import Programmatic from './examples/Programmatic';
 import GridForm from './examples/GridForm';
 import GridTracks from './examples/GridTracks';
 import GroupBoxes from './examples/GroupBoxes';
@@ -101,9 +101,9 @@ const PROPERTIES = [
 ];
 
 const METHODS = [
-  ['Stack.setGrow(child, grow), growOf(child)', '`void`, value', 'A child\'s `grow` from code (a value or a function).'],
-  ['Grid.setCell(child, cell), cellOf(child)', '`void`, `GridCell`', 'A child\'s `row`, `column`, `rowSpan`, `columnSpan` from code.'],
-  ['DockPanel.setDock(child, dock), dockOf(child)', '`void`, `Dock`', 'A child\'s `dock` from code.'],
+  ['Stack.setGrow(child, grow), growOf(child)', '`void`, value', 'A child\'s `grow` programmatically (a value or a function).'],
+  ['Grid.setCell(child, cell), cellOf(child)', '`void`, `GridCell`', 'A child\'s `row`, `column`, `rowSpan`, `columnSpan` programmatically.'],
+  ['DockPanel.setDock(child, dock), dockOf(child)', '`void`, `Dock`', 'A child\'s `dock` programmatically.'],
   ['DockPanel.setAnchors(child, anchors)', '`void`', 'The `left` / `top` / `right` / `bottom` of a `float` child.'],
   ['SplitContainer.collapse(pane?), restore()', '`void`', 'Hides a pane (the first by default) / shows both again.'],
   ['GroupBox.focus()', '`boolean`', 'Focuses the first control inside, opening a collapsed box.'],
@@ -169,12 +169,12 @@ import { Stack, Grid, Panel, GroupBox, DockPanel, SplitContainer, type LayoutSpa
         />
       </Section>
 
-      <Section anchor="ways" title="From JSX and from code">
+      <Section anchor="ways" title="Declarative and programmatic">
         <p>
           <Rich text="Children come as JSX or are added later with `controls.add`; either way the container picks them up. A child says where it goes in its own props (`grow`, `row`, `dock`…), whatever kind of component it is." />
         </p>
-        <Example files={code('FromCode.tsx')} stack>
-          <FromCode />
+        <Example files={code('Programmatic.tsx')} stack>
+          <Programmatic />
         </Example>
       </Section>
 

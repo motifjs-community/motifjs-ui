@@ -65,7 +65,7 @@ function click(el: HTMLElement, init: MouseEventInit = {}) {
 }
 
 describe('TreeView', () => {
-  it('builds the tree pattern, the same from JSX and from code', async () => {
+  it('builds the tree pattern, the same in JSX and programmatically', async () => {
     let jsx!: TreeView<Folder>;
     page(<TreeView ref={(t: TreeView<Folder>) => (jsx = t)} label="Files" items={files()} expandedKeys={['src']} class="extra" />);
     const coded = new TreeView<Folder>({ items: files() });
@@ -186,7 +186,7 @@ describe('TreeView', () => {
     });
   });
 
-  it('reads functions over plain data again on reState, and writes a selection set from code to x-model', async () => {
+  it('reads functions over plain data again on reState, and writes a selection set programmatically to x-model', async () => {
     const plain = { name: 'app.ts', items: files() };
     plain.items[0].children![0].text = (() => plain.name) as unknown as string;
     const s = reactive({ file: null as unknown });
@@ -316,7 +316,7 @@ describe('TreeView', () => {
     expect(row(t, 'src').getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('opens and closes rows from code, with cancelable events and the expanded field', async () => {
+  it('opens and closes rows programmatically, with cancelable events and the expanded field', async () => {
     const expanding = vi.fn((e: TreeViewExpandingEventArgs<Folder>) => (e.cancel = e.key === 'docs'));
     const expanded = vi.fn();
     const collapsed = vi.fn();
@@ -440,7 +440,7 @@ describe('TreeView', () => {
     expect(part(row(t, 'src'), 'check')).toBeNull();
   });
 
-  it('filters rows with their parents, from a search box or from code', async () => {
+  it('filters rows with their parents, from a search box or programmatically', async () => {
     const t = new TreeView<Folder>({ items: files(), searchEnabled: true });
     page(t);
     const search = t.element.querySelector<HTMLInputElement>('.mx-tree-view__search input')!;

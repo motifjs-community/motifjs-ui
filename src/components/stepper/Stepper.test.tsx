@@ -27,7 +27,7 @@ const faces = (s: Stepper) => Array.from(s.element.querySelectorAll<HTMLElement>
 const key = (el: HTMLElement, key: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
 
 describe('Stepper', () => {
-    it('draws the steps with their numbers, the completed ones and the current one, from JSX and from code', async () => {
+    it('draws the steps with their numbers, the completed ones and the current one, in JSX and programmatically', async () => {
         let jsx!: Stepper;
         page(<Stepper ref={(s: Stepper) => (jsx = s)} items={['Account', { text: 'Address', description: 'Where to send it' }, { text: 'Review', optional: true }]} value={1} />);
         const coded = new Stepper({ items: ['One', 'Two'] });
@@ -134,7 +134,7 @@ describe('Stepper', () => {
         expect(faces(stepper)[0].tagName).toBe('BUTTON');
     });
 
-    it('goes forward and back from code, over disabled steps, and tells the change', async () => {
+    it('goes forward and back programmatically, over disabled steps, and tells the change', async () => {
         const changes: string[] = [];
         const stepper = new Stepper({ items: ['One', { text: 'Two', enabled: false }, 'Three'], onStepChanged: e => changes.push(`${e.previous}>${e.index}:${e.byUser}`) });
         page(stepper);

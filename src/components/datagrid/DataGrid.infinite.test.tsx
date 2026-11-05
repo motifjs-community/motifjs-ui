@@ -98,7 +98,7 @@ describe('DataGrid infinite mode', () => {
     expect(grid.element.querySelector('.mx-data-grid__viewport')!.getAttribute('aria-rowcount')).toBe('96');
   });
 
-  it('keeps the rows as they are while onMoreRowsLoading cancels, and loads from code', async () => {
+  it('keeps the rows as they are while onMoreRowsLoading cancels, and loads programmatically', async () => {
     let allow = false;
     const { grid, toEnd } = make({ onMoreRowsLoading: (e) => (e.cancel = !allow) });
     await settle();
