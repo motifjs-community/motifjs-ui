@@ -13676,7 +13676,7 @@ import { Breadcrumb } from '@motifx-community/ui';
 
 ## Links and buttons
 
-A step with `href` is a link; `rel=&quot;router&quot;` lets the MotifJS router take it. A step without one is a button: `onItemClick` tells it.
+A step with `href` is a link; `rel='router'` lets the MotifJS router take it. A step without one is a button: `onItemClick` tells it.
 
 ```tsx
 import { reactive } from '@motifx/core';

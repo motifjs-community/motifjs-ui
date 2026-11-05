@@ -58,7 +58,7 @@ import { Breadcrumb } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Links and buttons">
         <p>
-          <Rich text="A step with `href` is a link; `rel=&quot;router&quot;` lets the MotifJS router take it. A step without one is a button: `onItemClick` tells it." />
+          <Rich text="A step with `href` is a link; `rel='router'` lets the MotifJS router take it. A step without one is a button: `onItemClick` tells it." />
         </p>
         <Example files={code('FromCode.tsx')}>
           <FromCode />
