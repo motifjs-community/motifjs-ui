@@ -608,5 +608,8 @@
   "sizeNow": "Width {width, number}, height {height, number}",
   "positionNow": "Moved {x, number} across and {y, number} down",
   "actions": "Actions",
-  "validationSummary": "Please correct the following"
+  "validationSummary": "Please correct the following",
+  "timeline": "Timeline",
+  "timelineEarlier": "Earlier",
+  "timelineLater": "Later"
 }

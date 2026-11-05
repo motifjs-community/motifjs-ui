@@ -50,6 +50,7 @@
 @import '../components/draggable/draggable.css';
 @import '../components/speeddial/speeddial.css';
 @import '../components/validationsummary/validationsummary.css';
+@import '../components/timeline/timeline.css';
 @import '../components/popover/popover.css';
 @import '../components/loadpanel/loadpanel.css';
 @import '../components/daterangebox/daterangebox.css';

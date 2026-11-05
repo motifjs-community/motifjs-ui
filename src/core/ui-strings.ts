@@ -630,6 +630,10 @@ export interface UiStrings {
   /** The speed dial and the validation summary. */
   actions: string;
   validationSummary: string;
+  /** The timeline. */
+  timeline: string;
+  timelineEarlier: string;
+  timelineLater: string;
   /** The sortable and the scroll view. */
   sortableMoved: string;
   scrollPullDown: string;

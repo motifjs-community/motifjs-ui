@@ -57,6 +57,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   each field's validity, so a check, a pass or a reset draws it again; `header`, `showHeader`, `focusOnClick`,
   `onItemClick`, `failed`, `count`.
 - Kit texts `actions`, `validationSummary` in English and Turkish.
+- `Timeline`: events in time order (`items`: `date`, `title`, `description`, `glyph` or `icon`, `tone`, any `content`),
+  down the page as cards beside a line with a dot each, on either side in turn (`alternate`) or folded until pressed
+  (`collapsible`); or along a line of dates (`orientation`), where a press on a date, the arrow keys, Home and End
+  show that event's card under the line, with buttons at the ends of the track; the dates written in the kit's
+  language with `dateFormat` (a style or the options of `Intl.DateTimeFormat`); `value` and `x-model`; `goTo()`,
+  `unfold()`, `isUnfolded()`, `formatDate()`, `refresh()`; `onItemClick`, `onSelectionChanged`. A list down the
+  page, tabs and a tab panel along the line. Units in the five languages: the line, a dot and its glyph by tone,
+  a card, a flag, the texts, the detail, the track buttons.
+- Kit texts `timeline`, `timelineEarlier`, `timelineLater` in English and Turkish.
 - Kit texts `gallery`, `gallerySlides`, `gallerySlideOf`, `galleryPrevious`, `galleryNext`, `galleryChoose`,
   `galleryPlay`, `galleryPause`, `multiView`, `multiViewPageOf` in English and Turkish; the `play` and `pause` glyphs.
 

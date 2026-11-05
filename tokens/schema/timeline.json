@@ -1,0 +1,98 @@
+{
+  "timeline": {
+    "$description": "Timeline: events in order down the page, each a card beside a line with a dot, or along a line of dates with the shown event's card under it.",
+    "$selector": ".mx-timeline",
+    "gap": { "$type": "dimension", "$description": "Down the page, between the events." },
+    "dot-gap": { "$type": "dimension", "$description": "Down the page, between the dot and the card." },
+    "track-gap": { "$type": "dimension", "$description": "Along the line, between the flags." },
+    "row-gap": { "$type": "dimension", "$description": "Along the line, between the track and the detail under it." },
+    "mark-size": { "$type": "dimension", "$description": "The dot on the line." },
+    "line-thickness": { "$type": "dimension", "$description": "The line's thickness." },
+    "$units": {
+      "line": {
+        "$description": "The line the dots sit on (one down the page, a piece between each two flags along it); its thickness is `timeline.line-thickness`.",
+        "selector": ".mx-timeline__list::before, .mx-timeline__item::before, .mx-timeline__item::after",
+        "defaults": { "width": "var(--_line-w)", "height": "var(--_line-h)" }
+      },
+      "dot": {
+        "$description": "The dot of an event, coloured by its tone: `accent`, `success`, `caution`, `danger`, `info`.",
+        "selector": ".mx-timeline__dot",
+        "defaults": { "size": "var(--_dot)" },
+        "states": {
+          "accent": ".mx-timeline__dot[data-tone='accent']",
+          "success": ".mx-timeline__dot[data-tone='success']",
+          "caution": ".mx-timeline__dot[data-tone='caution']",
+          "danger": ".mx-timeline__dot[data-tone='danger']",
+          "info": ".mx-timeline__dot[data-tone='info']"
+        }
+      },
+      "dot-glyph": {
+        "$description": "The glyph in a dot: `bg` its colour, `size` its size; by tone as the dot.",
+        "selector": ".mx-timeline__dot-glyph",
+        "states": {
+          "accent": ".mx-timeline__dot[data-tone='accent'] > .mx-timeline__dot-glyph",
+          "success": ".mx-timeline__dot[data-tone='success'] > .mx-timeline__dot-glyph",
+          "caution": ".mx-timeline__dot[data-tone='caution'] > .mx-timeline__dot-glyph",
+          "danger": ".mx-timeline__dot[data-tone='danger'] > .mx-timeline__dot-glyph",
+          "info": ".mx-timeline__dot[data-tone='info'] > .mx-timeline__dot-glyph"
+        }
+      },
+      "card": {
+        "$description": "An event's card down the page: `pressable` when it folds, then `hover`, `pressed`, `focus`, `expanded`.",
+        "selector": ".mx-timeline__card",
+        "states": {
+          "pressable": "button.mx-timeline__card",
+          "hover": "button.mx-timeline__card:hover",
+          "pressed": { "selector": "button.mx-timeline__card:active", "from": "hover" },
+          "focus": ".mx-timeline__card:focus-visible",
+          "expanded": ".mx-timeline__item[data-expanded] > .mx-timeline__card"
+        }
+      },
+      "flag": {
+        "$description": "An event's flag along the line, the dot and the date: `hover`, `pressed`, `focus`, `selected`.",
+        "selector": ".mx-timeline__flag",
+        "defaults": { "cursor": "default" },
+        "states": {
+          "hover": ".mx-timeline__flag:hover",
+          "pressed": { "selector": ".mx-timeline__flag:active", "from": "hover" },
+          "focus": ".mx-timeline__flag:focus-visible",
+          "selected": ".mx-timeline__flag[aria-selected='true']"
+        }
+      },
+      "date": {
+        "$description": "The date of an event; `selected` on the flag shown.",
+        "selector": ".mx-timeline__date",
+        "states": {
+          "selected": ".mx-timeline__flag[aria-selected='true'] > .mx-timeline__date"
+        }
+      },
+      "title": {
+        "$description": "The title of an event.",
+        "selector": ".mx-timeline__title"
+      },
+      "description": {
+        "$description": "The text under the title.",
+        "selector": ".mx-timeline__description"
+      },
+      "detail": {
+        "$description": "Along the line, the card of the shown event under the track.",
+        "selector": ".mx-timeline__detail"
+      },
+      "nav": {
+        "$description": "The buttons at the ends of the track: `hover`, `pressed`, `focus`, `disabled` at an end.",
+        "selector": ".mx-timeline__nav",
+        "defaults": { "cursor": "default" },
+        "states": {
+          "hover": ".mx-timeline__nav:not([aria-disabled='true']):hover",
+          "pressed": { "selector": ".mx-timeline__nav:not([aria-disabled='true']):active", "from": "hover" },
+          "focus": ".mx-timeline__nav:focus-visible",
+          "disabled": ".mx-timeline__nav[aria-disabled='true']"
+        }
+      },
+      "nav-glyph": {
+        "$description": "The arrow in a track button: `bg` its colour, `size` its size.",
+        "selector": ".mx-timeline__nav-glyph"
+      }
+    }
+  }
+}

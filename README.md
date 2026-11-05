@@ -42,7 +42,7 @@ each (`npm run dev`).
 | Group | Components |
 | --- | --- |
 | Buttons and commands | `Button` (menu, split, drop-down, toggle, busy), `ButtonGroup` (segmented choice), `Toolbar` (overflow menu), `MenuBar`, `ContextMenu`, `SpeedDial` (a fan of actions in a corner) |
-| Display | `Badge`, `Avatar`, `AvatarGroup`, `Chip`, `ChipGroup`, `Card`, `Skeleton`, `Gallery` (slides, dots, slideshow), `TileView` (tiles on a grid, chosen, reordered) |
+| Display | `Badge`, `Avatar`, `AvatarGroup`, `Chip`, `ChipGroup`, `Card`, `Skeleton`, `Gallery` (slides, dots, slideshow), `TileView` (tiles on a grid, chosen, reordered), `Timeline` (events down the page or along a line of dates) |
 | Navigation | `Tabs`, `Accordion`, `Breadcrumb`, `Pagination`, `Stepper`, `Wizard`, `MultiView` (pages by swipe), `TabDocumentManager` |
 | More editors | `Rating`, `ColorBox`, `ColorPicker` |
 | Scheduling | `Scheduler` (day, week, month, timeline, agenda; recurrence, resources, iCalendar) |

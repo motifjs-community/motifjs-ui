@@ -79,6 +79,7 @@ export const GROUPS = [
       { id: 'card', label: 'Card', title: 'Card', path: '/card', related: ['avatar', 'skeleton'] },
       { id: 'gallery', label: 'Gallery', title: 'Gallery', path: '/gallery', related: ['card', 'multiview', 'scrollview'] },
       { id: 'tileview', label: 'TileView', title: 'TileView', path: '/tileview', related: ['gallery', 'sortable', 'listbox'] },
+      { id: 'timeline', label: 'Timeline', title: 'Timeline', path: '/timeline', related: ['scheduler', 'stepper', 'card'] },
       { id: 'skeleton', label: 'Skeleton', title: 'Skeleton', path: '/skeleton', related: ['card', 'progress'] },
     ],
   },

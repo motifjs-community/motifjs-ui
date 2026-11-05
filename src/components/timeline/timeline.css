@@ -1,0 +1,229 @@
+/* Timeline: down the page, each event a row with the dot on the line and the card beside it (on either side in
+   turn when alternate); along a line, the flags in a track that scrolls with the buttons at its ends and the
+   shown event's card under it. Only the layout is here: the line, a dot, its glyph, a card, a flag, the texts, the
+   detail and the buttons are units of the schema. */
+@layer mx.components {
+    .mx-timeline {
+        --_dot: var(--_timeline-mark-size);
+
+        display: grid;
+        box-sizing: border-box;
+        inline-size: 100%;
+        min-inline-size: 0;
+        gap: var(--_timeline-row-gap);
+    }
+
+    .mx-timeline__list {
+        position: relative;
+        display: flex;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    /* The line, under the dots: down the page one piece on the list; along it a piece on either side of each flag,
+       since the flags are as wide as their dates. */
+    .mx-timeline__list::before,
+    .mx-timeline__item::before,
+    .mx-timeline__item::after {
+        content: '';
+        position: absolute;
+        pointer-events: none;
+    }
+
+    .mx-timeline__item::before,
+    .mx-timeline__item::after {
+        display: none;
+    }
+
+    .mx-timeline__nav[hidden],
+    .mx-timeline__detail[hidden],
+    .mx-timeline__date[hidden],
+    .mx-timeline__description[hidden],
+    .mx-timeline__content[hidden],
+    .mx-timeline__dot-glyph[hidden] {
+        display: none;
+    }
+
+    .mx-timeline__dot {
+        position: relative;
+        display: inline-flex;
+        flex: none;
+        box-sizing: border-box;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mx-timeline__dot-icon {
+        inline-size: var(--_timeline-dot-glyph-size, 0.625rem);
+        block-size: var(--_timeline-dot-glyph-size, 0.625rem);
+    }
+
+    .mx-timeline__card,
+    .mx-timeline__flag,
+    .mx-timeline__nav {
+        display: flex;
+        box-sizing: border-box;
+        margin: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        appearance: none;
+    }
+
+    .mx-timeline__card {
+        flex-direction: column;
+        min-inline-size: 0;
+    }
+
+    .mx-timeline__date,
+    .mx-timeline__title,
+    .mx-timeline__description {
+        overflow-wrap: anywhere;
+    }
+
+    /* Down the page: a row per event, the dot column at the start (in the middle when the cards take turns). */
+    .mx-timeline[data-orientation='vertical'] > .mx-timeline__track {
+        grid-column: 1 / -1;
+    }
+
+    .mx-timeline[data-orientation='vertical'] .mx-timeline__list {
+        --_line-w: var(--_timeline-line-thickness);
+        --_line-h: auto;
+
+        flex-direction: column;
+        gap: var(--_timeline-gap);
+    }
+
+    .mx-timeline[data-orientation='vertical'] .mx-timeline__list::before {
+        inset-block: calc(var(--_dot) / 2);
+        inset-inline-start: calc(var(--_dot) / 2 - var(--_timeline-line-thickness) / 2);
+    }
+
+    .mx-timeline[data-orientation='vertical'][data-alternate] .mx-timeline__list::before {
+        inset-inline-start: calc(50% - var(--_timeline-line-thickness) / 2);
+    }
+
+    .mx-timeline[data-orientation='vertical'] .mx-timeline__item {
+        display: grid;
+        grid-template-columns: var(--_dot) minmax(0, 1fr);
+        column-gap: var(--_timeline-dot-gap);
+        align-items: start;
+    }
+
+    .mx-timeline[data-orientation='vertical'] .mx-timeline__item > .mx-timeline__dot {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .mx-timeline[data-orientation='vertical'] .mx-timeline__item > .mx-timeline__card {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .mx-timeline[data-orientation='vertical'][data-alternate] .mx-timeline__item {
+        grid-template-columns: minmax(0, 1fr) var(--_dot) minmax(0, 1fr);
+    }
+
+    .mx-timeline[data-orientation='vertical'][data-alternate] .mx-timeline__item > .mx-timeline__dot {
+        grid-column: 2;
+    }
+
+    .mx-timeline[data-orientation='vertical'][data-alternate] .mx-timeline__item[data-side='start'] > .mx-timeline__card {
+        grid-column: 1;
+        text-align: end;
+        align-items: flex-end;
+    }
+
+    .mx-timeline[data-orientation='vertical'][data-alternate] .mx-timeline__item[data-side='end'] > .mx-timeline__card {
+        grid-column: 3;
+    }
+
+    .mx-timeline[data-orientation='vertical'] .mx-timeline__nav,
+    .mx-timeline[data-orientation='vertical'] .mx-timeline__detail {
+        display: none;
+    }
+
+    /* Along a line: the buttons at the ends of a track that scrolls, the flags on the line, the detail under it. */
+    .mx-timeline[data-orientation='horizontal'] {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+    }
+
+    .mx-timeline[data-orientation='horizontal'] > .mx-timeline__track {
+        min-inline-size: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+        scroll-behavior: smooth;
+    }
+
+    .mx-timeline[data-orientation='horizontal'] > .mx-timeline__track::-webkit-scrollbar {
+        display: none;
+    }
+
+    .mx-timeline[data-orientation='horizontal'] .mx-timeline__list {
+        --_line-w: auto;
+        --_line-h: var(--_timeline-line-thickness);
+
+        flex-direction: row;
+        gap: var(--_timeline-track-gap);
+        inline-size: max-content;
+        min-inline-size: 100%;
+    }
+
+    .mx-timeline[data-orientation='horizontal'] .mx-timeline__list::before {
+        display: none;
+    }
+
+    .mx-timeline[data-orientation='horizontal'] .mx-timeline__item {
+        position: relative;
+        flex: none;
+        display: flex;
+    }
+
+    .mx-timeline[data-orientation='horizontal'] .mx-timeline__item:not(:first-child)::before,
+    .mx-timeline[data-orientation='horizontal'] .mx-timeline__item:not(:last-child)::after {
+        display: block;
+        inset-block-start: calc(var(--_timeline-flag-padding, 0px) + var(--_dot) / 2 - var(--_timeline-line-thickness) / 2);
+    }
+
+    .mx-timeline[data-orientation='horizontal'] .mx-timeline__item::before {
+        --_line-w: calc(50% + var(--_timeline-track-gap));
+
+        inset-inline-start: calc(-1 * var(--_timeline-track-gap));
+    }
+
+    .mx-timeline[data-orientation='horizontal'] .mx-timeline__item::after {
+        --_line-w: 50%;
+
+        inset-inline-start: 50%;
+    }
+
+    .mx-timeline__flag {
+        position: relative;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .mx-timeline__flag > .mx-timeline__title {
+        display: none;
+    }
+
+    .mx-timeline[data-orientation='horizontal'] > .mx-timeline__detail {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        min-inline-size: 0;
+    }
+
+    .mx-timeline__nav {
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        padding: 0;
+    }
+}
