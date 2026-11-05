@@ -1,5 +1,6 @@
 import { Emitter, type Bind, type ComponentBase, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
+import { homeOf } from '../../core/flow-home';
 import { focusableIn, isFocusable } from '../../core/focus';
 import { nextId } from '../../core/next-id';
 import { isElement } from '../../core/node-kind';
@@ -36,21 +37,6 @@ function elementOf(target: TooltipTarget | null | undefined): Element | null {
   if (!target) return null;
   if (isElement(target)) return target;
   return isElement(target.element) ? target.element : null;
-}
-
-const HOLDS_FLOW = 'div, section, main, article, aside, nav, header, footer, form, dialog, fieldset, li, dd, td, th, body';
-const NAMED_BY_CONTENT = 'button, a, label, summary, [role="button"], [role="link"], [role="option"], [role="menuitem"], [role="tab"]';
-
-/**
- * Where a tooltip made from code goes: the nearest container of the target that may hold a
- * `<div>` and is not named by its content (a button would read the tooltip as part of its name).
- * Near the target, it stays in the target's landmark and window (a modal window makes the rest inert).
- */
-function homeOf(anchor: Element): Element {
-  for (let el = anchor.parentElement; el; el = el.parentElement) {
-    if (el.matches(HOLDS_FLOW) && !el.closest(NAMED_BY_CONTENT)) return el;
-  }
-  return anchor.ownerDocument.body;
 }
 
 function addToken(el: Element, name: string, token: string): void {

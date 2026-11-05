@@ -1,0 +1,55 @@
+{
+  "load-panel": {
+    "padding": {
+      "$value": "{space.4}"
+    },
+    "gap": {
+      "$value": "{space.3}"
+    },
+    "cancel": {
+      "variant": {
+        "$value": "outline"
+      }
+    },
+    "shade": {
+      "shaded": {
+        "bg": {
+          "$value": "{color.bg.smoke}"
+        }
+      }
+    },
+    "pane": {
+      "shown": {
+        "bg": {
+          "$value": "{color.bg.surface}"
+        },
+        "radius": {
+          "$value": "{radius.lg}"
+        },
+        "shadow": {
+          "$value": "{elevation.popup}"
+        },
+        "padding-block": {
+          "$value": "{space.4}"
+        },
+        "padding-inline": {
+          "$value": "{space.5}"
+        },
+        "min-width": {
+          "$value": {
+            "value": 10,
+            "unit": "rem"
+          }
+        }
+      }
+    },
+    "message": {
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "font-size": {
+        "$value": "{font.size.body}"
+      }
+    }
+  }
+}

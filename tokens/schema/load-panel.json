@@ -1,0 +1,36 @@
+{
+  "load-panel": {
+    "$description": "LoadPanel: a loading layer over a container or the page, a pane with the indicator, the message and a Cancel button.",
+    "$selector": ".mx-load-panel",
+    "padding": { "$type": "dimension", "$description": "The least space between the pane and the edge of what it covers." },
+    "gap": { "$type": "dimension", "$description": "Between the indicator, the message and the button." },
+    "$places": {
+      "cancel": {
+        "$description": "The Cancel button in the pane.",
+        "selector": ".mx-load-panel__cancel",
+        "part": "button",
+        "tokens": ["variant"]
+      }
+    },
+    "$units": {
+      "shade": {
+        "$description": "The layer over what is covered: its fill when `shade` is on (`shaded`), else clear.",
+        "selector": ".mx-load-panel",
+        "states": {
+          "shaded": ".mx-load-panel[data-shade]"
+        }
+      },
+      "pane": {
+        "$description": "The box behind the indicator and the message, drawn when `showPane` is on (`shown`).",
+        "selector": ".mx-load-panel__pane",
+        "states": {
+          "shown": ".mx-load-panel[data-pane] > .mx-load-panel__pane"
+        }
+      },
+      "message": {
+        "$description": "The message under the indicator.",
+        "selector": ".mx-load-panel__message"
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "popover": {
+    "$description": "Popover: content next to the element it belongs to, with a title, a close button and an arrow where the language draws one.",
+    "$selector": ".mx-popover",
+    "offset": { "$type": "dimension", "$description": "The gap between the popover and its target." },
+    "enter-offset": { "$type": "dimension", "$description": "How far it comes in from its target as it appears (0: it only fades in)." },
+    "header-gap": { "$type": "dimension", "$description": "Between the title and the close button." },
+    "$places": {
+      "close": {
+        "$description": "The close button in the header.",
+        "selector": ".mx-popover__close",
+        "part": "button",
+        "tokens": ["variant"]
+      }
+    },
+    "$units": {
+      "surface": {
+        "$description": "The popover: its fill, frame, corners and shadow; `focus` when the keys put focus on the surface itself.",
+        "selector": ".mx-popover",
+        "states": {
+          "focus": ".mx-popover:focus-visible"
+        }
+      },
+      "arrow": {
+        "$description": "The arrow towards the target: a square turned on its corner, the half outside showing (`display` shows it; `size` its side; its fill and frame continue the surface's).",
+        "selector": ".mx-popover__arrow",
+        "defaults": { "display": "none" }
+      },
+      "header": {
+        "$description": "The row with the title and the close button.",
+        "selector": ".mx-popover__header"
+      },
+      "title": {
+        "$description": "The title.",
+        "selector": ".mx-popover__title"
+      },
+      "body": {
+        "$description": "The content.",
+        "selector": ".mx-popover__body"
+      }
+    }
+  }
+}

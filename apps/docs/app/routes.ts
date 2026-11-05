@@ -38,6 +38,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   lookup: () => import('../pages/lookup/LookupPage'),
   progress: () => import('../pages/progress/ProgressPage'),
   tooltip: () => import('../pages/tooltip/TooltipPage'),
+  popover: () => import('../pages/popover/PopoverPage'),
+  loadpanel: () => import('../pages/loadpanel/LoadPanelPage'),
   toast: () => import('../pages/toast/ToastPage'),
   tabs: () => import('../pages/tabs/TabsPage'),
   accordion: () => import('../pages/accordion/AccordionPage'),

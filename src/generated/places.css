@@ -386,6 +386,16 @@
     --_list-item-radius: var(--mx-listbox-list-item-radius);
   }
 
+  /* load-panel: cancel — The Cancel button in the pane. */
+  .mx-load-panel__cancel {
+    --_button-variant: var(--mx-load-panel-cancel-variant);
+  }
+
+  /* popover: close — The close button in the header. */
+  .mx-popover__close {
+    --_button-variant: var(--mx-popover-close-variant);
+  }
+
   /* popup: list-box — A list box inside a popup: the surface is its frame, so by default the list draws none of its own (no frame, fill or shadow). */
   .mx-popup .mx-list-box {
     --_field-frame-display: var(--mx-popup-list-box-frame-display);

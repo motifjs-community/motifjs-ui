@@ -1,0 +1,116 @@
+/* Popover: a surface in the top layer next to its target. placePopup writes its position; the gap to the target is the
+   margin of the side it opens on, and it comes in from the target by `enter-offset`. Only the layout is here: the
+   surface, the arrow, the header, the title and the body are units of the schema. The arrow is a square turned on its
+   corner, its inner half clipped away, set along the edge towards the target where the component puts it. */
+@layer mx.components {
+    .mx-popover {
+        position: fixed;
+        inset: auto;
+        z-index: var(--mx-z-dropdown);
+        box-sizing: border-box;
+        margin: 0;
+        overflow: visible;
+        animation: mx-popover-in var(--mx-motion-duration-fast) var(--mx-motion-easing-out);
+
+        --_enter: 0 0;
+    }
+
+    .mx-popover:is([popover]:not(:popover-open), [hidden]) {
+        display: none;
+    }
+
+    .mx-popover[data-side='bottom'] {
+        margin-block-start: var(--_popover-offset);
+
+        --_enter: 0 calc(-1 * var(--_popover-enter-offset));
+    }
+
+    .mx-popover[data-side='top'] {
+        margin-block-end: var(--_popover-offset);
+
+        --_enter: 0 var(--_popover-enter-offset);
+    }
+
+    .mx-popover[data-side='end'] {
+        margin-inline-start: var(--_popover-offset);
+
+        --_enter: calc(-1 * var(--_popover-enter-offset)) 0;
+    }
+
+    .mx-popover[data-side='start'] {
+        margin-inline-end: var(--_popover-offset);
+
+        --_enter: var(--_popover-enter-offset) 0;
+    }
+
+    .mx-popover[data-side='end']:dir(rtl) {
+        --_enter: var(--_popover-enter-offset) 0;
+    }
+
+    .mx-popover[data-side='start']:dir(rtl) {
+        --_enter: calc(-1 * var(--_popover-enter-offset)) 0;
+    }
+
+    .mx-popover__arrow {
+        position: absolute;
+        box-sizing: border-box;
+        clip-path: polygon(0 0, 100% 0, 0 100%);
+        pointer-events: none;
+    }
+
+    .mx-popover:not([data-arrow]) > .mx-popover__arrow {
+        display: none;
+    }
+
+    .mx-popover[data-side='bottom'] > .mx-popover__arrow {
+        top: 0;
+        translate: -50% -50%;
+        rotate: 45deg;
+    }
+
+    .mx-popover[data-side='top'] > .mx-popover__arrow {
+        bottom: 0;
+        translate: -50% 50%;
+        rotate: 225deg;
+    }
+
+    .mx-popover:is([data-side='end']:dir(ltr), [data-side='start']:dir(rtl)) > .mx-popover__arrow {
+        left: 0;
+        translate: -50% -50%;
+        rotate: -45deg;
+    }
+
+    .mx-popover:is([data-side='start']:dir(ltr), [data-side='end']:dir(rtl)) > .mx-popover__arrow {
+        right: 0;
+        translate: 50% -50%;
+        rotate: 135deg;
+    }
+
+    .mx-popover__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--_popover-header-gap);
+    }
+
+    .mx-popover__title {
+        flex: 1 1 auto;
+        min-inline-size: 0;
+    }
+
+    .mx-popover__close {
+        flex: none;
+        margin-inline-start: auto;
+    }
+
+    .mx-popover__body {
+        min-inline-size: 0;
+    }
+
+    @keyframes mx-popover-in {
+        from {
+            opacity: 0;
+            translate: var(--_enter);
+        }
+    }
+}

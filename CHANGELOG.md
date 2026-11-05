@@ -20,6 +20,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   from JSX or from `steps` with content factories, `add`, `insert`, `remove`; `lazy` and `keepAlive` as in `Tabs`.
 - Kit texts `steps`, `stepOf`, `stepOptional`, `stepDone`, `stepError`, `wizardNext`, `wizardPrevious`,
   `wizardFinish` in English and Turkish.
+- `Popover`: content next to the element it belongs to, with a title, a close button and an arrow where the
+  design language draws one (Tactile, Fluent, Lilac); opened by a press on the target, by the pointer resting on it
+  (`showOn: 'hover'`, keyboard focus too) or from code; every placement of the kit's popups, a width of its own;
+  focus goes in and comes back; Escape, a press outside, focus leaving and the close button close it, and
+  `onClosing` may keep it open; `value` and `x-model`.
+- `LoadPanel`: a loading layer over a container or the whole page: a shade, a pane with the kit's spinner and a
+  message, a Cancel button (`onCancel`, Escape too); what is under it is inert and `aria-busy`, focus waits on the
+  panel and comes back; `delay` keeps quick work from flashing it; `value` and `x-model`, `show()` and `hide()`.
+- `homeOf` in the core: where a surface made from code goes for its anchor (the tooltip's rule, now shared).
 
 ### Language
 

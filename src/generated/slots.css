@@ -1528,6 +1528,22 @@
     --_listbox-box-padding-inline: var(--mx-listbox-box-padding-inline);
   }
 
+  .mx-load-panel {
+    --_load-panel-padding: var(--mx-load-panel-padding);
+    --_load-panel-gap: var(--mx-load-panel-gap);
+    --_load-panel-shade-shaded-bg: var(--mx-load-panel-shade-shaded-bg);
+    --_load-panel-pane-shown-bg: var(--mx-load-panel-pane-shown-bg);
+    --_load-panel-pane-shown-border-width: var(--mx-load-panel-pane-shown-border-width);
+    --_load-panel-pane-shown-border-color: var(--mx-load-panel-pane-shown-border-color);
+    --_load-panel-pane-shown-radius: var(--mx-load-panel-pane-shown-radius);
+    --_load-panel-pane-shown-shadow: var(--mx-load-panel-pane-shown-shadow);
+    --_load-panel-pane-shown-padding-block: var(--mx-load-panel-pane-shown-padding-block);
+    --_load-panel-pane-shown-padding-inline: var(--mx-load-panel-pane-shown-padding-inline);
+    --_load-panel-pane-shown-min-width: var(--mx-load-panel-pane-shown-min-width);
+    --_load-panel-message-color: var(--mx-load-panel-message-color);
+    --_load-panel-message-font-size: var(--mx-load-panel-message-font-size);
+  }
+
   .mx-lookup, .mx-lookup__popup {
     --_lookup-popup-width: var(--mx-lookup-popup-width);
     --_lookup-column-gap: var(--mx-lookup-column-gap);
@@ -1647,6 +1663,38 @@
     --_pagination-info-color: var(--mx-pagination-info-color);
     --_pagination-info-font-size: var(--mx-pagination-info-font-size);
     --_pagination-info-padding-inline: var(--mx-pagination-info-padding-inline);
+  }
+
+  .mx-popover {
+    --_popover-offset: var(--mx-popover-offset);
+    --_popover-enter-offset: var(--mx-popover-enter-offset);
+    --_popover-header-gap: var(--mx-popover-header-gap);
+    --_popover-surface-bg: var(--mx-popover-surface-bg);
+    --_popover-surface-border-width: var(--mx-popover-surface-border-width);
+    --_popover-surface-border-color: var(--mx-popover-surface-border-color);
+    --_popover-surface-radius: var(--mx-popover-surface-radius);
+    --_popover-surface-shadow: var(--mx-popover-surface-shadow);
+    --_popover-surface-color: var(--mx-popover-surface-color);
+    --_popover-surface-font-size: var(--mx-popover-surface-font-size);
+    --_popover-surface-line-height: var(--mx-popover-surface-line-height);
+    --_popover-surface-max-width: var(--mx-popover-surface-max-width);
+    --_popover-surface-focus-glow: var(--mx-popover-surface-focus-glow);
+    --_popover-surface-focus-outline-width: var(--mx-popover-surface-focus-outline-width);
+    --_popover-surface-focus-outline-color: var(--mx-popover-surface-focus-outline-color);
+    --_popover-surface-focus-outline-offset: var(--mx-popover-surface-focus-outline-offset);
+    --_popover-arrow-display: var(--mx-popover-arrow-display);
+    --_popover-arrow-size: var(--mx-popover-arrow-size);
+    --_popover-arrow-bg: var(--mx-popover-arrow-bg);
+    --_popover-arrow-border-width: var(--mx-popover-arrow-border-width);
+    --_popover-arrow-border-color: var(--mx-popover-arrow-border-color);
+    --_popover-header-padding-block: var(--mx-popover-header-padding-block);
+    --_popover-header-padding-start: var(--mx-popover-header-padding-start);
+    --_popover-header-padding-end: var(--mx-popover-header-padding-end);
+    --_popover-title-font-weight: var(--mx-popover-title-font-weight);
+    --_popover-title-color: var(--mx-popover-title-color);
+    --_popover-body-padding: var(--mx-popover-body-padding);
+    --_popover-header-border-bottom-width: var(--mx-popover-header-border-bottom-width);
+    --_popover-header-border-bottom-color: var(--mx-popover-header-border-bottom-color);
   }
 
   .mx-popup {

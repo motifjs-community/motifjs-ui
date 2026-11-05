@@ -11728,6 +11728,104 @@
     "value": "initial"
   },
   {
+    "name": "load-panel.padding",
+    "cssVar": "--mx-load-panel-padding",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "load-panel.gap",
+    "cssVar": "--mx-load-panel-gap",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "load-panel.cancel.variant",
+    "cssVar": "--mx-load-panel-cancel-variant",
+    "type": "keyword",
+    "ref": null,
+    "value": "outline"
+  },
+  {
+    "name": "load-panel.shade.shaded.bg",
+    "cssVar": "--mx-load-panel-shade-shaded-bg",
+    "type": "color",
+    "ref": "color.bg.smoke",
+    "value": "rgb(0 0 0 / 0.3)"
+  },
+  {
+    "name": "load-panel.pane.shown.bg",
+    "cssVar": "--mx-load-panel-pane-shown-bg",
+    "type": "color",
+    "ref": "color.bg.surface",
+    "value": "#f8f7f3"
+  },
+  {
+    "name": "load-panel.pane.shown.border-width",
+    "cssVar": "--mx-load-panel-pane-shown-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "load-panel.pane.shown.border-color",
+    "cssVar": "--mx-load-panel-pane-shown-border-color",
+    "type": "color",
+    "ref": "color.stroke.surface",
+    "value": "rgb(117 117 117 / 0.4)"
+  },
+  {
+    "name": "load-panel.pane.shown.radius",
+    "cssVar": "--mx-load-panel-pane-shown-radius",
+    "type": "dimension",
+    "ref": "radius.lg",
+    "value": "0.625rem"
+  },
+  {
+    "name": "load-panel.pane.shown.shadow",
+    "cssVar": "--mx-load-panel-pane-shown-shadow",
+    "type": "shadow",
+    "ref": "elevation.popup",
+    "value": "0px 8px 16px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "load-panel.pane.shown.padding-block",
+    "cssVar": "--mx-load-panel-pane-shown-padding-block",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "load-panel.pane.shown.padding-inline",
+    "cssVar": "--mx-load-panel-pane-shown-padding-inline",
+    "type": "dimension",
+    "ref": "space.5",
+    "value": "1.25rem"
+  },
+  {
+    "name": "load-panel.pane.shown.min-width",
+    "cssVar": "--mx-load-panel-pane-shown-min-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "10rem"
+  },
+  {
+    "name": "load-panel.message.color",
+    "cssVar": "--mx-load-panel-message-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "load-panel.message.font-size",
+    "cssVar": "--mx-load-panel-message-font-size",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
     "name": "lookup.popup-width",
     "cssVar": "--mx-lookup-popup-width",
     "type": "dimension",
@@ -12468,6 +12566,216 @@
     "type": "dimension",
     "ref": "space.2",
     "value": "0.5rem"
+  },
+  {
+    "name": "popover.offset",
+    "cssVar": "--mx-popover-offset",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "popover.enter-offset",
+    "cssVar": "--mx-popover-enter-offset",
+    "type": "dimension",
+    "ref": null,
+    "value": "4px"
+  },
+  {
+    "name": "popover.header-gap",
+    "cssVar": "--mx-popover-header-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "popover.close.variant",
+    "cssVar": "--mx-popover-close-variant",
+    "type": "keyword",
+    "ref": null,
+    "value": "ghost"
+  },
+  {
+    "name": "popover.surface.bg",
+    "cssVar": "--mx-popover-surface-bg",
+    "type": "color",
+    "ref": "color.bg.surface",
+    "value": "#f8f7f3"
+  },
+  {
+    "name": "popover.surface.border-width",
+    "cssVar": "--mx-popover-surface-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "popover.surface.border-color",
+    "cssVar": "--mx-popover-surface-border-color",
+    "type": "color",
+    "ref": "color.stroke.surface",
+    "value": "rgb(117 117 117 / 0.4)"
+  },
+  {
+    "name": "popover.surface.radius",
+    "cssVar": "--mx-popover-surface-radius",
+    "type": "dimension",
+    "ref": "radius.lg",
+    "value": "0.625rem"
+  },
+  {
+    "name": "popover.surface.shadow",
+    "cssVar": "--mx-popover-surface-shadow",
+    "type": "shadow",
+    "ref": "elevation.popup",
+    "value": "0px 8px 16px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "popover.surface.color",
+    "cssVar": "--mx-popover-surface-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "popover.surface.font-size",
+    "cssVar": "--mx-popover-surface-font-size",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
+    "name": "popover.surface.line-height",
+    "cssVar": "--mx-popover-surface-line-height",
+    "type": "dimension",
+    "ref": "font.line.body",
+    "value": "1.25rem"
+  },
+  {
+    "name": "popover.surface.max-width",
+    "cssVar": "--mx-popover-surface-max-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "24rem"
+  },
+  {
+    "name": "popover.surface.focus.glow",
+    "cssVar": "--mx-popover-surface-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "popover.surface.focus.outline-width",
+    "cssVar": "--mx-popover-surface-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "popover.surface.focus.outline-color",
+    "cssVar": "--mx-popover-surface-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "popover.surface.focus.outline-offset",
+    "cssVar": "--mx-popover-surface-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "popover.arrow.display",
+    "cssVar": "--mx-popover-arrow-display",
+    "type": "keyword",
+    "ref": null,
+    "value": "block"
+  },
+  {
+    "name": "popover.arrow.size",
+    "cssVar": "--mx-popover-arrow-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.75rem"
+  },
+  {
+    "name": "popover.arrow.bg",
+    "cssVar": "--mx-popover-arrow-bg",
+    "type": "color",
+    "ref": "color.bg.surface",
+    "value": "#f8f7f3"
+  },
+  {
+    "name": "popover.arrow.border-width",
+    "cssVar": "--mx-popover-arrow-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "popover.arrow.border-color",
+    "cssVar": "--mx-popover-arrow-border-color",
+    "type": "color",
+    "ref": "color.stroke.surface",
+    "value": "rgb(117 117 117 / 0.4)"
+  },
+  {
+    "name": "popover.header.padding-block",
+    "cssVar": "--mx-popover-header-padding-block",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "popover.header.padding-start",
+    "cssVar": "--mx-popover-header-padding-start",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "popover.header.padding-end",
+    "cssVar": "--mx-popover-header-padding-end",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "popover.header.border-bottom-width",
+    "cssVar": "--mx-popover-header-border-bottom-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "popover.header.border-bottom-color",
+    "cssVar": "--mx-popover-header-border-bottom-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
+    "name": "popover.title.font-weight",
+    "cssVar": "--mx-popover-title-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "popover.title.color",
+    "cssVar": "--mx-popover-title-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "popover.body.padding",
+    "cssVar": "--mx-popover-body-padding",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
   },
   {
     "name": "popup.offset",

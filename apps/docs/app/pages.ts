@@ -60,6 +60,8 @@ export const GROUPS = [
     pages: [
       { id: 'progress', label: 'ProgressBar and Spinner', title: 'ProgressBar and Spinner', path: '/progress', related: ['toast', 'button'] },
       { id: 'tooltip', label: 'Tooltip', title: 'Tooltip', path: '/tooltip', related: ['toast', 'button'] },
+      { id: 'popover', label: 'Popover', title: 'Popover', path: '/popover', related: ['tooltip', 'window', 'menus'] },
+      { id: 'loadpanel', label: 'LoadPanel', title: 'LoadPanel', path: '/loadpanel', related: ['progress', 'window', 'skeleton'] },
       { id: 'toast', label: 'Toast', title: 'Toast', path: '/toast', related: ['tooltip', 'progress'] },
     ],
   },

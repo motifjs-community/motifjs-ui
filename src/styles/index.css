@@ -42,6 +42,8 @@
 @import '../components/pagination/pagination.css';
 @import '../components/stepper/stepper.css';
 @import '../components/stepper/wizard.css';
+@import '../components/popover/popover.css';
+@import '../components/loadpanel/loadpanel.css';
 @import '../components/toast/toast.css';
 @import '../components/tabs/tabs.css';
 @import '../components/tabdocs/tabdocs.css';

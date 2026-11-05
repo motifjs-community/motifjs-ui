@@ -1,0 +1,41 @@
+/* LoadPanel: a layer over a container (absolute, inside it) or over the page (fixed), a pane in the middle with the
+   indicator, the message and a Cancel button. Only the layout is here: the shade, the pane and the message are units
+   of the schema; the indicator is the kit's spinner and the button the kit's, their look in the pane from the
+   panel's places. A container it covers carries `data-mx-covered` (`position: relative`, as for the spinner's cover). */
+@layer mx.components {
+    .mx-load-panel {
+        position: absolute;
+        inset: 0;
+        z-index: var(--mx-z-overlay);
+        display: flex;
+        box-sizing: border-box;
+        align-items: center;
+        justify-content: center;
+        padding: var(--_load-panel-padding);
+        border-radius: inherit;
+        outline: none;
+    }
+
+    .mx-load-panel[data-page] {
+        position: fixed;
+        border-radius: 0;
+    }
+
+    .mx-load-panel[hidden] {
+        display: none;
+    }
+
+    .mx-load-panel__pane {
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        align-items: center;
+        gap: var(--_load-panel-gap);
+        max-inline-size: 100%;
+        text-align: center;
+    }
+
+    .mx-load-panel__message:empty {
+        display: none;
+    }
+}

@@ -1,0 +1,114 @@
+{
+  "popover": {
+    "offset": {
+      "$value": "{space.2}"
+    },
+    "enter-offset": {
+      "$value": "4px"
+    },
+    "header-gap": {
+      "$value": "{space.2}"
+    },
+    "close": {
+      "variant": {
+        "$value": "ghost"
+      }
+    },
+    "surface": {
+      "bg": {
+        "$value": "{color.bg.surface}"
+      },
+      "border-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.surface}"
+      },
+      "radius": {
+        "$value": "{radius.lg}"
+      },
+      "shadow": {
+        "$value": "{elevation.popup}"
+      },
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "font-size": {
+        "$value": "{font.size.body}"
+      },
+      "line-height": {
+        "$value": "{font.line.body}"
+      },
+      "max-width": {
+        "$value": {
+          "value": 24,
+          "unit": "rem"
+        }
+      },
+      "focus": {
+        "glow": {
+          "$value": "{focus.ring.halo}"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.offset}"
+        }
+      }
+    },
+    "arrow": {
+      "display": {
+        "$value": "block"
+      },
+      "size": {
+        "$value": {
+          "value": 0.75,
+          "unit": "rem"
+        }
+      },
+      "bg": {
+        "$value": "{color.bg.surface}"
+      },
+      "border-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.surface}"
+      }
+    },
+    "header": {
+      "padding-block": {
+        "$value": "{space.2}"
+      },
+      "padding-start": {
+        "$value": "{space.3}"
+      },
+      "padding-end": {
+        "$value": "{space.2}"
+      },
+      "border-bottom-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-bottom-color": {
+        "$value": "{color.stroke.divider}"
+      }
+    },
+    "title": {
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      },
+      "color": {
+        "$value": "{color.fg.primary}"
+      }
+    },
+    "body": {
+      "padding": {
+        "$value": "{space.3}"
+      }
+    }
+  }
+}
