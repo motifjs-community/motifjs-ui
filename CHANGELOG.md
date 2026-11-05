@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed
+
+- `FileUploader`: the box is a drop zone, not a one-line field: as tall as the button and the hint with the same
+  room on every side (`zone-padding`, 8 px in Tactile and Fluent, 12 px in Lounge, Material and Lilac), where the
+  button used to touch the dashed frame. The label stays above the box in every language; Material's floating
+  label lay over the button. The dead `padding` tokens of the uploader's field place are gone.
+
 ## [0.1.0-beta.2] - 2026-11-05
 
 ### New components

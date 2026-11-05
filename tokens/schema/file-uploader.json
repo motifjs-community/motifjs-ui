@@ -5,12 +5,13 @@
     "box-gap": { "$type": "dimension", "$description": "Between the select button, the hint and the Upload button." },
     "button-gap": { "$type": "dimension", "$description": "Between a button's glyph and its text." },
     "item-gap": { "$type": "dimension", "$description": "Between a row's icon, texts and buttons." },
+    "zone-padding": { "$type": "dimension", "$description": "The room between the box's frame and the button, the hint and the Upload button, the same on every side." },
     "$places": {
       "field": {
-        "$description": "The field under an uploader: the box is the drop zone (a dashed frame where the language draws one).",
+        "$description": "The field under an uploader: the box is the drop zone (a dashed frame where the language draws one); the label stays above it, a floating one would lie over the button.",
         "selector": ".mx-file-uploader",
         "part": "field",
-        "tokens": ["width", "box.border-style", "border-width", "box.border-color", "box.hover.bg", "box.radius", "padding.sm", "padding.md", "padding.lg"]
+        "tokens": ["label-mode", "width", "box.border-style", "border-width", "box.border-color", "box.hover.bg", "box.radius"]
       },
       "action": {
         "$description": "A row's buttons: cancel, retry, remove.",

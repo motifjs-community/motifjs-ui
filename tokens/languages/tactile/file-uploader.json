@@ -9,7 +9,13 @@
     "item-gap": {
       "$value": "{space.2}"
     },
+    "zone-padding": {
+      "$value": "{space.2}"
+    },
     "field": {
+      "label-mode": {
+        "$value": "top"
+      },
       "width": {
         "$value": {
           "value": 26,
@@ -34,17 +40,6 @@
       },
       "border-width": {
         "$value": "{border.width.1}"
-      },
-      "padding": {
-        "sm": {
-          "$value": "{space.2}"
-        },
-        "md": {
-          "$value": "{space.3}"
-        },
-        "lg": {
-          "$value": "{space.4}"
-        }
       }
     },
     "action": {

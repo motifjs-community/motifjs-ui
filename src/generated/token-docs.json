@@ -10559,6 +10559,20 @@
     "value": "0.5rem"
   },
   {
+    "name": "file-uploader.zone-padding",
+    "cssVar": "--mx-file-uploader-zone-padding",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "file-uploader.field.label-mode",
+    "cssVar": "--mx-file-uploader-field-label-mode",
+    "type": "keyword",
+    "ref": null,
+    "value": "top"
+  },
+  {
     "name": "file-uploader.field.width",
     "cssVar": "--mx-file-uploader-field-width",
     "type": "dimension",
@@ -10599,27 +10613,6 @@
     "type": "dimension",
     "ref": "border.width.1",
     "value": "1px"
-  },
-  {
-    "name": "file-uploader.field.padding.sm",
-    "cssVar": "--mx-file-uploader-field-padding-sm",
-    "type": "dimension",
-    "ref": "space.2",
-    "value": "0.5rem"
-  },
-  {
-    "name": "file-uploader.field.padding.md",
-    "cssVar": "--mx-file-uploader-field-padding-md",
-    "type": "dimension",
-    "ref": "space.3",
-    "value": "0.75rem"
-  },
-  {
-    "name": "file-uploader.field.padding.lg",
-    "cssVar": "--mx-file-uploader-field-padding-lg",
-    "type": "dimension",
-    "ref": "space.4",
-    "value": "1rem"
   },
   {
     "name": "file-uploader.action.variant",

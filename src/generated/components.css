@@ -493,6 +493,7 @@
     --mx-field-frame-end-readonly-focus-border-end-width: initial;
     --mx-field-frame-end-readonly-invalid-focus-border-block-width: initial;
     --mx-field-frame-end-readonly-invalid-focus-border-end-width: initial;
+    --mx-file-uploader-field-label-mode: top;
     --mx-file-uploader-field-width: 26rem;
     --mx-file-uploader-field-box-border-style: dashed;
     --mx-file-uploader-action-variant: ghost;
@@ -1810,13 +1811,11 @@
     --mx-file-uploader-box-gap: var(--mx-space-3);
     --mx-file-uploader-button-gap: var(--mx-space-2);
     --mx-file-uploader-item-gap: var(--mx-space-2);
+    --mx-file-uploader-zone-padding: var(--mx-space-2);
     --mx-file-uploader-field-box-border-color: var(--mx-color-stroke-control-strong);
     --mx-file-uploader-field-box-radius: var(--mx-radius-lg);
     --mx-file-uploader-field-box-hover-bg: var(--mx-color-fill-subtle-secondary);
     --mx-file-uploader-field-border-width: var(--mx-border-width-1);
-    --mx-file-uploader-field-padding-sm: var(--mx-space-2);
-    --mx-file-uploader-field-padding-md: var(--mx-space-3);
-    --mx-file-uploader-field-padding-lg: var(--mx-space-4);
     --mx-file-uploader-select-padding-block: var(--mx-space-1);
     --mx-file-uploader-select-padding-inline: var(--mx-space-3);
     --mx-file-uploader-select-radius: var(--mx-radius-sm);
@@ -4494,6 +4493,7 @@
     --mx-field-frame-readonly-invalid-focus-border-width: var(--mx-border-width-2);
     --mx-field-frame-filled-readonly-invalid-focus-border-width: var(--mx-border-width-2);
     --mx-field-frame-underline-readonly-invalid-focus-border-width: var(--mx-border-width-2);
+    --mx-file-uploader-zone-padding: var(--mx-space-3);
     --mx-file-uploader-select-radius: var(--mx-radius-md);
     --mx-file-uploader-upload-radius: var(--mx-radius-md);
     --mx-file-uploader-item-radius: var(--mx-radius-md);
@@ -4658,6 +4658,7 @@
     --mx-avatar-square-radius-lg: var(--mx-radius-sm);
     --mx-avatar-square-radius-xl: var(--mx-radius-md);
     --mx-breadcrumb-link-radius: var(--mx-radius-full);
+    --mx-file-uploader-zone-padding: var(--mx-space-3);
     --mx-file-uploader-select-radius: var(--mx-radius-md);
     --mx-file-uploader-select-font-weight: var(--mx-font-weight-medium);
     --mx-file-uploader-upload-radius: var(--mx-radius-md);
@@ -5365,6 +5366,7 @@
     --mx-field-frame-underline-readonly-border-bottom-color: var(--mx-color-stroke-control-default);
     --mx-field-indicator-radius: calc(0.25rem - var(--mx-border-width-1));
     --mx-field-button-radius: var(--mx-radius-full);
+    --mx-file-uploader-zone-padding: var(--mx-space-3);
     --mx-file-uploader-select-radius: var(--mx-radius-full);
     --mx-file-uploader-select-font-weight: var(--mx-font-weight-medium);
     --mx-file-uploader-upload-radius: var(--mx-radius-full);

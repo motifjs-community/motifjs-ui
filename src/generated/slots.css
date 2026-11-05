@@ -1393,6 +1393,7 @@
     --_file-uploader-box-gap: var(--mx-file-uploader-box-gap);
     --_file-uploader-button-gap: var(--mx-file-uploader-button-gap);
     --_file-uploader-item-gap: var(--mx-file-uploader-item-gap);
+    --_file-uploader-zone-padding: var(--mx-file-uploader-zone-padding);
     --_file-uploader-over-bg: var(--mx-file-uploader-over-bg);
     --_file-uploader-over-border-color: var(--mx-file-uploader-over-border-color);
     --_file-uploader-select-padding-block: var(--mx-file-uploader-select-padding-block);

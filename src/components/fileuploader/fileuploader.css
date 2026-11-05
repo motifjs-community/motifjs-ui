@@ -3,10 +3,15 @@
    the list, its texts and the state are units of the schema; the row's buttons and progress bar are the kit's,
    their look in a row from the uploader's places. */
 @layer mx.components {
-    .mx-file-uploader .mx-field__box {
+    /* The box is a drop zone, not a line of text: as tall as what it holds, the same room on every side. */
+    .mx-file-uploader > .mx-field__box {
+        --_box-height: auto;
+
         flex-wrap: wrap;
         align-items: center;
+        align-content: center;
         gap: var(--_file-uploader-box-gap);
+        padding: var(--_file-uploader-zone-padding);
     }
 
     .mx-file-uploader__select,
