@@ -75,7 +75,7 @@
         "selector": ".mx-calendar__grid .mx-calendar__week"
       },
       "cell": {
-        "$description": "A day, or a month, a year, a decade in the zoomed-out views (`block`): under the pointer, pressed, focused by the keys, outside the month, today, chosen (`selected`), today and chosen, disabled.",
+        "$description": "A day, or a month, a year, a decade in the zoomed-out views (`block`): under the pointer, pressed, focused by the keys, outside the month, today, chosen (`selected`), today and chosen, disabled; in a range drawn over the days, its start, its end, one day of both (`range-single`) or between (`range-in`).",
         "selector": ".mx-calendar__cell",
         "defaults": {
           "width": "var(--_cell-w)",
@@ -114,6 +114,16 @@
             "selector": ".mx-calendar__cell[data-today][aria-selected='true']:hover",
             "from": "today-selected"
           },
+          "range-start": ".mx-calendar__cell[data-range='start']",
+          "range-end": {
+            "selector": ".mx-calendar__cell[data-range='end']",
+            "from": "range-start"
+          },
+          "range-single": {
+            "selector": ".mx-calendar__cell[data-range='single']",
+            "from": "range-start"
+          },
+          "range-in": ".mx-calendar__cell[data-range='in']",
           "disabled": ".mx-calendar__cell[aria-disabled='true']",
           "today-selected-disabled": {
             "selector": ".mx-calendar__cell[data-today][aria-selected='true'][aria-disabled='true']",

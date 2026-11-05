@@ -28,6 +28,8 @@ export * from './components/breadcrumb';
 export * from './components/stepper';
 export * from './components/popover';
 export * from './components/loadpanel';
+export * from './components/daterangebox';
+export * from './components/fileuploader';
 export * from './components/pagination';
 export * from './components/toast';
 export * from './components/tabs';

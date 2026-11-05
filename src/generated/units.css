@@ -1095,6 +1095,30 @@
     background-color: var(--_calendar-cell-selected-hover-bg, var(--_calendar-cell-selected-bg, transparent));
   }
 
+  .mx-calendar__cell[data-range='start'] {
+    background-color: var(--_calendar-cell-range-start-bg, transparent);
+    color: var(--_calendar-cell-range-start-color, inherit);
+  }
+
+  .mx-calendar__cell[data-range='end'] {
+    background-color: var(--_calendar-cell-range-end-bg, var(--_calendar-cell-range-start-bg, transparent));
+    color: var(--_calendar-cell-range-end-color, var(--_calendar-cell-range-start-color, inherit));
+  }
+
+  .mx-calendar__cell[data-range='single'] {
+    background-color: var(--_calendar-cell-range-single-bg, var(--_calendar-cell-range-start-bg, transparent));
+    color: var(--_calendar-cell-range-single-color, var(--_calendar-cell-range-start-color, inherit));
+  }
+
+  .mx-calendar__cell[data-range='in'] {
+    background-color: var(--_calendar-cell-range-in-bg, transparent);
+    border-start-start-radius: var(--_calendar-cell-range-in-radius, var(--_calendar-cell-radius, 0px));
+    border-start-end-radius: var(--_calendar-cell-range-in-radius, var(--_calendar-cell-radius, 0px));
+    border-end-start-radius: var(--_calendar-cell-range-in-radius, var(--_calendar-cell-radius, 0px));
+    border-end-end-radius: var(--_calendar-cell-range-in-radius, var(--_calendar-cell-radius, 0px));
+    color: var(--_calendar-cell-range-in-color, inherit);
+  }
+
   .mx-calendar__cell[aria-disabled='true'] {
     color: var(--_calendar-cell-disabled-color, inherit);
   }
@@ -2776,6 +2800,40 @@
     border-inline-start-color: var(--_date-box-times-beside-border-start-color, currentcolor);
   }
 
+  .mx-date-range-box__separator {
+    inline-size: var(--_date-range-box-separator-size, auto);
+    block-size: var(--_date-range-box-separator-size, auto);
+    margin-inline-end: var(--_date-range-box-separator-margin-inline, 0px);
+    margin-inline-start: var(--_date-range-box-separator-margin-inline, 0px);
+    background-color: var(--_date-range-box-separator-bg, transparent);
+    --_icon: var(--_date-range-box-separator-icon, none);
+  }
+
+  .mx-date-range-box__popup > .mx-date-range-box__presets {
+    min-inline-size: var(--_date-range-box-presets-min-width, auto);
+    max-block-size: var(--_date-range-box-presets-max-height, none);
+    border-style: solid;
+    border-block-start-width: 0px;
+    border-inline-end-width: 0px;
+    border-block-end-width: 0px;
+    border-inline-start-width: 0px;
+    outline-style: solid;
+    outline-width: 0px;
+  }
+
+  .mx-date-range-box__popup > .mx-date-range-box__presets:focus-visible {
+    box-shadow: var(--_date-range-box-presets-focus-glow, 0 0 #0000), 0 0 #0000;
+    outline-width: var(--_date-range-box-presets-focus-outline-width, 0px);
+    outline-color: var(--_date-range-box-presets-focus-outline-color, currentcolor);
+    outline-offset: var(--_date-range-box-presets-focus-outline-offset, 0px);
+  }
+
+  .mx-date-range-box__popup > .mx-calendar + .mx-date-range-box__presets {
+    padding-inline-start: var(--_date-range-box-presets-beside-padding-start, 0px);
+    border-inline-start-width: var(--_date-range-box-presets-beside-border-start-width, 0px);
+    border-inline-start-color: var(--_date-range-box-presets-beside-border-start-color, currentcolor);
+  }
+
   :where([data-disabled] [aria-disabled='true'], [data-disabled][aria-disabled='true']) {
     color: var(--_disabled-element-color, inherit);
     cursor: default;
@@ -2936,15 +2994,15 @@
     padding-inline-start: var(--_padding-start);
     gap: var(--_field-gap);
     background-color: var(--_field-box-bg, transparent);
-    border-style: solid;
+    border-style: var(--_field-box-border-style, solid);
     border-block-start-width: var(--_field-border-width);
     border-inline-end-width: var(--_field-border-width);
     border-block-end-width: var(--_field-border-width);
     border-inline-start-width: var(--_field-border-width);
-    border-block-start-color: transparent;
-    border-inline-end-color: transparent;
-    border-block-end-color: transparent;
-    border-inline-start-color: transparent;
+    border-block-start-color: var(--_field-box-border-color, transparent);
+    border-inline-end-color: var(--_field-box-border-color, transparent);
+    border-block-end-color: var(--_field-box-border-color, transparent);
+    border-inline-start-color: var(--_field-box-border-color, transparent);
     border-start-start-radius: var(--_field-box-radius, 0px);
     border-start-end-radius: var(--_field-box-radius, 0px);
     border-end-start-radius: var(--_field-box-radius, 0px);
@@ -3604,6 +3662,163 @@
 
   :where(.mx-field > .mx-field__foot) > .mx-field__counter {
     margin-inline-start: auto;
+  }
+
+  .mx-file-uploader[data-dragover] .mx-field__box {
+    background-color: var(--_file-uploader-over-bg, transparent);
+    border-block-start-color: var(--_file-uploader-over-border-color, currentcolor);
+    border-inline-end-color: var(--_file-uploader-over-border-color, currentcolor);
+    border-block-end-color: var(--_file-uploader-over-border-color, currentcolor);
+    border-inline-start-color: var(--_file-uploader-over-border-color, currentcolor);
+  }
+
+  .mx-file-uploader__select {
+    padding-block-start: var(--_file-uploader-select-padding-block, 0px);
+    padding-inline-end: var(--_file-uploader-select-padding-inline, 0px);
+    padding-block-end: var(--_file-uploader-select-padding-block, 0px);
+    padding-inline-start: var(--_file-uploader-select-padding-inline, 0px);
+    background-color: var(--_file-uploader-select-bg, transparent);
+    border-style: solid;
+    border-block-start-width: var(--_file-uploader-select-border-width, 0px);
+    border-inline-end-width: var(--_file-uploader-select-border-width, 0px);
+    border-block-end-width: var(--_file-uploader-select-border-width, 0px);
+    border-inline-start-width: var(--_file-uploader-select-border-width, 0px);
+    border-block-start-color: var(--_file-uploader-select-border-color, currentcolor);
+    border-inline-end-color: var(--_file-uploader-select-border-color, currentcolor);
+    border-block-end-color: var(--_file-uploader-select-border-color, currentcolor);
+    border-inline-start-color: var(--_file-uploader-select-border-color, currentcolor);
+    border-start-start-radius: var(--_file-uploader-select-radius, 0px);
+    border-start-end-radius: var(--_file-uploader-select-radius, 0px);
+    border-end-start-radius: var(--_file-uploader-select-radius, 0px);
+    border-end-end-radius: var(--_file-uploader-select-radius, 0px);
+    color: var(--_file-uploader-select-color, inherit);
+    font-weight: var(--_file-uploader-select-font-weight, inherit);
+    outline-style: solid;
+    outline-width: 0px;
+    cursor: default;
+  }
+
+  .mx-file-uploader__select:not(:disabled):hover {
+    background-color: var(--_file-uploader-select-hover-bg, var(--_file-uploader-select-bg, transparent));
+    cursor: var(--_file-uploader-select-hover-cursor, default);
+  }
+
+  .mx-file-uploader__select:not(:disabled):active {
+    background-color: var(--_file-uploader-select-pressed-bg, var(--_file-uploader-select-hover-bg, var(--_file-uploader-select-bg, transparent)));
+  }
+
+  .mx-file-uploader__select:focus-visible {
+    box-shadow: var(--_file-uploader-select-focus-glow, 0 0 #0000), 0 0 #0000;
+    outline-width: var(--_file-uploader-select-focus-outline-width, 0px);
+    outline-color: var(--_file-uploader-select-focus-outline-color, currentcolor);
+    outline-offset: var(--_file-uploader-select-focus-outline-offset, 0px);
+  }
+
+  .mx-file-uploader__select:disabled {
+    border-block-start-color: var(--_file-uploader-select-disabled-border-color, var(--_file-uploader-select-border-color, currentcolor));
+    border-inline-end-color: var(--_file-uploader-select-disabled-border-color, var(--_file-uploader-select-border-color, currentcolor));
+    border-block-end-color: var(--_file-uploader-select-disabled-border-color, var(--_file-uploader-select-border-color, currentcolor));
+    border-inline-start-color: var(--_file-uploader-select-disabled-border-color, var(--_file-uploader-select-border-color, currentcolor));
+    color: var(--_file-uploader-select-disabled-color, var(--_file-uploader-select-color, inherit));
+  }
+
+  .mx-file-uploader__upload {
+    padding-block-start: var(--_file-uploader-upload-padding-block, 0px);
+    padding-inline-end: var(--_file-uploader-upload-padding-inline, 0px);
+    padding-block-end: var(--_file-uploader-upload-padding-block, 0px);
+    padding-inline-start: var(--_file-uploader-upload-padding-inline, 0px);
+    background-color: var(--_file-uploader-upload-bg, transparent);
+    border-style: solid;
+    border-block-start-width: var(--_file-uploader-upload-border-width, 0px);
+    border-inline-end-width: var(--_file-uploader-upload-border-width, 0px);
+    border-block-end-width: var(--_file-uploader-upload-border-width, 0px);
+    border-inline-start-width: var(--_file-uploader-upload-border-width, 0px);
+    border-block-start-color: var(--_file-uploader-upload-border-color, currentcolor);
+    border-inline-end-color: var(--_file-uploader-upload-border-color, currentcolor);
+    border-block-end-color: var(--_file-uploader-upload-border-color, currentcolor);
+    border-inline-start-color: var(--_file-uploader-upload-border-color, currentcolor);
+    border-start-start-radius: var(--_file-uploader-upload-radius, 0px);
+    border-start-end-radius: var(--_file-uploader-upload-radius, 0px);
+    border-end-start-radius: var(--_file-uploader-upload-radius, 0px);
+    border-end-end-radius: var(--_file-uploader-upload-radius, 0px);
+    color: var(--_file-uploader-upload-color, inherit);
+    font-weight: var(--_file-uploader-upload-font-weight, inherit);
+    outline-style: solid;
+    outline-width: 0px;
+    cursor: default;
+  }
+
+  .mx-file-uploader__upload:not(:disabled):hover {
+    background-color: var(--_file-uploader-upload-hover-bg, var(--_file-uploader-upload-bg, transparent));
+    cursor: var(--_file-uploader-upload-hover-cursor, default);
+  }
+
+  .mx-file-uploader__upload:not(:disabled):active {
+    background-color: var(--_file-uploader-upload-pressed-bg, var(--_file-uploader-upload-hover-bg, var(--_file-uploader-upload-bg, transparent)));
+  }
+
+  .mx-file-uploader__upload:focus-visible {
+    box-shadow: var(--_file-uploader-upload-focus-glow, 0 0 #0000), 0 0 #0000;
+    outline-width: var(--_file-uploader-upload-focus-outline-width, 0px);
+    outline-color: var(--_file-uploader-upload-focus-outline-color, currentcolor);
+    outline-offset: var(--_file-uploader-upload-focus-outline-offset, 0px);
+  }
+
+  .mx-file-uploader__drop {
+    color: var(--_file-uploader-hint-color, inherit);
+  }
+
+  .mx-file-uploader__list {
+    margin-block-start: var(--_file-uploader-list-margin-top, 0px);
+    gap: var(--_file-uploader-list-gap, normal);
+  }
+
+  .mx-file-uploader__item {
+    padding-block-start: var(--_file-uploader-item-padding-block, 0px);
+    padding-inline-end: var(--_file-uploader-item-padding-inline, 0px);
+    padding-block-end: var(--_file-uploader-item-padding-block, 0px);
+    padding-inline-start: var(--_file-uploader-item-padding-inline, 0px);
+    border-start-start-radius: var(--_file-uploader-item-radius, 0px);
+    border-start-end-radius: var(--_file-uploader-item-radius, 0px);
+    border-end-start-radius: var(--_file-uploader-item-radius, 0px);
+    border-end-end-radius: var(--_file-uploader-item-radius, 0px);
+  }
+
+  .mx-file-uploader__item[data-status='error'] {
+    background-color: var(--_file-uploader-item-error-bg, transparent);
+  }
+
+  .mx-file-uploader__item[data-status='invalid'] {
+    background-color: var(--_file-uploader-item-invalid-bg, transparent);
+  }
+
+  .mx-file-uploader__icon {
+    inline-size: var(--_file-uploader-icon-size, auto);
+    block-size: var(--_file-uploader-icon-size, auto);
+    background-color: var(--_file-uploader-icon-bg, transparent);
+    --_icon: var(--_file-uploader-icon-icon, none);
+  }
+
+  .mx-file-uploader__name {
+    color: var(--_file-uploader-name-color, inherit);
+  }
+
+  .mx-file-uploader__size {
+    color: var(--_file-uploader-size-color, inherit);
+    font-size: var(--_file-uploader-size-font-size, inherit);
+  }
+
+  .mx-file-uploader__state {
+    color: var(--_file-uploader-state-color, inherit);
+    font-size: var(--_file-uploader-state-font-size, inherit);
+  }
+
+  .mx-file-uploader__item[data-status='done'] .mx-file-uploader__state {
+    color: var(--_file-uploader-state-done-color, var(--_file-uploader-state-color, inherit));
+  }
+
+  .mx-file-uploader__item:is([data-status='error'], [data-status='invalid']) .mx-file-uploader__state {
+    color: var(--_file-uploader-state-error-color, var(--_file-uploader-state-color, inherit));
   }
 
   .mx-filter-builder {

@@ -246,6 +246,16 @@
     --_calendar-container-padding: var(--mx-date-box-calendar-container-padding);
   }
 
+  /* date-range-box: field — The field under a range box: two dates wide. */
+  .mx-date-range-box {
+    --_field-width: var(--mx-date-range-box-field-width);
+  }
+
+  /* date-range-box: calendar — A calendar on the popup. */
+  .mx-date-range-box__popup > .mx-calendar {
+    --_calendar-container-padding: var(--mx-date-range-box-calendar-container-padding);
+  }
+
   /* drawer: close-button — The close button in the header. */
   .mx-drawer__tools > .mx-drawer__close {
     --_button-variant: var(--mx-drawer-close-button-variant);
@@ -296,6 +306,24 @@
   .mx-drop-down__search {
     --_field-variant: var(--mx-drop-down-search-variant);
     --_field-size: var(--mx-drop-down-search-size);
+  }
+
+  /* file-uploader: field — The field under an uploader: the box is the drop zone (a dashed frame where the language draws one). */
+  .mx-file-uploader {
+    --_field-width: var(--mx-file-uploader-field-width);
+    --_field-box-border-style: var(--mx-file-uploader-field-box-border-style);
+    --_field-border-width: var(--mx-file-uploader-field-border-width);
+    --_field-box-border-color: var(--mx-file-uploader-field-box-border-color);
+    --_field-box-hover-bg: var(--mx-file-uploader-field-box-hover-bg);
+    --_field-box-radius: var(--mx-file-uploader-field-box-radius);
+    --_field-padding-sm: var(--mx-file-uploader-field-padding-sm);
+    --_field-padding-md: var(--mx-file-uploader-field-padding-md);
+    --_field-padding-lg: var(--mx-file-uploader-field-padding-lg);
+  }
+
+  /* file-uploader: action — A row's buttons: cancel, retry, remove. */
+  .mx-file-uploader__action {
+    --_button-variant: var(--mx-file-uploader-action-variant);
   }
 
   /* filterbuilder: field-button — The button that chooses a condition's field. */

@@ -3360,6 +3360,69 @@
     "value": "#c24523"
   },
   {
+    "name": "calendar.cell.range-start.bg",
+    "cssVar": "--mx-calendar-cell-range-start-bg",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "calendar.cell.range-start.color",
+    "cssVar": "--mx-calendar-cell-range-start-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "calendar.cell.range-end.bg",
+    "cssVar": "--mx-calendar-cell-range-end-bg",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "calendar.cell.range-end.color",
+    "cssVar": "--mx-calendar-cell-range-end-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "calendar.cell.range-single.bg",
+    "cssVar": "--mx-calendar-cell-range-single-bg",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "calendar.cell.range-single.color",
+    "cssVar": "--mx-calendar-cell-range-single-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "calendar.cell.range-in.bg",
+    "cssVar": "--mx-calendar-cell-range-in-bg",
+    "type": "color",
+    "ref": "color.accent.subtle",
+    "value": "#fbe6de"
+  },
+  {
+    "name": "calendar.cell.range-in.color",
+    "cssVar": "--mx-calendar-cell-range-in-color",
+    "type": "color",
+    "ref": "color.accent.on-subtle",
+    "value": "#983318"
+  },
+  {
+    "name": "calendar.cell.range-in.radius",
+    "cssVar": "--mx-calendar-cell-range-in-radius",
+    "type": "dimension",
+    "ref": "radius.none",
+    "value": "0px"
+  },
+  {
     "name": "calendar.cell.disabled.color",
     "cssVar": "--mx-calendar-cell-disabled-color",
     "type": "color",
@@ -8347,6 +8410,118 @@
     "value": "rgb(0 0 0 / 0.1)"
   },
   {
+    "name": "date-range-box.popup-gap",
+    "cssVar": "--mx-date-range-box-popup-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "date-range-box.field.width",
+    "cssVar": "--mx-date-range-box-field-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "20rem"
+  },
+  {
+    "name": "date-range-box.calendar.container.padding",
+    "cssVar": "--mx-date-range-box-calendar-container-padding",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "date-range-box.separator.icon",
+    "cssVar": "--mx-date-range-box-separator-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-dash)"
+  },
+  {
+    "name": "date-range-box.separator.bg",
+    "cssVar": "--mx-date-range-box-separator-bg",
+    "type": "color",
+    "ref": "color.fg.tertiary",
+    "value": "#8c8a82"
+  },
+  {
+    "name": "date-range-box.separator.size",
+    "cssVar": "--mx-date-range-box-separator-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "1rem"
+  },
+  {
+    "name": "date-range-box.separator.margin-inline",
+    "cssVar": "--mx-date-range-box-separator-margin-inline",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "date-range-box.presets.min-width",
+    "cssVar": "--mx-date-range-box-presets-min-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "9rem"
+  },
+  {
+    "name": "date-range-box.presets.max-height",
+    "cssVar": "--mx-date-range-box-presets-max-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "18rem"
+  },
+  {
+    "name": "date-range-box.presets.focus.outline-width",
+    "cssVar": "--mx-date-range-box-presets-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "date-range-box.presets.focus.outline-color",
+    "cssVar": "--mx-date-range-box-presets-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "date-range-box.presets.focus.outline-offset",
+    "cssVar": "--mx-date-range-box-presets-focus-outline-offset",
+    "type": "dimension",
+    "ref": null,
+    "value": "calc(-1 * 2px)"
+  },
+  {
+    "name": "date-range-box.presets.focus.glow",
+    "cssVar": "--mx-date-range-box-presets-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "date-range-box.presets.beside.padding-start",
+    "cssVar": "--mx-date-range-box-presets-beside-padding-start",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "date-range-box.presets.beside.border-start-width",
+    "cssVar": "--mx-date-range-box-presets-beside-border-start-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "date-range-box.presets.beside.border-start-color",
+    "cssVar": "--mx-date-range-box-presets-beside-border-start-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
+  },
+  {
     "name": "disabled.element.color",
     "cssVar": "--mx-disabled-element-color",
     "type": "color",
@@ -9523,6 +9698,20 @@
     "value": "initial"
   },
   {
+    "name": "field.box.border-style",
+    "cssVar": "--mx-field-box-border-style",
+    "type": "keyword",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "field.box.border-color",
+    "cssVar": "--mx-field-box-border-color",
+    "type": "color",
+    "ref": null,
+    "value": "initial"
+  },
+  {
     "name": "field.frame.border-color",
     "cssVar": "--mx-field-frame-border-color",
     "type": "color",
@@ -10347,6 +10536,461 @@
     "type": "dimension",
     "ref": null,
     "value": "initial"
+  },
+  {
+    "name": "file-uploader.box-gap",
+    "cssVar": "--mx-file-uploader-box-gap",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "file-uploader.button-gap",
+    "cssVar": "--mx-file-uploader-button-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "file-uploader.item-gap",
+    "cssVar": "--mx-file-uploader-item-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "file-uploader.field.width",
+    "cssVar": "--mx-file-uploader-field-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "26rem"
+  },
+  {
+    "name": "file-uploader.field.box.border-style",
+    "cssVar": "--mx-file-uploader-field-box-border-style",
+    "type": "keyword",
+    "ref": null,
+    "value": "dashed"
+  },
+  {
+    "name": "file-uploader.field.box.border-color",
+    "cssVar": "--mx-file-uploader-field-box-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "file-uploader.field.box.radius",
+    "cssVar": "--mx-file-uploader-field-box-radius",
+    "type": "dimension",
+    "ref": "radius.lg",
+    "value": "0.625rem"
+  },
+  {
+    "name": "file-uploader.field.box.hover.bg",
+    "cssVar": "--mx-file-uploader-field-box-hover-bg",
+    "type": "color",
+    "ref": "color.fill.subtle.secondary",
+    "value": "rgb(0 0 0 / 0.0373)"
+  },
+  {
+    "name": "file-uploader.field.border-width",
+    "cssVar": "--mx-file-uploader-field-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "file-uploader.field.padding.sm",
+    "cssVar": "--mx-file-uploader-field-padding-sm",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "file-uploader.field.padding.md",
+    "cssVar": "--mx-file-uploader-field-padding-md",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "file-uploader.field.padding.lg",
+    "cssVar": "--mx-file-uploader-field-padding-lg",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "file-uploader.action.variant",
+    "cssVar": "--mx-file-uploader-action-variant",
+    "type": "keyword",
+    "ref": null,
+    "value": "ghost"
+  },
+  {
+    "name": "file-uploader.over.bg",
+    "cssVar": "--mx-file-uploader-over-bg",
+    "type": "color",
+    "ref": "color.accent.subtle",
+    "value": "#fbe6de"
+  },
+  {
+    "name": "file-uploader.over.border-color",
+    "cssVar": "--mx-file-uploader-over-border-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "file-uploader.select.padding-block",
+    "cssVar": "--mx-file-uploader-select-padding-block",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "file-uploader.select.padding-inline",
+    "cssVar": "--mx-file-uploader-select-padding-inline",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "file-uploader.select.radius",
+    "cssVar": "--mx-file-uploader-select-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "file-uploader.select.color",
+    "cssVar": "--mx-file-uploader-select-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "file-uploader.select.font-weight",
+    "cssVar": "--mx-file-uploader-select-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "file-uploader.select.bg",
+    "cssVar": "--mx-file-uploader-select-bg",
+    "type": "color",
+    "ref": "color.fill.control.default",
+    "value": "#f5f4f0"
+  },
+  {
+    "name": "file-uploader.select.border-width",
+    "cssVar": "--mx-file-uploader-select-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "file-uploader.select.border-color",
+    "cssVar": "--mx-file-uploader-select-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "file-uploader.select.hover.bg",
+    "cssVar": "--mx-file-uploader-select-hover-bg",
+    "type": "color",
+    "ref": "color.fill.subtle.secondary",
+    "value": "rgb(0 0 0 / 0.0373)"
+  },
+  {
+    "name": "file-uploader.select.hover.cursor",
+    "cssVar": "--mx-file-uploader-select-hover-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "pointer"
+  },
+  {
+    "name": "file-uploader.select.pressed.bg",
+    "cssVar": "--mx-file-uploader-select-pressed-bg",
+    "type": "color",
+    "ref": "color.fill.subtle.tertiary",
+    "value": "rgb(0 0 0 / 0.0241)"
+  },
+  {
+    "name": "file-uploader.select.focus.glow",
+    "cssVar": "--mx-file-uploader-select-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "file-uploader.select.focus.outline-width",
+    "cssVar": "--mx-file-uploader-select-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "file-uploader.select.focus.outline-color",
+    "cssVar": "--mx-file-uploader-select-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "file-uploader.select.focus.outline-offset",
+    "cssVar": "--mx-file-uploader-select-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "file-uploader.select.disabled.color",
+    "cssVar": "--mx-file-uploader-select-disabled-color",
+    "type": "color",
+    "ref": "color.fg.disabled",
+    "value": "#a2a098"
+  },
+  {
+    "name": "file-uploader.select.disabled.border-color",
+    "cssVar": "--mx-file-uploader-select-disabled-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.default",
+    "value": "rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "file-uploader.upload.padding-block",
+    "cssVar": "--mx-file-uploader-upload-padding-block",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "file-uploader.upload.padding-inline",
+    "cssVar": "--mx-file-uploader-upload-padding-inline",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "file-uploader.upload.radius",
+    "cssVar": "--mx-file-uploader-upload-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "file-uploader.upload.color",
+    "cssVar": "--mx-file-uploader-upload-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "file-uploader.upload.font-weight",
+    "cssVar": "--mx-file-uploader-upload-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "file-uploader.upload.bg",
+    "cssVar": "--mx-file-uploader-upload-bg",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "file-uploader.upload.border-width",
+    "cssVar": "--mx-file-uploader-upload-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "file-uploader.upload.border-color",
+    "cssVar": "--mx-file-uploader-upload-border-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "file-uploader.upload.hover.bg",
+    "cssVar": "--mx-file-uploader-upload-hover-bg",
+    "type": "color",
+    "ref": "color.accent.solid-hover",
+    "value": "#b43f20"
+  },
+  {
+    "name": "file-uploader.upload.hover.cursor",
+    "cssVar": "--mx-file-uploader-upload-hover-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "pointer"
+  },
+  {
+    "name": "file-uploader.upload.pressed.bg",
+    "cssVar": "--mx-file-uploader-upload-pressed-bg",
+    "type": "color",
+    "ref": "color.accent.solid-hover",
+    "value": "#b43f20"
+  },
+  {
+    "name": "file-uploader.upload.focus.glow",
+    "cssVar": "--mx-file-uploader-upload-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "file-uploader.upload.focus.outline-width",
+    "cssVar": "--mx-file-uploader-upload-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "file-uploader.upload.focus.outline-color",
+    "cssVar": "--mx-file-uploader-upload-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "file-uploader.upload.focus.outline-offset",
+    "cssVar": "--mx-file-uploader-upload-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "file-uploader.hint.color",
+    "cssVar": "--mx-file-uploader-hint-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "file-uploader.list.margin-top",
+    "cssVar": "--mx-file-uploader-list-margin-top",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "file-uploader.list.gap",
+    "cssVar": "--mx-file-uploader-list-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "file-uploader.item.padding-block",
+    "cssVar": "--mx-file-uploader-item-padding-block",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "file-uploader.item.padding-inline",
+    "cssVar": "--mx-file-uploader-item-padding-inline",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "file-uploader.item.radius",
+    "cssVar": "--mx-file-uploader-item-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "file-uploader.item.error.bg",
+    "cssVar": "--mx-file-uploader-item-error-bg",
+    "type": "color",
+    "ref": "color.danger.subtle",
+    "value": "#fde7e9"
+  },
+  {
+    "name": "file-uploader.item.invalid.bg",
+    "cssVar": "--mx-file-uploader-item-invalid-bg",
+    "type": "color",
+    "ref": "color.danger.subtle",
+    "value": "#fde7e9"
+  },
+  {
+    "name": "file-uploader.icon.icon",
+    "cssVar": "--mx-file-uploader-icon-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-file)"
+  },
+  {
+    "name": "file-uploader.icon.bg",
+    "cssVar": "--mx-file-uploader-icon-bg",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "file-uploader.icon.size",
+    "cssVar": "--mx-file-uploader-icon-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "1.25rem"
+  },
+  {
+    "name": "file-uploader.name.color",
+    "cssVar": "--mx-file-uploader-name-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "file-uploader.size.color",
+    "cssVar": "--mx-file-uploader-size-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "file-uploader.size.font-size",
+    "cssVar": "--mx-file-uploader-size-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "file-uploader.state.color",
+    "cssVar": "--mx-file-uploader-state-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "file-uploader.state.font-size",
+    "cssVar": "--mx-file-uploader-state-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "file-uploader.state.done.color",
+    "cssVar": "--mx-file-uploader-state-done-color",
+    "type": "color",
+    "ref": "color.success.fg",
+    "value": "#006402"
+  },
+  {
+    "name": "file-uploader.state.error.color",
+    "cssVar": "--mx-file-uploader-state-error-color",
+    "type": "color",
+    "ref": "color.danger.fg",
+    "value": "#b03659"
   },
   {
     "name": "filterbuilder.indent",

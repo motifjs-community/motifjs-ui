@@ -1,0 +1,87 @@
+/* FileUploader: the field's box holds the select button, the drop hint and the Upload button; the files are listed
+   under it. Only the layout is here: the box when a file is dragged over it, the select button, the hint, a row of
+   the list, its texts and the state are units of the schema; the row's buttons and progress bar are the kit's,
+   their look in a row from the uploader's places. */
+@layer mx.components {
+    .mx-file-uploader .mx-field__box {
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--_file-uploader-box-gap);
+    }
+
+    .mx-file-uploader__select,
+    .mx-file-uploader__upload {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--_file-uploader-button-gap);
+        margin: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        appearance: none;
+    }
+
+    .mx-file-uploader__upload {
+        margin-inline-start: auto;
+    }
+
+    .mx-file-uploader__drop {
+        flex: 1 1 auto;
+        min-inline-size: 0;
+    }
+
+    .mx-file-uploader__list {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .mx-file-uploader__item {
+        display: flex;
+        align-items: center;
+        gap: var(--_file-uploader-item-gap);
+        min-inline-size: 0;
+    }
+
+    .mx-file-uploader__icon {
+        flex: none;
+    }
+
+    .mx-file-uploader__texts {
+        display: flex;
+        flex: 1 1 auto;
+        flex-wrap: wrap;
+        align-items: baseline;
+        column-gap: var(--_file-uploader-item-gap);
+        min-inline-size: 0;
+    }
+
+    .mx-file-uploader__name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mx-file-uploader__progress {
+        flex-basis: 100%;
+    }
+
+    /* The bar's own label is the file's name, already on the row: kept for readers, not shown. */
+    .mx-file-uploader__progress .mx-progress__head {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .mx-file-uploader__actions {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+    }
+}

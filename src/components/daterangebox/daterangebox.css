@@ -1,0 +1,29 @@
+/* DateRangeBox: a field with two masked inputs, a separator between them, the calendars and the presets on a popup.
+   Only the layout is here: the separator and the list of presets are units of the schema, the calendars a place. */
+@layer mx.components {
+    .mx-date-range-box .mx-field__input {
+        flex: 1 1 0;
+        min-inline-size: 0;
+    }
+
+    .mx-date-range-box__tools {
+        display: flex;
+        flex: 1 1 0;
+        align-items: center;
+        min-inline-size: 0;
+    }
+
+    .mx-date-range-box__separator {
+        flex: none;
+    }
+
+    .mx-date-range-box__popup {
+        display: flex;
+        align-items: stretch;
+        gap: var(--_date-range-box-popup-gap);
+    }
+
+    .mx-date-range-box__presets {
+        overflow: auto;
+    }
+}

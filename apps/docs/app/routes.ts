@@ -23,6 +23,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   textarea: () => import('../pages/textarea/TextAreaPage'),
   numberbox: () => import('../pages/numberbox/NumberBoxPage'),
   datebox: () => import('../pages/datebox/DateBoxPage'),
+  daterangebox: () => import('../pages/daterangebox/DateRangeBoxPage'),
+  fileuploader: () => import('../pages/fileuploader/FileUploaderPage'),
   calendar: () => import('../pages/calendar/CalendarPage'),
   slider: () => import('../pages/slider/SliderPage'),
   checkbox: () => import('../pages/checkbox/CheckBoxPage'),

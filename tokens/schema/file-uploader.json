@@ -1,0 +1,89 @@
+{
+  "file-uploader": {
+    "$description": "FileUploader: the select button and the drop hint in the field's box, the files listed under it.",
+    "$selector": ".mx-file-uploader",
+    "box-gap": { "$type": "dimension", "$description": "Between the select button, the hint and the Upload button." },
+    "button-gap": { "$type": "dimension", "$description": "Between a button's glyph and its text." },
+    "item-gap": { "$type": "dimension", "$description": "Between a row's icon, texts and buttons." },
+    "$places": {
+      "field": {
+        "$description": "The field under an uploader: the box is the drop zone (a dashed frame where the language draws one).",
+        "selector": ".mx-file-uploader",
+        "part": "field",
+        "tokens": ["width", "box.border-style", "border-width", "box.border-color", "box.hover.bg", "box.radius", "padding.sm", "padding.md", "padding.lg"]
+      },
+      "action": {
+        "$description": "A row's buttons: cancel, retry, remove.",
+        "selector": ".mx-file-uploader__action",
+        "part": "button",
+        "tokens": ["variant"]
+      }
+    },
+    "$units": {
+      "over": {
+        "$description": "The box while files are dragged over it.",
+        "selector": ".mx-file-uploader[data-dragover] .mx-field__box"
+      },
+      "select": {
+        "$description": "The button that opens the file dialog: `hover`, `pressed`, `focus`, `disabled`.",
+        "selector": ".mx-file-uploader__select",
+        "defaults": { "cursor": "default" },
+        "states": {
+          "hover": ".mx-file-uploader__select:not(:disabled):hover",
+          "pressed": { "selector": ".mx-file-uploader__select:not(:disabled):active", "from": "hover" },
+          "focus": ".mx-file-uploader__select:focus-visible",
+          "disabled": ".mx-file-uploader__select:disabled"
+        }
+      },
+      "upload": {
+        "$description": "The Upload button (`uploadMode: 'button'`): `hover`, `pressed`, `focus`.",
+        "selector": ".mx-file-uploader__upload",
+        "defaults": { "cursor": "default" },
+        "states": {
+          "hover": ".mx-file-uploader__upload:not(:disabled):hover",
+          "pressed": { "selector": ".mx-file-uploader__upload:not(:disabled):active", "from": "hover" },
+          "focus": ".mx-file-uploader__upload:focus-visible"
+        }
+      },
+      "hint": {
+        "$description": "The drop hint next to the button.",
+        "selector": ".mx-file-uploader__drop"
+      },
+      "list": {
+        "$description": "The list of files under the box.",
+        "selector": ".mx-file-uploader__list"
+      },
+      "item": {
+        "$description": "A row of the list: `uploading`, `done`, `error`, `aborted`, `invalid` (refused).",
+        "selector": ".mx-file-uploader__item",
+        "states": {
+          "uploading": ".mx-file-uploader__item[data-status='uploading']",
+          "done": ".mx-file-uploader__item[data-status='done']",
+          "error": ".mx-file-uploader__item[data-status='error']",
+          "aborted": ".mx-file-uploader__item[data-status='aborted']",
+          "invalid": ".mx-file-uploader__item[data-status='invalid']"
+        }
+      },
+      "icon": {
+        "$description": "The file glyph at the start of a row (`icon` its shape, `bg` its colour).",
+        "selector": ".mx-file-uploader__icon"
+      },
+      "name": {
+        "$description": "The file's name.",
+        "selector": ".mx-file-uploader__name"
+      },
+      "size": {
+        "$description": "The file's size.",
+        "selector": ".mx-file-uploader__size"
+      },
+      "state": {
+        "$description": "What happened to the file: `error` and `invalid` in the danger colour, `done` in the success colour.",
+        "selector": ".mx-file-uploader__state",
+        "states": {
+          "done": ".mx-file-uploader__item[data-status='done'] .mx-file-uploader__state",
+          "error": ".mx-file-uploader__item:is([data-status='error'], [data-status='invalid']) .mx-file-uploader__state"
+        }
+      }
+    }
+  }
+}

@@ -36,10 +36,12 @@ export const GROUPS = [
       { id: 'textarea', label: 'TextArea', title: 'TextArea', path: '/textarea', related: ['textbox', 'numberbox'] },
       { id: 'numberbox', label: 'NumberBox', title: 'NumberBox', path: '/numberbox', related: ['textbox', 'slider'] },
       { id: 'datebox', label: 'DateBox', title: 'DateBox', path: '/datebox', related: ['calendar', 'textbox'] },
+      { id: 'daterangebox', label: 'DateRangeBox', title: 'DateRangeBox', path: '/daterangebox', related: ['datebox', 'calendar'] },
       { id: 'colorbox', label: 'ColorBox', title: 'ColorBox and ColorPicker', path: '/colorbox', related: ['textbox', 'datebox'] },
       { id: 'calendar', label: 'Calendar', title: 'Calendar', path: '/calendar', related: ['datebox'] },
       { id: 'slider', label: 'Slider', title: 'Slider', path: '/slider', related: ['numberbox', 'progress'] },
       { id: 'rating', label: 'Rating', title: 'Rating', path: '/rating', related: ['slider', 'buttongroup'] },
+      { id: 'fileuploader', label: 'FileUploader', title: 'FileUploader', path: '/fileuploader', related: ['progress', 'textbox', 'loadpanel'] },
     ],
   },
   {

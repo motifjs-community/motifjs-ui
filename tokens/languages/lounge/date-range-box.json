@@ -1,0 +1,78 @@
+{
+  "date-range-box": {
+    "popup-gap": {
+      "$value": "{space.1}"
+    },
+    "field": {
+      "width": {
+        "$value": {
+          "value": 20,
+          "unit": "rem"
+        }
+      }
+    },
+    "calendar": {
+      "container": {
+        "padding": {
+          "$value": "{calendar.container.padding}"
+        }
+      }
+    },
+    "separator": {
+      "icon": {
+        "$value": "dash"
+      },
+      "bg": {
+        "$value": "{color.fg.tertiary}"
+      },
+      "size": {
+        "$value": {
+          "value": 1,
+          "unit": "rem"
+        }
+      },
+      "margin-inline": {
+        "$value": "{space.1}"
+      }
+    },
+    "presets": {
+      "min-width": {
+        "$value": {
+          "value": 9,
+          "unit": "rem"
+        }
+      },
+      "max-height": {
+        "$value": {
+          "value": 18,
+          "unit": "rem"
+        }
+      },
+      "focus": {
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "calc(-1 * {focus.ring.width})"
+        },
+        "glow": {
+          "$value": "{focus.ring.halo}"
+        }
+      },
+      "beside": {
+        "padding-start": {
+          "$value": "{space.1}"
+        },
+        "border-start-width": {
+          "$value": "{border.width.1}"
+        },
+        "border-start-color": {
+          "$value": "{color.stroke.divider}"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "date-range-box": {
+    "$description": "DateRangeBox: two masked inputs with a separator, the calendars and the presets on a popup.",
+    "$selector": ".mx-date-range-box, .mx-date-range-box__popup",
+    "popup-gap": { "$type": "dimension", "$description": "Between the calendars, and the presets beside them." },
+    "$places": {
+      "field": {
+        "$description": "The field under a range box: two dates wide.",
+        "selector": ".mx-date-range-box",
+        "part": "field",
+        "tokens": ["width"]
+      },
+      "calendar": {
+        "$description": "A calendar on the popup.",
+        "selector": ".mx-date-range-box__popup > .mx-calendar",
+        "part": "calendar",
+        "tokens": ["container.padding"]
+      }
+    },
+    "$units": {
+      "separator": {
+        "$description": "The glyph between the start and the end (`icon` its shape, `bg` its colour).",
+        "selector": ".mx-date-range-box__separator"
+      },
+      "presets": {
+        "$description": "The list of ready-made ranges on the popup (its ring under the keys drawn inside it: it scrolls); `beside`: next to the calendars (the space and the line between them at its start).",
+        "selector": ".mx-date-range-box__popup > .mx-date-range-box__presets",
+        "states": {
+          "focus": ".mx-date-range-box__popup > .mx-date-range-box__presets:focus-visible",
+          "beside": ".mx-date-range-box__popup > .mx-calendar + .mx-date-range-box__presets"
+        }
+      }
+    }
+  }
+}

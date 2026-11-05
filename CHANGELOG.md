@@ -29,6 +29,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   message, a Cancel button (`onCancel`, Escape too); what is under it is inert and `aria-busy`, focus waits on the
   panel and comes back; `delay` keeps quick work from flashing it; `value` and `x-model`, `show()` and `hide()`.
 - `homeOf` in the core: where a surface made from code goes for its anchor (the tooltip's rule, now shared).
+- `DateRangeBox`: a start and an end in one field, typed through two masks or picked on two months side by side
+  (the first pick the start, the second the end, the pointer showing the range meanwhile), ready-made ranges
+  (`presets`), `min`, `max`, `disabledDates`, the least and the most days a range may span (`minDays`, `maxDays`),
+  `datetime` too; the value a `[start, end]` pair, `x-model`. The `Calendar` draws a range over its days
+  (`rangeStart`, `rangeEnd`: the cell states `range-start`, `range-end`, `range-single`, `range-in` in every
+  language) and tells the day under the pointer (`onDayPointed`).
+- `FileUploader`: files chosen with a button or dropped on the box, listed with their size and what happens to
+  them; `accept`, `maxFileSize`, `minFileSize` and `maxFiles` turn files away with the reason; uploaded as they come,
+  on an Upload button or from code, by the uploader itself (`uploadUrl`, in one piece or in chunks with
+  `Content-Range`, with progress) or by your own `upload`; cancel, retry and remove on each row; a field (label,
+  `required`, rules); kit glyphs `upload` and `file`.
+- Kit texts for both, in English and Turkish.
 
 ### Language
 

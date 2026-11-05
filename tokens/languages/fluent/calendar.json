@@ -93,6 +93,41 @@
       "selected-hover": {
         "bg": { "$value": "{color.accent.solid-hover}" }
       },
+      "range-start": {
+        "bg": {
+          "$value": "{color.accent.solid}"
+        },
+        "color": {
+          "$value": "{color.accent.on-solid}"
+        }
+      },
+      "range-end": {
+        "bg": {
+          "$value": "{color.accent.solid}"
+        },
+        "color": {
+          "$value": "{color.accent.on-solid}"
+        }
+      },
+      "range-single": {
+        "bg": {
+          "$value": "{color.accent.solid}"
+        },
+        "color": {
+          "$value": "{color.accent.on-solid}"
+        }
+      },
+      "range-in": {
+        "bg": {
+          "$value": "{color.accent.subtle}"
+        },
+        "color": {
+          "$value": "{color.accent.on-subtle}"
+        },
+        "radius": {
+          "$value": "{radius.none}"
+        }
+      },
       "disabled": {
         "color": { "$value": "{color.fg.disabled}" }
       }

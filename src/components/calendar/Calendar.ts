@@ -14,9 +14,9 @@ import type { CalendarProps } from './calendar-props';
 import type { CalendarView } from './calendar-view';
 import { onLanguage } from '../../core/on-language';
 
-const OWN = ['value', 'min', 'max', 'firstDayOfWeek', 'locale', 'showWeekNumbers', 'showOtherMonths', 'showTodayButton', 'currentView', 'minView'] as const;
+const OWN = ['value', 'min', 'max', 'firstDayOfWeek', 'locale', 'showWeekNumbers', 'showOtherMonths', 'showTodayButton', 'currentView', 'minView', 'rangeStart', 'rangeEnd'] as const;
 
-const DRAWN = ['value', 'min', 'max', 'disabledDates', 'firstDayOfWeek', 'locale', 'showWeekNumbers', 'showOtherMonths', 'minView'] as const;
+const DRAWN = ['value', 'min', 'max', 'disabledDates', 'firstDayOfWeek', 'locale', 'showWeekNumbers', 'showOtherMonths', 'minView', 'rangeStart', 'rangeEnd'] as const;
 
 const VIEWS: CalendarView[] = ['month', 'year', 'decade'];
 
@@ -35,6 +35,9 @@ interface Parts {
   /** Drawing waits until every prop is in. */
   ready: boolean;
   valueChanged: Emitter<ValueChangedEventArgs<Date | null>>;
+  pointed: Emitter<Date | null>;
+  /** The day last told to `onDayPointed`, so the same one is not told again. */
+  lastPointed: number | null;
 }
 
 /**
@@ -51,6 +54,7 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, own[name]);
     if (own.disabledDates !== undefined) this.bindProperty('disabledDates', functionValue(own.disabledDates));
     if (own.onValueChanged) this.onValueChanged(own.onValueChanged);
+    if (own.onDayPointed) this.onDayPointed(own.onDayPointed);
     const parts = this.parts;
     // A new value, from wherever it comes, shows its month.
     this.observeProperty<Date | null>('value', (value) => {
@@ -80,12 +84,15 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     this.observeProperty('shownView', drawTexts);
     parts.grid.addEventListener('keydown', (e) => this.keyDown(e));
     parts.grid.addEventListener('click', (e) => this.clicked(e));
+    parts.grid.addEventListener('pointerover', (e) => this.pointedOver(e));
+    parts.grid.addEventListener('pointerleave', () => this.point(null));
     parts.previous.addEventListener('click', () => this.page(-1));
     parts.next.addEventListener('click', () => this.page(1));
     parts.title.addEventListener('click', () => this.zoomOut());
     this.motif.setDisposable(() => {
       stopTexts();
       parts.valueChanged.dispose();
+      parts.pointed.dispose();
     });
   }
 
@@ -168,6 +175,24 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     return this.parts.focused;
   }
 
+  get rangeStart(): Date | null {
+    return this.getProperty<Date | null | undefined>('rangeStart') ?? null;
+  }
+  set rangeStart(value: Bind<Date | null>) {
+    this.assignProperty('rangeStart', value);
+  }
+  get rangeEnd(): Date | null {
+    return this.getProperty<Date | null | undefined>('rangeEnd') ?? null;
+  }
+  set rangeEnd(value: Bind<Date | null>) {
+    this.assignProperty('rangeEnd', value);
+  }
+
+  /** The pointer came over a day in the month view, or left the days (`null`). */
+  get onDayPointed(): MotifEvent<Date | null> {
+    return this.parts.pointed.event;
+  }
+
   get onValueChanged(): MotifEvent<ValueChangedEventArgs<Date | null>> {
     return this.parts.valueChanged.event;
   }
@@ -237,6 +262,8 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
       view: 'month',
       ready: false,
       valueChanged: new Emitter(),
+      pointed: new Emitter(),
+      lastPointed: null,
     };
   }
 
@@ -302,6 +329,7 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     const first = new Date(focused.getFullYear(), focused.getMonth(), 1);
     const start = addDays(first, -((first.getDay() - firstDay + 7) % 7));
     const today = new Date();
+    const range = this.rangeOf();
     const short = new Intl.DateTimeFormat(locale, { weekday: 'short' });
     const long = new Intl.DateTimeFormat(locale, { weekday: 'long' });
     const full = new Intl.DateTimeFormat(locale, { dateStyle: 'full' });
@@ -343,8 +371,45 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
         td.dataset.date = String(+day);
         td.setAttribute('aria-label', full.format(day));
         this.markCell(td, outside, sameDay(day, value), sameDay(day, today), this.canChoose(day), sameDay(day, focused));
+        const mark = this.rangeMark(day, range);
+        if (mark) td.dataset.range = mark;
       }
     }
+  }
+
+  /** The range's ends in order, as days. */
+  private rangeOf(): [Date | null, Date | null] {
+    const a = this.peekProperty<Date | null>('rangeStart') ?? null;
+    const b = this.peekProperty<Date | null>('rangeEnd') ?? null;
+    const start = a ? dayStart(a) : null;
+    const end = b ? dayStart(b) : null;
+    return start && end && end < start ? [end, start] : [start, end];
+  }
+
+  /** Where a day stands in the range drawn: its start, its end, one day of both, or between. */
+  private rangeMark(day: Date, [start, end]: [Date | null, Date | null]): string | null {
+    if (!start && !end) return null;
+    const atStart = sameDay(day, start);
+    const atEnd = sameDay(day, end);
+    if (atStart && (atEnd || !end)) return 'single';
+    if (atEnd && !start) return 'single';
+    if (atStart) return 'start';
+    if (atEnd) return 'end';
+    return start && end && day > start && day < end ? 'in' : null;
+  }
+
+  private pointedOver(e: PointerEvent): void {
+    if (this.parts.view !== 'month') return;
+    const cell = (e.target as Element).closest<HTMLElement>('.mx-calendar__cell');
+    this.point(cell?.dataset.date ? new Date(Number(cell.dataset.date)) : null);
+  }
+
+  private point(day: Date | null): void {
+    const parts = this.parts;
+    const key = day ? +day : null;
+    if (key === parts.lastPointed) return;
+    parts.lastPointed = key;
+    parts.pointed.fire(day);
   }
 
   /** The year view (twelve months) and the decade view (twelve years, one on each side). */

@@ -23,5 +23,10 @@ export interface CalendarProps extends ControlProps {
   currentView?: Bind<CalendarView>;
   /** The view a choice is made in: `'year'` picks a month, `'decade'` a year. Default `'month'`. */
   minView?: Bind<CalendarView>;
+  /** A range drawn over the days (its ends and the days between), for a date range box; the value is still one day. */
+  rangeStart?: Bind<Date | null>;
+  rangeEnd?: Bind<Date | null>;
   onValueChanged?: (e: ValueChangedEventArgs<Date | null>) => void;
+  /** The pointer came over a day (`null`: it left the days). */
+  onDayPointed?: (day: Date | null) => void;
 }

@@ -581,4 +581,31 @@ export interface UiStrings {
   wizardNext: string;
   wizardPrevious: string;
   wizardFinish: string;
+  /** The date range box. */
+  rangeStart: string;
+  rangeEnd: string;
+  rangeOrder: string;
+  rangeTooShort: string;
+  rangeTooLong: string;
+  rangeToday: string;
+  rangeYesterday: string;
+  rangeLast7: string;
+  rangeLast30: string;
+  rangeThisMonth: string;
+  rangeLastMonth: string;
+  /** The file uploader. */
+  fileSelect: string;
+  fileSelectOne: string;
+  fileDrop: string;
+  fileDropOne: string;
+  fileUpload: string;
+  fileTooLarge: string;
+  fileTooSmall: string;
+  fileWrongType: string;
+  fileTooMany: string;
+  fileUploading: string;
+  fileUploaded: string;
+  fileFailed: string;
+  fileAborted: string;
+  fileAbort: string;
 }

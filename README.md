@@ -46,7 +46,7 @@ each (`npm run dev`).
 | Navigation | `Tabs`, `Accordion`, `Breadcrumb`, `Pagination`, `Stepper`, `Wizard`, `TabDocumentManager` |
 | More editors | `Rating`, `ColorBox`, `ColorPicker` |
 | Scheduling | `Scheduler` (day, week, month, timeline, agenda; recurrence, resources, iCalendar) |
-| Editors | `TextBox` (mask, validation), `TextArea` (auto-grow), `NumberBox` (locale formats, spin), `DateBox` (date, time, both), `Calendar`, `Slider` (range) |
+| Editors | `TextBox` (mask, validation), `TextArea` (auto-grow), `NumberBox` (locale formats, spin), `DateBox` (date, time, both), `DateRangeBox` (two months, presets, a span), `Calendar`, `Slider` (range), `FileUploader` (drop, limits, chunks, progress) |
 | Choice | `CheckBox` (three states), `Switch`, `RadioGroup`, `DropDown`, `ComboBox`, `Autocomplete`, `Lookup` (columns), `TagBox`, `ListBox` |
 | Data | `DataGrid` (virtual or paged, editing with three save modes, row actions, selection, filters, search panel, grouping with a group panel, toolbar, lookup columns, copy and paste, CSV and Excel export, kept layout), `TreeView` (lazy, check boxes, filter); lists and grids read `@motifx-community/data` sources |
 | Layout and windows | `Stack`, `Grid`, `DockPanel`, `Panel`, `GroupBox`, `SplitContainer`, `FormLayout`, `Tabs`, `Accordion`, `MxForm` (window and modal form), `messageBox`, `confirm` |
