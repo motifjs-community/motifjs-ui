@@ -201,6 +201,11 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         this.relayout();
     }
 
+    // Going away: the panes and the handles are disposed one by one, nothing is drawn again.
+    override onDisposing(): void {
+        this.ready = false;
+    }
+
     /** @internal A pane's limits, collapsed state, visibility or `resizable` changed. */
     paneChanged(): void {
         if (!this.ready) return;
@@ -216,7 +221,7 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
 
     /** @internal A pane was disposed on its own. */
     paneGone(pane: SplitPane): void {
-        if (this.panes.includes(pane)) this.forget(pane);
+        if (this.ready && this.panes.includes(pane)) this.forget(pane);
     }
 
     place(pane: SplitPane, index: number): void {

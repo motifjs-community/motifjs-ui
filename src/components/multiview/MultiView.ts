@@ -206,6 +206,11 @@ export class MultiView extends Control<HTMLDivElement, MultiViewProps> {
         return this.views[index]?.key || index;
     }
 
+    // Going away: the views are disposed one by one, nothing is drawn again.
+    override onDisposing(): void {
+        this.ready = false;
+    }
+
     /** @internal A view's title, key, visibility or enabled changed. */
     viewChanged(): void {
         if (!this.ready) return;
@@ -215,7 +220,7 @@ export class MultiView extends Control<HTMLDivElement, MultiViewProps> {
 
     /** @internal A view was disposed on its own. */
     viewGone(view: View): void {
-        if (this.views.includes(view)) this.forget(view);
+        if (this.ready && this.views.includes(view)) this.forget(view);
     }
 
     // The views in the track, as the slide part sees them: the hidden ones take no room.

@@ -1,5 +1,5 @@
 import { Component, reactive } from '@motifx/core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { SplitPane } from './SplitPane';
@@ -133,6 +133,24 @@ describe('Splitter', () => {
         expect(s.panes[1].expand()).toBe(true);
         expect(s.panes[0].collapse()).toBe(true);
         expect(s.panes[0].expand()).toBe(true);
+    });
+
+    it('disposed with its panes, nothing is drawn again and nothing fails', async () => {
+        const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const warns = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const host = page(
+            <Splitter>
+                <SplitPane size={100} collapsible />
+                <SplitPane />
+                <SplitPane size={100} />
+            </Splitter>
+        );
+        await settle();
+        await host.dispose();
+        const logged = [...errors.mock.calls, ...warns.mock.calls].map(c => c.map(String).join(' ')).filter(s => /MJX|motifjs/i.test(s));
+        errors.mockRestore();
+        warns.mockRestore();
+        expect(logged).toEqual([]);
     });
 
     it('panes are added, inserted and removed programmatically; sizes given take the place of the panes’ own; vertical', async () => {

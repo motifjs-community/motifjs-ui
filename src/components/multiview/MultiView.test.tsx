@@ -1,5 +1,5 @@
 import { Component, reactive } from '@motifx/core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { MultiView } from './MultiView';
@@ -130,6 +130,23 @@ describe('MultiView', () => {
         );
         await settle();
         expect(eager.views.map(v => v.contentBuilt)).toEqual([true, true]);
+    });
+
+    it('disposed with its views, nothing is drawn again and nothing fails', async () => {
+        const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const warns = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const host = page(
+            <MultiView>
+                <View title="A" />
+                <View title="B" content={() => new Component('b')} />
+            </MultiView>
+        );
+        await settle();
+        await host.dispose();
+        const logged = [...errors.mock.calls, ...warns.mock.calls].map(c => c.map(String).join(' ')).filter(s => /MJX|motifjs/i.test(s));
+        errors.mockRestore();
+        warns.mockRestore();
+        expect(logged).toEqual([]);
     });
 
     it('views are added, inserted and removed programmatically; removing the one in sight moves to a neighbour', async () => {
