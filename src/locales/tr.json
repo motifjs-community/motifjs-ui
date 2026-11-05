@@ -553,5 +553,13 @@
   "recurrenceSummaryOnNthOf": "{rule}, {month} ayının {nth} {weekday} günü",
   "recurrenceSummaryCount": "{rule}, {count} kez",
   "recurrenceSummaryUntil": "{rule}, {date} tarihine kadar",
-  "recurrenceSummaryCustom": "{rule}, kendine özgü bir kuralla"
+  "recurrenceSummaryCustom": "{rule}, kendine özgü bir kuralla",
+  "steps": "Adımlar",
+  "stepOf": "Adım {index, number} / {count, number}",
+  "stepOptional": "İsteğe bağlı",
+  "stepDone": "Tamamlandı",
+  "stepError": "Düzeltme gerekiyor",
+  "wizardNext": "İleri",
+  "wizardPrevious": "Geri",
+  "wizardFinish": "Bitir"
 }

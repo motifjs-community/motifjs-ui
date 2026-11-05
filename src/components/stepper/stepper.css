@@ -1,0 +1,161 @@
+/* Stepper: a row (or a column) of steps with a line between them. Only the layout is here: a step, its indicator,
+   the mark and the number in it, the texts and the line are units of the schema (`$units`). Horizontal, the texts
+   sit under the indicator (`data-labels="bottom"`: the steps share the width and the line runs from one indicator
+   to the next) or after it (`end`: the line grows between the steps). Vertical, the line stands under the
+   indicator. The space around a step is the plain `padding` token, which the line's place is measured from. */
+@layer mx.components {
+    .mx-stepper {
+        display: block;
+        box-sizing: border-box;
+        inline-size: 100%;
+        min-inline-size: 0;
+    }
+
+    .mx-stepper[data-size='sm'] {
+        --_size: var(--_stepper-size-sm);
+        --_font-size: var(--_stepper-font-size-sm);
+        --_padding: var(--_stepper-padding-sm);
+    }
+
+    .mx-stepper[data-size='md'] {
+        --_size: var(--_stepper-size-md);
+        --_font-size: var(--_stepper-font-size-md);
+        --_padding: var(--_stepper-padding-md);
+    }
+
+    .mx-stepper[data-size='lg'] {
+        --_size: var(--_stepper-size-lg);
+        --_font-size: var(--_stepper-font-size-lg);
+        --_padding: var(--_stepper-padding-lg);
+    }
+
+    .mx-stepper__list {
+        display: flex;
+        align-items: flex-start;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .mx-stepper__item {
+        display: flex;
+        position: relative;
+        min-inline-size: 0;
+    }
+
+    .mx-stepper__step {
+        display: flex;
+        box-sizing: border-box;
+        align-items: center;
+        min-inline-size: 0;
+        margin: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        appearance: none;
+    }
+
+    .mx-stepper__indicator {
+        display: inline-flex;
+        flex: none;
+        box-sizing: border-box;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mx-stepper__number {
+        line-height: 1;
+    }
+
+    .mx-stepper__icon,
+    .mx-stepper__indicator > :is(img, svg) {
+        inline-size: calc(var(--_size) * 0.6);
+        block-size: calc(var(--_size) * 0.6);
+    }
+
+    .mx-stepper__texts {
+        display: flex;
+        flex-direction: column;
+        min-inline-size: 0;
+    }
+
+    .mx-stepper__label {
+        overflow-wrap: anywhere;
+    }
+
+    /* Texts after the indicator: the line grows between the steps. */
+    .mx-stepper:not([data-orientation='vertical'])[data-labels='end'] .mx-stepper__item {
+        align-items: center;
+    }
+
+    /* The steps keep their size; the room left goes to the lines, equally. */
+    .mx-stepper:not([data-orientation='vertical'])[data-labels='end'] .mx-stepper__item:not(:last-child) {
+        flex: 1 1 auto;
+    }
+
+    .mx-stepper:not([data-orientation='vertical'])[data-labels='end'] .mx-stepper__step {
+        flex: 0 1 auto;
+    }
+
+    .mx-stepper:not([data-orientation='vertical'])[data-labels='end'] .mx-stepper__line {
+        flex: 1 0 var(--_stepper-line-min-length);
+        margin-inline: var(--_stepper-line-gap);
+    }
+
+    /* Beside the indicator the texts stay on one line and end in an ellipsis when the row is short of room. */
+    .mx-stepper:not([data-orientation='vertical'])[data-labels='end'] .mx-stepper__label,
+    .mx-stepper:not([data-orientation='vertical'])[data-labels='end'] .mx-stepper__description {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Texts under the indicator: equal steps, the line from one indicator to the next. */
+    .mx-stepper:not([data-orientation='vertical']):not([data-labels='end']) .mx-stepper__item {
+        flex: 1 1 0;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .mx-stepper:not([data-orientation='vertical']):not([data-labels='end']) .mx-stepper__step {
+        flex-direction: column;
+        inline-size: 100%;
+        text-align: center;
+    }
+
+    .mx-stepper:not([data-orientation='vertical']):not([data-labels='end']) .mx-stepper__texts {
+        align-items: center;
+    }
+
+    .mx-stepper:not([data-orientation='vertical']):not([data-labels='end']) .mx-stepper__line {
+        position: absolute;
+        inset-block-start: calc(var(--_padding) + var(--_size) / 2);
+        inset-inline-start: calc(50% + var(--_size) / 2 + var(--_stepper-line-gap));
+        inset-inline-end: calc(-50% + var(--_size) / 2 + var(--_stepper-line-gap));
+        translate: 0 -50%;
+    }
+
+    /* Vertical: the line stands under the indicator, the texts beside it. */
+    .mx-stepper[data-orientation='vertical'] > .mx-stepper__list {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .mx-stepper[data-orientation='vertical'] .mx-stepper__item {
+        flex-direction: column;
+    }
+
+    .mx-stepper[data-orientation='vertical'] .mx-stepper__line {
+        flex: 1 1 auto;
+        min-block-size: var(--_stepper-line-min-length);
+        margin-block: var(--_stepper-line-gap);
+        margin-inline-start: calc(var(--_padding) + var(--_size) / 2);
+        translate: -50% 0;
+    }
+
+    .mx-stepper[data-orientation='vertical'] .mx-stepper__line:dir(rtl) {
+        translate: 50% 0;
+    }
+}

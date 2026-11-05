@@ -842,4 +842,15 @@
     --_button-variant: var(--mx-window-footer-main-button-variant);
     --_button-size: var(--mx-window-footer-main-button-size);
   }
+
+  /* wizard: previous — The Back button. */
+  .mx-wizard__previous {
+    --_button-variant: var(--mx-wizard-previous-variant);
+  }
+
+  /* wizard: next — The Next button, Finish on the last step. */
+  .mx-wizard__next {
+    --_button-variant: var(--mx-wizard-next-variant);
+    --_button-tone: var(--mx-wizard-next-tone);
+  }
 }

@@ -1,0 +1,34 @@
+{
+  "wizard": {
+    "gap": {
+      "$value": "{space.4}"
+    },
+    "bar-gap": {
+      "$value": "{space.2}"
+    },
+    "rail-width": {
+      "$value": {
+        "value": 14,
+        "unit": "rem"
+      }
+    },
+    "previous": {
+      "variant": {
+        "$value": "outline"
+      }
+    },
+    "next": {
+      "variant": {
+        "$value": "solid"
+      },
+      "tone": {
+        "$value": "accent"
+      }
+    },
+    "bar": {
+      "padding-top": {
+        "$value": "{space.3}"
+      }
+    }
+  }
+}

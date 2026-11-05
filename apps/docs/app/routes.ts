@@ -15,6 +15,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   colorbox: () => import('../pages/colorbox/ColorBoxPage'),
   breadcrumb: () => import('../pages/breadcrumb/BreadcrumbPage'),
   pagination: () => import('../pages/pagination/PaginationPage'),
+  stepper: () => import('../pages/stepper/StepperPage'),
+  wizard: () => import('../pages/wizard/WizardPage'),
   toolbar: () => import('../pages/toolbar/ToolbarPage'),
   menus: () => import('../pages/menus/MenusPage'),
   textbox: () => import('../pages/textbox/TextBoxPage'),

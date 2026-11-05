@@ -18843,6 +18843,405 @@
     "value": "initial"
   },
   {
+    "name": "stepper.font-size.sm",
+    "cssVar": "--mx-stepper-font-size-sm",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "stepper.font-size.md",
+    "cssVar": "--mx-stepper-font-size-md",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
+    "name": "stepper.font-size.lg",
+    "cssVar": "--mx-stepper-font-size-lg",
+    "type": "dimension",
+    "ref": null,
+    "value": "1rem"
+  },
+  {
+    "name": "stepper.description-font-size",
+    "cssVar": "--mx-stepper-description-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "stepper.gap",
+    "cssVar": "--mx-stepper-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "stepper.line-gap",
+    "cssVar": "--mx-stepper-line-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "stepper.line-min-length",
+    "cssVar": "--mx-stepper-line-min-length",
+    "type": "dimension",
+    "ref": null,
+    "value": "1rem"
+  },
+  {
+    "name": "stepper.size.sm",
+    "cssVar": "--mx-stepper-size-sm",
+    "type": "dimension",
+    "ref": null,
+    "value": "1.5rem"
+  },
+  {
+    "name": "stepper.size.md",
+    "cssVar": "--mx-stepper-size-md",
+    "type": "dimension",
+    "ref": null,
+    "value": "1.75rem"
+  },
+  {
+    "name": "stepper.size.lg",
+    "cssVar": "--mx-stepper-size-lg",
+    "type": "dimension",
+    "ref": null,
+    "value": "2.25rem"
+  },
+  {
+    "name": "stepper.padding.sm",
+    "cssVar": "--mx-stepper-padding-sm",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.25rem"
+  },
+  {
+    "name": "stepper.padding.md",
+    "cssVar": "--mx-stepper-padding-md",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.375rem"
+  },
+  {
+    "name": "stepper.padding.lg",
+    "cssVar": "--mx-stepper-padding-lg",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.5rem"
+  },
+  {
+    "name": "stepper.step.radius",
+    "cssVar": "--mx-stepper-step-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "stepper.step.color",
+    "cssVar": "--mx-stepper-step-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "stepper.step.hover.bg",
+    "cssVar": "--mx-stepper-step-hover-bg",
+    "type": "color",
+    "ref": "color.fill.subtle.secondary",
+    "value": "rgb(0 0 0 / 0.0373)"
+  },
+  {
+    "name": "stepper.step.hover.cursor",
+    "cssVar": "--mx-stepper-step-hover-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "pointer"
+  },
+  {
+    "name": "stepper.step.pressed.bg",
+    "cssVar": "--mx-stepper-step-pressed-bg",
+    "type": "color",
+    "ref": "color.fill.subtle.tertiary",
+    "value": "rgb(0 0 0 / 0.0241)"
+  },
+  {
+    "name": "stepper.step.focus.glow",
+    "cssVar": "--mx-stepper-step-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "stepper.step.focus.outline-width",
+    "cssVar": "--mx-stepper-step-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "stepper.step.focus.outline-color",
+    "cssVar": "--mx-stepper-step-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "stepper.step.focus.outline-offset",
+    "cssVar": "--mx-stepper-step-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "stepper.step.disabled.color",
+    "cssVar": "--mx-stepper-step-disabled-color",
+    "type": "color",
+    "ref": "color.fg.disabled",
+    "value": "#a2a098"
+  },
+  {
+    "name": "stepper.step.current.color",
+    "cssVar": "--mx-stepper-step-current-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "stepper.step.done.color",
+    "cssVar": "--mx-stepper-step-done-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "stepper.indicator.radius",
+    "cssVar": "--mx-stepper-indicator-radius",
+    "type": "dimension",
+    "ref": "radius.full",
+    "value": "9999px"
+  },
+  {
+    "name": "stepper.indicator.bg",
+    "cssVar": "--mx-stepper-indicator-bg",
+    "type": "color",
+    "ref": "color.fill.control.default",
+    "value": "#f5f4f0"
+  },
+  {
+    "name": "stepper.indicator.border-width",
+    "cssVar": "--mx-stepper-indicator-border-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "1px"
+  },
+  {
+    "name": "stepper.indicator.border-color",
+    "cssVar": "--mx-stepper-indicator-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "stepper.indicator.color",
+    "cssVar": "--mx-stepper-indicator-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "stepper.indicator.font-size",
+    "cssVar": "--mx-stepper-indicator-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "stepper.indicator.font-weight",
+    "cssVar": "--mx-stepper-indicator-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "stepper.indicator.current.bg",
+    "cssVar": "--mx-stepper-indicator-current-bg",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "stepper.indicator.current.border-color",
+    "cssVar": "--mx-stepper-indicator-current-border-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "stepper.indicator.current.color",
+    "cssVar": "--mx-stepper-indicator-current-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "stepper.indicator.done.bg",
+    "cssVar": "--mx-stepper-indicator-done-bg",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "stepper.indicator.done.border-color",
+    "cssVar": "--mx-stepper-indicator-done-border-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "stepper.indicator.done.color",
+    "cssVar": "--mx-stepper-indicator-done-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "stepper.indicator.error.bg",
+    "cssVar": "--mx-stepper-indicator-error-bg",
+    "type": "color",
+    "ref": "color.danger.solid",
+    "value": "#b03659"
+  },
+  {
+    "name": "stepper.indicator.error.border-color",
+    "cssVar": "--mx-stepper-indicator-error-border-color",
+    "type": "color",
+    "ref": "color.danger.solid",
+    "value": "#b03659"
+  },
+  {
+    "name": "stepper.indicator.error.color",
+    "cssVar": "--mx-stepper-indicator-error-color",
+    "type": "color",
+    "ref": "color.danger.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "stepper.indicator.disabled.border-color",
+    "cssVar": "--mx-stepper-indicator-disabled-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.default",
+    "value": "rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "stepper.indicator.disabled.color",
+    "cssVar": "--mx-stepper-indicator-disabled-color",
+    "type": "color",
+    "ref": "color.fg.disabled",
+    "value": "#a2a098"
+  },
+  {
+    "name": "stepper.indicator.disabled.bg",
+    "cssVar": "--mx-stepper-indicator-disabled-bg",
+    "type": "color",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "stepper.mark.done.icon",
+    "cssVar": "--mx-stepper-mark-done-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-check)"
+  },
+  {
+    "name": "stepper.mark.done.bg",
+    "cssVar": "--mx-stepper-mark-done-bg",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "stepper.mark.error.icon",
+    "cssVar": "--mx-stepper-mark-error-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-danger)"
+  },
+  {
+    "name": "stepper.mark.error.bg",
+    "cssVar": "--mx-stepper-mark-error-bg",
+    "type": "color",
+    "ref": "color.danger.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "stepper.label.current.font-weight",
+    "cssVar": "--mx-stepper-label-current-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "stepper.label.error.color",
+    "cssVar": "--mx-stepper-label-error-color",
+    "type": "color",
+    "ref": "color.danger.fg",
+    "value": "#b03659"
+  },
+  {
+    "name": "stepper.description.color",
+    "cssVar": "--mx-stepper-description-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "stepper.description.disabled.color",
+    "cssVar": "--mx-stepper-description-disabled-color",
+    "type": "color",
+    "ref": "color.fg.disabled",
+    "value": "#a2a098"
+  },
+  {
+    "name": "stepper.note.color",
+    "cssVar": "--mx-stepper-note-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "stepper.line.height",
+    "cssVar": "--mx-stepper-line-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "2px"
+  },
+  {
+    "name": "stepper.line.bg",
+    "cssVar": "--mx-stepper-line-bg",
+    "type": "color",
+    "ref": "color.stroke.control.secondary",
+    "value": "rgb(0 0 0 / 0.2)"
+  },
+  {
+    "name": "stepper.line.done.bg",
+    "cssVar": "--mx-stepper-line-done-bg",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "stepper.line.radius",
+    "cssVar": "--mx-stepper-line-radius",
+    "type": "dimension",
+    "ref": null,
+    "value": "initial"
+  },
+  {
     "name": "switch.thumb-inset",
     "cssVar": "--mx-switch-thumb-inset",
     "type": "dimension",
@@ -24665,5 +25064,68 @@
     "type": "color",
     "ref": "color.danger.fg",
     "value": "#b03659"
+  },
+  {
+    "name": "wizard.gap",
+    "cssVar": "--mx-wizard-gap",
+    "type": "dimension",
+    "ref": "space.4",
+    "value": "1rem"
+  },
+  {
+    "name": "wizard.bar-gap",
+    "cssVar": "--mx-wizard-bar-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "wizard.rail-width",
+    "cssVar": "--mx-wizard-rail-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "14rem"
+  },
+  {
+    "name": "wizard.previous.variant",
+    "cssVar": "--mx-wizard-previous-variant",
+    "type": "keyword",
+    "ref": null,
+    "value": "outline"
+  },
+  {
+    "name": "wizard.next.variant",
+    "cssVar": "--mx-wizard-next-variant",
+    "type": "keyword",
+    "ref": null,
+    "value": "solid"
+  },
+  {
+    "name": "wizard.next.tone",
+    "cssVar": "--mx-wizard-next-tone",
+    "type": "keyword",
+    "ref": null,
+    "value": "accent"
+  },
+  {
+    "name": "wizard.bar.padding-top",
+    "cssVar": "--mx-wizard-bar-padding-top",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "wizard.bar.border-top-width",
+    "cssVar": "--mx-wizard-bar-border-top-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "1px"
+  },
+  {
+    "name": "wizard.bar.border-top-color",
+    "cssVar": "--mx-wizard-bar-border-top-color",
+    "type": "color",
+    "ref": "color.stroke.divider",
+    "value": "rgb(0 0 0 / 0.1)"
   }
 ]

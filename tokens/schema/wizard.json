@@ -1,0 +1,37 @@
+{
+  "wizard": {
+    "$description": "Wizard: a stepper, a page per step and the Back and Next buttons.",
+    "$selector": ".mx-wizard",
+    "gap": { "$type": "dimension", "$description": "Between the stepper, the pages and the bar." },
+    "bar-gap": { "$type": "dimension", "$description": "Between the buttons." },
+    "rail-width": { "$type": "dimension", "$description": "The stepper's width when it stands beside the pages." },
+    "$places": {
+      "previous": {
+        "$description": "The Back button.",
+        "selector": ".mx-wizard__previous",
+        "part": "button",
+        "tokens": ["variant"]
+      },
+      "next": {
+        "$description": "The Next button, Finish on the last step.",
+        "selector": ".mx-wizard__next",
+        "part": "button",
+        "tokens": ["variant", "tone"]
+      }
+    },
+    "$units": {
+      "frame": {
+        "$description": "The whole wizard: a language may box it.",
+        "selector": ".mx-wizard"
+      },
+      "page": {
+        "$description": "The page of the current step.",
+        "selector": ".mx-wizard__page"
+      },
+      "bar": {
+        "$description": "The bar with the buttons, under the pages.",
+        "selector": ".mx-wizard__bar"
+      }
+    }
+  }
+}

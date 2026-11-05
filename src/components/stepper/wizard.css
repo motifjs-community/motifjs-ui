@@ -1,0 +1,41 @@
+/* Wizard: the stepper, the pages and the bar with the buttons. Only the layout is here: the frame, a page and the
+   bar are units of the schema; the buttons are the kit's, their look in the bar from the wizard's places. Standing
+   (`data-orientation="vertical"`), the stepper takes a column at the start and the pages and the bar the rest. */
+@layer mx.components {
+    .mx-wizard {
+        display: flex;
+        box-sizing: border-box;
+        flex-direction: column;
+        gap: var(--_wizard-gap);
+        inline-size: 100%;
+        min-inline-size: 0;
+    }
+
+    .mx-wizard[data-orientation='vertical'] {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto;
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: var(--_wizard-gap);
+    }
+
+    .mx-wizard[data-orientation='vertical'] > .mx-wizard__stepper {
+        grid-row: 1 / span 2;
+        inline-size: var(--_wizard-rail-width);
+    }
+
+    .mx-wizard__pages {
+        flex: 1 1 auto;
+        min-inline-size: 0;
+        min-block-size: 0;
+    }
+
+    .mx-wizard__bar {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--_wizard-bar-gap);
+    }
+
+    .mx-wizard[data-orientation='vertical'] > .mx-wizard__bar {
+        grid-column: 2;
+    }
+}

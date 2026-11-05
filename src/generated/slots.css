@@ -2435,6 +2435,66 @@
     --_spinner-shape-contained-scale: var(--mx-spinner-shape-contained-scale);
   }
 
+  .mx-stepper {
+    --_stepper-size-sm: var(--mx-stepper-size-sm);
+    --_stepper-size-md: var(--mx-stepper-size-md);
+    --_stepper-size-lg: var(--mx-stepper-size-lg);
+    --_stepper-font-size-sm: var(--mx-stepper-font-size-sm);
+    --_stepper-font-size-md: var(--mx-stepper-font-size-md);
+    --_stepper-font-size-lg: var(--mx-stepper-font-size-lg);
+    --_stepper-description-font-size: var(--mx-stepper-description-font-size);
+    --_stepper-padding-sm: var(--mx-stepper-padding-sm);
+    --_stepper-padding-md: var(--mx-stepper-padding-md);
+    --_stepper-padding-lg: var(--mx-stepper-padding-lg);
+    --_stepper-gap: var(--mx-stepper-gap);
+    --_stepper-line-gap: var(--mx-stepper-line-gap);
+    --_stepper-line-min-length: var(--mx-stepper-line-min-length);
+    --_stepper-step-radius: var(--mx-stepper-step-radius);
+    --_stepper-step-color: var(--mx-stepper-step-color);
+    --_stepper-step-hover-bg: var(--mx-stepper-step-hover-bg);
+    --_stepper-step-hover-cursor: var(--mx-stepper-step-hover-cursor);
+    --_stepper-step-pressed-bg: var(--mx-stepper-step-pressed-bg);
+    --_stepper-step-focus-glow: var(--mx-stepper-step-focus-glow);
+    --_stepper-step-focus-outline-width: var(--mx-stepper-step-focus-outline-width);
+    --_stepper-step-focus-outline-color: var(--mx-stepper-step-focus-outline-color);
+    --_stepper-step-focus-outline-offset: var(--mx-stepper-step-focus-outline-offset);
+    --_stepper-step-disabled-color: var(--mx-stepper-step-disabled-color);
+    --_stepper-step-current-color: var(--mx-stepper-step-current-color);
+    --_stepper-step-done-color: var(--mx-stepper-step-done-color);
+    --_stepper-indicator-radius: var(--mx-stepper-indicator-radius);
+    --_stepper-indicator-bg: var(--mx-stepper-indicator-bg);
+    --_stepper-indicator-border-width: var(--mx-stepper-indicator-border-width);
+    --_stepper-indicator-border-color: var(--mx-stepper-indicator-border-color);
+    --_stepper-indicator-color: var(--mx-stepper-indicator-color);
+    --_stepper-indicator-font-size: var(--mx-stepper-indicator-font-size);
+    --_stepper-indicator-font-weight: var(--mx-stepper-indicator-font-weight);
+    --_stepper-indicator-current-bg: var(--mx-stepper-indicator-current-bg);
+    --_stepper-indicator-current-border-color: var(--mx-stepper-indicator-current-border-color);
+    --_stepper-indicator-current-color: var(--mx-stepper-indicator-current-color);
+    --_stepper-indicator-done-bg: var(--mx-stepper-indicator-done-bg);
+    --_stepper-indicator-done-border-color: var(--mx-stepper-indicator-done-border-color);
+    --_stepper-indicator-done-color: var(--mx-stepper-indicator-done-color);
+    --_stepper-indicator-error-bg: var(--mx-stepper-indicator-error-bg);
+    --_stepper-indicator-error-border-color: var(--mx-stepper-indicator-error-border-color);
+    --_stepper-indicator-error-color: var(--mx-stepper-indicator-error-color);
+    --_stepper-indicator-disabled-border-color: var(--mx-stepper-indicator-disabled-border-color);
+    --_stepper-indicator-disabled-color: var(--mx-stepper-indicator-disabled-color);
+    --_stepper-mark-done-icon: var(--mx-stepper-mark-done-icon);
+    --_stepper-mark-done-bg: var(--mx-stepper-mark-done-bg);
+    --_stepper-mark-error-icon: var(--mx-stepper-mark-error-icon);
+    --_stepper-mark-error-bg: var(--mx-stepper-mark-error-bg);
+    --_stepper-label-current-font-weight: var(--mx-stepper-label-current-font-weight);
+    --_stepper-label-error-color: var(--mx-stepper-label-error-color);
+    --_stepper-description-color: var(--mx-stepper-description-color);
+    --_stepper-description-disabled-color: var(--mx-stepper-description-disabled-color);
+    --_stepper-note-color: var(--mx-stepper-note-color);
+    --_stepper-line-height: var(--mx-stepper-line-height);
+    --_stepper-line-bg: var(--mx-stepper-line-bg);
+    --_stepper-line-done-bg: var(--mx-stepper-line-done-bg);
+    --_stepper-line-radius: var(--mx-stepper-line-radius);
+    --_stepper-indicator-disabled-bg: var(--mx-stepper-indicator-disabled-bg);
+  }
+
   .mx-switch {
     --_switch-thumb-inset: var(--mx-switch-thumb-inset);
     --_switch-gap: var(--mx-switch-gap);
@@ -3183,5 +3243,14 @@
     --_window-footer-padding-block: var(--mx-window-footer-padding-block);
     --_window-footer-padding-inline: var(--mx-window-footer-padding-inline);
     --_window-bar-dialog-color: var(--mx-window-bar-dialog-color);
+  }
+
+  .mx-wizard {
+    --_wizard-gap: var(--mx-wizard-gap);
+    --_wizard-bar-gap: var(--mx-wizard-bar-gap);
+    --_wizard-rail-width: var(--mx-wizard-rail-width);
+    --_wizard-bar-padding-top: var(--mx-wizard-bar-padding-top);
+    --_wizard-bar-border-top-width: var(--mx-wizard-bar-border-top-width);
+    --_wizard-bar-border-top-color: var(--mx-wizard-bar-border-top-color);
   }
 }

@@ -1,0 +1,98 @@
+{
+  "stepper": {
+    "$description": "Stepper: the steps of a longer task and where the user stands in them; the Wizard builds on it.",
+    "$selector": ".mx-stepper",
+    "size": {
+      "sm": { "$type": "dimension", "$description": "The indicator of a step." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "font-size": {
+      "sm": { "$type": "dimension", "$description": "A step's text." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "description-font-size": { "$type": "dimension", "$description": "A step's second line, and its optional note." },
+    "padding": {
+      "sm": { "$type": "dimension", "$description": "The space around a step, its indicator and texts." },
+      "md": { "$type": "dimension" },
+      "lg": { "$type": "dimension" }
+    },
+    "gap": { "$type": "dimension", "$description": "Between the indicator and the texts." },
+    "line-gap": { "$type": "dimension", "$description": "Between a line and the indicators it joins." },
+    "line-min-length": { "$type": "dimension", "$description": "The shortest a line between two steps gets." },
+    "$units": {
+      "step": {
+        "$description": "A step, its indicator and texts together: `hover`, `pressed` and `focus` when it is a button; `disabled` when it cannot be reached; `current`, `done`, `error`.",
+        "selector": ".mx-stepper__step",
+        "defaults": {
+          "padding": "var(--_padding)",
+          "gap": "var(--_stepper-gap)",
+          "font-size": "var(--_font-size)",
+          "cursor": "default"
+        },
+        "states": {
+          "hover": "button.mx-stepper__step:not([aria-disabled='true']):hover",
+          "pressed": { "selector": "button.mx-stepper__step:not([aria-disabled='true']):active", "from": "hover" },
+          "focus": ".mx-stepper__step:focus-visible",
+          "disabled": ".mx-stepper__step[aria-disabled='true']",
+          "current": ".mx-stepper__step[aria-current]",
+          "done": ".mx-stepper__step[data-status='done']",
+          "error": ".mx-stepper__step[data-status='error']"
+        }
+      },
+      "indicator": {
+        "$description": "The circle (or box) with the step's number, icon or mark: `current`, `done`, `error`, `disabled`, and `hover` under the pointer.",
+        "selector": ".mx-stepper__indicator",
+        "defaults": { "size": "var(--_size)" },
+        "states": {
+          "hover": "button.mx-stepper__step:not([aria-disabled='true']):hover .mx-stepper__indicator",
+          "current": ".mx-stepper__indicator[data-status='current']",
+          "done": ".mx-stepper__indicator[data-status='done']",
+          "error": ".mx-stepper__indicator[data-status='error']",
+          "disabled": ".mx-stepper__step[aria-disabled='true'] .mx-stepper__indicator"
+        }
+      },
+      "mark": {
+        "$description": "The glyph in the indicator of a completed step (`done`) or of one with an error (`error`): `icon` its shape, `bg` its colour.",
+        "selector": ".mx-stepper__mark",
+        "defaults": { "size": "calc(var(--_size) * 0.6)" },
+        "states": {
+          "done": ".mx-stepper__mark[data-status='done']",
+          "error": ".mx-stepper__mark[data-status='error']"
+        }
+      },
+      "label": {
+        "$description": "A step's text: `current`, `done`, `error`, `disabled`.",
+        "selector": ".mx-stepper__label",
+        "states": {
+          "current": ".mx-stepper__step[aria-current] .mx-stepper__label",
+          "done": ".mx-stepper__step[data-status='done'] .mx-stepper__label",
+          "error": ".mx-stepper__step[data-status='error'] .mx-stepper__label",
+          "disabled": ".mx-stepper__step[aria-disabled='true'] .mx-stepper__label"
+        }
+      },
+      "description": {
+        "$description": "A step's second line (`disabled` when the step cannot be reached).",
+        "selector": ".mx-stepper__description",
+        "defaults": { "font-size": "var(--_stepper-description-font-size)" },
+        "states": {
+          "disabled": ".mx-stepper__step[aria-disabled='true'] .mx-stepper__description"
+        }
+      },
+      "note": {
+        "$description": "The “Optional” note under a step's text.",
+        "selector": ".mx-stepper__note",
+        "defaults": { "font-size": "var(--_stepper-description-font-size)" }
+      },
+      "line": {
+        "$description": "The line from a step to the next, `done` up to the current step. Lying in a horizontal stepper, standing in a vertical one.",
+        "selector": ".mx-stepper__line",
+        "states": {
+          "done": ".mx-stepper__line[data-status='done']"
+        },
+        "turn": { "where": ".mx-stepper[data-orientation='vertical']", "what": ["size", "radius", "margin", "padding", "border"] }
+      }
+    }
+  }
+}

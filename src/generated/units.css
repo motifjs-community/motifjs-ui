@@ -6117,6 +6117,168 @@
     scale: var(--_spinner-shape-contained-scale, none);
   }
 
+  .mx-stepper__step {
+    padding-block-start: var(--_padding);
+    padding-inline-end: var(--_padding);
+    padding-block-end: var(--_padding);
+    padding-inline-start: var(--_padding);
+    gap: var(--_stepper-gap);
+    border-start-start-radius: var(--_stepper-step-radius, 0px);
+    border-start-end-radius: var(--_stepper-step-radius, 0px);
+    border-end-start-radius: var(--_stepper-step-radius, 0px);
+    border-end-end-radius: var(--_stepper-step-radius, 0px);
+    color: var(--_stepper-step-color, inherit);
+    font-size: var(--_font-size);
+    outline-style: solid;
+    outline-width: 0px;
+    cursor: default;
+  }
+
+  button.mx-stepper__step:not([aria-disabled='true']):hover {
+    background-color: var(--_stepper-step-hover-bg, transparent);
+    cursor: var(--_stepper-step-hover-cursor, default);
+  }
+
+  button.mx-stepper__step:not([aria-disabled='true']):active {
+    background-color: var(--_stepper-step-pressed-bg, var(--_stepper-step-hover-bg, transparent));
+  }
+
+  .mx-stepper__step:focus-visible {
+    box-shadow: var(--_stepper-step-focus-glow, 0 0 #0000), 0 0 #0000;
+    outline-width: var(--_stepper-step-focus-outline-width, 0px);
+    outline-color: var(--_stepper-step-focus-outline-color, currentcolor);
+    outline-offset: var(--_stepper-step-focus-outline-offset, 0px);
+  }
+
+  .mx-stepper__step[aria-disabled='true'] {
+    color: var(--_stepper-step-disabled-color, var(--_stepper-step-color, inherit));
+  }
+
+  .mx-stepper__step[aria-current] {
+    color: var(--_stepper-step-current-color, var(--_stepper-step-color, inherit));
+  }
+
+  .mx-stepper__step[data-status='done'] {
+    color: var(--_stepper-step-done-color, var(--_stepper-step-color, inherit));
+  }
+
+  .mx-stepper__indicator {
+    inline-size: var(--_size);
+    block-size: var(--_size);
+    background-color: var(--_stepper-indicator-bg, transparent);
+    border-style: solid;
+    border-block-start-width: var(--_stepper-indicator-border-width, 0px);
+    border-inline-end-width: var(--_stepper-indicator-border-width, 0px);
+    border-block-end-width: var(--_stepper-indicator-border-width, 0px);
+    border-inline-start-width: var(--_stepper-indicator-border-width, 0px);
+    border-block-start-color: var(--_stepper-indicator-border-color, currentcolor);
+    border-inline-end-color: var(--_stepper-indicator-border-color, currentcolor);
+    border-block-end-color: var(--_stepper-indicator-border-color, currentcolor);
+    border-inline-start-color: var(--_stepper-indicator-border-color, currentcolor);
+    border-start-start-radius: var(--_stepper-indicator-radius, 0px);
+    border-start-end-radius: var(--_stepper-indicator-radius, 0px);
+    border-end-start-radius: var(--_stepper-indicator-radius, 0px);
+    border-end-end-radius: var(--_stepper-indicator-radius, 0px);
+    color: var(--_stepper-indicator-color, inherit);
+    font-size: var(--_stepper-indicator-font-size, inherit);
+    font-weight: var(--_stepper-indicator-font-weight, inherit);
+  }
+
+  .mx-stepper__indicator[data-status='current'] {
+    background-color: var(--_stepper-indicator-current-bg, var(--_stepper-indicator-bg, transparent));
+    border-block-start-color: var(--_stepper-indicator-current-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    border-inline-end-color: var(--_stepper-indicator-current-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    border-block-end-color: var(--_stepper-indicator-current-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    border-inline-start-color: var(--_stepper-indicator-current-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    color: var(--_stepper-indicator-current-color, var(--_stepper-indicator-color, inherit));
+  }
+
+  .mx-stepper__indicator[data-status='done'] {
+    background-color: var(--_stepper-indicator-done-bg, var(--_stepper-indicator-bg, transparent));
+    border-block-start-color: var(--_stepper-indicator-done-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    border-inline-end-color: var(--_stepper-indicator-done-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    border-block-end-color: var(--_stepper-indicator-done-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    border-inline-start-color: var(--_stepper-indicator-done-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    color: var(--_stepper-indicator-done-color, var(--_stepper-indicator-color, inherit));
+  }
+
+  .mx-stepper__indicator[data-status='error'] {
+    background-color: var(--_stepper-indicator-error-bg, var(--_stepper-indicator-bg, transparent));
+    border-block-start-color: var(--_stepper-indicator-error-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    border-inline-end-color: var(--_stepper-indicator-error-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    border-block-end-color: var(--_stepper-indicator-error-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    border-inline-start-color: var(--_stepper-indicator-error-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    color: var(--_stepper-indicator-error-color, var(--_stepper-indicator-color, inherit));
+  }
+
+  .mx-stepper__step[aria-disabled='true'] .mx-stepper__indicator {
+    background-color: var(--_stepper-indicator-disabled-bg, var(--_stepper-indicator-bg, transparent));
+    border-block-start-color: var(--_stepper-indicator-disabled-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    border-inline-end-color: var(--_stepper-indicator-disabled-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    border-block-end-color: var(--_stepper-indicator-disabled-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    border-inline-start-color: var(--_stepper-indicator-disabled-border-color, var(--_stepper-indicator-border-color, currentcolor));
+    color: var(--_stepper-indicator-disabled-color, var(--_stepper-indicator-color, inherit));
+  }
+
+  .mx-stepper__mark {
+    inline-size: calc(var(--_size) * 0.6);
+    block-size: calc(var(--_size) * 0.6);
+  }
+
+  .mx-stepper__mark[data-status='done'] {
+    background-color: var(--_stepper-mark-done-bg, transparent);
+    --_icon: var(--_stepper-mark-done-icon, none);
+  }
+
+  .mx-stepper__mark[data-status='error'] {
+    background-color: var(--_stepper-mark-error-bg, transparent);
+    --_icon: var(--_stepper-mark-error-icon, none);
+  }
+
+  .mx-stepper__step[aria-current] .mx-stepper__label {
+    font-weight: var(--_stepper-label-current-font-weight, inherit);
+  }
+
+  .mx-stepper__step[data-status='error'] .mx-stepper__label {
+    color: var(--_stepper-label-error-color, inherit);
+  }
+
+  .mx-stepper__description {
+    color: var(--_stepper-description-color, inherit);
+    font-size: var(--_stepper-description-font-size);
+  }
+
+  .mx-stepper__step[aria-disabled='true'] .mx-stepper__description {
+    color: var(--_stepper-description-disabled-color, var(--_stepper-description-color, inherit));
+  }
+
+  .mx-stepper__note {
+    color: var(--_stepper-note-color, inherit);
+    font-size: var(--_stepper-description-font-size);
+  }
+
+  .mx-stepper__line {
+    block-size: var(--_stepper-line-height, auto);
+    background-color: var(--_stepper-line-bg, transparent);
+    border-start-start-radius: var(--_stepper-line-radius, 0px);
+    border-start-end-radius: var(--_stepper-line-radius, 0px);
+    border-end-start-radius: var(--_stepper-line-radius, 0px);
+    border-end-end-radius: var(--_stepper-line-radius, 0px);
+  }
+
+  .mx-stepper__line:where(.mx-stepper[data-orientation='vertical'] *) {
+    block-size: auto;
+    inline-size: var(--_stepper-line-height, auto);
+    border-start-start-radius: var(--_stepper-line-radius, 0px);
+    border-end-start-radius: var(--_stepper-line-radius, 0px);
+    border-start-end-radius: var(--_stepper-line-radius, 0px);
+    border-end-end-radius: var(--_stepper-line-radius, 0px);
+  }
+
+  .mx-stepper__line[data-status='done'] {
+    background-color: var(--_stepper-line-done-bg, var(--_stepper-line-bg, transparent));
+  }
+
   .mx-switch__input {
     block-size: var(--_track-height);
     min-inline-size: var(--_track-width);
@@ -8026,5 +8188,15 @@
 
   .mx-message-box[data-tone='danger'] > .mx-message-box__icon > * {
     color: var(--_window-message-icon-danger-color, var(--_window-message-icon-color, inherit));
+  }
+
+  .mx-wizard__bar {
+    padding-block-start: var(--_wizard-bar-padding-top, 0px);
+    border-style: solid;
+    border-block-start-width: var(--_wizard-bar-border-top-width, 0px);
+    border-inline-end-width: 0px;
+    border-block-end-width: 0px;
+    border-inline-start-width: 0px;
+    border-block-start-color: var(--_wizard-bar-border-top-color, currentcolor);
   }
 }

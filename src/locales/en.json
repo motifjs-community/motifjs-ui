@@ -553,5 +553,13 @@
   "recurrenceSummaryOnNthOf": "{rule} on the {nth} {weekday} of {month}",
   "recurrenceSummaryCount": "{rule}, {count, plural, one {# time} other {# times}}",
   "recurrenceSummaryUntil": "{rule}, until {date}",
-  "recurrenceSummaryCustom": "{rule}, by a rule of its own"
+  "recurrenceSummaryCustom": "{rule}, by a rule of its own",
+  "steps": "Steps",
+  "stepOf": "Step {index, number} of {count, number}",
+  "stepOptional": "Optional",
+  "stepDone": "Completed",
+  "stepError": "Needs attention",
+  "wizardNext": "Next",
+  "wizardPrevious": "Back",
+  "wizardFinish": "Finish"
 }

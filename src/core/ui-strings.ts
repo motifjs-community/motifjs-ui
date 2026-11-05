@@ -572,4 +572,13 @@ export interface UiStrings {
   recurrenceSummaryCount: string;
   recurrenceSummaryUntil: string;
   recurrenceSummaryCustom: string;
+  /** The stepper and the wizard. */
+  steps: string;
+  stepOf: string;
+  stepOptional: string;
+  stepDone: string;
+  stepError: string;
+  wizardNext: string;
+  wizardPrevious: string;
+  wizardFinish: string;
 }

@@ -6,6 +6,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### New components
+
+- `Stepper`: the steps of a longer task and where the user stands, an indicator and a text per step, a line between
+  them; completed, current, pending and error statuses, optional and disabled steps, an icon in place of the number;
+  linear order (a press reaches a completed step or the next one) or free; `onStepChanging` may refuse or wait on a
+  promise; `next()`, `previous()`, `goTo()`; horizontal with the texts under or after the indicators, or vertical;
+  one Tab stop with the arrow keys; `x-model`. Units in the five languages: the step, its indicator, the mark, the
+  texts and the line (which turns a quarter standing).
+- `Wizard` and `WizardStep`: a stepper above or beside a page per step and the Back and Next buttons. Next validates
+  the kit's fields on the page, then the step's own `validate`; a page that fails keeps the wizard, marks its step
+  and focuses the first invalid field. On the last step Next finishes (`onFinishing` may wait, `onFinished`). Steps
+  from JSX or from `steps` with content factories, `add`, `insert`, `remove`; `lazy` and `keepAlive` as in `Tabs`.
+- Kit texts `steps`, `stepOf`, `stepOptional`, `stepDone`, `stepError`, `wizardNext`, `wizardPrevious`,
+  `wizardFinish` in English and Turkish.
+
 ### Language
 
 - A Language page in the docs: switching, the packs, a pack of your own, `connectI18n`, your own texts that follow,

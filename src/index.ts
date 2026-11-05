@@ -25,6 +25,7 @@ export * from './components/rating';
 export * from './components/colorpicker';
 export * from './components/colorbox';
 export * from './components/breadcrumb';
+export * from './components/stepper';
 export * from './components/pagination';
 export * from './components/toast';
 export * from './components/tabs';

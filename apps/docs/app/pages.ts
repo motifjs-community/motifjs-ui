@@ -81,6 +81,8 @@ export const GROUPS = [
       { id: 'tabs', label: 'Tabs', title: 'Tabs', path: '/tabs', related: ['accordion', 'keyboard'] },
       { id: 'breadcrumb', label: 'Breadcrumb', title: 'Breadcrumb', path: '/breadcrumb', related: ['tabs', 'menus'] },
       { id: 'pagination', label: 'Pagination', title: 'Pagination', path: '/pagination', related: ['datagrid', 'breadcrumb'] },
+      { id: 'stepper', label: 'Stepper', title: 'Stepper', path: '/stepper', related: ['wizard', 'tabs', 'breadcrumb'] },
+      { id: 'wizard', label: 'Wizard', title: 'Wizard', path: '/wizard', related: ['stepper', 'formlayout', 'window'] },
       { id: 'accordion', label: 'Accordion', title: 'Accordion', path: '/accordion', related: ['tabs'] },
       { id: 'window', label: 'Window', title: 'Window and dialog', path: '/window', related: ['button', 'keyboard'] },
       { id: 'bottomsheet', label: 'BottomSheet', title: 'BottomSheet', path: '/bottomsheet', related: ['drawer', 'actionsheet', 'window'] },
