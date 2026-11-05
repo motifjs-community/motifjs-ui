@@ -1,6 +1,6 @@
 # Skeleton
 
-> Display · @motifx-community/ui 0.1.0-beta.1
+> Display · @motifx-community/ui 0.1.0-beta.2
 
 The shape of what is loading, so the page keeps its layout while data arrives. Given content, it shows the content in the same place once loading ends.
 

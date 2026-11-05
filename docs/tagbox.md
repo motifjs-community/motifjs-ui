@@ -1,6 +1,6 @@
 # TagBox
 
-> Data · @motifx-community/ui 0.1.0-beta.1
+> Data · @motifx-community/ui 0.1.0-beta.2
 
 Picks several items. The chosen ones are tags in the field, followed by a text input that searches the list; items come from memory or from a data source, and typed text can become a tag of its own.
 
@@ -341,7 +341,7 @@ export default function Validation() {
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, TagBox, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, TagBox, uiLocale } from '@motifx-community/ui';
 import { skills } from './skills';
 
 /** Switches the texts of every tag box on the page: remove buttons, “+3”, “Select all”. */
@@ -349,7 +349,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

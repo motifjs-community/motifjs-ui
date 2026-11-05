@@ -1,6 +1,6 @@
 # @motifx-community/ui
 
-> Get started · @motifx-community/ui 0.1.0-beta.1
+> Get started · @motifx-community/ui 0.1.0-beta.2
 
 Components for MotifJS that work the way desktop UI does — created when needed, shown anywhere, closed and disposed like windows — drawn from the MotifJS design system's tokens.
 

@@ -1,6 +1,6 @@
 # TreeView
 
-> Data · @motifx-community/ui 0.1.0-beta.1
+> Data · @motifx-community/ui 0.1.0-beta.2
 
 A tree view shows items in a hierarchy. Rows open and close, are selected one or many at a time, can carry check boxes that add up to their parents, can be searched, and can load their children when they are first opened. Long trees draw only the rows in view.
 
@@ -185,7 +185,7 @@ The tree writes four texts, all from `uiLocale.strings`: `noItems` (nothing to s
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the texts of the kit; the trees on the page follow at once. */
@@ -193,7 +193,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

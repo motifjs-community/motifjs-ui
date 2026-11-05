@@ -1,6 +1,6 @@
 # Scheduler: Timeline
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.1
+> Scheduler · @motifx-community/ui 0.1.0-beta.2
 
 A row per resource with the time running along it: a day, a week, a work week or a month. Appointments at the same time stack in their row, and the row grows to fit them.
 

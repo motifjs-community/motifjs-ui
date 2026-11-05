@@ -1,6 +1,6 @@
 # NumberBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.1
+> Editors · @motifx-community/ui 0.1.0-beta.2
 
 A number field: arrow keys, PageUp / PageDown and spin buttons that repeat while held, bounds, a step without float noise, a format for display (currency, percent) and typing in the locale’s own way.
 
@@ -212,7 +212,7 @@ The names of the spin buttons and the range messages come from `uiLocale.strings
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the names of the spin buttons and the range messages. */
@@ -221,7 +221,7 @@ export default function Localization() {
 
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
 
   return (

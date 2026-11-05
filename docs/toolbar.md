@@ -1,6 +1,6 @@
 # Toolbar
 
-> Buttons · @motifx-community/ui 0.1.0-beta.1
+> Buttons · @motifx-community/ui 0.1.0-beta.2
 
 A bar of commands: buttons, toggle buttons, menus and fields in groups between separators. It is one Tab stop and the arrow keys move inside it; items that do not fit move into a “more” menu at the end. Items come as data, as JSX children, or both.
 
@@ -167,7 +167,7 @@ The only text a toolbar writes itself is the name of its “more” button, from
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the texts of the kit; the “more” buttons take the new name at once. */
@@ -175,7 +175,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

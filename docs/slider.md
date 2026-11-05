@@ -1,6 +1,6 @@
 # Slider
 
-> Editors · @motifx-community/ui 0.1.0-beta.1
+> Editors · @motifx-community/ui 0.1.0-beta.2
 
 A value picked on a track by dragging a thumb or with the keys: one number, or a range with two thumbs. Steps, marks with labels, a value bubble, a vertical form and number formatting, with the label, help line and validation every field has.
 
@@ -247,7 +247,7 @@ The names of the two thumbs of a range come from `uiLocale.strings` (`minimum`, 
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, Slider, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, Slider, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the names of the thumbs; the price slider writes its numbers in the chosen language. */
@@ -255,7 +255,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

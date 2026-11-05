@@ -1,6 +1,6 @@
 # DropDown
 
-> Choice · @motifx-community/ui 0.1.0-beta.1
+> Choice · @motifx-community/ui 0.1.0-beta.2
 
 Picks one item from a list. The field shows the chosen item; the list opens below it with the keyboard or a press, can be searched, grouped and drawn your way, and stays fast with thousands of items.
 
@@ -156,14 +156,14 @@ The search box, the clear button, the empty list text, the wait (`loading`) and 
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, DropDown, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, DropDown, uiLocale } from '@motifx-community/ui';
 
 /** Switches the texts of every drop-down on the page: the search box, the clear button, the empty list. */
 export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

@@ -1,6 +1,6 @@
 # Rating
 
-> Editors · @motifx-community/ui 0.1.0-beta.1
+> Editors · @motifx-community/ui 0.1.0-beta.2
 
 A row of stars to give a score or to show one, whole or by halves. It is a field: label, help text, rules and `x-model` work as in every field.
 

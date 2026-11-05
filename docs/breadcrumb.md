@@ -1,6 +1,6 @@
 # Breadcrumb
 
-> Navigation · @motifx-community/ui 0.1.0-beta.1
+> Navigation · @motifx-community/ui 0.1.0-beta.2
 
 The way to the current page: each step a link or a button, the current page last. Steps that do not fit go into a menu after the first.
 

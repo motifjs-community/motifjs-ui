@@ -1,6 +1,6 @@
 # ButtonGroup
 
-> Buttons · @motifx-community/ui 0.1.0-beta.1
+> Buttons · @motifx-community/ui 0.1.0-beta.2
 
 Buttons that belong together: a segmented choice of one or several, or a row of actions. The buttons are the kit’s own, touching by default.
 

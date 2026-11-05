@@ -1,6 +1,6 @@
 # ListBox
 
-> Data · @motifx-community/ui 0.1.0-beta.1
+> Data · @motifx-community/ui 0.1.0-beta.2
 
 A list that stays on the page. One item or several are chosen with the keys or the pointer; items come from memory or from a data source, can be searched and grouped, and long lists draw only the rows in view.
 
@@ -164,14 +164,14 @@ export const cities = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Kon
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, ListBox, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, ListBox, uiLocale } from '@motifx-community/ui';
 
 /** Switches the texts of every list on the page: “Select all”, the search box, “No items”. */
 export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

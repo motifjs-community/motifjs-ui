@@ -1,6 +1,6 @@
 # ColorBox and ColorPicker
 
-> Editors · @motifx-community/ui 0.1.0-beta.1
+> Editors · @motifx-community/ui 0.1.0-beta.2
 
 A colour as a field, with a picker in a popup; or the picker on its own. The picker has an area of saturation and brightness, a hue strip, an opacity strip, inputs for the channels and preset colours.
 

@@ -1,6 +1,6 @@
 # TabDocumentManager: New windows
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.1
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.2
 
 A document, a group or a floating window moves into a browser window of its own, and back. Its content moves with it, nothing is made again, and the new window is a part of the same manager: its tabs, menus, keys and drag work as they do here.
 

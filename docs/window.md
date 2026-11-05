@@ -1,6 +1,6 @@
 # Window and dialog
 
-> Navigation · @motifx-community/ui 0.1.0-beta.1
+> Navigation · @motifx-community/ui 0.1.0-beta.2
 
 A window or a dialog on a native `<dialog>`: one form, shown modeless or modal by whoever shows it. It has a title bar, moves, resizes, minimizes and maximizes; Enter and Escape press its buttons; forms open forms. `messageBox` and `confirm` cover the common questions.
 
@@ -327,7 +327,7 @@ The title bar buttons and the `ok`, `cancel`, `yes`, `no` buttons of a message b
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, messageBox, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, messageBox, uiLocale } from '@motifx-community/ui';
 
 /** Switches the names of the title bar buttons and of the message box buttons. */
 export default function Localization() {
@@ -335,7 +335,7 @@ export default function Localization() {
 
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
 
   const ask = () =>

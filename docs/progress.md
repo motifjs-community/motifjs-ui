@@ -1,6 +1,6 @@
 # ProgressBar and Spinner
 
-> Feedback · @motifx-community/ui 0.1.0-beta.1
+> Feedback · @motifx-community/ui 0.1.0-beta.2
 
 ProgressBar shows how far some work is, as a line or a circle, or that it runs when that is not known. Spinner says "busy, wait": a turning ring, alone or over a panel while it loads, shown only after a delay so quick work does not flash it.
 
@@ -307,7 +307,7 @@ A bar or a spinner without a label is named `uiLocale.strings.loading`. The perc
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, ProgressBar, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, ProgressBar, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the name of unlabelled bars and spinners, and the language the percent is written in. */
@@ -315,7 +315,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

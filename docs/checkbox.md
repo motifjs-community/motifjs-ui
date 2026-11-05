@@ -1,6 +1,6 @@
 # CheckBox
 
-> Choice · @motifx-community/ui 0.1.0-beta.1
+> Choice · @motifx-community/ui 0.1.0-beta.2
 
 A checkbox with its caption: checked, unchecked or indeterminate, three states on request, read-only, required and checked with its group. A native checkbox underneath, drawn from the design tokens.
 
@@ -244,7 +244,7 @@ The checkbox writes no text of its own; the `required` message comes from `uiLoc
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the texts of every field on the page; a required message already shown follows too. */
@@ -252,7 +252,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

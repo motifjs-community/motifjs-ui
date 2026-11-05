@@ -1,6 +1,6 @@
 # ActionSheet
 
-> Navigation · @motifx-community/ui 0.1.0-beta.1
+> Navigation · @motifx-community/ui 0.1.0-beta.2
 
 A list of commands that comes up from the bottom, made of the kit's menu items and large enough for a finger, with a title, a message and a cancel button apart. A context menu opens its items here on a touch screen.
 

@@ -1,6 +1,6 @@
 # Layout
 
-> Navigation · @motifx-community/ui 0.1.0-beta.1
+> Navigation · @motifx-community/ui 0.1.0-beta.2
 
 Containers that place controls: `Stack` (a row or a column), `Grid` (rows and columns), `Panel` (a plain box that can scroll), `GroupBox` (a titled frame), `DockPanel` (children stuck to its edges) and `SplitContainer` (two panes and a splitter). All of them are controls: they disable and hide what is inside, and lay out children added at any time.
 
@@ -426,7 +426,7 @@ The only text the containers write is the splitter's name, `uiLocale.strings.res
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the texts of the kit; the splitters on the page take the new name at once. */
@@ -434,7 +434,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

@@ -1,6 +1,6 @@
 # Keyboard and focus
 
-> Foundations · @motifx-community/ui 0.1.0-beta.1
+> Foundations · @motifx-community/ui 0.1.0-beta.2
 
 The rules every control follows: Tab order, the active control of a container, focus that never falls to `<body>`, `&File` access keys and app-wide shortcuts.
 

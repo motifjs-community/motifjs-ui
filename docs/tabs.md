@@ -1,6 +1,6 @@
 # Tabs
 
-> Navigation · @motifx-community/ui 0.1.0-beta.1
+> Navigation · @motifx-community/ui 0.1.0-beta.2
 
 Tabs show one panel at a time under a strip of tabs: from JSX or from code, closable, with icons and badges, scroll buttons when the tabs do not fit, four placements and panels built when they are first shown.
 
@@ -346,7 +346,7 @@ Tabs write one text: the close button's tooltip, `uiLocale.strings.close`. Every
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the texts of every component on the page, the tabs' close button included. */
@@ -354,7 +354,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

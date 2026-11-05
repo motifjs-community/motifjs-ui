@@ -1,6 +1,6 @@
 # DataGrid: Layout and events
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.1
+> DataGrid · @motifx-community/ui 0.1.0-beta.2
 
 ## Toolbar
 

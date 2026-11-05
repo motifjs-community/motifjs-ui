@@ -1,6 +1,6 @@
 # FormLayout
 
-> Navigation · @motifx-community/ui 0.1.0-beta.1
+> Navigation · @motifx-community/ui 0.1.0-beta.2
 
 Lays out the fields of a data object on a grid. Each field gets an editor — by name, or by the type of its value — bound to the object both ways; groups, spans and buttons arrange them; sending the form checks every field first.
 

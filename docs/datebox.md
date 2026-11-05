@@ -1,6 +1,6 @@
 # DateBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.1
+> Editors · @motifx-community/ui 0.1.0-beta.2
 
 A date, a time or both. It is typed in the order of the locale through a mask, or picked from a calendar and a list of times; `min`, `max` and `disabledDates` limit both ways.
 
@@ -146,14 +146,14 @@ Button names and messages come from `uiLocale.strings`; dates and names from `lo
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, uiLocale } from '@motifx-community/ui';
 
 /** Switches the button names and messages of every date box on the page. */
 export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return <Button text={() => (s.lang === 'en' ? 'Language: English' : 'Dil: Türkçe')} variant="outline" onclick={toggle} />;
 }

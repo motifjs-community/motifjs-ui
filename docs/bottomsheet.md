@@ -1,6 +1,6 @@
 # BottomSheet
 
-> Navigation · @motifx-community/ui 0.1.0-beta.1
+> Navigation · @motifx-community/ui 0.1.0-beta.2
 
 A panel that comes up from the bottom of the page or of a container and stops at a few heights: a peek, half, full, as tall as its content, or heights of your own. Dragged by its handle and its title, flicked, swiped down to close; modal or not, with the browser's back closing it on a phone.
 
@@ -225,7 +225,7 @@ The handle's name and heights, the default name and the close button come from `
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { BottomSheet, Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { BottomSheet, Button, uiLocale } from '@motifx-community/ui';
 
 /** The handle's name and heights and the close button's name come from uiLocale. */
 export default function Localization() {
@@ -233,7 +233,7 @@ export default function Localization() {
 
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
 
   return (

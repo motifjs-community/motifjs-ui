@@ -1,6 +1,6 @@
 # DataGrid: API reference
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.1
+> DataGrid · @motifx-community/ui 0.1.0-beta.2
 
 ## Columns
 
@@ -306,7 +306,7 @@ The rows and their saving are the data layer's: `grid.dataSource` and `grid.chan
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, DataGrid, enStrings, Stack, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, DataGrid, Stack, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 import type { Order } from './order';
 import { columns } from './orders';
@@ -316,7 +316,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
 
   return (

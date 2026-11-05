@@ -1,6 +1,6 @@
 # TextArea
 
-> Editors · @motifx-community/ui 0.1.0-beta.1
+> Editors · @motifx-community/ui 0.1.0-beta.2
 
 A text field of several lines: a box that grows with the text or that the user drags bigger, a character counter, a clear button, Ctrl+Enter to send, and the label, help text and validation every field has.
 
@@ -217,7 +217,7 @@ The name of the clear button and the validation messages come from `uiLocale.str
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the texts of every field on the page, the clear button's name included. */
@@ -225,7 +225,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

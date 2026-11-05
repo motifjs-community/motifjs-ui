@@ -1,6 +1,6 @@
 # Accordion
 
-> Navigation · @motifx-community/ui 0.1.0-beta.1
+> Navigation · @motifx-community/ui 0.1.0-beta.2
 
 An accordion opens and closes sections under their headers: one at a time or several, kept open, with icons, three looks and sections built when they are first opened.
 

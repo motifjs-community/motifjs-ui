@@ -1,6 +1,6 @@
 # Button
 
-> Buttons · @motifx-community/ui 0.1.0-beta.1
+> Buttons · @motifx-community/ui 0.1.0-beta.2
 
 A native `<button>` drawn from the design tokens: three variants, three tones, three sizes, an icon, an `&` access key. It can be a toggle, show that work is running, and open a menu or any content — from the whole button, or with `split` from an arrow next to it while the button keeps its own action.
 
@@ -304,7 +304,7 @@ The only text a button writes itself is the name of a split button's arrow. It c
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** The name of a split button's arrow, from uiLocale: a shipped language or a text of your own. */
@@ -313,7 +313,7 @@ export default function Localization() {
 
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
 
   return (

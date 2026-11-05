@@ -1,6 +1,6 @@
 # TextBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.1
+> Editors · @motifx-community/ui 0.1.0-beta.2
 
 A one-line text field with its label, help text and error: placeholder, prefix and suffix, buttons in the box, a clear button, a password that can be shown, a character counter, an input mask and validation — alone, in a group, or every field in a panel.
 
@@ -316,7 +316,7 @@ The names of the clear and password buttons and every validation message come fr
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
 /** Switches the texts of every field on the page; errors already shown follow too. */
@@ -324,7 +324,7 @@ export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
   return (
     <>

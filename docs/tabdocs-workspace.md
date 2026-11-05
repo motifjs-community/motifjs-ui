@@ -1,6 +1,6 @@
 # TabDocumentManager: A whole workspace
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.1
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.2
 
 A whole screen made of the kit's parts: a menu bar, the manager, a DataGrid with everything turned on, forms and a tool docked at the bottom. Each part is the same component it is on its own page; the manager only holds them.
 

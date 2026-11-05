@@ -1,6 +1,6 @@
 # Tooltip
 
-> Feedback · @motifx-community/ui 0.1.0-beta.1
+> Feedback · @motifx-community/ui 0.1.0-beta.2
 
 A short description shown next to an element: after the pointer rests on it, when it gets keyboard focus, or from code. It can be hovered, Escape hides it, and one is open at a time on the page.
 

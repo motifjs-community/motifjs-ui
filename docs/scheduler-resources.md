@@ -1,6 +1,6 @@
 # Scheduler: Resources and groups
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.1
+> Scheduler · @motifx-community/ui 0.1.0-beta.2
 
 Rooms, people and any other kind of resource: they colour the appointments, split the columns into groups (nested, or under each date), say when each one works and when nothing may be put in.
 

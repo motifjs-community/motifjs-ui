@@ -1,6 +1,6 @@
 # Toast
 
-> Feedback · @motifx-community/ui 0.1.0-beta.1
+> Feedback · @motifx-community/ui 0.1.0-beta.2
 
 Short notifications at an edge of the window: four tones, an action such as Undo, a time of their own or none, six positions and a limit on how many show at once. Called from code; a region of your own can sit in JSX.
 
@@ -219,7 +219,7 @@ The name of the region and of the close button come from `uiLocale.strings` (`no
 
 ```tsx
 import { reactive } from '@motifx/core';
-import { Button, enStrings, toast, trStrings, uiLocale } from '@motifx-community/ui';
+import { Button, toast, uiLocale } from '@motifx-community/ui';
 
 /** Switches the names of the region and the close button. */
 export default function Localization() {
@@ -227,7 +227,7 @@ export default function Localization() {
 
   const toggle = () => {
     s.lang = s.lang === 'en' ? 'tr' : 'en';
-    uiLocale.strings = s.lang === 'en' ? enStrings : trStrings;
+    void uiLocale.use(s.lang);
   };
 
   return (
