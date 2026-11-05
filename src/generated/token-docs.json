@@ -11280,6 +11280,538 @@
     "value": "600"
   },
   {
+    "name": "gallery.gap",
+    "cssVar": "--mx-gallery-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "gallery.nav-inset",
+    "cssVar": "--mx-gallery-nav-inset",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "gallery.bar-inset",
+    "cssVar": "--mx-gallery-bar-inset",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "gallery.indicator-gap",
+    "cssVar": "--mx-gallery-indicator-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "gallery.caption-padding",
+    "cssVar": "--mx-gallery-caption-padding",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "gallery.frame.radius",
+    "cssVar": "--mx-gallery-frame-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "gallery.frame.bg",
+    "cssVar": "--mx-gallery-frame-bg",
+    "type": "color",
+    "ref": "color.bg.layer",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "gallery.frame.focus.glow",
+    "cssVar": "--mx-gallery-frame-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "gallery.frame.focus.outline-width",
+    "cssVar": "--mx-gallery-frame-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "gallery.frame.focus.outline-color",
+    "cssVar": "--mx-gallery-frame-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "gallery.frame.focus.outline-offset",
+    "cssVar": "--mx-gallery-frame-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "gallery.frame.swipeable.cursor",
+    "cssVar": "--mx-gallery-frame-swipeable-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "grab"
+  },
+  {
+    "name": "gallery.frame.dragging.cursor",
+    "cssVar": "--mx-gallery-frame-dragging-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "grabbing"
+  },
+  {
+    "name": "gallery.frame.border-width",
+    "cssVar": "--mx-gallery-frame-border-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "gallery.frame.border-color",
+    "cssVar": "--mx-gallery-frame-border-color",
+    "type": "color",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "gallery.caption.bg",
+    "cssVar": "--mx-gallery-caption-bg",
+    "type": "color",
+    "ref": "color.bg.glass",
+    "value": "rgb(248 247 243 / 0.78)"
+  },
+  {
+    "name": "gallery.caption.color",
+    "cssVar": "--mx-gallery-caption-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "gallery.caption.font-size",
+    "cssVar": "--mx-gallery-caption-font-size",
+    "type": "dimension",
+    "ref": "font.size.body",
+    "value": "0.875rem"
+  },
+  {
+    "name": "gallery.title.font-weight",
+    "cssVar": "--mx-gallery-title-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "gallery.description.color",
+    "cssVar": "--mx-gallery-description-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "gallery.description.font-size",
+    "cssVar": "--mx-gallery-description-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "gallery.nav.size",
+    "cssVar": "--mx-gallery-nav-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "2rem"
+  },
+  {
+    "name": "gallery.nav.radius",
+    "cssVar": "--mx-gallery-nav-radius",
+    "type": "dimension",
+    "ref": "radius.full",
+    "value": "9999px"
+  },
+  {
+    "name": "gallery.nav.bg",
+    "cssVar": "--mx-gallery-nav-bg",
+    "type": "color",
+    "ref": "color.fill.control.default",
+    "value": "#f5f4f0"
+  },
+  {
+    "name": "gallery.nav.color",
+    "cssVar": "--mx-gallery-nav-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "gallery.nav.border-width",
+    "cssVar": "--mx-gallery-nav-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "gallery.nav.border-color",
+    "cssVar": "--mx-gallery-nav-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "gallery.nav.shadow",
+    "cssVar": "--mx-gallery-nav-shadow",
+    "type": "shadow",
+    "ref": "shadow.4",
+    "value": "0px 2px 4px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "gallery.nav.hover.bg",
+    "cssVar": "--mx-gallery-nav-hover-bg",
+    "type": "color",
+    "ref": "color.fill.control.secondary",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "gallery.nav.hover.cursor",
+    "cssVar": "--mx-gallery-nav-hover-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "pointer"
+  },
+  {
+    "name": "gallery.nav.pressed.bg",
+    "cssVar": "--mx-gallery-nav-pressed-bg",
+    "type": "color",
+    "ref": "color.fill.control.tertiary",
+    "value": "#e1e0da"
+  },
+  {
+    "name": "gallery.nav.focus.glow",
+    "cssVar": "--mx-gallery-nav-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "gallery.nav.focus.outline-width",
+    "cssVar": "--mx-gallery-nav-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "gallery.nav.focus.outline-color",
+    "cssVar": "--mx-gallery-nav-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "gallery.nav.focus.outline-offset",
+    "cssVar": "--mx-gallery-nav-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "gallery.nav.disabled.opacity",
+    "cssVar": "--mx-gallery-nav-disabled-opacity",
+    "type": "number",
+    "ref": "opacity.disabled",
+    "value": 0.5
+  },
+  {
+    "name": "gallery.arrow.size",
+    "cssVar": "--mx-gallery-arrow-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "1rem"
+  },
+  {
+    "name": "gallery.arrow.bg",
+    "cssVar": "--mx-gallery-arrow-bg",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "gallery.arrow.previous.icon",
+    "cssVar": "--mx-gallery-arrow-previous-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-chevron-start)"
+  },
+  {
+    "name": "gallery.arrow.next.icon",
+    "cssVar": "--mx-gallery-arrow-next-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-chevron-end)"
+  },
+  {
+    "name": "gallery.dot.size",
+    "cssVar": "--mx-gallery-dot-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.5rem"
+  },
+  {
+    "name": "gallery.dot.radius",
+    "cssVar": "--mx-gallery-dot-radius",
+    "type": "dimension",
+    "ref": "radius.full",
+    "value": "9999px"
+  },
+  {
+    "name": "gallery.dot.bg",
+    "cssVar": "--mx-gallery-dot-bg",
+    "type": "color",
+    "ref": "color.fill.control.default",
+    "value": "#f5f4f0"
+  },
+  {
+    "name": "gallery.dot.color",
+    "cssVar": "--mx-gallery-dot-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "gallery.dot.border-width",
+    "cssVar": "--mx-gallery-dot-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "gallery.dot.border-color",
+    "cssVar": "--mx-gallery-dot-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "gallery.dot.hover.bg",
+    "cssVar": "--mx-gallery-dot-hover-bg",
+    "type": "color",
+    "ref": "color.fill.control.secondary",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "gallery.dot.hover.cursor",
+    "cssVar": "--mx-gallery-dot-hover-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "pointer"
+  },
+  {
+    "name": "gallery.dot.pressed.bg",
+    "cssVar": "--mx-gallery-dot-pressed-bg",
+    "type": "color",
+    "ref": "color.fill.control.tertiary",
+    "value": "#e1e0da"
+  },
+  {
+    "name": "gallery.dot.focus.glow",
+    "cssVar": "--mx-gallery-dot-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "gallery.dot.focus.outline-width",
+    "cssVar": "--mx-gallery-dot-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "gallery.dot.focus.outline-color",
+    "cssVar": "--mx-gallery-dot-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "gallery.dot.focus.outline-offset",
+    "cssVar": "--mx-gallery-dot-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "gallery.dot.current.bg",
+    "cssVar": "--mx-gallery-dot-current-bg",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "gallery.dot.current.border-color",
+    "cssVar": "--mx-gallery-dot-current-border-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "gallery.dot.current.width",
+    "cssVar": "--mx-gallery-dot-current-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "gallery.dot.current.size",
+    "cssVar": "--mx-gallery-dot-current-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "gallery.play.size",
+    "cssVar": "--mx-gallery-play-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "1.75rem"
+  },
+  {
+    "name": "gallery.play.radius",
+    "cssVar": "--mx-gallery-play-radius",
+    "type": "dimension",
+    "ref": "radius.full",
+    "value": "9999px"
+  },
+  {
+    "name": "gallery.play.bg",
+    "cssVar": "--mx-gallery-play-bg",
+    "type": "color",
+    "ref": "color.fill.control.default",
+    "value": "#f5f4f0"
+  },
+  {
+    "name": "gallery.play.color",
+    "cssVar": "--mx-gallery-play-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "gallery.play.border-width",
+    "cssVar": "--mx-gallery-play-border-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "gallery.play.border-color",
+    "cssVar": "--mx-gallery-play-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "gallery.play.shadow",
+    "cssVar": "--mx-gallery-play-shadow",
+    "type": "shadow",
+    "ref": "shadow.4",
+    "value": "0px 2px 4px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "gallery.play.hover.bg",
+    "cssVar": "--mx-gallery-play-hover-bg",
+    "type": "color",
+    "ref": "color.fill.control.secondary",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "gallery.play.hover.cursor",
+    "cssVar": "--mx-gallery-play-hover-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "pointer"
+  },
+  {
+    "name": "gallery.play.pressed.bg",
+    "cssVar": "--mx-gallery-play-pressed-bg",
+    "type": "color",
+    "ref": "color.fill.control.tertiary",
+    "value": "#e1e0da"
+  },
+  {
+    "name": "gallery.play.focus.glow",
+    "cssVar": "--mx-gallery-play-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "gallery.play.focus.outline-width",
+    "cssVar": "--mx-gallery-play-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "gallery.play.focus.outline-color",
+    "cssVar": "--mx-gallery-play-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "gallery.play.focus.outline-offset",
+    "cssVar": "--mx-gallery-play-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "gallery.play-glyph.size",
+    "cssVar": "--mx-gallery-play-glyph-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.75rem"
+  },
+  {
+    "name": "gallery.play-glyph.bg",
+    "cssVar": "--mx-gallery-play-glyph-bg",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "gallery.play-glyph.icon",
+    "cssVar": "--mx-gallery-play-glyph-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-play)"
+  },
+  {
+    "name": "gallery.play-glyph.playing.icon",
+    "cssVar": "--mx-gallery-play-glyph-playing-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-pause)"
+  },
+  {
+    "name": "gallery.item.radius",
+    "cssVar": "--mx-gallery-item-radius",
+    "type": "dimension",
+    "ref": null,
+    "value": "initial"
+  },
+  {
     "name": "glyph.size",
     "cssVar": "--mx-glyph-size",
     "type": "dimension",
@@ -13042,6 +13574,27 @@
     "type": "dimension",
     "ref": "icon.size.md",
     "value": "1rem"
+  },
+  {
+    "name": "multi-view.gap",
+    "cssVar": "--mx-multi-view-gap",
+    "type": "dimension",
+    "ref": "space.0",
+    "value": "0px"
+  },
+  {
+    "name": "multi-view.frame.swipeable.cursor",
+    "cssVar": "--mx-multi-view-frame-swipeable-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "grab"
+  },
+  {
+    "name": "multi-view.frame.dragging.cursor",
+    "cssVar": "--mx-multi-view-frame-dragging-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "grabbing"
   },
   {
     "name": "number-box.spin-layout",

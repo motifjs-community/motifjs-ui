@@ -1,0 +1,48 @@
+/* MultiView: the views side by side in a viewport that clips them, the one in sight at its start. Only the layout
+   is here: the frame and a view are units of the schema. The track slides by `translate` (the slide part writes
+   it); while a finger drags it, after a move around the ends, or with `animated` off, it moves without motion. */
+@layer mx.components {
+    .mx-multi-view {
+        display: block;
+        box-sizing: border-box;
+        inline-size: 100%;
+        min-inline-size: 0;
+    }
+
+    .mx-multi-view[data-dragging] {
+        user-select: none;
+    }
+
+    .mx-multi-view__viewport {
+        position: relative;
+        overflow: hidden;
+        min-inline-size: 0;
+        touch-action: pan-y;
+    }
+
+    .mx-multi-view__track {
+        --_gap: var(--_multi-view-gap);
+
+        display: flex;
+        align-items: stretch;
+        gap: var(--_gap);
+        transition: translate var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
+    }
+
+    .mx-multi-view[data-still] .mx-multi-view__track,
+    .mx-multi-view__track[data-dragging],
+    .mx-multi-view__track[data-no-motion] {
+        transition: none;
+    }
+
+    .mx-multi-view__view {
+        flex: none;
+        box-sizing: border-box;
+        inline-size: 100%;
+        min-inline-size: 0;
+    }
+
+    .mx-multi-view__view[hidden] {
+        display: none;
+    }
+}

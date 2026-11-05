@@ -1,0 +1,21 @@
+{
+  "multi-view": {
+    "$description": "MultiView: pages side by side, one in sight, brought by a swipe or from code; the panels of a tab strip without the strip.",
+    "$selector": ".mx-multi-view",
+    "gap": { "$type": "dimension", "$description": "Between the views, seen while a finger drags them." },
+    "$units": {
+      "frame": {
+        "$description": "The viewport the views slide in: `swipeable` when a drag moves it, `dragging` while one does.",
+        "selector": ".mx-multi-view__viewport",
+        "states": {
+          "swipeable": ".mx-multi-view[data-swipe] > .mx-multi-view__viewport",
+          "dragging": ".mx-multi-view[data-dragging] > .mx-multi-view__viewport"
+        }
+      },
+      "view": {
+        "$description": "A view, the page in sight or one beside it.",
+        "selector": ".mx-multi-view__view"
+      }
+    }
+  }
+}

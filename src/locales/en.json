@@ -590,5 +590,15 @@
   "sortableMoved": "Moved to {index, number} of {count, number}",
   "scrollPullDown": "Pull down to refresh",
   "scrollRelease": "Release to refresh",
-  "scrollRefreshing": "Refreshing…"
+  "scrollRefreshing": "Refreshing…",
+  "gallery": "Gallery",
+  "gallerySlides": "Slides",
+  "gallerySlideOf": "Slide {index, number} of {count, number}",
+  "galleryPrevious": "Previous slide",
+  "galleryNext": "Next slide",
+  "galleryChoose": "Choose a slide",
+  "galleryPlay": "Start the slideshow",
+  "galleryPause": "Pause the slideshow",
+  "multiView": "Pages",
+  "multiViewPageOf": "Page {index, number} of {count, number}"
 }

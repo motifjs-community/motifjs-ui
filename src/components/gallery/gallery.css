@@ -1,0 +1,139 @@
+/* Gallery: the panes in a viewport that clips them, the previous and next buttons over its sides, the bar with the
+   dots and the slideshow button over its bottom. Only the layout is here: the frame, a pane, its caption and texts,
+   the buttons, the arrows, the bar, the dots and the slideshow glyph are units of the schema. The track slides by
+   `translate` (the slide part writes it); while a finger drags it, or after a move around the ends, it moves
+   without motion. */
+@layer mx.components {
+    .mx-gallery {
+        --_over: 1;
+
+        position: relative;
+        display: grid;
+        box-sizing: border-box;
+        inline-size: 100%;
+        min-inline-size: 0;
+    }
+
+    .mx-gallery__viewport {
+        grid-area: 1 / 1;
+        position: relative;
+        overflow: hidden;
+        min-inline-size: 0;
+        touch-action: pan-y;
+        user-select: none;
+    }
+
+    .mx-gallery__track {
+        --_gap: var(--_gallery-gap);
+
+        display: flex;
+        block-size: 100%;
+        gap: var(--_gap);
+        transition: translate var(--mx-motion-duration-normal) var(--mx-motion-easing-standard);
+    }
+
+    .mx-gallery__track[data-dragging],
+    .mx-gallery__track[data-no-motion] {
+        transition: none;
+    }
+
+    .mx-gallery__item {
+        position: relative;
+        display: flex;
+        flex: none;
+        flex-direction: column;
+        box-sizing: border-box;
+        inline-size: calc((100% - (var(--_per, 1) - 1) * var(--_gap)) / var(--_per, 1));
+        min-inline-size: 0;
+        overflow: hidden;
+    }
+
+    .mx-gallery__figure {
+        position: relative;
+        display: flex;
+        flex: 1 1 auto;
+        align-items: center;
+        justify-content: center;
+        min-block-size: 0;
+    }
+
+    .mx-gallery__image {
+        display: block;
+        inline-size: 100%;
+        block-size: 100%;
+        object-fit: contain;
+    }
+
+    .mx-gallery[data-stretch] .mx-gallery__image {
+        object-fit: cover;
+    }
+
+    .mx-gallery__caption {
+        position: absolute;
+        inset-inline: 0;
+        inset-block-end: 0;
+        display: flex;
+        flex-direction: column;
+        min-inline-size: 0;
+    }
+
+    .mx-gallery__title,
+    .mx-gallery__description {
+        overflow-wrap: anywhere;
+    }
+
+    .mx-gallery__nav,
+    .mx-gallery__dot,
+    .mx-gallery__play {
+        display: inline-flex;
+        box-sizing: border-box;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        appearance: none;
+    }
+
+    .mx-gallery__nav {
+        grid-area: 1 / 1;
+        z-index: var(--_over);
+        align-self: center;
+        justify-self: start;
+        margin-inline-start: var(--_gallery-nav-inset);
+    }
+
+    .mx-gallery__nav[data-direction='next'] {
+        justify-self: end;
+        margin-inline: 0 var(--_gallery-nav-inset);
+    }
+
+    .mx-gallery__bar {
+        grid-area: 1 / 1;
+        z-index: var(--_over);
+        display: inline-flex;
+        align-self: end;
+        justify-self: center;
+        align-items: center;
+        margin-block-end: var(--_gallery-bar-inset);
+    }
+
+    .mx-gallery__indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--_gallery-indicator-gap);
+    }
+
+    .mx-gallery__nav[hidden],
+    .mx-gallery__bar[hidden],
+    .mx-gallery__indicator[hidden],
+    .mx-gallery__play[hidden],
+    .mx-gallery__caption[hidden],
+    .mx-gallery__title[hidden],
+    .mx-gallery__description[hidden] {
+        display: none;
+    }
+}

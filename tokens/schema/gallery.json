@@ -1,0 +1,95 @@
+{
+  "gallery": {
+    "$description": "Gallery: panes side by side, one in view (or several), moved by the buttons at the sides, the dots under them, a swipe or the keys; a slideshow when told.",
+    "$selector": ".mx-gallery",
+    "gap": { "$type": "dimension", "$description": "Between panes shown side by side." },
+    "nav-inset": { "$type": "dimension", "$description": "From a side of the gallery to the button over it." },
+    "bar-inset": { "$type": "dimension", "$description": "From the bottom of the gallery to the bar with the dots and the slideshow button." },
+    "indicator-gap": { "$type": "dimension", "$description": "Between the dots, and between them and the slideshow button." },
+    "caption-padding": { "$type": "dimension", "$description": "Inside a pane's caption." },
+    "$units": {
+      "frame": {
+        "$description": "The viewport the panes slide in: `focus` when the keys have it, `swipeable` when a drag moves it, `dragging` while one does.",
+        "selector": ".mx-gallery__viewport",
+        "states": {
+          "focus": ".mx-gallery__viewport:focus-visible",
+          "swipeable": ".mx-gallery[data-swipe] > .mx-gallery__viewport",
+          "dragging": ".mx-gallery[data-dragging] > .mx-gallery__viewport"
+        }
+      },
+      "item": {
+        "$description": "A pane: `current` when it is the one in view.",
+        "selector": ".mx-gallery__item",
+        "states": {
+          "current": ".mx-gallery__item[data-current]"
+        }
+      },
+      "caption": {
+        "$description": "The band over the bottom of a pane with its texts.",
+        "selector": ".mx-gallery__caption",
+        "defaults": { "padding": "var(--_gallery-caption-padding)" }
+      },
+      "title": {
+        "$description": "The caption's first line.",
+        "selector": ".mx-gallery__title"
+      },
+      "description": {
+        "$description": "The caption's second line.",
+        "selector": ".mx-gallery__description"
+      },
+      "nav": {
+        "$description": "The previous and next buttons over the sides: `hover`, `pressed`, `focus`, `disabled` at an end without `loop`.",
+        "selector": ".mx-gallery__nav",
+        "defaults": { "cursor": "default" },
+        "states": {
+          "hover": ".mx-gallery__nav:not([aria-disabled='true']):hover",
+          "pressed": { "selector": ".mx-gallery__nav:not([aria-disabled='true']):active", "from": "hover" },
+          "focus": ".mx-gallery__nav:focus-visible",
+          "disabled": ".mx-gallery__nav[aria-disabled='true']"
+        }
+      },
+      "arrow": {
+        "$description": "The glyph in a nav button: `icon` its shape (`previous`, `next`), `bg` its colour.",
+        "selector": ".mx-gallery__arrow",
+        "states": {
+          "previous": ".mx-gallery__nav[data-direction='previous'] .mx-gallery__arrow",
+          "next": ".mx-gallery__nav[data-direction='next'] .mx-gallery__arrow",
+          "disabled": ".mx-gallery__nav[aria-disabled='true'] .mx-gallery__arrow"
+        }
+      },
+      "bar": {
+        "$description": "The bar over the bottom with the dots and the slideshow button.",
+        "selector": ".mx-gallery__bar",
+        "defaults": { "gap": "var(--_gallery-indicator-gap)" }
+      },
+      "dot": {
+        "$description": "A dot of the indicator, one per pane: `current` for the pane in view, `hover`, `pressed`, `focus`.",
+        "selector": ".mx-gallery__dot",
+        "defaults": { "cursor": "default" },
+        "states": {
+          "hover": ".mx-gallery__dot:hover",
+          "pressed": { "selector": ".mx-gallery__dot:active", "from": "hover" },
+          "focus": ".mx-gallery__dot:focus-visible",
+          "current": ".mx-gallery__dot[aria-current]"
+        }
+      },
+      "play": {
+        "$description": "The slideshow button: `hover`, `pressed`, `focus`.",
+        "selector": ".mx-gallery__play",
+        "defaults": { "cursor": "default" },
+        "states": {
+          "hover": ".mx-gallery__play:hover",
+          "pressed": { "selector": ".mx-gallery__play:active", "from": "hover" },
+          "focus": ".mx-gallery__play:focus-visible"
+        }
+      },
+      "play-glyph": {
+        "$description": "The glyph in the slideshow button: `icon` its shape (a pause mark while `playing`), `bg` its colour.",
+        "selector": ".mx-gallery__play-glyph",
+        "states": {
+          "playing": ".mx-gallery[data-playing] .mx-gallery__play-glyph"
+        }
+      }
+    }
+  }
+}

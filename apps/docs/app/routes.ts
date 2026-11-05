@@ -16,6 +16,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   breadcrumb: () => import('../pages/breadcrumb/BreadcrumbPage'),
   pagination: () => import('../pages/pagination/PaginationPage'),
   stepper: () => import('../pages/stepper/StepperPage'),
+  gallery: () => import('../pages/gallery/GalleryPage'),
+  multiview: () => import('../pages/multiview/MultiViewPage'),
   wizard: () => import('../pages/wizard/WizardPage'),
   toolbar: () => import('../pages/toolbar/ToolbarPage'),
   menus: () => import('../pages/menus/MenusPage'),

@@ -1477,6 +1477,85 @@
     --_form-layout-group-bg: var(--mx-form-layout-group-bg);
   }
 
+  .mx-gallery {
+    --_gallery-gap: var(--mx-gallery-gap);
+    --_gallery-nav-inset: var(--mx-gallery-nav-inset);
+    --_gallery-bar-inset: var(--mx-gallery-bar-inset);
+    --_gallery-indicator-gap: var(--mx-gallery-indicator-gap);
+    --_gallery-caption-padding: var(--mx-gallery-caption-padding);
+    --_gallery-frame-radius: var(--mx-gallery-frame-radius);
+    --_gallery-frame-bg: var(--mx-gallery-frame-bg);
+    --_gallery-frame-focus-glow: var(--mx-gallery-frame-focus-glow);
+    --_gallery-frame-focus-outline-width: var(--mx-gallery-frame-focus-outline-width);
+    --_gallery-frame-focus-outline-color: var(--mx-gallery-frame-focus-outline-color);
+    --_gallery-frame-focus-outline-offset: var(--mx-gallery-frame-focus-outline-offset);
+    --_gallery-frame-swipeable-cursor: var(--mx-gallery-frame-swipeable-cursor);
+    --_gallery-frame-dragging-cursor: var(--mx-gallery-frame-dragging-cursor);
+    --_gallery-item-radius: var(--mx-gallery-item-radius);
+    --_gallery-caption-bg: var(--mx-gallery-caption-bg);
+    --_gallery-caption-color: var(--mx-gallery-caption-color);
+    --_gallery-caption-font-size: var(--mx-gallery-caption-font-size);
+    --_gallery-title-font-weight: var(--mx-gallery-title-font-weight);
+    --_gallery-description-color: var(--mx-gallery-description-color);
+    --_gallery-description-font-size: var(--mx-gallery-description-font-size);
+    --_gallery-nav-size: var(--mx-gallery-nav-size);
+    --_gallery-nav-radius: var(--mx-gallery-nav-radius);
+    --_gallery-nav-bg: var(--mx-gallery-nav-bg);
+    --_gallery-nav-color: var(--mx-gallery-nav-color);
+    --_gallery-nav-border-width: var(--mx-gallery-nav-border-width);
+    --_gallery-nav-border-color: var(--mx-gallery-nav-border-color);
+    --_gallery-nav-hover-bg: var(--mx-gallery-nav-hover-bg);
+    --_gallery-nav-hover-cursor: var(--mx-gallery-nav-hover-cursor);
+    --_gallery-nav-pressed-bg: var(--mx-gallery-nav-pressed-bg);
+    --_gallery-nav-focus-glow: var(--mx-gallery-nav-focus-glow);
+    --_gallery-nav-focus-outline-width: var(--mx-gallery-nav-focus-outline-width);
+    --_gallery-nav-focus-outline-color: var(--mx-gallery-nav-focus-outline-color);
+    --_gallery-nav-focus-outline-offset: var(--mx-gallery-nav-focus-outline-offset);
+    --_gallery-nav-disabled-opacity: var(--mx-gallery-nav-disabled-opacity);
+    --_gallery-arrow-size: var(--mx-gallery-arrow-size);
+    --_gallery-arrow-bg: var(--mx-gallery-arrow-bg);
+    --_gallery-arrow-previous-icon: var(--mx-gallery-arrow-previous-icon);
+    --_gallery-arrow-next-icon: var(--mx-gallery-arrow-next-icon);
+    --_gallery-dot-size: var(--mx-gallery-dot-size);
+    --_gallery-dot-radius: var(--mx-gallery-dot-radius);
+    --_gallery-dot-bg: var(--mx-gallery-dot-bg);
+    --_gallery-dot-color: var(--mx-gallery-dot-color);
+    --_gallery-dot-hover-bg: var(--mx-gallery-dot-hover-bg);
+    --_gallery-dot-hover-cursor: var(--mx-gallery-dot-hover-cursor);
+    --_gallery-dot-pressed-bg: var(--mx-gallery-dot-pressed-bg);
+    --_gallery-dot-focus-glow: var(--mx-gallery-dot-focus-glow);
+    --_gallery-dot-focus-outline-width: var(--mx-gallery-dot-focus-outline-width);
+    --_gallery-dot-focus-outline-color: var(--mx-gallery-dot-focus-outline-color);
+    --_gallery-dot-focus-outline-offset: var(--mx-gallery-dot-focus-outline-offset);
+    --_gallery-dot-current-width: var(--mx-gallery-dot-current-width);
+    --_gallery-dot-current-bg: var(--mx-gallery-dot-current-bg);
+    --_gallery-play-size: var(--mx-gallery-play-size);
+    --_gallery-play-radius: var(--mx-gallery-play-radius);
+    --_gallery-play-bg: var(--mx-gallery-play-bg);
+    --_gallery-play-color: var(--mx-gallery-play-color);
+    --_gallery-play-border-width: var(--mx-gallery-play-border-width);
+    --_gallery-play-border-color: var(--mx-gallery-play-border-color);
+    --_gallery-play-hover-bg: var(--mx-gallery-play-hover-bg);
+    --_gallery-play-hover-cursor: var(--mx-gallery-play-hover-cursor);
+    --_gallery-play-pressed-bg: var(--mx-gallery-play-pressed-bg);
+    --_gallery-play-focus-glow: var(--mx-gallery-play-focus-glow);
+    --_gallery-play-focus-outline-width: var(--mx-gallery-play-focus-outline-width);
+    --_gallery-play-focus-outline-color: var(--mx-gallery-play-focus-outline-color);
+    --_gallery-play-focus-outline-offset: var(--mx-gallery-play-focus-outline-offset);
+    --_gallery-play-glyph-size: var(--mx-gallery-play-glyph-size);
+    --_gallery-play-glyph-bg: var(--mx-gallery-play-glyph-bg);
+    --_gallery-play-glyph-icon: var(--mx-gallery-play-glyph-icon);
+    --_gallery-play-glyph-playing-icon: var(--mx-gallery-play-glyph-playing-icon);
+    --_gallery-frame-border-width: var(--mx-gallery-frame-border-width);
+    --_gallery-frame-border-color: var(--mx-gallery-frame-border-color);
+    --_gallery-nav-shadow: var(--mx-gallery-nav-shadow);
+    --_gallery-dot-current-size: var(--mx-gallery-dot-current-size);
+    --_gallery-play-shadow: var(--mx-gallery-play-shadow);
+    --_gallery-dot-border-width: var(--mx-gallery-dot-border-width);
+    --_gallery-dot-border-color: var(--mx-gallery-dot-border-color);
+    --_gallery-dot-current-border-color: var(--mx-gallery-dot-current-border-color);
+  }
+
   .mx-glyph {
     --_glyph-size: var(--mx-glyph-size);
   }
@@ -1721,6 +1800,12 @@
     --_menubar-icon-size: var(--mx-menubar-icon-size);
     --_menubar-item-hover-color: var(--mx-menubar-item-hover-color);
     --_menubar-item-open-color: var(--mx-menubar-item-open-color);
+  }
+
+  .mx-multi-view {
+    --_multi-view-gap: var(--mx-multi-view-gap);
+    --_multi-view-frame-swipeable-cursor: var(--mx-multi-view-frame-swipeable-cursor);
+    --_multi-view-frame-dragging-cursor: var(--mx-multi-view-frame-dragging-cursor);
   }
 
   .mx-number-box {

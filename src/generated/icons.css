@@ -52,6 +52,8 @@
     --mx-icon-drag-dots: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M4.4%204a1.1%201.1%200%201%200%202.2%200a1.1%201.1%200%201%200-2.2%200zM4.4%208a1.1%201.1%200%201%200%202.2%200a1.1%201.1%200%201%200-2.2%200zM4.4%2012a1.1%201.1%200%201%200%202.2%200a1.1%201.1%200%201%200-2.2%200zM9.4%204a1.1%201.1%200%201%200%202.2%200a1.1%201.1%200%201%200-2.2%200zM9.4%208a1.1%201.1%200%201%200%202.2%200a1.1%201.1%200%201%200-2.2%200zM9.4%2012a1.1%201.1%200%201%200%202.2%200a1.1%201.1%200%201%200-2.2%200z%27%20fill%3D%27black%27%2F%3E%3C%2Fsvg%3E");
     --mx-icon-upload: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M8%2010V2.5M4.75%205.75L8%202.5l3.25%203.25M3%2012.5v1h10v-1%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
     --mx-icon-file: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M4%201.75h5.5L13%205.25v9H4zM9.25%201.75v3.75H13%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    --mx-icon-play: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M5%203.2v9.6l7.4-4.8z%27%20fill%3D%27black%27%2F%3E%3C%2Fsvg%3E");
+    --mx-icon-pause: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Cpath%20d%3D%27M5.5%203.5v9M10.5%203.5v9%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
   }
 
   .mx-glyph[data-icon='blocked'] {
@@ -182,6 +184,10 @@
     --_icon: var(--mx-icon-more);
   }
 
+  .mx-glyph[data-icon='pause'] {
+    --_icon: var(--mx-icon-pause);
+  }
+
   .mx-glyph[data-icon='pencil'] {
     --_icon: var(--mx-icon-pencil);
   }
@@ -192,6 +198,10 @@
 
   .mx-glyph[data-icon='pin'] {
     --_icon: var(--mx-icon-pin);
+  }
+
+  .mx-glyph[data-icon='play'] {
+    --_icon: var(--mx-icon-play);
   }
 
   .mx-glyph[data-icon='plus'] {

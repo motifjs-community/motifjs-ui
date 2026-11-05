@@ -6,6 +6,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### New components
+
+- `Gallery`: panes side by side, one in view or several (`itemsPerPage`), moved by the buttons over the sides, the dots
+  under them, a swipe, a drag with the mouse or the arrow keys (Home and End too); `loop` goes around the ends without
+  running back across the panes between; a slideshow with `slideInterval`, which waits under the pointer, while focus
+  is inside, out of sight and under reduced motion, and a button that pauses it; a pane is an image with a caption
+  (`image`, `alt`, `text`, `description`) or any `content`; `stretchImages`, `height`; `value` and `x-model`;
+  `onSlideChanging` may refuse, `onSlideChanged`, `onItemClick`. A `region` with `aria-roledescription="carousel"`,
+  the panes out of view hidden from readers and keys. Units in the five languages: the frame, a pane, its caption
+  and texts, the side buttons and their arrows, the bar, the dots, the slideshow button and its glyph.
+- `MultiView` and `View`: pages side by side, one in sight, brought by a swipe or a drag, from code (`next()`,
+  `previous()`, `goTo()`, `add()`, `insert()`, `remove()`) or by a `Tabs`, a `Stepper` or buttons bound to the same
+  `value`; `loop`, `animated`, `lazy` and `keepAlive` as in `Tabs` (the same panel content part); hidden and disabled
+  views are skipped; `onSelecting` may refuse, `onSelectionChanged`.
+- The slide part under both: a finger or a pointer drags the panes, a drag far or fast enough lands on the next one,
+  and around the ends the far pane is set next to the one leaving for the move.
+- Kit texts `gallery`, `gallerySlides`, `gallerySlideOf`, `galleryPrevious`, `galleryNext`, `galleryChoose`,
+  `galleryPlay`, `galleryPause`, `multiView`, `multiViewPageOf` in English and Turkish; the `play` and `pause` glyphs.
+
 ### Fixed
 
 - `FileUploader`: the box is a drop zone, not a one-line field: as tall as the button and the hint with the same

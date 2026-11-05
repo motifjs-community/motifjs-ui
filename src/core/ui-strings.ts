@@ -608,6 +608,17 @@ export interface UiStrings {
   fileFailed: string;
   fileAborted: string;
   fileAbort: string;
+  /** The gallery and the multi-view. */
+  gallery: string;
+  gallerySlides: string;
+  gallerySlideOf: string;
+  galleryPrevious: string;
+  galleryNext: string;
+  galleryChoose: string;
+  galleryPlay: string;
+  galleryPause: string;
+  multiView: string;
+  multiViewPageOf: string;
   /** The sortable and the scroll view. */
   sortableMoved: string;
   scrollPullDown: string;

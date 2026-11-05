@@ -26,6 +26,8 @@ export * from './components/colorpicker';
 export * from './components/colorbox';
 export * from './components/breadcrumb';
 export * from './components/stepper';
+export * from './components/gallery';
+export * from './components/multiview';
 export * from './components/popover';
 export * from './components/loadpanel';
 export * from './components/daterangebox';

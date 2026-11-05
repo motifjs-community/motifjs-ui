@@ -1,0 +1,19 @@
+{
+  "multi-view": {
+    "gap": {
+      "$value": "{space.0}"
+    },
+    "frame": {
+      "swipeable": {
+        "cursor": {
+          "$value": "grab"
+        }
+      },
+      "dragging": {
+        "cursor": {
+          "$value": "grabbing"
+        }
+      }
+    }
+  }
+}
