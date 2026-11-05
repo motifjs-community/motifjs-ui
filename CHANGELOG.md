@@ -35,6 +35,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   the grid by where the tiles lie; `allowReorder` drags a tile to its new place (a long press on a touch screen) or
   moves it with Ctrl and an arrow, `onReordering` may refuse, `onReordered` tells the indexes; `onItemClick`.
 - Kit texts `splitterCollapse`, `splitterExpand`, `tiles` in English and Turkish.
+- `Resizable`: a box resized from its sides and corners with the pointer (the window's frame and box parts), or with
+  the arrow keys on the grip in its end corner; `handles` (all, edges, corners or a list), `minWidth`/`minHeight`,
+  `maxWidth`/`maxHeight`, `area` (its parent or an element), `keepAspectRatio`, `step`; a positioned box also moves
+  when a start or top side is dragged; `size` and `x-model` in pixels; `onResizeStarting` may refuse, `onResizing`,
+  `onResized`; the new size is read out.
+- `Draggable` and `DropTarget`: anything moved with the pointer, a finger (a long press) or the arrow keys, along an
+  `axis`, inside a `boundary`, by a `handle` only, or as a `clone` that follows the pointer while the draggable
+  stays; `position` and `x-model`; Escape brings it back; `onDragStarting` may refuse, `onDragging`, `onDragEnding`
+  may bring it back, `onDragEnded`. A target of the same `group` is marked while a drag is under way and while the
+  draggable is over it, may refuse in `onDragEntering`, and is told in `onDropped` with the draggable's `data`.
+- Kit texts `move`, `sizeNow`, `positionNow` in English and Turkish.
 - Kit texts `gallery`, `gallerySlides`, `gallerySlideOf`, `galleryPrevious`, `galleryNext`, `galleryChoose`,
   `galleryPlay`, `galleryPause`, `multiView`, `multiViewPageOf` in English and Turkish; the `play` and `pause` glyphs.
 

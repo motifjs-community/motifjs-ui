@@ -1,0 +1,31 @@
+/* Draggable and DropTarget: the draggable moves by `translate` (written by the component) and, while it is
+   dragged and no copy is sent, lets the pointer through so the target under it is found. Only the layout is here:
+   the draggable, its handle, the copy after the pointer and a target are units of the schemas. */
+@layer mx.components {
+    .mx-draggable {
+        position: relative;
+        display: block;
+        box-sizing: border-box;
+        min-inline-size: 0;
+    }
+
+    .mx-draggable:not([data-dragging]) {
+        transition: translate var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+    }
+
+    .mx-draggable[data-dragging]:not([data-clone]) {
+        pointer-events: none;
+    }
+
+    .mx-draggable:not([data-handle]),
+    .mx-draggable__handle {
+        touch-action: none;
+    }
+
+    .mx-drop-target {
+        position: relative;
+        display: block;
+        box-sizing: border-box;
+        min-inline-size: 0;
+    }
+}

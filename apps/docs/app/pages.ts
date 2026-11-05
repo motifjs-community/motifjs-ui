@@ -97,6 +97,8 @@ export const GROUPS = [
       { id: 'actionsheet', label: 'ActionSheet', title: 'ActionSheet', path: '/actionsheet', related: ['bottomsheet', 'menus', 'drawer'] },
       { id: 'layout', label: 'Layout', title: 'Layout', path: '/layout', related: ['tabs', 'accordion'] },
       { id: 'splitter', label: 'Splitter', title: 'Splitter', path: '/splitter', related: ['layout', 'tabdocs', 'drawer'] },
+      { id: 'resizable', label: 'Resizable', title: 'Resizable', path: '/resizable', related: ['draggable', 'splitter', 'window'] },
+      { id: 'draggable', label: 'Draggable', title: 'Draggable and DropTarget', path: '/draggable', related: ['resizable', 'sortable', 'tileview'] },
       { id: 'scrollview', label: 'ScrollView', title: 'ScrollView', path: '/scrollview', related: ['layout', 'datagrid', 'progress'] },
       { id: 'sortable', label: 'Sortable', title: 'Sortable', path: '/sortable', related: ['layout', 'treeview', 'chip'] },
       { id: 'formlayout', label: 'FormLayout', title: 'FormLayout', path: '/formlayout', related: ['textbox', 'dropdown'] },

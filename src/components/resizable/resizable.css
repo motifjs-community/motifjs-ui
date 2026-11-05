@@ -1,0 +1,105 @@
+/* Resizable: the content, a frame of handles over the sides and corners (the window's frame part), and the grip in
+   the end corner that takes the keys. Only the layout is here: the box, a handle, the grip and its glyph are units
+   of the schema. The size itself is written inline by the component. */
+@layer mx.components {
+    .mx-resizable {
+        --_over: 1;
+
+        position: relative;
+        display: block;
+        box-sizing: border-box;
+        min-inline-size: 0;
+    }
+
+    .mx-resizable__frame {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+    .mx-resizable[data-disabled] > .mx-resizable__frame,
+    .mx-resizable[data-disabled] > .mx-resizable__grip {
+        display: none;
+    }
+
+    .mx-resizable__handle {
+        position: absolute;
+        pointer-events: auto;
+        touch-action: none;
+    }
+
+    .mx-resizable__handle[hidden] {
+        display: none;
+    }
+
+    .mx-resizable__handle:is([data-edge='top'], [data-edge='bottom']) {
+        inset-inline: var(--_resizable-edge);
+        block-size: var(--_resizable-edge);
+        cursor: ns-resize;
+    }
+
+    .mx-resizable__handle:is([data-edge='start'], [data-edge='end']) {
+        inset-block: var(--_resizable-edge);
+        inline-size: var(--_resizable-edge);
+        cursor: ew-resize;
+    }
+
+    .mx-resizable__handle[data-edge^='top'] {
+        inset-block-start: 0;
+    }
+
+    .mx-resizable__handle[data-edge^='bottom'] {
+        inset-block-end: 0;
+    }
+
+    .mx-resizable__handle:is([data-edge='start'], [data-edge$='-start']) {
+        inset-inline-start: 0;
+    }
+
+    .mx-resizable__handle:is([data-edge='end'], [data-edge$='-end']) {
+        inset-inline-end: 0;
+    }
+
+    .mx-resizable__handle[data-edge*='-'] {
+        inline-size: calc(2 * var(--_resizable-edge));
+        block-size: calc(2 * var(--_resizable-edge));
+    }
+
+    .mx-resizable__handle:is([data-edge='top-start'], [data-edge='bottom-end']) {
+        cursor: nwse-resize;
+    }
+
+    .mx-resizable__handle:is([data-edge='top-end'], [data-edge='bottom-start']) {
+        cursor: nesw-resize;
+    }
+
+    .mx-resizable__handle:is([data-edge='top-start'], [data-edge='bottom-end']):dir(rtl) {
+        cursor: nesw-resize;
+    }
+
+    .mx-resizable__handle:is([data-edge='top-end'], [data-edge='bottom-start']):dir(rtl) {
+        cursor: nwse-resize;
+    }
+
+    /* The grip lies in the end corner, over the corner handle. */
+    .mx-resizable__grip {
+        position: absolute;
+        z-index: var(--_over);
+        inset-inline-end: 0;
+        inset-block-end: 0;
+        display: inline-flex;
+        box-sizing: border-box;
+        align-items: center;
+        justify-content: center;
+        touch-action: none;
+        cursor: nwse-resize;
+    }
+
+    .mx-resizable__grip:dir(rtl) {
+        cursor: nesw-resize;
+    }
+
+    .mx-resizable__grip[hidden] {
+        display: none;
+    }
+}

@@ -1,0 +1,57 @@
+{
+  "drop-target": {
+    "target": {
+      "radius": {
+        "$value": "{radius.lg}"
+      },
+      "active": {
+        "outline-style": {
+          "$value": "dashed"
+        },
+        "outline-width": {
+          "$value": "{border.width.2}"
+        },
+        "outline-color": {
+          "$value": "{color.stroke.control.strong}"
+        },
+        "outline-offset": {
+          "$value": "-2px"
+        }
+      },
+      "over": {
+        "outline-style": {
+          "$value": "solid"
+        },
+        "outline-width": {
+          "$value": "{border.width.2}"
+        },
+        "outline-color": {
+          "$value": "{color.accent.solid}"
+        },
+        "outline-offset": {
+          "$value": "-2px"
+        },
+        "bg": {
+          "$value": "{color.accent.subtle}"
+        }
+      },
+      "refused": {
+        "outline-style": {
+          "$value": "solid"
+        },
+        "outline-width": {
+          "$value": "{border.width.2}"
+        },
+        "outline-color": {
+          "$value": "{color.danger.solid}"
+        },
+        "outline-offset": {
+          "$value": "-2px"
+        },
+        "bg": {
+          "$value": "{color.danger.subtle}"
+        }
+      }
+    }
+  }
+}

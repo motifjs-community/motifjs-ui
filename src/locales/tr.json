@@ -603,5 +603,8 @@
   "multiViewPageOf": "Sayfa {index, number} / {count, number}",
   "splitterCollapse": "Bölmeyi gizle",
   "splitterExpand": "Bölmeyi göster",
-  "tiles": "Karolar"
+  "tiles": "Karolar",
+  "move": "Taşı",
+  "sizeNow": "Genişlik {width, number}, yükseklik {height, number}",
+  "positionNow": "Yana {x, number}, aşağı {y, number} taşındı"
 }

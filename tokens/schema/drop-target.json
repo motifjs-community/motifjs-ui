@@ -1,0 +1,17 @@
+{
+  "drop-target": {
+    "$description": "DropTarget: a place a draggable of its group can be dropped on.",
+    "$selector": ".mx-drop-target",
+    "$units": {
+      "target": {
+        "$description": "The target: `active` while a drag of its group is under way, `over` while the draggable is over it, `refused` when it will not take it.",
+        "selector": ".mx-drop-target",
+        "states": {
+          "active": ".mx-drop-target[data-drop-active]",
+          "over": ".mx-drop-target[data-drop-over]",
+          "refused": ".mx-drop-target[data-drop-refused]"
+        }
+      }
+    }
+  }
+}

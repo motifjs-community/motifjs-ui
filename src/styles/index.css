@@ -46,6 +46,8 @@
 @import '../components/multiview/multiview.css';
 @import '../components/splitter/splitter.css';
 @import '../components/tileview/tileview.css';
+@import '../components/resizable/resizable.css';
+@import '../components/draggable/draggable.css';
 @import '../components/popover/popover.css';
 @import '../components/loadpanel/loadpanel.css';
 @import '../components/daterangebox/daterangebox.css';

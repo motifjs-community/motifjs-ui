@@ -603,5 +603,8 @@
   "multiViewPageOf": "Page {index, number} of {count, number}",
   "splitterCollapse": "Hide the pane",
   "splitterExpand": "Show the pane",
-  "tiles": "Tiles"
+  "tiles": "Tiles",
+  "move": "Move",
+  "sizeNow": "Width {width, number}, height {height, number}",
+  "positionNow": "Moved {x, number} across and {y, number} down"
 }

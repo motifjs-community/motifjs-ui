@@ -1,0 +1,38 @@
+{
+  "resizable": {
+    "$description": "Resizable: a box resized from its sides and corners with the pointer, or with the keys on the grip in its end corner.",
+    "$selector": ".mx-resizable",
+    "edge": { "$type": "dimension", "$description": "How wide a strip along a side takes the pointer; a corner takes twice that each way." },
+    "$units": {
+      "box": {
+        "$description": "The box (`resizing` while a handle is dragged).",
+        "selector": ".mx-resizable",
+        "states": {
+          "resizing": ".mx-resizable[data-resizing]"
+        }
+      },
+      "handle": {
+        "$description": "The strip along a side or at a corner that takes the pointer: `hover`, `active` while dragged, `corner`.",
+        "selector": ".mx-resizable__handle",
+        "states": {
+          "hover": ".mx-resizable:not([data-resizing]) > .mx-resizable__frame > .mx-resizable__handle:hover",
+          "active": ".mx-resizable__handle[data-active]",
+          "corner": ".mx-resizable__handle[data-edge*='-']"
+        }
+      },
+      "grip": {
+        "$description": "The grip in the end corner, the Tab stop that takes the keys: `hover`, `pressed`, `focus`.",
+        "selector": ".mx-resizable__grip",
+        "states": {
+          "hover": ".mx-resizable__grip:hover",
+          "pressed": { "selector": ".mx-resizable[data-resizing] > .mx-resizable__grip", "from": "hover" },
+          "focus": ".mx-resizable__grip:focus-visible"
+        }
+      },
+      "grip-glyph": {
+        "$description": "The glyph in the grip: `icon` its shape, `bg` its colour, `size` its size.",
+        "selector": ".mx-resizable__grip-glyph"
+      }
+    }
+  }
+}

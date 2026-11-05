@@ -623,6 +623,10 @@ export interface UiStrings {
   splitterCollapse: string;
   splitterExpand: string;
   tiles: string;
+  /** The resizable and the draggable. */
+  move: string;
+  sizeNow: string;
+  positionNow: string;
   /** The sortable and the scroll view. */
   sortableMoved: string;
   scrollPullDown: string;

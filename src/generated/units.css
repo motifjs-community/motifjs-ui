@@ -2839,6 +2839,53 @@
     cursor: default;
   }
 
+  .mx-draggable {
+    outline-style: solid;
+    outline-width: 0px;
+  }
+
+  .mx-draggable:not([data-disabled]):not([data-handle]) {
+    cursor: var(--_draggable-box-draggable-cursor, inherit);
+  }
+
+  .mx-draggable[data-dragging] {
+    box-shadow: 0 0 #0000, var(--_draggable-box-dragging-shadow, 0 0 #0000);
+    cursor: var(--_draggable-box-dragging-cursor, inherit);
+  }
+
+  .mx-draggable:focus-visible {
+    box-shadow: var(--_draggable-box-focus-glow, 0 0 #0000), 0 0 #0000;
+    outline-width: var(--_draggable-box-focus-outline-width, 0px);
+    outline-color: var(--_draggable-box-focus-outline-color, currentcolor);
+    outline-offset: var(--_draggable-box-focus-outline-offset, 0px);
+  }
+
+  .mx-draggable__handle {
+    outline-style: solid;
+    outline-width: 0px;
+    cursor: var(--_draggable-handle-cursor, inherit);
+  }
+
+  .mx-draggable:not([data-disabled]) .mx-draggable__handle:hover {
+    background-color: var(--_draggable-handle-hover-bg, transparent);
+  }
+
+  .mx-draggable__handle:focus-visible {
+    box-shadow: var(--_draggable-handle-focus-glow, 0 0 #0000), 0 0 #0000;
+    outline-width: var(--_draggable-handle-focus-outline-width, 0px);
+    outline-color: var(--_draggable-handle-focus-outline-color, currentcolor);
+    outline-offset: var(--_draggable-handle-focus-outline-offset, 0px);
+  }
+
+  .mx-draggable__ghost {
+    border-start-start-radius: var(--_draggable-ghost-radius, 0px);
+    border-start-end-radius: var(--_draggable-ghost-radius, 0px);
+    border-end-start-radius: var(--_draggable-ghost-radius, 0px);
+    border-end-end-radius: var(--_draggable-ghost-radius, 0px);
+    box-shadow: var(--_draggable-ghost-shadow, none);
+    opacity: var(--_draggable-ghost-opacity, 1);
+  }
+
   .mx-drawer__scrim {
     background-color: var(--_drawer-scrim-bg, transparent);
   }
@@ -2986,6 +3033,38 @@
   .mx-drop-down__spinner::before {
     display: var(--_drop-down-spinner-shape-display, none);
     background-color: currentcolor;
+  }
+
+  .mx-drop-target {
+    border-start-start-radius: var(--_drop-target-target-radius, 0px);
+    border-start-end-radius: var(--_drop-target-target-radius, 0px);
+    border-end-start-radius: var(--_drop-target-target-radius, 0px);
+    border-end-end-radius: var(--_drop-target-target-radius, 0px);
+    outline-style: solid;
+    outline-width: 0px;
+  }
+
+  .mx-drop-target[data-drop-active] {
+    outline-style: var(--_drop-target-target-active-outline-style, solid);
+    outline-width: var(--_drop-target-target-active-outline-width, 0px);
+    outline-color: var(--_drop-target-target-active-outline-color, currentcolor);
+    outline-offset: var(--_drop-target-target-active-outline-offset, 0px);
+  }
+
+  .mx-drop-target[data-drop-over] {
+    background-color: var(--_drop-target-target-over-bg, transparent);
+    outline-style: var(--_drop-target-target-over-outline-style, solid);
+    outline-width: var(--_drop-target-target-over-outline-width, 0px);
+    outline-color: var(--_drop-target-target-over-outline-color, currentcolor);
+    outline-offset: var(--_drop-target-target-over-outline-offset, 0px);
+  }
+
+  .mx-drop-target[data-drop-refused] {
+    background-color: var(--_drop-target-target-refused-bg, transparent);
+    outline-style: var(--_drop-target-target-refused-outline-style, solid);
+    outline-width: var(--_drop-target-target-refused-outline-width, 0px);
+    outline-color: var(--_drop-target-target-refused-outline-color, currentcolor);
+    outline-offset: var(--_drop-target-target-refused-outline-offset, 0px);
   }
 
   :where(.mx-field) > .mx-field__box {
@@ -5256,6 +5335,58 @@
     margin-block-end: 0px;
     margin-inline-start: 0px;
     color: var(--_recurrence-editor-summary-color, inherit);
+  }
+
+  .mx-resizable {
+    outline-style: solid;
+    outline-width: 0px;
+  }
+
+  .mx-resizable[data-resizing] {
+    outline-width: var(--_resizable-box-resizing-outline-width, 0px);
+    outline-color: var(--_resizable-box-resizing-outline-color, currentcolor);
+    outline-offset: var(--_resizable-box-resizing-outline-offset, 0px);
+  }
+
+  .mx-resizable:not([data-resizing]) > .mx-resizable__frame > .mx-resizable__handle:hover {
+    background-color: var(--_resizable-handle-hover-bg, transparent);
+  }
+
+  .mx-resizable__handle[data-active] {
+    background-color: var(--_resizable-handle-active-bg, transparent);
+  }
+
+  .mx-resizable__grip {
+    inline-size: var(--_resizable-grip-size, auto);
+    block-size: var(--_resizable-grip-size, auto);
+    border-start-start-radius: var(--_resizable-grip-radius, 0px);
+    border-start-end-radius: var(--_resizable-grip-radius, 0px);
+    border-end-start-radius: var(--_resizable-grip-radius, 0px);
+    border-end-end-radius: var(--_resizable-grip-radius, 0px);
+    outline-style: solid;
+    outline-width: 0px;
+  }
+
+  .mx-resizable__grip:hover {
+    background-color: var(--_resizable-grip-hover-bg, transparent);
+  }
+
+  .mx-resizable[data-resizing] > .mx-resizable__grip {
+    background-color: var(--_resizable-grip-pressed-bg, var(--_resizable-grip-hover-bg, transparent));
+  }
+
+  .mx-resizable__grip:focus-visible {
+    box-shadow: var(--_resizable-grip-focus-glow, 0 0 #0000), 0 0 #0000;
+    outline-width: var(--_resizable-grip-focus-outline-width, 0px);
+    outline-color: var(--_resizable-grip-focus-outline-color, currentcolor);
+    outline-offset: var(--_resizable-grip-focus-outline-offset, 0px);
+  }
+
+  .mx-resizable__grip-glyph {
+    inline-size: var(--_resizable-grip-glyph-size, auto);
+    block-size: var(--_resizable-grip-glyph-size, auto);
+    background-color: var(--_resizable-grip-glyph-bg, transparent);
+    --_icon: var(--_resizable-grip-glyph-icon, none);
   }
 
   .mx-scheduler {

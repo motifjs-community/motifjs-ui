@@ -1,0 +1,81 @@
+{
+  "resizable": {
+    "edge": {
+      "$value": "{space.2}"
+    },
+    "box": {
+      "resizing": {
+        "outline-width": {
+          "$value": "{border.width.1}"
+        },
+        "outline-color": {
+          "$value": "{color.accent.solid}"
+        },
+        "outline-offset": {
+          "$value": "-1px"
+        }
+      }
+    },
+    "handle": {
+      "hover": {
+        "bg": {
+          "$value": "{color.accent.subtle}"
+        }
+      },
+      "active": {
+        "bg": {
+          "$value": "{color.accent.subtle}"
+        }
+      }
+    },
+    "grip": {
+      "size": {
+        "$value": {
+          "value": 1,
+          "unit": "rem"
+        }
+      },
+      "radius": {
+        "$value": "{radius.full}"
+      },
+      "hover": {
+        "bg": {
+          "$value": "{color.fill.subtle.secondary}"
+        }
+      },
+      "pressed": {
+        "bg": {
+          "$value": "{color.fill.subtle.tertiary}"
+        }
+      },
+      "focus": {
+        "glow": {
+          "$value": "{focus.ring.halo}"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.offset}"
+        }
+      }
+    },
+    "grip-glyph": {
+      "size": {
+        "$value": {
+          "value": 0.75,
+          "unit": "rem"
+        }
+      },
+      "bg": {
+        "$value": "{color.fg.tertiary}"
+      },
+      "icon": {
+        "$value": "grip"
+      }
+    }
+  }
+}

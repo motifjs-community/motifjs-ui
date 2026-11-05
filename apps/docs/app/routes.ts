@@ -20,6 +20,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   multiview: () => import('../pages/multiview/MultiViewPage'),
   splitter: () => import('../pages/splitter/SplitterPage'),
   tileview: () => import('../pages/tileview/TileViewPage'),
+  resizable: () => import('../pages/resizable/ResizablePage'),
+  draggable: () => import('../pages/draggable/DraggablePage'),
   wizard: () => import('../pages/wizard/WizardPage'),
   toolbar: () => import('../pages/toolbar/ToolbarPage'),
   menus: () => import('../pages/menus/MenusPage'),

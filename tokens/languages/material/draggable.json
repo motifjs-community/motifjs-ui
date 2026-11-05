@@ -1,0 +1,68 @@
+{
+  "draggable": {
+    "box": {
+      "draggable": {
+        "cursor": {
+          "$value": "grab"
+        }
+      },
+      "dragging": {
+        "cursor": {
+          "$value": "grabbing"
+        },
+        "shadow": {
+          "$value": "{elevation.popup}"
+        }
+      },
+      "focus": {
+        "glow": {
+          "$value": "{focus.ring.halo}"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.offset}"
+        }
+      }
+    },
+    "handle": {
+      "cursor": {
+        "$value": "grab"
+      },
+      "hover": {
+        "bg": {
+          "$value": "{color.fill.subtle.secondary}"
+        }
+      },
+      "focus": {
+        "glow": {
+          "$value": "{focus.ring.halo}"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.offset}"
+        }
+      }
+    },
+    "ghost": {
+      "radius": {
+        "$value": "{radius.lg}"
+      },
+      "shadow": {
+        "$value": "{elevation.popup}"
+      },
+      "opacity": {
+        "$value": 0.9
+      }
+    }
+  }
+}

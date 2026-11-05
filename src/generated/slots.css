@@ -1129,6 +1129,25 @@
     --_disabled-element-color: var(--mx-disabled-element-color);
   }
 
+  .mx-draggable {
+    --_draggable-box-draggable-cursor: var(--mx-draggable-box-draggable-cursor);
+    --_draggable-box-dragging-cursor: var(--mx-draggable-box-dragging-cursor);
+    --_draggable-box-dragging-shadow: var(--mx-draggable-box-dragging-shadow);
+    --_draggable-box-focus-glow: var(--mx-draggable-box-focus-glow);
+    --_draggable-box-focus-outline-width: var(--mx-draggable-box-focus-outline-width);
+    --_draggable-box-focus-outline-color: var(--mx-draggable-box-focus-outline-color);
+    --_draggable-box-focus-outline-offset: var(--mx-draggable-box-focus-outline-offset);
+    --_draggable-handle-cursor: var(--mx-draggable-handle-cursor);
+    --_draggable-handle-hover-bg: var(--mx-draggable-handle-hover-bg);
+    --_draggable-handle-focus-glow: var(--mx-draggable-handle-focus-glow);
+    --_draggable-handle-focus-outline-width: var(--mx-draggable-handle-focus-outline-width);
+    --_draggable-handle-focus-outline-color: var(--mx-draggable-handle-focus-outline-color);
+    --_draggable-handle-focus-outline-offset: var(--mx-draggable-handle-focus-outline-offset);
+    --_draggable-ghost-radius: var(--mx-draggable-ghost-radius);
+    --_draggable-ghost-shadow: var(--mx-draggable-ghost-shadow);
+    --_draggable-ghost-opacity: var(--mx-draggable-ghost-opacity);
+  }
+
   .mx-drawer {
     --_drawer-font-family: var(--mx-drawer-font-family);
     --_drawer-size: var(--mx-drawer-size);
@@ -1186,6 +1205,24 @@
     --_drop-down-spinner-color: var(--mx-drop-down-spinner-color);
     --_drop-down-chevron-open-rotate: var(--mx-drop-down-chevron-open-rotate);
     --_drop-down-spinner-shape-display: var(--mx-drop-down-spinner-shape-display);
+  }
+
+  .mx-drop-target {
+    --_drop-target-target-radius: var(--mx-drop-target-target-radius);
+    --_drop-target-target-active-outline-style: var(--mx-drop-target-target-active-outline-style);
+    --_drop-target-target-active-outline-width: var(--mx-drop-target-target-active-outline-width);
+    --_drop-target-target-active-outline-color: var(--mx-drop-target-target-active-outline-color);
+    --_drop-target-target-active-outline-offset: var(--mx-drop-target-target-active-outline-offset);
+    --_drop-target-target-over-outline-style: var(--mx-drop-target-target-over-outline-style);
+    --_drop-target-target-over-outline-width: var(--mx-drop-target-target-over-outline-width);
+    --_drop-target-target-over-outline-color: var(--mx-drop-target-target-over-outline-color);
+    --_drop-target-target-over-outline-offset: var(--mx-drop-target-target-over-outline-offset);
+    --_drop-target-target-over-bg: var(--mx-drop-target-target-over-bg);
+    --_drop-target-target-refused-outline-style: var(--mx-drop-target-target-refused-outline-style);
+    --_drop-target-target-refused-outline-width: var(--mx-drop-target-target-refused-outline-width);
+    --_drop-target-target-refused-outline-color: var(--mx-drop-target-target-refused-outline-color);
+    --_drop-target-target-refused-outline-offset: var(--mx-drop-target-target-refused-outline-offset);
+    --_drop-target-target-refused-bg: var(--mx-drop-target-target-refused-bg);
   }
 
   .mx-field {
@@ -2057,6 +2094,26 @@
     --_recurrence-editor-days-label-margin-bottom: var(--mx-recurrence-editor-days-label-margin-bottom);
     --_recurrence-editor-days-gap: var(--mx-recurrence-editor-days-gap);
     --_recurrence-editor-summary-color: var(--mx-recurrence-editor-summary-color);
+  }
+
+  .mx-resizable {
+    --_resizable-edge: var(--mx-resizable-edge);
+    --_resizable-box-resizing-outline-width: var(--mx-resizable-box-resizing-outline-width);
+    --_resizable-box-resizing-outline-color: var(--mx-resizable-box-resizing-outline-color);
+    --_resizable-box-resizing-outline-offset: var(--mx-resizable-box-resizing-outline-offset);
+    --_resizable-handle-hover-bg: var(--mx-resizable-handle-hover-bg);
+    --_resizable-handle-active-bg: var(--mx-resizable-handle-active-bg);
+    --_resizable-grip-size: var(--mx-resizable-grip-size);
+    --_resizable-grip-radius: var(--mx-resizable-grip-radius);
+    --_resizable-grip-hover-bg: var(--mx-resizable-grip-hover-bg);
+    --_resizable-grip-pressed-bg: var(--mx-resizable-grip-pressed-bg);
+    --_resizable-grip-focus-glow: var(--mx-resizable-grip-focus-glow);
+    --_resizable-grip-focus-outline-width: var(--mx-resizable-grip-focus-outline-width);
+    --_resizable-grip-focus-outline-color: var(--mx-resizable-grip-focus-outline-color);
+    --_resizable-grip-focus-outline-offset: var(--mx-resizable-grip-focus-outline-offset);
+    --_resizable-grip-glyph-size: var(--mx-resizable-grip-glyph-size);
+    --_resizable-grip-glyph-bg: var(--mx-resizable-grip-glyph-bg);
+    --_resizable-grip-glyph-icon: var(--mx-resizable-grip-glyph-icon);
   }
 
   .mx-scheduler {

@@ -1,0 +1,29 @@
+{
+  "draggable": {
+    "$description": "Draggable: anything the user moves with the pointer, a finger or the arrow keys; a copy after the pointer when told.",
+    "$selector": ".mx-draggable",
+    "$units": {
+      "box": {
+        "$description": "The draggable: `draggable` when the whole of it takes the press, `dragging` while it moves, `focus` when the keys have it.",
+        "selector": ".mx-draggable",
+        "states": {
+          "draggable": ".mx-draggable:not([data-disabled]):not([data-handle])",
+          "dragging": ".mx-draggable[data-dragging]",
+          "focus": ".mx-draggable:focus-visible"
+        }
+      },
+      "handle": {
+        "$description": "The handle inside it that takes the press and the keys, when one is named: `hover`, `focus`.",
+        "selector": ".mx-draggable__handle",
+        "states": {
+          "hover": ".mx-draggable:not([data-disabled]) .mx-draggable__handle:hover",
+          "focus": ".mx-draggable__handle:focus-visible"
+        }
+      },
+      "ghost": {
+        "$description": "The copy after the pointer (`clone`).",
+        "selector": ".mx-draggable__ghost"
+      }
+    }
+  }
+}

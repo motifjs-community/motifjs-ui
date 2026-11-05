@@ -8529,6 +8529,118 @@
     "value": "#a2a098"
   },
   {
+    "name": "draggable.box.draggable.cursor",
+    "cssVar": "--mx-draggable-box-draggable-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "grab"
+  },
+  {
+    "name": "draggable.box.dragging.cursor",
+    "cssVar": "--mx-draggable-box-dragging-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "grabbing"
+  },
+  {
+    "name": "draggable.box.dragging.shadow",
+    "cssVar": "--mx-draggable-box-dragging-shadow",
+    "type": "shadow",
+    "ref": "elevation.popup",
+    "value": "0px 8px 16px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "draggable.box.focus.glow",
+    "cssVar": "--mx-draggable-box-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "draggable.box.focus.outline-width",
+    "cssVar": "--mx-draggable-box-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "draggable.box.focus.outline-color",
+    "cssVar": "--mx-draggable-box-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "draggable.box.focus.outline-offset",
+    "cssVar": "--mx-draggable-box-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "draggable.handle.cursor",
+    "cssVar": "--mx-draggable-handle-cursor",
+    "type": "keyword",
+    "ref": null,
+    "value": "grab"
+  },
+  {
+    "name": "draggable.handle.hover.bg",
+    "cssVar": "--mx-draggable-handle-hover-bg",
+    "type": "color",
+    "ref": "color.fill.subtle.secondary",
+    "value": "rgb(0 0 0 / 0.0373)"
+  },
+  {
+    "name": "draggable.handle.focus.glow",
+    "cssVar": "--mx-draggable-handle-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "draggable.handle.focus.outline-width",
+    "cssVar": "--mx-draggable-handle-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "draggable.handle.focus.outline-color",
+    "cssVar": "--mx-draggable-handle-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "draggable.handle.focus.outline-offset",
+    "cssVar": "--mx-draggable-handle-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "draggable.ghost.radius",
+    "cssVar": "--mx-draggable-ghost-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "draggable.ghost.shadow",
+    "cssVar": "--mx-draggable-ghost-shadow",
+    "type": "shadow",
+    "ref": "elevation.popup",
+    "value": "0px 8px 16px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "draggable.ghost.opacity",
+    "cssVar": "--mx-draggable-ghost-opacity",
+    "type": "number",
+    "ref": null,
+    "value": 0.9
+  },
+  {
     "name": "drawer.font-family",
     "cssVar": "--mx-drawer-font-family",
     "type": "fontFamily",
@@ -9150,6 +9262,111 @@
     "type": "keyword",
     "ref": null,
     "value": "initial"
+  },
+  {
+    "name": "drop-target.target.radius",
+    "cssVar": "--mx-drop-target-target-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "drop-target.target.active.outline-style",
+    "cssVar": "--mx-drop-target-target-active-outline-style",
+    "type": "keyword",
+    "ref": null,
+    "value": "dashed"
+  },
+  {
+    "name": "drop-target.target.active.outline-width",
+    "cssVar": "--mx-drop-target-target-active-outline-width",
+    "type": "dimension",
+    "ref": "border.width.2",
+    "value": "2px"
+  },
+  {
+    "name": "drop-target.target.active.outline-color",
+    "cssVar": "--mx-drop-target-target-active-outline-color",
+    "type": "color",
+    "ref": "color.stroke.control.strong",
+    "value": "rgb(0 0 0 / 0.4458)"
+  },
+  {
+    "name": "drop-target.target.active.outline-offset",
+    "cssVar": "--mx-drop-target-target-active-outline-offset",
+    "type": "dimension",
+    "ref": null,
+    "value": "-2px"
+  },
+  {
+    "name": "drop-target.target.over.outline-style",
+    "cssVar": "--mx-drop-target-target-over-outline-style",
+    "type": "keyword",
+    "ref": null,
+    "value": "solid"
+  },
+  {
+    "name": "drop-target.target.over.outline-width",
+    "cssVar": "--mx-drop-target-target-over-outline-width",
+    "type": "dimension",
+    "ref": "border.width.2",
+    "value": "2px"
+  },
+  {
+    "name": "drop-target.target.over.outline-color",
+    "cssVar": "--mx-drop-target-target-over-outline-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "drop-target.target.over.outline-offset",
+    "cssVar": "--mx-drop-target-target-over-outline-offset",
+    "type": "dimension",
+    "ref": null,
+    "value": "-2px"
+  },
+  {
+    "name": "drop-target.target.over.bg",
+    "cssVar": "--mx-drop-target-target-over-bg",
+    "type": "color",
+    "ref": "color.accent.subtle",
+    "value": "#fbe6de"
+  },
+  {
+    "name": "drop-target.target.refused.outline-style",
+    "cssVar": "--mx-drop-target-target-refused-outline-style",
+    "type": "keyword",
+    "ref": null,
+    "value": "solid"
+  },
+  {
+    "name": "drop-target.target.refused.outline-width",
+    "cssVar": "--mx-drop-target-target-refused-outline-width",
+    "type": "dimension",
+    "ref": "border.width.2",
+    "value": "2px"
+  },
+  {
+    "name": "drop-target.target.refused.outline-color",
+    "cssVar": "--mx-drop-target-target-refused-outline-color",
+    "type": "color",
+    "ref": "color.danger.solid",
+    "value": "#b03659"
+  },
+  {
+    "name": "drop-target.target.refused.outline-offset",
+    "cssVar": "--mx-drop-target-target-refused-outline-offset",
+    "type": "dimension",
+    "ref": null,
+    "value": "-2px"
+  },
+  {
+    "name": "drop-target.target.refused.bg",
+    "cssVar": "--mx-drop-target-target-refused-bg",
+    "type": "color",
+    "ref": "color.danger.subtle",
+    "value": "#fde7e9"
   },
   {
     "name": "field.width",
@@ -15831,6 +16048,125 @@
     "type": "color",
     "ref": "color.fg.secondary",
     "value": "#5e5c55"
+  },
+  {
+    "name": "resizable.edge",
+    "cssVar": "--mx-resizable-edge",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "resizable.box.resizing.outline-width",
+    "cssVar": "--mx-resizable-box-resizing-outline-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "resizable.box.resizing.outline-color",
+    "cssVar": "--mx-resizable-box-resizing-outline-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "resizable.box.resizing.outline-offset",
+    "cssVar": "--mx-resizable-box-resizing-outline-offset",
+    "type": "dimension",
+    "ref": null,
+    "value": "-1px"
+  },
+  {
+    "name": "resizable.handle.hover.bg",
+    "cssVar": "--mx-resizable-handle-hover-bg",
+    "type": "color",
+    "ref": "color.accent.subtle",
+    "value": "#fbe6de"
+  },
+  {
+    "name": "resizable.handle.active.bg",
+    "cssVar": "--mx-resizable-handle-active-bg",
+    "type": "color",
+    "ref": "color.accent.subtle",
+    "value": "#fbe6de"
+  },
+  {
+    "name": "resizable.grip.size",
+    "cssVar": "--mx-resizable-grip-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "1rem"
+  },
+  {
+    "name": "resizable.grip.radius",
+    "cssVar": "--mx-resizable-grip-radius",
+    "type": "dimension",
+    "ref": "radius.sm",
+    "value": "0.25rem"
+  },
+  {
+    "name": "resizable.grip.hover.bg",
+    "cssVar": "--mx-resizable-grip-hover-bg",
+    "type": "color",
+    "ref": "color.fill.subtle.secondary",
+    "value": "rgb(0 0 0 / 0.0373)"
+  },
+  {
+    "name": "resizable.grip.pressed.bg",
+    "cssVar": "--mx-resizable-grip-pressed-bg",
+    "type": "color",
+    "ref": "color.fill.subtle.tertiary",
+    "value": "rgb(0 0 0 / 0.0241)"
+  },
+  {
+    "name": "resizable.grip.focus.glow",
+    "cssVar": "--mx-resizable-grip-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "resizable.grip.focus.outline-width",
+    "cssVar": "--mx-resizable-grip-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "resizable.grip.focus.outline-color",
+    "cssVar": "--mx-resizable-grip-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "resizable.grip.focus.outline-offset",
+    "cssVar": "--mx-resizable-grip-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "resizable.grip-glyph.size",
+    "cssVar": "--mx-resizable-grip-glyph-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "0.75rem"
+  },
+  {
+    "name": "resizable.grip-glyph.bg",
+    "cssVar": "--mx-resizable-grip-glyph-bg",
+    "type": "color",
+    "ref": "color.fg.tertiary",
+    "value": "#8c8a82"
+  },
+  {
+    "name": "resizable.grip-glyph.icon",
+    "cssVar": "--mx-resizable-grip-glyph-icon",
+    "type": "icon",
+    "ref": null,
+    "value": "var(--mx-icon-grip)"
   },
   {
     "name": "scheduler.height",
