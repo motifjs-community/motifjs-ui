@@ -18,6 +18,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   stepper: () => import('../pages/stepper/StepperPage'),
   gallery: () => import('../pages/gallery/GalleryPage'),
   multiview: () => import('../pages/multiview/MultiViewPage'),
+  splitter: () => import('../pages/splitter/SplitterPage'),
+  tileview: () => import('../pages/tileview/TileViewPage'),
   wizard: () => import('../pages/wizard/WizardPage'),
   toolbar: () => import('../pages/toolbar/ToolbarPage'),
   menus: () => import('../pages/menus/MenusPage'),

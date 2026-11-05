@@ -1,0 +1,112 @@
+{
+  "splitter": {
+    "size": {
+      "$value": "{space.2}"
+    },
+    "line-width": {
+      "$value": "{border.width.1}"
+    },
+    "active-width": {
+      "$value": "{border.width.2}"
+    },
+    "grip-length": {
+      "$value": "{space.6}"
+    },
+    "grip-thickness": {
+      "$value": "{space.1}"
+    },
+    "handle": {
+      "focus": {
+        "glow": {
+          "$value": "{focus.ring.halo}"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.offset}"
+        }
+      }
+    },
+    "line": {
+      "bg": {
+        "$value": "{color.stroke.divider}"
+      },
+      "active": {
+        "bg": {
+          "$value": "{color.accent.solid}"
+        }
+      }
+    },
+    "grip": {
+      "bg": {
+        "$value": "{color.stroke.control.strong}"
+      },
+      "radius": {
+        "$value": "{radius.full}"
+      },
+      "active": {
+        "bg": {
+          "$value": "{color.accent.solid}"
+        }
+      },
+      "disabled": {
+        "bg": {
+          "$value": "{color.stroke.control.default}"
+        }
+      }
+    },
+    "fold": {
+      "size": {
+        "$value": {
+          "value": 1,
+          "unit": "rem"
+        }
+      },
+      "radius": {
+        "$value": "{radius.sm}"
+      },
+      "hover": {
+        "bg": {
+          "$value": "{color.fill.subtle.secondary}"
+        },
+        "cursor": {
+          "$value": "pointer"
+        }
+      },
+      "pressed": {
+        "bg": {
+          "$value": "{color.fill.subtle.tertiary}"
+        }
+      },
+      "focus": {
+        "glow": {
+          "$value": "{focus.ring.halo}"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.offset}"
+        }
+      }
+    },
+    "fold-glyph": {
+      "size": {
+        "$value": {
+          "value": 0.625,
+          "unit": "rem"
+        }
+      },
+      "bg": {
+        "$value": "{color.fg.secondary}"
+      }
+    }
+  }
+}

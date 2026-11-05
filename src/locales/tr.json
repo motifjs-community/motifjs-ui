@@ -600,5 +600,8 @@
   "galleryPlay": "Slayt gösterisini başlat",
   "galleryPause": "Slayt gösterisini duraklat",
   "multiView": "Sayfalar",
-  "multiViewPageOf": "Sayfa {index, number} / {count, number}"
+  "multiViewPageOf": "Sayfa {index, number} / {count, number}",
+  "splitterCollapse": "Bölmeyi gizle",
+  "splitterExpand": "Bölmeyi göster",
+  "tiles": "Karolar"
 }

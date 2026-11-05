@@ -1,0 +1,59 @@
+{
+  "splitter": {
+    "$description": "Splitter: panes side by side or one under the other, as many as needed, a handle between each two that drags and takes the keys; a pane may be hidden from its handle.",
+    "$selector": ".mx-splitter",
+    "size": { "$type": "dimension", "$description": "The handle's thickness, the track it takes between two panes." },
+    "line-width": { "$type": "dimension", "$description": "The line along the handle." },
+    "active-width": { "$type": "dimension", "$description": "The line under the pointer or while dragged." },
+    "grip-length": { "$type": "dimension", "$description": "The grip in the middle of the handle, along it." },
+    "grip-thickness": { "$type": "dimension", "$description": "The grip across the handle." },
+    "$units": {
+      "handle": {
+        "$description": "The bar of a handle, the separator that drags and takes the keys (`focus`).",
+        "selector": ".mx-splitter__bar",
+        "states": {
+          "focus": ".mx-splitter__bar:focus-visible"
+        }
+      },
+      "line": {
+        "$description": "The line along the handle (`active`: under the pointer or dragged; `disabled`); its thickness is `splitter.line-width`, `splitter.active-width`.",
+        "selector": ".mx-splitter__bar::before",
+        "defaults": { "width": "var(--_line-w, auto)", "height": "var(--_line-h, auto)" },
+        "states": {
+          "active": ".mx-splitter__bar[data-resizable]:hover::before, .mx-splitter__bar[data-dragging]::before",
+          "disabled": ".mx-splitter[data-disabled] .mx-splitter__bar::before"
+        }
+      },
+      "grip": {
+        "$description": "The grip in the middle of the handle (`active`; `disabled`: also while it cannot be moved); its size is `splitter.grip-length` × `splitter.grip-thickness`.",
+        "selector": ".mx-splitter__grip",
+        "defaults": { "width": "var(--_grip-w)", "height": "var(--_grip-h)" },
+        "states": {
+          "active": ".mx-splitter__bar[data-resizable]:hover > .mx-splitter__grip, .mx-splitter__bar[data-dragging] > .mx-splitter__grip",
+          "disabled": ".mx-splitter__bar:not([data-resizable]) > .mx-splitter__grip, .mx-splitter[data-disabled] .mx-splitter__grip"
+        }
+      },
+      "fold": {
+        "$description": "The button at an end of the grip that hides the pane beside the handle, or shows it again: `hover`, `pressed`, `focus`.",
+        "selector": ".mx-splitter__fold",
+        "defaults": { "cursor": "default" },
+        "states": {
+          "hover": ".mx-splitter__fold:hover",
+          "pressed": { "selector": ".mx-splitter__fold:active", "from": "hover" },
+          "focus": ".mx-splitter__fold:focus-visible"
+        }
+      },
+      "fold-glyph": {
+        "$description": "The arrow in a fold button: `bg` its colour, `size` its size.",
+        "selector": ".mx-splitter__fold-glyph"
+      },
+      "pane": {
+        "$description": "A pane (`collapsed` while hidden).",
+        "selector": ".mx-splitter__pane",
+        "states": {
+          "collapsed": ".mx-splitter__pane[data-collapsed]"
+        }
+      }
+    }
+  }
+}

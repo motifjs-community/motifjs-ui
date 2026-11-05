@@ -1,0 +1,57 @@
+/* TileView: the grid of base cells (`--_base-w` × `--_base-h`, written by the component) in a box that scrolls,
+   each tile spanning its ratios, packed densely down the columns (horizontal: the box scrolls sideways) or along
+   the rows (vertical). The text read out after a move lies beside the grid, not in the list. Only the layout is
+   here: the view, a tile, its text and the copy after the pointer are units of the schema. */
+@layer mx.components {
+    .mx-tile-view {
+        position: relative;
+        display: grid;
+        grid-template-rows: minmax(0, 1fr);
+        box-sizing: border-box;
+        inline-size: 100%;
+        min-inline-size: 0;
+    }
+
+    .mx-tile-view__grid {
+        display: grid;
+        box-sizing: border-box;
+        min-inline-size: 0;
+        min-block-size: 0;
+        gap: var(--_tile-view-gap);
+        overflow: auto;
+    }
+
+    .mx-tile-view[data-direction='horizontal'] > .mx-tile-view__grid {
+        grid-auto-flow: column dense;
+        grid-template-rows: repeat(auto-fill, var(--_base-h, 100px));
+        grid-auto-columns: var(--_base-w, 100px);
+    }
+
+    .mx-tile-view[data-direction='vertical'] > .mx-tile-view__grid {
+        grid-auto-flow: row dense;
+        grid-template-columns: repeat(auto-fill, var(--_base-w, 100px));
+        grid-auto-rows: var(--_base-h, 100px);
+    }
+
+    .mx-tile-view[data-dragging] {
+        user-select: none;
+    }
+
+    .mx-tile-view__tile {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        min-inline-size: 0;
+        min-block-size: 0;
+        overflow: hidden;
+    }
+
+    .mx-tile-view__text {
+        overflow-wrap: anywhere;
+    }
+
+    .mx-tile-view__text[hidden] {
+        display: none;
+    }
+}

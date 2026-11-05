@@ -44,6 +44,8 @@
 @import '../components/stepper/wizard.css';
 @import '../components/gallery/gallery.css';
 @import '../components/multiview/multiview.css';
+@import '../components/splitter/splitter.css';
+@import '../components/tileview/tileview.css';
 @import '../components/popover/popover.css';
 @import '../components/loadpanel/loadpanel.css';
 @import '../components/daterangebox/daterangebox.css';

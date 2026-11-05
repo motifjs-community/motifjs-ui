@@ -600,5 +600,8 @@
   "galleryPlay": "Start the slideshow",
   "galleryPause": "Pause the slideshow",
   "multiView": "Pages",
-  "multiViewPageOf": "Page {index, number} of {count, number}"
+  "multiViewPageOf": "Page {index, number} of {count, number}",
+  "splitterCollapse": "Hide the pane",
+  "splitterExpand": "Show the pane",
+  "tiles": "Tiles"
 }

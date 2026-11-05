@@ -619,6 +619,10 @@ export interface UiStrings {
   galleryPause: string;
   multiView: string;
   multiViewPageOf: string;
+  /** The splitter and the tile view. */
+  splitterCollapse: string;
+  splitterExpand: string;
+  tiles: string;
   /** The sortable and the scroll view. */
   sortableMoved: string;
   scrollPullDown: string;

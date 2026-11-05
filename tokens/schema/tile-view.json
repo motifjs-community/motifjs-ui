@@ -1,0 +1,35 @@
+{
+  "tile-view": {
+    "$description": "TileView: tiles of different sizes packed on a grid of base cells, chosen and put in order by dragging.",
+    "$selector": ".mx-tile-view",
+    "gap": { "$type": "dimension", "$description": "Between the tiles." },
+    "$units": {
+      "view": {
+        "$description": "The view the tiles lie in.",
+        "selector": ".mx-tile-view"
+      },
+      "tile": {
+        "$description": "A tile: `hover`, `pressed`, `focus`, `selected` when chosen, `disabled`, `dragging` while lifted (left faint in its place), `target` where a drop would land.",
+        "selector": ".mx-tile-view__tile",
+        "defaults": { "cursor": "default" },
+        "states": {
+          "hover": ".mx-tile-view__tile:not([aria-disabled='true']):hover",
+          "pressed": { "selector": ".mx-tile-view__tile:not([aria-disabled='true']):active", "from": "hover" },
+          "focus": ".mx-tile-view__tile:focus-visible",
+          "selected": ".mx-tile-view__tile[aria-selected='true']",
+          "disabled": ".mx-tile-view__tile[aria-disabled='true']",
+          "dragging": ".mx-tile-view__tile[data-dragging]",
+          "target": ".mx-tile-view__tile[data-drop]"
+        }
+      },
+      "text": {
+        "$description": "A tile's text.",
+        "selector": ".mx-tile-view__text"
+      },
+      "ghost": {
+        "$description": "The copy of the tile after the pointer.",
+        "selector": ".mx-tile-view__ghost"
+      }
+    }
+  }
+}

@@ -2686,6 +2686,35 @@
     --_spinner-shape-contained-scale: var(--mx-spinner-shape-contained-scale);
   }
 
+  .mx-splitter {
+    --_splitter-size: var(--mx-splitter-size);
+    --_splitter-line-width: var(--mx-splitter-line-width);
+    --_splitter-active-width: var(--mx-splitter-active-width);
+    --_splitter-grip-length: var(--mx-splitter-grip-length);
+    --_splitter-grip-thickness: var(--mx-splitter-grip-thickness);
+    --_splitter-handle-focus-glow: var(--mx-splitter-handle-focus-glow);
+    --_splitter-handle-focus-outline-width: var(--mx-splitter-handle-focus-outline-width);
+    --_splitter-handle-focus-outline-color: var(--mx-splitter-handle-focus-outline-color);
+    --_splitter-handle-focus-outline-offset: var(--mx-splitter-handle-focus-outline-offset);
+    --_splitter-line-bg: var(--mx-splitter-line-bg);
+    --_splitter-line-active-bg: var(--mx-splitter-line-active-bg);
+    --_splitter-grip-bg: var(--mx-splitter-grip-bg);
+    --_splitter-grip-radius: var(--mx-splitter-grip-radius);
+    --_splitter-grip-active-bg: var(--mx-splitter-grip-active-bg);
+    --_splitter-grip-disabled-bg: var(--mx-splitter-grip-disabled-bg);
+    --_splitter-fold-size: var(--mx-splitter-fold-size);
+    --_splitter-fold-radius: var(--mx-splitter-fold-radius);
+    --_splitter-fold-hover-bg: var(--mx-splitter-fold-hover-bg);
+    --_splitter-fold-hover-cursor: var(--mx-splitter-fold-hover-cursor);
+    --_splitter-fold-pressed-bg: var(--mx-splitter-fold-pressed-bg);
+    --_splitter-fold-focus-glow: var(--mx-splitter-fold-focus-glow);
+    --_splitter-fold-focus-outline-width: var(--mx-splitter-fold-focus-outline-width);
+    --_splitter-fold-focus-outline-color: var(--mx-splitter-fold-focus-outline-color);
+    --_splitter-fold-focus-outline-offset: var(--mx-splitter-fold-focus-outline-offset);
+    --_splitter-fold-glyph-size: var(--mx-splitter-fold-glyph-size);
+    --_splitter-fold-glyph-bg: var(--mx-splitter-fold-glyph-bg);
+  }
+
   .mx-stepper {
     --_stepper-size-sm: var(--mx-stepper-size-sm);
     --_stepper-size-md: var(--mx-stepper-size-md);
@@ -3283,6 +3312,36 @@
     --_text-box-reveal-shown-color: var(--mx-text-box-reveal-shown-color);
     --_text-box-reveal-glyph-icon: var(--mx-text-box-reveal-glyph-icon);
     --_text-box-reveal-glyph-shown-icon: var(--mx-text-box-reveal-glyph-shown-icon);
+  }
+
+  .mx-tile-view {
+    --_tile-view-gap: var(--mx-tile-view-gap);
+    --_tile-view-tile-radius: var(--mx-tile-view-tile-radius);
+    --_tile-view-tile-bg: var(--mx-tile-view-tile-bg);
+    --_tile-view-tile-color: var(--mx-tile-view-tile-color);
+    --_tile-view-tile-padding: var(--mx-tile-view-tile-padding);
+    --_tile-view-tile-hover-bg: var(--mx-tile-view-tile-hover-bg);
+    --_tile-view-tile-hover-cursor: var(--mx-tile-view-tile-hover-cursor);
+    --_tile-view-tile-pressed-bg: var(--mx-tile-view-tile-pressed-bg);
+    --_tile-view-tile-focus-glow: var(--mx-tile-view-tile-focus-glow);
+    --_tile-view-tile-focus-outline-width: var(--mx-tile-view-tile-focus-outline-width);
+    --_tile-view-tile-focus-outline-color: var(--mx-tile-view-tile-focus-outline-color);
+    --_tile-view-tile-focus-outline-offset: var(--mx-tile-view-tile-focus-outline-offset);
+    --_tile-view-tile-selected-bg: var(--mx-tile-view-tile-selected-bg);
+    --_tile-view-tile-selected-border-color: var(--mx-tile-view-tile-selected-border-color);
+    --_tile-view-tile-selected-color: var(--mx-tile-view-tile-selected-color);
+    --_tile-view-tile-disabled-color: var(--mx-tile-view-tile-disabled-color);
+    --_tile-view-tile-disabled-cursor: var(--mx-tile-view-tile-disabled-cursor);
+    --_tile-view-tile-dragging-opacity: var(--mx-tile-view-tile-dragging-opacity);
+    --_tile-view-tile-target-outline-width: var(--mx-tile-view-tile-target-outline-width);
+    --_tile-view-tile-target-outline-color: var(--mx-tile-view-tile-target-outline-color);
+    --_tile-view-tile-target-outline-offset: var(--mx-tile-view-tile-target-outline-offset);
+    --_tile-view-tile-border-width: var(--mx-tile-view-tile-border-width);
+    --_tile-view-tile-border-color: var(--mx-tile-view-tile-border-color);
+    --_tile-view-ghost-radius: var(--mx-tile-view-ghost-radius);
+    --_tile-view-ghost-shadow: var(--mx-tile-view-ghost-shadow);
+    --_tile-view-ghost-opacity: var(--mx-tile-view-ghost-opacity);
+    --_tile-view-tile-shadow: var(--mx-tile-view-tile-shadow);
   }
 
   .mx-toaster__stack, .mx-toast {

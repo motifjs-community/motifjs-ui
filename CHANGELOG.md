@@ -22,6 +22,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   views are skipped; `onSelecting` may refuse, `onSelectionChanged`.
 - The slide part under both: a finger or a pointer drags the panes, a drag far or fast enough lands on the next one,
   and around the ends the far pane is set next to the one leaving for the move.
+- `Splitter` and `SplitPane`: panes side by side or one under the other, as many as needed, a handle between each
+  two that the pointer drags and the keys move (arrows by `step`, Home, End), resizing the two panes beside it; a
+  pane is a `Panel` with `size` (pixels, a share, or an equal share of what is left), `minSize`, `maxSize`,
+  `resizable`, and may be hidden from its handle (`collapsible`: a button on the handle, Enter, a double press);
+  `sizes` and `x-model` keep and restore a layout in pixels; panes added, inserted and removed from code, one may
+  hold another splitter; `onResizing`, `onResized`, `onCollapsing` may refuse, `onCollapsed`. The handle looks as
+  the `SplitContainer`’s does in every language.
+- `TileView`: tiles of `widthRatio` × `heightRatio` base cells (`baseItemWidth`, `baseItemHeight`) packed densely
+  down the columns (the view scrolls sideways) or along the rows; a tile is a text or any `content`; `selectionMode`
+  none, single or multiple with `value` and `x-model` (a press, Ctrl and a press, Space, Enter); the arrow keys walk
+  the grid by where the tiles lie; `allowReorder` drags a tile to its new place (a long press on a touch screen) or
+  moves it with Ctrl and an arrow, `onReordering` may refuse, `onReordered` tells the indexes; `onItemClick`.
+- Kit texts `splitterCollapse`, `splitterExpand`, `tiles` in English and Turkish.
 - Kit texts `gallery`, `gallerySlides`, `gallerySlideOf`, `galleryPrevious`, `galleryNext`, `galleryChoose`,
   `galleryPlay`, `galleryPause`, `multiView`, `multiViewPageOf` in English and Turkish; the `play` and `pause` glyphs.
 
