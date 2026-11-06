@@ -1,0 +1,66 @@
+/* Signature: a pad with a canvas, the line to sign on and a text while it is empty, and two buttons in its corner. The
+   pad takes every touch, so that signing does not scroll the page. The pad, the line, the text and the buttons' place
+   are units of the schema; the color of the ink is the color of the pad. */
+@layer mx.components {
+    .mx-signature {
+        inline-size: 100%;
+        max-inline-size: var(--_signature-width);
+    }
+
+    .mx-signature > .mx-field__box {
+        position: relative;
+        inline-size: 100%;
+    }
+
+    .mx-signature__pad {
+        position: relative;
+        overflow: hidden;
+        box-sizing: border-box;
+        inline-size: 100%;
+        block-size: var(--_signature-height);
+        touch-action: none;
+        user-select: none;
+    }
+
+    .mx-signature__canvas {
+        position: absolute;
+        inset: 0;
+        inline-size: 100%;
+        block-size: 100%;
+    }
+
+    .mx-signature__guide {
+        position: absolute;
+        inset-block-end: var(--_signature-guide-inset);
+        inset-inline: var(--_signature-guide-inset);
+        pointer-events: none;
+    }
+
+    .mx-signature__guide[hidden] {
+        display: none;
+    }
+
+    .mx-signature__placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+    .mx-signature__placeholder[hidden] {
+        display: none;
+    }
+
+    .mx-signature__actions {
+        position: absolute;
+        inset-block-start: var(--_signature-actions-inset);
+        inset-inline-end: var(--_signature-actions-inset);
+        display: flex;
+    }
+
+    .mx-signature__actions[hidden] {
+        display: none;
+    }
+}

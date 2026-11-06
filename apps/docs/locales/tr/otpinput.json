@@ -17,7 +17,6 @@
   "Puts a separator after every so many boxes, such as `3` for `123-456`.": "Belirtilen sayıda kutudan sonra ayırıcı koyar; örneğin `123-456` için `3`.",
   "The text of that separator.": "Bu ayırıcının metni.",
   "The `autocomplete` of the input, which lets a phone offer the code from a message.": "Input'un `autocomplete` değeri; telefonun kodu mesajdan önermesini sağlar.",
-  "Same as `TextBox`.": "`TextBox` ile aynıdır.",
   "The characters entered so far. `x-model` provides two-way binding.": "Şimdiye kadar girilen karakterler. `x-model` iki yönlü bağlama sağlar.",
   "Indicates that every box is filled.": "Tüm kutuların dolu olduğunu belirtir.",
   "Empties the boxes and puts the caret in the first one.": "Kutuları boşaltır ve imleci ilk kutuya koyar.",

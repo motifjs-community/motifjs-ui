@@ -6766,6 +6766,68 @@
     border-block-start-color: var(--_sheet-footer-border-top-color, currentcolor);
   }
 
+  .mx-signature__pad {
+    background-color: var(--_signature-pad-bg, transparent);
+    border-style: solid;
+    border-block-start-width: var(--_signature-pad-border-width, 0px);
+    border-inline-end-width: var(--_signature-pad-border-width, 0px);
+    border-block-end-width: var(--_signature-pad-border-bottom-width, var(--_signature-pad-border-width, 0px));
+    border-inline-start-width: var(--_signature-pad-border-width, 0px);
+    border-block-start-color: var(--_signature-pad-border-color, currentcolor);
+    border-inline-end-color: var(--_signature-pad-border-color, currentcolor);
+    border-block-end-color: var(--_signature-pad-border-bottom-color, var(--_signature-pad-border-color, currentcolor));
+    border-inline-start-color: var(--_signature-pad-border-color, currentcolor);
+    border-start-start-radius: var(--_signature-pad-radius, 0px);
+    border-start-end-radius: var(--_signature-pad-radius, 0px);
+    border-end-start-radius: var(--_signature-pad-radius, 0px);
+    border-end-end-radius: var(--_signature-pad-radius, 0px);
+    color: var(--_signature-pad-color, inherit);
+    outline-style: solid;
+    outline-width: 0px;
+    cursor: var(--_signature-pad-cursor, inherit);
+  }
+
+  .mx-signature__pad:focus-visible {
+    box-shadow: var(--_signature-pad-focus-glow, 0 0 #0000), 0 0 #0000;
+    outline-width: var(--_signature-pad-focus-outline-width, 0px);
+    outline-color: var(--_signature-pad-focus-outline-color, currentcolor);
+    outline-offset: var(--_signature-pad-focus-outline-offset, 0px);
+  }
+
+  .mx-signature[data-invalid] .mx-signature__pad {
+    border-block-start-color: var(--_signature-pad-invalid-border-color, var(--_signature-pad-border-color, currentcolor));
+    border-inline-end-color: var(--_signature-pad-invalid-border-color, var(--_signature-pad-border-color, currentcolor));
+    border-block-end-color: var(--_signature-pad-invalid-border-color, var(--_signature-pad-border-bottom-color, var(--_signature-pad-border-color, currentcolor)));
+    border-inline-start-color: var(--_signature-pad-invalid-border-color, var(--_signature-pad-border-color, currentcolor));
+  }
+
+  .mx-signature[data-readonly] .mx-signature__pad {
+    cursor: var(--_signature-pad-readonly-cursor, var(--_signature-pad-cursor, inherit));
+  }
+
+  .mx-signature[data-disabled] .mx-signature__pad {
+    background-color: var(--_signature-pad-disabled-bg, var(--_signature-pad-bg, transparent));
+    color: var(--_signature-pad-disabled-color, var(--_signature-pad-color, inherit));
+    cursor: var(--_signature-pad-disabled-cursor, var(--_signature-pad-cursor, inherit));
+  }
+
+  .mx-signature__guide {
+    border-style: solid;
+    border-block-start-width: var(--_signature-guide-border-top-width, 0px);
+    border-inline-end-width: 0px;
+    border-block-end-width: 0px;
+    border-inline-start-width: 0px;
+    border-block-start-color: var(--_signature-guide-border-color, currentcolor);
+    border-inline-end-color: var(--_signature-guide-border-color, currentcolor);
+    border-block-end-color: var(--_signature-guide-border-color, currentcolor);
+    border-inline-start-color: var(--_signature-guide-border-color, currentcolor);
+  }
+
+  .mx-signature__placeholder {
+    color: var(--_signature-placeholder-color, inherit);
+    font-size: var(--_signature-placeholder-font-size, inherit);
+  }
+
   .mx-skeleton__bone {
     margin-block-start: 0px;
     margin-inline-end: 0px;

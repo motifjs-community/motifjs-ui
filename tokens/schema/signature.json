@@ -1,0 +1,79 @@
+{
+  "signature": {
+    "$description": "Signature: a pad to sign on, with the line to sign on and two buttons in its corner.",
+    "$selector": ".mx-signature",
+    "width": {
+      "$type": "dimension",
+      "$description": "The width of the field at most."
+    },
+    "height": {
+      "$type": "dimension",
+      "$description": "The height of the pad."
+    },
+    "guide-inset": {
+      "$type": "dimension",
+      "$description": "From the edges of the pad to the line to sign on."
+    },
+    "actions-inset": {
+      "$type": "dimension",
+      "$description": "From the corner of the pad to the buttons."
+    },
+    "$places": {
+      "field": {
+        "$description": "The field under the pad: no text-field box.",
+        "selector": ".mx-signature",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "label-mode",
+          "padding.sm",
+          "padding.md",
+          "padding.lg",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "border-width",
+          "box.radius",
+          "box.shadow",
+          "box.focus.shadow",
+          "box.cursor",
+          "frame.display",
+          "indicator.display",
+          "box.disabled.bg",
+          "box.disabled.shadow",
+          "padding-start.sm",
+          "padding-start.md",
+          "padding-start.lg",
+          "padding-end.sm",
+          "padding-end.md",
+          "padding-end.lg",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "box.invalid-focus.shadow",
+          "box.readonly-focus.shadow",
+          "box.readonly-invalid-focus.shadow"
+        ]
+      }
+    },
+    "$units": {
+      "pad": {
+        "$description": "The pad: `color` is the color of the ink; `focus`, `invalid`, `readonly`, `disabled`.",
+        "selector": ".mx-signature__pad",
+        "states": {
+          "focus": ".mx-signature__pad:focus-visible",
+          "invalid": ".mx-signature[data-invalid] .mx-signature__pad",
+          "readonly": ".mx-signature[data-readonly] .mx-signature__pad",
+          "disabled": ".mx-signature[data-disabled] .mx-signature__pad"
+        }
+      },
+      "guide": {
+        "$description": "The line to sign on.",
+        "selector": ".mx-signature__guide"
+      },
+      "placeholder": {
+        "$description": "The text of the empty pad.",
+        "selector": ".mx-signature__placeholder"
+      }
+    }
+  }
+}

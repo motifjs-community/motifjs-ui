@@ -2685,6 +2685,34 @@
     --_sheet-footer-border-top-color: var(--mx-sheet-footer-border-top-color);
   }
 
+  .mx-signature {
+    --_signature-width: var(--mx-signature-width);
+    --_signature-height: var(--mx-signature-height);
+    --_signature-guide-inset: var(--mx-signature-guide-inset);
+    --_signature-actions-inset: var(--mx-signature-actions-inset);
+    --_signature-pad-bg: var(--mx-signature-pad-bg);
+    --_signature-pad-color: var(--mx-signature-pad-color);
+    --_signature-pad-radius: var(--mx-signature-pad-radius);
+    --_signature-pad-border-width: var(--mx-signature-pad-border-width);
+    --_signature-pad-border-color: var(--mx-signature-pad-border-color);
+    --_signature-pad-cursor: var(--mx-signature-pad-cursor);
+    --_signature-pad-border-bottom-color: var(--mx-signature-pad-border-bottom-color);
+    --_signature-pad-focus-glow: var(--mx-signature-pad-focus-glow);
+    --_signature-pad-focus-outline-width: var(--mx-signature-pad-focus-outline-width);
+    --_signature-pad-focus-outline-color: var(--mx-signature-pad-focus-outline-color);
+    --_signature-pad-focus-outline-offset: var(--mx-signature-pad-focus-outline-offset);
+    --_signature-pad-invalid-border-color: var(--mx-signature-pad-invalid-border-color);
+    --_signature-pad-readonly-cursor: var(--mx-signature-pad-readonly-cursor);
+    --_signature-pad-disabled-bg: var(--mx-signature-pad-disabled-bg);
+    --_signature-pad-disabled-cursor: var(--mx-signature-pad-disabled-cursor);
+    --_signature-pad-disabled-color: var(--mx-signature-pad-disabled-color);
+    --_signature-guide-border-top-width: var(--mx-signature-guide-border-top-width);
+    --_signature-guide-border-color: var(--mx-signature-guide-border-color);
+    --_signature-placeholder-color: var(--mx-signature-placeholder-color);
+    --_signature-placeholder-font-size: var(--mx-signature-placeholder-font-size);
+    --_signature-pad-border-bottom-width: var(--mx-signature-pad-border-bottom-width);
+  }
+
   .mx-skeleton {
     --_skeleton-animation: var(--mx-skeleton-animation);
     --_skeleton-duration: var(--mx-skeleton-duration);

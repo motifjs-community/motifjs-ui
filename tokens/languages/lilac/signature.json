@@ -1,0 +1,423 @@
+{
+  "signature": {
+    "width": {
+      "$value": {
+        "value": 420,
+        "unit": "px"
+      }
+    },
+    "height": {
+      "$value": {
+        "value": 168,
+        "unit": "px"
+      }
+    },
+    "guide-inset": {
+      "$value": "{space.6}"
+    },
+    "actions-inset": {
+      "$value": "{space.1}"
+    },
+    "field": {
+      "label-mode": {
+        "$value": "top"
+      },
+      "variant": {
+        "$value": "outline"
+      },
+      "padding": {
+        "sm": {
+          "$value": "0px"
+        },
+        "md": {
+          "$value": "0px"
+        },
+        "lg": {
+          "$value": "0px"
+        }
+      },
+      "border-width": {
+        "$value": "0px"
+      },
+      "padding-start": {
+        "sm": {
+          "$value": "0px"
+        },
+        "md": {
+          "$value": "0px"
+        },
+        "lg": {
+          "$value": "0px"
+        }
+      },
+      "padding-end": {
+        "sm": {
+          "$value": "0px"
+        },
+        "md": {
+          "$value": "0px"
+        },
+        "lg": {
+          "$value": "0px"
+        }
+      },
+      "box": {
+        "bg": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0,
+              0,
+              0
+            ],
+            "alpha": 0
+          }
+        },
+        "hover": {
+          "bg": {
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0,
+                0,
+                0
+              ],
+              "alpha": 0
+            }
+          }
+        },
+        "focus": {
+          "bg": {
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0,
+                0,
+                0
+              ],
+              "alpha": 0
+            }
+          },
+          "shadow": {
+            "$value": {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [
+                  0,
+                  0,
+                  0
+                ],
+                "alpha": 0
+              },
+              "offsetX": {
+                "value": 0,
+                "unit": "px"
+              },
+              "offsetY": {
+                "value": 0,
+                "unit": "px"
+              },
+              "blur": {
+                "value": 0,
+                "unit": "px"
+              },
+              "spread": {
+                "value": 0,
+                "unit": "px"
+              }
+            }
+          }
+        },
+        "radius": {
+          "$value": "0px"
+        },
+        "shadow": {
+          "$value": {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [
+                0,
+                0,
+                0
+              ],
+              "alpha": 0
+            },
+            "offsetX": {
+              "value": 0,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 0,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 0,
+              "unit": "px"
+            },
+            "spread": {
+              "value": 0,
+              "unit": "px"
+            }
+          }
+        },
+        "cursor": {
+          "$value": "default"
+        },
+        "disabled": {
+          "bg": {
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0,
+                0,
+                0
+              ],
+              "alpha": 0
+            }
+          },
+          "shadow": {
+            "$value": {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [
+                  0,
+                  0,
+                  0
+                ],
+                "alpha": 0
+              },
+              "offsetX": {
+                "value": 0,
+                "unit": "px"
+              },
+              "offsetY": {
+                "value": 0,
+                "unit": "px"
+              },
+              "blur": {
+                "value": 0,
+                "unit": "px"
+              },
+              "spread": {
+                "value": 0,
+                "unit": "px"
+              }
+            }
+          }
+        },
+        "invalid-hover": {
+          "bg": {
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0,
+                0,
+                0
+              ],
+              "alpha": 0
+            }
+          }
+        },
+        "invalid-focus": {
+          "bg": {
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0,
+                0,
+                0
+              ],
+              "alpha": 0
+            }
+          },
+          "shadow": {
+            "$value": {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [
+                  0,
+                  0,
+                  0
+                ],
+                "alpha": 0
+              },
+              "offsetX": {
+                "value": 0,
+                "unit": "px"
+              },
+              "offsetY": {
+                "value": 0,
+                "unit": "px"
+              },
+              "blur": {
+                "value": 0,
+                "unit": "px"
+              },
+              "spread": {
+                "value": 0,
+                "unit": "px"
+              }
+            }
+          }
+        },
+        "readonly-focus": {
+          "shadow": {
+            "$value": {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [
+                  0,
+                  0,
+                  0
+                ],
+                "alpha": 0
+              },
+              "offsetX": {
+                "value": 0,
+                "unit": "px"
+              },
+              "offsetY": {
+                "value": 0,
+                "unit": "px"
+              },
+              "blur": {
+                "value": 0,
+                "unit": "px"
+              },
+              "spread": {
+                "value": 0,
+                "unit": "px"
+              }
+            }
+          }
+        },
+        "readonly-invalid-focus": {
+          "shadow": {
+            "$value": {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [
+                  0,
+                  0,
+                  0
+                ],
+                "alpha": 0
+              },
+              "offsetX": {
+                "value": 0,
+                "unit": "px"
+              },
+              "offsetY": {
+                "value": 0,
+                "unit": "px"
+              },
+              "blur": {
+                "value": 0,
+                "unit": "px"
+              },
+              "spread": {
+                "value": 0,
+                "unit": "px"
+              }
+            }
+          }
+        }
+      },
+      "frame": {
+        "display": {
+          "$value": "none"
+        }
+      },
+      "indicator": {
+        "display": {
+          "$value": "none"
+        }
+      }
+    },
+    "pad": {
+      "bg": {
+        "$value": "{color.selection.bg}"
+      },
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "radius": {
+        "$value": "{radius.lg}"
+      },
+      "border-width": {
+        "$value": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "border-color": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0,
+            0
+          ],
+          "alpha": 0
+        }
+      },
+      "cursor": {
+        "$value": "crosshair"
+      },
+      "focus": {
+        "glow": {
+          "$value": "{focus.ring.halo}"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.offset}"
+        }
+      },
+      "invalid": {
+        "border-color": {
+          "$value": "{color.danger.solid}"
+        }
+      },
+      "readonly": {
+        "cursor": {
+          "$value": "default"
+        }
+      },
+      "disabled": {
+        "bg": {
+          "$value": "{color.fill.control.disabled}"
+        },
+        "cursor": {
+          "$value": "default"
+        },
+        "color": {
+          "$value": "{color.fg.disabled}"
+        }
+      }
+    },
+    "guide": {
+      "border-top-width": {
+        "$value": {
+          "value": 1,
+          "unit": "px"
+        }
+      },
+      "border-color": {
+        "$value": "{color.stroke.control.strong}"
+      }
+    },
+    "placeholder": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-size": {
+        "$value": "{font.size.body}"
+      }
+    }
+  }
+}

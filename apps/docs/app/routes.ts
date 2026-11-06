@@ -18,6 +18,7 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   appbar: () => import('../pages/appbar/AppBarPage'),
   bottomnavigation: () => import('../pages/bottomnavigation/BottomNavigationPage'),
   otpinput: () => import('../pages/otpinput/OtpInputPage'),
+  signature: () => import('../pages/signature/SignaturePage'),
   pagination: () => import('../pages/pagination/PaginationPage'),
   stepper: () => import('../pages/stepper/StepperPage'),
   gallery: () => import('../pages/gallery/GalleryPage'),

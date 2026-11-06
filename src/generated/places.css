@@ -682,6 +682,38 @@
     --_field-box-readonly-invalid-focus-shadow: var(--mx-sheet-list-box-box-readonly-invalid-focus-shadow);
   }
 
+  /* signature: field — The field under the pad: no text-field box. */
+  .mx-signature {
+    --_field-variant: var(--mx-signature-field-variant);
+    --_field-label-mode: var(--mx-signature-field-label-mode);
+    --_field-padding-sm: var(--mx-signature-field-padding-sm);
+    --_field-padding-md: var(--mx-signature-field-padding-md);
+    --_field-padding-lg: var(--mx-signature-field-padding-lg);
+    --_field-box-bg: var(--mx-signature-field-box-bg);
+    --_field-box-hover-bg: var(--mx-signature-field-box-hover-bg);
+    --_field-box-focus-bg: var(--mx-signature-field-box-focus-bg);
+    --_field-border-width: var(--mx-signature-field-border-width);
+    --_field-box-radius: var(--mx-signature-field-box-radius);
+    --_field-box-shadow: var(--mx-signature-field-box-shadow);
+    --_field-box-focus-shadow: var(--mx-signature-field-box-focus-shadow);
+    --_field-box-cursor: var(--mx-signature-field-box-cursor);
+    --_field-frame-display: var(--mx-signature-field-frame-display);
+    --_field-indicator-display: var(--mx-signature-field-indicator-display);
+    --_field-box-disabled-bg: var(--mx-signature-field-box-disabled-bg);
+    --_field-box-disabled-shadow: var(--mx-signature-field-box-disabled-shadow);
+    --_field-padding-start-sm: var(--mx-signature-field-padding-start-sm);
+    --_field-padding-start-md: var(--mx-signature-field-padding-start-md);
+    --_field-padding-start-lg: var(--mx-signature-field-padding-start-lg);
+    --_field-padding-end-sm: var(--mx-signature-field-padding-end-sm);
+    --_field-padding-end-md: var(--mx-signature-field-padding-end-md);
+    --_field-padding-end-lg: var(--mx-signature-field-padding-end-lg);
+    --_field-box-invalid-hover-bg: var(--mx-signature-field-box-invalid-hover-bg);
+    --_field-box-invalid-focus-bg: var(--mx-signature-field-box-invalid-focus-bg);
+    --_field-box-invalid-focus-shadow: var(--mx-signature-field-box-invalid-focus-shadow);
+    --_field-box-readonly-focus-shadow: var(--mx-signature-field-box-readonly-focus-shadow);
+    --_field-box-readonly-invalid-focus-shadow: var(--mx-signature-field-box-readonly-invalid-focus-shadow);
+  }
+
   /* slider: field — The field under a slider: no text-field box. */
   .mx-slider {
     --_field-variant: var(--mx-slider-field-variant);

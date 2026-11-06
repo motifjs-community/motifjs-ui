@@ -479,12 +479,17 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     const control = this.parts.control;
     this.element.toggleAttribute('data-readonly', on);
     if (control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement) control.readOnly = on;
-    else if (on) control.setAttribute('aria-readonly', 'true');
+    else if (on && this.formRole) control.setAttribute('aria-readonly', 'true');
     else control.removeAttribute('aria-readonly');
   }
 
   protected override get focusElement(): HTMLElement {
     return this.parts.control;
+  }
+
+  /** Whether the role of the control carries `aria-required` and `aria-readonly`. A control with another role says no. */
+  protected get formRole(): boolean {
+    return true;
   }
 
   // Drawing.
@@ -646,7 +651,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
   private renderRequired(on: boolean): void {
     const parts = this.parts;
     this.element.toggleAttribute('data-required', on);
-    if (on) parts.control.setAttribute('aria-required', 'true');
+    if (on && this.formRole) parts.control.setAttribute('aria-required', 'true');
     else parts.control.removeAttribute('aria-required');
     if (on && !parts.requiredMark) {
       parts.requiredMark = parts.label.appendChild(document.createElement('span'));

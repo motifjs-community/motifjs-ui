@@ -2939,6 +2939,59 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `sheet.footer.gap` | `--mx-sheet-footer-gap` | `space.2` | `0.5rem` |
 | `sheet.footer.border-top-width` | `--mx-sheet-footer-border-top-width` | `border.width.1` | `1px` |
 | `sheet.footer.border-top-color` | `--mx-sheet-footer-border-top-color` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
+| `signature.width` | `--mx-signature-width` | `` | `420px` |
+| `signature.height` | `--mx-signature-height` | `` | `160px` |
+| `signature.guide-inset` | `--mx-signature-guide-inset` | `space.6` | `1.5rem` |
+| `signature.actions-inset` | `--mx-signature-actions-inset` | `space.1` | `0.25rem` |
+| `signature.field.label-mode` | `--mx-signature-field-label-mode` | `` | `top` |
+| `signature.field.variant` | `--mx-signature-field-variant` | `` | `outline` |
+| `signature.field.padding.sm` | `--mx-signature-field-padding-sm` | `` | `0px` |
+| `signature.field.padding.md` | `--mx-signature-field-padding-md` | `` | `0px` |
+| `signature.field.padding.lg` | `--mx-signature-field-padding-lg` | `` | `0px` |
+| `signature.field.border-width` | `--mx-signature-field-border-width` | `` | `0px` |
+| `signature.field.padding-start.sm` | `--mx-signature-field-padding-start-sm` | `` | `0px` |
+| `signature.field.padding-start.md` | `--mx-signature-field-padding-start-md` | `` | `0px` |
+| `signature.field.padding-start.lg` | `--mx-signature-field-padding-start-lg` | `` | `0px` |
+| `signature.field.padding-end.sm` | `--mx-signature-field-padding-end-sm` | `` | `0px` |
+| `signature.field.padding-end.md` | `--mx-signature-field-padding-end-md` | `` | `0px` |
+| `signature.field.padding-end.lg` | `--mx-signature-field-padding-end-lg` | `` | `0px` |
+| `signature.field.box.bg` | `--mx-signature-field-box-bg` | `` | `rgb(0 0 0 / 0)` |
+| `signature.field.box.hover.bg` | `--mx-signature-field-box-hover-bg` | `` | `rgb(0 0 0 / 0)` |
+| `signature.field.box.focus.bg` | `--mx-signature-field-box-focus-bg` | `` | `rgb(0 0 0 / 0)` |
+| `signature.field.box.focus.shadow` | `--mx-signature-field-box-focus-shadow` | `` | `0px 0px 0px 0px rgb(0 0 0 / 0)` |
+| `signature.field.box.radius` | `--mx-signature-field-box-radius` | `` | `0px` |
+| `signature.field.box.shadow` | `--mx-signature-field-box-shadow` | `` | `0px 0px 0px 0px rgb(0 0 0 / 0)` |
+| `signature.field.box.cursor` | `--mx-signature-field-box-cursor` | `` | `default` |
+| `signature.field.box.disabled.bg` | `--mx-signature-field-box-disabled-bg` | `` | `rgb(0 0 0 / 0)` |
+| `signature.field.box.disabled.shadow` | `--mx-signature-field-box-disabled-shadow` | `` | `0px 0px 0px 0px rgb(0 0 0 / 0)` |
+| `signature.field.box.invalid-hover.bg` | `--mx-signature-field-box-invalid-hover-bg` | `` | `rgb(0 0 0 / 0)` |
+| `signature.field.box.invalid-focus.bg` | `--mx-signature-field-box-invalid-focus-bg` | `` | `rgb(0 0 0 / 0)` |
+| `signature.field.box.invalid-focus.shadow` | `--mx-signature-field-box-invalid-focus-shadow` | `` | `0px 0px 0px 0px rgb(0 0 0 / 0)` |
+| `signature.field.box.readonly-focus.shadow` | `--mx-signature-field-box-readonly-focus-shadow` | `` | `0px 0px 0px 0px rgb(0 0 0 / 0)` |
+| `signature.field.box.readonly-invalid-focus.shadow` | `--mx-signature-field-box-readonly-invalid-focus-shadow` | `` | `0px 0px 0px 0px rgb(0 0 0 / 0)` |
+| `signature.field.frame.display` | `--mx-signature-field-frame-display` | `` | `none` |
+| `signature.field.indicator.display` | `--mx-signature-field-indicator-display` | `` | `none` |
+| `signature.pad.bg` | `--mx-signature-pad-bg` | `color.bg.card` | `#f5f4f0` |
+| `signature.pad.color` | `--mx-signature-pad-color` | `color.fg.primary` | `#1d1c1a` |
+| `signature.pad.radius` | `--mx-signature-pad-radius` | `radius.lg` | `0.625rem` |
+| `signature.pad.border-width` | `--mx-signature-pad-border-width` | `` | `1px` |
+| `signature.pad.border-color` | `--mx-signature-pad-border-color` | `color.stroke.control.strong` | `rgb(0 0 0 / 0.4458)` |
+| `signature.pad.cursor` | `--mx-signature-pad-cursor` | `` | `crosshair` |
+| `signature.pad.border-bottom-width` | `--mx-signature-pad-border-bottom-width` | `control.edge.width` | `2px` |
+| `signature.pad.border-bottom-color` | `--mx-signature-pad-border-bottom-color` | `color.stroke.control.edge` | `rgb(0 0 0 / 0.3)` |
+| `signature.pad.focus.glow` | `--mx-signature-pad-focus-glow` | `focus.ring.halo` | `0px 0px 0px 1px rgb(255 255 255 / 0.7)` |
+| `signature.pad.focus.outline-width` | `--mx-signature-pad-focus-outline-width` | `focus.ring.width` | `2px` |
+| `signature.pad.focus.outline-color` | `--mx-signature-pad-focus-outline-color` | `focus.ring.color` | `#1d1c1a` |
+| `signature.pad.focus.outline-offset` | `--mx-signature-pad-focus-outline-offset` | `focus.ring.offset` | `1px` |
+| `signature.pad.invalid.border-color` | `--mx-signature-pad-invalid-border-color` | `color.danger.solid` | `#b03659` |
+| `signature.pad.readonly.cursor` | `--mx-signature-pad-readonly-cursor` | `` | `default` |
+| `signature.pad.disabled.bg` | `--mx-signature-pad-disabled-bg` | `color.fill.control.disabled` | `#ebeae5` |
+| `signature.pad.disabled.cursor` | `--mx-signature-pad-disabled-cursor` | `` | `default` |
+| `signature.pad.disabled.color` | `--mx-signature-pad-disabled-color` | `color.fg.disabled` | `#a2a098` |
+| `signature.guide.border-top-width` | `--mx-signature-guide-border-top-width` | `` | `1px` |
+| `signature.guide.border-color` | `--mx-signature-guide-border-color` | `color.stroke.control.strong` | `rgb(0 0 0 / 0.4458)` |
+| `signature.placeholder.color` | `--mx-signature-placeholder-color` | `color.fg.secondary` | `#5e5c55` |
+| `signature.placeholder.font-size` | `--mx-signature-placeholder-font-size` | `font.size.body` | `0.875rem` |
 | `skeleton.animation` | `--mx-skeleton-animation` | `` | `wave` |
 | `skeleton.duration` | `--mx-skeleton-duration` | `` | `calc(250ms * 6)` |
 | `skeleton.easing` | `--mx-skeleton-easing` | `motion.easing.standard` | `cubic-bezier(0.33, 0, 0.67, 1)` |

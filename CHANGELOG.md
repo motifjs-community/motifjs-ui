@@ -23,8 +23,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `charset` or `pattern`, `uppercase`, `masked` and `maskCharacter`, `placeholder`, `groupSize` and `separator`,
   `autoComplete`; a field, with its label, rules and `x-model`; an incomplete code fails on its own; `onCompleted` occurs
   once for a code, `isComplete`, `clear()`. The boxes run left to right in every page.
-- The glyphs `menu` and `arrow-start`, and the kit strings `navigationMenu`, `navigation`, `appBarActions` and
-  `otpIncomplete`.
+- `Signature`: a pad to sign on with a pen, a finger or a mouse. The value is the strokes themselves, in shares of the
+  pad, so that a signature can be stored as data and drawn again at any size. A pen that reports pressure sets the width
+  of the line, and otherwise it follows the speed (`minWidth`, `maxWidth`, `penColor`). `toDataURL()`, `toBlob()` and
+  `toSVG()` give an image in black, whatever the theme. `undo()`, `clear()`, buttons in the corner of the pad (`showUndo`,
+  `showClear`), Ctrl+Z and Delete; `showGuide`, `placeholder`, `height`; `onStrokeBegan`, `onStrokeEnded`; a field, with
+  its label, rules and `x-model`.
+- The glyphs `menu` and `arrow-start`, and the kit strings `navigationMenu`, `navigation`, `appBarActions`,
+  `otpIncomplete`, `signatureHere`, `signatureUndo`, `signatureName`, `signatureEmpty` and `signatureSigned`.
 
 ### Documentation
 
