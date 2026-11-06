@@ -1,6 +1,6 @@
 import type { Scheduler } from './Scheduler';
 
-/** Two fingers zoomed the time scale (sent when they let go). */
+/** Occurs when a pinch that zoomed the time scale ends. */
 export interface TimeZoomChangedEventArgs<T = unknown> {
   from: number;
   to: number;

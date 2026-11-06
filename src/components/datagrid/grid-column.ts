@@ -16,55 +16,65 @@ import type { ListOption } from './list-option';
 import type { StickySide } from './sticky-side';
 
 /**
- * Definition of one column. `editable`, `creatable`, `sortable`, `resizable`, `movable`, `hideable`,
- * `pinnable`, `menu`, `filterRow`, `headerFilter`, `filterBuilder`, `copyable`, `cellSelectable`, `exportable`, `syncLookupFilterValues`, `searchable`, `groupable`, `showWhenGrouped`, `allowCollapsing`, `groupCount` and `groupMenu` override the grid's `settings` for this column; each is a value or a function
- * that is followed (`editable` and `creatable` also take a function of the row, which decides per row).
+ * The definition of one column. `editable`, `creatable`, `sortable`, `resizable`, `movable`, `hideable`,
+ * `pinnable`, `menu`, `filterRow`, `headerFilter`, `filterBuilder`, `copyable`, `cellSelectable`,
+ * `exportable`, `syncLookupFilterValues`, `searchable`, `groupable`, `showWhenGrouped`, `allowCollapsing`,
+ * `groupCount` and `groupMenu` take precedence over the grid's `settings` for this column. Each is a value
+ * or a tracked function (`editable` and `creatable` also accept a function of the row, which applies per
+ * row).
  *
  * @example
  * { field: 'amount', title: 'Amount', type: 'number', width: 120, sticky: 'end', movable: false }
  */
 export interface GridColumn<T = any> {
-  /** Key of the value in the row (a dotted path reads a nested one); also the column's identity in layouts and sort items. */
+  /**
+   * The key of the value in the row (a dotted path reads a nested value), and the column's identity in
+   * layouts and sort items.
+   */
   field: string;
-  /** Header text. */
+  /** The header text. */
   title: Bind<string>;
-  /** Content of your own in the header cell instead of the title text, made once; read `ctx` in getters. The title stays the cell's accessible name. */
+  /**
+   * Custom content in the header cell in place of the title text, created once. Read `ctx` in getters.
+   * The title stays the cell's accessible name.
+   */
   headerCell?: (ctx: HeaderCellContext<T>) => unknown;
-  /** Value type; decides alignment, formatting, comparison and the editor. Default `'text'`. */
+  /** The value type, which determines the alignment, format, sorting and editor. The default is `'text'`. */
   type?: ColumnType;
-  /** Width in pixels. Default: the grid's `columnWidth` setting (140). */
+  /** The width in pixels. The default is the grid's `columnWidth` setting (140). */
   width?: number;
-  /** Smallest width the user can resize to. Default: the grid's `columnMinWidth` setting (48). */
+  /** The minimum width the user can resize to. The default is the grid's `columnMinWidth` setting (48). */
   minWidth?: number;
-  /** Largest width the user can resize to. */
+  /** The maximum width the user can resize to. */
   maxWidth?: number;
-  /** Share of the free space this column takes when the grid is wider than its columns. */
+  /** The share of the free space this column takes when the grid is wider than its columns. */
   flex?: number;
-  /** Keep the column at the start or end edge while scrolling sideways. A column in a band sticks with its band. */
+  /** Pins the column to the start or end edge during horizontal scrolling. A column in a band sticks with its band. */
   sticky?: StickySide;
-  /** The band this column sits in when the columns are given flat: the band's `name`, or its place in the grid's `columns` (`ownerBand`). */
+  /** The band of this column in a flat list: the band's `name`, or its position in the grid's `columns`. */
   ownerBand?: string | number;
   /**
    * When the grid is narrower than its columns, columns with a priority hide, the lowest first, and
-   * show in the row's adaptive detail (`columnHidingEnabled`). Given on any column, only columns
-   * with one hide. Pinned and grouped columns never hide. Followed when a function.
+   * appear in the row's adaptive detail (`columnHidingEnabled`). Once set on any column, only columns
+   * with a priority hide. Pinned and grouped columns never hide. A function is tracked.
    */
   hidingPriority?: Bind<number | undefined>;
-  /** Start hidden; the user can show it from the column menu. */
+  /** Starts hidden. The user can show it from the column menu. */
   hidden?: boolean;
-  /** Horizontal alignment. Default: `end` for numbers, `center` for booleans, `start` otherwise. */
+  /** The horizontal alignment. By default, `end` for numbers, `center` for booleans and `start` otherwise. */
   align?: 'start' | 'center' | 'end';
-  /** Reads the value instead of `row[field]`. */
+  /** Reads the value in place of `row[field]`. */
   value?: (row: T) => unknown;
   /**
-   * How the value shows: `Intl` options for a number or a date column (`{ style: 'currency', currency: 'EUR' }`,
-   * `{ dateStyle: 'medium' }`), which an Excel export turns into the cell's number format too, or a
-   * function that writes the text (exported as that text). Default: `Intl` formatting by `type` and `locale`.
+   * How the value is displayed: `Intl` options for a number or date column
+   * (`{ style: 'currency', currency: 'EUR' }`, `{ dateStyle: 'medium' }`), which an Excel export also
+   * converts to a number format, or a function that returns the text (exported as that text). By
+   * default, `Intl` formatting by `type` and `locale`.
    */
   format?: ((value: unknown, row: T) => string) | Intl.NumberFormatOptions | Intl.DateTimeFormatOptions;
-  /** Compares two values for sorting rows in memory. Default: by `type`, text in the locale. */
+  /** Compares two values for sorting in-memory rows. By default, by `type`, with text in the locale's order. */
   compare?: (a: unknown, b: unknown) => number;
-  /** Custom cell content, built once per pooled cell. Read `ctx.row` inside getters. */
+  /** Custom cell content, created once per pooled cell. Read `ctx.row` inside getters. */
   cell?: (ctx: CellContext<T>) => unknown;
   editable?: boolean | ((row: T) => boolean);
   creatable?: boolean | ((row: T) => boolean);
@@ -73,17 +83,17 @@ export interface GridColumn<T = any> {
   /** How this column's edge is dragged; overrides the grid's `resizeMode`. */
   resizeMode?: Bind<ColumnResizeMode>;
   /**
-   * `'virtual'`: the column gets cells only while it is in view; `'standard'`: always (a cell content
-   * with a state of its own). Overrides the grid's `columnRenderingMode`.
+   * `'virtual'` creates the column's cells only while it is in view, and `'standard'` keeps them always
+   * (for cell content with its own state). Overrides the grid's `columnRenderingMode`.
    */
   columnRenderingMode?: Bind<'standard' | 'virtual'>;
   /** Typing a character on a cell opens its editor. Overrides the grid's `editOnKeyPress`. */
   editOnKeyPress?: Bind<boolean>;
-  /** A double-click or one click opens a cell's editor. Overrides the grid's `startEditAction`. */
+  /** A double-click, or one click, opens a cell's editor. Overrides the grid's `startEditAction`. */
   startEditAction?: Bind<'click' | 'dblClick'>;
-  /** A yes/no column: pasted texts read as yes. Overrides the grid's `trueTexts`. */
+  /** For a yes/no column, the pasted text read as yes. Overrides the grid's `trueTexts`. */
   trueTexts?: readonly string[];
-  /** A yes/no column: pasted texts read as no. Overrides the grid's `falseTexts`. */
+  /** For a yes/no column, the pasted text read as no. Overrides the grid's `falseTexts`. */
   falseTexts?: readonly string[];
   movable?: Bind<boolean>;
   hideable?: Bind<boolean>;
@@ -95,97 +105,109 @@ export interface GridColumn<T = any> {
   copyable?: Bind<boolean>;
   cellSelectable?: Bind<boolean>;
   exportable?: Bind<boolean>;
-  /** The conditions the filter row offers for this column, in order. Default: all of the column type's. */
+  /** The conditions the filter row offers for this column, in order. By default, all those of the column type. */
   filterOperators?: readonly GridFilterOperator[];
-  /** The condition the filter row starts with. Default: the first of `filterOperators`, else by type. */
+  /** The initial condition of the filter row. The default is the first of `filterOperators`, otherwise by type. */
   filterOperator?: GridFilterOperator;
   /**
-   * How the header filter groups the values: a range size for a number column (`100`: "0 – 100",
-   * "100 – 200"; `[1000, 100]` a tree of ranges), the deepest part of the year → month → day … tree
-   * for a date column (`'month'`), `null` for one entry per value. Default: none for numbers, the
-   * grid's `headerFilterDateInterval` for dates.
+   * How the header filter groups values: a range size for a number column (`100` creates "0 – 100",
+   * "100 – 200", and `[1000, 100]` creates a tree of ranges), the deepest level of the year → month →
+   * day … tree for a date column (`'month'`), or `null` for one entry per value. By default, no grouping
+   * for numbers, and the grid's `headerFilterDateInterval` for dates.
    */
   headerFilterInterval?: Bind<GridHeaderFilterInterval>;
-  /** The header filter's entries instead of the column's values: `{ text, value }` items (a value may be a filter expression), or a function that gives them. */
+  /**
+   * Custom header filter entries in place of the column's values: `{ text, value }` items (a value can be
+   * a filter expression), or a function that returns them.
+   */
   headerFilterItems?: GridHeaderFilterItems<T>;
-  /** The values chosen in the header filter, followed when a function. The grid's `filters` hold them as the column's `values`. */
+  /** The values selected in the header filter. A function is tracked. The grid's `filters` hold them as `values`. */
   filterValues?: Bind<readonly unknown[] | undefined>;
-  /** `'exclude'`: the rows with `filterValues` are omitted instead of kept. Followed when a function. Default `'include'`. */
+  /**
+   * With `'exclude'`, the rows with `filterValues` are omitted instead of kept. A function is tracked. The
+   * default is `'include'`.
+   */
   filterType?: Bind<'include' | 'exclude'>;
-  /** An empty value stops the row from being saved. */
+  /** An empty value is not accepted, which prevents the row from being saved. */
   required?: boolean;
   /**
-   * Checks a value; return the message to show, or nothing. `row` is the row itself; `context` has
-   * the values entered and not saved yet (`values`) and `getValue(field)`, the value a field is saved with.
+   * Validates a value and returns the message to display, or nothing. `row` is the row itself, and
+   * `context` holds the entered, unsaved values (`values`) and `getValue(field)`, the value a field will
+   * be saved with.
    */
   validate?: (value: unknown, row: T, context: data.RowCheckContext<T>) => string | null | undefined;
   /**
-   * the standard rule set, checked after `required` and `validate`: `required`, `numeric`, `range`,
+   * Validation rules, checked after `required` and `validate`: `required`, `numeric`, `range`,
    * `stringLength`, `pattern`, `email`, `compare`, `custom` and `async`. A value is checked when it is
-   * written and when the row is checked before it is saved; the row waits for an `async` rule.
+   * written and when the row is validated before saving, and the row waits for an `async` rule.
    */
   validationRules?: readonly GridValidationRule<T>[];
-  /** How the column shows in the edit form (`editMode` `'form'` or `'popup'`). */
+  /** How the column appears in the edit form (`editMode` `'form'` or `'popup'`). */
   formItem?: GridColumnFormItem;
-  /** Choices of a `list` column: an array, or a function of the row and its entered values (`context.getValue(field)`; may return a promise). */
+  /**
+   * The choices of a `list` column: an array, or a function of the row and its entered values
+   * (`context.getValue(field)`), which can return a promise.
+   */
   options?: readonly ListOption[] | ((row: T, context: data.RowCheckContext<T>) => readonly ListOption[] | Promise<readonly ListOption[]>);
   /**
-   * A custom editor, made when the cell is edited: a `Field` (its `value` is read), or any component
-   * that calls `ctx.setValue`.
+   * A custom editor, created when the cell is edited: a `Field` (read through its `value`), or any
+   * component that calls `ctx.setValue`.
    */
   editor?: (ctx: EditorContext<T>) => unknown;
   /**
-   * The cell keeps a key and shows the text of its item from another source (a service, an array).
-   * The column is shown, edited, filtered, sorted, copied and exported as a lookup; `type` still
-   * decides the alignment.
+   * The cell holds a key and displays the text of its item from another source (a service, an array).
+   * The column is displayed, edited, filtered, sorted, copied and exported as a lookup, and `type` still
+   * determines the alignment.
    */
   lookup?: GridLookup<T>;
   /**
-   * The text of a lookup cell read from the row itself (`'customer.name'` of an expanded relation);
-   * the lookup source is then asked only to edit and to list. The field form is also what a server
+   * The text of a lookup cell, read from the row itself (`'customer.name'` of an expanded relation), so
+   * that the lookup source is used only for editing and lists. The field form is also what a server
    * sorts by.
    */
   textFrom?: string | ((row: T) => string);
-  /** The field the rows are sorted by for this column (a server sorts by it), instead of `field`. */
+  /** The field the rows are sorted by for this column (a server sorts by it), in place of `field`. */
   sortField?: string;
   /**
-   * Called when the user commits a value into a cell (editor, paste, Delete), before it is written.
-   * `values` starts as `{ [field]: value }`; change it to write other fields too (clear the city when
-   * the state changes). `row` is the row itself; `context` has the values entered so far
-   * (`context.values`, `context.getValue(field)`). May return a promise: the cell shows that it is
-   * busy until it settles.
+   * Called when the user commits a value to a cell (editor, paste or Delete), before it is written.
+   * `values` starts as `{ [field]: value }`, and you can change it to write other fields too (clear the
+   * city when the state changes). `row` is the row itself, and `context` holds the values entered so far
+   * (`context.values`, `context.getValue(field)`). A promise keeps the cell busy until it settles.
    */
   setCellValue?: (values: Record<string, unknown>, value: unknown, row: T, context: data.RowCheckContext<T>) => void | Promise<void>;
-  /** The filter row and header filter of a lookup column list only the keys of rows the other filters leave. Overrides the grid's `syncLookupFilterValues`. */
+  /**
+   * The filter row and header filter of a lookup column list only the keys of rows that match the other
+   * filters. Overrides the grid's `syncLookupFilterValues`.
+   */
   syncLookupFilterValues?: Bind<boolean>;
-  /** The search panel looks in this column. Default: on, unless the column turns its own filters off. */
+  /** Includes this column in the search panel's search. By default, enabled unless the column disables its own filters. */
   searchable?: Bind<boolean>;
-  /** The user can group by this column. Overrides the grid's `groupable`. */
+  /** Allows the user to group by this column. Overrides the grid's `groupable`. */
   groupable?: Bind<boolean>;
   /**
-   * The column's place among the grouped columns, 0 first; the rows start grouped by it. A function is
-   * followed: a new value moves the column there, `undefined` takes it out.
+   * The column's position among the grouped columns, 0 first, so that the rows start grouped by it. A
+   * function is tracked: a new value moves the column there, and `undefined` ungroups it.
    */
   groupIndex?: Bind<number | undefined>;
-  /** A grouped column still shows among the other columns. Overrides the grid's `showWhenGrouped`. */
+  /** A grouped column still appears among the other columns. Overrides the grid's `showWhenGrouped`. */
   showWhenGrouped?: Bind<boolean>;
-  /** The user can open and close this column's groups. Overrides the grid's `allowCollapsing`. */
+  /** Allows the user to expand and collapse this column's groups. Overrides the grid's `allowCollapsing`. */
   allowCollapsing?: Bind<boolean>;
   /** This column's group rows show their row count. Overrides the grid's `groupCount`. */
   groupCount?: Bind<boolean>;
   /** The grouping items of the column menu for this column. Overrides the grid's `groupMenu`. */
   groupMenu?: Bind<boolean>;
-  /** This column's groups open from their arrow or from a click on the row. Overrides the grid's `groupExpandMode`. */
+  /** This column's groups expand from their arrow or from a click on the row. Overrides the grid's `groupExpandMode`. */
   groupExpandMode?: Bind<'button' | 'rowClick'>;
-  /** Orders this column's groups, in memory (`dir` still turns the order). Default: by their values, like a sort. */
+  /** Orders this column's groups in memory (`dir` still reverses it). By default, by their values, like a sort. */
   groupCompare?: (a: unknown, b: unknown) => number;
-  /** The groups of this column start open. Default: the grid's `autoExpandAll`. */
+  /** The groups of this column start expanded. The default is the grid's `autoExpandAll`. */
   autoExpandGroup?: Bind<boolean>;
   /**
-   * What the rows are grouped by instead of the value: a function of the row (rows in memory), or the
-   * field a server groups by. Groups are ordered by it too.
+   * The value used for grouping in place of the column's value: a function of the row (in-memory rows),
+   * or the field a server groups by. Groups are also ordered by it.
    */
   calculateGroupValue?: string | ((row: T) => unknown);
-  /** Content of your own in the column's group rows, made once per pooled group row; read `ctx` in getters. */
+  /** Custom content in the column's group rows, created once per pooled group row. Read `ctx` in getters. */
   groupCell?: (ctx: GroupCellContext<T>) => unknown;
 }

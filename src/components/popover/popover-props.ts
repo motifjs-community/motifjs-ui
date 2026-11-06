@@ -9,32 +9,38 @@ import type { PopoverShowOn } from './popover-show-on';
 export interface PopoverProps extends ControlProps {
     /** The element or component it opens next to. */
     target?: Bind<TooltipTarget | null | undefined>;
-    /** A title in the header. The same property as `text`. */
+    /** A title in the header. This is the same property as `text`. */
     title?: Bind<string>;
-    /** What screen readers call it when it has no title. */
+    /** The accessible name when there is no title. */
     label?: Bind<string>;
-    /** Content programmatically, after the JSX children. */
+    /** Content set programmatically, shown after the JSX children. */
     content?: Bind<ComponentBase | null | undefined>;
-    /** Default `'click'`. */
+    /** The default is `'click'`. */
     showOn?: Bind<PopoverShowOn>;
-    /** Default `'bottom'`. It opens on the other side when there is no room. */
+    /** The default is `'bottom'`. It opens on the opposite side if there is no room. */
     placement?: Bind<PopupPlacement>;
-    /** An arrow towards the target, where the design language draws one. Default `true`. */
+    /** Shows an arrow toward the target, where the design language includes one. The default is `true`. */
     arrow?: Bind<boolean>;
-    /** A close button in the header. Default `false`. */
+    /** Shows a close button in the header. The default is `false`. */
     showClose?: Bind<boolean>;
-    /** A width of its own (a CSS length, or pixels); without one it takes its content's. */
+    /** A custom width, as a CSS length or in pixels. Without it, the popover fits its content. */
     width?: Bind<string | number | null>;
-    /** Closes on a click outside it and its target. Default `true`. */
+    /** Closes the popover on a click outside it and its target. The default is `true`. */
     closeOnOutside?: Bind<boolean>;
-    /** Milliseconds the pointer rests on the target before it opens (`showOn: 'hover'`). Default 300. */
+    /**
+     * The time in milliseconds the pointer must rest on the target before it opens (`showOn: 'hover'`). The default
+     * is 300.
+     */
     delay?: Bind<number>;
-    /** Milliseconds it stays after the pointer leaves both, so the pointer can move onto it. Default 200. */
+    /**
+     * The time in milliseconds it stays after the pointer leaves both, so the pointer can move onto it. The default
+     * is 200.
+     */
     hideDelay?: Bind<number>;
-    /** Open or not; `x-model` binds it two-way. */
+    /** Indicates whether it is open. `x-model` provides two-way binding. */
     value?: Bind<boolean>;
     onOpened?: () => void;
-    /** About to close; cancelable. */
+    /** Occurs before it closes. This event is cancelable. */
     onClosing?: (e: PopoverClosingEventArgs) => void;
     onClosed?: (reason: unknown) => void;
 }

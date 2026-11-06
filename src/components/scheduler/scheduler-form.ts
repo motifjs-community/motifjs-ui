@@ -4,24 +4,24 @@ import type { FormBind } from './form-bind';
 import type { SchedulerFormItem } from './scheduler-form-item';
 
 /**
- * The appointment form, set up without events. `items` says what it holds, in order: a built-in
+ * Configures the appointment form without events. `items` lists its contents, in order: a built-in
  * item by its field (`text`, `start`, `end`, `allDay`, `startTimeZone`, `separateEndZone`,
  * `endTimeZone`, or `timeZone` for those three, `recurrenceRule`, `description`), a resource by
- * its field (`roomId`), or an item of your own. An item whose `field` is a built-in's or a
- * resource's changes that one (its label, place, rules added, shown or locked); groups, tabs,
- * buttons and templates are the form's own.
+ * its field (`roomId`), or a custom item. An item whose `field` matches a built-in item or a
+ * resource modifies it (its label, position, added rules, visibility or lock state). Groups, tabs,
+ * buttons and templates are also supported.
  */
 export interface SchedulerForm<T = unknown> {
-  /** Default: the built-in items, the resources after the all-day switch. */
+  /** The default is the built-in items, with resources after the all-day switch. */
   items?: readonly (string | SchedulerFormItem<T>)[];
-  /** Default `2`. */
+  /** The default is `2`. */
   columns?: number;
-  /** With it, as many columns as fit, each at least this wide (a CSS length); `columns` is the most. */
+  /** Fits as many columns as possible, each at least this wide (a CSS length). `columns` sets the maximum. */
   minColumnWidth?: string;
-  /** Where the labels go. Default: the design language's. */
+  /** Label placement. The default is set by the design language. */
   labelMode?: Bind<FieldLabelMode>;
-  /** The form's title. Default "New appointment" / "Edit appointment". */
+  /** The form's title. The default is "New appointment" or "Edit appointment". */
   title?: FormBind<string, T>;
-  /** The form's width (a CSS length). Default: the design language's. */
+  /** The form's width, as a CSS length. The default is set by the design language. */
   width?: string;
 }

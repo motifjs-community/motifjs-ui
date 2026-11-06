@@ -404,6 +404,26 @@ describe('MxForm', () => {
     expect(document.activeElement).toBe(b.element);
   });
 
+  it('leaves an iframe out of the focus on open, so that Escape still closes the form', async () => {
+    const host = page();
+    const form = new MxForm({ title: 'Help', content: <iframe srcdoc="<p>Help</p>" /> });
+    const closed = form.showDialog(host);
+    await settle();
+    expect(document.activeElement).toBe(form.element);
+    press('Escape');
+    await closed;
+    expect(form.isOpen).toBe(false);
+  });
+
+  it('focuses an iframe marked [autofocus]', async () => {
+    const host = page();
+    const form = new MxForm({ title: 'Help', content: <iframe autofocus srcdoc="<p>Help</p>" /> });
+    form.show(host);
+    await settle();
+    expect(document.activeElement?.localName).toBe('iframe');
+    form.close();
+  });
+
   it('focuses [autofocus], else the first field, else the accept button', async () => {
     const host = page();
     const ok = new Button({ text: 'OK' });

@@ -98,8 +98,8 @@ function emptyLike(value: unknown): boolean {
 
 /**
  * The base of every editor: a label, a box with the editor and its buttons, a line for help or
- * an error, the value (two-way with `x-model`) and validation. A subclass gives the element that
- * holds the value (`createControl`) and draws the value into it (`renderValue`).
+ * an error, the value (`x-model` provides two-way binding) and validation. A subclass provides the
+ * element that holds the value (`createControl`) and draws the value into it (`renderValue`).
  */
 export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> extends Control<HTMLDivElement, TProps> implements ValidationTarget {
   constructor(props?: IBaseProp<TProps>) {
@@ -177,7 +177,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
   set label(value: Bind<string>) {
     this.text = value;
   }
-  /** As set, else the design language's default. */
+  /** The value as set, otherwise the design language's default. */
   get labelMode(): FieldLabelMode {
     return this.getProperty<FieldLabelMode | undefined>('labelMode') ?? (this.parts.look.get('labelMode') as FieldLabelMode | null) ?? 'top';
   }
@@ -238,7 +238,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
   set size(value: Bind<ControlSize>) {
     this.assignProperty('size', value);
   }
-  /** As set, else the design language's default. */
+  /** The value as set, otherwise the design language's default. */
   get variant(): FieldVariant {
     return this.getProperty<FieldVariant | undefined>('variant') ?? (this.parts.look.get('variant') as FieldVariant | null) ?? 'outline';
   }
@@ -286,12 +286,12 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
 
   // Validation.
 
-  /** `false` while a failed check or an `error` shows. */
+  /** `false` while a failed validation or an `error` is shown. */
   get isValid(): boolean {
     return !this.getProperty<boolean>('invalid');
   }
 
-  /** The error shown, `''` when there is none. */
+  /** The error shown, or `''` if there is none. */
   get validationMessage(): string {
     const error = this.getProperty<string | null | undefined>('error');
     if (error) return error;
@@ -299,12 +299,12 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     return failure ? failure() : '';
   }
 
-  /** An asynchronous rule is running. */
+  /** Indicates that an asynchronous rule is running. */
   get validating(): boolean {
     return !!this.getProperty<boolean>('validating');
   }
 
-  /** Checks the value and shows the outcome. */
+  /** Validates the value and shows the result. */
   async validate(): Promise<boolean> {
     const parts = this.parts;
     parts.shown = true;
@@ -327,7 +327,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     return valid;
   }
 
-  /** Hides the outcome of earlier checks; a running one is dropped. */
+  /** Clears the results of earlier validation, and drops a running one. */
   resetValidation(): void {
     const parts = this.parts;
     parts.run++;
@@ -402,8 +402,8 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
   }
 
   /**
-   * Reads your data again after it was changed in place (the field's buttons here; a list its items). Your data
-   * may be plain or reactive; the field reads it as it is.
+   * Re-reads your data after it has been changed in place (the field's buttons here, and a list's items in a list).
+   * Your data can be plain or reactive, and the field reads it as it is.
    */
   refresh(): void {
     this.renderButtons();
@@ -627,8 +627,8 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     this.element.toggleAttribute('data-notch', look.get('notch') === 'cut');
   }
 
-  /** Reads again what the design language decides for the field (variant, label mode, size). The field does it once
-   *  it is in the page; one placed in the page outside the component tree is told when it is placed. */
+  /** Re-reads what the design language sets for the field (variant, label mode, size). The field does this once
+   *  it is in the page, and a field placed outside the component tree receives this call when it is placed. */
   readLook(): void {
     this.parts.look.read();
   }

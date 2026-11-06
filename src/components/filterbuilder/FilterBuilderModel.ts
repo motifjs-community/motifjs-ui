@@ -68,13 +68,12 @@ function words(dataField: string): string {
 }
 
 /**
- * The logic of a filter builder, without its view: the fields and the operations they offer, the
- * tree of groups and conditions and the data layer's filter expression it stands for (both ways),
- * and the texts of operations, values and whole filters. Reads its options each time, so they can
- * be reactive.
+ * The logic of a filter builder, without its view: the fields and their operations, the tree of groups and
+ * conditions and its conversion to and from a data layer filter expression, and the text of operations, values
+ * and whole filters. Its options are read each time they are needed, so they can be reactive.
  */
 export class FilterBuilderModel {
-  /** Bumped when texts of lookup values arrive. */
+  /** Updated when the text of lookup values arrives. */
   readonly state = reactive({ texts: 0 });
 
   constructor(private readonly options: () => FilterBuilderModelOptions) {}
@@ -96,7 +95,7 @@ export class FilterBuilderModel {
     return this.fields().find((f) => givenValue(f, 'dataField') === dataField);
   }
 
-  /** A field the builder does not know still reads: a plain text field of that name. */
+  /** Returns the field with this name. An unknown field is treated as a plain text field of that name. */
   fieldOrPlain(dataField: string): FilterBuilderField {
     return this.field(dataField) ?? { dataField };
   }
@@ -128,7 +127,10 @@ export class FilterBuilderModel {
     return typeof max === 'number' ? max : null;
   }
 
-  /** The operations a field offers, in order: its own `filterOperations`, else by its type and the custom operations for that type. */
+  /**
+   * The operations a field offers, in order: its own `filterOperations`, otherwise those of its type and the custom
+   * operations for that type.
+   */
   operations(field: FilterBuilderField): FilterBuilderOperation[] {
     const own = givenList(givenField<readonly FilterBuilderOperation[] | undefined>(field, 'filterOperations'));
     const list = own.length ? own : this.typeOperations(field);
@@ -140,7 +142,10 @@ export class FilterBuilderModel {
     return out;
   }
 
-  /** The operations of a field's type, with the custom operations for that type: what a field without `filterOperations` offers. */
+  /**
+   * The operations of a field's type and the custom operations for that type, as offered by a field without
+   * `filterOperations`.
+   */
   typeOperations(field: FilterBuilderField): FilterBuilderOperation[] {
     const type = this.dataType(field);
     const custom = this.customOperations().filter((op) => givenList(givenValue<readonly FilterBuilderDataType[] | undefined>(op, 'dataTypes')).includes(type));
@@ -177,27 +182,33 @@ export class FilterBuilderModel {
     return { kind: 'group', operation, items: [], parent: null };
   }
 
-  /** A condition on a field (the first one by default) with its default operation and no value; `null` without fields. */
+  /**
+   * Creates a condition on a field (the first by default) with its default operation and no value. Returns `null`
+   * without fields.
+   */
   newCondition(dataField?: string): FilterBuilderCondition | null {
     const field = dataField ? this.field(dataField) : this.fields()[0];
     if (!field) return null;
     return { kind: 'condition', field: givenValue<string>(field, 'dataField'), operation: this.defaultOperation(field), value: undefined, parent: null };
   }
 
-  /** How deep an item sits: the root is 0. */
+  /** The depth of an item. The root is 0. */
   level(item: FilterBuilderItem): number {
     let n = 0;
     for (let p = item.parent; p; p = p.parent) n++;
     return n;
   }
 
-  /** Whether a group may get a group inside it (`maxGroupLevel`). */
+  /** Indicates whether a group can contain another group (`maxGroupLevel`). */
   canAddGroup(group: FilterBuilderGroup): boolean {
     const max = this.maxGroupLevel();
     return max === null || this.level(group) < max;
   }
 
-  /** The value a condition keeps when its operation changes: a list, a range or one value, as far as it goes. */
+  /**
+   * The value a condition keeps when its operation changes: a list, a range or one value, as far as it can be
+   * converted.
+   */
   valueFor(operation: FilterBuilderOperation, previous: FilterBuilderOperation, value: unknown): unknown {
     if (!this.hasValue(operation) || this.customOperation(operation) || this.customOperation(previous)) return undefined;
     const many = Array.isArray(value) ? (value as unknown[]).filter((v) => !empty(v)) : empty(value) ? [] : [value];
@@ -206,7 +217,7 @@ export class FilterBuilderModel {
     return many[0];
   }
 
-  /** Whether a condition has what its operation needs; one that has not is omitted of the value. */
+  /** Indicates whether a condition has what its operation requires. An incomplete condition is omitted from the value. */
   isComplete(c: FilterBuilderCondition): boolean {
     if (!this.hasValue(c.operation)) return true;
     const v = c.value;
@@ -217,7 +228,7 @@ export class FilterBuilderModel {
 
   // Expressions.
 
-  /** The data layer's filter a group stands for; conditions without their value are omitted. */
+  /** Returns the data layer filter of a group. Conditions without a value are omitted. */
   toExpression(group: FilterBuilderGroup): data.FilterExpression | null {
     const parts = group.items.map((item) => (item.kind === 'group' ? this.toExpression(item) : this.conditionExpression(item)));
     const joined = group.operation === 'or' || group.operation === 'notOr' ? data.or(...parts) : data.and(...parts);
@@ -225,7 +236,7 @@ export class FilterBuilderModel {
     return group.operation === 'notAnd' || group.operation === 'notOr' ? data.not(joined) : joined;
   }
 
-  /** The tree of an expression: a group at the root, whatever the expression is. */
+  /** Returns the tree of an expression, with a group at the root for any expression. */
   fromExpression(e: data.FilterExpression | null | undefined): FilterBuilderGroup {
     const root = this.newGroup();
     if (!e) return root;
@@ -238,7 +249,7 @@ export class FilterBuilderModel {
     return root;
   }
 
-  /** Whether two expressions are the same filter (dates by their moment). */
+  /** Indicates whether two expressions are the same filter. Dates are compared by their moment. */
   same(a: data.FilterExpression | null | undefined, b: data.FilterExpression | null | undefined): boolean {
     return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
   }
@@ -297,7 +308,7 @@ export class FilterBuilderModel {
 
   // Texts.
 
-  /** One value as text: the field's `customizeText`, its lookup's text, its format, yes / no. */
+  /** Formats one value as text: the field's `customizeText`, its lookup text, its format, or yes / no. */
   formatValue(field: FilterBuilderField, value: unknown, operation?: FilterBuilderOperation): string {
     const valueText = this.plainText(field, value);
     const custom = operation ? this.customOperation(operation) : undefined;
@@ -318,12 +329,12 @@ export class FilterBuilderModel {
     return empty(v) ? '' : this.formatValue(field, v, c.operation);
   }
 
-  /** A filter as one line of text: `[City] Equals 'Ankara' And [Amount] Is greater than '100'`. */
+  /** Formats a filter as a single line of text: `[City] Equals 'Ankara' And [Amount] Is greater than '100'`. */
   filterText(e: data.FilterExpression | null | undefined): string {
     return e ? this.groupLine(this.fromExpression(e), false) : '';
   }
 
-  /** The text of the tree as it is (conditions without their value omitted). */
+  /** The text of the current tree. Conditions without a value are omitted. */
   treeText(group: FilterBuilderGroup): string {
     return this.groupLine(group, false);
   }

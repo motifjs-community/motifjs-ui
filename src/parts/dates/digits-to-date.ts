@@ -1,6 +1,6 @@
 import type { DatePattern } from './date-pattern';
 
-/** The date typed as `digits` in `pattern`; `null` when it is not a real date. A part the pattern lacks comes from `base`. */
+/** The date typed as `digits` in `pattern`, or `null` if it is not a real date. A part the pattern lacks comes from `base`. */
 export function digitsToDate(digits: string, pattern: DatePattern, base: Date = new Date()): Date | null {
   const value = { year: base.getFullYear(), month: base.getMonth() + 1, day: base.getDate(), hour: 0, minute: 0, second: 0 };
   let at = 0;

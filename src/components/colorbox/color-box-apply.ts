@@ -1,2 +1,2 @@
-/** When a color chosen in the popup becomes the value: as it is moved, or on OK. */
+/** When a color selected in the popup becomes the value: as it changes, or on OK. */
 export type ColorBoxApply = 'instantly' | 'useButtons';

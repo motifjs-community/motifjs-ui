@@ -3,11 +3,11 @@ import type { data } from '@motifx-community/data';
 import type { GridValidationCallbackArgs } from './grid-validation-callback-args';
 
 /**
- * One check of a column's value, the standard rule set. Without a `message` the text comes from
- * `uiLocale`. `ignoreEmptyValue` lets an empty value pass (default: `true` for `numeric`, `range`,
- * `pattern` and `email`, `false` for the others); `reevaluate` runs the rule on every check of the row,
- * not only when the value changed (default: `true` for `async`, `false` for the others). The
- * rules run in order, the `async` ones last and together; the first that fails gives the message.
+ * One validation rule for a column's value. Without a `message`, the text comes from `uiLocale`.
+ * `ignoreEmptyValue` lets an empty value pass (by default, `true` for `numeric`, `range`, `pattern` and
+ * `email`, and `false` for the others). `reevaluate` runs the rule on every validation of the row, not
+ * only when the value changes (by default, `true` for `async`, and `false` for the others). The rules
+ * run in order, with the `async` rules last and together. The first that fails provides the message.
  */
 export type GridValidationRule<T = any> =
   | { type: 'required'; message?: Bind<string>; trim?: boolean }
@@ -17,7 +17,10 @@ export type GridValidationRule<T = any> =
   /** A string pattern is found anywhere in the value, as `new RegExp(pattern)` would. */
   | { type: 'pattern'; pattern: Bind<RegExp | string>; message?: Bind<string>; ignoreEmptyValue?: boolean }
   | { type: 'email'; message?: Bind<string>; ignoreEmptyValue?: boolean }
-  /** The value compared with what `comparisonTarget` returns (a repeated password: `context.getValue('password')`). Default `'=='`. */
+  /**
+   * Compares the value with what `comparisonTarget` returns (for a repeated password,
+   * `context.getValue('password')`). The default is `'=='`.
+   */
   | {
       type: 'compare';
       comparisonTarget: (row: T, context: data.RowCheckContext<T>) => unknown;
@@ -25,7 +28,7 @@ export type GridValidationRule<T = any> =
       message?: Bind<string>;
       ignoreEmptyValue?: boolean;
     }
-  /** `true` passes, `false` fails, a string fails with that text. */
+  /** `true` passes, `false` fails, and a string fails with that text. */
   | {
       type: 'custom';
       validationCallback: (e: GridValidationCallbackArgs<T>) => boolean | string | null | undefined | void;
@@ -34,8 +37,8 @@ export type GridValidationRule<T = any> =
       reevaluate?: boolean;
     }
   /**
-   * Checked on the server: the promise resolves to `true` (or nothing), `false`, a message, or
-   * `{ isValid, message }`; a rejection fails with its message.
+   * Validated on the server. The promise resolves to `true` (or nothing), `false`, a message, or
+   * `{ isValid, message }`, and a rejection fails with its message.
    */
   | {
       type: 'async';

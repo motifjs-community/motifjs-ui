@@ -1,11 +1,11 @@
 import type { ComponentBase } from '@motifx/core';
 
-/** What a panel's `content` factory returns. */
+/** The return type of a panel's `content` factory. */
 export type ContentFactory = () => ComponentBase | readonly ComponentBase[];
 
 /**
- * The content of a panel that is built when it is first shown: the JSX children, kept once
- * placed, and what a `content` factory makes, which can be dropped while the panel is hidden
+ * The content of a panel that is created when it is first shown: the JSX children, kept once
+ * placed, and what a `content` factory creates, which can be disposed while the panel is hidden
  * and recreated the next time.
  */
 export class PanelContent {
@@ -34,7 +34,7 @@ export class PanelContent {
     }
   }
 
-  /** Disposes what the factory made; the JSX children stay. */
+  /** Disposes what the factory created. The JSX children stay. */
   release(): void {
     if (!this.made) return;
     for (const component of this.made) this.host.controls.remove(component);

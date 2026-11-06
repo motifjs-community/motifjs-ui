@@ -2,7 +2,7 @@ import type { RuleDate } from './rule-date';
 
 const SHAPE = /^(\d{4})-?(\d{2})-?(\d{2})(?:T(\d{2}):?(\d{2})(?::?(\d{2})(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/i;
 
-/** A date as a rule writes it (`20261031`, `20261031T090000`, `20261031T090000Z`) or in ISO form; `null` when it is none. */
+/** A date as a rule writes it (`20261031`, `20261031T090000`, `20261031T090000Z`) or in ISO form, or `null` if it is neither. */
 export function parseRuleDate(text: string): RuleDate | null {
   const m = SHAPE.exec(text.trim());
   if (!m) return null;

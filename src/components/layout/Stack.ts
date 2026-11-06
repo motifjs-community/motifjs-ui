@@ -16,8 +16,8 @@ const LOOK = ['orientation', 'align', 'justify', 'wrap', 'reverse', 'inline'] as
 const CHILDREN = Symbol('mx.stack');
 
 /**
- * Children in a row or a column with a gap between them, aligned across and spread along the
- * direction, wrapping if asked. A child that says `grow` takes the free space.
+ * Children in a row or a column with a gap between them, aligned across the direction and spread
+ * along it, with optional wrapping. A child that sets `grow` takes the free space.
  *
  * @example
  * <Stack orientation="horizontal" gap="sm" align="center">
@@ -90,7 +90,7 @@ export class Stack extends Control<HTMLDivElement, StackProps> {
     this.assignProperty('inline', value, Boolean);
   }
 
-  /** A child's `grow`, as its props say or as set with {@link setGrow}. */
+  /** The `grow` of a child, from its props or as set with {@link setGrow}. */
   growOf(child: ComponentBase): boolean | number {
     return (this.settings.get(child, 'grow') as boolean | number | undefined) ?? false;
   }

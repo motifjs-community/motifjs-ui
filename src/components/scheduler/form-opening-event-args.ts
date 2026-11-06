@@ -6,16 +6,16 @@ import type { AppointmentFormData } from './appointment-form-data';
 import type { Scheduler } from './Scheduler';
 
 /**
- * The appointment form is about to open. `items` may be changed (fields of your own read and write
- * `data`, whose extra keys are written to the appointment's fields of those names); `cancel = true`
- * keeps it closed (to show a form of your own).
+ * Occurs before the appointment form opens. `items` can be changed. Custom fields read and write
+ * `data`, whose extra keys are written to the appointment fields of those names. Set `cancel = true`
+ * to keep the form closed and show a custom form.
  */
 export interface FormOpeningEventArgs<T = unknown> extends EventArgs {
-  /** The appointment edited; `null` for a new one. */
+  /** The appointment being edited, or `null` for a new one. */
   appointment: T | null;
   data: AppointmentFormData;
   items: FormItem[];
-  /** The form's window; on a phone, the sheet it comes up in. */
+  /** The form's window or, on a phone, the sheet that contains the form. */
   form: MxForm | BottomSheet;
   source: Scheduler<T>;
 }

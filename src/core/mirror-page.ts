@@ -5,8 +5,8 @@ const SHEET_CHECK = 1000;
  * Gives `target` (the document of a window the app opened) the appearance of `source`, the page: its
  * style sheets (`<link rel="stylesheet">`, `<style>` and constructed sheets) and the attributes
  * of `<html>` and `<body>` the design system reads (`data-theme`, `data-identity`, density, `dir`,
- * `lang`, classes, inline style). It keeps watching: a sheet added, changed or removed later (a
- * dev server does that), or a theme changed, shows in `target` too. Returns the function that
+ * `lang`, classes, inline style). It keeps watching, so a sheet added, changed or removed later (as
+ * a dev server does), or a changed theme, also appears in `target`. Returns a function that
  * stops watching.
  */
 export function mirrorPage(source: Document, target: Document): () => void {

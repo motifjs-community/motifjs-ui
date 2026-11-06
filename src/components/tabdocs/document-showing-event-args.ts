@@ -5,14 +5,14 @@ import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 
 /**
- * A hidden document is about to be shown again; `cancel = true` keeps it hidden. `group` and
- * `index` may be changed.
+ * Occurs before a hidden document is shown again. Set `cancel = true` to keep it hidden. `group` and
+ * `index` can be changed.
  */
 export interface DocumentShowingEventArgs extends EventArgs {
   document: TabDocument;
-  /** The group it goes into; `null` when a dock area (`side`) or a floating window is created for it. */
+  /** The group it moves into, or `null` when a dock area (`side`) or floating window is created for it. */
   group: TabGroup | null;
-  /** The dock area it goes into, `null` elsewhere. */
+  /** The dock area it moves into, otherwise `null`. */
   side: TabDockSide | null;
   index: number;
   byUser: boolean;

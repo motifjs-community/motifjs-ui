@@ -39,7 +39,7 @@ describe('CellRules', () => {
     expect(await messageOf(20, [{ type: 'compare', comparisonTarget: (r) => r.age, comparisonType: '>', message: 'Older, please' }])).toBe('Older, please');
   });
 
-  it('lets an empty value pass, and as ignoreEmptyValue says', async () => {
+  it('lets an empty value pass, as ignoreEmptyValue says', async () => {
     expect(await messageOf('', [{ type: 'email' }, { type: 'pattern', pattern: 'x' }, { type: 'numeric' }, { type: 'range', min: 1 }])).toBe('');
     expect(await messageOf('', [{ type: 'stringLength', min: 2 }])).toBe('Enter at least 2 characters.');
     expect(await messageOf('', [{ type: 'stringLength', min: 2, ignoreEmptyValue: true }])).toBe('');

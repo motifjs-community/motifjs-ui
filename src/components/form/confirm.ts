@@ -3,8 +3,8 @@ import { messageBox } from './message-box';
 import type { MessageBoxOptions } from './message-box-options';
 
 /**
- * Asks a question with OK and Cancel; resolves `true` for OK (or Yes). The other options of
- * `messageBox` can be given too: `title`, `tone`, other `buttons`.
+ * Asks a question with OK and Cancel, and resolves to `true` for OK (or Yes). The other options of
+ * `messageBox` are also accepted: `title`, `tone` and other `buttons`.
  *
  * @example
  * if (await confirm('Delete the file?', { tone: 'danger' })) this.remove();

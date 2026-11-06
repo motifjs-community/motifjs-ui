@@ -4,25 +4,28 @@ import type { LoadPanelTarget } from './load-panel-target';
 
 /** Props of `LoadPanel`. Each prop is also a settable property, and a function is tracked. */
 export interface LoadPanelProps extends ControlProps {
-    /** What it covers: a component or an element; `null` (the default) covers the whole page. */
+    /** The area to cover, a component or element. The default, `null`, covers the whole page. */
     target?: Bind<LoadPanelTarget | undefined>;
-    /** The message under the indicator. The same property as `text`. Default: the kit's "Loading…". */
+    /**
+     * The message below the indicator. This is the same property as `text`. The default is the kit's "Loading…"
+     * string.
+     */
     message?: Bind<string>;
-    /** Shown or not; `x-model` binds it two-way. Default `false`. */
+    /** Indicates whether the panel is shown. `x-model` provides two-way binding. The default is `false`. */
     value?: Bind<boolean>;
-    /** Milliseconds before it shows, so quick work does not flash it. Default `0`. */
+    /** The delay in milliseconds before it appears, so quick operations show nothing. The default is `0`. */
     delay?: Bind<number>;
-    /** Dims what it covers. Default `true`. */
+    /** Dims the covered area. The default is `true`. */
     shade?: Bind<boolean>;
-    /** The pane behind the indicator and the message. Default `true`. */
+    /** Shows the box behind the indicator and the message. The default is `true`. */
     showPane?: Bind<boolean>;
-    /** The turning indicator. Default `true`. */
+    /** Shows the rotating indicator. The default is `true`. */
     showIndicator?: Bind<boolean>;
-    /** A Cancel button in the pane; `onCancel` tells, and the panel hides. Default `false`. */
+    /** Shows a Cancel button in the panel, which raises `onCancel` and hides the panel. The default is `false`. */
     cancelable?: Bind<boolean>;
-    /** The Cancel button's text. Default: the kit's "Cancel". */
+    /** The Cancel button text. The default is the kit's "Cancel" string. */
     cancelText?: Bind<string>;
-    /** A click on the shade hides it. Default `false`. */
+    /** Clicking the shade hides the panel. The default is `false`. */
     closeOnOutside?: Bind<boolean>;
     onShown?: () => void;
     onHidden?: () => void;

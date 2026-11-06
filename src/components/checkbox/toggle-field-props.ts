@@ -4,8 +4,8 @@ import type { LabelPosition } from './label-position';
 
 /** Props of a field drawn as a native checkbox (`CheckBox`, `Switch`). Each prop is also a settable, reactive property. */
 export interface ToggleFieldProps<T> extends FieldProps<T> {
-  /** Where the caption sits. Default `'end'`. */
+  /** The position of the label. The default is `'end'`. */
   labelPosition?: Bind<LabelPosition>;
-  /** The name it is sent with in a form. */
+  /** The name submitted with the form. */
   name?: Bind<string>;
 }

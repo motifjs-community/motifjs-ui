@@ -1,12 +1,12 @@
 import type { MaskChar } from './mask-char';
 
 export interface InputMaskOptions {
-  /** `(000) 000 00 00`; see `maskChars` for the characters a mask knows. */
+  /** The mask, such as `(000) 000 00 00`. See `maskChars` for the characters a mask recognizes. */
   mask: string;
-  /** Your own mask characters: `{ H: /[0-9a-f]/i }`. */
+  /** Custom mask characters: `{ H: /[0-9a-f]/i }`. */
   chars?: Readonly<Record<string, MaskChar>>;
-  /** Shown in the places not filled yet. Default `_`. */
+  /** Shown in the unfilled places. The default is `_`. */
   placeholder?: string;
-  /** `focus` (default): an empty mask shows only while the input has focus. */
+  /** `focus` (the default) shows an empty mask only while the input has focus. */
   showMask?: 'always' | 'focus';
 }

@@ -3,24 +3,27 @@ import type { IconSource } from '../../core/icon-source';
 import type { SpeedDialActionClickEventArgs } from './speed-dial-action-click-event-args';
 import type { SpeedDialTooltip } from './speed-dial-tooltip';
 
-/** One action of the `SpeedDial`: a round button with a glyph or an icon, its text as a label beside it. */
+/** One action of the `SpeedDial`: a round button with a glyph or an icon, and its text as a label next to it. */
 export interface SpeedDialAction {
-    /** Names the action in the events; without one its index does. */
+    /** Identifies the action in the events. If omitted, its index is used. */
     key?: string;
-    /** The label beside the button, and what screen readers call it. */
+    /** The label next to the button, which also provides its accessible name. */
     text: Bind<string>;
-    /** A glyph of the kit's set (`pencil`, `trash`, `plus`…). */
+    /** A glyph from the kit's set (`pencil`, `trash`, `plus`…). */
     glyph?: Bind<string>;
-    /** An icon of your own: an address, an element or a component, in place of the glyph. */
+    /** A custom icon that replaces the glyph: an address, an element or a component. */
     icon?: IconSource;
-    /** Its tooltip: a text of its own, its options, or `false` for none. Wins over the speed dial's `tooltip`. */
+    /**
+     * The tooltip: custom text, its options, or `false` for none. This takes precedence over the speed dial's
+     * `tooltip`.
+     */
     tooltip?: Bind<string | boolean | SpeedDialTooltip>;
-    /** Default `true`. */
+    /** The default is `true`. */
     enabled?: Bind<boolean>;
-    /** Default `true`. */
+    /** The default is `true`. */
     visible?: Bind<boolean>;
-    /** What the action does; `onActionClick` is told too. */
+    /** The action to run. `onActionClick` is also raised. */
     click?: (e: SpeedDialActionClickEventArgs) => void;
-    /** Anything of your own. */
+    /** A custom value. */
     data?: unknown;
 }

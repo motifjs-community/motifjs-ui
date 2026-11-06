@@ -1,8 +1,8 @@
 import type { GridSelection } from './grid-selection';
 
-/** The selection changed, by the user or by code. */
+/** Occurs when the selection changes, by the user or programmatically. */
 export interface GridSelectionChangedEventArgs {
   selection: GridSelection;
-  /** The change comes from rows selected by dragging over them. */
+  /** Indicates that the rows were selected by dragging over them. */
   byDrag: boolean;
 }

@@ -7,9 +7,9 @@ import type { Splitter } from "./Splitter";
 const OWN = ['key', 'size', 'minSize', 'maxSize', 'collapsible', 'collapsed', 'resizable'] as const;
 
 /**
- * One pane of a `Splitter`: a `Panel` with its place in the split: `size` (pixels, a share, or an equal share of
- * what is left), `minSize`, `maxSize`, whether the handles next to it may hide it (`collapsible`) or change its
- * size (`resizable`).
+ * One pane of a `Splitter`: a `Panel` with its place in the split. It sets its `size` (pixels, a percentage, or an
+ * equal share of what remains), `minSize` and `maxSize`, and whether the adjacent handles can collapse it
+ * (`collapsible`) or change its size (`resizable`).
  *
  * @example
  * <Splitter>
@@ -34,7 +34,7 @@ export class SplitPane extends Panel {
 
     // Properties (see SplitPaneProps).
 
-    /** The `key` prop (also when written as the JSX `key`), `''` without one. */
+    /** The `key` prop, which the JSX `key` also sets, or `''` if there is none. */
     get key(): string {
         const own = this.getProperty<string | undefined>('key');
         if (own !== undefined) return own;
@@ -63,7 +63,7 @@ export class SplitPane extends Panel {
     set maxSize(value: Bind<number | null>) {
         this.assignProperty('maxSize', value);
     }
-    /** This pane's own setting; `undefined` follows the splitter. */
+    /** This pane's own setting. `undefined` inherits from the splitter. */
     get collapsible(): boolean | undefined {
         return this.getProperty<boolean | undefined>('collapsible');
     }
@@ -83,17 +83,17 @@ export class SplitPane extends Panel {
         this.assignProperty('resizable', value);
     }
 
-    /** Whether the handles next to it may hide it: its own `collapsible`, else the splitter's. */
+    /** Indicates whether the adjacent handles can collapse it: its own `collapsible`, otherwise the splitter's. */
     get isCollapsible(): boolean {
         return this.collapsible ?? this.owner?.collapsible ?? false;
     }
 
-    /** Hides the pane as the handle's button does; `false` when it may not be hidden or `onCollapsing` refused. */
+    /** Collapses the pane as the handle's button does. Returns `false` if it cannot collapse or `onCollapsing` canceled it. */
     collapse(): boolean {
         return this.owner?.collapse(this) ?? false;
     }
 
-    /** Shows the pane again. */
+    /** Expands the pane. */
     expand(): boolean {
         return this.owner?.expand(this) ?? false;
     }

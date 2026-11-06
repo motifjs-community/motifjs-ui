@@ -7,13 +7,13 @@ export interface ParsedAccessKey {
   text: string;
   /** The access key as written (`D`), or `null` when the text has none. */
   key: string | null;
-  /** Index of the access key in `text`, -1 when there is none. */
+  /** The index of the access key in `text`, or -1 if there is none. */
   index: number;
 }
 
 /**
- * Parses a control text: the character after a single `&` is the access key
- * (`&File` → F), `&&` is a literal ampersand. Only the first marker counts.
+ * Parses a control text. The character after a single `&` is the access key
+ * (`&File` → F), and `&&` is a literal ampersand. Only the first marker counts.
  */
 export function parseAccessKey(source: string): ParsedAccessKey {
   if (!source.includes('&')) return { text: source, key: null, index: -1 };
@@ -40,8 +40,8 @@ export function parseAccessKey(source: string): ParsedAccessKey {
 }
 
 /**
- * Renders a parsed text into `host` (replacing its content): the access key
- * is wrapped in `<span class="mx-access-key">`, underlined while the access
+ * Renders a parsed text into `host`, replacing its content. The access key
+ * is wrapped in `<span class="mx-access-key">` and underlined while the access
  * key modifiers are held (or always, with `data-mx-access-keys="always"` on
  * <html>). The accessible name stays the plain text.
  */

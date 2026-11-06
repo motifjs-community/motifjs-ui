@@ -3,16 +3,16 @@ import type { DataGrid } from './DataGrid';
 import type { GridExportOptions } from './grid-export-options';
 
 /**
- * An export is about to start (`exportRows`, `exportCsv`, `exportTo`, the toolbar's export button);
- * change `options`, or `cancel` it. For a format the grid does not write itself (`'xlsx'`), this is
- * where you write it: `exportDataGrid({ component: e.component, worksheet, selectedRowsOnly: e.selectedRowsOnly })`.
+ * Occurs before an export starts (`exportRows`, `exportCsv`, `exportTo`, the toolbar's export button).
+ * Change `options`, or set `cancel = true`. For a format the grid does not write (`'xlsx'`), write it
+ * here: `exportDataGrid({ component: e.component, worksheet, selectedRowsOnly: e.selectedRowsOnly })`.
  */
 export interface GridExportingEventArgs extends EventArgs {
-  /** `'rows'`, `'csv'`, or the format the toolbar or `exportTo` asks for (`'xlsx'`, `'pdf'`…). */
+  /** `'rows'`, `'csv'`, or the format requested by the toolbar or `exportTo` (`'xlsx'`, `'pdf'`…). */
   readonly format: 'rows' | 'csv' | 'xlsx' | (string & {});
   /** The grid. */
   readonly component: DataGrid<any>;
-  /** Only the selected rows ("Export selected rows"). */
+  /** Indicates that only the selected rows are exported ("Export selected rows"). */
   readonly selectedRowsOnly: boolean;
   options: GridExportOptions;
 }

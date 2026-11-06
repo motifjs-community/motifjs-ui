@@ -101,10 +101,10 @@ const focusChecked = (button: Button) => {
 const empty = (v: unknown) => v === undefined || v === null || v === '' || (typeof v === 'number' && Number.isNaN(v));
 
 /**
- * Builds a filter of the data layer by hand: a tree of groups (and, or, not and, not or) and
+ * Builds a data layer filter interactively: a tree of groups (and, or, not and, not or) and
  * conditions (a field, an operation, a value), edited with the mouse and the keyboard. The value
- * is a `data.FilterExpression`, ready for any adapter. Each value is edited with the kit's editor
- * for the field's type. The tree is one Tab stop: the arrow keys move between its buttons.
+ * is a `data.FilterExpression` that any adapter can use. Each value is edited with the kit editor
+ * for the field's type. The tree is one Tab stop, and the arrow keys move between its buttons.
  *
  * @example
  * <FilterBuilder fields={fields} x-model={() => this.state.filter} />
@@ -243,20 +243,23 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     this.assignProperty('removeKeys', value);
   }
 
-  /** The root group of the tree; change it through the methods. */
+  /** The root group of the tree. Change it through the methods. */
   get root(): FilterBuilderGroup {
     return this.parts.root;
   }
 
-  /** The filter as one line of text (`[City] Equals 'Ankara' And …`), conditions without their value omitted. Reactive. */
+  /**
+   * The filter as a single line of text (`[City] Equals 'Ankara' And …`). Conditions without a value are omitted.
+   * Reactive.
+   */
   get filterText(): string {
     void this.parts.version.n;
     return this.parts.model.treeText(this.parts.root);
   }
 
   /**
-   * Reads the options (fields, custom operations) and the value again after they were changed in place, and draws
-   * the rows again. Your fields and value may be plain or reactive; the builder reads them as they are.
+   * Re-reads the options (fields, custom operations) and the value after they have been changed in place, and redraws
+   * the rows. Your fields and value can be plain or reactive, and the builder reads them as they are.
    */
   refresh(): void {
     const parts = this.parts;
@@ -271,7 +274,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     });
   }
 
-  /** The logic behind the builder: operations of a field, texts, the tree of an expression. */
+  /** The logic behind the builder: field operations, text, and conversion between expressions and the tree. */
   get model(): FilterBuilderModel {
     return this.parts.model;
   }
@@ -291,28 +294,28 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
   get onValueChanged(): MotifEvent<FilterBuilderValueChangedEventArgs> {
     return this.parts.valueChanged.event;
   }
-  /** A condition or group is about to be added; `e.cancel = true` keeps it out. */
+  /** Occurs before a condition or group is added. Set `e.cancel = true` to prevent it. */
   get onItemAdding(): MotifEvent<FilterBuilderItemAddingEventArgs> {
     return this.parts.itemAdding.event;
   }
   get onItemAdded(): MotifEvent<FilterBuilderItemAddedEventArgs> {
     return this.parts.itemAdded.event;
   }
-  /** A condition or group is about to be removed; `e.cancel = true` keeps it. */
+  /** Occurs before a condition or group is removed. Set `e.cancel = true` to keep it. */
   get onItemRemoving(): MotifEvent<FilterBuilderItemRemovingEventArgs> {
     return this.parts.itemRemoving.event;
   }
   get onItemRemoved(): MotifEvent<FilterBuilderItemRemovedEventArgs> {
     return this.parts.itemRemoved.event;
   }
-  /** A field, operation, value or group operation is about to change; change `e.value`, or `e.cancel = true`. */
+  /** Occurs before a field, operation, value or group operation changes. Change `e.value`, or set `e.cancel = true`. */
   get onItemChanging(): MotifEvent<FilterBuilderItemChangingEventArgs> {
     return this.parts.itemChanging.event;
   }
   get onItemChanged(): MotifEvent<FilterBuilderItemChangedEventArgs> {
     return this.parts.itemChanged.event;
   }
-  /** A value editor is about to be made: change `e.options`, set `e.editor`, or `e.cancel = true`. */
+  /** Occurs before a value editor is created. Change `e.options`, set `e.editor`, or set `e.cancel = true`. */
   get onEditorPreparing(): MotifEvent<FilterBuilderEditorPreparingEventArgs> {
     return this.parts.editorPreparing.event;
   }
@@ -322,7 +325,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
 
   // Methods.
 
-  /** The value, ready for the data layer (the same as `value`). */
+  /** Returns the value for the data layer, the same as `value`. */
   getFilterExpression(): data.FilterExpression | null {
     return this.parts.value;
   }
@@ -332,17 +335,17 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     return untracked(() => this.addItem(group, this.parts.model.newCondition(dataField), false)) as FilterBuilderCondition | null;
   }
 
-  /** Adds a group with one condition at the end of a group (the root by default); `null` past `maxGroupLevel`. */
+  /** Adds a group with one condition at the end of a group (the root by default). Returns `null` past `maxGroupLevel`. */
   addGroup(group: FilterBuilderGroup = this.parts.root): FilterBuilderGroup | null {
     return untracked(() => this.addGroupTo(group, false));
   }
 
-  /** Takes a condition or a group (with what it holds) out. The root stays. */
+  /** Removes a condition, or a group with its contents. The root stays. */
   removeItem(item: FilterBuilderItem): boolean {
     return untracked(() => this.remove(item, false));
   }
 
-  /** Puts a condition on another field; its operation and value stay where the new field allows them. */
+  /** Moves a condition to another field. Its operation and value are kept if the new field allows them. */
   setField(condition: FilterBuilderCondition, dataField: string): boolean {
     return untracked(() => this.changeField(condition, dataField, false));
   }
@@ -359,7 +362,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     return untracked(() => this.changeGroupOperation(group, operation, false));
   }
 
-  /** Empties the tree. */
+  /** Clears the tree. */
   clear(): void {
     untracked(() => {
       const parts = this.parts;
@@ -370,17 +373,17 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     });
   }
 
-  /** Opens the value editor of a condition and focuses it. */
+  /** Opens the value editor of a condition and sets focus on it. */
   openEditor(condition: FilterBuilderCondition): boolean {
     return untracked(() => this.startEditor(condition));
   }
 
-  /** Closes the open value editor, keeping its value (or not). */
+  /** Closes the open value editor, and either keeps or discards its value. */
   closeEditor(keep = true): void {
     untracked(() => this.stopEditor(keep, true));
   }
 
-  /** Focuses a button of an item's row: its field by default, a group's operation. */
+  /** Sets focus on a button in an item's row: by default, its field, or a group's operation. */
   focusItem(item: FilterBuilderItem, part?: 'remove' | 'group' | 'add' | 'field' | 'operation' | 'value'): boolean {
     const cell = this.cellOf(item, part ?? (item.kind === 'group' ? 'group' : 'field')) ?? this.parts.rows.find((r) => r.item === item)?.cells[0];
     if (!cell) return false;

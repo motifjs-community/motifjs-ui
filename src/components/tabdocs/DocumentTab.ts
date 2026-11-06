@@ -1,7 +1,7 @@
 import { Component, untracked, type ComponentBase } from '@motifx/core';
 import { setAccessKeyAttribute } from '../../core/access-key';
 import { follow } from '../../core/follow';
-import { focusableIn, isFocusable } from '../../core/focus';
+import { focusableIn, isFocusable, keepsKeys } from '../../core/focus';
 import { dismissMark, pinMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
@@ -120,7 +120,7 @@ export class DocumentTab {
       last.focus(options);
       return true;
     }
-    const target = focusableIn(this.panel.element)[0] ?? (isFocusable(this.panel.element) ? this.panel.element : null);
+    const target = focusableIn(this.panel.element).find(keepsKeys) ?? (isFocusable(this.panel.element) ? this.panel.element : null);
     (target ?? this.header).focus(options);
     return true;
   }

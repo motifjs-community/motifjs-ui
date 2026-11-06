@@ -3,7 +3,7 @@ import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 
-/** A document is about to open; `group` and `index` may be changed, `cancel = true` keeps it closed. */
+/** Occurs before a document opens. `group` and `index` can be changed. Set `cancel = true` to keep it closed. */
 export interface DocumentOpeningEventArgs extends EventArgs {
   document: TabDocument;
   group: TabGroup;

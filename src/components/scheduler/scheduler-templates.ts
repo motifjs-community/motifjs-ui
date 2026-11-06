@@ -12,24 +12,25 @@ import type { TooltipTemplateContext } from './tooltip-template-context';
 type Template<C> = Bind<((context: C) => ComponentBase) | null>;
 
 /**
- * The templates a scheduler draws with, component-wide or for one view (a view's own wins). Each
- * is created once for the element it draws and gets a context whose fields follow the element.
+ * The templates of a scheduler, set on the scheduler or on one view. A view's own template takes
+ * precedence. Each is created once for the element it renders, and receives a context whose fields
+ * stay up to date.
  */
 export interface SchedulerTemplates<T> {
   /** An appointment's content, in place of its text and time. */
   appointmentTemplate?: Template<AppointmentTemplateContext<T>>;
   /** The tooltip's content, in place of its title, times, resources and buttons. */
   appointmentTooltipTemplate?: Template<TooltipTemplateContext<T>>;
-  /** A cell's content (a time cell, a whole day's cell); the cell keeps its own look, keys and name. */
+  /** A cell's content, for a time cell or a whole-day cell. The cell keeps its appearance, keys and accessible name. */
   dataCellTemplate?: Template<CellTemplateContext>;
-  /** A day's head: the dates of the day views, the weekdays of the month, a timeline's days. */
+  /** A day header: the dates of the day views, the weekdays of a month, or the days of a timeline. */
   dateCellTemplate?: Template<DateTemplateContext>;
-  /** An hour of the time ruler, and of a timeline's scale. */
+  /** An hour of the time ruler or of a timeline scale. */
   timeCellTemplate?: Template<TimeTemplateContext>;
-  /** A group's head (a resource item). */
+  /** A group header, which represents a resource item. */
   resourceHeaderTemplate?: Template<ResourceHeaderContext>;
   /** An agenda row's content, in place of its time, color and text. */
   agendaRowTemplate?: Template<AgendaRowContext<T>>;
-  /** The list "+N more" opens. */
+  /** The list opened by "+N more". */
   moreListTemplate?: Template<MoreListContext<T>>;
 }

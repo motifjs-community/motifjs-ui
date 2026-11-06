@@ -7,9 +7,9 @@ function formatLiteral(text: string): string {
 }
 
 /**
- * The Excel number format that shows `value` as `format` (an `Intl.NumberFormat`) writes it: the
+ * The Excel number format that displays `value` as `format` (an `Intl.NumberFormat`) writes it: the
  * grouping, the fraction digits the value shows, a percent, a currency symbol where the locale puts
- * it, a scientific exponent. `undefined` for what Excel cannot write (compact notation, units).
+ * it, and a scientific exponent. Returns `undefined` for what Excel cannot write (compact notation, units).
  */
 export function excelNumberFormat(format: Intl.NumberFormat, value: number): string | undefined {
   if (!Number.isFinite(value)) return undefined;

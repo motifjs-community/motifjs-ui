@@ -5,16 +5,16 @@ import type { TabDropPlace } from './tab-drop-place';
 import type { TabGroup } from './TabGroup';
 
 /**
- * A dragged document or group is over a place (`onDragOver`) or about to be dropped there
- * (`onDropping`). The place may be changed; `cancel = true` refuses it (over) or keeps everything
- * where it is (dropping).
+ * Occurs while a dragged document or group is over a position (`onDragOver`), or just before it is
+ * dropped there (`onDropping`). The position can be changed. Set `cancel = true` to refuse it
+ * (`onDragOver`) or to leave everything in place (`onDropping`).
  */
 export interface TabDropEventArgs extends EventArgs, TabDropPlace {
-  /** The document; `null` when a whole group is dragged. */
+  /** The document, or `null` when a whole group is dragged. */
   document: TabDocument | null;
-  /** Where it comes from: the document's group, or the group dragged. */
+  /** The source: the document's group, or the group being dragged. */
   from: TabGroup;
-  /** A copy opens there (the copy key is held and the document may be open twice). */
+  /** Indicates that a copy opens there: the copy key is held and the document can be open twice. */
   copy: boolean;
   byKeyboard: boolean;
   source: TabDocumentManager;

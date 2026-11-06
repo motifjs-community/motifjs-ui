@@ -4,7 +4,7 @@ import { holdBackButton } from '../../core/back-button';
 import { FocusContainer } from '../../core/container';
 import type { Control } from '../../core/control';
 import { controlOf } from '../../core/control-map';
-import { deepActiveElement, focusableIn, isFocusable } from '../../core/focus';
+import { deepActiveElement, focusableIn, isFocusable, keepsKeys } from '../../core/focus';
 import { dismissMark } from '../../core/glyphs';
 import { nextId } from '../../core/next-id';
 import { isHtmlElement } from '../../core/node-kind';
@@ -87,17 +87,17 @@ interface Parts {
 const PARTS = Symbol('mx.overlay');
 
 /**
- * What a bottom sheet, a drawer and an action sheet share: a panel that slides in over the page or
- * over a container, with a scrim under it, a title and a close button, a content area and a footer.
- * Modal, nothing around it can be used (it is created inert) and Tab stays inside. Escape, a click on
- * the scrim and the browser's back close it (each an option); focus moves in when it opens and goes
- * back when it closes. Every opening and closing asks first (`onOpening`, `onClosing`) and reports
- * after (`onOpened`, `onClosed`). A subclass names its parts (`static overlayClass`), places the
- * panel and moves it with the finger.
+ * The base of a bottom sheet, a drawer and an action sheet: a panel that slides in over the page or
+ * over a container, with a scrim behind it, a title and a close button, a content area and a footer.
+ * While it is modal, the surrounding content is inert and Tab stays inside. Escape, a click on the
+ * scrim and the browser's back action close it, each with its own option. Focus moves in when it opens
+ * and returns when it closes. Every opening and closing raises an event first (`onOpening`, `onClosing`)
+ * and reports after (`onOpened`, `onClosed`). A subclass names its parts (`static overlayClass`), places
+ * the panel and moves it with the finger.
  */
 export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> extends FocusContainer<HTMLDivElement, TProps> {
   static override elementTag = 'div';
-  /** The class of the root; its parts are `<class>__panel`, `__scrim`, `__header`, `__title`, `__body`, `__footer`. */
+  /** The class of the root. Its parts are `<class>__panel`, `__scrim`, `__header`, `__title`, `__body` and `__footer`. */
   static overlayClass = 'mx-overlay';
 
   constructor(props?: IBaseProp<TProps>) {
@@ -147,7 +147,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
   set label(value: Bind<string>) {
     this.assignProperty('label', value);
   }
-  /** Whether it is open. Reactive. Setting it opens or closes it. */
+  /** Indicates whether it is open. Reactive. Setting it opens or closes it. */
   get value(): boolean {
     return this.isOpen;
   }
@@ -160,14 +160,14 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
   set modal(value: Bind<boolean>) {
     this.assignProperty('modal', value, Boolean);
   }
-  /** Whether a scrim shows: as set, else when modal. */
+  /** Indicates whether a scrim is shown: as set, otherwise when modal. */
   get scrim(): boolean {
     return this.getProperty<boolean | undefined>('scrim') ?? this.modal;
   }
   set scrim(value: Bind<boolean>) {
     this.assignProperty('scrim', value, Boolean);
   }
-  /** What it opens over; a function given is read each time it opens. */
+  /** What it opens over. A function is read each time it opens. */
   get container(): OverlayContainer {
     const given = this.getProperty<Bind<OverlayContainer> | undefined>('container');
     return (typeof given === 'function' ? given() : given) ?? null;
@@ -211,7 +211,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
   set closeOnBack(value: Bind<boolean>) {
     this.assignProperty('closeOnBack', value, Boolean);
   }
-  /** Whether focus moves in when it opens: as set, else when modal. */
+  /** Indicates whether focus moves in when it opens: as set, otherwise when modal. */
   get focusOnOpen(): boolean {
     return this.getProperty<boolean | undefined>('focusOnOpen') ?? this.modal;
   }
@@ -224,7 +224,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
   set returnFocus(value: Bind<boolean>) {
     this.assignProperty('returnFocus', value, Boolean);
   }
-  /** Whether it is disposed when it closes: as set, else when `show` added it to its host. */
+  /** Indicates whether it is disposed when it closes: as set, otherwise when `show` added it to its host. */
   get disposeOnClose(): boolean {
     return this.getProperty<boolean | undefined>('disposeOnClose') ?? this.parts.attached;
   }
@@ -232,7 +232,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     this.assignProperty('disposeOnClose', value, Boolean);
   }
 
-  /** Reactive. */
+  /** Indicates whether it is open. Reactive. */
   get isOpen(): boolean {
     return !!this.getProperty<boolean>('open');
   }
@@ -259,12 +259,15 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     return this.parts.closed.event;
   }
 
-  /** Opens it; `false` when an `onOpening` listener said no. Made with `new` and placed nowhere, it opens from the end of the page or in its container. */
+  /**
+   * Opens it. Returns `false` if an `onOpening` listener canceled it. If it was created with `new` and is not on
+   * the page, it opens from the end of the page or in its container.
+   */
   open(): boolean {
     return this.openBy();
   }
 
-  /** Closes it; `false` when an `onClosing` listener kept it open. */
+  /** Closes it. Returns `false` if an `onClosing` listener kept it open. */
   close(reason: OverlayCloseReason = 'code'): boolean {
     return this.closeBy(reason);
   }
@@ -273,7 +276,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     return this.parts.open ? this.close() : this.open();
   }
 
-  /** Adds it to `host` (a component or the application) unless it sits somewhere already, and opens it; it is disposed when it closes. */
+  /** Adds it to `host` (a component or the application) if needed and opens it. It is disposed when it closes. */
   show(host: FormHost, disposeRef?: ComponentBase): boolean {
     if (this.isDisposed) throw new Error(`${this.constructor.name}: it was closed and disposed; create a new one.`);
     const parts = this.parts;
@@ -292,7 +295,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     return this.openBy();
   }
 
-  /** A panel is a root: controls around it do not disable it, and it runs Tab itself while modal. */
+  /** A panel is a root: the controls around it do not disable it, and it handles Tab itself while modal. */
   override get parentControl(): Control | null {
     return null;
   }
@@ -739,7 +742,7 @@ export class OverlayPanel<TProps extends OverlayPanelProps = OverlayPanelProps> 
     const field = coarse ? null : focusableIn(parts.body).find((el) => el.matches(FIELDS));
     if (field && tryFocus(field)) return true;
     if (coarse) return tryFocus(parts.panel);
-    const first = focusableIn(parts.body).find((el) => el.tabIndex >= 0);
+    const first = focusableIn(parts.body).find((el) => el.tabIndex >= 0 && keepsKeys(el));
     if (first && tryFocus(first)) return true;
     return tryFocus(parts.panel);
   }

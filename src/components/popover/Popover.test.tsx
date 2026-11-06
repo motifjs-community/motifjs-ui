@@ -28,6 +28,28 @@ async function settle() {
 const key = (el: Element, key: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
 
 describe('Popover', () => {
+    it('leaves an iframe out of the focus on open, so that Escape still closes it', async () => {
+        const s = reactive({ open: false });
+        let button!: Button;
+        let pop!: Popover;
+        page(
+            <div>
+                <Button ref={(b: Button) => (button = b)} text="Help" />
+                <Popover ref={(p: Popover) => (pop = p)} target={() => button} title="Help" x-model={() => s.open}>
+                    <iframe srcdoc="<p>Help</p>" />
+                </Popover>
+            </div>,
+        );
+        await settle();
+        (button.element as HTMLButtonElement).click();
+        await settle();
+        expect(s.open).toBe(true);
+        expect(document.activeElement?.localName).not.toBe('iframe');
+        key(pop.element, 'Escape');
+        await settle();
+        expect(s.open).toBe(false);
+    });
+
     it('opens on a press on its target, takes focus, closes on Escape and gives focus back; x-model follows', async () => {
         const s = reactive({ open: false });
         let button!: Button;

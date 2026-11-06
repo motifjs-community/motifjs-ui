@@ -34,9 +34,9 @@ interface Step {
 }
 
 /**
- * The way to the current page: each step a link (`href`, `rel="router"` for the MotifJS router) or a button
- * (`onItemClick`), the current page last. Steps that do not fit, or beyond `maxItems`, go into a menu after the first
- * step; the first and the last ones always show.
+ * The path to the current page. Each step is a link (`href`, `rel="router"` for the MotifJS router) or a button
+ * (`onItemClick`), with the current page last. Steps that do not fit, or that exceed `maxItems`, move to a menu after
+ * the first step. The first and last steps always stay visible.
  *
  * @example
  * <Breadcrumb rel="router" items={[{ text: 'Home', href: '/' }, { text: 'Orders', href: '/orders' }, { text: () => this.order.number }]} />
@@ -119,12 +119,12 @@ export class Breadcrumb extends Control<HTMLElement, BreadcrumbProps> {
     this.assignProperty('label', value);
   }
 
-  /** A step was pressed, on the breadcrumb or in its menu; `cancel` keeps a link from being followed. */
+  /** Occurs when a step is clicked, on the breadcrumb or in its menu. `cancel` prevents following a link. */
   get onItemClick(): MotifEvent<BreadcrumbItemClickEventArgs> {
     return this.clicked.event;
   }
 
-  /** The indexes of the steps now in the menu. */
+  /** The indexes of the steps currently in the menu. */
   get collapsed(): readonly number[] {
     return [...this.hidden].sort((a, b) => a - b);
   }

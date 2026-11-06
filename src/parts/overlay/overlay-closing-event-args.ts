@@ -1,7 +1,7 @@
 import type { OverlayCloseReason } from './overlay-close-reason';
 import type { OverlayPanel } from './OverlayPanel';
 
-/** An overlay is about to close; `cancel = true` keeps it open (not when its owner goes away). */
+/** The arguments of `onClosing`. Set `cancel = true` to keep the overlay open, unless its owner is being disposed. */
 export interface OverlayClosingEventArgs {
   cancel: boolean;
   reason: OverlayCloseReason;

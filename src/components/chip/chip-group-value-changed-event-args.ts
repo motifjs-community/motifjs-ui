@@ -1,9 +1,9 @@
 import type { ChipGroup } from './ChipGroup';
 
 export interface ChipGroupValueChangedEventArgs {
-  /** The value of the selected chip (`single`, `null` for none) or of each selected chip (`multiple`). */
+  /** The value of the selected chip (`single`, or `null` for none), or the values of each selected chip (`multiple`). */
   value: unknown;
-  /** `true` when the user pressed a chip, `false` when code set the value. */
+  /** `true` when the user clicked a chip, and `false` when the value was set programmatically. */
   byUser: boolean;
   source: ChipGroup;
 }

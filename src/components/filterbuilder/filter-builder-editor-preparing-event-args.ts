@@ -5,15 +5,15 @@ import type { FilterBuilderField } from './filter-builder-field';
 import type { FilterBuilderOperation } from './filter-builder-operation';
 
 /**
- * A value editor is about to be made: change the props of the kit editor (`options`), give a
- * component of your own (`editor`, which calls `setValue`), or `cancel` to open none.
+ * Provides data for the event that occurs before a value editor is created. Change the kit editor props (`options`),
+ * provide a custom component (`editor`, which calls `setValue`), or set `cancel` for no editor.
  */
 export interface FilterBuilderEditorPreparingEventArgs extends EventArgs {
   field: FilterBuilderField;
   operation: FilterBuilderOperation;
   value: unknown;
   condition: FilterBuilderCondition;
-  /** `'from'` and `'to'` for the two editors of `between`, else `'value'`. */
+  /** `'from'` and `'to'` for the two editors of `between`, and otherwise `'value'`. */
   part: 'value' | 'from' | 'to';
   options: Record<string, unknown>;
   editor: ComponentBase | null;

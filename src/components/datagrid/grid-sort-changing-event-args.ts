@@ -1,10 +1,10 @@
 import type { EventArgs } from '@motifx/core';
 import type { data } from '@motifx-community/data';
 
-/** The sort order is about to change (a header, the column menu, code); `cancel` keeps it. */
+/** Occurs before the sort order changes (a header, the column menu, or programmatically). Set `cancel = true` to keep it. */
 export interface GridSortChangingEventArgs extends EventArgs {
   readonly sort: readonly data.SortItem[];
   readonly previous: readonly data.SortItem[];
-  /** The user changed it; `false` programmatically. */
+  /** Indicates that the user changed it. `false` programmatically. */
   readonly byUser: boolean;
 }

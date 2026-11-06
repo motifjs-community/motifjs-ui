@@ -7,33 +7,39 @@ import type { SlideChangingEventArgs } from './slide-changing-event-args';
 
 /** Props of `Gallery`. Each prop is also a settable property, and a function is tracked. */
 export interface GalleryProps extends ControlProps {
-    /** The panes in order: `GalleryItem`s or image addresses. */
+    /** The slides in order: `GalleryItem` objects or image addresses. */
     items?: Bind<readonly (GalleryItem | string)[]>;
-    /** The pane in view: its `key`, else its index. `x-model` binds it two-way. Default `0`. */
+    /** The current slide, identified by its `key` or index. `x-model` provides two-way binding. The default is `0`. */
     value?: Bind<string | number | null>;
-    /** After the last pane comes the first. Default `false`. */
+    /** The first slide follows the last. The default is `false`. */
     loop?: Bind<boolean>;
-    /** The previous and next buttons at the sides. Default `true`. */
+    /** Shows previous and next buttons over the sides. The default is `true`. */
     showNavButtons?: Bind<boolean>;
-    /** The dots under the panes, one per pane. Default `true`. */
+    /** Shows indicator dots below the slides, one per slide. The default is `true`. */
     showIndicator?: Bind<boolean>;
-    /** Milliseconds a pane stays in a slideshow; `0` for none. It pauses under the pointer, while focus is inside, out of sight and under reduced motion. Default `0`. */
+    /**
+     * The time each slide stays in a slideshow, in milliseconds. The default, `0`, turns it off. The slideshow pauses on
+     * hover, while focus is inside, while out of view and when the user prefers reduced motion.
+     */
     slideInterval?: Bind<number>;
-    /** The slideshow pauses while the pointer rests on the gallery. Default `true`. */
+    /** Pauses the slideshow while the pointer is over the gallery. The default is `true`. */
     pauseOnHover?: Bind<boolean>;
-    /** A finger or a pointer drags the panes. Default `true`. */
+    /** Lets a finger or pointer drag the slides. The default is `true`. */
     swipeEnabled?: Bind<boolean>;
-    /** Panes side by side in the width. Default `1`. */
+    /** The number of slides side by side. The default is `1`. */
     itemsPerPage?: Bind<number>;
-    /** An image fills its pane, cut at the edges, instead of fitting inside it whole. Default `false`. */
+    /**
+     * Makes an image fill its slide and crops the edges, instead of fitting the whole image inside. The default is
+     * `false`.
+     */
     stretchImages?: Bind<boolean>;
-    /** The gallery's height, a CSS length or pixels. Without one it is as tall as its tallest pane. */
+    /** The height of the gallery, a CSS length or pixels. Without it, the gallery is as tall as its tallest slide. */
     height?: Bind<string | number | null>;
-    /** What screen readers call it. Default: the kit's "Gallery". */
+    /** The accessible name. The default is the kit's "Gallery" string. */
     label?: Bind<string>;
-    /** The pane in view is about to change; cancelable. */
+    /** Occurs before the current slide changes. This event is cancelable. */
     onSlideChanging?: (e: SlideChangingEventArgs) => void;
     onSlideChanged?: (e: SlideChangedEventArgs) => void;
-    /** A click on a pane that was not a drag. */
+    /** Occurs when a slide is clicked without dragging. */
     onItemClick?: (e: GalleryItemClickEventArgs) => void;
 }

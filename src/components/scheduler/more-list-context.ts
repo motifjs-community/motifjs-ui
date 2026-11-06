@@ -1,7 +1,7 @@
-/** What a "+N more" list template gets: the day, its appointments and how to open one. */
+/** The context of a "+N more" list template: the day, its appointments and a way to open one. */
 export interface MoreListContext<T> {
   readonly date: Date | null;
   readonly appointments: readonly T[];
-  /** Closes the list and does what a click on the appointment does. */
+  /** Closes the list and performs the same action as a click on the appointment. */
   choose(appointment: T, event: MouseEvent | KeyboardEvent): void;
 }

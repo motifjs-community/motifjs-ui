@@ -1,5 +1,5 @@
 /**
- * Follows a finger or a pointer along a drag and tells how fast it was going when let go, from
+ * Tracks a finger or a pointer along a drag and reports its speed at release, from
  * the last tenth of a second of movement.
  */
 export class SwipeTracker {
@@ -15,7 +15,7 @@ export class SwipeTracker {
     while (this.points.length > 2 && this.points[0].t < old) this.points.shift();
   }
 
-  /** Pixels per millisecond along `axis` (positive: right or down). */
+  /** The speed along `axis`, in pixels per millisecond. A positive value is right or down. */
   velocity(axis: 'x' | 'y', t = performance.now()): number {
     const to = this.points[this.points.length - 1];
     // Held still before letting go: no speed.

@@ -16,8 +16,8 @@ const DEFAULTS: Partial<AdaptiveDetailValues> = {
 };
 
 /**
- * Which row has its adaptive detail open (one at a time), by the grid's row id, so
- * a new row can have it too; and the detail's options.
+ * Tracks the row whose adaptive detail is open, by the grid's row id so that a new row can also have one,
+ * and holds the detail's options. Only one row can be open at a time.
  */
 export class AdaptiveRow {
   readonly options: Switches<AdaptiveDetailValues>;

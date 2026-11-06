@@ -8,42 +8,48 @@ import type { OverlayOpeningEventArgs } from './overlay-opening-event-args';
 
 /** Props every overlay panel (a bottom sheet, a drawer, an action sheet) understands. Each prop is also a settable, reactive property. */
 export interface OverlayPanelProps extends ControlProps {
-  /** A title at the top; it names the panel. The same property as `text`. */
+  /** A title at the top, which also names the panel. This is the same property as `text`. */
   title?: Bind<string>;
-  /** Names the panel for screen readers when it has no title. */
+  /** The accessible name when the panel has no title. */
   label?: Bind<string>;
-  /** Whether it is open. `x-model` binds it two-way: the user closing it writes `false`. */
+  /** Indicates whether it is open. `x-model` provides two-way binding, so `false` is written when the user closes it. */
   value?: Bind<boolean>;
-  /** Nothing outside it can be used while it is open (inside its container, or on the whole page). Default `true`. */
+  /** Blocks everything around it while open, within its container or on the whole page. The default is `true`. */
   modal?: Bind<boolean>;
-  /** A dimmed layer under it. Default: when modal. */
+  /** Shows a dimmed layer behind it. By default, this applies when modal. */
   scrim?: Bind<boolean>;
-  /** Opens over this element (it must be a positioned box; a static one is created relative while open); `null` over the page. Default `null`. */
+  /**
+   * Opens over this element, which must be positioned (a static element is made relative while open). `null` opens
+   * over the page. The default is `null`.
+   */
   container?: Bind<OverlayContainer>;
-  /** What fills it (besides JSX children). */
+  /** Its content, in addition to JSX children. */
   content?: Bind<ComponentBase | null>;
-  /** A row under the content that does not scroll with it. */
+  /** A non-scrolling row below the content. */
   footer?: Bind<ComponentBase | null>;
-  /** A close button beside the title. Default `false`. */
+  /** Shows a close button next to the title. The default is `false`. */
   showClose?: Bind<boolean>;
-  /** Escape closes it. Default `true`. */
+  /** Closes it on Escape. The default is `true`. */
   closeOnEscape?: Bind<boolean>;
-  /** A click on the scrim closes it. Default `true`. */
+  /** Closes it on a click on the scrim. The default is `true`. */
   closeOnScrim?: Bind<boolean>;
-  /** The browser's back (Android's back button, the back gesture) closes it, through the session history, leaving no entry behind. Default `true`. */
+  /**
+   * Closes it with the browser's back action (the Android back button or back gesture), through the session
+   * history, leaving no entry behind. The default is `true`.
+   */
   closeOnBack?: Bind<boolean>;
-  /** Focus moves into it when it opens: the first field, else the first control, else the panel. Default: when modal. */
+  /** Moves focus in on open: to the first field, the first control, or the panel. By default, this applies when modal. */
   focusOnOpen?: Bind<boolean>;
-  /** Focus goes back where it was when it closes (if it was inside). Default `true`. */
+  /** Returns focus to where it was on close, if focus was inside. The default is `true`. */
   returnFocus?: Bind<boolean>;
-  /** Disposed when it closes. Default: when `show` added it to its host. */
+  /** Disposes it on close. By default, this applies when `show` added it to its host. */
   disposeOnClose?: Bind<boolean>;
-  /** It is about to open; cancelable. */
+  /** Occurs before it opens. Set `cancel = true` to keep it closed. */
   onOpening?: (e: OverlayOpeningEventArgs) => void;
-  /** It has opened (after it slid in). */
+  /** Occurs after it opens and the slide-in animation ends. */
   onOpened?: (e: OverlayEventArgs) => void;
-  /** It is about to close; cancelable but when its owner goes away. */
+  /** Occurs before it closes. Set `cancel = true` to keep it open, unless its owner is being disposed. */
   onClosing?: (e: OverlayClosingEventArgs) => void;
-  /** It has closed (after it slid out). */
+  /** Occurs after it closes and the slide-out animation ends. */
   onClosed?: (e: OverlayClosedEventArgs) => void;
 }

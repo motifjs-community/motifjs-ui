@@ -1,26 +1,26 @@
 import type { Bind, ComponentBase } from '@motifx/core';
 import type { IconSource } from '../../core/icon-source';
 
-/** The color of an event's dot and flag. */
+/** The color of an event's dot and date marker. */
 export type TimelineTone = 'default' | 'accent' | 'success' | 'caution' | 'danger' | 'info';
 
-/** One event on the `Timeline`. Each field may be a function of your state. */
+/** One event on the `Timeline`. Each field can be a function of your state. */
 export interface TimelineItem {
-    /** Names the event in `value` and the events; without one its index does. */
+    /** Identifies the event in `value` and the events. If omitted, its index is used. */
     key?: string;
-    /** When: a `Date`, an ISO text, or milliseconds. */
+    /** The date: a `Date`, an ISO string or milliseconds. */
     date: Bind<Date | string | number>;
     title: Bind<string>;
-    /** The text under the title; folded until the card is pressed when the timeline is `collapsible`. */
+    /** The text below the title. With `collapsible`, it stays collapsed until the card is clicked. */
     description?: Bind<string>;
-    /** A glyph of the kit's set in the dot. */
+    /** A glyph from the kit's set in the dot. */
     glyph?: Bind<string>;
-    /** An icon of your own in the dot, in place of the glyph. */
+    /** A custom icon in the dot, in place of the glyph. */
     icon?: IconSource;
-    /** Default `'default'`. */
+    /** The default is `'default'`. */
     tone?: Bind<TimelineTone>;
-    /** Any content in the card, made when the card is. */
+    /** Any content in the card, created with the card. */
     content?: () => ComponentBase;
-    /** Anything of your own; the item comes back as given in the events. */
+    /** A custom value. The item is returned as provided in the events. */
     data?: unknown;
 }

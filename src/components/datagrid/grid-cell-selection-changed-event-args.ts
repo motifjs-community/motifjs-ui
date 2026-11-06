@@ -1,8 +1,8 @@
 import type { GridCellRange } from './grid-cell-range';
 
-/** The cell ranges changed, by the user or by code. */
+/** Occurs when the cell ranges change, by the user or programmatically. */
 export interface GridCellSelectionChangedEventArgs {
   ranges: GridCellRange[];
-  /** The change comes from a range being drawn with the pointer. */
+  /** Indicates that a range is being drawn with the pointer. */
   byDrag: boolean;
 }

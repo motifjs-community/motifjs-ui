@@ -62,10 +62,10 @@ function withMenu(props: IBaseProp<ButtonProps> | undefined): boolean {
 }
 
 /**
- * A `<button>` drawn from the design tokens. Its caption is `text` (`&Save` makes Alt+S press it)
- * or its JSX children, with an optional icon. It can be a toggle (`pressed`, two-way with
- * `x-model`), show that work is running (`busy`), and open a menu or any content: the whole
- * button opens it, or with `split` an arrow next to it does while the button keeps its own action.
+ * A `<button>` drawn from the design tokens. The caption is `text` (`&Save` makes Alt+S click it)
+ * or the JSX children, with an optional icon. It can be a toggle (`pressed`, where `x-model` provides two-way
+ * binding), show that work is in progress (`busy`), and open a menu or any content. The whole button opens it, or
+ * with `split` an arrow next to the button opens it while the button keeps its own action.
  *
  * @example
  * <Button text="&Save" tone="accent" onclick={() => this.model.save()} />
@@ -213,7 +213,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     this.assignProperty('dropDown', value);
   }
 
-  /** `pressed`, for `x-model` on a toggle button. */
+  /** Maps to `pressed` for `x-model` on a toggle button. */
   get value(): boolean {
     return this.pressed;
   }
@@ -221,12 +221,12 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     this.pressed = !!value;
   }
 
-  /** Whether the button was created with a menu (`split`, `menu` or `dropDown`). */
+  /** Indicates whether the button was created with a menu (`split`, `menu` or `dropDown`). */
   get hasMenu(): boolean {
     return this.element.tagName !== 'BUTTON';
   }
 
-  /** Whether its menu or drop-down is open. Reactive. Setting it opens or closes it. */
+  /** Indicates whether the menu or drop-down is open. Reactive. Set it to open or close it. */
   get opened(): boolean {
     return !!this.getProperty<boolean>('opened');
   }
@@ -235,7 +235,10 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     else this.close();
   }
 
-  /** Opens the menu or drop-down with focus on its first item; `false` when there is nothing to open or the button cannot be used. */
+  /**
+   * Opens the menu or drop-down with focus on its first item. Returns `false` if there is nothing to open or the
+   * button cannot be used.
+   */
   open(): boolean {
     return this.openMenu('first');
   }
@@ -245,8 +248,8 @@ export class Button extends Control<HTMLElement, ButtonProps> {
   }
 
   /**
-   * Reads the menu again after its items were changed in place: the open menu shows them at once. Your items may
-   * be plain or reactive; the button reads them as they are.
+   * Re-reads the menu after its items have been changed in place, and an open menu shows the change immediately.
+   * Your items can be plain or reactive, and the button reads them as they are.
    */
   refresh(): void {
     this.refill();
@@ -264,7 +267,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     return (this.isEnabled || this.focusableWhenDisabled) && face.isConnected && isFocusable(face);
   }
 
-  /** The access key presses the button, as HTML `accesskey` does; with a menu and no `split` it opens the menu. */
+  /** The access key clicks the button, as HTML `accesskey` does. With a menu and no `split`, it opens the menu. */
   override onAccessKey(): boolean {
     if (!this.focus()) return false;
     this.parts.face.click();
@@ -441,8 +444,10 @@ export class Button extends Control<HTMLElement, ButtonProps> {
     if (busy) this.close();
   }
 
-  /** Reads again what the design language decides for the button (variant, tone, size). The button does it once
-   *  it is in the page; one placed in the page outside the component tree is told when it is placed. */
+  /**
+   * Re-reads what the design language sets for the button (variant, tone, size). The button does this once it is
+   * on the page. A button placed on the page outside the component tree is notified when it is placed.
+   */
   readLook(): void {
     this.look.read();
   }

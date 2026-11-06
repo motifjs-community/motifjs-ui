@@ -1,19 +1,19 @@
 import type { Bind, ComponentBase } from '@motifx/core';
 
-/** A pane of the gallery: an image, or any content, with a caption. Each field may be a function of your state. */
+/** A slide of the gallery: an image, or any content, with a caption. Each field can be a function of your state. */
 export interface GalleryItem {
-    /** Names the pane in `value`; without one its index does. */
+    /** Identifies the slide in `value`. If omitted, its index is used. */
     key?: string;
     /** The address of the image. */
     image?: Bind<string>;
-    /** What the image shows, for screen readers; empty for a decorative one. */
+    /** Alternative text for the image. Leave it empty for a decorative image. */
     alt?: Bind<string>;
-    /** The caption's first line. */
+    /** The first line of the caption. */
     text?: Bind<string>;
-    /** The caption's second line. */
+    /** The second line of the caption. */
     description?: Bind<string>;
-    /** Any content in place of an image, made when the pane is. */
+    /** Any content in place of an image, created with the slide. */
     content?: () => ComponentBase;
-    /** Anything of your own; the item comes back as given in the events. */
+    /** A custom value. The item is returned as provided in the events. */
     data?: unknown;
 }

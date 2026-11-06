@@ -54,13 +54,13 @@ interface Parts<T> {
 }
 
 /**
- * Picks one item from a list (the APG select-only combobox): the field shows the chosen item, the
- * list opens below it with the keyboard or a click, and can be searched. Items are plain values,
- * `DropDownItem`s or your own objects read through `textField` / `valueField`.
+ * Selects one item from a list (the APG select-only combobox). The field shows the selected item, the
+ * list opens below it with the keyboard or a click, and it can be searched. Items are plain values,
+ * `DropDownItem` objects or custom objects read through `textField` / `valueField`.
  *
- * From a data source, a value on no loaded page is requested by key: meanwhile the field shows
- * `valueText` when it is given, else it waits (a spinner in the arrow's place, the list closed).
- * A key the source does not have shows itself, marked.
+ * With a data source, a value that is not on a loaded page is requested by key. In the meantime, the field shows
+ * `valueText` if provided, and otherwise it waits (a spinner replaces the arrow and the list stays closed).
+ * A key that the source does not have is displayed as is and marked.
  *
  * @example
  * <DropDown label="&City" items={['Ankara', 'İstanbul', 'İzmir']} x-model={() => this.form.city} />
@@ -219,7 +219,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     this.assignProperty('matchWidth', value, Boolean);
   }
 
-  /** The item whose value is the value, when it is known. */
+  /** The item whose value matches `value`, when known. */
   get selectedItem(): T | undefined {
     void this.getProperty('chosenTick');
     void this.getProperty('refreshed');
@@ -228,7 +228,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     return untracked(() => this.itemOfValue(items, value));
   }
 
-  /** Whether the list is open. Reactive. Setting it opens or closes it. */
+  /** Indicates whether the list is open. Reactive. Set it to open or close the list. */
   get opened(): boolean {
     return !!this.getProperty<boolean>('opened');
   }
@@ -245,7 +245,10 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     return this.dropParts.closed.event;
   }
 
-  /** Opens the list; `search` starts the search box with that text (or jumps to it without one). `false` when it cannot be used now. */
+  /**
+   * Opens the list, and `search` starts the search box with that text (or jumps to it without one). Returns `false` when
+   * it cannot be used.
+   */
   open(search?: string): boolean {
     const parts = this.dropParts;
     if (!this.isEnabled || this.peekProperty('readOnly') || parts.state === 'loading') return false;
@@ -279,14 +282,14 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     this.dropParts.popup?.close('code');
   }
 
-  /** Empties the field as its clear button does. */
+  /** Clears the field, as its clear button does. */
   clear(): void {
     this.commit(null);
   }
 
   /**
-   * Reads the items again after they were changed in place: the field's text and the open list. Your items may be
-   * plain or reactive; the drop-down reads them as they are.
+   * Re-reads the items after they have been changed in place, and updates the field text and the open list. Your items
+   * can be plain or reactive, and the drop-down reads them as they are.
    */
   override refresh(): void {
     super.refresh();

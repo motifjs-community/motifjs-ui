@@ -2,7 +2,7 @@ import type { EventArgs } from '@motifx/core';
 import type { Accordion } from './Accordion';
 import type { AccordionItem } from './AccordionItem';
 
-/** The user is about to open (or close) an item; `cancel = true` leaves it as it is. */
+/** Provides data for the events before the user opens or closes an item. Set `cancel = true` to keep its state. */
 export interface AccordionExpandingEventArgs extends EventArgs {
   item: AccordionItem;
   index: number;

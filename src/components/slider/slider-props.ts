@@ -4,38 +4,47 @@ import type { SliderOrientation } from './slider-orientation';
 import type { SliderShowValue } from './slider-show-value';
 import type { SliderValue } from './slider-value';
 
-/** Props of `Slider`: the field props plus its own. Each prop is also a settable, reactive property. */
+/** Props of `Slider`, in addition to the field props. Each prop is also a settable, reactive property. */
 export interface SliderProps extends FieldProps<SliderValue> {
-  /** Default `0`. */
+  /** The default is `0`. */
   min?: Bind<number>;
-  /** Default `100`. */
+  /** The default is `100`. */
   max?: Bind<number>;
-  /** Default `1`; `0` lets the value take any number. */
+  /** The default is `1`. `0` allows continuous values. */
   step?: Bind<number>;
-  /** What Page Up and Page Down move by. Default ten steps. */
+  /** The amount Page Up and Page Down move the thumb. The default is ten steps. */
   largeStep?: Bind<number>;
-  /** Two thumbs; the value is `[start, end]`. */
+  /** Shows two thumbs, and the value is `[start, end]`. */
   range?: Bind<boolean>;
-  /** A centred slider: the active segment runs from this value to the thumb. Not with `range`. */
+  /**
+   * Creates a centered slider, where the active part of the track runs from this value to the thumb. It cannot be used
+   * with `range`.
+   */
   origin?: Bind<number | undefined>;
-  /** The least distance between the two thumbs. Default `0`. */
+  /** The minimum distance between the two thumbs. The default is `0`. */
   minDistance?: Bind<number>;
-  /** Default `'horizontal'`. */
+  /** The default is `'horizontal'`. */
   orientation?: Bind<SliderOrientation>;
-  /** `true` a mark at every step, a number that many equal parts. */
+  /** `true` adds a mark at every step, and a number adds that many equal parts. */
   ticks?: Bind<boolean | number>;
-  /** The values under the marks (at the two ends without marks). */
+  /** Shows values under the marks, or at the two ends if there are no marks. */
   tickLabels?: Bind<boolean>;
-  /** Default `'never'`. */
+  /** The default is `'never'`. */
   showValue?: Bind<SliderShowValue>;
-  /** How the bubble and the tick labels write the value. */
+  /** The format used by the tooltip and the tick labels. */
   format?: Bind<Intl.NumberFormatOptions | null>;
-  /** Default: the page's `lang`. */
+  /** The default is the page's `lang`. */
   locale?: Bind<string>;
-  /** `input` (default) changes the value while the thumb moves, `change` when it is let go. */
+  /**
+   * With `input` (the default), the value updates while the thumb moves. With `change`, it updates when the thumb is
+   * released.
+   */
   updateOn?: Bind<'input' | 'change'>;
-  /** The name it is sent with in a form; a range sends two values. */
+  /** The name submitted with the form. A range submits two values. */
   name?: Bind<string>;
-  /** What screen readers say for a value, e.g. `(v) => v + ' °C'`. A function, so it is not bound like the other props. */
+  /**
+   * The text screen readers announce for a value, such as `(v) => v + ' °C'`. Because it is a function, it is stored as
+   * is and not bound.
+   */
   valueText?: (value: number) => string;
 }

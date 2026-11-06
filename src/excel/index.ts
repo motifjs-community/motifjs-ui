@@ -1,4 +1,4 @@
-// Excel export for the DataGrid, the standard `excelExporter` way: the app brings ExcelJS (an
+// Excel export for the DataGrid: the app brings ExcelJS (an
 // optional peer dependency), this entry only writes to the worksheet it is given. Apps that do not
 // export to Excel never load it.
 export { exportDataGrid } from './export-data-grid';

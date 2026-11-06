@@ -2,7 +2,7 @@ import { Component, Emitter, untracked, type Bind, type Event as MotifEvent, typ
 import { parseAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
-import { deepActiveElement, nextTabbable } from '../../core/focus';
+import { deepActiveElement, rescueStop } from '../../core/focus';
 import { chevronDown } from '../../core/glyphs';
 import { isElement } from '../../core/node-kind';
 import { ResizeWatch } from '../../core/resize-watch';
@@ -40,11 +40,11 @@ interface Parts {
 const PARTS = Symbol('mx.tabs');
 
 /**
- * Tabs: a strip of tabs and the panel of the selected one, following the ARIA tabs pattern.
- * Tabs come as `<Tab>` children or programmatically (`add`, `insert`, `remove`); `value` (two-way with
- * `x-model`) is the selected tab's `key`, else its index. Arrow keys move along the strip (and
- * select, with `activation="auto"`), Home and End go to the ends, Delete closes a closable tab,
- * a tab's `&` key selects it. Panels are built when first shown (`lazy`).
+ * A strip of tabs and the panel of the selected one, following the ARIA tabs pattern.
+ * Tabs are `<Tab>` children or are managed programmatically (`add`, `insert`, `remove`), and `value` is the `key` of
+ * the selected tab, or its index (`x-model` provides two-way binding). The arrow keys move along the strip (and
+ * select, with `activation="auto"`), Home and End move to the ends, Delete closes a closable tab, and
+ * a tab's `&` key selects it. Panels are created when first shown (`lazy`).
  *
  * @example
  * <Tabs x-model={() => this.state.page}>
@@ -95,7 +95,7 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
   get tabs(): readonly Tab[] {
     return this.getProperty<readonly Tab[] | undefined>('tabs') ?? NO_TABS;
   }
-  /** The selected tab, `null` when there is none. Reactive. */
+  /** The selected tab, or `null` if there is none. Reactive. */
   get selectedTab(): Tab | null {
     return this.getProperty<Tab | null | undefined>('selected') ?? null;
   }
@@ -106,7 +106,7 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
   set selectedIndex(value: Bind<number>) {
     this.assignProperty('selectedIndex', value, Number);
   }
-  /** The selected tab's `key`, else its index; `null` when none is selected. */
+  /** The `key` of the selected tab, or its index, or `null` if none is selected. */
   get value(): string | number | null {
     const selected = this.selectedTab;
     return selected ? this.valueAt(selected, this.tabs) : null;
@@ -177,22 +177,22 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
 
   // Events.
 
-  /** The user is about to select a tab; `e.cancel = true` keeps the current one. */
+  /** Occurs before the user selects a tab. Set `e.cancel = true` to keep the current tab. */
   get onSelecting(): MotifEvent<TabSelectingEventArgs> {
     return this.parts.selecting.event;
   }
-  /** The selected tab changed, by the user or by code (`e.byUser`). */
+  /** Occurs after the selected tab changes, either by the user or programmatically (`e.byUser`). */
   get onSelectionChanged(): MotifEvent<TabSelectionChangedEventArgs> {
     return this.parts.selectionChanged.event;
   }
-  /** A tab is about to close; `e.cancel = true` keeps it. */
+  /** Occurs before a tab closes. Set `e.cancel = true` to keep it. */
   get onClose(): MotifEvent<TabCloseEventArgs> {
     return this.parts.closing.event;
   }
 
   // Methods.
 
-  /** Adds a tab at the end (a tab of another `Tabs` moves here). */
+  /** Adds a tab at the end. A tab from another `Tabs` moves here. */
   add(tab: Tab): Tab {
     return this.insert(this.tabsNow().length, tab);
   }
@@ -207,18 +207,18 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
     return tab;
   }
 
-  /** Removes a tab and disposes it; the selection moves to a neighbor. No `onClose`. */
+  /** Removes the tab and disposes it, without raising `onClose`. Selection moves to an adjacent tab. */
   remove(tab: Tab): boolean {
     if (!this.tabsNow().includes(tab)) return false;
     const active = deepActiveElement();
     const hadFocus = !!active && (tab.element.contains(active) || tab.headerElement.contains(active));
     this.forget(tab);
     this.parts.panels.controls.remove(tab);
-    if (hadFocus && !this.focus()) nextTabbable(this.element, this.element.closest('dialog') ?? document.body)?.focus();
+    if (hadFocus && !this.focus()) rescueStop(this.element, this.element.closest('dialog') ?? document.body)?.focus();
     return true;
   }
 
-  /** Selects a tab (or the tab at an index) programmatically; `false` when it is hidden or not here. */
+  /** Selects a tab, or the tab at an index, programmatically. Returns `false` if it is hidden or missing. */
   select(tab: Tab | number): boolean {
     const target = typeof tab === 'number' ? this.tabsNow()[tab] : tab;
     if (!target) return false;
@@ -227,7 +227,7 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
     return untracked(() => this.choose(target, false));
   }
 
-  /** Closes a tab as the user would: `onClose` can cancel it. */
+  /** Closes a tab as its close button does, so `onClose` can cancel it. */
   close(tab: Tab, byUser = false, event?: Event): boolean {
     const tabs = this.tabsNow();
     if (!tabs.includes(tab) || (byUser && !tab.isEnabled)) return false;

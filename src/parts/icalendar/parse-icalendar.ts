@@ -6,9 +6,9 @@ import { readTimeZone } from './read-time-zone';
 import { unescapeText } from './unescape-text';
 
 /**
- * Reads an iCalendar file (RFC 5545): its events, the time zones it writes and its name. Several
- * calendars in one file are merged; to-dos, journals, free/busy times and the blocks inside an
- * event (alarms) are omitted, and so are lines it cannot read. It never throws on a bad file.
+ * Reads an iCalendar file (RFC 5545): its events, its time zones and its name. Several calendars
+ * in one file are merged. To-dos, journals, free/busy times, the blocks inside an event (alarms)
+ * and unreadable lines are omitted. It never throws on a bad file.
  *
  * @example
  * const calendar = parseICalendar(text);

@@ -5,9 +5,9 @@ import type { ContextMenuOpeningEventArgs } from './context-menu-opening-event-a
 import type { ContextMenuTarget } from './context-menu-target';
 
 /**
- * Gives `target` a context menu: fixed items, or a function that builds them each time the menu
- * opens (from `e.target`, the element pressed). Returns the function that removes it; for a
- * component it also goes when the component does.
+ * Attaches a context menu to `target`: fixed items, or a function that builds them each time the menu
+ * opens (from `e.target`, the element clicked). Returns a function that removes the menu. For a
+ * component, the menu is also removed with the component.
  *
  * @example
  * attachContextMenu(this.list, (e) => this.itemsFor(e.target.closest('li')));

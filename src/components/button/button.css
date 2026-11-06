@@ -96,11 +96,22 @@
   .mx-button__icon {
     display: inline-flex;
     flex: none;
+    align-items: center;
+    justify-content: center;
   }
 
-  .mx-button__icon > :is(img, svg, .mx-glyph) {
+  .mx-button__icon > :is(img, svg, .mx-glyph),
+  .mx-button__icon > [data-mx-icon-slot] > :is(img, svg, .mx-glyph) {
     inline-size: 100%;
     block-size: 100%;
+  }
+
+  /* Other content, such as an avatar, sets the size of the box. */
+  .mx-button__icon:has(> :not(img, svg, .mx-glyph, [data-mx-icon-slot]), > [data-mx-icon-slot] > :not(img, svg, .mx-glyph)) {
+    inline-size: auto;
+    block-size: auto;
+    min-inline-size: var(--_button-icon-size);
+    min-block-size: var(--_button-icon-size);
   }
 
   /* DOM order is icon, text, children; the end position is drawn with order. */

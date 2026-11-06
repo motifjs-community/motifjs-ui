@@ -1,4 +1,4 @@
-import { deepActiveElement, nextTabbable } from './focus';
+import { deepActiveElement, rescueStop } from './focus';
 import { isElement } from './node-kind';
 
 // `enabled = false` on a container disables everything inside it, controls
@@ -175,5 +175,5 @@ export function rescueTarget(area: Element): HTMLElement | null {
   const active = deepActiveElement();
   if (!active || !area.contains(active)) return null;
   const scope = area.parentElement?.closest<HTMLElement>('dialog') ?? area.ownerDocument.body;
-  return nextTabbable(area, scope) ?? nextTabbable(area, scope, false);
+  return rescueStop(area, scope);
 }

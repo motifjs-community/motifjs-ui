@@ -15,12 +15,12 @@ import type { TabGroup } from './TabGroup';
 import type { TabRect } from './tab-rect';
 
 /**
- * A floating window of a `TabDocumentManager`, in the page: it holds groups as the documents' area
- * does (split and resized the same way) and moves by the empty part of its strips. It resizes from
- * its edges and corners, comes to the front when pressed, and maximizes within the page. The
- * manager makes and closes windows (`float`, `closeWindow`); the methods here go through it, with
- * its events. Its strips are compact by default (the manager's `compact…` props); its own
- * settings (`scrollButtons`, `tabSize`, `tabMinWidth`, `singleTabTitle`, `barButtons`) win.
+ * A floating window of a `TabDocumentManager`, in the page. It holds groups as the document area
+ * does (split and resized in the same way) and moves by the empty part of its strips. It resizes
+ * from its edges and corners, comes to the front when clicked, and maximizes within the page. The
+ * manager creates and closes windows (`float`, `closeWindow`), and the methods here call the manager
+ * and raise its events. Its strips are compact by default (the manager's `compact…` props). Its own
+ * settings (`scrollButtons`, `tabSize`, `tabMinWidth`, `singleTabTitle`, `barButtons`) take precedence.
  */
 export class TabWindow extends TabBarSettings {
   readonly element: HTMLDivElement;
@@ -68,15 +68,15 @@ export class TabWindow extends TabBarSettings {
   get manager(): TabDocumentManager {
     return this.owner;
   }
-  /** Its place and size in the viewport, in pixels (as it is when restored). Reactive. */
+  /** Its position and size in the viewport, in pixels (as restored). Reactive. */
   get rect(): TabRect {
     return this.box.value;
   }
-  /** Reactive. */
+  /** Indicates whether it is maximized. Reactive. */
   get isMaximized(): boolean {
     return this.maximized.value;
   }
-  /** The front window of the page. Reactive. */
+  /** Indicates whether it is the front window of the page. Reactive. */
   get isActive(): boolean {
     return this.active.value;
   }
@@ -84,11 +84,11 @@ export class TabWindow extends TabBarSettings {
   get groups(): readonly TabGroup[] {
     return this.owner.groups.filter((g) => g.window === this);
   }
-  /** Reactive. */
+  /** The documents of its groups. Reactive. */
   get documents(): readonly TabDocument[] {
     return this.groups.flatMap((g) => g.documents);
   }
-  /** Its place among the manager's `floatingWindows`, the one at the back first. Reactive. */
+  /** Its position in the manager's `floatingWindows`, with the one at the back first. Reactive. */
   get index(): number {
     return this.owner.floatingWindows.indexOf(this);
   }
@@ -110,17 +110,17 @@ export class TabWindow extends TabBarSettings {
     return this.owner.restoreWindow(this);
   }
 
-  /** Closes it with its documents; resolves `false` when one stays open. */
+  /** Closes it with its documents. Resolves to `false` when one stays open. */
   close(): Promise<boolean> {
     return this.owner.closeWindow(this);
   }
 
-  /** Docks it with everything in it: into the dock area of `side`, or back where it was docked. */
+  /** Docks it with its contents: in the dock area of `side`, or back where it was docked. */
   dock(side?: TabDockSide, size?: number | string): boolean {
     return this.owner.dock(this, side, size);
   }
 
-  /** Brings it to the front and focuses what had focus in it last. */
+  /** Brings it to the front and sets focus on what last had focus in it. */
   focus(): boolean {
     return this.owner.focusWindow(this);
   }

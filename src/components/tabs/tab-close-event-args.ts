@@ -2,7 +2,10 @@ import type { EventArgs } from '@motifx/core';
 import type { Tab } from './Tab';
 import type { Tabs } from './Tabs';
 
-/** A tab is about to close; `cancel = true` keeps it (to ask about unsaved work first, say). */
+/**
+ * Provides data for the event that occurs before a tab closes. Set `cancel = true` to keep it, for example to confirm
+ * unsaved work.
+ */
 export interface TabCloseEventArgs extends EventArgs {
   tab: Tab;
   index: number;

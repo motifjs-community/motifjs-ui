@@ -10,25 +10,25 @@ import type { ChipVariant } from './chip-variant';
 
 /** Props of `Chip`. Each prop is also a settable property, and a function is tracked. */
 export interface ChipProps extends ControlProps {
-  /** What it stands for in a group's value. Default: its text. */
+  /** The value it represents in a group. The default is its text. */
   value?: Bind<unknown>;
   /** An icon before the text: an image address, an element or a component. */
   icon?: Bind<IconSource | null>;
-  /** An avatar before the text (its props; the chip sets its size). */
+  /** An avatar before the text (its props, with the size set by the chip). */
   avatar?: Bind<AvatarProps | null>;
-  /** Pressed, it turns on and off (a filter). In a group that selects, the group decides. Default `false`. */
+  /** Clicking the chip toggles it, as a filter. In a group with selection, the group controls it. The default is `false`. */
   selectable?: Bind<boolean>;
-  /** Whether it is on. Default `false`. */
+  /** Indicates whether the chip is on. The default is `false`. */
   selected?: Bind<boolean>;
-  /** It can be pressed like a button (`onclick`). Default `false`. */
+  /** Lets the chip be clicked like a button (`onclick`). The default is `false`. */
   clickable?: Bind<boolean>;
-  /** A remove button after the text; it and Delete / Backspace raise `onRemove`. Default `false`. */
+  /** Adds a remove button after the text. The button, Delete and Backspace raise `onRemove`. The default is `false`. */
   removable?: Bind<boolean>;
-  /** Default: the design language's (`filled`, or `outline` where the language draws chips that way). */
+  /** The default comes from the design language (`filled`, or `outline` where the language draws chips that way). */
   variant?: Bind<ChipVariant>;
-  /** Default `'standard'`. */
+  /** The default is `'standard'`. */
   tone?: Bind<ChipTone>;
-  /** Default `'md'`. */
+  /** The default is `'md'`. */
   size?: Bind<ControlSize>;
   onRemove?: (e: ChipRemoveEventArgs) => void;
   onSelectedChanged?: (e: ChipSelectedChangedEventArgs) => void;

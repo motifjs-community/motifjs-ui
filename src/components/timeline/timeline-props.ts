@@ -4,30 +4,33 @@ import type { TimelineItem } from './timeline-item';
 import type { TimelineItemClickEventArgs } from './timeline-item-click-event-args';
 import type { TimelineSelectionChangedEventArgs } from './timeline-selection-changed-event-args';
 
-/** Down the page with a card per event, or along a line of dates with the chosen event's card under it. */
+/** Down the page with a card per event, or along a line of dates with the selected event's card below it. */
 export type TimelineOrientation = 'vertical' | 'horizontal';
 
-/** How a date is written: a preset, or the options of `Intl.DateTimeFormat`. */
+/** How a date is formatted: a preset, or `Intl.DateTimeFormat` options. */
 export type TimelineDateFormat = 'short' | 'medium' | 'long' | Intl.DateTimeFormatOptions;
 
 /** Props of `Timeline`. Each prop is also a settable property, and a function is tracked. */
 export interface TimelineProps extends ControlProps {
-    /** The events, in order. */
+    /** The events in order. */
     items?: Bind<readonly TimelineItem[]>;
-    /** Default `'vertical'`. */
+    /** The default is `'vertical'`. */
     orientation?: Bind<TimelineOrientation>;
-    /** Vertical: the cards take turns on either side of the line. Default `false`. */
+    /** In the vertical layout, places cards on alternating sides of the line. The default is `false`. */
     alternate?: Bind<boolean>;
-    /** Vertical: a card shows its description only when pressed. Default `false`. */
+    /** In the vertical layout, shows a card's description only when clicked. The default is `false`. */
     collapsible?: Bind<boolean>;
-    /** How the dates are written, in the kit's language. Default `'medium'`. */
+    /** How the dates are formatted, in the kit language. The default is `'medium'`. */
     dateFormat?: Bind<TimelineDateFormat>;
-    /** Horizontal: the event whose card is shown, its `key` else its index. `x-model` binds it two-way. Default `0`. */
+    /**
+     * In the horizontal layout, the event whose card is shown, identified by its `key` or index. `x-model` provides
+     * two-way binding. The default is `0`.
+     */
     value?: Bind<string | number | null>;
-    /** What screen readers call it. Default: the kit's "Timeline". */
+    /** The accessible name. The default is the kit's "Timeline" string. */
     label?: Bind<string>;
-    /** A click on an event's card or flag. */
+    /** Occurs when an event's card or date is clicked. */
     onItemClick?: (e: TimelineItemClickEventArgs) => void;
-    /** Horizontal: the shown event changed. */
+    /** In the horizontal layout, occurs when the selected event changes. */
     onSelectionChanged?: (e: TimelineSelectionChangedEventArgs) => void;
 }

@@ -3,10 +3,10 @@ import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 import type { TabWindow } from './TabWindow';
 
-/** A document or a group floats in a window now. */
+/** Occurs after a document or group floats in a window. */
 export interface TabFloatedEventArgs {
   document: TabDocument | null;
-  /** The group in the window: the new one of a document, or the group that floated. */
+  /** The group in the window: a document's new group, or the group that floated. */
   group: TabGroup;
   window: TabWindow;
   byUser: boolean;

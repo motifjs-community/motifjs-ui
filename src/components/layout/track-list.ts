@@ -25,7 +25,7 @@ function track(word: string | number): string {
   return word;
 }
 
-/** The CSS `grid-template-rows` / `-columns` value of `GridTracks`; `''` for none. */
+/** The CSS `grid-template-rows` / `-columns` value of `GridTracks`, or `''` for none. */
 export function trackList(value: GridTracks | null | undefined): string {
   if (value === null || value === undefined) return '';
   if (typeof value === 'number') return value > 0 ? `repeat(${Math.floor(value)}, minmax(0, 1fr))` : '';

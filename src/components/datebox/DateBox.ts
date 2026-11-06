@@ -54,7 +54,7 @@ interface Parts {
 
 /**
  * A date, a time or both, typed in the locale's order through a mask (`22.11.2006`) or picked from
- * a calendar and a list of times. `min`, `max` and `disabledDates` limit both ways.
+ * a calendar and a list of times. `min`, `max` and `disabledDates` apply to both.
  *
  * @example
  * <DateBox label="&Birthday" max={new Date()} x-model={() => this.form.birthday} />
@@ -187,7 +187,7 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     return this.focusElement as HTMLInputElement;
   }
 
-  /** The text typed so far is not a whole, real date. */
+  /** Indicates that the typed text is not yet a complete, valid date. */
   get unfinished(): boolean {
     return this.dateParts.unfinished;
   }
@@ -208,7 +208,7 @@ export class DateBox extends Field<Date | null, DateBoxProps> {
     return this.dateParts.closed.event;
   }
 
-  /** Opens the calendar (or the times); `false` when it cannot be used now. */
+  /** Opens the calendar or the list of times. Returns `false` when it cannot be used. */
   open(): boolean {
     if (!this.isEnabled || this.peekProperty('readOnly')) return false;
     const parts = this.dateParts;

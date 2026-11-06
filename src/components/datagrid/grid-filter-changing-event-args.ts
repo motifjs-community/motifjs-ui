@@ -3,8 +3,8 @@ import type { data } from '@motifx-community/data';
 import type { GridFilters } from './grid-filters';
 
 /**
- * The filters (filter row, header filters, the filter value of the builder, the panel's check box)
- * are about to apply; `cancel` puts the ones before back.
+ * Occurs before the filters (filter row, header filters, the builder's filter value, the panel's check
+ * box) apply. Set `cancel = true` to restore the previous ones.
  */
 export interface GridFilterChangingEventArgs extends EventArgs {
   readonly filters: GridFilters;

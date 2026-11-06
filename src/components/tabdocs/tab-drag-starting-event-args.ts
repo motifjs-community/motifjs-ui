@@ -3,9 +3,9 @@ import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 
-/** A tab or a group is about to be dragged (or moved with "Move to…"); `cancel = true` leaves it. */
+/** Occurs before a tab or group is dragged or moved with "Move to…". Set `cancel = true` to prevent it. */
 export interface TabDragStartingEventArgs extends EventArgs {
-  /** The document; `null` when the whole group is dragged. */
+  /** The document, or `null` when the whole group is dragged. */
   document: TabDocument | null;
   group: TabGroup;
   /** `'mouse'`, `'touch'`, `'pen'`, or `'keyboard'` for "Move to…". */

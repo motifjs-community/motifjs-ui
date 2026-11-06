@@ -1,2 +1,2 @@
-/** How big an avatar is, from the design language's sizes. */
+/** The size of an avatar, from the sizes of the design language. */
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';

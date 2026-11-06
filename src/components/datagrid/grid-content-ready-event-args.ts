@@ -1,5 +1,5 @@
-/** Rows arrived and are laid out (after a load, a filter, a sort, a page, a resize). */
+/** Occurs when rows have arrived and been laid out (after a load, a filter, a sort, a page change or a resize). */
 export interface GridContentReadyEventArgs {
-  /** Data rows of the filter, saved new rows included. */
+  /** The data rows of the filter, including saved new rows. */
   readonly total: number;
 }

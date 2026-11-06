@@ -6,51 +6,61 @@ import type { GridSelection } from './grid-selection';
 import type { RowState } from './row-state';
 
 /**
- * A button of a row's actions. `text` is always there: it is the button's name for assistive
- * technology even when only the icon shows. Give an element icon as a function (`() => myIcon()`),
- * so every row gets its own.
+ * A button among a row's actions. `text` is required: it is the button's accessible name even when
+ * only the icon is displayed. Provide an element icon as a function (`() => myIcon()`), so that every
+ * row has its own.
  *
- * An action shows in its row, or in the toolbar or the bottom bar for the selected rows
- * (`location`); there several rows share the actions they all have. On several rows `onclickMany`
- * runs once with all of them; without it `onclick` runs for each row in turn.
+ * An action appears in its row, or in the toolbar or the bottom bar for the selected rows (`location`),
+ * where several rows share the actions they all have. On several rows, `onclickMany` runs once with
+ * all of them. Without it, `onclick` runs for each row in turn.
  */
 export interface GridAction<T = any> {
-  /** Names the action; its width is measured once per `id` and text. Rows share an action by its `id`. */
+  /** Identifies the action. Its width is measured once per `id` and text, and rows share an action by its `id`. */
   id: string;
   text: Bind<string>;
   icon?: Bind<IconSource | null | undefined>;
-  /** Show the text next to the icon. Default: only when there is no icon. */
+  /** Shows the text next to the icon. By default, only when there is no icon. */
   showText?: boolean;
-  /** The color of its button and of its menu items. Default `'standard'`. */
+  /** The color of its button and of its menu items. The default is `'standard'`. */
   tone?: 'standard' | 'accent' | 'danger';
-  /** Shown as a tooltip. Default: `text` when only the icon shows. */
+  /** A tooltip. By default, `text` when only the icon is displayed. */
   hint?: Bind<string>;
   disabled?: boolean | ((row: T, state: RowState) => boolean);
-  /** `false` leaves the action out for that row. */
+  /** `false` omits the action for that row. */
   visible?: boolean | ((row: T, state: RowState) => boolean);
-  /** Where it shows. Default: the grid's `actionsLocation`. */
+  /** Where it appears. The default is the grid's `actionsLocation`. */
   location?: Bind<GridActionLocation>;
-  /** In its "more" menu: when it does not fit, always, or never (a button even in the `'menu'` display). Default `'auto'`. */
+  /**
+   * When it moves into the "more" menu: when it does not fit, always, or never (a button even in the
+   * `'menu'` display). The default is `'auto'`.
+   */
   menu?: Bind<'auto' | 'always' | 'never'>;
-  /** It can run on several rows at once. Default `true`; the grid's `edit` `false`. */
+  /** Allows it to run on several rows at once. The default is `true`, and `false` for the built-in `edit`. */
   multiple?: Bind<boolean>;
-  /** On several rows: usable while it is enabled for all of them, or for any (it then runs on those). Default: the grid's `actionsMultipleEnabled`. */
+  /**
+   * On several rows, the action is available while it is enabled for all of them, or for any (it then
+   * runs on those). The default is the grid's `actionsMultipleEnabled`.
+   */
   multipleEnabled?: Bind<'all' | 'any'>;
-  /** On several rows one by one: a failed row stops the rest. Default: the grid's `actionsStopOnError`. */
+  /** On several rows one by one, a failed row stops the rest. The default is the grid's `actionsStopOnError`. */
   stopOnError?: Bind<boolean>;
-  /** The count of rows it runs on, after its text ("Approve (3)"). Default: the grid's `actionsShowCount`. */
+  /**
+   * Shows the count of rows it runs on after its text ("Approve (3)"). The default is the grid's
+   * `actionsShowCount`.
+   */
   showCount?: Bind<boolean>;
-  /** In the row's context menu. Default: the grid's `actionsContextMenu`. */
+  /** Includes it in the row's context menu. The default is the grid's `actionsContextMenu`. */
   contextMenu?: Bind<boolean>;
-  /** A line before it in a menu, to group the commands. */
+  /** Shows a separator before it in a menu, to group the commands. */
   beginGroup?: Bind<boolean>;
-  /** Runs for one row. A promise is waited for; a throw, a rejection or a promise of `false` counts the row as failed. */
+  /** Runs for one row. A promise is awaited. An error, a rejection or a promise of `false` counts the row as failed. */
   onclick?: (row: T, state: RowState) => unknown;
   /** Runs once for several rows (one row too, when there is no `onclick`). */
   onclickMany?: (rows: T[], e: GridActionRun) => unknown;
   /**
-   * Runs for a selection whose rows are not loaded ("select all" over a server): it gets the selection
-   * as `grid.selection` has it, to send to the server. Only actions that have it show in that state.
+   * Runs for a selection whose rows are not loaded ("select all" over a server). It receives the
+   * selection as in `grid.selection`, to send to the server. Only actions that have it appear in that
+   * state.
    */
   onclickSelection?: (selection: GridSelection, e: GridActionRun) => unknown;
 }

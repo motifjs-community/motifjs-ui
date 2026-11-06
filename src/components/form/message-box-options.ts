@@ -4,16 +4,19 @@ import type { FormResult } from './form-result';
 import type { MessageBoxButton } from './message-box-button';
 import type { MessageBoxTone } from './message-box-tone';
 
-/** What `messageBox` shows. */
+/** The content and options of a `messageBox`. */
 export interface MessageBoxOptions {
   title?: Bind<string>;
   text: Bind<string>;
-  /** `'ok'`, `'cancel'`, `'yes'`, `'no'` (named from `uiLocale`) or buttons of your own. Default `['ok']`. */
+  /** `'ok'`, `'cancel'`, `'yes'`, `'no'` (named from `uiLocale`) or custom buttons. The default is `['ok']`. */
   buttons?: readonly ('ok' | 'cancel' | 'yes' | 'no' | MessageBoxButton)[];
-  /** Default `'none'`. */
+  /** The tone of the box. The default is `'none'`. */
   tone?: MessageBoxTone;
-  /** The result of the button Enter presses and that has focus first. Default: `ok` or `yes`, else the first button; in a danger box focus starts on the safe one. */
+  /**
+   * The result of the button that Enter activates and that receives focus first. The default is `ok` or `yes`,
+   * otherwise the first button. In a danger box, focus starts on the safe button.
+   */
   defaultButton?: FormResult;
-  /** What it is shown in. Default: the application, else a holder of its own on the page. */
+  /** Where it is shown. The default is the application, otherwise a holder it creates on the page. */
   host?: FormHost;
 }

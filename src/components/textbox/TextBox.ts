@@ -52,8 +52,8 @@ interface Parts {
 }
 
 /**
- * A one-line text field: a label, a placeholder, a clear button, a password that can be shown, a
- * character counter, a mask (`(000) 000 00 00`) and validation. `x-model` binds the value.
+ * A single-line text field with a label, a placeholder, a clear button, a password reveal button, a
+ * character counter, a mask (`(000) 000 00 00`) and validation. `x-model` provides two-way binding.
  *
  * @example
  * <TextBox label="&Email" type="email" required x-model={() => this.form.email} />
@@ -210,7 +210,7 @@ export class TextBox extends Field<string, TextBoxProps> {
     this.assignProperty('showMask', value);
   }
 
-  /** Every place of the mask is filled; `true` without a mask. */
+  /** Indicates that every position of the mask is filled. This is `true` without a mask. */
   get maskComplete(): boolean {
     return this.textParts.mask?.complete ?? true;
   }
@@ -223,12 +223,12 @@ export class TextBox extends Field<string, TextBoxProps> {
     return this.textParts.enter.event;
   }
 
-  /** Selects the whole text. */
+  /** Selects all text. */
   select(): void {
     this.inputElement.select();
   }
 
-  /** Empties the field as its clear button does. */
+  /** Clears the field, as the clear button does. */
   clear(): void {
     this.commit('');
   }

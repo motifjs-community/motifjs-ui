@@ -65,10 +65,10 @@ function finite(value: unknown): number | null {
 }
 
 /**
- * A number field: arrow keys, PageUp/PageDown, Home/End, spin buttons that repeat while held and
- * an optional mouse wheel change the value by `step`; `min`, `max` and `decimals` shape what is
- * entered. Without focus it shows the value formatted (`Intl.NumberFormat`: currency, percent…);
- * with focus the plain number, typed in the locale's own way. `x-model` binds a number (or `null`).
+ * A number field. The arrow keys, PageUp/PageDown, Home/End, spin buttons that repeat while held and
+ * an optional mouse wheel change the value by `step`, and `min`, `max` and `decimals` control what is
+ * entered. Without focus, it shows the formatted value (`Intl.NumberFormat`: currency, percent…). With focus,
+ * it shows the plain number, typed in the format of the locale. `x-model` binds a number or `null`.
  *
  * @example
  * <NumberBox label="&Price" min={0} step={0.5} format={{ style: 'currency', currency: 'TRY' }} locale="tr-TR" x-model={() => this.item.price} />
@@ -162,7 +162,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
   set format(value: Bind<Intl.NumberFormatOptions>) {
     this.assignProperty('format', value);
   }
-  /** The locale in use: the one set, else the page's. */
+  /** The locale in use: the one set, otherwise the language of the page. */
   get locale(): string {
     return checkedLocale(this.getProperty<string | undefined>('locale'));
   }
@@ -224,7 +224,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     this.assignProperty('autocomplete', value);
   }
 
-  /** The value as it shows without focus, `''` when empty. Reactive. */
+  /** The value as displayed without focus, or `''` when empty. Reactive. */
   get formattedValue(): string {
     const value = this.value;
     // Read only to follow them.
@@ -245,12 +245,12 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
     this.spin(this.peekStep() * times);
   }
 
-  /** Takes `step` × `times` away, as the down arrow does. */
+  /** Subtracts `step` × `times`, as the down arrow does. */
   stepDown(times = 1): void {
     this.spin(-this.peekStep() * times);
   }
 
-  /** Selects the whole text. */
+  /** Selects all text. */
   select(): void {
     this.inputElement.select();
   }

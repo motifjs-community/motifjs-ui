@@ -387,12 +387,12 @@ interface Parts {
 const PARTS = Symbol('mx.tab-document-manager');
 
 /**
- * Documents in tabs, in groups that split side by side and one under the other, as code editors
- * have them. A document's content is any component; it is moved, never recreated, when its tab
- * moves to another group. Tabs can be previews, pinned, colored and counted; each group has a
- * list of its documents, every tab and the strip a context menu, and the recently used documents
- * are a key away. Every user action is also a method, asks first (`on…ing`, cancelable) and
- * reports after (`on…ed`). The layout saves to JSON and loads back.
+ * Arranges documents in tabs, in groups that split side by side and one above the other, the way
+ * code editors do. A document's content can be any component, and it is moved, never recreated,
+ * when its tab moves to another group. Tabs can be previews, pinned, colored and counted. Each group
+ * has a list of its documents, every tab and strip has a context menu, and the recently used
+ * documents are one key away. Every user action is also a method, raises a cancelable event first
+ * (`on…ing`) and reports the result afterward (`on…ed`). The layout saves to JSON and loads back.
  *
  * @example
  * <TabDocumentManager label="Editor" style="block-size: 30rem" ref={(m: TabDocumentManager) => (this.docs = m)} />
@@ -402,7 +402,7 @@ const PARTS = Symbol('mx.tab-document-manager');
  * localStorage.layout = JSON.stringify(this.docs.saveLayout());
  */
 export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocumentManagerProps> {
-  /** The keys a manager in a browser tab starts with: keys the browser lets the page have. */
+  /** The default keys of a manager in a browser tab: keys that the browser lets through to the page. */
   static readonly browserKeys: Readonly<TabDocumentKeys> = BROWSER_KEYS;
   /** The keys of a desktop editor, for an installed app (`keyPreset: 'desktop'`). */
   static readonly desktopKeys: Readonly<TabDocumentKeys> = DESKTOP_KEYS;
@@ -993,7 +993,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   set dockOnDoubleClick(value: Bind<boolean>) {
     this.assignProperty('dockOnDoubleClick', value, Boolean);
   }
-  /** The size a new dock area of each side starts with: pixels, or a share such as `'25%'`. */
+  /** The initial size of a new dock area on each side, in pixels or as a share such as `'25%'`. */
   get dockAreaSize(): Readonly<Record<TabDockSide, number | string>> {
     return { ...AREA_SIZES, ...this.getProperty<Partial<Record<TabDockSide, number | string>> | undefined>('dockAreaSize') };
   }
@@ -1114,7 +1114,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   set keyPreset(value: Bind<TabKeyPreset>) {
     this.assignProperty('keyPreset', value);
   }
-  /** The keys in use: the preset's with the `keys` prop over them. Reactive. */
+  /** The keys in use: the preset's keys, overridden by the `keys` prop. Reactive. */
   get keys(): TabDocumentKeys {
     const preset = this.keyPreset;
     const desktop = preset === 'desktop' || (preset === 'auto' && runsInstalled(this.element.ownerDocument.defaultView));
@@ -1159,14 +1159,14 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   set phoneWidth(value: Bind<number>) {
     this.assignProperty('phoneWidth', value, Number);
   }
-  /** When `'auto'` shows the tablet layout: on a touch screen under `tabletWidth`, or under it whatever the pointer. */
+  /** When `'auto'` uses the tablet presentation: below `tabletWidth` on a touch screen, or with any pointer. */
   get tabletWhen(): TabTabletWhen {
     return this.getProperty<TabTabletWhen | undefined>('tabletWhen') ?? 'touch';
   }
   set tabletWhen(value: Bind<TabTabletWhen>) {
     this.assignProperty('tabletWhen', value);
   }
-  /** How the bars of the documents' groups look on a tablet or a phone: compact, or as on a desktop. */
+  /** The appearance of the document group bars on a tablet or phone: compact, or the same as on a desktop. */
   get narrowBars(): TabNarrowBars {
     return this.getProperty<TabNarrowBars | undefined>('narrowBars') ?? 'compact';
   }
@@ -1197,23 +1197,23 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   set backButton(value: Bind<boolean>) {
     this.assignProperty('backButton', value, Boolean);
   }
-  /** How the tab menus show, as set; `null` follows the presentation. */
+  /** How tab menus appear, as set. `null` follows the presentation. */
   get menuPresentation(): ContextMenuPresentation | null {
     return this.getProperty<ContextMenuPresentation | null | undefined>('menuPresentation') ?? null;
   }
   set menuPresentation(value: Bind<ContextMenuPresentation | null>) {
     this.assignProperty('menuPresentation', value);
   }
-  /** How the layout is shown now: `presentation`, or by the manager's width when it is `'auto'`. Reactive. */
+  /** The current presentation: `presentation`, or calculated from the manager's width when it is `'auto'`. Reactive. */
   get currentPresentation(): TabPresentationKind {
     return this.getProperty<TabPresentationKind | undefined>('currentPresentation') ?? 'desktop';
   }
-  /** Whether the phone's list of documents is open. Reactive. */
+  /** Indicates whether the phone's list of documents is open. Reactive. */
   get documentListOpen(): boolean {
     return !!this.getProperty<boolean>('documentListOpen');
   }
 
-  /** The groups, in layout order (left to right, top to bottom). Reactive. */
+  /** The groups in layout order: left to right, top to bottom. Reactive. */
   get groups(): readonly TabGroup[] {
     return this.getProperty<readonly TabGroup[] | undefined>('groups') ?? NO_GROUPS;
   }
@@ -1221,232 +1221,250 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   get documents(): readonly TabDocument[] {
     return this.groups.flatMap((g) => g.documents);
   }
-  /** The group that has focus, or had it last. Reactive. */
+  /** The group that has or last had focus. Reactive. */
   get activeGroup(): TabGroup | null {
     return this.getProperty<TabGroup | null | undefined>('activeGroup') ?? null;
   }
-  /** The active group's active document. Reactive. */
+  /** The active document of the active group. Reactive. */
   get activeDocument(): TabDocument | null {
     return this.activeGroup?.activeDocument ?? null;
   }
-  /** The maximized group, `null` when none is. Reactive. */
+  /** The maximized group, or `null` when none is maximized. Reactive. */
   get maximizedGroup(): TabGroup | null {
     return this.getProperty<TabGroup | null | undefined>('maximizedGroup') ?? null;
   }
-  /** The open documents of every group, the one activated last first. Reactive. */
+  /** The open documents of every group, most recently activated first. Reactive. */
   get recentDocuments(): readonly TabDocument[] {
     return this.getProperty<readonly TabDocument[] | undefined>('recentDocuments') ?? NO_DOCUMENTS;
   }
-  /** The hidden documents `show` can put back, in the order they were hidden. Reactive. */
+  /** The hidden documents that `show` can restore, in the order they were hidden. Reactive. */
   get hiddenDocuments(): readonly TabDocument[] {
     return this.getProperty<readonly TabDocument[] | undefined>('hiddenDocuments') ?? NO_DOCUMENTS;
   }
-  /** The closed documents `reopenClosed` can open again, the one closed last first. Reactive. */
+  /** The closed documents that `reopenClosed` can open, most recently closed first. Reactive. */
   get closedDocuments(): readonly TabDocument[] {
     return this.getProperty<readonly TabDocument[] | undefined>('closedDocuments') ?? NO_DOCUMENTS;
   }
-  /** Whether `goBack` has somewhere to go. Reactive. */
+  /** Indicates whether `goBack` has a document to return to. Reactive. */
   get canGoBack(): boolean {
     return !!this.getProperty<boolean>('canGoBack');
   }
-  /** Reactive. */
+  /** Indicates whether `goForward` has a document to move to. Reactive. */
   get canGoForward(): boolean {
     return !!this.getProperty<boolean>('canGoForward');
   }
-  /** What is being dragged now (or moved with "Move to…"), `null` when nothing is. Reactive. */
+  /** The item being dragged or moved with "Move to…", or `null` when there is none. Reactive. */
   get dragging(): TabDragSubject | null {
     return this.getProperty<TabDragSubject | null | undefined>('dragging') ?? null;
   }
-  /** The floating windows, the one at the back first. Reactive. */
+  /** The floating windows, with the one at the back first. Reactive. */
   get floatingWindows(): readonly TabWindow[] {
     return this.getProperty<readonly TabWindow[] | undefined>('floatingWindows') ?? NO_WINDOWS;
   }
-  /** The new browser windows, the one used last at the end. Reactive. */
+  /** The new browser windows, with the most recently used last. Reactive. */
   get browserWindows(): readonly TabBrowserWindow[] {
     return this.getProperty<readonly TabBrowserWindow[] | undefined>('browserWindows') ?? NO_BROWSERS;
   }
-  /** The dock areas, the outermost first. Reactive. */
+  /** The dock areas, with the outermost first. Reactive. */
   get dockAreas(): readonly TabDockArea[] {
     return this.getProperty<readonly TabDockArea[] | undefined>('dockAreas') ?? NO_AREAS;
   }
-  /** The dock area of a side, `null` when nothing is docked there. Reactive. */
+  /** The dock area on a side, or `null` when nothing is docked there. Reactive. */
   dockArea(side: TabDockSide): TabDockArea | null {
     return this.dockAreas.find((a) => a.side === side) ?? null;
   }
-  /** The drop targets, asked in order: the dock guides and floating first, the built-in one (strips, groups, the layout's edges) last. */
+  /**
+   * The drop targets, in the order they are checked: the dock guides and floating first, and the
+   * built-in target (strips, groups, the layout's edges) last.
+   */
   get dropTargets(): readonly TabDropTarget[] {
     return this.parts.targets;
   }
 
   // Events.
 
-  /** A document is about to open; cancelable, `group` and `index` may be changed. */
+  /** Occurs before a document opens. Change `group` and `index`, or set `cancel = true` to keep it closed. */
   get onOpening(): MotifEvent<DocumentOpeningEventArgs> {
     return this.parts.opening.event;
   }
   get onOpened(): MotifEvent<DocumentOpenedEventArgs> {
     return this.parts.opened.event;
   }
-  /** A document is about to close; cancelable, or `e.promise` asks first. */
+  /** Occurs before a document closes. Set `cancel = true` to keep it open, or set `e.promise` to prompt first. */
   get onClosing(): MotifEvent<DocumentClosingEventArgs> {
     return this.parts.closing.event;
   }
   get onClosed(): MotifEvent<DocumentClosedEventArgs> {
     return this.parts.closed_.event;
   }
-  /** A tab is about to become its group's active one; cancelable. */
+  /** Occurs before a tab becomes the active tab of its group. Set `cancel = true` to keep the current one. */
   get onDocumentActivating(): MotifEvent<DocumentActivatingEventArgs> {
     return this.parts.activating.event;
   }
-  /** A group's active tab, or the active group, changed. */
+  /** Occurs when a group's active tab, or the active group, changes. */
   get onDocumentActivated(): MotifEvent<DocumentActivatedEventArgs> {
     return this.parts.activated.event;
   }
-  /** A document is about to move; cancelable. */
+  /** Occurs before a document moves. Set `cancel = true` to keep it in place. */
   get onMoving(): MotifEvent<DocumentMovingEventArgs> {
     return this.parts.moving.event;
   }
   get onMoved(): MotifEvent<DocumentMovedEventArgs> {
     return this.parts.moved.event;
   }
-  /** A group is about to be split; cancelable. */
+  /** Occurs before a group is split. Set `cancel = true` to keep the layout. */
   get onSplitting(): MotifEvent<GroupSplittingEventArgs> {
     return this.parts.splitting.event;
   }
   get onSplit(): MotifEvent<GroupSplitEventArgs> {
     return this.parts.split.event;
   }
-  /** A group is about to close, be resized, maximized or restored, or a layout to load; cancelable. */
+  /**
+   * Occurs before a group closes, is resized, maximized or restored, or a layout loads. Set
+   * `cancel = true` to prevent it.
+   */
   get onLayoutChanging(): MotifEvent<LayoutChangingEventArgs> {
     return this.parts.layoutChanging.event;
   }
-  /** Groups were added, closed, resized, maximized or restored. */
+  /** Occurs after groups are added, closed, resized, maximized or restored. */
   get onLayoutChanged(): MotifEvent<LayoutChangedEventArgs> {
     return this.parts.layoutChanged.event;
   }
-  /** A preview tab is about to be kept open; cancelable. */
+  /** Occurs before a preview tab is kept open. Set `cancel = true` to leave it a preview. */
   get onKeeping(): MotifEvent<DocumentChangingEventArgs> {
     return this.parts.keeping.event;
   }
   get onKept(): MotifEvent<DocumentChangedEventArgs> {
     return this.parts.kept.event;
   }
-  /** A document is about to be pinned; cancelable. */
+  /** Occurs before a document is pinned. Set `cancel = true` to leave it unpinned. */
   get onPinning(): MotifEvent<DocumentChangingEventArgs> {
     return this.parts.pinning.event;
   }
   get onPinned(): MotifEvent<DocumentChangedEventArgs> {
     return this.parts.pinned.event;
   }
-  /** A document is about to be unpinned; cancelable. */
+  /** Occurs before a document is unpinned. Set `cancel = true` to keep it pinned. */
   get onUnpinning(): MotifEvent<DocumentChangingEventArgs> {
     return this.parts.unpinning.event;
   }
   get onUnpinned(): MotifEvent<DocumentChangedEventArgs> {
     return this.parts.unpinned.event;
   }
-  /** A group is about to be locked; cancelable. */
+  /** Occurs before a group is locked. Set `cancel = true` to leave it unlocked. */
   get onLocking(): MotifEvent<GroupLockingEventArgs> {
     return this.parts.locking.event;
   }
   get onLocked(): MotifEvent<GroupLockedEventArgs> {
     return this.parts.locked.event;
   }
-  /** A group is about to be unlocked; cancelable. */
+  /** Occurs before a group is unlocked. Set `cancel = true` to keep it locked. */
   get onUnlocking(): MotifEvent<GroupLockingEventArgs> {
     return this.parts.unlocking.event;
   }
   get onUnlocked(): MotifEvent<GroupLockedEventArgs> {
     return this.parts.unlocked.event;
   }
-  /** The context menu of a tab or of the empty strip is about to open; change `items`, or cancel. */
+  /** Occurs before the context menu of a tab or the empty strip opens. Change `items`, or set `cancel = true`. */
   get onContextMenuOpening(): MotifEvent<TabContextMenuEventArgs> {
     return this.parts.menuOpening.event;
   }
-  /** A tab or a group is about to be dragged, or moved with "Move to…"; cancelable. */
+  /** Occurs before a tab or group is dragged or moved with "Move to…". Set `cancel = true` to prevent it. */
   get onDragStarting(): MotifEvent<TabDragStartingEventArgs> {
     return this.parts.dragStarting.event;
   }
-  /** The drag is over a place: change the place, or `cancel` to refuse it. Outside every manager it comes refused. */
+  /**
+   * Occurs while a drag is over a position. Change the position, or set `cancel` to refuse it. Outside
+   * every manager, it arrives already refused.
+   */
   get onDragOver(): MotifEvent<TabDropEventArgs> {
     return this.parts.dragOver.event;
   }
-  /** The drag is about to drop; change the place, or cancel to keep everything where it is. */
+  /** Occurs just before a drop. Change the position, or set `cancel` to leave everything in place. */
   get onDropping(): MotifEvent<TabDropEventArgs> {
     return this.parts.dropping.event;
   }
-  /** A drop was created (after the `moved`, `split`… events of what it did). */
+  /** Occurs after a drop completes, following the events of the action it performed (`moved`, `split`…). */
   get onDropped(): MotifEvent<TabDroppedEventArgs> {
     return this.parts.dropped.event;
   }
-  /** A drag is over, dropped or not. */
+  /** Occurs when a drag ends, whether or not it was dropped. */
   get onDragEnded(): MotifEvent<TabDragEndedEventArgs> {
     return this.parts.dragEnded.event;
   }
 
-  /** A document or a group is about to float in a window; `rect` may be changed; cancelable. */
+  /** Occurs before a document or group floats in a window. Change `rect`, or set `cancel = true` to prevent it. */
   get onFloating(): MotifEvent<TabFloatingEventArgs> {
     return this.parts.floating.event;
   }
   get onFloated(): MotifEvent<TabFloatedEventArgs> {
     return this.parts.floated.event;
   }
-  /** A document, a group or a window is about to be docked; `side` and `size` may be changed; cancelable. */
+  /**
+   * Occurs before a document, group or window is docked. Change `side` and `size`, or set
+   * `cancel = true` to prevent it.
+   */
   get onDocking(): MotifEvent<TabDockingEventArgs> {
     return this.parts.docking.event;
   }
   get onDocked(): MotifEvent<TabDockedEventArgs> {
     return this.parts.docked.event;
   }
-  /** A dock area is about to fold to its edge (`on`) or come back; cancelable. */
+  /** Occurs before a dock area collapses to its edge (`on`) or is restored. Set `cancel = true` to prevent it. */
   get onAutoHiding(): MotifEvent<TabAutoHidingEventArgs> {
     return this.parts.autoHiding.event;
   }
   get onAutoHidden(): MotifEvent<TabAutoHiddenEventArgs> {
     return this.parts.autoHidden.event;
   }
-  /** A document is about to be hidden; cancelable. */
+  /** Occurs before a document is hidden. Set `cancel = true` to keep it in its group. */
   get onHiding(): MotifEvent<DocumentChangingEventArgs> {
     return this.parts.hiding.event;
   }
-  /** A document was hidden; `group` is the one it left. */
+  /** Occurs after a document is hidden. `group` is the group it left. */
   get onHidden(): MotifEvent<DocumentChangedEventArgs> {
     return this.parts.hidden_.event;
   }
-  /** A hidden document is about to be shown again; `group` and `index` may be changed; cancelable. */
+  /** Occurs before a hidden document is shown again. Change `group` and `index`, or set `cancel = true`. */
   get onShowing(): MotifEvent<DocumentShowingEventArgs> {
     return this.parts.showing.event;
   }
   get onShown(): MotifEvent<DocumentShownEventArgs> {
     return this.parts.shown.event;
   }
-  /** A folded dock area is about to slide out (`open`) or back; cancelable. */
+  /** Occurs before a collapsed dock area slides out (`open`) or back. Set `cancel = true` to prevent it. */
   get onSlideChanging(): MotifEvent<TabSlideEventArgs> {
     return this.parts.slideChanging.event;
   }
   get onSlideChanged(): MotifEvent<TabSlideEventArgs> {
     return this.parts.slideChanged.event;
   }
-  /** A floating window or a new browser window is about to close; `then` may be changed; cancelable (not a new window the user closed). */
+  /**
+   * Occurs before a floating window or new browser window closes. Change `then`, or set `cancel = true`
+   * to keep it open, except for a new window that the user closed.
+   */
   get onWindowClosing(): MotifEvent<TabWindowClosingEventArgs> {
     return this.parts.windowClosing.event;
   }
-  /** A floating window or a new browser window is gone: closed, docked, left empty, or moved into a new window. */
+  /** Occurs when a floating window or new browser window is closed, docked, left empty, or moved into a new window. */
   get onWindowClosed(): MotifEvent<TabWindowClosedEventArgs> {
     return this.parts.windowClosed.event;
   }
-  /** A document, a group or a floating window is about to move into a new browser window; `rect` and `url` may be changed; cancelable. */
+  /**
+   * Occurs before a document, group or floating window moves into a new browser window. Change `rect`
+   * and `url`, or set `cancel = true` to prevent it.
+   */
   get onWindowOpening(): MotifEvent<TabWindowOpeningEventArgs> {
     return this.parts.windowOpening.event;
   }
   get onWindowOpened(): MotifEvent<TabWindowOpenedEventArgs> {
     return this.parts.windowOpened.event;
   }
-  /** The browser opened no new window, or one of another origin; `fallback` may be changed. */
+  /** Occurs when the browser opens no new window, or one from another origin. `fallback` can be changed. */
   get onError(): MotifEvent<TabErrorEventArgs> {
     return this.parts.error.event;
   }
-  /** The layout is about to be shown another way (desktop, tablet, phone); cancelable. */
+  /** Occurs before the presentation changes (desktop, tablet, phone). Set `cancel = true` to keep the current one. */
   get onPresentationChanging(): MotifEvent<PresentationChangingEventArgs> {
     return this.parts.presentationChanging.event;
   }
@@ -1456,7 +1474,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   // Tablet and phone.
 
-  /** On a phone: opens the full-screen list of open documents. `false` in another presentation. */
+  /** On a phone, opens the full-screen list of open documents. Returns `false` in any other presentation. */
   showDocumentList(): boolean {
     return untracked(() => this.parts.presenter.showList());
   }
@@ -1465,12 +1483,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return untracked(() => this.parts.presenter.hideList());
   }
 
-  /** On a tablet or a phone: opens the dock area of `document` (its drawer or sheet) with it shown. */
+  /** On a tablet or phone, opens the dock area of `document` (its drawer or sheet) with that document shown. */
   showTool(document: TabDocument): boolean {
     return untracked(() => this.parts.presenter.showTool(document));
   }
 
-  /** On a tablet or a phone: closes a dock area's drawer or sheet. */
+  /** On a tablet or phone, closes a dock area's drawer or sheet. */
   hideTool(area: TabDockArea): boolean {
     return untracked(() => this.parts.presenter.hideTool(area));
   }
@@ -1478,34 +1496,34 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   // Documents.
 
   /**
-   * Opens a document (or makes one from options) in a group: the active one by default, never a
-   * locked one. A document that is already open is activated, or copied into the group when it may
-   * be open twice (`allowDuplicate`). A preview replaces the group's preview tab. Returns `null`
-   * when `onOpening` cancels.
+   * Opens a document, or one created from options, in a group: the active group by default, never a
+   * locked one. An already open document is activated, or copied into the group when it can be open
+   * twice (`allowDuplicate`). A preview replaces the group's preview tab. Returns `null` when
+   * `onOpening` cancels.
    */
   open(document: TabDocument | TabDocumentOptions, options: TabOpenOptions = {}): TabDocument | null {
     return untracked(() => this.openDocument(document, options, false));
   }
 
-  /** Closes a document as its close button does; resolves `false` when it stays open. */
+  /** Closes a document as its close button does. Resolves to `false` when it stays open. */
   close(document: TabDocument): Promise<boolean> {
     return untracked(() => this.closeDocument(document, false));
   }
 
   /**
-   * Closes the documents of a group, or of every group; resolves `false` when some stay open.
+   * Closes the documents of a group, or of all groups. Resolves to `false` when some stay open.
    * Pinned documents stay while `keepPinned` is on, unless `pinned` is `true`.
    */
   closeAll(group?: TabGroup, pinned?: boolean): Promise<boolean> {
     return this.closeMany(untracked(() => [...(group ? group.documents : this.documents)]), pinned, false);
   }
 
-  /** Closes the other documents of the document's group. */
+  /** Closes the other documents in the document's group. */
   closeOthers(document: TabDocument): Promise<boolean> {
     return this.closeMany(untracked(() => (document.group?.documents ?? []).filter((d) => d !== document)), undefined, false);
   }
 
-  /** Closes the documents after (or before) this one in its group. */
+  /** Closes the documents after this one in its group. `closeToLeft` closes those before it. */
   closeToRight(document: TabDocument): Promise<boolean> {
     return this.closeMany(untracked(() => this.sideOf(document, 1)), undefined, false);
   }
@@ -1514,30 +1532,30 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return this.closeMany(untracked(() => this.sideOf(document, -1)), undefined, false);
   }
 
-  /** Closes the documents of a group (or of every group) that have no unsaved changes. */
+  /** Closes the documents of a group, or of all groups, that have no unsaved changes. */
   closeSaved(group?: TabGroup): Promise<boolean> {
     return this.closeMany(untracked(() => (group ? group.documents : this.documents).filter((d) => !d.dirty)), undefined, false);
   }
 
   /**
-   * Takes a document out of its group without closing it: its tab goes, its content is kept as its
-   * `contentLifetime` says, and `show` puts it back where it was. A group, a dock area or a window
-   * it leaves empty goes. `false` when it may not be hidden (`allowHide`) or `onHiding` cancels.
+   * Removes a document from its group without closing it. Its content is kept according to its
+   * `contentLifetime`, and `show` returns it to its place. A group, dock area or window it leaves
+   * empty is removed. Returns `false` when hiding is not allowed (`allowHide`) or `onHiding` cancels.
    */
   hide(document: TabDocument): boolean {
     return untracked(() => document.manager === this && this.hideBy(document, false));
   }
 
   /**
-   * Puts a hidden document back: into the group it was hidden from, else into its dock area (made
-   * again at its size), else into a floating window where its window was, else among the documents.
-   * `options` may name a group or a dock area instead.
+   * Restores a hidden document: to the group it was hidden from, otherwise to its dock area (recreated
+   * at its size), otherwise to a floating window in the same position, otherwise to the documents.
+   * `options` can name a group or a dock area instead.
    */
   show(document: TabDocument, options: TabShowOptions = {}): boolean {
     return untracked(() => this.showBy(document, options, false));
   }
 
-  /** Makes a document its group's active one, and its group the active group. */
+  /** Makes a document the active tab of its group, and that group the active group. */
   activate(document: TabDocument, focus = false): boolean {
     return untracked(() => {
       const presenter = this.parts.presenter;
@@ -1547,7 +1565,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
   }
 
-  /** Activates the next tab of a group (the active group by default), around the end. */
+  /** Activates the next tab of a group (the active group by default), wrapping around at the end. */
   activateNext(group?: TabGroup | null, focus = false): boolean {
     return untracked(() => this.step(group ?? this.activeGroup, 1, focus, false));
   }
@@ -1556,45 +1574,48 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return untracked(() => this.step(group ?? this.activeGroup, -1, focus, false));
   }
 
-  /** Moves a document to `index` of `group` (another group, or its own). Pinned documents stay before the others. */
+  /** Moves a document to `index` of `group`, another group or its own. Pinned documents stay before the others. */
   move(document: TabDocument, group: TabGroup, index?: number): boolean {
     return untracked(() => this.moveDocument(document, group, index, false));
   }
 
   /**
-   * Moves a document to the next or previous group, or to the group on that side of its own; its
-   * group splits that way when there is none.
+   * Moves a document to the next or previous group, or to the group on that side of its own. Its
+   * group splits in that direction when there is none.
    */
   moveToGroup(document: TabDocument, which: 'next' | 'previous' | SplitDirection): boolean {
     return untracked(() => this.moveToGroupBy(document, which, false));
   }
 
-  /** Moves a document a place along its strip (`-1` towards the start), not past the pinned or the other tabs. */
+  /**
+   * Moves a document one position along its strip (`-1` toward the start), without passing the
+   * boundary between pinned and other tabs.
+   */
   moveInGroup(document: TabDocument, by: number): boolean {
     return untracked(() => this.moveInGroupBy(document, by, false));
   }
 
-  /** Makes a preview tab stay open. */
+  /** Keeps a preview tab open. */
   keep(document: TabDocument): boolean {
     return untracked(() => this.keepBy(document, false));
   }
 
-  /** Pins a document: its tab goes to the end of the pinned ones, at the start of the strip. */
+  /** Pins a document. Its tab moves to the end of the pinned tabs, at the start of the strip. */
   pin(document: TabDocument): boolean {
     return untracked(() => this.pinBy(document, true, false));
   }
 
-  /** Unpins a document: its tab becomes the first of the others. */
+  /** Unpins a document. Its tab moves to the first position after the pinned tabs. */
   unpin(document: TabDocument): boolean {
     return untracked(() => this.pinBy(document, false, false));
   }
 
-  /** Opens the document closed last again, where it was. `null` when there is none to open. */
+  /** Reopens the most recently closed document in its original place. Returns `null` when there is none. */
   reopenClosed(): TabDocument | null {
     return untracked(() => this.reopenBy(false));
   }
 
-  /** Activates the document activated before the current one, in whatever group. */
+  /** Activates the document that was active before the current one, in any group. */
   goBack(): boolean {
     return untracked(() => this.travel(-1, false));
   }
@@ -1603,7 +1624,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return untracked(() => this.travel(1, false));
   }
 
-  /** Makes a new document with `newDocument` and opens it in a group (the active one by default). */
+  /** Creates a document with `newDocument` and opens it in a group (the active group by default). */
   openNew(group?: TabGroup): TabDocument | null {
     return untracked(() => this.openNewBy(group ?? this.activeGroup, false));
   }
@@ -1620,12 +1641,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     }
   }
 
-  /** A document of this manager by its id: an open one first, else a hidden one. */
+  /** Finds a document of this manager by its id: an open document first, then a hidden one. */
   findDocument(id: string): TabDocument | null {
     return untracked(() => this.documents.find((d) => d.id === id && !d.original) ?? this.documents.find((d) => d.id === id) ?? this.hiddenDocuments.find((d) => d.id === id) ?? null);
   }
 
-  /** The content made for a document, `null` while it is not built. */
+  /** Returns the content created for a document, or `null` until it is created. */
   contentOf(document: TabDocument): ComponentBase | null {
     return this.parts.tabs.get(document)?.contentComponent ?? null;
   }
@@ -1633,9 +1654,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   // Groups.
 
   /**
-   * Opens a new group beside `group`, or along that edge of the whole layout when `group` is `null`;
-   * `document` moves into it, or a copy of it opens there when it may be open twice and `splitCopies`
-   * is on. Returns the new group, `null` when `onSplitting` cancels.
+   * Opens a new group beside `group`, or along that edge of the whole layout when `group` is `null`.
+   * `document` moves into it, or a copy opens there when it can be open twice and `splitCopies` is
+   * on. Returns the new group, or `null` when `onSplitting` cancels.
    */
   split(group: TabGroup | null, direction: SplitDirection, document?: TabDocument): TabGroup | null {
     return untracked(() => this.splitGroup(group, direction, document ?? null, false));
@@ -1643,19 +1664,19 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   /**
    * Moves a whole group with its documents: beside another group (`left`, `right`, `up`, `down`),
-   * into it (`center`: its documents join that group), or along an edge of the layout (`target`
-   * `null`). Nothing is recreated.
+   * into it (`center`, where its documents join that group), or along an edge of the layout
+   * (`target` is `null`). Nothing is recreated.
    */
   moveGroup(group: TabGroup, target: TabGroup | null, side: TabDropSide): boolean {
     return untracked(() => this.moveGroupBy(group, target, side, false));
   }
 
-  /** Closes the documents of a group, then the group (the last group stays, empty). */
+  /** Closes the documents of a group, and then the group. The last group stays, empty. */
   closeGroup(group: TabGroup): Promise<boolean> {
     return untracked(() => this.closeGroupBy(group, false));
   }
 
-  /** Makes a group (or the n-th one, from 0) active and focuses what had focus in it last. */
+  /** Makes a group, or the n-th group from 0, active and sets focus on what last had focus in it. */
   focusGroup(group: TabGroup | number): boolean {
     return untracked(() => {
       const target = typeof group === 'number' ? this.groups[group] : group;
@@ -1667,7 +1688,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
   }
 
-  /** Locks a group: documents opened without naming a group go elsewhere. */
+  /** Locks a group, so that documents opened without naming a group open elsewhere. */
   lock(group: TabGroup): boolean {
     return untracked(() => this.lockBy(group, true, false));
   }
@@ -1676,7 +1697,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return untracked(() => this.lockBy(group, false, false));
   }
 
-  /** Gives a group all the room; the others stay as they are, out of sight. */
+  /** Gives a group all the space. The other groups stay hidden, unchanged. */
   maximizeGroup(group: TabGroup): boolean {
     return untracked(() => this.maximizeBy(group, false));
   }
@@ -1686,12 +1707,15 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return untracked(() => this.restoreBy(false));
   }
 
-  /** Gives every group of every split the same size. */
+  /** Makes every group of every split the same size. */
   evenSizes(): boolean {
     return untracked(() => this.evenSizesBy(null, false));
   }
 
-  /** Sets a group's size along its split: pixels, or a share such as `'30%'`. The neighbor after it (before it, for the last) gives or takes the room. */
+  /**
+   * Sets a group's size along its split, in pixels or as a share such as `'30%'`. The next group, or
+   * the previous group for the last one, gives up or takes the difference.
+   */
   resizeGroup(group: TabGroup, size: number | string): boolean {
     return untracked(() => {
       const split = group.parentSplit;
@@ -1718,8 +1742,8 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   // Drag and drop.
 
   /**
-   * "Move to…": the keys choose where a document (or a whole group) goes, with the drop areas of a
-   * drag shown and each place announced; Enter moves it there, Escape leaves it.
+   * Starts "Move to…": the keys choose where a document or a whole group moves, with the drop areas
+   * of a drag shown and each position announced. Enter moves it there, and Escape cancels.
    */
   showMoveTo(target: TabDocument | TabGroup): boolean {
     return untracked(() => {
@@ -1736,7 +1760,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
   }
 
-  /** Stops a drag or "Move to…" under way; everything goes back where it was. */
+  /** Stops a drag or "Move to…" in progress and restores everything. */
   cancelDrag(): boolean {
     return untracked(() => {
       const parts = this.parts;
@@ -1750,7 +1774,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
   }
 
-  /** Adds a drop target, asked before the built-in one (at `index` of `dropTargets`). Returns the function that removes it. */
+  /**
+   * Adds a drop target, checked before the built-in one (at `index` of `dropTargets`). Returns a
+   * function that removes it.
+   */
   addDropTarget(target: TabDropTarget, index = 0): () => void {
     const list = this.parts.targets;
     list.splice(Math.max(0, Math.min(index, list.length - 1)), 0, target);
@@ -1763,9 +1790,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   // Floating windows and dock areas.
 
   /**
-   * Moves a document, or a whole group, into a floating window of its own at `rect` (by default
-   * the size of the group it comes from, beside it). Returns the window, `null` when it may not
-   * float or `onFloating` cancels.
+   * Moves a document or a whole group into its own floating window at `rect`. By default, the window
+   * has the size of the original group and opens beside it. Returns the window, or `null` when the
+   * target cannot float or `onFloating` cancels.
    */
   float(target: TabDocument | TabGroup, rect?: TabRect): TabWindow | null {
     return untracked(() => {
@@ -1777,15 +1804,15 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   }
 
   /**
-   * Docks a document, a group or a whole floating window into the dock area of `side` (made at
-   * `size`, else `dockAreaSize`, when there is none), or, without a side, puts it back where it was
-   * docked before it floated. A document not open yet opens there.
+   * Docks a document, a group or a whole floating window in the dock area of `side`, which is created
+   * at `size`, otherwise at `dockAreaSize`, if necessary. Without a side, it returns to where it was
+   * docked before it floated. A document that is not open yet opens there.
    */
   dock(target: TabDocument | TabGroup | TabWindow, side?: TabDockSide | null, size?: number | string): boolean {
     return untracked(() => this.dockBy(target, side ?? null, size ?? null, false));
   }
 
-  /** Folds a dock area (or a document's) to the manager's edge, where only its tab titles stay; `false` brings it back. */
+  /** Collapses a dock area, or a document's area, to the manager's edge, leaving its tab titles. `false` restores it. */
   autoHide(target: TabDockArea | TabDocument, on = true): boolean {
     return untracked(() => {
       const area = target instanceof TabDockArea ? target : target.dockArea;
@@ -1793,12 +1820,12 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
   }
 
-  /** Slides a folded dock area out over the documents, with `document` shown. */
+  /** Slides a collapsed dock area out over the documents, with `document` shown. */
   showAutoHidden(document: TabDocument): boolean {
     return untracked(() => (this.parts.presenter.kind === 'desktop' ? this.slideOut(document, false, false) : this.parts.presenter.showTool(document)));
   }
 
-  /** Slides the folded area that is out back to its edge. */
+  /** Slides the collapsed area that is out back to its edge. */
   hideAutoHidden(): boolean {
     return untracked(() => this.slideBack(false));
   }
@@ -1826,7 +1853,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
   }
 
-  /** Gives a floating window the whole page; `restoreWindow` gives it its place back. */
+  /** Gives a floating window the whole page. `restoreWindow` returns it to its place. */
   maximizeWindow(window: TabWindow): boolean {
     return untracked(() => this.maximizeWindowBy(window, true, false));
   }
@@ -1836,15 +1863,15 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   }
 
   /**
-   * Closes a floating window with its documents (each one asks through `onClosing`), or a new
-   * browser window: its documents go back to the main window, or close, as
-   * `newWindowCloseAction` says. Resolves `false` when it stays open.
+   * Closes a floating window with its documents (each raising `onClosing`), or a new browser window,
+   * whose documents return to the main window or close according to `newWindowCloseAction`. Resolves
+   * to `false` when it stays open.
    */
   closeWindow(window: TabWindow | TabBrowserWindow): Promise<boolean> {
     return untracked(() => (window instanceof TabBrowserWindow ? this.closeBrowserBy(window, false) : this.closeWindowBy(window, false)));
   }
 
-  /** Brings a floating window or a new browser window to the front and focuses what had focus in it last. */
+  /** Brings a floating or new browser window to the front and sets focus on what last had focus in it. */
   focusWindow(window: TabWindow | TabBrowserWindow): boolean {
     return untracked(() => {
       const parts = this.parts;
@@ -1860,7 +1887,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
   }
 
-  /** Sets a dock area's size: pixels, or a share of the manager such as `'25%'`. */
+  /** Sets a dock area's size, in pixels or as a share of the manager such as `'25%'`. */
   resizeDockArea(area: TabDockArea, size: number | string, byUser = false): boolean {
     return untracked(() => {
       if (!this.parts.areas.has(area.side) || this.parts.areas.get(area.side) !== area) return false;
@@ -1872,7 +1899,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
   }
 
-  /** Moves focus to the next part (`-1`: the previous one): the documents, each dock area that is not folded, each floating window. */
+  /**
+   * Moves focus to the next part, or with `-1` the previous part: the documents, each dock area that
+   * is not collapsed, and each floating window.
+   */
   focusPart(by: 1 | -1 = 1): boolean {
     return untracked(() => this.focusPartBy(by));
   }
@@ -1880,12 +1910,13 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   // New browser windows.
 
   /**
-   * Moves a document, a whole group or a floating window with all it holds into a new browser
-   * window (`window.open`, or `openWindow`), at `options.rect` on the screen (by default as large
-   * as what moves, beside it). The content moves, it is not recreated. Returns the window, `null`
-   * when it may not move, `onWindowOpening` cancels, or the browser opens none (`onError` tells,
-   * and `newWindowFallback` may float it instead). A page given in `newWindowUrl` is waited for:
-   * the move is created once it has loaded (`onWindowOpened`), and this returns `null`.
+   * Moves a document, a whole group or a floating window with its contents into a new browser
+   * window (`window.open`, or `openWindow`) at `options.rect` on the screen. By default, the window is
+   * as large as what moves and opens beside it. The content moves and is not recreated. Returns the
+   * window, or `null` when the move is not allowed, `onWindowOpening` cancels, or the browser opens no
+   * window (`onError` reports it, and `newWindowFallback` can float the target instead). When a page
+   * is set in `newWindowUrl`, the move completes once it has loaded (`onWindowOpened`), and this
+   * method returns `null`.
    */
   moveToNewWindow(target: TabDocument | TabGroup | TabWindow, options: TabNewWindowOptions = {}): TabBrowserWindow | null {
     return untracked(() => {
@@ -1894,15 +1925,15 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
   }
 
-  /** Brings a document, a group or everything in a new window back to the main window, into the group it came from. */
+  /** Returns a document, a group or everything in a new window to the main window, into its original group. */
   moveToMainWindow(target: TabDocument | TabGroup | TabBrowserWindow): boolean {
     return untracked(() => this.mainWindowBy(target, false));
   }
 
   /**
-   * Opens again the new windows a layout saved (`restoreWindows: 'reopen'`) that are floating
-   * because the browser did not let `loadLayout` open them. A browser lets a page open windows only
-   * on a click or a key: call it from one. Returns how many opened.
+   * Reopens the new windows of a saved layout (`restoreWindows: 'reopen'`) that are floating because
+   * the browser did not let `loadLayout` open them. A browser lets a page open windows only on a click
+   * or a key press, so call this method from one. Returns how many windows opened.
    */
   reopenWindows(): number {
     return untracked(() => this.reopenWindowsBy());
@@ -1911,8 +1942,9 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   // Lists.
 
   /**
-   * Opens a group's menu of open documents (its "…" button): a search, the documents, and commands
-   * under them. In a compact bar the commands come first: the buttons the bar does not show, then the documents.
+   * Opens a group's menu of open documents (its "…" button): a search field, the documents, and
+   * commands below them. In a compact bar, the commands come first: the buttons the bar does not show,
+   * followed by the documents.
    */
   showOpenList(group?: TabGroup | null): boolean {
     return untracked(() => {
@@ -1945,7 +1977,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     });
   }
 
-  /** Opens the list of recently used documents with the next one (or the last one, `-1`) highlighted. */
+  /** Opens the list of recently used documents with the next document (or the last, with `-1`) highlighted. */
   showRecentList(by: 1 | -1 = 1, event: KeyboardEvent | null = null): boolean {
     return untracked(() => {
       const group = this.activeGroup;
@@ -1962,7 +1994,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
 
   // Layout as JSON.
 
-  /** The layout as plain JSON: the tree of splits and groups, each document's `id`, `type`, `title`, `state` and flags. */
+  /**
+   * Returns the layout as plain JSON: the tree of splits and groups, and each document's `id`, `type`,
+   * `title`, `state` and flags.
+   */
   saveLayout(): TabLayout {
     return untracked(() => {
       const groups = this.groups;
@@ -2026,11 +2061,11 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   }
 
   /**
-   * Puts a saved layout back in place of the current one, whose documents close without asking
-   * (and whose new windows close). `factory` makes each document again (by its `type`); without it
-   * a document is created from what was saved and its content comes from the manager's `factory`. A
-   * document saved twice comes back as a copy of the first one. Saved new windows come back as
-   * `restoreWindows` says.
+   * Replaces the current layout with a saved one. The current documents close without prompting, and
+   * the current new windows close. `factory` recreates each document by its `type`. Without it, a
+   * document is created from the saved data, and the manager's `factory` creates its content. A
+   * document saved twice returns as a copy of the first. Saved new windows are restored according to
+   * `restoreWindows`.
    */
   loadLayout(layout: TabLayout, factory?: TabLayoutFactory): boolean {
     return untracked(() => {
@@ -2505,7 +2540,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     this.parts.dropping.fire(e);
   }
 
-  /** @internal The drop was created: `onDropped`, with where it ended up. */
+  /** @internal The drop is complete: `onDropped`, with where it ended up. */
   dropped(place: TabDropPlace, subject: TabDragSubject, byKeyboard: boolean): void {
     const owner = place.manager ?? this;
     const result = owner.parts.dropResult;

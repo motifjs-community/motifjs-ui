@@ -26,13 +26,12 @@ interface ColumnWriter {
 }
 
 /**
- * Writes a DataGrid to an ExcelJS worksheet's `excelExporter.exportDataGrid` does:
- * the header row, the group rows ("Column: value", their summaries) with outline levels, the data
- * rows in the grid's order with its filter, search and grouping (every matching row, loaded in
- * parts from a server), the group footers and the totals. Numbers stay numbers with a number format
- * made from the column's `Intl` format, dates stay dates, yes/no cells are `TRUE` / `FALSE`, lookup
- * and list cells hold their texts. Bring your own ExcelJS: create the workbook and the worksheet,
- * then save the workbook when the promise resolves with the cells written.
+ * Writes a DataGrid to an ExcelJS worksheet: the header row, the group rows ("Column: value", with
+ * their summaries) with outline levels, the data rows in the grid's order with its filter, search and
+ * grouping (every matching row, loaded in parts from a server), the group footers and the totals.
+ * Numbers stay numbers with a number format created from the column's `Intl` format, dates stay dates,
+ * yes/no cells are `TRUE` / `FALSE`, and lookup and list cells hold their text. Provide your own ExcelJS:
+ * create the workbook and the worksheet, then save the workbook when the promise resolves with the cells written.
  *
  * @example
  * onExporting={(e) => {

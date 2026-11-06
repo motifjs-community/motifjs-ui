@@ -52,10 +52,10 @@ function toNumber(value: unknown, fallback: number): number {
 }
 
 /**
- * Shows how far some work is: a bar that fills from `min` to `max`, or an arc that goes round a circle
- * (`shape="circle"`); while `value` is `null`, a part that runs to and fro, or an arc that turns. A label and
- * the percent can go above it, under it or beside it. Where the design language gives it a wave, the line
- * or the arc swings while it grows.
+ * Shows the progress of an operation: a bar that fills from `min` to `max`, or an arc around a circle
+ * (`shape="circle"`). While `value` is `null`, the bar shows continuous motion and the arc rotates. A label and
+ * the percentage can appear above, below or beside it. Where the design language includes a wave, the line
+ * or the arc moves as it grows.
  *
  * @example
  * <ProgressBar label="Uploading" value={() => this.upload.sent} max={() => this.upload.size} showValue />
@@ -97,7 +97,7 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
 
   // Properties (see ProgressBarProps).
 
-  /** `null` while the progress is not known. */
+  /** `null` while the progress is unknown. */
   get value(): number | null {
     const value = this.getProperty<number | null | undefined>('value');
     return value === null || value === undefined ? null : toNumber(value, 0);
@@ -165,7 +165,7 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
   set stretch(value: Bind<boolean>) {
     this.assignProperty('stretch', value, Boolean);
   }
-  /** A function, so it is stored as it is, never bound. */
+  /** Because it is a function, it is stored as is and not bound. */
   get valueText(): ((value: number, fraction: number) => string) | null {
     return this.getProperty<((value: number, fraction: number) => string) | null | undefined>('valueText') ?? null;
   }
@@ -173,7 +173,7 @@ export class ProgressBar extends Control<HTMLDivElement, ProgressBarProps> {
     this.setProperty('valueText', value);
   }
 
-  /** How much is done, from 0 to 1; `null` while it is not known. Reactive. */
+  /** The completed share from 0 to 1, or `null` while the progress is unknown. Reactive. */
   get fraction(): number | null {
     const value = this.value;
     if (value === null) return null;

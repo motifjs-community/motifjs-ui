@@ -1,2 +1,2 @@
-/** What pressing a button of a group does: only its action, choose that one, or turn it on and off. */
+/** What clicking a button in a group does: runs only its action, selects it, or toggles it. */
 export type ButtonGroupSelection = 'none' | 'single' | 'multiple';

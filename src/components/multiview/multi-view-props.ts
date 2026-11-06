@@ -5,21 +5,27 @@ import type { ViewSelectionChangedEventArgs } from './view-selection-changed-eve
 
 /** Props of `MultiView`. Each prop is also a settable property, and a function is tracked. */
 export interface MultiViewProps extends ControlProps {
-    /** The view in sight: its `key`, else its index. `x-model` binds it two-way. Default `0`. */
+    /** The visible view, identified by its `key` or index. `x-model` provides two-way binding. The default is `0`. */
     value?: Bind<string | number | null>;
-    /** After the last view comes the first. Default `false`. */
+    /** The first view follows the last. The default is `false`. */
     loop?: Bind<boolean>;
-    /** A finger or a pointer drags the views. Default `true`. */
+    /** Lets a finger or pointer drag the views. The default is `true`. */
     swipeEnabled?: Bind<boolean>;
-    /** The views slide into sight. `false` shows the next one at once. Default `true`. */
+    /** Animates the transition between views. `false` shows the next view immediately. The default is `true`. */
     animated?: Bind<boolean>;
-    /** A view is built when first shown, then kept (a view's own `lazy` wins). Default `true`. */
+    /**
+     * Creates a view when it first becomes visible and then keeps it. A view's own `lazy` takes precedence.
+     * The default is `true`.
+     */
     lazy?: Bind<boolean>;
-    /** `false`: content made by a view's `content` is disposed while out of sight (a view's own `keepAlive` wins). Default `true`. */
+    /**
+     * With `false`, disposes what a view's `content` created while the view is hidden. A view's own `keepAlive` takes
+     * precedence. The default is `true`.
+     */
     keepAlive?: Bind<boolean>;
-    /** What screen readers call it. Default: the kit's "Pages". */
+    /** The accessible name. The default is the kit's "Pages" string. */
     label?: Bind<string>;
-    /** The view in sight is about to change; cancelable. */
+    /** Occurs before the visible view changes. This event is cancelable. */
     onSelecting?: (e: ViewSelectingEventArgs) => void;
     onSelectionChanged?: (e: ViewSelectionChangedEventArgs) => void;
 }

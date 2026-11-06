@@ -12,9 +12,9 @@ function one(value: unknown): RuleDate | null {
 }
 
 /**
- * The dates of an exception field (`EXDATE`): a text of dates apart by commas or semicolons
+ * The dates of an exception field (`EXDATE`): a text of dates separated by commas or semicolons
  * (`20261104T090000Z,20261111T090000Z`), or a list of dates, texts or milliseconds. A `Date` and a
- * text with a zone are moments; a text without one is a wall clock time of the series.
+ * text with a zone are moments, and a text without one is a wall clock time of the series.
  */
 export function readRuleDates(value: unknown): RuleDate[] {
   const list = Array.isArray(value) ? value : typeof value === 'string' ? value.split(/[,;]/) : value === null || value === undefined ? [] : [value];

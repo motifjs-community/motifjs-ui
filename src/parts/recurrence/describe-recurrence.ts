@@ -2,11 +2,11 @@ import { fillText } from '../../core/fill-text';
 import type { UiStrings } from '../../core/ui-strings';
 import type { RecurrenceRule } from './recurrence-rule';
 
-/** What `describeRecurrence` writes with. */
+/** The options of `describeRecurrence`. */
 export interface DescribeRecurrenceOptions {
   locale: string;
   strings: UiStrings;
-  /** The time zone a moment in the rule (an `UNTIL` in UTC) is written on. Default: the browser's. */
+  /** The time zone a moment in the rule (an `UNTIL` in UTC) is written in. The default is the browser's. */
   timeZone?: string;
 }
 
@@ -30,10 +30,10 @@ const weekdayName = (locale: string, day: number) => new Intl.DateTimeFormat(loc
 const monthName = (locale: string, month: number) => new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(Date.UTC(2026, month - 1, 1));
 
 /**
- * How a rule repeats, in plain words of the locale: "Every 2 weeks on Monday and Wednesday, until
- * 31 December 2026". `start` (a date of the browser's clock with the series' fields) gives what the
- * rule leaves to it: the weekday, the day of the month. Parts the words do not cover are said to be
- * a rule of its own.
+ * Describes how a rule repeats, in plain words of the locale: "Every 2 weeks on Monday and Wednesday,
+ * until 31 December 2026". `start` (a date of the browser's clock with the series' fields) provides what
+ * the rule leaves to it: the weekday and the day of the month. Parts the words do not cover are
+ * described as a custom rule.
  */
 export function describeRecurrence(rule: RecurrenceRule | null, start: Date | null, options: DescribeRecurrenceOptions): string {
   const { locale, strings } = options;

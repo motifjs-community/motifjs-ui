@@ -19,10 +19,10 @@ const OWN = ['value', 'icon', 'avatar', 'selectable', 'selected', 'clickable', '
 const STATE = ['selectable', 'selected', 'clickable', 'removable', 'tabStop'] as const;
 
 /**
- * A short text with an icon or an avatar before it and a remove button after it. It can be pressed
- * (`clickable`), turned on and off (`selectable`, a filter) or removed (`removable`: its button and
- * Delete / Backspace raise `onRemove`, your code performs the removal). Its appearance defaults to the design
- * language's. In a `ChipGroup` that selects, the group decides which chips are selected.
+ * A short text with an icon or an avatar before it and a remove button after it. It can be clicked
+ * (`clickable`), toggled (`selectable`, as a filter) or removed (`removable`: its button, Delete and Backspace raise
+ * `onRemove`, and your code performs the removal). The appearance defaults to that of the design language. In a
+ * `ChipGroup` with selection, the group controls which chips are selected.
  *
  * @example
  * <Chip text="Vegan" selectable selected={() => this.filters.vegan} onSelectedChanged={(e) => (this.filters.vegan = e.selected)} />
@@ -144,22 +144,22 @@ export class Chip extends Control<HTMLSpanElement, ChipProps> {
     this.assignProperty('size', value);
   }
 
-  /** The user asked to remove it (its button, or Delete / Backspace). */
+  /** Occurs when the user requests removal, using the remove button or Delete / Backspace. */
   get onRemove(): MotifEvent<ChipRemoveEventArgs> {
     return this.removed.event;
   }
 
-  /** It was turned on or off, by the user or by code (`e.byUser`). */
+  /** Occurs when the chip is turned on or off, either by the user or programmatically (`e.byUser`). */
   get onSelectedChanged(): MotifEvent<ChipSelectedChangedEventArgs> {
     return this.selectedChanged.event;
   }
 
-  /** The avatar before the text, when it has one. */
+  /** The avatar before the text, if there is one. */
   get avatarControl(): Avatar | null {
     return this.avatarPart;
   }
 
-  /** Asks for it to be removed, as its remove button does. */
+  /** Requests removal, as the remove button does. */
   remove(): void {
     if (this.isEnabled) this.removed.fire({ byKeyboard: false, source: this });
   }

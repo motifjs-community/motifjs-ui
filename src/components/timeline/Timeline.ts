@@ -42,10 +42,9 @@ interface Entry {
 }
 
 /**
- * Events in time order: down the page, each a card beside a line with a dot (the cards taking turns on either side
- * when `alternate`, folded until pressed when `collapsible`); or along a line of dates (`horizontal`), where a
- * press on a date, or the arrow keys, shows that event's card under the line. The dates are written in the kit's
- * language.
+ * Events in time order, either down the page, each a card next to a line with a dot (with cards on alternating sides
+ * with `alternate`, and collapsed until clicked with `collapsible`), or along a line of dates (`horizontal`), where
+ * clicking a date or using the arrow keys shows that event's card below the line. Dates use the kit language.
  *
  * @example
  * <Timeline items={[{ date: '2026-03-01', title: 'Kick-off', description: 'The plan agreed' }, { date: '2026-05-14', title: 'Beta', tone: 'accent' }]} />
@@ -172,22 +171,22 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
         this.assignProperty('label', value);
     }
 
-    /** A click on an event's card or flag (`index`, `item`). */
+    /** Occurs when an event's card or date is clicked (`index`, `item`). */
     get onItemClick(): MotifEvent<TimelineItemClickEventArgs> {
         return this.itemClick.event;
     }
 
-    /** Horizontal: the shown event changed (`index`, `item`, `previous`, `byUser`). */
+    /** In the horizontal layout, occurs when the selected event changes (`index`, `item`, `previous`, `byUser`). */
     get onSelectionChanged(): MotifEvent<TimelineSelectionChangedEventArgs> {
         return this.selectionChanged.event;
     }
 
-    /** Horizontal: the index of the shown event; -1 when there is none. */
+    /** In the horizontal layout, the index of the selected event, or -1 if there is none. */
     get selectedIndex(): number {
         return this.indexOf(this.peekProperty<string | number | null | undefined>('value'));
     }
 
-    /** How many events there are. */
+    /** The number of events. */
     get count(): number {
         return this.looks.length;
     }
@@ -196,7 +195,7 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
         return this.orientation === 'horizontal';
     }
 
-    /** Horizontal: shows an event, by index or key. Vertical: unfolds its card. */
+    /** In the horizontal layout, shows an event by index or key. In the vertical layout, expands its card. */
     goTo(event: number | string): boolean {
         const index = this.indexOf(event);
         if (index < 0) return false;
@@ -205,7 +204,7 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
         return true;
     }
 
-    /** Vertical, `collapsible`: unfolds or folds an event's card. */
+    /** In the vertical layout with `collapsible`, expands or collapses an event's card. */
     unfold(event: number | string, on = true): void {
         const look = this.looks[this.indexOf(event)];
         if (!look) return;
@@ -214,18 +213,18 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
         this.drawStates();
     }
 
-    /** Whether an event's card is unfolded. */
+    /** Indicates whether an event's card is expanded. */
     isUnfolded(event: number | string): boolean {
         const look = this.looks[this.indexOf(event)];
         return !!look && this.expanded.has(look.item);
     }
 
-    /** Reads the items again after they were changed in place. */
+    /** Re-reads the items after they have been changed in place. */
     refresh(): void {
         this.renderItems();
     }
 
-    /** The index a value names: a key, else an index in range; -1 for none. */
+    /** Returns the index that a value identifies: a key, otherwise an index in range, or -1 if there is none. */
     indexOf(value: string | number | null | undefined): number {
         if (value === undefined) return this.looks.length ? 0 : -1;
         if (value === null) return -1;
@@ -237,7 +236,7 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
         return this.looks[index]?.key ?? index;
     }
 
-    /** A date as the kit's language writes it with `dateFormat`. */
+    /** Formats a date in the kit language, using `dateFormat`. */
     formatDate(date: Date | null): string {
         if (!date || Number.isNaN(date.getTime())) return '';
         const format = this.dateFormat;

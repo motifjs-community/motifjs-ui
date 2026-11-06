@@ -1,4 +1,4 @@
-/** A row's changes were saved. */
+/** Occurs when a row's changes are saved. */
 export interface GridRowUpdatedEventArgs<T, K = unknown> {
   readonly key: K;
   /** The row, with the saved values. */

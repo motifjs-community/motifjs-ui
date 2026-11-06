@@ -1,2 +1,2 @@
-/** What a change to an occurrence of a series reaches: this one alone, this one and the ones after it, or every one. */
+/** What a change to an occurrence of a series applies to: this one, this and following, or the whole series. */
 export type SeriesScope = 'occurrence' | 'following' | 'series';

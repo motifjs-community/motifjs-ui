@@ -1,11 +1,11 @@
-/** Texts of the toolbar's export button, over the `gridExport…` texts of `uiLocale`; `{format}` is the format's name. */
+/** Strings of the toolbar's export button, over the `gridExport…` strings of `uiLocale`. `{format}` is the format's name. */
 export interface GridExportTexts {
-  /** The button's name when it opens a menu. Default "Export". */
+  /** The button's name when it opens a menu. The default is "Export". */
   exportTo?: string;
-  /** Default "Export all data to {format}". */
+  /** The command that exports all rows. The default is "Export all data to {format}". */
   exportAll?: string;
-  /** Default "Export selected rows to {format}". */
+  /** The command that exports the selected rows. The default is "Export selected rows to {format}". */
   exportSelectedRows?: string;
-  /** Names of the formats by their code, over "Excel", "CSV" and "PDF". */
+  /** The names of the formats by code, over "Excel", "CSV" and "PDF". */
   formats?: Readonly<Record<string, string>>;
 }

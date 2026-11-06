@@ -1,2 +1,2 @@
-/** `horizontal` (the default) or `vertical`, where up is more. */
+/** `horizontal` (the default) or `vertical`, with higher values at the top. */
 export type SliderOrientation = 'horizontal' | 'vertical';

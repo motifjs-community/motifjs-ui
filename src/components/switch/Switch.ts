@@ -6,8 +6,8 @@ import type { SwitchStateText } from './switch-state-text';
 const OWN = ['onText', 'offText', 'showStateText'] as const;
 
 /**
- * An on / off switch: a native checkbox with `role="switch"`, drawn as a track with a thumb that
- * slides. Space and Enter flip it; `onText` / `offText` show in the track or next to it.
+ * An on / off switch: a native checkbox with `role="switch"`, drawn as a track with a sliding thumb.
+ * Space and Enter toggle it, and `onText` / `offText` appear in the track or next to it.
  *
  * @example
  * <Switch label="&Wi-Fi" x-model={() => this.settings.wifi} />

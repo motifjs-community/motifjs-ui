@@ -15,7 +15,7 @@ function cased(ch: string, transform: Place['transform']): string {
 }
 
 /**
- * The characters typed into a mask, and the edits on them. Positions are positions in the shown
+ * The characters typed into a mask, and the edits on them. Positions are positions in the displayed
  * text, where every place of the mask is one character.
  */
 export class MaskedText {
@@ -38,7 +38,7 @@ export class MaskedText {
     return !this.chars.length;
   }
 
-  /** Every place that may not stay empty is filled. */
+  /** Indicates that every required place is filled. */
   get complete(): boolean {
     return this.places.slice(this.chars.length).every((i) => (this.slots[i] as Place).optional);
   }
@@ -58,17 +58,17 @@ export class MaskedText {
     this.chars = this.fit(0, raw, false);
   }
 
-  /** Takes text that may hold the fixed characters too, e.g. a pasted `(532) 123 45 67`. */
+  /** Sets text that can also contain the fixed characters, such as a pasted `(532) 123 45 67`. */
   setText(text: string): void {
     this.chars = this.fit(0, text, true);
   }
 
-  /** Where the k-th typed character is shown; past the last place, the end. */
+  /** The position of the k-th typed character, or the end if it is past the last place. */
   positionOf(k: number): number {
     return k < this.places.length ? this.places[k] : this.slots.length;
   }
 
-  /** The caret stops at the first empty place. */
+  /** Limits a caret position so that it stops at the first empty place. */
   clamp(position: number): number {
     return Math.min(position, this.positionOf(this.chars.length));
   }

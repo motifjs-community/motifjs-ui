@@ -11,9 +11,9 @@ function line(align: string, from: number, to: number, size: number, reversed: b
 }
 
 /**
- * Puts a fixed `popup` next to `anchor`: on the side the placement asks for, or on the other one
- * when that has more room; inside the viewport, scrolling inside when it is taller. The gap is the
- * popup's CSS margin on the side it opens on (`data-side`).
+ * Places a fixed `popup` next to `anchor`: on the side the placement requests, or on the other side
+ * when that has more room. It stays inside the viewport and scrolls inside when it is taller. The gap
+ * is the popup's CSS margin on the side it opens on (`data-side`).
  */
 export function placePopup(popup: HTMLElement, anchor: Element, placement: PopupPlacement, matchWidth: boolean): void {
   const style = popup.style;

@@ -48,29 +48,32 @@ interface Submenu {
 
 /**
  * A list of commands (`role="menu"`). Up and Down move between the items and wrap around, Home
- * and End go to the ends, a letter goes to the next item that starts with it, an item's `&` key
- * chooses it, Enter and Space choose the focused one. A disabled item can be reached but not chosen.
- * An item with `items` opens a submenu at its side: Right (Left in a right-to-left page), Enter or
- * Space open it, Left closes it again, and pointing at the item opens it after `hoverDelay`.
+ * and End move to the ends, a letter moves to the next item that starts with it, an item's `&` key
+ * selects it, and Enter and Space select the focused item. A disabled item can be reached but not
+ * selected. An item with `items` opens a submenu at its side: Right (Left in a right-to-left page),
+ * Enter or Space open it, Left closes it again, and pointing at the item opens it after `hoverDelay`.
  */
 export class MenuList extends Component<HTMLDivElement> {
   static override elementTag = 'div';
 
-  /** The component the menu belongs to; reported with every chosen item. */
+  /** The component the menu belongs to, reported with every selected item. */
   source: ComponentBase | null = null;
   /** Pointing at an item opens its submenu (and pointing elsewhere closes it) after `hoverDelay`. */
   openOnHover = true;
-  /** Milliseconds the pointer rests on an item before its submenu opens or closes. */
+  /** The milliseconds the pointer rests on an item before its submenu opens or closes. */
   hoverDelay = 250;
   /** The menu this one is a submenu of. */
   parentList: MenuList | null = null;
   /** Keeps the column for a mark or an icon when no item has one, so the texts line up with a menu beside it. */
   markColumn = false;
-  /** A checked item keeps its icon: the mark gets a column of its own, before the icons. */
+  /** A checked item keeps its icon, and the mark gets its own column before the icons. */
   markBesideIcon = false;
-  /** How a chosen radio item is marked: a dot, or a check (when a dot means something else in the menu). */
+  /** How a selected radio item is marked: a dot, or a check when a dot means something else in the menu. */
   radioMark: 'dot' | 'check' = 'dot';
-  /** An item with `items` opens its submenu at its side; `false` reports it as chosen instead, for an owner that shows the submenu itself. */
+  /**
+   * Lets an item with `items` open its submenu at its side. `false` reports it as selected instead, for an owner
+   * that shows the submenu itself.
+   */
   openSubmenus = true;
 
   private given: Bind<readonly MenuItem[]> | undefined;
@@ -83,7 +86,7 @@ export class MenuList extends Component<HTMLDivElement> {
   private pointerFocus = false;
   private readonly chosenEmitter = new Emitter<MenuItemClickEventArgs>();
 
-  /** An item was chosen, here or in a submenu. The owner closes the menu, then runs the item's `click`. */
+  /** Occurs when an item is selected, here or in a submenu. The owner closes the menu, then runs the item's `click`. */
   readonly onChosen: MotifEvent<MenuItemClickEventArgs> = this.chosenEmitter.event;
 
   override onConfigured(): void {
@@ -105,8 +108,8 @@ export class MenuList extends Component<HTMLDivElement> {
   }
 
   /**
-   * Shows the visible ones of `items`, and draws them again when a function in an item reads something that
-   * changes, or on `reState()`. The items and their fields are read as they are: after changing them in place,
+   * Shows the visible entries of `items`, and redraws them when a function in an item reads a value that
+   * changes, or on `reState()`. The items and their fields are read as they are. After changing them in place,
    * call `refresh`.
    */
   setItems(items: Bind<readonly MenuItem[]>): void {
@@ -136,7 +139,7 @@ export class MenuList extends Component<HTMLDivElement> {
     }, (looks) => this.draw(looks));
   }
 
-  /** Reads the items again, and those of an open submenu: after they were changed in place. */
+  /** Re-reads the items, and those of an open submenu, after they have been changed in place. */
   refresh(): void {
     if (this.given !== undefined) this.setItems(this.given);
     const sub = this.sub;
@@ -149,19 +152,22 @@ export class MenuList extends Component<HTMLDivElement> {
     return this.entries.length;
   }
 
-  /** The open submenu's list, `null` while none is open. */
+  /** The list of the open submenu, or `null` if none is open. */
   get submenu(): MenuList | null {
     return this.sub?.entry ? this.sub.list : null;
   }
 
-  /** Focuses the first or the last item; `false` when there is none. */
+  /** Sets focus on the first or last item. Returns `false` if there is none. */
   focusItem(which: 'first' | 'last'): boolean {
     const entry = which === 'first' ? this.entries[0] : this.entries[this.entries.length - 1];
     entry?.element.focus();
     return !!entry;
   }
 
-  /** Focuses the menu itself, with no item highlighted: what a menu opened by the pointer does. Down then goes to the first item. */
+  /**
+   * Sets focus on the menu itself with no item highlighted, as a menu opened by the pointer does.
+   * Down then moves to the first item.
+   */
   focusList(): void {
     if (!this.element.hasAttribute('tabindex')) this.element.tabIndex = -1;
     this.element.focus();

@@ -16,7 +16,7 @@ import type { ValueList } from '../model/value-list';
  * where they scroll) and Apply / Cancel. The chosen values filter the column (any of them); none,
  * or all of them, take the column's value filter away. A column grouped into date parts or ranges
  * in more than one level shows the kit's `TreeView` with check boxes instead (year → month → day …),
- * "Select all" above it. choosing every value of the list and then leaving some out
+ * "Select all" above it. Choosing every value of the list and then leaving some out
  * keeps the left-out ones (`filterType: 'exclude'`), so values that come later are kept too.
  */
 export class HeaderFilter<T> {

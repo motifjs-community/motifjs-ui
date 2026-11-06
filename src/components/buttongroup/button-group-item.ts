@@ -1,16 +1,16 @@
 import type { Bind } from '@motifx/core';
 import type { IconSource } from '../../core/icon-source';
 
-/** One button of a `ButtonGroup`. Its fields may be functions of reactive state: the group follows them. */
+/** One button of a `ButtonGroup`. Its fields can be functions of reactive state, which the group tracks. */
 export interface ButtonGroupItem<T = unknown> {
   value: T;
-  /** Default: the value as text. */
+  /** The default is the value as text. */
   text?: Bind<string>;
   icon?: Bind<IconSource | null>;
-  /** A tooltip; with an icon and no text it also names the button. */
+  /** A tooltip. With an icon and no text, it also provides the name of the button. */
   hint?: Bind<string>;
-  /** `false` greys it out and skips it. Default `true`. */
+  /** `false` shows the button dimmed and skips it. The default is `true`. */
   enabled?: Bind<boolean>;
-  /** `false` leaves it out. Default `true`. */
+  /** `false` removes the button. The default is `true`. */
   visible?: Bind<boolean>;
 }

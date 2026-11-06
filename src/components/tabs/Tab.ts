@@ -34,7 +34,7 @@ const PARTS = Symbol('mx.tab');
 
 /**
  * One tab of {@link Tabs}: its button in the tab strip and its panel. The JSX children are the
- * panel's content, built when the tab is first shown (see `lazy`).
+ * panel content, created when the tab is first shown (see `lazy`).
  *
  * @example
  * <Tabs>
@@ -80,7 +80,7 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
   set title(value: Bind<string>) {
     this.text = value;
   }
-  /** The `key` prop (also when written as the JSX `key`), `''` without one. */
+  /** The `key` prop, also when written as the JSX `key`, or `''` if there is none. */
   get key(): string {
     const own = this.getProperty<string | undefined>('key');
     if (own !== undefined) return own;
@@ -109,7 +109,7 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
   set hint(value: Bind<string>) {
     this.assignProperty('hint', value);
   }
-  /** This tab's own setting; `undefined` follows the `Tabs`. */
+  /** This tab's own setting. `undefined` inherits from the `Tabs`. */
   get closable(): boolean | undefined {
     return this.getProperty<boolean | undefined>('closable');
   }
@@ -129,22 +129,22 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     this.assignProperty('keepAlive', value);
   }
 
-  /** Whether the tab shows a close button: its own `closable`, else the `Tabs` one. Reactive. */
+  /** Indicates whether the tab shows a close button: its own `closable`, otherwise that of the `Tabs`. Reactive. */
   get isClosable(): boolean {
     return this.closable ?? this.parts.owner?.closable ?? false;
   }
 
-  /** The `Tabs` it belongs to. */
+  /** The `Tabs` that owns the tab. */
   get owner(): Tabs | null {
     return this.parts.owner;
   }
 
-  /** Whether it is the selected tab. Reactive. */
+  /** Indicates whether it is the selected tab. Reactive. */
   get isSelected(): boolean {
     return !!this.parts.owner && this.parts.owner.selectedTab === this;
   }
 
-  /** Whether its panel content has been built (see `lazy`). */
+  /** Indicates whether its panel content has been created (see `lazy`). */
   get contentBuilt(): boolean {
     return !!this.parts.content?.isBuilt;
   }
@@ -154,12 +154,12 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     return this.parts.header;
   }
 
-  /** Selects the tab; `false` when it is hidden or not in a `Tabs`. */
+  /** Selects the tab. Returns `false` if it is hidden or not in a `Tabs`. */
   select(): boolean {
     return this.parts.owner?.select(this) ?? false;
   }
 
-  /** Closes the tab as its close button does: `onClose` can cancel it. */
+  /** Closes the tab as its close button does, so `onClose` can cancel it. */
   close(): boolean {
     return this.parts.owner?.close(this) ?? false;
   }
@@ -168,7 +168,7 @@ export class Tab extends Control<HTMLDivElement, TabProps> {
     return this.parts.header;
   }
 
-  /** The access key selects the tab and focuses it. */
+  /** The access key selects the tab and sets focus on it. */
   override onAccessKey(): boolean {
     return this.parts.owner?.activate(this) ?? false;
   }

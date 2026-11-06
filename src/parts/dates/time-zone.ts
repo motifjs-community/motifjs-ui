@@ -20,12 +20,12 @@ function utcTime(year: number, month: number, day: number, hours: number, minute
 }
 
 /**
- * A time zone: an IANA name (`Europe/Istanbul`), or the browser's own. It turns moments into wall
- * clock times and back with `Intl` only. A wall clock time is milliseconds of UTC with the clock's
+ * A time zone: an IANA name (`Europe/Istanbul`), or the browser's own. It converts moments to wall
+ * clock times and back using `Intl` only. A wall clock time is milliseconds of UTC with the clock's
  * fields (`Date.UTC(2026, 9, 25, 2, 30)` is half past two on the clock), so days and hours can be
- * counted on it without summer time getting in the way. A time the clock skips (the hour put
- * forward) is moved on by the gap; a time it shows twice (the hour put back) is the first one,
- * unless the later is requested.
+ * counted on it without daylight saving time interfering. A time the clock skips (the hour moved
+ * forward) is shifted by the gap, and a time it shows twice (the hour moved back) is the first one,
+ * unless the later one is requested.
  *
  * @example
  * const berlin = TimeZone.of('Europe/Berlin');
@@ -37,7 +37,7 @@ export class TimeZone {
   /** The browser's own zone. */
   static readonly local = new TimeZone('');
 
-  /** A zone by its IANA name; the browser's own for none (or for a name `Intl` does not know). */
+  /** A zone by its IANA name, or the browser's own for no name or for a name `Intl` does not recognize. */
   static of(name?: string | null): TimeZone {
     if (!name) return TimeZone.local;
     let zone = TimeZone.made.get(name);
@@ -52,7 +52,7 @@ export class TimeZone {
     return zone;
   }
 
-  /** Whether `Intl` knows a zone by this name. */
+  /** Indicates whether `Intl` recognizes a zone by this name. */
   static isValid(name: string): boolean {
     try {
       new Intl.DateTimeFormat('en-US', { timeZone: name });
@@ -62,13 +62,13 @@ export class TimeZone {
     }
   }
 
-  /** The IANA names the browser knows, with `UTC`. */
+  /** The IANA names the browser recognizes, with `UTC`. */
   static names(): string[] {
     const list = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : [];
     return list.includes('UTC') ? [...list] : ['UTC', ...list];
   }
 
-  /** The browser's own zone's IANA name. */
+  /** The IANA name of the browser's own zone. */
   static localName(): string {
     return new Intl.DateTimeFormat().resolvedOptions().timeZone;
   }
@@ -77,7 +77,7 @@ export class TimeZone {
   private format: Intl.DateTimeFormat | null = null;
 
   private constructor(
-    /** The IANA name; empty for the browser's own zone. */
+    /** The IANA name, or an empty string for the browser's own zone. */
     readonly name: string,
   ) {}
 
@@ -119,7 +119,10 @@ export class TimeZone {
     return time + this.offset(time) * MINUTE;
   }
 
-  /** The moment the clock shows `wall`: skipped times move on by the gap; of a time shown twice, the first (or `later`). */
+  /**
+   * The moment the clock shows `wall`. Skipped times shift by the gap, and a time shown twice is the first,
+   * or the later one with `later`.
+   */
   moment(wall: number, later = false): number {
     const before = wall - this.offset(wall - DAY) * MINUTE;
     const after = wall - this.offset(wall + DAY) * MINUTE;
@@ -142,24 +145,24 @@ export class TimeZone {
     return this.date(Math.floor(wall / DAY) * DAY);
   }
 
-  /** The same time of the clock `days` later (or earlier). */
+  /** The same clock time `days` later or earlier. */
   addDays(moment: number | Date, days: number): Date {
     return this.date(this.wall(moment) + days * DAY);
   }
 
-  /** Whether two moments are on the same day of this clock. */
+  /** Indicates whether two moments are on the same day of this clock. */
   sameDay(a: number | Date, b: number | Date): boolean {
     return Math.floor(this.wall(a) / DAY) === Math.floor(this.wall(b) / DAY);
   }
 
-  /** A date of the browser's clock with this clock's fields at a moment: for editors and calendars, which show the browser's. */
+  /** A date of the browser's clock with this clock's fields at a moment, for editors and calendars, which show the browser's. */
   toLocal(moment: number | Date): Date {
     if (!this.name) return new Date(typeof moment === 'number' ? moment : moment.getTime());
     const d = new Date(this.wall(moment));
     return localDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds(), d.getUTCMilliseconds());
   }
 
-  /** The moment this clock shows the fields of a date of the browser's clock (what `toLocal` gave, or an editor's value). */
+  /** The moment this clock shows the fields of a date of the browser's clock (the result of `toLocal`, or an editor's value). */
   fromLocal(local: Date): Date {
     if (!this.name) return new Date(local.getTime());
     return this.date(utcTime(local.getFullYear(), local.getMonth(), local.getDate(), local.getHours(), local.getMinutes(), local.getSeconds(), local.getMilliseconds()));

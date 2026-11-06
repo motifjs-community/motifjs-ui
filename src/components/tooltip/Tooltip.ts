@@ -51,11 +51,11 @@ function removeToken(el: Element, name: string, token: string): void {
 }
 
 /**
- * A short description shown next to an element: after the pointer rests on it, when it gets
- * keyboard focus, or programmatically. The pointer can move onto the tooltip without closing it; Escape,
+ * A short description shown next to an element when the pointer rests on it, when it receives
+ * keyboard focus, or programmatically. The pointer can move onto the tooltip without closing it. Escape,
  * a click, leaving focus and scrolling close it. One tooltip is open at a time on the page, and
- * all of them share one set of document listeners. It never takes focus and holds nothing
- * interactive; the target is described by it (`aria-describedby`) while it is shown.
+ * all of them share one set of document listeners. It never takes focus and contains nothing
+ * interactive, and the target is described by it (`aria-describedby`) while it is shown.
  *
  * @example
  * <Button ref={(b) => (this.save = b)} icon={saveIcon} aria-label="Save" />
@@ -65,7 +65,7 @@ function removeToken(el: Element, name: string, token: string): void {
  * tip.placement = 'bottom';
  */
 export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
-  /** Milliseconds after a tooltip closes during which the next one shows at once. 0 turns it off. */
+  /** The time in milliseconds after a tooltip closes during which the next one appears immediately. `0` turns it off. */
   static get skipDelay(): number {
     return tooltipTiming.skipDelay;
   }
@@ -146,7 +146,7 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
     this.assignProperty('showOn', value);
   }
 
-  /** Whether it is shown. Reactive. Setting it opens or closes it. */
+  /** Indicates whether it is visible. Reactive. Set it to open or close the tooltip. */
   get opened(): boolean {
     return !!this.getProperty<boolean>('opened');
   }
@@ -163,7 +163,10 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
     return this.parts.closed.event;
   }
 
-  /** Shows it now, whatever `showOn` says; `false` without a target on the page or when disabled. */
+  /**
+   * Shows the tooltip now, regardless of `showOn`. Returns `false` if there is no target on the page or it is
+   * disabled.
+   */
   open(): boolean {
     const anchor = this.parts.anchor;
     if (!anchor?.isConnected || !this.enabled) return false;
@@ -175,7 +178,7 @@ export class Tooltip extends Control<HTMLDivElement, TooltipProps> {
     hideTooltip(this);
   }
 
-  /** Lines it up with its target again, e.g. after the target moved. */
+  /** Repositions it relative to its target, for example after the target moves. */
   place(): void {
     const anchor = this.parts.anchor;
     if (isTooltipShown(this) && anchor) placePopup(this.element, anchor, this.peekProperty<PopupPlacement>('placement') ?? 'top', false);

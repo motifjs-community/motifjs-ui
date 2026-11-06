@@ -6,28 +6,28 @@ import type { FilterBuilderField } from './filter-builder-field';
 import type { FilterBuilderValueInfo } from './filter-builder-value-info';
 
 /**
- * An operation of your own. The builder's value holds what `calculateFilterExpression` makes of it,
- * so it goes to any adapter as it is; the builder knows it again as this operation while it holds
- * that value, and from any expression when `readFilterExpression` is given.
+ * A custom operation. The builder's value holds the result of `calculateFilterExpression`, so any adapter can
+ * run it. The builder recognizes this operation while it holds that value, and in any expression when
+ * `readFilterExpression` is provided.
  *
  * @example
  * { name: 'lastDays', caption: 'Is in the last days', dataTypes: ['date'],
  *   calculateFilterExpression: (days, field) => data.where(field.dataField, '>=', daysAgo(days as number)) }
  */
 export interface FilterBuilderCustomOperation {
-  /** Used in `filterOperations`. */
+  /** The name used in `filterOperations`. */
   name: string;
   caption: Bind<string>;
-  /** The data types whose fields offer it without naming it in `filterOperations`. */
+  /** The data types whose fields offer it automatically, for fields without their own `filterOperations`. */
   dataTypes?: readonly FilterBuilderDataType[];
-  /** Whether the operation takes a value. Default `true`. */
+  /** Indicates whether the operation takes a value. The default is `true`. */
   hasValue?: boolean;
-  /** The editor of the value. Default: the field's editor. */
+  /** The value editor. The default is the field's editor. */
   editor?: (ctx: FilterBuilderEditorContext) => ComponentBase;
-  /** The text of the value. */
+  /** The display text of the value. */
   customizeText?: (info: FilterBuilderValueInfo) => string;
-  /** The data layer's filter for a value; `null` filters nothing. */
+  /** Defines the data layer filter for a value. `null` applies no filter. */
   calculateFilterExpression: (value: unknown, field: FilterBuilderField) => data.FilterExpression | null;
-  /** Knows an expression as this operation: its field and value, or `null`. */
+  /** Recognizes an expression as this operation, and returns its field and value, or `null`. */
   readFilterExpression?: (expression: data.FilterExpression) => { field: string; value: unknown } | null;
 }

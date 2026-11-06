@@ -1,17 +1,17 @@
-/** What a row is going through, given to `actions` and to an action's `visible` and `disabled`. */
+/** The state of a row, passed to `actions` and to an action's `visible` and `disabled`. */
 export interface RowState {
-  /** Added in the grid and never saved. */
+  /** Indicates that the row was added in the grid and never saved. */
   readonly isNew: boolean;
-  /** The user is in this row with edits not sent yet, or has its editor open. */
+  /** Indicates that the user is in this row with unsent edits, or has its editor open. */
   readonly isEditing: boolean;
-  /** Has unsaved values. */
+  /** Indicates that the row has unsaved values. */
   readonly isDirty: boolean;
   readonly isSaving: boolean;
-  /** The last save failed, or a value has a message. */
+  /** Indicates that the last save failed, or that a value has a message. */
   readonly hasError: boolean;
-  /** Marked for deletion (batch mode), or being deleted. */
+  /** Indicates that the row is marked for deletion (batch mode), or is being deleted. */
   readonly isRemoved: boolean;
   readonly isSelected: boolean;
-  /** Index of the row in the grid (new rows included). */
+  /** The index of the row in the grid, including new rows. */
   readonly index: number;
 }

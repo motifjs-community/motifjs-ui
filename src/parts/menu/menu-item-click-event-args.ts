@@ -1,11 +1,11 @@
 import type { ComponentBase } from '@motifx/core';
 import type { MenuItem } from './menu-item';
 
-/** What a chosen menu item reports. */
+/** What a selected menu item reports. */
 export interface MenuItemClickEventArgs {
   item: MenuItem;
-  /** The component whose menu it is, e.g. the button. */
+  /** The component that owns the menu, such as the button. */
   source: ComponentBase;
-  /** The click or key press that chose it. */
+  /** The click or key press that selected it. */
   event: Event;
 }

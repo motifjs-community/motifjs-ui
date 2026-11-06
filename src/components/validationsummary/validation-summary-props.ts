@@ -5,14 +5,14 @@ import type { SummaryItemClickEventArgs } from './summary-item-click-event-args'
 
 /** Props of `ValidationSummary`. Each prop is also a settable property, and a function is tracked. */
 export interface ValidationSummaryProps extends ControlProps {
-    /** The group whose failed fields are listed. */
+    /** The group whose invalid fields are listed. */
     group?: Bind<ValidationGroup | null>;
-    /** The line above the list. Default: the kit's "Please correct the following". */
+    /** The text above the list. The default is the kit's "Please correct the following" string. */
     header?: Bind<string>;
-    /** Default `true`. */
+    /** Shows the header. The default is `true`. */
     showHeader?: Bind<boolean>;
-    /** A click on a line focuses its field. Default `true`. */
+    /** Clicking a line moves focus to its field. The default is `true`. */
     focusOnClick?: Bind<boolean>;
-    /** A line was pressed. */
+    /** Occurs when a line is clicked. */
     onItemClick?: (e: SummaryItemClickEventArgs) => void;
 }

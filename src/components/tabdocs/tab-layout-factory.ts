@@ -4,7 +4,7 @@ import type { TabDocumentOptions } from './tab-document-options';
 import type { TabLayoutDocument } from './tab-layout-document';
 
 /**
- * Makes a saved document again for `loadLayout`, usually by its `type`: the document itself, the
- * options to make it with (over the saved ones), or only its content. `null` leaves it out.
+ * Recreates a saved document for `loadLayout`, usually by its `type`. Returns the document itself, the
+ * options to create it with (which override the saved ones), or only its content. `null` omits it.
  */
 export type TabLayoutFactory = (saved: TabLayoutDocument) => TabDocument | TabDocumentOptions | ComponentBase | null | undefined;

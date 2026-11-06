@@ -1,12 +1,12 @@
 import type { EventArgs } from '@motifx/core';
 
 /**
- * A key went down in the grid (a cell, an editor, the filter row, a group chip) and the grid is about
- * to handle it. `cancel` stops the grid's own handling: do your own with `event`.
+ * Occurs when a key is pressed in the grid (a cell, an editor, the filter row, a group chip), before the
+ * grid handles it. Set `cancel = true` to prevent the grid's handling and handle `event` yourself.
  */
 export interface GridKeyHandlingEventArgs extends EventArgs {
   readonly event: KeyboardEvent;
-  /** The active row (-1 the header, -2 the filter row). */
+  /** The active row, where -1 is the header and -2 is the filter row. */
   readonly rowIndex: number;
   readonly field: string;
 }

@@ -1,2 +1,2 @@
-/** Which way the user can drag the box bigger. */
+/** The directions the user can resize the box. */
 export type TextAreaResize = 'none' | 'vertical' | 'both';

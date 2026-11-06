@@ -89,13 +89,13 @@ interface Parts {
 }
 
 /**
- * How something repeats, edited: the repeat list (never, daily, weekly, monthly, yearly), every how
- * many, the weekdays of a week, a day of the month or a weekday by its place (the second Tuesday,
- * the last Friday), the month of a year, and the end (never, after a number of times, on a date).
- * It reads and writes an RFC 5545 rule (`value`, two-way with `x-model`) and says it in plain words
- * under it. The scheduler's appointment form holds one; it works on its own anywhere else, and in
+ * Edits a recurrence: the repeat list (never, daily, weekly, monthly, yearly), the interval, the
+ * weekdays of a week, a day of the month or a weekday by position (the second Tuesday, the last
+ * Friday), the month of a year, and the end (never, after a number of times, on a date). It reads
+ * and writes an RFC 5545 rule (`value`, with two-way binding through `x-model`) and describes it in
+ * plain words below. The scheduler's appointment form includes one. It also works on its own, and in
  * a `FormLayout` (`FormLayout.editors.set('recurrence', (p) => new RecurrenceEditor(p))`). Its editors
- * are created once and written by hand when a choice, a property or the language changes.
+ * are created once and updated programmatically when a selection, a property or the language changes.
  *
  * @example
  * <RecurrenceEditor x-model={() => state.rule} start={() => state.start} />
@@ -116,7 +116,7 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
   set label(value: Bind<string>) {
     this.text = value;
   }
-  /** The rule as RFC 5545 text; empty when it does not repeat. */
+  /** The rule as RFC 5545 text, empty when it does not repeat. */
   get value(): string {
     return this.getProperty<string | undefined>('value') ?? '';
   }
@@ -184,11 +184,11 @@ export class RecurrenceEditor extends Control<HTMLDivElement, RecurrenceEditorPr
     this.assignProperty('texts', value);
   }
 
-  /** The rule read from `value`; `null` when it does not repeat (or the text is not a rule). Reactive. */
+  /** The rule parsed from `value`, or `null` when it does not repeat or the text is not a rule. Reactive. */
   get rule(): RecurrenceRule | null {
     return parseRecurrenceRule(this.value);
   }
-  /** How it repeats, in plain words. Reactive. */
+  /** Describes the recurrence in plain words. Reactive. */
   get summaryText(): string {
     return describeRecurrence(this.rule, this.start, { locale: this.locale, strings: this.strings(), timeZone: this.timeZone ?? undefined });
   }

@@ -1,2 +1,2 @@
-/** Which way a toolbar runs; the arrow keys follow it. */
+/** The direction of a toolbar. The arrow keys follow it. */
 export type ToolbarOrientation = 'horizontal' | 'vertical';

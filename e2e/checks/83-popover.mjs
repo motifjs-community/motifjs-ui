@@ -19,7 +19,7 @@ export default async function ({ page, base, check, axeSource, box }) {
         const a = arrow.getBoundingClientRect();
         const p = el.getBoundingClientRect();
         const t = document.querySelector('section[aria-labelledby="ways"] .docs-example__stage .mx-button').getBoundingClientRect();
-        return { side: el.dataset.side, onEdge: Math.abs((a.top + a.bottom) / 2 - p.top) <= 1, atMiddle: Math.abs((a.left + a.right) / 2 - (t.left + t.width / 2)) <= 1.5, arrow: Math.round((a.left + a.right) / 2), target: Math.round(t.left + t.width / 2), popover: Math.round(p.left + p.width / 2) };
+        return { side: el.dataset.side, onEdge: Math.abs((a.top + a.bottom) / 2 - (el.dataset.side === 'top' ? p.bottom : p.top)) <= 1, atMiddle: Math.abs((a.left + a.right) / 2 - (t.left + t.width / 2)) <= 1.5, arrow: Math.round((a.left + a.right) / 2), target: Math.round(t.left + t.width / 2), popover: Math.round(p.left + p.width / 2) };
     });
     check('the arrow points at the middle of the target', geometry === null || (geometry.onEdge && geometry.atMiddle), JSON.stringify(geometry));
 

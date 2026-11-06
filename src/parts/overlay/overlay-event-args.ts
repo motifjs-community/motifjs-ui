@@ -1,6 +1,6 @@
 import type { OverlayPanel } from './OverlayPanel';
 
-/** An event of an overlay with nothing more to say than which one it is. */
+/** The arguments of an overlay event that reports only which overlay raised it. */
 export interface OverlayEventArgs {
   source: OverlayPanel;
 }

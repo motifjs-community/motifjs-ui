@@ -30,7 +30,7 @@ const PARTS = Symbol('mx.accordion-item');
 
 /**
  * One section of an {@link Accordion}: a header button and the region it opens. The JSX
- * children are the region's content, built when it is first opened (see `lazy`).
+ * children are the content of the region, created when it is first opened (see `lazy`).
  *
  * @example
  * <Accordion>
@@ -82,7 +82,7 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
   set title(value: Bind<string>) {
     this.text = value;
   }
-  /** The `key` prop (also when written as the JSX `key`), `''` without one. */
+  /** The `key` prop, also when written as the JSX `key`, or `''` if there is none. */
   get key(): string {
     const own = this.getProperty<string | undefined>('key');
     if (own !== undefined) return own;
@@ -92,7 +92,7 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
   set key(value: Bind<string>) {
     this.assignProperty('key', value, (v) => v ?? '');
   }
-  /** Whether the section is open. Setting it programmatically fires no cancelable event. Reactive. */
+  /** Indicates whether the section is open. Setting it programmatically raises no cancelable event. Reactive. */
   get expanded(): boolean {
     return !!this.getProperty<boolean>('expanded');
   }
@@ -111,7 +111,7 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
   set hint(value: Bind<string>) {
     this.assignProperty('hint', value);
   }
-  /** This item's own setting; `undefined` follows the `Accordion`. */
+  /** This item's own setting. `undefined` inherits from the `Accordion`. */
   get lazy(): boolean | undefined {
     return this.getProperty<boolean | undefined>('lazy');
   }
@@ -125,12 +125,12 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
     this.assignProperty('keepAlive', value);
   }
 
-  /** The `Accordion` it belongs to. */
+  /** The `Accordion` that owns the item. */
   get owner(): Accordion | null {
     return this.parts.owner;
   }
 
-  /** Whether its section content has been built (see `lazy`). */
+  /** Indicates whether the section content has been created (see `lazy`). */
   get contentBuilt(): boolean {
     return !!this.parts.content?.isBuilt;
   }
@@ -145,12 +145,12 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
     return this.parts.region.element;
   }
 
-  /** Opens the section as a click would: `onExpanding` can cancel it. */
+  /** Opens the section as a click would, so `onExpanding` can cancel it. */
   expand(): boolean {
     return this.toggleAsUser(true);
   }
 
-  /** Closes the section as a click would: `onCollapsing` can cancel it. */
+  /** Closes the section as a click would, so `onCollapsing` can cancel it. */
   collapse(): boolean {
     return this.toggleAsUser(false);
   }
@@ -159,7 +159,7 @@ export class AccordionItem extends Control<HTMLDivElement, AccordionItemProps> {
     return this.parts.header;
   }
 
-  /** The access key focuses the header and presses it. */
+  /** The access key moves focus to the header and clicks it. */
   override onAccessKey(): boolean {
     if (!this.focus()) return false;
     this.parts.header.click();

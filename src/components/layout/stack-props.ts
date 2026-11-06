@@ -7,20 +7,20 @@ import type { StackJustify } from './stack-justify';
 
 /** Props of `Stack`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface StackProps extends ControlProps {
-  /** Default `'vertical'`. */
+  /** The direction of the children. The default is `'vertical'`. */
   orientation?: Bind<LayoutOrientation>;
-  /** The space between the children. Default the `layout.gap` token. */
+  /** The space between the children. The default is the `layout.gap` token. */
   gap?: Bind<LayoutSpace>;
-  /** The space inside the edges, one to four values as in CSS. Default none. */
+  /** The space inside the edges, one to four values as in CSS. There is none by default. */
   padding?: Bind<LayoutSpace>;
-  /** Across the direction. Default `'stretch'`. */
+  /** The alignment across the direction. The default is `'stretch'`. */
   align?: Bind<LayoutAlign>;
-  /** Along the direction. Default `'start'`. */
+  /** The alignment along the direction. The default is `'start'`. */
   justify?: Bind<StackJustify>;
-  /** Children that do not fit go on to a new line. Default `false`. */
+  /** Moves children that do not fit to a new line. The default is `false`. */
   wrap?: Bind<boolean>;
-  /** The children are laid out from the other end. Default `false`. */
+  /** Lays out the children from the opposite end. The default is `false`. */
   reverse?: Bind<boolean>;
-  /** Flows inside a line of text, as wide as its children. Default `false`. */
+  /** Flows within a line of text, as wide as its children. The default is `false`. */
   inline?: Bind<boolean>;
 }

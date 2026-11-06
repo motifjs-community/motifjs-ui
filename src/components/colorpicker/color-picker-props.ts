@@ -4,15 +4,18 @@ import type { ColorChangedEventArgs } from './color-changed-event-args';
 
 /** Props of `ColorPicker`. Each prop is also a settable property, and a function is tracked. */
 export interface ColorPickerProps extends ControlProps {
-  /** The color: `#rrggbb` (`#rrggbbaa` with `alpha`), or any `#…` / `rgb(…)` form it reads; `null`: none. Two-way with `x-model`. */
+  /**
+   * The color: `#rrggbb` (`#rrggbbaa` with `alpha`). Any `#…` or `rgb(…)` form is accepted, and `null` means none.
+   * `x-model` provides two-way binding.
+   */
   value?: Bind<string | null>;
-  /** An opacity strip and input; the value keeps its opacity. Default `false`. */
+  /** Adds an opacity strip and input, and the value keeps its opacity. The default is `false`. */
   alpha?: Bind<boolean>;
-  /** Preset colors to choose with one press. Default: none. */
+  /** Preset colors that can be selected with one click. By default, there are none. */
   palette?: Bind<readonly string[] | null>;
-  /** The hex and red, green, blue inputs. Default `true`. */
+  /** Shows the hex and red, green and blue inputs. The default is `true`. */
   showInputs?: Bind<boolean>;
-  /** A button that picks a color from the screen, where the browser can. Default `true`. */
+  /** Shows a button that picks a color from the screen, in browsers that support it. The default is `true`. */
   eyeDropper?: Bind<boolean>;
   onValueChanged?: (e: ColorChangedEventArgs) => void;
 }

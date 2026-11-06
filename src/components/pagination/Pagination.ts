@@ -35,10 +35,10 @@ const LOOK = {
 } as const;
 
 /**
- * Moving through pages of items: the page sizes, where the page stands ("Page 3 of 12 (250 items)"), the first,
- * previous, next and last steps and a button per page around the current one, with gaps. The compact look has a box for
- * the page number and a drop-down of the sizes instead; `adaptive` is compact while the full one does not fit. Its
- * buttons stay while their page does, so focus stays on a button pressed.
+ * Navigation through pages of items: the page sizes, the position ("Page 3 of 12 (250 items)"), the first,
+ * previous, next and last buttons, and a button per page around the current one, with gaps. The compact layout has a
+ * box for the page number and a drop-down of sizes instead, and `adaptive` is compact when the full layout does not
+ * fit. Its buttons stay while their page does, so focus stays on a clicked button.
  *
  * @example
  * <Pagination total={() => this.orders.total} pageSizes={[10, 25, 50]} pageSize={() => this.orders.pageSize}
@@ -131,7 +131,7 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
   set page(value: Bind<number>) {
     this.assignProperty('page', value);
   }
-  /** The page, as `x-model` binds it: the same as `page`. */
+  /** The page, as bound by `x-model`. This is the same as `page`. */
   get value(): number {
     return this.page;
   }
@@ -200,18 +200,18 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
     this.assignProperty('label', value);
   }
 
-  /** The page or the page size changed, by the user or by code (`e.byUser`). */
+  /** Occurs when the page or the page size changes, either by the user or programmatically (`e.byUser`). */
   get onPageChanged(): MotifEvent<PageChangedEventArgs> {
     return this.changed.event;
   }
 
-  /** Whether the compact look shows now. */
+  /** Indicates whether the compact layout is currently shown. */
   get compact(): boolean {
     const mode = this.peekProperty<PaginationMode>('mode') ?? 'adaptive';
     return mode === 'compact' || (mode === 'adaptive' && this.narrow);
   }
 
-  /** Goes to a page (from 1), as a click would. */
+  /** Moves to a page, starting from 1, as a click would. */
   goTo(page: number, byUser = false): void {
     const next = Math.min(Math.max(Math.round(page), 1), this.count);
     if (next === this.current) {

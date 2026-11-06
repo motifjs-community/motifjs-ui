@@ -7,7 +7,10 @@ export interface AppointmentUpdatedEventArgs<T = unknown> {
   byUser: boolean;
   scope: SeriesScope | null;
   series: T | null;
-  /** The appointment the change made: the occurrence changed apart (`occurrence`), or the series going on from it (`following`). */
+  /**
+   * The appointment the change created: the individually edited occurrence (`occurrence`), or the
+   * continuing series (`following`).
+   */
   added: T | null;
   source: Scheduler<T>;
 }

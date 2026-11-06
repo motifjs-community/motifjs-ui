@@ -19,7 +19,7 @@ const KEEP_OPEN = Symbol('keep open');
  * from the toolbar) and reset, each shown only while its feature is on for the column. Every item
  * follows the grid's state while the menu is open. A band's menu pins, moves and hides the band.
  * With bands the list of columns is the kit's `TreeView` with check boxes, bands over their columns,
- * in a window of its own (column chooser in its select mode).
+ * in a window of its own.
  */
 export class ColumnMenu<T> {
   readonly popup: Popup;

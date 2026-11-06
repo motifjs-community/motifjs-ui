@@ -3,7 +3,7 @@ import { parseAccessKey } from '../../core/access-key';
 import { FocusContainer } from '../../core/container';
 import type { Control } from '../../core/control';
 import { controlOf } from '../../core/control-map';
-import { deepActiveElement, focusableIn, isFocusable } from '../../core/focus';
+import { deepActiveElement, focusableIn, isFocusable, keepsKeys } from '../../core/focus';
 import { dismissMark, maximizeMark, minimizeMark, restoreMark } from '../../core/glyphs';
 import { iconNode } from '../../core/icon-node';
 import type { IconSource } from '../../core/icon-source';
@@ -152,13 +152,13 @@ function viewport(el: Element): { w: number; h: number } {
 }
 
 /**
- * A window: a title bar (icon, title, minimize, maximize and close buttons), a content area and a
- * row for its buttons, on a native `<dialog>`. Whoever shows it decides how: `show(host)` opens it
- * modeless (the page stays usable), `showDialog(host)` modal, and resolves with its result when it
- * closes. Forms open forms; a modal opened from a modal blocks the one below. It moves by its title
- * bar, resizes from its edges and corners, and can be minimized and maximized. Escape and Enter
- * click its `cancelButton` and `acceptButton`. Written in JSX with `x-model`, it shows while the
- * value is true.
+ * A window with a title bar (icon, title, minimize, maximize and close buttons), a content area and a
+ * row for its buttons, on a native `<dialog>`. The caller decides how it appears: `show(host)` opens it
+ * as modeless, so the page stays usable, and `showDialog(host)` opens it as modal and resolves with its
+ * result when it closes. Forms can open other forms, and a modal opened from a modal blocks the one
+ * below. It moves by its title bar, resizes from its edges and corners, and can be minimized and
+ * maximized. Escape and Enter click its `cancelButton` and `acceptButton`. Declared in JSX with
+ * `x-model`, it appears while the value is true.
  *
  * @example
  * class Settings extends MxForm {
@@ -213,14 +213,14 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     });
   }
 
-  /** The title; the same property as `text`. */
+  /** The title. This is the same property as `text`. */
   get title(): string {
     return this.text;
   }
   set title(value: Bind<string>) {
     this.text = value;
   }
-  /** Whether the form is open. Reactive. Setting it opens (modal with `modal`) or closes it. */
+  /** Indicates whether the form is open. Reactive. Setting it opens the form, as modal with `modal`, or closes it. */
   get value(): boolean {
     return this.isOpen;
   }
@@ -281,7 +281,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   set movable(value: Bind<boolean>) {
     this.assignProperty('movable', value, Boolean);
   }
-  /** Whether Escape closes it now: as set, else on for a modal form and off for a modeless one. */
+  /** Indicates whether Escape closes it now: as set, otherwise on for a modal form and off for a modeless one. */
   get closeOnEscape(): boolean {
     const own = this.getProperty<boolean | undefined>('closeOnEscape');
     return own ?? this.isModal;
@@ -319,28 +319,28 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   set startPosition(value: Bind<FormStartPosition>) {
     this.assignProperty('startPosition', value);
   }
-  /** See the prop. After the user moves the form, its place (in pixels). */
+  /** See the prop. After the user moves the form, this is its position in pixels. */
   get left(): number | string | null {
     return this.getProperty<number | string | undefined>('left') ?? null;
   }
   set left(value: Bind<number | string | null>) {
     this.assignProperty('left', value);
   }
-  /** See the prop. After the user moves the form, its place (in pixels). */
+  /** See the prop. After the user moves the form, this is its position in pixels. */
   get top(): number | string | null {
     return this.getProperty<number | string | undefined>('top') ?? null;
   }
   set top(value: Bind<number | string | null>) {
     this.assignProperty('top', value);
   }
-  /** See the prop. After the user resizes the form, its size (in pixels). */
+  /** See the prop. After the user resizes the form, this is its size in pixels. */
   get width(): number | string | null {
     return this.getProperty<number | string | undefined>('width') ?? null;
   }
   set width(value: Bind<number | string | null>) {
     this.assignProperty('width', value);
   }
-  /** See the prop. After the user resizes the form, its size (in pixels). */
+  /** See the prop. After the user resizes the form, this is its size in pixels. */
   get height(): number | string | null {
     return this.getProperty<number | string | undefined>('height') ?? null;
   }
@@ -353,14 +353,14 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   set alert(value: Bind<boolean>) {
     this.assignProperty('alert', value, Boolean);
   }
-  /** Whether it is disposed when it closes: as set, else when `show` or `showDialog` added it to its host. */
+  /** Indicates whether it is disposed when it closes: as set, otherwise when `show` or `showDialog` added it. */
   get disposeOnClose(): boolean {
     return this.getProperty<boolean | undefined>('disposeOnClose') ?? this.parts.attached;
   }
   set disposeOnClose(value: Bind<boolean>) {
     this.assignProperty('disposeOnClose', value, Boolean);
   }
-  /** How it was closed, or will be: `close()` without an argument uses it. `'cancel'` when it opens. Reactive. */
+  /** How the form closed, or will close. `close()` without an argument uses this value. It is `'cancel'` on open. Reactive. */
   get result(): FormResult {
     return this.getProperty<FormResult | undefined>('result') ?? 'cancel';
   }
@@ -368,15 +368,15 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     this.assignProperty('result', value);
   }
 
-  /** Reactive. */
+  /** Indicates whether the form is open. Reactive. */
   get isOpen(): boolean {
     return !!this.getProperty<boolean>('open');
   }
-  /** Shown modal. Reactive. */
+  /** Indicates whether the form is shown as modal. Reactive. */
   get isModal(): boolean {
     return !!this.getProperty<boolean>('isModal');
   }
-  /** The active (front) window of the page. Reactive. */
+  /** Indicates whether it is the active (front) window of the page. Reactive. */
   get isActive(): boolean {
     return !!this.getProperty<boolean>('active');
   }
@@ -386,21 +386,21 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     return this.parts.content;
   }
 
-  /** Before it is shown the first time: the place to fill it. */
+  /** Occurs before the form is first shown, and is where to populate it. */
   get onLoaded(): MotifEvent<FormEventArgs> {
     return this.parts.load.event;
   }
   get onShown(): MotifEvent<FormEventArgs> {
     return this.parts.shown.event;
   }
-  /** It became the active window (shown, clicked, focused). */
+  /** Occurs when it becomes the active window (shown, clicked, focused). */
   get onActivate(): MotifEvent<FormEventArgs> {
     return this.parts.activate.event;
   }
   get onDeactivate(): MotifEvent<FormEventArgs> {
     return this.parts.deactivate.event;
   }
-  /** It is about to close; `e.cancel = true` keeps it open (not when its owner is going away). */
+  /** Occurs before it closes. Set `e.cancel = true` to keep it open, unless its owner is being disposed. */
   get onClosing(): MotifEvent<FormClosingEventArgs> {
     return this.parts.closingEmitter.event;
   }
@@ -409,17 +409,17 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   }
 
   /**
-   * Shows the form modeless: the page and other windows stay usable. It is added to `host`
-   * (a component or the application) unless it already sits somewhere, and dies with
-   * `disposeRef` (else the host) even while open. Shown already, it comes to the front.
+   * Shows the form as modeless, so the page and other windows stay usable. It is added to `host`
+   * (a component or the application) unless it is already placed, and it is disposed with
+   * `disposeRef`, or with the host, even while open. If it is already shown, it moves to the front.
    */
   show(host: FormHost, disposeRef?: ComponentBase): void {
     this.request(host, disposeRef, false);
   }
 
   /**
-   * Shows the form modal: nothing else on the page can be used until it closes. Resolves with
-   * its result (`'ok'`, `'cancel'` or your own word) when it closes.
+   * Shows the form as modal, so nothing else on the page can be used until it closes. Resolves with
+   * its result (`'ok'`, `'cancel'` or a custom word) when it closes.
    */
   showDialog(host: FormHost, disposeRef?: ComponentBase): Promise<FormResult> {
     const done = new Promise<FormResult>((resolve) => this.parts.waiters.push(resolve));
@@ -428,14 +428,14 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
   }
 
   /**
-   * Closes the form with `result` (else its `result`). A form `show` or `showDialog` added to its
-   * host is disposed; one written in JSX is hidden. `false` when an `onClosing` listener kept it open.
+   * Closes the form with `result`, or with its current `result`. A form that `show` or `showDialog` added to
+   * its host is disposed, and one declared in JSX is hidden. Returns `false` if an `onClosing` listener kept it open.
    */
   close(result?: FormResult): boolean {
     return this.closeWith(result, 'code');
   }
 
-  /** Brings the form to the front and gives focus back to its last active control. */
+  /** Brings the form to the front with focus on its last active control. */
   activate(): void {
     const parts = this.parts;
     if (!parts.open) return;
@@ -455,12 +455,12 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     this.windowState = 'maximized';
   }
 
-  /** Back from minimized (to the state before) or from maximized. */
+  /** Restores the form from minimized, to its previous state, or from maximized. */
   restore(): void {
     this.windowState = this.windowState === 'minimized' ? this.parts.unminimized : 'normal';
   }
 
-  /** Puts it back in the middle of the viewport. */
+  /** Centers the form in the viewport. */
   center(): void {
     this.element.removeAttribute('data-placed');
   }
@@ -471,7 +471,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     return super.restoreFocus() || this.focusFirst();
   }
 
-  /** A window is a root: controls around it do not disable it, and it runs Tab itself. */
+  /** A window is a root: the controls around it do not disable it, and it handles Tab itself. */
   override get parentControl(): Control | null {
     return null;
   }
@@ -936,7 +936,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
     if (field && this.tryFocus(field)) return true;
     if (this.acceptButton?.focus()) return true;
     for (const area of areas) {
-      const first = focusableIn(area).find((el) => el.tabIndex >= 0);
+      const first = focusableIn(area).find((el) => el.tabIndex >= 0 && keepsKeys(el));
       if (first && this.tryFocus(first)) return true;
     }
     this.element.focus();

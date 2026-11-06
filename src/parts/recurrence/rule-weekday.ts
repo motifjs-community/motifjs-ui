@@ -2,6 +2,6 @@
 export interface RuleWeekday {
   /** 0 Sunday … 6 Saturday. */
   day: number;
-  /** Its place: 2 the second, -1 the last; 0 every one. */
+  /** Its position: 2 is the second, -1 is the last, and 0 is every one. */
   nth: number;
 }

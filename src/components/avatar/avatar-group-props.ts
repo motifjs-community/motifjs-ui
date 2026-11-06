@@ -5,14 +5,14 @@ import type { AvatarSize } from './avatar-size';
 
 /** Props of `AvatarGroup`. Each prop is also a settable property, and a function is tracked. */
 export interface AvatarGroupProps extends ControlProps {
-  /** The size of every avatar in it. Default `'md'`. */
+  /** The size of every avatar in the group. The default is `'md'`. */
   size?: Bind<AvatarSize>;
-  /** Default: the design language's (`stack`). */
+  /** The default comes from the design language (`stack`). */
   layout?: Bind<AvatarGroupLayout>;
-  /** The most avatars shown; the others are counted in a `+N` after them. Default: all. */
+  /** The maximum number of avatars shown. The others are counted in a `+N` after them. By default, all are shown. */
   max?: Bind<number | null>;
-  /** How many there are in all, when only some are given; the rest are counted in the `+N`. */
+  /** The total number of people when only some are provided. The rest are counted in the `+N`. */
   total?: Bind<number | null>;
-  /** What screen readers call the group ("Members"). */
+  /** The accessible name of the group ("Members"). */
   label?: Bind<string>;
 }

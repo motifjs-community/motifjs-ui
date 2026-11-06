@@ -1,11 +1,14 @@
 import type { SchedulerRange } from './scheduler-range';
 
-/** What `exportICalendar` writes. */
+/** The options of `exportICalendar`. */
 export interface ICalendarExportOptions<T = unknown> {
-  /** The appointments of the days shown (default), all the ones loaded, or those of a range of your own. A series goes whole, with its rule. */
+  /**
+   * The appointments of the displayed days (the default), all loaded appointments, or those of a
+   * custom range. A series is exported whole, with its rule.
+   */
   range?: 'visible' | 'all' | SchedulerRange;
-  /** These appointments instead of the range's. */
+  /** Exports these appointments instead of the range's. */
   appointments?: readonly T[];
-  /** The calendar's name (`X-WR-CALNAME`). Default: the scheduler's label. */
+  /** The calendar's name (`X-WR-CALNAME`). The default is the scheduler's label. */
   name?: string;
 }

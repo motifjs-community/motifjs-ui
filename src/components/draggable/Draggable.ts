@@ -31,10 +31,10 @@ interface Session {
 }
 
 /**
- * Anything the user moves with the pointer, a finger (a long press) or the arrow keys: the JSX children in a box
- * that follows the drag. It moves along `axis`, stays inside `boundary`, is taken by a `handle` only, or sends a
- * `clone` after the pointer and stays where it is. A `DropTarget` of the same `group` under the pointer is told
- * when it comes over, leaves and drops, with its `data`; what a drop does to your data is yours.
+ * Content the user moves with the pointer, a finger (a long press) or the arrow keys. The JSX children sit in a
+ * box that follows the drag. It moves along `axis`, stays inside `boundary`, can be dragged by a `handle` only, or
+ * can send a `clone` after the pointer and stay in place. A `DropTarget` in the same `group` under the pointer is
+ * notified when it enters, leaves and drops, and receives its `data`. Your code decides what a drop does to the data.
  *
  * @example
  * <Draggable boundary="parent" x-model={() => this.note.at}><Card>…</Card></Draggable>
@@ -135,7 +135,7 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
     set position(value: Bind<DragPosition | null>) {
         this.assignProperty('position', value);
     }
-    /** `position`, for `x-model`. */
+    /** Maps to `position` for `x-model`. */
     get value(): DragPosition | null {
         return this.position;
     }
@@ -143,37 +143,37 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
         this.position = value;
     }
 
-    /** A drag is about to begin; `cancel` keeps the draggable in place. */
+    /** Occurs before a drag starts. Set `cancel = true` to keep the draggable in place. */
     get onDragStarting(): MotifEvent<DraggableEventArgs> {
         return this.starting.event;
     }
 
-    /** It is being dragged (`x`, `y`, `target`). */
+    /** Occurs during a drag (`x`, `y`, `target`). */
     get onDragging(): MotifEvent<DraggableEventArgs> {
         return this.dragging.event;
     }
 
-    /** The pointer let go; `cancel` brings the draggable back where it started. */
+    /** Occurs when the pointer is released. Set `cancel = true` to return the draggable to where it started. */
     get onDragEnding(): MotifEvent<DraggableEventArgs> {
         return this.ending.event;
     }
 
-    /** The drag ended (`x`, `y`, `target`, `dropped`). */
+    /** Occurs when the drag ends (`x`, `y`, `target`, `dropped`). */
     get onDragEnded(): MotifEvent<DraggableEventArgs> {
         return this.ended.event;
     }
 
-    /** Where it stands now, in pixels from where it was laid out. */
+    /** The current position, in pixels from its layout position. */
     get currentPosition(): DragPosition {
         return { ...this.pos };
     }
 
-    /** Whether it is being dragged. */
+    /** Indicates whether it is being dragged. */
     get isDragging(): boolean {
         return !!this.session?.started;
     }
 
-    /** The element that takes the press and the keys: the handle, else the draggable itself. */
+    /** The element that handles the pointer and keyboard: the handle, or the draggable itself. */
     get handleElement(): HTMLElement {
         return this.handleEl ?? this.element;
     }

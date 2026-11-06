@@ -3,7 +3,7 @@ import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 
-/** A tab is about to become its group's active one; `cancel = true` keeps the current one. */
+/** Occurs before a tab becomes the active tab of its group. Set `cancel = true` to keep the current one. */
 export interface DocumentActivatingEventArgs extends EventArgs {
   document: TabDocument;
   previous: TabDocument | null;

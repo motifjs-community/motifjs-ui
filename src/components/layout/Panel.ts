@@ -14,8 +14,8 @@ function scrollOf(value: PanelScroll | undefined): 'vertical' | 'horizontal' | '
 }
 
 /**
- * A plain container: padding, an optional frame, and its own scrolling. A scrolling panel is a
- * Tab stop, so it can be scrolled with the keys; `text` names it (a region landmark).
+ * A plain container with padding, an optional frame and its own scrolling. A scrolling panel is a
+ * Tab stop, so the keyboard can scroll it. `text` names it, which makes it a region landmark.
  *
  * @example
  * <Panel scrollable="vertical" padding="md" variant="outline" text="Messages">…</Panel>

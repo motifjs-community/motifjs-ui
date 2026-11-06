@@ -1,10 +1,10 @@
 import type { EventArgs } from '@motifx/core';
 import type { GridSelection } from './grid-selection';
 
-/** The selection is about to change (by the user or by code); `cancel` keeps it as it is. */
+/** Occurs before the selection changes, by the user or programmatically. Set `cancel = true` to keep it. */
 export interface GridSelectionChangingEventArgs extends EventArgs {
   readonly selection: GridSelection;
   readonly previous: GridSelection;
-  /** The change comes from rows selected by dragging over them. */
+  /** Indicates that the rows are selected by dragging over them. */
   readonly byDrag: boolean;
 }

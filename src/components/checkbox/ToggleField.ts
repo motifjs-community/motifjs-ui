@@ -5,9 +5,8 @@ import type { LabelPosition } from './label-position';
 import type { ToggleFieldProps } from './toggle-field-props';
 
 /**
- * The base of the fields drawn as a native checkbox (`CheckBox`, `Switch`): the caption sits next
- * to the box, a click, Space or the access key asks the subclass for the next value, and
- * read-only keeps the value as it is.
+ * The base class of fields drawn as a native checkbox (`CheckBox`, `Switch`). The label sits next to the box, a
+ * click, Space or the access key requests the next value from the subclass, and read-only keeps the value unchanged.
  */
 export abstract class ToggleField<T, TProps extends ToggleFieldProps<T> = ToggleFieldProps<T>> extends Field<T, TProps> {
   constructor(props?: IBaseProp<TProps>) {
@@ -57,7 +56,7 @@ export abstract class ToggleField<T, TProps extends ToggleFieldProps<T> = Toggle
     this.commit(this.nextValue());
   }
 
-  /** The access key focuses the box and clicks it, as a click on its caption does. */
+  /** The access key moves focus to the box and clicks it, as a click on its label does. */
   override onAccessKey(): boolean {
     if (!this.focus()) return false;
     this.inputElement.click();

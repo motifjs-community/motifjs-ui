@@ -52,10 +52,10 @@ function scrollerOf(el: HTMLElement, axis: 'x' | 'y'): HTMLElement | null {
 }
 
 /**
- * Items the user puts in order by dragging them, with the pointer or a finger (a long press), or with the keys
- * (Ctrl + an arrow moves the focused item a place); sortables of one `group` take each other's items. The items
- * are the JSX children, or `items` drawn with `itemTemplate`. A drop moves the item's element and tells
- * `onReorder` (`onRemove` and `onAdd` across sortables) with the indexes: your data is yours to reorder.
+ * Items the user reorders by dragging, with the pointer or a finger (a long press), or with the keyboard
+ * (Ctrl + an arrow moves the focused item one position). Sortables in the same `group` exchange items. The items
+ * are the JSX children, or `items` drawn with `itemTemplate`. A drop moves the item's element and reports the
+ * indexes to `onReorder` (`onRemove` and `onAdd` across sortables). Your code reorders the data.
  *
  * @example
  * <Sortable label="Steps" onReorder={e => this.steps.splice(e.toIndex, 0, ...this.steps.splice(e.fromIndex, 1))}>
@@ -192,17 +192,17 @@ export class Sortable<T = unknown> extends Control<HTMLDivElement, SortableProps
         return this.removed.event;
     }
 
-    /** The items' elements, in order. */
+    /** The item elements, in order. */
     get elements(): readonly HTMLElement[] {
         return this.itemElements();
     }
 
-    /** Whether an item is being dragged. */
+    /** Indicates whether an item is being dragged. */
     get isDragging(): boolean {
         return !!this.session?.started;
     }
 
-    /** Moves the item at `fromIndex` to `toIndex` as a drop would, and tells `onReorder`; `false` when nothing moved. */
+    /** Moves the item at `fromIndex` to `toIndex` as a drop would, and raises `onReorder`. Returns `false` if nothing moved. */
     move(fromIndex: number, toIndex: number, event?: Event): boolean {
         const elements = this.itemElements();
         const el = elements[fromIndex];
@@ -227,7 +227,7 @@ export class Sortable<T = unknown> extends Control<HTMLDivElement, SortableProps
         this.drawItems();
     }
 
-    /** Reads the items again after they were changed in place. */
+    /** Re-reads the items after they have been changed in place. */
     refresh(): void {
         this.renderItems();
     }

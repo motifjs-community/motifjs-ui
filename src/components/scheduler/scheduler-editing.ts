@@ -1,25 +1,28 @@
 import type { SchedulerForm } from './scheduler-form';
 
-/** What the user may change, and the form. Each is a switch of its own; an appointment's own field (`fields.allowDrag`…) takes precedence over it. */
+/**
+ * What the user can change, and the form. Each is a separate switch, and an appointment's own field
+ * (`fields.allowDrag`…) takes precedence.
+ */
 export interface SchedulerEditing<T = unknown> {
-  /** A double click (or Enter) on cells opens the form for a new appointment. Default `true`. */
+  /** Opens the form for a new appointment on a double-click or Enter on cells. The default is `true`. */
   allowAdding: boolean;
-  /** The form edits an appointment. Default `true`. */
+  /** Allows the form to edit an appointment. The default is `true`. */
   allowUpdating: boolean;
-  /** Delete, and the form's and the tooltip's Delete. Default `true`. */
+  /** Enables the Delete key and the Delete buttons of the form and the tooltip. The default is `true`. */
   allowDeleting: boolean;
-  /** Moving by dragging and by the keys. Default `true`. */
+  /** Allows moving by dragging and with the keyboard. The default is `true`. */
   allowDragging: boolean;
-  /** Changing the start or the end by its edges and by the keys. Default `true`. */
+  /** Allows changing the start or the end with its edges and the keyboard. The default is `true`. */
   allowResizing: boolean;
-  /** Ctrl while dragging drops a copy. Default `true`. */
+  /** Allows dropping a copy by holding Ctrl while dragging. The default is `true`. */
   allowCopying: boolean;
-  /** Asks before deleting. Default `true`. */
+  /** Asks for confirmation before deleting. The default is `true`. */
   confirmDelete: boolean;
-  /** The form edits how an appointment repeats. Default `true`. */
+  /** Includes the recurrence editor in the form. The default is `true`. */
   allowRecurrence: boolean;
-  /** The form edits the time zones of the start and the end. Default `false`. */
+  /** Includes the time zones of the start and the end in the form. The default is `false`. */
   allowTimeZones: boolean;
-  /** What the appointment form holds and how it is laid out, without events (`onFormOpening` still gets the items). */
+  /** The contents and layout of the appointment form, without events. `onFormOpening` still receives the items. */
   form?: SchedulerForm<T>;
 }

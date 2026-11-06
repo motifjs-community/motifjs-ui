@@ -1,19 +1,22 @@
 import type { Bind, ComponentBase } from '@motifx/core';
 
-/** A tile of the `TileView`: a text, or any content, on a tile of so many base cells. Each field may be a function of your state. */
+/**
+ * A tile of the `TileView`: text or any content, on a tile that spans a number of base cells. Each field can be a
+ * function of your state.
+ */
 export interface TileViewItem {
-    /** Names the tile in `value`; without one its index does. */
+    /** Identifies the tile in `value`. If omitted, its index is used. */
     key?: string;
-    /** The tile's text. */
+    /** The tile text. */
     text?: Bind<string>;
-    /** How many base cells wide the tile is. Default `1`. */
+    /** The width of the tile in base cells. The default is `1`. */
     widthRatio?: Bind<number>;
-    /** How many base cells tall the tile is. Default `1`. */
+    /** The height of the tile in base cells. The default is `1`. */
     heightRatio?: Bind<number>;
-    /** Any content in place of the text, made when the tile is. */
+    /** Any content in place of the text, created with the tile. */
     content?: () => ComponentBase;
-    /** A tile that cannot be chosen or moved. Default `true`. */
+    /** `false` means the tile cannot be selected or moved. The default is `true`. */
     enabled?: Bind<boolean>;
-    /** Anything of your own; the item comes back as given in the events. */
+    /** A custom value. The item is returned as provided in the events. */
     data?: unknown;
 }

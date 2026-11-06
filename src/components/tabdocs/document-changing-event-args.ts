@@ -3,7 +3,7 @@ import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 
-/** A document is about to be kept open, pinned, unpinned or hidden; `cancel = true` leaves it as it is. */
+/** Occurs before a document is kept open, pinned, unpinned or hidden. Set `cancel = true` to leave it unchanged. */
 export interface DocumentChangingEventArgs extends EventArgs {
   document: TabDocument;
   group: TabGroup;

@@ -4,7 +4,7 @@ import type { ValidationResult } from './validation-result';
 import type { ValidationTarget } from './validation-target';
 
 /**
- * Fields checked together, e.g. the fields of one form.
+ * Fields validated together, such as the fields of one form.
  *
  * @example
  * const group = new ValidationGroup();
@@ -15,7 +15,7 @@ export class ValidationGroup {
   private readonly members = new Set<ValidationTarget>();
   private readonly version = createSignal(0);
 
-  /** Returns the function that removes it again. */
+  /** Adds a member. Returns a function that removes it. */
   add(target: ValidationTarget): () => void {
     this.members.add(target);
     this.changed();
@@ -35,7 +35,7 @@ export class ValidationGroup {
     return this.targets.every((target) => target.isValid);
   }
 
-  /** Checks every member; the first one that failed gets focus unless `focus` is `false`. */
+  /** Validates every member. The first invalid member receives focus unless `focus` is `false`. */
   validate(options: { focus?: boolean } = {}): Promise<ValidationResult> {
     return validateTargets(this.targets, options.focus !== false);
   }

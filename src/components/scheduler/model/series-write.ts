@@ -3,6 +3,6 @@ export interface SeriesWrite<T> {
   kind: 'add' | 'update' | 'delete';
   /** The values added, or the appointment changed or deleted. */
   appointment: T | Partial<T>;
-  /** What an update wrote. */
+  /** The values an update wrote. */
   changes?: Partial<T>;
 }

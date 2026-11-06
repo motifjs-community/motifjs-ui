@@ -2,10 +2,10 @@ import type { EventArgs } from '@motifx/core';
 import type { Scheduler } from './Scheduler';
 import type { SchedulerRange } from './scheduler-range';
 
-/** An iCalendar file is about to be written; `appointments` may be changed, `cancel = true` writes nothing. */
+/** Occurs before an iCalendar file is written. `appointments` can be changed. Set `cancel = true` to write nothing. */
 export interface ICalendarExportingEventArgs<T = unknown> extends EventArgs {
   appointments: T[];
-  /** The range asked for, `null` for all. */
+  /** The requested range, or `null` for all. */
   range: SchedulerRange | null;
   source: Scheduler<T>;
 }

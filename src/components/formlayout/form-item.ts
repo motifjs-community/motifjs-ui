@@ -7,37 +7,37 @@ import type { FormTab } from './form-tab';
 import type { FormTemplateContext } from './form-template-context';
 
 /**
- * One place of a form: a field of the data object with its editor, a group of items under a
- * caption, tabs of items, a button, or any component of your own.
+ * One entry of a form: a field of the data object with its editor, a group of items under a
+ * caption, tabs of items, a button, or any custom component.
  */
 export interface FormItem {
-  /** The property of the data object the editor shows and changes. */
+  /** The property of the data object that the editor displays and changes. */
   field?: string;
   label?: Bind<string>;
   /**
-   * By name, or by the type of the value when omitted. A function makes the editor from the props
-   * a named one gets (`label`, `value`, `onValueChanged`, `validationGroup`, `rules` …): any
-   * component that takes them is an editor.
+   * The editor, by name, or by the type of the value when omitted. A function creates the editor from
+   * the props a named editor receives (`label`, `value`, `onValueChanged`, `validationGroup`, `rules` …),
+   * so any component that accepts them can be an editor.
    */
   editor?: FormEditorType | FormEditorFactory;
-  /** Props of the editor: `items`, `min`, `mask`… */
+  /** The editor's props: `items`, `min`, `mask`… */
   editorProps?: Record<string, unknown>;
   required?: Bind<boolean>;
   rules?: Bind<readonly ValidationRule[]>;
   helpText?: Bind<string>;
-  /** Columns it spans; `'all'` the whole row. */
+  /** The number of columns it spans. Use `'all'` for the whole row. */
   colSpan?: number | 'all';
   visible?: Bind<boolean>;
   enabled?: Bind<boolean>;
   readOnly?: Bind<boolean>;
-  /** A caption over `items`, laid out on `columns` of its own. */
+  /** A caption over `items`, which are laid out on their own `columns`. */
   group?: Bind<string>;
   items?: readonly FormItem[];
   columns?: number;
-  /** Tabs, each with items of its own (they all count when the form is checked). */
+  /** Tabs, each with its own items, all of which are validated with the form. */
   tabs?: readonly FormTab[];
-  /** A button; `submit` sends the form after it passes its checks. */
+  /** A button. `submit` submits the form once it passes validation. */
   button?: ButtonProps & { submit?: boolean };
-  /** Any component, made for this place (with the form's data, the item's field and its check group). */
+  /** Any component, created for this item with the form's data, the item's field and its validation group. */
   template?: (context: FormTemplateContext) => ComponentBase;
 }

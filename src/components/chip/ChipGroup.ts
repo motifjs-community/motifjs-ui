@@ -10,9 +10,9 @@ import type { ChipGroupValueChangedEventArgs } from './chip-group-value-changed-
 const OWN = ['selection', 'value', 'wrap', 'label'] as const;
 
 /**
- * Chips in a row that wraps. With `selection`, pressing a chip selects it (`single`: that one,
- * `multiple`: on and off) and `value` (or `x-model`) holds the chips' values; Tab stops once and the arrow keys,
- * Home and End move between the chips. Chips from a JSX list are counted as the list changes.
+ * Chips in a wrapping row. With `selection`, clicking a chip selects it (`single` selects that chip, `multiple` toggles
+ * it), and `value` (or `x-model`) holds the values of the chips. The group is one Tab stop, and the arrow keys, Home and
+ * End move between the chips. Chips from a JSX list are counted as the list changes.
  *
  * @example
  * <ChipGroup selection="multiple" value={() => this.filters.diets} onValueChanged={(e) => (this.filters.diets = e.value as string[])} label="Diet">
@@ -90,12 +90,12 @@ export class ChipGroup extends Control<HTMLDivElement, ChipGroupProps> {
     this.assignProperty('label', value);
   }
 
-  /** The value changed, by the user or by code (`e.byUser`). */
+  /** Occurs when the value changes, either through user input or programmatically (`e.byUser`). */
   get onValueChanged(): MotifEvent<ChipGroupValueChangedEventArgs> {
     return this.valueChanged.event;
   }
 
-  /** The chips in it, in order, from JSX lists too. */
+  /** The chips in order, including those from JSX lists. */
   get chips(): Chip[] {
     const chips: Chip[] = [];
     for (const el of Array.from(this.element.children)) {
@@ -105,7 +105,7 @@ export class ChipGroup extends Control<HTMLDivElement, ChipGroupProps> {
     return chips;
   }
 
-  /** Whether the chip of `value` is selected. */
+  /** Indicates whether the chip for `value` is selected. */
   isSelected(value: unknown): boolean {
     const selection = this.peekProperty<ChipGroupSelection>('selection') ?? 'none';
     const current = this.peekProperty<unknown>('value');

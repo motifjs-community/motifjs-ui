@@ -9,20 +9,20 @@ import { accessKeyToken, setAccessKeyAttribute } from './access-key';
 
 /** Props every {@link Control} understands. Each one is also a settable property. */
 export interface ControlProps {
-  /** The control's text (caption, label, title…); where it shows is up to the control. */
+  /** The text of the control (caption, label, title…). Where it appears depends on the control. */
   text?: Bind<string>;
-  /** `false` disables the control and everything inside it. Default `true`. */
+  /** `false` disables the control and everything inside it. The default is `true`. */
   enabled?: Bind<boolean>;
-  /** The HTML-style inverse of `enabled`, for habit: `disabled={() => state.busy}`. Ignored when `enabled` is given. */
+  /** The HTML-style inverse of `enabled`: `disabled={() => state.busy}`. It is ignored when `enabled` is set. */
   disabled?: Bind<boolean>;
-  /** `false` hides the control (core `hide()`), `true` shows it again. Default `true`. */
+  /** `false` hides the control with the core `hide()` method, and `true` shows it again. The default is `true`. */
   visible?: Bind<boolean>;
-  /** `false` takes the control out of the Tab order; it can still be focused by code or click. Default `true`. */
+  /** `false` removes the control from the Tab order. Code or a click can still focus it. The default is `true`. */
   tabStop?: Bind<boolean>;
   /**
-   * Order among the controls of the same container: Tab visits them in
-   * ascending order, equal ones (default 0) in document order. Leave it unset
-   * where you can: document order is also the order screen readers read in.
+   * The order among the controls of the same container. Tab visits them in
+   * ascending order, and ties (the default is 0) follow document order. Leave it unset
+   * where you can, because document order is also the reading order for screen readers.
    */
   tabIndex?: Bind<number>;
 }
@@ -54,25 +54,25 @@ const STATE = Symbol('mx.control');
 const DEFAULTS: Record<string, unknown> = { text: '', enabled: true, visible: true, tabStop: true, tabIndex: 0 };
 
 /**
- * The base of every `@motifx-community/ui` control: the shared properties
+ * The base of every `@motifx-community/ui` control. The shared properties
  * (`text`, `enabled`, `visible`, `tabStop`) work the same whether the control
- * is written in JSX or created with `new` and changed programmatically.
+ * is declared in JSX or created with `new` and changed programmatically.
  *
- * - A prop can be a value or a getter (`enabled={() => !state.busy}`); a
+ * - A prop can be a value or a getter (`enabled={() => !state.busy}`). A
  *   getter keeps the property in sync with the state.
- * - Every property can be set programmatically, with a value (`ctrl.enabled = false`:
- *   it replaces a getter given before, the code owns the value from then on) or
- *   with a function (`ctrl.enabled = () => !state.busy`: bound and followed; over plain data, read again on
- *   `reState()`).
- * - Every property is reactive to read: `{() => ctrl.text}` or a watch follows it.
+ * - Every property can be set programmatically, with a value (`ctrl.enabled = false`,
+ *   which replaces any earlier getter, so the code owns the value from then on) or
+ *   with a function (`ctrl.enabled = () => !state.busy`, which is bound and tracked, and
+ *   over plain data is read again on `reState()`).
+ * - Every property is reactive to read: `{() => ctrl.text}` or a watch tracks it.
  *
- * Cost model: a property nobody set or bound costs nothing; a plain value is
- * written to the DOM once; only a getter prop creates a binding; the change
- * counter readers track is created on the first read.
+ * Cost model: a property nobody set or bound costs nothing, a plain value is
+ * written to the DOM once, only a getter prop creates a binding, and the change
+ * counter that readers track is created on the first read.
  *
- * Subclasses render `text` (and their own properties built on the same
- * storage) with {@link observeProperty}; the root element defaults to a div,
- * set `static elementTag` for another.
+ * Subclasses render `text`, and their own properties built on the same
+ * storage, with {@link observeProperty}. The root element defaults to a div, and
+ * `static elementTag` sets another element.
  */
 export class Control<TElement extends HTMLElement = HTMLElement, TProps extends ControlProps = ControlProps> extends Component<
   TElement,
@@ -117,7 +117,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
 
   // Shared properties.
 
-  /** The control's text (caption, label, title…). Reactive. */
+  /** The text of the control (caption, label, title…). Reactive. */
   get text(): string {
     return this.getProperty<string>('text');
   }
@@ -127,9 +127,9 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   }
 
   /**
-   * This control's own value, as set or bound (like the HTML `disabled`
-   * attribute). Whether it can be used right now also depends on the controls
-   * it sits in: see {@link isEnabled}. Reactive.
+   * The control's own value, as set or bound (like the HTML `disabled`
+   * attribute). Whether it can be used now also depends on its ancestors.
+   * See {@link isEnabled}. Reactive.
    */
   get enabled(): boolean {
     return this.getProperty<boolean>('enabled');
@@ -149,15 +149,15 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   }
 
   /**
-   * Whether the control can be used now: enabled itself and in every control
-   * it sits in (like CSS `:enabled`; windows opened inside do not inherit it).
-   * Reactive.
+   * Indicates whether the control can be used now, meaning that it and all its
+   * ancestors are enabled (like CSS `:enabled`). Windows opened inside it do not
+   * inherit the state. Reactive.
    */
   get isEnabled(): boolean {
     return this.getProperty<boolean>('enabled') && (this.parentControl?.isEnabled ?? true);
   }
 
-  /** This control's own visibility (a hidden parent does not change it). Reactive. */
+  /** The control's own visibility. A hidden parent does not change it. Reactive. */
   get visible(): boolean {
     return this.getProperty<boolean>('visible');
   }
@@ -166,7 +166,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     this.assignProperty('visible', value, Boolean);
   }
 
-  /** `false` takes the control out of the Tab order (see the prop). Reactive. */
+  /** `false` removes the control from the Tab order (see the prop). Reactive. */
   get tabStop(): boolean {
     return this.getProperty<boolean>('tabStop');
   }
@@ -175,7 +175,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     this.assignProperty('tabStop', value, Boolean);
   }
 
-  /** See the prop. Reactive. */
+  /** The position in its container's Tab order. Reactive. */
   get tabIndex(): number {
     return this.getProperty<number>('tabIndex');
   }
@@ -185,7 +185,7 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   }
 
   /**
-   * The nearest ancestor that is a `Control`, not crossing a window (a window
+   * The nearest ancestor that is a `Control`, without crossing a window (a window
    * opened inside a disabled control is not disabled by it).
    */
   get parentControl(): Control | null {
@@ -203,24 +203,24 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
     return this.element;
   }
 
-  /** Whether {@link focus} can succeed now: enabled, on the page, visible and focusable. */
+  /** Indicates whether {@link focus} can succeed now: enabled, on the page, visible and focusable. */
   get canFocus(): boolean {
     const el = this.focusElement;
     return this.isEnabled && el.isConnected && isFocusable(el);
   }
 
-  /** Whether this control's focus element has focus. Not reactive (a DOM query). */
+  /** Indicates whether the control's focus element has focus. This is a DOM query and is not reactive. */
   get focused(): boolean {
     return deepActiveElement(this.element) === this.focusElement;
   }
 
-  /** Whether focus is on this control or anything inside it (CSS `:focus-within`). Not reactive. */
+  /** Indicates whether focus is on the control or inside it (CSS `:focus-within`). This is not reactive. */
   get focusWithin(): boolean {
     const active = deepActiveElement(this.element);
     return !!active && this.element.contains(active);
   }
 
-  /** Focuses the control; `false` when it cannot take focus. */
+  /** Sets focus on the control. Returns `false` if it cannot receive focus. */
   focus(): boolean {
     if (!this.canFocus) return false;
     this.focusElement.focus();
@@ -230,17 +230,17 @@ export class Control<TElement extends HTMLElement = HTMLElement, TProps extends 
   // Keyboard.
 
   /**
-   * What the control's access key (`&Save` → Alt+S) does. Focuses it by
-   * default; a button-like control also clicks itself. Returns whether it did something.
+   * Defines what the control's access key (`&Save` → Alt+S) does. By default it sets
+   * focus, and a button-like control also clicks itself. Returns whether it did anything.
    */
   onAccessKey(): boolean {
     return this.focus();
   }
 
   /**
-   * A keyboard shortcut active while focus is inside this control, removed
-   * when the control is disposed. See `addShortcut` for the chord syntax and
-   * the rules; returns the remover.
+   * Adds a keyboard shortcut that is active while focus is inside this control and
+   * is removed when the control is disposed. See `addShortcut` for the chord syntax
+   * and the rules. Returns a function that removes it.
    *
    * @example
    * this.addShortcut('Ctrl+S', () => this.save());

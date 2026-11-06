@@ -7,23 +7,23 @@ import type { ToastPosition } from './toast-position';
 import type { ToastTone } from './toast-tone';
 
 /**
- * Props of `Toast`, and what `toast.show()` takes: the shared `ControlProps` (`text` is the
- * message) plus its own. Each prop is also a settable, reactive property.
+ * Props of `Toast`, and the options of `toast.show()`: the shared `ControlProps` (`text` is the
+ * message) in addition to its own. Each prop is also a settable, reactive property.
  */
 export interface ToastProps extends ControlProps {
-  /** A bold line above the text. */
+  /** A bold line above the message. */
   title?: Bind<string>;
-  /** Default `'info'`. */
+  /** The default is `'info'`. */
   tone?: Bind<ToastTone>;
-  /** Default: the tone's glyph; `null` shows none. */
+  /** The default is the tone's glyph. `null` shows none. */
   icon?: Bind<IconSource | null | undefined>;
-  /** Milliseconds it stays; `0` keeps it until it is closed. Default 5000. */
+  /** The time it stays, in milliseconds. `0` keeps it open until it is closed. The default is 5000. */
   duration?: Bind<number>;
   /** A button in the toast, such as Undo. */
   action?: Bind<ToastAction | null | undefined>;
-  /** Default `true`. */
+  /** The default is `true`. */
   closeButton?: Bind<boolean>;
-  /** Where it stacks; its toaster's `position` by default. Read when it is shown. */
+  /** The stacking position. The default is the `position` of its toaster. It is read when the toast is shown. */
   position?: Bind<ToastPosition | undefined>;
   onClosed?: (reason: ToastCloseReason) => void;
 }

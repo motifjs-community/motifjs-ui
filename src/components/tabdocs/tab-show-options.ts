@@ -1,16 +1,16 @@
 import type { TabDockSide } from './tab-dock-side';
 import type { TabGroup } from './TabGroup';
 
-/** Where and how `show` puts a hidden document back. Without `group` or `side`, it goes back where it was hidden from. */
+/** Where and how `show` restores a hidden document. Without `group` or `side`, it returns to where it was hidden from. */
 export interface TabShowOptions {
-  /** Into this group. */
+  /** Restores it into this group. */
   group?: TabGroup;
-  /** Into the dock area of this side (made when there is none). */
+  /** Restores it into the dock area on this side, which is created if necessary. */
   side?: TabDockSide;
-  /** Its place in the group's strip. Default: where it was, or as `openPosition` says in another group. */
+  /** Its position in the group's strip. The default is its previous position, or `openPosition` in another group. */
   index?: number;
-  /** Make it the active tab. Default `true`. */
+  /** Makes it the active tab. The default is `true`. */
   active?: boolean;
-  /** Move focus to it as well. Default `false`. */
+  /** Moves focus to it as well. The default is `false`. */
   focus?: boolean;
 }

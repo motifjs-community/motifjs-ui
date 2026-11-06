@@ -1,21 +1,21 @@
 import type { Bind } from '@motifx/core';
 import type { IconSource } from '../../core/icon-source';
 
-/** One step of a `Stepper`. Its fields may be functions of reactive state: the stepper follows them. */
+/** One step of a `Stepper`. Its fields can be functions of reactive state, which the stepper tracks. */
 export interface StepperItem {
     text: Bind<string>;
-    /** A second line under the text. */
+    /** A second line below the text. */
     description?: Bind<string>;
-    /** Names the step in `value`; without it the step's index does. */
+    /** Identifies the step in `value`. If omitted, the step's index is used. */
     key?: string;
-    /** Drawn in the indicator in place of the number. */
+    /** Displayed in the indicator instead of the number. */
     icon?: Bind<IconSource | null>;
-    /** `done` or `error` whatever the current step is; omitted, the steps before the current one are done. */
+    /** `done` or `error`, regardless of the current step. If omitted, the steps before the current one are done. */
     status?: Bind<'done' | 'error' | 'pending' | null>;
-    /** May be skipped in linear order; says so under the text. */
+    /** Can be skipped in linear order, and is marked as optional below the text. */
     optional?: Bind<boolean>;
-    /** `false` keeps it from being chosen. Default `true`. */
+    /** `false` prevents the step from being selected. The default is `true`. */
     enabled?: Bind<boolean>;
-    /** The app's own value for the step. */
+    /** A custom application value for the step. */
     data?: unknown;
 }

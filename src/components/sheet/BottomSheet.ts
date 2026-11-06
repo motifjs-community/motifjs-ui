@@ -52,13 +52,13 @@ interface Parts {
 const PARTS = Symbol('mx.bottom-sheet');
 
 /**
- * A panel that comes up from the bottom of the page or of a container and stops at a few heights
- * (`detents`: a peek, half, full, as tall as its content, or heights of your own). The finger and the
- * mouse drag it by its handle and its title from height to height, a flick goes on to the next one,
- * and dragging it down past the lowest one closes it; the content takes the sheet along when it
- * cannot scroll that way. The handle is a slider for the keyboard (the arrow keys, Home and End).
- * It is a dialog: modal by default, with Escape, a click on the scrim and the browser's back
- * closing it, focus moved in and back again; it keeps clear of the screen's safe areas.
+ * A panel that slides up from the bottom of the page or of a container and stops at a few heights
+ * (`detents`: a peek, half, full, the height of its content, or custom heights). A finger or the
+ * mouse drags it by its handle and title from height to height, a flick moves to the next height,
+ * and dragging it below the lowest height closes it. The content drags the sheet when it cannot
+ * scroll in that direction. The handle is a slider for the keyboard (the arrow keys, Home and End).
+ * It is a dialog: modal by default, closed by Escape, a click on the scrim and the browser's back
+ * action, with focus moved in and returned. It stays clear of the screen's safe areas.
  *
  * @example
  * <BottomSheet title="Filters" detents={['peek', 'half', 'full']} x-model={() => this.state.filters}>…</BottomSheet>
@@ -100,7 +100,7 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
   set detents(value: Bind<readonly BottomSheetDetent[]>) {
     this.assignProperty('detents', value);
   }
-  /** The height it is at (or opens at). Reactive. Setting it moves the sheet there. */
+  /** The current height, or the height it opens at. Reactive. Setting it moves the sheet there. */
   get detent(): BottomSheetDetent {
     return this.getProperty<BottomSheetDetent | undefined>('detent') ?? this.detents[0];
   }
@@ -144,7 +144,7 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
     this.assignProperty('topGap', value);
   }
 
-  /** Its height now, in pixels (0 while closed). */
+  /** The current height in pixels, or 0 while closed. */
   get height(): number {
     return this.isOpen ? Math.round(this.sheet.size) : 0;
   }
@@ -156,7 +156,7 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
     return this.sheet.detentChanged.event;
   }
 
-  /** Moves it to one of its heights (opened at it when closed). `false` when an `onDetentChanging` listener said no. */
+  /** Moves it to a height, and opens it there if closed. Returns `false` if an `onDetentChanging` listener canceled it. */
   snapTo(detent: BottomSheetDetent): boolean {
     if (!this.isOpen) {
       this.detent = detent;
@@ -165,12 +165,12 @@ export class BottomSheet extends OverlayPanel<BottomSheetProps> {
     return this.changeDetent(detent, false);
   }
 
-  /** To the next taller height; `false` at the tallest. */
+  /** Moves to the next taller height. Returns `false` at the tallest. */
   expand(): boolean {
     return this.step(1, false);
   }
 
-  /** To the next lower height; `false` at the lowest. */
+  /** Moves to the next shorter height. Returns `false` at the lowest. */
   collapse(): boolean {
     return this.step(-1, false);
   }

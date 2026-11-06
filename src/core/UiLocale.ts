@@ -7,14 +7,14 @@ import type { UiPackModule } from './ui-pack-module';
 import type { UiStrings } from './ui-strings';
 
 /**
- * The language of the kit's controls: their texts, the locale their dates and numbers are written in, the direction.
- * A language is switched with `use`, its pack loaded first when it is not there yet; then `onChanged` is raised once
- * and every control draws its texts and formats again. Nothing follows it: a control listens to `onChanged`.
+ * The language of the kit's controls: their strings, the locale of their dates and numbers, and the direction.
+ * `use` switches the language, loading its pack first if needed. `onChanged` is then raised once, and every
+ * control redraws its strings and formats. No binding reads it, so a control listens to `onChanged`.
  */
 export class UiLocale {
-  /** Loads the pack of a language (`'tr'`, `'pt-br'`); a pack it does not have is a rejected promise. */
+  /** Loads the pack of a language (`'tr'`, `'pt-br'`). A pack that does not exist is a rejected promise. */
   loader: (language: string) => Promise<UiPackModule>;
-  /** Settles once the starting language is in. */
+  /** Resolves once the initial language has loaded. */
   readonly ready: Promise<void>;
   private current: { locale: string; strings: UiStrings };
   private readonly packs = new Map<string, UiPack>();
@@ -34,19 +34,19 @@ export class UiLocale {
     this.ready = this.use(locale).catch(() => {});
   }
 
-  /** The locale in use (`'tr-TR'`). A change is told by `onChanged`; nothing follows it. */
+  /** The active locale (`'tr-TR'`). `onChanged` reports a change, and no binding reads it. */
   get locale(): string {
     return this.current.locale;
   }
 
-  /** `'rtl'` or `'ltr'` for the locale in use. */
+  /** The text direction of the active locale, `'rtl'` or `'ltr'`. */
   get dir(): 'ltr' | 'rtl' {
     return directionOf(this.locale);
   }
 
   /**
-   * The texts in use. Assigning a set changes the texts and keeps the locale: for an app's own wording
-   * (`uiLocale.strings = { ...uiLocale.strings, close: 'Kapat' }`). The set is kept as given.
+   * The active strings. Assigning a set changes the strings and keeps the locale, for an app's custom wording
+   * (`uiLocale.strings = { ...uiLocale.strings, close: 'Kapat' }`). The set is kept as provided.
    */
   get strings(): UiStrings {
     return this.current.strings;
@@ -56,15 +56,15 @@ export class UiLocale {
     this.apply(this.current.locale, value);
   }
 
-  /** Raised once the language changed, with the locale before. */
+  /** Occurs after the language changes, with the previous locale. */
   get onChanged(): MotifEvent<UiLocaleChangedEventArgs> {
     return this.changed.event;
   }
 
   /**
-   * Switches to `locale`: its pack (`tr-TR`, else `tr`) is loaded first when it is not there, so no control shows
-   * half its texts in the old language; until then the old one stays. A later call takes precedence over one still loading.
-   * A language without a pack keeps the built-in texts and still writes dates and numbers its way.
+   * Switches to `locale`. Its pack (`tr-TR`, otherwise `tr`) is loaded first if needed, so no control shows half its
+   * strings in the old language, which stays until then. A later call takes precedence over one still loading.
+   * A language without a pack keeps the built-in strings and still formats dates and numbers for its locale.
    */
   async use(locale: string): Promise<void> {
     const turn = ++this.turn;
@@ -73,7 +73,7 @@ export class UiLocale {
     this.apply(locale, pack ? { ...this.builtIn, ...pack } : this.builtIn);
   }
 
-  /** Adds the pack of a language, or more texts to it; a language in use shows them at once. */
+  /** Adds the pack of a language, or adds strings to it. The active language shows them immediately. */
   add(language: string, pack: UiPack) {
     const key = language.toLowerCase();
     this.packs.set(key, { ...this.packs.get(key), ...pack });
@@ -81,7 +81,7 @@ export class UiLocale {
     if (languagesOf(this.current.locale).includes(key)) void this.use(this.current.locale);
   }
 
-  /** A text of the kit with its values filled in (ICU: `{count, plural, one {# row} other {# rows}}`). */
+  /** Returns a kit string with its values filled in (ICU:`{count, plural, one {# row} other {# rows}}`). */
   text(key: keyof UiStrings, values?: Record<string, unknown>): string {
     const message = this.current.strings[key];
     return fillText(message, this.current.locale, values);

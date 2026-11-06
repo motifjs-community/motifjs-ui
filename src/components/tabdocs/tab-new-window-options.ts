@@ -1,9 +1,12 @@
 import type { TabRect } from './tab-rect';
 
-/** What `moveToNewWindow` may be told. */
+/** The options of `moveToNewWindow`. */
 export interface TabNewWindowOptions {
-  /** The window's place and size on the screen; by default the size of what moves (or `newWindowSize`), beside it. */
+  /**
+   * The window's position and size on the screen. By default, it has the size of what moves (or
+   * `newWindowSize`) and opens beside it.
+   */
   rect?: TabRect;
-  /** The page the window opens, on the page's own origin; `newWindowUrl` by default. */
+  /** The page the window opens, on the page's own origin. The default is `newWindowUrl`. */
   url?: string;
 }

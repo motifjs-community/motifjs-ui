@@ -1,6 +1,6 @@
 import type { EventArgs } from '@motifx/core';
 
-/** A new row is about to be sent; change `data` to change what goes out, `cancel` keeps it unsent. */
+/** Occurs before a new row is sent. Change `data` to change what is sent, or set `cancel = true` to keep it unsent. */
 export interface GridRowInsertingEventArgs<T> extends EventArgs {
   readonly row: T;
   /** The values sent. */

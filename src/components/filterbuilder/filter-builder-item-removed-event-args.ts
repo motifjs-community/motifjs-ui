@@ -2,7 +2,7 @@ import type { FilterBuilder } from './FilterBuilder';
 import type { FilterBuilderGroup } from './filter-builder-group';
 import type { FilterBuilderItem } from './filter-builder-item';
 
-/** A condition or a group was removed of `group`. */
+/** Provides data for the event that occurs after a condition or group is removed from `group`. */
 export interface FilterBuilderItemRemovedEventArgs {
   item: FilterBuilderItem;
   group: FilterBuilderGroup;

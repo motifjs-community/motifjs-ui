@@ -1,4 +1,4 @@
-/** The editors a form knows by name; register more with `FormLayout.editors`. */
+/** The editors a form knows by name. Register more with `FormLayout.editors`. */
 export type FormEditorType =
   | 'text'
   | 'password'

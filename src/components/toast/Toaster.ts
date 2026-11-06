@@ -49,13 +49,13 @@ function transitionTime(el: Element): number {
 }
 
 /**
- * The region toasts show in: a landmark named "Notifications" (`uiLocale`) holding a stack at
- * each edge position in use, newest nearest the edge, at most `max` per position (the rest wait
- * their turn). Info and success toasts are read out politely, caution and danger at once. Toasts
- * never take focus; Tab reaches them where the toaster sits in the page (the default one is the
- * last thing in `document.body`), and `hotkey` (F8) jumps to the newest and back.
+ * The region that shows toasts: a landmark named "Notifications" (`uiLocale`) holding a stack at
+ * each edge position in use, with the newest nearest the edge and at most `max` per position (the rest wait
+ * their turn). Screen readers announce info and success toasts politely, and caution and danger toasts immediately.
+ * Toasts never take focus. Tab reaches them where the toaster sits on the page (the default one is the
+ * last element in `document.body`), and `hotkey` (F8) moves to the newest toast and back.
  *
- * `toast.show()` uses `Toaster.default`: one made on first use, or the one you assign.
+ * `toast.show()` uses `Toaster.default`: one created on first use, or the one you assign.
  *
  * @example
  * <Toaster position="top" max={2} ref={(t) => (Toaster.default = t)} />
@@ -64,7 +64,7 @@ function transitionTime(el: Element): number {
  * uploads.success('photo.jpg is uploaded.');
  */
 export class Toaster extends Control<HTMLElement, ToasterProps> {
-  /** The toaster `toast.show()` uses; made in `document.body` on first use unless you set one. */
+  /** The toaster used by `toast.show()`, created in `document.body` on first use unless you set one. */
   static get default(): Toaster {
     if (defaultToaster?.isDisposed) defaultToaster = null;
     if (!defaultToaster) {
@@ -155,12 +155,12 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
     this.assignProperty('pauseOnHover', value, Boolean);
   }
 
-  /** The toasts on the screen, then the ones waiting. */
+  /** The toasts on screen, followed by the waiting ones. */
   get toasts(): readonly Toast[] {
     return [...this.parts.shown, ...this.parts.waiting];
   }
 
-  /** Whether timers are stopped now: the pointer or focus is on the toasts, or the page is hidden. */
+  /** Indicates whether the timers are currently paused: the pointer or focus is on the toasts, or the page is hidden. */
   get paused(): boolean {
     const parts = this.parts;
     const hover = parts.hovered && (this.peekProperty<boolean>('pauseOnHover') ?? true);
@@ -169,7 +169,7 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
 
   // Showing.
 
-  /** Shows a toast (or puts it in line when `max` are showing at its position) and returns it. */
+  /** Shows a toast, or queues it when `max` are showing at its position, and returns it. */
   show(options: ToastProps | Toast): Toast {
     const t = options instanceof Toast ? options : new Toast(options);
     if (t.isClosed || t.toaster) return t;
@@ -196,14 +196,14 @@ export class Toaster extends Control<HTMLElement, ToasterProps> {
     return this.show({ ...options, text, tone: 'danger' });
   }
 
-  /** Closes every toast, the waiting ones too. */
+  /** Closes every toast, including the waiting ones. */
   closeAll(): void {
     const parts = this.parts;
     for (const t of parts.waiting.splice(0)) t.close('code');
     for (const t of [...parts.shown]) t.close('code');
   }
 
-  /** Moves focus to the newest toast; `false` when there is none. */
+  /** Moves focus to the newest toast. Returns `false` if there is none. */
   focusNewest(): boolean {
     const newest = this.parts.shown.at(-1);
     if (!newest) return false;

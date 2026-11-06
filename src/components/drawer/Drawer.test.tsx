@@ -53,6 +53,22 @@ function touch(el: Element, type: string, x: number, y: number, at?: number) {
 const shift = (d: Drawer) => d.panelElement.style.getPropertyValue('--_shift-x');
 
 describe('Drawer', () => {
+  it('leaves an iframe out of the focus on open, so that Escape still closes it', async () => {
+    const state = reactive({ open: false });
+    let drawer!: Drawer;
+    page(
+      <Drawer ref={(d: Drawer) => (drawer = d)} title="Help" container={room()} x-model={() => state.open}>
+        <iframe srcdoc="<p>Help</p>" />
+      </Drawer>,
+    );
+    await settle();
+    state.open = true;
+    await settle();
+    expect(document.activeElement).toBe(drawer.panelElement);
+    drawer.panelElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    expect(state.open).toBe(false);
+  });
+
   it('slides in from the start over its container, modal, and closes with Escape and the scrim', async () => {
     const box = room();
     const before = document.createElement('button');

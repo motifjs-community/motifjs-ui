@@ -8,39 +8,42 @@ import type { ButtonTone } from './button-tone';
 import type { ButtonVariant } from './button-variant';
 
 /**
- * Props of `Button`: the shared `ControlProps` plus its own. Each one is also a settable, reactive
- * property. `split`, `menu` and `dropDown` give the button a menu; one of them must be there when
- * the button is created, because a button with a menu is built of two parts.
+ * Props of `Button`, in addition to the shared `ControlProps`. Each prop is also a settable, reactive
+ * property. `split`, `menu` and `dropDown` give the button a menu. One of them must be set when the
+ * button is created, because a button with a menu has two parts.
  */
 export interface ButtonProps extends ControlProps {
-  /** Default `'solid'`. */
+  /** The default is `'solid'`. */
   variant?: Bind<ButtonVariant>;
-  /** Default `'standard'`. */
+  /** The default is `'standard'`. */
   tone?: Bind<ButtonTone>;
-  /** Default `'md'`. */
+  /** The default is `'md'`. */
   size?: Bind<ButtonSize>;
   icon?: Bind<IconSource | null | undefined>;
-  /** Default `'start'`; `'end'` puts the icon after the text. */
+  /** Places the icon before or after the text. The default is `'start'`, and `'end'` puts it after the text. */
   iconPosition?: Bind<'start' | 'end'>;
-  /** Fills the width of what it sits in. */
+  /** Stretches to the full width of its container. */
   stretch?: Bind<boolean>;
-  /** The native type. Default `'button'`, so a button in a form never submits by accident. */
+  /** The native type. The default is `'button'`, so a button in a form never submits by accident. */
   type?: Bind<'button' | 'submit' | 'reset'>;
-  /** Shown as a tooltip. */
+  /** The tooltip text. */
   hint?: Bind<string>;
-  /** A toggle button: a click turns `pressed` on and off; `x-model` binds it two-way. */
+  /** Makes it a toggle button. A click turns `pressed` on and off, and `x-model` provides two-way binding. */
   toggle?: Bind<boolean>;
   pressed?: Bind<boolean>;
-  /** Work is running: a spinner shows, presses are ignored, the size stays. */
+  /** Indicates that work is in progress. A spinner appears, clicks are ignored and the size is preserved. */
   busy?: Bind<boolean>;
-  /** Disabled, it can still take focus, so a screen reader finds it and reads it as dimmed. */
+  /** When disabled, the button can still receive focus, so a screen reader can find it and announce it as dimmed. */
   focusableWhenDisabled?: Bind<boolean>;
-  /** Two parts: the button does its own action, the arrow next to it opens the menu. Without it the whole button opens the menu. */
+  /**
+   * With a menu, the button keeps its own action and an arrow next to it opens the menu. Without it, the whole button
+   * opens the menu.
+   */
   split?: Bind<boolean>;
-  /** The menu's commands. */
+  /** The menu commands. */
   menu?: Bind<readonly MenuItem[]>;
-  /** Any content to open instead of a menu (a picker, a small form). */
+  /** Any content to open instead of a menu, such as a picker or a small form. */
   dropDown?: Bind<ComponentBase | null | undefined>;
-  /** A menu item was chosen, after the item's own `click`. */
+  /** Occurs when a menu item is selected, after the item's own `click`. */
   onItemClick?: (e: MenuItemClickEventArgs) => void;
 }

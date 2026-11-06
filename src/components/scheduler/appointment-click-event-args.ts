@@ -1,13 +1,13 @@
 import type { EventArgs } from '@motifx/core';
 import type { Scheduler } from './Scheduler';
 
-/** An appointment was clicked (or double-clicked); `cancel = true` stops what the scheduler does with it. */
+/** Occurs when an appointment is clicked or double-clicked. Set `cancel = true` to skip the default action. */
 export interface AppointmentClickEventArgs<T = unknown> extends EventArgs {
   appointment: T;
-  /** Where it was clicked: the day of the piece of it shown there. */
+  /** The day of the displayed part that was clicked. */
   start: Date;
   end: Date;
-  /** The resource values of the group it was clicked in; `null` without groups. */
+  /** The resource values of the clicked group. `null` without groups. */
   group: Record<string, unknown> | null;
   event: MouseEvent | KeyboardEvent;
   source: Scheduler<T>;

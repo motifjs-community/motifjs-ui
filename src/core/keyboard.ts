@@ -20,22 +20,22 @@ import { windowStack } from './window-stack';
 // A shortcut may be two chords in a row (`Ctrl+K W`): the first one waits for
 // the second, and the key after it is taken either way.
 
-/** What `addShortcut` takes besides the chord and the handler. */
+/** The options of `addShortcut`, besides the chord and the handler. */
 export interface ShortcutOptions {
   /**
-   * Only while focus is inside this component (and it is enabled). Without
-   * it the shortcut is app-wide.
+   * Limits the shortcut to times when focus is inside this component and it is
+   * enabled. Without it, the shortcut is application-wide.
    */
   scope?: ComponentBase;
   /**
-   * Also when focus is in a text field. By default a chord without Ctrl, Alt
-   * or Meta (Delete, a letter, Escape…) leaves text fields alone; F-keys and
-   * chords with those modifiers always work.
+   * Also enables the shortcut in text fields. By default, a chord without Ctrl, Alt
+   * or Meta (Delete, a letter, Escape…) does not fire in text fields. Function keys
+   * and chords with those modifiers always work.
    */
   inEditable?: boolean;
 }
 
-/** Return `false` from a handler to let the key go on (to a less specific shortcut, then the page). */
+/** Return `false` from a handler to pass the key on, to a less specific shortcut and then the page. */
 export type ShortcutHandler = (e: KeyboardEvent) => void | boolean;
 
 interface Chord {
@@ -144,12 +144,11 @@ function typesWithAltGr(chord: Chord, e: KeyboardEvent): boolean {
 }
 
 /**
- * Registers a keyboard shortcut. App-wide by default (except while a modal
- * form is open, and except plain keys while focus is in a window); with
- * `scope`, only while focus is inside that component. Returns the function
- * that removes it. `Control.addShortcut` does the same and removes it when the
- * control is disposed. Two chords split by a space are pressed one after the
- * other (`'Ctrl+K W'`).
+ * Registers a keyboard shortcut. It is application-wide by default, except while a
+ * modal form is open and for plain keys while focus is in a window. With `scope`, it
+ * is active only while focus is inside that component. Returns a function that
+ * removes it. `Control.addShortcut` does the same and removes it when the control
+ * is disposed. Two chords separated by a space are pressed in sequence (`'Ctrl+K W'`).
  *
  * @example
  * const remove = addShortcut('Ctrl+S', () => model.save());

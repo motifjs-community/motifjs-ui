@@ -92,10 +92,10 @@ interface BarLook {
 }
 
 /**
- * A group of a `TabDocumentManager`: a strip of tabs and the active document's content under it.
- * The manager makes and closes groups (`split`, `closeGroup`); a group is a container, so focus
- * comes back to where it was when the group is focused again. Pinned tabs come first, in a row of
- * their own when the manager says so.
+ * A group of a `TabDocumentManager`: a strip of tabs with the active document's content below it.
+ * The manager creates and closes groups (`split`, `closeGroup`). A group is a container, so focus
+ * returns to where it was when the group receives focus again. Pinned tabs come first, on their
+ * own row when `pinnedTabsOnSeparateRow` is on.
  */
 export class TabGroup extends FocusContainer<HTMLDivElement> {
   constructor(manager: TabDocumentManager) {
@@ -136,25 +136,25 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   get manager(): TabDocumentManager {
     return this.parts.manager;
   }
-  /** The documents, in strip order: the pinned ones first. Reactive. */
+  /** The documents in strip order, with the pinned documents first. Reactive. */
   get documents(): readonly TabDocument[] {
     return this.getProperty<readonly TabDocument[] | undefined>('documents') ?? NONE;
   }
-  /** Reactive. */
+  /** The group's active document. Reactive. */
   get activeDocument(): TabDocument | null {
     return this.getProperty<TabDocument | null | undefined>('activeDocument') ?? null;
   }
-  /** The documents, the one used last first. Reactive. */
+  /** The documents, with the most recently used first. Reactive. */
   get recentDocuments(): readonly TabDocument[] {
     return this.getProperty<readonly TabDocument[] | undefined>('recent') ?? NONE;
   }
-  /** The preview document, if the group has one. Reactive. */
+  /** The document of the group's preview tab, if it has one. Reactive. */
   get previewDocument(): TabDocument | null {
     return this.documents.find((d) => d.preview) ?? null;
   }
   /**
-   * A locked group takes no documents opened without naming it. Set it through `lock()` and
-   * `unlock()` to be asked and told. Reactive.
+   * A locked group does not receive documents opened without naming the group. Use `lock()` and
+   * `unlock()` so that events are raised. Reactive.
    */
   get locked(): boolean {
     return !!this.getProperty<boolean>('locked');
@@ -162,48 +162,48 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
   set locked(value: Bind<boolean>) {
     this.assignProperty('locked', value, Boolean);
   }
-  /** Dragged documents and groups may be dropped into it and beside it. Default `true`. Reactive. */
+  /** Allows drops into and beside the group. The default is `true`. Reactive. */
   get allowDrop(): boolean {
     return this.getProperty<boolean | undefined>('allowDrop') !== false;
   }
   set allowDrop(value: Bind<boolean>) {
     this.assignProperty('allowDrop', value, Boolean);
   }
-  /** Where a drop on its content may go, over the manager's `dropSides`; `null` follows the manager. Reactive. */
+  /** The group's own drop sides, which override the manager's `dropSides`. `null` uses the manager's. Reactive. */
   get dropSides(): readonly TabDropSide[] | null {
     return this.getProperty<readonly TabDropSide[] | null | undefined>('dropSides') ?? null;
   }
   set dropSides(value: Bind<readonly TabDropSide[] | null>) {
     this.assignProperty('dropSides', value);
   }
-  /** Whether it is the manager's active group. Reactive. */
+  /** Indicates whether it is the manager's active group. Reactive. */
   get isActive(): boolean {
     return !!this.getProperty<boolean>('isActive');
   }
-  /** Reactive. */
+  /** Indicates whether the group is maximized. Reactive. */
   get isMaximized(): boolean {
     return !!this.getProperty<boolean>('isMaximized');
   }
   get isEmpty(): boolean {
     return this.documents.length === 0;
   }
-  /** The floating window it is in, `null` elsewhere. Reactive. */
+  /** The floating window containing it, otherwise `null`. Reactive. */
   get window(): TabWindow | null {
     return this.getProperty<TabWindow | null | undefined>('window') ?? null;
   }
-  /** The dock area it is in, `null` elsewhere. Reactive. */
+  /** The dock area containing it, otherwise `null`. Reactive. */
   get dockArea(): TabDockArea | null {
     return this.getProperty<TabDockArea | null | undefined>('dockArea') ?? null;
   }
-  /** The new browser window it is in, `null` in the main window. Reactive. */
+  /** The new browser window containing it, or `null` in the main window. Reactive. */
   get browserWindow(): TabBrowserWindow | null {
     return this.getProperty<TabBrowserWindow | null | undefined>('browserWindow') ?? null;
   }
-  /** Its place in the manager's `groups`, from 0. Reactive. */
+  /** Its position in the manager's `groups`, starting from 0. Reactive. */
   get index(): number {
     return this.manager.groups.indexOf(this);
   }
-  /** How many of its tabs are not fully in sight in the strip now. Reactive. */
+  /** The number of its tabs that are not fully visible in the strip. Reactive. */
   get hiddenTabCount(): number {
     return this.getProperty<number | undefined>('hiddenTabs') ?? 0;
   }
@@ -220,7 +220,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     return this.manager.closeAll(this);
   }
 
-  /** Closes its documents, then the group. */
+  /** Closes its documents, and then the group. */
   close(): Promise<boolean> {
     return this.manager.closeGroup(this);
   }
@@ -241,7 +241,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     return this.manager.unlock(this);
   }
 
-  /** Makes it the active group and focuses what had focus in it last. */
+  /** Makes it the active group and sets focus on what last had focus in it. */
   override focus(): boolean {
     return this.manager.focusGroup(this);
   }

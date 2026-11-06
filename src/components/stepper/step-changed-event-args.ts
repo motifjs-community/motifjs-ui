@@ -1,12 +1,12 @@
 import type { Stepper } from './Stepper';
 
-/** The current step changed. */
+/** Provides data for the event that occurs after the current step changes. */
 export interface StepChangedEventArgs {
     index: number;
-    /** The item as given; `null` when there is no current step. */
+    /** The item as provided, or `null` if there is no current step. */
     item: unknown;
     previous: number;
-    /** By a click on a step, else programmatically. */
+    /** `true` for a click on a step, and `false` for a programmatic change. */
     byUser: boolean;
     source: Stepper;
 }

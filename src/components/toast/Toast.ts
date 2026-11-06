@@ -48,9 +48,9 @@ interface Parts {
 const PARTS = Symbol('mx.toast');
 
 /**
- * A short notification: a tone glyph, a title and a text, an optional action button and a
- * close button. It closes by itself after `duration` (the timer stops while the pointer or
- * focus is on it, or the page is hidden). Usually made with `toast.show()`, which returns it;
+ * A short notification with a tone glyph, a title and a message, an optional action button and a
+ * close button. It closes automatically after `duration`, and the timer stops while the pointer or
+ * focus is on it, or the page is hidden. `toast.show()` usually creates it and returns it, and
  * a closed toast is disposed.
  *
  * @example
@@ -125,12 +125,12 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     this.assignProperty('position', value);
   }
 
-  /** The toaster showing it, or holding it until there is room. */
+  /** The toaster that shows the toast, or that holds it until there is room. */
   get toaster(): Toaster | null {
     return this.parts.toaster;
   }
 
-  /** Settles with the reason when it closes. */
+  /** Resolves with the reason when the toast closes. */
   get closed(): Promise<ToastCloseReason> {
     return this.parts.closed;
   }
@@ -155,7 +155,7 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     else void this.dispose();
   }
 
-  /** Changes what it shows (any of the props) and starts its time again; it is read out again. */
+  /** Changes any of the props, restarts the timer and announces the toast again. */
   update(options: ToastProps): void {
     const self = this as unknown as Record<string, unknown>;
     for (const name of ['text', ...OWN] as const) if (name in options) self[name] = options[name];
@@ -202,7 +202,7 @@ export class Toast extends Control<HTMLDivElement, ToastProps> {
     parts.line?.play();
   }
 
-  /** The words a screen reader says when it appears. */
+  /** The text screen readers announce when it appears. */
   get announcement(): string {
     const title = this.peekProperty<string>('title') ?? '';
     const text = this.peekProperty<string>('text') ?? '';

@@ -47,9 +47,9 @@ function count(value: number | null | undefined, fallback: number): number {
 }
 
 /**
- * A text field of several lines: a placeholder, a box that grows with the text or that the user
- * can drag bigger, a character counter, a clear button and validation. `x-model` binds the value;
- * Ctrl+Enter (Cmd+Enter) reports `onEnter`, Enter alone starts a new line.
+ * A multi-line text field with a placeholder, a box that grows with the text or that the user
+ * can resize, a character counter, a clear button and validation. `x-model` provides two-way binding.
+ * Ctrl+Enter (Cmd+Enter) raises `onEnter`, and Enter alone starts a new line.
  *
  * @example
  * <TextArea label="&Comment" autoGrow maxRows={8} maxLength={500} showCounter x-model={() => this.form.comment} />
@@ -190,12 +190,12 @@ export class TextArea extends Field<string, TextAreaProps> {
     return this.areaParts.enter.event;
   }
 
-  /** Selects the whole text. */
+  /** Selects all text. */
   select(): void {
     this.textAreaElement.select();
   }
 
-  /** Empties the field as its clear button does. */
+  /** Clears the field, as the clear button does. */
   clear(): void {
     this.commit('');
   }

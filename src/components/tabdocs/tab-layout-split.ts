@@ -1,7 +1,7 @@
 import type { LayoutOrientation } from '../layout/layout-orientation';
 import type { TabLayoutNode } from './tab-layout-node';
 
-/** Groups side by side (`horizontal`) or one under the other, each with its share of the room. */
+/** Groups side by side (`horizontal`) or one above the other, each with its share of the space. */
 export interface TabLayoutSplit {
   kind: 'split';
   orientation: LayoutOrientation;

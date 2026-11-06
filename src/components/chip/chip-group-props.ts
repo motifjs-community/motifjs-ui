@@ -5,13 +5,13 @@ import type { ChipGroupValueChangedEventArgs } from './chip-group-value-changed-
 
 /** Props of `ChipGroup`. Each prop is also a settable property, and a function is tracked. */
 export interface ChipGroupProps extends ControlProps {
-  /** Default `'none'`. */
+  /** The default is `'none'`. */
   selection?: Bind<ChipGroupSelection>;
-  /** The selected chip's value (`single`), or an array of the selected ones' values (`multiple`). */
+  /** The value of the selected chip (`single`), or an array of selected values (`multiple`). */
   value?: Bind<unknown>;
-  /** `false` keeps the chips on one line that scrolls. Default `true`. */
+  /** `false` keeps the chips on one line that scrolls. The default is `true`. */
   wrap?: Bind<boolean>;
-  /** What screen readers call the group ("Filters"). */
+  /** The accessible name of the group ("Filters"). */
   label?: Bind<string>;
   onValueChanged?: (e: ChipGroupValueChangedEventArgs) => void;
 }

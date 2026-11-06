@@ -1,4 +1,4 @@
-// PDF export for the DataGrid, the standard `pdfExporter` way: the app brings jsPDF (an optional
+// PDF export for the DataGrid: the app brings jsPDF (an optional
 // peer dependency), this entry only draws on the document it is given. Apps that do not export to
 // PDF never load it.
 export { exportDataGrid } from './export-data-grid';

@@ -25,9 +25,9 @@ interface Told {
 }
 
 /**
- * The failed fields of a `ValidationGroup`, one line each with the field's label and its message, under a header;
- * a click on a line focuses the field. It draws itself again whenever a field of the group is checked, and stays
- * out of sight while nothing has failed.
+ * The invalid fields of a `ValidationGroup`, one line each with the field label and its message, below a header.
+ * Clicking a line moves focus to the field. It redraws whenever a field of the group is validated, and stays
+ * hidden while nothing is invalid.
  *
  * @example
  * const group = new ValidationGroup();
@@ -95,22 +95,22 @@ export class ValidationSummary extends Control<HTMLDivElement, ValidationSummary
         this.assignProperty('focusOnClick', value);
     }
 
-    /** A line was pressed (`target`, `text`). */
+    /** Occurs when a line is clicked (`target`, `text`). */
     get onItemClick(): MotifEvent<SummaryItemClickEventArgs> {
         return this.itemClick.event;
     }
 
-    /** The failed targets listed now, in the group's order. */
+    /** The invalid targets currently listed, in group order. */
     get failed(): readonly ValidationTarget[] {
         return this.rows.map(row => row.target);
     }
 
-    /** How many lines there are. */
+    /** The number of lines. */
     get count(): number {
         return this.rows.length;
     }
 
-    /** Draws the lines again from the fields as they are now. */
+    /** Redraws the lines from the current state of the fields. */
     refresh(): void {
         this.draw();
     }

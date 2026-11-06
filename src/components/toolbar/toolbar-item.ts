@@ -7,31 +7,31 @@ import type { ToolbarItemOverflow } from './toolbar-item-overflow';
 import type { ToolbarItemType } from './toolbar-item-type';
 
 /**
- * One item of `Toolbar.items`, drawn as a `Button` (or a separator). Every field but `click` and
- * `data` is a value or a function: a function is tracked.
+ * One item of `Toolbar.items`, drawn as a `Button` or a separator. Every field except `click` and
+ * `data` accepts a value or a function, and a function is tracked.
  */
 export interface ToolbarItem {
-  /** Default `'button'`. */
+  /** The default is `'button'`. */
   type?: Bind<ToolbarItemType>;
-  /** The caption; `&Bold` makes Alt+B press it. */
+  /** The caption. `&Bold` makes Alt+B click it. */
   text?: Bind<string>;
   icon?: Bind<IconSource | null | undefined>;
-  /** A tooltip; the name of a button that only has an icon. */
+  /** A tooltip, which also names a button that only has an icon. */
   hint?: Bind<string>;
-  /** The color of the button, by what it does. Default `'standard'`. */
+  /** The color of the button, according to its action. The default is `'standard'`. */
   tone?: Bind<ButtonTone>;
-  /** A toggle's state. Given as a function, the item follows it: `click` changes what it reads. */
+  /** The state of a toggle. As a function, the item tracks it, and `click` changes the value it reads. */
   pressed?: Bind<boolean>;
-  /** `false` dims the item; it cannot be pressed. Default `true`. */
+  /** `false` dims the item, and it cannot be clicked. The default is `true`. */
   enabled?: Bind<boolean>;
-  /** `false` leaves the item out. Default `true`. */
+  /** `false` removes the item. The default is `true`. */
   visible?: Bind<boolean>;
   /** The commands of a `menu` item. */
   menu?: Bind<readonly MenuItem[]>;
-  /** Whether it may move into the "more" menu. Default `'auto'`. */
+  /** Controls whether the item can move into the overflow menu. The default is `'auto'`. */
   overflow?: Bind<ToolbarItemOverflow>;
-  /** Runs when the item is pressed, in the bar or in the "more" menu. */
+  /** Occurs when the item is clicked, in the bar or in the overflow menu. */
   click?: (e: ToolbarItemClickEventArgs) => void;
-  /** The app's own value for the item. */
+  /** A custom application value for the item. */
   data?: unknown;
 }

@@ -30,10 +30,10 @@ interface Look {
 }
 
 /**
- * A row of buttons that belong together: with `selection`, a segmented choice (`single`: one of them,
- * `multiple`: each on and off), else a set of actions (`onItemClick`). The buttons are the kit's own;
- * their look in a group is the design language's, attached by default. One Tab stop: the arrow keys,
- * Home and End move between the buttons, Space and Enter press them.
+ * A row of related buttons. With `selection`, it is a segmented choice (`single` selects one button, `multiple`
+ * toggles each one). Otherwise, it is a set of actions (`onItemClick`). These are kit buttons, and their appearance in
+ * a group comes from the design language, attached by default. The group is one Tab stop: the arrow keys, Home and End
+ * move between the buttons, and Space and Enter click them.
  *
  * @example
  * <ButtonGroup label="Alignment" items={['Left', 'Center', 'Right']} x-model={() => this.doc.align} />
@@ -157,22 +157,22 @@ export class ButtonGroup<T = unknown> extends Control<HTMLDivElement, ButtonGrou
     this.assignProperty('label', value);
   }
 
-  /** The value changed, by the user or by code (`e.byUser`). */
+  /** Occurs when the value changes, either through user input or programmatically (`e.byUser`). */
   get onValueChanged(): MotifEvent<ButtonGroupValueChangedEventArgs<T>> {
     return this.valueChanged.event;
   }
 
-  /** A button was pressed (with any selection). */
+  /** Occurs when a button is clicked, with any selection mode. */
   get onItemClick(): MotifEvent<ButtonGroupItemClickEventArgs<T>> {
     return this.itemClicked.event;
   }
 
-  /** The buttons, in the order of the items (hidden ones too). */
+  /** The kit buttons in the group, in item order, including hidden ones. */
   get buttons(): readonly Button[] {
     return this.buttonList;
   }
 
-  /** Whether the button of `value` is chosen or on. */
+  /** Indicates whether the button for `value` is selected or on. */
   isSelected(value: unknown): boolean {
     const selection = this.peekProperty<ButtonGroupSelection>('selection') ?? 'single';
     const current = this.peekProperty<unknown>('value');
@@ -181,7 +181,7 @@ export class ButtonGroup<T = unknown> extends Control<HTMLDivElement, ButtonGrou
     return false;
   }
 
-  /** Reads the items again after they were changed in place. */
+  /** Re-reads the items after they have been changed in place. */
   refresh(): void {
     this.renderItems();
   }

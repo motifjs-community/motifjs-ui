@@ -3,8 +3,8 @@ import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabWindow } from './TabWindow';
 
 /**
- * A floating window or a new browser window is gone: closed, docked (its documents went back),
- * left without documents, or moved (a floating window's layout went into a new window).
+ * Occurs when a floating window or new browser window is closed, docked (its documents returned), left
+ * without documents, or moved (a floating window's layout moved into a new window).
  */
 export interface TabWindowClosedEventArgs {
   window: TabWindow | TabBrowserWindow;

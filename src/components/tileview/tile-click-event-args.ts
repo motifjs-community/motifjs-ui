@@ -1,9 +1,9 @@
 import type { TileView } from './TileView';
 
-/** A click on a tile that was not a drag. */
+/** Provides data for the event that occurs when a tile is clicked without dragging. */
 export interface TileClickEventArgs {
     index: number;
-    /** The item as given. */
+    /** The item as provided. */
     item: unknown;
     source: TileView;
     event: Event;

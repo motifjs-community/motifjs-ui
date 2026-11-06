@@ -1,6 +1,6 @@
 import type { MaskChar } from './mask-char';
 
-/** `0` a digit, `9` a digit that may stay empty, `a` a letter, `*` a letter or a digit. */
+/** `0` is a digit, `9` is an optional digit, `a` is a letter, and `*` is a letter or a digit. */
 export const maskChars: Readonly<Record<string, MaskChar>> = {
   '0': /\d/,
   '9': /\d/,

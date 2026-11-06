@@ -3,64 +3,69 @@ import type { GridRowDragEventArgs } from './grid-row-drag-event-args';
 import type { GridRowDropEventArgs } from './grid-row-drop-event-args';
 
 /**
- * Rows moved by dragging them (`rowDragging`): within the grid (`allowReordering`),
- * onto a row (`allowDropInsideItem`), or to another grid of the same `group`. The grid shows where
- * the row would land and tells it in the events; your handlers move the data. Rows also move with
- * the keyboard (`moveUpKeys`, `moveDownKeys`) and with `moveRow()`. Every field but the handlers and
- * `dragTemplate` is a value or a tracked function; read and change them later through
- * `grid.rowDragging`.
+ * Moves rows by dragging: within the grid (`allowReordering`), onto a row (`allowDropInsideItem`), or
+ * to another grid of the same `group`. The grid shows where the row would land and reports it in the
+ * events, and your handlers move the data. Rows also move with the keyboard (`moveUpKeys`,
+ * `moveDownKeys`) and with `moveRow()`. Every field except the handlers and `dragTemplate` is a value
+ * or a tracked function. Read and change them later through `grid.rowDragging`.
  */
 export interface GridRowDragging<T = any> {
-  /** Rows move within the grid. Default `false`. */
+  /** Allows rows to move within the grid. The default is `false`. */
   allowReordering?: Bind<boolean>;
-  /** A row can be dropped onto another (the middle of a row), for trees and details. Default `false`. */
+  /** Allows a row to be dropped onto another (the middle of a row), for trees and details. The default is `false`. */
   allowDropInsideItem?: Bind<boolean>;
-  /** Where a drop would land: a line between rows (`'indicate'`), or the rows making room for it (`'push'`, not with `allowDropInsideItem`). Default `'indicate'`. */
+  /**
+   * How the drop position is shown: a line between rows (`'indicate'`), or the rows making room for it
+   * (`'push'`, which does not apply with `allowDropInsideItem`). The default is `'indicate'`.
+   */
   dropFeedbackMode?: Bind<'indicate' | 'push'>;
-  /** A column of drag icons to drag rows by; off, the whole row is dragged. Default `true`. */
+  /** Shows a column of drag icons to drag rows by. Otherwise, the whole row is dragged. The default is `true`. */
   showDragIcons?: Bind<boolean>;
-  /** A CSS selector of what a row is dragged by, instead of the drag icon or the whole row. Default `''`. */
+  /** A CSS selector of what a row is dragged by, in place of the drag icon or the whole row. The default is `''`. */
   handle?: Bind<string>;
-  /** Grids of the same group take each other's rows (`onAdd` on the one dropped on, `onRemove` on the one it came from). */
+  /** Grids of the same group accept each other's rows (`onAdd` on the one dropped on, `onRemove` on the one it came from). */
   group?: Bind<string | undefined>;
-  /** Anything of yours, handed to the events as `fromData` / `toData`. */
+  /** Custom data, passed to the events as `fromData` and `toData`. */
   data?: Bind<unknown>;
-  /** Where the copy of the row may go: `'vertical'`, `'horizontal'` or `'both'`. Default `'both'`. */
+  /** The directions the copy of the row can move: `'vertical'`, `'horizontal'` or `'both'`. The default is `'both'`. */
   dragDirection?: Bind<'both' | 'vertical' | 'horizontal'>;
-  /** An element (or a CSS selector) the dragged row stays inside. Default: none. */
+  /** An element or CSS selector the dragged row stays inside. By default, none. */
   boundary?: Bind<string | HTMLElement | undefined>;
-  /** An element (or a CSS selector) the copy of the row is shown in. Default: the grid. */
+  /** An element or CSS selector the copy of the row appears in. The default is the grid. */
   container?: Bind<string | HTMLElement | undefined>;
-  /** Where the copy sits from the pointer, `{ x, y }` (or `'x y'`). Default: where the row was taken, kept level with the rows. */
+  /**
+   * The offset of the copy from the pointer, `{ x, y }` or `'x y'`. By default, where the row was grabbed,
+   * kept level with the rows.
+   */
   cursorOffset?: Bind<{ x?: number; y?: number } | string | undefined>;
-  /** Content of your own instead of the copy of the row: a component, an element or a text. */
+  /** Custom content in place of the copy of the row: a component, an element or text. */
   dragTemplate?: (e: { itemData: T; itemElement: HTMLElement }) => unknown;
-  /** The rows scroll while the pointer is near their top or bottom edge. Default `true`. */
+  /** The rows scroll while the pointer is near their top or bottom edge. The default is `true`. */
   autoScroll?: Bind<boolean>;
-  /** Pixels scrolled per frame at the edge. Default `30`. */
+  /** The pixels scrolled per frame at the edge. The default is `30`. */
   scrollSpeed?: Bind<number>;
-  /** How near the edge, in pixels, scrolling starts. Default `60`. */
+  /** The distance from the edge, in pixels, at which scrolling starts. The default is `60`. */
   scrollSensitivity?: Bind<number>;
-  /** The keys move the active row too. Default `true`. */
+  /** Allows keys to move the active row. The default is `true`. */
   keyboard?: Bind<boolean>;
-  /** Keys that move the active row up one place. Default `['Ctrl+Shift+ArrowUp']`. */
+  /** Keys that move the active row up one place. The default is `['Ctrl+Shift+ArrowUp']`. */
   moveUpKeys?: Bind<readonly string[]>;
-  /** Keys that move the active row down one place. Default `['Ctrl+Shift+ArrowDown']`. */
+  /** Keys that move the active row down one place. The default is `['Ctrl+Shift+ArrowDown']`. */
   moveDownKeys?: Bind<readonly string[]>;
-  /** Width of the drag icon column, in pixels. Default `36`. */
+  /** The width of the drag icon column, in pixels. The default is `36`. */
   columnWidth?: Bind<number>;
-  /** A row is about to be dragged; `cancel` keeps it in place. */
+  /** Occurs before a row is dragged. Set `cancel = true` to keep it in place. */
   onDragStart?: (e: GridRowDragEventArgs<T>) => void;
-  /** The row moved under the pointer; `cancel` takes no drop there. */
+  /** Occurs when the row moves under the pointer. Set `cancel = true` to accept no drop there. */
   onDragMove?: (e: GridRowDragEventArgs<T>) => void;
-  /** The place the row would land changed; `cancel` takes no drop there. */
+  /** Occurs when the position where the row would land changes. Set `cancel = true` to accept no drop there. */
   onDragChange?: (e: GridRowDragEventArgs<T>) => void;
-  /** The row is about to be dropped; `cancel` drops nothing. */
+  /** Occurs before the row is dropped. Set `cancel = true` to drop nothing. */
   onDragEnd?: (e: GridRowDragEventArgs<T>) => void;
-  /** The row was dropped elsewhere in this grid: move it in the data. */
+  /** Occurs when the row is dropped elsewhere in this grid. Move it in the data. */
   onReorder?: (e: GridRowDropEventArgs<T>) => void;
-  /** A row of another grid was dropped on this one: add it to the data. */
+  /** Occurs when a row of another grid is dropped on this one. Add it to the data. */
   onAdd?: (e: GridRowDropEventArgs<T>) => void;
-  /** This grid's row was dropped on another one: take it out of the data. */
+  /** Occurs when this grid's row is dropped on another grid. Remove it from the data. */
   onRemove?: (e: GridRowDropEventArgs<T>) => void;
 }

@@ -8,8 +8,8 @@ import type { ViewProps } from "./view-props";
 const OWN = ['key', 'title', 'lazy', 'keepAlive'] as const;
 
 /**
- * One page of a `MultiView`: the JSX children are its content, built when it is first in sight (see `lazy`), and
- * what `content` makes besides them.
+ * One page of a `MultiView`. The JSX children are its content, created when it first becomes visible (see `lazy`),
+ * together with what `content` creates.
  *
  * @example
  * <MultiView x-model={() => this.page}>
@@ -37,7 +37,7 @@ export class View extends Control<HTMLDivElement, ViewProps> {
 
     // Properties (see ViewProps).
 
-    /** The `key` prop (also when written as the JSX `key`), `''` without one. */
+    /** The `key` prop, also when written as the JSX `key`, or `''` if there is none. */
     get key(): string {
         const own = this.getProperty<string | undefined>('key');
         if (own !== undefined) return own;
@@ -54,7 +54,7 @@ export class View extends Control<HTMLDivElement, ViewProps> {
     set title(value: Bind<string>) {
         this.assignProperty('title', value);
     }
-    /** This view's own setting; `undefined` follows the multi-view. */
+    /** This view's own setting. `undefined` inherits from the multi-view. */
     get lazy(): boolean | undefined {
         return this.getProperty<boolean | undefined>('lazy');
     }
@@ -68,17 +68,17 @@ export class View extends Control<HTMLDivElement, ViewProps> {
         this.assignProperty('keepAlive', value);
     }
 
-    /** Whether it is the view in sight. */
+    /** Indicates whether it is the visible view. */
     get isSelected(): boolean {
         return !!this.owner && this.owner.selectedView === this;
     }
 
-    /** Whether its content has been built (see `lazy`). */
+    /** Indicates whether its content has been created (see `lazy`). */
     get contentBuilt(): boolean {
         return this.content.isBuilt;
     }
 
-    /** Brings the view into sight; `false` when it is hidden, disabled or not in a `MultiView`. */
+    /** Makes the view visible. Returns `false` if it is hidden, disabled or not in a `MultiView`. */
     select(): Promise<boolean> {
         return this.owner ? this.owner.select(this) : Promise.resolve(false);
     }

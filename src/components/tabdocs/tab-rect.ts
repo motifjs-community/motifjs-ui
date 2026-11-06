@@ -1,4 +1,4 @@
-/** A box on the screen, in pixels of the viewport: a floating window's place and size. */
+/** A box on the screen, in pixels of the viewport: a floating window's position and size. */
 export interface TabRect {
   x: number;
   y: number;

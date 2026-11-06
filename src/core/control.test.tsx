@@ -1,4 +1,5 @@
 import { Component, effect, reactive } from '@motifx/core';
+import { rescueTarget } from './enable';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../tests/helpers';
 import { TestButton } from '../../tests/controls';
@@ -398,5 +399,23 @@ describe('Control focus', () => {
     expect(runs).toBe(1);
     expect(c.items).toEqual([1, 2]);
     stop();
+  });
+});
+
+describe('rescueTarget', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('passes over an iframe, because keys inside it never reach the page', () => {
+    document.body.innerHTML = '<div id="area"><button></button></div><iframe></iframe><button id="next"></button>';
+    document.querySelector<HTMLElement>('#area button')!.focus();
+    expect(rescueTarget(document.getElementById('area')!)).toBe(document.getElementById('next'));
+  });
+
+  it('takes the iframe when nothing else is left', () => {
+    document.body.innerHTML = '<div id="area"><button></button></div><iframe></iframe>';
+    document.querySelector<HTMLElement>('#area button')!.focus();
+    expect(rescueTarget(document.getElementById('area')!)?.localName).toBe('iframe');
   });
 });

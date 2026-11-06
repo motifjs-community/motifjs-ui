@@ -3,7 +3,7 @@ import type { FilterBuilderCustomOperation } from './filter-builder-custom-opera
 import type { FilterBuilderField } from './filter-builder-field';
 import type { FilterBuilderGroupOperation } from './filter-builder-group-operation';
 
-/** What a `FilterBuilderModel` reads, each time it needs it. */
+/** The options a `FilterBuilderModel` reads, each time it needs them. */
 export interface FilterBuilderModelOptions {
   fields?: readonly FilterBuilderField[];
   customOperations?: readonly FilterBuilderCustomOperation[];

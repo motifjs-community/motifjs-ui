@@ -20,10 +20,10 @@ const maskOf = (icon: string | null | undefined): string =>
   !icon ? '' : /[:/.]/.test(icon) ? `url("${icon.replace(/"/g, '%22')}")` : `var(--mx-icon-${icon})`;
 
 /**
- * A row of stars to give a score, or to show one (`readOnly`): whole stars or halves (`step`), any number of them
- * (`max`). Under the pointer the stars show what a click would give; a click on the value chosen clears it. A field:
- * label, help text, rules and `x-model` work as in every field. Keyboard: the arrow keys change it by a step,
- * Home and End go to the ends, a digit gives that many stars, Delete clears.
+ * A row of stars for setting or showing a score (`readOnly`), with whole or half stars (`step`) and any number of them
+ * (`max`). On hover, the stars preview the score a click would set, and clicking the selected value clears it. This is
+ * a field, so the label, help text, rules and `x-model` work as in all fields. The arrow keys change the score by a
+ * step, Home and End move to the ends, a digit sets that many stars, and Delete clears it.
  *
  * @example
  * <Rating label="Your rating" x-model={() => this.review.stars} step={0.5} />

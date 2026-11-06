@@ -1,9 +1,12 @@
 import type { SpeedDial } from './SpeedDial';
 
-/** An action was pressed (or the main button, when it stands for the only action). */
+/**
+ * Provides data for the event that occurs when an action is clicked, or the main button when it performs the only
+ * action.
+ */
 export interface SpeedDialActionClickEventArgs {
     index: number;
-    /** The action as given. */
+    /** The action as provided. */
     action: unknown;
     source: SpeedDial;
     event: Event;

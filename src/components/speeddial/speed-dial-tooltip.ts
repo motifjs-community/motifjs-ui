@@ -1,4 +1,4 @@
 import type { TooltipProps } from '../tooltip/tooltip-props';
 
-/** Options of an action's tooltip: what a `Tooltip` takes, but its target. */
+/** The options of an action's tooltip: the `Tooltip` options, except its target. */
 export type SpeedDialTooltip = Omit<TooltipProps, 'target'>;

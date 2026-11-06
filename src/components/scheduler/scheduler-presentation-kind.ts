@@ -1,2 +1,2 @@
-/** How a scheduler shows itself now. */
+/** The scheduler's current presentation. */
 export type SchedulerPresentationKind = 'desktop' | 'tablet' | 'phone';

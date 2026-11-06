@@ -1,6 +1,6 @@
 /** A property of an iCalendar file as written: `NAME;PARAM=VALUE:value`. */
 export interface ICalendarProperty {
-  /** Upper case. */
+  /** The name in upper case. */
   name: string;
   /** Parameters by upper case name, without the quotes around a value. */
   params: Record<string, string>;

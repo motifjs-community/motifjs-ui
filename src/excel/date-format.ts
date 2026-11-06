@@ -2,8 +2,8 @@
 const SAMPLE = new Date(2009, 1, 3, 4, 5, 6, 789);
 
 /**
- * The Excel number format that shows a date as `format` (an `Intl.DateTimeFormat`) writes it, in
- * the same order with the same separators: `dd.mm.yyyy`, `m/d/yy h:mm AM/PM`, `d mmmm yyyy`. Month
+ * The Excel number format that displays a date as `format` (an `Intl.DateTimeFormat`) writes it, in
+ * the same order and with the same separators: `dd.mm.yyyy`, `m/d/yy h:mm AM/PM`, `d mmmm yyyy`. Month
  * and day names are Excel's own, in the language of the computer that opens the file.
  */
 export function excelDateFormat(format: Intl.DateTimeFormat): string {

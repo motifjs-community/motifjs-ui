@@ -3,13 +3,13 @@ import type { ControlProps } from '../../core/control';
 import type { WindowEdge } from '../../parts/window/window-edge';
 import type { ResizeEventArgs } from './resize-event-args';
 
-/** A side or a corner the box is resized from; `start` and `end` follow the reading direction. */
+/** An edge or corner the box is resized from. `start` and `end` follow the reading direction. */
 export type ResizeEdge = WindowEdge;
 
-/** Which handles the box has: every side and corner, the sides, the corners, or a list of them. */
+/** The handles of the box: all edges and corners, the edges, the corners, or a list of them. */
 export type ResizeHandles = 'all' | 'edges' | 'corners' | readonly ResizeEdge[];
 
-/** The box's size in pixels. */
+/** The size of the box, in pixels. */
 export interface ResizeSize {
     width: number;
     height: number;
@@ -17,29 +17,29 @@ export interface ResizeSize {
 
 /** Props of `Resizable`. Each prop is also a settable property, and a function is tracked. */
 export interface ResizableProps extends ControlProps {
-    /** Default `'all'`. */
+    /** The handles of the box. The default is `'all'`. */
     handles?: Bind<ResizeHandles>;
-    /** The least width and height, in pixels. Default `30`. */
+    /** The minimum width and height, in pixels. The default is `30`. */
     minWidth?: Bind<number>;
     minHeight?: Bind<number>;
-    /** The most width and height, in pixels; `null` for no limit. Default `null`. */
+    /** The maximum width and height, in pixels. `null` means no limit. The default is `null`. */
     maxWidth?: Bind<number | null>;
     maxHeight?: Bind<number | null>;
-    /** The box stays inside this: its parent, or an element it lies in. Default `null`, no limit. */
+    /** The area the box stays inside: its parent, or an element that contains it. The default is `null`, no limit. */
     area?: Bind<'parent' | HTMLElement | null>;
-    /** The width and the height keep their ratio. Default `false`. */
+    /** Preserves the ratio of width to height. The default is `false`. */
     keepAspectRatio?: Bind<boolean>;
-    /** Pixels an arrow key changes a side by. Default `10`. */
+    /** The number of pixels an arrow key changes an edge. The default is `10`. */
     step?: Bind<number>;
-    /** The width to start with, a CSS length or pixels. Without one the content decides. */
+    /** The initial width, as a CSS length or in pixels. Without it, the content determines the size. */
     width?: Bind<number | string | null>;
     height?: Bind<number | string | null>;
-    /** The size in pixels: given, it is applied; after every resize the new one is written to `x-model`. */
+    /** The size in pixels. When set, it is applied, and after every resize the new size is written to `x-model`. */
     size?: Bind<ResizeSize | null>;
-    /** A resize is about to begin from a handle; cancelable. */
+    /** Occurs before a resize starts from a handle. Set `cancel = true` to prevent it. */
     onResizeStarting?: (e: ResizeEventArgs) => void;
-    /** The box is being resized. */
+    /** Occurs while the box is being resized. */
     onResizing?: (e: ResizeEventArgs) => void;
-    /** A resize ended (the pointer let go, or a key moved a side). */
+    /** Occurs when a resize ends, either when the pointer is released or when a key moves an edge. */
     onResized?: (e: ResizeEventArgs) => void;
 }

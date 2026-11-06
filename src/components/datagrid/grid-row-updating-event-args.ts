@@ -1,6 +1,9 @@
 import type { EventArgs } from '@motifx/core';
 
-/** A row's changes are about to be sent; change `changes` to change what goes out, `cancel` keeps them unsent. */
+/**
+ * Occurs before a row's changes are sent. Change `changes` to change what is sent, or set
+ * `cancel = true` to keep them unsent.
+ */
 export interface GridRowUpdatingEventArgs<T, K = unknown> extends EventArgs {
   readonly key: K;
   /** The row as it was read. */

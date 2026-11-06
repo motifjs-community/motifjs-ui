@@ -1,2 +1,2 @@
-/** A part of a date the header filter lists a date column by: the deepest level of its year → month → day … tree. */
+/** The deepest level of the year → month → day … tree in a date column's header filter. */
 export type GridDateInterval = 'year' | 'quarter' | 'month' | 'day' | 'hour' | 'minute' | 'second';

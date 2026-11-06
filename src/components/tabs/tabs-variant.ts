@@ -1,2 +1,2 @@
-/** `line`: a line under the selected tab; `pill`: the selected tab is filled. */
+/** `line` shows a line under the selected tab, and `pill` fills the selected tab. */
 export type TabsVariant = 'line' | 'pill';

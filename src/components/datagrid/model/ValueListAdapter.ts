@@ -5,9 +5,9 @@ import type { ValueLoader } from './value-loader';
 const ALL = 1_000_000;
 
 /**
- * The values of a header filter as a data-layer adapter, so the kit's `ListBox` lists, searches and
- * scrolls them like any other data: a search arrives as a filter on `text` and goes to the loader,
- * a value asked by key is answered from what was loaded.
+ * Exposes the values of a header filter as a data-layer adapter, so the kit's `ListBox` lists, searches and
+ * scrolls them like any other data. A search arrives as a filter on `text` and is passed to the loader.
+ * A value requested by key is returned from the loaded values, or created with its text if it is not loaded.
  */
 export class ValueListAdapter extends data.DataAdapter<GridFilterValue, unknown> {
   private readonly known = new Map<string, GridFilterValue>();

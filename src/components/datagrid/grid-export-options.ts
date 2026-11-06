@@ -2,35 +2,42 @@ import type { GridLoadPanel } from './grid-load-panel';
 
 /** How `exportCsv()` and `exportRows()` write the rows. Every field has a default. */
 export interface GridExportOptions {
-  /** The text the cells show, or their values (numbers and dates in a neutral form). Default `'shown'`. */
+  /** The displayed text of the cells, or their values (numbers and dates in a neutral form). The default is `'shown'`. */
   values?: 'shown' | 'raw';
-  /** Only the selected rows ("all" selected over a server: the filter less the rows removed). Default `false`. */
+  /** Exports only the selected rows ("all" over a server is the filter minus the rows removed). The default is `false`. */
   selected?: boolean;
-  /** Rows asked for per request when the data comes from a server. Default `1000`. */
+  /** The rows per request when the data comes from a server. The default is `1000`. */
   pageSize?: number;
-  /** Told after each part arrives. */
+  /** Called after each part arrives. */
   onProgress?: (loaded: number, total: number) => void;
   signal?: AbortSignal;
-  /** The panel over the rows while it runs, with its progress and a button that stops it; `true` turns it on. Default off. */
+  /**
+   * The panel over the rows while the export runs, with its progress and a button that stops it. `true`
+   * enables it. By default, it is disabled.
+   */
   loadPanel?: boolean | GridLoadPanel;
-  /** CSV: the file name. Default: the grid's label, or `export`, with `.csv`. */
+  /** For CSV, the file name. The default is the grid's label, or `export`, with `.csv`. */
   fileName?: string;
-  /** CSV: save the file (else only the text is returned). Default `true`. */
+  /** For CSV, saves the file. Otherwise, only the text is returned. The default is `true`. */
   download?: boolean;
-  /** CSV: the field separator. Default: `;` where the locale writes decimals with a comma, else `,`. */
+  /** For CSV, the field separator. By default, `;` where the locale writes decimals with a comma, otherwise `,`. */
   separator?: string;
-  /** CSV, while grouped: a "Column: value" line before each group. Default `true`. */
+  /** For CSV while grouped, adds a "Column: value" line before each group. The default is `true`. */
   groups?: boolean;
   /**
-   * The summaries as the grid shows them: each group's footer line after its rows, the row of totals
-   * last (as objects of the same fields in `exportRows()`), and the group summary items on the group
-   * lines. Several items of one column share a cell, one per line. Not with `selected`. Default `true`.
+   * Includes the summaries as the grid displays them: each group's footer line after its rows, the
+   * totals row last (as objects with the same fields in `exportRows()`), and the group summary items on
+   * the group lines. Several items of one column share a cell, one per line. This does not apply with
+   * `selected`. The default is `true`.
    */
   summaries?: boolean;
-  /** CSV: a first line of column titles. Default `true`. */
+  /** For CSV, adds a first line of column titles. The default is `true`. */
   headers?: boolean;
-  /** CSV: start with a byte order mark so spreadsheets read UTF-8. Default `true`. */
+  /** For CSV, starts with a byte order mark so that spreadsheets read UTF-8. The default is `true`. */
   bom?: boolean;
-  /** CSV: text that a spreadsheet would run as a formula (`=`, `+`, `-`, `@`) gets a `'` in front. Default `true`. */
+  /**
+   * For CSV, prefixes text that a spreadsheet would run as a formula (`=`, `+`, `-`, `@`) with a `'`. The
+   * default is `true`.
+   */
   escapeFormulas?: boolean;
 }

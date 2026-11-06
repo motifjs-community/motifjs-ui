@@ -10,9 +10,9 @@ export const TARGETS = new Set<DropTarget>();
 const OWN = ['group'] as const;
 
 /**
- * A place a `Draggable` of its group can be dropped on: marked while a drag of the group is under way and while
- * the draggable is over it; `onDragEntering` may refuse it, `onDropped` tells what was dropped, with its `data`. The JSX
- * children are its content; what a drop does to your data is yours.
+ * An area that accepts a `Draggable` of its group. It is marked while a drag from the group is in progress and
+ * while the draggable is over it. `onDragEntering` can reject the draggable, and `onDropped` reports what was
+ * dropped, with its `data`. The JSX children are its content. Your code decides what a drop does to the data.
  *
  * @example
  * <DropTarget group="cards" onDropped={e => this.board.move(e.data as Card, 'done')}>…</DropTarget>
@@ -45,22 +45,22 @@ export class DropTarget extends Control<HTMLDivElement, DropTargetProps> {
         this.assignProperty('group', value);
     }
 
-    /** A draggable came over it (`draggable`, `data`); `cancel` refuses it. */
+    /** Occurs when a draggable enters (`draggable`, `data`). Set `cancel = true` to reject it. */
     get onDragEntering(): MotifEvent<DropEventArgs> {
         return this.entered.event;
     }
 
-    /** A draggable left it. */
+    /** Occurs when the draggable leaves. */
     get onDragLeaving(): MotifEvent<DropEventArgs> {
         return this.left.event;
     }
 
-    /** A draggable was dropped on it. */
+    /** Occurs when a draggable is dropped on it. */
     get onDropped(): MotifEvent<DropEventArgs> {
         return this.dropped.event;
     }
 
-    /** Whether it takes the draggables of `group`. */
+    /** Indicates whether it accepts the draggables of `group`. */
     takes(group: string | null): boolean {
         return this.isEnabled && this.group === group;
     }

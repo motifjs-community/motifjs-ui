@@ -5,50 +5,62 @@ import type { SpeedDialActionClickEventArgs } from './speed-dial-action-click-ev
 import type { SpeedDialEventArgs } from './speed-dial-event-args';
 import type { SpeedDialTooltip } from './speed-dial-tooltip';
 
-/** How the actions lie: in a line from the main button, or on a circle, a half or a quarter of one around it. */
+/** How the actions are arranged: in a line from the main button, or on a full, half or quarter circle around it. */
 export type SpeedDialLayout = 'linear' | 'circle' | 'semi-circle' | 'quarter-circle';
 
-/** Where the actions go from the main button. A line takes the first word of a diagonal. */
+/** The direction the actions open in from the main button. A line uses the first part of a diagonal. */
 export type SpeedDialDirection = 'up' | 'down' | 'start' | 'end' | 'up-start' | 'up-end' | 'down-start' | 'down-end';
 
-/** A corner, an edge's middle or the centre of what it is placed in, or `inline` in the flow of the page. */
+/** A corner, the middle of an edge or the center of the container, or `inline` to stay in the page flow. */
 export type SpeedDialPosition = 'bottom-end' | 'bottom-start' | 'top-end' | 'top-start' | 'bottom' | 'top' | 'start' | 'end' | 'center' | 'inline';
 
-/** What `position` is measured in: the viewport, or the nearest positioned parent. */
+/** The reference for `position`: the viewport, or the nearest positioned ancestor. */
 export type SpeedDialRelativeTo = 'viewport' | 'parent';
 
 /** Props of `SpeedDial`. Each prop is also a settable property, and a function is tracked. */
 export interface SpeedDialProps extends ControlProps {
-    /** The actions, in the order they fan out. With one shown, the main button does it itself. */
+    /** The actions, in order. If one is visible, the main button performs it directly. */
     actions?: Bind<readonly SpeedDialAction[]>;
-    /** The main button's glyph. Default `'plus'`. */
+    /** The glyph of the main button. The default is `'plus'`. */
     glyph?: Bind<string>;
-    /** The main button's glyph while the actions are open. Default `'dismiss'`. */
+    /** The glyph of the main button while the actions are open. The default is `'dismiss'`. */
     openGlyph?: Bind<string>;
-    /** What screen readers call the main button, and its text when `extended`. Default: the kit's "Actions". */
+    /**
+     * The accessible name of the main button, and its text when `extended` is set. The default is the kit's "Actions"
+     * string.
+     */
     text?: Bind<string>;
-    /** The main button shows its `text` beside the glyph. Default `false`. */
+    /** Shows `text` next to the glyph on the main button. The default is `false`. */
     extended?: Bind<boolean>;
-    /** Default `'linear'`. */
+    /** The default is `'linear'`. */
     layout?: Bind<SpeedDialLayout>;
-    /** Pixels from the main button's centre to the actions' centres, around it. Default: just enough to keep them apart. */
+    /**
+     * In circular layouts, the distance in pixels from the center of the main button to the center of each action.
+     * By default, it is just large enough to keep the actions apart.
+     */
     radius?: Bind<number | null>;
-    /** Default: away from the edges `position` names; `'up'` in the centre and inline. */
+    /** By default, the actions open away from the edges named by `position`, or `'up'` when centered or inline. */
     direction?: Bind<SpeedDialDirection>;
-    /** Default `'bottom-end'`. */
+    /** The default is `'bottom-end'`. */
     position?: Bind<SpeedDialPosition>;
-    /** Default `'viewport'`. */
+    /** The default is `'viewport'`. */
     relativeTo?: Bind<SpeedDialRelativeTo>;
-    /** The actions are open. `x-model` binds it two-way. Default `false`. */
+    /** Indicates whether the actions are open. `x-model` provides two-way binding. The default is `false`. */
     open?: Bind<boolean>;
-    /** A click on an action closes the fan. Default `true`. */
+    /** Closes the actions when one is selected. The default is `true`. */
     closeOnAction?: Bind<boolean>;
-    /** The actions' labels are shown beside them while open. Default: in a line yes, around the button no. */
+    /**
+     * Shows labels next to the actions while they are open. By default, they appear in a line but not around the
+     * button.
+     */
     showLabels?: Bind<boolean>;
-    /** Tooltips on the actions, with their text unless an action says otherwise; options go to each `Tooltip`. Default: while the labels are off. */
+    /**
+     * Shows tooltips on the actions, using their text unless an action overrides it. Options are passed to each
+     * `Tooltip`. By default, they appear while the labels are off.
+     */
     tooltip?: Bind<boolean | SpeedDialTooltip>;
     onOpened?: (e: SpeedDialEventArgs) => void;
     onClosed?: (e: SpeedDialEventArgs) => void;
-    /** An action was pressed. */
+    /** Occurs when an action is clicked. */
     onActionClick?: (e: SpeedDialActionClickEventArgs) => void;
 }

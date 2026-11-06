@@ -44,9 +44,9 @@ interface Parts {
 }
 
 /**
- * A set of options of which one is chosen: native radios sharing a name, in a `role="radiogroup"`
- * named by the field's label. One Tab stop; the arrow keys move and choose. `x-model` binds the
- * value of the chosen item.
+ * A set of options with one selected: native radios sharing a name, in a `role="radiogroup"`
+ * named by the field label. It is one Tab stop, and the arrow keys move and select. `x-model` binds the
+ * value of the selected item.
  *
  * @example
  * <RadioGroup label="&Size" items={['S', 'M', 'L']} x-model={() => this.order.size} />
@@ -104,14 +104,14 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
   set items(value: Bind<readonly (RadioItem<T> | T)[]>) {
     this.assignProperty('items', value);
   }
-  /** A property name or a reader function (not a binding). */
+  /** A property name or a reader function, not a binding. */
   get itemText(): ItemField<RadioItem<T> | T> | undefined {
     return this.getProperty<ItemField<RadioItem<T> | T> | undefined>('itemText');
   }
   set itemText(value: ItemField<RadioItem<T> | T> | undefined) {
     this.setProperty('itemText', value);
   }
-  /** A property name or a reader function (not a binding). */
+  /** A property name or a reader function, not a binding. */
   get itemValue(): ItemField<RadioItem<T> | T> | undefined {
     return this.getProperty<ItemField<RadioItem<T> | T> | undefined>('itemValue');
   }
@@ -143,15 +143,15 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
   }
 
   /**
-   * Reads the items again after they were changed in place: their texts, values and states. Your items may be
-   * plain or reactive; the group reads them as they are.
+   * Re-reads the items after they have been changed in place, including their text, values and states. Your items can
+   * be plain or reactive, and the group reads them as they are.
    */
   override refresh(): void {
     super.refresh();
     this.renderItems();
   }
 
-  /** The native radios, in the order of the items. */
+  /** The native radios, in item order. */
   get inputs(): readonly HTMLInputElement[] {
     return this.radioParts.rows.map((row) => row.input);
   }
@@ -171,7 +171,7 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
     return !!active && this.radioParts.rows.some((row) => row.input === active);
   }
 
-  /** Focuses the chosen option, or the first one that can be chosen. */
+  /** Sets focus on the selected option, or on the first available one. */
   override focus(): boolean {
     if (!this.canFocus) return false;
     this.stopRow()!.input.focus();

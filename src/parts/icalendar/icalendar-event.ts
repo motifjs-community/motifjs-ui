@@ -5,18 +5,18 @@ import type { ICalendarProperty } from './icalendar-property';
 export interface ICalendarEvent {
   uid: string;
   start: ICalendarDate;
-  /** `DTEND`, or the start with its `DURATION` added, in the start's form; `null` for none. */
+  /** `DTEND`, or the start with its `DURATION` added, in the start's form, or `null` if there is none. */
   end: ICalendarDate | null;
   summary: string;
   description: string;
   location: string;
-  /** The `RRULE` value without its name; empty for none. */
+  /** The `RRULE` value without its name, or empty if there is none. */
   rule: string;
   /** Every `EXDATE`. */
   exceptions: ICalendarDate[];
   /** The occurrence of a series this event replaces. */
   recurrenceId: ICalendarDate | null;
-  /** Upper case (`CONFIRMED`, `CANCELLED`); empty when not given. */
+  /** In upper case (`CONFIRMED`, `CANCELLED`), or empty if omitted. */
   status: string;
   /** The `DTSTAMP` moment. */
   stamp: number | null;

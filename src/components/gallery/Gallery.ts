@@ -38,10 +38,10 @@ interface Pane {
 type Hold = 'hover' | 'focus' | 'drag';
 
 /**
- * Panes side by side, one in view (or several), moved by the buttons at the sides, the dots under them, a swipe
- * or the arrow keys; a slideshow when `slideInterval` says so, which pauses under the pointer and while focus is
- * inside. A pane is an image with a caption, or any content. The pane in view is `value`: a pane's `key`, else its
- * index; `x-model` binds it two-way.
+ * Slides side by side, with one in view (or several), moved by the buttons at the sides, the dots below them, a swipe
+ * or the arrow keys. With `slideInterval`, it runs as a slideshow that pauses on hover and while focus is
+ * inside. A slide is an image with a caption, or any content. The current slide is `value`, identified by its `key`
+ * or index, and `x-model` provides two-way binding.
  *
  * @example
  * <Gallery items={['/photos/1.jpg', '/photos/2.jpg']} loop slideInterval={4000} height={320} />
@@ -226,74 +226,77 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
         this.assignProperty('label', value);
     }
 
-    /** The pane in view is about to change (`from`, `to`, `byUser`); `cancel` keeps the one there. */
+    /** Occurs before the current slide changes (`from`, `to`, `byUser`). Set `cancel` to keep the current slide. */
     get onSlideChanging(): MotifEvent<SlideChangingEventArgs> {
         return this.changing.event;
     }
 
-    /** The pane in view changed, by the user, programmatically or by the slideshow (`byUser`). */
+    /** Occurs after the current slide changes, by the user, programmatically or by the slideshow (`byUser`). */
     get onSlideChanged(): MotifEvent<SlideChangedEventArgs> {
         return this.changed.event;
     }
 
-    /** A click on a pane that was not a drag. */
+    /** Occurs when a slide is clicked without dragging. */
     get onItemClick(): MotifEvent<GalleryItemClickEventArgs> {
         return this.itemClick.event;
     }
 
-    /** The index of the pane in view; -1 when there is none. */
+    /** The index of the current slide, or -1 if there is none. */
     get selectedIndex(): number {
         return this.indexOf(this.peekProperty<string | number | null | undefined>('value'));
     }
 
-    /** How many panes there are. */
+    /** The number of slides. */
     get count(): number {
         return this.looks.length;
     }
 
-    /** The slideshow runs: it was not paused, and nothing holds it (the pointer, focus, a drag, reduced motion). */
+    /**
+     * Indicates that the slideshow is running: it is not paused, and nothing is holding it (the pointer, focus, a drag,
+     * reduced motion).
+     */
     get isPlaying(): boolean {
         return this.timer !== 0;
     }
 
-    /** Panes side by side, at least one. */
+    /** The number of slides side by side, at least one. */
     get perView(): number {
         return Math.max(1, Math.floor(this.getProperty<number | undefined>('itemsPerPage') ?? 1));
     }
 
-    /** Goes to the pane after the one in view; `false` at the end without `loop`, or when the change was refused. */
+    /** Moves to the next slide. Returns `false` at the end without `loop`, or if the change was canceled. */
     next(): Promise<boolean> {
         return this.go(this.selectedIndex + 1, false);
     }
 
-    /** Goes to the pane before the one in view. */
+    /** Moves to the previous slide. */
     previous(): Promise<boolean> {
         return this.go(this.selectedIndex - 1, false);
     }
 
-    /** Goes to a pane by index or key; `onSlideChanging` is asked first. */
+    /** Moves to a slide by index or key. `onSlideChanging` is raised first. */
     goTo(pane: number | string): Promise<boolean> {
         return this.go(this.indexOf(pane), false);
     }
 
-    /** Starts the slideshow (`slideInterval` says how fast) after `pause()`. */
+    /** Starts the slideshow again after `pause()`. `slideInterval` sets its speed. */
     play(): void {
         this.playing = true;
         this.schedule();
     }
 
-    /** Stops the slideshow until `play()`. */
+    /** Stops the slideshow until `play()` is called. */
     pause(): void {
         this.playing = false;
         this.schedule();
     }
 
-    /** Reads the items again after they were changed in place. */
+    /** Re-reads the items after they have been changed in place. */
     refresh(): void {
         this.renderItems();
     }
 
-    /** The index a value names: a key, else an index in range; -1 for none. */
+    /** Returns the index that a value identifies: a key, otherwise an index in range, or -1 if there is none. */
     indexOf(value: string | number | null | undefined): number {
         if (value === undefined) return this.looks.length ? 0 : -1;
         if (value === null) return -1;
@@ -301,7 +304,7 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
         return Number.isInteger(value) && value >= 0 && value < this.looks.length ? value : -1;
     }
 
-    /** The value that names the pane at `index`: its key when it has one, else the index. */
+    /** Returns the value that identifies the slide at `index`: its key if it has one, otherwise the index. */
     valueAt(index: number): string | number {
         return this.looks[index]?.key ?? index;
     }

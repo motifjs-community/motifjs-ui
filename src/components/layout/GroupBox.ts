@@ -1,7 +1,7 @@
 import { Emitter, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { parseAccessKey, renderAccessKey } from '../../core/access-key';
 import { Control } from '../../core/control';
-import { deepActiveElement, tabbableIn } from '../../core/focus';
+import { deepActiveElement, keepsKeys, tabbableIn } from '../../core/focus';
 import { chevronDown } from '../../core/glyphs';
 import type { GroupBoxProps } from './group-box-props';
 import type { GroupBoxToggledEventArgs } from './group-box-toggled-event-args';
@@ -26,8 +26,8 @@ const PARTS = Symbol('mx.group-box');
 
 /**
  * A titled frame around related controls: a `<fieldset>` whose `<legend>` names the group for
- * screen readers. `enabled = false` disables everything inside; the title's `&` key focuses the
- * first control inside; with `collapsible` the title shows and hides the content.
+ * screen readers. `enabled = false` disables everything inside, the title's `&` key moves focus to
+ * the first control inside, and with `collapsible` the title shows and hides the content.
  *
  * @example
  * <GroupBox title="&Address" collapsible>
@@ -61,7 +61,7 @@ export class GroupBox extends Control<HTMLFieldSetElement, GroupBoxProps> {
     this.motif.setDisposable(() => parts.toggled.dispose());
   }
 
-  /** The title; the same property as `text`. */
+  /** The title. This is the same property as `text`. */
   get title(): string {
     return this.text;
   }
@@ -99,12 +99,12 @@ export class GroupBox extends Control<HTMLFieldSetElement, GroupBoxProps> {
     this.assignProperty('variant', value);
   }
 
-  /** The content was shown or hidden, by the user or by code (`e.byUser`). */
+  /** Occurs when the content is shown or hidden, by the user or by code (`e.byUser`). */
   get onToggled(): MotifEvent<GroupBoxToggledEventArgs> {
     return this.parts.toggled.event;
   }
 
-  /** The `<legend>` holding the title. */
+  /** The `<legend>` element that holds the title. */
   get legendElement(): HTMLLegendElement {
     return this.parts.legend;
   }
@@ -113,7 +113,7 @@ export class GroupBox extends Control<HTMLFieldSetElement, GroupBoxProps> {
     return this.isEnabled && this.element.isConnected && !!this.focusTarget();
   }
 
-  /** Focuses the first control inside (showing the content first when it is collapsed). */
+  /** Sets focus on the first control inside, expanding the content first if it is collapsed. */
   override focus(): boolean {
     if (!this.isEnabled) return false;
     if (this.isCollapsed) this.change(false);
@@ -149,7 +149,7 @@ export class GroupBox extends Control<HTMLFieldSetElement, GroupBoxProps> {
   /** The first control inside the content, else the toggle. */
   private focusTarget(): HTMLElement | null {
     const legend = this.parts.legend;
-    return tabbableIn(this.element).find((el) => !legend.contains(el)) ?? this.parts.toggle;
+    return tabbableIn(this.element).find((el) => !legend.contains(el) && keepsKeys(el)) ?? this.parts.toggle;
   }
 
   private change(collapsed: boolean): void {

@@ -4,31 +4,43 @@ import type { SchedulerTemplates } from './scheduler-templates';
 import type { SchedulerViewType } from './scheduler-view-type';
 
 /**
- * One view the scheduler offers. Its own settings and templates take precedence over the scheduler's; every one
- * is a value or a tracked function.
+ * One view the scheduler offers. Its own settings and templates take precedence over the scheduler's,
+ * and each setting is a value or a tracked function.
  */
 export interface SchedulerView<T = any> extends SchedulerTemplates<T> {
   type: SchedulerViewType;
-  /** What `currentView` and the view switcher call it; the type by default. Two views of one type need names. */
+  /** Its name for `currentView` and the view switcher. The default is the type. Two views of one type need names. */
   name?: string;
-  /** The caption in the view switcher; the type's text by default. */
+  /** The caption in the view switcher. The default is the type's text. */
   text?: Bind<string>;
-  /** How many days (`day`, `timelineDay`), weeks (`week`, `workWeek`, `timelineWeek`, `timelineWorkWeek`) or months (`month`, `timelineMonth`) it shows. Default 1. */
+  /**
+   * The number of days (`day`, `timelineDay`), weeks (`week`, `workWeek`, `timelineWeek`,
+   * `timelineWorkWeek`) or months (`month`, `timelineMonth`) shown. The default is 1.
+   */
   intervalCount?: Bind<number>;
-  /** With `intervalCount` over 1 (and for the agenda): the date the intervals are counted from, so they stay where they are when the date moves. */
+  /**
+   * With an `intervalCount` greater than 1, and for the agenda, the date intervals are counted from,
+   * so that they stay in place when the date changes.
+   */
   startDate?: Bind<Date | null>;
   startDayHour?: Bind<number>;
   endDayHour?: Bind<number>;
-  /** Minutes in a cell. */
+  /** The duration of a cell, in minutes. */
   cellDuration?: Bind<number>;
   allDayPanel?: Bind<boolean>;
-  /** Appointments shown in a month cell (or the all-day panel, or a timeline row) before "+N more"; `'auto'`: as many as fit (a timeline row grows). */
+  /**
+   * The number of appointments in a month cell, the all-day panel or a timeline row before "+N more".
+   * `'auto'` shows as many as fit, and a timeline row grows.
+   */
   maxAppointmentsPerCell?: Bind<number | 'auto'>;
-  /** The resource fields its columns (a timeline's rows) are grouped by; `[]` for none. */
+  /** The resource fields its columns, or a timeline's rows, are grouped by. `[]` means none. */
   groups?: Bind<readonly string[]>;
   groupByDate?: Bind<boolean>;
-  /** The days the agenda shows. Default 7. */
+  /** The number of days the agenda shows. The default is 7. */
   agendaDuration?: Bind<number>;
-  /** Whether it builds every cell and row or only what is in view; `'auto'` (default): only what is in view once the cells are many. */
+  /**
+   * Whether every cell and row is rendered, or only the visible ones. `'auto'` (the default) renders
+   * only the visible ones above about 2,000 cells.
+   */
   scrolling?: Bind<ScrollingMode>;
 }

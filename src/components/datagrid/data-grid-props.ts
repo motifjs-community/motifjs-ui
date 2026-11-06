@@ -92,64 +92,74 @@ import type { GridValuesResult } from './grid-values-result';
 import type { NewRowOptions } from './new-row-options';
 import type { RowState } from './row-state';
 
-/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form`, `popup`, `filterBuilder`, `filterBuilderPopup`, `masterDetail`, `adaptiveDetail` and `rowDragging` (whose fields are) and the callbacks is a value or a tracked function. */
+/**
+ * The props of `DataGrid`. Every prop is a value or a tracked function, except the callbacks and
+ * `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form`, `popup`,
+ * `filterBuilder`, `filterBuilderPopup`, `masterDetail`, `adaptiveDetail` and `rowDragging` (whose
+ * fields are).
+ */
 export interface DataGridProps<T> extends ControlProps {
   /**
-   * Column definitions, in their initial order, and bands over them (`{ title, columns: [...] }`).
-   * Columns come and go later with `addColumn` and `deleteColumn`.
+   * The column definitions, in their initial order, and bands over them (`{ title, columns: [...] }`).
+   * Add and remove columns later with `addColumn` and `deleteColumn`.
    */
   columns: GridColumnItem<T>[];
   /**
-   * Rows in memory, plain or reactive: the grid reads them as they are and gives back the same
-   * objects. It puts them in a `DataSource` over an `ArrayAdapter` itself; a new array (or a function
-   * that returns one) loads again, and after a change in place (`push`, `splice`, a field) call
-   * `grid.refresh()` or `grid.repaintRows(keys)`. Saved edits, new rows and deletions go into the array.
+   * In-memory rows, plain or reactive. The grid reads them as they are and returns the same objects. It
+   * places them in a `DataSource` over an `ArrayAdapter`. A new array (or a function that returns one)
+   * reloads, and after a change in place (`push`, `splice`, a field), call `grid.refresh()` or
+   * `grid.repaintRows(keys)`. Saved edits, new rows and deletions go into the array.
    */
   rows?: Bind<T[]>;
-  /** Rows from the data layer, any adapter. `'blocks'` loads where the virtual list looks, `'page'` shows pages. Wins over `rows`. */
+  /**
+   * Data layer rows, from any adapter. Loading by `'blocks'` creates a virtual list that requests only
+   * the visible rows, and loading by `'page'` creates a paged grid. Takes precedence over `rows`.
+   */
   dataSource?: Bind<data.DataSource<T, any> | null>;
-  /** The row's identity for `rows`: a field name or a function. A `dataSource` uses its adapter's key. */
+  /** The key of `rows`: a field name or a function. A `dataSource` uses its adapter's key. */
   rowKey?: string | ((row: T) => unknown);
   /**
-   * `'virtual'` (default): one long list, loaded and drawn where the view is. `'paged'`: pages with a
-   * pager. `'infinite'`: the rows show part by part (`pageSize` each), the next part loading as the
-   * view nears the end; no total is needed (a source with `count: false` finds the end from a short
-   * part). A `dataSource` that loads by `'page'` is always paged.
+   * `'virtual'` (the default) is one long list, loaded and rendered where the view is. `'paged'` shows
+   * pages with a pager. `'infinite'` displays rows page by page (`pageSize` each), loading the next page
+   * as the view nears the end. No total is needed (a source with `count: false` detects the end from a
+   * short page). A `dataSource` that loads by `'page'` is always paged.
    */
   mode?: Bind<GridMode>;
   /**
-   * Rows per page in paged mode (0: every row on one page), and of a part in infinite mode, for rows in memory. A `dataSource` that
-   * loads pages or blocks uses its own `pageSize`. The user can change it from the pager's page sizes
-   * (`settings.pageSizeSelector`). Default 100.
+   * The rows per page for in-memory rows, in paged mode (0 places every row on one page) and in
+   * infinite mode. A `dataSource` that loads pages or blocks uses its own `pageSize`. The user can change
+   * it from the pager's page sizes (`settings.pageSizeSelector`). The default is 100.
    */
   pageSize?: Bind<number>;
-  /** Row height in pixels. Default: read from the grid's CSS, which follows the density. */
+  /** A fixed row height in pixels. By default, it is read from the grid's CSS, which follows the density. */
   rowHeight?: Bind<number>;
-  /** Initial sort order. */
+  /** The initial sort order. */
   sort?: data.SortItem[];
-  /** Initial layout (overrides the columns' own width, order, hidden and sticky settings). */
+  /** The initial layout (overrides the columns' own width, order, hidden and sticky settings). */
   layout?: GridLayout;
-  /** Called after the user changes the layout (resize, move, hide, sticky, sort). */
+  /** Occurs after the user changes the layout (resize, move, hide, sticky, sort). */
   onLayoutChange?: (layout: GridLayout) => void;
-  /** The user is about to change the layout; `e.cancel` puts the one before back. */
+  /** Occurs when the user changes the layout. Set `e.cancel = true` to restore the previous layout. */
   onLayoutChanging?: (e: GridLayoutChangingEventArgs) => void;
   /**
-   * A name to keep the layout, the filters and the search text under in the browser's `localStorage`:
-   * they come back when a grid with the same name is recreated, over `layout`, `sort`, `filters` and
-   * `searchText`.
+   * Saves the layout, the filters and the search text in the browser's `localStorage` under this name.
+   * A grid recreated with the same name restores them, over `layout`, `sort`, `filters` and `searchText`.
    */
   layoutKey?: string;
-  /** Where `layoutKey` keeps the layout: `sessionStorage`, or any object with `getItem`, `setItem` and `removeItem`. Default `localStorage`. */
+  /**
+   * Where `layoutKey` saves the layout: `sessionStorage`, or any object with `getItem`, `setItem` and
+   * `removeItem`. The default is `localStorage`.
+   */
   layoutStorage?: LayoutStorage;
-  /** Accessible name of the grid. The same as `text`. */
+  /** The accessible name of the grid. This is the same as `text`. */
   label?: Bind<string>;
-  /** Texts for this grid only, over `uiLocale.strings`. */
+  /** Strings for this grid only, over `uiLocale.strings`. */
   texts?: Bind<Partial<UiStrings>>;
-  /** Locale of number and date formatting and of text sorting. Default: the page's language. */
+  /** The locale of number and date formatting and of text sorting. The default is the page's language. */
   locale?: Bind<string>;
-  /** Features turned on or off; see `GridSettings`. Read and change them later through `grid.settings`. */
+  /** The feature switches (see `GridSettings`). Read and change them later through `grid.settings`. */
   settings?: GridSettingsProps;
-  /** When changes are sent: on leaving each row and waiting for it, without waiting, or all at once. Default `'wait'`. */
+  /** When changes are sent: on leaving each row and waiting for it, without waiting, or all at once. The default is `'wait'`. */
   saveMode?: Bind<data.SaveMode>;
   /** Where new rows open and their initial values. */
   newRow?: NewRowOptions<T>;
@@ -157,199 +167,246 @@ export interface DataGridProps<T> extends ControlProps {
   form?: GridEditForm;
   /** The window of `settings.editMode: 'popup'`: title, size, buttons. Read and change it later through `grid.popup`. */
   popup?: GridEditPopup;
-  /** Details under the rows: an expand column, and what `template` makes for each row in a row across the grid. Read and change it later through `grid.masterDetail`. */
+  /**
+   * Details below the rows: an expand column, and what `template` creates for each row, in a row across
+   * the grid. Read and change it later through `grid.masterDetail`.
+   */
   masterDetail?: GridMasterDetail<T>;
-  /** The adaptive detail of a row, while columns hide to fit the width (`settings.columnHidingEnabled`, a column's `hidingPriority`). Read and change it later through `grid.adaptiveDetail`. */
+  /**
+   * The adaptive detail of a row, while columns hide to fit the width (`settings.columnHidingEnabled`, a
+   * column's `hidingPriority`). Read and change it later through `grid.adaptiveDetail`.
+   */
   adaptiveDetail?: GridAdaptiveDetail;
   /**
-   * Rows moved by dragging (a column of drag icons, or the whole row) and with the keyboard: within
-   * the grid, onto a row, or to another grid of the same `group`. The handlers move the data. Read and
+   * Moves rows by dragging (a column of drag icons, or the whole row) and with the keyboard: within the
+   * grid, onto a row, or to another grid of the same `group`. The handlers move the data. Read and
    * change it later through `grid.rowDragging`.
    */
   rowDragging?: GridRowDragging<T>;
   /**
-   * Checks a whole row before it is saved: a message per field, or one message for the row. `row` is
-   * the row itself; `context.values` holds the values entered and not saved yet, `context.getValue(field)`
-   * the value a field is saved with (the entered one, else the row's), `changed` the fields entered.
+   * Validates a whole row before saving, returning a message per field or one for the row. `row` is
+   * the row itself, `context.values` holds the entered, unsaved values, `context.getValue(field)` returns
+   * the value a field will be saved with (the entered value, otherwise the row's), and `changed` holds
+   * the entered fields.
    */
   validateRow?: (
     row: T,
     context: data.RowCheckContext<T> & { readonly changed: readonly string[] },
   ) => Readonly<Record<string, string | null | undefined>> | string | null | undefined | void;
   /**
-   * The buttons of each row, in order of importance: those that do not fit go into the row's
-   * "more" menu. A function of the row and its state is asked again when the row's state changes
-   * (edited, saved, selected) and on `refreshActions()`. Strings name the grid's own actions (`'edit'`, `'remove'`, `'restore'`,
-   * `'save'`, `'cancel'`).
+   * The buttons of each row, in order of importance. Those that do not fit go into the row's "more"
+   * menu. A function of the row and its state is called again when the row's state changes (edited,
+   * saved, selected or deleted) and on `refreshActions()`. Strings name built-in actions (`'edit'`, `'remove'`,
+   * `'restore'`, `'save'`, `'cancel'`).
    */
   actions?: readonly GridActionItem<T>[] | ((row: T, state: RowState) => readonly GridActionItem<T>[]);
-  /** An action is about to run (in a row, a bar, a row's menu or programmatically): `e.cancel` keeps it from running. */
+  /**
+   * Occurs before an action runs (in a row, a bar, a row's menu or programmatically). Set
+   * `e.cancel = true` to prevent it.
+   */
   onActionRunning?: (e: GridActionRunningEventArgs<T>) => void;
-  /** An action ran: on how many rows it worked or failed, and whether it was stopped. */
+  /** Occurs after an action runs, and reports how many rows succeeded or failed and whether it was stopped. */
   onActionRan?: (e: GridActionRanEventArgs<T>) => void;
-  /** Keys of the selected rows, and a function is tracked. The user's changes come through `onSelectionChanged`. */
+  /** The keys of the selected rows. A function is tracked, and user changes arrive in `onSelectionChanged`. */
   selectedKeys?: Bind<readonly unknown[]>;
-  /** The selection is about to change; `e.cancel` keeps it. */
+  /** Occurs before the selection changes. Set `e.cancel = true` to keep it. */
   onSelectionChanging?: (e: GridSelectionChangingEventArgs) => void;
   onSelectionChanged?: (e: GridSelectionChangedEventArgs) => void;
-  /** The cell ranges (`settings.cellSelection`), and a function is tracked. The user's changes come through `onCellSelectionChanged`. */
+  /**
+   * The cell ranges (`settings.cellSelection`). A function is tracked, and user changes arrive in
+   * `onCellSelectionChanged`.
+   */
   cellRanges?: Bind<readonly GridCellRange[]>;
-  /** The cell ranges are about to change; `e.cancel` keeps them. */
+  /** Occurs before the cell ranges change. Set `e.cancel = true` to keep them. */
   onCellSelectionChanging?: (e: GridCellSelectionChangingEventArgs) => void;
   onCellSelectionChanged?: (e: GridCellSelectionChangedEventArgs) => void;
-  /** Before an editor of a cell or of an edit form field is created: change its props (`e.options`), or `e.cancel` it. */
+  /** Occurs before the editor of a cell or edit form field is created. Change `e.options`, or set `e.cancel = true`. */
   onEditorPreparing?: (e: GridEditorPreparingEventArgs<T>) => void;
-  /** An editor was created, in a cell or in the edit form. */
+  /** Occurs when an editor is created, in a cell or in the edit form. */
   onEditorPrepared?: (e: GridEditorPreparedEventArgs<T>) => void;
-  /** A row is checked before it is saved, after its cells: add or remove messages, or `e.isValid = false`. */
+  /** Occurs when a row is validated before saving, after its cells. Add or remove messages, or set `e.isValid = false`. */
   onRowValidating?: (e: GridRowValidatingEventArgs<T>) => void;
   /**
-   * The search panel's text: the rows that hold it in a searchable column. A function is tracked;
-   * what the user types comes through `onSearchTextChanged`.
+   * The search panel's text, which limits the rows to those that contain it in a searchable column. A
+   * function is tracked, and what the user types arrives in `onSearchTextChanged`.
    */
   searchText?: Bind<string>;
-  /** The search text is about to change; `e.cancel` keeps the one before. */
+  /** Occurs before the search text changes. Set `e.cancel = true` to keep the previous text. */
   onSearchTextChanging?: (e: GridSearchTextChangingEventArgs) => void;
-  /** The search text changed (typed, or set programmatically). */
+  /** Occurs when the search text changes, typed or set programmatically. */
   onSearchTextChanged?: (e: GridSearchTextChangedEventArgs) => void;
   /**
-   * Values of the rows under the filter and the search: a row of totals under the rows
-   * (`totalItems`) and values of each group in its row or footer (`groupItems`), also custom ones.
+   * Values calculated from the rows under the filter and the search: a totals row below the rows
+   * (`totalItems`) and values of each group in its row or footer (`groupItems`), including custom ones.
    * Read and change it later through `grid.summary`.
    */
   summary?: Bind<GridSummary<T>>;
-  /** The summary values were calculated again (new data, or unsaved changes with `recalculateWhileEditing`). */
+  /** Occurs when summary values are recalculated (new data, or unsaved changes with `recalculateWhileEditing`). */
   onSummaryChanged?: (e: GridSummaryChangedEventArgs) => void;
-  /** Content of your own in every group row whose column has no `groupCell`, made once per pooled group row. */
+  /** Custom content in every group row whose column has no `groupCell`, created once per pooled group row. */
   groupCell?: (ctx: GroupCellContext<T>) => unknown;
-  /** The grouping is about to change (user or code): `e.group`, `e.previous`, `e.byUser`; `e.cancel` keeps it. */
+  /**
+   * Occurs before the grouping changes, by the user or programmatically: `e.group`, `e.previous`,
+   * `e.byUser`. Set `e.cancel = true` to keep it.
+   */
   onGroupingChanging?: (e: GridGroupingChangingEventArgs) => void;
-  /** The grouping changed. */
+  /** Occurs after the grouping changes. */
   onGroupingChanged?: (e: GridGroupingChangedEventArgs) => void;
-  /** A header or a chip is dropped: `e.field`, `e.from`, `e.to`, `e.index`; `e.cancel` cancels the drop. */
+  /**
+   * Occurs when a header or chip is dropped: `e.field`, `e.from`, `e.to`, `e.index`. Set
+   * `e.cancel = true` to cancel the drop.
+   */
   onGroupDropping?: (e: GridGroupDroppingEventArgs) => void;
   /**
-   * A group or a row's details are about to open: `e.kind` says which (`'group'`, `'detail'`), `e.key`
-   * is the group's key (the values from the top level down) or the row's; `e.cancel` keeps it closed.
+   * Occurs before a group or a row's details open. `e.kind` indicates which (`'group'`, `'detail'`), and
+   * `e.key` is the group's key (the values from the top level down) or the row's. Set `e.cancel = true`
+   * to keep it closed.
    */
   onRowExpanding?: (e: GridRowExpandingEventArgs) => void;
-  /** A group or a row's details opened. */
+  /** Occurs after a group or a row's details open. */
   onRowExpanded?: (e: GridRowExpandedEventArgs) => void;
-  /** A group or a row's details are about to close; `e.cancel` keeps it open. */
+  /** Occurs before a group or a row's details close. Set `e.cancel = true` to keep it open. */
   onRowCollapsing?: (e: GridRowExpandingEventArgs) => void;
-  /** A group or a row's details closed. */
+  /** Occurs after a group or a row's details close. */
   onRowCollapsed?: (e: GridRowExpandedEventArgs) => void;
-  /** A row's adaptive detail is about to lay out its form: change `e.formOptions`. */
+  /** Occurs when a row's adaptive detail lays out its form. Change `e.formOptions`. */
   onAdaptiveDetailRowPreparing?: (e: GridAdaptiveDetailRowPreparingEventArgs<T>) => void;
-  /** A row's adaptive detail is about to open; `e.cancel` keeps it closed. */
+  /** Occurs before a row's adaptive detail opens. Set `e.cancel = true` to keep it closed. */
   onAdaptiveDetailRowExpanding?: (e: GridAdaptiveRowExpandingEventArgs<T>) => void;
   onAdaptiveDetailRowExpanded?: (e: GridAdaptiveRowExpandedEventArgs<T>) => void;
-  /** A row's adaptive detail is about to close; `e.cancel` keeps it open. */
+  /** Occurs before a row's adaptive detail closes. Set `e.cancel = true` to keep it open. */
   onAdaptiveDetailRowCollapsing?: (e: GridAdaptiveRowExpandingEventArgs<T>) => void;
   onAdaptiveDetailRowCollapsed?: (e: GridAdaptiveRowExpandedEventArgs<T>) => void;
-  /** The bar above the rows: which items, and whether it shows. */
+  /** The bar above the rows: which items it holds, and whether it appears. */
   toolbar?: GridToolbar;
   /** What the toolbar's export button (`settings.exportButton`) offers: the formats, "Export selected rows", the texts. */
   export?: GridExportSettings;
-  /** Initial filters, by field. Read and change them later through `grid.filters`. */
+  /** The initial filters, by field. Read and change them later through `grid.filters`. */
   filters?: GridFilters;
   /**
-   * The filter value, as the data layer has it: the filter builder's conditions, and with
-   * `settings.filterSyncEnabled` the filter row's and header filters' too (those they can show go
-   * to them). A function is tracked; the user's changes come through `onFilterChanged` (`e.filterValue`).
+   * The filter value, in data layer form: the filter builder's conditions and, with
+   * `settings.filterSyncEnabled`, those of the filter row and header filters, which display the ones they
+   * can. A function is tracked, and user changes arrive in `onFilterChanged` (`e.filterValue`).
    */
   filterValue?: Bind<data.FilterExpression | null>;
-  /** Whether the filter value applies: the filter panel's check box. A function is tracked. Default `true`. */
+  /**
+   * Indicates whether the filter value applies (the filter panel's check box). A function is tracked.
+   * The default is `true`.
+   */
   filterEnabled?: Bind<boolean>;
-  /** The text of the filter panel, from the one it would show. */
+  /** Returns the filter panel's text, given the text it would display. */
   filterPanelText?: (e: GridFilterPanelTextInfo) => string;
-  /** The filter builder the filter panel opens (any prop of `FilterBuilder` but `value` and `fields`). Read and change it later through `grid.filterBuilder`. */
+  /**
+   * The filter builder the filter panel opens (any prop of `FilterBuilder` except `value` and `fields`).
+   * Read and change it later through `grid.filterBuilder`.
+   */
   filterBuilder?: GridFilterBuilderOptions;
   /** The window the filter builder opens in. Read and change it later through `grid.filterBuilderPopup`. */
   filterBuilderPopup?: GridFilterBuilderPopup;
-  /** The filter builder is about to open; `e.cancel` keeps it closed. */
+  /** Occurs before the filter builder opens. Set `e.cancel = true` to keep it closed. */
   onFilterBuilderOpening?: (e: GridFilterBuilderOpeningEventArgs) => void;
   onFilterBuilderOpened?: (e: GridFilterBuilderOpenedEventArgs) => void;
-  /** The filter builder is about to close, with OK (`e.apply`) or not; `e.cancel` keeps it open. */
+  /** Occurs before the filter builder closes, with OK (`e.apply`) or not. Set `e.cancel = true` to keep it open. */
   onFilterBuilderClosing?: (e: GridFilterBuilderClosingEventArgs) => void;
   onFilterBuilderClosed?: (e: GridFilterBuilderClosedEventArgs) => void;
   /**
-   * The values of a column's header filter, when the data comes from a server that cannot group:
-   * a part of the distinct values that honor the other filters. Without it, rows in memory and
-   * adapters that group give the values themselves.
+   * Loads the values of a column's header filter when the data comes from a server that cannot group:
+   * a part of the distinct values that match the other filters. Without it, in-memory rows and adapters
+   * that group provide the values themselves.
    */
   loadValues?: (request: GridValuesRequest<T>) => GridValuesResult | Promise<GridValuesResult>;
-  /** A cell was clicked; `e.cancel` stops the grid's own handling (select, group, edit). */
+  /**
+   * Occurs when a cell is clicked. Set `e.cancel = true` to prevent the grid's handling (selection, the
+   * group toggle and the editor).
+   */
   onCellClick?: (e: GridCellClickEventArgs<T>) => void;
-  /** A cell was double-clicked; `e.cancel` keeps its editor closed. */
+  /** Occurs when a cell is double-clicked. Set `e.cancel = true` to keep its editor closed. */
   onCellDblClick?: (e: GridCellClickEventArgs<T>) => void;
-  /** A row was clicked (after its cell's event); `e.cancel` stops the grid's own handling. */
+  /** Occurs when a row is clicked, after its cell's event. Set `e.cancel = true` to prevent the grid's handling. */
   onRowClick?: (e: GridRowClickEventArgs<T>) => void;
-  /** A row was double-clicked; `e.cancel` keeps the editor closed. */
+  /** Occurs when a row is double-clicked. Set `e.cancel = true` to keep the editor closed. */
   onRowDblClick?: (e: GridRowClickEventArgs<T>) => void;
-  /** A cell was drawn for a row: style it (the element is reused; set and clear what you change). */
+  /**
+   * Occurs when a cell is rendered for a row, so that you can style it. The element is reused, so set
+   * and clear what you change.
+   */
   onCellPrepared?: (e: GridCellPreparedEventArgs<T>) => void;
-  /** A row was drawn: style it (the element is reused; set and clear what you change). */
+  /**
+   * Occurs when a row is rendered, so that you can style it. The element is reused, so set and clear
+   * what you change.
+   */
   onRowPrepared?: (e: GridRowPreparedEventArgs<T>) => void;
-  /** Rows arrived and are laid out. */
+  /** Occurs when rows have arrived and been laid out. */
   onContentReady?: (e: GridContentReadyEventArgs) => void;
-  /** Loading or saving failed. */
+  /** Occurs when loading or saving fails. */
   onDataErrorOccurred?: (e: GridDataErrorEventArgs<T>) => void;
-  /** A cell editor, or a row's edit form, is about to open; `e.cancel` keeps it closed. */
+  /** Occurs before a cell editor or a row's edit form opens. Set `e.cancel = true` to keep it closed. */
   onEditingStart?: (e: GridEditingStartEventArgs<T>) => void;
-  /** A new row is about to open: change `e.data` (what it starts with) or `e.values` (entered), or `e.cancel`. */
+  /**
+   * Occurs before a new row opens. Change `e.data` (its initial content) or `e.values` (what counts as
+   * entered), or set `e.cancel = true`.
+   */
   onInitNewRow?: (e: GridInitNewRowEventArgs<T>) => void;
-  /** Changes are about to be sent; `e.cancel` keeps them all unsent. */
+  /** Occurs before changes are sent. Set `e.cancel = true` to keep them all unsent. */
   onSaving?: (e: GridSavingEventArgs<T>) => void;
-  /** The answer to a save came. */
+  /** Occurs when the response to a save arrives. */
   onSaved?: (e: GridSavedEventArgs<T>) => void;
-  /** A new row is about to be sent; change `e.data`, or `e.cancel`. */
+  /** Occurs before a new row is sent. Change `e.data`, or set `e.cancel = true`. */
   onRowInserting?: (e: GridRowInsertingEventArgs<T>) => void;
   onRowInserted?: (e: GridRowInsertedEventArgs<T>) => void;
-  /** A row's changes are about to be sent; change `e.changes`, or `e.cancel`. */
+  /** Occurs before a row's changes are sent. Change `e.changes`, or set `e.cancel = true`. */
   onRowUpdating?: (e: GridRowUpdatingEventArgs<T>) => void;
   onRowUpdated?: (e: GridRowUpdatedEventArgs<T>) => void;
-  /** A row's deletion is about to be sent; `e.cancel` keeps the row. */
+  /** Occurs before a row's deletion is sent. Set `e.cancel = true` to keep the row. */
   onRowRemoving?: (e: GridRowRemovingEventArgs<T>) => void;
   onRowRemoved?: (e: GridRowRemovedEventArgs<T>) => void;
-  /** Unsaved changes are about to be dropped (Escape, "Cancel", `discardChanges()`); `e.cancel` keeps them. */
+  /**
+   * Occurs before unsaved changes are discarded (Escape, "Cancel", `discardChanges()`). Set
+   * `e.cancel = true` to keep them.
+   */
   onEditCanceling?: (e: GridEditCancelingEventArgs<T>) => void;
   onEditCanceled?: (e: GridEditCanceledEventArgs<T>) => void;
-  /** The active cell is about to move; `e.cancel` keeps it. */
+  /** Occurs before the active cell moves. Set `e.cancel = true` to keep it in place. */
   onFocusedCellChanging?: (e: GridFocusedCellChangingEventArgs<T>) => void;
   onFocusedCellChanged?: (e: GridFocusedCellChangedEventArgs<T>) => void;
-  /** The active row is about to change; `e.cancel` keeps it. */
+  /** Occurs before the active row changes. Set `e.cancel = true` to keep the current row. */
   onFocusedRowChanging?: (e: GridFocusedRowChangingEventArgs<T>) => void;
   onFocusedRowChanged?: (e: GridFocusedRowChangedEventArgs<T>) => void;
-  /** A key is about to be handled by the grid (`onKeyDown`); `e.cancel` stops the grid's handling. */
+  /** Occurs before the grid handles a key. Set `e.cancel = true` to prevent the grid's handling. */
   onKeyHandling?: (e: GridKeyHandlingEventArgs) => void;
-  /** A setting of the grid, a column or the toolbar was assigned, or a column was added or removed (`name: 'columns'`). */
+  /**
+   * Occurs when a setting of the grid, a column or the toolbar is assigned, or when a column is added or
+   * removed (`name: 'columns'`).
+   */
   onOptionChanged?: (e: GridOptionChangedEventArgs) => void;
-  /** An export is about to start; change `e.options`, or `e.cancel`. */
+  /** Occurs before an export starts. Change `e.options`, or set `e.cancel = true`. */
   onExporting?: (e: GridExportingEventArgs) => void;
   onExported?: (e: GridExportedEventArgs) => void;
-  /** A column menu or a row's menu is about to open: change `e.items`, or `e.cancel`. */
+  /** Occurs before a column menu or a row's menu opens. Change `e.items`, or set `e.cancel = true`. */
   onContextMenuPreparing?: (e: GridContextMenuPreparingEventArgs<T>) => void;
-  /** The toolbar is laid out: change `e.items`. */
+  /** Occurs when the toolbar is laid out. Change `e.items`. */
   onToolbarPreparing?: (e: GridToolbarPreparingEventArgs) => void;
-  /** The sort is about to change; `e.cancel` keeps it. */
+  /** Occurs before the sort changes. Set `e.cancel = true` to keep the current sort. */
   onSortChanging?: (e: GridSortChangingEventArgs) => void;
   onSortChanged?: (e: GridSortChangedEventArgs) => void;
-  /** The filters are about to apply; `e.cancel` puts the ones before back. */
+  /** Occurs before the filters apply. Set `e.cancel = true` to restore the previous ones. */
   onFilterChanging?: (e: GridFilterChangingEventArgs) => void;
   onFilterChanged?: (e: GridFilterChangedEventArgs) => void;
-  /** Another page is about to show; `e.cancel` stays. */
+  /** Occurs before another page appears. Set `e.cancel = true` to stay on the current page. */
   onPageChanging?: (e: GridPageChangingEventArgs) => void;
   onPageChanged?: (e: GridPageChangedEventArgs) => void;
-  /** The rows per page are about to change (the pager's page sizes, `pageSize(n)`); `e.cancel` keeps them. */
+  /**
+   * Occurs before the rows per page change (the pager's page sizes, `pageSize(n)`). Set
+   * `e.cancel = true` to keep the current value.
+   */
   onPageSizeChanging?: (e: GridPageSizeChangingEventArgs) => void;
   onPageSizeChanged?: (e: GridPageSizeChangedEventArgs) => void;
-  /** Infinite mode: the next part of the rows is about to load; `e.cancel` keeps the rows as they are. */
+  /** In infinite mode, occurs before the next page of rows loads. Set `e.cancel = true` to keep the rows as they are. */
   onMoreRowsLoading?: (e: GridMoreRowsLoadingEventArgs) => void;
-  /** Infinite mode: a part of the rows came. */
+  /** In infinite mode, occurs when a page of rows arrives. */
   onMoreRowsLoaded?: (e: GridMoreRowsLoadedEventArgs) => void;
-  /** Cells are about to be copied; change `e.text` / `e.html`, or `e.cancel`. */
+  /** Occurs before cells are copied. Change `e.text` or `e.html`, or set `e.cancel = true`. */
   onCopying?: (e: GridCopyingEventArgs) => void;
-  /** Text is about to be pasted; change `e.text`, or `e.cancel`. */
+  /** Occurs before text is pasted. Change `e.text`, or set `e.cancel = true`. */
   onPasting?: (e: GridPastingEventArgs) => void;
 }

@@ -106,7 +106,7 @@ export class GridExport<T> {
     const merges: GridSheetMerge[] = [];
     if (options.headers !== false) this.headerRows(fields, cols, out, merges);
     const summaryRows = (rowType: 'groupFooter' | 'totalFooter', level: number, lists: Entry[][]) => {
-      // Several items under one column take a row each writes them.
+      // Several items under one column take a row each.
       const count = Math.max(1, ...lists.map((list) => list.length));
       for (let k = 0; k < count; k++) {
         const cells = lists.map((list, j): GridSheetCell<T> => {
@@ -200,7 +200,7 @@ export class GridExport<T> {
   }
 
   /**
-   * The header rows of a sheet's Excel export writes them: a row per level of bands,
+   * The header rows of a sheet: a row per level of bands,
    * each band's title in the first cell it spans and merged over the rest; a column's title in the
    * row under its deepest band, merged down to the last header row.
    */

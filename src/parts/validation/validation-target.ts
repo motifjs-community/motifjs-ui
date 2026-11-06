@@ -1,4 +1,4 @@
-/** Anything a `ValidationGroup` can check. */
+/** Anything a `ValidationGroup` can validate. */
 export interface ValidationTarget {
   validate(): Promise<boolean>;
   resetValidation(): void;

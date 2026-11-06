@@ -1,39 +1,48 @@
 /** The fields of an appointment object the scheduler reads. */
 export interface SchedulerFields {
-  /** Default `'id'`: what tells two appointments apart. */
+  /** The value that identifies an appointment. The default is `'id'`. */
   key: string;
-  /** Default `'startDate'`: a `Date`, an ISO text or a number of milliseconds. */
+  /** A `Date`, an ISO string or a number of milliseconds. The default is `'startDate'`. */
   start: string;
-  /** Default `'endDate'`. */
+  /** The default is `'endDate'`. */
   end: string;
-  /** Default `'text'`. */
+  /** The default is `'text'`. */
   text: string;
-  /** Default `'allDay'`. */
+  /** The default is `'allDay'`. */
   allDay: string;
-  /** Default `'description'`. */
+  /** The default is `'description'`. */
   description: string;
-  /** Default `'color'`: a CSS color of its own. */
+  /** A custom CSS color. The default is `'color'`. */
   color: string;
-  /** Default `'disabled'`. */
+  /** The default is `'disabled'`. */
   disabled: string;
-  /** Default `'visible'`: `false` leaves it out. */
+  /** `false` omits the appointment. The default is `'visible'`. */
   visible: string;
-  /** Default `'allowDrag'`: `false` keeps it in place, whatever `editing` says. */
+  /** `false` keeps it in place, regardless of `editing`. The default is `'allowDrag'`. */
   allowDrag: string;
-  /** Default `'allowResize'`. */
+  /** The default is `'allowResize'`. */
   allowResize: string;
-  /** Default `'allowEdit'`: `false` opens no form for it. */
+  /** `false` opens no form for it. The default is `'allowEdit'`. */
   allowEdit: string;
-  /** Default `'allowDelete'`. */
+  /** The default is `'allowDelete'`. */
   allowDelete: string;
-  /** Default `'recurrenceRule'`: how it repeats, an RFC 5545 rule (`FREQ=WEEKLY;BYDAY=MO,WE`); empty for once. */
+  /**
+   * The recurrence, as an RFC 5545 rule (`FREQ=WEEKLY;BYDAY=MO,WE`). Empty for a single appointment.
+   * The default is `'recurrenceRule'`.
+   */
   recurrenceRule: string;
-  /** Default `'recurrenceException'`: the times of a series omitted (`EXDATE`), a text apart by commas or a list of dates. */
+  /**
+   * The excluded times of a series (`EXDATE`), as comma-separated text or a list of dates. The default
+   * is `'recurrenceException'`.
+   */
   recurrenceException: string;
-  /** Default `'recurrenceId'`: on an occurrence changed apart from its series, the key of that series. */
+  /** On an individually edited occurrence, the key of its series. The default is `'recurrenceId'`. */
   recurrenceId: string;
-  /** Default `'startDateTimeZone'`: the IANA time zone the start is set in (and a series repeats in); empty for the scheduler's. */
+  /**
+   * The IANA time zone of the start, in which a series also recurs. Empty for the scheduler's zone.
+   * The default is `'startDateTimeZone'`.
+   */
   startTimeZone: string;
-  /** Default `'endDateTimeZone'`: the time zone the end is set in; empty for the start's. */
+  /** The time zone of the end. Empty for the start's zone. The default is `'endDateTimeZone'`. */
   endTimeZone: string;
 }

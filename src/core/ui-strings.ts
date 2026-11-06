@@ -1,4 +1,4 @@
-/** The texts the controls write themselves. `{min}` and `{max}` are filled in. */
+/** The strings the controls display on their own. `{min}` and `{max}` are filled in. */
 export interface UiStrings {
   moreOptions: string;
   clear: string;
@@ -9,7 +9,7 @@ export interface UiStrings {
   close: string;
   loading: string;
   noItems: string;
-  /** A value the list's source does not have. */
+  /** A value that is not in the list's source. */
   notInList: string;
   search: string;
   notifications: string;
@@ -48,12 +48,12 @@ export interface UiStrings {
   presenceOffline: string;
   /** `{name}` is the person's name, `{presence}` one of the presence texts. */
   avatarPresence: string;
-  /** The check box of a selectable card; `{title}` is the card's title. */
+  /** The check box of a selectable card. `{title}` is the card's title. */
   cardSelect: string;
-  /** A rating's value for screen readers; `{value}` and `{max}` are numbers. */
+  /** A rating's value for screen readers. `{value}` and `{max}` are numbers. */
   ratingValue: string;
   ratingNone: string;
-  /** A pagination's page sizes (the grid's pager says rows: `gridPageSize`). */
+  /** A pagination's page sizes. The grid's pager uses rows (`gridPageSize`). */
   pagerPageSize: string;
   breadcrumb: string;
   /** The button of a breadcrumb's pages that do not fit. */
@@ -70,7 +70,7 @@ export interface UiStrings {
   colorBlue: string;
   colorPresets: string;
   colorPick: string;
-  /** `{count}` is how many avatars a group does not show. */
+  /** `{count}` is the number of avatars a group does not show. */
   avatarGroupMore: string;
   required: string;
   invalidEmail: string;
@@ -349,7 +349,7 @@ export interface UiStrings {
   tabDocsLock: string;
   tabDocsUnlock: string;
   tabDocsOpenList: string;
-  /** The "…" button with tabs out of sight: `{n}` is how many. */
+  /** The "…" button with tabs out of view. `{n}` is their number. */
   tabDocsOpenListHidden: string;
   /** The "…" button of a compact bar: the documents and the buttons that are not in the bar. */
   tabDocsBarMenu: string;

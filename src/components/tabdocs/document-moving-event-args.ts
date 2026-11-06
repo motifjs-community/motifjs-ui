@@ -3,7 +3,7 @@ import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 
-/** A document is about to move, in its group or to another one; `cancel = true` keeps it where it is. */
+/** Occurs before a document moves, within its group or to another group. Set `cancel = true` to keep it in place. */
 export interface DocumentMovingEventArgs extends EventArgs {
   document: TabDocument;
   from: TabGroup;

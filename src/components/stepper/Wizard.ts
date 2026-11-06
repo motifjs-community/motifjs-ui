@@ -19,10 +19,10 @@ import { WizardStep } from "./WizardStep";
 const OWN = ['value', 'linear', 'orientation', 'labelPosition', 'size', 'showStepper', 'clickable', 'showNavigation', 'lazy', 'keepAlive', 'previousText', 'nextText', 'finishText', 'label'] as const;
 
 /**
- * A task in steps: a `Stepper` above (or beside) one page per step, and the Back and Next buttons under them. Next
- * validates the page first: the kit's fields on it, then the step's own `validate`; a page that fails keeps the
- * wizard and marks its step. On the last step Next finishes (`onFinishing`, `onFinished`). The steps are
- * `WizardStep`s, from JSX or from `steps`, and the current one is `value` (`x-model`).
+ * A task in steps: a `Stepper` above or next to one page per step, with Back and Next buttons below them. Next
+ * validates the page first: the kit fields on it, and then the step's own `validate`. A page that fails keeps the
+ * wizard on it and marks its step. On the last step, Next finishes (`onFinishing`, `onFinished`). The steps are
+ * `WizardStep` objects, from JSX or from `steps`, and the current one is `value` (`x-model`).
  *
  * @example
  * <Wizard onFinished={() => this.save()}>
@@ -188,42 +188,45 @@ export class Wizard extends Control<HTMLDivElement, WizardProps> {
         this.assignProperty('label', value);
     }
 
-    /** The current step is about to change (the stepper's event); `cancel` keeps it, `promise` waits. */
+    /** Occurs before the current step changes (the stepper event). `cancel` keeps it, and `promise` waits. */
     get onStepChanging(): MotifEvent<StepChangingEventArgs> {
         return this.stepper.onStepChanging;
     }
 
-    /** The current step changed (the stepper's event). */
+    /** Occurs after the current step changes (the stepper event). */
     get onStepChanged(): MotifEvent<StepChangedEventArgs> {
         return this.stepper.onStepChanged;
     }
 
-    /** The last page passed and the wizard is about to finish; `cancel` keeps it open, `promise` waits. */
+    /**
+     * Occurs when the last page is valid and the wizard is about to finish. `cancel` keeps it open, and `promise`
+     * waits.
+     */
     get onFinishing(): MotifEvent<WizardFinishingEventArgs> {
         return this.finishing.event;
     }
 
-    /** The wizard finished. */
+    /** Occurs when the wizard finishes. */
     get onFinished(): MotifEvent<{ source: Wizard }> {
         return this.finished.event;
     }
 
-    /** The step of the current page; `null` when there is none. */
+    /** The step of the current page, or `null` if there is none. */
     get currentStep(): WizardStep | null {
         return this.steps[this.stepper.selectedIndex] ?? null;
     }
 
-    /** The index of the current step; -1 when there is none. */
+    /** The index of the current step, or -1 if there is none. */
     get selectedIndex(): number {
         return this.stepper.selectedIndex;
     }
 
-    /** The current step is the last one that can be gone to: Next finishes. */
+    /** Indicates that the current step is the last one that can be reached, so Next finishes. */
     get isLast(): boolean {
         return this.stepper.selectedIndex >= 0 && !this.stepper.canGoNext;
     }
 
-    /** The wizard finished (`finish()` passed). */
+    /** Indicates that the wizard has finished (`finish()` passed). */
     get isFinished(): boolean {
         return this.done;
     }
@@ -250,7 +253,7 @@ export class Wizard extends Control<HTMLDivElement, WizardProps> {
         return step;
     }
 
-    /** Takes a step out and disposes it. */
+    /** Removes a step and disposes it. */
     remove(step: WizardStep): boolean {
         const at = this.steps.indexOf(step);
         if (at < 0) {
@@ -267,22 +270,25 @@ export class Wizard extends Control<HTMLDivElement, WizardProps> {
         return true;
     }
 
-    /** Validates the page, then goes to the next step; on the last one, finishes. */
+    /** Validates the page and moves to the next step. On the last step, it finishes. */
     next(): Promise<boolean> {
         return this.isLast ? this.finish() : this.stepper.next();
     }
 
-    /** Goes back a step; nothing is validated. */
+    /** Moves back a step, without validation. */
     previous(): Promise<boolean> {
         return this.stepper.previous();
     }
 
-    /** Goes to a step by index or key; going forward validates the page. */
+    /** Moves to a step by index or key. Moving forward validates the page. */
     goTo(step: number | string): Promise<boolean> {
         return this.stepper.goTo(step);
     }
 
-    /** Validates the page, asks `onFinishing`, then finishes: every step is drawn done and `onFinished` is raised. */
+    /**
+     * Validates the page, raises `onFinishing`, and then finishes: every step is shown as done and `onFinished` is
+     * raised.
+     */
     async finish(): Promise<boolean> {
         if (!(await this.leaveCheck()) || this.isDisposed) {
             return false;
@@ -301,7 +307,10 @@ export class Wizard extends Control<HTMLDivElement, WizardProps> {
         return true;
     }
 
-    /** Validates the current page the way Next does: the kit's fields on it, then the step's own `validate`. The step is marked when it fails. */
+    /**
+     * Validates the current page as Next does: the kit fields on it, and then the step's own `validate`. The step is
+     * marked when it fails.
+     */
     async leaveCheck(): Promise<boolean> {
         const step = this.currentStep;
         if (!step) {
@@ -320,7 +329,7 @@ export class Wizard extends Control<HTMLDivElement, WizardProps> {
         return ok;
     }
 
-    /** The stepper's items are recreated from the steps: a step changed, came or went. */
+    /** Recreates the stepper's items from the steps, after a step changed, was added or was removed. */
     stepsChanged(): void {
         if (!this.ready) {
             return;

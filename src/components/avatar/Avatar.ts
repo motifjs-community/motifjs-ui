@@ -28,9 +28,9 @@ const PRESENCE: Record<AvatarStatus, keyof UiStrings> = {
 };
 
 /**
- * Someone's picture; until it loads, or when there is none, their initials (made from `name` in the
- * kit's language), else a person icon. A presence dot sits on its lower end corner. Its shape and tone
- * default to the design language's.
+ * A person's picture. Until it loads, or when there is none, the initials appear (created from `name` in the
+ * kit language), and otherwise a person icon. A presence dot sits on the lower end corner. The shape and tone
+ * default to those of the design language.
  *
  * @example
  * <Avatar name="Ada Lovelace" src={() => this.user.photo} status="online" />
@@ -120,13 +120,13 @@ export class Avatar extends Control<HTMLSpanElement, AvatarProps> {
     this.assignProperty('status', value);
   }
 
-  /** The initials it shows: the ones given, else the ones made from the name. */
+  /** The displayed initials: the ones provided, otherwise the ones created from the name. */
   get shownInitials(): string {
     const given = this.peekProperty<string>('initials');
     return given || initialsOf(this.peekProperty<string>('name') ?? '', uiLocale.locale);
   }
 
-  /** Whether the picture is what shows now (it loaded). */
+  /** Indicates whether the picture has loaded and is currently shown. */
   get showsPicture(): boolean {
     const src = this.peekProperty<string | null>('src') || null;
     return !!src && src === this.loaded;

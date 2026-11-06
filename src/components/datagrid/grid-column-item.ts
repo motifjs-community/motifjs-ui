@@ -1,5 +1,5 @@
 import type { GridBand } from './grid-band';
 import type { GridColumn } from './grid-column';
 
-/** What the grid's `columns` hold: columns, and bands over columns. */
+/** An entry of the grid's `columns`: a column, or a band over columns. */
 export type GridColumnItem<T = any> = GridColumn<T> | GridBand<T>;

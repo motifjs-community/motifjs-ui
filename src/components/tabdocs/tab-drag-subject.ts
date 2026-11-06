@@ -3,15 +3,18 @@ import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 import type { TabWindow } from './TabWindow';
 
-/** What is being dragged: a document, a whole group (`document: null`), or a floating window (`window`) with everything in it. */
+/**
+ * The item being dragged: a document, a whole group (`document: null`), or a floating window (`window`)
+ * with its contents.
+ */
 export interface TabDragSubject {
   document: TabDocument | null;
-  /** The document's group, or the group dragged (for a window, its active group). */
+  /** The document's group, the group being dragged, or a window's active group. */
   group: TabGroup;
   /** The manager it is dragged from. */
   manager: TabDocumentManager;
-  /** A drop now would open a copy (the copy key is held and the document may be open twice). */
+  /** Indicates that a drop now would open a copy: the copy key is held and the document can be open twice. */
   copy: boolean;
-  /** The floating window moved by its title area. */
+  /** The floating window being moved by its title area. */
   window?: TabWindow | null;
 }

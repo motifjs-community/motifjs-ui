@@ -13,13 +13,13 @@ import type { ValueChangedEventArgs } from './value-changed-event-args';
 
 /** Props every field has. Each prop is also a settable, reactive property. */
 export interface FieldProps<T> extends ControlProps {
-  /** Two-way with `x-model`. */
+  /** The value. `x-model` provides two-way binding. */
   value?: Bind<T>;
-  /** `&Name` makes Alt+N focus the field. The same as `text`. */
+  /** The label. `&Name` makes Alt+N move focus to the field. This is the same property as `text`. */
   label?: Bind<string>;
-  /** Default `'top'`. */
+  /** Where the label appears. The default is `'top'`. */
   labelMode?: Bind<FieldLabelMode>;
-  /** A line under the box; an error message takes its place. */
+  /** A line below the box, which an error message replaces. */
   helpText?: Bind<string>;
   /** A tooltip. */
   hint?: Bind<string>;
@@ -29,15 +29,15 @@ export interface FieldProps<T> extends ControlProps {
   buttons?: Bind<readonly FieldButton[]>;
   readOnly?: Bind<boolean>;
   required?: Bind<boolean>;
-  /** Default `'md'`. */
+  /** The height of the field. The default is `'md'`. */
   size?: Bind<ControlSize>;
-  /** Default `'outline'`. */
+  /** The appearance of the box. The default is `'outline'`. */
   variant?: Bind<FieldVariant>;
   stretch?: Bind<boolean>;
   rules?: Bind<readonly ValidationRule<T>[]>;
-  /** An error from outside, e.g. the server; shown until it is cleared. */
+  /** An error from outside, such as the server, shown until it is cleared. */
   error?: Bind<string | null>;
-  /** Default `'blur'`. */
+  /** When the field is validated. The default is `'blur'`. */
   validateOn?: Bind<ValidateOn>;
   validationGroup?: Bind<ValidationGroup | null>;
   onValueChanged?: (e: ValueChangedEventArgs<T>) => void;

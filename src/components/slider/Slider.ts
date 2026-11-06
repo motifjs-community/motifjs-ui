@@ -99,9 +99,9 @@ function decimals(n: number): number {
 }
 
 /**
- * A value picked on a track by dragging a thumb or with the keys: one number, or a range with two
- * thumbs that cannot cross. Steps, marks with labels, a value bubble, a vertical form and number
- * formatting; the label, help line and validation come from `Field`. `x-model` binds the value.
+ * A value selected on a track by dragging a thumb or with the keyboard: one number, or a range with two
+ * thumbs that cannot cross. It supports steps, marks with labels, a value tooltip, a vertical orientation and number
+ * formatting, and `Field` provides the label, help line and validation. `x-model` provides two-way binding.
  *
  * @example
  * <Slider label="&Volume" x-model={() => this.settings.volume} showValue="drag" />
@@ -190,7 +190,7 @@ export class Slider extends Field<SliderValue, SliderProps> {
   set minDistance(value: Bind<number>) {
     this.assignProperty('minDistance', value);
   }
-  /** Where the active segment starts on a one-thumb slider; `undefined` for the start of the track. */
+  /** The start of the active part of the track on a one-thumb slider. `undefined` means the start of the track. */
   get origin(): number | undefined {
     const origin = this.getProperty<number | null | undefined>('origin');
     return origin === null || origin === undefined ? undefined : toNumber(origin, 0);
@@ -246,7 +246,7 @@ export class Slider extends Field<SliderValue, SliderProps> {
   set name(value: Bind<string>) {
     this.assignProperty('name', value);
   }
-  /** A function, so it is stored as it is, never bound. */
+  /** Because it is a function, it is stored as is and not bound. */
   get valueText(): ((value: number) => string) | null {
     return this.getProperty<((value: number) => string) | null | undefined>('valueText') ?? null;
   }
@@ -254,12 +254,12 @@ export class Slider extends Field<SliderValue, SliderProps> {
     this.setProperty('valueText', value);
   }
 
-  /** The thumbs, `[start, end]` with a range (the end one is hidden without). */
+  /** The thumb elements, `[start, end]`. The end thumb is hidden without a range. */
   get thumbElements(): readonly HTMLElement[] {
     return this.sliderParts.thumbs;
   }
 
-  /** The value as text, the way the bubble and the tick labels write it. */
+  /** Formats a value the same way as the tooltip and the tick labels. */
   formatValue(value: number): string {
     const parts = this.sliderParts;
     if (!parts.formatter) {

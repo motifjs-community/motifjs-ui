@@ -1,7 +1,7 @@
 import type { EventArgs } from '@motifx/core';
 import type { data } from '@motifx-community/data';
 
-/** The filter builder is about to open on the filter value; `cancel` keeps it closed (open one of your own instead). */
+/** Occurs before the filter builder opens on the filter value. Set `cancel = true` to keep it closed. */
 export interface GridFilterBuilderOpeningEventArgs extends EventArgs {
   readonly value: data.FilterExpression | null;
 }

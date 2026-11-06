@@ -18,11 +18,11 @@ function firstWeek(year: number, weekStart: number): number {
 }
 
 /**
- * The times a rule happens from `from` up to `to` (not included), in order. Every time is a wall
- * clock time as milliseconds of UTC (`Date.UTC` of its fields), so a series keeps its hour over
- * summer time; the caller turns them into moments in the series' time zone. `start` is the first
- * time (`DTSTART`); it counts only when the rule has it. `COUNT` counts from `start`, whatever
- * `from` is; with no count the steps before `from` are skipped.
+ * The times a rule occurs from `from` up to `to` (not included), in order. Every time is a wall
+ * clock time as milliseconds of UTC (`Date.UTC` of its fields), so a series keeps its hour across
+ * daylight saving time, and the caller converts them to moments in the series' time zone. `start` is
+ * the first time (`DTSTART`), and it counts only when the rule includes it. `COUNT` counts from
+ * `start`, whatever `from` is, and with no count the steps before `from` are skipped.
  *
  * @example
  * // Every last Friday of the month, at the start's time.

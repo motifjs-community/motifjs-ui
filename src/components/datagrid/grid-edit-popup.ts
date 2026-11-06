@@ -2,22 +2,22 @@ import type { Bind } from '@motifx/core';
 
 /** The modal window of `editMode: 'popup'`, the kit's `MxForm`. Read and change it later through `grid.popup`. */
 export interface GridEditPopup {
-  /** Default: the `gridEditRowTitle` text of `uiLocale` (`gridNewRowTitle` for a new row). */
+  /** The title. The default is the `gridEditRowTitle` text of `uiLocale` (`gridNewRowTitle` for a new row). */
   title?: Bind<string>;
-  /** The title shows in the title bar; off, it still names the window for screen readers. Default `true`. */
+  /** Shows the title in the title bar. Otherwise, it still names the window for screen readers. The default is `true`. */
   showTitle?: Bind<boolean>;
-  /** A CSS length; a number is pixels. Default: as wide as the form needs. */
+  /** The width, as a CSS length or a number of pixels. By default, as wide as the form needs. */
   width?: Bind<number | string>;
-  /** A CSS length; a number is pixels. Default: as tall as the form needs. */
+  /** The height, as a CSS length or a number of pixels. By default, as tall as the form needs. */
   height?: Bind<number | string>;
-  /** Resized from its edges. Default `true`. */
+  /** Allows resizing from its edges. The default is `true`. */
   resizable?: Bind<boolean>;
-  /** Moved by its title bar. Default `true`. */
+  /** Allows moving by its title bar. The default is `true`. */
   movable?: Bind<boolean>;
-  /** The close button in the title bar (it cancels, like Cancel). Default `true`. */
+  /** Shows a close button in the title bar, which acts as Cancel. The default is `true`. */
   showCloseButton?: Bind<boolean>;
-  /** The maximize button. Default `false`. */
+  /** Shows a maximize button. The default is `false`. */
   showMaximize?: Bind<boolean>;
-  /** Opens maximized, filling the viewport. Default `false`. */
+  /** Opens maximized, filling the viewport. The default is `false`. */
   fullScreen?: Bind<boolean>;
 }

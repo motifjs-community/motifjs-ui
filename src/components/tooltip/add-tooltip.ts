@@ -5,8 +5,8 @@ import type { TooltipProps } from './tooltip-props';
 import type { TooltipTarget } from './tooltip-target';
 
 /**
- * Gives `target` a tooltip, made only when it is first needed: cheap enough for many elements.
- * Returns the function that removes it; for a component it also goes when the component does.
+ * Adds a tooltip to `target`, created on first use, so it is efficient for many elements.
+ * Returns a function that removes it. For a component, it is removed along with the component.
  *
  * @example
  * for (const cell of row.cells) addTooltip(cell, cell.title);

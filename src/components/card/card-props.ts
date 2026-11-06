@@ -9,37 +9,37 @@ import type { CardVariant } from './card-variant';
 
 /** Props of `Card`. Each prop is also a settable property, and a function is tracked. */
 export interface CardProps extends ControlProps {
-  /** The title; it names the card for screen readers. */
+  /** The title, which also provides the accessible name of the card. */
   title?: Bind<string>;
-  /** The line under the title. */
+  /** Text below the title. */
   subtitle?: Bind<string>;
   /** An avatar before the titles (its props). */
   avatar?: Bind<AvatarProps | null>;
-  /** Something at the end of the header: a menu button, a badge. */
+  /** Content at the end of the header, such as a menu button or a badge. */
   action?: Bind<ComponentBase | null>;
-  /** A picture running to the card's edges: an image address, an element or a component. */
+  /** An image that extends to the card edges: an image address, an element or a component. */
   media?: Bind<IconSource | null>;
-  /** What the picture shows, for screen readers, when `media` is an image address. Default: none (it only adorns). */
+  /** Alternative text for the image when `media` is an image address. Without it, the image is decorative. */
   mediaAlt?: Bind<string>;
-  /** What fills the content (besides JSX children). */
+  /** The content, in addition to JSX children. */
   content?: Bind<ComponentBase | null>;
-  /** A row of actions under the content. */
+  /** A row of actions below the content. */
   footer?: Bind<ComponentBase | null>;
-  /** Default: the design language's (`elevated`). */
+  /** The default comes from the design language (`elevated`). */
   variant?: Bind<CardVariant>;
-  /** The space in and between its parts. Default `'md'`. */
+  /** The spacing inside and between the parts. The default is `'md'`. */
   size?: Bind<ControlSize>;
-  /** `horizontal` puts the picture at the start. Default `'vertical'`. */
+  /** `horizontal` places the image at the start. The default is `'vertical'`. */
   orientation?: Bind<CardOrientation>;
-  /** The whole card can be pressed (`onclick`, Enter, Space). Default `false`. */
+  /** Makes the whole card pressable (`onclick`, Enter, Space). The default is `false`. */
   clickable?: Bind<boolean>;
-  /** The whole card is a link there: its title is the link, and a click anywhere on the card follows it. */
+  /** Makes the whole card a link to this address. The title is the link, and clicking anywhere on the card follows it. */
   href?: Bind<string | null>;
-  /** The link's `rel`; `'router'` lets the MotifJS router take it. */
+  /** The `rel` of the link. `'router'` lets the MotifJS router handle it. */
   rel?: Bind<string>;
-  /** A check box on its top end corner, and a click on the card turns it on and off. Default `false`. */
+  /** Adds a check box on the top end corner, and clicking the card toggles it. The default is `false`. */
   selectable?: Bind<boolean>;
-  /** Whether it is selected. Default `false`. */
+  /** Indicates whether the card is selected. The default is `false`. */
   selected?: Bind<boolean>;
   onSelectedChanged?: (e: CardSelectedChangedEventArgs) => void;
 }

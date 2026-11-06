@@ -2,7 +2,7 @@ import type { EventArgs } from '@motifx/core';
 import type { Tab } from './Tab';
 import type { Tabs } from './Tabs';
 
-/** The user is about to select a tab; `cancel = true` keeps the current one. */
+/** Provides data for the event that occurs before the user selects a tab. Set `cancel = true` to keep the current tab. */
 export interface TabSelectingEventArgs extends EventArgs {
   tab: Tab;
   index: number;

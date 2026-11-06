@@ -6,33 +6,36 @@ import type { AccordionExpandedEventArgs } from './accordion-expanded-event-args
 import type { AccordionExpandingEventArgs } from './accordion-expanding-event-args';
 import type { AccordionVariant } from './accordion-variant';
 
-/** Props of `Accordion`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
+/** Props of `Accordion`, in addition to the shared `ControlProps`. Each prop is also a settable, reactive property. */
 export interface AccordionProps extends ControlProps {
-  /** The open items' keys (an item without a key: its index). `x-model` binds it two-way. */
+  /** The keys of the open items (an item without a key uses its index). `x-model` provides two-way binding. */
   value?: Bind<readonly (string | number)[] | null | undefined>;
-  /** Several items can be open at once. Default `false`: opening one closes the other. */
+  /** Allows several items to be open. The default is `false`, so opening one closes the other. */
   multiple?: Bind<boolean>;
-  /** The open item can be closed. Default `true`; `false` keeps one item open. */
+  /** Allows the open item to be closed. The default is `true`. With `false`, one item stays open. */
   collapsible?: Bind<boolean>;
-  /** The `aria-level` of the headers, 1 to 6. Default 3. */
+  /** The `aria-level` of the headers, 1 to 6. The default is 3. */
   headingLevel?: Bind<number>;
-  /** Up, Down, Home and End move between the headers. Default `true`. */
+  /** Up, Down, Home and End move between the headers. The default is `true`. */
   arrowKeys?: Bind<boolean>;
-  /** Sections are `role="region"` landmarks: `'auto'` (default) while there are six items or fewer. */
+  /** Makes sections `role="region"` landmarks. The default, `'auto'`, applies when there are six items or fewer. */
   regions?: Bind<boolean | 'auto'>;
-  /** Default `'list'`. */
+  /** The default is `'list'`. */
   variant?: Bind<AccordionVariant>;
-  /** Default `'md'`. */
+  /** The default is `'md'`. */
   size?: Bind<ControlSize>;
-  /** Default `'end'`. */
+  /** The default is `'end'`. */
   chevron?: Bind<AccordionChevron>;
-  /** A section is built when first opened, then kept (an item's own `lazy` wins). Default `true`. */
+  /** Creates a section when first opened and then keeps it. An item's own `lazy` takes precedence. The default is `true`. */
   lazy?: Bind<boolean>;
-  /** `false`: content made by an item's `content` is disposed when it closes (an item's own `keepAlive` wins). Default `true`. */
+  /**
+   * With `false`, content created by an item's `content` is disposed when it closes. An item's own `keepAlive`
+   * takes precedence. The default is `true`.
+   */
   keepAlive?: Bind<boolean>;
-  /** The user is about to open an item; cancelable. */
+  /** Occurs before the user opens an item. This event is cancelable. */
   onExpanding?: (e: AccordionExpandingEventArgs) => void;
-  /** The user is about to close an item; cancelable. */
+  /** Occurs before the user closes an item. This event is cancelable. */
   onCollapsing?: (e: AccordionExpandingEventArgs) => void;
   onExpanded?: (e: AccordionExpandedEventArgs) => void;
   onCollapsed?: (e: AccordionExpandedEventArgs) => void;

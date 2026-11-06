@@ -17,8 +17,8 @@ interface Parts {
 }
 
 /**
- * Picks one row of a table-like list, typically from a data source searched on the server: a
- * customer by name, city and phone. The field shows the chosen row's text.
+ * Selects one row of a table-like list, typically from a data source searched on the server, such as a
+ * customer by name, city and phone. The field shows the text of the selected row.
  *
  * @example
  * <Lookup label="Customer" dataSource={this.customers} textField="CompanyName" valueField="CustomerID"
@@ -57,8 +57,8 @@ export class Lookup<T = unknown, V = unknown> extends DropDown<T, V> {
   }
 
   /**
-   * Reads the items and the columns again after they were changed in place. Your items and columns may be plain or
-   * reactive; the lookup reads them as they are.
+   * Re-reads the items and the columns after they have been changed in place. Your items and columns can be plain or
+   * reactive, and the lookup reads them as they are.
    */
   override refresh(): void {
     this.applyColumns();

@@ -12,7 +12,7 @@ import type { AvatarSize } from './avatar-size';
 const OWN = ['size', 'layout', 'max', 'total', 'label'] as const;
 
 /**
- * Avatars side by side, or stacked each over the one before it (the design language's layout), all
+ * Avatars side by side, or stacked with each one over the previous one (the design language's layout), all
  * of one size. Past `max`, and up to `total`, the rest are counted in a `+N` avatar after them.
  *
  * @example
@@ -95,14 +95,14 @@ export class AvatarGroup extends Control<HTMLDivElement, AvatarGroupProps> {
     this.assignProperty('label', value);
   }
 
-  /** The elements of the avatars given, in order, from JSX lists too (the `+N` is not one of them). */
+  /** The elements of the provided avatars in order, including those from JSX lists. The `+N` is not included. */
   get avatars(): HTMLElement[] {
     return Array.from(this.element.children).filter(
       (el): el is HTMLElement => el instanceof HTMLElement && el !== this.more.element && el.classList.contains('mx-avatar'),
     );
   }
 
-  /** How many are counted in the `+N`; 0 when it does not show. */
+  /** The number of people counted in the `+N`, or 0 when it is not shown. */
   get hiddenCount(): number {
     const given = this.avatars.length;
     const max = countOf(this.peekProperty('max'));

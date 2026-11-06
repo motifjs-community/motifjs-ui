@@ -41,9 +41,9 @@ const OWN_PRESS = 'a, button, input, select, textarea, [role="button"], [role="c
 type Slot = 'action' | 'content' | 'footer';
 
 /**
- * A surface holding one thing: a picture running to its edges, a header (avatar, title, subtitle and an
- * action), content (JSX children or `content`) and a row of actions (`footer`). Parts with nothing in them
- * are omitted. Its appearance defaults to the design language's; `clickable` makes the whole card pressable.
+ * A surface for one subject: an image that extends to the edges, a header (avatar, title, subtitle and an
+ * action), content (JSX children or `content`) and a row of actions (`footer`). Empty parts are omitted. The
+ * appearance defaults to that of the design language, and `clickable` makes the whole card pressable.
  *
  * @example
  * <Card title="Ada Lovelace" subtitle="Mathematician" avatar={{ name: 'Ada Lovelace' }} footer={<Button text="Follow" />}>
@@ -213,17 +213,17 @@ export class Card extends Control<HTMLDivElement, CardProps> {
     this.assignProperty('selected', value, Boolean);
   }
 
-  /** It was selected or not any more, by the user or by code (`e.byUser`). */
+  /** Occurs when the selection changes, either by the user or programmatically (`e.byUser`). */
   get onSelectedChanged(): MotifEvent<CardSelectedChangedEventArgs> {
     return this.selectedChanged.event;
   }
 
-  /** The part holding the content, for adding to it programmatically. */
+  /** The part that holds the content, for adding to it programmatically. */
   get contentPart(): Component<HTMLDivElement> {
     return this.slots.content;
   }
 
-  /** The avatar before the titles, when it has one. */
+  /** The avatar before the titles, if there is one. */
   get avatarControl(): Avatar | null {
     return this.avatarPart;
   }

@@ -1,7 +1,7 @@
 import { Emitter, untracked, type Bind, type Event as MotifEvent, type IBaseProp } from '@motifx/core';
 import { Control } from '../../core/control';
 import type { ControlSize } from '../../core/control-size';
-import { deepActiveElement, nextTabbable } from '../../core/focus';
+import { deepActiveElement, rescueStop } from '../../core/focus';
 import type { AccordionChevron } from './accordion-chevron';
 import type { AccordionExpandedEventArgs } from './accordion-expanded-event-args';
 import type { AccordionExpandingEventArgs } from './accordion-expanding-event-args';
@@ -36,11 +36,11 @@ interface Parts {
 const PARTS = Symbol('mx.accordion');
 
 /**
- * Sections that open and close under their headers, following the ARIA accordion pattern.
- * Items come as `<AccordionItem>` children or programmatically (`add`, `insert`, `remove`). One item is
- * open at a time unless `multiple`; `value` (two-way with `x-model`) lists the open items'
- * keys. Up and Down move between the headers, an item's `&` key opens or closes it, and a
- * section is built when it is first opened (`lazy`).
+ * Sections that expand and collapse under their headers, following the ARIA accordion pattern.
+ * Items are `<AccordionItem>` children or are managed programmatically (`add`, `insert`, `remove`). One item is
+ * open at a time unless `multiple` is set, and `value` lists the keys of the open items (`x-model` provides two-way
+ * binding). Up and Down move between the headers, an item's `&` key toggles it, and a section is created when it is
+ * first opened (`lazy`).
  *
  * @example
  * <Accordion multiple x-model={() => this.state.open}>
@@ -90,7 +90,7 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
   get items(): readonly AccordionItem[] {
     return this.getProperty<readonly AccordionItem[] | undefined>('items') ?? NO_ITEMS;
   }
-  /** The open items' keys (an item without a key: its index). Reactive. */
+  /** The keys of the open items (an item without a key uses its index). Reactive. */
   get value(): (string | number)[] {
     const items = this.items;
     return items.filter((item) => item.expanded).map((item) => this.keyOf(item, items));
@@ -165,26 +165,26 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
 
   // Events.
 
-  /** The user is about to open an item; `e.cancel = true` keeps it closed. */
+  /** Occurs before the user opens an item. Set `e.cancel = true` to keep it closed. */
   get onExpanding(): MotifEvent<AccordionExpandingEventArgs> {
     return this.parts.expanding.event;
   }
-  /** The user is about to close an item; `e.cancel = true` keeps it open. */
+  /** Occurs before the user closes an item. Set `e.cancel = true` to keep it open. */
   get onCollapsing(): MotifEvent<AccordionExpandingEventArgs> {
     return this.parts.collapsing.event;
   }
-  /** An item opened, by the user or by code (`e.byUser`). */
+  /** Occurs after an item opens, either by the user or programmatically (`e.byUser`). */
   get onExpanded(): MotifEvent<AccordionExpandedEventArgs> {
     return this.parts.expanded.event;
   }
-  /** An item closed, by the user or by code (`e.byUser`). */
+  /** Occurs after an item closes, either by the user or programmatically (`e.byUser`). */
   get onCollapsed(): MotifEvent<AccordionExpandedEventArgs> {
     return this.parts.collapsed.event;
   }
 
   // Methods.
 
-  /** Adds an item at the end (an item of another `Accordion` moves here). */
+  /** Adds an item at the end. An item from another `Accordion` moves here. */
   add(item: AccordionItem): AccordionItem {
     return this.insert(this.itemsNow().length, item);
   }
@@ -207,18 +207,18 @@ export class Accordion extends Control<HTMLDivElement, AccordionProps> {
     const next = this.neighbour(item);
     this.forget(item);
     this.controls.remove(item);
-    if (hadFocus && !next?.focus()) nextTabbable(this.element, this.element.closest('dialog') ?? document.body)?.focus();
+    if (hadFocus && !next?.focus()) rescueStop(this.element, this.element.closest('dialog') ?? document.body)?.focus();
     this.settle();
     return true;
   }
 
-  /** Opens every item (with `multiple`), programmatically. */
+  /** Opens every item programmatically. This requires `multiple`. */
   expandAll(): void {
     if (!this.peekProperty('multiple')) return;
     for (const item of this.itemsNow()) item.setExpanded(true);
   }
 
-  /** Closes every item, programmatically (with `collapsible` off, the first stays open). */
+  /** Closes every item programmatically. With `collapsible` off, the first item stays open. */
   collapseAll(): void {
     for (const item of this.itemsNow()) item.setExpanded(false);
     this.settle();

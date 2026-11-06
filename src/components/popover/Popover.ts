@@ -32,11 +32,11 @@ function elementOf(target: TooltipTarget | null | undefined): HTMLElement | null
 }
 
 /**
- * Content next to the element it belongs to: a title, a close button, anything in it. It opens on a click on its
- * target (`showOn: 'click'`), when the pointer rests on the target (`'hover'`) or programmatically; it follows the target
- * while the page scrolls, opens on the other side when there is no room, and points at the target with an arrow
- * where the design language draws one. Focus goes in when it opens by a click and back to the target when it
- * closes; Escape, a click outside, focus leaving and the close button close it.
+ * Content next to the element it belongs to, with a title, a close button and any content. It opens on a click on its
+ * target (`showOn: 'click'`), when the pointer rests on the target (`'hover'`) or programmatically. It follows the target
+ * during page scrolling, opens on the opposite side if there is no room, and shows an arrow toward the target
+ * where the design language includes one. Focus moves in when a click opens it, and returns to the target when it
+ * closes. Escape, a click outside, focus leaving and the close button close it.
  *
  * @example
  * <Button ref={b => (this.info = b)} text="Details" />
@@ -218,7 +218,7 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
     set hideDelay(value: Bind<number>) {
         this.assignProperty('hideDelay', value, Number);
     }
-    /** Open or not. Reactive; setting it opens or closes. */
+    /** Indicates whether it is open. Reactive. Set it to open or close the popover. */
     get value(): boolean {
         return !!this.getProperty<boolean>('value');
     }
@@ -226,7 +226,7 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         this.assignProperty('value', value, Boolean);
     }
 
-    /** Whether it is open now. */
+    /** Indicates whether it is currently open. */
     get isOpen(): boolean {
         return this.opened;
     }
@@ -235,7 +235,7 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         return this.openedEmitter.event;
     }
 
-    /** About to close (`reason`); `cancel = true` keeps it open. */
+    /** Occurs before it closes (`reason`). Set `cancel = true` to keep it open. */
     get onClosing(): MotifEvent<PopoverClosingEventArgs> {
         return this.closing.event;
     }
@@ -244,7 +244,10 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         return this.closed.event;
     }
 
-    /** Opens it next to its target; `false` without a target on the page, or when disabled. Focus goes in. */
+    /**
+     * Opens it next to its target, and focus moves in. Returns `false` if there is no target on the page or it is
+     * disabled.
+     */
     open(): boolean {
         const anchor = this.anchor;
         if (this.opened || !anchor?.isConnected || !this.isEnabled) {
@@ -277,7 +280,7 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         return true;
     }
 
-    /** Closes it; `onClosing` may keep it open. Focus inside goes back to the target. */
+    /** Closes it. `onClosing` can keep it open. Focus inside returns to the target. */
     close(reason: PopoverCloseReason = 'code'): boolean {
         this.clearTimers();
         if (!this.opened) {
@@ -315,7 +318,7 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         }
     }
 
-    /** Lines it up with its target again, e.g. after its content changed size. */
+    /** Repositions it relative to its target, for example after its content changes size. */
     place(): void {
         const anchor = this.anchor;
         if (!this.opened || !anchor) {

@@ -3,9 +3,9 @@ import type { TabRect } from './tab-rect';
 
 /** A new browser window as `saveLayout` writes it. */
 export interface TabLayoutBrowserWindow {
-  /** Its place and size on the screen. */
+  /** Its position and size on the screen. */
   rect: TabRect;
   root: TabLayoutNode;
-  /** The group (its index in `groups`) its documents came from, where they go back to. */
+  /** The group (an index in `groups`) its documents came from and return to. */
   home?: number | null;
 }

@@ -6,18 +6,18 @@ import type { TreeRow } from './tree-row';
 
 /**
  * The nodes of a tree read from its items, nested (a `children` array) or flat (a `parentId` on
- * each item). Children loaded on demand are kept here and survive the next read. It knows which
- * nodes are on screen and how check boxes add up; it draws nothing.
+ * each item). Children loaded on demand are kept here and survive the next read. It tracks which
+ * nodes are on screen and how check boxes combine, and it draws nothing.
  */
 export class TreeModel<T> {
   roots: TreeNode<T>[] = [];
-  /** Children that loaded on demand, by their parent's key. */
+  /** Children loaded on demand, by the key of their parent. */
   readonly loaded = new Map<unknown, readonly T[]>();
   private byKey = new Map<unknown, TreeNode<T>>();
   private fields: TreeFields<T> | null = null;
   private lazy = false;
 
-  /** Reads the items again; `lazy`: a node without children may load them. */
+  /** Re-reads the items. With `lazy`, a node without children can load them. */
   read(items: readonly T[], fields: TreeFields<T>, flat: boolean, lazy: boolean): void {
     this.fields = fields;
     this.lazy = lazy;
@@ -25,7 +25,7 @@ export class TreeModel<T> {
     this.roots = flat ? this.readFlat(items) : this.readNested(items, null);
   }
 
-  /** Children that just loaded. */
+  /** Stores children that have just loaded. */
   setChildren(node: TreeNode<T>, given: readonly T[]): void {
     const items = givenList(given);
     this.loaded.set(node.key, items);
@@ -36,7 +36,7 @@ export class TreeModel<T> {
     return this.byKey.get(key);
   }
 
-  /** Every known node, parents before their children. */
+  /** Every known node, with parents before their children. */
   *walk(nodes: readonly TreeNode<T>[] = this.roots): Generator<TreeNode<T>> {
     for (const node of nodes) {
       yield node;
@@ -44,13 +44,13 @@ export class TreeModel<T> {
     }
   }
 
-  /** Whether `node` has children to show (or may load some). */
+  /** Indicates whether `node` has children to show, or can load some. */
   hasChildren(node: TreeNode<T>, shown: Set<TreeNode<T>> | null): boolean {
     if (!node.children) return node.lazy;
     return shown ? node.children.some((child) => shown.has(child)) : node.children.length > 0;
   }
 
-  /** The nodes on screen, in order: the roots, and the children of the open ones. */
+  /** The nodes on screen, in order: the roots, and the children of the expanded nodes. */
   rows(isOpen: (node: TreeNode<T>) => boolean, shown: Set<TreeNode<T>> | null): TreeRow<T>[] {
     const rows: TreeRow<T>[] = [];
     const add = (nodes: readonly TreeNode<T>[]) => {
@@ -74,7 +74,7 @@ export class TreeModel<T> {
     return shown;
   }
 
-  /** `keys` in tree order; keys of nodes not known (yet) come last. */
+  /** `keys` in tree order. Keys of unknown nodes come last. */
   inOrder(keys: Set<unknown>): unknown[] {
     const known: unknown[] = [];
     for (const node of this.walk()) if (keys.has(node.key)) known.push(node.key);
@@ -83,9 +83,9 @@ export class TreeModel<T> {
   }
 
   /**
-   * Brings the checked keys in step with the tree and returns each node's state. With
-   * `recursive`, the children of a checked node are checked and a parent is checked when all its
-   * children are, mixed when some are.
+   * Synchronizes the checked keys with the tree and returns the state of each node. With
+   * `recursive`, the children of a checked node are checked, and a parent is checked when all its
+   * children are, or mixed when some are.
    */
   checkStates(checked: Set<unknown>, recursive: boolean): Map<TreeNode<T>, TreeCheckState> {
     const states = new Map<TreeNode<T>, TreeCheckState>();
@@ -111,7 +111,7 @@ export class TreeModel<T> {
     return states;
   }
 
-  /** Checks or unchecks a node; with `recursive`, its children go with it and its parents follow. */
+  /** Checks or unchecks a node. With `recursive`, its children change with it and its parents are updated. */
   setChecked(node: TreeNode<T>, on: boolean, checked: Set<unknown>, recursive: boolean): void {
     const nodes = recursive ? [...this.walk([node])] : [node];
     for (const n of nodes) {

@@ -1,2 +1,2 @@
-/** Which tab becomes active when the active one closes: the one used last, or its neighbor on the left or right. */
+/** Which tab becomes active when the active tab closes: the most recently used tab, or a neighbor. */
 export type TabAfterClose = 'recent' | 'left' | 'right';

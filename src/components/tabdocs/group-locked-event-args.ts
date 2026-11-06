@@ -1,7 +1,7 @@
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 
-/** A group was locked or unlocked. */
+/** Occurs after a group is locked or unlocked. */
 export interface GroupLockedEventArgs {
   group: TabGroup;
   byUser: boolean;

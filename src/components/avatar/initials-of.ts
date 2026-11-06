@@ -1,7 +1,7 @@
 /**
- * The initials of a name: the first letters of its first and last words, in capitals of `locale`
- * ("ada lovelace" → "AL", "ılgın" in Turkish → "I"). What is in brackets and what is not a letter or a
- * digit are omitted; `''` when nothing is left.
+ * Creates the initials of a name: the first letters of its first and last words, capitalized for `locale`
+ * ("ada lovelace" → "AL", "ılgın" in Turkish → "I"). Text in brackets and characters that are not letters or
+ * digits are omitted. Returns `''` when nothing is left.
  */
 export function initialsOf(name: string, locale: string): string {
   const words = name

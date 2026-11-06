@@ -1,6 +1,6 @@
 import type { EventArgs } from '@motifx/core';
 
-/** The rows per page are about to change (0: every row on one page); `cancel` keeps them. */
+/** Occurs before the rows per page change (0 means all). Set `cancel = true` to keep the current value. */
 export interface GridPageSizeChangingEventArgs extends EventArgs {
   readonly pageSize: number;
   readonly previous: number;

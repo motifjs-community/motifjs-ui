@@ -7,25 +7,31 @@ import type { ContextMenuOpeningEventArgs } from './context-menu-opening-event-a
 import type { ContextMenuPresentation } from './context-menu-presentation';
 import type { ContextMenuTarget } from './context-menu-target';
 
-/** Props of `ContextMenu`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
+/** Props of `ContextMenu`, in addition to the shared `ControlProps`. Each prop is also a settable, reactive property. */
 export interface ContextMenuProps extends ControlProps {
-  /** Names the menu for screen readers. The same property as `text`. */
+  /** The accessible name of the menu. This is the same property as `text`. */
   label?: Bind<string>;
-  /** The menu's commands; `onOpening` can give others for each element. */
+  /** The commands. `onOpening` can provide different ones for each element. */
   items?: Bind<readonly MenuItem[]>;
-  /** The element or component whose menu it is. Default: the element the `ContextMenu` is placed in. */
+  /** The element or component the menu belongs to. The default is the element the `ContextMenu` is placed in. */
   target?: Bind<ContextMenuTarget | null | undefined>;
-  /** The Menu key and Shift+F10 open the menu at the focused element. Default `true`. */
+  /** The Menu key and Shift+F10 open the menu at the focused element. The default is `true`. */
   keyboard?: Bind<boolean>;
-  /** Scrolling that takes the element the menu opened on out of sight closes the menu (until then it goes along). Default `true`. */
+  /**
+   * Scrolling the element the menu opened on out of view closes the menu. Until then, the menu follows the element.
+   * The default is `true`.
+   */
   closeOnScroll?: Bind<boolean>;
-  /** Pointing at an item opens its submenu. Default `true`. */
+  /** Hovering an item opens its submenu. The default is `true`. */
   openOnHover?: Bind<boolean>;
-  /** A menu at the pointer, an `ActionSheet` from the bottom, or (`'auto'`) a sheet when a finger opened it, or on a screen with only a coarse pointer when not opened by a key. Default `'menu'`. */
+  /**
+   * A menu at the pointer, an `ActionSheet` from the bottom, or (`'auto'`) a sheet when a finger opened it, or on a
+   * screen with only a coarse pointer when not opened by a key. The default is `'menu'`.
+   */
   presentation?: Bind<ContextMenuPresentation>;
-  /** The menu is about to open; set `e.items` for `e.target`, or cancel. */
+  /** Occurs before the menu opens. Set `e.items` for `e.target`, or cancel. */
   onOpening?: (e: ContextMenuOpeningEventArgs) => void;
-  /** An item was chosen, after the item's own `click`. */
+  /** Occurs when an item is selected, after the item's own `click`. */
   onItemClick?: (e: MenuItemClickEventArgs) => void;
   onClosed?: (reason: PopupCloseReason) => void;
 }

@@ -1,2 +1,2 @@
-/** Where tabs show their close button: on every tab, on the active one and under the pointer, or nowhere. */
+/** Which tabs show a close button: every tab, the active tab and the tab under the pointer, or none. */
 export type TabCloseButton = 'always' | 'active' | 'never';

@@ -37,11 +37,11 @@ interface Parts {
 const PARTS = Symbol('mx.action-sheet');
 
 /**
- * A list of commands that comes up from the bottom: the kit's menu items, large enough for a
- * finger, with a title, a message and a cancel button apart. A submenu opens in its place, with a
- * way back. Choosing an item closes the sheet and runs it; `choose()` resolves with the item, or
- * `null` when the sheet was closed without one. It is a `BottomSheet` (as tall as its items by
- * default): it is dragged down, closed by Escape, the scrim and the browser's back. A
+ * A list of commands that slides up from the bottom. It shows the kit's menu items at a touch-friendly
+ * size, with a title, a message and a separate Cancel button. A submenu replaces the list, with a Back
+ * item. Selecting an item closes the sheet and runs the item. `choose()` resolves with the item, or with
+ * `null` if the sheet closes without a selection. It is a `BottomSheet`, as tall as its items by default,
+ * so it can be dragged down and is closed by Escape, the scrim and the browser's back action. A
  * `ContextMenu` with `presentation: 'sheet'` (or `'auto'` on a touch screen) opens its items here.
  *
  * @example
@@ -103,7 +103,7 @@ export class ActionSheet extends BottomSheet {
   set cancelText(value: Bind<string>) {
     this.assignProperty('cancelText', value);
   }
-  /** As tall as its items unless set. */
+  /** The heights the sheet stops at. Without a value, it is as tall as its items. */
   override get detents(): readonly BottomSheetDetent[] {
     const own = this.getProperty<readonly BottomSheetDetent[] | undefined>('detents');
     return own?.length ? own : FIT;
@@ -111,13 +111,13 @@ export class ActionSheet extends BottomSheet {
   override set detents(value: Bind<readonly BottomSheetDetent[]>) {
     this.assignProperty('detents', value);
   }
-  /** Focus moves in as it opens: to the list, or to its first item when a key opened it. */
+  /** Focus moves in when the sheet opens: to the list, or to the first item when opened from the keyboard. */
   override get focusOnOpen(): boolean {
     return false;
   }
   override set focusOnOpen(_value: Bind<boolean>) {}
 
-  /** The item chosen the last time it was open, `null` when none was. */
+  /** The item selected the last time the sheet was open, or `null` if there was none. */
   get chosenItem(): MenuItem | null {
     return this.actions.chosen;
   }
@@ -127,14 +127,14 @@ export class ActionSheet extends BottomSheet {
     return this.actions.list;
   }
 
-  /** An item was chosen, after the sheet closed and the item's own `click` ran. */
+  /** Occurs when an item is selected, after the sheet closes and the item's own `click` runs. */
   get onItemClick(): MotifEvent<MenuItemClickEventArgs> {
     return this.actions.itemClick.event;
   }
 
   /**
-   * Reads the items again (the level shown too) after they were changed in place. Your items may be plain or
-   * reactive; the sheet reads them as they are.
+   * Re-reads the items, including the visible level, after they have been changed in place. Your items can be
+   * plain or reactive, and the sheet reads them as they are.
    */
   refresh(): void {
     const parts = this.actions;
@@ -144,15 +144,15 @@ export class ActionSheet extends BottomSheet {
     this.showLevel(levels);
   }
 
-  /** Opens it; `byKeyboard` puts focus on the first item (else on the list, as a menu opened by the pointer does). */
+  /** Opens the sheet. `byKeyboard` moves focus to the first item. Otherwise, focus moves to the list. */
   override open(byKeyboard = false): boolean {
     this.actions.byKeyboard = byKeyboard;
     return super.open();
   }
 
   /**
-   * Opens it with `items` (else its own) and resolves with the item chosen, or `null` when it is
-   * closed without one. `host` gives it a place when it has none (else the end of the page).
+   * Opens the sheet with `items`, or with its own, and resolves with the selected item, or with `null` if it
+   * closes without a selection. `host` gives it a place if it has none. Otherwise, it opens at the end of the page.
    */
   choose(items?: readonly MenuItem[], host?: FormHost): Promise<MenuItem | null> {
     const parts = this.actions;

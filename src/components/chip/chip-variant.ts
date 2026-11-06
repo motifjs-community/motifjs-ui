@@ -1,2 +1,2 @@
-/** The appearance of a chip: filled, or only its outline. */
+/** The appearance of a chip: filled or outlined. */
 export type ChipVariant = 'filled' | 'outline';

@@ -30,8 +30,8 @@ interface Parts {
 }
 
 /**
- * A color as a field: its hex written in the box, a swatch of it at the start, and a picker in a popup (the area,
- * the strips, the inputs and the presets of `ColorPicker`). With `apply: 'useButtons'` the popup has OK and Cancel.
+ * A color field: the hex value in the box, a swatch at the start, and a picker in a popup (the area, the
+ * strips, the inputs and the presets of `ColorPicker`). With `apply: 'useButtons'`, the popup has OK and Cancel buttons.
  * Alt+Down opens it.
  *
  * @example
@@ -113,7 +113,7 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     return this.focusElement as HTMLInputElement;
   }
 
-  /** The picker in the popup, once it was opened. */
+  /** The picker in the popup, after it has been opened. */
   get picker(): ColorPicker | null {
     return this.colorParts.picker;
   }
@@ -130,7 +130,7 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     return this.colorParts.closed.event;
   }
 
-  /** Opens the picker; `false` when it cannot be used now. */
+  /** Opens the picker. Returns `false` when it cannot be used. */
   open(): boolean {
     if (!this.isEnabled || this.peekProperty('readOnly')) return false;
     const parts = this.colorParts;

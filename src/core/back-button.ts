@@ -30,10 +30,10 @@ let order = 0;
 export type BackButtonHold = (() => void) & { raise(): void };
 
 /**
- * Lets the browser's back close something: `onBack` runs when the user goes back while it is the
- * holder of the highest `layer` (the last one held, or raised, among equals). Returns the function
- * that lets go when it closes some other way: its history entry is taken back. A page whose address
- * changed in the meantime keeps the entry (going back then just returns to it).
+ * Lets the browser's back action close something. `onBack` runs when the user navigates back while it is
+ * the holder of the highest `layer` (the most recently held or raised among equals). Returns a function
+ * that releases the hold when it closes another way, which removes its history entry. A page whose address
+ * changed in the meantime keeps the entry, and navigating back then returns to it.
  */
 export function holdBackButton(view: Window | null, onBack: () => void, layer = 1): BackButtonHold {
   if (!view?.history || typeof view.history.pushState !== 'function') return Object.assign(() => {}, { raise: () => {} });

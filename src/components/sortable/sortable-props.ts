@@ -6,30 +6,30 @@ import type { SortableOrientation } from './sortable-orientation';
 
 /** Props of `Sortable`. Each prop is also a settable property, and a function is tracked. */
 export interface SortableProps<T = unknown> extends ControlProps {
-    /** The items, drawn with `itemTemplate`; without them the JSX children are the items. */
+    /** The items, each drawn with `itemTemplate`. Without them, the JSX children are the items. */
     items?: Bind<readonly T[]>;
-    /** Makes the component of an item. A function, so it is not bound like the other props. Default: the item's text. */
+    /** Creates the component for an item. It is not bound like the other props. The default is the item's text. */
     itemTemplate?: (item: T, index: number) => ComponentBase;
-    /** A selector inside an item that takes the drag (and the keys); without one the whole item does. */
+    /** A selector inside an item for the part that handles dragging and the keyboard. Without it, the whole item does. */
     handle?: Bind<string | null>;
-    /** Sortables of one group take each other's items. */
+    /** Sortables in the same group can exchange items. */
     group?: Bind<string | null>;
-    /** The items can be moved. Default `true`. */
+    /** Allows items to be moved. The default is `true`. */
     allowReordering?: Bind<boolean>;
-    /** Default `'vertical'`. */
+    /** The direction of the items. The default is `'vertical'`. */
     orientation?: Bind<SortableOrientation>;
-    /** What screen readers call the list. */
+    /** The accessible name of the list. */
     label?: Bind<string>;
-    /** A drag is about to start; cancelable. */
+    /** Occurs before a drag starts. Set `cancel = true` to prevent it. */
     onDragStarting?: (e: SortableDragEventArgs<T>) => void;
-    /** The place it would land changed; cancelable (the place is refused). */
+    /** Occurs when the drop position changes. Set `cancel = true` to reject that position. */
     onDragChanging?: (e: SortableDragEventArgs<T>) => void;
-    /** The drag is about to end; cancelable. */
+    /** Occurs before the drop. Set `cancel = true` to leave everything unchanged. */
     onDragEnding?: (e: SortableDragEventArgs<T>) => void;
-    /** An item moved within this sortable (by a drop or the keys). */
+    /** Occurs when an item moves within this sortable, by a drop or the keyboard. */
     onReorder?: (e: SortableDropEventArgs<T>) => void;
-    /** An item came in from another sortable of the group. */
+    /** Occurs when an item arrives from another sortable in the group. */
     onAdd?: (e: SortableDropEventArgs<T>) => void;
-    /** An item went to another sortable of the group. */
+    /** Occurs when an item leaves for another sortable in the group. */
     onRemove?: (e: SortableDropEventArgs<T>) => void;
 }

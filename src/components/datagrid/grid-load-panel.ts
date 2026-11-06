@@ -1,11 +1,11 @@
-/** The panel over the rows while an export runs: what it says, how far it got, and a button that stops it. */
+/** The panel over the rows while an export runs: its text, its progress and a button that stops it. */
 export interface GridLoadPanel {
-  /** Default `true` for `exportDataGrid`, `false` for `exportCsv` and `exportRows`. */
+  /** Enables the panel. The default is `true` for `exportDataGrid`, and `false` for `exportCsv` and `exportRows`. */
   enabled?: boolean;
-  /** Default: the `gridExporting` text of `uiLocale`. */
+  /** The panel's text. The default is the `gridExporting` text of `uiLocale`. */
   text?: string;
-  /** "1,000 of 25,000 rows" under the text, with a progress bar. Default `true`. */
+  /** Shows "1,000 of 25,000 rows" below the text, with a progress bar. The default is `true`. */
   showProgress?: boolean;
-  /** A button that stops the export (its promise rejects with an `AbortError`). Default `true`. */
+  /** Shows a button that stops the export (its promise rejects with an `AbortError`). The default is `true`. */
   cancelButton?: boolean;
 }

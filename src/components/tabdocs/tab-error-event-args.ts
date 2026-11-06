@@ -4,9 +4,9 @@ import type { TabGroup } from './TabGroup';
 import type { TabNewWindowFallback } from './tab-new-window-fallback';
 
 /**
- * Something the manager was asked could not be done: `windowBlocked`, the browser opened no window
- * (it blocks windows a page opens without a click or a key); `windowNotUsable`, the page in it is
- * of another origin. `fallback` says what happens instead, and may be changed.
+ * Reports an action the manager could not perform. With `windowBlocked`, the browser opened no window,
+ * because it blocks windows a page opens without a click or a key press. With `windowNotUsable`, the
+ * page in the window is from another origin. `fallback` determines what happens instead, and can be changed.
  */
 export interface TabErrorEventArgs {
   error: 'windowBlocked' | 'windowNotUsable';

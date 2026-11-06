@@ -6,7 +6,10 @@ const RANGE_OPS: readonly FilterBuilderOperation[] = ['=', '<>', '<', '>', '<=',
 const LIST_OPS: readonly FilterBuilderOperation[] = ['=', '<>', 'isblank', 'isnotblank'];
 const OBJECT_OPS: readonly FilterBuilderOperation[] = ['isblank', 'isnotblank'];
 
-/** The operations a field offers by its data type when it names none; a lookup field the same whatever its type. */
+/**
+ * The operations a field offers by its data type when it specifies none. A lookup field has the same operations for
+ * any type.
+ */
 export function defaultOperations(dataType: FilterBuilderDataType, lookup = false): readonly FilterBuilderOperation[] {
   if (lookup) return LIST_OPS;
   switch (dataType) {

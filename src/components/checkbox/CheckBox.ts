@@ -14,8 +14,8 @@ interface Drawn {
 }
 
 /**
- * A native checkbox with its caption: checked (`true`), unchecked (`false`) or indeterminate
- * (`null`). `required` means it must be checked.
+ * A native checkbox with its label: checked (`true`), unchecked (`false`) or indeterminate
+ * (`null`). `required` means that it must be checked.
  *
  * @example
  * <CheckBox label="&Remember me" x-model={() => this.form.remember} />

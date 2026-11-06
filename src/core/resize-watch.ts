@@ -2,9 +2,9 @@ import { onNodesMoved } from './document-watch';
 
 /**
  * A `ResizeObserver` that follows its targets into another window. A browser's observer only
- * reports elements of its own window's documents: an element moved into a window the app opened
- * would never be reported again. This one keeps an observer per window and moves each target to
- * the observer of the window it is in now. Where the browser has no `ResizeObserver` it does
+ * reports elements in its own window's documents, so an element moved into a window the app opened
+ * would no longer be reported. This class keeps an observer per window and moves each target to
+ * the observer of its current window. Where the browser has no `ResizeObserver`, it does
  * nothing.
  */
 export class ResizeWatch {

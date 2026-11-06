@@ -48,9 +48,9 @@ export function eachDocument(setup: Setup): () => void {
 }
 
 /**
- * Connects another document, of a window opened on the same origin: the kit's keys, tooltips,
- * focus guard and the like work there as they do in the page. It is disconnected again when its
- * window closes or loads another page. Returns the function that disconnects it.
+ * Connects another document, from a window opened on the same origin, so the kit's keys, tooltips,
+ * focus guard and similar features work there as they do in the page. It is disconnected when its
+ * window closes or loads another page. Returns a function that disconnects it.
  */
 export function connectDocument(doc: Document): () => void {
   if (isPageDocument(doc)) return () => {};

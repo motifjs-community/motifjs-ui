@@ -2,16 +2,16 @@ import type { EventArgs } from '@motifx/core';
 import type { Draggable } from './Draggable';
 import type { DropTarget } from './DropTarget';
 
-/** A drag begins (`cancel = true` keeps it in place), goes on, is about to end (`cancel` brings it back), or ended. */
+/** The drag event arguments. `cancel = true` prevents a drag from starting, or returns the draggable when it ends. */
 export interface DraggableEventArgs extends EventArgs {
-    /** Where the draggable stands, in pixels from where it was laid out. */
+    /** The position of the draggable, in pixels from its layout position. */
     x: number;
     y: number;
-    /** The drop target under the pointer that takes it, `null` for none. */
+    /** The drop target under the pointer that accepts it, or `null` if there is none. */
     target: DropTarget | null;
-    /** By the pointer or a key, else from the props. */
+    /** `true` when the pointer or a key moved it, `false` when the props did. */
     byUser: boolean;
-    /** At the end: a target took it. */
+    /** At the end of a drag, indicates whether a target accepted it. */
     dropped?: boolean;
     source: Draggable;
     event?: Event;

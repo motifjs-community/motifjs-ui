@@ -1,6 +1,6 @@
 import type { Scheduler } from './Scheduler';
 
-/** The print dialog has closed. */
+/** Occurs when the print dialog closes. */
 export interface PrintedEventArgs<T = unknown> {
   source: Scheduler<T>;
 }

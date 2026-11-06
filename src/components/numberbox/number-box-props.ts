@@ -3,43 +3,50 @@ import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
 import type { FieldProps } from '../../parts/field/field-props';
 import type { SpinLayout } from './spin-layout';
 
-/** Props of `NumberBox`: the field props plus its own. Each prop is also a settable, reactive property. */
+/** Props of `NumberBox`, in addition to the field props. Each prop is also a settable, reactive property. */
 export interface NumberBoxProps extends FieldProps<number | null> {
   min?: Bind<number | null>;
   max?: Bind<number | null>;
-  /** What the arrow keys, the spin buttons and the wheel add. Default `1`. */
+  /** The amount added by the arrow keys, the spin buttons and the wheel. The default is `1`. */
   step?: Bind<number>;
-  /** What PageUp and PageDown add. Default 10 × `step`. */
+  /** The amount added by PageUp and PageDown. The default is 10 × `step`. */
   largeStep?: Bind<number>;
-  /** Default `true`. */
+  /** Shows up and down buttons in the box. The default is `true`. */
   showSpinButtons?: Bind<boolean>;
-  /** `stacked` (default): up and down arrows on top of each other; `inline`: − and + side by side. */
+  /** `stacked` (the default) shows arrows on top of each other, and `inline` shows − and + side by side. */
   spinLayout?: Bind<SpinLayout>;
-  /** The mouse wheel changes the value while the field has focus. Default `false`. */
+  /** The mouse wheel changes the value while the field has focus. The default is `false`. */
   wheel?: Bind<boolean>;
-  /** How the value shows when the field does not have focus: currency, percent, digits… */
+  /** The display format without focus: currency, percent, digits… */
   format?: Bind<Intl.NumberFormatOptions>;
-  /** The locale of the format and of what is typed. Default the page's `lang`. */
+  /** The locale of the format and of the input. The default is the page's `lang`. */
   locale?: Bind<string>;
   /**
-   * Digits after the decimal point: every value is rounded to them (entered, given or set programmatically, written back
-   * to `x-model`), and shown with exactly that many while the field is not edited. Default: as given.
+   * The number of digits after the decimal point. Every value is rounded to this precision (entered, provided or set
+   * programmatically, and written back to `x-model`), and displayed with exactly that many digits while the field is
+   * not being edited. By default, values are used as provided.
    */
   decimals?: Bind<number | null>;
-  /** A value outside `min` / `max` is brought inside when entered. Default `true`; `false` leaves it to the range check. */
+  /**
+   * Brings a value outside `min` / `max` into range when entered. The default is `true`. `false` leaves it to the
+   * range validation.
+   */
   clamp?: Bind<boolean>;
-  /** An empty field is `null`. Default `true`; `false` puts `min` (or 0) in its place. */
+  /** An empty field is `null`. The default is `true`. `false` replaces it with `min` (or 0). */
   allowEmpty?: Bind<boolean>;
-  /** `input` (default) changes the value as soon as the text is a whole number, `change` when the field is left or Enter is pressed. */
+  /**
+   * With `input` (the default), the value updates as soon as the text is a complete number. With `change`, it updates
+   * when the field loses focus or the user presses Enter.
+   */
   updateOn?: Bind<'input' | 'change'>;
   placeholder?: Bind<string>;
-  /** Selects the whole text when the field gets focus. */
+  /** Selects all text when the field receives focus. */
   selectOnFocus?: Bind<boolean>;
-  /** Default `'start'`. */
+  /** The text alignment. The default is `'start'`. */
   align?: Bind<'start' | 'center' | 'end'>;
-  /** The name it is sent with in a form. */
+  /** The name submitted with the form. */
   name?: Bind<string>;
-  /** Default `'off'`. */
+  /** The default is `'off'`. */
   autocomplete?: Bind<string>;
   onEnter?: (e: EnterKeyEventArgs<number | null>) => void;
 }

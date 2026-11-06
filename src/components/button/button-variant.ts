@@ -1,2 +1,2 @@
-/** How a button is drawn: `solid` (filled and pressable), `outline` (a frame) or `ghost` (only on hover). */
+/** How a button is drawn: `solid` (filled and pressable), `outline` (framed) or `ghost` (visible only on hover). */
 export type ButtonVariant = 'solid' | 'outline' | 'ghost';

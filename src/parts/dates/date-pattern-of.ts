@@ -5,7 +5,7 @@ import type { DatePattern } from './date-pattern';
 const SAMPLE = new Date(2006, 10, 22, 13, 44, 55);
 const MASK_CHARS = /[09a*\\]/g;
 
-/** The digit pattern `locale` writes dates (and times, in 24 hours) with. */
+/** The digit pattern `locale` uses for dates, and for times in 24-hour form. */
 export function datePatternOf(locale: string, kind: DateKind, seconds = false): DatePattern {
   const options: Intl.DateTimeFormatOptions = { numberingSystem: 'latn' };
   if (kind !== 'time') Object.assign(options, { year: 'numeric', month: '2-digit', day: '2-digit' });

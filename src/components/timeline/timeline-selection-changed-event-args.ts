@@ -1,12 +1,12 @@
 import type { Timeline } from './Timeline';
 
-/** Horizontal: the event whose card is shown changed. */
+/** Provides data for the event that occurs, in the horizontal layout, when the selected event changes. */
 export interface TimelineSelectionChangedEventArgs {
     index: number;
-    /** The item as given; `null` when there is none. */
+    /** The item as provided, or `null` if there is none. */
     item: unknown;
     previous: number;
-    /** By a click or a key, else from code. */
+    /** `true` for a click or key, and `false` for a programmatic change. */
     byUser: boolean;
     source: Timeline;
 }

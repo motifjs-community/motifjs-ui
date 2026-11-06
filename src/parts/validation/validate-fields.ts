@@ -14,7 +14,7 @@ export function fieldsWithin(root: ComponentBase | Element): ValidationTarget[] 
     .filter((target): target is ValidationTarget => !!target && typeof target.validate === 'function');
 }
 
-/** Checks every field inside `root` (a panel, a dialog, a page) without a group. */
+/** Validates every field inside `root` (a panel, a dialog, a page) without a group. */
 export function validateFields(root: ComponentBase | Element, options: { focus?: boolean } = {}): Promise<ValidationResult> {
   return validateTargets(fieldsWithin(root), options.focus !== false);
 }

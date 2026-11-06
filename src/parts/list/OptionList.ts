@@ -17,10 +17,10 @@ import { foldText } from '../../core/fold-text';
 type Row = { header: string } | { index: number };
 
 /**
- * The options of a drop-down, a combo box or a list box (`role="listbox"`). The owner gives the
- * items and how to read them, says which are selected, and moves the highlight from its own keys
- * (`handleKey`); the owner's element points to the highlighted option with `aria-activedescendant`.
- * Long lists draw only the rows in view; with an `ItemSource` rows may load while they come into view.
+ * The options of a drop-down, a combo box or a list box (`role="listbox"`). The owner provides the
+ * items and how to read them, sets which are selected, and moves the highlight from its own keys
+ * (`handleKey`). The owner's element points to the highlighted option with `aria-activedescendant`.
+ * Long lists draw only the rows in view, and with an `ItemSource` rows can load as they come into view.
  */
 export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   static override elementTag = 'div';
@@ -29,18 +29,18 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
   enabledOf: (item: T) => boolean = (item) => readItemField(item, undefined, 'enabled') !== false;
   iconOf: ((item: T) => IconSource | undefined) | null = null;
   groupOf: ((item: T) => string | undefined) | null = null;
-  /** Draws an option's content instead of its text; may return a cleanup. */
+  /** Draws an option's content instead of its text. It can return a cleanup function. */
   draw: ((item: T, host: HTMLElement) => (() => void) | void) | null = null;
   isSelected: (item: T) => boolean = () => false;
-  /** Check marks in front of the options and `aria-multiselectable`. */
+  /** Shows check marks before the options and sets `aria-multiselectable`. */
   multiple = false;
-  /** Lists with more rows than this draw only the ones in view. */
+  /** Lists with more rows than this draw only the rows in view. */
   windowFrom = 100;
   /** Rows drawn above and below the visible ones in a long list. */
   extraRows = 6;
-  /** Milliseconds within which typed letters join one search. */
+  /** The milliseconds within which typed letters join one search. */
   typingDelay = 600;
-  /** What an empty list says; `uiLocale`'s "No items" by default. */
+  /** The text of an empty list. The default is the `uiLocale` string "No items". */
   emptyText: (() => string) | null = null;
 
   private size = 0;
@@ -96,7 +96,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     });
   }
 
-  /** The items as they are now; give them again after they changed. */
+  /** Sets the items as they are now. Set them again after they change. */
   setItems(given: readonly T[]): void {
     const items = givenList(given);
     this.size = items.length;
@@ -118,7 +118,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     this.drawAll();
   }
 
-  /** Items that load while they come into view (no groups). */
+  /** Sets items that load as they come into view (no groups). */
   setSource(source: ItemSource<T>): void {
     this.size = source.count;
     this.itemAt = (index) => source.at(index);
@@ -128,7 +128,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     this.drawAll();
   }
 
-  /** Draws the rows in view again, e.g. after some loaded. */
+  /** Redraws the rows in view, such as after some have loaded. */
   redraw(): void {
     if (this.windowed) {
       this.drawn = { first: 0, end: 0 };
@@ -159,7 +159,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     return `${this.baseId}-${index}`;
   }
 
-  /** Draws the selection again, after it changed. */
+  /** Redraws the selection after it changes. */
   refresh(): void {
     for (const el of this.element.querySelectorAll<HTMLElement>('[role="option"]')) {
       const item = this.itemAt(Number(el.dataset.index));
@@ -176,7 +176,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     el?.setAttribute('data-active', '');
   }
 
-  /** Moves the highlight over enabled options; returns the new index. */
+  /** Moves the highlight over enabled options and returns the new index. */
   move(how: ListMove): number {
     const n = this.size;
     if (!n) return -1;
@@ -196,7 +196,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     return this.active;
   }
 
-  /** The next enabled option whose text starts with what was typed lately; -1 when none. */
+  /** The next enabled option whose text starts with what was typed recently, or -1 if there is none. */
   typeAhead(key: string): number {
     const now = Date.now();
     this.typed = now - this.typedAt < this.typingDelay ? this.typed + key : key;
@@ -213,7 +213,7 @@ export class OptionList<T = unknown> extends Component<HTMLDivElement> {
     return -1;
   }
 
-  /** The list keys: arrows, Home, End, Page Up, Page Down, Enter. Returns whether it used the key. */
+  /** Handles the list keys: arrows, Home, End, Page Up, Page Down and Enter. Returns whether it used the key. */
   handleKey(e: KeyboardEvent): boolean {
     switch (e.key) {
       case 'ArrowDown':

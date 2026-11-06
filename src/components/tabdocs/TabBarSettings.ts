@@ -5,9 +5,8 @@ import type { TabLayoutBar } from './tab-layout-bar';
 import type { TabSize } from './tab-size';
 
 /**
- * The appearance of the strips of a dock area or a floating window. Each setting is a value or a
- * function, which is followed; `null` (the default) follows the manager's `compact…` prop of the
- * same name.
+ * The appearance of the strips of a dock area or floating window. Each setting is a value or a
+ * tracked function. `null`, the default, uses the manager's `compact…` prop of the same name.
  */
 export class TabBarSettings {
   private readonly own = {
@@ -19,7 +18,7 @@ export class TabBarSettings {
     barButtonSize: createSignal<Bind<TabBarButtonSize | null>>(null),
   };
 
-  /** Buttons that scroll its strips when the tabs do not fit. Reactive. */
+  /** Shows buttons that scroll its strips when the tabs do not fit. Reactive. */
   get scrollButtons(): boolean | null {
     return read(this.own.scrollButtons.value);
   }
@@ -33,28 +32,32 @@ export class TabBarSettings {
   set tabSize(value: Bind<TabSize | null>) {
     this.own.tabSize.value = value;
   }
-  /** The narrowest its tabs get, in pixels. Reactive. */
+  /** The minimum width of its tabs, in pixels. Reactive. */
   get tabMinWidth(): number | null {
     return read(this.own.tabMinWidth.value);
   }
   set tabMinWidth(value: Bind<number | null>) {
     this.own.tabMinWidth.value = value;
   }
-  /** A strip with one document shows it as a title. Reactive. */
+  /** Shows a strip with one document as a title. Reactive. */
   get singleTabTitle(): boolean | null {
     return read(this.own.singleTabTitle.value);
   }
   set singleTabTitle(value: Bind<boolean | null>) {
     this.own.singleTabTitle.value = value;
   }
-  /** The built-in buttons that stay in its toolbars; the others go into the "…" menu. `'all'`: every button, as among the documents; `'auto'`: as the manager's `compactBarButtons` says it. Reactive. */
+  /**
+   * The built-in buttons that stay in its toolbars, and the others move into the "…" menu. `'all'` keeps
+   * every button, as in the document groups. `'auto'` works as in the manager's `compactBarButtons`.
+   * Reactive.
+   */
   get barButtons(): readonly TabBarButton[] | 'all' | 'auto' | null {
     return read(this.own.barButtons.value);
   }
   set barButtons(value: Bind<readonly TabBarButton[] | 'all' | 'auto' | null>) {
     this.own.barButtons.value = value;
   }
-  /** How large the buttons of its toolbars are. Reactive. */
+  /** The size of the buttons in its toolbars. Reactive. */
   get barButtonSize(): TabBarButtonSize | null {
     return read(this.own.barButtonSize.value);
   }

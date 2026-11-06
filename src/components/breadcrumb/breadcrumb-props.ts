@@ -6,17 +6,20 @@ import type { BreadcrumbItemClickEventArgs } from './breadcrumb-item-click-event
 
 /** Props of `Breadcrumb`. Each prop is also a settable property, and a function is tracked. */
 export interface BreadcrumbProps extends ControlProps {
-  /** The steps, the current page last: `BreadcrumbItem`s or plain texts. */
+  /** The steps, with the current page last: `BreadcrumbItem` objects or plain text. */
   items?: Bind<readonly (BreadcrumbItem | string)[]>;
-  /** The links' `rel`; `'router'` lets the MotifJS router take them. */
+  /** The `rel` of the links. `'router'` lets the MotifJS router handle them. */
   rel?: Bind<string>;
-  /** The most steps shown; the first and the last ones stay, those between go into a menu. Default: as many as fit. */
+  /**
+   * The maximum number of steps shown. The first and last stay, and those in between move to a menu.
+   * By default, as many as fit are shown.
+   */
   maxItems?: Bind<number | null>;
-  /** The last step is the current page (not pressable, `aria-current`). Default `true`. */
+  /** Makes the last step the current page, which cannot be clicked and has `aria-current`. The default is `true`. */
   lastIsCurrent?: Bind<boolean>;
-  /** Default `'md'`. */
+  /** The default is `'md'`. */
   size?: Bind<ControlSize>;
-  /** What screen readers call it. Default: the kit's "Breadcrumb". */
+  /** The accessible name. The default is the kit's "Breadcrumb" string. */
   label?: Bind<string>;
   onItemClick?: (e: BreadcrumbItemClickEventArgs) => void;
 }

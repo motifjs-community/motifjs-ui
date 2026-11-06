@@ -1,6 +1,6 @@
 import type { OverlayPanel } from './OverlayPanel';
 
-/** An overlay is about to open; `cancel = true` keeps it closed. */
+/** The arguments of `onOpening`. Set `cancel = true` to keep the overlay closed. */
 export interface OverlayOpeningEventArgs {
   cancel: boolean;
   source: OverlayPanel;

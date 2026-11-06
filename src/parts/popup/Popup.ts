@@ -10,17 +10,17 @@ const hasPopover = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prot
 
 /**
  * A surface shown next to an anchor, above everything else (the browser's top layer): a menu, a
- * drop-down list, a picker. It follows the anchor while the page scrolls or resizes, opens on the
+ * drop-down list or a picker. It follows the anchor while the page scrolls or resizes, opens on the
  * other side when there is no room, and closes on Escape, on a click outside it and its toggle,
- * and when focus leaves both. Focus inside goes back to the toggle when it closes. Its content is
- * whatever is added to its `controls`; presses inside do not reach the component that hosts it.
- * Opened next to an anchor in another document (a window the app opened), it goes there.
+ * and when focus leaves both. Focus inside returns to the toggle when it closes. Its content is
+ * whatever is added to its `controls`, and clicks inside do not reach the component that hosts it.
+ * Opened next to an anchor in another document (a window the app opened), it moves there.
  */
 export class Popup extends Component<HTMLDivElement> {
   static override elementTag = 'div';
 
   placement: PopupPlacement = 'bottom-start';
-  /** At least as wide as the anchor. */
+  /** Makes the popup at least as wide as the anchor. */
   matchWidth = true;
 
   private anchor: HTMLElement | null = null;
@@ -91,7 +91,7 @@ export class Popup extends Component<HTMLDivElement> {
     this.closedEmitter.fire(reason);
   }
 
-  /** Lines the popup up with its anchor again, e.g. after its content changed size. */
+  /** Aligns the popup with its anchor again, such as after its content changes size. */
   place(): void {
     if (!this.anchor) return;
     if (!this.anchor.isConnected) {

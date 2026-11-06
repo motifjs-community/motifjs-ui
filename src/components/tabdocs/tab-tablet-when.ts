@@ -1,2 +1,5 @@
-/** When `presentation: 'auto'` shows the tablet layout: under `tabletWidth` on a touch screen (`'touch'`), or under it whatever the pointer (`'width'`). */
+/**
+ * When `presentation: 'auto'` uses the tablet presentation: below `tabletWidth` on a touch screen
+ * (`'touch'`), or below it regardless of the pointer type (`'width'`).
+ */
 export type TabTabletWhen = 'touch' | 'width';

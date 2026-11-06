@@ -1,8 +1,8 @@
 import type { SpeedDial } from './SpeedDial';
 
-/** The actions opened or closed. */
+/** Provides data for the events that occur when the actions open or close. */
 export interface SpeedDialEventArgs {
-    /** By a click or a key, else from code. */
+    /** `true` for a click or key, and `false` for a programmatic change. */
     byUser: boolean;
     source: SpeedDial;
     event?: Event;

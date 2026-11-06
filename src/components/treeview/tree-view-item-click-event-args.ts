@@ -1,6 +1,6 @@
 import type { TreeView } from './TreeView';
 
-/** A row was pressed, or Enter was pressed on it. */
+/** Provides data for the event that occurs when a row is clicked, or when Enter is pressed on it. */
 export interface TreeViewItemClickEventArgs<T> {
   item: T;
   key: unknown;

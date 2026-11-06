@@ -2,14 +2,14 @@ import type { EventArgs } from '@motifx/core';
 import type { MultiView } from './MultiView';
 import type { View } from './View';
 
-/** The view in sight is about to change. `cancel = true` keeps the one there. */
+/** Provides data for the event that occurs before the visible view changes. Set `cancel = true` to keep it. */
 export interface ViewSelectingEventArgs extends EventArgs {
     from: number;
     to: number;
-    /** `null` when there was none. */
+    /** `null` when there was no view. */
     fromView: View | null;
     toView: View;
-    /** By a swipe, else programmatically. */
+    /** `true` for a swipe, and `false` for a programmatic change. */
     byUser: boolean;
     source: MultiView;
     event?: Event;

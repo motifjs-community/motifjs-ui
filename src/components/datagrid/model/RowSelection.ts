@@ -211,7 +211,7 @@ export class RowSelection {
     this.before = { all: this.state.all, keys: new Map(this.keys), except: new Map(this.except), filter: this.filter, anchor: this.anchorIndex, base: this.base };
   }
 
-  /** The change is created: the guard is asked first, then it shows and is told. Returns whether it stays. */
+  /** Applies the change: the guard is asked first, then it shows and is told. Returns whether it stays. */
   private changed(): boolean {
     const before = this.before;
     this.before = null;

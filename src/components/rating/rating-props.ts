@@ -2,20 +2,26 @@ import type { Bind } from '@motifx/core';
 import type { FieldProps } from '../../parts/field/field-props';
 import type { RatingTone } from './rating-tone';
 
-/** Props of `Rating`: a field (label, help text, rules, `x-model`) plus its own. Each prop is also a settable, reactive property. */
+/**
+ * Props of `Rating`, in addition to the field props (label, help text, rules, `x-model`). Each prop is also a settable,
+ * reactive property.
+ */
 export interface RatingProps extends FieldProps<number | null> {
-  /** How many stars. Default `5`. */
+  /** The number of stars. The default is `5`. */
   max?: Bind<number>;
-  /** `0.5` takes halves (a click on a star's first half, or the arrow keys). Default `1`. */
+  /** `0.5` allows half stars, using the first half of a star or the arrow keys. The default is `1`. */
   step?: Bind<1 | 0.5>;
-  /** A click on the value chosen, Delete or Backspace leave none. Default `true`. */
+  /** Clicking the selected value, or pressing Delete or Backspace, clears the score. The default is `true`. */
   allowClear?: Bind<boolean>;
-  /** Under the pointer, the stars show what a click would give. Default `true`. */
+  /** On hover, the stars preview the score a click would set. The default is `true`. */
   preview?: Bind<boolean>;
-  /** Default: the design language's (`accent`). */
+  /** The default comes from the design language (`accent`). */
   tone?: Bind<RatingTone>;
-  /** The shape of an empty star: a name of the kit's icon set, or an image address (drawn in the star's color). Default: the language's (`star`). */
+  /**
+   * The shape of an empty star: a name from the kit's icon set, or an image address (drawn in the star color).
+   * The default comes from the design language (`star`).
+   */
   emptyIcon?: Bind<string | null>;
-  /** The shape of a filled star, as `emptyIcon`. Default: the language's (`star-filled`). */
+  /** The shape of a filled star, set as in `emptyIcon`. The default comes from the design language (`star-filled`). */
   filledIcon?: Bind<string | null>;
 }

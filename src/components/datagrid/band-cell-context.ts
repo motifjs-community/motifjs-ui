@@ -1,8 +1,8 @@
 import type { GridBand } from './grid-band';
 
-/** What a band's `headerCell` content gets: read its fields inside getters. */
+/** The context a band's `headerCell` content receives. Read its fields inside getters. */
 export interface BandCellContext<T> {
   readonly band: GridBand<T>;
-  /** The title, as `title` gives it now. */
+  /** The current value of `title`. */
   readonly title: string;
 }

@@ -1,4 +1,4 @@
-/** Infinite mode: a part of the rows came, `count` rows from `skip`; `ended` once every row shows. */
+/** In infinite mode, occurs when a page of rows arrives: `count` rows from `skip`, and `ended` once every row is displayed. */
 export interface GridMoreRowsLoadedEventArgs {
   readonly skip: number;
   readonly count: number;

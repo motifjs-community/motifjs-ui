@@ -7,52 +7,61 @@ import type { TabDockSide } from './tab-dock-side';
 import type { TabDocumentContent } from './tab-document-content';
 import type { TabTone } from './tab-tone';
 
-/** What a `TabDocument` is created from. Every field but `id`, `type`, `content` and `clone` takes a value or a function. */
+/**
+ * The options a `TabDocument` is created from. Every field except `id`, `type`, `content` and `clone`
+ * accepts a value or a function.
+ */
 export interface TabDocumentOptions {
-  /** Stays the same for the document's life; made up when omitted. */
+  /** Stays the same for the life of the document, and is generated when omitted. */
   id?: string;
-  /** The key a layout is restored by: `loadLayout`'s factory and the manager's `factory` read it. */
+  /** The key used to restore a layout. The `loadLayout` factory and the manager's `factory` read it. */
   type?: string;
   title?: Bind<string>;
-  /** A second, quieter text after the title: tells two documents of the same title apart. */
+  /** A second, lighter text after the title, which distinguishes documents with the same title. */
   description?: Bind<string>;
   icon?: Bind<IconSource | null | undefined>;
-  /** Shown when the pointer rests on the tab. Default: the title and the description. */
+  /** Shown when the pointer rests on the tab. By default, it is the title and the description. */
   tooltip?: Bind<string>;
-  /** A short text or number after the title; `true` shows a dot. */
+  /** A short text or number after the title. `true` shows a dot. */
   badge?: Bind<string | number | boolean | null | undefined>;
   /** Colors the title and the badge. */
   tone?: Bind<TabTone | null | undefined>;
-  /** Unsaved changes: a dot takes the close button's place. */
+  /** Marks unsaved changes. A dot replaces the close button. */
   dirty?: Bind<boolean>;
   pinned?: Bind<boolean>;
-  /** A preview tab: the next preview opened in its group takes its place, until it is kept. */
+  /** Marks a preview tab, which the next preview opened in its group replaces until it is kept. */
   preview?: Bind<boolean>;
-  /** `false`: no close button, and the user cannot close it; the close button of a dock area hides it instead (`allowHide`). Default `true`. */
+  /**
+   * With `false`, there is no close button and the user cannot close the document. The close button of
+   * a dock area hides it instead (`allowHide`). The default is `true`.
+   */
   closable?: Bind<boolean>;
-  /** This document's own setting; omitted, the manager's. */
+  /** This document's own setting. When omitted, the manager's setting applies. */
   contentLifetime?: Bind<ContentLifetime | undefined>;
-  /** This document's own setting; omitted, the manager's `allowDuplicate`. */
+  /** This document's own setting. When omitted, the manager's `allowDuplicate` applies. */
   allowDuplicate?: Bind<boolean | undefined>;
-  /** This document's own setting; omitted, the manager's `allowDrag`. */
+  /** This document's own setting. When omitted, the manager's `allowDrag` applies. */
   allowDrag?: Bind<boolean | undefined>;
-  /** This document's own setting; omitted, the manager's `allowFloat`. */
+  /** This document's own setting. When omitted, the manager's `allowFloat` applies. */
   allowFloat?: Bind<boolean | undefined>;
-  /** This document's own setting; omitted, the manager's `allowDock`. */
+  /** This document's own setting. When omitted, the manager's `allowDock` applies. */
   allowDock?: Bind<boolean | undefined>;
-  /** The dock areas this document may go to; omitted, the manager's `dockSides`. */
+  /** The dock areas this document can move to. When omitted, the manager's `dockSides` applies. */
   dockSides?: Bind<readonly TabDockSide[] | undefined>;
-  /** This document's own setting; omitted, the manager's `allowAutoHide`. */
+  /** This document's own setting. When omitted, the manager's `allowAutoHide` applies. */
   allowAutoHide?: Bind<boolean | undefined>;
-  /** This document's own setting; omitted, the manager's `allowHide`. */
+  /** This document's own setting. When omitted, the manager's `allowHide` applies. */
   allowHide?: Bind<boolean | undefined>;
-  /** This document's own setting; omitted, the manager's `allowNewWindow`. */
+  /** This document's own setting. When omitted, the manager's `allowNewWindow` applies. */
   allowNewWindow?: Bind<boolean | undefined>;
-  /** Buttons for the group's toolbar while this document is the active one. */
+  /** Buttons in the group's toolbar while this document is active. */
   actions?: Bind<readonly ToolbarItem[]>;
   content?: TabDocumentContent;
-  /** Makes the content of a copy of the document in another group; without it `content` (a function) or the manager's `factory` does. */
+  /**
+   * Creates the content of a copy of the document in another group. Without it, a `content` function
+   * or the manager's `factory` creates it.
+   */
   clone?: TabContentClone;
-  /** The app's own data for the document, saved with the layout. */
+  /** Application data for the document, saved with the layout. */
   state?: Bind<unknown>;
 }

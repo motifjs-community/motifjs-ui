@@ -1,6 +1,6 @@
 import type { EventArgs } from '@motifx/core';
 
-/** Another page is about to show (paged mode, 0-based); `cancel` stays on this one. */
+/** Occurs before another page appears (paged mode, 0-based). Set `cancel = true` to stay on the current page. */
 export interface GridPageChangingEventArgs extends EventArgs {
   readonly page: number;
   readonly previous: number;

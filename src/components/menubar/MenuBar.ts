@@ -52,10 +52,10 @@ interface Parts {
 const PARTS = Symbol('mx.menubar');
 
 /**
- * A bar of menus (`role="menubar"`), as at the top of an app: File, Edit, View. Left and Right
- * move along the bar and, while a menu is open, open the next one; Down, Enter and Space open a
- * menu; Escape closes it back to the bar; a letter goes to the item that starts with it; `&File`
- * makes Alt+F open File. Menus hold submenus, check and radio items and shortcuts (`MenuItem`).
+ * A bar of menus (`role="menubar"`), as at the top of an application: File, Edit, View. Left and Right
+ * move along the bar and, while a menu is open, open the next one. Down, Enter and Space open a
+ * menu, Escape closes it and returns to the bar, and a letter moves to the item that starts with it. `&File`
+ * makes Alt+F open File. Menus contain submenus, check and radio items and shortcuts (`MenuItem`).
  *
  * @example
  * <MenuBar label="Main" items={[{ text: '&File', items: [{ text: '&New', shortcut: 'Ctrl+N', click: () => this.create() }] }]} />
@@ -117,17 +117,23 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     this.assignProperty('openOnHover', value, Boolean);
   }
 
-  /** The top item whose menu is open, `null` while none is. Reactive. */
+  /** The top-level item whose menu is open, or `null` if there is none. Reactive. */
   get openItem(): MenuItem | null {
     return this.getProperty<MenuItem | null | undefined>('openItem') ?? null;
   }
 
-  /** An item was chosen (a top item without a menu, or an item in a menu), after the item's own `click`. */
+  /**
+   * Occurs when an item is selected (a top-level item without a menu, or an item in a menu), after the item's own
+   * `click`.
+   */
   get onItemClick(): MotifEvent<MenuItemClickEventArgs> {
     return this.parts.itemClick.event;
   }
 
-  /** Opens the menu of a top item (or the item at an index) with focus on its first item; `false` when it has none or cannot be used. */
+  /**
+   * Opens the menu of a top-level item, or the item at an index, with focus on its first item. Returns `false` if it has
+   * none or cannot be used.
+   */
   open(item: MenuItem | number): boolean {
     const parts = this.parts;
     const entry = typeof item === 'number' ? parts.entries[item] : parts.entries.find((e) => e.item === item);
@@ -141,8 +147,8 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
   }
 
   /**
-   * Reads the items again after they were changed in place: the bar, the open menu and its submenus. Your items
-   * may be plain or reactive; the bar reads them as they are.
+   * Re-reads the items after they have been changed in place, and updates the bar, the open menu and its submenus.
+   * Your items can be plain or reactive, and the bar reads them as they are.
    */
   refresh(): void {
     this.followItems();

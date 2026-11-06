@@ -1,11 +1,11 @@
 import type { FileUploader } from './FileUploader';
 import type { UploadItem } from './upload-item';
 
-/** Something happened to one file of the uploader. */
+/** Provides data for the events that report a stage of one file's upload. */
 export interface UploadEventArgs {
     item: UploadItem;
     file: File;
-    /** What went wrong, when it did. */
+    /** The error, when the upload failed. */
     error?: unknown;
     source: FileUploader;
 }

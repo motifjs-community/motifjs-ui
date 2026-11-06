@@ -51,7 +51,7 @@ interface Parts<T> {
   /** The chosen values, for quick lookups while drawing. */
   chosen: Set<unknown>;
   search: TextBox | null;
-  /** Where the last choice was created: Shift extends from there. */
+  /** Where the last selection was made: Shift extends from there. */
   anchor: number;
   timer: ReturnType<typeof setTimeout> | undefined;
   /** Drawing waits until the constructor has bound every prop. */
@@ -61,9 +61,9 @@ interface Parts<T> {
 }
 
 /**
- * A list that stays on the page (the APG listbox): one item or several are chosen, with the keys
- * or the pointer. Items come from memory or from a `DataSource`; long lists draw only the rows in
- * view. A search box, groups, check boxes and a "Select all" row can be turned on.
+ * A list that stays on the page (the APG listbox), where one or several items are selected with the keyboard
+ * or the pointer. Items come from memory or from a `DataSource`, and long lists render only the visible rows.
+ * A search box, groups, check boxes and a "Select all" row are optional.
  *
  * @example
  * <ListBox label="&City" items={cities} x-model={() => this.form.city} />
@@ -211,7 +211,7 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     this.assignProperty('noItemsText', value);
   }
 
-  /** The items of the chosen values that are known; with a data source the others are asked by key and follow. Reactive. */
+  /** The known items for the selected values. With a data source, the others are requested by key and added. Reactive. */
   get selectedItems(): T[] {
     void this.value;
     void this.getProperty('found');
@@ -228,29 +228,29 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     return this.selectedItems[0];
   }
 
-  /** The items the list shows: what matched the last search. */
+  /** The items shown in the list, which are the results of the last search. */
   get listItems(): DataItems<T> {
     return this.listParts.items;
   }
 
-  /** The search box, while `searchEnabled` is on. */
+  /** The search box while `searchEnabled` is on. */
   get searchBox(): TextBox | null {
     return this.listParts.search;
   }
 
-  /** Multiple: chooses every item the list shows (with a data source, after they load). */
+  /** In multiple selection, selects every item the list shows (with a data source, after they load). */
   selectAllItems(): Promise<void> {
     return this.chooseAll(true);
   }
 
-  /** Chooses nothing. */
+  /** Clears the selection. */
   clear(): void {
     this.commit(this.emptyValue());
   }
 
   /**
-   * Reads the items again after they were changed in place: which there are, their texts and values, the chosen
-   * ones. Your items may be plain or reactive; the list reads them as they are.
+   * Re-reads the items after they have been changed in place, including their text and values and the selection. Your
+   * items can be plain or reactive, and the list reads them as they are.
    */
   override refresh(): void {
     super.refresh();

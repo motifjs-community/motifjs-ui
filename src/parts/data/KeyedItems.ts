@@ -22,8 +22,8 @@ const sameText = (a: string, b: string, locale: string) => foldText(a.trim(), lo
 /**
  * Items by key, from a data source of the data layer (any adapter) or an array: what a grid cell, a
  * drop-down's field or a filter list needs to turn a key into its item. Keys are requested when they
- * are needed and only once: the keys asked for in the same moment go out together, in one request
- * per `batchSize` keys (`valueField in [...]`), or one request per key for a service that only gives
+ * are needed and only once. Keys requested at the same moment go out together, in one request
+ * per `batchSize` keys (`valueField in [...]`), or in one request per key for a service that only returns
  * one item by key (`resolve: 'byKey'`). There is one cache per source and value field, shared by
  * every grid, column and list that uses it (`KeyedItems.of`). Requests go through the source's
  * adapter, so the source's own query (filter, page, search) never changes.
@@ -35,12 +35,15 @@ const sameText = (a: string, b: string, locale: string) => foldText(a.trim(), lo
  * customers.get(7); // { state: 'loading' }, later { state: 'found', item }
  */
 export class KeyedItems<T = unknown> {
-  /** `'batch'`: the keys of a moment in one request each `batchSize`; `'byKey'`: one request per key. Default: `'batch'` when the service filters, else `'byKey'`. */
+  /**
+   * `'batch'` sends the keys of a moment in one request per `batchSize`, and `'byKey'` sends one request per key.
+   * The default is `'batch'` when the service filters, otherwise `'byKey'`.
+   */
   resolve: 'batch' | 'byKey';
   batchSize = 100;
-  /** `'byKey'`: requests at the same time. */
+  /** With `'byKey'`, the number of simultaneous requests. */
   parallelRequests = 6;
-  /** Items asked for when an exact text is looked for (a pasted text). */
+  /** The number of items requested when searching for an exact text, such as pasted text. */
   pasteSearchLimit = 50;
   private readonly entries = new Map<string, KeyedItem<T>>();
   private readonly waiting = new Map<string, Promise<void>>();
@@ -51,10 +54,10 @@ export class KeyedItems<T = unknown> {
   private generation = 0;
   private readonly resolvedEmitter = new Emitter<readonly string[] | null>();
 
-  /** Keys were resolved (their key texts) or, with `null`, everything was cleared. */
+  /** Occurs when keys are resolved (with their key strings), or with `null` when everything is cleared. */
   readonly onResolved: MotifEvent<readonly string[] | null> = this.resolvedEmitter.event;
 
-  /** The same text for equal keys, as the cache keeps them (`1` and `'1'` are one key). */
+  /** The same string for equal keys, as the cache stores them (`1` and `'1'` are one key). */
   static keyString(key: unknown): string {
     return keyString(key);
   }
@@ -84,12 +87,12 @@ export class KeyedItems<T = unknown> {
     adapter?.onChanged((e) => this.changed(e.changes));
   }
 
-  /** Whether the items are an array in memory (every key is known at once). */
+  /** Indicates whether the items are an array in memory, where every key is known immediately. */
   get inMemory(): boolean {
     return Array.isArray(this.source);
   }
 
-  /** The value of an item: its `valueField`, else the adapter's key (an array: `item.value`, or the item itself). */
+  /** The value of an item: its `valueField`, otherwise the adapter's key (for an array, `item.value` or the item itself). */
   valueOf(item: T): unknown {
     if (this.valueField) return data.getField(item, this.valueField);
     if (this.inMemory) return item !== null && typeof item === 'object' && 'value' in item ? (item as { value: unknown }).value : item;
@@ -100,7 +103,7 @@ export class KeyedItems<T = unknown> {
     return keyString(a) === keyString(b);
   }
 
-  /** What is known of a key now; `undefined` when it was never asked for (an array knows every key). */
+  /** What is known of a key now, or `undefined` if it was never requested (an array knows every key). */
   get(key: unknown): KeyedItem<T> | undefined {
     const ks = keyString(key);
     const known = this.entries.get(ks);
@@ -109,7 +112,7 @@ export class KeyedItems<T = unknown> {
     return item === undefined ? { state: 'missing' } : { state: 'found', item };
   }
 
-  /** Asks for the keys not known yet; resolves once every one of them is found or missing. */
+  /** Requests the keys that are not known yet, and resolves once each one is found or missing. */
   request(keys: Iterable<unknown>): Promise<void> {
     if (this.inMemory) return Promise.resolve();
     const waits = new Set<Promise<void>>();
@@ -132,7 +135,7 @@ export class KeyedItems<T = unknown> {
     return Promise.all(waits).then(() => undefined);
   }
 
-  /** Asks again for the keys whose last request failed (and for those never asked for). */
+  /** Requests the keys whose last request failed, and those never requested. */
   retry(keys: Iterable<unknown>): Promise<void> {
     const list = [...keys];
     for (const key of list) {
@@ -142,7 +145,7 @@ export class KeyedItems<T = unknown> {
     return this.request(list);
   }
 
-  /** Keeps what an editor chose for a key: its item, or its text. It shows at once, without a request. */
+  /** Stores what an editor selected for a key, its item or its text, which appears immediately without a request. */
   remember(key: unknown, itemOrText: T | string) {
     if (key === null || key === undefined) return;
     const ks = keyString(key);
@@ -150,7 +153,7 @@ export class KeyedItems<T = unknown> {
     this.resolvedEmitter.fire([ks]);
   }
 
-  /** Items among those known whose text is exactly `text` (case aside, in the locale). */
+  /** The known items whose text is exactly `text`, ignoring case, in the locale. */
   findLoadedByText(text: string, search: TextSearch<T>): T[] {
     const locale = search.locale ?? uiLocale.locale;
     const pool = this.inMemory ? (this.source as readonly T[]) : [...this.entries.values()].filter((e) => e.item !== undefined).map((e) => e.item as T);
@@ -166,7 +169,7 @@ export class KeyedItems<T = unknown> {
     return out;
   }
 
-  /** Items whose text is exactly `text`: among those known, else asked from the source. */
+  /** The items whose text is exactly `text`: from those known, otherwise requested from the source. */
   async findByText(text: string, search: TextSearch<T>): Promise<T[]> {
     const known = this.findLoadedByText(text, search);
     if (known.length || this.inMemory || !text.trim()) return known;
@@ -176,8 +179,8 @@ export class KeyedItems<T = unknown> {
   }
 
   /**
-   * A part of the items whose text holds `text` (all of them for an empty text), in the source's
-   * order, and how many there are. The items found are kept, so their keys show at once.
+   * Returns a part of the items whose text contains `text` (all of them for an empty text), in the
+   * source's order, and their total. The items found are stored, so their keys appear immediately.
    */
   async search(text: string, search: TextSearch<T>, skip = 0, take = 100): Promise<{ items: T[]; total: number }> {
     const now = this.searchInMemory(text, search, skip, take);
@@ -200,7 +203,7 @@ export class KeyedItems<T = unknown> {
     return { items: result.rows, total: result.total ?? skip + result.rows.length };
   }
 
-  /** `search` at once, for items in an array; `null` for items that come from a source. */
+  /** Runs `search` immediately for items in an array. Returns `null` for items that come from a source. */
   searchInMemory(text: string, search: TextSearch<T>, skip = 0, take = 100): { items: T[]; total: number } | null {
     if (!this.inMemory) return null;
     const locale = search.locale ?? uiLocale.locale;
@@ -212,7 +215,7 @@ export class KeyedItems<T = unknown> {
     return { items: all.slice(skip, skip + take), total: all.length };
   }
 
-  /** Forgets everything; keys are requested again when they are needed. */
+  /** Clears everything. Keys are requested again when they are needed. */
   clear() {
     this.generation++;
     this.entries.clear();

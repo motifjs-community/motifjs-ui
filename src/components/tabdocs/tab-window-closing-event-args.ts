@@ -5,10 +5,10 @@ import type { TabNewWindowCloseAction } from './tab-new-window-close-action';
 import type { TabWindow } from './TabWindow';
 
 /**
- * A floating window or a new browser window is about to close. `then` says what its documents do:
- * go back (a floating window: where it was docked; a new window: to the main window) or close (each
- * one still asks through `onClosing`); it may be changed. `cancel = true` keeps the window, except
- * a new window the user closed: that one is gone already, and its documents come back.
+ * Occurs before a floating window or new browser window closes. `then` determines whether its documents
+ * return (a floating window to where it was docked, a new window to the main window) or close (each
+ * still raising `onClosing`), and it can be changed. Set `cancel = true` to keep the window, except for
+ * a new window that the user closed: that window has already closed, and its documents return.
  */
 export interface TabWindowClosingEventArgs extends EventArgs {
   window: TabWindow | TabBrowserWindow;

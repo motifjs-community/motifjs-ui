@@ -51,10 +51,10 @@ interface Session {
 }
 
 /**
- * Tiles of different sizes packed on a grid of base cells: a tile is `widthRatio` × `heightRatio` cells. They
- * fill the height in columns and the view scrolls sideways (`horizontal`), or fill the width in rows
- * (`vertical`). Tiles can be chosen (`selectionMode`) and put in another order by dragging or with Ctrl and an
- * arrow key (`allowReorder`); a drop tells `onReordered` with the indexes, your data is yours to reorder.
+ * Tiles of different sizes packed on a grid of base cells, where a tile spans `widthRatio` × `heightRatio` cells. They
+ * fill the height in columns and scroll horizontally (`horizontal`), or fill the width in rows (`vertical`). Tiles can
+ * be selected (`selectionMode`) and reordered by dragging or with Ctrl and an arrow key (`allowReorder`). A drop
+ * raises `onReordered` with the indexes, and your code reorders the data.
  *
  * @example
  * <TileView height={320} items={[{ text: 'Sales', widthRatio: 2 }, { text: 'Stock' }, { text: 'Staff', heightRatio: 2 }]} />
@@ -187,27 +187,27 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
         this.assignProperty('label', value);
     }
 
-    /** A click on a tile that was not a drag. */
+    /** Occurs when a tile is clicked without dragging. */
     get onItemClick(): MotifEvent<TileClickEventArgs> {
         return this.itemClick.event;
     }
 
-    /** The chosen tiles changed (`indexes`, `items`, `byUser`). */
+    /** Occurs when the selected tiles change (`indexes`, `items`, `byUser`). */
     get onSelectionChanged(): MotifEvent<TileSelectionChangedEventArgs> {
         return this.selectionChanged.event;
     }
 
-    /** A tile is about to be dragged or moved with the keys; `cancel` keeps it where it is. */
+    /** Occurs before a tile is dragged or moved with the keyboard. `cancel` keeps it in place. */
     get onReordering(): MotifEvent<TileReorderEventArgs> {
         return this.reordering.event;
     }
 
-    /** A tile was moved to another place (`fromIndex`, `toIndex`). */
+    /** Occurs after a tile is moved to a new position (`fromIndex`, `toIndex`). */
     get onReordered(): MotifEvent<TileReorderEventArgs> {
         return this.reordered.event;
     }
 
-    /** The chosen tiles' indexes, in tile order. */
+    /** The indexes of the selected tiles, in tile order. */
     get selectedIndexes(): number[] {
         const value = this.peekProperty<string | number | null | readonly (string | number)[] | undefined>('value');
         if (value === null || value === undefined || this.selectionMode === 'none') return [];
@@ -216,34 +216,34 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
         return [...new Set(indexes)].sort((a, b) => a - b);
     }
 
-    /** How many tiles there are. */
+    /** The number of tiles. */
     get count(): number {
         return this.looks.length;
     }
 
-    /** Whether a tile is being dragged. */
+    /** Indicates that a tile is being dragged. */
     get isDragging(): boolean {
         return !!this.session?.started;
     }
 
-    /** The index a value names: a key, else an index in range; -1 for none. */
+    /** Returns the index that a value identifies: a key, otherwise an index in range, or -1 if there is none. */
     indexOf(value: string | number | null | undefined): number {
         if (value === null || value === undefined) return -1;
         if (typeof value === 'string') return this.looks.findIndex(look => look.key === value);
         return Number.isInteger(value) && value >= 0 && value < this.looks.length ? value : -1;
     }
 
-    /** The value that names the tile at `index`: its key when it has one, else the index. */
+    /** Returns the value that identifies the tile at `index`: its key if it has one, otherwise the index. */
     valueAt(index: number): string | number {
         return this.looks[index]?.key ?? index;
     }
 
-    /** Chooses a tile programmatically: the only one (`single`), or one more (`multiple`). */
+    /** Selects a tile programmatically, as the only one (`single`) or in addition to others (`multiple`). */
     select(index: number): void {
         this.choose(index, false, this.selectionMode === 'multiple' ? 'add' : 'only');
     }
 
-    /** Reads the items again after they were changed in place. */
+    /** Re-reads the items after they have been changed in place. */
     refresh(): void {
         this.renderItems();
     }

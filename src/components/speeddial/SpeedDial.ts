@@ -46,10 +46,10 @@ interface ActionPart {
 }
 
 /**
- * A round button in a corner of the page (or in the flow) that opens its actions when pressed: each a round button
- * with a glyph, in a line with a label beside it, or on a circle around the button with a tooltip. With one action
- * shown, the main button does it itself. The actions are a menu for the keys: the arrows move, Enter and Space
- * choose, Escape closes.
+ * A round button in a corner of the page, or in the page flow, that opens its actions when clicked. Each action is a
+ * round button with a glyph, either in a line with a label next to it or on a circle around the button with a tooltip.
+ * If one action is visible, the main button performs it directly. The actions act as a menu for the keyboard: the
+ * arrow keys move, Enter and Space select, and Escape closes.
  *
  * @example
  * <SpeedDial text="New" actions={[{ text: 'Note', glyph: 'pencil', click: () => this.newNote() }, { text: 'Event', glyph: 'calendar', click: () => this.newEvent() }]} />
@@ -180,7 +180,7 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
     set open(value: Bind<boolean>) {
         this.assignProperty('open', value);
     }
-    /** `open`, for `x-model`. */
+    /** Maps to `open` for `x-model`. */
     get value(): boolean {
         return this.open;
     }
@@ -206,22 +206,22 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
         this.assignProperty('tooltip', value);
     }
 
-    /** The actions opened. */
+    /** Occurs when the actions open. */
     get onOpened(): MotifEvent<SpeedDialEventArgs> {
         return this.opened.event;
     }
 
-    /** The actions closed. */
+    /** Occurs when the actions close. */
     get onClosed(): MotifEvent<SpeedDialEventArgs> {
         return this.closed.event;
     }
 
-    /** An action was pressed (`index`, `action`). */
+    /** Occurs when an action is clicked (`index`, `action`). */
     get onActionClick(): MotifEvent<SpeedDialActionClickEventArgs> {
         return this.actionClick.event;
     }
 
-    /** Whether the actions are open. */
+    /** Indicates whether the actions are open. */
     get isOpen(): boolean {
         return this.open && !this.single;
     }
@@ -231,28 +231,28 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
         return this.main.element;
     }
 
-    /** The one action shown, when there is exactly one: the main button does it itself. */
+    /** The single visible action, when there is exactly one. The main button performs it directly. */
     get single(): Look | null {
         const shown = this.looks.filter(look => look.visible);
         return shown.length === 1 ? shown[0] : null;
     }
 
-    /** Opens the actions from code. */
+    /** Opens the actions programmatically. */
     show(): void {
         this.setOpen(true, false);
     }
 
-    /** Closes the actions from code. */
+    /** Closes the actions programmatically. */
     close(): void {
         this.setOpen(false, false);
     }
 
-    /** Opens the actions, or closes them. */
+    /** Opens or closes the actions. */
     toggle(): void {
         this.setOpen(!this.open, false);
     }
 
-    /** Reads the actions again after they were changed in place. */
+    /** Re-reads the actions after they have been changed in place. */
     refresh(): void {
         this.renderItems();
     }

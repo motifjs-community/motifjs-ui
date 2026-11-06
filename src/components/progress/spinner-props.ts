@@ -6,16 +6,22 @@ import type { SpinnerLabelPosition } from './spinner-label-position';
 
 /** Props of `Spinner`. Each prop is also a settable, reactive property. */
 export interface SpinnerProps extends ControlProps {
-  /** Text next to the ring. Screen readers get it, or `uiLocale.strings.loading` without one. The same as `text`. */
+  /**
+   * Text next to the ring. Screen readers announce it, or `uiLocale.strings.loading` without one. This is the same
+   * property as `text`.
+   */
   label?: Bind<string>;
-  /** Default `'side'`. */
+  /** The default is `'side'`. */
   labelPosition?: Bind<SpinnerLabelPosition>;
-  /** Default `'md'`. */
+  /** The default is `'md'`. */
   size?: Bind<ControlSize>;
-  /** Default `'accent'`. */
+  /** The default is `'accent'`. */
   tone?: Bind<ProgressTone>;
-  /** Drawn inside a container of its own (a disc behind it), where the design language has one. Default `false`. */
+  /**
+   * Places the spinner in its own container (a disc behind it), where the design language includes one. The default is
+   * `false`.
+   */
   contained?: Bind<boolean>;
-  /** Milliseconds before it shows, so quick work does not flash it. Default `0`. */
+  /** The delay in milliseconds before it appears, so quick operations show nothing. The default is `0`. */
   delay?: Bind<number>;
 }

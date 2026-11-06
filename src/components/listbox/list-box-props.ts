@@ -5,35 +5,41 @@ import type { ItemField } from '../../parts/list/item-field';
 import type { ItemTemplate } from './item-template';
 import type { ListSelectionMode } from './list-selection-mode';
 
-/** Props of `ListBox`: the field props plus its own. Each prop is also a settable, reactive property. */
+/** Props of `ListBox`, in addition to the field props. Each prop is also a settable, reactive property. */
 export interface ListBoxProps<T, V> extends FieldProps<V | V[] | null> {
-  /** Items in memory; searched here. */
+  /** In-memory items, searched on the client. */
   items?: Bind<readonly T[]>;
-  /** Items from the data layer; the search goes to it (`searchFields`). Wins over `items`. */
+  /** Items from the data layer, searched using its `searchFields`. This takes precedence over `items`. */
   dataSource?: Bind<data.DataSource<T, unknown> | null>;
   textField?: Bind<ItemField<T>>;
   valueField?: Bind<ItemField<T>>;
   iconField?: Bind<ItemField<T>>;
-  /** Items in memory only. */
+  /** Applies to in-memory items only. */
   groupField?: Bind<ItemField<T>>;
   enabledField?: Bind<ItemField<T>>;
-  /** `'single'` (default): the value is one value; `'multiple'`: an array. */
+  /** With `'single'` (the default), the value is one value. With `'multiple'`, it is an array. */
   selectionMode?: Bind<ListSelectionMode>;
-  /** Multiple: check boxes in front of the items; `false` shows a check mark. Default `true`. */
+  /** In multiple selection, shows check boxes in front of the items. `false` draws a check mark. The default is `true`. */
   showCheckBoxes?: Bind<boolean>;
-  /** Multiple: a "Select all" row before the items. */
+  /** In multiple selection, adds a "Select all" row before the items. */
   selectAll?: Bind<boolean>;
-  /** Single: moving through the list with the keys chooses the item. Default `true`. */
+  /** In single selection, the arrow keys select as they move. The default is `true`. */
   selectionFollowsFocus?: Bind<boolean>;
-  /** A search box above the list. */
+  /** Adds a search box above the list. */
   searchEnabled?: Bind<boolean>;
-  /** Default `'contains'` (items in memory; a data source uses its own `searchOperator`). */
+  /** The default is `'contains'` for in-memory items. A data source uses its own `searchOperator`. */
   searchMode?: Bind<'contains' | 'startswith'>;
-  /** Milliseconds between the last key and the search. Default `0` in memory, `250` with a data source. */
+  /**
+   * The delay, in milliseconds, between the last keystroke and the search. The default is `0` in memory and `250` with a
+   * data source.
+   */
   searchDelay?: Bind<number>;
-  /** The list's height: a number of rows, or a CSS length. Default: as high as its items, up to the list's `max-height` (`list.container`). */
+  /**
+   * The height, in rows or a CSS length. By default, the list is as tall as its items, up to its `max-height`
+   * (`list.container`).
+   */
   height?: Bind<number | string | null>;
   itemTemplate?: Bind<ItemTemplate<T> | null>;
-  /** What an empty list says; `uiLocale`'s "No items" by default. */
+  /** The text for an empty list. The default is the `uiLocale` "No items" string. */
   noItemsText?: Bind<string>;
 }

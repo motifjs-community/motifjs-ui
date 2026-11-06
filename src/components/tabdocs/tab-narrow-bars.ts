@@ -1,2 +1,5 @@
-/** How the bars of the documents' groups look on a tablet or a phone: with the `compact…` settings, or as on a desktop. */
+/**
+ * The appearance of the document group bars on a tablet or phone: the `compact…` settings, or the same
+ * as on a desktop.
+ */
 export type TabNarrowBars = 'compact' | 'documents';

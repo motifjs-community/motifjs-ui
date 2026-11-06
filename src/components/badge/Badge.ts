@@ -16,9 +16,9 @@ const SHOWN = ['count', 'max', 'showZero', 'dot', 'label'] as const;
 const LOOK = ['tone', 'variant', 'size', 'position'] as const;
 
 /**
- * A short text, a count or a dot: in the flow of the text, or on a corner of what it is in
- * (`position`). A count over `max` shows `max+`, a count of 0 hides unless `showZero`; numbers are
- * written in the kit's language. Its tone and look default to the design language's.
+ * A short text, a count or a dot, either in the text flow or on a corner of its container
+ * (`position`). A count above `max` shows `max+`, and a count of 0 hides the badge unless `showZero` is set. Numbers
+ * are formatted in the kit language. The tone and appearance default to those of the design language.
  *
  * @example
  * <Badge text="New" tone="success" />
@@ -28,7 +28,10 @@ const LOOK = ['tone', 'variant', 'size', 'position'] as const;
  * badge.count = 0; // hides
  */
 export class Badge extends Control<HTMLSpanElement, BadgeProps> {
-  /** Puts a badge on a corner of `target` (`top-end` unless `props` says otherwise): one of its children, it goes with it. */
+  /**
+   * Places a badge on a corner of `target` (`top-end` unless `props` specifies otherwise). The badge becomes a child of
+   * `target` and is disposed with it.
+   */
   static attach(target: ComponentBase, props: BadgeProps = {}): Badge {
     const badge = new Badge({ position: 'top-end', ...props });
     // What it is on a corner of is its anchor.
@@ -113,7 +116,7 @@ export class Badge extends Control<HTMLSpanElement, BadgeProps> {
     this.assignProperty('label', value);
   }
 
-  /** What it shows now: the count as written (`99+`), else the text; `''` for a dot. */
+  /** The current display text: the formatted count (`99+`), otherwise the text, or `''` for a dot. */
   get shownText(): string {
     if (this.peekProperty('dot')) return '';
     const count = this.peekCount();

@@ -137,10 +137,10 @@ function sameSet(a: Set<unknown>, b: Set<unknown>): boolean {
 }
 
 /**
- * Hierarchical items (the APG tree view pattern): rows open and close, are selected one or many
- * at a time, can carry tri-state check boxes, can be searched, and children can load when a row
- * is first opened. Items are nested (`children`) or flat (`parentId`), read through the `…Field`
- * props. One Tab stop; the arrow keys move, open and close. Long trees draw only the rows in view.
+ * Hierarchical items (the APG tree view pattern). Rows expand and collapse, are selected singly or in
+ * groups, can have tri-state check boxes, can be searched, and can load children when first expanded.
+ * Items are nested (`children`) or flat (`parentId`), read through the `…Field` props. The tree is one Tab stop,
+ * and the arrow keys move, expand and collapse. Long trees render only the visible rows.
  *
  * @example
  * <TreeView label="Files" items={() => this.files} x-model={() => this.state.file} />
@@ -307,7 +307,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
   set selectionMode(value: Bind<TreeViewSelectionMode>) {
     this.assignProperty('selectionMode', value);
   }
-  /** The selected key (`single`, `null` when none) or keys (`multiple`). Reactive. */
+  /** The selected key (`single`, or `null` if there is none) or keys (`multiple`). Reactive. */
   get value(): unknown {
     void this.getProperty('value');
     return this.valueNow();
@@ -324,7 +324,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     void this.getProperty('value');
     return this.itemsOf(this.parts.selected);
   }
-  /** The open rows' keys, in tree order. Reactive. */
+  /** The keys of the expanded rows, in tree order. Reactive. */
   get expandedKeys(): unknown[] {
     void this.getProperty('expandedKeys');
     return this.parts.model.inOrder(this.parts.expanded);
@@ -344,7 +344,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
   set checkRecursive(value: Bind<boolean>) {
     this.assignProperty('checkRecursive', value, Boolean);
   }
-  /** The checked keys, in tree order (a parent is in it when all its children are). Reactive. */
+  /** The checked keys, in tree order. A parent is included when all its children are checked. Reactive. */
   get checkedKeys(): unknown[] {
     void this.getProperty('checkedKeys');
     return this.parts.model.inOrder(this.parts.checked);
@@ -413,11 +413,11 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
 
   // Events.
 
-  /** A branch is about to open; `e.cancel = true` keeps it closed. */
+  /** Occurs before a branch expands. Set `e.cancel = true` to keep it collapsed. */
   get onExpanding(): MotifEvent<TreeViewExpandingEventArgs<T>> {
     return this.parts.expanding.event;
   }
-  /** A branch is about to close; `e.cancel = true` keeps it open. */
+  /** Occurs before a branch collapses. Set `e.cancel = true` to keep it expanded. */
   get onCollapsing(): MotifEvent<TreeViewExpandingEventArgs<T>> {
     return this.parts.collapsing.event;
   }
@@ -444,7 +444,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     return this.parts.model.node(key)?.item;
   }
 
-  /** Opens a row (its children load first if they have to); the cancelable event runs. */
+  /** Expands a row, loading its children first if needed. The cancelable event runs. */
   expand(key: unknown): boolean {
     const node = this.parts.model.node(key);
     return !!node && untracked(() => this.setOpen(node, true, false));
@@ -455,7 +455,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     return !!node && untracked(() => this.setOpen(node, false, false));
   }
 
-  /** Opens every row whose children are known (children not loaded yet are not loaded). */
+  /** Expands every row whose children are known. Children that have not loaded are not loaded. */
   expandAll(): void {
     const parts = this.parts;
     for (const node of parts.model.walk()) if (node.children?.length) parts.expanded.add(node.key);
@@ -467,7 +467,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     this.expansionChanged();
   }
 
-  /** Selects a row programmatically (`multiple`: adds it to the selection). */
+  /** Selects a row programmatically. With `multiple`, it adds to the selection. */
   select(key: unknown): void {
     const parts = this.parts;
     untracked(() => this.setSelection(this.selectionMode === 'multiple' ? [...parts.selected, key] : [key], false));
@@ -477,7 +477,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     untracked(() => this.setSelection([...this.parts.selected].filter((k) => k !== key), false));
   }
 
-  /** With `multiple`: every known row that can be selected. */
+  /** With `multiple`, selects every known row that can be selected. */
   selectAll(): void {
     untracked(() => this.selectAllBy(false));
   }
@@ -506,12 +506,12 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     untracked(() => this.checksChanged(null, false));
   }
 
-  /** Filters the rows by `text` (empty: all rows), as the search box does. */
+  /** Filters the rows by `text`, as the search box does. Empty text shows all rows. */
   filter(text: string): void {
     this.searchValue = text;
   }
 
-  /** Opens the row's parents and scrolls it into view; `false` when it is not shown (filtered out, unknown). */
+  /** Expands the row's parents and scrolls it into view. Returns `false` if it is not shown (filtered out or unknown). */
   scrollTo(key: unknown): boolean {
     return untracked(() => {
       const at = this.reveal(key);
@@ -521,7 +521,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     });
   }
 
-  /** Opens the row's parents, scrolls to it and focuses it. */
+  /** Expands the row's parents, scrolls it into view and sets focus on it. */
   focusNode(key: unknown): boolean {
     return untracked(() => {
       const at = this.reveal(key);
@@ -532,15 +532,18 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
   }
 
   /**
-   * Reads the items again after they were changed in place: which there are, their children, texts and states.
-   * Children that loaded stay. Your items may be plain or reactive; the tree reads them as they are.
+   * Re-reads the items after they have been changed in place, including their children, text and states.
+   * Loaded children are kept. Your items can be plain or reactive, and the tree reads them as they are.
    */
   refresh(): void {
     const parts = this.parts;
     parts.version.value = parts.version.peek() + 1;
   }
 
-  /** Draws one row again after its item was changed in place: its text, icon and state (`refresh` for its children). */
+  /**
+   * Redraws one row after its item changes in place, including its text, icon and state. Use `refresh` for its
+   * children.
+   */
   refreshItem(key: unknown): void {
     untracked(() => {
       const parts = this.parts;
@@ -557,7 +560,7 @@ export class TreeView<T = unknown> extends Control<HTMLDivElement, TreeViewProps
     });
   }
 
-  /** Loads a row's children again (all loaded children without a key) and reads the items again. */
+  /** Reloads a row's children, or all loaded children when no key is given, and re-reads the items. */
   reload(key?: unknown): void {
     const parts = this.parts;
     if (key === undefined) parts.model.loaded.clear();

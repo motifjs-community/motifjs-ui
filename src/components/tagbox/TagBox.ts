@@ -78,9 +78,9 @@ interface Parts<T> {
 }
 
 /**
- * Picks several items: the chosen ones are tags in the field, followed by a text input that
+ * Selects several items: the selected ones appear as tags in the field, followed by a text input that
  * searches the list (the APG combobox with a multi-select listbox). Items come from memory or from
- * a `DataSource`; typed text can become a tag of its own with `acceptCustomValue`.
+ * a `DataSource`, and with `acceptCustomValue`, typed text can become a custom tag.
  *
  * @example
  * <TagBox label="&Skills" items={skills} x-model={() => this.form.skills} />
@@ -294,7 +294,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     return this.focusElement as HTMLInputElement;
   }
 
-  /** The items of the chosen values that are known. Reactive. */
+  /** The known items for the selected values. Reactive. */
   get selectedItems(): T[] {
     void this.value;
     void this.getProperty('found');
@@ -302,7 +302,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     return [...parts.chosen].map((value) => parts.known.itemOf(value)).filter((item): item is T => item !== undefined);
   }
 
-  /** The items the list shows: what matched the last search. */
+  /** The items shown in the list, which are the results of the last search. */
   get listItems(): DataItems<T> {
     return this.tagParts.items;
   }
@@ -323,7 +323,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     return this.tagParts.closed.event;
   }
 
-  /** Opens the list; `false` when it cannot be used now. */
+  /** Opens the list. Returns `false` when it cannot be used. */
   open(): boolean {
     if (!this.canChange()) return false;
     const parts = this.tagParts;
@@ -345,8 +345,8 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
   }
 
   /**
-   * Reads the items again after they were changed in place: the tags, the open list, the chosen items. Your items
-   * may be plain or reactive; the box reads them as they are.
+   * Re-reads the items after they have been changed in place, and updates the tags, the open list and the selected
+   * items. Your items can be plain or reactive, and the box reads them as they are.
    */
   override refresh(): void {
     super.refresh();
@@ -358,12 +358,12 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     this.setProperty('found', (this.peekProperty<number>('found') ?? 0) + 1);
   }
 
-  /** Removes every tag. */
+  /** Removes all tags. */
   clear(): void {
     this.commit([]);
   }
 
-  /** Chooses every item the list shows (with a data source, after they load), up to `maxSelected`. */
+  /** Selects every item the list shows, up to `maxSelected` (with a data source, after they load). */
   selectAllItems(): Promise<void> {
     return this.chooseAll(true);
   }

@@ -2,7 +2,7 @@ import { formatRuleDate } from './format-rule-date';
 import type { RecurrenceRule } from './recurrence-rule';
 import { WEEKDAY_CODES } from './weekday-codes';
 
-/** Writes a rule as RFC 5545 text (without the `RRULE:` name), leaving out what is the default. */
+/** Writes a rule as RFC 5545 text, without the `RRULE:` name, omitting default values. */
 export function formatRecurrenceRule(rule: RecurrenceRule): string {
   const parts = [`FREQ=${rule.frequency.toUpperCase()}`];
   const list = (key: string, values: readonly number[]) => values.length && parts.push(`${key}=${values.join(',')}`);

@@ -1,2 +1,2 @@
-/** How a form was closed: `'ok'`, `'cancel'` or any word of your own, like `dialog.returnValue`. */
+/** How a form closed: `'ok'`, `'cancel'` or any custom word, like `dialog.returnValue`. */
 export type FormResult = 'ok' | 'cancel' | (string & {});

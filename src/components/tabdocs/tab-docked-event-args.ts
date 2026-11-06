@@ -4,12 +4,12 @@ import type { TabDockArea } from './TabDockArea';
 import type { TabDockSide } from './tab-dock-side';
 import type { TabGroup } from './TabGroup';
 
-/** A document, a group or a window was docked. */
+/** Occurs after a document, group or window is docked. */
 export interface TabDockedEventArgs {
   document: TabDocument | null;
   /** The group it ended up in. */
   group: TabGroup | null;
-  /** The dock area it went to; `null` when it went back among the documents. */
+  /** The dock area it moved to, or `null` when it returned to the documents. */
   area: TabDockArea | null;
   side: TabDockSide | null;
   byUser: boolean;

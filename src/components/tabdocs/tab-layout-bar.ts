@@ -2,7 +2,7 @@ import type { TabBarButton } from './tab-bar-button';
 import type { TabBarButtonSize } from './tab-bar-button-size';
 import type { TabSize } from './tab-size';
 
-/** The bar settings of a dock area or a floating window that were set as plain values, as `saveLayout` writes them. */
+/** The bar settings of a dock area or floating window that were set as plain values, as `saveLayout` writes them. */
 export interface TabLayoutBar {
   scrollButtons?: boolean;
   tabSize?: TabSize;

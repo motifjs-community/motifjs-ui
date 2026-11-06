@@ -8,35 +8,41 @@ import type { TabsActivation } from './tabs-activation';
 import type { TabsPlacement } from './tabs-placement';
 import type { TabsVariant } from './tabs-variant';
 
-/** Props of `Tabs`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
+/** Props of `Tabs`, in addition to the shared `ControlProps`. Each prop is also a settable, reactive property. */
 export interface TabsProps extends ControlProps {
-  /** Names the tab list for screen readers. The same property as `text`. */
+  /** The accessible name of the tab list. This is the same property as `text`. */
   label?: Bind<string>;
-  /** The selected tab's `key`, else its index. `x-model` binds it two-way. */
+  /** The `key` of the selected tab, or its index. `x-model` provides two-way binding. */
   value?: Bind<string | number | null | undefined>;
-  /** The selected tab's index in `tabs`; -1 when there is none. */
+  /** The index of the selected tab in `tabs`, or -1 if there is none. */
   selectedIndex?: Bind<number>;
-  /** Default `'auto'`. */
+  /** The default is `'auto'`. */
   activation?: Bind<TabsActivation>;
-  /** Default `'top'`. */
+  /** The default is `'top'`. */
   placement?: Bind<TabsPlacement>;
-  /** Default `'line'`. */
+  /** The default is `'line'`. */
   variant?: Bind<TabsVariant>;
-  /** Default `'md'`. */
+  /** The default is `'md'`. */
   size?: Bind<ControlSize>;
-  /** The tabs share the whole width. */
+  /** Makes the tabs share the full width. */
   stretch?: Bind<boolean>;
-  /** Arrow buttons at the ends of the strip when the tabs do not fit. Default `true`. */
+  /** Shows arrow buttons at the ends of the strip when tabs do not fit. The default is `true`. */
   scrollButtons?: Bind<boolean>;
-  /** Every tab gets a close button (a tab's own `closable` wins). Default `false`. */
+  /** Adds a close button to every tab. A tab's own `closable` takes precedence. The default is `false`. */
   closable?: Bind<boolean>;
-  /** A panel is built when first shown, then kept (a tab's own `lazy` wins). Default `true`. */
+  /**
+   * Creates a panel the first time it is shown and then keeps it. A tab's own `lazy` takes precedence.
+   * The default is `true`.
+   */
   lazy?: Bind<boolean>;
-  /** `false`: content made by a tab's `content` is disposed while hidden (a tab's own `keepAlive` wins). Default `true`. */
+  /**
+   * With `false`, content created by a tab's `content` is disposed while hidden. A tab's own `keepAlive` takes
+   * precedence. The default is `true`.
+   */
   keepAlive?: Bind<boolean>;
-  /** The user is about to select a tab; cancelable. */
+  /** Occurs before the user selects a tab. This event is cancelable. */
   onSelecting?: (e: TabSelectingEventArgs) => void;
   onSelectionChanged?: (e: TabSelectionChangedEventArgs) => void;
-  /** A tab is about to close; cancelable. */
+  /** Occurs before a tab closes. This event is cancelable. */
   onClose?: (e: TabCloseEventArgs) => void;
 }

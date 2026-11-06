@@ -5,7 +5,7 @@ import type { SplitPosition } from './split-position';
 export interface SplitterMovedEventArgs {
   position: SplitPosition;
   collapsed: SplitPanel;
-  /** `true` when the user moved it (pointer or keys), `false` when code did. */
+  /** `true` when the user moved it (pointer or keyboard), `false` when code did. */
   byUser: boolean;
   source: SplitContainer;
 }

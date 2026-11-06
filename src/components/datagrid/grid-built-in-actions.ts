@@ -1,15 +1,15 @@
 import type { GridAction } from './grid-action';
 
-/** The actions the grid has ready (`grid.actions`); in the `actions` prop they can also be named: `['edit', 'remove']`. */
+/** The built-in actions (`grid.actions`). In the `actions` prop, they can also be named: `['edit', 'remove']`. */
 export interface GridBuiltInActions<T> {
   /** Opens the editor of the row's first cell the user can fill. */
   edit: GridAction<T>;
   /** Deletes the row according to the save mode. */
   remove: GridAction<T>;
-  /** Takes a deletion mark back (batch mode). */
+  /** Removes a deletion mark (batch mode). */
   restore: GridAction<T>;
-  /** Sends the row's edits now. */
+  /** Sends the row's edits immediately. */
   save: GridAction<T>;
-  /** Drops the row's edits; a new row goes away. */
+  /** Discards the row's edits. A new row is removed. */
   cancel: GridAction<T>;
 }

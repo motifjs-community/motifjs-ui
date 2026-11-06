@@ -1,21 +1,24 @@
-/** The scheduler's keys while focus is inside it (outside text fields). Each is a list of chords; an empty list turns it off. */
+/**
+ * The key bindings that apply while focus is inside the scheduler, outside text fields. Each is a
+ * list of chords, and an empty list disables the binding.
+ */
 export interface SchedulerKeys {
-  /** Default `T`. */
+  /** The default is `T`. */
   today: string[];
-  /** Default `N`, `J`. */
+  /** The defaults are `N` and `J`. */
   next: string[];
-  /** Default `P`, `K`. */
+  /** The defaults are `P` and `K`. */
   previous: string[];
-  /** Default `D`, `W`, `X`, `M`, `A`: the views by type (the first view of the type). */
+  /** Show the first view of each type. The defaults are `D`, `W`, `X`, `M` and `A`. */
   dayView: string[];
   weekView: string[];
   workWeekView: string[];
   monthView: string[];
   agendaView: string[];
   /**
-   * On a focused appointment while the columns are grouped: moves it to the group before or after
-   * (Enter saves, Escape takes it back). Default `Alt+Shift+ArrowLeft` and `Alt+Shift+ArrowRight`,
-   * mirrored right to left.
+   * On a focused appointment in a grouped view, moves it to the previous or next group. Enter saves,
+   * and Escape reverts. The defaults are `Alt+Shift+ArrowLeft` and `Alt+Shift+ArrowRight`, mirrored
+   * on right-to-left pages.
    */
   previousGroup: string[];
   nextGroup: string[];

@@ -39,12 +39,12 @@ interface Parts {
 const PARTS = Symbol('mx.drawer');
 
 /**
- * A panel that slides in from an edge of the page or of a container: the start or the end (they
- * follow the reading direction), the top or the bottom. It covers the content (`over`) or moves it
- * aside (`push`, with `pushTarget`). A finger swiping it back towards its edge closes it, and one
- * swiping in from the edge opens it (`edgeSwipe`). Like a bottom sheet it is a dialog: modal over
- * the content by default, with Escape, a click on the scrim and the browser's back closing it,
- * and focus moved in and back again.
+ * A panel that slides in from an edge of the page or of a container: the start or the end, which
+ * follow the reading direction, the top or the bottom. It covers the content (`over`) or moves it
+ * aside (`push`, with `pushTarget`). A finger swiping it back toward its edge closes it, and one
+ * swiping in from the edge opens it (`edgeSwipe`). Like a bottom sheet, it is a dialog. It is modal
+ * over the content by default, it is closed by Escape, a click on the scrim and the browser's back
+ * action, and focus moves in and returns.
  *
  * @example
  * <Drawer title="Navigation" side="start" edgeSwipe x-model={() => this.state.menu}>…</Drawer>
@@ -89,7 +89,7 @@ export class Drawer extends OverlayPanel<DrawerProps> {
   set mode(value: Bind<DrawerMode>) {
     this.assignProperty('mode', value);
   }
-  /** What push mode moves aside; a function given is read each time it opens. */
+  /** The element that push mode moves aside. A function is read each time the drawer opens. */
   get pushTarget(): HTMLElement | ComponentBase | null {
     const given = this.getProperty<Bind<HTMLElement | ComponentBase | null> | undefined>('pushTarget');
     return (typeof given === 'function' ? given() : given) ?? null;
@@ -127,7 +127,7 @@ export class Drawer extends OverlayPanel<DrawerProps> {
   set flickSpeed(value: Bind<number>) {
     this.assignProperty('flickSpeed', value, Number);
   }
-  /** Modal as set; else modal over the content, not while it pushes the content aside. */
+  /** Indicates whether it is modal. Without a value, it is modal over the content and not while pushing it aside. */
   override get modal(): boolean {
     const own = this.getProperty<boolean | undefined>('modal');
     return own ?? this.mode !== 'push';

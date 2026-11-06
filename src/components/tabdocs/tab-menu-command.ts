@@ -1,4 +1,4 @@
-/** The built-in items of the tab and strip context menus; each one is in `menuItems` and in the items' `data`. */
+/** The built-in items of the tab and strip context menus. Each one is a key of `menuItems` and an item's `data`. */
 export type TabMenuCommand =
   | 'close'
   | 'hide'

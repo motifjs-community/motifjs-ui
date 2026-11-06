@@ -58,10 +58,10 @@ interface Parts {
 const ITEM_PROPS = ['label', 'required', 'rules', 'helpText', 'enabled'] as const;
 
 /**
- * Lays out the fields of a data object: each item a field with its editor (chosen by name, by the
- * type of the value, or made by a function), a group under a caption, tabs, a button or a
- * component of your own. The editors are bound to the object both ways and checked together (the
- * ones on hidden tabs too); sending the form checks them first.
+ * Lays out the fields of a data object. Each item is a field with its editor (selected by name, by the
+ * type of the value, or created by a function), a group under a caption, tabs, a button or a custom
+ * component. The editors have two-way binding to the object and are validated together, including
+ * those on hidden tabs. Submitting the form validates them first.
  *
  * @example
  * <FormLayout data={this.order} columns={2} onValidSubmit={() => this.save()} items={[
@@ -72,7 +72,7 @@ const ITEM_PROPS = ['label', 'required', 'rules', 'helpText', 'enabled'] as cons
  * ]} />
  */
 export class FormLayout<T extends object = Record<string, unknown>> extends Control<HTMLFormElement, FormLayoutProps<T>> {
-  /** The editors forms know by name; add yours: `FormLayout.editors.set('color', (p) => new ColorBox(p))`. */
+  /** The editors registered by name. Add your own with `FormLayout.editors.set('color', (p) => new ColorBox(p))`. */
   static readonly editors = new Map<string, FormEditorFactory>([
     ['text', (p) => new TextBox(p)],
     ['password', (p) => new TextBox({ ...p, type: 'password' })],
@@ -162,7 +162,7 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     this.assignProperty('readOnly', value, Boolean);
   }
 
-  /** The group every field of the form is checked in. */
+  /** The validation group of the form's fields. */
   get validationGroup(): ValidationGroup {
     return this.formParts.group;
   }
@@ -177,7 +177,7 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     return this.formParts.editors.get(field);
   }
 
-  /** Checks every field; the first one that failed gets focus (its tab shown first) unless `focus` is `false`. */
+  /** Validates every field. The first invalid field receives focus, with its tab shown first, unless `focus` is `false`. */
   async validate(options?: { focus?: boolean }): Promise<ValidationResult> {
     this.restHidden();
     const result = await this.formParts.group.validate({ focus: false });
@@ -195,9 +195,9 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
   }
 
   /**
-   * Reads your data object and the items again after they were changed in place: every editor's value, the items'
-   * texts and states, and the layout when items were added or removed. Your data and items may be plain or
-   * reactive; the form reads them as they are.
+   * Re-reads your data object and the items after they have been changed in place: every editor's value, the
+   * items' text and states, and the layout if items were added or removed. Your data and items can be plain or
+   * reactive, and the form reads them as they are.
    */
   refresh(): void {
     const parts = this.formParts;
@@ -218,13 +218,13 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     parts.version.value = parts.version.peek() + 1;
   }
 
-  /** Reads one field of your data object again, after it was changed in place. */
+  /** Re-reads one field of your data object after it has been changed in place. */
   refreshField(field: string): void {
     const version = this.formParts.fieldVersions.get(field);
     if (version) version.value = version.peek() + 1;
   }
 
-  /** Checks every field, then reports the form as sent (`onValidSubmit`) or not (`onInvalidSubmit`). */
+  /** Validates every field, then reports the submission as valid (`onValidSubmit`) or invalid (`onInvalidSubmit`). */
   async submit(event: Event = new Event('submit')): Promise<boolean> {
     const result = await this.validate();
     if (result.valid) this.props?.onValidSubmit?.({ data: this.peekProperty<T | null>('data') ?? null, event });

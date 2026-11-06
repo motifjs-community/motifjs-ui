@@ -81,7 +81,7 @@ function observanceLines(kind: string, start: number, from: number, to: number, 
 /**
  * The `VTIMEZONE` of an IANA zone as content lines, from `Intl` only: every change of its offset
  * from the start of `fromYear` to the end of `toYear`. Changes of one kind that fall on the same
- * yearly rule in every year are written as one observance with an `RRULE`; others as observances
+ * yearly rule in every year are written as one observance with an `RRULE`, and others as observances
  * with `RDATE`s. A zone that does not change writes one `STANDARD`.
  *
  * @example

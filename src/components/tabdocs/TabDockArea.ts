@@ -13,13 +13,13 @@ import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 
 /**
- * A dock area of a `TabDocumentManager`: one side around the documents, with groups of its own
- * (split and resized as the documents' groups are), a size, and a splitter against the documents.
- * Folded (`autoHide`), only its tab titles stay along the manager's edge and it slides out over the
- * documents when one is chosen. The manager makes the area when something is docked there, and
- * takes it away once it is empty. Its strips are compact by default (the manager's `compact…`
- * props); its own settings (`scrollButtons`, `tabSize`, `tabMinWidth`, `singleTabTitle`,
- * `barButtons`) win.
+ * A dock area of a `TabDocumentManager`: one side around the documents, with its own groups (split
+ * and resized as the document groups are), a size, and a splitter against the documents. When it is
+ * collapsed (`autoHide`), only its tab titles stay along the manager's edge, and it slides out over
+ * the documents when one is chosen. The manager creates the area when something is docked there,
+ * and removes it once it is empty. Its strips are compact by default (the manager's `compact…`
+ * props). Its own settings (`scrollButtons`, `tabSize`, `tabMinWidth`, `singleTabTitle`,
+ * `barButtons`) take precedence.
  */
 export class TabDockArea extends TabBarSettings implements SashOwner {
   readonly element: HTMLDivElement;
@@ -55,15 +55,15 @@ export class TabDockArea extends TabBarSettings implements SashOwner {
   get manager(): TabDocumentManager {
     return this.owner;
   }
-  /** As set: pixels, or a share of the manager such as `'25%'`. Reactive. */
+  /** Its size as set, in pixels or as a share of the manager such as `'25%'`. Reactive. */
   get size(): number | string {
     return this.sizeSignal.value;
   }
-  /** Folded to the manager's edge. Reactive. */
+  /** Indicates whether it is collapsed to the manager's edge. Reactive. */
   get autoHidden(): boolean {
     return this.folded.value;
   }
-  /** Folded and slid out over the documents now. Reactive. */
+  /** Indicates whether it is collapsed and slid out over the documents. Reactive. */
   get isOpen(): boolean {
     return this.openSignal.value;
   }
@@ -71,7 +71,10 @@ export class TabDockArea extends TabBarSettings implements SashOwner {
   get groups(): readonly TabGroup[] {
     return this.owner.groups.filter((g) => g.dockArea === this);
   }
-  /** How it shows on a phone (a sheet, a drawer, or not at all), over the manager's `phoneDockMode`; `null` follows the manager. Reactive. */
+  /**
+   * How it appears on a phone (a sheet, a drawer, or not at all), which overrides the manager's
+   * `phoneDockMode`. `null` uses the manager's setting. Reactive.
+   */
   get phoneDockMode(): TabDockPresentation | null {
     return read(this.phoneMode.value);
   }
@@ -79,7 +82,10 @@ export class TabDockArea extends TabBarSettings implements SashOwner {
     this.phoneMode.value = value;
     this.owner.presentationSettingChanged();
   }
-  /** How it shows on a tablet, over the manager's `tabletDockMode`; `null` follows the manager. Reactive. */
+  /**
+   * How it appears on a tablet, which overrides the manager's `tabletDockMode`. `null` uses the
+   * manager's setting. Reactive.
+   */
   get tabletDockMode(): TabDockPresentation | null {
     return read(this.tabletMode.value);
   }
@@ -87,30 +93,30 @@ export class TabDockArea extends TabBarSettings implements SashOwner {
     this.tabletMode.value = value;
     this.owner.presentationSettingChanged();
   }
-  /** Reactive. */
+  /** The documents of its groups. Reactive. */
   get documents(): readonly TabDocument[] {
     return this.groups.flatMap((g) => g.documents);
   }
-  /** Its place in the manager's `dockAreas`, the outermost first. Reactive. */
+  /** Its position in the manager's `dockAreas`, with the outermost first. Reactive. */
   get index(): number {
     return this.owner.dockAreas.indexOf(this);
   }
-  /** Where it is on the screen now (empty while folded and not slid out). */
+  /** Its box on the screen, which is empty while it is collapsed and not slid out. */
   get rect(): DOMRect {
     return this.element.getBoundingClientRect();
   }
 
-  /** Sets its size: pixels, or a share of the manager such as `'25%'`. */
+  /** Sets its size, in pixels or as a share of the manager such as `'25%'`. */
   resize(size: number | string): boolean {
     return this.owner.resizeDockArea(this, size);
   }
 
-  /** Folds it to the manager's edge (`true`), or brings it back. */
+  /** Collapses it to the manager's edge (`true`), or restores it. */
   autoHide(on = true): boolean {
     return this.owner.autoHide(this, on);
   }
 
-  /** Folded: slides it out over the documents with `document` (else its active one). */
+  /** When collapsed, slides it out over the documents with `document`, otherwise its active document. */
   show(document?: TabDocument): boolean {
     const doc = document ?? this.groups[0]?.activeDocument ?? this.documents[0];
     return !!doc && this.owner.showAutoHidden(doc);

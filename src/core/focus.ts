@@ -70,6 +70,16 @@ export function nextTabbable(anchor: Node, scope: Element, forward = true): HTML
 }
 
 /**
+ * Where focus goes when `anchor` can no longer hold it: the next tabbable element of `scope`, else the one
+ * before it. An iframe is the last choice, because keys pressed inside it never reach the page.
+ */
+export function rescueStop(anchor: Node, scope: Element): HTMLElement | null {
+  const stops = tabbableIn(scope).filter((el) => !anchor.contains(el) && keepsKeys(el));
+  const after = (el: HTMLElement) => !!(anchor.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+  return stops.find(after) ?? stops.filter((el) => !after(el)).pop() ?? nextTabbable(anchor, scope) ?? nextTabbable(anchor, scope, false);
+}
+
+/**
  * Whether `el` can take focus at all (by Tab or programmatically): a
  * focusable kind of element, or any `tabindex` including -1, and not
  * disabled, hidden or inert.
@@ -83,13 +93,18 @@ export function isFocusable(el: Element): boolean {
   );
 }
 
+/** Keys pressed inside an iframe never reach the page, so focus on open skips it and Escape keeps working. */
+export function keepsKeys(el: Element): boolean {
+  return el.localName !== 'iframe';
+}
+
 /**
  * Moves focus to the first `[autofocus]` element under `root`, else the first
- * focusable one. Returns `false` when there is nothing to focus.
+ * focusable one that is not an iframe. Returns `false` when there is nothing to focus.
  */
 export function focusInitial(root: Element): boolean {
   const auto = root.querySelector<HTMLElement>('[autofocus]');
-  const target = auto && !auto.closest('[hidden], [inert]') ? auto : focusableIn(root)[0];
+  const target = auto && !auto.closest('[hidden], [inert]') ? auto : focusableIn(root).find(keepsKeys);
   if (!target) return false;
   target.focus();
   return true;

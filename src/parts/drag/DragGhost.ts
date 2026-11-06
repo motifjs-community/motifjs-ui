@@ -14,11 +14,11 @@ interface Follow {
 }
 
 /**
- * The picture of something dragged (a header, a chip, a row, a tab): a copy of it next to the
- * pointer while it moves, marked with what a drop would do there (`data-target`). It lives inside
- * the element `root` gives, so it shows above a modal window that element sits in; its place is
- * measured from where it starts, so a moved or scaled window around it does not throw it off. The
- * component styles it through `className` and `data-kind`.
+ * The image of something dragged (a header, a chip, a row, a tab): a copy next to the pointer
+ * while it moves, marked with what a drop would do there (`data-target`). It lives inside the
+ * element `root` provides, so it appears above a modal window that contains that element, and its
+ * position is measured from where it starts, so a moved or scaled window around it does not offset
+ * it. The component styles it through `className` and `data-kind`.
  */
 export class DragGhost {
   private el: HTMLDivElement | null = null;
@@ -31,12 +31,12 @@ export class DragGhost {
     private readonly className: string,
   ) {}
 
-  /** Whether a copy is shown. */
+  /** Indicates whether a copy is shown. */
   get shown(): boolean {
     return !!this.el;
   }
 
-  /** Starts showing a copy of `source`, as wide and as tall as it is, after the pointer. */
+  /** Starts showing a copy of `source`, at the same width and height, that follows the pointer. */
   show(source: HTMLElement, x: number, y: number, kind: string): void {
     this.open(this.copyOf(source), kind, this.root());
     this.move(x, y, 'none');
@@ -44,7 +44,7 @@ export class DragGhost {
 
   /**
    * Starts showing `content` (a copy, or a drag template) with its top left corner at `offset`
-   * from the pointer, in `root`; it moves along `direction` only and stays in `bounds`.
+   * from the pointer, in `root`. It moves along `direction` only and stays in `bounds`.
    */
   showAt(content: Node, kind: string, x: number, y: number, options: { offset: { x: number; y: number }; root?: HTMLElement | null; direction?: Follow['direction']; bounds?: DOMRect | null }): void {
     this.open(content, kind, options.root ?? this.root());
@@ -53,7 +53,7 @@ export class DragGhost {
     this.move(x, y, 'none');
   }
 
-  /** Follows the pointer; `target` says what dropping here would do. */
+  /** Follows the pointer. `target` reports what dropping here would do. */
   move(x: number, y: number, target: string): void {
     const el = this.el;
     if (!el) return;
@@ -79,7 +79,7 @@ export class DragGhost {
     this.follow = null;
   }
 
-  /** A copy that looks the same and is nothing else: no ids, no Tab stops, not dragged-looking. */
+  /** A visual copy with no other role: no ids, no Tab stops and no dragged appearance. */
   copyOf(source: HTMLElement, sized = true): HTMLElement {
     const box = source.getBoundingClientRect();
     const copy = source.cloneNode(true) as HTMLElement;

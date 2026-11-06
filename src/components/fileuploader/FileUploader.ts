@@ -71,10 +71,11 @@ function accepted(file: File, accept: string): boolean {
 }
 
 /**
- * Files chosen with a button or dropped on the box, listed with their size and what happens to them: uploaded as
- * they come (`uploadUrl`, in one piece or in chunks, or your own `upload`), on an Upload button, or programmatically;
- * progress, cancel, retry and remove on each. `accept`, `maxFileSize`, `minFileSize` and `maxFiles` turn files
- * away, each listed with the reason. The value is the files taken; `x-model` binds it.
+ * Files selected with a button or dropped on the box, listed with their size and state. They are uploaded on
+ * selection (`uploadUrl`, whole or in chunks, or a custom `upload`), with an Upload button, or programmatically,
+ * with progress, cancel, retry and remove on each one. `accept`, `maxFileSize`, `minFileSize` and `maxFiles` reject
+ * files, and each one is listed with the reason. The value is the accepted files, and `x-model` provides two-way
+ * binding.
  *
  * @example
  * <FileUploader label="Attachments" accept=".pdf,image/*" maxFileSize={5_000_000} uploadUrl="/api/files" x-model={() => this.form.files} />
@@ -231,12 +232,12 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
         this.assignProperty('showFileList', value);
     }
 
-    /** Every file in the list, the refused ones too, with what happened to each. */
+    /** Every file in the list with its state, including rejected ones. */
     get items(): readonly UploadItem[] {
         return this.uploadParts.items;
     }
 
-    /** An upload is running. */
+    /** Indicates that an upload is running. */
     get isUploading(): boolean {
         return this.uploadParts.jobs.size > 0;
     }
@@ -265,12 +266,15 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
 
     // Methods.
 
-    /** Opens the browser's file dialog, as the button does. */
+    /** Opens the browser's file dialog, the same as the button. */
     openDialog(): void {
         if (this.isEnabled && !this.peekProperty('readOnly')) this.uploadParts.input.click();
     }
 
-    /** Takes files as if chosen: the limits apply, `onFilesAdded` is asked, uploads start as the mode says. */
+    /**
+     * Adds files as if the user selected them. The limits apply, `onFilesAdded` is raised, and uploads start according to
+     * the mode.
+     */
     addFiles(files: Iterable<File>, event?: Event): void {
         if (!this.isEnabled || this.peekProperty('readOnly')) {
             return;
@@ -314,19 +318,19 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
         if (this.uploadMode === 'instant') for (const item of fresh) void this.uploadItem(item);
     }
 
-    /** Uploads the files waiting (or one of them); `manual` mode calls this. */
+    /** Uploads the waiting files, or one of them. This is what `manual` mode calls. */
     upload(item?: UploadItem): Promise<void> {
         const waiting = item ? [item] : this.uploadParts.items.filter(i => i.status === 'ready' || i.status === 'error' || i.status === 'aborted');
         return Promise.all(waiting.map(i => this.uploadItem(i))).then(() => undefined);
     }
 
-    /** Stops the upload of a file (or of every one); the file stays, listed as canceled. */
+    /** Stops the upload of one file or of all files. The file remains, marked as canceled. */
     abort(item?: UploadItem): void {
         const parts = this.uploadParts;
         for (const i of item ? [item] : [...parts.jobs.keys()]) parts.jobs.get(i)?.abort();
     }
 
-    /** Takes a file out of the list and the value; a running upload is stopped. */
+    /** Removes a file from the list and the value. A running upload is stopped. */
     remove(item: UploadItem, event?: Event): void {
         const parts = this.uploadParts;
         const at = parts.items.indexOf(item);
@@ -340,7 +344,7 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
         this.drawList();
     }
 
-    /** Takes every file out. */
+    /** Removes every file. */
     clear(): void {
         const parts = this.uploadParts;
         for (const item of parts.items) this.stop(item);

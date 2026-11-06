@@ -11,8 +11,8 @@ interface ChildSettingsHandler {
 
 /**
  * The settings a layout container reads from its children (`dock`, `row`, `grow`…). A child
- * says them in its own props, a value or a tracked function, whatever kind of
- * component it is; code can set them later with `set`. Children added at any time are picked
+ * declares them in its own props, as a value or a tracked function, whatever kind of
+ * component it is, and code can set them later with `set`. Children added at any time are picked
  * up through the container's own `controladded` event, so nothing watches the DOM and nothing
  * runs on resize.
  */
@@ -37,7 +37,7 @@ export class ChildSettings {
   }
 
   /**
-   * Picks up the children already there. Called once the container has stored this object: the
+   * Picks up the existing children. Call it once the container has stored this object, because the
    * handler reads the settings back through the container.
    */
   addPresent(): this {
@@ -45,7 +45,7 @@ export class ChildSettings {
     return this;
   }
 
-  /** The children that take part, in order. */
+  /** The participating children, in order. */
   get children(): ComponentBase[] {
     return this.owner.controls.items.filter((child) => this.tracked.has(child));
   }

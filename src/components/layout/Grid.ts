@@ -31,8 +31,8 @@ function span(value: unknown): string {
 }
 
 /**
- * Rows and columns defined up front, CSS-like (`columns="auto 1fr 2fr 120"`). Children fill
- * the cells in order, or say where they go in their own props: `row`, `column`, `rowSpan`,
+ * Rows and columns defined up front, in a CSS-like form (`columns="auto 1fr 2fr 120"`). Children fill
+ * the cells in order, or declare their position in their own props: `row`, `column`, `rowSpan` and
  * `columnSpan`, counted from 1.
  *
  * @example
@@ -141,7 +141,7 @@ export class Grid extends Control<HTMLDivElement, GridProps> {
     this.assignProperty('inline', value, Boolean);
   }
 
-  /** A child's cell, as its props say or as set with {@link setCell}. */
+  /** The cell of a child, from its props or as set with {@link setCell}. */
   cellOf(child: ComponentBase): GridCell {
     const cell: Record<string, unknown> = {};
     for (const name of CELL) {
@@ -151,7 +151,7 @@ export class Grid extends Control<HTMLDivElement, GridProps> {
     return cell as GridCell;
   }
 
-  /** Places a child programmatically; each field is a value or a tracked function. Fields omitted stay. */
+  /** Places a child programmatically. Each field is a value or a tracked function, and omitted fields do not change. */
   setCell(child: ComponentBase, cell: GridCell): void {
     for (const name of CELL) if (cell[name] !== undefined) this.settings.set(child, name, cell[name]);
   }

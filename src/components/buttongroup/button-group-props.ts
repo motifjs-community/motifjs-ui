@@ -10,27 +10,39 @@ import type { ButtonGroupValueChangedEventArgs } from './button-group-value-chan
 
 /** Props of `ButtonGroup`. Each prop is also a settable property, and a function is tracked. */
 export interface ButtonGroupProps<T = unknown> extends ControlProps {
-  /** The buttons: `ButtonGroupItem`s, plain values (each its own text), or objects of your own shape with `itemText` / `itemValue`. */
+  /**
+   * The buttons: `ButtonGroupItem` objects, plain values that serve as their own text, or custom objects with
+   * `itemText` / `itemValue`.
+   */
   items?: Bind<readonly (ButtonGroupItem<T> | T)[]>;
-  /** Where an item keeps its text: a property name or a function. Default `'text'`. Not a binding: a function here is the reader. */
+  /**
+   * The location of the text in an item: a property name or a function. The default is `'text'`. A function here is a
+   * reader, not a binding.
+   */
   itemText?: ItemField<ButtonGroupItem<T> | T>;
-  /** Where an item keeps its value: a property name or a function. Default `'value'`. Not a binding: a function here is the reader. */
+  /**
+   * The location of the value in an item: a property name or a function. The default is `'value'`. A function here is a
+   * reader, not a binding.
+   */
   itemValue?: ItemField<ButtonGroupItem<T> | T>;
-  /** Default `'single'`. */
+  /** The default is `'single'`. */
   selection?: Bind<ButtonGroupSelection>;
-  /** The chosen value (`single`) or an array of the values turned on (`multiple`). Two-way with `x-model`. */
+  /**
+   * The selected value (`single`) or an array of the values that are on (`multiple`). `x-model` provides two-way
+   * binding.
+   */
   value?: Bind<T | readonly T[] | null>;
-  /** `single`: pressing the chosen button again leaves none chosen. Default `false`. */
+  /** With `single`, clicking the selected button again clears the selection. The default is `false`. */
   allowEmpty?: Bind<boolean>;
-  /** The buttons touch, sharing their edges. Default: the design language's (`true`). */
+  /** The buttons are attached and share their edges. The default comes from the design language (`true`). */
   attached?: Bind<boolean>;
-  /** Default: the design language's (`outline`). */
+  /** The default comes from the design language (`outline`). */
   variant?: Bind<ButtonVariant>;
-  /** Default `'md'`. */
+  /** The default is `'md'`. */
   size?: Bind<ButtonSize>;
-  /** Fills the width, the buttons sharing it. Default `false`. */
+  /** Stretches to the full width, with the buttons sharing it. The default is `false`. */
   stretch?: Bind<boolean>;
-  /** What screen readers call the group ("Text alignment"). */
+  /** The accessible name of the group ("Text alignment"). */
   label?: Bind<string>;
   onValueChanged?: (e: ButtonGroupValueChangedEventArgs<T>) => void;
   onItemClick?: (e: ButtonGroupItemClickEventArgs<T>) => void;

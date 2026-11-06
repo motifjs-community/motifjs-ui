@@ -7,7 +7,7 @@ export type { DesignTokenName };
 /** Every token name a style in this kit may use: the design system's layers plus this kit's component tokens. */
 export type TokenName = DesignTokenName | ComponentTokenName;
 
-/** Every token: the design system's map and the component tokens, one object. */
+/** Every token in one object: the design system's map and the component tokens. */
 export const tokens = { ...designTokens, ...componentTokens } as const;
 
 /**

@@ -54,9 +54,9 @@ interface Parts<T> {
 }
 
 /**
- * A text field with a list that follows what is typed (the APG combobox with list autocomplete).
- * The list comes from items in memory or from a `DataSource` of the data layer, searched on the
- * server. Text that matches no item goes back to the chosen one, or becomes the value with
+ * A text field with a list that follows the typed text (the APG combobox with list autocomplete).
+ * The list comes from in-memory items, or from a `DataSource` of the data layer searched on the
+ * server. Text that matches no item reverts to the selected item, or becomes the value with
  * `acceptCustomValue`.
  *
  * @example
@@ -209,13 +209,13 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     return this.focusElement as HTMLInputElement;
   }
 
-  /** The item of the value, when it is known. */
+  /** The item for the current value, when known. */
   get selectedItem(): T | undefined {
     void this.value;
     return this.comboParts.chosen;
   }
 
-  /** The items the list shows: what matched the last search. */
+  /** The items shown in the list, which are the results of the last search. */
   get listItems(): DataItems<T> {
     return this.comboParts.items;
   }
@@ -236,7 +236,7 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     return this.comboParts.closed.event;
   }
 
-  /** Opens the list; `false` when it cannot be used now. */
+  /** Opens the list. Returns `false` when it cannot be used. */
   open(): boolean {
     if (!this.isEnabled || this.peekProperty('readOnly')) return false;
     const parts = this.comboParts;
@@ -257,14 +257,14 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     this.comboParts.popup?.close('code');
   }
 
-  /** Empties the value and the text. */
+  /** Clears the value and the text. */
   clear(): void {
     this.choose(undefined, null);
   }
 
   /**
-   * Reads the items again after they were changed in place: the open list and the text of the value. Your items
-   * may be plain or reactive; the box reads them as they are.
+   * Re-reads the items after they have been changed in place, and updates the open list and the value text. Your
+   * items can be plain or reactive, and the box reads them as they are.
    */
   override refresh(): void {
     super.refresh();

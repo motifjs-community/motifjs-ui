@@ -5,18 +5,21 @@ import type { SkeletonShape } from './skeleton-shape';
 
 /** Props of `Skeleton`. Each prop is also a settable property, and a function is tracked. */
 export interface SkeletonProps extends ControlProps {
-  /** Default `'text'`. */
+  /** The default is `'text'`. */
   shape?: Bind<SkeletonShape>;
-  /** How many lines of text; the last of several is shorter. Default `1`. */
+  /** The number of text lines. The last of several lines is shorter. The default is `1`. */
   lines?: Bind<number>;
-  /** A CSS length, or pixels as a number; a circle's size. Default: the room it is in (a circle: the language's size). */
+  /**
+   * A CSS length, or a number in pixels. Also sets the size of a circle. By default, it fills the available
+   * width, and a circle uses the size from the design language.
+   */
   width?: Bind<string | number | null>;
-  /** A CSS length, or pixels as a number. Default: a line of text, or the language's block height. */
+  /** A CSS length, or a number in pixels. The default is a line of text, or the block height of the design language. */
   height?: Bind<string | number | null>;
-  /** Default: the design language's (`wave`, or `pulse`). */
+  /** The default comes from the design language (`wave` or `pulse`). */
   animation?: Bind<SkeletonAnimation>;
-  /** While `true` the skeleton shows; then its JSX children do. Default `true`. */
+  /** Shows the skeleton while `true`, and then the JSX children. The default is `true`. */
   loading?: Bind<boolean>;
-  /** What screen readers say while it loads. Default: the kit's "Loading…". */
+  /** The text announced by screen readers while loading. The default is the kit's "Loading…" string. */
   label?: Bind<string>;
 }

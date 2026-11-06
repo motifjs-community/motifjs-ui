@@ -44,11 +44,11 @@ interface Step {
 }
 
 /**
- * The steps of a longer task and where the user stands in them: a numbered indicator and a text per step, a line
- * between them, the steps before the current one completed. A step is a button (`clickable`); in linear order a
- * press reaches a completed step or the one right after the last completed, and `onStepChanging` may refuse or
- * wait. One Tab stop: the arrow keys move between the steps, Enter and Space choose. The `Wizard` adds a page and
- * the buttons to each step.
+ * The steps of a longer task and the user's position in them: a numbered indicator and a text per step, a line
+ * between them, and the steps before the current one completed. A step is a button (`clickable`). In linear order, a
+ * click reaches a completed step or the one right after the last completed step, and `onStepChanging` can cancel the
+ * change or wait. The stepper is one Tab stop: the arrow keys move between the steps, and Enter and Space select.
+ * `Wizard` adds a page and buttons to each step.
  *
  * @example
  * <Stepper items={['Account', 'Address', 'Payment']} x-model={() => this.order.step} />
@@ -174,37 +174,37 @@ export class Stepper extends Control<HTMLElement, StepperProps> {
         this.assignProperty('label', value);
     }
 
-    /** The current step is about to change (`from`, `to`, `byUser`); `cancel` keeps it, `promise` waits. */
+    /** Occurs before the current step changes (`from`, `to`, `byUser`). `cancel` keeps it, and `promise` waits. */
     get onStepChanging(): MotifEvent<StepChangingEventArgs> {
         return this.changing.event;
     }
 
-    /** The current step changed, by the user or programmatically (`byUser`). */
+    /** Occurs after the current step changes, by the user or programmatically (`byUser`). */
     get onStepChanged(): MotifEvent<StepChangedEventArgs> {
         return this.changed.event;
     }
 
-    /** The index of the current step; -1 when there is none. */
+    /** The index of the current step, or -1 if there is none. */
     get selectedIndex(): number {
         return this.indexOf(this.peekProperty<string | number | null | undefined>('value'));
     }
 
-    /** How many steps there are. */
+    /** The number of steps. */
     get count(): number {
         return this.looks.length;
     }
 
-    /** A step after the current one can be gone to with `next()`. */
+    /** Indicates whether `next()` can move to a step after the current one. */
     get canGoNext(): boolean {
         return this.nextIndex(1) >= 0;
     }
 
-    /** A step before the current one can be gone to with `previous()`. */
+    /** Indicates whether `previous()` can move to a step before the current one. */
     get canGoPrevious(): boolean {
         return this.nextIndex(-1) >= 0;
     }
 
-    /** The status of the step at `index`, as drawn. */
+    /** The status of the step at `index`, as displayed. */
     statusOf(index: number): StepperStatus {
         const look = this.looks[index];
         if (!look) {
@@ -220,7 +220,10 @@ export class Stepper extends Control<HTMLElement, StepperProps> {
         return look.status ?? (index < current ? 'done' : 'pending');
     }
 
-    /** Whether a click may reach the step at `index`: enabled, and in linear order with every step before it done or optional. */
+    /**
+     * Indicates whether a click can reach the step at `index`: it is enabled and, in linear order, every step before it
+     * is done or optional.
+     */
     canReach(index: number): boolean {
         const look = this.looks[index];
         if (!look || !look.enabled) {
@@ -238,27 +241,27 @@ export class Stepper extends Control<HTMLElement, StepperProps> {
         return true;
     }
 
-    /** Goes to the step after the current one (the next enabled); `false` when there is none or the change was refused. */
+    /** Moves to the next enabled step. Returns `false` if there is none or the change was canceled. */
     next(): Promise<boolean> {
         return this.goTo(this.nextIndex(1));
     }
 
-    /** Goes to the step before the current one (the previous enabled). */
+    /** Moves to the previous enabled step. */
     previous(): Promise<boolean> {
         return this.goTo(this.nextIndex(-1));
     }
 
-    /** Goes to a step by index or key, whatever the order; `onStepChanging` is asked first. */
+    /** Moves to a step by index or key, in any order. `onStepChanging` is raised first. */
     goTo(step: number | string): Promise<boolean> {
         return this.go(this.indexOf(step), false);
     }
 
-    /** Reads the items again after they were changed in place. */
+    /** Re-reads the items after they have been changed in place. */
     refresh(): void {
         this.renderItems();
     }
 
-    /** The index a value names: a key, else an index in range; -1 for none. */
+    /** Returns the index that a value identifies: a key, otherwise an index in range, or -1 if there is none. */
     indexOf(value: string | number | null | undefined): number {
         if (value === undefined) {
             return this.looks.length ? 0 : -1;
@@ -272,7 +275,7 @@ export class Stepper extends Control<HTMLElement, StepperProps> {
         return Number.isInteger(value) && value >= 0 && value < this.looks.length ? value : -1;
     }
 
-    /** The value that names the step at `index`: its key when it has one, else the index. */
+    /** Returns the value that identifies the step at `index`: its key if it has one, otherwise the index. */
     valueAt(index: number): string | number {
         return this.looks[index]?.key ?? index;
     }

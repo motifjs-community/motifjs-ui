@@ -2,7 +2,7 @@ import type { Card } from './Card';
 
 export interface CardSelectedChangedEventArgs {
   selected: boolean;
-  /** `true` when the user pressed it or its check box, `false` when code set it. */
+  /** `true` when the user clicked the card or its check box, and `false` when it was set programmatically. */
   byUser: boolean;
   source: Card;
 }

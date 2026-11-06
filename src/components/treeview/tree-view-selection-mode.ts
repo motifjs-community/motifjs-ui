@@ -1,2 +1,2 @@
-/** `none`: rows are not selected; `single`: one at a time; `multiple`: any number. */
+/** `none` selects no rows, `single` selects one at a time, and `multiple` selects any number. */
 export type TreeViewSelectionMode = 'none' | 'single' | 'multiple';

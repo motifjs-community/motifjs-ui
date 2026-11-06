@@ -238,17 +238,17 @@ const COLUMN_STATE = new Set<string>(['width', 'visible', 'hidden', 'flex', 'sti
 const COLUMN_DATA = new Set<string>(['type', 'value', 'compare', 'sortField', 'textFrom', 'lookup', 'calculateGroupValue', 'groupCompare']);
 
 /**
- * A data grid: rows in memory or from the data layer (any adapter), shown as one virtual list or in
- * pages. Columns can be sorted, resized, moved, hidden and pinned; cells are edited in place with the
- * kit's editors, rows are added (Tab on the last cell of a new row opens the next one) and deleted,
- * and changes are saved through a `ChangeTracker` row by row (waiting or in the background) or all
- * together. Rows carry their own action buttons (those that do not fit go into a "more" menu), can be
- * selected one, several or all (also over data never loaded), and are filtered from a filter row, from
- * value lists in the headers and from a search box that looks in every column at once (the text found
- * is marked). Rows can be grouped, with summaries in the group rows and footers, and totals in a
- * row under the rows. A toolbar above the rows holds the grid's own commands and the app's. The grid is a
- * single tab stop navigated with the arrow keys. Every feature can be turned off, for the whole grid
- * (`settings`) or per column, also while it is shown.
+ * A data grid that displays in-memory rows or rows from the data layer (any adapter), as one virtual
+ * list or in pages. Columns can be sorted, resized, moved, hidden and pinned. Cells are edited in place
+ * with the kit's editors, rows are added (Tab on the last cell of a new row opens the next one) and
+ * deleted, and changes are saved through a `ChangeTracker` row by row (waiting or in the background) or
+ * all together. Rows have their own action buttons (those that do not fit go into a "more" menu) and
+ * can be selected one at a time, several at once or all together, including data that has not loaded.
+ * Rows are filtered from a filter row, from value lists in the headers and from a search box that
+ * covers every column at once and highlights the matches. Rows can be grouped, with summaries in the
+ * group rows and footers, and totals in a row below the rows. A toolbar above the rows holds the
+ * grid's commands and custom ones. The grid is a single tab stop navigated with the arrow keys. Every
+ * feature can be disabled for the whole grid (`settings`) or per column, including at runtime.
  *
  * @example
  * <DataGrid rows={() => this.orders} rowKey="id" columns={columns} settings={{ editable: true }} />
@@ -634,40 +634,40 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.text = value;
   }
 
-  /** The feature switches, live: `grid.settings.resizable = false`, and a function is tracked. */
+  /** The live feature switches: `grid.settings.resizable = false`. A function is tracked. */
   get settings(): GridSettings {
     return this.model.settings.view;
   }
 
   /**
-   * The bar above the rows, live: `grid.toolbar.items = ['searchPanel', { text: 'Refresh', click }]`;
-   * a function is tracked. `visible` omitted shows the bar while it has an item.
+   * The live bar above the rows: `grid.toolbar.items = ['searchPanel', { text: 'Refresh', click }]`.
+   * A function is tracked. When `visible` is omitted, the bar appears while it has an item.
    */
   get toolbar(): GridToolbarOptions {
     return this.toolbarSwitches.view as GridToolbarOptions;
   }
 
   /**
-   * What the toolbar's export button offers, live: `grid.export.formats = ['xlsx', 'csv']`; a
-   * function is followed.
+   * What the toolbar's export button offers, live: `grid.export.formats = ['xlsx', 'csv']`. A function
+   * is tracked.
    */
   get export(): GridExportSettings {
     return this.exportSwitches.view as GridExportSettings;
   }
 
-  /** The edit form of `editMode` `'form'` and `'popup'`, live: `grid.form.colCount = 3`, and a function is tracked. */
+  /** The live edit form of `editMode` `'form'` and `'popup'`: `grid.form.colCount = 3`. A function is tracked. */
   get form(): GridEditForm {
     return this.formSwitches.view as GridEditForm;
   }
 
-  /** The window of `editMode: 'popup'`, live: `grid.popup.width = '40rem'`, and a function is tracked. */
+  /** The live window of `editMode: 'popup'`: `grid.popup.width = '40rem'`. A function is tracked. */
   get popup(): GridEditPopup {
     return this.popupSwitches.view as GridEditPopup;
   }
 
   /**
-   * One column's own feature switches, live. A value set here takes precedence over `settings`; `undefined`
-   * follows `settings` again.
+   * One column's own live feature switches. A value set here takes precedence over `settings`, and
+   * `undefined` returns to `settings`.
    * @example grid.columnSettings('amount').movable = false;
    */
   columnSettings(field: string): Partial<ColumnFeatures> {
@@ -675,29 +675,29 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.model.columns.features.get(field)!.view;
   }
 
-  /** The source the rows come from: the one given, or the one the grid made for `rows`. */
+  /** The source of the rows: the one provided, or the one the grid created for `rows`. */
   get dataSource(): data.DataSource<T, unknown> {
     void this.model.state.connection;
     return this.model.data.source;
   }
 
-  /** The unsaved changes of the rows; listen to it, or read it, as any `ChangeTracker`. */
+  /** The unsaved changes of the rows. Subscribe to it or read it like any `ChangeTracker`. */
   get changeTracker(): data.ChangeTracker<T, unknown> {
     void this.model.state.connection;
     return this.model.data.tracker;
   }
 
-  /** Data rows (0 while the first answer is loading), saved new rows included. Reactive. */
+  /** The number of data rows, including saved new rows (0 while the first response loads). Reactive. */
   get total(): number {
     return this.model.dataTotal + this.savedAdded();
   }
 
-  /** True until the first rows arrive, and again after the sort changes, until they are there. Reactive. */
+  /** `true` until the first rows arrive, and again after the sort changes until they arrive. Reactive. */
   get loading(): boolean {
     return this.model.state.status === 'loading';
   }
 
-  /** The sort order. Assigning replaces it and goes back to the first row. */
+  /** The sort order. Assigning replaces it and returns to the first row. */
   get sort(): data.SortItem[] {
     return this.model.state.sort.map((s) => ({ ...s }));
   }
@@ -705,7 +705,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.setSort(sort);
   }
 
-  /** The page shown (paged mode), 0-based. Infinite mode: the last part shown; assigning loads the parts up to that one and scrolls to its first row. */
+  /**
+   * The displayed page in paged mode, 0-based. In infinite mode, the last displayed page, and assigning
+   * loads the pages up to that one and scrolls to its first row.
+   */
   get page(): number {
     const { model } = this;
     if (model.mode !== 'infinite') return model.state.page;
@@ -727,32 +730,36 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     model.setPage(page);
   }
 
-  /** Pages in paged mode (at least 1); in infinite mode the parts of every row once their count is known, else the parts shown. Reactive. */
+  /**
+   * The number of pages in paged mode (at least 1). In infinite mode, the pages of all rows once their
+   * count is known, otherwise the displayed pages. Reactive.
+   */
   get pageCount(): number {
     return this.model.pageCount();
   }
 
   /**
-   * Infinite mode: shows the next part of the rows (`pageSize` more), after `onMoreRowsLoading`;
-   * `false` while the rows load, a part is loading or failed (`retry()`), or every row shows.
+   * In infinite mode, displays the next page of rows (`pageSize` more), after `onMoreRowsLoading`. Returns
+   * `false` while the rows load, while a page is loading or has failed (`retry()`), or when every row is
+   * displayed.
    */
   loadMore(): boolean {
     return this.model.loadMore();
   }
 
-  /** Infinite mode: a part of the rows is loading. Reactive. */
+  /** In infinite mode, indicates that a page of rows is loading. Reactive. */
   get loadingMore(): boolean {
     void this.model.state.connection;
     return this.model.data.loadingMore;
   }
 
-  /** Every row shows: always outside infinite mode, there once the last part came. Reactive. */
+  /** Indicates that every row is displayed: always outside infinite mode, otherwise once the last page arrives. Reactive. */
   get endReached(): boolean {
     void this.model.state.connection;
     return this.model.data.ended;
   }
 
-  /** The page shown, 0-based; with a number, goes there (as `page` does). */
+  /** The displayed page, 0-based. With a number, moves to that page, as `page` does. */
   pageIndex(): number;
   pageIndex(page: number): void;
   pageIndex(page?: number): number | void {
@@ -761,9 +768,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * Rows per page in paged mode, 0 for every row on one page; with a number, shows that many, as the
-   * pager's page sizes do (`onPageSizeChanging` may keep the old size): back to the first page, and
-   * the size is kept with the layout (`layoutKey`).
+   * The rows per page in paged mode, 0 for every row on one page. With a number, displays that many, as
+   * the pager's page sizes do (`onPageSizeChanging` can keep the current size). The grid returns to the
+   * first page and saves the size with the layout (`layoutKey`).
    */
   pageSize(): number;
   pageSize(size: number): void;
@@ -773,7 +780,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.setPageSize(size);
   }
 
-  /** Data rows of every page, saved new rows included: the same as `total`. Infinite mode: every matching row once known (counted, or the end reached), -1 until then. Reactive. */
+  /**
+   * The data rows of every page, including saved new rows (the same as `total`). In infinite mode, every
+   * matching row once known (counted, or the end reached), and -1 until then. Reactive.
+   */
   totalCount(): number {
     const { model } = this;
     if (model.mode !== 'infinite') return this.total;
@@ -781,7 +791,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return known === undefined ? -1 : known + this.savedAdded();
   }
 
-  /** Column order, widths, visibility, sticky sides and sort. Store it and assign it back later, or give the grid a `layoutKey`. */
+  /**
+   * The column order, widths, visibility, sticky sides and sort. Store it and assign it back later, or
+   * set a `layoutKey` on the grid.
+   */
   get layout(): GridLayout {
     return this.model.layout;
   }
@@ -789,7 +802,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.layout = layout;
   }
 
-  /** The row of the active cell; `undefined` on the header or while it loads. */
+  /** The row of the active cell, or `undefined` on the header or while the row loads. */
   get activeRow(): T | undefined {
     const i = this.model.state.activeRow;
     return i >= 0 ? this.model.rowAt(i) : undefined;
@@ -799,31 +812,34 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.model.state.activeField;
   }
 
-  /** Whether there are unsaved changes (edited, new or deleted rows). Reactive. */
+  /** Indicates whether there are unsaved changes (edited, new or deleted rows). Reactive. */
   get hasChanges(): boolean {
     return this.model.stats.changed > 0;
   }
 
-  /** The unsaved changes: new rows, updated rows (the row itself and what changed) and deleted rows. */
+  /** The unsaved changes: new rows, updated rows (the row itself and the changed values) and deleted rows. */
   get changes(): GridChanges<T> {
     void this.model.state.edits;
     return this.model.data.changes();
   }
 
-  /** Rows whose save failed or that have messages to fix. Reactive. */
+  /** The number of rows whose save failed or that have messages to fix. Reactive. */
   get errorCount(): number {
     return this.model.stats.failed;
   }
 
-  /** Back to the columns' own settings and the initial sort; with `layoutKey`, that is what is kept from now on. Filters stay. */
+  /**
+   * Returns to the columns' own settings and the initial sort. With `layoutKey`, that layout is saved
+   * from now on. Filters are not affected.
+   */
   resetLayout() {
     this.model.resetLayout();
   }
 
   /**
-   * Loads the rows again, keeping the position, and the texts of the lookup columns; saved new rows
-   * leave the new-row area and take their place among the rows. Everything that shows the app's data
-   * is read again too (`repaint()`), and the summaries are calculated again.
+   * Reloads the rows while keeping the position, along with the text of the lookup columns. Saved new
+   * rows leave the new-row area and take their place among the rows. Everything that displays your data
+   * is re-read (`repaint()`), and the summaries are recalculated.
    */
   refresh() {
     this.dropForm();
@@ -834,17 +850,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.repaint();
   }
 
-  /** Forgets the texts of the lookup columns and asks for the ones on the screen again. */
+  /** Clears the cached text of the lookup columns and requests the text on screen again. */
   refreshLookups() {
     this.model.refreshLookups();
   }
 
-  /** Raised before a cell editor is created: change its props (`e.options`), or `e.cancel` the edit. */
+  /** Occurs before a cell editor is created. Change its props (`e.options`), or set `e.cancel = true`. */
   get onEditorPreparing(): MotifEvent<GridEditorPreparingEventArgs<T>> {
     return this.on(this.model.events.editorPreparing);
   }
 
-  /** Loads what failed to load again; in infinite mode a part that failed, after `onMoreRowsLoading`. */
+  /** Reloads what failed to load. In infinite mode, reloads a failed page, after `onMoreRowsLoading`. */
   retry() {
     const { model } = this;
     const data = model.data;
@@ -853,13 +869,13 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     data.retry();
   }
 
-  /** Scrolls row `index` into view (in paged mode, goes to its page). New rows count as rows. */
+  /** Scrolls row `index` into view (in paged mode, moves to its page). New rows count as rows. */
   scrollToIndex(index: number, align: 'nearest' | 'start' | 'end' = 'start') {
     const i = Math.max(0, Math.min(this.model.count - 1, Math.floor(index)));
     if (i >= 0) this.body.reveal(i, align);
   }
 
-  /** Fits every visible, resizable column to its header and the rows shown. */
+  /** Fits every visible, resizable column to its header and the displayed rows. */
   autoSizeColumns() {
     // Virtual columns: every column gets its cells while they are measured.
     const drawn = this.model.columnWindow;
@@ -873,17 +889,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.keepLayout();
   }
 
-  /** Moves keyboard focus to the active cell. */
+  /** Sets focus on the active cell. */
   override focus(): boolean {
     this.focusActive(true);
     return this.focusWithin;
   }
 
   /**
-   * Opens a new row, as the "New row" button does: at the bottom (the grid goes to the end; in a
-   * virtual list only the last block is loaded) or at the top, with its first cell a new row can fill
-   * in edit mode. The row being edited is left first; when it cannot be left no row is added.
-   * `values` fill the new row as if typed.
+   * Opens a new row, as the "New row" button does: at the bottom (the grid moves to the end, and a
+   * virtual list loads only the last block) or at the top, with the first cell a new row can fill in
+   * edit mode. The row being edited is left first, and no row is added if it cannot be left. `values`
+   * fill the new row as if typed.
    */
   addRow(values?: Partial<T>): Promise<boolean> {
     const { model } = this;
@@ -908,10 +924,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * Deletes a row (default: the active one) according to the save mode: `batch` marks it until
-   * `saveChanges()`, `wait` sends it and resolves when the answer is in, `background` sends it
-   * through the queue. A new row never saved is just dropped. With `confirmDelete` (and not in batch
-   * mode) the user is asked first. Resolves to `false` when it failed or was not confirmed.
+   * Deletes a row (by default, the active row) according to the save mode: `batch` marks it until
+   * `saveChanges()`, `wait` sends it and resolves when the response arrives, and `background` sends it
+   * through the queue. A new row that was never saved is discarded. With `confirmDelete`, outside batch
+   * mode, the user is prompted first. Resolves to `false` when the deletion failed or was not confirmed.
    */
   deleteRow(row?: T): Promise<boolean> {
     const target = this.locate(row);
@@ -919,8 +935,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * Deletes several rows in one save, as `deleteRow` does one: in `wait` and `background` they are
-   * sent together, in one request when the adapter saves in batches. The user is asked once.
+   * Deletes several rows in one save, as `deleteRow` does for one row. In `wait` and `background` modes
+   * they are sent together, in one request when the adapter saves in batches. The user is prompted once.
    * Resolves to `false` when a row failed or the deletion was not confirmed.
    */
   async deleteRows(rows: readonly T[]): Promise<boolean> {
@@ -938,7 +954,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return model.removeRows(targets.map(({ rowId, obj, index }) => ({ rowId, row: obj, index: index >= 0 ? model.dataIndex(index) : -1 })));
   }
 
-  /** Takes back the deletion mark of a row (batch mode). */
+  /** Removes the deletion mark of a row (batch mode). */
   restoreRow(row: T) {
     const target = this.locate(row);
     if (target) this.model.restore(target.rowId);
@@ -946,7 +962,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /**
    * Sends every unsaved change: deleted rows, then updated rows, then new rows. The row being edited
-   * is included when it passes its checks. Rows the backend rejects keep their marks and messages.
+   * is included when it passes validation. Rows the backend rejects keep their marks and messages.
    */
   async saveChanges(): Promise<{ saved: number; failed: number }> {
     const { model } = this;
@@ -971,7 +987,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return model.saveChanges();
   }
 
-  /** Drops every unsaved change: edits, new rows and deletion marks. */
+  /** Discards every unsaved change: edits, new rows and deletion marks. */
   discardChanges() {
     const rows = this.model.data.tracker.pendingRows();
     if (!this.canDrop(rows)) return;
@@ -1004,203 +1020,218 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return false;
   }
 
-  // Events (names; `onKeyHandling` is its `onKeyDown`, a DOM event name in JSX).
+  // Events. `onKeyHandling` avoids `onKeyDown`, a DOM event name in JSX.
 
   private on<A>(emitter: Emitter<A>): MotifEvent<A> {
     return this.model.events.event(emitter);
   }
 
-  /** Raised after an editor was created, in a cell or in the edit form. */
+  /** Occurs after an editor is created, in a cell or in the edit form. */
   get onEditorPrepared(): MotifEvent<GridEditorPreparedEventArgs<T>> {
     return this.on(this.model.events.editorPrepared);
   }
 
-  /** Raised when a row is checked before it is saved: add messages to `e.errors`, or `e.isValid = false`. */
+  /** Occurs when a row is validated before saving. Add messages to `e.errors`, or set `e.isValid = false`. */
   get onRowValidating(): MotifEvent<GridRowValidatingEventArgs<T>> {
     return this.on(this.model.events.rowValidating);
   }
 
-  /** Raised when a cell is clicked: `e.cancel` stops what the grid does with it (select, open or close a group, edit). */
+  /**
+   * Occurs when a cell is clicked. Set `e.cancel = true` to prevent the grid's handling (selection, the
+   * group toggle and the editor).
+   */
   get onCellClick(): MotifEvent<GridCellClickEventArgs<T>> {
     return this.on(this.model.events.cellClick);
   }
 
-  /** Raised when a cell is double-clicked: `e.cancel` keeps its editor closed. */
+  /** Occurs when a cell is double-clicked. Set `e.cancel = true` to keep its editor closed. */
   get onCellDblClick(): MotifEvent<GridCellClickEventArgs<T>> {
     return this.on(this.model.events.cellDblClick);
   }
 
-  /** Raised when a row is clicked, after its cell's event: `e.cancel` stops what the grid does with it. */
+  /** Occurs when a row is clicked, after its cell's event. Set `e.cancel = true` to prevent the grid's handling. */
   get onRowClick(): MotifEvent<GridRowClickEventArgs<T>> {
     return this.on(this.model.events.rowClick);
   }
 
-  /** Raised when a row is double-clicked: `e.cancel` keeps the editor closed. */
+  /** Occurs when a row is double-clicked. Set `e.cancel = true` to keep the editor closed. */
   get onRowDblClick(): MotifEvent<GridRowClickEventArgs<T>> {
     return this.on(this.model.events.rowDblClick);
   }
 
-  /** Raised when a cell is drawn for a row: style it. The element is reused; set and clear what you change. */
+  /**
+   * Occurs when a cell is rendered for a row, so that you can style it. The element is reused, so set
+   * and clear what you change.
+   */
   get onCellPrepared(): MotifEvent<GridCellPreparedEventArgs<T>> {
     return this.on(this.model.events.cellPrepared);
   }
 
-  /** Raised when a row is drawn: style it. The element is reused; set and clear what you change. */
+  /**
+   * Occurs when a row is rendered, so that you can style it. The element is reused, so set and clear
+   * what you change.
+   */
   get onRowPrepared(): MotifEvent<GridRowPreparedEventArgs<T>> {
     return this.on(this.model.events.rowPrepared);
   }
 
-  /** Raised when rows arrived and are laid out. */
+  /** Occurs when rows have arrived and been laid out. */
   get onContentReady(): MotifEvent<GridContentReadyEventArgs> {
     return this.on(this.model.events.contentReady);
   }
 
-  /** Raised when loading or saving fails. */
+  /** Occurs when loading or saving fails. */
   get onDataErrorOccurred(): MotifEvent<GridDataErrorEventArgs<T>> {
     return this.on(this.model.events.dataErrorOccurred);
   }
 
-  /** Raised before a cell editor opens: `e.cancel` keeps it closed. */
+  /** Occurs before a cell editor opens. Set `e.cancel = true` to keep it closed. */
   get onEditingStart(): MotifEvent<GridEditingStartEventArgs<T>> {
     return this.on(this.model.events.editingStart);
   }
 
-  /** Raised before a new row opens: change `e.data` or `e.values`, or `e.cancel`. */
+  /** Occurs before a new row opens. Change `e.data` or `e.values`, or set `e.cancel = true`. */
   get onInitNewRow(): MotifEvent<GridInitNewRowEventArgs<T>> {
     return this.on(this.model.events.initNewRow);
   }
 
-  /** Raised before changes are sent: `e.cancel` keeps them unsent. */
+  /** Occurs before changes are sent. Set `e.cancel = true` to keep them unsent. */
   get onSaving(): MotifEvent<GridSavingEventArgs<T>> {
     return this.on(this.model.events.saving);
   }
 
-  /** Raised when the answer to a save came. */
+  /** Occurs when the response to a save arrives. */
   get onSaved(): MotifEvent<GridSavedEventArgs<T>> {
     return this.on(this.model.events.saved);
   }
 
-  /** Raised before a new row is sent: change `e.data`, or `e.cancel`. */
+  /** Occurs before a new row is sent. Change `e.data`, or set `e.cancel = true`. */
   get onRowInserting(): MotifEvent<GridRowInsertingEventArgs<T>> {
     return this.on(this.model.events.rowInserting);
   }
 
-  /** Raised when a new row was saved. */
+  /** Occurs when a new row is saved. */
   get onRowInserted(): MotifEvent<GridRowInsertedEventArgs<T>> {
     return this.on(this.model.events.rowInserted);
   }
 
-  /** Raised before a row's changes are sent: change `e.changes`, or `e.cancel`. */
+  /** Occurs before a row's changes are sent. Change `e.changes`, or set `e.cancel = true`. */
   get onRowUpdating(): MotifEvent<GridRowUpdatingEventArgs<T>> {
     return this.on(this.model.events.rowUpdating);
   }
 
-  /** Raised when a row's changes were saved. */
+  /** Occurs when a row's changes are saved. */
   get onRowUpdated(): MotifEvent<GridRowUpdatedEventArgs<T>> {
     return this.on(this.model.events.rowUpdated);
   }
 
-  /** Raised before a row's deletion is sent: `e.cancel` keeps the row. */
+  /** Occurs before a row's deletion is sent. Set `e.cancel = true` to keep the row. */
   get onRowRemoving(): MotifEvent<GridRowRemovingEventArgs<T>> {
     return this.on(this.model.events.rowRemoving);
   }
 
-  /** Raised when a row was deleted on the backend. */
+  /** Occurs when a row is deleted on the backend. */
   get onRowRemoved(): MotifEvent<GridRowRemovedEventArgs<T>> {
     return this.on(this.model.events.rowRemoved);
   }
 
-  /** Raised before unsaved changes are dropped: `e.cancel` keeps them. */
+  /** Occurs before unsaved changes are discarded. Set `e.cancel = true` to keep them. */
   get onEditCanceling(): MotifEvent<GridEditCancelingEventArgs<T>> {
     return this.on(this.model.events.editCanceling);
   }
 
-  /** Raised when unsaved changes were dropped. */
+  /** Occurs when unsaved changes are discarded. */
   get onEditCanceled(): MotifEvent<GridEditCanceledEventArgs<T>> {
     return this.on(this.model.events.editCanceled);
   }
 
-  /** Raised before the active cell moves: `e.cancel` keeps it. */
+  /** Occurs before the active cell moves. Set `e.cancel = true` to keep it in place. */
   get onFocusedCellChanging(): MotifEvent<GridFocusedCellChangingEventArgs<T>> {
     return this.on(this.model.events.focusedCellChanging);
   }
 
-  /** Raised when the active cell moved. */
+  /** Occurs when the active cell moves. */
   get onFocusedCellChanged(): MotifEvent<GridFocusedCellChangedEventArgs<T>> {
     return this.on(this.model.events.focusedCellChanged);
   }
 
-  /** Raised before the active row changes: `e.cancel` keeps it. */
+  /** Occurs before the active row changes. Set `e.cancel = true` to keep the current row. */
   get onFocusedRowChanging(): MotifEvent<GridFocusedRowChangingEventArgs<T>> {
     return this.on(this.model.events.focusedRowChanging);
   }
 
-  /** Raised when the active row changed. */
+  /** Occurs when the active row changes. */
   get onFocusedRowChanged(): MotifEvent<GridFocusedRowChangedEventArgs<T>> {
     return this.on(this.model.events.focusedRowChanged);
   }
 
-  /** Raised when a key goes down in the grid, before the grid handles it: `e.cancel` stops the grid's handling. */
+  /**
+   * Occurs when a key is pressed in the grid, before the grid handles it. Set `e.cancel = true` to
+   * prevent the grid's handling.
+   */
   get onKeyHandling(): MotifEvent<GridKeyHandlingEventArgs> {
     return this.on(this.model.events.keyHandling);
   }
 
-  /** Raised when a setting of the grid, a column or the toolbar is assigned. */
+  /** Occurs when a setting of the grid, a column or the toolbar is assigned. */
   get onOptionChanged(): MotifEvent<GridOptionChangedEventArgs> {
     return this.on(this.model.events.optionChanged);
   }
 
-  /** Raised before an export starts: change `e.options`, or `e.cancel`. */
+  /** Occurs before an export starts. Change `e.options`, or set `e.cancel = true`. */
   get onExporting(): MotifEvent<GridExportingEventArgs> {
     return this.on(this.model.events.exporting);
   }
 
-  /** Raised when an export finished. */
+  /** Occurs when an export finishes. */
   get onExported(): MotifEvent<GridExportedEventArgs> {
     return this.on(this.model.events.exported);
   }
 
-  /** Raised before a column menu or a row menu opens: change `e.items`, or `e.cancel`. */
+  /** Occurs before a column menu or a row menu opens. Change `e.items`, or set `e.cancel = true`. */
   get onContextMenuPreparing(): MotifEvent<GridContextMenuPreparingEventArgs<T>> {
     return this.on(this.model.events.contextMenuPreparing);
   }
 
-  /** Raised when the toolbar is laid out: change `e.items`. */
+  /** Occurs when the toolbar is laid out. Change `e.items`. */
   get onToolbarPreparing(): MotifEvent<GridToolbarPreparingEventArgs> {
     return this.on(this.model.events.toolbarPreparing);
   }
 
-  /** Raised before the sort changes: `e.cancel` keeps it. */
+  /** Occurs before the sort changes. Set `e.cancel = true` to keep the current sort. */
   get onSortChanging(): MotifEvent<GridSortChangingEventArgs> {
     return this.on(this.model.events.sortChanging);
   }
 
-  /** Raised when the sort changed. */
+  /** Occurs when the sort changes. */
   get onSortChanged(): MotifEvent<GridSortChangedEventArgs> {
     return this.on(this.model.events.sortChanged);
   }
 
-  /** Raised before the filters apply: `e.cancel` puts the ones before back. */
+  /** Occurs before the filters apply. Set `e.cancel = true` to restore the previous ones. */
   get onFilterChanging(): MotifEvent<GridFilterChangingEventArgs> {
     return this.on(this.model.events.filterChanging);
   }
 
-  /** Raised when the filters applied. */
+  /** Occurs when the filters apply. */
   get onFilterChanged(): MotifEvent<GridFilterChangedEventArgs> {
     return this.on(this.model.events.filterChanged);
   }
 
-  /** Raised before another page shows: `e.cancel` stays. */
+  /** Occurs before another page appears. Set `e.cancel = true` to stay on the current page. */
   get onPageChanging(): MotifEvent<GridPageChangingEventArgs> {
     return this.on(this.model.events.pageChanging);
   }
 
-  /** Raised when another page shows. */
+  /** Occurs when another page appears. */
   get onPageChanged(): MotifEvent<GridPageChangedEventArgs> {
     return this.on(this.model.events.pageChanged);
   }
 
-  /** Raised before the rows per page change (the pager's page sizes, `pageSize(n)`): `e.cancel` keeps them. */
+  /**
+   * Occurs before the rows per page change (the pager's page sizes, `pageSize(n)`). Set
+   * `e.cancel = true` to keep the current value.
+   */
   get onPageSizeChanging(): MotifEvent<GridPageSizeChangingEventArgs> {
     return this.on(this.model.events.pageSizeChanging);
   }
@@ -1209,39 +1240,42 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.on(this.model.events.pageSizeChanged);
   }
 
-  /** Infinite mode: raised before the next part of the rows loads (the view nears the end, `loadMore()`, Ctrl+End): `e.cancel` keeps the rows as they are. */
+  /**
+   * In infinite mode, occurs before the next page of rows loads (the view nears the end, `loadMore()`,
+   * Ctrl+End). Set `e.cancel = true` to keep the rows as they are.
+   */
   get onMoreRowsLoading(): MotifEvent<GridMoreRowsLoadingEventArgs> {
     return this.on(this.model.events.moreRowsLoading);
   }
 
-  /** Infinite mode: raised when a part of the rows came. */
+  /** In infinite mode, occurs when a page of rows arrives. */
   get onMoreRowsLoaded(): MotifEvent<GridMoreRowsLoadedEventArgs> {
     return this.on(this.model.events.moreRowsLoaded);
   }
 
-  /** Raised before a layout change by the user is kept: `e.cancel` puts the one before back. */
+  /** Occurs before a layout change by the user is saved. Set `e.cancel = true` to restore the previous layout. */
   get onLayoutChanging(): MotifEvent<GridLayoutChangingEventArgs> {
     return this.on(this.model.events.layoutChanging);
   }
 
-  /** Raised after the user changed the layout. */
+  /** Occurs after the user changes the layout. */
   get onLayoutChange(): MotifEvent<GridLayout> {
     return this.on(this.model.events.layoutChanged);
   }
 
-  /** Raised before cells go to the clipboard: change `e.text` / `e.html`, or `e.cancel`. */
+  /** Occurs before cells are copied to the clipboard. Change `e.text` or `e.html`, or set `e.cancel = true`. */
   get onCopying(): MotifEvent<GridCopyingEventArgs> {
     return this.on(this.model.events.copying);
   }
 
-  /** Raised before text is pasted: change `e.text`, or `e.cancel`. */
+  /** Occurs before text is pasted. Change `e.text`, or set `e.cancel = true`. */
   get onPasting(): MotifEvent<GridPastingEventArgs> {
     return this.on(this.model.events.pasting);
   }
 
   // State and rows programmatically.
 
-  /** `'loading'` until the rows arrive (again after a new query), `'error'` when the load failed, else `'ready'`. Reactive. */
+  /** `'loading'` until the rows arrive (and after a new query), `'error'` if the load failed, otherwise `'ready'`. Reactive. */
   get status(): 'loading' | 'ready' | 'error' {
     return this.model.state.status;
   }
@@ -1253,7 +1287,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.model.data.source.error;
   }
 
-  /** Blocks of rows that failed to load after the first answer; `retry()` loads them again. Reactive. */
+  /** The blocks of rows that failed to load after the first response. `retry()` reloads them. Reactive. */
   get failedBlocks(): number {
     return this.model.state.failedBlocks;
   }
@@ -1266,17 +1300,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return { rowIndex: this.model.indexOfKey(at.rowId, this.model.state.activeRow), field: editing.field, row: at.row };
   }
 
-  /** A row is being saved and the grid waits for it (`wait` mode); keys and clicks wait too. Reactive. */
+  /** Indicates that a row is being saved and the grid is waiting (`wait` mode). Keys and clicks wait too. Reactive. */
   get saving(): boolean {
     return this.model.state.busy;
   }
 
-  /** An export is running. Reactive. */
+  /** Indicates that an export is running. Reactive. */
   get exporting(): boolean {
     return this.model.state.exporting;
   }
 
-  /** The active row's index (new rows count; -1 the header, -2 the filter row). Assigning moves there. */
+  /** The active row's index, where new rows count, -1 is the header and -2 is the filter row. Assigning moves there. */
   get focusedRowIndex(): number {
     return this.model.state.activeRow;
   }
@@ -1284,7 +1318,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.focusCell(index);
   }
 
-  /** The active row's key; `undefined` on the header, a group row or a new row. Assigning goes to the row with that key, when it is loaded. */
+  /**
+   * The active row's key, or `undefined` on the header, a group row or a new row. Assigning moves to the
+   * row with that key when it is loaded.
+   */
   get focusedRowKey(): unknown {
     return this.getKeyByRowIndex(this.model.state.activeRow);
   }
@@ -1292,7 +1329,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     void this.navigateToRow(key);
   }
 
-  /** The rows drawn now (the ones in view, and the active one wherever it is), in order. */
+  /** The currently rendered rows (those in view, and the active row wherever it is), in order. */
   getVisibleRows(): GridVisibleRow<T>[] {
     const { model } = this;
     const rows: GridVisibleRow<T>[] = this.body.drawn().map(({ index, element, group }) => ({
@@ -1309,17 +1346,17 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return rows.sort((a, b) => a.rowIndex - b.rowIndex || order(a.rowType) - order(b.rowType));
   }
 
-  /** The element of grid row `rowIndex` while it is drawn. */
+  /** The element of grid row `rowIndex` while it is rendered. */
   getRowElement(rowIndex: number): HTMLElement | undefined {
     return this.body.rowAt(rowIndex)?.element ?? this.body.groupRowAt(rowIndex)?.element ?? this.body.footerRowAt(rowIndex)?.element;
   }
 
-  /** The element of a cell while its row is drawn; a group row's one cell for any field. */
+  /** The element of a cell while its row is rendered. A group row returns its single cell for any field. */
   getCellElement(rowIndex: number, field: string): HTMLElement | undefined {
     return this.body.cellElement(rowIndex, field);
   }
 
-  /** The key of grid row `rowIndex`; `undefined` for a new row, a group row, the header or a row still loading. */
+  /** The key of grid row `rowIndex`, or `undefined` for a new row, a group row, the header or a row still loading. */
   getKeyByRowIndex(rowIndex: number): unknown {
     const { model } = this;
     if (rowIndex < 0 || model.groupAt(rowIndex)) return undefined;
@@ -1329,20 +1366,21 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return adapter.keys.hasKey(row) ? adapter.keyOf(row) : undefined;
   }
 
-  /** The grid index of the row with this key while it is loaded (rows in memory: always), else -1. */
+  /** The grid index of the row with this key while it is loaded (in-memory rows always are), otherwise -1. */
   getRowIndexByKey(key: unknown): number {
     const row = this.model.data.rowByKey(key);
     return row === undefined ? -1 : this.model.indexOfRow(row);
   }
 
-  /** The row with this key: a loaded one, one found before, or asked of the data source. */
+  /** The row with this key: loaded, previously found, or requested from the data source. */
   byKey(key: unknown): Promise<T | undefined> {
     return this.model.data.source.byKey(key);
   }
 
   /**
-   * The value a cell shows (its unsaved edit when there is one). With `value`, writes it as the user
-   * would: into the row's draft, checked, and sent according to the save mode (batch: on `saveChanges()`).
+   * The value displayed in a cell (its unsaved edit when there is one). With `value`, writes it as the
+   * user would: into the row's draft, validated, and sent according to the save mode (in batch mode, on
+   * `saveChanges()`).
    */
   cellValue(rowIndex: number, field: string, value?: unknown): unknown {
     const { model } = this;
@@ -1357,8 +1395,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * Goes to the row with this key (its page in paged mode) and makes it the active row; focus moves
-   * along only while the grid has it. Resolves to whether the row was found among the loaded rows.
+   * Moves to the row with this key (its page in paged mode) and makes it the active row. Focus moves
+   * with it only while the grid has focus. Resolves to whether the row was found among the loaded rows.
    */
   navigateToRow(key: unknown): Promise<boolean> {
     const i = this.getRowIndexByKey(key);
@@ -1382,7 +1420,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.navigate(rowIndex, field, { edit: true });
   }
 
-  /** Opens the editor of a row's first cell the user can fill; with `editMode` `'form'` or `'popup'`, the row's edit form. */
+  /**
+   * Opens the editor of the first cell of a row the user can fill. With `editMode` `'form'` or `'popup'`,
+   * opens its edit form.
+   */
   editRow(rowIndex: number): boolean {
     const field = this.editableFields(rowIndex)[0];
     return field !== undefined && this.navigate(rowIndex, field, { edit: true });
@@ -1395,8 +1436,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * Saves what is being edited, as Save does: the edit form, else the row being edited (as the save
-   * mode says); in batch mode every unsaved change (`saveChanges()`). Resolves to whether it worked.
+   * Saves the current edit, as Save does: the edit form, otherwise the row being edited (according to
+   * the save mode), and in batch mode every unsaved change (`saveChanges()`). Resolves to whether it
+   * succeeded.
    */
   async saveEditData(): Promise<boolean> {
     const { model } = this;
@@ -1411,7 +1453,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     });
   }
 
-  /** Gives up what is being edited, as Cancel does: the edit form or the row being edited; in batch mode every unsaved change (`discardChanges()`). */
+  /**
+   * Discards the current edit, as Cancel does: the edit form or the row being edited, and in batch mode
+   * every unsaved change (`discardChanges()`).
+   */
   cancelEditData() {
     const { model } = this;
     if (this.formEdit) {
@@ -1428,8 +1473,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * Keeps the open editor's value and closes it (the row stays the edited one until it is left; in
-   * `'cell'` mode it is saved). In the edit form, keeps every field's value. `false` when a value cannot be read.
+   * Keeps the open editor's value and closes it. The row remains the edited row until it is left, and
+   * in `'cell'` mode it is saved. In the edit form, keeps the value of every field. Returns `false` when
+   * a value cannot be read.
    */
   closeEditCell(): boolean {
     if (this.formEdit) return this.formEdit.form.keepAll() === null;
@@ -1442,7 +1488,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return ok;
   }
 
-  /** Starts changes made programmatically together: the rows are laid out once, at the last `endUpdate()`. */
+  /** Starts a group of programmatic changes. The rows are laid out once, at the last `endUpdate()`. */
   beginUpdate() {
     this.updates++;
   }
@@ -1453,12 +1499,6 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.layOut();
   }
 
-  /**
-   * Draws again what shows the app's data, without loading: the rows, their details and adaptive
-   * detail, the group rows and footers, the totals, the bars and their actions. Your data may be
-   * plain or reactive; the grid reads it as it is, so after changing it in place call this (or
-   * `repaintRows(keys)` for some rows, `refresh()` to load again).
-   */
   /**
    * What `reState()` does here: the options given (the grid's, its parts', the columns') are read again, and
    * what shows the app's data is drawn again (`repaint()`). Nothing is loaded.
@@ -1499,6 +1539,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     );
   }
 
+  /**
+   * Redraws everything that displays your data, without loading: the rows, their details and adaptive
+   * detail, the group rows and footers, the totals, the bars and their actions. Your data can be plain
+   * or reactive, and the grid reads it as it is, so call this after changing it in place (or
+   * `repaintRows(keys)` for some rows, and `refresh()` to reload).
+   */
   repaint() {
     this.toolbarSwitches.touchAll();
     this.exportSwitches.touchAll();
@@ -1508,13 +1554,16 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.body.repaint();
   }
 
-  /** Draws again the rows with these keys (and their details), after their data was changed in place; the other rows stay as they are. */
+  /** Redraws only the rows with these keys, with their details, after their data is changed in place. */
   repaintRows(keys: readonly unknown[]) {
     const adapter = this.model.data.source.adapter;
     this.body.repaintRows(new Set(givenList(keys).map((key) => adapter.keyString(key))));
   }
 
-  /** Asks every row and bar for its actions again: what the `actions` function, an action's `visible` or `disabled` reads was changed in place. */
+  /**
+   * Re-reads the actions of every row and both bars, after a value read by the `actions` function or by
+   * an action's `visible`, `disabled` or `text` is changed in place.
+   */
   refreshActions() {
     this.model.actionSets.refresh();
   }
@@ -1527,10 +1576,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   // Columns at run time.
 
   /**
-   * Adds a column, at `index` among the data columns (default: last), as the user would see it after
-   * the ones given: its width, visibility and sticky side, or what the kept layout says of it; its
-   * `groupIndex` groups the rows by it. A band comes with its columns; a column with `ownerBand`
-   * goes into that band. The layout and the kept layout follow.
+   * Adds a column at runtime, at `index` among the data columns (by default, last), with its width,
+   * visibility and sticky side, or those in the saved layout. Its `groupIndex` groups the rows by it.
+   * A band includes its columns, and a column with `ownerBand` is placed in that band. The layout and
+   * the saved layout follow.
    */
   addColumn(column: GridColumnItem<T>, index?: number) {
     const { model } = this;
@@ -1544,7 +1593,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     model.events.tell(model.events.optionChanged, () => ({ name: 'columns', value: model.columnFields(), previous }));
   }
 
-  /** Takes a column out: its sort, grouping and filter go with it (without `…Changing` events), and the layout follows. */
+  /** Removes a column with its sort, grouping and filter (without `…Changing` events). The layout follows. */
   deleteColumn(field: string) {
     const { model } = this;
     const cols = model.columns;
@@ -1562,24 +1611,26 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     model.events.tell(model.events.optionChanged, () => ({ name: 'columns', value: model.columnFields(), previous }));
   }
 
-  /** The data columns, the hidden ones too. */
+  /** The number of data columns, including hidden ones. */
   columnCount(): number {
     return this.model.columnFields().length;
   }
 
-  /** The definitions of the data columns shown now, in display order, those the width hides too (`adaptiveHiddenColumns`). Reactive. */
+  /**
+   * The definitions of the currently displayed data columns, in display order, including those the
+   * width hides (`adaptiveHiddenColumns`). Reactive.
+   */
   getVisibleColumns(): GridColumn<T>[] {
     const cols = this.model.columns;
     return cols.listedData().map((field) => cols.get(field));
   }
 
   /**
-   * An option of a column, read or written: its layout (`width`, `visible` or `hidden`, `flex`,
-   * `sticky`, `visibleIndex` among the visible columns), sort (`sortOrder`, `sortIndex`),
-   * `groupIndex`, its header filter (`filterValues`, `filterType`), a feature switch (`sortable`,
-   * `resizable` …, as `columnSettings` has them) or any other field of its definition (`title`,
-   * `format`, `lookup`, `cell` …; the column is drawn again with it). Without a name: all of them.
-   * An object sets several at once.
+   * Reads or writes an option of a column: its layout (`width`, `visible` or `hidden`, `flex`, `sticky`,
+   * `visibleIndex` among the visible columns), sort (`sortOrder`, `sortIndex`), `groupIndex`, header
+   * filter (`filterValues`, `filterType`), a feature switch (`sortable`, `resizable` …, as in
+   * `columnSettings`) or any other field of its definition (`title`, `format`, `lookup`, `cell` …, which
+   * redraws the column). Without a name, returns all of them. An object sets several at once.
    */
   columnOption(field: string): Record<string, unknown>;
   columnOption(field: string, name: ColumnOptionName): unknown;
@@ -1833,7 +1884,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /** What the user set up: the layout (columns, sort, grouping), filters, search text, page and page size, selection and active row. */
   state(): GridStateValue;
-  /** Puts a state back (parts omitted stay as they are). */
+  /** Restores a state. Omitted parts are not changed. */
   state(value: Partial<GridStateValue>): void;
   state(value?: Partial<GridStateValue>): GridStateValue | void {
     if (value === undefined) {
@@ -1866,22 +1917,22 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   // Actions.
 
-  /** The grid's ready actions, to put in `actions` or to call: `grid.actions.remove`. */
+  /** The built-in actions, to include in `actions` or to call: `grid.actions.remove`. */
   get actions(): GridBuiltInActions<T> {
     return this.builtIns;
   }
 
   /**
-   * The rows the toolbar's and the bottom bar's actions act on now (`actionsTarget`): the selected
-   * rows or the active one. Empty for nothing, and for a selection whose rows are not loaded (read
-   * `selection` then). Reactive.
+   * The rows the toolbar and bottom bar actions currently act on (`actionsTarget`): the selected rows
+   * or the active row. Empty when there are none, and for a selection whose rows are not loaded (read
+   * `selection` in that case). Reactive.
    */
   get actionTargets(): T[] {
     const target = this.model.actionSets.target();
     return target.kind === 'rows' ? [...target.rows] : [];
   }
 
-  /** The actions the toolbar and the bottom bar show now, for those rows. Reactive. */
+  /** The actions the toolbar and the bottom bar currently show for those rows. Reactive. */
   get barActions(): GridBarAction<T>[] {
     const sets = this.model.actionSets;
     return (['toolbar', 'bottom'] as const).flatMap((location) =>
@@ -1890,9 +1941,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * Runs an action programmatically, as a click does: on `rows`, or on the rows the bars act on now. Rows
-   * share an action by its `id`; it runs only where it is visible and enabled for them. Resolves to
-   * the outcome, or `null` when the action is not there or `onActionRunning` canceled it.
+   * Runs an action programmatically, as a click does, on `rows` or on the rows the bars currently act
+   * on. Rows share an action by its `id`, and it runs only where it is visible and enabled for them.
+   * Resolves to the outcome, or `null` when the action is not available or `onActionRunning` canceled it.
    */
   runAction(id: string, rows?: readonly T[]): Promise<GridActionRanEventArgs<T> | null> {
     const sets = this.model.actionSets;
@@ -1901,46 +1952,49 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return entry ? this.startEntry(entry, 'code') : Promise.resolve(null);
   }
 
-  /** Stops the action working on several rows (the rows not started are left). */
+  /** Stops the action running on several rows. Rows not yet started are skipped. */
   stopAction() {
     this.runner.stop();
   }
 
-  /** Raised before an action runs (in a row, a bar, a row's menu or programmatically): `e.cancel` keeps it from running. */
+  /**
+   * Occurs before an action runs (in a row, a bar, a row's menu or programmatically). Set
+   * `e.cancel = true` to prevent it.
+   */
   get onActionRunning(): MotifEvent<GridActionRunningEventArgs<T>> {
     return this.on(this.model.events.actionRunning);
   }
 
-  /** Raised when an action ran: on how many rows it worked or failed, and whether it was stopped. */
+  /** Occurs after an action runs, and reports how many rows succeeded or failed and whether it was stopped. */
   get onActionRan(): MotifEvent<GridActionRanEventArgs<T>> {
     return this.on(this.model.events.actionRan);
   }
 
   // Selection.
 
-  /** The selection as a state: rows one by one, or every row of a filter but some. Reactive. */
+  /** The selection as a state: rows one by one, or every row of a filter except some. Reactive. */
   get selection(): GridSelection {
     return this.model.selection.snapshot();
   }
 
-  /** Raised whenever the selection changes. */
+  /** Occurs whenever the selection changes. */
   get onSelectionChanged(): MotifEvent<GridSelectionChangedEventArgs> {
     return this.on(this.model.events.selectionChanged);
   }
 
-  /** Raised before the selection changes (by the user or by code): `e.cancel` keeps it. */
+  /** Occurs before the selection changes, by the user or programmatically. Set `e.cancel = true` to keep it. */
   get onSelectionChanging(): MotifEvent<GridSelectionChangingEventArgs> {
     return this.on(this.model.events.selectionChanging);
   }
 
-  /** Selected rows. Reactive. With "all" selected, the total of the filter less the rows removed. */
+  /** The number of selected rows. With "all" selected, the total of the filter minus the rows removed. Reactive. */
   get selectedCount(): number {
     return this.model.selection.count(this.model.dataTotal);
   }
 
   /**
-   * Keys of the selected rows. With "all" selected over data that loads in parts, only the rows
-   * loaded now are known: read `selection` for the whole state. Assign to select exactly these rows.
+   * The keys of the selected rows. With "all" selected over data that loads in parts, only the loaded
+   * rows are known, so read `selection` for the whole state. Assign to select exactly these rows.
    */
   get selectedKeys(): unknown[] {
     const sel = this.model.selection;
@@ -1954,7 +2008,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.selection.replace(keys.map((key) => [adapter.keyString(key), key]));
   }
 
-  /** The selected rows that are loaded (rows in memory: all of them). */
+  /** The selected rows that are loaded (all of them for in-memory rows). */
   get selectedRows(): T[] {
     const { model } = this;
     const sel = model.selection;
@@ -1968,9 +2022,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * The selection as a filter of the data layer, for work on the server: the selected keys, or the
-   * filter of "all" without the rows removed. `undefined` when nothing is selected or the key is
-   * not one field.
+   * The selection as a data layer filter, for server operations: the selected keys, or the filter of
+   * "all" without the rows removed. `undefined` when nothing is selected or the key is not a single
+   * field.
    */
   get selectionFilter(): data.FilterExpression | null | undefined {
     const sel = this.selection;
@@ -1985,7 +2039,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.model.selection.isSelected(this.model.selectId(row));
   }
 
-  /** Selects a row; `add` keeps the rows selected before (multiple selection). */
+  /** Selects a row. With `add`, keeps the rows already selected (multiple selection). */
   selectRow(row: T, add = false) {
     const id = this.model.selectId(row);
     if (id === undefined || this.model.settings.get('selection') === 'none') return;
@@ -2011,9 +2065,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   // Cell ranges.
 
   /**
-   * The cell ranges (`settings.cellSelection`), each from the cell it was started on to its far
-   * corner, by row key and field. Reactive. Assign to set them (`[]` clears them); a range whose
-   * corner names no row or column is omitted.
+   * The cell ranges (`settings.cellSelection`), each from the cell where it started to its far corner,
+   * by row key and field. Reactive. Assign to set them (`[]` clears them). A range whose corner matches
+   * no row or column is omitted.
    */
   get cellRanges(): GridCellRange[] {
     void this.model.cellRanges.state.version;
@@ -2025,19 +2079,19 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     r.set(this.model.settings.get('cellSelection') === 'single' ? list.slice(-1) : list);
   }
 
-  /** Raised before the cell ranges change (by the user or by code): `e.cancel` keeps them. */
+  /** Occurs before the cell ranges change, by the user or programmatically. Set `e.cancel = true` to keep them. */
   get onCellSelectionChanging(): MotifEvent<GridCellSelectionChangingEventArgs> {
     return this.on(this.model.events.cellSelectionChanging);
   }
 
-  /** Raised whenever the cell ranges change; `e.byDrag` while one is drawn with the pointer. */
+  /** Occurs whenever the cell ranges change. `e.byDrag` is `true` while one is drawn with the pointer. */
   get onCellSelectionChanged(): MotifEvent<GridCellSelectionChangedEventArgs> {
     return this.on(this.model.events.cellSelectionChanged);
   }
 
   /**
-   * Selects the cells from `from` to `to` (one cell when it is omitted), in place of the ranges
-   * there are, or after them (`add`, with `cellSelection: 'multiple'`). Returns whether it shows.
+   * Selects the cells from `from` to `to` (one cell when it is omitted), in place of the current ranges
+   * or after them (`add`, with `cellSelection: 'multiple'`). Returns whether the range is displayed.
    */
   selectCells(from: GridCellPoint, to: GridCellPoint = from, add = false): boolean {
     const { model } = this;
@@ -2052,7 +2106,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.cellRanges.clear();
   }
 
-  /** The selected cells of the rows loaded, each once, row by row in the grid's order, with their values (unsaved edits included). */
+  /**
+   * The selected cells of the loaded rows, each once, row by row in the grid's order, with their values
+   * (including unsaved edits).
+   */
   getSelectedCellValues(): GridCellValue<T>[] {
     const { model } = this;
     const out: GridCellValue<T>[] = [];
@@ -2066,7 +2123,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return out;
   }
 
-  /** The count, sum, average, smallest and largest of the selected cells (rows loaded only), as a spreadsheet's status bar. Reactive. */
+  /**
+   * The count, sum, average, minimum and maximum of the selected cells (loaded rows only), as in a
+   * spreadsheet's status bar. Reactive.
+   */
   get cellSelectionSummary(): GridCellSummary {
     void this.model.cellRanges.state.version;
     void this.model.state.edits;
@@ -2076,7 +2136,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   // Filters.
 
-  /** The filters by field (filter row and header filter). Assign to replace them; `{}` clears them. */
+  /** The filters by field (filter row and header filter). Assign to replace them, and `{}` clears them. */
   get filters(): GridFilters {
     return this.model.filters.toFilters();
   }
@@ -2084,22 +2144,24 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.filters.replace(filters);
   }
 
-  /** The whole filter of the rows, as the data layer has it: the source's own and the grid's. Reactive. */
+  /** The whole filter of the rows, in data layer form: the source's own and the grid's. Reactive. */
   get filter(): data.FilterExpression | null {
     return this.model.filter;
   }
 
-  /** Takes every filter away: the filter row's and header filters', the filter value, the search text (the conditions chosen in the filter row stay). */
+  /**
+   * Removes every filter, including the filter row, the header filters, the filter value and the search
+   * text. The conditions selected in the filter row are not affected.
+   */
   clearFilters() {
     this.model.filters.clearAll();
     if (this.model.search.state.text) this.model.search.setText('');
   }
 
   /**
-   * The filter value, as the data layer has it: the filter builder's conditions, and with
-   * `settings.filterSyncEnabled` the filter row's and header filters' too. Reactive. Assigning
-   * gives the conditions the filter row and header filters can show to them (with sync); a
-   * function is followed.
+   * The filter value, in data layer form: the filter builder's conditions and, with
+   * `settings.filterSyncEnabled`, those of the filter row and header filters. Reactive. With sync,
+   * assigning distributes the conditions those can display to them. A function is tracked.
    */
   get filterValue(): data.FilterExpression | null {
     return this.model.filters.filterValue();
@@ -2114,7 +2176,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.stopFilterValueBinding = follow(this, 'filterValue', value, (next) => this.takeFilterValue(next));
   }
 
-  /** Whether the filter value applies (the filter panel's check box). Reactive, and a function is tracked. */
+  /** Indicates whether the filter value applies (the filter panel's check box). Reactive. A function is tracked. */
   get filterEnabled(): boolean {
     return this.model.filters.enabled;
   }
@@ -2133,7 +2195,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     );
   }
 
-  /** The filter value as the filter panel writes it: `[City] Equals 'Ankara' And …` with the columns' titles and texts. Reactive. */
+  /**
+   * The filter value as the filter panel displays it: `[City] Equals 'Ankara' And …`, with the columns'
+   * titles and text. Reactive.
+   */
   get filterText(): string {
     const { model } = this;
     void this.lookupTexts.n;
@@ -2144,22 +2209,25 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.props.filterPanelText ? this.props.filterPanelText({ text, filterValue: value }) : text;
   }
 
-  /** The filter builder the filter panel opens, live: `grid.filterBuilder.maxGroupLevel = 1`, and a function is tracked. */
+  /** The live filter builder the filter panel opens: `grid.filterBuilder.maxGroupLevel = 1`. A function is tracked. */
   get filterBuilder(): GridFilterBuilderOptions {
     return this.builderOptions.view;
   }
 
-  /** The window the filter builder opens in, live: `grid.filterBuilderPopup.width = '50rem'`, and a function is tracked. */
+  /** The live window the filter builder opens in: `grid.filterBuilderPopup.width = '50rem'`. A function is tracked. */
   get filterBuilderPopup(): GridFilterBuilderPopup {
     return this.builderPopupSwitches.view as GridFilterBuilderPopup;
   }
 
-  /** Opens the filter builder on the filter value, in its window; `false` when `onFilterBuilderOpening` kept it closed. */
+  /** Opens the filter builder on the filter value. Returns `false` when `onFilterBuilderOpening` kept it closed. */
   openFilterBuilder(): boolean {
     return untracked(() => this.builderWindow.open());
   }
 
-  /** Closes the filter builder's window: with `apply`, as OK. `false` when it is not open or `onFilterBuilderClosing` kept it. */
+  /**
+   * Closes the filter builder's window. With `apply`, acts as OK. Returns `false` when it is not open or
+   * `onFilterBuilderClosing` kept it open.
+   */
   closeFilterBuilder(apply = false): boolean {
     return untracked(() => this.builderWindow.close(apply));
   }
@@ -2169,19 +2237,22 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.builderWindow.builder;
   }
 
-  /** Takes the filter value away (the panel's Clear); with sync, the filter row's and header filters' filters too. The search stays. */
+  /**
+   * Removes the filter value (the panel's Clear) and, with sync, the filters of the filter row and
+   * header filters. The search is not affected.
+   */
   clearFilterValue() {
     untracked(() => this.model.filters.clearValue());
   }
 
-  /** Raised before the filter builder opens: `e.cancel` keeps it closed. */
+  /** Occurs before the filter builder opens. Set `e.cancel = true` to keep it closed. */
   get onFilterBuilderOpening(): MotifEvent<GridFilterBuilderOpeningEventArgs> {
     return this.on(this.model.events.filterBuilderOpening);
   }
   get onFilterBuilderOpened(): MotifEvent<GridFilterBuilderOpenedEventArgs> {
     return this.on(this.model.events.filterBuilderOpened);
   }
-  /** Raised before the filter builder closes, with OK (`e.apply`) or not: `e.cancel` keeps it open. */
+  /** Occurs before the filter builder closes, with OK (`e.apply`) or not. Set `e.cancel = true` to keep it open. */
   get onFilterBuilderClosing(): MotifEvent<GridFilterBuilderClosingEventArgs> {
     return this.on(this.model.events.filterBuilderClosing);
   }
@@ -2198,8 +2269,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   // Search.
 
   /**
-   * The search panel's text: the rows shown hold it in a searchable column. Reactive. Assigning
-   * searches at once, and a function is tracked.
+   * The search panel's text. The displayed rows contain it in a searchable column. Reactive. Assigning
+   * searches immediately, and a function is tracked.
    */
   get searchText(): string {
     return this.model.search.state.text;
@@ -2219,22 +2290,22 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     );
   }
 
-  /** Searches for a text at once, as the search panel does after a typing pause; `''` stops searching. */
+  /** Searches for text immediately, as the search panel does after a typing pause. `''` stops searching. */
   searchByText(text: string) {
     this.model.search.setText(text ?? '');
   }
 
-  /** Raised when the search text changes: typed in the search box, or set programmatically. */
+  /** Occurs when the search text changes, typed in the search box or set programmatically. */
   get onSearchTextChanged(): MotifEvent<GridSearchTextChangedEventArgs> {
     return this.on(this.model.events.searchTextChanged);
   }
 
-  /** Raised before the search text changes: `e.cancel` keeps the one before. */
+  /** Occurs before the search text changes. Set `e.cancel = true` to keep the previous text. */
   get onSearchTextChanging(): MotifEvent<GridSearchTextChangingEventArgs> {
     return this.on(this.model.events.searchTextChanging);
   }
 
-  /** Opens the list of columns (show and hide), under the toolbar's column button when it shows. */
+  /** Opens the column list (show and hide), below the toolbar's column button when it is visible. */
   showColumnChooser() {
     const button = this.topBar.elementOf('columnChooserButton');
     const shown = button && button.isConnected && !button.hidden && !button.hasAttribute('data-overflowed') && this.topBar.bar.element.offsetParent !== null;
@@ -2245,7 +2316,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /**
    * The grouped columns, in order, with the order of their groups: `[{ field: 'city', dir: 'asc' }]`.
-   * Assigning groups the rows by them (`[]` ungroups); a column grouped now leaves the sort.
+   * Assign to group the rows by them (`[]` ungroups). A newly grouped column leaves the sort.
    */
   get group(): data.GroupItem[] {
     return this.model.groups.items.map((g) => ({ ...g }));
@@ -2254,18 +2325,18 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.setGroup(items ?? []);
   }
 
-  /** Takes every grouping away. */
+  /** Removes all grouping. */
   clearGrouping() {
     this.model.setGroup([]);
   }
 
-  /** Groups by a column, at a place among the grouped ones (default: last); a grouped column moves there. */
+  /** Groups by a column at a position among the grouped columns (by default, last). A grouped column moves there. */
   groupBy(field: string, index?: number, dir?: 'asc' | 'desc') {
     this.model.columns.get(field);
     this.model.setGroup(this.model.groups.withField(field, index ?? Number.MAX_SAFE_INTEGER, dir));
   }
 
-  /** Takes one column out of the grouping. */
+  /** Removes one column from the grouping. */
   ungroup(field: string) {
     this.model.ungroup(field);
   }
@@ -2275,83 +2346,89 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (this.model.groups.isGrouped(field) && this.model.groups.dirOf(field) !== dir) this.model.toggleGroupOrder(field, false);
   }
 
-  /** Raised before the grouping changes, by the user or programmatically: `e.cancel` keeps it. */
+  /** Occurs before the grouping changes, by the user or programmatically. Set `e.cancel = true` to keep it. */
   get onGroupingChanging(): MotifEvent<GridGroupingChangingEventArgs> {
     return this.on(this.model.events.groupingChanging);
   }
 
-  /** Raised after the grouping changed. */
+  /** Occurs after the grouping changes. */
   get onGroupingChanged(): MotifEvent<GridGroupingChangedEventArgs> {
     return this.on(this.model.events.groupingChanged);
   }
 
-  /** Raised before a dropped header or chip changes the grouping: `e.cancel` cancels the drop. */
+  /** Occurs before a dropped header or chip changes the grouping. Set `e.cancel = true` to cancel the drop. */
   get onGroupDropping(): MotifEvent<GridGroupDroppingEventArgs> {
     return this.on(this.model.events.groupDropping);
   }
 
-  /** Opens every group of a level (0 is the top level), or of every level. */
+  /** Expands every group of a level (0 is the top level), or of every level. */
   expandAll(level?: number) {
     this.model.setAllExpanded(true, level);
   }
 
-  /** Closes every group of a level (0 is the top level), or of every level. */
+  /** Collapses every group of a level (0 is the top level), or of every level. */
   collapseAll(level?: number) {
     this.model.setAllExpanded(false, level);
   }
 
   /**
-   * Opens a group by its key: the values of the groups from the top level down (`['Ankara']`,
-   * `['Ankara', 'Draft']`). Returns whether it opened; a group not known yet (still loading) is not.
+   * Expands a group by its key: the group values from the top level down (`['Ankara']`,
+   * `['Ankara', 'Draft']`). Returns whether it expanded. A group that is still loading does not.
    */
   expandGroup(key: readonly unknown[]): boolean {
     const node = this.model.findGroup(key);
     return !!node && this.toggleGroup(node, true);
   }
 
-  /** Closes a group by its key (see `expandGroup`). Returns whether it closed. */
+  /** Collapses a group by its key (see `expandGroup`). Returns whether it collapsed. */
   collapseGroup(key: readonly unknown[]): boolean {
     const node = this.model.findGroup(key);
     return !!node && this.toggleGroup(node, false);
   }
 
-  /** Whether a group is open, by its key (see `expandGroup`). */
+  /** Indicates whether a group is expanded, by its key (see `expandGroup`). */
   isGroupExpanded(key: readonly unknown[]): boolean {
     const node = this.model.findGroup(key);
     void this.model.groups.state.version;
     return !!node && this.model.groups.isExpanded(node);
   }
 
-  /** Raised before a group or a row's details open: `e.kind` says which, `e.key` is its key; `e.cancel` keeps it closed. */
+  /**
+   * Occurs before a group or a row's details open. `e.kind` indicates which, and `e.key` is its key. Set
+   * `e.cancel = true` to keep it closed.
+   */
   get onRowExpanding(): MotifEvent<GridRowExpandingEventArgs> {
     return this.on(this.model.events.rowExpanding);
   }
 
-  /** Raised after a group or a row's details opened. */
+  /** Occurs after a group or a row's details open. */
   get onRowExpanded(): MotifEvent<GridRowExpandedEventArgs> {
     return this.on(this.model.events.rowExpanded);
   }
 
-  /** Raised before a group or a row's details close: `e.cancel` keeps it open. */
+  /** Occurs before a group or a row's details close. Set `e.cancel = true` to keep it open. */
   get onRowCollapsing(): MotifEvent<GridRowExpandingEventArgs> {
     return this.on(this.model.events.rowCollapsing);
   }
 
-  /** Raised after a group or a row's details closed. */
+  /** Occurs after a group or a row's details close. */
   get onRowCollapsed(): MotifEvent<GridRowExpandedEventArgs> {
     return this.on(this.model.events.rowCollapsed);
   }
 
   // Details (master-detail).
 
-  /** The `masterDetail` options, live: `grid.masterDetail.enabled = true`, and a function is tracked, `onOptionChanged` tells `masterDetail.enabled` …. */
+  /**
+   * The live `masterDetail` options: `grid.masterDetail.enabled = true`. A function is tracked, and
+   * `onOptionChanged` reports `masterDetail.enabled` ….
+   */
   get masterDetail(): GridMasterDetail<T> {
     return this.model.details.options.view as GridMasterDetail<T>;
   }
 
   /**
    * Opens a row's details by its key, as its arrow does (`onRowExpanding` can keep them closed).
-   * Returns whether they opened; a row not loaded, or one without details, does not.
+   * Returns whether they opened. A row that is not loaded or has no details does not open.
    */
   expandRow(key: unknown): boolean {
     return this.toggleDetail(this.model.indexOfDetailKey(key), true);
@@ -2362,7 +2439,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.toggleDetail(this.model.indexOfDetailKey(key), false);
   }
 
-  /** Whether a row's details are open, by its key. Reactive. */
+  /** Indicates whether a row's details are open, by its key. Reactive. */
   isRowExpanded(key: unknown): boolean {
     const { model } = this;
     if (!model.details.on) return false;
@@ -2371,7 +2448,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return model.details.isOpen(model.data.source.adapter.keyString(key));
   }
 
-  /** Opens the details of every row (`expandAll(-1)`); like `expandAll()` for groups it raises no row events. */
+  /** Opens the details of every row. Like `expandAll()` for groups, it raises no row events. */
   expandAllRows() {
     this.model.details.setAll(true);
     this.body.refreshDetails();
@@ -2387,17 +2464,18 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   // Row drag and drop.
 
   /**
-   * The `rowDragging` options, live: `grid.rowDragging.allowReordering = true`; a function is
-   * followed, handlers can be set too, `onOptionChanged` tells `rowDragging.allowReordering` ….
+   * The live `rowDragging` options: `grid.rowDragging.allowReordering = true`. A function is tracked,
+   * handlers can be set too, and `onOptionChanged` reports `rowDragging.allowReordering` ….
    */
   get rowDragging(): GridRowDragging<T> {
     return this.model.rowDrag.view;
   }
 
   /**
-   * Moves grid row `fromIndex` to `toIndex` as dropping it there would (the keys that move a row do
-   * this): `onDragStart`, `onDragChange` and `onDragEnd` of `rowDragging`, any of which can cancel it,
-   * then `onReorder`, whose handler moves the data. Resolves to whether `onReorder` was raised.
+   * Moves grid row `fromIndex` to `toIndex` as dropping it there would (the keys that move a row use
+   * this). It raises `onDragStart`, `onDragChange` and `onDragEnd` of `rowDragging`, any of which can
+   * cancel the move, and then `onReorder`, whose handler moves the data. Resolves to whether `onReorder`
+   * was raised.
    */
   moveRow(fromIndex: number, toIndex: number): Promise<boolean> {
     return this.rowDrag.move(fromIndex, toIndex);
@@ -2405,20 +2483,26 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   // Adaptive columns.
 
-  /** The `adaptiveDetail` options, live: `grid.adaptiveDetail.colCount = 1`, and a function is tracked, `onOptionChanged` tells `adaptiveDetail.colCount` …. */
+  /**
+   * The live `adaptiveDetail` options: `grid.adaptiveDetail.colCount = 1`. A function is tracked, and
+   * `onOptionChanged` reports `adaptiveDetail.colCount` ….
+   */
   get adaptiveDetail(): GridAdaptiveDetail {
     return this.model.adaptive.options.view as GridAdaptiveDetail;
   }
 
-  /** The columns the width hides now (`settings.columnHidingEnabled`, a column's `hidingPriority`), by field, in display order. Reactive. */
+  /**
+   * The columns the width currently hides (`settings.columnHidingEnabled`, a column's `hidingPriority`),
+   * by field, in display order. Reactive.
+   */
   get adaptiveHiddenColumns(): string[] {
     return [...this.model.columns.state.adaptive];
   }
 
   /**
-   * Opens the adaptive detail of the row with this key, as its "…" does (the one open before
-   * closes; `onAdaptiveDetailRowExpanding` can keep it closed). Returns whether it opened: a row not
-   * loaded, or a grid with no column hidden, does not.
+   * Opens the adaptive detail of the row with this key, as its "…" button does. Any open detail closes
+   * first, and `onAdaptiveDetailRowExpanding` can keep it closed. Returns whether it opened. A row that
+   * is not loaded, or a grid with no hidden column, does not open.
    */
   expandAdaptiveDetailRow(key: unknown): boolean {
     const i = this.getRowIndexByKey(key);
@@ -2430,7 +2514,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.closeAdaptive();
   }
 
-  /** Whether the row with this key has its adaptive detail open. Reactive. */
+  /** Indicates whether the row with this key has its adaptive detail open. Reactive. */
   isAdaptiveDetailRowExpanded(key: unknown): boolean {
     const { model } = this;
     const id = model.adaptive.state.rowId;
@@ -2439,12 +2523,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return row !== undefined && model.rowIdOf(row) === id;
   }
 
-  /** Raised when a row's adaptive detail lays out its form: change `e.formOptions`. */
+  /** Occurs when a row's adaptive detail lays out its form. Change `e.formOptions`. */
   get onAdaptiveDetailRowPreparing(): MotifEvent<GridAdaptiveDetailRowPreparingEventArgs<T>> {
     return this.on(this.model.events.adaptiveDetailRowPreparing);
   }
 
-  /** Raised before a row's adaptive detail opens: `e.cancel` keeps it closed. */
+  /** Occurs before a row's adaptive detail opens. Set `e.cancel = true` to keep it closed. */
   get onAdaptiveDetailRowExpanding(): MotifEvent<GridAdaptiveRowExpandingEventArgs<T>> {
     return this.on(this.model.events.adaptiveDetailRowExpanding);
   }
@@ -2453,7 +2537,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.on(this.model.events.adaptiveDetailRowExpanded);
   }
 
-  /** Raised before a row's adaptive detail closes: `e.cancel` keeps it open. */
+  /** Occurs before a row's adaptive detail closes. Set `e.cancel = true` to keep it open. */
   get onAdaptiveDetailRowCollapsing(): MotifEvent<GridAdaptiveRowExpandingEventArgs<T>> {
     return this.on(this.model.events.adaptiveDetailRowCollapsing);
   }
@@ -2465,9 +2549,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   // Summaries.
 
   /**
-   * The summaries: `totalItems` in the row under the rows, `groupItems` in group rows and footers. A
-   * function is followed, and so is a function in a field of an item; after a change in place (an
-   * item's field, the items, the rows' values) call `refreshSummary()`.
+   * The summaries: `totalItems` in the row below the rows, and `groupItems` in group rows and footers.
+   * A function is tracked, including a function in a field of an item. After a change in place (an
+   * item's field, the items or the row values), call `refreshSummary()`.
    */
   get summary(): GridSummary<T> {
     return this.model.summaries.config();
@@ -2477,31 +2561,34 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * A value of the total summary: by the item's `name`, its place in `totalItems`, its type, its
-   * column or `type_column` (`'sum_amount'`); `undefined` while it is not known. Reactive.
+   * A total summary value, by the item's `name`, its position in `totalItems`, its type, its column or
+   * `type_column` (`'sum_amount'`). `undefined` while it is not known. Reactive.
    */
   getTotalSummaryValue(name: string | number): unknown {
     return this.model.summaries.totalValue(name);
   }
 
-  /** A value of the group summary of the group with this key (see `expandGroup`), by the item as `getTotalSummaryValue` finds it. Reactive. */
+  /**
+   * A group summary value, with the group by its key (see `expandGroup`) and the item as in
+   * `getTotalSummaryValue`. Reactive.
+   */
   getGroupSummaryValue(key: readonly unknown[], name: string | number): unknown {
     void this.model.state.version;
     const node = this.model.findGroup(key);
     return node ? this.model.summaries.groupValue(node, name) : undefined;
   }
 
-  /** `'loading'` while a server works out the totals (or every row loads for them), `'error'` when that failed. */
+  /** `'loading'` while a server calculates the totals (or every row loads for them), `'error'` if that failed. */
   get summaryStatus(): 'loading' | 'ready' | 'error' {
     return this.model.summaries.state.status;
   }
 
-  /** Reads the summary items again and works the values out again (after a change in place). */
+  /** Re-reads the summary items and recalculates the values, after a change in place. */
   refreshSummary() {
     this.model.summaries.reread();
   }
 
-  /** Raised when the summary values were calculated again. */
+  /** Occurs when the summary values are recalculated. */
   get onSummaryChanged(): MotifEvent<GridSummaryChangedEventArgs> {
     return this.on(this.model.events.summaryChanged);
   }
@@ -2509,9 +2596,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   // Copy, paste, export.
 
   /**
-   * Copies as Ctrl+C does: the cell ranges, else the selected rows of a multiple selection, else the
-   * active cell, as tab-separated text and an HTML table, with the copyable visible columns. Returns
-   * the text; `''` when there was nothing to copy.
+   * Copies as Ctrl+C does: the cell ranges, otherwise the selected rows of a multiple selection,
+   * otherwise the active cell, as tab-separated text and an HTML table, with the copyable visible
+   * columns. Returns the text, or `''` when there was nothing to copy.
    */
   copy(): string {
     const { model } = this;
@@ -2536,9 +2623,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /**
    * Pastes as Ctrl+V does: tab-separated text into the cells the user can fill, from the active cell
-   * (with cell ranges: from the last range's first cell) rightwards and downwards; one value alone
-   * fills every cell of the ranges. Values go into the rows' drafts and are checked like typed ones;
-   * rows other than the active one are saved according to the save mode. Returns the number of cells written.
+   * (with cell ranges, the first cell of the last range) to the right and down. One value alone fills
+   * every cell of the ranges. Values go into the rows' drafts and are validated like typed values, and
+   * rows other than the active row are saved according to the save mode. Returns the number of cells
+   * written.
    */
   paste(text: string): number {
     const { model } = this;
@@ -2569,11 +2657,11 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * The rows of the filter in the sort order, with the visible exportable columns in display order,
-   * as objects by field: the text the cells show, or their values (`values: 'raw'`). Rows in memory
-   * are taken as they are; a server's are requested in parts (`pageSize`) through the data source.
-   * Group footers follow their rows and the row of totals comes last, as objects of the same fields
-   * with the texts they show (`summaries: false` leaves them out).
+   * The rows of the filter in sort order, with the visible exportable columns in display order, as
+   * objects by field: the displayed text of the cells, or their values (`values: 'raw'`). In-memory rows
+   * are used as they are, and server rows are requested in parts (`pageSize`) through the data source.
+   * Group footers follow their rows and the totals row comes last, as objects with the same fields and
+   * their displayed text (`summaries: false` omits them).
    */
   async exportRows(options: GridExportOptions = {}): Promise<Record<string, unknown>[]> {
     const run = await this.runExport('rows', options, (o, signal) => this.exporter.table(o, signal));
@@ -2592,8 +2680,8 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * Saves the rows as `exportRows` collects them in a CSV file a spreadsheet opens as it is: UTF-8
-   * with a byte order mark, the locale's separator, column titles first. Returns the text.
+   * Saves the rows as `exportRows` collects them in a CSV file that a spreadsheet can open: UTF-8 with
+   * a byte order mark, the locale's separator, and column titles first. Returns the text.
    */
   async exportCsv(options: GridExportOptions = {}): Promise<string> {
     const run = await this.runExport('csv', options, (o, signal) => this.exporter.table(o, signal));
@@ -2610,9 +2698,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * What a command of the toolbar's export button does: `'csv'` runs `exportCsv`; any other format
-   * raises `onExporting` with that `format` and `selectedRowsOnly`, and the app writes the file
-   * there (`exportDataGrid` of the `excel` entry for `'xlsx'`, of the `pdf` entry for `'pdf'`).
+   * Performs a command of the toolbar's export button. `'csv'` runs `exportCsv`, and any other format
+   * raises `onExporting` with that `format` and `selectedRowsOnly`, where the application writes the
+   * file (`exportDataGrid` of the `excel` entry for `'xlsx'`, of the `pdf` entry for `'pdf'`).
    */
   async exportTo(format: string, options: GridExportOptions = {}): Promise<void> {
     if (format === 'csv') {
@@ -2631,11 +2719,11 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * The rows of an export as a sheet of typed cells (header, group rows, data rows, group footers,
-   * totals), handed to `write`, a file writer: `exportDataGrid` writes it to an ExcelJS worksheet.
-   * The rows load as `exportRows` loads them (in parts from a server, with progress, stopped by
-   * `signal` or the load panel's button). `onExported` follows with `format` once `write` is done.
-   * Raises no `onExporting`: this is what an `onExporting` handler calls.
+   * Passes the rows of an export to `write`, a file writer, as a sheet of typed cells (header, group
+   * rows, data rows, group footers and totals). `exportDataGrid` writes it to an ExcelJS worksheet. The
+   * rows load as in `exportRows` (in parts from a server, with progress, stopped by `signal` or the load
+   * panel's button). `onExported` follows with `format` once `write` finishes. It raises no
+   * `onExporting`, because an `onExporting` handler calls this method.
    */
   async exportSheet<R>(options: GridSheetOptions, write: (sheet: GridSheet<T>) => R | Promise<R>): Promise<R> {
     const selected = options.selectedRowsOnly ?? this.selectedNext;
@@ -2652,7 +2740,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return result;
   }
 
-  /** Stops the export the load panel shows (its promise rejects with an `AbortError`). */
+  /** Stops the export shown by the load panel. Its promise rejects with an `AbortError`. */
   cancelExport() {
     if (this.exportPanel.kind === 'export') this.stopPanelExport?.();
   }
@@ -2813,7 +2901,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     );
 
     // Master-detail: turning it on or off, `autoExpandAll` or another template open or close every
-    // row again; another template makes the details again.
+    // row again; another template recreates the details.
     let lastTemplate: unknown;
     this.whenChanged(
       () => {

@@ -1,9 +1,9 @@
 import type { Timeline } from './Timeline';
 
-/** A click on an event's card (vertical) or flag (horizontal). */
+/** Provides data for the event that occurs when an event's card (vertical) or date (horizontal) is clicked. */
 export interface TimelineItemClickEventArgs {
     index: number;
-    /** The item as given. */
+    /** The item as provided. */
     item: unknown;
     source: Timeline;
     event: Event;

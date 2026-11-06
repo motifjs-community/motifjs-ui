@@ -4,7 +4,7 @@ import { parseMask } from './parse-mask';
 
 /**
  * Keeps what is typed into an `<input>` in the shape of a mask. Typing, deleting and pasting
- * follow the mask and the caret skips the fixed characters. An `input` event is fired after
+ * follow the mask, and the caret skips the fixed characters. An `input` event is raised after
  * every change.
  *
  * @example
@@ -64,7 +64,7 @@ export class InputMask {
     this.show();
   }
 
-  /** `value` in the shape of the mask, without changing the input. */
+  /** Returns `value` in the shape of the mask, without changing the input. */
   conform(value: string, formatted = false): string {
     const text = new MaskedText(this.text.slots, this.text.placeholder);
     if (formatted) text.setText(value);
@@ -72,7 +72,7 @@ export class InputMask {
     return formatted ? text.formatted : text.raw;
   }
 
-  /** What was typed stays where it still fits. */
+  /** Updates the options. What was typed stays where it still fits. */
   update(options: InputMaskOptions): void {
     const raw = this.text.raw;
     this.options = options;

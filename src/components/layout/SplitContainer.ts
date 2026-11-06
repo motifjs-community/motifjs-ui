@@ -47,11 +47,11 @@ function sizeOf(position: SplitPosition): string {
 }
 
 /**
- * Two panes, `first` and `second`, side by side or one over the other, with a splitter between
- * them that the pointer drags and the keys move (the ARIA window splitter pattern). The pane
- * named by `fixedPanel` keeps its size when the container is resized; `collapsed` hides one.
- * The first JSX child goes into the first pane, the second into the second one; programmatically, add
- * to `split.first.controls` / `split.second.controls`.
+ * Two panes, `first` and `second`, side by side or stacked, with a splitter between them that
+ * the pointer drags and the keyboard moves (the ARIA window splitter pattern). The pane named by
+ * `fixedPanel` keeps its size when the container is resized, and `collapsed` hides one. The first
+ * JSX child goes into the first pane and the second into the second pane. Programmatically, add
+ * to `split.first.controls` and `split.second.controls`.
  *
  * @example
  * <SplitContainer position={240} fixedPanel="first" firstMinSize={160} x-model={() => this.state.width}>
@@ -102,11 +102,11 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     });
   }
 
-  /** The first pane (start or top), a `Panel`. */
+  /** The first pane (start or top), as a `Panel`. */
   get first(): Panel {
     return this.parts.first!;
   }
-  /** The second pane (end or bottom), a `Panel`. */
+  /** The second pane (end or bottom), as a `Panel`. */
   get second(): Panel {
     return this.parts.second!;
   }
@@ -131,7 +131,7 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     const now = this.peekProperty<SplitPosition>('position');
     if (typeof value !== 'function' && now !== before) this.bindings.writeModel(now);
   }
-  /** `position`, for `x-model`. */
+  /** Maps to `position` for `x-model`. */
   get value(): SplitPosition {
     return this.position;
   }
@@ -187,17 +187,17 @@ export class SplitContainer extends FocusContainer<HTMLDivElement, SplitContaine
     this.assignProperty('splitterLabel', value);
   }
 
-  /** The splitter was moved, or a pane hidden or restored, by the user or by code (`e.byUser`). */
+  /** Occurs when the splitter moves, or when a pane is hidden or restored, by the user or by code (`e.byUser`). */
   get onSplitterMoved(): MotifEvent<SplitterMovedEventArgs> {
     return this.parts.moved.event;
   }
 
-  /** Hides a pane; the other one takes all the room. */
+  /** Hides a pane, and the other pane takes all the space. */
   collapse(pane: 'first' | 'second' = 'first'): void {
     this.collapsed = pane;
   }
 
-  /** Shows both panes again, the splitter where it was. */
+  /** Shows both panes again, with the splitter at its previous position. */
   restore(): void {
     this.collapsed = 'none';
   }

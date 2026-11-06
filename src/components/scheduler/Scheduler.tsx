@@ -404,17 +404,17 @@ interface Parts<T> {
 }
 
 /**
- * A scheduler: appointments over days and hours, in day, week, work week and month views. The
- * appointments come from an array or a `DataSource`; the fields it reads are options. The array
- * and the appointments may be plain or reactive: they are read as they are, the objects handed
- * back are the ones given, and a change made in place shows after `refresh()` (its own edits and
- * the data source's changes show at once). It moves by day, week or month (today, previous, next, a date chosen from a
- * calendar), selects cells with the pointer and the keyboard, places appointments at the same
- * time side by side, shows all-day and multi-day ones as bars, and what does not fit a month day
- * as "+N more". Resources color the appointments and split the columns into groups (nested, or
- * under each date); blocked times, work hours per resource and an overlap rule say where an
- * appointment may go. Every setting is a value or a tracked function; a view's own
- * settings take precedence over the scheduler's.
+ * A full-featured calendar for appointments across days and hours, with day, week, work week and
+ * month views. Appointments come from an array or a `DataSource`, and `fields` maps the names it
+ * reads. The array and the appointments can be plain or reactive: they are read as they are, the
+ * objects returned are the ones provided, and a change made in place appears after `refresh()`. Its
+ * own edits and the data source's changes appear immediately. It moves by day, week or month (today,
+ * previous, next, or a date selected from a calendar), selects cells with the pointer and the keyboard,
+ * places appointments at the same time side by side, shows all-day and multi-day ones as bars, and
+ * shows what does not fit a month day as "+N more". Resources color the appointments and split the
+ * columns into groups (nested, or under each date). Blocked times, work hours per resource and an
+ * overlap rule control where an appointment can go. Every setting is a value or a tracked function,
+ * and a view's own settings take precedence over the scheduler's.
  *
  * @example
  * <Scheduler appointments={state.meetings} currentView="week" startDayHour={7} onAppointmentDblClick={(e) => open(e.appointment)} />
@@ -518,7 +518,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set views(value: Bind<readonly (SchedulerViewType | SchedulerView<T>)[]>) {
     this.assignProperty('views', value);
   }
-  /** The view on screen, by name. */
+  /** The current view, by name. */
   get currentView(): string {
     const list = this.viewList();
     const name = this.getProperty<string | undefined>('currentView');
@@ -596,14 +596,14 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set maxAppointmentsPerCell(value: Bind<number | 'auto'>) {
     this.assignProperty('maxAppointmentsPerCell', value);
   }
-  /** The days the agenda shows. */
+  /** The number of days the agenda shows. */
   get agendaDuration(): number {
     return Math.max(1, Math.round(this.getProperty<number | undefined>('agendaDuration') ?? 7));
   }
   set agendaDuration(value: Bind<number>) {
     this.assignProperty('agendaDuration', value, Number);
   }
-  /** Whether a view builds every cell and row or only what is in view. */
+  /** Whether a view renders every cell and row, or only the visible ones. */
   get scrolling(): ScrollingMode {
     return this.getProperty<ScrollingMode | undefined>('scrolling') ?? 'auto';
   }
@@ -652,21 +652,21 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set locale(value: Bind<string>) {
     this.assignProperty('locale', value);
   }
-  /** The clock the days and hours are on, an IANA time zone; `null` for the browser's. */
+  /** The time zone for days and hours, as an IANA name. `null` uses the browser time zone. */
   get timeZone(): string | null {
     return this.getProperty<string | null | undefined>('timeZone') || null;
   }
   set timeZone(value: Bind<string | null>) {
     this.assignProperty('timeZone', value);
   }
-  /** What changing or deleting an occurrence of a series reaches; `'ask'` asks the user. */
+  /** What changing or deleting an occurrence applies to. `'ask'` prompts the user. */
   get seriesEdit(): SeriesEditMode {
     return this.getProperty<SeriesEditMode | undefined>('seriesEdit') ?? 'ask';
   }
   set seriesEdit(value: Bind<SeriesEditMode>) {
     this.assignProperty('seriesEdit', value);
   }
-  /** Marks on occurrences of a series and on ones changed apart. Default `true`. */
+  /** Shows the indicators of an occurrence and of an individually edited one. The default is `true`. */
   get recurrenceMarks(): boolean {
     return this.getProperty<boolean | undefined>('recurrenceMarks') ?? true;
   }
@@ -740,21 +740,24 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set resourceHeaderTemplate(value: Bind<((context: ResourceHeaderContext) => ComponentBase) | null>) {
     this.bindOwn('resourceHeaderTemplate', value);
   }
-  /** Times nothing may be put in. */
+  /** Times when nothing can be scheduled. */
   get blockedTimes(): readonly SchedulerBlockedTime[] {
     return this.getProperty<readonly SchedulerBlockedTime[] | undefined>('blockedTimes') ?? [];
   }
   set blockedTimes(value: Bind<readonly SchedulerBlockedTime[]>) {
     this.assignProperty('blockedTimes', value);
   }
-  /** Whether the user may make an appointment overlap another of its group; or a rule that decides whether a time is free. Default `true`. */
+  /**
+   * Whether the user can make an appointment overlap another one in its group, or a function that
+   * decides whether a time is free. The default is `true`.
+   */
   get allowOverlap(): boolean | ((check: SchedulerTimeCheck<T>) => boolean) {
     return this.getProperty<boolean | ((check: SchedulerTimeCheck<T>) => boolean) | undefined>('allowOverlap') ?? true;
   }
   set allowOverlap(value: Bind<boolean | ((check: SchedulerTimeCheck<T>) => boolean)>) {
     this.bindOwn('allowOverlap', value);
   }
-  /** Whether the user may put an appointment outside the work hours. Default `true`. */
+  /** Whether the user can place an appointment outside the work hours. The default is `true`. */
   get allowOffHours(): boolean {
     return this.getProperty<boolean | undefined>('allowOffHours') ?? true;
   }
@@ -782,7 +785,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set announce(value: Bind<boolean>) {
     this.assignProperty('announce', value, Boolean);
   }
-  /** What the user may change; `false` changes nothing (read only), `true` everything. */
+  /** What the user can change. `false` makes the scheduler read-only, and `true` allows everything. */
   get editing(): SchedulerEditing<T> {
     const value = this.getProperty<boolean | Partial<SchedulerEditing<T>> | undefined>('editing');
     if (value === false) return Object.fromEntries(Object.keys(DEFAULT_EDITING).map((k) => [k, k === 'confirmDelete'])) as unknown as SchedulerEditing<T>;
@@ -791,21 +794,21 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set editing(value: Bind<boolean | Partial<SchedulerEditing<T>>>) {
     this.assignProperty('editing', value);
   }
-  /** The minutes a drag and the keys move by. Default: the view's cell. */
+  /** The step used by dragging and the keyboard, in minutes. The default is the view's cell duration. */
   get snapMinutes(): number {
     return Math.max(1, this.getProperty<number | undefined>('snapMinutes') ?? this.resolveView().cellDuration);
   }
   set snapMinutes(value: Bind<number>) {
     this.assignProperty('snapMinutes', value, Number);
   }
-  /** The shortest an appointment gets by resizing, in minutes. Default: `snapMinutes`. */
+  /** The minimum duration when resizing, in minutes. The default is `snapMinutes`. */
   get minDuration(): number {
     return Math.max(1, this.getProperty<number | undefined>('minDuration') ?? this.snapMinutes);
   }
   set minDuration(value: Bind<number>) {
     this.assignProperty('minDuration', value, Number);
   }
-  /** A click on an appointment shows its tooltip. Default `true`. */
+  /** Clicking an appointment shows its tooltip. The default is `true`. */
   get tooltip(): boolean {
     return this.getProperty<boolean | undefined>('tooltip') ?? true;
   }
@@ -813,7 +816,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     this.assignProperty('tooltip', value, Boolean);
   }
 
-  /** How it shows itself: by its own width (`'auto'`), or always as on a desktop, a tablet or a phone. */
+  /** The presentation: based on its own width (`'auto'`), or always desktop, tablet or phone. */
   get presentation(): SchedulerPresentation {
     return this.getProperty<SchedulerPresentation | undefined>('presentation') ?? 'auto';
   }
@@ -832,14 +835,17 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set phoneWidth(value: Bind<number>) {
     this.assignProperty('phoneWidth', value, Number);
   }
-  /** When `'auto'` shows it as on a tablet: on a touch screen under `tabletWidth`, or under it whatever the pointer. */
+  /**
+   * When `'auto'` uses the tablet presentation: below `tabletWidth` on a touch screen, or regardless
+   * of the pointer type.
+   */
   get tabletWhen(): SchedulerTabletWhen {
     return this.getProperty<SchedulerTabletWhen | undefined>('tabletWhen') ?? 'touch';
   }
   set tabletWhen(value: Bind<SchedulerTabletWhen>) {
     this.assignProperty('tabletWhen', value);
   }
-  /** The view it shows as on a phone, by name or type (the agenda, else a day); `null` keeps the view. */
+  /** The view shown in the phone presentation, by name or type, or else a day view. `null` keeps the current view. */
   get phoneView(): string | null {
     const value = this.getProperty<string | null | undefined>('phoneView');
     return value === undefined ? 'agenda' : value || null;
@@ -847,7 +853,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set phoneView(value: Bind<string | null>) {
     this.assignProperty('phoneView', value);
   }
-  /** The view it shows as on a tablet, by name or type; `null` keeps the view. */
+  /** The view shown in the tablet presentation, by name or type. `null` keeps the current view. */
   get tabletView(): string | null {
     return this.getProperty<string | null | undefined>('tabletView') || null;
   }
@@ -866,7 +872,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   set pinchZoom(value: Bind<boolean>) {
     this.assignProperty('pinchZoom', value, Boolean);
   }
-  /** How far the time scale is zoomed, from 0.5 to 4. */
+  /** The zoom level of the time scale, from 0.5 to 4. */
   get timeZoom(): number {
     const value = Number(this.getProperty<number | undefined>('timeZoom') ?? 1);
     return Number.isFinite(value) ? Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, value)) : 1;
@@ -877,23 +883,23 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
 
   // State.
 
-  /** How it shows itself now: `presentation`, or by its width when that is `'auto'`. Reactive. */
+  /** The current presentation: `presentation`, or based on its width when that is `'auto'`. Reactive. */
   get currentPresentation(): SchedulerPresentationKind {
     return this.parts.version.presentation;
   }
-  /** The days on screen, `end` not included. Reactive. */
+  /** The displayed days, not including `end`. Reactive. */
   get visibleRange(): SchedulerRange {
     return this.parts.model.range();
   }
-  /** The view on screen with every setting decided. Reactive. */
+  /** The current view with every setting calculated. Reactive. */
   get resolvedView(): ResolvedView {
     return this.resolveView();
   }
-  /** The selected cells as one time, or `null`. Reactive. */
+  /** The selected cells as one time range, or `null`. Reactive. */
   get selectedCells(): SchedulerCell | null {
     return this.parts.model.selection();
   }
-  /** The appointments in the days shown, in time order. Reactive. */
+  /** The appointments in the displayed days, in time order. Reactive. */
   get shownAppointments(): readonly T[] {
     return this.parts.model.shown();
   }
@@ -1051,14 +1057,14 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   goToday(): boolean {
     return this.changeDate(this.today(), false);
   }
-  /** Moves a step on: a day, a week or a month, times the view's interval. */
+  /** Moves forward one step: a day, a week or a month, multiplied by the view's interval. */
   next(): boolean {
     return this.changeDate(stepDate(this.resolveView(), this.currentDate, 1), false);
   }
   previous(): boolean {
     return this.changeDate(stepDate(this.resolveView(), this.currentDate, -1), false);
   }
-  /** Shows the view that has `date`. */
+  /** Shows the days that contain `date`. */
   showDate(date: Date): boolean {
     return this.changeDate(date, false);
   }
@@ -1066,7 +1072,10 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   showView(name: string): boolean {
     return this.changeView(name, false);
   }
-  /** Scrolls the hours to a time of day: the day columns down to it, a timeline along to it (on the date shown, else the first day). */
+  /**
+   * Scrolls to a time of day: down the day columns, or along a timeline (on the displayed date,
+   * otherwise the first day).
+   */
   scrollToTime(hour: number, minute = 0): void {
     const scroller = this.parts.scroller;
     const view = this.resolveView();
@@ -1086,8 +1095,8 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     scroller.scrollTop = Math.max(0, at * body.offsetHeight);
   }
   /**
-   * Scrolls a time into view: in the day views to its hour and its day's column, in a timeline to
-   * its cell and the row of `resources` (the group's values). A time not shown changes nothing.
+   * Scrolls a time into view: its hour and column in the day views, or its cell and the row of
+   * `resources` (the group's values) in a timeline. A time that is not displayed has no effect.
    */
   scrollTo(date: Date, resources: Record<string, unknown> | null = null): void {
     const model = this.parts.model;
@@ -1111,26 +1120,26 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   appointmentsIn(start: Date, end: Date): T[] {
     return this.parts.model.appointmentsIn(start, end);
   }
-  /** The appointment with this key (the `key` field), among the ones loaded. */
+  /** Returns the appointment with this key (the `key` field), among those loaded. */
   findAppointment(key: unknown): T | undefined {
     const field = this.fields.key;
     return givenList(this.items()).find((item) => givenField(item, field) === key);
   }
 
   /**
-   * Reads the appointments and the resources again: what was changed in them in place shows. The
-   * scheduler reads the data as it is, plain or reactive alike, so a change made outside it (not
-   * through its methods, its form or its data source) shows after this.
+   * Re-reads the appointments and the resources, so that changes made in place appear. The scheduler
+   * reads the data as it is, plain or reactive, so a change made outside it (not through its methods,
+   * its form or its data source) appears after this call.
    */
   refresh(): void {
     this.parts.resources.refresh();
     this.parts.model.refresh();
   }
-  /** Reads one appointment again (for an occurrence: its series): what was changed in it in place shows. */
+  /** Re-reads one appointment after it has been changed in place. For an occurrence, this means its series. */
   refreshAppointment(appointment: T): void {
     this.parts.model.refresh(appointment);
   }
-  /** Reads the resources again: their items, and what was changed in them in place. */
+  /** Re-reads the resources after their items have been changed in place. */
   refreshResources(): void {
     this.parts.resources.refresh();
   }
@@ -1146,7 +1155,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return values;
   }
 
-  /** Selects cells from `start` to `end` (in the days shown), or none with `null`. */
+  /** Selects the cells from `start` to `end` in the displayed days, or clears the selection with `null`. */
   selectCells(cell: SchedulerCell | null): boolean {
     const model = this.parts.model;
     // A date or a view asked for just before is calculated first: the cells are found in the days shown then.
@@ -1163,30 +1172,34 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return true;
   }
 
-  /** Adds an appointment where they come from (the array, or the data source), asking `onAppointmentAdding` first. */
+  /** Adds an appointment to its source (the array or the data source), raising `onAppointmentAdding` first. */
   addAppointment(values: Partial<T>): Promise<T | null> {
     return this.parts.editor.add(values);
   }
   /**
-   * Changes an appointment's fields, asking `onAppointmentUpdating` first. For an occurrence of a
-   * series, `scope` says what the change reaches; default: `seriesEdit`'s, else the occurrence.
+   * Changes an appointment's fields, raising `onAppointmentUpdating` first. For an occurrence of a
+   * series, `scope` sets what the change applies to. The default comes from `seriesEdit`, otherwise
+   * it is the occurrence.
    */
   updateAppointment(appointment: T, changes: Partial<T>, scope: SeriesScope | null = null): Promise<boolean> {
     return this.parts.editor.update(appointment, changes, false, scope);
   }
-  /** Deletes an appointment, asking `onAppointmentDeleting` first (not the user); `scope` as for `updateAppointment`. */
+  /**
+   * Deletes an appointment without confirmation, raising `onAppointmentDeleting` first. `scope` is
+   * the same as in `updateAppointment`.
+   */
   deleteAppointment(appointment: T, scope: SeriesScope | null = null): Promise<boolean> {
     return this.parts.editor.remove(appointment, false, scope);
   }
-  /** The series of an occurrence (or of one changed apart from it), a series itself, or `null`. */
+  /** Returns the series of an occurrence or an individually edited one, the series itself, or otherwise `null`. */
   seriesOf(appointment: T): T | null {
     return this.parts.model.seriesOf(appointment);
   }
-  /** Whether an appointment is an occurrence of a series (the scheduler made it from the series' rule). */
+  /** Indicates whether an appointment is an occurrence generated from the rule of a series. */
   isOccurrence(appointment: T): boolean {
     return !!this.parts.model.occurrenceOf(appointment);
   }
-  /** Whether an appointment is an occurrence changed apart from its series (it names the series by `recurrenceId`). */
+  /** Indicates whether an appointment is an individually edited occurrence, linked to its series by `recurrenceId`. */
   isException(appointment: T): boolean {
     return this.parts.model.isException(appointment);
   }
@@ -1198,7 +1211,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       return !!time && time.start < end && (time.end > start || time.end.getTime() === time.start.getTime());
     });
   }
-  /** How a series (or the series of an occurrence) repeats, in plain words; empty for an appointment that happens once. */
+  /** Describes in plain words how a series, or the series of an occurrence, recurs. Empty for a single appointment. */
   recurrenceText(appointment: T): string {
     const series = this.parts.model.seriesOf(appointment);
     const rule = series ? this.parts.model.occurrences.ruleOf(series) : null;
@@ -1211,11 +1224,14 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       timeZone: zone.name || undefined,
     });
   }
-  /** Asks the user what a change (or a delete) of an occurrence reaches; `null` when the question is canceled. */
+  /**
+   * Asks the user what a change or a delete of an occurrence applies to. Resolves to `null` if the
+   * prompt is canceled.
+   */
   askSeries(appointment: T, action: SeriesAction = 'update'): Promise<SeriesScope | null> {
     return this.parts.editor.askSeries(appointment, action);
   }
-  /** Opens the appointment form: for an appointment, or for a new one at `cell` (the selection by default). */
+  /** Opens the form for an appointment, or for a new one at `cell` (the selection by default). */
   showAppointmentForm(appointment: T | null = null, cell: SchedulerCell | null = null): Promise<void> {
     return this.parts.editor.openForm(appointment, cell ?? (appointment ? null : this.parts.model.selection()));
   }
@@ -1228,9 +1244,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     this.parts.editor.hideTooltip();
   }
   /**
-   * Whether an appointment may be at a time, and what is there: the appointments it would overlap
-   * in its groups, the blocked times, whether it is outside the work hours. With `resources`, the
-   * values its resource fields would have there.
+   * Indicates whether an appointment can be at a time, and what conflicts: the appointments it would
+   * overlap in its groups, the blocked times, and whether it is outside the work hours. `resources`
+   * holds the values its resource fields would have there.
    */
   checkTime(
     appointment: T,
@@ -1241,7 +1257,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     const result = this.parts.model.check(appointment, start, end, options.allDay ?? false, options.resources ?? null);
     return { ...result.check, free: result.free };
   }
-  /** An appointment's resource items, by kind, in the order of `resources` (the kinds it has). */
+  /** Returns an appointment's resource items by type, in the order of `resources` (only the types it has). */
   resourcesOf(appointment: T): { field: string; label: string; items: { value: unknown; text: string; color: string; item: unknown }[] }[] {
     return this.parts.resources.itemsOf(appointment).map(({ kind, items }) => ({
       field: kind.field,
@@ -1251,10 +1267,10 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
 
   /**
-   * Writes the appointments as an iCalendar file (RFC 5545): those of the days shown, all the ones
-   * loaded, or those of a range; a series goes whole with its rule, the times omitted and the
-   * occurrences changed apart, each zone used with its definition. Asks `onICalendarExporting`
-   * first; `null` when it said no.
+   * Writes the appointments as an iCalendar file (RFC 5545): those of the displayed days, all loaded
+   * ones, or those of a range. A series is exported whole with its rule, excluded times and individually
+   * edited occurrences, and each zone used is written with its definition. Raises `onICalendarExporting`
+   * first, and returns `null` if it is canceled.
    */
   exportICalendar(options: ICalendarExportOptions<T> = {}): string | null {
     const parts = this.parts;
@@ -1270,10 +1286,10 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
 
   /**
-   * Reads an iCalendar file in: each event becomes an appointment added through the data layer (the
-   * array, or the data source's adapter) as any other is, with `onAppointmentAdding` first; an event
-   * whose UID is an appointment's key already changes that one. Asks `onICalendarImporting` first;
-   * `null` when it said no.
+   * Imports an iCalendar file. Each event is added through the data layer (the array, or the data
+   * source's adapter) like any other appointment, with `onAppointmentAdding` first. An event whose UID
+   * matches an appointment's key updates that appointment. Raises `onICalendarImporting` first, and
+   * returns `null` if it is canceled.
    */
   async importICalendar(text: string): Promise<ICalendarImportResult<T> | null> {
     const parts = this.parts;
@@ -1288,9 +1304,9 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
 
   /**
-   * Prints the scheduler alone: the days shown, every row and column built and nothing scrolled,
-   * the colors kept, the bar omitted. Asks `onPrinting` first; `false` when it said no. (The
-   * browser's own print prints it the same way, beside the rest of the page.)
+   * Prints the scheduler alone: the displayed days, with every row and column rendered, nothing
+   * scrolled, colors preserved and the toolbar omitted. Raises `onPrinting` first, and returns `false`
+   * if it is canceled. The browser's own print command prints it the same way, with the rest of the page.
    */
   async print(): Promise<boolean> {
     const parts = this.parts;
@@ -1313,7 +1329,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     return true;
   }
 
-  /** The text for `key`: the scheduler's own `texts`, else `uiLocale`'s, filled in. */
+  /** Returns the string for `key` from `texts`, otherwise from `uiLocale`, with its values filled in. */
   textOf(key: keyof UiStrings, values?: Record<string, unknown>): string {
     const text = this.texts[key] ?? uiLocale.strings[key];
     return fillText(text, this.locale, values);

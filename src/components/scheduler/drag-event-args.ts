@@ -2,21 +2,21 @@ import type { EventArgs } from '@motifx/core';
 import type { Scheduler } from './Scheduler';
 
 /**
- * An appointment is being moved or resized. `start`, `end` and `allDay` are where it would go.
- * `cancel = true`: on `…Start` it does not begin, on `moving` and `resizing` it may not go there
- * (it shows so; `cancel` starts `true` where the time is not free, and `false` lets it go there),
- * on `moveEnd` and `resizeEnd` it goes back.
+ * Provides data while an appointment is moved or resized. `start`, `end` and `allDay` are its new
+ * position. Set `cancel = true` on `…Start` to prevent the drag, on `moving` and `resizing` to mark
+ * the position as invalid, or on `moveEnd` and `resizeEnd` to revert. On `moving` and `resizing`,
+ * `cancel` starts as `true` where the time is not free, and `false` allows the move.
  */
 export interface DragEventArgs<T = unknown> extends EventArgs {
   appointment: T;
   start: Date;
   end: Date;
   allDay: boolean;
-  /** A copy is dropped (Ctrl), the appointment itself stays. */
+  /** Indicates that a copy is dropped (Ctrl) and the appointment itself stays in place. */
   copy: boolean;
-  /** By the keys, not the pointer. */
+  /** Indicates that the keyboard is used, not the pointer. */
   byKeys: boolean;
-  /** Moved to another group: the values its resource fields would get, by field; `null` when they stay. */
+  /** In another group, the values its resource fields would get, by field. `null` if they do not change. */
   resources: Record<string, unknown> | null;
   source: Scheduler<T>;
 }

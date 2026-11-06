@@ -64,7 +64,7 @@ export default async function ({ page, base, check, axeSource }) {
     const offset = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute) - wall;
     return new Intl.DateTimeFormat(document.documentElement.lang || 'en', { hour: 'numeric', minute: '2-digit' }).format(new Date(wall - offset));
   });
-  check('the series in its zone (its VTIMEZONE) at its time on this clock, the day left out missing', sync.length === 2 && sync.every((t) => t.includes(expected.replace(/\s/g, ' ').split(' ')[0])), `${expected}: ${JSON.stringify(sync)}`);
+  check('the series in the file’s zone (its VTIMEZONE) at its time on this clock, the day left out missing', sync.length === 2 && sync.every((t) => t.includes(expected.replace(/\s/g, ' ').split(' ')[0])), `${expected}: ${JSON.stringify(sync)}`);
   check('the all-day event and the one with a DURATION', boxes.some((t) => /Team offsite/.test(t)) && boxes.some((t) => /Call with the customer/.test(t)), JSON.stringify(boxes));
   await im.getByRole('button', { name: 'Read in' }).click();
   await page.waitForTimeout(500);

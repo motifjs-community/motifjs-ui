@@ -1,17 +1,20 @@
 import type { TabGroup } from './TabGroup';
 
-/** Where and how `open` puts a document. */
+/** Where and how `open` places a document. */
 export interface TabOpenOptions {
-  /** Default: the active group (never a locked one). */
+  /** The group. The default is the active group, never a locked one. */
   group?: TabGroup;
-  /** Default: as the manager's `openPosition` says. */
+  /** The position in the strip. By default, the manager's `openPosition` determines it. */
   index?: number;
-  /** Make it the active tab. Default `true`. */
+  /** Makes it the active tab. The default is `true`. */
   active?: boolean;
-  /** Move focus to it as well. Default `false`. */
+  /** Moves focus to it as well. The default is `false`. */
   focus?: boolean;
-  /** Open it as a preview tab, which the next preview replaces (when `previewTabs` is on). `false` keeps a preview tab open. */
+  /**
+   * Opens it as a preview tab, which the next preview replaces, when `previewTabs` is on. `false` keeps
+   * a preview tab open.
+   */
   preview?: boolean;
-  /** Open it pinned. */
+  /** Opens it pinned. */
   pinned?: boolean;
 }

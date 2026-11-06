@@ -550,3 +550,31 @@ describe('Button with a menu', () => {
     });
   });
 });
+
+/** A condition changes its branch on a later task. */
+const settled = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+describe('an icon written as a condition in JSX', () => {
+  it('shows the branch of the condition and follows it', async () => {
+    const s = reactive({ on: false });
+    const host = page(<Button text="Favorite" icon={s.on ? <i class="on" /> : <i class="off" />} />);
+    await settled();
+    const box = host.element.querySelector('.mx-button__icon')!;
+    expect(box.querySelector('.off')).not.toBeNull();
+    s.on = true;
+    await settled();
+    expect(box.querySelector('.on')).not.toBeNull();
+    expect(box.querySelector('.off')).toBeNull();
+  });
+
+  it('is removed with the button', async () => {
+    const s = reactive({ on: false });
+    const b = new Button({ text: 'Favorite' });
+    b.icon = () => (s.on ? <i class="on" /> : <i class="off" />);
+    page(b);
+    await settle();
+    b.icon = null;
+    await settle();
+    expect(b.element.querySelector('.mx-button__icon')).toBeNull();
+  });
+});

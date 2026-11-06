@@ -16,43 +16,49 @@ import type { FilterBuilderItemRemovedEventArgs } from './filter-builder-item-re
 import type { FilterBuilderItemRemovingEventArgs } from './filter-builder-item-removing-event-args';
 import type { FilterBuilderValueChangedEventArgs } from './filter-builder-value-changed-event-args';
 
-/** Props of `FilterBuilder`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
+/** Props of `FilterBuilder`, in addition to the shared `ControlProps`. Each prop is also a settable, reactive property. */
 export interface FilterBuilderProps extends ControlProps {
-  /** The filter, as the data layer has it. `x-model` binds it two-way. */
+  /** The filter, in data layer format. `x-model` provides two-way binding. */
   value?: Bind<data.FilterExpression | null>;
   /** The fields conditions are built on. */
   fields?: Bind<readonly FilterBuilderField[]>;
-  /** Operations of your own, offered by name or by data type. */
+  /** Custom operations, offered by name or by data type. */
   customOperations?: Bind<readonly FilterBuilderCustomOperation[]>;
-  /** The operations a group can join with, in order; the first is a new group's. Default `['and', 'or', 'notAnd', 'notOr']`. */
+  /**
+   * The operations a group can use, in order. The first is the default for a new group.
+   * The default is `['and', 'or', 'notAnd', 'notOr']`.
+   */
   groupOperations?: Bind<readonly FilterBuilderGroupOperation[]>;
-  /** How deep groups may go: `0` allows none, `1` groups in the root only… Default `null`, no limit. */
+  /**
+   * The depth of groups: `0` allows no groups, `1` allows groups in the root only, and so on. The default, `null`,
+   * means no limit.
+   */
   maxGroupLevel?: Bind<number | null>;
-  /** Fields with a dotted `dataField` (`customer.city`) show as submenus of their parts. Default `false`. */
+  /** Shows fields with a dotted `dataField` (`customer.city`) as submenus of their parts. The default is `false`. */
   allowHierarchicalFields?: Bind<boolean>;
-  /** The accessible name of the tree. Default: the `filterBuilderLabel` text. */
+  /** The accessible name of the tree. The default is the `filterBuilderLabel` string. */
   label?: Bind<string>;
-  /** Texts for this builder only, over `uiLocale.strings`. */
+  /** Strings for this builder only, which override `uiLocale.strings`. */
   texts?: Bind<Partial<UiStrings>>;
-  /** Locale of numbers and dates. Default: the page's language. */
+  /** The locale of numbers and dates. The default is the language of the page. */
   locale?: Bind<string>;
-  /** Default `'sm'`. */
+  /** The default is `'sm'`. */
   size?: Bind<ControlSize>;
-  /** Keys that add a condition to the focused row's group. Default `['Insert']`. */
+  /** Keys that add a condition to the focused row's group. The default is `['Insert']`. */
   addKeys?: Bind<readonly string[]>;
-  /** Keys that take out the focused row's condition or group. Default `['Delete']`. */
+  /** Keys that remove the focused row's condition or group. The default is `['Delete']`. */
   removeKeys?: Bind<readonly string[]>;
   onValueChanged?: (e: FilterBuilderValueChangedEventArgs) => void;
-  /** A condition or group is about to be added; cancelable. */
+  /** Occurs before a condition or group is added. This event is cancelable. */
   onItemAdding?: (e: FilterBuilderItemAddingEventArgs) => void;
   onItemAdded?: (e: FilterBuilderItemAddedEventArgs) => void;
-  /** A condition or group is about to be removed; cancelable. */
+  /** Occurs before a condition or group is removed. This event is cancelable. */
   onItemRemoving?: (e: FilterBuilderItemRemovingEventArgs) => void;
   onItemRemoved?: (e: FilterBuilderItemRemovedEventArgs) => void;
-  /** A field, operation, value or group operation is about to change; cancelable. */
+  /** Occurs before a field, operation, value or group operation changes. This event is cancelable. */
   onItemChanging?: (e: FilterBuilderItemChangingEventArgs) => void;
   onItemChanged?: (e: FilterBuilderItemChangedEventArgs) => void;
-  /** A value editor is about to be made; change it, replace it, or cancel it. */
+  /** Occurs before a value editor is created. It can be changed, replaced or canceled. */
   onEditorPreparing?: (e: FilterBuilderEditorPreparingEventArgs) => void;
   onEditorPrepared?: (e: FilterBuilderEditorPreparedEventArgs) => void;
 }

@@ -23,11 +23,11 @@ interface Limits {
 }
 
 /**
- * A box the user resizes from its sides and corners with the pointer, or with the arrow keys on the grip in its
+ * A box the user resizes from its edges and corners with the pointer, or with the arrow keys on the grip in its
  * end corner. The JSX children are its content. It stays at least `minWidth` × `minHeight`, at most the maximums,
- * and inside `area` when one is given; `keepAspectRatio` keeps its shape. A box laid out by its position
- * (`absolute`, `fixed`) also moves when a start or top side is dragged, so the far side stays; one in the flow
- * only changes size.
+ * and inside `area` if one is set, and `keepAspectRatio` preserves its shape. A box laid out by its position
+ * (`absolute`, `fixed`) also moves when a start or top edge is dragged, so the far edge stays in place. A box in
+ * the normal flow only changes size.
  *
  * @example
  * <Resizable minWidth={160} minHeight={100} x-model={() => this.layout.size}><Panel padding="md">…</Panel></Resizable>
@@ -146,7 +146,7 @@ export class Resizable extends Control<HTMLDivElement, ResizableProps> {
     set size(value: Bind<ResizeSize | null>) {
         this.assignProperty('size', value);
     }
-    /** `size`, for `x-model`. */
+    /** Maps to `size` for `x-model`. */
     get value(): ResizeSize | null {
         return this.size;
     }
@@ -154,27 +154,27 @@ export class Resizable extends Control<HTMLDivElement, ResizableProps> {
         this.size = value;
     }
 
-    /** A resize is about to begin from a handle (`edge`); `cancel` keeps the size. */
+    /** Occurs before a resize starts from a handle (`edge`). Set `cancel = true` to keep the size. */
     get onResizeStarting(): MotifEvent<ResizeEventArgs> {
         return this.starting.event;
     }
 
-    /** The box is being resized (`width`, `height` so far). */
+    /** Occurs while the box is being resized (the current `width` and `height`). */
     get onResizing(): MotifEvent<ResizeEventArgs> {
         return this.resizing.event;
     }
 
-    /** A resize ended: the pointer let go, or a key moved a side. */
+    /** Occurs when a resize ends, either when the pointer is released or when a key moves an edge. */
     get onResized(): MotifEvent<ResizeEventArgs> {
         return this.resized.event;
     }
 
-    /** The box's size in pixels now. */
+    /** The current size in pixels. */
     get currentSize(): ResizeSize {
         return { width: this.element.offsetWidth, height: this.element.offsetHeight };
     }
 
-    /** The grip in the end corner, the Tab stop that takes the keys. */
+    /** The grip in the end corner, which is the Tab stop for keyboard resizing. */
     get gripElement(): HTMLDivElement {
         return this.grip.element;
     }

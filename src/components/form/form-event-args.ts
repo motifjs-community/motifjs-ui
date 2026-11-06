@@ -1,6 +1,6 @@
 import type { MxForm } from './MxForm';
 
-/** An event of the form with nothing more to say than which form it is. */
+/** The arguments of a form event that reports only which form raised it. */
 export interface FormEventArgs {
   source: MxForm;
 }

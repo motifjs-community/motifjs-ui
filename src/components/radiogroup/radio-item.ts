@@ -1,16 +1,16 @@
 import type { Bind } from '@motifx/core';
 
-/** One option of a `RadioGroup`. Its fields may be functions of reactive state: the group follows them. */
+/** One option of a `RadioGroup`. Its fields can be functions of reactive state, which the group tracks. */
 export interface RadioItem<T = unknown> {
   value: T;
-  /** Shown next to the circle. Default: the value as text. */
+  /** Shown next to the circle. The default is the value as text. */
   text?: Bind<string>;
-  /** A tooltip. */
+  /** The tooltip text. */
   hint?: Bind<string>;
-  /** A smaller line under the text. */
+  /** A smaller line below the text. */
   helpText?: Bind<string>;
-  /** `false` greys it out and skips it. Default `true`. */
+  /** `false` dims the option, and the arrow keys skip it. The default is `true`. */
   enabled?: Bind<boolean>;
-  /** `false` leaves it out. Default `true`. */
+  /** `false` removes the option. The default is `true`. */
   visible?: Bind<boolean>;
 }

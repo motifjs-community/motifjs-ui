@@ -1,2 +1,2 @@
-/** How a group lays its avatars: each over the one before it, or side by side. */
+/** How a group arranges its avatars: each one over the previous one, or side by side. */
 export type AvatarGroupLayout = 'stack' | 'spread';

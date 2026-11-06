@@ -5,8 +5,8 @@ import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 
 /**
- * A context menu is about to open on a tab (`document`) or on the empty strip (`document` is
- * `null`). `items` may be changed or replaced; `cancel = true` opens none.
+ * Occurs before a context menu opens on a tab (`document`) or on the empty strip (`document` is
+ * `null`). `items` can be changed or replaced. Set `cancel = true` to open no menu.
  */
 export interface TabContextMenuEventArgs extends EventArgs {
   document: TabDocument | null;

@@ -1,6 +1,6 @@
 import type { EventArgs } from '@motifx/core';
 
-/** Text is about to be pasted into the cells (Ctrl+V, `paste()`); change `text`, or `cancel`. */
+/** Occurs before text is pasted into the cells (Ctrl+V, `paste()`). Change `text`, or set `cancel = true`. */
 export interface GridPastingEventArgs extends EventArgs {
   text: string;
   readonly rowIndex: number;

@@ -1,24 +1,24 @@
 import type { SchedulerViewType } from '../scheduler-view-type';
 import type { ScrollingMode } from './scrolling-mode';
 
-/** The view on screen with every setting decided (its own value, else the scheduler's). */
+/** The current view with every setting calculated: its own value, otherwise the scheduler's. */
 export interface ResolvedView {
   name: string;
   type: SchedulerViewType;
   intervalCount: number;
-  /** The date its intervals are counted from (with `intervalCount` over 1); `null`: the date shown. */
+  /** With an `intervalCount` greater than 1, the date intervals are counted from. `null` uses the displayed date. */
   startDate?: Date | null;
   startDayHour: number;
   endDayHour: number;
   cellDuration: number;
   allDayPanel: boolean;
   maxAppointmentsPerCell: number | 'auto';
-  /** The resource fields the columns are grouped by, outer first (the ones of a resource kind). */
+  /** The resource fields the columns are grouped by, outer first. Only fields of a resource type are included. */
   groups: string[];
-  /** The groups stand under each date, not the dates under each group. */
+  /** Places the groups under each date, instead of the dates under each group. */
   groupByDate: boolean;
-  /** The days the agenda shows. Default 7. */
+  /** The number of days the agenda shows. The default is 7. */
   agendaDuration?: number;
-  /** Default `'auto'`. */
+  /** The default is `'auto'`. */
   scrolling?: ScrollingMode;
 }

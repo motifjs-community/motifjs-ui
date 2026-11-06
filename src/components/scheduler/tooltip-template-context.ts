@@ -1,14 +1,14 @@
-/** What a tooltip template gets: the appointment shown, and the tooltip's actions. */
+/** The context of a tooltip template: the displayed appointment and the tooltip's actions. */
 export interface TooltipTemplateContext<T> {
   readonly appointment: T | null;
-  /** Its text and time as the scheduler writes them. */
+  /** Its text and time as the scheduler displays them. */
   readonly text: string;
   readonly time: string;
   readonly canEdit: boolean;
   readonly canDelete: boolean;
-  /** Opens its form. */
+  /** Opens the appointment's form. */
   edit(): void;
-  /** Deletes it (asking first, as `editing.confirmDelete` says). */
+  /** Deletes the appointment, after confirmation if `editing.confirmDelete` is set. */
   remove(): void;
   close(): void;
 }

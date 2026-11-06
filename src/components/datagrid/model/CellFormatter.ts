@@ -11,7 +11,7 @@ import { sameValue } from './same-value';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** Cell values as text and back, by column type, with `Intl` in one locale; also the record counts. */
+/** Formats cell values as text and parses them back by column type, using `Intl` in one locale. Also formats record counts. */
 export class CellFormatter {
   readonly collator: Intl.Collator;
   private readonly number: Intl.NumberFormat;

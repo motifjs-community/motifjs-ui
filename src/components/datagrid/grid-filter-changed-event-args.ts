@@ -1,13 +1,13 @@
 import type { data } from '@motifx-community/data';
 import type { GridFilters } from './grid-filters';
 
-/** The filters applied. */
+/** Occurs when the filters apply. */
 export interface GridFilterChangedEventArgs {
   readonly filters: GridFilters;
-  /** The whole filter of the rows, as the data layer has it. */
+  /** The whole filter of the rows, in data layer form. */
   readonly filter: data.FilterExpression | null;
-  /** The filter value (what the filter panel shows), as chosen. */
+  /** The filter value (what the filter panel shows), as selected. */
   readonly filterValue: data.FilterExpression | null;
-  /** Whether the filter value applies (the filter panel's check box). */
+  /** Indicates whether the filter value applies (the filter panel's check box). */
   readonly filterEnabled: boolean;
 }

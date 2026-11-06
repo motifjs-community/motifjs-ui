@@ -13,16 +13,16 @@ import type { TabGroup } from './TabGroup';
 import type { TabRect } from './tab-rect';
 
 /**
- * A browser window of a `TabDocumentManager`, opened by `moveToNewWindow`: it holds groups as the
- * documents' area does (split, resized and dragged the same way), with the page's look, the
- * manager's keys and menus. Its title follows its active document. When it is closed its documents
- * go back to the main window, or close (`newWindowCloseAction`). The manager makes and closes these
- * windows; the methods here go through it, with its events.
+ * A browser window of a `TabDocumentManager`, opened by `moveToNewWindow`. It holds groups as the
+ * document area does (split, resized and dragged in the same way), with the page's appearance and
+ * the manager's keys and menus. Its title follows its active document. When it closes, its documents
+ * return to the main window or close (`newWindowCloseAction`). The manager creates and closes these
+ * windows, and the methods here call the manager and raise its events.
  */
 export class TabBrowserWindow {
   /** The browser window. */
   readonly window: Window;
-  /** The manager's look in that window, filling it: the groups are laid out in it. */
+  /** The manager's part in that window, which fills it and contains the groups. */
   readonly element: HTMLDivElement;
   /** @internal The top of its layout. */
   root: LayoutItem | null = null;
@@ -92,7 +92,7 @@ export class TabBrowserWindow {
   get manager(): TabDocumentManager {
     return this.owner;
   }
-  /** Its place and size on the screen, in pixels (the browser tells no change of place: read it when needed). */
+  /** Its position and size on the screen, in pixels. Browsers do not report moves, so read it when needed. */
   get rect(): TabRect {
     const v = this.window;
     return { x: v.screenX, y: v.screenY, width: v.outerWidth, height: v.outerHeight };
@@ -101,35 +101,38 @@ export class TabBrowserWindow {
   get groups(): readonly TabGroup[] {
     return this.owner.groups.filter((g) => g.browserWindow === this);
   }
-  /** Reactive. */
+  /** The documents of its groups. Reactive. */
   get documents(): readonly TabDocument[] {
     return this.groups.flatMap((g) => g.documents);
   }
-  /** The group used last in it. Reactive. */
+  /** The most recently used group in it. Reactive. */
   get activeGroup(): TabGroup | null {
     const group = this.active.value;
     return group && group.browserWindow === this ? group : (this.groups[0] ?? null);
   }
-  /** The active document of its group used last; its title is the window's. Reactive. */
+  /** The active document of its most recently used group, which sets the window's title. Reactive. */
   get activeDocument(): TabDocument | null {
     return this.activeGroup?.activeDocument ?? null;
   }
-  /** Its place among the manager's `browserWindows`. Reactive. */
+  /** Its position in the manager's `browserWindows`. Reactive. */
   get index(): number {
     return this.owner.browserWindows.indexOf(this);
   }
 
-  /** Brings its documents back to the main window, where they came from; the window closes. */
+  /** Returns its documents to their original place in the main window, and the window closes. */
   moveToMainWindow(): boolean {
     return this.owner.moveToMainWindow(this);
   }
 
-  /** Closes it: its documents go back to the main window or close, as `newWindowCloseAction` (or `onWindowClosing`) says. */
+  /**
+   * Closes it. Its documents return to the main window or close, according to `newWindowCloseAction`
+   * or `onWindowClosing`.
+   */
   close(): Promise<boolean> {
     return this.owner.closeWindow(this);
   }
 
-  /** Brings it to the front and focuses what had focus in it last. */
+  /** Brings it to the front and sets focus on what last had focus in it. */
   focus(): boolean {
     return this.owner.focusWindow(this);
   }

@@ -66,10 +66,10 @@ const PARTS = Symbol('mx.toolbar');
 
 /**
  * A bar of commands (`role="toolbar"`): buttons, toggle buttons, menus and fields, in groups
- * between separators. It is one Tab stop; Left and Right (Up and Down when vertical) and Home and
- * End move between its controls, while a text field keeps the arrows for its text. Items come
- * as data (`items`) and as JSX children. Items that do not fit move into a "more" menu at the
- * end (`overflow`), keeping their names, checks and menus there.
+ * between separators. It is one Tab stop. Left and Right (Up and Down when vertical) and Home and
+ * End move between its controls, while a text field keeps the arrow keys for its text. Items are defined
+ * as data (`items`) and as JSX children. Items that do not fit move into an overflow menu at the
+ * end (`overflow`), where they keep their names, checks and menus.
  *
  * @example
  * <Toolbar label="Format" items={[
@@ -148,29 +148,29 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     this.assignProperty('overflow', value);
   }
 
-  /** The controls that are in the "more" menu now. Reactive. */
+  /** The controls currently in the overflow menu. Reactive. */
   get overflowed(): readonly Control[] {
     return this.getProperty<readonly Control[] | undefined>('overflowed') ?? [];
   }
 
-  /** An item of `items` was pressed, after its own `click`. */
+  /** Occurs when an item in `items` is clicked, after its own `click`. */
   get onItemClick(): MotifEvent<ToolbarItemClickEventArgs> {
     return this.parts.itemClick.event;
   }
 
-  /** The control made for an item of `items`. */
+  /** The control created for an item in `items`. */
   controlOf(item: ToolbarItem): Control | null {
     return this.parts.made.get(item)?.control ?? null;
   }
 
-  /** Works out again which items fit, e.g. after their content changed size. */
+  /** Recalculates which items fit, for example after their content changes size. */
   updateOverflow(): void {
     this.layout();
   }
 
   /**
-   * Reads the items again after they were changed in place: the list, and each item's fields. Your items may be
-   * plain or reactive; the toolbar reads them as they are.
+   * Re-reads the items after they have been changed in place, including the list and each item's fields. Your items
+   * can be plain or reactive, and the toolbar reads them as they are.
    */
   refresh(): void {
     for (const [item, made] of this.parts.made) this.fill(item, made);

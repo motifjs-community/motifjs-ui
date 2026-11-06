@@ -5,17 +5,20 @@ import type { TabDockSide } from './tab-dock-side';
 import type { TabGroup } from './TabGroup';
 import type { TabWindow } from './TabWindow';
 
-/** A document, a group or a whole floating window is about to be docked; `side` and `size` may be changed, `cancel = true` leaves it. */
+/**
+ * Occurs before a document, group or whole floating window is docked. `side` and `size` can be changed.
+ * Set `cancel = true` to prevent it.
+ */
 export interface TabDockingEventArgs extends EventArgs {
-  /** The document; `null` for a group or a window. */
+  /** The document, or `null` for a group or window. */
   document: TabDocument | null;
-  /** The document's group, or the group docked; `null` for a whole window. */
+  /** The document's group or the docked group, or `null` for a whole window. */
   group: TabGroup | null;
-  /** The window docked, or the window the document or the group is in. */
+  /** The docked window, or the window that contains the document or group. */
   window: TabWindow | null;
-  /** The dock area it goes to; `null` puts it back where it was docked last. */
+  /** The dock area it moves to, or `null` to return it to where it was last docked. */
   side: TabDockSide | null;
-  /** The size of a new dock area (pixels, or a share such as `'25%'`); `null` for the manager's `dockAreaSize`. */
+  /** The size of a new dock area, in pixels or as a share such as `'25%'`. `null` uses the manager's `dockAreaSize`. */
   size: number | string | null;
   byUser: boolean;
   source: TabDocumentManager;

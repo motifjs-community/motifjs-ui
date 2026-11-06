@@ -1,6 +1,7 @@
 /**
- * The texts of summary items by type, `{0}` the formatted value. The `…OtherColumn` ones are for an
- * item shown away from its column (`showInColumn`, a group row), `{1}` that column's title.
+ * The strings of summary items by type, where `{0}` is the formatted value. The `…OtherColumn` strings
+ * are for an item displayed away from its column (`showInColumn`, a group row), with `{1}` as that
+ * column's title.
  */
 export interface GridSummaryTexts {
   sum: string;

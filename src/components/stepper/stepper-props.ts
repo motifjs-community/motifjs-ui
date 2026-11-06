@@ -9,25 +9,31 @@ import type { StepperOrientation } from './stepper-orientation';
 
 /** Props of `Stepper`. Each prop is also a settable property, and a function is tracked. */
 export interface StepperProps extends ControlProps {
-    /** The steps in order: `StepperItem`s or plain texts. */
+    /** The steps in order: `StepperItem` objects or plain text. */
     items?: Bind<readonly (StepperItem | string)[]>;
-    /** The current step: its `key`, else its index. `x-model` binds it two-way. Default `0`; `null` for none. */
+    /**
+     * The current step, identified by its `key` or index, or `null` for none. `x-model` provides two-way binding.
+     * The default is `0`.
+     */
     value?: Bind<string | number | null>;
-    /** The steps are taken in order: a click reaches a completed step, or the one right after the last completed. Default `true`. */
+    /**
+     * Steps are taken in order: a click reaches a completed step or the one right after the last completed step.
+     * The default is `true`.
+     */
     linear?: Bind<boolean>;
-    /** Default `'horizontal'`. */
+    /** The default is `'horizontal'`. */
     orientation?: Bind<StepperOrientation>;
-    /** Where the texts sit next to the indicator in a horizontal stepper. Default `'bottom'`. */
+    /** The position of the text next to the indicator in a horizontal stepper. The default is `'bottom'`. */
     labelPosition?: Bind<StepperLabelPosition>;
-    /** Default `'md'`. */
+    /** The default is `'md'`. */
     size?: Bind<ControlSize>;
-    /** The steps can be pressed. `false` shows the way only. Default `true`. */
+    /** Lets the user click the steps. `false` makes the stepper display only. The default is `true`. */
     clickable?: Bind<boolean>;
-    /** The indicator of a step to come shows its number. Default `true`. */
+    /** Shows the number in the indicator of an upcoming step. The default is `true`. */
     showNumbers?: Bind<boolean>;
-    /** What screen readers call it. Default: the kit's "Steps". */
+    /** The accessible name. The default is the kit's "Steps" string. */
     label?: Bind<string>;
-    /** The current step is about to change; cancelable, may wait on `promise`. */
+    /** Occurs before the current step changes. This event is cancelable and can wait on `promise`. */
     onStepChanging?: (e: StepChangingEventArgs) => void;
     onStepChanged?: (e: StepChangedEventArgs) => void;
 }

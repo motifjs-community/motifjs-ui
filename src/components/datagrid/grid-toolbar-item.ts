@@ -3,8 +3,8 @@ import type { IconSource } from '../../core/icon-source';
 import type { GridToolbarItemClickEventArgs } from './grid-toolbar-item-click-event-args';
 
 /**
- * An item of the grid's toolbar: a button of your own, your own component (`content`), or one of the
- * grid's items (`name`) with some of its fields changed. Every field but `name`, `content` and
+ * An item of the grid's toolbar: a custom button, a custom component (`content`), or one of the grid's
+ * built-in items (`name`) with some of its fields changed. Every field except `name`, `content` and
  * `click` is a value or a tracked function.
  *
  * @example
@@ -12,24 +12,33 @@ import type { GridToolbarItemClickEventArgs } from './grid-toolbar-item-click-ev
  * { name: 'exportButton', showText: 'always' }
  */
 export interface GridToolbarItem {
-  /** One of the grid's items to change, or a name of your own for this item. */
+  /** The built-in item to change, or a custom name for this item. */
   name?: string;
-  /** Which end of the toolbar it sits at. Default `'after'`; the group panel `'before'`. */
+  /** The end of the toolbar where it appears. The default is `'after'`, and `'before'` for the group panel. */
   location?: Bind<'before' | 'after'>;
   text?: Bind<string>;
   icon?: Bind<IconSource | null | undefined>;
-  /** A tooltip; the name of a button that shows only its icon. Default: `text`. */
+  /** A tooltip, which also names a button that shows only its icon. The default is `text`. */
   hint?: Bind<string>;
-  /** Show the text in the toolbar, or only in its "more" menu (the icon alone in the bar). Default `'always'`; the grid's buttons `'inMenu'`. */
+  /**
+   * Shows the text in the toolbar, or only in its "more" menu (the icon alone in the bar). The default
+   * is `'always'`, and `'inMenu'` for built-in buttons.
+   */
   showText?: Bind<'always' | 'inMenu'>;
-  /** `false` leaves the item out. Default `true`. */
+  /** `false` omits the item. The default is `true`. */
   visible?: Bind<boolean>;
-  /** `false` dims the item; it cannot be pressed. Default `true`. */
+  /** `false` disables the item. The default is `true`. */
   enabled?: Bind<boolean>;
-  /** Whether it may move into the "more" menu: when it does not fit, always, or never. Default `'never'`; the grid's buttons `'auto'`. */
+  /**
+   * When it moves into the "more" menu: when it does not fit, always, or never. The default is
+   * `'never'`, and `'auto'` for built-in buttons.
+   */
   overflow?: Bind<'auto' | 'always' | 'never'>;
-  /** Your own component in place of a button: made once, when the item first shows. */
+  /** A custom component in place of a button, created once, when the item first appears. */
   content?: () => unknown;
-  /** Runs when the button is pressed, in the bar or in the "more" menu. On one of the grid's items it replaces what the item does. */
+  /**
+   * Runs when the button is clicked, in the bar or in the "more" menu. On a built-in item, it replaces
+   * the item's behavior.
+   */
   click?: (e: GridToolbarItemClickEventArgs) => void;
 }

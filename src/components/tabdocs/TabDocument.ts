@@ -46,7 +46,7 @@ const NO_ACTIONS: readonly ToolbarItem[] = [];
 
 /**
  * A document of a `TabDocumentManager`: a tab and its content, which can be any component. Every
- * field takes a value or a function (`dirty: () => form.changed`) and is reactive to read.
+ * field accepts a value or a function (`dirty: () => form.changed`), and reading it is reactive.
  *
  * @example
  * const doc = new TabDocument({ type: 'order', title: 'Order 1042', state: { id: 1042 }, content: (d) => new OrderForm(d.state) });
@@ -58,7 +58,7 @@ export class TabDocument {
   readonly type: string;
   /** What `contentComponent` is created from. */
   content: TabDocumentContent | null;
-  /** Makes the content of a copy in another group. */
+  /** Creates the content of a copy in another group. */
   clone: TabContentClone | null;
   private readonly values = new Map<string, Signal<unknown>>();
   /** The manager it is open in, and its group (`null` while it is hidden). */
@@ -98,7 +98,7 @@ export class TabDocument {
   set tooltip(value: Bind<string>) {
     this.slot('tooltip').value = value;
   }
-  /** A text, a number, or `true` for a dot. */
+  /** A short text or number, or `true` to show a dot. */
   get badge(): string | number | boolean | null {
     return this.get<string | number | boolean | null>('badge') ?? null;
   }
@@ -117,14 +117,14 @@ export class TabDocument {
   set dirty(value: Bind<boolean>) {
     this.slot('dirty').value = value;
   }
-  /** Set it through the manager's `pin` and `unpin` to be asked and told. */
+  /** Use the manager's `pin` and `unpin` so that events are raised. */
   get pinned(): boolean {
     return !!this.get<boolean>('pinned');
   }
   set pinned(value: Bind<boolean>) {
     this.slot('pinned').value = value;
   }
-  /** Set it to `false` through the manager's `keep` to be asked and told. */
+  /** To set it to `false`, use the manager's `keep` so that events are raised. */
   get preview(): boolean {
     return !!this.get<boolean>('preview');
   }
@@ -137,63 +137,63 @@ export class TabDocument {
   set closable(value: Bind<boolean>) {
     this.slot('closable').value = value;
   }
-  /** The document's own setting; `undefined` follows the manager. */
+  /** This document's own setting. `undefined` uses the manager's. */
   get contentLifetime(): ContentLifetime | undefined {
     return this.get<ContentLifetime>('contentLifetime') ?? undefined;
   }
   set contentLifetime(value: Bind<ContentLifetime | undefined>) {
     this.slot('contentLifetime').value = value;
   }
-  /** The document's own setting; `undefined` follows the manager. */
+  /** This document's own setting. `undefined` uses the manager's. */
   get allowDuplicate(): boolean | undefined {
     return this.get<boolean>('allowDuplicate') ?? undefined;
   }
   set allowDuplicate(value: Bind<boolean | undefined>) {
     this.slot('allowDuplicate').value = value;
   }
-  /** The document's own setting; `undefined` follows the manager's `allowDrag`. */
+  /** This document's own setting. `undefined` uses the manager's `allowDrag`. */
   get allowDrag(): boolean | undefined {
     return this.get<boolean>('allowDrag') ?? undefined;
   }
   set allowDrag(value: Bind<boolean | undefined>) {
     this.slot('allowDrag').value = value;
   }
-  /** The document's own setting; `undefined` follows the manager's `allowFloat`. */
+  /** This document's own setting. `undefined` uses the manager's `allowFloat`. */
   get allowFloat(): boolean | undefined {
     return this.get<boolean>('allowFloat') ?? undefined;
   }
   set allowFloat(value: Bind<boolean | undefined>) {
     this.slot('allowFloat').value = value;
   }
-  /** The document's own setting; `undefined` follows the manager's `allowDock`. */
+  /** This document's own setting. `undefined` uses the manager's `allowDock`. */
   get allowDock(): boolean | undefined {
     return this.get<boolean>('allowDock') ?? undefined;
   }
   set allowDock(value: Bind<boolean | undefined>) {
     this.slot('allowDock').value = value;
   }
-  /** The dock areas it may go to; `undefined` follows the manager's `dockSides`. */
+  /** The dock areas this document can move to. `undefined` uses the manager's `dockSides`. */
   get dockSides(): readonly TabDockSide[] | undefined {
     return this.get<readonly TabDockSide[]>('dockSides') ?? undefined;
   }
   set dockSides(value: Bind<readonly TabDockSide[] | undefined>) {
     this.slot('dockSides').value = value;
   }
-  /** The document's own setting; `undefined` follows the manager's `allowAutoHide`. */
+  /** This document's own setting. `undefined` uses the manager's `allowAutoHide`. */
   get allowAutoHide(): boolean | undefined {
     return this.get<boolean>('allowAutoHide') ?? undefined;
   }
   set allowAutoHide(value: Bind<boolean | undefined>) {
     this.slot('allowAutoHide').value = value;
   }
-  /** The document's own setting; `undefined` follows the manager's `allowHide`. */
+  /** This document's own setting. `undefined` uses the manager's `allowHide`. */
   get allowHide(): boolean | undefined {
     return this.get<boolean>('allowHide') ?? undefined;
   }
   set allowHide(value: Bind<boolean | undefined>) {
     this.slot('allowHide').value = value;
   }
-  /** The document's own setting; `undefined` follows the manager's `allowNewWindow`. */
+  /** This document's own setting. `undefined` uses the manager's `allowNewWindow`. */
   get allowNewWindow(): boolean | undefined {
     return this.get<boolean>('allowNewWindow') ?? undefined;
   }
@@ -213,7 +213,7 @@ export class TabDocument {
     this.slot('state').value = value;
   }
 
-  /** The document this one is a copy of (open in another group), `null` for the document itself. */
+  /** The document this one is a copy of (open in another group), or `null` for the document itself. */
   get original(): TabDocument | null {
     return this.from;
   }
@@ -225,59 +225,65 @@ export class TabDocument {
   get group(): TabGroup | null {
     return this.where.value?.group ?? null;
   }
-  /** In a manager: in one of its groups, or hidden there. */
+  /** Indicates whether it is in a manager: in one of its groups, or hidden there. */
   get isOpen(): boolean {
     return !!this.where.value;
   }
-  /** Hidden by its manager: in no group, its content kept as its `contentLifetime` says, until `show`. Reactive. */
+  /**
+   * Indicates whether its manager has hidden it. Until `show`, it is in no group, and its content is
+   * kept according to its `contentLifetime`. Reactive.
+   */
   get isHidden(): boolean {
     const where = this.where.value;
     return !!where && !where.group;
   }
-  /** Whether it is its group's active tab. Reactive. */
+  /** Indicates whether it is the active tab of its group. Reactive. */
   get isActive(): boolean {
     const group = this.group;
     return !!group && group.activeDocument === this;
   }
-  /** The content made for it, `null` while it is not built. */
+  /** The content created for it, or `null` until it is created. */
   get contentComponent(): ComponentBase | null {
     return this.manager?.contentOf(this) ?? null;
   }
 
-  /** The floating window it is in, `null` elsewhere. Reactive. */
+  /** The floating window containing it, otherwise `null`. Reactive. */
   get window(): TabWindow | null {
     return this.group?.window ?? null;
   }
-  /** The dock area it is in, `null` elsewhere. Reactive. */
+  /** The dock area containing it, otherwise `null`. Reactive. */
   get dockArea(): TabDockArea | null {
     return this.group?.dockArea ?? null;
   }
-  /** The new browser window it is in, `null` in the main window. Reactive. */
+  /** The new browser window containing it, or `null` in the main window. Reactive. */
   get browserWindow(): TabBrowserWindow | null {
     return this.group?.browserWindow ?? null;
   }
 
-  /** Makes it its group's active tab. */
+  /** Makes it the active tab of its group. */
   activate(focus = false): boolean {
     return this.manager?.activate(this, focus) ?? false;
   }
 
-  /** Closes it as its close button does: `onClosing` may keep it. */
+  /** Closes it as its close button does. `onClosing` can keep it open. */
   close(): Promise<boolean> {
     return this.manager?.close(this) ?? Promise.resolve(false);
   }
 
-  /** Takes it out of its group, kept for `show`. */
+  /** Removes it from its group and keeps it for `show`. */
   hide(): boolean {
     return this.manager?.hide(this) ?? false;
   }
 
-  /** Puts it back after `hide`: where it was, unless `options` say where. */
+  /** Restores it after `hide`: to its previous place, unless `options` name another. */
   show(options?: TabShowOptions): boolean {
     return this.manager?.show(this, options) ?? false;
   }
 
-  /** Whether a copy of it can get content of its own: from `clone`, from `content` given as a function, or from the manager's factory. */
+  /**
+   * Indicates whether a copy of it can have its own content: from `clone`, from a `content` function,
+   * or from the manager's factory.
+   */
   canCopy(factory: boolean): boolean {
     const root = this.from ?? this;
     return !!root.clone || typeof root.content === 'function' || (!root.content && factory);

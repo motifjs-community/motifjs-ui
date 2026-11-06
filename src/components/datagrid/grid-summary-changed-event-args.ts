@@ -1,7 +1,7 @@
-/** The summary values were calculated again. */
+/** Occurs when the summary values are recalculated. */
 export interface GridSummaryChangedEventArgs {
   /** The values of `summary.totalItems`, in order. */
   readonly total: readonly unknown[];
-  /** The values follow unsaved changes (`recalculateWhileEditing`) rather than new data. */
+  /** Indicates that the values reflect unsaved changes (`recalculateWhileEditing`) rather than new data. */
   readonly editing: boolean;
 }

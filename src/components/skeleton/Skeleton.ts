@@ -15,8 +15,8 @@ const length = (value: string | number | null | undefined): string =>
   typeof value === 'number' && Number.isFinite(value) ? `${value}px` : typeof value === 'string' ? value : '';
 
 /**
- * The shape of what is loading (lines of text, a block, a circle), moving as the design language does
- * until `loading` turns `false`; then its JSX children show in its place. A screen reader hears that it
+ * The shape of the content being loaded (lines of text, a block, a circle), animated as the design language
+ * defines until `loading` turns `false`, when the JSX children replace it. Screen readers announce that it
  * is loading.
  *
  * @example
@@ -94,7 +94,7 @@ export class Skeleton extends Control<HTMLDivElement, SkeletonProps> {
     this.assignProperty('label', value);
   }
 
-  /** The part holding what shows once loaded, for adding to it programmatically. */
+  /** The part that holds the loaded content, for adding to it programmatically. */
   get content(): Component<HTMLDivElement> {
     return this.contentPart;
   }

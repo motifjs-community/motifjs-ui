@@ -7,28 +7,31 @@ import type { ProgressTone } from './progress-tone';
 
 /** Props of `ProgressBar`. Each prop is also a settable, reactive property. */
 export interface ProgressBarProps extends ControlProps {
-  /** How far the work is; `null` (the default) when that is not known: the bar then runs to and fro, a circle turns. */
+  /** The progress. Use `null` (the default) when it is unknown: the bar shows continuous motion and a circle rotates. */
   value?: Bind<number | null>;
-  /** Default `0`. */
+  /** The default is `0`. */
   min?: Bind<number>;
-  /** Default `100`. */
+  /** The default is `100`. */
   max?: Bind<number>;
-  /** A caption; it names the bar for screen readers. The same as `text`. */
+  /** A label that names the bar. This is the same property as `text`. */
   label?: Bind<string>;
-  /** A line (the default) or a circle. */
+  /** `line` (the default) or `circle`. */
   shape?: Bind<ProgressShape>;
-  /** Default `'top'` (`'bottom'` for a circle). */
+  /** The default is `'top'`, or `'bottom'` for a circle. */
   labelPosition?: Bind<ProgressLabelPosition>;
-  /** Writes the percent next to the label. */
+  /** Shows the percentage next to the label. */
   showValue?: Bind<boolean>;
-  /** Default: the page's `lang`. */
+  /** The default is the page's `lang`. */
   locale?: Bind<string>;
-  /** Default `'accent'`. */
+  /** The default is `'accent'`. */
   tone?: Bind<ProgressTone>;
-  /** The thickness, and a circle's size. Default `'md'`. */
+  /** The thickness, and the size of a circle. The default is `'md'`. */
   size?: Bind<ControlSize>;
-  /** Fills the width of what it sits in. */
+  /** Stretches to the full width of its container. */
   stretch?: Bind<boolean>;
-  /** The text for a value, shown and read out, e.g. `(v) => v + ' of 12 files'`. A function, so it is not bound like the other props. */
+  /**
+   * The text shown and announced for a value, such as `(v) => v + ' of 12 files'`. Because it is a function, it is
+   * stored as is and not bound.
+   */
   valueText?: (value: number, fraction: number) => string;
 }

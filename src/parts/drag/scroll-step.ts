@@ -1,7 +1,7 @@
 /**
  * How far to scroll in one frame while something is dragged at `pos` near the edges of `start`…`end`
- * (one axis): nothing farther than `sensitivity` from them, `speed` at the edge and beyond it, less
- * on the way in. Negative scrolls towards `start`.
+ * (one axis): nothing farther than `sensitivity` from them, `speed` at the edge and beyond it, and
+ * less on the way in. A negative value scrolls toward `start`.
  */
 export function scrollStep(pos: number, start: number, end: number, sensitivity: number, speed: number): number {
   if (!(sensitivity > 0) || !(speed > 0) || end <= start) return 0;

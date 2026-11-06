@@ -4,9 +4,9 @@ import type { SchedulerRange } from '../scheduler-range';
 import type { RangeFilterOptions } from './range-filter-options';
 
 /**
- * The data layer's filter for the appointments a range may show: they start before it ends and
- * end at or after it starts, or they repeat (a series that began before the range may happen in
- * it; its occurrences are found by its rule). With `resources`, only the ones of those resources.
+ * Returns the data layer filter for the appointments a range can show: those that start before it
+ * ends and either end at or after it starts or have a rule, because a series that began before the
+ * range can occur in it. With `resources`, only appointments of those resources are included.
  *
  * @example
  * source.setFilter(rangeFilter(scheduler.visibleRange, scheduler.fields, { resources: { roomId: [1, 2] } }));

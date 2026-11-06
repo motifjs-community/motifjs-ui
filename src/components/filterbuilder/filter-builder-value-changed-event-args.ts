@@ -4,7 +4,7 @@ import type { FilterBuilder } from './FilterBuilder';
 export interface FilterBuilderValueChangedEventArgs {
   value: data.FilterExpression | null;
   previousValue: data.FilterExpression | null;
-  /** `true` when the user changed it, `false` when code did. */
+  /** `true` when the user changed the value, and `false` when it changed programmatically. */
   byUser: boolean;
   source: FilterBuilder;
 }

@@ -48,13 +48,11 @@ interface Parts {
 const PARTS = Symbol('mx.contextmenu');
 
 /**
- * A menu that opens on an element's right-click (or long press), at the pointer, and from the
- * keyboard with the Menu key or Shift+F10, at the focused element. `onOpening` builds the items
- * for the element it opened on (a row of a list) or cancels. It closes on Escape, a click outside
- * it and focus leaving it; when the page scrolls it goes along with the element it opened on, and
- * closes once that element is out of sight. The items are `MenuItem`s: submenus, check and radio
- * items, shortcuts. Opened on an element in another document (a window the app opened), the menu
- * goes there.
+ * A menu that opens at the pointer on an element's right-click (or long press), and at the focused element
+ * with the Menu key or Shift+F10. `onOpening` builds the items for the element it opened on, such as a list
+ * row, or cancels. It closes on Escape, a click outside it and focus leaving it. When the page scrolls, it
+ * follows that element and closes once the element is out of view. The items are `MenuItem`s: submenus, check and
+ * radio items, shortcuts. Opened on an element in another document (a window the app opened), the menu appears there.
  *
  * @example
  * <ContextMenu target={() => this.list} items={[{ text: '&Copy', click: () => this.copy() }]} />
@@ -112,7 +110,7 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   set items(value: Bind<readonly MenuItem[]>) {
     this.assignProperty('items', value);
   }
-  /** The element the menu listens on. Reactive. Set it with an element, a component or a function of one. */
+  /** The element the menu listens on. Reactive. Set it to an element, a component or a function that returns one. */
   get target(): Element | null {
     return this.getProperty<Element | null | undefined>('attached') ?? null;
   }
@@ -145,21 +143,21 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     this.assignProperty('presentation', value);
   }
 
-  /** Whether the menu is open. Reactive. */
+  /** Indicates whether the menu is open. Reactive. */
   get opened(): boolean {
     return !!this.getProperty<boolean>('opened');
   }
 
-  /** The element the menu was last opened on (pressed, or focused); kept after it closes. Reactive. */
+  /** The element the menu was last opened on (clicked or focused), kept after it closes. Reactive. */
   get targetElement(): Element | null {
     return this.getProperty<Element | null | undefined>('targetElement') ?? null;
   }
 
-  /** The menu is about to open; set `e.items` for `e.target`, or cancel. */
+  /** Occurs before the menu opens. Set `e.items` for `e.target`, or cancel. */
   get onOpening(): MotifEvent<ContextMenuOpeningEventArgs> {
     return this.parts.opening.event;
   }
-  /** An item was chosen, after the item's own `click`. */
+  /** Occurs when an item is selected, after the item's own `click`. */
   get onItemClick(): MotifEvent<MenuItemClickEventArgs> {
     return this.parts.itemClick.event;
   }
@@ -168,9 +166,9 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   }
 
   /**
-   * Opens the menu programmatically: at a point of the viewport, or at an element (its start corner,
-   * below it). `target` is what `onOpening` and `targetElement` report; the target element by
-   * default. Returns whether it opened.
+   * Opens the menu programmatically, at a point of the viewport, or at an element (its start corner,
+   * below it). `target` is the element that `onOpening` and `targetElement` report, by default the target element.
+   * Returns whether it opened.
    */
   open(at: { x: number; y: number } | Element, target?: Element): boolean {
     const point = isElement(at) ? pointOf(at) : at;
@@ -185,8 +183,8 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   }
 
   /**
-   * Reads the items of the open menu again (an open submenu too) after they were changed in place. Your items may
-   * be plain or reactive; the menu reads them as they are.
+   * Re-reads the items of the open menu, including an open submenu, after they have been changed in place. Your items
+   * can be plain or reactive, and the menu reads them as they are.
    */
   refresh(): void {
     const parts = this.parts;
@@ -194,7 +192,7 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     parts.sheet?.refresh();
   }
 
-  /** The action sheet it shows its items in, once it has shown them there. */
+  /** The action sheet that displays the items, once it has displayed them. */
   get actionSheet(): ActionSheet | null {
     return this.parts.sheet;
   }

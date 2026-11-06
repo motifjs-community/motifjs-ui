@@ -10,8 +10,8 @@ const OWN = ['description', 'key', 'icon', 'optional', 'error', 'lazy', 'keepAli
 const TOLD = ['text', 'description', 'key', 'icon', 'optional', 'error', 'enabled'] as const;
 
 /**
- * One step of a {@link Wizard}: its entry in the stepper and its page. The JSX children are the page, built when
- * the step is first shown (see `lazy`); `content` makes it programmatically.
+ * One step of a {@link Wizard}: its entry in the stepper and its page. The JSX children are the page, created when
+ * the step is first shown (see `lazy`), and `content` creates it programmatically.
  *
  * @example
  * <Wizard>
@@ -101,12 +101,12 @@ export class WizardStep extends Control<HTMLDivElement, WizardStepProps> {
         this.assignProperty('validateFields', value);
     }
 
-    /** Whether this is the wizard's current step. */
+    /** Indicates whether this is the current step of the wizard. */
     get isCurrent(): boolean {
         return this.owner?.currentStep === this;
     }
 
-    /** The wizard the step is in. */
+    /** The wizard that contains the step. */
     get wizard(): Wizard | null {
         return this.owner;
     }

@@ -12,9 +12,10 @@ import type { ViewSelectionChangedEventArgs } from "./view-selection-changed-eve
 const OWN = ['value', 'loop', 'swipeEnabled', 'animated', 'lazy', 'keepAlive', 'label'] as const;
 
 /**
- * Pages side by side, one in sight: the JSX `View` children, or views added programmatically. A swipe brings the next or
- * the previous one; programmatically `next()`, `previous()` and `goTo()` do, and a `Tabs`, a `Stepper` or buttons bound
- * to `value` drive it. A view is built when first shown (`lazy`) and kept (`keepAlive`), as the panels of `Tabs`.
+ * Pages side by side, with one visible: the JSX `View` children, or views added programmatically. A swipe shows the
+ * next or previous view, as do `next()`, `previous()` and `goTo()`, and a `Tabs`, a `Stepper` or buttons bound to
+ * `value` can control it. A view is created when it first becomes visible (`lazy`) and kept (`keepAlive`), like the
+ * panels of `Tabs`.
  *
  * @example
  * <MultiView x-model={() => this.page} loop>
@@ -127,27 +128,27 @@ export class MultiView extends Control<HTMLDivElement, MultiViewProps> {
         this.assignProperty('label', value);
     }
 
-    /** The view in sight is about to change (`from`, `to`, `byUser`); `cancel` keeps the one there. */
+    /** Occurs before the visible view changes (`from`, `to`, `byUser`). Set `cancel` to keep the current view. */
     get onSelecting(): MotifEvent<ViewSelectingEventArgs> {
         return this.selecting.event;
     }
 
-    /** The view in sight changed, by a swipe or programmatically (`byUser`). */
+    /** Occurs after the visible view changes, by a swipe or programmatically (`byUser`). */
     get onSelectionChanged(): MotifEvent<ViewSelectionChangedEventArgs> {
         return this.selectionChanged.event;
     }
 
-    /** The index of the view in sight; -1 when there is none. */
+    /** The index of the visible view, or -1 if there is none. */
     get selectedIndex(): number {
         return this.indexOf(this.peekProperty<string | number | null | undefined>('value'));
     }
 
-    /** The view in sight, `null` when there is none. */
+    /** The visible view, or `null` if there is none. */
     get selectedView(): View | null {
         return this.views[this.selectedIndex] ?? null;
     }
 
-    /** How many views there are, hidden ones too. */
+    /** The number of views, including hidden ones. */
     get count(): number {
         return this.views.length;
     }
@@ -165,7 +166,7 @@ export class MultiView extends Control<HTMLDivElement, MultiViewProps> {
         return view;
     }
 
-    /** Removes a view and disposes it; the sight moves to a neighbor. */
+    /** Removes a view and disposes it. The display moves to an adjacent view. */
     remove(view: View): boolean {
         if (!this.views.includes(view)) return false;
         this.forget(view);
@@ -173,27 +174,27 @@ export class MultiView extends Control<HTMLDivElement, MultiViewProps> {
         return true;
     }
 
-    /** Goes to the next view that is shown and enabled; `false` at the end without `loop`, or when refused. */
+    /** Moves to the next view that is visible and enabled. Returns `false` at the end without `loop`, or if canceled. */
     next(): Promise<boolean> {
         return this.go(this.usable(this.selectedIndex, 1), false);
     }
 
-    /** Goes to the previous view that is shown and enabled. */
+    /** Moves to the previous view that is visible and enabled. */
     previous(): Promise<boolean> {
         return this.go(this.usable(this.selectedIndex, -1), false);
     }
 
-    /** Goes to a view, by index or key; `onSelecting` is asked first. */
+    /** Moves to a view by index or key. `onSelecting` is raised first. */
     goTo(view: number | string | View): Promise<boolean> {
         return this.go(view instanceof View ? this.views.indexOf(view) : this.indexOf(view), false);
     }
 
-    /** Brings a view into sight, as `goTo` does. */
+    /** Makes a view visible, as `goTo` does. */
     select(view: View): Promise<boolean> {
         return this.goTo(view);
     }
 
-    /** The index a value names: a key, else an index in range; -1 for none. */
+    /** Returns the index that a value identifies: a key, otherwise an index in range, or -1 if there is none. */
     indexOf(value: string | number | null | undefined): number {
         if (value === undefined) return this.views.length ? 0 : -1;
         if (value === null) return -1;
@@ -201,7 +202,7 @@ export class MultiView extends Control<HTMLDivElement, MultiViewProps> {
         return Number.isInteger(value) && value >= 0 && value < this.views.length ? value : -1;
     }
 
-    /** The value that names the view at `index`: its key when it has one, else the index. */
+    /** Returns the value that identifies the view at `index`: its key if it has one, otherwise the index. */
     valueAt(index: number): string | number {
         return this.views[index]?.key || index;
     }

@@ -22,10 +22,10 @@ interface Parts {
 }
 
 /**
- * A turning ring, or a shape that turns into the next one, as the design language draws it, that says "busy,
- * wait": alone, with a label, after a delay so quick work does
- * not flash it, or over a container while it loads (`Spinner.cover`). Screen readers meet it as
- * a progress bar without a value, named by its label or `uiLocale.strings.loading`.
+ * A rotating ring, or a shape that changes into the next one, as drawn by the design language, that indicates a
+ * wait: alone, with a label, after a delay so that quick operations show nothing, or over a container
+ * while it loads (`Spinner.cover`). Screen readers announce it as a progress bar without a value, named by
+ * its label or `uiLocale.strings.loading`.
  *
  * @example
  * <Spinner label="Loading orders" visible={() => this.orders.loading} delay={300} />
@@ -36,10 +36,10 @@ interface Parts {
  */
 export class Spinner extends Control<HTMLDivElement, SpinnerProps> {
   /**
-   * Covers a container with a spinner until the returned function is called: what is under it
-   * cannot be pressed or focused (it is `inert`), the container is `aria-busy`, and focus that
-   * was inside waits on the spinner and comes back afterwards. A static container becomes
-   * `position: relative` meanwhile.
+   * Covers a container with a spinner until the returned function is called. The covered area
+   * cannot be clicked or focused (it is `inert`), the container is `aria-busy`, and focus that was
+   * inside moves to the spinner and returns afterward. A static container becomes
+   * `position: relative` in the meantime.
    */
   static cover(target: ComponentBase | HTMLElement, props: SpinnerProps = {}): () => void {
     const host = target instanceof HTMLElement ? target : (target.element as HTMLElement);
@@ -140,7 +140,7 @@ export class Spinner extends Control<HTMLDivElement, SpinnerProps> {
     this.assignProperty('delay', value);
   }
 
-  /** Still inside its delay, not seen yet. Not reactive. */
+  /** Indicates that it is still within its delay and not yet visible. Not reactive. */
   get waiting(): boolean {
     return this.element.hasAttribute('data-waiting');
   }

@@ -1,9 +1,9 @@
 import type { Gallery } from './Gallery';
 
-/** A click on a pane that was not a drag. */
+/** Provides data for the event that occurs when a slide is clicked without dragging. */
 export interface GalleryItemClickEventArgs {
     index: number;
-    /** The item as given. */
+    /** The item as provided. */
     item: unknown;
     source: Gallery;
     event: MouseEvent;

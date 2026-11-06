@@ -2,7 +2,10 @@ import type { EventArgs } from '@motifx/core';
 import type { FileUploader } from './FileUploader';
 import type { UploadItem } from './upload-item';
 
-/** Files were chosen or dropped. `cancel = true` takes none of them; `refused` lists those the limits turned away. */
+/**
+ * Provides data for the event that occurs when files are selected or dropped. Set `cancel = true` to accept none.
+ * `refused` lists the files the limits rejected.
+ */
 export interface FilesAddedEventArgs extends EventArgs {
     files: File[];
     refused: UploadItem[];

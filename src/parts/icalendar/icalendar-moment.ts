@@ -4,9 +4,9 @@ import type { ICalendarTimeZone } from './icalendar-time-zone';
 import { observanceMoment } from './observance-moment';
 
 /**
- * The moment a date of a file names. A UTC one is a moment already; a date only gives the wall
- * clock time of its midnight (all-day events are the caller's). A zone is an IANA name, or else a
- * `VTIMEZONE` of the file by that id; a floating time, or a zone neither knows, takes `fallback`
+ * The moment a date of a file names. A UTC date is already a moment, and a date only returns the wall
+ * clock time of its midnight (all-day events are up to the caller). A zone is an IANA name, or otherwise a
+ * `VTIMEZONE` of the file by that id. A floating time, or a zone neither recognizes, uses `fallback`
  * (an IANA name, or `null` for the browser's own).
  *
  * @example

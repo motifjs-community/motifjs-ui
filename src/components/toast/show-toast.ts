@@ -4,7 +4,7 @@ import type { ToastProps } from './toast-props';
 import { Toaster } from './Toaster';
 
 /**
- * Shows toasts on `Toaster.default`: made in `document.body` on first use, or the one the app
+ * Shows toasts on `Toaster.default`: one created in `document.body` on first use, or the one the application
  * assigned. Each call returns the `Toast`, to `close()` or `update()` it, or to await `closed`.
  *
  * @example

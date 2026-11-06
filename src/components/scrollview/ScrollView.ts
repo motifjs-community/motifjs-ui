@@ -23,8 +23,8 @@ interface Pull {
 }
 
 /**
- * Content that scrolls in a box of its own, with the scrollbars shown as told (`showScrollbar`), a pull from the top
- * that asks for what is new (`pullToRefresh`, `onPullDown`) and a reach near the end that asks for more
+ * Content that scrolls in its own box, with scrollbars shown as set by `showScrollbar`, a pull from the top that
+ * requests new content (`pullToRefresh`, `onPullDown`), and a request for more content near the end
  * (`loadOnReachBottom`, `onReachBottom`). `scrollTo`, `scrollBy` and `scrollToElement` move it programmatically.
  *
  * @example
@@ -187,23 +187,23 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         return this.scrolled.event;
     }
 
-    /** Where the content stands. */
+    /** The current scroll position. */
     get scrollTop(): number {
         return this.element.scrollTop;
     }
     get scrollLeft(): number {
         return this.element.scrollLeft;
     }
-    /** A refresh (a pull) is going on. */
+    /** Indicates that a refresh (a pull) is in progress. */
     get isRefreshing(): boolean {
         return this.refreshing;
     }
-    /** More is being loaded (a reach near the end). */
+    /** Indicates that more data is being loaded near the end. */
     get isLoading(): boolean {
         return this.loading;
     }
 
-    /** Scrolls to a position: `{ top, left }`, or a top. */
+    /** Scrolls to a position: `{ top, left }`, or a top position. */
     scrollTo(where: number | { top?: number; left?: number }, smooth = false): void {
         const options: ScrollToOptions = typeof where === 'number' ? { top: where } : { top: where.top, left: where.left };
         options.behavior = smooth ? 'smooth' : 'auto';
@@ -214,13 +214,13 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         this.element.scrollBy({ top: by.top ?? 0, left: by.left ?? 0, behavior: smooth ? 'smooth' : 'auto' });
     }
 
-    /** Brings an element of the content into view. */
+    /** Scrolls an element of the content into view. */
     scrollToElement(target: Element | { element: Element }, smooth = false): void {
         const el = 'element' in target ? target.element : target;
         el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
     }
 
-    /** Starts a refresh as a pull would: the panel shows, `onPullDown` is asked. */
+    /** Starts a refresh as a pull would: the panel appears and `onPullDown` is raised. */
     refresh(): void {
         if (this.refreshing || !this.peekProperty('pullToRefresh')) {
             return;
@@ -239,7 +239,7 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         if (args.promise) void args.promise.then(end, end);
     }
 
-    /** Ends a refresh: the panel goes back. */
+    /** Ends a refresh and closes the panel. */
     release(): void {
         this.refreshing = false;
         this.pull = null;
@@ -248,7 +248,7 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         this.drawTexts();
     }
 
-    /** Asks for more now, as a reach near the end would. */
+    /** Requests more data now, as reaching the end would. */
     loadMore(): boolean {
         if (this.loading || this.ended || !this.peekProperty('loadOnReachBottom')) {
             return false;
@@ -276,7 +276,7 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         return true;
     }
 
-    /** Looks at the position again (the content changed): near the end, more is requested. */
+    /** Checks the position again after the content changes, and requests more data near the end. */
     update(): void {
         this.ended = false;
         this.check();

@@ -29,10 +29,10 @@ interface Track {
 }
 
 /**
- * Choosing a color: an area of saturation and brightness, a hue strip and an opacity strip (`alpha`), the hex and
- * red, green, blue inputs, preset colors (`palette`) and, where the browser can, a color picked from the screen.
- * The value follows every move. Keyboard: on a handle the arrow keys move it by 1 (by 10 with Shift), Home and End
- * go to the ends.
+ * Selects a color: an area of saturation and brightness, a hue strip and an opacity strip (`alpha`), the hex and
+ * red, green and blue inputs, preset colors (`palette`) and, in browsers that support it, a color picked from the
+ * screen. The value follows every change. On a handle, the arrow keys move it by 1 (by 10 with Shift), and Home and
+ * End move it to the ends.
  *
  * @example
  * <ColorPicker x-model={() => this.theme.accent} palette={['#3b5bdb', '#2b8a3e', '#e03131']} />
@@ -134,12 +134,12 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
     this.assignProperty('eyeDropper', value);
   }
 
-  /** The color changed, by the user or by code (`e.byUser`). */
+  /** Occurs when the color changes, either through user input or programmatically (`e.byUser`). */
   get onValueChanged(): MotifEvent<ColorChangedEventArgs> {
     return this.changed.event;
   }
 
-  /** Focuses the area's handle. */
+  /** Sets focus on the handle of the area. */
   override focus(): boolean {
     this.area.thumb.element.focus();
     return document.activeElement === this.area.thumb.element;

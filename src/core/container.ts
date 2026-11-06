@@ -4,20 +4,20 @@ import { Control, type ControlProps } from './control';
 import { deepActiveElement, isFocusable, nextTabbable, tabbableIn } from './focus';
 
 /**
- * A control that remembers which control inside it is active and is a scope
- * for Tab: forms, split panes, later tab pages and document windows.
+ * A control that remembers which control inside it is active and acts as a scope
+ * for Tab, such as a form, a split pane, a tab page or a document window.
  *
  * - `activeControl` follows focus inside it (a nested container counts as one
- *   control and keeps its own `activeControl`). Assigning it focuses that control.
- * - `restoreFocus()` puts focus back where it was the last time the container
- *   was active: a form switching windows, a tab page coming back.
- * - The outermost container of a page or window runs Tab order: controls with
- *   a `tabIndex` go in ascending order, ties in document order. Until some
+ *   control and keeps its own `activeControl`). Assigning it moves focus to that control.
+ * - `restoreFocus()` returns focus to where it was the last time the container
+ *   was active, such as when a form switches windows or a tab page returns.
+ * - The outermost container of a page or window manages Tab order: controls with
+ *   a `tabIndex` are visited in ascending order, and ties follow document order. Until a
  *   control inside sets a `tabIndex`, Tab is left to the browser. A container
  *   that is a modal window (`cyclesTab`) keeps Tab inside itself.
  *
- * Cost: two listeners per container (focusin, keydown), none per control
- * inside; Tab order is computed only on a Tab press that needs it.
+ * Cost: two listeners per container (focusin, keydown) and none per control
+ * inside. Tab order is calculated only when a Tab press needs it.
  */
 export class FocusContainer<TElement extends HTMLElement = HTMLElement, TProps extends ControlProps = ControlProps> extends Control<
   TElement,
@@ -37,9 +37,9 @@ export class FocusContainer<TElement extends HTMLElement = HTMLElement, TProps e
   }
 
   /**
-   * The control inside that has focus, or had it last (what
-   * `document.activeElement` is for the page). Reactive. Setting it focuses
-   * that control.
+   * The control inside that has focus, or last had it. It works like
+   * `document.activeElement` does for the page. Reactive. Setting it moves focus
+   * to that control.
    */
   get activeControl(): Control | null {
     return this.getProperty<Control | null>('activeControl') ?? null;
@@ -58,9 +58,9 @@ export class FocusContainer<TElement extends HTMLElement = HTMLElement, TProps e
   }
 
   /**
-   * Focuses what had focus last inside the container, else its active
-   * control, else the first control in Tab order. Returns `false` when
-   * nothing inside can take focus.
+   * Returns focus to where it was last inside the container. If that is not possible, it moves
+   * to the active control, and then to the first control in Tab order. Returns `false` if
+   * nothing inside can receive focus.
    */
   restoreFocus(): boolean {
     const last = this.lastFocused;

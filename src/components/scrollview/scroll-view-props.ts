@@ -8,23 +8,23 @@ import type { ScrollViewDirection } from './scroll-view-direction';
 
 /** Props of `ScrollView`. Each prop is also a settable property, and a function is tracked. */
 export interface ScrollViewProps extends ControlProps {
-    /** Default `'vertical'`. */
+    /** The scroll direction. The default is `'vertical'`. */
     direction?: Bind<ScrollViewDirection>;
-    /** When the scrollbars show. Default `'onScroll'`. */
+    /** When the scrollbars appear. The default is `'onScroll'`. */
     showScrollbar?: Bind<ScrollViewBars>;
-    /** Pulling the content down from the top asks `onPullDown` for what is new. Default `false`. */
+    /** Pulling the content down from the top raises `onPullDown`. The default is `false`. */
     pullToRefresh?: Bind<boolean>;
-    /** Scrolling near the end asks `onReachBottom` for more. Default `false`. */
+    /** Scrolling near the end raises `onReachBottom`. The default is `false`. */
     loadOnReachBottom?: Bind<boolean>;
-    /** Pixels from the end at which `onReachBottom` is asked. Default `100`. */
+    /** The distance from the end, in pixels, at which `onReachBottom` is raised. The default is `100`. */
     reachBottomOffset?: Bind<number>;
-    /** The texts of the pull-down panel; the kit's when not given. */
+    /** The text of the pull-down panel. When omitted, the kit strings are used. */
     pullDownText?: Bind<string>;
     releaseText?: Bind<string>;
     refreshingText?: Bind<string>;
-    /** The text under the content while more is loading; the kit's "Loading…" when not given. */
+    /** The text below the content while more data loads. When omitted, the kit's "Loading…" string is used. */
     reachBottomText?: Bind<string>;
-    /** What screen readers call the scrolling region. */
+    /** The accessible name of the scrolling region. */
     label?: Bind<string>;
     onPullDown?: (e: PullDownEventArgs) => void;
     onReachBottom?: (e: ReachBottomEventArgs) => void;

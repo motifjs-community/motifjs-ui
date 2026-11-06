@@ -1,9 +1,9 @@
 import type { EventArgs } from '@motifx/core';
 
-/** A row's adaptive detail is about to open or close, by the user or programmatically; `cancel` keeps it as it is. */
+/** Occurs before a row's adaptive detail opens or closes, by the user or programmatically. Set `cancel = true` to prevent it. */
 export interface GridAdaptiveRowExpandingEventArgs<T> extends EventArgs {
   readonly row: T;
-  /** The row's key; `undefined` for a new row. */
+  /** The row's key, or `undefined` for a new row. */
   readonly key: unknown;
   readonly rowIndex: number;
 }

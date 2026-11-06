@@ -56,10 +56,10 @@ function daysBetween(a: Date, b: Date): number {
 }
 
 /**
- * A start and an end date in one field: typed in the locale's order through two masks, or picked on the popup from
- * two months side by side (the first pick the start, the second the end), from ready-made ranges (`presets`), with
- * `min`, `max`, `disabledDates`, and the least and the most days a range may span (`minDays`, `maxDays`). The
- * value is a `[start, end]` pair; `x-model` binds it.
+ * A start and an end date in one field, typed in the locale's order through two masks or picked in the popup from
+ * two months side by side (the first pick is the start, the second the end), or from ready-made ranges (`presets`),
+ * with `min`, `max`, `disabledDates`, and the minimum and maximum length of a range (`minDays`, `maxDays`). The
+ * value is a `[start, end]` pair, and `x-model` provides two-way binding.
  *
  * @example
  * <DateRangeBox label="Stay" x-model={() => this.booking.nights} minDays={1} maxDays={30} presets />
@@ -206,7 +206,7 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         this.assignProperty('closeOnComplete', value);
     }
 
-    /** The start, and the end, as properties of their own. */
+    /** The start and end as separate properties. */
     get startDate(): Date | null {
         return this.value[0];
     }
@@ -220,7 +220,7 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         this.value = [this.peekValue()[0], value];
     }
 
-    /** The start's input; the end's is `endInputElement`. */
+    /** The start input. The end input is `endInputElement`. */
     get inputElement(): HTMLInputElement {
         return this.rangeParts.startInput;
     }
@@ -229,12 +229,12 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         return this.rangeParts.endInput;
     }
 
-    /** A side's text is not a whole, real date yet. */
+    /** Indicates that the text of an end is not yet a complete, valid date. */
     get unfinished(): boolean {
         return this.rangeParts.unfinished.some(Boolean);
     }
 
-    /** Whether the popup is open. Reactive. */
+    /** Indicates whether the popup is open. Reactive. */
     get opened(): boolean {
         return !!this.getProperty<boolean>('opened');
     }
@@ -251,7 +251,7 @@ export class DateRangeBox extends Field<DateRange, DateRangeBoxProps> {
         return this.rangeParts.closed.event;
     }
 
-    /** Opens the calendars; `false` when disabled or read-only. */
+    /** Opens the calendars. Returns `false` when disabled or read-only. */
     open(): boolean {
         if (!this.isEnabled || this.peekProperty('readOnly')) {
             return false;

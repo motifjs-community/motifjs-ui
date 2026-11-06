@@ -1,7 +1,7 @@
 import type { EventArgs } from '@motifx/core';
 import type { Scheduler } from './Scheduler';
 
-/** Another view is about to show; `cancel = true` keeps this one. */
+/** Occurs before the view changes. Set `cancel = true` to keep the current view. */
 export interface ViewChangingEventArgs<T = unknown> extends EventArgs {
   from: string;
   to: string;

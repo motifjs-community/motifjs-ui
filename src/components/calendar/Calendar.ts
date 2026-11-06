@@ -41,8 +41,8 @@ interface Parts {
 }
 
 /**
- * A month of days to pick a date from (the APG date grid), with a year and a decade view to get
- * far quickly. Names of months and days come from the locale.
+ * A month of days for selecting a date (the APG date grid), with year and decade views for moving
+ * quickly. The month and day names come from the locale.
  *
  * @example
  * <Calendar x-model={() => this.form.day} min={new Date()} disabledDates={(d) => d.getDay() === 0} />
@@ -162,7 +162,7 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     this.assignProperty('minView', value);
   }
 
-  /** The view on screen. Reactive. Setting it shows that view. */
+  /** The current view. Reactive. Set it to show that view. */
   get currentView(): CalendarView {
     return this.getProperty<CalendarView | undefined>('shownView') ?? this.parts.view;
   }
@@ -170,7 +170,7 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     this.assignProperty('currentView', value);
   }
 
-  /** The date with the Tab stop; its month (or year) is the one on screen. */
+  /** The date with the Tab stop. Its month or year is the one on screen. */
   get focusedDate(): Date {
     return this.parts.focused;
   }
@@ -188,7 +188,7 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     this.assignProperty('rangeEnd', value);
   }
 
-  /** The pointer came over a day in the month view, or left the days (`null`). */
+  /** Occurs when the pointer moves over a day in the month view, or leaves the days (`null`). */
   get onDayPointed(): MotifEvent<Date | null> {
     return this.parts.pointed.event;
   }
@@ -197,13 +197,13 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     return this.parts.valueChanged.event;
   }
 
-  /** Shows the month of `date` and puts the Tab stop on it. */
+  /** Shows the month of `date` and places the Tab stop on it. */
   goTo(date: Date): void {
     this.parts.focused = dayStart(date);
     this.render();
   }
 
-  /** Focuses the cell with the Tab stop. */
+  /** Sets focus on the cell with the Tab stop. */
   override focus(): boolean {
     const cell = this.parts.grid.querySelector<HTMLElement>('[tabindex="0"]');
     if (!cell || !this.isEnabled) return false;
@@ -211,7 +211,7 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     return document.activeElement === cell;
   }
 
-  /** Whether `date` can be chosen: inside min and max, and not one of the disabled dates. */
+  /** Indicates whether `date` can be selected: within min and max, and not one of the disabled dates. */
   canChoose(date: Date): boolean {
     const min = this.peekProperty<Date | null>('min');
     const max = this.peekProperty<Date | null>('max');

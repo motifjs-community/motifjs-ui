@@ -1,4 +1,4 @@
-/** Cells of a `GridSheet` that make one: a band's header over its columns, a column's header down the band rows. */
+/** Merged cells of a `GridSheet`: a band's header over its columns, or a column's header down the band rows. */
 export interface GridSheetMerge {
   /** The first row, an index into `rows`. */
   readonly row: number;

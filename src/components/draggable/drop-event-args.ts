@@ -2,10 +2,10 @@ import type { EventArgs } from '@motifx/core';
 import type { Draggable } from './Draggable';
 import type { DropTarget } from './DropTarget';
 
-/** A draggable came over a target (`cancel = true` refuses it), left it, or was dropped on it. */
+/** The arguments of a drop target's events. In `onDragEntering`, set `cancel = true` to reject the draggable. */
 export interface DropEventArgs extends EventArgs {
     draggable: Draggable;
-    /** The draggable's `data`, as given. */
+    /** The draggable's `data`, exactly as provided. */
     data: unknown;
     source: DropTarget;
     event?: Event;

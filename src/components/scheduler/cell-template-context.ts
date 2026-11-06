@@ -1,17 +1,17 @@
 import type { SchedulerViewType } from './scheduler-view-type';
 
-/** What a cell template gets: the cell's time (it changes in place with the date shown). */
+/** The context of a cell template: the cell's time, which changes in place with the displayed date. */
 export interface CellTemplateContext {
   readonly start: Date;
   readonly end: Date;
-  /** A cell of a whole day (the all-day panel, the month, the timeline month). */
+  /** Indicates a whole-day cell (the all-day panel, the month, the timeline month). */
   readonly allDay: boolean;
-  /** Its group's resource values, by field; `null` without groups. */
+  /** The resource values of its group, by field. `null` without groups. */
   readonly resources: Record<string, unknown> | null;
   readonly view: SchedulerViewType;
   readonly today: boolean;
-  /** In the work hours of its group. */
+  /** Indicates that the cell is within the work hours of its group. */
   readonly work: boolean;
-  /** In a blocked time. */
+  /** Indicates that the cell is within a blocked time. */
   readonly blocked: boolean;
 }

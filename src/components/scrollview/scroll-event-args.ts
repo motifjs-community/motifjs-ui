@@ -1,6 +1,6 @@
 import type { ScrollView } from './ScrollView';
 
-/** The content moved: where it stands now. */
+/** The arguments of `onScrolled`: the current scroll position. */
 export interface ScrollEventArgs {
     top: number;
     left: number;

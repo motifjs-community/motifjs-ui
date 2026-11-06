@@ -3,7 +3,7 @@ import { ComboBox } from './ComboBox';
 import type { ComboBoxProps } from './combo-box-props';
 
 /**
- * A text field that suggests items while typing; the value is the text itself, picked from the list
+ * A text field that suggests items during typing. The value is the text itself, picked from the list
  * or typed freely.
  *
  * @example

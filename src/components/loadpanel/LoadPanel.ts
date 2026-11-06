@@ -14,10 +14,10 @@ import type { LoadPanelTarget } from "./load-panel-target";
 const OWN = ['target', 'value', 'delay', 'shade', 'showPane', 'showIndicator', 'cancelable', 'cancelText', 'closeOnOutside'] as const;
 
 /**
- * A "loading" layer over a container or the whole page: a shade, a pane with a turning indicator and a message,
- * a Cancel button when the work can be stopped. What is under it cannot be pressed or focused meanwhile; focus
- * that was inside waits on the pane and comes back afterwards. It shows after `delay`, so quick work does not
- * flash it. `value` (or `x-model`) shows and hides it; so do `show()` and `hide()`.
+ * A loading layer over a container or the whole page: a shade, a box with a rotating indicator and a message, and
+ * a Cancel button when the work can be stopped. The covered area cannot be clicked or focused in the meantime, and focus
+ * that was inside moves to the box and returns afterward. It appears after `delay`, so quick operations show
+ * nothing. `value` (or `x-model`), `show()` and `hide()` control it.
  *
  * @example
  * <LoadPanel target={() => this.ordersPanel} message="Loading orders" x-model={() => this.state.loading} />
@@ -114,7 +114,7 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
     set message(value: Bind<string>) {
         this.text = value;
     }
-    /** Shown or not. Reactive; setting it shows or hides. */
+    /** Indicates whether the panel is shown. Reactive. Set it to show or hide the panel. */
     get value(): boolean {
         return !!this.getProperty<boolean>('value');
     }
@@ -164,7 +164,7 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
         this.assignProperty('closeOnOutside', value, Boolean);
     }
 
-    /** Whether it is on the screen now (after its delay). */
+    /** Indicates whether the panel is currently on screen, after its delay. */
     get isShown(): boolean {
         return this.shownNow;
     }
@@ -177,12 +177,12 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
         return this.hiddenEmitter.event;
     }
 
-    /** The Cancel button was pressed (or Escape); the panel hides after. */
+    /** Occurs when the Cancel button or Escape is pressed. The panel hides afterward. */
     get onCancel(): MotifEvent<void> {
         return this.cancelled.event;
     }
 
-    /** Shows it over its target after `delay`; `false` when it is shown or waiting already. */
+    /** Shows the panel over its target after `delay`. Returns `false` while it is shown or waiting. */
     show(): boolean {
         if (this.shownNow || this.timer) {
             return false;
@@ -200,7 +200,7 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
         return true;
     }
 
-    /** Hides it; what it covered can be used again, and focus goes back where it was. */
+    /** Hides the panel. The covered area can be used again, and focus returns to where it was. */
     hide(): void {
         if (this.timer) {
             clearTimeout(this.timer);
@@ -229,7 +229,7 @@ export class LoadPanel extends Control<HTMLDivElement, LoadPanelProps> {
         this.hiddenEmitter.fire();
     }
 
-    /** What the Cancel button does: tells `onCancel`, then hides. */
+    /** The action of the Cancel button: raises `onCancel`, and then hides the panel. */
     cancel(): void {
         this.cancelled.fire();
         this.hide();

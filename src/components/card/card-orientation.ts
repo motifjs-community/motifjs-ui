@@ -1,2 +1,2 @@
-/** Where a card's picture stands: above the rest, or at its start. */
+/** The position of a card's image: above the rest, or at the start. */
 export type CardOrientation = 'vertical' | 'horizontal';

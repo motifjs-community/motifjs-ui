@@ -10,8 +10,8 @@ type Source<T> = data.DataSource<T, unknown>;
 
 /**
  * The items of a list control, from an array in memory or from a `DataSource` of the data layer
- * (any adapter: REST, OData, a service…). It searches, tells when the items change, and finds the
- * item of a value even when it is on no loaded page.
+ * (any adapter: REST, OData, a service…). It searches, reports when the items change, and finds the
+ * item of a value even when it is not on a loaded page.
  */
 export class DataItems<T> implements ItemSource<T>, IDisposable {
   private array: readonly T[] = [];
@@ -23,13 +23,13 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
 
   /** How an item is searched in memory. */
   textOf: (item: T) => string = (item) => String(item);
-  /** The field of an item that holds its value, when it is not the source's key: a value on no loaded page is requested by it. */
+  /** The field of an item that holds its value, when it is not the source's key. It is used to request unloaded values. */
   valueField: string | undefined;
   searchMode: 'contains' | 'startswith' = 'contains';
 
   readonly onChanged: MotifEvent<void> = this.changedEmitter.event;
 
-  /** Items in memory, read as they are now; the search runs over them here. Call it again after they changed. */
+  /** Sets items in memory, read as they are now. The search runs over them here. Call it again after they change. */
   setArray(items: readonly T[]): void {
     this.detach();
     this.array = givenList(items);
@@ -37,7 +37,7 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
     this.changedEmitter.fire();
   }
 
-  /** Items from a data source; the search goes to it (`searchFields`), and it loads when first needed. */
+  /** Sets items from a data source. The search runs on the source (`searchFields`), and it loads when first needed. */
   setDataSource(source: Source<T>): void {
     if (source === this.source) return;
     this.detach();
@@ -51,7 +51,7 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
     return this.source;
   }
 
-  /** Whether rows are loading. */
+  /** Indicates whether rows are loading. */
   get loading(): boolean {
     return this.source?.status === 'loading';
   }
@@ -102,9 +102,9 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
   }
 
   /**
-   * The item whose value is `value`: among the items, else asked from the data source by key, through
-   * the cache every list and grid over the same adapter shares (`KeyedItems`), so the keys several
-   * lists need at once go out in one request.
+   * Returns the item whose value is `value`: from the items, otherwise requested from the data source by key,
+   * through the cache that every list and grid over the same adapter shares (`KeyedItems`), so the keys
+   * several lists need at once go out in one request.
    */
   async find(value: unknown, valueOf: (item: T) => unknown, same: (a: unknown, b: unknown) => boolean = Object.is): Promise<T | undefined> {
     const near = this.findLoaded(value, valueOf, same);
@@ -120,13 +120,13 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
     return pool.find((item) => same(valueOf(item), value));
   }
 
-  /** What is known of the item `find` asked the data source for: still asked for, found, or not in the source. */
+  /** What is known of the item `find` requested from the data source: loading, found, or not in the source. */
   known(value: unknown): KeyedItem<T> | undefined {
     if (!this.source || value === null || value === undefined) return undefined;
     return KeyedItems.of<T>(this.source, this.valueField).get(value);
   }
 
-  /** Asks the data source again for the item of `value` after its request failed. */
+  /** Requests the item of `value` from the data source again after its request failed. */
   async retry(value: unknown): Promise<T | undefined> {
     if (!this.source || value === null || value === undefined) return undefined;
     const known = KeyedItems.of<T>(this.source, this.valueField);

@@ -1,17 +1,17 @@
 import type { data } from '@motifx-community/data';
 
 /**
- * The selected rows as a state, not a list: one by one (`keys`), or every row of `filter` but
- * `except`, which is what "select all" gives over data of any size. Send it to the server for work on
- * the selected rows; `grid.selectionFilter` turns it into a filter when the key is one field.
+ * The selected rows as a state: one by one (`keys`), or every row of `filter` except `except`, which is
+ * what "select all" produces over data of any size. Send it to the server for operations on the
+ * selected rows. `grid.selectionFilter` converts it to a filter when the key is a single field.
  */
 export interface GridSelection {
-  /** Every row of `filter` is selected but the ones in `except`. */
+  /** Indicates that every row of `filter` is selected, except those in `except`. */
   all: boolean;
-  /** Keys of the selected rows, while `all` is `false`. */
+  /** The keys of the selected rows, while `all` is `false`. */
   keys: unknown[];
-  /** Keys of the rows omitted, while `all` is `true`. */
+  /** The keys of the omitted rows, while `all` is `true`. */
   except: unknown[];
-  /** The rows' filter when everything was selected (the source's filter, the grid's filters in it). */
+  /** The rows' filter when everything was selected (the source's filter, including the grid's filters). */
   filter: data.FilterExpression | null;
 }

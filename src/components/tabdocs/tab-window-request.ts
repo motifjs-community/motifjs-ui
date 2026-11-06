@@ -1,12 +1,12 @@
 import type { TabRect } from './tab-rect';
 
-/** What `openWindow` is asked to open: the arguments of `window.open`, and the place they say. */
+/** What `openWindow` is requested to open: the arguments of `window.open`, and the position they describe. */
 export interface TabWindowRequest {
   url: string;
-  /** The window's name: a new one each time. */
+  /** The window's name, which is new each time. */
   name: string;
   /** `popup,width=…,height=…,left=…,top=…`. */
   features: string;
-  /** The place and size on the screen `features` says. */
+  /** The position and size on the screen that `features` describes. */
   rect: TabRect;
 }

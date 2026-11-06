@@ -1,7 +1,7 @@
 import type { EventArgs } from '@motifx/core';
 import type { GridLayout } from './grid-layout';
 
-/** The user changed the layout (resize, move, hide, pin, sort, reset); `cancel` puts the one before back. */
+/** Occurs when the user resizes, moves, hides, pins, sorts or resets. Set `cancel = true` to restore the previous layout. */
 export interface GridLayoutChangingEventArgs extends EventArgs {
   readonly layout: GridLayout;
   readonly previous: GridLayout;

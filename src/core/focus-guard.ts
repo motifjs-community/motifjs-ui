@@ -1,5 +1,5 @@
 import { closestControl } from './control-map';
-import { isShown, nextTabbable, tabbableIn } from './focus';
+import { isShown, keepsKeys, rescueStop, tabbableIn } from './focus';
 import { isHtmlElement } from './node-kind';
 import { eachDocument } from './page-documents';
 
@@ -48,7 +48,7 @@ function rescueFrom(el: HTMLElement, trail: Trail): HTMLElement | null {
   // Still in the document (hidden by CSS): search around the element itself.
   if (el.isConnected) {
     const scope = el.closest('dialog') ?? el.ownerDocument.body;
-    return nextTabbable(el, scope) ?? nextTabbable(el, scope, false);
+    return rescueStop(el, scope);
   }
   // Removed: the topmost removed ancestor's parent and old next sibling mark the spot.
   const step = trail.find((s) => !s.node.isConnected && s.parent?.isConnected);
@@ -60,5 +60,6 @@ function rescueFrom(el: HTMLElement, trail: Trail): HTMLElement | null {
       ? t === next || !!(next.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING)
       : !parent.contains(t) && !!(parent.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING);
   const all = tabbableIn(parent.closest('dialog') ?? parent.ownerDocument.body);
-  return all.find(isAfter) ?? all.filter((t) => !isAfter(t)).pop() ?? null;
+  const stops = all.filter(keepsKeys);
+  return stops.find(isAfter) ?? stops.filter((t) => !isAfter(t)).pop() ?? all[0] ?? null;
 }

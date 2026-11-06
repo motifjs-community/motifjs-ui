@@ -2,16 +2,16 @@ import type { Bind } from '@motifx/core';
 
 /** A column's field in the edit form. */
 export interface GridColumnFormItem {
-  /** `false` leaves the column out of the form. Default `true`. */
+  /** `false` omits the column from the form. The default is `true`. */
   visible?: Bind<boolean>;
-  /** Form columns it spans; `'all'` the whole line. */
+  /** The form columns it spans, or `'all'` for the whole line. */
   colSpan?: number | 'all';
-  /** The label. Default: the column's title. */
+  /** The label. The default is the column's title. */
   label?: Bind<string>;
-  /** A line under the editor. */
+  /** A line of help text below the editor. */
   helpText?: Bind<string>;
-  /** Props of its editor in the form only, over the column's (`lookup.editorOptions`). */
+  /** The props of its editor in the form only, over the column's (`lookup.editorOptions`). */
   editorOptions?: Record<string, unknown>;
-  /** Its place in the form; lower first. Default: the column's place. */
+  /** Its position in the form, lowest first. The default is the column's position. */
   order?: number;
 }

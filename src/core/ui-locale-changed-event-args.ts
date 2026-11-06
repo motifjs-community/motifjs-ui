@@ -1,4 +1,4 @@
-/** `uiLocale.onChanged`: the locale now and the one before (the same when only the texts changed). */
+/** The arguments of `uiLocale.onChanged`: the current locale and the previous one (the same if only the strings changed). */
 export interface UiLocaleChangedEventArgs {
   locale: string;
   previous: string;

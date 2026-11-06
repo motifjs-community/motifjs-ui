@@ -1,7 +1,7 @@
 import type { Bind } from '@motifx/core';
 
 /**
- * One check of a value. Without a `message` the text comes from `uiLocale`. Empty values pass
+ * One validation of a value. Without a `message`, the text comes from `uiLocale`. Empty values pass
  * every rule except `required` and `compare`.
  */
 export type ValidationRule<T = unknown> =
@@ -12,9 +12,9 @@ export type ValidationRule<T = unknown> =
   | { type: 'pattern'; pattern: Bind<RegExp | string>; message?: Bind<string>; enabled?: Bind<boolean> }
   | { type: 'length'; min?: Bind<number>; max?: Bind<number>; message?: Bind<string>; enabled?: Bind<boolean> }
   | { type: 'range'; min?: Bind<number | Date>; max?: Bind<number | Date>; message?: Bind<string>; enabled?: Bind<boolean> }
-  /** Equal to another value (a repeated password); with `not`, different from it. */
+  /** Equal to another value, such as a repeated password. With `not`, different from it. */
   | { type: 'compare'; with: () => unknown; not?: Bind<boolean>; message?: Bind<string>; enabled?: Bind<boolean> }
-  /** `true` or nothing passes, `false` fails, a string fails with that text. May be async. */
+  /** `true` or no value passes, `false` fails, and a string fails with that text. It can be async. */
   | {
       type: 'custom';
       check: (value: T) => CheckResult | Promise<CheckResult>;

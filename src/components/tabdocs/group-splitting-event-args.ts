@@ -4,14 +4,14 @@ import type { TabDocument } from './TabDocument';
 import type { TabDocumentManager } from './TabDocumentManager';
 import type { TabGroup } from './TabGroup';
 
-/** A group is about to be split (or the whole layout, along an edge); `cancel = true` keeps the layout. */
+/** Occurs before a group, or the whole layout along an edge, is split. Set `cancel = true` to keep the layout. */
 export interface GroupSplittingEventArgs extends EventArgs {
-  /** The group split; `null` when the new group goes along an edge of the whole layout. */
+  /** The group being split, or `null` when the new group runs along an edge of the whole layout. */
   group: TabGroup | null;
   direction: SplitDirection;
-  /** The document that goes into the new group, if any. */
+  /** The document that moves into the new group, if any. */
   document: TabDocument | null;
-  /** The document is copied into the new group (`splitCopies`), not moved. */
+  /** Indicates that the document is copied into the new group (`splitCopies`) instead of moved. */
   copy: boolean;
   byUser: boolean;
   source: TabDocumentManager;

@@ -1,6 +1,6 @@
 import type { EventArgs } from '@motifx/core';
 
-/** The search text is about to change (typed, or set programmatically); `cancel` keeps the one before. */
+/** Occurs before the search text changes, typed or set programmatically. Set `cancel = true` to keep the previous text. */
 export interface GridSearchTextChangingEventArgs extends EventArgs {
   readonly text: string;
   readonly previous: string;

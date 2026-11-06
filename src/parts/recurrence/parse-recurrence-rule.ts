@@ -33,8 +33,8 @@ function weekdays(text: string): RuleWeekday[] | null {
 /**
  * Reads a recurrence rule (RFC 5545 `RRULE`, with or without the `RRULE:` name): `FREQ` daily to
  * yearly, `INTERVAL`, `COUNT`, `UNTIL`, `BYDAY` (`2MO`, `-1FR`), `BYMONTHDAY`, `BYMONTH`,
- * `BYYEARDAY`, `BYWEEKNO`, `BYHOUR`, `BYMINUTE`, `BYSECOND`, `BYSETPOS`, `WKST`. `null` when the
- * text is not a rule it can follow (a part it knows with a wrong value, or hourly and shorter).
+ * `BYYEARDAY`, `BYWEEKNO`, `BYHOUR`, `BYMINUTE`, `BYSECOND`, `BYSETPOS`, `WKST`. Returns `null` if the
+ * text is not a rule it can follow (a known part with a wrong value, or hourly and shorter).
  *
  * @example
  * parseRecurrenceRule('FREQ=MONTHLY;BYDAY=-1FR;COUNT=6')

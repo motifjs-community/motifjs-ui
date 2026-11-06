@@ -3,16 +3,15 @@ import type { PdfExportResult } from './pdf-export-result';
 import { PdfTable } from './pdf-table';
 
 /**
- * Draws a DataGrid on a jsPDF document as a table's `pdfExporter.exportDataGrid`
- * does: the header rows (bands merged over their columns), the rows in the grid's order with its
- * filter, search and grouping (every matching row, loaded in parts from a server), the group rows,
- * the group footers and the totals, with the grid's texts and alignment. Columns take the grid's
- * widths, narrowed to fit the page; rows that do not fit go on to the next page under the header
- * rows again. Only jsPDF itself is used (no table plugin). Bring your own jsPDF: make the document,
- * then save it when the promise resolves.
+ * Draws a DataGrid on a jsPDF document as a table: the header rows (bands merged over their columns),
+ * the rows in the grid's order with its filter, search and grouping (every matching row, loaded in
+ * parts from a server), the group rows, the group footers and the totals, with the grid's text and
+ * alignment. Columns take the grid's widths, narrowed to fit the page, and rows that do not fit continue
+ * on the next page under repeated header rows. Only jsPDF itself is used, with no table plugin. Provide
+ * your own jsPDF: create the document, then save it when the promise resolves.
  *
- * jsPDF's own fonts write Latin-1 text only: for other letters (ş, ğ, İ, Cyrillic, Greek…) add a
- * TrueType font that has them (`doc.addFileToVFS`, `doc.addFont`) and `doc.setFont` it first.
+ * jsPDF's built-in fonts write Latin-1 text only. For other letters (ş, ğ, İ, Cyrillic, Greek…), add a
+ * TrueType font that has them (`doc.addFileToVFS`, `doc.addFont`) and select it first with `doc.setFont`.
  *
  * @example
  * onExporting={(e) => {

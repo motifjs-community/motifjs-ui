@@ -5,6 +5,6 @@
 export interface RuleDate {
   time: number;
   utc: boolean;
-  /** Only a date (`20261031`), no time. */
+  /** A date only (`20261031`), with no time. */
   dateOnly: boolean;
 }

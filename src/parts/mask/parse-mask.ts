@@ -2,7 +2,7 @@ import type { MaskChar } from './mask-char';
 import { maskChars } from './mask-chars';
 import type { MaskSlot } from './mask-slot';
 
-/** `(000) 000 00 00` → its places. `\` makes the next character fixed. */
+/** Parses a mask such as `(000) 000 00 00` into its places. `\` makes the next character fixed. */
 export function parseMask(mask: string, chars: Readonly<Record<string, MaskChar>> = {}): MaskSlot[] {
   const known = { ...maskChars, ...chars };
   const slots: MaskSlot[] = [];

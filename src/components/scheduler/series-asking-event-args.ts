@@ -4,8 +4,8 @@ import type { Scheduler } from './Scheduler';
 import type { SeriesAction } from './series-action';
 
 /**
- * The user is about to be asked what a change (or a delete) of an occurrence reaches. Set `scope`
- * to answer without the question, narrow `scopes` to offer fewer, or `cancel = true` to drop the change.
+ * Occurs before the user is asked what a change or a delete of an occurrence applies to. Set `scope`
+ * to answer without prompting, narrow `scopes` to offer fewer, or set `cancel = true` to discard the change.
  */
 export interface SeriesAskingEventArgs<T = unknown> extends EventArgs {
   /** The occurrence. */

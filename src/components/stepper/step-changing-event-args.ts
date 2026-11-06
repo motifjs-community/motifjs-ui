@@ -2,16 +2,16 @@ import type { EventArgs } from '@motifx/core';
 import type { Stepper } from './Stepper';
 
 /**
- * The current step is about to change. `cancel = true` keeps it; `promise` may be set to wait (a validation, a
- * server): the step changes when it resolves to `true`.
+ * Provides data for the event that occurs before the current step changes. Set `cancel = true` to keep it, or set
+ * `promise` to wait (for a validation or a server), and the step changes when it resolves to `true`.
  */
 export interface StepChangingEventArgs extends EventArgs {
     from: number;
     to: number;
-    /** The items as given; `null` when there is none (no current step). */
+    /** The items as provided, or `null` if there is no current step. */
     fromItem: unknown;
     toItem: unknown;
-    /** By a click on a step, else programmatically. */
+    /** `true` for a click on a step, and `false` for a programmatic change. */
     byUser: boolean;
     promise?: Promise<boolean>;
     source: Stepper;

@@ -24,8 +24,8 @@ function buttonOf(button: NonNullable<MessageBoxOptions['buttons']>[number]): Me
 }
 
 /**
- * Shows a modal message with its buttons and resolves with the result of the one pressed
- * (`'cancel'` for Escape when no button cancels). Built on `MxForm`.
+ * Shows a modal message with its buttons and resolves with the result of the clicked button
+ * (`'cancel'` for Escape when no button cancels). It is built on `MxForm`.
  *
  * @example
  * const answer = await messageBox({ title: 'Unsaved changes', text: 'Save them first?', buttons: ['yes', 'no', 'cancel'], tone: 'caution' });

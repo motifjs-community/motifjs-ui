@@ -7,29 +7,32 @@ import type { SplitterMovedEventArgs } from './splitter-moved-event-args';
 
 /** Props of `SplitContainer`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface SplitContainerProps extends ControlProps {
-  /** `'horizontal'`: the panes side by side (default); `'vertical'`: one over the other. */
+  /** `'horizontal'` places the panes side by side (the default), and `'vertical'` stacks them. */
   orientation?: Bind<LayoutOrientation>;
   /**
-   * The size of the pane that keeps its size (`fixedPanel`; the first one with `'none'`): pixels,
-   * a share (`'30%'`) or a CSS length. Default `'50%'`. `x-model` binds it two-way.
+   * The size of the pane that keeps its size (`fixedPanel`, or the first pane with `'none'`), in pixels,
+   * as a share (`'30%'`) or as a CSS length. The default is `'50%'`. `x-model` provides two-way binding.
    */
   position?: Bind<SplitPosition>;
-  /** The pane that keeps its size when the container is resized. `'none'` (default): both grow, the position is kept as a share. */
+  /**
+   * The pane that keeps its size when the container is resized. With `'none'`, the default, both panes grow
+   * and the position is kept as a share.
+   */
   fixedPanel?: Bind<SplitPanel>;
-  /** The smallest size of the first pane, in pixels. Default 0. */
+  /** The minimum size of the first pane, in pixels. The default is 0. */
   firstMinSize?: Bind<number>;
-  /** The smallest size of the second pane, in pixels. Default 0. */
+  /** The minimum size of the second pane, in pixels. The default is 0. */
   secondMinSize?: Bind<number>;
-  /** A pane that is hidden, the other one taking all the room. Default `'none'`. */
+  /** The hidden pane. The other pane takes all the space. The default is `'none'`. */
   collapsed?: Bind<SplitPanel>;
-  /** The splitter can be moved with the pointer and the keys. Default `true`. */
+  /** Lets the pointer and keyboard move the splitter. The default is `true`. */
   resizable?: Bind<boolean>;
-  /** Enter and a double click on the splitter hide and restore the first pane. Default `true`. */
+  /** Lets Enter and a double-click on the splitter hide and restore the first pane. The default is `true`. */
   collapsible?: Bind<boolean>;
-  /** How far an arrow key moves the splitter, in pixels. Default 10. */
+  /** The distance an arrow key moves the splitter, in pixels. The default is 10. */
   step?: Bind<number>;
-  /** The splitter's accessible name. Default `uiLocale.strings.resize`. */
+  /** The accessible name of the splitter. The default is `uiLocale.strings.resize`. */
   splitterLabel?: Bind<string>;
-  /** The splitter was moved, or a pane hidden or restored. */
+  /** Occurs when the splitter moves, or when a pane is hidden or restored. */
   onSplitterMoved?: (e: SplitterMovedEventArgs) => void;
 }

@@ -37,10 +37,10 @@ function length(value: unknown): string {
 }
 
 /**
- * Children stuck to its edges in the order they come — `top`, `bottom`, `start`, `end` — with
- * a `fill` child taking what is left, and `float` children placed over the rest by their own
- * anchors. Each child says where in its own `dock` prop, whatever kind of component it is. Laid
- * out with CSS grid: nothing runs when the size changes.
+ * Children docked to its edges in the order they appear (`top`, `bottom`, `start`, `end`), with
+ * a `fill` child taking the remaining space and `float` children placed over the rest by their own
+ * anchors. Each child declares its position in its own `dock` prop, whatever kind of component it is.
+ * It is laid out with CSS grid, so nothing runs when the size changes.
  *
  * @example
  * <DockPanel style="block-size: 100vh">
@@ -79,7 +79,7 @@ export class DockPanel extends Control<HTMLDivElement, DockPanelProps> {
     this.assignProperty('padding', value);
   }
 
-  /** Where a child is docked, as its props say or as set with {@link setDock}. */
+  /** The dock position of a child, from its props or as set with {@link setDock}. */
   dockOf(child: ComponentBase): Dock {
     const dock = this.settings.get(child, 'dock') as Dock | undefined;
     return dock && DOCKS.has(dock) ? dock : 'fill';
@@ -90,7 +90,7 @@ export class DockPanel extends Control<HTMLDivElement, DockPanelProps> {
     this.settings.set(child, 'dock', dock);
   }
 
-  /** Sets the anchors of a `float` child programmatically; each is a value or a function. Fields omitted stay. */
+  /** Sets the anchors of a `float` child programmatically. Each is a value or a function, and omitted fields do not change. */
   setAnchors(child: ComponentBase, anchors: Omit<DockChildProps, 'dock'>): void {
     for (const [name] of ANCHORS) if (anchors[name] !== undefined) this.settings.set(child, name, anchors[name]);
   }

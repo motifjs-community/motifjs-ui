@@ -75,6 +75,22 @@ const size = (s: BottomSheet) => s.panelElement.style.getPropertyValue('--_size'
 const handle = (s: BottomSheet) => s.element.querySelector<HTMLElement>('.mx-bottom-sheet__handle')!;
 
 describe('BottomSheet', () => {
+  it('leaves an iframe out of the focus on open, so that Escape still closes it', async () => {
+    const state = reactive({ open: false });
+    let sheet!: BottomSheet;
+    page(
+      <BottomSheet ref={(s: BottomSheet) => (sheet = s)} title="Help" container={room()} x-model={() => state.open}>
+        <iframe srcdoc="<p>Help</p>" />
+      </BottomSheet>,
+    );
+    await settle();
+    state.open = true;
+    await settle();
+    expect(document.activeElement).toBe(sheet.panelElement);
+    press('Escape', sheet.panelElement);
+    expect(state.open).toBe(false);
+  });
+
   it('opens over its container as a modal dialog named by its title, and closes with Escape giving focus back', async () => {
     const box = room();
     const before = document.createElement('button');

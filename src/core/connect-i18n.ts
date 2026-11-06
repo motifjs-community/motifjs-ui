@@ -3,8 +3,8 @@ import type { UiLocale } from './UiLocale';
 import { uiLocale } from './ui-locale';
 
 /**
- * Keeps the kit's language with the app's: the kit switches when the app's translations do (their
- * `onLocaleChanged`), loading its own pack. Returns what stops it.
+ * Keeps the kit's language in sync with the app's. The kit switches when the app's translations do
+ * (their `onLocaleChanged`), loading its own pack. Returns a function that stops it.
  *
  * @example
  * const i18n = createI18n({ locale: 'tr', load: (l) => import(`./locales/${l}.json`) });

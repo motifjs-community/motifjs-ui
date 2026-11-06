@@ -7,9 +7,9 @@ import type { TabRect } from './tab-rect';
 export interface TabLayoutWindow {
   rect: TabRect;
   maximized?: boolean;
-  /** Its bar settings given as plain values (`TabBarSettings`). */
+  /** Its bar settings that were set as plain values (`TabBarSettings`). */
   bar?: TabLayoutBar;
   root: TabLayoutNode;
-  /** Where "Dock" puts it back: a dock area, or the group (its index in `groups`) it came from. */
+  /** Where "Dock" returns it: a dock area, or its original group (an index in `groups`). */
   dock?: { side: TabDockSide | null; group: number | null };
 }

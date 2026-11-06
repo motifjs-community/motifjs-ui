@@ -7,20 +7,23 @@ import type { AvatarTone } from './avatar-tone';
 
 /** Props of `Avatar`. Each prop is also a settable property, and a function is tracked. */
 export interface AvatarProps extends ControlProps {
-  /** The picture. Until it loads, or when it cannot, the initials (else the person icon) show. */
+  /** The picture. Until it loads, or if it fails, the initials appear, or the person icon if there are none. */
   src?: Bind<string | null>;
-  /** Whose avatar it is: the initials are created from it, and screen readers say it. */
+  /** The person's name. It is used to create the initials and is announced by screen readers. */
   name?: Bind<string>;
-  /** Initials of your own instead of the ones made from `name`. */
+  /** Custom initials that replace the ones created from `name`. */
   initials?: Bind<string>;
-  /** What screen readers say instead of the name. */
+  /** The text screen readers announce instead of the name. */
   label?: Bind<string>;
-  /** Default `'md'`; in a group, the group's. */
+  /** The default is `'md'`. In a group, the group's size applies. */
   size?: Bind<AvatarSize>;
-  /** Default: the design language's (`circle`). */
+  /** The default comes from the design language (`circle`). */
   shape?: Bind<AvatarShape>;
-  /** The color without a picture; `auto` takes one from the name, the same for the same name. Default: the design language's. */
+  /**
+   * The color when there is no picture. `auto` derives a tone from the name, so the same name always has the same tone.
+   * The default comes from the design language.
+   */
   tone?: Bind<AvatarTone>;
-  /** A presence dot on the lower end corner; `null`: none. Default `null`. */
+  /** A presence dot on the lower end corner. The default, `null`, shows none. */
   status?: Bind<AvatarStatus | null>;
 }

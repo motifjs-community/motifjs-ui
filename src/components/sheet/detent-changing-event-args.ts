@@ -1,11 +1,11 @@
 import type { BottomSheet } from './BottomSheet';
 import type { BottomSheetDetent } from './bottom-sheet-detent';
 
-/** A bottom sheet is about to stop at another height; `to` can be changed, `cancel = true` keeps it where it was. */
+/** The arguments of `onDetentChanging`. `to` can be changed, and `cancel = true` keeps the sheet at its current height. */
 export interface DetentChangingEventArgs {
   from: BottomSheetDetent;
   to: BottomSheetDetent;
-  /** The finger, the mouse or a key moved it; `false` for code. */
+  /** `true` when a finger, the mouse or a key moved it, `false` when code did. */
   byUser: boolean;
   cancel: boolean;
   source: BottomSheet;

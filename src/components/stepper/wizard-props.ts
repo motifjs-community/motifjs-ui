@@ -10,38 +10,50 @@ import type { WizardStepProps } from './wizard-step-props';
 
 /** Props of `Wizard`. Each prop is also a settable property, and a function is tracked. */
 export interface WizardProps extends ControlProps {
-    /** Steps made programmatically, each as the props of a `WizardStep` (`title`, `content`, …); the JSX `WizardStep` children come first. */
+    /**
+     * Steps created programmatically, each as `WizardStep` props (`title`, `content`, …). JSX `WizardStep` children come
+     * first.
+     */
     steps?: readonly WizardStepProps[];
-    /** The current step: its `key`, else its index. `x-model` binds it two-way. Default `0`. */
+    /** The current step, identified by its `key` or index. `x-model` provides two-way binding. The default is `0`. */
     value?: Bind<string | number | null>;
-    /** The steps are taken in order: a step is reached only after the ones before it. Default `true`. */
+    /** Steps are taken in order: a step can be reached only after the previous ones. The default is `true`. */
     linear?: Bind<boolean>;
-    /** `horizontal`: the stepper above the pages; `vertical`: beside them. Default `'horizontal'`. */
+    /**
+     * `horizontal` places the stepper above the pages, and `vertical` places it next to them. The default is
+     * `'horizontal'`.
+     */
     orientation?: Bind<StepperOrientation>;
-    /** Where the stepper's texts sit, horizontal only. Default `'bottom'`. */
+    /** The position of the stepper text, in the horizontal orientation only. The default is `'bottom'`. */
     labelPosition?: Bind<StepperLabelPosition>;
-    /** The stepper's size. Default `'md'`. */
+    /** The size of the stepper. The default is `'md'`. */
     size?: Bind<ControlSize>;
-    /** The stepper is shown. Default `true`. */
+    /** Shows the stepper. The default is `true`. */
     showStepper?: Bind<boolean>;
-    /** The steps of the stepper can be pressed. Default `true`. */
+    /** Lets the user click the stepper steps. The default is `true`. */
     clickable?: Bind<boolean>;
-    /** The bar with the Back and Next buttons. Default `true`. */
+    /** Shows the bar with the Back and Next buttons. The default is `true`. */
     showNavigation?: Bind<boolean>;
-    /** A page is built when first shown, then kept (a step's own `lazy` wins). Default `true`. */
+    /** Creates a page when first shown and then keeps it. A step's own `lazy` takes precedence. The default is `true`. */
     lazy?: Bind<boolean>;
-    /** `false`: content made by a step's `content` is disposed while hidden (a step's own `keepAlive` wins). Default `true`. */
+    /**
+     * With `false`, content created by a step's `content` is disposed while hidden. A step's own `keepAlive` takes
+     * precedence. The default is `true`.
+     */
     keepAlive?: Bind<boolean>;
-    /** The buttons' texts; the kit's “Back”, “Next” and “Finish” when not given. */
+    /** The button text. The kit strings "Back", "Next" and "Finish" are used when omitted. */
     previousText?: Bind<string>;
     nextText?: Bind<string>;
     finishText?: Bind<string>;
-    /** What screen readers call the stepper. Default: the kit's "Steps". */
+    /** The accessible name of the stepper. The default is the kit's "Steps" string. */
     label?: Bind<string>;
-    /** The current step is about to change; cancelable, may wait on `promise`. */
+    /** Occurs before the current step changes. This event is cancelable and can wait on `promise`. */
     onStepChanging?: (e: StepChangingEventArgs) => void;
     onStepChanged?: (e: StepChangedEventArgs) => void;
-    /** The last page validated and the wizard is about to finish; cancelable, may wait on `promise`. */
+    /**
+     * Occurs when the last page is valid and the wizard is about to finish. This event is cancelable and can wait on
+     * `promise`.
+     */
     onFinishing?: (e: WizardFinishingEventArgs) => void;
     onFinished?: (e: { source: unknown }) => void;
 }

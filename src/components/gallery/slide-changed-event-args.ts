@@ -1,12 +1,12 @@
 import type { Gallery } from './Gallery';
 
-/** The pane in view changed. */
+/** Provides data for the event that occurs after the current slide changes. */
 export interface SlideChangedEventArgs {
     index: number;
-    /** The item as given; `null` when there is none. */
+    /** The item as provided, or `null` if there is none. */
     item: unknown;
     previous: number;
-    /** By a click, a swipe or a key, else programmatically or the slideshow. */
+    /** `true` for a click, swipe or key, and `false` for a programmatic change or the slideshow. */
     byUser: boolean;
     source: Gallery;
 }

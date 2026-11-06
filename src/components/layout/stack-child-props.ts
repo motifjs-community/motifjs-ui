@@ -1,7 +1,7 @@
 import type { Bind } from '@motifx/core';
 
-/** What a child of a `Stack` may say about its place, in its own props: `<TextBox grow />`. */
+/** The prop a child of a `Stack` sets for its position: `<TextBox grow />`. */
 export interface StackChildProps {
-  /** Takes the free space along the direction; a number shares it in proportion. */
+  /** Takes the free space along the direction. Numbers share it proportionally. */
   grow?: Bind<boolean | number>;
 }

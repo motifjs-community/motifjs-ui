@@ -1,2 +1,2 @@
-/** How the options of a `RadioGroup` follow each other: one under the other, or side by side. */
+/** The arrangement of the options of a `RadioGroup`: stacked, or side by side. */
 export type RadioGroupOrientation = 'vertical' | 'horizontal';

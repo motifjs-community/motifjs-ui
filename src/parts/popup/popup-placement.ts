@@ -1,6 +1,6 @@
 /**
- * Where a popup opens from its anchor: the side (`bottom`, `top`, or `start` / `end` across the
- * reading direction), then how it lines up along that side (`-start`, centered, `-end`). Start and
+ * Where a popup opens relative to its anchor: the side (`bottom`, `top`, or `start` / `end` across the
+ * reading direction), then its alignment along that side (`-start`, centered, `-end`). Start and
  * end follow the reading direction. It opens on the other side when that has more room.
  */
 export type PopupPlacement =

@@ -1,8 +1,8 @@
 import type { EventArgs } from '@motifx/core';
 
 /**
- * A new row is about to open. `data` is what it starts with (`newRow.create()`), `values` what counts
- * as entered (the values given to `addRow`); change either. `cancel` opens no row.
+ * Occurs before a new row opens. `data` is its initial content (`newRow.create()`), and `values` is what
+ * counts as entered (the values passed to `addRow`). Change either. Set `cancel = true` to open no row.
  */
 export interface GridInitNewRowEventArgs<T> extends EventArgs {
   data: Partial<T>;

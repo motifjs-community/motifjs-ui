@@ -39,10 +39,10 @@ interface Drag {
 }
 
 /**
- * Panes side by side or one under the other, as many as needed, with a handle between each two that the pointer
- * drags and the keys move (the window splitter pattern); a handle resizes the two panes next to it, the rest keep
- * their room. A pane is a `SplitPane`: pixels, a share or an equal share of what is left, least and most sizes, and
- * it may be hidden from its handle (`collapsible`). A pane may hold another splitter.
+ * Panes side by side or stacked, as many as needed, with a handle between each two that the pointer drags and the
+ * keyboard moves (the window splitter pattern). A handle resizes the two panes next to it, and the others keep their
+ * space. A pane is a `SplitPane`, sized in pixels, as a percentage or as an equal share of what remains, with minimum
+ * and maximum sizes, and it can be collapsed from its handle (`collapsible`). A pane can hold another splitter.
  *
  * @example
  * <Splitter x-model={() => this.layout.sizes}>
@@ -115,14 +115,14 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
     set step(value: Bind<number>) {
         this.assignProperty('step', value);
     }
-    /** The sizes given; see `sizes` in the props. The pixels now are `currentSizes`. */
+    /** The sizes as set. See `sizes` in the props. The current sizes in pixels are in `currentSizes`. */
     get sizes(): readonly (number | string | null)[] | null {
         return this.getProperty<readonly (number | string | null)[] | null | undefined>('sizes') ?? null;
     }
     set sizes(value: Bind<readonly (number | string | null)[] | null>) {
         this.assignProperty('sizes', value);
     }
-    /** `sizes`, for `x-model`. */
+    /** Maps to `sizes` for `x-model`. */
     get value(): readonly (number | string | null)[] | null {
         return this.sizes;
     }
@@ -130,27 +130,27 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         this.sizes = value;
     }
 
-    /** A handle is being dragged (`handle`, `sizes` in pixels). */
+    /** Occurs while a handle is dragged (`handle`, `sizes` in pixels). */
     get onResizing(): MotifEvent<SplitterResizeEventArgs> {
         return this.resizing.event;
     }
 
-    /** A drag ended or a key moved a handle. */
+    /** Occurs after a drag ends or a key moves a handle. */
     get onResized(): MotifEvent<SplitterResizeEventArgs> {
         return this.resized.event;
     }
 
-    /** A pane is about to be hidden or shown again (`pane`, `collapsed`); `cancel` leaves it. */
+    /** Occurs before a pane is collapsed or expanded (`pane`, `collapsed`). Set `cancel = true` to keep the current state. */
     get onCollapsing(): MotifEvent<SplitterCollapseEventArgs> {
         return this.collapsing.event;
     }
 
-    /** A pane was hidden or shown again. */
+    /** Occurs after a pane is collapsed or expanded. */
     get onCollapsed(): MotifEvent<SplitterCollapseEventArgs> {
         return this.collapsedEvent.event;
     }
 
-    /** The panes' pixels along the split now, in pane order; 0 for a hidden pane. */
+    /** The current pane sizes in pixels, in pane order, with 0 for a collapsed pane. */
     get currentSizes(): number[] {
         const panes = this.shownPanes();
         const measured = this.measure(panes);
@@ -160,7 +160,7 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         });
     }
 
-    /** How many panes there are, hidden ones too. */
+    /** The number of panes, including collapsed ones. */
     get count(): number {
         return this.panes.length;
     }
@@ -186,12 +186,15 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         return true;
     }
 
-    /** Hides a pane, the neighbors taking its room; `false` when it is not here, hidden already, or `onCollapsing` refused. */
+    /**
+   * Collapses a pane, and the adjacent panes take its space. Returns `false` if the pane is not in the splitter,
+   * is already collapsed, or `onCollapsing` canceled it.
+   */
     collapse(pane: SplitPane | number): boolean {
         return this.fold(pane, true, false);
     }
 
-    /** Shows a hidden pane again. */
+    /** Expands a collapsed pane. */
     expand(pane: SplitPane | number): boolean {
         return this.fold(pane, false, false);
     }

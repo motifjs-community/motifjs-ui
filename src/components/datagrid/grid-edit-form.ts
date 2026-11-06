@@ -10,14 +10,14 @@ export interface GridEditForm {
   /**
    * What the form holds, in order: a column by its field name, or a kit form item. An item whose
    * `field` is a column's gets that column's editor, with the item's `label`, `colSpan`, `helpText`,
-   * `visible` and `editorProps`; groups (`group`, `items`, `columns`), buttons and `template`s are
-   * the form's own. Default: every column, in the columns' order (`formItem.order` first).
+   * `visible` and `editorProps`. Groups (`group`, `items`, `columns`), buttons and `template`s belong to
+   * the form. By default, every column, in the columns' order (`formItem.order` first).
    */
   items?: Bind<readonly (string | FormItem)[] | undefined>;
-  /** Columns of the form. Default `2`. */
+  /** The columns of the form. The default is `2`. */
   colCount?: Bind<number>;
-  /** With it, as many columns as fit, each at least this wide (a CSS length); `colCount` is the most. */
+  /** As many columns as fit, each at least this wide (a CSS length), up to `colCount`. */
   minColWidth?: Bind<string>;
-  /** Where the labels go. Default `'top'`. */
+  /** Where the labels appear. The default is `'top'`. */
   labelMode?: Bind<FieldLabelMode>;
 }

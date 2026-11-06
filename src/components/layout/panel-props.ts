@@ -9,10 +9,10 @@ import type { PanelVariant } from './panel-variant';
  * reactive property. `text` names the panel: it becomes a region landmark with that name.
  */
 export interface PanelProps extends ControlProps {
-  /** Scrolls its content; a scrolling panel is a Tab stop, so the keys scroll it. Default `false`. */
+  /** Scrolls its content. A scrolling panel is a Tab stop, so the keyboard can scroll it. The default is `false`. */
   scrollable?: Bind<PanelScroll>;
-  /** The space inside the edges, one to four values as in CSS. Default none. */
+  /** The space inside the edges, one to four values as in CSS. There is none by default. */
   padding?: Bind<LayoutSpace>;
-  /** Default `'plain'`. */
+  /** The appearance of the panel. The default is `'plain'`. */
   variant?: Bind<PanelVariant>;
 }

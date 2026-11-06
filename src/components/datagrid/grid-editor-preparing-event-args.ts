@@ -1,20 +1,23 @@
 import type { EventArgs } from '@motifx/core';
 
 /**
- * An editor of a cell or of an edit form field is about to be made. `options` are the props the
- * editor gets: change them (`enabled = false` disables it, `clearButton`, `placeholder`…); `cancel`
- * keeps the cell from being edited, or leaves the field out of the form.
+ * Occurs before the editor of a cell or edit form field is created. `options` holds the editor's props,
+ * which you can change (`enabled = false` disables it, `clearButton`, `placeholder`…). Set `cancel = true`
+ * to prevent the cell from being edited, or to omit the field from the form.
  */
 export interface GridEditorPreparingEventArgs<T> extends EventArgs {
   readonly field: string;
   /** The row itself. */
   readonly row: T;
-  /** The values entered and not saved yet, by field (`{}` while there are none); the row itself does not hold them. */
+  /** The entered, unsaved values by field (`{}` while there are none). The row itself does not hold them. */
   readonly values: Readonly<Partial<T>>;
-  /** The value a field is saved with: the entered one when there is one, else the row's. */
+  /** Returns the value a field will be saved with: the entered value, otherwise the row's. */
   getValue(field: string): unknown;
-  /** The row was added in the grid and never saved. */
+  /** Indicates that the row was added in the grid and never saved. */
   readonly isNew: boolean;
-  /** Props of the kit's editor (`TextBox`, `NumberBox`, `DateBox`, `CheckBox`, `DropDown`, `ComboBox`, `Lookup`); empty for a column's own `editor`. */
+  /**
+   * The props of the kit's editor (`TextBox`, `NumberBox`, `DateBox`, `CheckBox`, `DropDown`, `ComboBox`,
+   * `Lookup`). Empty for a column's custom `editor`.
+   */
   options: Record<string, unknown>;
 }
