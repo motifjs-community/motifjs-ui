@@ -8,55 +8,55 @@ import RowReorderServer from './examples/RowReorderServer';
 const withTasks = (name: string) => code(name, 'tasks.ts', 'task.ts');
 
 const OPTIONS = [
-  ['allowReordering', '`Bind<boolean>`', '`false`', 'Rows move within the grid.'],
-  ['allowDropInsideItem', '`Bind<boolean>`', '`false`', 'A row can be dropped onto another (the middle half of a row): `dropInsideItem` in the events, for trees and details.'],
-  ['dropFeedbackMode', "`Bind<'indicate' | 'push'>`", "`'indicate'`", "Where a drop would land: a line between the rows, or the rows moving aside to make room for it (not with `allowDropInsideItem`)."],
-  ['showDragIcons', '`Bind<boolean>`', '`true`', 'A column of drag icons, pinned to the start, to drag rows by; off, the whole row is dragged (a click still selects and edits).'],
-  ['handle', '`Bind<string>`', "`''`", 'A CSS selector of what a row is dragged by, instead of the icon or the whole row.'],
-  ['group, data', '`Bind<string>`, `Bind<unknown>`', '—', 'Grids of the same group take each other’s rows; `data` is handed to the events as `fromData` / `toData`.'],
-  ['dragDirection', "`Bind<'both' | 'vertical' | 'horizontal'>`", "`'both'`", 'Where the copy of the row may go.'],
-  ['boundary, container', '`Bind<string | HTMLElement>`', 'none, the grid', 'The element the dragged row stays inside; the element its copy is shown in.'],
-  ['cursorOffset', '`Bind<{ x, y } | string>`', 'where the row was taken', 'Where the copy sits from the pointer.'],
-  ['dragTemplate', '`({ itemData, itemElement }) => unknown`', 'a copy of the row', 'Content of your own under the pointer: a component, an element or a text.'],
-  ['autoScroll, scrollSpeed, scrollSensitivity', '`Bind<boolean>`, `Bind<number>`, `Bind<number>`', '`true`, `30`, `60`', 'The rows scroll while the pointer is near their top or bottom edge: pixels per frame at the edge, and how near it starts.'],
-  ['keyboard, moveUpKeys, moveDownKeys', '`Bind<boolean>`, `Bind<string[]>`', "`true`, `['Ctrl+Shift+ArrowUp']`, `['Ctrl+Shift+ArrowDown']`", 'The active row moves a place up or down with these keys (any chord: `Mod+Alt+Up`…), with the same events as a drop; announced.'],
-  ['columnWidth', '`Bind<number>`', '`36`', 'Width of the drag icon column, in pixels.'],
-  ['settings.dragThreshold, settings.dragGhost', '`Bind<number>`, `Bind<boolean>`', '`5`, `true`', 'How far the pointer moves before a drag starts, and whether a copy follows it; the same as for headers.'],
+  ['allowReordering', '`Bind<boolean>`', '`false`', 'Allows rows to move within the grid.'],
+  ['allowDropInsideItem', '`Bind<boolean>`', '`false`', 'Allows a row to be dropped onto another (the middle half of a row), reported as `dropInsideItem` in the events. This is useful for trees and details.'],
+  ['dropFeedbackMode', "`Bind<'indicate' | 'push'>`", "`'indicate'`", "How the drop position appears: a line between the rows, or the rows moving aside to make room (not with `allowDropInsideItem`)."],
+  ['showDragIcons', '`Bind<boolean>`', '`true`', 'A column of drag icons pinned to the start. When disabled, the whole row is draggable (a click still selects and edits).'],
+  ['handle', '`Bind<string>`', "`''`", 'A CSS selector for the part of a row used for dragging, instead of the icon or the whole row.'],
+  ['group, data', '`Bind<string>`, `Bind<unknown>`', '—', 'Grids in the same group accept each other\'s rows. `data` is passed to the events as `fromData` and `toData`.'],
+  ['dragDirection', "`Bind<'both' | 'vertical' | 'horizontal'>`", "`'both'`", 'Where the copy of the row can go.'],
+  ['boundary, container', '`Bind<string | HTMLElement>`', 'None, and the grid', 'The element the dragged row stays inside, and the element that displays its copy.'],
+  ['cursorOffset', '`Bind<{ x, y } | string>`', 'Where the row was grabbed', 'The offset of the copy from the pointer.'],
+  ['dragTemplate', '`({ itemData, itemElement }) => unknown`', 'A copy of the row', 'Custom content under the pointer: a component, an element or text.'],
+  ['autoScroll, scrollSpeed, scrollSensitivity', '`Bind<boolean>`, `Bind<number>`, `Bind<number>`', '`true`, `30`, `60`', 'The rows scroll while the pointer is near their top or bottom edge: the speed in pixels per frame at the edge, and the distance at which it starts.'],
+  ['keyboard, moveUpKeys, moveDownKeys', '`Bind<boolean>`, `Bind<string[]>`', "`true`, `['Ctrl+Shift+ArrowUp']`, `['Ctrl+Shift+ArrowDown']`", 'Moves the active row one position up or down with these keys (any combination, such as `Mod+Alt+Up`), with the same events as a drop. The move is announced.'],
+  ['columnWidth', '`Bind<number>`', '`36`', 'The width of the drag icon column, in pixels.'],
+  ['settings.dragThreshold, settings.dragGhost', '`Bind<number>`, `Bind<boolean>`', '`5`, `true`', 'The distance the pointer moves before a drag starts, and whether a copy follows it. These are the same as for headers.'],
 ];
 
 const EVENTS = [
-  ['onDragStart', 'A row is about to be dragged (pointer or keys); `cancel` keeps it in place.'],
-  ['onDragMove', 'The row moved under the pointer; `cancel` takes no drop there.'],
-  ['onDragChange', 'The place it would land changed (another index, another grid, onto a row); `cancel` takes no drop there.'],
-  ['onDragEnd', 'The row is about to be dropped (`toIndex` -1 when it is over no grid that takes it); `cancel` drops nothing.'],
-  ['onReorder', 'Dropped elsewhere in this grid: move it in the data. `promise`: the grid waits for it, the marks shown.'],
-  ['onRemove / onAdd', 'Dropped on another grid of the group: `onRemove` on the grid it left, `onAdd` on the one it went to.'],
+  ['onDragStart', 'Occurs before a row is dragged, by pointer or keys. Set `cancel` to keep it in place.'],
+  ['onDragMove', 'Occurs when the row moves under the pointer. Set `cancel` to refuse a drop there.'],
+  ['onDragChange', 'Occurs when the drop position changes (another index, another grid, or onto a row). Set `cancel` to refuse a drop there.'],
+  ['onDragEnd', 'Occurs before the row is dropped (`toIndex` is -1 when it is not over a grid that accepts it). Set `cancel` to drop nothing.'],
+  ['onReorder', 'Occurs on a drop elsewhere in this grid, where you move the row in the data. With `promise`, the grid waits for it while keeping the marks visible.'],
+  ['onRemove / onAdd', 'Occurs on a drop on another grid of the group: `onRemove` on the source grid and `onAdd` on the target grid.'],
 ];
 
 const ARGS = [
-  ['component, fromComponent, toComponent', 'The grid raising it, the grid the row comes from, the grid under the pointer (the same while reordering, `null` over none).'],
-  ['itemData, itemKey, itemElement', 'The row dragged, its key, its element.'],
-  ['fromIndex, toIndex', 'The grid’s row indexes (as `focusedRowIndex` and `getVisibleRows()` count them, across pages too): where the row is, and where it would be after the drop.'],
-  ['toItemData', 'The row at `toIndex` before the drop — splice the row in where it is; `undefined` at the end of the other grid or on a group row.'],
-  ['dropInsideItem, fromData, toData, event', 'Dropped onto the row at `toIndex`; the grids’ `rowDragging.data`; the pointer or key event.'],
-  ['cancel / promise', 'The four drag events can be cancelled; the three drop events take a promise.'],
+  ['component, fromComponent, toComponent', 'The grid raising the event, the grid the row comes from, and the grid under the pointer (the same while reordering, or `null` when over none).'],
+  ['itemData, itemKey, itemElement', 'The dragged row, its key and its element.'],
+  ['fromIndex, toIndex', 'The grid\'s row indexes (as counted by `focusedRowIndex` and `getVisibleRows()`, also across pages): the current position, and the position after the drop.'],
+  ['toItemData', 'The row at `toIndex` before the drop, which is where to insert the row. It is `undefined` at the end of the other grid or on a group row.'],
+  ['dropInsideItem, fromData, toData, event', 'Whether it was dropped onto the row at `toIndex`, the grids\' `rowDragging.data`, and the pointer or key event.'],
+  ['cancel / promise', 'The four drag events can be canceled, and the three drop events accept a promise.'],
 ];
 
 const API = [
-  ['rowDragging', 'read/write, live', '`grid.rowDragging.allowReordering = true`, handlers too; `onOptionChanged` tells `rowDragging.allowReordering`.'],
-  ['moveRow(fromIndex, toIndex)', '`Promise<boolean>`', 'Moves a row as a drop there would: `onDragStart`, `onDragChange`, `onDragEnd` (any can cancel), then `onReorder`; whether it was raised.'],
+  ['rowDragging', 'read/write, live', '`grid.rowDragging.allowReordering = true`, and handlers too. `onOptionChanged` reports `rowDragging.allowReordering`.'],
+  ['moveRow(fromIndex, toIndex)', '`Promise<boolean>`', 'Moves a row as a drop there would: `onDragStart`, `onDragChange` and `onDragEnd` (any of which can cancel), then `onReorder`. Returns whether the event was raised.'],
 ];
 
 const KEYS = [
-  ['Ctrl+Shift+Up / Ctrl+Shift+Down on a row (`moveUpKeys`, `moveDownKeys`)', 'Moves the active row a place up or down (`allowReordering`); the row stays the active one, and the move is announced (“Row moved to position 3 of 20”).'],
-  ['Escape while dragging', 'Cancels the drag; nothing is dropped.'],
+  ['Ctrl+Shift+Up / Ctrl+Shift+Down on a row (`moveUpKeys`, `moveDownKeys`)', 'Moves the active row one position up or down (`allowReordering`). The row stays active, and the move is announced (“Row moved to position 3 of 20”).'],
+  ['Escape while dragging', 'Cancels the drag, and nothing is dropped.'],
 ];
 
 const RULES = [
-  ['The data', 'The grid moves nothing itself (as in the standard grid): `onReorder` and `onAdd` / `onRemove` move the row in your array or tell the server. The grid reads your rows as they are, plain or reactive: after the move call `e.component.refresh()` (rows in memory and a server alike).'],
-  ['Sorted, filtered, grouped', 'Rows can be dragged as they are shown; the indexes are the shown ones. A list the user orders by hand usually turns `sortable` off; while grouped the keys move a row within its group, and only data rows are dragged (not group rows, new rows or rows still loading).'],
-  ['Virtual and paged', 'The rows under the pointer are the pooled rows drawn now; near the edges the rows scroll and the new ones take the marks. Paged, a row moves within its page; the indexes count across pages.'],
-  ['Screen readers', 'The drag icon cell is named “Drag to move the row” with the keys in `aria-keyshortcuts`; drops and key moves are announced politely.'],
+  ['The data', 'The grid does not move anything itself. `onReorder` and `onAdd` / `onRemove` move the row in your array or notify the server. The grid reads your rows as they are, plain or reactive, so after the move, call `e.component.refresh()` (for both in-memory rows and a server).'],
+  ['Sorted, filtered, grouped', 'Rows can be dragged in their displayed order, and the indexes are the displayed ones. A manually ordered list usually disables `sortable`. While grouped, the keys move a row within its group, and only data rows can be dragged (not group rows, new rows or rows still loading).'],
+  ['Virtual and paged', 'The rows under the pointer are the pooled rows currently rendered, and near the edges, the rows scroll and new ones receive the marks. In paged mode, a row moves within its page, and the indexes count across pages.'],
+  ['Screen readers', 'The drag icon cell is named “Drag to move the row”, with the keys in `aria-keyshortcuts`. Drops and key moves are announced politely.'],
 ];
 
 export default function DataGridDragPage() {
@@ -64,7 +64,7 @@ export default function DataGridDragPage() {
     <>
       <Section anchor="reorder" title="Reorder rows">
         <p>
-          <Rich text="With `rowDragging: { allowReordering: true }` a column of drag icons comes at the start: take a row by its icon and drag it, a copy of the row follows the pointer and a line shows where it would land — or, with `dropFeedbackMode: 'push'`, the rows move aside to make room for it. Near the top or bottom edge the rows scroll. Drop it and `onReorder` tells where it went:, the grid does not move the data itself, the handler does. Here the rows are in memory: take the row out and splice it in where `toItemData` (the row at `toIndex`) is. Ctrl+Shift+Up and Down move the active row the same way." />
+          <Rich text="With `rowDragging: { allowReordering: true }`, a column of drag icons appears at the start. Drag a row by its icon, and a copy of the row follows the pointer while a line shows the drop position. With `dropFeedbackMode: 'push'`, the rows move aside to make room instead. Near the top or bottom edge, the rows scroll. On drop, `onReorder` reports the new position. The grid does not move the data itself, so the handler must do it. In this example, the rows are in memory, so the handler removes the row and inserts it at the position of `toItemData` (the row at `toIndex`). Ctrl+Shift+Up and Down move the active row the same way." />
         </p>
         <Example files={withTasks('RowReorder.tsx')} stack>
           <RowReorder />
@@ -73,7 +73,7 @@ export default function DataGridDragPage() {
 
       <Section anchor="server" title="Reorder rows on a server">
         <p>
-          <Rich text="On a server the order is a field the rows are sorted by. The handler asks the server to move the row to the place of `toItemData` and gives the grid the promise (`e.promise`): the line stays until the answer comes, then `refresh()` loads the rows in their new order. 10,000 rows, the virtual list loading blocks as it scrolls." />
+          <Rich text="On a server, the order is a field the rows are sorted by. The handler asks the server to move the row to the position of `toItemData`, and gives the promise to the grid (`e.promise`). The line stays until the response arrives, and then `refresh()` loads the rows in their new order. This example has 10,000 rows, and the virtual list loads blocks as it scrolls." />
         </p>
         <Example files={[...withTasks('RowReorderServer.tsx'), slowAdapterFile]} stack>
           <RowReorderServer />
@@ -82,7 +82,7 @@ export default function DataGridDragPage() {
 
       <Section anchor="between" title="Drag rows between grids">
         <p>
-          <Rich text="Grids with the same `group` take each other's rows: drop a row on the other grid and `onRemove` comes on the grid it left, `onAdd` on the one it went to (pair), with `toIndex` and `toItemData` saying where. Both grids here push their rows aside and reorder too." />
+          <Rich text="Grids with the same `group` accept each other's rows. When a row is dropped on the other grid, `onRemove` occurs on the source grid and `onAdd` on the target grid, with `toIndex` and `toItemData` giving the position. Both grids in this example also push rows aside and support reordering." />
         </p>
         <Example files={withTasks('RowDragBetween.tsx')} stack>
           <RowDragBetween />
@@ -91,12 +91,12 @@ export default function DataGridDragPage() {
 
       <Section anchor="drag-options" title="Options">
         <ApiTable head={['rowDragging', 'Type', 'Default', 'Description']} rows={OPTIONS} />
-        <ApiTable head={['Topic', 'How dragging does it']} rows={RULES} />
+        <ApiTable head={['Topic', 'Dragging behavior']} rows={RULES} />
       </Section>
 
       <Section anchor="drag-events" title="Events and methods">
         <ApiTable head={['rowDragging handler', 'When']} rows={EVENTS} />
-        <ApiTable head={['Field of the event', 'What it holds']} rows={ARGS} />
+        <ApiTable head={['Event field', 'Value']} rows={ARGS} />
         <ApiTable head={['Member', 'Parameters or return value', 'Description']} rows={API} />
       </Section>
 

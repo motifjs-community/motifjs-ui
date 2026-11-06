@@ -7,116 +7,116 @@ import Switches from './examples/Switches';
 import Toolbar from './examples/Toolbar';
 
 const SETTINGS = [
-  ['editable', '`false`', 'Edit cells in place. A column can decide itself, also per row with `(row) => boolean`.'],
-  ['creatable', '`true`', 'Fill the cells of new rows. A column with its own `editable` and no `creatable` uses the same; `editable: false, creatable: true` is entered only when the row is created.'],
-  ['addRows, newRowButton, tabChain', '`false`, `true`, `true`', 'The user adds rows; the toolbar’s “New row” button; Tab on a new row’s last cell opens the next one.'],
-  ['enterMoves', "`'none'`", 'Enter in an editor keeps the value and stays, goes `down`, or goes on like Tab (`next`).'],
+  ['editable', '`false`', 'Allows editing cells in place. A column can set its own value, also per row with `(row) => boolean`.'],
+  ['creatable', '`true`', 'Allows filling the cells of new rows. A column with its own `editable` and no `creatable` uses the same value, and `editable: false, creatable: true` can be entered only when the row is created.'],
+  ['addRows, newRowButton, tabChain', '`false`, `true`, `true`', 'Allows the user to add rows, shows the toolbar\'s “New row” button, and makes Tab on a new row\'s last cell open the next one.'],
+  ['enterMoves', "`'none'`", 'Enter in an editor keeps the value and either stays, moves `down`, or continues like Tab (`next`).'],
   ['rowStatus', '`true`', 'The narrow column that marks new, changed, deleted, saving and failed rows.'],
-  ['saveButtons, errorSummary', '`true`', '“Save changes” and “Discard” in the toolbar in batch mode (dimmed while there is nothing to save); “N rows with errors” and “Next error” in the bar under the rows.'],
-  ['sortable, multiSort', '`true`', 'Sort from the header; Shift adds a column to the sort.'],
-  ['resizable, movable, hideable, pinnable, menu', '`true`', 'What the user may do with the columns; a column can say otherwise for itself.'],
-  ['resizeMode', "`'widget'`", 'Dragging a column edge: `widget` changes that column and the columns after it shift; `nextColumn` moves only the edge between it and the next column, which gives or takes the difference. A column can set its own.'],
-  ['headerButtons', "`'hover'`", 'The menu button shows on hover and focus (always on touch screens), or `always`.'],
+  ['saveButtons, errorSummary', '`true`', '“Save changes” and “Discard” in the toolbar in batch mode (disabled when there is nothing to save), and “N rows with errors” and “Next error” in the bar below the rows.'],
+  ['sortable, multiSort', '`true`', 'Sorts from the header, and Shift adds a column to the sort.'],
+  ['resizable, movable, hideable, pinnable, menu', '`true`', 'What the user can do with the columns. A column can set its own values.'],
+  ['resizeMode', "`'widget'`", 'The result of dragging a column edge: `widget` resizes that column and shifts the following ones, and `nextColumn` moves only the edge between it and the next column, which takes up the difference. A column can set its own value.'],
+  ['headerButtons', "`'hover'`", 'The menu button appears on hover and focus (always on touch screens), or `always`.'],
   ['columnChooser, layoutReset', '`true`', 'The column list and “Reset layout” in the column menu.'],
   ['columnChooserButton', '`false`', 'A toolbar button that opens the column list (while `columnChooser` is on).'],
-  ['tooltips, striped, rowCount', '`true`, `false`, `true`', 'Full text of a clipped cell; stripes; the row count.'],
-  ['pager', '`true`', 'The pager in paged mode; `auto` only while there is more than one page.'],
+  ['tooltips, striped, rowCount', '`true`, `false`, `true`', 'The full text of a clipped cell, stripes, and the row count.'],
+  ['pager', '`true`', 'The pager in paged mode. `auto` shows it only when there is more than one page.'],
   ['actionsColumn, actionsPosition, actionsSticky, actionsWidth', "`true`, `'end'`, `true`, `140`", 'The actions column, at the start or the end, pinned to its edge or scrolling with the rows, and its width.'],
-  ['actionsLocation, actionsTarget, actionsDisplay', "`'row'`, `'auto'`, `'auto'`", 'Where the actions show (the row, the toolbar, the bottom bar), which rows the bars act on, and buttons or a menu only: see [Row actions](/datagrid/editing#actions).'],
-  ['actionsMultipleEnabled, actionsShowCount, actionsStopOnError', "`'all'`, `true`, `false`", 'Actions on several rows: enabled for all or any, the count after the text, a failed row stops the rest.'],
-  ['actionsProgress, actionsStopButton, actionsContextMenu', '`true`, `true`, `true`', 'The progress panel and its Stop button while an action works on several rows; the actions in the row’s context menu.'],
-  ['selection, selectionColumn, selectAll, selectedCount', "`'none'`, `true`, `true`, `true`", '`single` or `multiple`; the check box column; the header check box and Ctrl+A; “N selected” in the bar.'],
-  ['filterRow, headerFilter', '`false`', 'The filter row and the header filter; a column can turn them on or off for itself.'],
-  ['syncLookupFilterValues', '`true`', 'A lookup column’s filter row and header filter list only the keys of the rows the other filters leave; off, they list the lookup source. A column can say otherwise for itself.'],
-  ['filterDelay', '`300`', 'Milliseconds from the last key typed in the filter row to the filter.'],
-  ['copyable, exportable', '`true`', 'Columns that go into what Ctrl+C copies and into an export; a column can say otherwise for itself.'],
-  ['copyValues, copyHeaders', "`'shown'`, `false`", 'Ctrl+C copies the text the cells show or their `raw` values; copied rows start with the column titles.'],
-  ['paste, pasteNewRows', '`true`, `false`', 'Ctrl+V writes into the editable cells; pasted lines past the last row open new rows (with `addRows`).'],
-  ['exportButton', '`false`', 'An “Export” button in the toolbar: the formats of the `export` prop (CSV by default), as a menu when it offers more than one command.'],
-  ['saveLayout', '`true`', 'With `layoutKey`, the layout, the filters and the search text are kept and come back.'],
-  ['searchPanel', '`false`', 'The search box in the toolbar. `searchText` and `searchByText()` search without it too.'],
-  ['filterPanel, filterSyncEnabled', "`false`, `'auto'`", 'The filter panel under the rows, and the filter row and header filters kept in the filter value (`\'auto\'`: while the panel shows). See [Filter panel and builder](/datagrid/filtering#filter-panel).'],
-  ['searchPanelWidth, searchPlaceholder',"`160`, `uiLocale` “Search…”", 'The box’s width (pixels or a CSS length) and its placeholder.'],
-  ['searchDelay', '`700`', 'Milliseconds from the last key typed in the search box to the search; Enter searches at once.'],
-  ['highlightSearchText, highlightCaseSensitive', '`true`, `false`', 'Mark what the search found in the cells; mark only text in the same case (the search itself ignores case).'],
-  ['searchVisibleColumnsOnly', '`false`', 'Search only the visible columns; by default hidden ones too.'],
-  ['searchable', '`true`', 'The columns the search looks in; a column can say otherwise for itself (one that turns its own filters off is left out).'],
-  ['groupPanel', '`false`', 'The group panel at the start of the toolbar: a chip per grouped column, and where headers are dropped to group by them.'],
-  ['groupPanelDragging, groupPanelEmptyText', "`true`, `uiLocale` “Drag a column header here…”", 'Headers drag to the panel and chips back (off: the panel only shows the grouping); what the empty panel says.'],
-  ['groupMenu', 'unset', '“Group by this column”, “Ungroup” and “Ungroup all” in the column menu. Left unset (grid and column), they show while the panel takes headers, as the keyboard’s way to do the same.'],
-  ['groupable, showWhenGrouped', '`true`, `false`', 'The columns the user can group by; a grouped column still shows among the columns. A column can say otherwise for itself.'],
-  ['autoExpandAll, allowCollapsing', '`true`, `true`', 'Groups start open (a column’s `autoExpandGroup` decides for its level); the user can open and close them (code always can; a column can say otherwise).'],
-  ['groupExpandMode', "`'button'`", 'A group opens from its arrow and the keyboard, or with `rowClick` from a click anywhere on its row. A column can set its own.'],
-  ['groupCount', '`true`', 'Group rows show their row count; a column can say otherwise for itself.'],
-  ['groupToggleKeys, groupArrowKeys', "`['Enter', ' ']`, `true`", 'The keys that open and close a group row; Right and Left open, close and go in and out.'],
-  ['remoteGrouping', "`'auto'`", 'Who groups a data source’s rows: `auto` its adapter when it groups (blocks), `true` the adapter whenever the source loads by blocks, `false` always the browser, from every matching row.'],
-  ['groupLoadPageSize', '`0`', 'Grouping or summaries in the browser over a source that loads pages or blocks: rows per request while every matching row loads (0: one request).'],
-  ['totalSummary, groupSummary', '`true`', 'The row of totals with the items of `summary.totalItems`; the items of `summary.groupItems` in group rows and footers. An item’s `visible` wins.'],
-  ['totalSummaryTabStop', '`true`', 'The row of totals is a Tab stop of its own after the rows.'],
-  ['remoteSummary', "`'auto'`", 'Who works out the summaries of a source that loads pages or blocks: `auto` its adapter when it has the `summary` capability, `true` the adapter always, `false` the browser, from every matching row. `custom` items and columns with a `value` reader are always worked out in the browser.'],
-  ['dragThreshold', '`5`', 'Pixels a pressed header or chip moves before it is dragged.'],
-  ['dragGhost', '`true`', 'A dragged header or chip shows its title next to the pointer, marked with what a drop would do: group, move, ungroup. While a header is dragged the whole toolbar takes drops for the group panel and is marked.'],
-  ['emptyRows', '`3`', 'Rows of room the body keeps while it has no rows to show (empty, loading, failed), so the message shows in a grid without a height.'],
-  ['columnWidth, columnMinWidth', '`140`, `48`', 'The width of a column that gives none, and the smallest width the user can resize one to; a column’s `width` and `minWidth` win.'],
-  ['rowStatusWidth, selectionColumnWidth', '`28`, `36`', 'Widths of the row status column and the check box column.'],
-  ['resizeStep, resizeFineStep', '`10`, `1`', 'Pixels one arrow key resizes a column by (“Width” in the column menu), and with Shift.'],
-  ['tooltipDelay', '`500`', 'Milliseconds the pointer rests on a cell before its tooltip shows (keyboard focus shows it at once).'],
-  ['extraRows', '`4`', 'Rows drawn above and below the visible ones, so a quick scroll shows no gap; more costs more per scroll.'],
-  ['loadMoreDistance, preloadEnabled, loadMoreIndicator', '`0`, `false`, `true`', 'Infinite mode: rows left below the view when the next part loads; a part loaded ahead (in virtual mode a part on each side); the “Loading more rows…” mark with Retry. See [Infinite scrolling](/datagrid/scrolling#infinite).'],
-  ['columnRenderingMode, extraColumns', "`'standard'`, `2`", '`virtual`: only the scrolling columns in view and `extraColumns` on each side get cells; a column’s own `columnRenderingMode` wins. See [Virtual columns](/datagrid/scrolling#virtual-columns).'],
-  ['renderAsync, columnRenderingThreshold, columnRenderingDelay', "`'auto'`, `300`, `300`", 'Virtual columns coming into view are drawn as the rows scroll, once the scrolling stops, or once it stops while drawing them took longer than the threshold (ms); the quiet time before they are drawn (ms).'],
-  ['pagerNeighbors, pagerNavigation, pagerInfo', '`1`, `true`, `true`', 'Page buttons on each side of the current page; the first, previous, next and last buttons; “Page 3 of 12 (250 items)”.'],
-  ['pagerInfoText, pagerLabel', '`uiLocale` texts', 'The pager’s text (`{0}` or `{page}`, `{1}` or `{count}`, `{2}` or `{total}`) and its accessible name.'],
-  ['pagerDisplayMode', "`'adaptive'`", '`full`: page buttons, and the page sizes as buttons; `compact`: a page number box and a drop-down of the sizes; `adaptive`: full while it fits in the bar.'],
-  ['pageSizeSelector, allowedPageSizes', "`false`, `'auto'`", 'The page sizes in the pager; the sizes it offers (numbers and `all`; `auto` is half, once and twice the page size).'],
-  ['pageKeys', "`'page'`", 'In paged mode PageUp and PageDown go to the previous and next page, or move a screen of rows (`rows`).'],
-  ['headerFilterPageSize, headerFilterRows', '`100`, `8`', 'Values the header filter loads per request; the height of its list (or tree) in rows.'],
-  ['headerFilterDateInterval', "`'day'`", 'The deepest part of the year → month → day tree a date column’s header filter lists; `null` lists every date. A column’s `headerFilterInterval` wins.'],
-  ['exportPageSize', '`1000`', 'Rows an export asks a server for per request; `exportCsv({ pageSize })` wins.'],
-  ['trueTexts, falseTexts', "`['true', '1', 'x', '✓', '✔']`, `['false', '0', '']`", 'Pasted texts read as yes and as no in a yes/no column, besides the `yes` and `no` texts; a column can give its own.'],
-  ['editKeys, clearKeys', "`['Enter', 'F2']`, `['Delete']`", 'Keys that open the active cell’s editor, and that empty it (`KeyboardEvent.key` values).'],
-  ['editOnKeyPress', '`true`', 'Typing a character on a cell opens its editor with it. A column can set its own.'],
-  ['startEditAction', "`'dblClick'`", 'A double-click, or one `click` on the active cell, opens its editor. A column can set its own.'],
-  ['columnHidingEnabled, bandAlign', "`false`, `'center'`", 'Columns hide while the grid is narrower than they are, and a “…” column opens their values; where band captions sit. See [Bands and adaptive columns](/datagrid/bands#adaptive).'],
-  ['editMode, confirmDelete, selectTextOnEditStart', "`'row'`, `true`, `true`", 'How rows are edited: in the cells (`row`, `cell`, `batch`) or in a form (`form`, `popup`); deleting asks first; an editor opens with its text selected. See [Edit forms and popups](/datagrid/forms#forms).'],
+  ['actionsLocation, actionsTarget, actionsDisplay', "`'row'`, `'auto'`, `'auto'`", 'Where actions appear (the row, the toolbar or the bottom bar), which rows the bars act on, and whether to use buttons or a menu only. See [Row actions](/datagrid/editing#actions).'],
+  ['actionsMultipleEnabled, actionsShowCount, actionsStopOnError', "`'all'`, `true`, `false`", 'Actions on several rows: enabled for all or any, the count after the text, and whether a failed row stops the rest.'],
+  ['actionsProgress, actionsStopButton, actionsContextMenu', '`true`, `true`, `true`', 'The progress panel and its Stop button while an action runs on several rows, and the actions in the row\'s context menu.'],
+  ['selection, selectionColumn, selectAll, selectedCount', "`'none'`, `true`, `true`, `true`", '`single` or `multiple`, the check box column, the header check box and Ctrl+A, and “N selected” in the bar.'],
+  ['filterRow, headerFilter', '`false`', 'The filter row and the header filter. A column can enable or disable them for itself.'],
+  ['syncLookupFilterValues', '`true`', 'A lookup column\'s filter row and header filter list only the keys of rows that match the other filters. When disabled, they list the lookup source. A column can set its own value.'],
+  ['filterDelay', '`300`', 'The delay in milliseconds from the last key typed in the filter row to the filter.'],
+  ['copyable, exportable', '`true`', 'The columns included in Ctrl+C and in an export. A column can set its own value.'],
+  ['copyValues, copyHeaders', "`'shown'`, `false`", 'Ctrl+C copies the displayed text of the cells or their `raw` values, and copied rows start with the column titles.'],
+  ['paste, pasteNewRows', '`true`, `false`', 'Ctrl+V writes into editable cells, and pasted lines past the last row open new rows (with `addRows`).'],
+  ['exportButton', '`false`', 'An “Export” button in the toolbar, using the formats of the `export` prop (CSV by default), as a menu when it offers more than one command.'],
+  ['saveLayout', '`true`', 'With `layoutKey`, the layout, the filters and the search text are saved and restored.'],
+  ['searchPanel', '`false`', 'The search box in the toolbar. `searchText` and `searchByText()` also search without it.'],
+  ['filterPanel, filterSyncEnabled', "`false`, `'auto'`", 'The filter panel below the rows, and whether the filter row and header filters are part of the filter value (`\'auto\'` applies while the panel is visible). See [Filter panel and builder](/datagrid/filtering#filter-panel).'],
+  ['searchPanelWidth, searchPlaceholder',"`160`, `uiLocale` “Search…”", 'The box\'s width (in pixels or as a CSS length) and its placeholder.'],
+  ['searchDelay', '`700`', 'The delay in milliseconds from the last key typed in the search box to the search. Enter searches immediately.'],
+  ['highlightSearchText, highlightCaseSensitive', '`true`, `false`', 'Highlights matches in the cells, and limits highlighting to text in the same case (the search itself is case-insensitive).'],
+  ['searchVisibleColumnsOnly', '`false`', 'Searches only the visible columns. By default, hidden columns are included.'],
+  ['searchable', '`true`', 'The columns the search covers. A column can set its own value, and a column that disables its own filters is excluded.'],
+  ['groupPanel', '`false`', 'The group panel at the start of the toolbar, with a chip per grouped column and a drop area for grouping by headers.'],
+  ['groupPanelDragging, groupPanelEmptyText', "`true`, `uiLocale` “Drag a column header here…”", 'Allows headers to be dragged to the panel and chips back (otherwise, the panel only displays the grouping), and sets the text of the empty panel.'],
+  ['groupMenu', 'Not set', '“Group by this column”, “Ungroup” and “Ungroup all” in the column menu. When not set on the grid and column, they appear while the panel accepts headers, as the keyboard alternative.'],
+  ['groupable, showWhenGrouped', '`true`, `false`', 'The columns the user can group by. A grouped column still appears among the columns. A column can set its own value.'],
+  ['autoExpandAll, allowCollapsing', '`true`, `true`', 'Groups start expanded (a column\'s `autoExpandGroup` applies to its level), and the user can expand and collapse them (code always can, and a column can set its own value).'],
+  ['groupExpandMode', "`'button'`", 'A group expands from its arrow and the keyboard, or with `rowClick` from a click anywhere on its row. A column can set its own value.'],
+  ['groupCount', '`true`', 'Group rows show their row count. A column can set its own value.'],
+  ['groupToggleKeys, groupArrowKeys', "`['Enter', ' ']`, `true`", 'The keys that expand and collapse a group row. Right and Left expand, collapse, and move in and out.'],
+  ['remoteGrouping', "`'auto'`", 'What groups a data source\'s rows: `auto` uses its adapter when it supports grouping (blocks), `true` always uses the adapter when the source loads by blocks, and `false` always uses the browser, from every matching row.'],
+  ['groupLoadPageSize', '`0`', 'For grouping or summaries in the browser over a source that loads pages or blocks, the rows per request while every matching row loads (0 means one request).'],
+  ['totalSummary, groupSummary', '`true`', 'The totals row with the items of `summary.totalItems`, and the items of `summary.groupItems` in group rows and footers. An item\'s `visible` takes precedence.'],
+  ['totalSummaryTabStop', '`true`', 'Makes the totals row a separate Tab stop after the rows.'],
+  ['remoteSummary', "`'auto'`", 'What calculates the summaries of a source that loads pages or blocks: `auto` uses its adapter when it has the `summary` capability, `true` always uses the adapter, and `false` uses the browser, from every matching row. `custom` items and columns with a `value` reader are always calculated in the browser.'],
+  ['dragThreshold', '`5`', 'The distance in pixels a pressed header or chip moves before it is dragged.'],
+  ['dragGhost', '`true`', 'A dragged header or chip shows its title next to the pointer, marked with what a drop would do: group, move or ungroup. While a header is being dragged, the whole toolbar accepts drops for the group panel and is marked.'],
+  ['emptyRows', '`3`', 'The number of rows of space the body keeps while it has no rows to show (empty, loading or failed), so that the message appears in a grid without a height.'],
+  ['columnWidth, columnMinWidth', '`140`, `48`', 'The width of a column that does not set one, and the minimum width the user can resize a column to. A column\'s `width` and `minWidth` take precedence.'],
+  ['rowStatusWidth, selectionColumnWidth', '`28`, `36`', 'The widths of the row status column and the check box column.'],
+  ['resizeStep, resizeFineStep', '`10`, `1`', 'The number of pixels one arrow key resizes a column (“Width” in the column menu), and with Shift.'],
+  ['tooltipDelay', '`500`', 'The delay in milliseconds before a cell\'s tooltip appears under the pointer (keyboard focus shows it immediately).'],
+  ['extraRows', '`4`', 'The rows rendered above and below the visible ones, so that a quick scroll shows no gap. More rows cost more per scroll.'],
+  ['loadMoreDistance, preloadEnabled, loadMoreIndicator', '`0`, `false`, `true`', 'For infinite mode: the rows left below the view when the next page loads, a page loaded ahead (in virtual mode, one on each side), and the “Loading more rows…” indicator with Retry. See [Infinite scrolling](/datagrid/scrolling#infinite).'],
+  ['columnRenderingMode, extraColumns', "`'standard'`, `2`", 'With `virtual`, only the visible scrolling columns and `extraColumns` on each side have cells. A column\'s own `columnRenderingMode` takes precedence. See [Virtual columns](/datagrid/scrolling#virtual-columns).'],
+  ['renderAsync, columnRenderingThreshold, columnRenderingDelay', "`'auto'`, `300`, `300`", 'Whether virtual columns coming into view are rendered during scrolling, once scrolling stops, or once it stops when rendering took longer than the threshold (ms), and the idle time before they are rendered (ms).'],
+  ['pagerNeighbors, pagerNavigation, pagerInfo', '`1`, `true`, `true`', 'The page buttons on each side of the current page, the first, previous, next and last buttons, and “Page 3 of 12 (250 items)”.'],
+  ['pagerInfoText, pagerLabel', '`uiLocale` strings', 'The pager\'s text (`{0}` or `{page}`, `{1}` or `{count}`, `{2}` or `{total}`) and its accessible name.'],
+  ['pagerDisplayMode', "`'adaptive'`", '`full` shows page buttons and page sizes as buttons, `compact` shows a page number box and a drop-down of sizes, and `adaptive` uses `full` while it fits in the bar.'],
+  ['pageSizeSelector, allowedPageSizes', "`false`, `'auto'`", 'The page sizes in the pager, and the sizes it offers (numbers and `all`, where `auto` is half, once and twice the page size).'],
+  ['pageKeys', "`'page'`", 'In paged mode, PageUp and PageDown move to the previous and next page, or move a screen of rows (`rows`).'],
+  ['headerFilterPageSize, headerFilterRows', '`100`, `8`', 'The values the header filter loads per request, and the height of its list or tree in rows.'],
+  ['headerFilterDateInterval', "`'day'`", 'The deepest level of the year → month → day tree in a date column\'s header filter. `null` lists every date. A column\'s `headerFilterInterval` takes precedence.'],
+  ['exportPageSize', '`1000`', 'The rows an export requests from a server per request. `exportCsv({ pageSize })` takes precedence.'],
+  ['trueTexts, falseTexts', "`['true', '1', 'x', '✓', '✔']`, `['false', '0', '']`", 'Pasted text read as yes and as no in a yes/no column, in addition to the `yes` and `no` strings. A column can set its own values.'],
+  ['editKeys, clearKeys', "`['Enter', 'F2']`, `['Delete']`", 'The keys that open the active cell\'s editor, and the keys that clear it (`KeyboardEvent.key` values).'],
+  ['editOnKeyPress', '`true`', 'Typing a character on a cell opens its editor with that character. A column can set its own value.'],
+  ['startEditAction', "`'dblClick'`", 'A double-click, or one `click` on the active cell, opens its editor. A column can set its own value.'],
+  ['columnHidingEnabled, bandAlign', "`false`, `'center'`", 'Columns hide while the grid is narrower than they are, a “…” column opens their values, and this sets where band captions appear. See [Bands and adaptive columns](/datagrid/bands#adaptive).'],
+  ['editMode, confirmDelete, selectTextOnEditStart', "`'row'`, `true`, `true`", 'How rows are edited, in the cells (`row`, `cell`, `batch`) or in a form (`form`, `popup`), whether deleting prompts first, and whether an editor opens with its text selected. See [Edit forms and popups](/datagrid/forms#forms).'],
 ];
 
 const EVENTS = [
-  ['onCellClick / onCellDblClick', '`{ field, row, rowIndex, rowType, groupKey?, element, event }`', 'yes', 'A cell was clicked or double-clicked (also in a group footer, `rowType: \'groupFooter\'`, and in the row of totals, `\'totalFooter\'`); cancel: no selection, no group toggle, no editor.'],
-  ['onRowClick / onRowDblClick', '`{ row, rowIndex, rowType, groupKey?, element, event }`', 'yes', 'The same for the row, after its cell’s event.'],
-  ['onCellPrepared', '`{ field, row, rowIndex, value, isNew, element }`', '', 'A cell was drawn for a row: style it. Cells are reused while scrolling, so set and clear what you change. Costs nothing while nobody listens.'],
-  ['onRowPrepared', '`{ row, rowIndex, rowType, groupKey?, isSelected, element }`', '', 'A data row, group row, group footer (`groupFooter`) or the row of totals (`totalFooter`) was drawn; the same rule.'],
-  ['onContentReady', '`{ total }`', '', 'Rows arrived and are laid out (after a load, a filter, a sort, a page, a resize).'],
-  ['onDataErrorOccurred', '`{ error, operation, row? }`', '', 'A load (`operation: \'load\'`) or the save of a row (`\'save\'`, with `row`) failed.'],
-  ['onEditingStart', '`{ field, row, rowIndex, isNew }`', 'yes', "A cell editor, or a row’s edit form (`field` `''`), is about to open."],
-  ['onEditorPreparing / onEditorPrepared', '`{ field, row, isNew, options }` / `{ field, row, isNew, editor, element, place }`', 'yes / —', 'An editor of a cell or of a form field is about to be made (change its props in `options`); it was made.'],
-  ['onRowValidating', '`{ key, row, isNew, changed, errors, isValid, errorText }`', 'yes', 'A row is checked before it is saved, after its cells: add messages to `errors`, or `isValid = false` (or cancel) with `errorText`.'],
-  ['onInitNewRow', '`{ data, values }`', 'yes', 'A new row is about to open: `data` is what it starts with, `values` what counts as entered; cancel opens no row.'],
-  ['onSaving / onSaved', '`{ changes }` / `{ changes, saved, failed }`', 'yes / —', 'Changes are about to be sent (leaving a row, the background queue, “Save changes”); the answer came.'],
-  ['onRowInserting / onRowInserted', '`{ row, data }` / `{ row, key }`', 'yes / —', 'Per new row: change `data` (what is sent) or keep it unsent; it was saved.'],
-  ['onRowUpdating / onRowUpdated', '`{ key, row, changes }` / `{ key, row, changes }`', 'yes / —', 'Per changed row: change `changes` or keep them unsent; they were saved.'],
-  ['onRowRemoving / onRowRemoved', '`{ key, row }`', 'yes / —', 'Per deleted row, when the deletion is sent (batch: on “Save changes”); it was deleted.'],
-  ['onEditCanceling / onEditCanceled', '`{ rows }`', 'yes / —', 'Unsaved changes are about to be dropped: Escape on a row, the “Cancel” action, `discardChanges()`.'],
-  ['onFocusedCellChanging / onFocusedCellChanged', '`{ rowIndex, field, previousRowIndex, previousField, row }`', 'yes / —', 'The active cell moves (keys, a click, code); -1 is the header, -2 the filter row.'],
-  ['onFocusedRowChanging / onFocusedRowChanged', '`{ rowIndex, previousRowIndex, row }` / `{ rowIndex, row, key }`', 'yes / —', 'The active row changes.'],
-  ['onKeyHandling', '`{ event, rowIndex, field }`', 'yes', 'A key went down in the rows, an editor, the filter row or a group chip, before the grid handles it; cancel and handle it yourself. the standard calls it `onKeyDown`, a DOM event name in JSX.'],
-  ['onOptionChanged', '`{ name, field?, value, previous }`', '', 'A setting was assigned: `grid.settings`, `columnSettings(field)` (with `field`), `toolbar` (`toolbar.visible`, `toolbar.items`), `columnOption` (with `field`); a column was added or taken out (`name: \'columns\'`, the fields).'],
-  ['onSortChanging / onSortChanged', '`{ sort, previous, byUser }`', 'yes / —', 'The sort is about to change, by the user or programmatically.'],
-  ['onFilterChanging / onFilterChanged', '`{ filters, previous }` / `{ filters, filter }`', 'yes / —', 'The filter row and header filters are about to apply; cancel puts the ones before back in the cells.'],
-  ['onSearchTextChanging / onSearchTextChanged', '`{ text, previous }` / `{ text }`', 'yes / —', 'The search text is about to change; cancel keeps the one before in the box.'],
-  ['onPageChanging / onPageChanged', '`{ page, previous }`', 'yes / —', 'Another page is about to show.'],
-  ['onPageSizeChanging / onPageSizeChanged', '`{ pageSize, previous }`', 'yes / —', 'The rows per page are about to change (0: all); the grid goes back to the first page.'],
-  ['onMoreRowsLoading / onMoreRowsLoaded', '`{ skip, take }` / `{ skip, count, ended }`', 'yes / —', 'Infinite mode: the next part of the rows is about to load; it came.'],
-  ['onSelectionChanging / onSelectionChanged', '`{ selection, previous }` / `{ selection }`', 'yes / —', 'The selection is about to change, by the user or programmatically.'],
-  ['onLayoutChanging / onLayoutChange', '`{ layout, previous }` / `layout`', 'yes / —', 'The user resized, moved, hid, pinned, sorted or reset; cancel puts the layout before back.'],
-  ['onGroupingChanging / onGroupingChanged, onGroupDropping', 'see [Grouping](/datagrid/grouping#grouping)', 'yes', 'The grouping; a dropped header or chip.'],
-  ['onRowExpanding / onRowExpanded, onRowCollapsing / onRowCollapsed', '`{ kind, key, row }`', 'yes / —', "A group (`kind: 'group'`) or a row's details (`kind: 'detail'`) open or close."],
-  ['onCopying / onPasting', '`{ text, html, rows }` / `{ text, rowIndex, field }`', 'yes', 'Ctrl+C, `copy()`; Ctrl+V, `paste()`: change the text, or stop it.'],
-  ['onSummaryChanged', '`{ total, editing }`', '', 'The summary values were worked out again: new rows, a new filter or search, a save, or (with `recalculateWhileEditing`) an unsaved change.'],
-  ['onExporting / onExported', '`{ format, component, selectedRowsOnly, options }` / `{ format, rows, text? }`', 'yes / —', 'An export is about to start (change its options); for a format the grid does not write (`xlsx`) the handler writes it with `exportDataGrid`. It finished (`exportDataGrid` tells it with `format: \'xlsx\'`).'],
-  ['onContextMenuPreparing', '`{ target, field, row?, rowIndex, items }`', 'yes', 'A header’s column menu (`header`) or a row’s menu (`row`: a right click or the context menu key; `items` hold the row’s actions, and it opens only when it has items) is about to open: change `items`.'],
-  ['onActionRunning / onActionRan', '`{ action, rows, selection, location }` / `{ action, rows, location, done, failed, canceled, errors }`', 'yes / —', 'An action is about to run; it ran. See [Row actions](/datagrid/editing#actions).'],
-  ['onToolbarPreparing', '`{ items }`', '', 'The toolbar is laid out: change the list of items it takes.'],
+  ['onCellClick / onCellDblClick', '`{ field, row, rowIndex, rowType, groupKey?, element, event }`', 'yes', 'Occurs when a cell is clicked or double-clicked (also in a group footer, `rowType: \'groupFooter\'`, and in the totals row, `\'totalFooter\'`). Canceling prevents selection, the group toggle and the editor.'],
+  ['onRowClick / onRowDblClick', '`{ row, rowIndex, rowType, groupKey?, element, event }`', 'yes', 'The same for the row, after its cell\'s event.'],
+  ['onCellPrepared', '`{ field, row, rowIndex, value, isNew, element }`', '', 'Occurs when a cell is rendered for a row, so that you can style it. Cells are reused while scrolling, so set and clear what you change. It has no cost when there are no listeners.'],
+  ['onRowPrepared', '`{ row, rowIndex, rowType, groupKey?, isSelected, element }`', '', 'Occurs when a data row, group row, group footer (`groupFooter`) or the totals row (`totalFooter`) is rendered. The same rule applies.'],
+  ['onContentReady', '`{ total }`', '', 'Occurs when rows have arrived and been laid out (after a load, a filter, a sort, a page change or a resize).'],
+  ['onDataErrorOccurred', '`{ error, operation, row? }`', '', 'Occurs when a load (`operation: \'load\'`) or the save of a row (`\'save\'`, with `row`) fails.'],
+  ['onEditingStart', '`{ field, row, rowIndex, isNew }`', 'yes', "Occurs before a cell editor or a row's edit form (`field` `''`) opens."],
+  ['onEditorPreparing / onEditorPrepared', '`{ field, row, isNew, options }` / `{ field, row, isNew, editor, element, place }`', 'yes / —', 'Occur before and after the editor of a cell or form field is created. Change its props in `options` in the first event.'],
+  ['onRowValidating', '`{ key, row, isNew, changed, errors, isValid, errorText }`', 'yes', 'Occurs when a row is validated before saving, after its cells. Add messages to `errors`, or set `isValid = false` (or cancel) with `errorText`.'],
+  ['onInitNewRow', '`{ data, values }`', 'yes', 'Occurs before a new row opens. `data` is its initial content, and `values` is what counts as entered. Canceling opens no row.'],
+  ['onSaving / onSaved', '`{ changes }` / `{ changes, saved, failed }`', 'yes / —', 'Occur before changes are sent (leaving a row, the background queue or “Save changes”) and after the response arrives.'],
+  ['onRowInserting / onRowInserted', '`{ row, data }` / `{ row, key }`', 'yes / —', 'Per new row: change `data` (what is sent) or keep it unsent. The second event occurs after saving.'],
+  ['onRowUpdating / onRowUpdated', '`{ key, row, changes }` / `{ key, row, changes }`', 'yes / —', 'Per changed row: change `changes` or keep them unsent. The second event occurs after saving.'],
+  ['onRowRemoving / onRowRemoved', '`{ key, row }`', 'yes / —', 'Per deleted row, when the deletion is sent (in batch mode, on “Save changes”). The second event occurs after the deletion.'],
+  ['onEditCanceling / onEditCanceled', '`{ rows }`', 'yes / —', 'Occurs before unsaved changes are discarded: Escape on a row, the “Cancel” action, or `discardChanges()`.'],
+  ['onFocusedCellChanging / onFocusedCellChanged', '`{ rowIndex, field, previousRowIndex, previousField, row }`', 'yes / —', 'Occurs when the active cell moves (by keys, a click or code). -1 is the header and -2 is the filter row.'],
+  ['onFocusedRowChanging / onFocusedRowChanged', '`{ rowIndex, previousRowIndex, row }` / `{ rowIndex, row, key }`', 'yes / —', 'Occurs when the active row changes.'],
+  ['onKeyHandling', '`{ event, rowIndex, field }`', 'yes', 'Occurs when a key is pressed in the rows, an editor, the filter row or a group chip, before the grid handles it. Cancel it to handle the key yourself. The name avoids `onKeyDown`, a DOM event name in JSX.'],
+  ['onOptionChanged', '`{ name, field?, value, previous }`', '', 'Occurs when a setting is assigned: `grid.settings`, `columnSettings(field)` (with `field`), `toolbar` (`toolbar.visible`, `toolbar.items`), `columnOption` (with `field`), or a column is added or removed (`name: \'columns\'`, with the fields).'],
+  ['onSortChanging / onSortChanged', '`{ sort, previous, byUser }`', 'yes / —', 'Occurs before the sort changes, by the user or programmatically.'],
+  ['onFilterChanging / onFilterChanged', '`{ filters, previous }` / `{ filters, filter }`', 'yes / —', 'Occurs before the filter row and header filters apply. Canceling restores the previous ones in the cells.'],
+  ['onSearchTextChanging / onSearchTextChanged', '`{ text, previous }` / `{ text }`', 'yes / —', 'Occurs before the search text changes. Canceling keeps the previous text in the box.'],
+  ['onPageChanging / onPageChanged', '`{ page, previous }`', 'yes / —', 'Occurs before another page appears.'],
+  ['onPageSizeChanging / onPageSizeChanged', '`{ pageSize, previous }`', 'yes / —', 'Occurs before the rows per page change (0 means all). The grid returns to the first page.'],
+  ['onMoreRowsLoading / onMoreRowsLoaded', '`{ skip, take }` / `{ skip, count, ended }`', 'yes / —', 'In infinite mode, occur before and after the next page of rows loads.'],
+  ['onSelectionChanging / onSelectionChanged', '`{ selection, previous }` / `{ selection }`', 'yes / —', 'Occurs before the selection changes, by the user or programmatically.'],
+  ['onLayoutChanging / onLayoutChange', '`{ layout, previous }` / `layout`', 'yes / —', 'Occurs when the user resizes, moves, hides, pins, sorts or resets. Canceling restores the previous layout.'],
+  ['onGroupingChanging / onGroupingChanged, onGroupDropping', 'See [Grouping](/datagrid/grouping#grouping)', 'yes', 'The grouping, and a dropped header or chip.'],
+  ['onRowExpanding / onRowExpanded, onRowCollapsing / onRowCollapsed', '`{ kind, key, row }`', 'yes / —', "Occurs when a group (`kind: 'group'`) or a row's details (`kind: 'detail'`) open or close."],
+  ['onCopying / onPasting', '`{ text, html, rows }` / `{ text, rowIndex, field }`', 'yes', 'Ctrl+C and `copy()`, and Ctrl+V and `paste()`. Change the text or stop the action.'],
+  ['onSummaryChanged', '`{ total, editing }`', '', 'Occurs when summary values are recalculated: new rows, a new filter or search, a save, or (with `recalculateWhileEditing`) an unsaved change.'],
+  ['onExporting / onExported', '`{ format, component, selectedRowsOnly, options }` / `{ format, rows, text? }`', 'yes / —', 'Occur before an export starts, where you can change its options, and after it finishes. For a format the grid does not write (`xlsx`), the handler writes it with `exportDataGrid`, which raises the second event with `format: \'xlsx\'`.'],
+  ['onContextMenuPreparing', '`{ target, field, row?, rowIndex, items }`', 'yes', 'Occurs before a header\'s column menu (`header`) or a row\'s menu (`row`: a right-click or the Menu key) opens. `items` holds the row\'s actions, and the menu opens only if it has items. Change `items`.'],
+  ['onActionRunning / onActionRan', '`{ action, rows, selection, location }` / `{ action, rows, location, done, failed, canceled, errors }`', 'yes / —', 'Occur before and after an action runs. See [Row actions](/datagrid/editing#actions).'],
+  ['onToolbarPreparing', '`{ items }`', '', 'Occurs when the toolbar is laid out. Change the list of items it uses.'],
 ];
 
 export default function DataGridLayoutPage() {
@@ -124,7 +124,7 @@ export default function DataGridLayoutPage() {
     <>
       <Section anchor="toolbar" title="Toolbar">
         <p>
-          <Rich text="The bar above the rows holds the grid's own items whose features are on, at the end, in this order: “New row” (`addRows`, `newRowButton`), “Save changes” and “Discard” (batch mode, `saveButtons`), “Export” (`exportButton`), the column list (`columnChooserButton`) and the search box (`searchPanel`); with none of them it does not show. `toolbar.items` lists exactly what it holds: the grid's items by name, an object with a `name` to change one of them, and items of your own — a button with `text`, `icon`, `hint` and `click`, or any component with `content` — at the start (`location: 'before'`) or at the end. Buttons that do not fit go into its “more” menu (`overflow`); the grid's own show only their icons there (`showText`), and their texts in the menu." />
+          <Rich text="The bar above the rows contains the grid's own items whose features are enabled, at the end, in this order: “New row” (`addRows`, `newRowButton`), “Save changes” and “Discard” (batch mode, `saveButtons`), “Export” (`exportButton`), the column list (`columnChooserButton`) and the search box (`searchPanel`). If there are none, the bar does not appear. `toolbar.items` lists its exact contents: grid items by name, an object with a `name` to change one of them, and custom items, such as a button with `text`, `icon`, `hint` and `click`, or any component with `content`, at the start (`location: 'before'`) or at the end. Buttons that do not fit move to the “more” menu (`overflow`). The grid's own buttons show only their icons in the bar (`showText`), with their text in the menu." />
         </p>
         <Example files={withOrders('Toolbar.tsx')} stack>
           <Toolbar />
@@ -132,21 +132,21 @@ export default function DataGridLayoutPage() {
         <ApiTable
           head={['Item field', 'Description']}
           rows={[
-            ['name', 'One of the grid’s items (`groupPanel`, `rowActions`, `searchPanel`, `addRowButton`, `saveButton`, `revertButton`, `exportButton`, `columnChooserButton`) to change, or a name of your own. A grid item whose feature is off stays out.'],
-            ['location', "`'before'` or `'after'` (default; the group panel and `rowActions` `'before'`): which end of the bar."],
-            ['text, icon, hint', 'The button’s text, icon and tooltip (default: the text when only the icon shows).'],
-            ['showText', "`'always'` (default) or `'inMenu'`: only the icon in the bar, the text in the “more” menu (the grid’s own buttons)."],
-            ['visible, enabled', 'Leave the item out; dim it.'],
-            ['overflow', "`'never'` (default; the grid’s buttons `'auto'`), `'auto'` or `'always'`: whether it may go into the “more” menu."],
-            ['content', '`() => component`: your own component in place of a button, made once.'],
-            ['click', '`(e) => void` with `{ item, grid, event }`; on a grid item it replaces what the item does.'],
+            ['name', 'One of the grid\'s items to change (`groupPanel`, `rowActions`, `searchPanel`, `addRowButton`, `saveButton`, `revertButton`, `exportButton`, `columnChooserButton`), or a custom name. A grid item whose feature is disabled is omitted.'],
+            ['location', "`'before'` or `'after'` (the default, except `'before'` for the group panel and `rowActions`): which end of the bar."],
+            ['text, icon, hint', 'The button\'s text, icon and tooltip (by default, the text when only the icon is shown).'],
+            ['showText', "`'always'` (the default) or `'inMenu'`, which shows only the icon in the bar and the text in the “more” menu (the grid's own buttons)."],
+            ['visible, enabled', 'Omits the item, or disables it.'],
+            ['overflow', "`'never'` (the default, or `'auto'` for grid buttons), `'auto'` or `'always'`: whether it can move to the “more” menu."],
+            ['content', '`() => component`: a custom component in place of a button, created once.'],
+            ['click', '`(e) => void` with `{ item, grid, event }`. On a grid item, it replaces the item\'s action.'],
           ]}
         />
       </Section>
 
-      <Section anchor="columns" title="Columns at run time">
+      <Section anchor="columns" title="Columns at runtime">
         <p>
-          <Rich text="`addColumn(column, index?)` adds a column at a place among the data columns, with its own width, visibility and sticky side (or what the kept layout says of it); `deleteColumn(field)` takes one out, and its sort, grouping and filter go with it. `columnOption(field, name, value)` changes one option of a column while it shows — its layout (`width`, `visible`, `sticky`, `visibleIndex`), sort, grouping, header filter values, a feature switch, or any field of its definition (`title`, `format`, `lookup`, `cell`, `type` …), the column drawn again with it — and `columnOption(field, { … })` several at once. The layout, `layoutKey` and `onLayoutChange` follow; `onOptionChanged` tells each change (`name: 'columns'` for a column added or taken out). `columnCount()` and `getVisibleColumns()` read them." />
+          <Rich text="`addColumn(column, index?)` adds a column at a position among the data columns, with its own width, visibility and sticky side (or the values in the saved layout). `deleteColumn(field)` removes a column, along with its sort, grouping and filter. `columnOption(field, name, value)` changes one option of a column while it is displayed: its layout (`width`, `visible`, `sticky`, `visibleIndex`), sort, grouping, header filter values, a feature switch, or any field of its definition (`title`, `format`, `lookup`, `cell`, `type` …), and the column is redrawn. `columnOption(field, { … })` changes several at once. The layout, `layoutKey` and `onLayoutChange` follow, and `onOptionChanged` reports each change (`name: 'columns'` for a column added or removed). `columnCount()` and `getVisibleColumns()` read them." />
         </p>
         <Example files={withOrders('RuntimeColumns.tsx')} stack>
           <RuntimeColumns />
@@ -155,16 +155,16 @@ export default function DataGridLayoutPage() {
 
       <Section anchor="layout" title="Persisting the layout">
         <p>
-          <Rich text="With `layoutKey` the grid keeps the column widths, order, hidden and pinned columns, the sort, the filters and the search text in the browser's `localStorage`, and a grid made again with the same name — after a reload too — gets them back. Storage that is full or blocked is skipped quietly. `resetLayout()` (also in the column menu) goes back to the column definitions. To keep the layout elsewhere, a server for instance, read `layout` and `filters`, listen to `onLayoutChange`, and give them back through the props of the same names." />
+          <Rich text="With `layoutKey`, the grid saves column widths, order, hidden and pinned columns, the sort, the filters and the search text in the browser's `localStorage`, and a grid created again with the same name, even after a reload, restores them. Storage that is full or blocked is silently skipped. `resetLayout()` (also in the column menu) returns to the column definitions. To store the layout elsewhere, such as on a server, read `layout` and `filters`, listen to `onLayoutChange`, and pass them back through the props of the same names." />
         </p>
         <Example files={withOrders('KeepLayout.tsx')} stack>
           <KeepLayout />
         </Example>
       </Section>
 
-      <Section anchor="settings" title="Turning features off">
+      <Section anchor="settings" title="Disabling features">
         <p>
-          <Rich text="Every feature has a switch in `settings`, each a value or a function; a column can turn one on or off for itself, and its value wins. `grid.settings` and `grid.columnSettings(field)` change them while the grid shows." />
+          <Rich text="Every feature has a switch in `settings`, as a value or a function. A column can enable or disable a feature for itself, and its value takes precedence. `grid.settings` and `grid.columnSettings(field)` change them at runtime." />
         </p>
         <Example files={withOrders('Switches.tsx')} stack>
           <Switches />
@@ -174,7 +174,7 @@ export default function DataGridLayoutPage() {
 
       <Section anchor="events" title="Events">
         <p>
-          <Rich text="Every action of the user has an event, given as a prop or listened to with `grid.onX((e) => …)`; one that is about to happen (`…ing`) can be stopped with `e.cancel = true`, and most can change what happens (the values sent, the items of a menu, the text copied). Here amounts over 900 are drawn in bold, the rows get a menu of their own (right click, or Shift + F10), a change to “Cancelled” is not saved, and the list tells what happened. Methods do the same programmatically: `editCell`, `cellValue`, `navigateToRow`, `columnOption`, `state()` and the others in the [API reference](/datagrid/api#api)." />
+          <Rich text="Every user action has an event, set as a prop or subscribed to with `grid.onX((e) => …)`. An event raised before an action (`…ing`) can stop it with `e.cancel = true`, and most can change the result (the values sent, the items of a menu or the text copied). In this example, amounts over 900 are bold, rows have a custom menu (right-click or Shift + F10), a change to “Cancelled” is not saved, and the list shows what happened. Methods do the same programmatically: `editCell`, `cellValue`, `navigateToRow`, `columnOption`, `state()` and the others in the [API reference](/datagrid/api#api)." />
         </p>
         <Example files={withOrders('Events.tsx')} stack>
           <Events />

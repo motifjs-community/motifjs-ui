@@ -29,7 +29,7 @@ const MEMBERS = [
 
 const A11Y = [
   ['Landmark', 'A `nav` named “Pages” in the kit language, or by its label.'],
-  ['Pages', 'Each page button is named “Page 5”, and the current one has `aria-current="page"`.'],
+  ['Paging', 'Each page button is named “Page 5”, and the current one has `aria-current="page"`.'],
   ['Steps', 'Named First page, Previous page, Next page and Last page, and disabled at the ends.'],
   ['Compact', 'The page number box is named “Page number”, and the information stays available to screen readers while hidden.'],
 ];

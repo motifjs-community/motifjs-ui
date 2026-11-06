@@ -30,7 +30,7 @@ export default function InfiniteScroll() {
     <>
       <Stack orientation="horizontal" wrap align="center">
         <CheckBox label="Load a part ahead" x-model={() => s.preload} />
-        <CheckBox label="The next part fails" x-model={() => s.failing} onValueChanged={(e) => (server.failing = !!e.value)} />
+        <CheckBox label="The next page fails" x-model={() => s.failing} onValueChanged={(e) => (server.failing = !!e.value)} />
         <Button text="Load more" variant="outline" onclick={() => grid?.loadMore()} />
         <Button text="To the last row" variant="outline" onclick={() => grid?.scrollToIndex(grid.total - 1, 'end')} />
         <output class="dg-infinite-state">{() => `${s.loads} loads, ${s.parts} parts came${grid?.endReached ? ', every row is here' : ''}`}</output>
