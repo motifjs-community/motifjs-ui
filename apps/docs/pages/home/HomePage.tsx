@@ -31,7 +31,7 @@ import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/
         </ul>
       </Section>
 
-      <Section anchor="today" title="Components">
+      <Section anchor="Today" title="Components">
         <p>
           <Rich text="The library includes more than fifty components built on a shared base. Each one provides keyboard and focus support, accessible roles and names, English and Turkish strings that can be switched at runtime, right-to-left layout, and component tokens for the five design languages of the design system: Tactile, Lounge, Material, Fluent and Lilac. Every component has a reference page with live examples and its full API." />
         </p>

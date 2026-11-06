@@ -68,7 +68,7 @@ import { uiLocale, connectI18n } from '@motifx-community/ui';
                 </Example>
             </Section>
 
-            <Section anchor="rules" title="Rules">
+            <Section anchor="rules" title="Validation rules">
                 <ApiTable head={['Rule', 'Details']} rows={RULES} />
             </Section>
 

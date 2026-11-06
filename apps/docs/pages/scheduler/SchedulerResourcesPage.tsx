@@ -10,61 +10,61 @@ import ResourcesFromSource from './examples/ResourcesFromSource';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['resources', '`Bind<SchedulerResource[]>`', '`[]`', 'The kinds of resources the appointments use. Each colours them, may group the columns and gets a picker in the form.'],
-  ['groups', '`Bind<string[]>`', '`[]`', 'The resource fields the columns are grouped by, outer first (`[\'roomId\', \'ownerIds\']`). A view’s own `groups` wins; `[]` there for none.'],
-  ['groupByDate', '`Bind<boolean>`', '`false`', 'The groups stand under each date, not the dates under each group. A view’s own wins.'],
-  ['resourceHeaderTemplate', '`Bind<((context: ResourceHeaderContext) => ComponentBase) \\| null>`', '`null`', 'Draws a group’s head in place of its name.'],
-  ['blockedTimes', '`Bind<SchedulerBlockedTime[]>`', '`[]`', 'Times nothing may be put in: `{ start, end, text?, allDay?, recurrenceRule?, resources? }`. Shaded on the days shown; with `resources`, only for those.'],
+  ['resources', '`Bind<SchedulerResource[]>`', '`[]`', 'The resource types the appointments use. Each one can color them, group the columns and add a picker to the form.'],
+  ['groups', '`Bind<string[]>`', '`[]`', 'The resource fields the columns are grouped by, outer first (`[\'roomId\', \'ownerIds\']`). A view\'s own `groups` takes precedence, and `[]` there means none.'],
+  ['groupByDate', '`Bind<boolean>`', '`false`', 'Places the groups under each date, instead of the dates under each group. A view\'s own value takes precedence.'],
+  ['resourceHeaderTemplate', '`Bind<((context: ResourceHeaderContext) => ComponentBase) \\| null>`', '`null`', 'Customizes a group header in place of its name.'],
+  ['blockedTimes', '`Bind<SchedulerBlockedTime[]>`', '`[]`', 'Times when nothing can be scheduled: `{ start, end, text?, allDay?, recurrenceRule?, resources? }`. They are shaded on the visible days, and with `resources` only for those resources.'],
   [
     'allowOverlap',
     '`Bind<boolean \\| ((check: SchedulerTimeCheck) => boolean)>`',
     '`true`',
-    'Whether what the user moves, resizes or saves may overlap another appointment of its group (any one, without groups). A function decides the whole check: `true` when the time is free.',
+    'Whether what the user moves, resizes or saves can overlap another appointment in its group, or any appointment without groups. A function makes the whole decision and returns `true` when the time is free.',
   ],
-  ['allowOffHours', '`Bind<boolean>`', '`true`', 'Whether the user may put an appointment outside the work hours (of its resources, else the scheduler’s).'],
-  ['keys.previousGroup / nextGroup', '`string[]`', '`Alt+Shift+ArrowLeft` / `…Right`', 'On a focused appointment, grouped: moves it to the group before or after.'],
+  ['allowOffHours', '`Bind<boolean>`', '`true`', 'Whether the user can place an appointment outside the work hours of its resources, or of the scheduler.'],
+  ['keys.previousGroup / nextGroup', '`string[]`', '`Alt+Shift+ArrowLeft` / `…Right`', 'On a focused appointment in a grouped view, moves it to the previous or next group.'],
 ];
 
 const RESOURCE = [
-  ['field', '`string`', '—', 'The appointment field that holds the item’s value (`roomId`), or a list of them (`ownerIds`).'],
-  ['label', '`Bind<string>`', 'the field', 'The form’s label; how the cells and the tooltip name the kind.'],
-  ['items', '`Bind<R[] \\| DataSource<R> \\| null>`', '`[]`', 'The items, in memory or from a data source (loaded once, then followed). Your data may be plain or reactive; the component reads it as it is. After changing it in place, call `refreshResources()` (or `refresh()`).'],
-  ['valueExpr, displayExpr, colorExpr', '`string`', "`'id'`, `'text'`, `'color'`", 'The item fields of its value, its name and its colour.'],
-  ['allowMultiple', '`Bind<boolean>`', '`false`', 'An appointment may have several: the field holds a list, the form has a tag box.'],
-  ['useColorAsDefault', '`Bind<boolean>`', '`false`', 'Appointments take this kind’s colour (else the first kind whose item has one). Their own `color` wins.'],
-  ['parentExpr', '`string`', '—', 'The item field naming its item of the kind above it in `groups`: nested, a group shows only its own.'],
-  ['workStartHourExpr, workEndHourExpr, workDaysExpr', '`string`', "`'workStartHour'`, `'workEndHour'`, `'workDays'`", 'An item’s own work hours and days; they win over the scheduler’s (the innermost item’s, in nested groups).'],
+  ['field', '`string`', '—', 'The appointment field that holds the item value (`roomId`) or a list of values (`ownerIds`).'],
+  ['label', '`Bind<string>`', 'The field', 'The form label, and the name of the type in cells and tooltips.'],
+  ['items', '`Bind<R[] \\| DataSource<R> \\| null>`', '`[]`', 'The items, in memory or from a data source (loaded once and then tracked). Your data can be plain or reactive, and the component reads it as it is. After changing it in place, call `refreshResources()` or `refresh()`.'],
+  ['valueExpr, displayExpr, colorExpr', '`string`', "`'id'`, `'text'`, `'color'`", 'The item fields for its value, name and color.'],
+  ['allowMultiple', '`Bind<boolean>`', '`false`', 'Allows several per appointment. The field holds a list, and the form uses a tag box.'],
+  ['useColorAsDefault', '`Bind<boolean>`', '`false`', 'Colors appointments by this type, otherwise by the first type with an item color. An appointment\'s own `color` takes precedence.'],
+  ['parentExpr', '`string`', '—', 'The item field that references its parent item in the type above it in `groups`. When nested, a group shows only its own children.'],
+  ['workStartHourExpr, workEndHourExpr, workDaysExpr', '`string`', "`'workStartHour'`, `'workEndHour'`, `'workDays'`", 'An item\'s own work hours and days, which override the scheduler\'s. In nested groups, the innermost item applies.'],
 ];
 
 const METHODS = [
-  ['checkTime(appointment, start, end, options?)', 'Whether it may be there (`free`) and what is there: `overlapping`, `blocked`, `offHours`. `options`: `allDay`, `resources` (the values it would have).'],
-  ['resourcesOf(appointment)', 'Its items by kind: `{ field, label, items: { value, text, color, item }[] }[]`.'],
-  ['refreshResources()', 'Reads the items again, after you changed them in place.'],
-  ['rangeFilter(range, fields, { resources })', 'The data layer’s filter for a range, now also for the resources shown (`{ roomId: [1, 2] }`, fields of one value).'],
+  ['checkTime(appointment, start, end, options?)', 'Whether it can be there (`free`) and what conflicts: `overlapping`, `blocked`, `offHours`. `options` accepts `allDay` and `resources`, the values it would have.'],
+  ['resourcesOf(appointment)', 'Its items by type: `{ field, label, items: { value, text, color, item }[] }[]`.'],
+  ['refreshResources()', 'Re-reads the items after they have been changed in place.'],
+  ['rangeFilter(range, fields, { resources })', 'The data layer filter for a range, now also for the visible resources (`{ roomId: [1, 2] }`, for single-value fields).'],
 ];
 
 const EVENTS = [
-  ['onMoving / onResizing', 'Now also `resources`: the values its resource fields would get in another group. `cancel` starts `true` where the time is not free; `false` lets it go there.'],
-  ['onMoveStart / onMoveEnd …', '`resources` too.'],
-  ['onAppointmentClick / DblClick', '`group`: the resource values of the group it was clicked in.'],
-  ['onCellClick / DblClick', '`cell.resources`: the cell’s group; a new appointment there gets them.'],
+  ['onMoving / onResizing', 'These also include `resources`, the values its resource fields would get in another group. `cancel` starts as `true` where the time is not free, and `false` allows the move.'],
+  ['onMoveStart / onMoveEnd …', 'This also includes `resources`.'],
+  ['onAppointmentClick / DblClick', '`group` provides the resource values of the clicked group.'],
+  ['onCellClick / DblClick', '`cell.resources` provides the group of the cell, and a new appointment there receives these values.'],
 ];
 
 const KEYS = [
-  ['Alt + Shift + Left / Right (on an appointment)', 'Moves it to the group before or after; Enter saves, Escape takes it back. Mirrored right to left.'],
-  ['Arrows on the cells', 'Over every column: the days of each group (by date, the groups of each day).'],
+  ['Alt + Shift + Left / Right (on an appointment)', 'Moves it to the previous or next group. Enter saves, and Escape reverts. These keys are mirrored on right-to-left pages.'],
+  ['Arrows on the cells', 'Above every column, showing the days of each group, or the groups of each day when grouping by date.'],
 ];
 
 export default function SchedulerResourcesPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="Rooms, people and any other kind of resource: they colour the appointments, split the columns into groups (nested, or under each date), say when each one works and when nothing may be put in." />
+        <Rich text="Resources such as rooms, people and equipment can color appointments, divide columns into groups (nested or under each date), and define when each resource is available and when time is blocked." />
       </p>
 
       <Section anchor="resources" title="Resources">
         <p>
-          <Rich text="`resources` lists the kinds. An appointment holds an item's value in the kind's `field`; with `allowMultiple`, a list (one meeting, two people). The kind marked `useColorAsDefault` colours the appointments (else the first kind whose item has a colour); an appointment's own `color` wins. The tooltip names its items, and the form has a picker for each kind." />
+          <Rich text="`resources` lists the resource types. An appointment holds an item's value in the type's `field`, or a list with `allowMultiple` (one meeting with two people). The type marked `useColorAsDefault` colors the appointments, otherwise the first type with an item color does, and an appointment's own `color` takes precedence. The tooltip lists the items, and the form has a picker for each type." />
         </p>
         <Example files={code('Resources.tsx', 'resource-data.ts')}>
           <Resources />
@@ -73,16 +73,16 @@ export default function SchedulerResourcesPage() {
 
       <Section anchor="groups" title="Groups">
         <p>
-          <Rich text="`groups` splits the columns: each item of the first kind, then each of the next under it (`parentExpr` keeps a person under their own room). The day, week, work week and month views show a head per level. `groupByDate` turns it round: each day, with the groups under it. A drag (or Alt + Shift + arrows) to another group changes the resource: in a list, only the group's own value changes." />
+          <Rich text="`groups` divides the columns by each item of the first type, then each item of the next under it (`parentExpr` keeps a person under their own room). The day, week, work week and month views show a header per level. `groupByDate` reverses this, showing each day with the groups under it. Dragging to another group, or pressing Alt + Shift + arrow, changes the resource. In a list, only the value for that group changes." />
         </p>
         <Example files={code('Grouped.tsx', 'resource-data.ts')}>
           <Grouped />
         </Example>
       </Section>
 
-      <Section anchor="header" title="A head of your own">
+      <Section anchor="header" title="Custom group headers">
         <p>
-          <Rich text="`resourceHeaderTemplate` draws a group's head: any MotifJS component, made for each head with the item, its name, colour, level and (by date) the date." />
+          <Rich text="`resourceHeaderTemplate` customizes a group header. It can return any MotifJS component, and it is created for each header with the item, its name, color and level, and the date when grouping by date." />
         </p>
         <Example files={code('HeaderTemplate.tsx', 'resource-data.ts')}>
           <HeaderTemplate />
@@ -91,7 +91,7 @@ export default function SchedulerResourcesPage() {
 
       <Section anchor="availability" title="Availability">
         <p>
-          <Rich text="An item's own work hours and days (`workStartHour`, `workEndHour`, `workDays`) shade its columns. `blockedTimes` blocks a time, once or by a rule, for every resource or the ones named. `allowOffHours: false` keeps what the user moves or saves inside the work hours, `allowOverlap: false` keeps it off another appointment of its group; a function there decides it all. A box being moved shows where it may not go, and the form says why it cannot save." />
+          <Rich text="An item's own work hours and days (`workStartHour`, `workEndHour`, `workDays`) shade its columns. `blockedTimes` blocks a time, once or with a rule, for every resource or for specific ones. `allowOffHours: false` keeps what the user moves or saves within work hours, and `allowOverlap: false` prevents overlap with another appointment in the group. A function there makes the whole decision. A box being moved shows where it cannot go, and the form explains why it cannot save." />
         </p>
         <Example files={code('Availability.tsx', 'resource-data.ts')}>
           <Availability />
@@ -100,7 +100,7 @@ export default function SchedulerResourcesPage() {
 
       <Section anchor="data" title="From a data source">
         <p>
-          <Rich text="A kind's `items` may be a data source: it is loaded once and followed (a filter, an added room). Appointments from a data source group the same way; with `remoteFiltering`, grouped by a field of one value, the source is asked for the resources shown too (`rangeFilter` with `resources`)." />
+          <Rich text="A type's `items` can be a data source, which is loaded once and then tracked for changes such as a filter or an added room. Appointments from a data source group the same way. With `remoteFiltering`, when grouping by a single-value field, the visible resources are also requested from the source (`rangeFilter` with `resources`)." />
         </p>
         <Example files={[...code('ResourcesFromSource.tsx', 'resource-data.ts'), slowAdapterFile]}>
           <ResourcesFromSource />
@@ -121,9 +121,9 @@ source.setFilter(rangeFilter(scheduler.visibleRange, scheduler.fields, { resourc
         <ApiTable
           head={['Topic', 'Details']}
           rows={[
-            ['Cells', 'A cell reads its group before its time ("Atlas, Ana Silva, Monday 26 October, 09:00") and a blocked time after it ("not available: Lunch").'],
-            ['Heads', 'The heads of the groups are drawn only (`aria-hidden`): every cell names its group.'],
-            ['Moving', 'Moving by the keys says where it would go, its group, and whether it is free there.'],
+            ['Cells', 'A cell announces its group before its time ("Atlas, Ana Silva, Monday 26 October, 09:00") and any blocked time after it ("not available: Lunch").'],
+            ['Heads', 'Group headers are decorative (`aria-hidden`), because every cell names its group.'],
+            ['Moving', 'Moving with the keyboard announces the destination, its group and whether it is free.'],
           ]}
         />
       </Section>
@@ -132,12 +132,12 @@ source.setFilter(rangeFilter(scheduler.visibleRange, scheduler.fields, { resourc
         <ApiTable
           head={['Hook', 'Description']}
           rows={[
-            ['scheduler.group-header (`inner`, `month`), group-swatch', 'Units: a group’s head at each level, and its item’s colour before the name.'],
-            ['scheduler.group-divider (`inner`, `head`)', 'Unit: the line between groups (by date, between days), down the heads and the cells.'],
-            ['scheduler.cell `blocked`, scheduler.unavailable', 'A cell in a blocked time, and a layer over it (a hatch).'],
-            ['scheduler.drop-mark', 'Unit: the mark on a box where it may not go (with the `appointment` unit’s `invalid` state).'],
-            ['scheduler.resource-swatch (`tooltip`), tooltip-resource-label, tooltip-resource-item', 'Units: an item’s colour in the form’s pickers and the tooltip; the tooltip’s lines of resources.'],
-            ['.mx-scheduler__group-head', '`data-level`, `data-edge`; cells `data-edge`, `data-blocked`.'],
+            ['scheduler.group-header (`inner`, `month`), group-swatch', 'Units: a group header at each level, and the item color before the name.'],
+            ['scheduler.group-divider (`inner`, `head`)', 'Unit: the line between groups (or between days when grouping by date), across the headers and cells.'],
+            ['scheduler.cell `blocked`, scheduler.unavailable', 'A cell in a blocked time, and a hatched layer over it.'],
+            ['scheduler.drop-mark', 'Unit: the indicator on a box where it cannot go (with the `invalid` state of the `appointment` unit).'],
+            ['scheduler.resource-swatch (`tooltip`), tooltip-resource-label, tooltip-resource-item', 'Units: an item color in the form pickers and tooltip, and the tooltip resource lines.'],
+            ['.mx-scheduler__group-head', '`data-level`, `data-edge`. Cells have `data-edge` and `data-blocked`.'],
           ]}
         />
       </Section>

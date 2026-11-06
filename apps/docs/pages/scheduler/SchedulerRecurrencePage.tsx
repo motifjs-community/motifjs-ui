@@ -9,96 +9,96 @@ import TimeZones from './examples/TimeZones';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['timeZone', '`Bind<string | null>`', "`null`: the browser's", 'The clock the days and hours are on, an IANA name (`Europe/Istanbul`). Converted with `Intl` only.'],
+  ['timeZone', '`Bind<string | null>`', "`null` uses the browser time zone", 'The time zone for days and hours, as an IANA name (`Europe/Istanbul`). Conversion uses `Intl` only.'],
   [
     'seriesEdit',
     "`Bind<'ask' \\| 'occurrence' \\| 'following' \\| 'series'>`",
     "`'ask'`",
-    'What changing or deleting an occurrence reaches. `ask` asks the user; programmatically it is the occurrence unless the call says.',
+    'What changing or deleting an occurrence applies to. `ask` prompts the user. In code, it applies to the occurrence unless the call specifies otherwise.',
   ],
-  ['recurrenceMarks', '`Bind<boolean>`', '`true`', 'The marks of an occurrence and of one changed apart, where the design language draws them.'],
-  ['editing.allowRecurrence', '`boolean`', '`true`', 'The form holds the recurrence editor.'],
-  ['editing.allowTimeZones', '`boolean`', '`false`', 'The form holds a time zone picker, and a box "Separate end time zone" (`separateEndZone` in the form’s data and `items`) that shows a picker for the end; unchecked, the end follows the start’s zone. Not on all-day appointments.'],
-  ['fields.recurrenceRule', '`string`', "`'recurrenceRule'`", 'How it repeats: an RFC 5545 rule (`FREQ=WEEKLY;BYDAY=MO,WE`); empty for once.'],
-  ['fields.recurrenceException', '`string`', "`'recurrenceException'`", 'The times left out (`EXDATE`): a text apart by commas (`20261104T090000Z,…`) or a list of dates.'],
-  ['fields.recurrenceId', '`string`', "`'recurrenceId'`", 'On an occurrence changed apart: the key of its series.'],
-  ['fields.startTimeZone / endTimeZone', '`string`', "`'startDateTimeZone'` / `'endDateTimeZone'`", 'The zone the start (and the series) and the end are set in; empty for the scheduler’s (the start) and for the start’s (the end).'],
+  ['recurrenceMarks', '`Bind<boolean>`', '`true`', 'The indicators of an occurrence and of an individually edited one, where the design language draws them.'],
+  ['editing.allowRecurrence', '`boolean`', '`true`', 'Includes the recurrence editor in the form.'],
+  ['editing.allowTimeZones', '`boolean`', '`false`', 'Includes a time zone picker and a "Separate end time zone" check box in the form (`separateEndZone` in the form `data` and `items`), which shows a picker for the end. When unchecked, the end follows the start zone. It is not available for all-day appointments.'],
+  ['fields.recurrenceRule', '`string`', "`'recurrenceRule'`", 'The recurrence, as an RFC 5545 rule (`FREQ=WEEKLY;BYDAY=MO,WE`). Leave it empty for a single appointment.'],
+  ['fields.recurrenceException', '`string`', "`'recurrenceException'`", 'The excluded times (`EXDATE`), as comma-separated text (`20261104T090000Z,…`) or a list of dates.'],
+  ['fields.recurrenceId', '`string`', "`'recurrenceId'`", 'On an individually edited occurrence, the key of its series.'],
+  ['fields.startTimeZone / endTimeZone', '`string`', "`'startDateTimeZone'` / `'endDateTimeZone'`", 'The time zones of the start (and the series) and the end. Leave them empty to use the scheduler zone for the start and the start zone for the end.'],
 ];
 
 const METHODS = [
-  ['updateAppointment(appointment, changes, scope?)', 'For an occurrence, `scope` says what the change reaches: `occurrence`, `following` or `series`.'],
+  ['updateAppointment(appointment, changes, scope?)', 'For an occurrence, `scope` sets what the change applies to: `occurrence`, `following` or `series`.'],
   ['deleteAppointment(appointment, scope?)', 'The same for a delete.'],
-  ['askSeries(appointment, action?)', 'Asks the user what a change (`update`) or a delete (`delete`) reaches; resolves to the answer or `null`.'],
-  ['seriesOf(appointment)', 'The series of an occurrence or of one changed apart; a series itself; else `null`.'],
-  ['isOccurrence(appointment), isException(appointment)', 'An occurrence the scheduler made from a rule; one changed apart from its series.'],
-  ['occurrencesOf(series, start, end)', 'The occurrences of a series in a time.'],
-  ['recurrenceText(appointment)', 'How it repeats, in plain words of the locale.'],
+  ['askSeries(appointment, action?)', 'Asks the user what a change (`update`) or a delete (`delete`) applies to. Resolves to the answer, or `null`.'],
+  ['seriesOf(appointment)', 'The series of an occurrence or an individually edited one, the series itself, or otherwise `null`.'],
+  ['isOccurrence(appointment), isException(appointment)', 'Indicate an occurrence generated from a rule, and an occurrence edited individually from its series.'],
+  ['occurrencesOf(series, start, end)', 'The occurrences of a series in a time range.'],
+  ['recurrenceText(appointment)', 'Describes the recurrence in plain words in the current locale.'],
 ];
 
 const EVENTS = [
-  ['onSeriesAsking', '`{ appointment, series, action, scopes, scope, cancel }`: set `scope` to answer without the question, narrow `scopes`, or cancel the change.'],
-  ['onSeriesAnswered', '`{ appointment, series, action, scope, byUser }`: `scope` is `null` when the question was cancelled.'],
-  ['onAppointmentUpdating / Updated', 'Now also `scope` and `series` (`null` for an appointment that happens once); `Updated` gives `added`: the occurrence changed apart, or the series that goes on.'],
-  ['onAppointmentDeleting / Deleted', 'Now also `scope` and `series`.'],
-  ['onDataError', 'Now also `saved` and `unsaved` (each `{ kind, appointment, changes? }`) and `undone`: what a change of a series wrote before it failed, and whether it was all taken back.'],
+  ['onSeriesAsking', '`{ appointment, series, action, scopes, scope, cancel }`. Set `scope` to answer without prompting, narrow `scopes`, or cancel the change.'],
+  ['onSeriesAnswered', '`{ appointment, series, action, scope, byUser }`. `scope` is `null` when the prompt was canceled.'],
+  ['onAppointmentUpdating / Updated', 'These also include `scope` and `series` (`null` for a non-recurring appointment). `Updated` includes `added`, which is the individually edited occurrence or the continuing series.'],
+  ['onAppointmentDeleting / Deleted', 'These also include `scope` and `series`.'],
+  ['onDataError', 'This also includes `saved` and `unsaved` (each `{ kind, appointment, changes? }`) and `undone`, which report what a series change wrote before failing and whether it was rolled back.'],
 ];
 
 const EDITOR = [
-  ['value', '`Bind<string>`', "`''`", 'The rule as RFC 5545 text; empty when it does not repeat. Two-way with `x-model`.'],
-  ['start', '`Bind<Date | null>`', 'now', 'When it starts: a rule’s weekday and day of the month come from it unless the rule names them.'],
-  ['allDay', '`Bind<boolean>`', '`false`', 'Its last date is written as a date (else as the end of that day, in UTC).'],
-  ['timeZone', '`Bind<string | null>`', "the browser's", 'The zone the series repeats in.'],
-  ['frequencies', '`Bind<("never" \\| frequency)[]>`', 'all five', 'The choices of the repeat list.'],
-  ['firstDayOfWeek, locale, texts, readOnly, summary', '—', '—', 'The first weekday button; names and words; read only; the line in words.'],
-  ['rule, summaryText', '—', '—', 'The rule read from `value`, and how it repeats in words. Reactive.'],
-  ['onValueChanged', '`{ value, previousValue, byUser }`', '—', 'A choice changed the rule.'],
+  ['value', '`Bind<string>`', "`''`", 'The rule as RFC 5545 text, empty when it does not repeat. `x-model` provides two-way binding.'],
+  ['start', '`Bind<Date | null>`', 'Now', 'The start of the series. A rule takes its weekday and day of the month from it, unless the rule specifies them.'],
+  ['allDay', '`Bind<boolean>`', '`false`', 'Writes the last date as a date, instead of the end of that day in UTC.'],
+  ['timeZone', '`Bind<string | null>`', "The browser time zone", 'The time zone the series recurs in.'],
+  ['frequencies', '`Bind<("never" \\| frequency)[]>`', 'all five', 'The options in the repeat list.'],
+  ['firstDayOfWeek, locale, texts, readOnly, summary', '—', '—', 'The first weekday button, names and strings, read-only state, and the description line.'],
+  ['rule, summaryText', '—', '—', 'The rule parsed from `value`, and its description in words. Reactive.'],
+  ['onValueChanged', '`{ value, previousValue, byUser }`', '—', 'Occurs when a selection changes the rule.'],
 ];
 
 const PARTS = [
-  ['TimeZone.of(name) / TimeZone.local', 'A zone: `wall(moment)`, `moment(wall, later?)`, `offset`, `dayStart`, `addDays`, `sameDay`, `toLocal` / `fromLocal` (for editors), `TimeZone.names()`.'],
-  ['parseRecurrenceRule(text) / formatRecurrenceRule(rule)', 'A rule as an object (`RecurrenceRule`) and back.'],
-  ['recurrenceDates(rule, start, from, to, options?)', 'The times a rule happens in a range, as wall clock times.'],
-  ['describeRecurrence(rule, start, options)', 'A rule in plain words.'],
-  ['readRuleDates, addRuleDate, filterRuleDates, parseRuleDate, formatRuleDate', 'Exception dates as a field holds them.'],
-  ['rangeFilter(range, fields)', 'The data layer’s filter for a range: starts before it ends and (ends at or after it starts, or has a rule). The scheduler’s `remoteFiltering` uses it.'],
+  ['TimeZone.of(name) / TimeZone.local', 'A time zone: `wall(moment)`, `moment(wall, later?)`, `offset`, `dayStart`, `addDays`, `sameDay`, `toLocal` and `fromLocal` (for editors), and `TimeZone.names()`.'],
+  ['parseRecurrenceRule(text) / formatRecurrenceRule(rule)', 'Converts a rule to an object (`RecurrenceRule`) and back.'],
+  ['recurrenceDates(rule, start, from, to, options?)', 'The times a rule occurs in a range, as wall clock times.'],
+  ['describeRecurrence(rule, start, options)', 'Describes a rule in plain words.'],
+  ['readRuleDates, addRuleDate, filterRuleDates, parseRuleDate, formatRuleDate', 'Exception dates as stored in the field.'],
+  ['rangeFilter(range, fields)', 'The data layer filter for a range: it starts before the range ends and either ends at or after the range starts or has a rule. The scheduler\'s `remoteFiltering` uses it.'],
 ];
 
 const KEYS = [
-  ['Arrows (in the question)', 'Choose this one, this and the following, the whole series.'],
-  ['Enter / Escape', 'Answer / cancel: the change is dropped and the appointment goes back.'],
+  ['Arrows (in the question)', 'Chooses this occurrence, this and following, or the whole series.'],
+  ['Enter / Escape', 'Confirms, or cancels so that the change is discarded and the appointment reverts.'],
 ];
 
 export default function SchedulerRecurrencePage() {
   return (
     <>
       <p class="lead">
-        <Rich text="Appointments that repeat by an RFC 5545 rule, with times left out and occurrences changed apart; a question on what a change reaches; an editor of the rule; and the days on the clock of any time zone, summer time included." />
+        <Rich text="Recurring appointments based on RFC 5545 rules, with exceptions and individually edited occurrences, a prompt that asks what a change should apply to, a recurrence editor, and time zone support that handles daylight saving time." />
       </p>
 
       <Section anchor="recurring" title="Recurring appointments">
         <p>
-          <Rich text="An appointment with a `recurrenceRule` is a series: the scheduler shows its occurrences in the days on screen only. `recurrenceException` leaves times out; an appointment whose `recurrenceId` names a series stands in for one of its occurrences. Supported: `FREQ` daily to yearly, `INTERVAL`, `COUNT`, `UNTIL`, `BYDAY` (`2MO`, `-1FR`), `BYMONTHDAY`, `BYMONTH`, `BYYEARDAY`, `BYWEEKNO`, `BYSETPOS`, `WKST`, `BYHOUR`, `BYMINUTE`." />
+          <Rich text="An appointment with a `recurrenceRule` is a series, and the scheduler shows its occurrences only in the visible days. `recurrenceException` excludes specific times, and an appointment whose `recurrenceId` references a series replaces one of its occurrences. Supported parts are `FREQ` (daily to yearly), `INTERVAL`, `COUNT`, `UNTIL`, `BYDAY` (`2MO`, `-1FR`), `BYMONTHDAY`, `BYMONTH`, `BYYEARDAY`, `BYWEEKNO`, `BYSETPOS`, `WKST`, `BYHOUR` and `BYMINUTE`." />
         </p>
         <Example files={code('Recurring.tsx', 'recurring-appointments.ts')}>
           <Recurring />
         </Example>
       </Section>
 
-      <Section anchor="series" title="Changing a series">
+      <Section anchor="series" title="Editing a series">
         <p>
-          <Rich text="Moving, resizing, the form and Delete ask the same question. **This one**: a new appointment takes its place (naming its series) and its time is left out of the series. **This and following**: the series ends before it (`UNTIL`, or a smaller `COUNT`) and a new series goes on from it. **The whole series**: every occurrence moves as this one did; a weekly series moved to another day moves its weekdays." />
+          <Rich text="Moving, resizing, the form and Delete all ask the same question. **This one**: a new appointment takes its place, referencing its series, and its time is excluded from the series. **This and following**: the series ends before it (with `UNTIL` or a smaller `COUNT`), and a new series continues from it. **The whole series**: every occurrence moves the same way, and moving a weekly series to another day moves its weekdays." />
         </p>
         <p>
-          <Rich text="With a data source every write goes through its adapter, one after another: the new rows first, then the changes, then the deletes. When a later write fails, the earlier ones are taken back through the adapter; `onDataError` tells what was saved (`saved`, `unsaved`) and whether it was all taken back (`undone`). An occurrence changed apart is an ordinary row, linked to its series by `recurrenceId`; deleting the series asks the adapter for those rows, loaded or not. This example runs from a data source." />
+          <Rich text="With a data source, each write goes through its adapter in sequence: new rows first, then updates, then deletes. If a later write fails, the earlier ones are rolled back through the adapter. `onDataError` reports what was saved (`saved`, `unsaved`) and whether everything was rolled back (`undone`). An individually edited occurrence is an ordinary row linked to its series through `recurrenceId`, and deleting the series requests those rows from the adapter, whether they are loaded or not. This example uses a data source." />
         </p>
         <Example files={[...code('SeriesQuestion.tsx', 'recurring-appointments.ts'), slowAdapterFile]}>
           <SeriesQuestion />
         </Example>
       </Section>
 
-      <Section anchor="editor" title="The recurrence editor">
+      <Section anchor="editor" title="Recurrence editor">
         <p>
-          <Rich text="The appointment form holds it (`editing.allowRecurrence`). On its own it is `RecurrenceEditor`: the repeat list, every how many, the weekdays, a day of the month or a weekday by its place, the month, the end; a rule it cannot show whole stays as it is until a choice is changed." />
+          <Rich text="The appointment form includes it (`editing.allowRecurrence`). On its own, it is `RecurrenceEditor`, with the repeat list, the interval, the weekdays, a day of the month or a weekday by position, the month and the end. A rule it cannot fully display stays unchanged until a selection is changed." />
         </p>
         <Example files={code('RuleEditor.tsx')}>
           <RuleEditor />
@@ -114,10 +114,10 @@ FormLayout.editors.set('recurrence', (p) => new RecurrenceEditor(p));
 
       <Section anchor="zones" title="Time zones">
         <p>
-          <Rich text="`timeZone` puts the days and hours on a zone's clock. A series repeats on the clock of its start's zone (`startDateTimeZone`), so 09:00 in New York stays 09:00 there over summer time. On the night the clocks go forward the skipped hour is passed (a time in it moves on by the hour); on the night they go back a box is as long as the appointment lasts." />
+          <Rich text="`timeZone` displays days and hours in a given zone. A series recurs in the zone of its start (`startDateTimeZone`), so 09:00 in New York stays 09:00 there across daylight saving changes. On the night the clocks go forward, the skipped hour is passed, and a time inside it moves forward by the hour. On the night they go back, an appointment's box is as long as the appointment lasts." />
         </p>
         <p>
-          <Rich text="With `editing.allowTimeZones` the form has one time zone picker and a box, **Separate end time zone**: checked, a second picker sets the end's zone (an appointment whose end zone differs opens with it checked); unchecked, the end follows the start's zone again." />
+          <Rich text="With `editing.allowTimeZones`, the form has a time zone picker and a **Separate end time zone** check box. When checked, a second picker sets the end zone, and an appointment with a different end zone opens with it checked. When unchecked, the end follows the start zone again." />
         </p>
         <Example files={code('TimeZones.tsx')}>
           <TimeZones />
@@ -132,9 +132,9 @@ FormLayout.editors.set('recurrence', (p) => new RecurrenceEditor(p));
         <ApiTable
           head={['Topic', 'Details']}
           rows={[
-            ['Occurrences', 'An occurrence is named with how its series repeats; one changed apart says so. The marks are only drawn (`aria-hidden`).'],
-            ['The question', 'A modal form: its choices are radio buttons under the question, the first one chosen.'],
-            ['The editor', 'A group named "Repeat"; the weekdays are toggle buttons (`aria-pressed`) in a group named by its caption; the line in words is polite live text.'],
+            ['Occurrences', 'An occurrence is named with how its series repeats, and an individually edited one says so. The indicators are decorative (`aria-hidden`).'],
+            ['The question', 'A modal form with radio buttons under the question. The first option is selected.'],
+            ['The editor', 'A group named "Repeat". The weekdays are toggle buttons (`aria-pressed`) in a group named by its label, and the description is polite live text.'],
           ]}
         />
       </Section>
@@ -144,10 +144,10 @@ FormLayout.editors.set('recurrence', (p) => new RecurrenceEditor(p));
           head={['Hook', 'Description']}
           rows={[
             ['.mx-scheduler__appointment', '`data-series`, `data-exception`.'],
-            ['scheduler.series-mark, exception-mark', 'Units: the marks (`bar`, `chip`, `open`, `past`, `disabled`); a language that has none leaves them out.'],
-            ['scheduler.tooltip-repeat', 'Unit: the tooltip’s line on how it repeats (`exception`).'],
-            ['.mx-recurrence-editor, __days, __day, __summary', 'The editor, its weekday buttons and its line in words.'],
-            ['recurrence-editor.editor, days-label, days, summary', 'Units of the editor; `day-button` is the weekday buttons’ place; `row-gap`, `column-gap`.'],
+            ['scheduler.series-mark, exception-mark', 'Units: the indicators (`bar`, `chip`, `open`, `past`, `disabled`). A design language without them omits them.'],
+            ['scheduler.tooltip-repeat', 'Unit: the tooltip line that describes the recurrence (`exception`).'],
+            ['.mx-recurrence-editor, __days, __day, __summary', 'The editor, its weekday buttons and its description.'],
+            ['recurrence-editor.editor, days-label, days, summary', 'Units of the editor. `day-button` is the place for the weekday buttons, plus `row-gap` and `column-gap`.'],
           ]}
         />
       </Section>
@@ -170,7 +170,7 @@ FormLayout.editors.set('recurrence', (p) => new RecurrenceEditor(p));
         </h3>
         <ApiTable head={['Member', 'Type', 'Default', 'Description']} rows={EDITOR} />
         <h3>
-          <Rich text="Parts" />
+          <Rich text="Utilities" />
         </h3>
         <ApiTable head={['Part', 'Description']} rows={PARTS} />
       </Section>

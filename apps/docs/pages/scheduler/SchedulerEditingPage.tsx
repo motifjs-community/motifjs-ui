@@ -14,54 +14,54 @@ const PROPS = [
     'editing',
     '`Bind<boolean | Partial<SchedulerEditing>>`',
     '`true`',
-    '`false`: read only. Or each switch: `allowAdding`, `allowUpdating`, `allowDeleting`, `allowDragging`, `allowResizing`, `allowCopying`, `confirmDelete`.',
+    '`false` makes the scheduler read-only. You can also set `allowAdding`, `allowUpdating`, `allowDeleting`, `allowDragging`, `allowResizing`, `allowCopying` and `confirmDelete` individually.',
   ],
-  ['fields.allowDrag / allowResize / allowEdit / allowDelete', '`string`', 'the same names', 'An appointment’s own switches; they win over `editing`.'],
-  ['snapMinutes', '`Bind<number>`', 'the cell', 'The step a drag and the keys move by.'],
-  ['minDuration', '`Bind<number>`', '`snapMinutes`', 'The shortest an appointment gets by resizing, in minutes.'],
-  ['tooltip', '`Bind<boolean>`', '`true`', 'A click on an appointment shows its tooltip with Edit and Delete.'],
+  ['fields.allowDrag / allowResize / allowEdit / allowDelete', '`string`', 'The same names', 'An appointment\'s own settings, which override `editing`.'],
+  ['snapMinutes', '`Bind<number>`', 'The cell duration', 'The step used by dragging and the keyboard.'],
+  ['minDuration', '`Bind<number>`', '`snapMinutes`', 'The minimum duration when resizing, in minutes.'],
+  ['tooltip', '`Bind<boolean>`', '`true`', 'Clicking an appointment shows its tooltip with Edit and Delete.'],
 ];
 
 const EVENTS = [
-  ['onAppointmentAdding / Added', '`{ appointment, byUser, cancel, promise? }`: the values may still be changed; `promise` waits (a server).'],
+  ['onAppointmentAdding / Added', '`{ appointment, byUser, cancel, promise? }`. The values can still be changed, and `promise` waits, for example for a server.'],
   ['onAppointmentUpdating / Updated', '`{ appointment, changes, byUser, cancel, promise? }`.'],
-  ['onAppointmentDeleting / Deleted', '`{ appointment, byUser, cancel, promise? }`, after the question when it asks.'],
-  ['onFormOpening', '`{ appointment, data, items, form, cancel }`: change the fields, or cancel to open your own form.'],
-  ['onMoveStart / onMoving / onMoveEnd', '`{ appointment, start, end, allDay, copy, byKeys, cancel }`: cancel on `moving` marks a place it may not go.'],
-  ['onResizeStart / onResizing / onResizeEnd', 'The same, for the edges.'],
-  ['onDataError', '`{ operation, appointment, error }`: saving failed; the appointment shows as it was.'],
+  ['onAppointmentDeleting / Deleted', '`{ appointment, byUser, cancel, promise? }`, raised after the confirmation if there is one.'],
+  ['onFormOpening', '`{ appointment, data, items, form, cancel }`. Change the fields, or cancel to open your own form.'],
+  ['onMoveStart / onMoving / onMoveEnd', '`{ appointment, start, end, allDay, copy, byKeys, cancel }`. Canceling `moving` marks a position as invalid.'],
+  ['onResizeStart / onResizing / onResizeEnd', 'The same, for resizing.'],
+  ['onDataError', '`{ operation, appointment, error }`: saving failed, and the appointment reverted.'],
 ];
 
 const METHODS = [
-  ['addAppointment(values)', 'Adds where the appointments come from (pushed into the array, or inserted through the data source); resolves to it.'],
-  ['updateAppointment(appointment, changes)', 'Changes its fields; resolves `false` when an event said no or saving failed.'],
-  ['deleteAppointment(appointment)', 'Deletes it (no question programmatically).'],
-  ['showAppointmentForm(appointment?, cell?)', 'The form for an appointment, or for a new one at `cell` (the selection by default).'],
-  ['showTooltip(appointment, anchor?) / hideTooltip()', 'Its tooltip.'],
+  ['addAppointment(values)', 'Adds an appointment to the source (the array or, through the data source, the server) and resolves to it.'],
+  ['updateAppointment(appointment, changes)', 'Changes its fields. Resolves to `false` if an event canceled it or saving failed.'],
+  ['deleteAppointment(appointment)', 'Deletes it. There is no confirmation when called from code.'],
+  ['showAppointmentForm(appointment?, cell?)', 'Opens the form for an appointment, or for a new one at `cell` (the selection by default).'],
+  ['showTooltip(appointment, anchor?) / hideTooltip()', 'Controls its tooltip.'],
 ];
 
 const KEYS = [
-  ['Enter on cells', 'The form for a new appointment over the selection.'],
-  ['Enter on an appointment', 'Its form. Space: its tooltip.'],
+  ['Enter on cells', 'Opens the form for a new appointment over the selection.'],
+  ['Enter on an appointment', 'Opens its form. Space shows its tooltip.'],
   [
     'Arrows on an appointment',
-    'Move it: Up / Down a step (a week in the month), Left / Right a day. Shift + arrows: its end. Enter saves, Escape takes it back.',
+    'Moves it: Up and Down by a step (a week in the month view), Left and Right by a day. Shift + arrow changes its end. Enter saves, and Escape reverts.',
   ],
-  ['Delete', 'Deletes the focused appointment (asking first).'],
+  ['Delete', 'Deletes the focused appointment, after confirmation.'],
   ['Ctrl while dragging', 'Drops a copy.'],
-  ['Escape while dragging', 'Takes it back.'],
+  ['Escape while dragging', 'Reverts the change.'],
 ];
 
 export default function SchedulerEditingPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="Appointments are added, moved, resized, copied and deleted with the pointer, the keys and code; every change asks its event first, can wait for a server, and goes back when saving fails." />
+        <Rich text="Users can add, move, resize, copy and delete appointments with the pointer and the keyboard, and you can do the same in code. Every change raises its event first, can wait for a server, and is reverted if saving fails." />
       </p>
 
-      <Section anchor="editing" title="Drag, resize, edit">
+      <Section anchor="editing" title="Drag, resize and edit">
         <p>
-          <Rich text="The box itself goes where the appointment would go while it is dragged, on the step of `snapMinutes`; near the edges the view scrolls. A finger starts a drag with a long press." />
+          <Rich text="While dragging, the appointment itself moves to the new position, on the `snapMinutes` step, and the view scrolls near the edges. On touch screens, a long press starts a drag." />
         </p>
         <Example files={code('Editing.tsx', 'sample-appointments.ts')}>
           <Editing />
@@ -70,25 +70,25 @@ export default function SchedulerEditingPage() {
 
       <Section anchor="saving" title="Saving to a server">
         <p>
-          <Rich text="With a data source the changes go through its adapter. While one saves the appointment stays where it was put and cannot be changed; when it fails `onDataError` tells, and it goes back." />
+          <Rich text="With a data source, changes go through its adapter. While saving, the appointment stays where it was placed and cannot be changed. If saving fails, `onDataError` reports it and the appointment reverts." />
         </p>
         <Example files={[...code('Saving.tsx'), slowAdapterFile]}>
           <Saving />
         </Example>
       </Section>
 
-      <Section anchor="form" title="The form">
+      <Section anchor="form" title="The appointment form">
         <p>
-          <Rich text="`onFormOpening` gets the form's `items` (a `FormLayout`) and its `data`: add your own fields, take some away, or cancel and show a form of your own." />
+          <Rich text="`onFormOpening` receives the form's `items` (a `FormLayout`) and its `data`. You can add or remove fields, or cancel and show your own form." />
         </p>
         <Example files={code('CustomForm.tsx')}>
           <CustomForm />
         </Example>
       </Section>
 
-      <Section anchor="rules" title="Rules">
+      <Section anchor="rules" title="Validation rules">
         <p>
-          <Rich text="`onMoving` and `onResizing` say where an appointment may go: cancelled, the drag shows it cannot drop there. An appointment's own `allowDrag` and `allowResize` lock it." />
+          <Rich text="`onMoving` and `onResizing` control where an appointment can go. When canceled, the drag shows that it cannot drop there. An appointment's own `allowDrag` and `allowResize` can lock it." />
         </p>
         <Example files={code('Rules.tsx')}>
           <Rules />

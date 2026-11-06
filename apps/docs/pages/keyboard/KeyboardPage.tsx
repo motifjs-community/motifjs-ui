@@ -62,7 +62,7 @@ export default function KeyboardPage() {
         <Rich text={'Every control follows the same rules for Tab order, the active control of a container, focus handling, `&File` access keys and application-wide shortcuts.'} />
       </p>
 
-      <Section anchor="rules" title="Rules">
+      <Section anchor="rules" title="Validation rules">
         <ApiTable head={['Rule', 'Details']} rows={RULES} />
       </Section>
 
