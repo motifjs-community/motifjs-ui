@@ -1,6 +1,6 @@
 # ProgressBar and Spinner
 
-> Feedback · @motifx-community/ui 0.1.0-beta.2
+> Feedback · @motifx-community/ui 0.1.0-beta.3
 
 ProgressBar shows how far some work is, as a line or a circle, or that it runs when that is not known. Spinner says "busy, wait": a turning ring, alone or over a panel while it loads, shown only after a delay so quick work does not flash it.
 
@@ -10,16 +10,16 @@ ProgressBar shows how far some work is, as a line or a circle, or that it runs w
 import { ProgressBar, Spinner, type ProgressTone } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-Every prop takes a value or a function; a function of a reactive object keeps the bar in step with the work. Created with `new`, the same properties are set from code.
+Every prop takes a value or a function; a function of a reactive object keeps the bar in step with the work. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, ProgressBar, Stack } from '@motifx-community/ui';
 
-/** A bar that follows an upload, and bars created with `new` and added from code. */
-export default function FromCode() {
+/** A bar that follows an upload, and bars created with `new` and added programmatically. */
+export default function Programmatic() {
   const s = reactive({ upload: 0, uploading: false });
   let added = 0;
   let host: Stack | null = null;
@@ -36,7 +36,7 @@ export default function FromCode() {
     }, 120);
   };
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const bar = new ProgressBar({ label: `Task ${++added}`, showValue: true, tone: 'success' });
     bar.value = 25 * added;
     host?.controls.add(bar);
@@ -47,7 +47,7 @@ export default function FromCode() {
       <ProgressBar label="Uploading" value={() => s.upload} showValue stretch />
       <Stack orientation="horizontal" wrap align="center">
         <Button text="Upload" tone="accent" enabled={() => !s.uploading} onclick={upload} />
-        <Button text="Add a bar from code" variant="outline" onclick={addFromCode} />
+        <Button text="Add a bar programmatically" variant="outline" onclick={addProgrammatic} />
       </Stack>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />
     </>

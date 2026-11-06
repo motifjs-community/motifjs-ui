@@ -1,6 +1,6 @@
 # Chip and ChipGroup
 
-> Display · @motifx-community/ui 0.1.0-beta.2
+> Display · @motifx-community/ui 0.1.0-beta.3
 
 A short text with an icon or an avatar before it: a filter to turn on, a choice among a few, or something picked that can be removed. A group selects one or several and moves between them with the arrow keys.
 
@@ -10,16 +10,16 @@ A short text with an icon or an avatar before it: a filter to turn on, a choice 
 import { Chip, ChipGroup } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-Every prop takes a value or a function. Created with `new`, the same properties are set from code.
+Every prop takes a value or a function. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Chip, Stack } from '@motifx-community/ui';
 
-/** A chip from JSX follows its functions; one made with `new` takes the same properties from code. */
-export default function FromCode() {
+/** A chip from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+export default function Programmatic() {
   const s = reactive({ vegan: false });
   const coded = new Chip({ text: 'Spicy', selectable: true });
 

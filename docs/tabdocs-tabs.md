@@ -1,6 +1,6 @@
 # TabDocumentManager: Tabs
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.2
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
 
 What a tab does in a code editor: preview tabs that the next preview replaces, pinned tabs that stay at the start, tabs that shrink, wrap or scroll, counts and colours, and the same document open in two groups.
 

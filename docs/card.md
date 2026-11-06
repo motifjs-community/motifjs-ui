@@ -1,6 +1,6 @@
 # Card
 
-> Display · @motifx-community/ui 0.1.0-beta.2
+> Display · @motifx-community/ui 0.1.0-beta.3
 
 A surface holding one thing: a picture, a header with an avatar and titles, content and a row of actions. Parts with nothing in them are left out.
 
@@ -10,16 +10,16 @@ A surface holding one thing: a picture, a header with an avatar and titles, cont
 import { Card } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-Every prop takes a value or a function. Created with `new`, the same properties are set from code.
+Every prop takes a value or a function. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, Card, Stack } from '@motifx-community/ui';
 
-/** A card from JSX follows its functions; one made with `new` takes the same properties from code. */
-export default function FromCode() {
+/** A card from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+export default function Programmatic() {
   const s = reactive({ following: false });
   const coded = new Card({ title: 'Made in code', subtitle: 'new Card({ … })', variant: 'outline' });
 
@@ -250,5 +250,5 @@ export default function Sizes() {
 | Property | Access | Description |
 | --- | --- | --- |
 | `every prop above` | read/write | A value or a function, like the prop. |
-| `contentPart` | read-only | The part holding the content, for adding to it from code. |
+| `contentPart` | read-only | The part holding the content, for adding to it programmatically. |
 | `avatarControl` | read-only | The avatar before the titles, when it has one. |

@@ -1,6 +1,6 @@
 # TagBox
 
-> Data · @motifx-community/ui 0.1.0-beta.2
+> Data · @motifx-community/ui 0.1.0-beta.3
 
 Picks several items. The chosen ones are tags in the field, followed by a text input that searches the list; items come from memory or from a data source, and typed text can become a tag of its own.
 
@@ -11,9 +11,9 @@ import { TagBox } from '@motifx-community/ui';
 import { data } from '@motifx-community/data';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-`x-model` binds an array; every change writes a new one. Created with `new`, the same properties are set from code.
+`x-model` binds an array; every change writes a new one. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 /** The skills the tag boxes of the examples pick from. */
@@ -265,20 +265,20 @@ export const skills = ['CSS', 'Go', 'HTML', 'Java', 'JavaScript', 'Kotlin', 'Pyt
 
 ## Example files
 
-`FromCode.tsx`
+`Programmatic.tsx`
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, Stack, TagBox } from '@motifx-community/ui';
 import { skills } from './skills';
 
-/** A tag box bound to an array with x-model, and tag boxes created with `new` and added from code. */
-export default function FromCode() {
+/** A tag box bound to an array with x-model, and tag boxes created with `new` and added programmatically. */
+export default function Programmatic() {
   const form = reactive({ skills: ['TypeScript', 'CSS'] as string[], result: '' });
   let added = 0;
   let host: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const tags = new TagBox<string, string>({ label: `Skills ${++added}`, items: skills, placeholder: 'Pick some' });
     tags.onValueChanged((e) => (form.result = `${tags.label}: ${e.value.join(', ')}`));
     host?.controls.add(tags);
@@ -290,7 +290,7 @@ export default function FromCode() {
       <TagBox label="&Skills" items={skills} x-model={() => form.skills} stretch />
       <Stack orientation="horizontal" wrap align="center">
         <output class="tg-skills">{() => `skills: ${JSON.stringify(form.skills)}`}</output>
-        <Button text="Add a tag box from code" variant="outline" onclick={addFromCode} />
+        <Button text="Add a tag box programmatically" variant="outline" onclick={addProgrammatic} />
         <output class="tg-made">{() => form.result}</output>
       </Stack>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />

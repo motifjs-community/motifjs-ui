@@ -1,6 +1,6 @@
 # DateRangeBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.2
+> Editors · @motifx-community/ui 0.1.0-beta.3
 
 A start and an end date in one field: typed through two masks, or picked on two months side by side, from ready-made ranges, within the dates and the span allowed. The value is a `[start, end]` pair.
 
@@ -10,7 +10,7 @@ A start and an end date in one field: typed through two masks, or picked on two 
 import { DateRangeBox, type DateRange } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -18,8 +18,8 @@ import { Button, DateRangeBox, Stack, type DateRange } from '@motifx-community/u
 
 const say = (d: Date | null) => (d ? d.toLocaleDateString('en-GB') : '—');
 
-/** A range bound with x-model, and one made from code and read through its properties. */
-export default function FromCode() {
+/** A range bound with x-model, and one made programmatically and read through its properties. */
+export default function Programmatic() {
     const s = reactive({ stay: [new Date(2026, 2, 10), new Date(2026, 2, 14)] as DateRange, told: '' });
     const coded = new DateRangeBox({ label: 'Report period', clearButton: true, onValueChanged: e => (s.told = `${say(e.value[0])} to ${say(e.value[1])}`) });
 

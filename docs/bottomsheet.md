@@ -1,6 +1,6 @@
 # BottomSheet
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
 A panel that comes up from the bottom of the page or of a container and stops at a few heights: a peek, half, full, as tall as its content, or heights of your own. Dragged by its handle and its title, flicked, swiped down to close; modal or not, with the browser's back closing it on a phone.
 
@@ -10,9 +10,9 @@ A panel that comes up from the bottom of the page or of a container and stops at
 import { BottomSheet, type BottomSheetDetent } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-In JSX, `x-model` opens and closes it with the state. From code, `show(host)` puts it in a component and disposes it when it closes; `open()` and `close()` work on one that stays. Without a `container` it opens over the whole page, in the browser's top layer.
+In JSX, `x-model` opens and closes it with the state. Programmatically, `show(host)` puts it in a component and disposes it when it closes; `open()` and `close()` work on one that stays. Without a `container` it opens over the whole page, in the browser's top layer.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -44,7 +44,7 @@ export default function JsxAndCode() {
     <Stack ref={(c: Stack) => (host = c)} gap="sm">
       <Stack orientation="horizontal" wrap align="center">
         <Button text="Edit the name" variant="outline" onclick={() => (s.open = true)} />
-        <Button text="Share (from code)" variant="outline" onclick={share} />
+        <Button text="Share (programmatically)" variant="outline" onclick={share} />
         <output>{() => s.said || `Name: ${s.name}`}</output>
       </Stack>
       <BottomSheet title="Your name" showClose detents={['half', 'full']} x-model={() => s.open}>

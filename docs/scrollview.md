@@ -1,8 +1,8 @@
 # ScrollView
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
-Content that scrolls in a box of its own: the bars shown as told, a pull from the top that asks for what is new, a reach near the end that asks for more. Moved from code to a position or to an element.
+Content that scrolls in a box of its own: the bars shown as told, a pull from the top that asks for what is new, a reach near the end that asks for more. Moved programmatically to a position or to an element.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { ScrollView } from '@motifx-community/ui';
 
 ## A box that scrolls
 
-The JSX children are the content. `showScrollbar` says when the bars show; `scrollTo` and `scrollToElement` move the content from code, `onScrolled` tells where it stands.
+The JSX children are the content. `showScrollbar` says when the bars show; `scrollTo` and `scrollToElement` move the content programmatically, `onScrolled` tells where it stands.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -21,7 +21,7 @@ import { Button, ScrollView, Stack, type ScrollViewBars } from '@motifx-communit
 const LINES = Array.from({ length: 40 }, (_, i) => `Line ${i + 1} of a long text that needs a box of its own to scroll in.`);
 const MODES: ScrollViewBars[] = ['onScroll', 'onHover', 'always', 'never'];
 
-/** A box that scrolls, its bars shown as told; moved from code to a line and back to the top. */
+/** A box that scrolls, its bars shown as told; moved programmatically to a line and back to the top. */
 export default function Bars() {
     const s = reactive({ bars: 'onScroll' as ScrollViewBars, top: 0 });
     let view!: ScrollView;
@@ -121,7 +121,7 @@ export default function More() {
 
 | Topic | How |
 | --- | --- |
-| `Scrolling` | The box scrolls with the wheel, the keys when focused, a finger, and from code. `direction` locks the other axis; the page behind does not scroll on when the content ends. |
+| `Scrolling` | The box scrolls with the wheel, the keys when focused, a finger, and programmatically. `direction` locks the other axis; the page behind does not scroll on when the content ends. |
 | `Scrollbars` | The design system’s bars. With `onScroll` the thumb shows while the content moves and goes a moment after; with `onHover` while the pointer is over the view or focus is in it; `always` leaves them; `never` hides them, the content still scrolls. |
 | `Pull to refresh` | From the top, with a finger or the pointer: the content comes down (harder the farther it goes) and the panel above it says to pull, then to release. Let go far enough it refreshes: the spinner turns until `release()` or the promise. A short pull goes back. |
 | `Load more` | Within `reachBottomOffset` of the end, `onReachBottom` is asked once; the panel under the content shows meanwhile. Released, the next reach asks again, until `release(true)`. Content that does not fill the box asks at once, and again as it grows. |

@@ -1,8 +1,8 @@
 # Tabs
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
-Tabs show one panel at a time under a strip of tabs: from JSX or from code, closable, with icons and badges, scroll buttons when the tabs do not fit, four placements and panels built when they are first shown.
+Tabs show one panel at a time under a strip of tabs: from JSX or programmatically, closable, with icons and badges, scroll buttons when the tabs do not fit, four placements and panels built when they are first shown.
 
 ## Import
 
@@ -10,22 +10,22 @@ Tabs show one panel at a time under a strip of tabs: from JSX or from code, clos
 import { Tabs, Tab } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-A `<Tab>`'s children are its panel. `value` is the selected tab's `key` (else its index) and `x-model` binds it two-way. Created with `new`, tabs are added, inserted and removed from code.
+A `<Tab>`'s children are its panel. `value` is the selected tab's `key` (else its index) and `x-model` binds it two-way. Created with `new`, tabs are added, inserted and removed programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, Stack, Tab, Tabs, TextBox } from '@motifx-community/ui';
 
-/** Tabs from JSX bound with x-model, and tabs created with `new` and added from code. */
-export default function FromCode() {
+/** Tabs from JSX bound with x-model, and tabs created with `new` and added programmatically. */
+export default function Programmatic() {
   const s = reactive({ page: 'general' as string | number, name: '', log: '' });
   let added = 0;
 
   const reports = new Tabs({ label: 'Reports', closable: true });
   reports.add(new Tab({ title: 'Summary', content: () => <p>The summary, built when it was first shown.</p> }));
-  reports.onSelectionChanged((e) => (s.log = e.tab ? `Selected “${e.tab.title}”${e.byUser ? ' by the user' : ' from code'}.` : 'No tab left.'));
+  reports.onSelectionChanged((e) => (s.log = e.tab ? `Selected “${e.tab.title}”${e.byUser ? ' by the user' : ' programmatically'}.` : 'No tab left.'));
 
   const addReport = () => {
     const n = ++added;
@@ -48,7 +48,7 @@ export default function FromCode() {
       </Tabs>
       <output class="tabs-page">{() => `value: "${s.page}"`}</output>
       <Stack orientation="horizontal" wrap align="center">
-        <Button text="Add a report from code" variant="outline" onclick={addReport} />
+        <Button text="Add a report programmatically" variant="outline" onclick={addReport} />
         <output class="tabs-log">{() => s.log}</output>
       </Stack>
       <Stack orientation="horizontal" wrap align="center" class="tabs-coded" style="inline-size: 100%" onBuilt={(c) => c.controls.add(reports)} />
@@ -442,7 +442,7 @@ export default function Localization() {
 | `add(tab)` | `Tab` | Adds a tab at the end. A tab of another `Tabs` moves here. |
 | `insert(index, tab)` | `Tab` | Adds a tab at an index. |
 | `remove(tab)` | `boolean` | Removes the tab and disposes it; no `onClose`. The selection and focus move to a neighbour. |
-| `select(tab \| index)` | `boolean` | Selects a tab from code; `false` when it is hidden or not there. |
+| `select(tab \| index)` | `boolean` | Selects a tab programmatically; `false` when it is hidden or not there. |
 | `close(tab)` | `boolean` | Closes a tab as its close button does: `onClose` can cancel it. |
 | `focus()` | `boolean` | Focuses the selected tab. |
 | `Tab.select(), Tab.close(), Tab.focus()` | `boolean` | The same, from the tab. |

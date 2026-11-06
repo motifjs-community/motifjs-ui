@@ -1,8 +1,8 @@
 # Toast
 
-> Feedback · @motifx-community/ui 0.1.0-beta.2
+> Feedback · @motifx-community/ui 0.1.0-beta.3
 
-Short notifications at an edge of the window: four tones, an action such as Undo, a time of their own or none, six positions and a limit on how many show at once. Called from code; a region of your own can sit in JSX.
+Short notifications at an edge of the window: four tones, an action such as Undo, a time of their own or none, six positions and a limit on how many show at once. Called programmatically; a region of your own can sit in JSX.
 
 ## Import
 
@@ -10,7 +10,7 @@ Short notifications at an edge of the window: four tones, an action such as Undo
 import { toast, Toast, Toaster, type ToastTone, type ToastPosition } from '@motifx-community/ui';
 ```
 
-## From code and from JSX
+## Programmatic and declarative
 
 `toast.show()` and its tone shortcuts return the `Toast`, an object you can `close()`, `update()` or await. They use `Toaster.default`, made in `document.body` the first time; an app can put a `Toaster` of its own where it wants it in JSX and make it the default.
 
@@ -18,8 +18,8 @@ import { toast, Toast, Toaster, type ToastTone, type ToastPosition } from '@moti
 import { reactive } from '@motifx/core';
 import { Button, toast, type Toast } from '@motifx-community/ui';
 
-/** Toasts shown from code: the Toast that comes back can be closed and awaited. */
-export default function FromCode() {
+/** Toasts shown programmatically: the Toast that comes back can be closed and awaited. */
+export default function Programmatic() {
   const s = reactive({ reason: '' });
 
   const exportFile = () => {

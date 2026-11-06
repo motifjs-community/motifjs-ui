@@ -1,6 +1,6 @@
 # Badge
 
-> Display · @motifx-community/ui 0.1.0-beta.2
+> Display · @motifx-community/ui 0.1.0-beta.3
 
 A short text, a count or a dot: in a line of text, or on a corner of a button, an avatar or an icon. A count over its maximum shows “99+”, a count of zero hides.
 
@@ -10,16 +10,16 @@ A short text, a count or a dot: in a line of text, or on a corner of a button, a
 import { Badge } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-Every prop takes a value or a function. Created with `new`, the same properties are set from code.
+Every prop takes a value or a function. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Badge, Button } from '@motifx-community/ui';
 
-/** A badge from JSX follows its functions; one made with `new` takes the same properties from code. */
-export default function FromCode() {
+/** A badge from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+export default function Programmatic() {
   const s = reactive({ unread: 4 });
   const coded = new Badge({ text: 'Beta', tone: 'info', variant: 'subtle' });
 
@@ -87,7 +87,7 @@ export default function Counts() {
 
 ## On a corner
 
-`position` puts the badge on a corner of what it is in. `Badge.attach` does it from code, on any component.
+`position` puts the badge on a corner of what it is in. `Badge.attach` does it programmatically, on any component.
 
 ```tsx
 import { Badge, Button, Stack, type BadgePosition } from '@motifx-community/ui';

@@ -1,6 +1,6 @@
 # Toolbar
 
-> Buttons · @motifx-community/ui 0.1.0-beta.2
+> Buttons · @motifx-community/ui 0.1.0-beta.3
 
 A bar of commands: buttons, toggle buttons, menus and fields in groups between separators. It is one Tab stop and the arrow keys move inside it; items that do not fit move into a “more” menu at the end. Items come as data, as JSX children, or both.
 
@@ -10,9 +10,9 @@ A bar of commands: buttons, toggle buttons, menus and fields in groups between s
 import { Toolbar, ToolbarSeparator, type ToolbarItem } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-`items` describes the commands as data, each field a value or a function; JSX children (any control) come after them. From code, a toolbar is filled like any control: `toolbar.controls.add(button)`. Every prop is also a property.
+`items` describes the commands as data, each field a value or a function; JSX children (any control) come after them. Programmatically, a toolbar is filled like any control: `toolbar.controls.add(button)`. Every prop is also a property.
 
 ```tsx
 /** A small outline icon drawn from one path. */
@@ -41,21 +41,21 @@ import { reactive, type Component } from '@motifx/core';
 import { Button, Toolbar } from '@motifx-community/ui';
 
 /** A toolbar made with `new` and filled with `controls.add`. */
-export default function FromCode() {
+export default function Programmatic() {
   const s = reactive({ log: '' });
   let added = 0;
 
   const bar = new Toolbar({ label: 'Actions', size: 'sm' });
   bar.controls.add(new Button({ text: 'First', onclick: () => (s.log = 'First pressed') }));
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const n = ++added;
     bar.controls.add(new Button({ text: `Button ${n}`, onclick: () => (s.log = `Button ${n} pressed`) }));
   };
 
   return (
     <>
-      <Button text="Add a button from code" variant="outline" onclick={addFromCode} />
+      <Button text="Add a button programmatically" variant="outline" onclick={addProgrammatic} />
       <div style="inline-size: 100%" ref={(c: Component<HTMLDivElement>) => c.controls.add(bar)} />
       <output>{() => s.log}</output>
     </>

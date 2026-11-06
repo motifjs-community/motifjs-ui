@@ -1,6 +1,6 @@
 # Rating
 
-> Editors · @motifx-community/ui 0.1.0-beta.2
+> Editors · @motifx-community/ui 0.1.0-beta.3
 
 A row of stars to give a score or to show one, whole or by halves. It is a field: label, help text, rules and `x-model` work as in every field.
 
@@ -10,7 +10,7 @@ A row of stars to give a score or to show one, whole or by halves. It is a field
 import { Rating } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
 Every prop takes a value or a function; `x-model` binds the score two-way. Under the pointer the stars show what a press would give.
 
@@ -18,8 +18,8 @@ Every prop takes a value or a function; `x-model` binds the score two-way. Under
 import { reactive } from '@motifx/core';
 import { Rating, Stack } from '@motifx-community/ui';
 
-/** A rating bound with `x-model`, with a label and a help line like any field; one made with `new` from code. */
-export default function FromCode() {
+/** A rating bound with `x-model`, with a label and a help line like any field; one made with `new` programmatically. */
+export default function Programmatic() {
   const s = reactive({ stars: 3 as number | null });
   const coded = new Rating({ label: 'Made in code', max: 10, value: 7 });
 

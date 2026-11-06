@@ -1,6 +1,6 @@
 # ComboBox and Autocomplete
 
-> Choice · @motifx-community/ui 0.1.0-beta.2
+> Choice · @motifx-community/ui 0.1.0-beta.3
 
 A text field with a list that follows what is typed. The items come from memory or from a data source of the data layer, searched on the server. `Autocomplete` is the free-text kind: the value is the text.
 
@@ -11,7 +11,7 @@ import { ComboBox, Autocomplete } from '@motifx-community/ui';
 import { data } from '@motifx-community/data';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
 ```tsx
 /** The cities the combo boxes of the examples suggest. */
@@ -97,20 +97,20 @@ The items part is shared: `DataItems` feeds any list control from an array or a 
 
 ## Example files
 
-`FromCode.tsx`
+`Programmatic.tsx`
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, ComboBox, Stack } from '@motifx-community/ui';
 import { cities } from './cities';
 
-/** A combo box bound with x-model, and combo boxes created with `new` and added from code. */
-export default function FromCode() {
+/** A combo box bound with x-model, and combo boxes created with `new` and added programmatically. */
+export default function Programmatic() {
   const form = reactive({ city: 'İzmir' as string | null, result: '' });
   let added = 0;
   let host: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const town = new ComboBox<string, string>({ label: `Town ${++added}`, items: cities, minSearchLength: 2 });
     town.onValueChanged((e) => (form.result = `${town.label}: ${e.value ?? '—'}`));
     host?.controls.add(town);
@@ -121,7 +121,7 @@ export default function FromCode() {
     <>
       <ComboBox label="&City" items={cities} x-model={() => form.city} clearButton />
       <output class="cb-city">{() => `city: ${form.city ?? '—'}`}</output>
-      <Button text="Add a combo box from code" variant="outline" onclick={addFromCode} />
+      <Button text="Add a combo box programmatically" variant="outline" onclick={addProgrammatic} />
       <output class="cb-made">{() => form.result}</output>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />
     </>

@@ -1,6 +1,6 @@
 # Layout
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
 Containers that place controls: `Stack` (a row or a column), `Grid` (rows and columns), `Panel` (a plain box that can scroll), `GroupBox` (a titled frame), `DockPanel` (children stuck to its edges) and `SplitContainer` (two panes and a splitter). All of them are controls: they disable and hide what is inside, and lay out children added at any time.
 
@@ -10,7 +10,7 @@ Containers that place controls: `Stack` (a row or a column), `Grid` (rows and co
 import { Stack, Grid, Panel, GroupBox, DockPanel, SplitContainer, type LayoutSpace } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
 Children come as JSX or are added later with `controls.add`; either way the container picks them up. A child says where it goes in its own props (`grow`, `row`, `dock`…), whatever kind of component it is.
 
@@ -19,13 +19,13 @@ import type { Component } from '@motifx/core';
 import { Button, Grid, Stack, TextBox } from '@motifx-community/ui';
 
 /** Buttons added to a Stack with `controls.add`, and a Grid built with `new`. */
-export default function FromCode() {
+export default function Programmatic() {
   let added = 0;
   let bar: Stack | null = null;
 
   const addButton = () => bar?.controls.add(new Button({ text: `Button ${++added}`, variant: 'outline', grow: added % 3 === 0 }));
 
-  const buildFromCode = (host: Component<HTMLDivElement>) => {
+  const buildProgrammatic = (host: Component<HTMLDivElement>) => {
     const grid = new Grid({ columns: '* *', gap: 'xs' });
     grid.element.classList.add('layout-coded');
     grid.controls.add(
@@ -41,7 +41,7 @@ export default function FromCode() {
       <Stack ref={(c: Stack) => (bar = c)} orientation="horizontal" gap="sm" wrap align="center" style="inline-size: 100%">
         <Button text="Add a button" tone="accent" onclick={addButton} />
       </Stack>
-      <div style="inline-size: 100%" ref={(c: Component<HTMLDivElement>) => buildFromCode(c)} />
+      <div style="inline-size: 100%" ref={(c: Component<HTMLDivElement>) => buildProgrammatic(c)} />
     </>
   );
 }
@@ -287,7 +287,7 @@ const FRAME = 'border: var(--mx-border-width-1) solid var(--mx-color-stroke-card
 const BAR = 'background: var(--mx-color-bg-bar);';
 const LAYER = 'background: var(--mx-color-bg-layer);';
 
-/** A mail app laid out with DockPanel: a header, a sidebar that changes sides, a status bar, a float button and a panel added from code. */
+/** A mail app laid out with DockPanel: a header, a sidebar that changes sides, a status bar, a float button and a panel added programmatically. */
 export default function AppShell() {
   const s = reactive({ side: 'start' as Dock, messages: 3 });
   let shell: DockPanel | null = null;
@@ -302,7 +302,7 @@ export default function AppShell() {
     notes = new Panel({ dock: 'end', padding: 'sm' });
     notes.element.setAttribute('style', `inline-size: 9rem; ${LAYER}`);
     notes.element.classList.add('layout-notes');
-    notes.controls.add(<span>Notes, added from code.</span>);
+    notes.controls.add(<span>Notes, added programmatically.</span>);
     shell?.controls.add(notes);
   };
 
@@ -310,7 +310,7 @@ export default function AppShell() {
     <>
       <Stack orientation="horizontal" wrap align="center">
         <Button text={() => `Sidebar: ${s.side}`} size="sm" variant="outline" onclick={() => (s.side = s.side === 'start' ? 'end' : 'start')} />
-        <Button text="Notes panel from code" size="sm" variant="outline" onclick={toggleNotes} />
+        <Button text="Notes panel programmatically" size="sm" variant="outline" onclick={toggleNotes} />
       </Stack>
       <DockPanel class="layout-shell" ref={(c: DockPanel) => (shell = c)} style={`block-size: 22rem; inline-size: 100%; overflow: hidden; ${FRAME}`}>
         <Stack dock="top" orientation="horizontal" align="center" gap="sm" padding="xs sm" style={BAR}>
@@ -332,7 +332,7 @@ export default function AppShell() {
         <Panel class="layout-content" text="Message" scrollable padding="md">
           <h3 style="margin-block-start: 0">Welcome</h3>
           <p>The header, the folders and the status bar are docked; this panel fills the rest and scrolls on its own.</p>
-          <p>Switch the sidebar to the other side, or add a panel from code: the layout follows at once.</p>
+          <p>Switch the sidebar to the other side, or add a panel programmatically: the layout follows at once.</p>
         </Panel>
         <Button class="layout-help" dock="float" right={16} bottom={48} text="Help" variant="outline" />
       </DockPanel>
@@ -353,7 +353,7 @@ const FOLDERS = ['Inbox', 'Drafts', 'Sent', 'Archive', 'Spam', 'Trash'];
 const FRAME = 'border: var(--mx-border-width-1) solid var(--mx-color-stroke-card); border-radius: var(--mx-radius-lg);';
 const LAYER = 'background: var(--mx-color-bg-layer);';
 
-/** A split container inside another: a position bound with x-model, minimum sizes, a fixed pane, and hiding a pane from code. */
+/** A split container inside another: a position bound with x-model, minimum sizes, a fixed pane, and hiding a pane programmatically. */
 export default function NestedSplit() {
   const s = reactive({ tree: 180 as SplitPosition, fixed: 'first' as SplitPanel, log: '' });
   let outer: SplitContainer | null = null;
@@ -567,9 +567,9 @@ Every container also has the shared properties of `Control`: `enabled` / `disabl
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `Stack.setGrow(child, grow), growOf(child)` | `void`, value | A child's `grow` from code (a value or a function). |
-| `Grid.setCell(child, cell), cellOf(child)` | `void`, `GridCell` | A child's `row`, `column`, `rowSpan`, `columnSpan` from code. |
-| `DockPanel.setDock(child, dock), dockOf(child)` | `void`, `Dock` | A child's `dock` from code. |
+| `Stack.setGrow(child, grow), growOf(child)` | `void`, value | A child's `grow` programmatically (a value or a function). |
+| `Grid.setCell(child, cell), cellOf(child)` | `void`, `GridCell` | A child's `row`, `column`, `rowSpan`, `columnSpan` programmatically. |
+| `DockPanel.setDock(child, dock), dockOf(child)` | `void`, `Dock` | A child's `dock` programmatically. |
 | `DockPanel.setAnchors(child, anchors)` | `void` | The `left` / `top` / `right` / `bottom` of a `float` child. |
 | `SplitContainer.collapse(pane?), restore()` | `void` | Hides a pane (the first by default) / shows both again. |
 | `GroupBox.focus()` | `boolean` | Focuses the first control inside, opening a collapsed box. |

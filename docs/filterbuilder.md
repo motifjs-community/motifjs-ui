@@ -1,6 +1,6 @@
 # FilterBuilder
 
-> Data · @motifx-community/ui 0.1.0-beta.2
+> Data · @motifx-community/ui 0.1.0-beta.3
 
 A filter builder lets people put a filter together by hand: groups joined by And, Or, Not And or Not Or, and conditions of a field, an operation and a value. Its value is the data layer's filter expression, so it goes to rows in memory and to every adapter as it is. The DataGrid opens it from its filter panel; on its own it serves a report screen or a saved search.
 
@@ -57,7 +57,7 @@ export const saleFields: FilterBuilderField[] = [
 ];
 ```
 
-## From code, and the events
+## Programmatic use, and the events
 
 Every change the user makes is also a method (`addCondition`, `addGroup`, `removeItem`, `setField`, `setOperation`, `setConditionValue`, `setGroupOperation`, `clear`), and every change asks first: `onItemAdding`, `onItemRemoving` and `onItemChanging` can change it or cancel it, the `…ed` events and `onValueChanged` follow. Here the last condition of the root cannot be taken out.
 
@@ -372,7 +372,7 @@ export const saleFields: FilterBuilderField[] = [
 | `setField(condition, dataField), setOperation(condition, op), setConditionValue(condition, value)` | `boolean` | An operation or value that no longer fits the new field is reset. |
 | `setGroupOperation(group, op)` | `boolean` |  |
 | `clear()` | `void` | Empties the tree. |
-| `openEditor(condition), closeEditor(keep?)` | `boolean`, `void` | The value editor, from code. |
+| `openEditor(condition), closeEditor(keep?)` | `boolean`, `void` | The value editor, programmatically. |
 | `focusItem(item, part?), focus()` | `boolean` | A row's button (`'remove'`, `'group'`, `'add'`, `'field'`, `'operation'`, `'value'`); the tree's Tab stop. |
 | `getFilterExpression()` | `data.FilterExpression \| null` | The value. |
 | `refresh()` | `void` | Your fields and value may be plain or reactive; the builder reads them as they are. After changing them in place, call `refresh()`. The rows are drawn again; a value changed in place is read into the tree. |
@@ -460,7 +460,7 @@ export const saleFields: FilterBuilderField[] = [
 ];
 ```
 
-`FromCode.tsx`
+`Programmatic.tsx`
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -468,14 +468,14 @@ import { data } from '@motifx-community/data';
 import { Button, FilterBuilder, Stack } from '@motifx-community/ui';
 import { saleFields } from './sales';
 
-/** Made with `new` and driven from code; every change asks first, and a handler may cancel it. */
-export default function FromCode() {
+/** Made with `new` and driven programmatically; every change asks first, and a handler may cancel it. */
+export default function Programmatic() {
   const log = reactive({ lines: [] as { id: number; text: string }[], next: 0 });
   const write = (text: string) => {
     log.lines.unshift({ id: log.next++, text });
     if (log.lines.length > 6) log.lines.pop();
   };
-  const builder = new FilterBuilder({ fields: saleFields, locale: 'en', label: 'Built from code' });
+  const builder = new FilterBuilder({ fields: saleFields, locale: 'en', label: 'Built programmatically' });
   builder.element.classList.add('fb-code');
   builder.onItemAdding((e) => write(`adding a ${e.item.kind}${e.byUser ? ' (user)' : ''}`));
   builder.onItemRemoving((e) => {

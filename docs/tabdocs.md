@@ -1,6 +1,6 @@
 # TabDocumentManager
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.2
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
 
 A document manager in the way code editors arrange files: documents in tabs, tabs in groups, groups split side by side and one under the other. A document's content is any component, a form, a grid or plain text, and it is moved, never made again, when its tab goes to another group. Everything the user does is a method too, asks first and reports after; the whole layout saves to JSON and comes back. Preview and pinned tabs, sizes and copies are on [Tabs](tabdocs-tabs.md); context menus, lists and keys on [Menus and keys](tabdocs-menus.md).
 
@@ -131,7 +131,7 @@ export function customerCard(customer: Customer): ComponentBase {
 }
 ```
 
-## From code, and the events
+## Programmatic use, and the events
 
 Each thing the user does is also a method (`open`, `close`, `activate`, `split`, `move`, `closeGroup`, `focusGroup`, `maximizeGroup`, `restoreGroups`, `evenSizes`, `resizeGroup`), asks first through a cancelable `on…ing` event and reports through `on…ed`, with `byUser` telling the two apart.
 
@@ -731,7 +731,7 @@ export default function Options() {
 }
 ```
 
-`FromCode.tsx`
+`Programmatic.tsx`
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -739,14 +739,14 @@ import { Button, Stack, TabDocumentManager, type SplitDirection } from '@motifx-
 import { notes } from './contents';
 
 /** Everything the user does is a method too; the events report each change, by the user or by code. */
-export default function FromCode() {
+export default function Programmatic() {
   const log = reactive({ lines: [] as { id: number; text: string }[], next: 0, opened: 0 });
   const write = (text: string) => {
     log.lines.unshift({ id: log.next++, text });
     if (log.lines.length > 6) log.lines.pop();
   };
 
-  const docs = new TabDocumentManager({ label: 'Driven from code' });
+  const docs = new TabDocumentManager({ label: 'Driven programmatically' });
   docs.element.style.cssText = 'block-size: 28rem; inline-size: 100%';
   docs.onOpened((e) => write(`opened ${e.document.title} in group ${e.group.index + 1}`));
   docs.onClosed((e) => write(`closed ${e.document.title}${e.byUser ? ' (user)' : ''}`));

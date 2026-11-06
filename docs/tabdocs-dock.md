@@ -1,6 +1,6 @@
 # TabDocumentManager: Dock and floating windows
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.2
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
 
 Documents and whole groups float in windows of their own in the page and dock again into the documents' groups or into dock areas around them, which fold to the manager's edge. The mouse, the keys and the code do the same, through the same events.
 
@@ -568,14 +568,14 @@ export function fileDocument(path: string, extra: TabDocumentOptions = {}): TabD
 }
 ```
 
-`FloatFromCode.tsx`
+`FloatProgrammatically.tsx`
 
 ```tsx
 import { Button, Stack, TabDocumentManager } from '@motifx-community/ui';
 import { FILES, fileDocument } from './files';
 
 /** Floating windows by code: float a document, move, resize and maximize its window, dock it back or to a side, close it. */
-export default function FloatFromCode() {
+export default function FloatProgrammatically() {
   const docs = new TabDocumentManager({ label: 'Files to float' });
   docs.element.style.cssText = 'block-size: 28rem; inline-size: 100%';
   for (const file of FILES.slice(0, 5)) docs.open(fileDocument(file.path), { index: 99 });

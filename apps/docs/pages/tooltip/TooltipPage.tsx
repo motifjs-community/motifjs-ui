@@ -71,8 +71,8 @@ export default function TooltipPage() {
   return (
     <>
       <p class="lead">
-        A short description shown next to an element: after the pointer rests on it, when it gets keyboard focus, or from
-        code. It can be hovered, Escape hides it, and one is open at a time on the page.
+        A short description shown next to an element: after the pointer rests on it, when it gets keyboard focus, or
+        programmatically. It can be hovered, Escape hides it, and one is open at a time on the page.
       </p>
 
       <Section anchor="import" title="Import">

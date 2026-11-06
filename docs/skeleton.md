@@ -1,6 +1,6 @@
 # Skeleton
 
-> Display · @motifx-community/ui 0.1.0-beta.2
+> Display · @motifx-community/ui 0.1.0-beta.3
 
 The shape of what is loading, so the page keeps its layout while data arrives. Given content, it shows the content in the same place once loading ends.
 
@@ -128,4 +128,4 @@ export default function Animations() {
 | Property | Access | Description |
 | --- | --- | --- |
 | `every prop above` | read/write | A value or a function, like the prop. |
-| `content` | read-only | The part holding what shows once loaded, for adding to it from code. |
+| `content` | read-only | The part holding what shows once loaded, for adding to it programmatically. |

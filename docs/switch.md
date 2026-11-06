@@ -1,6 +1,6 @@
 # Switch
 
-> Choice · @motifx-community/ui 0.1.0-beta.2
+> Choice · @motifx-community/ui 0.1.0-beta.3
 
 An on / off switch with its caption: a track with a thumb that slides, an optional on / off text inside or next to it, read-only and required. A native checkbox with the switch role underneath.
 
@@ -10,21 +10,21 @@ An on / off switch with its caption: a track with a thumb that slides, an option
 import { Switch } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set from code.
+Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, Stack, Switch } from '@motifx-community/ui';
 
-/** A switch bound to state with x-model, and switches created with `new` and added from code. */
-export default function FromCode() {
+/** A switch bound to state with x-model, and switches created with `new` and added programmatically. */
+export default function Programmatic() {
   const s = reactive({ wifi: true, result: '' });
   let added = 0;
   let host: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const sw = new Switch({ label: `Feature ${++added}`, onText: 'On', offText: 'Off' });
     sw.onValueChanged((e) => (s.result = `${sw.label}: ${e.value ? 'on' : 'off'}`));
     host?.controls.add(sw);
@@ -35,7 +35,7 @@ export default function FromCode() {
     <>
       <Switch label="&Wi-Fi" x-model={() => s.wifi} helpText={() => (s.wifi ? 'Connected to Home.' : 'Not connected.')} />
       <Stack orientation="horizontal" wrap align="center">
-        <Button text="Add a switch from code" variant="outline" onclick={addFromCode} />
+        <Button text="Add a switch programmatically" variant="outline" onclick={addProgrammatic} />
         <output class="sw-result">{() => s.result}</output>
       </Stack>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />

@@ -1,6 +1,6 @@
 # Stepper
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
 The steps of a longer task and where the user stands in them: an indicator and a text per step, a line between them, the steps before the current one completed. The [Wizard](wizard.md) adds a page and the buttons to each step.
 
@@ -10,16 +10,16 @@ The steps of a longer task and where the user stands in them: an indicator and a
 import { Stepper } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-The current step is `value`: a step’s `key`, else its index; `x-model` binds it two-way. From code, `next()`, `previous()` and `goTo()` move it and `onStepChanged` tells.
+The current step is `value`: a step’s `key`, else its index; `x-model` binds it two-way. Programmatically, `next()`, `previous()` and `goTo()` move it and `onStepChanged` tells.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, Stack, Stepper } from '@motifx-community/ui';
 
-/** A stepper bound with x-model, and one made from code and moved with its own methods. */
-export default function FromCode() {
+/** A stepper bound with x-model, and one made programmatically and moved with its own methods. */
+export default function Programmatic() {
     const s = reactive({ step: 0 as string | number | null, at: 0, told: '' });
     const coded = new Stepper({
         label: 'Order',

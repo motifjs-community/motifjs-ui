@@ -1,6 +1,6 @@
 # TreeView
 
-> Data · @motifx-community/ui 0.1.0-beta.2
+> Data · @motifx-community/ui 0.1.0-beta.3
 
 A tree view shows items in a hierarchy. Rows open and close, are selected one or many at a time, can carry check boxes that add up to their parents, can be searched, and can load their children when they are first opened. Long trees draw only the rows in view.
 
@@ -10,9 +10,9 @@ A tree view shows items in a hierarchy. Rows open and close, are selected one or
 import { TreeView } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-Items are objects with a `children` array (or a `parentId`, see below). `value` is the selected row's key and `x-model` binds it two-way. Created with `new`, the tree is filled and driven from code; items changed in place, plain or reactive, show after `refresh()` (`refreshItem(key)` for one row).
+Items are objects with a `children` array (or a `parentId`, see below). `value` is the selected row's key and `x-model` binds it two-way. Created with `new`, the tree is filled and driven programmatically; items changed in place, plain or reactive, show after `refresh()` (`refreshItem(key)` for one row).
 
 ```tsx
 /** A row of the trees on this page. */
@@ -84,7 +84,7 @@ export interface Entry {
 
 ## Search and filter
 
-`searchEnabled` adds a search box; matches show with their parents, opened, and clearing the search brings the rows back as they were. `searchValue` (or `filter(text)`) filters from code; `searchMode` is `contains` or `startswith`.
+`searchEnabled` adds a search box; matches show with their parents, opened, and clearing the search brings the rows back as they were. `searchValue` (or `filter(text)`) filters programmatically; `searchMode` is `contains` or `startswith`.
 
 ```tsx
 /** A row of the trees on this page. */
@@ -269,8 +269,8 @@ export default function Localization() {
 | --- | --- | --- |
 | `expand(key), collapse(key)` | `boolean` | Opens / closes a row; children load first if they have to. The cancelable events run. |
 | `expandAll(), collapseAll()` | `void` | Every row whose children are known. No event per row. |
-| `select(key), unselect(key), selectAll(), clearSelection()` | `void` | From code; `select` adds to the selection with `multiple`. |
-| `check(key, checked?), uncheck(key), checkAll(), uncheckAll()` | `void` | From code. |
+| `select(key), unselect(key), selectAll(), clearSelection()` | `void` | Programmatically; `select` adds to the selection with `multiple`. |
+| `check(key, checked?), uncheck(key), checkAll(), uncheckAll()` | `void` | Programmatically. |
 | `filter(text)` | `void` | Sets `searchValue`. |
 | `scrollTo(key), focusNode(key)` | `boolean` | Opens the row's parents and scrolls it into view (and focuses it). |
 | `reload(key?)` | `void` | Loads a row's children again (all loaded children without a key). |
@@ -291,7 +291,7 @@ export default function Localization() {
 
 ## Example files
 
-`FromCode.tsx`
+`Programmatic.tsx`
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -302,7 +302,7 @@ import { project } from './project';
 const BOX = 'inline-size: 100%; max-inline-size: 26rem; background: var(--mx-color-bg-card)';
 
 /** A tree bound with x-model, and a tree made with `new` whose items change in place and are read again on `refresh()`. */
-export default function FromCode() {
+export default function Programmatic() {
   const s = reactive({ file: 'tree' as unknown, clicked: '' });
   const menu = reactive<Entry[]>([
     { id: 'home', text: 'Home' },
@@ -327,7 +327,7 @@ export default function FromCode() {
       </Panel>
       <output class="tv-value">{() => `value: ${JSON.stringify(s.file)}`}</output>
       <Stack orientation="horizontal" wrap align="center">
-        <Button text="Add a product from code" variant="outline" onclick={addProduct} />
+        <Button text="Add a product programmatically" variant="outline" onclick={addProduct} />
         <Button text="Expand all" variant="ghost" onclick={() => tree.expandAll()} />
         <Button text="Collapse all" variant="ghost" onclick={() => tree.collapseAll()} />
         <output class="tv-clicked">{() => s.clicked}</output>

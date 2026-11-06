@@ -1,6 +1,6 @@
 # Scheduler: Recurrence and time zones
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.2
+> Scheduler · @motifx-community/ui 0.1.0-beta.3
 
 Appointments that repeat by an RFC 5545 rule, with times left out and occurrences changed apart; a question on what a change reaches; an editor of the rule; and the days on the clock of any time zone, summer time included.
 
@@ -198,7 +198,7 @@ export default function TimeZones() {
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `timeZone` | `Bind<string \| null>` | `null`: the browser's | The clock the days and hours are on, an IANA name (`Europe/Istanbul`). Converted with `Intl` only. |
-| `seriesEdit` | `Bind<'ask' \\| 'occurrence' \\| 'following' \\| 'series'>` | `'ask'` | What changing or deleting an occurrence reaches. `ask` asks the user; from code it is the occurrence unless the call says. |
+| `seriesEdit` | `Bind<'ask' \\| 'occurrence' \\| 'following' \\| 'series'>` | `'ask'` | What changing or deleting an occurrence reaches. `ask` asks the user; programmatically it is the occurrence unless the call says. |
 | `recurrenceMarks` | `Bind<boolean>` | `true` | The marks of an occurrence and of one changed apart, where the design language draws them. |
 | `editing.allowRecurrence` | `boolean` | `true` | The form holds the recurrence editor. |
 | `editing.allowTimeZones` | `boolean` | `false` | The form holds a time zone picker, and a box "Separate end time zone" (`separateEndZone` in the form’s data and `items`) that shows a picker for the end; unchecked, the end follows the start’s zone. Not on all-day appointments. |

@@ -1,6 +1,6 @@
 # TabDocumentManager: Drag and drop
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.2
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
 
 Tabs and whole groups dragged as in a code editor: along a strip, to another group, beside a group or along an edge of the layout, between two managers, and the same moves from the keyboard. Every drop goes through the methods and events of what it does.
 

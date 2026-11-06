@@ -1,6 +1,6 @@
 # Window and dialog
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
 A window or a dialog on a native `<dialog>`: one form, shown modeless or modal by whoever shows it. It has a title bar, moves, resizes, minimizes and maximizes; Enter and Escape press its buttons; forms open forms. `messageBox` and `confirm` cover the common questions.
 
@@ -10,9 +10,9 @@ A window or a dialog on a native `<dialog>`: one form, shown modeless or modal b
 import { MxForm, messageBox, confirm, type FormResult } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-In JSX, `x-model` shows the form while the value is true and writes `false` when the user closes it; it is hidden, not disposed, and lives with its parent. From code, a form (often a class with a `view()`) is shown with `show(host)` or `showDialog(host)`; it is added to the host and disposed when it closes.
+In JSX, `x-model` shows the form while the value is true and writes `false` when the user closes it; it is hidden, not disposed, and lives with its parent. Programmatically, a form (often a class with a `view()`) is shown with `show(host)` or `showDialog(host)`; it is added to the host and disposed when it closes.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -206,7 +206,7 @@ export class RenameForm extends MxForm {
 
 ## Events
 
-`onClosing` can keep the form open, here while it has changes; `reason` tells the user (close button, Escape) from code and from the owner going away.
+`onClosing` can keep the form open, here while it has changes; `reason` tells the user (close button, Escape) programmatically and from the owner going away.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -451,7 +451,7 @@ import { reactive, type Component } from '@motifx/core';
 import { Button, MxForm, Stack, TextBox, type FormResult } from '@motifx-community/ui';
 import { RenameForm } from './RenameForm';
 
-/** A modeless form in JSX shown through x-model, and a form class shown modal from code. */
+/** A modeless form in JSX shown through x-model, and a form class shown modal programmatically. */
 export default function JsxAndCode() {
   const s = reactive({ find: false, query: '', found: '', renamed: '' });
   let host: Component<HTMLDivElement> | null = null;

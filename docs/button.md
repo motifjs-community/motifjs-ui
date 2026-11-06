@@ -1,6 +1,6 @@
 # Button
 
-> Buttons · @motifx-community/ui 0.1.0-beta.2
+> Buttons · @motifx-community/ui 0.1.0-beta.3
 
 A native `<button>` drawn from the design tokens: three variants, three tones, three sizes, an icon, an `&` access key. It can be a toggle, show that work is running, and open a menu or any content — from the whole button, or with `split` from an arrow next to it while the button keeps its own action.
 
@@ -10,20 +10,20 @@ A native `<button>` drawn from the design tokens: three variants, three tones, t
 import { Button, type MenuItem } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-Both ways are complete. Every prop takes a value or a function; a function of a reactive object keeps the button in step with it. A property set from code takes the same.
+Both ways are complete. Every prop takes a value or a function; a function of a reactive object keeps the button in step with it. A property set programmatically takes the same.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, Stack } from '@motifx-community/ui';
 
-/** A button in JSX, and buttons created with `new`, added and bound from code. */
-export default function FromCode() {
+/** A button in JSX, and buttons created with `new`, added and bound programmatically. */
+export default function Programmatic() {
   let added = 0;
   let toolbar: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const n = ++added;
     const state = reactive({ marks: '' });
     const b = new Button({ variant: 'outline' });
@@ -34,7 +34,7 @@ export default function FromCode() {
 
   return (
     <>
-      <Button text="Add a button from code" onclick={addFromCode} />
+      <Button text="Add a button programmatically" onclick={addProgrammatic} />
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (toolbar = c)} />
     </>
   );
@@ -378,7 +378,7 @@ All of them reference design-system tokens; see [Tokens](tokens.md). Override on
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write, reactive | Set from code with a value or a function, like the prop: `b.tone = () => this.state.tone` is followed, `b.tone = 'accent'` replaces it. |
+| `every prop above` | read/write, reactive | Set programmatically with a value or a function, like the prop: `b.tone = () => this.state.tone` is followed, `b.tone = 'accent'` replaces it. |
 | `value` | read/write | `pressed`, for `x-model`. |
 | `opened` | read/write, reactive | Whether the menu or drop-down is open; setting it opens or closes it. |
 | `hasMenu` | read-only | Whether it was created with `split`, `menu` or `dropDown`. |

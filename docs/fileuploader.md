@@ -1,8 +1,8 @@
 # FileUploader
 
-> Editors · @motifx-community/ui 0.1.0-beta.2
+> Editors · @motifx-community/ui 0.1.0-beta.3
 
-Files chosen with a button or dropped on the box, listed with their size and what happens to them: uploaded as they come, on a button or from code, with progress, cancel, retry and remove on each. Files outside the limits are listed with the reason.
+Files chosen with a button or dropped on the box, listed with their size and what happens to them: uploaded as they come, on a button or programmatically, with progress, cancel, retry and remove on each. Files outside the limits are listed with the reason.
 
 ## Import
 
@@ -137,7 +137,7 @@ The uploader posts a form with the file in `uploadField` (`file` by default) to 
 | --- | --- |
 | `Choosing` | The button opens the file dialog; files may be dropped on the box too, which lights up while they are over it. |
 | `Refusing` | A file outside `accept`, the sizes or `maxFiles` is listed as refused with the reason, and is not in the value. |
-| `Uploading` | As chosen, on the Upload button, or from code. A row shows the progress and a Cancel button meanwhile; afterwards “Uploaded”, or the failure with Retry. The server’s answer is the item’s `response` (JSON parsed). |
+| `Uploading` | As chosen, on the Upload button, or programmatically. A row shows the progress and a Cancel button meanwhile; afterwards “Uploaded”, or the failure with Retry. The server’s answer is the item’s `response` (JSON parsed). |
 | `Chunks` | With `chunkSize` the file goes in pieces, each a request with `Content-Range: bytes start-end/total`; progress runs over the whole. |
 | `Removing` | Each row has a remove button; a running upload is stopped first. |
 
@@ -178,7 +178,7 @@ The uploader posts a form with the file in `uploadField` (`file` by default) to 
 | `maxFileSize, minFileSize` | `Bind<number \| null>` | `null` | Bytes. A file outside is listed as refused, with the reason. |
 | `maxFiles` | `Bind<number \| null>` | `null` | How many files may be taken in all. |
 | `allowDrop` | `Bind<boolean>` | `true` | Files may be dropped on the box. |
-| `uploadMode` | `Bind<UploadMode>` | `instant` / `manual` | `instant`: as chosen; `button`: an Upload button; `manual`: `upload()` from code. Default `instant` with `uploadUrl` or `upload`, else `manual`. |
+| `uploadMode` | `Bind<UploadMode>` | `instant` / `manual` | `instant`: as chosen; `button`: an Upload button; `manual`: `upload()` programmatically. Default `instant` with `uploadUrl` or `upload`, else `manual`. |
 | `uploadUrl, uploadMethod, uploadHeaders, uploadField` | `Bind<string \| null>`, … | `null`, `POST`, `null`, `file` | Where and how the uploader itself sends a file (XMLHttpRequest, with progress), as a form with the file in `uploadField`. |
 | `chunkSize` | `Bind<number \| null>` | `null` | Bytes per request: the file goes in pieces, each with its `Content-Range` and `chunkIndex` / `chunkCount` fields; the last answer is the response. |
 | `upload` | `(file, report, signal) => Promise<unknown>` | — | Your own upload instead of `uploadUrl`: call `report(0…1)` as it goes, stop on `signal`; what it resolves to is the response. |

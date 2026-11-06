@@ -1,6 +1,6 @@
 # ListBox
 
-> Data · @motifx-community/ui 0.1.0-beta.2
+> Data · @motifx-community/ui 0.1.0-beta.3
 
 A list that stays on the page. One item or several are chosen with the keys or the pointer; items come from memory or from a data source, can be searched and grouped, and long lists draw only the rows in view.
 
@@ -11,9 +11,9 @@ import { ListBox } from '@motifx-community/ui';
 import { data } from '@motifx-community/data';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-`items` can be plain values; `x-model` binds the value. Created with `new`, the same properties are set from code.
+`items` can be plain values; `x-model` binds the value. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 /** The cities the lists of the examples show. */
@@ -255,20 +255,20 @@ A prop whose value is a function of its own (`textField`, a template) takes the 
 
 ## Example files
 
-`FromCode.tsx`
+`Programmatic.tsx`
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, ListBox, Stack } from '@motifx-community/ui';
 import { cities } from './cities';
 
-/** A list bound with x-model, and lists created with `new` and added from code. */
-export default function FromCode() {
+/** A list bound with x-model, and lists created with `new` and added programmatically. */
+export default function Programmatic() {
   const form = reactive({ city: 'İzmir' as string | null, result: '' });
   let added = 0;
   let host: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const list = new ListBox<string, string>({ label: `Size ${++added}`, items: ['S', 'M', 'L', 'XL'], height: 4 });
     list.onValueChanged((e) => (form.result = `${list.label}: ${e.value}`));
     host?.controls.add(list);
@@ -280,7 +280,7 @@ export default function FromCode() {
       <ListBox label="&City" items={cities} x-model={() => form.city} />
       <Stack orientation="horizontal" wrap align="center">
         <output class="lb-city">{() => `city: ${form.city ?? '—'}`}</output>
-        <Button text="Add a list from code" variant="outline" onclick={addFromCode} />
+        <Button text="Add a list programmatically" variant="outline" onclick={addProgrammatic} />
         <output class="lb-made">{() => form.result}</output>
       </Stack>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />

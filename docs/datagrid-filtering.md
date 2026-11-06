@@ -1,6 +1,6 @@
 # DataGrid: Filtering and search
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.2
+> DataGrid · @motifx-community/ui 0.1.0-beta.3
 
 ## Filters
 
@@ -55,7 +55,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 | `filterPanelText` | The panel's text, from the one it would show. `({ text, filterValue }) => string`. |
 | `filterBuilder` | Any prop of `FilterBuilder` but `value` and `fields` (`customOperations`, `maxGroupLevel`, `groupOperations`, its events…); live as `grid.filterBuilder`. `GridFilterBuilderOptions`, default `{}`. |
 | `filterBuilderPopup` | The window: `title`, `showTitle`, `width` (`'40rem'`), `height`, `resizable`, `movable`, `showCloseButton`, `showMaximize`, `fullScreen`; live as `grid.filterBuilderPopup`. `GridFilterBuilderPopup`, default `{}`. |
-| `openFilterBuilder(), closeFilterBuilder(apply?), clearFilterValue()` | What the panel does, from code. `filterText` is the panel's text, `filterBuilderInstance` the open builder. |
+| `openFilterBuilder(), closeFilterBuilder(apply?), clearFilterValue()` | What the panel does, programmatically. `filterText` is the panel's text, `filterBuilderInstance` the open builder. |
 | `onFilterBuilderOpening / Opened, onFilterBuilderClosing / Closed` | `e.cancel` keeps the builder closed, or open; `e.apply` / `e.applied` say whether OK was pressed. `onFilterChanging` (cancelable) and `onFilterChanged` carry `filterValue` and `filterEnabled` too. |
 
 ## Ranges, dates and entries
@@ -80,7 +80,7 @@ export interface Order {
 
 ## Search panel
 
-`searchPanel` puts a search box in the toolbar: its text is looked for in every searchable column at once, after a short typing pause. Each column reads it by its type — text columns contain it (without case, in the locale), number, date and yes/no columns match it when it reads as one of their values, list columns by their option texts — and the columns are joined with OR, then with the filter row and the header filter with AND. A text no column can read leaves no row. The filter goes to the data source like any other (`data.where`, `data.or`), so a server runs it; what was found is marked in the cells. `searchText` binds the text both ways with `onSearchTextChanged`; `searchByText()` searches from code.
+`searchPanel` puts a search box in the toolbar: its text is looked for in every searchable column at once, after a short typing pause. Each column reads it by its type — text columns contain it (without case, in the locale), number, date and yes/no columns match it when it reads as one of their values, list columns by their option texts — and the columns are joined with OR, then with the filter row and the header filter with AND. A text no column can read leaves no row. The filter goes to the data source like any other (`data.where`, `data.or`), so a server runs it; what was found is marked in the cells. `searchText` binds the text both ways with `onSearchTextChanged`; `searchByText()` searches programmatically.
 
 A lookup column is searched by its texts: the lookup source — here a customers service apart from the sales' server — is asked for the items whose text holds the search (at most `searchLimit`), and their keys go to the rows' server as `customerId in [...]`. A column with a `textFrom` field searches that field of the row instead.
 

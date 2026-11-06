@@ -1,6 +1,6 @@
 # Scheduler: The appointment form
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.2
+> Scheduler · @motifx-community/ui 0.1.0-beta.3
 
 The appointment form set up without events: which fields, in which order, in groups and tabs; editors of your own; checks per field; fields shown or locked for one appointment only. Or a form of your own.
 

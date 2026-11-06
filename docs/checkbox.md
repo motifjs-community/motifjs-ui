@@ -1,6 +1,6 @@
 # CheckBox
 
-> Choice · @motifx-community/ui 0.1.0-beta.2
+> Choice · @motifx-community/ui 0.1.0-beta.3
 
 A checkbox with its caption: checked, unchecked or indeterminate, three states on request, read-only, required and checked with its group. A native checkbox underneath, drawn from the design tokens.
 
@@ -10,21 +10,21 @@ A checkbox with its caption: checked, unchecked or indeterminate, three states o
 import { CheckBox } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set from code.
+Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, CheckBox, Stack } from '@motifx-community/ui';
 
-/** A checkbox bound to state with x-model, and checkboxes created with `new` and added from code. */
-export default function FromCode() {
+/** A checkbox bound to state with x-model, and checkboxes created with `new` and added programmatically. */
+export default function Programmatic() {
   const s = reactive({ remember: true, result: '' });
   let added = 0;
   let host: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const box = new CheckBox({ label: `Option ${++added}`, threeState: true });
     box.onValueChanged((e) => (s.result = `${box.label}: ${String(e.value)}`));
     host?.controls.add(box);
@@ -35,7 +35,7 @@ export default function FromCode() {
     <>
       <CheckBox label="&Remember me" x-model={() => s.remember} helpText={() => (s.remember ? 'You stay signed in.' : 'You sign in every time.')} />
       <Stack orientation="horizontal" wrap align="center">
-        <Button text="Add a checkbox from code" variant="outline" onclick={addFromCode} />
+        <Button text="Add a checkbox programmatically" variant="outline" onclick={addProgrammatic} />
         <output class="cb-result">{() => s.result}</output>
       </Stack>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />

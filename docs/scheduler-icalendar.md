@@ -1,6 +1,6 @@
 # Scheduler: iCalendar and print
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.2
+> Scheduler · @motifx-community/ui 0.1.0-beta.3
 
 Appointments out to an iCalendar file and back in (RFC 5545), for use with other calendar applications; and the scheduler on paper.
 

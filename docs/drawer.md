@@ -1,6 +1,6 @@
 # Drawer
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
 A panel that slides in from an edge of the page or of a container, over the content or pushing it aside. A finger swipes it in from the edge and back again; Escape, the scrim and the browser's back close it.
 

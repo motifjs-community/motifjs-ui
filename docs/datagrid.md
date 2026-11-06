@@ -1,6 +1,6 @@
 # DataGrid
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.2
+> DataGrid · @motifx-community/ui 0.1.0-beta.3
 
 A grid for data entry and large data: rows in memory or from any adapter of the data layer, a virtual list or pages, sorting, column layout, editing with the kit's editors, new rows with the Tab chain, three save modes, row actions, selection, filters, a search panel, grouping, summaries, a toolbar, lookup columns from other services, copy and paste, export and a layout that is kept — and every feature can be turned off, for the grid or for one column.
 
@@ -11,7 +11,7 @@ import { DataGrid, type GridColumn } from '@motifx-community/ui';
 import { data } from '@motifx-community/data';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
 Give rows in memory with `rows` and their key with `rowKey`; the grid puts them in a `DataSource` over an `ArrayAdapter` itself. Every prop takes a value or a function. Created with `new`, the grid is an object like any other: add it, sort it, ask it.
 
@@ -77,7 +77,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 
 ## Pager
 
-The pager under the rows shows the page sizes (`pageSizeSelector`, the sizes of `allowedPageSizes`, `all` for one page with every row), “Page 3 of 12 (250 items)” (`pagerInfo`, `pagerInfoText` with `{0}`, `{1}`, `{2}`), the first, previous, next and last buttons (`pagerNavigation`) and the pages around the current one (`pagerNeighbors`). `pagerDisplayMode` picks its look: `full` with page buttons and the sizes as buttons, `compact` with a box for the page number and a drop-down of the sizes, `adaptive` (the default) full while it fits in the grid's width. The rows per page change from code with `pageSize(n)` too; either way `onPageSizeChanging` can keep the old size, the grid goes back to the first page, and with `layoutKey` the size is kept with the layout. PageUp and PageDown turn the page (`pageKeys`).
+The pager under the rows shows the page sizes (`pageSizeSelector`, the sizes of `allowedPageSizes`, `all` for one page with every row), “Page 3 of 12 (250 items)” (`pagerInfo`, `pagerInfoText` with `{0}`, `{1}`, `{2}`), the first, previous, next and last buttons (`pagerNavigation`) and the pages around the current one (`pagerNeighbors`). `pagerDisplayMode` picks its look: `full` with page buttons and the sizes as buttons, `compact` with a box for the page number and a drop-down of the sizes, `adaptive` (the default) full while it fits in the grid's width. The rows per page change programmatically with `pageSize(n)` too; either way `onPageSizeChanging` can keep the old size, the grid goes back to the first page, and with `layoutKey` the size is kept with the layout. PageUp and PageDown turn the page (`pageKeys`).
 
 ```tsx
 /** An order, as the examples' made-up server keeps it. */
@@ -95,7 +95,7 @@ export interface Order {
 
 ## Example files
 
-`FromCode.tsx`
+`Programmatic.tsx`
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -103,8 +103,8 @@ import { Button, DataGrid, Stack } from '@motifx-community/ui';
 import type { Order } from './order';
 import { columns, makeOrders, newOrder } from './orders';
 
-/** Rows in memory given with `rows`, rows added from code, and a grid created with `new`. */
-export default function FromCode() {
+/** Rows in memory given with `rows`, rows added programmatically, and a grid created with `new`. */
+export default function Programmatic() {
   const s = reactive({ orders: makeOrders(40) });
   let grid: DataGrid<Order> | null = null;
   let host: Stack | null = null;
@@ -139,9 +139,9 @@ export default function FromCode() {
         ref={(g: DataGrid<Order>) => (grid = g)}
       />
       <Stack orientation="horizontal" wrap align="center">
-        <Button text="Add a row from code" variant="outline" onclick={() => void grid?.addRow({ customer: 'Ada Lovelace' })} />
+        <Button text="Add a row programmatically" variant="outline" onclick={() => void grid?.addRow({ customer: 'Ada Lovelace' })} />
         <Button text="Push an order into the array" variant="outline" onclick={pushOrder} />
-        <Button text="Add a grid from code" variant="outline" onclick={addGrid} />
+        <Button text="Add a grid programmatically" variant="outline" onclick={addGrid} />
         <output class="dg-local-count">{() => `${s.orders.length} orders in the array`}</output>
       </Stack>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />

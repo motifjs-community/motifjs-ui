@@ -1,6 +1,6 @@
 # Scheduler: Editing
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.2
+> Scheduler · @motifx-community/ui 0.1.0-beta.3
 
 Appointments are added, moved, resized, copied and deleted with the pointer, the keys and code; every change asks its event first, can wait for a server, and goes back when saving fails.
 
@@ -216,15 +216,15 @@ export default function Rules() {
 }
 ```
 
-## From code
+## Programmatic use
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, Scheduler } from '@motifx-community/ui';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** The same changes from code: add, move, delete, open the form for a new one. */
-export default function EditFromCode() {
+/** The same changes programmatically: add, move, delete, open the form for a new one. */
+export default function EditProgrammatically() {
   const state = reactive({ appointments: sampleAppointments(), said: '' });
   let scheduler: Scheduler<Meeting> | null = null;
   const tomorrow = (hour: number) => {
@@ -303,7 +303,7 @@ export default function EditFromCode() {
 | --- | --- |
 | `addAppointment(values)` | Adds where the appointments come from (pushed into the array, or inserted through the data source); resolves to it. |
 | `updateAppointment(appointment, changes)` | Changes its fields; resolves `false` when an event said no or saving failed. |
-| `deleteAppointment(appointment)` | Deletes it (no question from code). |
+| `deleteAppointment(appointment)` | Deletes it (no question programmatically). |
 | `showAppointmentForm(appointment?, cell?)` | The form for an appointment, or for a new one at `cell` (the selection by default). |
 | `showTooltip(appointment, anchor?) / hideTooltip()` | Its tooltip. |
 

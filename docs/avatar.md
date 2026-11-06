@@ -1,6 +1,6 @@
 # Avatar and AvatarGroup
 
-> Display · @motifx-community/ui 0.1.0-beta.2
+> Display · @motifx-community/ui 0.1.0-beta.3
 
 Someone’s picture, or their initials, or a person icon, with their presence on its corner. A group stacks or spreads them and counts the ones it does not show.
 
@@ -10,9 +10,9 @@ Someone’s picture, or their initials, or a person icon, with their presence on
 import { Avatar, AvatarGroup } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-Every prop takes a value or a function. Created with `new`, the same properties are set from code.
+Every prop takes a value or a function. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -21,8 +21,8 @@ import { Avatar, Button, Stack, type AvatarStatus } from '@motifx-community/ui';
 const PEOPLE = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper'];
 const STATUSES: AvatarStatus[] = ['online', 'away', 'busy', 'offline'];
 
-/** An avatar from JSX follows its functions; one made with `new` takes the same properties from code. */
-export default function FromCode() {
+/** An avatar from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+export default function Programmatic() {
   const s = reactive({ person: 0, status: 0 });
   const coded = new Avatar({ name: 'Edsger Dijkstra', tone: 'success', shape: 'square' });
 

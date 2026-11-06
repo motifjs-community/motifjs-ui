@@ -1,6 +1,6 @@
 # ActionSheet
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
 A list of commands that comes up from the bottom, made of the kit's menu items and large enough for a finger, with a title, a message and a cancel button apart. A context menu opens its items here on a touch screen.
 
@@ -10,7 +10,7 @@ A list of commands that comes up from the bottom, made of the kit's menu items a
 import { ActionSheet, type ActionSheetProps } from '@motifx-community/ui';
 ```
 
-## Choosing from code
+## Choosing programmatically
 
 `choose()` opens it and resolves with the item chosen, or `null`. An item with `items` opens its submenu in place, with a way back.
 

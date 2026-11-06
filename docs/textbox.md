@@ -1,6 +1,6 @@
 # TextBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.2
+> Editors · @motifx-community/ui 0.1.0-beta.3
 
 A one-line text field with its label, help text and error: placeholder, prefix and suffix, buttons in the box, a clear button, a password that can be shown, a character counter, an input mask and validation — alone, in a group, or every field in a panel.
 
@@ -10,21 +10,21 @@ A one-line text field with its label, help text and error: placeholder, prefix a
 import { TextBox, ValidationGroup, validateFields, type ValidationRule } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-Every prop takes a value or a function; a function of a reactive object keeps the field in step with it. `x-model` binds the value two-way. Created with `new`, the same properties are set from code.
+Every prop takes a value or a function; a function of a reactive object keeps the field in step with it. `x-model` binds the value two-way. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, Stack, TextBox } from '@motifx-community/ui';
 
-/** A field bound to state with x-model, and fields created with `new` and added from code. */
-export default function FromCode() {
+/** A field bound to state with x-model, and fields created with `new` and added programmatically. */
+export default function Programmatic() {
   const form = reactive({ name: 'Ada', result: '' });
   let added = 0;
   let host: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const box = new TextBox({ label: `Field ${++added}`, clearButton: true, placeholder: 'Created with new' });
     box.onValueChanged((e) => (form.result = `${box.label}: ${e.value}`));
     host?.controls.add(box);
@@ -35,7 +35,7 @@ export default function FromCode() {
     <>
       <TextBox label="&Name" x-model={() => form.name} clearButton helpText={() => `Hello, ${form.name || 'stranger'}.`} />
       <Stack orientation="horizontal" wrap align="center">
-        <Button text="Add a field from code" variant="outline" onclick={addFromCode} />
+        <Button text="Add a field programmatically" variant="outline" onclick={addProgrammatic} />
         <output class="tb-result">{() => form.result}</output>
       </Stack>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />
@@ -428,7 +428,7 @@ export default function Localization() {
 
 | Event | When |
 | --- | --- |
-| `onValueChanged(e)` | The value changed. `e`: `{ value, previousValue, byUser, source, event? }`; `byUser` tells the user from code. |
+| `onValueChanged(e)` | The value changed. `e`: `{ value, previousValue, byUser, source, event? }`; `byUser` tells the user programmatically. |
 | `onValidated(e)` | A check ended. `e`: `{ valid, message, source }`. |
 | `onEnter(e)` | Enter was pressed. `e`: `{ value, source, event }`. |
 | `oninput, onchange, onkeydown, onfocusin, onfocusout` | The DOM events of the input reach the field. |

@@ -1,6 +1,6 @@
 # MenuBar and ContextMenu
 
-> Buttons · @motifx-community/ui 0.1.0-beta.2
+> Buttons · @motifx-community/ui 0.1.0-beta.3
 
 A menu bar of an app (File, Edit, View) and the menu that opens on a right-click. Both show the same menu items: submenus, check and radio items, shortcuts, access keys.
 
@@ -298,7 +298,7 @@ Menus write no text of their own: every label, shortcut and name comes from your
 | --- | --- | --- |
 | `MenuBar.open(item \| index)` | `boolean` | Opens a top item’s menu with focus on its first item. |
 | `MenuBar.close()` | `void` | Closes the open menu. |
-| `ContextMenu.open(at, target?)` | `boolean` | Opens it from code, at `{ x, y }` or at an element. |
+| `ContextMenu.open(at, target?)` | `boolean` | Opens it programmatically, at `{ x, y }` or at an element. |
 | `ContextMenu.close()` | `void` | Closes it. |
 | `MenuBar.refresh(), ContextMenu.refresh()` | `void` | Your items may be plain or reactive; the menu reads them as they are. After changing them in place, call `refresh()`. The bar, the open menu and its submenus follow. |
 | `attachContextMenu(target, items)` | `() => void` | Gives an element or component a menu; `items` can be a function of the opening (`e.target`). Returns the remover. |

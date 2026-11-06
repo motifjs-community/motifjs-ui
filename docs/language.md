@@ -1,6 +1,6 @@
 # Language
 
-> Foundations · @motifx-community/ui 0.1.0-beta.2
+> Foundations · @motifx-community/ui 0.1.0-beta.3
 
 The texts the controls write, the locale their dates and numbers follow, and the direction: one `uiLocale` for the kit, with a pack per language loaded as it is asked for.
 

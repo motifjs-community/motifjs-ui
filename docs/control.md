@@ -1,8 +1,8 @@
 # Control
 
-> Foundations · @motifx-community/ui 0.1.0-beta.2
+> Foundations · @motifx-community/ui 0.1.0-beta.3
 
-The base of every control in the package. It gives each one the same `text`, `enabled`, `visible` and `tabStop`, and the same focus methods, whether the control is written in JSX and bound to state or created with `new` and changed from code.
+The base of every control in the package. It gives each one the same `text`, `enabled`, `visible` and `tabStop`, and the same focus methods, whether the control is written in JSX and bound to state or created with `new` and changed programmatically.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { Control, type ControlProps } from '@motifx-community/ui';
 
 Every component of the package ([Button](button.md), …) extends it; extend it for your own controls.
 
-## From JSX and from code
+## Declarative and programmatic
 
 Both ways are complete; the developer using the control decides.
 
@@ -33,12 +33,12 @@ unread.text = () => `Unread (${this.mail.count})`; // a function is followed
 ```tsx
 import { Button, Stack } from '@motifx-community/ui';
 
-/** Buttons created with `new`, added to a container, and their text changed from code on a click. */
-export default function AddFromCode() {
+/** Buttons created with `new`, added to a container, and their text changed programmatically on a click. */
+export default function AddProgrammatically() {
   let added = 0;
   let target: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const b = new Button({ text: `Button ${++added}` });
     b.motif.on('click', () => (b.text = `${b.text} ✓`));
     target?.controls.add(b);
@@ -46,7 +46,7 @@ export default function AddFromCode() {
 
   return (
     <>
-      <Button text="Add a button from code" onclick={addFromCode} />
+      <Button text="Add a button programmatically" onclick={addProgrammatic} />
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (target = c)} />
     </>
   );
@@ -61,7 +61,7 @@ export default function AddFromCode() {
 
 - With `x-model` the model always shows the control's state: a change by the user, by your code (`ctrl.value = …`, `select()`, `show()`) or by a rule you gave (`decimals`, a mask, `min` / `max`) is written back to it.
 
-- A property set from code takes the same: a function (`ctrl.enabled = () => !state.busy`) is bound in place of what was there and followed; a value (`ctrl.enabled = false`) drops what was bound, and from then on the code owns it.
+- A property set programmatically takes the same: a function (`ctrl.enabled = () => !state.busy`) is bound in place of what was there and followed; a value (`ctrl.enabled = false`) drops what was bound, and from then on the code owns it.
 
 - Every property is reactive to read: `{() => ctrl.text}` in JSX or a `bindings.watch` follows it, whichever way it changed.
 
@@ -84,7 +84,7 @@ If focus was inside, it moves to the next usable element in the same window (or 
 ```tsx
 import { Button, Panel, Stack } from '@motifx-community/ui';
 
-/** A panel disabled and enabled from code: everything inside follows, and the inner button keeps its own `enabled`. */
+/** A panel disabled and enabled programmatically: everything inside follows, and the inner button keeps its own `enabled`. */
 export default function EnabledPanel() {
   let panel: Panel | null = null;
   let inner: Button | null = null;
@@ -171,7 +171,7 @@ class Badge extends Control<HTMLSpanElement, BadgeProps> {
 | --- | --- |
 | `static elementTag` | The root element. `div` unless the subclass sets another (`button` for a button). |
 | `focusElement` | Getter: the element that takes focus; the root by default. Composite controls override it. It runs from the constructor, so derive it from `this.element`. |
-| `observeProperty(name, apply)` | Renders a property without an effect: `apply` runs now and on every change, from a getter prop or from code. |
+| `observeProperty(name, apply)` | Renders a property without an effect: `apply` runs now and on every change, from a getter prop or programmatically. |
 | `getProperty(name) / setProperty(name, value)` | The storage behind the shared properties, for your own: tracked read, and set-from-code (which replaces a bound getter). |
 | `bindProperty(name, prop)` | Binds one of your own props: a getter is read now and followed by a binding of the control (so `reState()` reads it again), a value is stored once. Call it from your constructor. |
 | `applyProperty(name, value) / peekProperty(name)` | Render your own properties without an effect: override `applyProperty` (call `super`); read the current value untracked with `peekProperty`. Can run from the constructor: touch only `this.element`. |
@@ -187,7 +187,7 @@ The base adds no listeners per control and pays only for what is used.
 | `A plain value (`enabled={false}`, `new Badge({ text })`)` | Stored and written to the DOM once. |
 | `A getter (`enabled={() => !state.busy}`)` | One binding for that property, stopped when the control is disposed or another value or function is set. |
 | `Reading a property` | A small change counter, created the first time someone reads it. |
-| `Setting from code` | A direct DOM write; readers are notified through the counter. |
+| `Setting programmatically` | A direct DOM write; readers are notified through the counter. |
 | ``enabled = false`` | One pass over the control's subtree, plus one shared observer while anything is disabled (it disappears when nothing is). |
 
 ## API reference
@@ -207,7 +207,7 @@ The base adds no listeners per control and pays only for what is used.
 
 | Property | Type | Access | Description |
 | --- | --- | --- | --- |
-| `text` | `string` | read/write, reactive | Set from code with a value or a function, like the prop (see "How a property gets its value"). |
+| `text` | `string` | read/write, reactive | Set programmatically with a value or a function, like the prop (see "How a property gets its value"). |
 | `enabled` | `boolean` | read/write, reactive | This control's own value, as set or bound (like the HTML `disabled` attribute). |
 | `isEnabled` | `boolean` | read-only, reactive | Whether it can be used now: enabled itself and in every control it sits in (like CSS `:enabled`). Windows shown inside do not inherit it. |
 | `visible` | `boolean` | read/write, reactive | This control's own value; a hidden parent does not change it. |

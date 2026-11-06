@@ -1,6 +1,6 @@
 # Slider
 
-> Editors · @motifx-community/ui 0.1.0-beta.2
+> Editors · @motifx-community/ui 0.1.0-beta.3
 
 A value picked on a track by dragging a thumb or with the keys: one number, or a range with two thumbs. Steps, marks with labels, a value bubble, a vertical form and number formatting, with the label, help line and validation every field has.
 
@@ -10,21 +10,21 @@ A value picked on a track by dragging a thumb or with the keys: one number, or a
 import { Slider, type SliderValue } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set from code.
+Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, Slider, Stack } from '@motifx-community/ui';
 
-/** A slider bound to state with x-model, and sliders created with `new` and added from code. */
-export default function FromCode() {
+/** A slider bound to state with x-model, and sliders created with `new` and added programmatically. */
+export default function Programmatic() {
   const s = reactive({ volume: 40, result: '' });
   let added = 0;
   let host: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const slider = new Slider({ label: `Slider ${++added}`, showValue: 'drag' });
     slider.value = 50;
     slider.onValueChanged((e) => (s.result = `${slider.label}: ${String(e.value)}`));
@@ -36,7 +36,7 @@ export default function FromCode() {
     <>
       <Slider label="&Volume" x-model={() => s.volume} helpText={() => `Volume: ${s.volume}`} />
       <Stack orientation="horizontal" wrap align="center">
-        <Button text="Add a slider from code" variant="outline" onclick={addFromCode} />
+        <Button text="Add a slider programmatically" variant="outline" onclick={addProgrammatic} />
         <output class="sl-result">{() => s.result}</output>
       </Stack>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />

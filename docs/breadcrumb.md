@@ -1,6 +1,6 @@
 # Breadcrumb
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
 The way to the current page: each step a link or a button, the current page last. Steps that do not fit go into a menu after the first.
 
@@ -18,8 +18,8 @@ A step with `href` is a link; `rel='router'` lets the MotifJS router take it. A 
 import { reactive } from '@motifx/core';
 import { Breadcrumb, Stack } from '@motifx-community/ui';
 
-/** Links the router takes (`rel="router"`), a step that is a button, the current page last; one made from code. */
-export default function FromCode() {
+/** Links the router takes (`rel="router"`), a step that is a button, the current page last; one made programmatically. */
+export default function Programmatic() {
   const s = reactive({ last: '' });
   const coded = new Breadcrumb({ label: 'Settings path', items: ['Settings', 'Account', 'Security'] });
 

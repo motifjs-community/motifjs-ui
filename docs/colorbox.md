@@ -1,6 +1,6 @@
 # ColorBox and ColorPicker
 
-> Editors · @motifx-community/ui 0.1.0-beta.2
+> Editors · @motifx-community/ui 0.1.0-beta.3
 
 A colour as a field, with a picker in a popup; or the picker on its own. The picker has an area of saturation and brightness, a hue strip, an opacity strip, inputs for the channels and preset colours.
 
@@ -20,8 +20,8 @@ import { ColorBox, Stack } from '@motifx-community/ui';
 
 const PALETTE = ['#3b5bdb', '#1971c2', '#0c8599', '#2b8a3e', '#f08c00', '#e8590c', '#e03131', '#c2255c', '#862e9c', '#495057'];
 
-/** A colour field bound with `x-model`: type a hex, or open the picker (Alt+Down); one made with `new` from code. */
-export default function FromCode() {
+/** A colour field bound with `x-model`: type a hex, or open the picker (Alt+Down); one made with `new` programmatically. */
+export default function Programmatic() {
   const s = reactive({ accent: '#3b5bdb' as string | null });
   const coded = new ColorBox({ label: 'Made in code', value: '#2b8a3e', clearButton: true });
 

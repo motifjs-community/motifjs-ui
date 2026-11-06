@@ -1,6 +1,6 @@
 # Wizard
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
 A task in steps: a [Stepper](stepper.md) above or beside one page per step, and the Back and Next buttons under them. Next validates the page first; on the last step it finishes.
 
@@ -44,7 +44,7 @@ export default function Basic() {
 }
 ```
 
-## From code
+## Programmatic use
 
 `steps` makes the steps from props, each page from a `content` factory when it is first shown; `add`, `insert` and `remove` change them later. `next()`, `previous()`, `goTo()` and `finish()` move it.
 
@@ -52,15 +52,15 @@ export default function Basic() {
 import { Component, reactive } from '@motifx/core';
 import { Button, Stack, Wizard, WizardStep } from '@motifx-community/ui';
 
-// A page made from code: any MotifJS component.
+// A page made programmatically: any MotifJS component.
 class Note extends Component<HTMLDivElement, { text: string }> {
     override view() {
         return <p>{this.props.text}</p>;
     }
 }
 
-/** A wizard made from code: its steps as props with content factories, moved with its methods, a step added later. */
-export default function FromCode() {
+/** A wizard made programmatically: its steps as props with content factories, moved with its methods, a step added later. */
+export default function Programmatic() {
     const s = reactive({ told: '' });
     const wizard = new Wizard({
         label: 'Setup',
@@ -73,7 +73,7 @@ export default function FromCode() {
         onFinished: () => (s.told = 'Finished.')
     });
     const addStep = () => {
-        wizard.insert(2, new WizardStep({ title: 'Extra', optional: true, content: () => new Note({ text: 'Added from code.' }) }));
+        wizard.insert(2, new WizardStep({ title: 'Extra', optional: true, content: () => new Note({ text: 'Added programmatically.' }) }));
     };
     return (
         <Stack gap="md" style="inline-size: 100%">
@@ -195,7 +195,7 @@ export default function Custom() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `steps` | `readonly WizardStepProps[]` | `[]` | Steps made from code, each as the props of a `WizardStep`; the JSX `WizardStep` children come first. |
+| `steps` | `readonly WizardStepProps[]` | `[]` | Steps made programmatically, each as the props of a `WizardStep`; the JSX `WizardStep` children come first. |
 | `value` | `Bind<string \| number \| null>` | `0` | The current step: its `key`, else its index. `x-model` binds it two-way. |
 | `linear` | `Bind<boolean>` | `true` | A step is reached only after the ones before it; optional steps may be skipped. |
 | `orientation` | `Bind<StepperOrientation>` | `'horizontal'` | `horizontal`: the stepper above the pages; `vertical`: beside them. |
@@ -222,7 +222,7 @@ export default function Custom() {
 | `validateFields` | `Bind<boolean>` | `true` | The kit’s fields on the page are validated before the wizard moves on from it; the first invalid one takes focus. |
 | `validate` | `() => boolean \| Promise<boolean>` | — | Asked after the fields; `false` keeps the page and marks the step. |
 | `lazy, keepAlive` | `Bind<boolean \| undefined>` | the wizard’s | See the wizard’s. |
-| `content` | `() => ComponentBase \| ComponentBase[]` | — | Makes the page from code, when the page is built. |
+| `content` | `() => ComponentBase \| ComponentBase[]` | — | Makes the page programmatically, when the page is built. |
 
 ### Events, properties and methods
 
@@ -234,7 +234,7 @@ export default function Custom() {
 | `next(), previous(), goTo(step)` | `Promise<boolean>` | Next validates the page first and finishes on the last step; Back validates nothing; `goTo` validates when it goes forward. |
 | `finish()` | `Promise<boolean>` | Validates the page, asks `onFinishing`, then finishes. |
 | `leaveCheck()` | `Promise<boolean>` | Validates the current page the way Next does, without moving. |
-| `add(step), insert(index, step), remove(step)` | `WizardStep` / `boolean` | Steps from code; a step of another wizard moves here. |
+| `add(step), insert(index, step), remove(step)` | `WizardStep` / `boolean` | Steps programmatically; a step of another wizard moves here. |
 | `stepper, steps, currentStep, selectedIndex` | read-only | The `Stepper`, the `WizardStep`s in order, the current one and its index. |
 | `isLast, isFinished` | read-only | The current step is the last that can be gone to (Next finishes); the wizard finished. |
 | `previousButton, nextButton` | read-only | The kit’s buttons in the bar, for an icon or a look of your own. |

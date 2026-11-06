@@ -1,6 +1,6 @@
 # Pagination
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
 Moving through pages of items: the sizes to choose from, where the page stands, the steps and a button per page around the current one. It turns compact when it does not fit. It looks and works as the grid’s pager.
 
@@ -10,7 +10,7 @@ Moving through pages of items: the sizes to choose from, where the page stands, 
 import { Pagination } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
 `x-model` binds the page; `onPageChanged` tells the page size too, so the data can be loaded for both.
 
@@ -18,8 +18,8 @@ import { Pagination } from '@motifx-community/ui';
 import { reactive } from '@motifx/core';
 import { Pagination, Stack } from '@motifx-community/ui';
 
-/** The page bound with `x-model`, the sizes to choose from; one made with `new` from code. */
-export default function FromCode() {
+/** The page bound with `x-model`, the sizes to choose from; one made with `new` programmatically. */
+export default function Programmatic() {
   const s = reactive({ page: 3, size: 25 });
   const coded = new Pagination({ label: 'Pages made in code', total: 40, pageSize: 10, mode: 'full', showInfo: false });
 

@@ -1,6 +1,6 @@
 # ButtonGroup
 
-> Buttons · @motifx-community/ui 0.1.0-beta.2
+> Buttons · @motifx-community/ui 0.1.0-beta.3
 
 Buttons that belong together: a segmented choice of one or several, or a row of actions. The buttons are the kit’s own, touching by default.
 
@@ -10,16 +10,16 @@ Buttons that belong together: a segmented choice of one or several, or a row of 
 import { ButtonGroup } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set from code.
+Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { ButtonGroup, Stack } from '@motifx-community/ui';
 
-/** One choice bound with `x-model`; a group made with `new` takes the same properties from code. */
-export default function FromCode() {
+/** One choice bound with `x-model`; a group made with `new` takes the same properties programmatically. */
+export default function Programmatic() {
   const s = reactive({ view: 'Week' as unknown });
   const coded = new ButtonGroup({ label: 'Density', items: ['Compact', 'Comfortable'], value: 'Compact' });
 

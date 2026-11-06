@@ -1,6 +1,6 @@
 # DataGrid: API reference
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.2
+> DataGrid · @motifx-community/ui 0.1.0-beta.3
 
 ## Columns
 
@@ -185,13 +185,13 @@ export interface Order {
 | `filterValue, filterEnabled` | `Bind<data.FilterExpression \| null>`, `Bind<boolean>` | `null`, `true` | The filter value the filter panel shows and the builder edits (with `filterSyncEnabled`, the filter row's and header filters' too) and whether it applies; functions are followed, the user's changes come in `onFilterChanged`. See [Filter panel and builder](datagrid-filtering.md#filter-panel). |
 | `filterPanelText, filterBuilder, filterBuilderPopup` | function, objects | — | The panel's text; the builder's props (any of `FilterBuilder` but `value` and `fields`); its window (`title`, `width`, `height`, …). |
 | `onFilterBuilderOpening / Opened / Closing / Closed` | `(e) => void` | — | The builder's window opens and closes; the `…ing` ones cancel (`e.apply` says whether OK was pressed). |
-| `searchText / onSearchTextChanged` | `Bind<string>` / `(e) => void` | `''` | The search panel’s text (a function is followed); told when it changes, typed or set from code (`{ text }`). The two together bind it both ways. |
+| `searchText / onSearchTextChanged` | `Bind<string>` / `(e) => void` | `''` | The search panel’s text (a function is followed); told when it changes, typed or set programmatically (`{ text }`). The two together bind it both ways. |
 | `toolbar` | `{ visible?: Bind<boolean>, items?: Bind<(GridToolbarItem \| GridToolbarItemName)[]> }` | the items whose features are on | The bar above the rows: which items, in which order and place; `visible` left out shows it while it has an item. |
 | `export` | `{ formats?, allowExportSelectedData?, texts? }`, each a `Bind` | `{ formats: ['csv'] }` | What the toolbar’s export button (`exportButton`) offers: a command per format (`'xlsx'`, `'csv'`, any of your own), and “Export selected rows” for each with `allowExportSelectedData`; one command is a plain button, more a menu. `texts`: `exportTo`, `exportAll`, `exportSelectedRows` (`{format}` is the format’s name), `formats` (names by code). Live through `grid.export`. |
 | `onRowExpanding / onRowExpanded` | `(e) => void` | — | Before and after a group or a row's details open: `{ kind, key, row }` — `kind: 'group'` with the values of the groups from the top level down, or `kind: 'detail'` with the row's key and the row; `e.cancel = true` keeps it closed. |
 | `onRowCollapsing / onRowCollapsed` | `(e) => void` | — | Before and after a group or a row's details close; `e.cancel = true` keeps it open. |
 | `masterDetail` | `GridMasterDetail<T>`, each field a `Bind` | `{ enabled: false }` | Details under the rows: the expand column (`enabled`), what they hold (`template`), `autoExpandAll`, `canExpand`, `keepDetails`, `keepAcrossPages`, `keepLimit`, `height`, `estimatedHeight`, `columnWidth`, `toggleKeys`, `arrowKeys`. Live through `grid.masterDetail`. See [Master-detail](datagrid-master-detail.md#master-detail). |
-| `onGroupingChanging / onGroupingChanged` | `(e) => void` | — | Before and after the grouping changes, by the user or from code: `{ group, previous, byUser }`; `e.cancel = true` keeps it. |
+| `onGroupingChanging / onGroupingChanged` | `(e) => void` | — | Before and after the grouping changes, by the user or programmatically: `{ group, previous, byUser }`; `e.cancel = true` keeps it. |
 | `onGroupDropping` | `(e) => void` | — | A header or a chip dropped to change the grouping: `{ field, from, to, index }`; `e.cancel = true` cancels the drop. |
 | `groupCell` | `(ctx) => component` | — | Content of your own in the group rows of columns without a `groupCell`. |
 | `summary` | `Bind<GridSummary>` | — | The summaries: `totalItems` in the row under the rows, `groupItems` in group rows and footers, and how they are worked out. See [Summaries](datagrid-grouping.md#summaries). |
@@ -257,7 +257,7 @@ export interface Order {
 | `selectRow(row, add?) / deselectRow(row) / isSelected(row)` |  | One row in or out of the selection. |
 | `selectAll() / clearSelection()` |  | Every row of the filter, loaded or not; none. |
 | `clearFilters()` |  | Takes every filter away, the filter value too, and the search text. |
-| `openFilterBuilder() / closeFilterBuilder(apply?) / clearFilterValue()` | `boolean` / `boolean` / `void` | The filter panel's builder window and its Clear, from code. |
+| `openFilterBuilder() / closeFilterBuilder(apply?) / clearFilterValue()` | `boolean` / `boolean` / `void` | The filter panel's builder window and its Clear, programmatically. |
 | `searchByText(text)` | `void` | Searches for a text at once, as the search panel does; `''` stops searching. |
 | `showColumnChooser()` | `void` | Opens the column list, under the toolbar’s column button when it shows. |
 | `expandAll(level?) / collapseAll(level?)` | `void` | Opens or closes every group of a level (0 is the top level), or of every level. |
@@ -285,7 +285,7 @@ export interface Order {
 | `focusCell(i, field?) / editCell(i, field) / editRow(i) / closeEditCell()` | `boolean` | Moves the active cell as the arrows do; opens a cell’s editor, or the first one of a row (in the form modes its form); keeps the open editor’s value and closes it. |
 | `editRowByKey(key)` | `boolean` | `editRow` for the row with this key, while it is loaded. |
 | `saveEditData() / cancelEditData()` | `Promise<boolean>` / `void` | Saves or gives up what is being edited, as Save and Cancel do: the edit form, else the row being edited; in batch mode every unsaved change. |
-| `beginUpdate() / endUpdate()` | `void` | Changes from code in between lay the rows out once, at the last `endUpdate()`. |
+| `beginUpdate() / endUpdate()` | `void` | Changes programmatically in between lay the rows out once, at the last `endUpdate()`. |
 | `repaint()` | `void` | Draws again, without loading, what shows your data: the rows, their details and adaptive detail, the group rows and footers, the totals, the toolbar and the actions (after a row, an option or what a template or `onRowPrepared` reads was changed in place). |
 | `repaintRows(keys)` | `void` | Draws again only the rows with these keys, with their actions and details: after you changed those rows in place. |
 | `refreshSummary()` | `void` | Reads the summary items again and works the values out again: after an item, the items or the rows’ values were changed in place. |

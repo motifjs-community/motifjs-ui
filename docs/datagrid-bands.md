@@ -1,6 +1,6 @@
 # DataGrid: Bands and adaptive columns
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.2
+> DataGrid · @motifx-community/ui 0.1.0-beta.3
 
 ## Band headers
 

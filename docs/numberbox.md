@@ -1,6 +1,6 @@
 # NumberBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.2
+> Editors · @motifx-community/ui 0.1.0-beta.3
 
 A number field: arrow keys, PageUp / PageDown and spin buttons that repeat while held, bounds, a step without float noise, a format for display (currency, percent) and typing in the locale’s own way.
 
@@ -10,9 +10,9 @@ A number field: arrow keys, PageUp / PageDown and spin buttons that repeat while
 import { NumberBox, type NumberBoxProps } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-`x-model` binds a number (`null` when empty). Created with `new`, the same properties are set from code.
+`x-model` binds a number (`null` when empty). Created with `new`, the same properties are set programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -20,13 +20,13 @@ import { Button, NumberBox, Stack } from '@motifx-community/ui';
 
 const show = (value: number | null) => (value === null ? 'null' : String(value));
 
-/** A field bound to a number with x-model, and fields created with `new` and stepped from code. */
-export default function FromCode() {
+/** A field bound to a number with x-model, and fields created with `new` and stepped programmatically. */
+export default function Programmatic() {
   const s = reactive({ quantity: 3 as number | null, log: '' });
   let added = 0;
   let host: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const box = new NumberBox({ label: `Count ${++added}`, min: 0, max: 10, value: 5, locale: 'en' });
     box.onValueChanged((e) => (s.log = `${box.label}: ${show(e.value)}`));
     host?.controls.add(box);
@@ -41,7 +41,7 @@ export default function FromCode() {
         <output class="nb-quantity">{() => `value: ${show(s.quantity)}`}</output>
       </Stack>
       <Stack orientation="horizontal" wrap align="center">
-        <Button text="Add a field from code" variant="outline" onclick={addFromCode} />
+        <Button text="Add a field programmatically" variant="outline" onclick={addProgrammatic} />
         <output class="nb-log">{() => s.log}</output>
       </Stack>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />

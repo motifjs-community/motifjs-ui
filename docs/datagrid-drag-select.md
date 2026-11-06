@@ -1,6 +1,6 @@
 # DataGrid: Selecting by dragging
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.2
+> DataGrid · @motifx-community/ui 0.1.0-beta.3
 
 ## Rows
 
@@ -40,7 +40,7 @@ export interface Order {
 
 ## Over 100,000 rows
 
-Ranges are marks on the cells drawn now: the pooled rows and, with virtual columns, the columns in view. Drawing one over 100,000 rows × 60 columns keeps the frame rate, and a change of a range writes only the marks that changed, never a cell's text. The buttons set ranges by key from code.
+Ranges are marks on the cells drawn now: the pooled rows and, with virtual columns, the columns in view. Drawing one over 100,000 rows × 60 columns keeps the frame rate, and a change of a range writes only the marks that changed, never a cell's text. The buttons set ranges by key programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';

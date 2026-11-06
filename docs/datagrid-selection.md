@@ -1,6 +1,6 @@
 # DataGrid: Selection and export
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.2
+> DataGrid · @motifx-community/ui 0.1.0-beta.3
 
 ## Selection
 
@@ -308,7 +308,7 @@ import { Button, CheckBox, DataGrid, Stack } from '@motifx-community/ui';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** Ctrl+C and Ctrl+V as tab-separated text, and the same from code. */
+/** Ctrl+C and Ctrl+V as tab-separated text, and the same programmatically. */
 export default function Clipboard() {
   const s = reactive({ raw: false, headers: false, newRows: false, copied: '' });
   let grid: DataGrid<Order> | null = null;
@@ -340,7 +340,7 @@ export default function Clipboard() {
         ref={(g: DataGrid<Order>) => (grid = g)}
       />
       <Stack orientation="horizontal" wrap align="center">
-        <Button text="Copy from code" variant="outline" onclick={() => (s.copied = grid?.copy() ?? '')} />
+        <Button text="Copy programmatically" variant="outline" onclick={() => (s.copied = grid?.copy() ?? '')} />
         <Button text="Paste two lines at the active cell" variant="outline" onclick={() => grid?.paste('Ada Lovelace\tİzmir\nGrace Hopper\tAnkara')} />
         <output class="dg-copied">{() => (s.copied ? `Copied: ${s.copied.replace(/\t/g, ' → ').replace(/\r?\n/g, ' ¶ ')}` : '')}</output>
       </Stack>

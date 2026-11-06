@@ -1,6 +1,6 @@
 # DateBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.2
+> Editors · @motifx-community/ui 0.1.0-beta.3
 
 A date, a time or both. It is typed in the order of the locale through a mask, or picked from a calendar and a list of times; `min`, `max` and `disabledDates` limit both ways.
 
@@ -10,7 +10,7 @@ A date, a time or both. It is typed in the order of the locale through a mask, o
 import { DateBox } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -18,13 +18,13 @@ import { Button, DateBox, Stack } from '@motifx-community/ui';
 
 const today = new Date();
 
-/** A date box bound with x-model, and date boxes created with `new`, given a value and added from code. */
-export default function FromCode() {
+/** A date box bound with x-model, and date boxes created with `new`, given a value and added programmatically. */
+export default function Programmatic() {
   const order = reactive({ delivery: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3) as Date | null, result: '' });
   let added = 0;
   let host: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const due = new DateBox({ label: `Due ${++added}`, locale: 'tr-TR', clearButton: true });
     due.value = new Date(2026, 9, 25);
     due.onValueChanged((e) => (order.result = `${due.label}: ${e.value ? e.value.toDateString() : '—'}`));
@@ -36,7 +36,7 @@ export default function FromCode() {
     <>
       <DateBox label="&Delivery" x-model={() => order.delivery} clearButton />
       <output class="db-day">{() => (order.delivery ? order.delivery.toDateString() : '—')}</output>
-      <Button text="Add a date box from code" variant="outline" onclick={addFromCode} />
+      <Button text="Add a date box programmatically" variant="outline" onclick={addProgrammatic} />
       <output class="db-made">{() => order.result}</output>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />
     </>

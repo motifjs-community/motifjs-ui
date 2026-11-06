@@ -1,6 +1,6 @@
 # Accordion
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
 An accordion opens and closes sections under their headers: one at a time or several, kept open, with icons, three looks and sections built when they are first opened.
 
@@ -10,9 +10,9 @@ An accordion opens and closes sections under their headers: one at a time or sev
 import { Accordion, AccordionItem } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-An `<AccordionItem>`'s children are its section. `value` lists the open items' keys and `x-model` binds it two-way. Created with `new`, items are added and removed from code.
+An `<AccordionItem>`'s children are its section. `value` lists the open items' keys and `x-model` binds it two-way. Created with `new`, items are added and removed programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -30,14 +30,14 @@ const FAQ = [
   { q: 'How do I return an item?', a: 'Send it back within 14 days with the slip in the box.' },
 ];
 
-/** An accordion from JSX bound with x-model, and one created with `new` that gets items from code. */
-export default function FromCode() {
+/** An accordion from JSX bound with x-model, and one created with `new` that gets items programmatically. */
+export default function Programmatic() {
   const s = reactive({ open: ['shipping'] as (string | number)[], address: '', log: '' });
   let added = 0;
 
   const faq = new Accordion({ variant: 'separated', multiple: true });
   for (const entry of FAQ) faq.add(new AccordionItem({ title: entry.q, content: () => <p>{entry.a}</p> }));
-  faq.onExpanded((e) => (s.log = `Opened “${e.item.title}”${e.byUser ? ' by the user' : ' from code'}.`));
+  faq.onExpanded((e) => (s.log = `Opened “${e.item.title}”${e.byUser ? ' by the user' : ' programmatically'}.`));
 
   const addQuestion = () => {
     const n = ++added;
@@ -60,7 +60,7 @@ export default function FromCode() {
       </Accordion>
       <output class="acc-value">{() => `value: [${s.open.map((k) => JSON.stringify(k)).join(', ')}]`}</output>
       <Stack orientation="horizontal" wrap align="center">
-        <Button text="Add a question from code" variant="outline" onclick={addQuestion} />
+        <Button text="Add a question programmatically" variant="outline" onclick={addQuestion} />
         <output class="acc-log">{() => s.log}</output>
       </Stack>
       <Stack style="inline-size: 100%" onBuilt={(c) => c.controls.add(faq)} />
@@ -281,8 +281,8 @@ export default function VariantsAndSizes() {
 | --- | --- | --- |
 | `add(item), insert(index, item)` | `AccordionItem` | Adds an item. An item of another `Accordion` moves here. |
 | `remove(item)` | `boolean` | Removes the item and disposes it; focus inside moves to a neighbour. |
-| `expandAll(), collapseAll()` | `void` | From code. `expandAll` needs `multiple`; with `collapsible` off one item stays open. |
-| `AccordionItem.expand(), collapse()` | `boolean` | As a click would: the cancelable events run. `item.expanded = true` sets it from code. |
+| `expandAll(), collapseAll()` | `void` | Programmatically. `expandAll` needs `multiple`; with `collapsible` off one item stays open. |
+| `AccordionItem.expand(), collapse()` | `boolean` | As a click would: the cancelable events run. `item.expanded = true` sets it programmatically. |
 | `focus()` | `boolean` | An item focuses its header. |
 
 ### Events

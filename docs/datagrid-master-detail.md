@@ -1,6 +1,6 @@
 # DataGrid: Master-detail
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.2
+> DataGrid · @motifx-community/ui 0.1.0-beta.3
 
 ## Master-detail
 
@@ -30,7 +30,7 @@ export function makeCustomers(n: number): Customer[] {
 
 | Option | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `masterDetail.enabled` | `Bind<boolean>` | `false` | The expand column, after the status and check box columns and pinned like them: the user opens and closes the details. Off, they open from code only. |
+| `masterDetail.enabled` | `Bind<boolean>` | `false` | The expand column, after the status and check box columns and pinned like them: the user opens and closes the details. Off, they open programmatically only. |
 | `masterDetail.template` | `(ctx: DetailContext<T>) => unknown` | — | What a row’s details hold: a component (another `DataGrid`, a `FormLayout`, `Tabs` …), an element or a text. Made the first time the details show. `ctx`: `row` (the row itself) and `rowIndex`, both read again in getters when the row shows another one and on `grid.repaint()` or `grid.repaintRows(keys)`, `key`, `grid`, `collapse()`. |
 | `masterDetail.autoExpandAll` | `Bind<boolean>` | `false` | Every row starts open. Changing it, `enabled` or `template` opens or closes every row again. |
 | `masterDetail.canExpand` | `Bind<boolean> \| (row) => boolean` | `true` | Whether a row has details; a row without has no arrow, and `expandRow` leaves it closed. New rows not saved yet have none. |
@@ -89,7 +89,7 @@ The arrow is a button with `aria-expanded` and `aria-controls`; the row says `ar
 
 | Event | Gets | When |
 | --- | --- | --- |
-| `onRowExpanding / onRowCollapsing` | `{ kind: 'detail', key, row, cancel }` | A row’s details are about to open or close, by the user or from code; `cancel` keeps them as they are. The same events as for groups (`kind: 'group'`). |
+| `onRowExpanding / onRowCollapsing` | `{ kind: 'detail', key, row, cancel }` | A row’s details are about to open or close, by the user or programmatically; `cancel` keeps them as they are. The same events as for groups (`kind: 'group'`). |
 | `onRowExpanded / onRowCollapsed` | `{ kind: 'detail', key, row }` | They opened or closed. |
 | `onRowPrepared` | `{ rowType: 'detail', row, rowIndex, element }` | A row’s details were drawn for a row. |
 | `onOptionChanged` | `{ name: 'masterDetail.enabled', value, previous }` | A `masterDetail` option was assigned through `grid.masterDetail`. |

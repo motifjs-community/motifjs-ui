@@ -1,6 +1,6 @@
 # Sortable
 
-> Navigation · @motifx-community/ui 0.1.0-beta.2
+> Navigation · @motifx-community/ui 0.1.0-beta.3
 
 Items the user puts in order by dragging them, with the pointer or a finger, or with the keys; lists of one group take each other’s items. A drop moves the element and tells you the indexes: your data stays yours.
 
@@ -207,7 +207,7 @@ export default function Handle() {
 | `onDragEnding` | event | About to drop; `cancel = true` leaves everything as it was. |
 | `onReorder` | event | An item moved within this sortable (`fromIndex`, `toIndex`, `item`), by a drop or the keys. Reorder your data here. |
 | `onRemove, onAdd` | event | An item went to another sortable of the group, and came into one: `from`, `to`, the indexes and the item. Move the data between your arrays here. |
-| `move(fromIndex, toIndex)` | `boolean` | Moves an item from code as a drop would, telling `onReorder`. |
+| `move(fromIndex, toIndex)` | `boolean` | Moves an item programmatically as a drop would, telling `onReorder`. |
 | `elements` | read-only | The items’ elements, in order. |
 | `isDragging` | read-only | An item is being dragged. |
 | `refresh()` | `void` | Reads the items again after they were changed in place. |

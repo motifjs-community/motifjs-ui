@@ -1,6 +1,6 @@
 # Scheduler
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.2
+> Scheduler · @motifx-community/ui 0.1.0-beta.3
 
 Appointments over days and hours: day, week, work week and month views, all-day and multi-day bars, appointments at the same time side by side, and "+N more" where a day is full. From an array or a data source, with every setting live.
 
@@ -229,15 +229,15 @@ export default function Templates() {
 }
 ```
 
-## From code
+## Programmatic use
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, Scheduler, Stack } from '@motifx-community/ui';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** A scheduler made with `new`, added from code and driven by its methods. */
-export default function FromCode() {
+/** A scheduler made with `new`, added programmatically and driven by its methods. */
+export default function Programmatic() {
   const state = reactive({ said: '' });
   let host: Stack | null = null;
   let scheduler: Scheduler<Meeting> | null = null;

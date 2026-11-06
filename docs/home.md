@@ -1,6 +1,6 @@
 # @motifx-community/ui
 
-> Get started · @motifx-community/ui 0.1.0-beta.2
+> Get started · @motifx-community/ui 0.1.0-beta.3
 
 Components for MotifJS that work the way desktop UI does — created when needed, shown anywhere, closed and disposed like windows — drawn from the MotifJS design system's tokens.
 
@@ -22,14 +22,18 @@ import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/
 
 ## What ships today
 
-The components are being written one at a time; Button is the first. Under them is the base they all build on: focus and the keyboard, and the shared parts a menu or a drop-down opens on.
+More than fifty components, every one an object with the same base: focus and the keyboard, the right roles and names for a screen reader, texts in English and Turkish that switch while the app runs, right to left, and a look in each of the design system's five languages (Tactile, Lounge, Material, Fluent, Lilac) painted from component tokens. Each has a page with live examples and its API.
 
-| Part | What it is |
+| Group | Components |
 | --- | --- |
-| [`Button`](button.md) | Solid, outline and ghost in three tones and sizes, pressable; icon, `&` access key, toggle, busy; a menu or any content, from the whole button or with `split` from an arrow next to it. |
-| `Popup`, `MenuList` | The shared parts: a surface above the page that follows its anchor and closes on Escape or a press outside, and a keyboard-driven list of commands. |
-| [`Control`](control.md) | The base of every control: `text`, `enabled`, `visible`, `tabStop` and focus, the same from JSX and from code. |
-| [`FocusContainer`, `addShortcut`](keyboard.md) | Tab order, the active control of a container, `&` access keys, shortcuts, and focus that never falls to the page when a control goes away. |
+| Buttons and commands | [`Button`](button.md) (menu, split, toggle, busy), [`ButtonGroup`](buttongroup.md), [`Toolbar`](toolbar.md), [`MenuBar` and `ContextMenu`](menus.md) |
+| Editors | [`TextBox`](textbox.md) (mask, validation), [`TextArea`](textarea.md), [`NumberBox`](numberbox.md), [`DateBox`](datebox.md), [`DateRangeBox`](daterangebox.md), [`Calendar`](calendar.md), [`ColorBox` and `ColorPicker`](colorbox.md), [`Slider`](slider.md), [`Rating`](rating.md), [`FileUploader`](fileuploader.md) |
+| Choice | [`CheckBox`](checkbox.md), [`Switch`](switch.md), [`RadioGroup`](radiogroup.md), [`DropDown`](dropdown.md), [`ComboBox` and `Autocomplete`](combobox.md), [`Lookup`](lookup.md), [`TagBox`](tagbox.md), [`ListBox`](listbox.md) |
+| Display and feedback | [`Badge`](badge.md), [`Avatar` and `AvatarGroup`](avatar.md), [`Chip` and `ChipGroup`](chip.md), [`Card`](card.md), [`Skeleton`](skeleton.md), [`ProgressBar` and `Spinner`](progress.md), [`LoadPanel`](loadpanel.md), [`Tooltip`](tooltip.md), [`Popover`](popover.md), [`Toast`](toast.md) |
+| Navigation and layers | [`Tabs`](tabs.md), [`Accordion`](accordion.md), [`Breadcrumb`](breadcrumb.md), [`Pagination`](pagination.md), [`Stepper`](stepper.md), [`Wizard`](wizard.md), [`Window` and dialog](window.md), [`BottomSheet`](bottomsheet.md), [`Drawer`](drawer.md), [`ActionSheet`](actionsheet.md) |
+| Layout | [`Stack`, `Grid`, `DockPanel`, `Panel`, `GroupBox`, `SplitContainer`](layout.md), [`FormLayout`](formlayout.md), [`ScrollView`](scrollview.md) (pull to refresh, load more), [`Sortable`](sortable.md) |
+| Data | [`DataGrid`](datagrid.md) (virtual or paged, editing, filters, grouping, master-detail, export), [`TreeView`](treeview.md), [`FilterBuilder`](filterbuilder.md), [`Scheduler`](scheduler.md) (day to timeline, recurrence, resources, iCalendar), [`TabDocumentManager`](tabdocs.md) (tabs, split, dock, new windows); lists and grids read `@motifx-community/data` sources |
+| Base | [`Control`](control.md), [`FocusContainer` and `addShortcut`](keyboard.md), [`uiLocale`](language.md), [the component tokens](tokens.md); `Popup` and `MenuList`, the shared parts a menu or a drop-down opens on |
 
 ## Design system
 

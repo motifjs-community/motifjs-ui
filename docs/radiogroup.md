@@ -1,6 +1,6 @@
 # RadioGroup
 
-> Choice · @motifx-community/ui 0.1.0-beta.2
+> Choice · @motifx-community/ui 0.1.0-beta.3
 
 A set of options of which one is chosen: from plain values, from your own objects or from a live list; one under the other, side by side or in columns; options that are disabled, hidden or carry a help line; one Tab stop and the arrow keys.
 
@@ -10,20 +10,20 @@ A set of options of which one is chosen: from plain values, from your own object
 import { RadioGroup, type RadioItem } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-A plain value is its own text. `x-model` binds the chosen value two-way. Created with `new`, the same properties are set from code.
+A plain value is its own text. `x-model` binds the chosen value two-way. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, RadioGroup, Stack } from '@motifx-community/ui';
 
-/** A group of plain values bound with x-model, and a group created with `new` and added from code. */
-export default function FromCode() {
+/** A group of plain values bound with x-model, and a group created with `new` and added programmatically. */
+export default function Programmatic() {
   const s = reactive({ size: 'M' as string | null, result: '' });
   let host: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const wrap = new RadioGroup<string>({ label: 'Gift wrap', orientation: 'horizontal', items: ['None', 'Paper', 'Box'], value: 'None' });
     wrap.onValueChanged((e) => (s.result = `Gift wrap: ${e.value}`));
     host?.controls.add(wrap);
@@ -34,7 +34,7 @@ export default function FromCode() {
     <>
       <RadioGroup label="&Size" items={['S', 'M', 'L', 'XL']} x-model={() => s.size} helpText={() => `Chosen: ${s.size ?? 'nothing'}`} />
       <Stack orientation="horizontal" wrap align="center">
-        <Button text="Add a group from code" variant="outline" onclick={addFromCode} />
+        <Button text="Add a group programmatically" variant="outline" onclick={addProgrammatic} />
         <output class="rg-result">{() => s.result}</output>
       </Stack>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />

@@ -1,6 +1,6 @@
 # DropDown
 
-> Choice · @motifx-community/ui 0.1.0-beta.2
+> Choice · @motifx-community/ui 0.1.0-beta.3
 
 Picks one item from a list. The field shows the chosen item; the list opens below it with the keyboard or a press, can be searched, grouped and drawn your way, and stays fast with thousands of items.
 
@@ -10,9 +10,9 @@ Picks one item from a list. The field shows the chosen item; the list opens belo
 import { DropDown, type DropDownItem } from '@motifx-community/ui';
 ```
 
-## From JSX and from code
+## Declarative and programmatic
 
-`items` can be plain values; `x-model` binds the value. Created with `new`, the same properties are set from code.
+`items` can be plain values; `x-model` binds the value. Created with `new`, the same properties are set programmatically.
 
 ```tsx
 /** The cities the drop-downs of the examples show. */
@@ -249,20 +249,20 @@ The list is a shared part, `OptionList`, exported for combo boxes, list boxes an
 
 ## Example files
 
-`FromCode.tsx`
+`Programmatic.tsx`
 
 ```tsx
 import { reactive } from '@motifx/core';
 import { Button, DropDown, Stack } from '@motifx-community/ui';
 import { cities } from './cities';
 
-/** Drop-downs bound with x-model, and drop-downs created with `new` and added from code. */
-export default function FromCode() {
+/** Drop-downs bound with x-model, and drop-downs created with `new` and added programmatically. */
+export default function Programmatic() {
   const form = reactive({ city: 'İzmir' as string | null, size: null as string | null, result: '' });
   let added = 0;
   let host: Stack | null = null;
 
-  const addFromCode = () => {
+  const addProgrammatic = () => {
     const size = new DropDown<string, string>({ label: `Size ${++added}`, items: ['S', 'M', 'L'], placeholder: 'Pick one' });
     size.onValueChanged((e) => (form.result = `${size.label}: ${e.value}`));
     host?.controls.add(size);
@@ -277,7 +277,7 @@ export default function FromCode() {
       </Stack>
       <DropDown label="Size" items={['S', 'M', 'L', 'XL']} placeholder="Pick one" x-model={() => form.size} clearButton />
       <Stack orientation="horizontal" wrap align="center">
-        <Button text="Add a drop-down from code" variant="outline" onclick={addFromCode} />
+        <Button text="Add a drop-down programmatically" variant="outline" onclick={addProgrammatic} />
         <output class="dd-made">{() => form.result}</output>
       </Stack>
       <Stack orientation="horizontal" wrap align="center" ref={(c: Stack) => (host = c)} />
