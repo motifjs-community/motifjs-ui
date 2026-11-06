@@ -1,13 +1,13 @@
-import { identities } from '../languages.mjs';
+import { designLanguages } from '../languages.mjs';
 
 /** Measured: a picture keeps the icon size of each design language, and larger content stays centered in the button. */
 export default async function ({ page, base, check }) {
   await page.goto(base + 'button', { waitUntil: 'load' });
   await page.locator('.docs-article .mx-button[data-icon]').first().waitFor();
 
-  for (const language of identities) {
+  for (const language of designLanguages) {
     const result = await page.evaluate(async (language) => {
-      document.documentElement.setAttribute('data-identity', language);
+      document.documentElement.setAttribute('data-design-language', language);
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       const button = document.querySelector('.docs-article .mx-button[data-icon]');
       const face = button.matches('.mx-button__face') ? button : button.querySelector('.mx-button__face');

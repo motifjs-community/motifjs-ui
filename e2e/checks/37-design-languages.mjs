@@ -78,8 +78,8 @@ const PARTS = {
 };
 
 export default async function ({ page, base, check }) {
-  const restore = await page.evaluate(() => ({ identity: document.documentElement.dataset.identity, theme: document.documentElement.dataset.theme }));
-  for (const [identity, specs] of Object.entries(SPECS)) {
+  const restore = await page.evaluate(() => ({ designLanguage: document.documentElement.dataset.designLanguage, theme: document.documentElement.dataset.theme }));
+  for (const [designLanguage, specs] of Object.entries(SPECS)) {
     for (const [part, prop, expected, source] of specs) {
       const [path, selector, how] = PARTS[part];
       if (!page.url().endsWith(`/${path}`)) await page.goto(base + path, { waitUntil: 'load' });
@@ -88,7 +88,7 @@ export default async function ({ page, base, check }) {
       if (how === 'focus') await page.keyboard.press('Shift');
       const value = await page.evaluate(
         async ([id, sel, mode, name]) => {
-          document.documentElement.dataset.identity = id;
+          document.documentElement.dataset.designLanguage = id;
           delete document.documentElement.dataset.theme;
           const el = [...document.querySelectorAll(`.docs-main ${sel}`)].find((e) => e.checkVisibility());
           if (!el) return 'missing';
@@ -100,14 +100,14 @@ export default async function ({ page, base, check }) {
           if (mode === 'focus') el.blur();
           return name === 'height' || name === 'width' ? `${Math.round(parseFloat(v))}px` : v;
         },
-        [identity, selector, how, prop],
+        [designLanguage, selector, how, prop],
       );
-      check(`${identity}: ${part} ${prop} is ${expected} (${source})`, value === expected, value);
+      check(`${designLanguage}: ${part} ${prop} is ${expected} (${source})`, value === expected, value);
     }
   }
   await page.evaluate((r) => {
-    if (r.identity) document.documentElement.dataset.identity = r.identity;
-    else delete document.documentElement.dataset.identity;
+    if (r.designLanguage) document.documentElement.dataset.designLanguage = r.designLanguage;
+    else delete document.documentElement.dataset.designLanguage;
     if (r.theme) document.documentElement.dataset.theme = r.theme;
   }, restore);
 }

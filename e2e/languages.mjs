@@ -6,14 +6,14 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 
 const ds = dirname(createRequire(import.meta.url).resolve('@motifx-community/design-system/package.json'));
-const root = join(ds, 'tokens', 'identity');
+const root = join(ds, 'tokens', 'design-language');
 const THEMES = ['light', 'dark', 'high-contrast'];
 
-/** Every design language, the value of `data-identity`. */
-export const identities = readdirSync(root, { withFileTypes: true })
+/** Every design language, the value of `data-design-language`. */
+export const designLanguages = readdirSync(root, { withFileTypes: true })
   .filter((d) => d.isDirectory())
   .map((d) => d.name)
   .sort();
 
 /** The themes each language ships. */
-export const identityThemes = Object.fromEntries(identities.map((id) => [id, { themes: THEMES.filter((t) => existsSync(join(root, id, `${t}.json`))) }]));
+export const designLanguageThemes = Object.fromEntries(designLanguages.map((id) => [id, { themes: THEMES.filter((t) => existsSync(join(root, id, `${t}.json`))) }]));

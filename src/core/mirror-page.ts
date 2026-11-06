@@ -4,7 +4,7 @@ const SHEET_CHECK = 1000;
 /**
  * Gives `target` (the document of a window the app opened) the appearance of `source`, the page: its
  * style sheets (`<link rel="stylesheet">`, `<style>` and constructed sheets) and the attributes
- * of `<html>` and `<body>` the design system reads (`data-theme`, `data-identity`, density, `dir`,
+ * of `<html>` and `<body>` the design system reads (`data-theme`, `data-design-language`, density, `dir`,
  * `lang`, classes, inline style). It keeps watching, so a sheet added, changed or removed later (as
  * a dev server does), or a changed theme, also appears in `target`. Returns a function that
  * stops watching.

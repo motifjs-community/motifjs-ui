@@ -8,7 +8,7 @@ const listeners = new Set<() => void>();
 let stop: (() => void) | null = null;
 let queued = false;
 
-const ATTRIBUTES = ['data-identity', 'data-theme', 'data-density'];
+const ATTRIBUTES = ['data-design-language', 'data-theme', 'data-density'];
 
 /** Calls `changed` (once per microtask) after a design language, theme or density changes anywhere. Returns the function that stops it. */
 export function onLookChanged(changed: () => void): () => void {

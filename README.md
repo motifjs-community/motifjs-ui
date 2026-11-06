@@ -82,7 +82,7 @@ addShortcut('Mod+K', () => palette.open()); // app-wide
   They are written inside `@layer mx.components`, after the design system's `mx.base`, with one group per component
   (`button.*`, `field.*`, `list.*`, `calendar.*` …).
 - **Design languages.** The design system includes Tactile (the default), Lounge, Material, Fluent and Lilac, selected
-  with `data-identity`. Every kit stylesheet uses only its own component tokens, one per role (fill, text, frame per
+  with `data-design-language`. Every kit stylesheet uses only its own component tokens, one per role (fill, text, frame per
   side, edge, effect, focus and marks), and every language defines its own value for each one in
   `tokens/languages/<language>/`, such as Material's 56 px filled text field with square bottom corners or Fluent's
   20 px check box. Languages do not inherit from each other, and adding one only requires new files. Decisions that

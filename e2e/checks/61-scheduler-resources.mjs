@@ -1,4 +1,4 @@
-import { identities, identityThemes } from '../languages.mjs';
+import { designLanguages, designLanguageThemes } from '../languages.mjs';
 import { sweepBox, sweepColours } from '../scheduler-ink-sweep.mjs';
 
 /** Real-browser checks of the Scheduler's resources page: groups and their heads, moving between groups by mouse and by keys, availability, a data source of resources, right to left, axe. */
@@ -58,8 +58,8 @@ export default async function ({ page, base, check, axeSource, box }) {
 
   // The divider: every language draws it or leaves it out; drawn, it is centred on the edge of the group's column.
   const dividers = [];
-  for (const identity of identities) {
-    await page.evaluate((i) => (document.documentElement.dataset.identity = i), identity);
+  for (const designLanguage of designLanguages) {
+    await page.evaluate((i) => (document.documentElement.dataset.designLanguage = i), designLanguage);
     await page.waitForTimeout(150);
     dividers.push(
       await g.evaluate((el, i) => {
@@ -73,10 +73,10 @@ export default async function ({ page, base, check, axeSource, box }) {
         const moved = shift.endsWith('%') ? (parseFloat(shift) / 100) * width : parseFloat(shift) || 0;
         const centre = r.left + parseFloat(line.left) + moved + width / 2;
         return { i, drawn: true, width, off: Math.abs(centre - r.left) };
-      }, identity),
+      }, designLanguage),
     );
   }
-  await page.evaluate(() => document.documentElement.removeAttribute('data-identity'));
+  await page.evaluate(() => document.documentElement.removeAttribute('data-design-language'));
   check('the group divider is drawn centred on the column edge, or not at all', dividers.every((d) => !d.drawn || d.off <= 0.5), JSON.stringify(dividers));
 
   // A drag by the mouse to another person: only that person changes.
@@ -133,21 +133,21 @@ export default async function ({ page, base, check, axeSource, box }) {
   // Every language and theme: the heads, the boxes in their resources' colours and the blocked cells read (axe contrast).
   const low = [];
   await page.addScriptTag({ content: axeSource });
-  for (const identity of identities) {
-    for (const theme of identityThemes[identity].themes) {
+  for (const designLanguage of designLanguages) {
+    for (const theme of designLanguageThemes[designLanguage].themes) {
       await page.evaluate(([i, t]) => {
-        document.documentElement.dataset.identity = i;
+        document.documentElement.dataset.designLanguage = i;
         document.documentElement.dataset.theme = t;
-      }, [identity, theme]);
+      }, [designLanguage, theme]);
       await page.waitForTimeout(100);
       for (const id of ['groups', 'availability']) {
         const found = await section(id).evaluate(async (el) => (await window.axe.run(el, { runOnly: ['color-contrast'] })).violations.flatMap((v) => v.nodes.map((n) => n.target.join(' '))));
-        if (found.length) low.push(`${identity} ${theme} ${id}: ${found.slice(0, 2).join(' | ')}`);
+        if (found.length) low.push(`${designLanguage} ${theme} ${id}: ${found.slice(0, 2).join(' | ')}`);
       }
     }
   }
   await page.evaluate(() => {
-    document.documentElement.removeAttribute('data-identity');
+    document.documentElement.removeAttribute('data-design-language');
     document.documentElement.removeAttribute('data-theme');
   });
   check('in every language and theme the heads and the boxes read on their fills (axe contrast)', low.length === 0, low.join(' ;; '));
@@ -183,12 +183,12 @@ export default async function ({ page, base, check, axeSource, box }) {
   const stayed = await box(avail.locator('.mx-scheduler__appointment', { hasText: 'Supplier call' }).first());
   check('dragged over lunch, the box shows it may not go there and goes back', over.invalid === 'true' && over.mark && /Not free/.test(log) && Math.abs(stayed.top - s0.top) < 1, JSON.stringify({ over, log, s0: s0.top, stayed: stayed.top }));
   const marks = [];
-  for (const identity of identities) {
-    await page.evaluate((i) => (document.documentElement.dataset.identity = i), identity);
+  for (const designLanguage of designLanguages) {
+    await page.evaluate((i) => (document.documentElement.dataset.designLanguage = i), designLanguage);
     await page.waitForTimeout(100);
     marks.push(await avail.evaluate((el) => [...el.querySelectorAll('.mx-scheduler__drop-mark')].map((m) => getComputedStyle(m).display !== 'none')));
   }
-  await page.evaluate(() => document.documentElement.removeAttribute('data-identity'));
+  await page.evaluate(() => document.documentElement.removeAttribute('data-design-language'));
   check('no mark shows on a box that may go where it is', marks.every((m) => m.every((shown) => !shown)), JSON.stringify(marks));
   await axe('availability', section('availability'));
 
@@ -230,24 +230,24 @@ export default async function ({ page, base, check, axeSource, box }) {
   };
   const unread = [];
   let least = Infinity;
-  for (const identity of identities) {
-    for (const theme of identityThemes[identity].themes) {
+  for (const designLanguage of designLanguages) {
+    for (const theme of designLanguageThemes[designLanguage].themes) {
       await page.evaluate(([i, t]) => {
-        document.documentElement.dataset.identity = i;
+        document.documentElement.dataset.designLanguage = i;
         document.documentElement.dataset.theme = t;
-      }, [identity, theme]);
+      }, [designLanguage, theme]);
       await page.waitForTimeout(100);
       for (const [kind, selector] of Object.entries(kinds)) {
         const worst = await sweepBox(page, selector, sweep);
         for (const part of ['title', 'time']) {
           least = Math.min(least, worst[part].ratio);
-          if (worst[part].ratio < 4.5) unread.push(`${identity} ${theme} ${kind} ${part}: ${worst[part].ratio.toFixed(2)} on ${worst[part].colour} (${worst[part].state})`);
+          if (worst[part].ratio < 4.5) unread.push(`${designLanguage} ${theme} ${kind} ${part}: ${worst[part].ratio.toFixed(2)} on ${worst[part].colour} (${worst[part].state})`);
         }
       }
     }
   }
   await page.evaluate(() => {
-    document.documentElement.removeAttribute('data-identity');
+    document.documentElement.removeAttribute('data-design-language');
     document.documentElement.removeAttribute('data-theme');
   });
   check(`a box's title and time read on any colour, in every language, theme and state (least ${least.toFixed(2)}:1)`, unread.length === 0, unread.join(' ;; '));

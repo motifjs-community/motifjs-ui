@@ -1,4 +1,4 @@
-import { identities } from '../languages.mjs';
+import { designLanguages } from '../languages.mjs';
 import { sweepBox, sweepColours } from '../scheduler-ink-sweep.mjs';
 
 /** Real-browser checks of the Scheduler's timeline page: rows, the scale, scrolling, the current time, dragging and resizing along and across rows, the keys, nested groups, settings and templates per view, right to left, every language, axe. */
@@ -250,8 +250,8 @@ export default async function ({ page, base, check, axeSource, box }) {
 
   // Every language: the divider over a row is centred on the row's edge, the resource names on their row's middle.
   const results = [];
-  for (const identity of identities) {
-    await page.evaluate((i) => (document.documentElement.dataset.identity = i), identity);
+  for (const designLanguage of designLanguages) {
+    await page.evaluate((i) => (document.documentElement.dataset.designLanguage = i), designLanguage);
     await page.waitForTimeout(200);
     results.push(
       await n.evaluate((el, i) => {
@@ -267,10 +267,10 @@ export default async function ({ page, base, check, axeSource, box }) {
         const name = row.querySelector('.mx-scheduler__resource:not([data-continued]) .mx-scheduler__group-text').getBoundingClientRect();
         const cell = row.querySelector('.mx-scheduler__resource').getBoundingClientRect();
         return { i, divider, name: Math.abs(name.top + name.height / 2 - (cell.top + cell.height / 2)) };
-      }, identity),
+      }, designLanguage),
     );
   }
-  await page.evaluate(() => document.documentElement.removeAttribute('data-identity'));
+  await page.evaluate(() => document.documentElement.removeAttribute('data-design-language'));
   check('in every language the row divider is centred on the edge (or not drawn), the names in the middle of their row', results.every((x) => (x.divider === null || x.divider <= 0.5) && x.name <= 0.5), JSON.stringify(results));
 
   // The text of a job reads on its fill in every colour and state.

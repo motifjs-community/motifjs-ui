@@ -145,7 +145,7 @@ const index = [
   '',
   `> ${pkg.description}. Version ${pkg.version}: a preview, its API may still change before 1.0.`,
   '',
-  'Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with `new`, whose every prop takes a value or a function (`Bind<T>`); `x-model` binds a value two-way. The look is the design system’s (`@motifx-community/design-system`): five design languages (`data-identity`), light and dark themes, density.',
+  'Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with `new`, whose every prop takes a value or a function (`Bind<T>`); `x-model` binds a value two-way. The look is the design system’s (`@motifx-community/design-system`): five design languages (`data-design-language`), light and dark themes, density.',
   '',
   '## Start',
   '',

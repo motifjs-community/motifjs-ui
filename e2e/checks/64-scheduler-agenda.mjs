@@ -1,4 +1,4 @@
-import { identities } from '../languages.mjs';
+import { designLanguages } from '../languages.mjs';
 
 /** Real-browser checks of the Scheduler's agenda page: the days and their rows, its length, the keys and the pointer, the tooltip and the form, groups, templates, the empty text, right to left, every language, axe. */
 export default async function ({ page, base, check, axeSource, box }) {
@@ -131,8 +131,8 @@ export default async function ({ page, base, check, axeSource, box }) {
 
   // Every language: the colour mark (where drawn) and the day's number stand in the middle of their line.
   const marks = [];
-  for (const identity of identities) {
-    await page.evaluate((i) => (document.documentElement.dataset.identity = i), identity);
+  for (const designLanguage of designLanguages) {
+    await page.evaluate((i) => (document.documentElement.dataset.designLanguage = i), designLanguage);
     await page.waitForTimeout(200);
     marks.push(
       await g.evaluate((el, i) => {
@@ -148,9 +148,9 @@ export default async function ({ page, base, check, axeSource, box }) {
         const date = day.querySelector('.mx-scheduler__agenda-date');
         const drawn = getComputedStyle(dot).display !== 'none';
         return { i, dot: drawn ? Math.abs(mid(dot) - mid(text)) : null, day: Math.abs(mid(number) - mid(date)) };
-      }, identity),
+      }, designLanguage),
     );
   }
-  await page.evaluate(() => document.documentElement.removeAttribute('data-identity'));
+  await page.evaluate(() => document.documentElement.removeAttribute('data-design-language'));
   check('in every language the colour mark and the day’s number stand in the middle of their line', marks.every((m) => (m.dot === null || m.dot <= 0.5) && m.day <= 0.5), JSON.stringify(marks));
 }

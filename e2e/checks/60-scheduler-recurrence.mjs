@@ -1,4 +1,4 @@
-import { identities, identityThemes } from '../languages.mjs';
+import { designLanguages, designLanguageThemes } from '../languages.mjs';
 
 /** Real-browser checks of the Scheduler's recurrence page: series and their marks, the series question by mouse and by keys, the recurrence editor, time zones over a change of summer time, right to left, axe. */
 export default async function ({ page, base, check, axeSource, box }) {
@@ -43,8 +43,8 @@ export default async function ({ page, base, check, axeSource, box }) {
     JSON.stringify(shown),
   );
   const marks = [];
-  for (const identity of identities) {
-    await page.evaluate((i) => (document.documentElement.dataset.identity = i), identity);
+  for (const designLanguage of designLanguages) {
+    await page.evaluate((i) => (document.documentElement.dataset.designLanguage = i), designLanguage);
     await page.waitForTimeout(150);
     marks.push(
       await recurring.evaluate((el, i) => {
@@ -59,10 +59,10 @@ export default async function ({ page, base, check, axeSource, box }) {
         });
         const glyph = drawn.every((m) => getComputedStyle(m).getPropertyValue('--_icon').includes('url('));
         return { i, found: found.length, drawn: drawn.length, off: Math.max(0, ...off), glyph };
-      }, identity),
+      }, designLanguage),
     );
   }
-  await page.evaluate(() => document.documentElement.removeAttribute('data-identity'));
+  await page.evaluate(() => document.documentElement.removeAttribute('data-design-language'));
   check(
     'every language either draws the marks (a glyph on the first line of the text) or leaves them out',
     marks.every((m) => m.found > 0 && (m.drawn === 0 || (m.drawn === m.found && m.glyph && m.off <= 0.5))),
@@ -77,19 +77,19 @@ export default async function ({ page, base, check, axeSource, box }) {
   await axe('series, their marks and an open box', section('recurring'));
   await axe('the tooltip', tip);
   const low = [];
-  for (const identity of identities) {
-    for (const theme of identityThemes[identity].themes) {
+  for (const designLanguage of designLanguages) {
+    for (const theme of designLanguageThemes[designLanguage].themes) {
       await page.evaluate(([i, t]) => {
-        document.documentElement.dataset.identity = i;
+        document.documentElement.dataset.designLanguage = i;
         document.documentElement.dataset.theme = t;
-      }, [identity, theme]);
+      }, [designLanguage, theme]);
       await page.waitForTimeout(100);
       const found = await recurring.evaluate(async (el) => (await window.axe.run(el, { runOnly: ['color-contrast'] })).violations.flatMap((v) => v.nodes.map((n) => n.target.join(' '))));
-      if (found.length) low.push(`${identity} ${theme}: ${found.slice(0, 2).join(' | ')}`);
+      if (found.length) low.push(`${designLanguage} ${theme}: ${found.slice(0, 2).join(' | ')}`);
     }
   }
   await page.evaluate(() => {
-    document.documentElement.removeAttribute('data-identity');
+    document.documentElement.removeAttribute('data-design-language');
     document.documentElement.removeAttribute('data-theme');
   });
   check('…in every language and theme the open box’s text stands out on its fill (axe contrast)', low.length === 0, low.join(' ;; '));

@@ -1,23 +1,23 @@
 /** The buttons, icons and glyphs in a field's box sit in its middle: in every design language, the
  *  gap above each one equals the gap below it (within half a pixel). A stacked pair of steps is one
  *  column: each half leans to its own end. */
-import { identities } from '../languages.mjs';
+import { designLanguages } from '../languages.mjs';
 
 // Every design language the design system ships.
-const LANGUAGES = [...identities];
+const LANGUAGES = [...designLanguages];
 const PAGES = ['textbox', 'numberbox', 'dropdown', 'combobox', 'tagbox', 'datebox', 'lookup'];
 // Fields drawn as something else than a one-line box.
 const SKIP = ['mx-toggle-field', 'mx-text-area', 'mx-list-box', 'mx-radio-group', 'mx-slider'];
 
 export default async function ({ page, base, check }) {
-  const restore = await page.evaluate(() => document.documentElement.dataset.identity);
+  const restore = await page.evaluate(() => document.documentElement.dataset.designLanguage);
   for (const path of PAGES) {
     await page.goto(base + path, { waitUntil: 'load' });
     await page.waitForSelector('.docs-main');
-    for (const identity of LANGUAGES) {
+    for (const designLanguage of LANGUAGES) {
       const off = await page.evaluate(
         async ([id, skip]) => {
-          document.documentElement.dataset.identity = id;
+          document.documentElement.dataset.designLanguage = id;
           await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
           const found = [];
           let measured = 0;
@@ -42,13 +42,13 @@ export default async function ({ page, base, check }) {
           }
           return { measured, found };
         },
-        [identity, SKIP],
+        [designLanguage, SKIP],
       );
-      check(`${identity} /${path}: field buttons and icons are centred (${off.measured} measured)`, off.measured > 0 && off.found.length === 0, off.found.slice(0, 3).join(' | '));
+      check(`${designLanguage} /${path}: field buttons and icons are centred (${off.measured} measured)`, off.measured > 0 && off.found.length === 0, off.found.slice(0, 3).join(' | '));
     }
   }
   await page.evaluate((r) => {
-    if (r) document.documentElement.dataset.identity = r;
-    else delete document.documentElement.dataset.identity;
+    if (r) document.documentElement.dataset.designLanguage = r;
+    else delete document.documentElement.dataset.designLanguage;
   }, restore);
 }

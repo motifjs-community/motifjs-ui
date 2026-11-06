@@ -34,14 +34,14 @@ export const LAYER: 'mx.components';
 export const PREFIX: 'mx';
 export const SCHEMA_DIR: string;
 export const LANGUAGES_DIR: string;
-/** The language whose values stand where no `data-identity` is written. */
+/** The language whose values stand where no `data-design-language` is written. */
 export const DEFAULT_LANGUAGE: 'tactile';
 export const INCLUDE: string[];
 export const TRANSFORMS: string[];
 /** Every scope where the design system's values can change. */
 export const SCOPES: string;
 /** A language's scope, and theme and density scopes inside it. */
-export function identityScope(language: string): string;
+export function designLanguageScope(language: string): string;
 
 /** Every component token (places included) with its type and description, and the places. */
 export function schema(): {

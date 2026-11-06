@@ -1,6 +1,6 @@
 // A new design language in the kit: `npm run language -- <name> [--from <language>]` copies a language's
 // token files (tactile by default) to tokens/languages/<name>, so the new one builds at once and only the
-// values that differ are changed. The design system needs the language too (tokens/identity/<name>): the
+// values that differ are changed. The design system needs the language too (tokens/design-language/<name>): the
 // token tests say when one side is missing.
 import { cpSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';

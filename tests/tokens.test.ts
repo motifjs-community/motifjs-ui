@@ -3,14 +3,14 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defaultIdentity, identities, tokens as designTokens } from '@motifx-community/design-system';
+import { defaultDesignLanguage, designLanguages, tokens as designTokens } from '@motifx-community/design-system';
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_LANGUAGE,
   LAYER,
   SCOPES,
   componentTokens,
-  identityScope,
+  designLanguageScope,
   languageValues,
   languages,
   referenceOf,
@@ -57,8 +57,8 @@ describe('component tokens', { timeout: 30_000 }, () => {
   });
 
   it('has a language for every design language of the design system, and no other: a new one is its folder in both', () => {
-    expect([...languages()].sort()).toEqual([...identities].sort());
-    expect(DEFAULT_LANGUAGE).toBe(defaultIdentity);
+    expect([...languages()].sort()).toEqual([...designLanguages].sort());
+    expect(DEFAULT_LANGUAGE).toBe(defaultDesignLanguage);
   });
 
   it('reference design-system tokens only, with matching types, in every language', async () => {
@@ -73,20 +73,20 @@ describe('component tokens', { timeout: 30_000 }, () => {
   it('are written as var() chains inside @layer mx.components', async () => {
     const css = await render('mx/components-css');
     expect(LAYER).toBe('mx.components');
-    expect(css).toMatch(/^\/\*[^\n]*\*\/\n@layer mx\.components \{\n {2}:root, \[data-theme\], \[data-identity\], \[data-density\] \{\n( {4}--mx-[\w-]+: [^\n]+;\n)+ {2}\}\n\}\n$/);
-    expect(SCOPES).toBe(':root, [data-theme], [data-identity], [data-density]');
+    expect(css).toMatch(/^\/\*[^\n]*\*\/\n@layer mx\.components \{\n {2}:root, \[data-theme\], \[data-design-language\], \[data-density\] \{\n( {4}--mx-[\w-]+: [^\n]+;\n)+ {2}\}\n\}\n$/);
+    expect(SCOPES).toBe(':root, [data-theme], [data-design-language], [data-density]');
     // Only component tokens are written; the design system's layers come from its own stylesheet.
     expect(css).not.toContain('--mx-color-gray-');
   });
 
   it('writes every other language under its scope, theme and density scopes inside it included', async () => {
     const css = await renderLanguage('material');
-    expect(identityScope('material')).toBe('[data-identity="material"], :where([data-identity="material"]) :is([data-theme], [data-density])');
-    expect(css).toContain(`  ${identityScope('material')} {\n`);
+    expect(designLanguageScope('material')).toBe('[data-design-language="material"], :where([data-design-language="material"]) :is([data-theme], [data-density])');
+    expect(css).toContain(`  ${designLanguageScope('material')} {\n`);
     expect(css).toContain('--mx-slider-knob-bg: var(--mx-color-accent-solid);');
     // The default block stays first, so a language's block wins by source order at the same weight.
     const whole = await renderCss();
-    expect(whole.indexOf(SCOPES)).toBeLessThan(whole.indexOf(identityScope('material')));
+    expect(whole.indexOf(SCOPES)).toBeLessThan(whole.indexOf(designLanguageScope('material')));
   });
 
   it("takes every token of a component in a slot on the component's root", () => {

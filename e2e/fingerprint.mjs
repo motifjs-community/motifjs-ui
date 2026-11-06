@@ -41,9 +41,9 @@ const PAGES = only.length
 
 // Every design language in every theme it ships; dark and light through the browser's color scheme.
 const ds = dirname(require.resolve('@motifx-community/design-system/package.json'));
-const { identityThemes, defaultIdentity } = await import(pathToFileURL(join(ds, 'dist/js/generated/tokens.js')).href);
-const RUNS = Object.entries(identityThemes).flatMap(([identity, { themes }]) =>
-  themes.map((theme) => ({ identity, theme, scheme: theme === 'dark' ? 'dark' : 'light' })),
+const { designLanguageThemes, defaultDesignLanguage } = await import(pathToFileURL(join(ds, 'dist/js/generated/tokens.js')).href);
+const RUNS = Object.entries(designLanguageThemes).flatMap(([designLanguage, { themes }]) =>
+  themes.map((theme) => ({ designLanguage, theme, scheme: theme === 'dark' ? 'dark' : 'light' })),
 );
 
 const PROPS = [
@@ -139,14 +139,14 @@ const data = {};
 const errors = [];
 try {
   await Promise.all(
-    RUNS.map(async ({ identity, theme, scheme }) => {
-      const name = `${identity} ${theme}`;
+    RUNS.map(async ({ designLanguage, theme, scheme }) => {
+      const name = `${designLanguage} ${theme}`;
       const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: scheme });
       await ctx.addInitScript(([i, t]) => {
         localStorage.clear();
-        if (i) localStorage.setItem('mx-docs-identity', i);
+        if (i) localStorage.setItem('mx-docs-design-language', i);
         if (t) localStorage.setItem('mx-docs-theme', t);
-      }, [identity === defaultIdentity ? null : identity, theme === 'high-contrast' ? theme : null]);
+      }, [designLanguage === defaultDesignLanguage ? null : designLanguage, theme === 'high-contrast' ? theme : null]);
       // One fixed day, so pages that show today (a calendar, a date box) look the same on every run.
       await ctx.clock.setFixedTime(new Date('2026-03-18T10:00:00'));
       const page = await ctx.newPage();

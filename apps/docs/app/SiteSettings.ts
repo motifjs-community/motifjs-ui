@@ -1,12 +1,12 @@
 import { reactive } from '@motifx/core';
 import {
   getDensity,
-  getIdentity,
+  getDesignLanguage,
   getTheme,
   setDensity,
-  setIdentity,
+  setDesignLanguage,
   setTheme,
-  type IdentityName,
+  type DesignLanguageName,
   type ThemeChoice,
 } from '@motifx-community/design-system';
 import { uiLocale } from '@motifx-community/ui';
@@ -32,7 +32,7 @@ function store(key: string, value: string | null): void {
 /** The reader's choices for the whole site: design language, theme, density, language and direction, kept between visits. */
 export class SiteSettings {
   private readonly state = reactive({
-    identity: getIdentity(),
+    designLanguage: getDesignLanguage(),
     theme: getTheme(),
     compact: getDensity() === 'compact',
     rtl: document.documentElement.dir === 'rtl',
@@ -44,13 +44,13 @@ export class SiteSettings {
     if (this.state.language !== 'en') this.language = this.state.language;
   }
 
-  get identity(): IdentityName | 'default' {
-    return this.state.identity;
+  get designLanguage(): DesignLanguageName | 'default' {
+    return this.state.designLanguage;
   }
-  set identity(id: IdentityName | 'default') {
-    this.state.identity = id;
-    setIdentity(id);
-    store('mx-docs-identity', id === 'default' ? null : id);
+  set designLanguage(id: DesignLanguageName | 'default') {
+    this.state.designLanguage = id;
+    setDesignLanguage(id);
+    store('mx-docs-design-language', id === 'default' ? null : id);
   }
 
   get theme(): ThemeChoice {

@@ -44,7 +44,7 @@ npm run e2e              # real-browser checks: a local Chrome and playwright-co
 - Keep a pull request focused on one thing. Two unrelated fixes are easier to review as two pull requests.
 - Add a test that fails without your change and passes with it.
 - A component's look comes from its tokens: no literal length or colour in its CSS, and every design language
-  (`data-identity`) draws it from its own files under `tokens/languages/`. Look at the change in each language, in
+  (`data-design-language`) draws it from its own files under `tokens/languages/`. Look at the change in each language, in
   the light and the dark theme.
 - The developer's data is used as given: a component never copies, wraps or changes it.
 - A change visible to users gets a line in CHANGELOG.md under "Unreleased", and the component's page under

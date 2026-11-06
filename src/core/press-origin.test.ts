@@ -46,13 +46,13 @@ describe('look changes', () => {
   it('tells once after a design language, a theme or a density changes, anywhere', async () => {
     let told = 0;
     const stop = onLookChanged(() => told++);
-    document.documentElement.dataset.identity = 'material';
+    document.documentElement.dataset.designLanguage = 'material';
     const inner = document.body.appendChild(document.createElement('div'));
     inner.dataset.theme = 'dark';
     await new Promise((done) => setTimeout(done, 0));
     expect(told).toBe(1);
     stop();
-    document.documentElement.removeAttribute('data-identity');
+    document.documentElement.removeAttribute('data-design-language');
     await new Promise((done) => setTimeout(done, 0));
     expect(told).toBe(1);
     inner.remove();

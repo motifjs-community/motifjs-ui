@@ -48,10 +48,10 @@ The look comes from the design system. Choose a design language and a theme on `
 part of the page):
 
 ```html
-<html data-identity="material" data-theme="dark" data-density="compact">
+<html data-design-language="material" data-theme="dark" data-density="compact">
 ```
 
-- `data-identity`: `tactile` (the default, without the attribute), `lounge`, `material`, `fluent`, `lilac`.
+- `data-design-language`: `tactile` (the default, without the attribute), `lounge`, `material`, `fluent`, `lilac`.
 - `data-theme`: `light`, `dark`, `high-contrast`; without it the system's preference.
 - `data-density`: `compact`; without it the regular one.
 

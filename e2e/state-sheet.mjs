@@ -33,9 +33,9 @@ if (!out) {
 mkdirSync(out, { recursive: true });
 
 const ds = dirname(require.resolve('@motifx-community/design-system/package.json'));
-const { identityThemes, defaultIdentity } = await import(pathToFileURL(join(ds, 'dist/js/generated/tokens.js')).href);
-const RUNS = Object.entries(identityThemes).flatMap(([identity, { themes }]) =>
-  themes.map((theme) => ({ identity, theme, scheme: theme === 'dark' ? 'dark' : 'light' })),
+const { designLanguageThemes, defaultDesignLanguage } = await import(pathToFileURL(join(ds, 'dist/js/generated/tokens.js')).href);
+const RUNS = Object.entries(designLanguageThemes).flatMap(([designLanguage, { themes }]) =>
+  themes.map((theme) => ({ designLanguage, theme, scheme: theme === 'dark' ? 'dark' : 'light' })),
 );
 
 const LIVE = ['rest', 'hover', 'pressed', 'focus'];
@@ -146,14 +146,14 @@ const missing = [];
 const browser = await chromium.launch({ executablePath: chromePath });
 try {
   await Promise.all(
-    RUNS.map(async ({ identity, theme, scheme }) => {
-      const run = `${identity}-${theme}`;
+    RUNS.map(async ({ designLanguage, theme, scheme }) => {
+      const run = `${designLanguage}-${theme}`;
       const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: scheme, deviceScaleFactor: 2 });
       await ctx.addInitScript(([i, t]) => {
         localStorage.clear();
-        if (i) localStorage.setItem('mx-docs-identity', i);
+        if (i) localStorage.setItem('mx-docs-design-language', i);
         if (t) localStorage.setItem('mx-docs-theme', t);
-      }, [identity === defaultIdentity ? null : identity, theme === 'high-contrast' ? theme : null]);
+      }, [designLanguage === defaultDesignLanguage ? null : designLanguage, theme === 'high-contrast' ? theme : null]);
       // One fixed day, so pages that show today (a calendar, a date box) look the same on every run.
       await ctx.clock.setFixedTime(new Date('2026-03-18T10:00:00'));
       const page = await ctx.newPage();
@@ -199,9 +199,9 @@ try {
 const states = ['rest', 'hover', 'pressed', 'focus'];
 const cell = (file) => (file ? `<td><img src="${file}" alt=""></td>` : '<td class="none">—</td>');
 const sections = ROWS.map((row, index) => {
-  const rows = RUNS.map(({ identity, theme }) => {
-    const run = `${identity}-${theme}`;
-    return `<tr><th scope="row">${identity}<br><small>${theme}</small></th>${states.map((s) => cell(shots[index]?.[`${run} ${s}`])).join('')}</tr>`;
+  const rows = RUNS.map(({ designLanguage, theme }) => {
+    const run = `${designLanguage}-${theme}`;
+    return `<tr><th scope="row">${designLanguage}<br><small>${theme}</small></th>${states.map((s) => cell(shots[index]?.[`${run} ${s}`])).join('')}</tr>`;
   }).join('\n');
   return `<section><h2>${row.label}</h2><table><thead><tr><th></th>${states.map((s) => `<th scope="col">${s}</th>`).join('')}</tr></thead><tbody>\n${rows}\n</tbody></table></section>`;
 }).join('\n');

@@ -1,5 +1,5 @@
 /** Real-browser checks of the TabDocumentManager's New windows page: a real `window.open` window, what moves into it and what works there. */
-import { identityThemes } from '../languages.mjs';
+import { designLanguageThemes } from '../languages.mjs';
 export default async function ({ page, base, check, axeSource, box }) {
   const titlesIn = (scope) => scope.locator('[role="tab"] .mx-tabdocs__title').allTextContents();
   const open = async (anchor) => {
@@ -56,16 +56,16 @@ export default async function ({ page, base, check, axeSource, box }) {
   check('…the page\'s state shows it, unchanged', (await s.locator('output').textContent()).includes('Customer: Ada Byron, İzmir'), await s.locator('output').textContent());
 
   // The look follows the page: the theme, the language, a sheet added later.
-  const looks = () => popup.evaluate(() => ({ theme: document.documentElement.dataset.theme ?? '', identity: document.documentElement.dataset.identity ?? '', bg: getComputedStyle(document.querySelector('.mx-tabdocs__page')).backgroundColor }));
+  const looks = () => popup.evaluate(() => ({ theme: document.documentElement.dataset.theme ?? '', designLanguage: document.documentElement.dataset.designLanguage ?? '', bg: getComputedStyle(document.querySelector('.mx-tabdocs__page')).backgroundColor }));
   const pageBg = () => m.evaluate((el) => getComputedStyle(el).backgroundColor);
   await page.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
   await popup.waitForTimeout(150);
   let look = await looks();
   check('the theme changed here changes in the new window', look.theme === 'dark' && look.bg === (await pageBg()), JSON.stringify(look));
-  await page.evaluate(() => (document.documentElement.dataset.identity = 'material'));
+  await page.evaluate(() => (document.documentElement.dataset.designLanguage = 'material'));
   await popup.waitForTimeout(150);
   look = await looks();
-  check('…so does the design language', look.identity === 'material' && look.bg === (await pageBg()), JSON.stringify(look));
+  check('…so does the design language', look.designLanguage === 'material' && look.bg === (await pageBg()), JSON.stringify(look));
   await page.evaluate(() => {
     const sheet = document.createElement('style');
     sheet.id = 'probe-sheet';
@@ -77,13 +77,13 @@ export default async function ({ page, base, check, axeSource, box }) {
   await page.evaluate(() => {
     document.getElementById('probe-sheet').remove();
     document.documentElement.removeAttribute('data-theme');
-    document.documentElement.removeAttribute('data-identity');
+    document.documentElement.removeAttribute('data-design-language');
   });
 
   // The look, state by state, the same as in the page in every language and theme.
   {
     // Every design language in every theme it ships.
-    const COMBOS = Object.entries(identityThemes).flatMap(([identity, { themes }]) => themes.map((theme) => [identity, theme]));
+    const COMBOS = Object.entries(designLanguageThemes).flatMap(([designLanguage, { themes }]) => themes.map((theme) => [designLanguage, theme]));
     const measure = (root) => {
       const cs = (el) => {
         const c = getComputedStyle(el);
@@ -99,11 +99,11 @@ export default async function ({ page, base, check, axeSource, box }) {
     const other = page.locator('section[aria-labelledby="layout"] .mx-tabdocs').first();
     await other.evaluate((el) => el.scrollIntoView({ block: 'center' }));
     const differences = [];
-    for (const [identity, theme] of COMBOS) {
+    for (const [designLanguage, theme] of COMBOS) {
       await page.evaluate(([i, t]) => {
-        document.documentElement.dataset.identity = i;
+        document.documentElement.dataset.designLanguage = i;
         document.documentElement.dataset.theme = t;
-      }, [identity, theme]);
+      }, [designLanguage, theme]);
       // At rest in both: no focus, no pointer on a tab.
       await popup.evaluate(() => document.activeElement?.blur());
       await popup.mouse.move(popup.viewportSize().width - 4, popup.viewportSize().height - 4);
@@ -117,7 +117,7 @@ export default async function ({ page, base, check, axeSource, box }) {
         there = await popup.evaluate(`(${measure.toString()})(document.querySelector('.mx-tabdocs__page'))`);
         if (JSON.stringify(here) === JSON.stringify(there)) break;
       }
-      for (const key of Object.keys(here)) if (here[key] !== there[key]) differences.push(`${identity}/${theme} ${key}: ${here[key]} ≠ ${there[key]}`);
+      for (const key of Object.keys(here)) if (here[key] !== there[key]) differences.push(`${designLanguage}/${theme} ${key}: ${here[key]} ≠ ${there[key]}`);
       // Under the pointer (forced through the devtools protocol: a popup Chrome runs headless keeps no
       // hover of its own) and with keyboard focus, the same as in the page too.
       const states = async (target, rootSelector) => {
@@ -145,13 +145,13 @@ export default async function ({ page, base, check, axeSource, box }) {
       };
       const pageStates = await states(page, 'section[aria-labelledby="layout"] .mx-tabdocs');
       const windowStates = await states(popup, '.mx-tabdocs__page');
-      for (const key of Object.keys(pageStates)) if (pageStates[key] !== windowStates[key]) differences.push(`${identity}/${theme} ${key}: ${pageStates[key]} ≠ ${windowStates[key]}`);
+      for (const key of Object.keys(pageStates)) if (pageStates[key] !== windowStates[key]) differences.push(`${designLanguage}/${theme} ${key}: ${pageStates[key]} ≠ ${windowStates[key]}`);
       await popup.evaluate(() => document.activeElement?.blur());
       await other.evaluate(() => document.activeElement?.blur());
     }
     await popup.bringToFront();
     await page.evaluate(() => {
-      document.documentElement.removeAttribute('data-identity');
+      document.documentElement.removeAttribute('data-design-language');
       document.documentElement.removeAttribute('data-theme');
     });
     check(`the new window looks as the page in ${COMBOS.length} languages and themes (tabs at rest, active, under the pointer and focused; the strip; the group)`, differences.length === 0, differences.slice(0, 4).join(' ;; '));

@@ -1,5 +1,5 @@
 import { Component, reactive, RouterView, untracked, useNavigation } from '@motifx/core';
-import { defaultIdentity, identities, type IdentityName, type ThemeChoice } from '@motifx-community/design-system';
+import { defaultDesignLanguage, designLanguages, type DesignLanguageName, type ThemeChoice } from '@motifx-community/design-system';
 import { Button, TextBox } from '@motifx-community/ui';
 import { version as VERSION } from "../../../package.json";
 import { GROUPS, PAGES, SECTIONS } from '../app/pages';
@@ -24,8 +24,8 @@ const LANGUAGES: { id: string; label: string }[] = [
 ];
 
 /** Every design language the design system ships, the default one first: a new one shows up here by itself. */
-const STYLES: { id: IdentityName | 'default'; label: string }[] = [defaultIdentity, ...identities.filter((id) => id !== defaultIdentity)].map((id) => ({
-  id: id === defaultIdentity ? 'default' : id,
+const DESIGN_LANGUAGES: { id: DesignLanguageName | 'default'; label: string }[] = [defaultDesignLanguage, ...designLanguages.filter((id) => id !== defaultDesignLanguage)].map((id) => ({
+  id: id === defaultDesignLanguage ? 'default' : id,
   label: id.split('-').map((word) => word[0].toUpperCase() + word.slice(1)).join(' '),
 }));
 
@@ -163,12 +163,12 @@ export class DocsLayout extends Component<HTMLDivElement> {
               </a>
             ))}
           </nav>
-          <div class="docs-topbar__tools">
+          <div class="docs-topbar__tools" onfocusin={(e: FocusEvent) => (e.target as HTMLElement).scrollIntoView({ block: 'nearest', inline: 'nearest' })}>
             <Button
-              text={() => tx('Style')}
+              text={() => tx('Design language')}
               size="sm"
               variant="ghost"
-              menu={STYLES.map((t) => ({ text: t.label, checked: () => settings.identity === t.id, click: () => (settings.identity = t.id) }))}
+              menu={DESIGN_LANGUAGES.map((t) => ({ text: t.label, checked: () => settings.designLanguage === t.id, click: () => (settings.designLanguage = t.id) }))}
             />
             <Button
               text={() => tx('Theme')}

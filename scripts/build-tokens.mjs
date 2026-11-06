@@ -12,7 +12,7 @@
 //
 // Every language is complete: a token missing from a language, or one the schema lacks, fails the
 // build. No language takes anything from another; the default language is only the set that stands
-// where no `data-identity` is written.
+// where no `data-design-language` is written.
 //
 // A value is a design-system token (`{color.accent.solid}`), another token of the same language
 // (`{field.radius}`, resolved here to what that one holds) or a literal. The design system's source
@@ -65,19 +65,19 @@ export const LAYER = 'mx.components';
 export const PREFIX = 'mx';
 export const SCHEMA_DIR = `${root}/tokens/schema`;
 export const LANGUAGES_DIR = `${root}/tokens/languages`;
-/** The language whose values stand where no `data-identity` is written (the design system's default too). */
+/** The language whose values stand where no `data-design-language` is written (the design system's default too). */
 export const DEFAULT_LANGUAGE = 'tactile';
 /** Every scope where the design system's values can change. */
-export const SCOPES = ':root, [data-theme], [data-identity], [data-density]';
+export const SCOPES = ':root, [data-theme], [data-design-language], [data-density]';
 /** A language's scope, and theme and density scopes inside it. */
-export const identityScope = (language) => `[data-identity="${language}"], :where([data-identity="${language}"]) :is([data-theme], [data-density])`;
+export const designLanguageScope = (language) => `[data-design-language="${language}"], :where([data-design-language="${language}"]) :is([data-theme], [data-density])`;
 
 /** The design-system layers references resolve against: the default language, light theme, comfortable density (names are the same in every language and theme). */
 export const INCLUDE = [
   `${ds}/tokens/primitive/*.json`,
-  `${ds}/tokens/identity/tactile/base.json`,
-  `${ds}/tokens/identity/tactile/light.json`,
-  `${ds}/tokens/identity/tactile/density/comfortable.json`,
+  `${ds}/tokens/design-language/tactile/base.json`,
+  `${ds}/tokens/design-language/tactile/light.json`,
+  `${ds}/tokens/design-language/tactile/density/comfortable.json`,
 ];
 
 /** What a language leaves out of a unit: the guaranteed-invalid value, so the unit's paint falls back. */
@@ -502,7 +502,7 @@ export async function render(name) {
 /** A language's tokens under its scope; the lines it writes exactly as the default language does are left out (the default set stands on every scope). */
 export async function renderLanguage(language) {
   const skip = new Set((await format(DEFAULT_LANGUAGE, 'mx/components-lines')).split('\n'));
-  return format(language, 'mx/components-css', { selector: identityScope(language), skip });
+  return format(language, 'mx/components-css', { selector: designLanguageScope(language), skip });
 }
 
 /** The whole token stylesheet: the default language on every scope, then each other language under its own. */

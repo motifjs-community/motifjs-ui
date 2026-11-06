@@ -32,7 +32,7 @@ const compact = compactJson as Record<string, DesignToken>;
 const rows = (layer: string) => Object.entries(light).filter(([, t]) => t.layer === layer);
 const semantic = rows('semantic');
 const density = rows('density');
-const identity = rows('identity');
+const designLanguage = rows('design-language');
 const primitive = rows('primitive');
 
 const Swatch = (props: { value: string }) => (
@@ -196,9 +196,9 @@ export default function TokensPage() {
         </div>
       </Section>
 
-      <Section anchor="identity" title="Identity ({identity.length})">
+      <Section anchor="design-language" title="Design language ({designLanguage.length})">
         <p>
-          <Rich text="These are the values a design language defines for itself: corner radii, shadows, typography and motion. The names are the same in every language, and `data-identity` selects which values apply. The values shown here are from Tactile, the default." />
+          <Rich text="These are the values a design language defines for itself: corner radii, shadows, typography and motion. The names are the same in every language, and `data-design-language` selects which values apply. The values shown here are from Tactile, the default." />
         </p>
         <div class="table-scroll" tabindex="0">
           <table class="token-table">
@@ -219,7 +219,7 @@ export default function TokensPage() {
               </tr>
             </thead>
             <tbody>
-              {identity.map(([name, t]) => (
+              {designLanguage.map(([name, t]) => (
                 <tr key={name}>
                   <td>
                     <code>{name}</code>

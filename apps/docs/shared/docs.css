@@ -105,11 +105,24 @@
   border-block-end-color: var(--mx-color-accent-fg);
 }
 
+/* A narrow window scrolls the tools sideways. The padding keeps focus rings inside this box. */
 .docs-topbar__tools {
   display: flex;
   align-items: center;
   gap: var(--mx-space-1);
-  margin-inline-start: auto;
+  min-inline-size: 0;
+  margin-inline: auto calc(-1 * var(--mx-space-1));
+  padding: var(--mx-space-1);
+  overflow-x: auto;
+  scroll-padding-inline: var(--mx-space-6);
+  scrollbar-width: none;
+}
+
+/* Only the tools give way: the brand and the section links keep their size. */
+.docs-brand,
+.docs-topnav,
+.docs-topbar__tools > * {
+  flex: none;
 }
 
 .docs-topbar__source {
