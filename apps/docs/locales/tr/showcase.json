@@ -1,3 +1,3 @@
 {
-  "An order screen built with the kit, the way a MotifJS app is built: the state and the operations live in a model (`OrderModel`), the page binds to it. The customer list is a data source of 5,000 rows that answers like a server.": ""
+  "An order screen built with the kit, the way a MotifJS app is built: the state and the operations live in a model (`OrderModel`), the page binds to it. The customer list is a data source of 5,000 rows that answers like a server.": "Kitle yapılmış bir sipariş ekranı, bir MotifJS uygulamasının yapıldığı gibi: durum ve işlemler bir modelde (`OrderModel`) yaşar, sayfa ona bağlanır. Müşteri listesi, sunucu gibi yanıt veren 5.000 satırlık bir veri kaynağıdır."
 }

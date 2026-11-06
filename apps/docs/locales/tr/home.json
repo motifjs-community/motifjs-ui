@@ -1,5 +1,5 @@
 {
-  "Components for MotifJS: objects you create when you need them, show anywhere and dispose when you are done, drawn from the MotifJS design system's tokens.": "MotifJS için masaüstü arayüzleri gibi çalışan bileşenler: gerektiğinde oluşturulur, istenen yerde gösterilir, pencereler gibi kapatılıp atılır; görünümünü MotifJS tasarım sisteminin token'larından alır.",
+  "Components for MotifJS: objects you create when you need them, show anywhere and dispose when you are done, drawn from the MotifJS design system's tokens.": "MotifJS bileşenleri: ihtiyaç duyduğunuzda oluşturduğunuz, istediğiniz yerde gösterdiğiniz, işiniz bitince dispose ettiğiniz ve MotifJS tasarım sisteminin token'larıyla çizilen nesneler.",
   "Install": "Kurulum",
   "How the components work": "Bileşenler nasıl çalışır",
   "Every component is an object. Write it in JSX and bind it to state, or create it with `new` and add it wherever and whenever you need it — the developer using it decides, both ways are complete.": "Her bileşen bir nesnedir. JSX'te yazıp duruma bağlayabilir ya da `new` ile oluşturup istediğiniz yere, istediğiniz anda ekleyebilirsiniz; kararı kullanan geliştirici verir, iki yol da eksiksizdir.",
