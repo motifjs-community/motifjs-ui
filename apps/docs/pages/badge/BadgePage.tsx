@@ -9,56 +9,56 @@ import Tones from './examples/Tones';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['text', '`Bind<string>`', "`''`", 'A short text; shown while there is no `count`.'],
-  ['count', '`Bind<number | null>`', '`null`', 'A count, written in the kit language; over `max` it shows `max+`.'],
-  ['max', '`Bind<number>`', '`99`', 'The highest count written as it is.'],
-  ['showZero', '`Bind<boolean>`', '`false`', 'A count of 0 shows; without it the badge hides at 0.'],
-  ['dot', '`Bind<boolean>`', '`false`', 'A dot only: there is something, without saying what.'],
-  ['tone', '`Bind<BadgeTone>`', 'Set by the design language', '`standard`, `accent`, `info`, `success`, `caution`, `danger`. Material marks counts in `danger`, the other languages in `accent`.'],
-  ['variant', '`Bind<BadgeVariant>`', 'the language’s (`solid`)', '`solid`, `subtle`, `outline`.'],
+  ['text', '`Bind<string>`', "`''`", 'Short text, shown when there is no `count`.'],
+  ['count', '`Bind<number | null>`', '`null`', 'A count formatted in the kit language. Above `max`, it shows `max+`.'],
+  ['max', '`Bind<number>`', '`99`', 'The highest count shown in full.'],
+  ['showZero', '`Bind<boolean>`', '`false`', 'Shows a count of 0. Without it, the badge hides at 0.'],
+  ['dot', '`Bind<boolean>`', '`false`', 'Shows a dot only, indicating that something is present.'],
+  ['tone', '`Bind<BadgeTone>`', 'Set by the design language', '`standard`, `accent`, `info`, `success`, `caution` or `danger`. Material uses `danger` for counts, and the other design languages use `accent`.'],
+  ['variant', '`Bind<BadgeVariant>`', 'Set by the design language (`solid`)', '`solid`, `subtle`, `outline`.'],
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`.'],
-  ['position', '`Bind<BadgePosition | null>`', '`null`', '`top-end`, `top-start`, `bottom-end`, `bottom-start`: on that corner of what it is in, which becomes its anchor. `start` and `end` follow the writing direction.'],
-  ['label', '`Bind<string>`', "`''`", 'What screen readers say (“3 unread messages”); without it they read the text.'],
+  ['position', '`Bind<BadgePosition | null>`', '`null`', '`top-end`, `top-start`, `bottom-end` or `bottom-start`: the corner of the container, which becomes its anchor. `start` and `end` follow the writing direction.'],
+  ['label', '`Bind<string>`', "`''`", 'The text announced by screen readers (“3 unread messages”). Without it, they read the badge text.'],
   ['visible, tabStop', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
   ['every prop above', 'read/write', 'Accepts a value or a function, the same as the prop.'],
-  ['shownText', 'read-only', 'What it shows now: the count as written (`99+`), else the text; `\'\'` for a dot.'],
+  ['shownText', 'read-only', 'The current display text: the formatted count (`99+`), otherwise the text, or `\'\'` for a dot.'],
 ];
 
 const METHODS = [
   [
     'Badge.attach(target, props?)',
     '`Badge`',
-    'Puts a badge on a corner of a component (`top-end` unless `props` says otherwise). It becomes one of its children and goes with it.',
+    'Places a badge on a corner of a component (`top-end` unless `props` specifies otherwise). The badge becomes a child of the component and is disposed with it.',
   ],
 ];
 
 const A11Y = [
-  ['Text', 'Read where it stands, as part of what it is in.'],
-  ['label', 'With a label the badge is an image with that name (`role="img"`), so a count can say what it counts.'],
-  ['Dot', 'Without a label a dot is hidden from screen readers (`aria-hidden`): give it one when it says something.'],
-  ['Colour', 'The tone is never the only way something is said: pair a tone with a text or a label.'],
+  ['Text', 'A badge is read in place, as part of its container.'],
+  ['label', 'With a label, the badge is an image with that name (`role="img"`), so a count can describe what it counts.'],
+  ['Dot', 'Without a label, a dot is hidden from screen readers (`aria-hidden`). Give it a label when it conveys information.'],
+  ['Colour', 'Do not rely on tone alone to convey meaning. Pair it with text or a label.'],
 ];
 
 const HOOKS = [
   ['.mx-badge', 'The badge. `data-tone`, `data-variant`, `data-size`, `data-position`, `data-dot`, `data-empty`.'],
-  ['.mx-badge-anchor', 'What a badge on a corner sits on (`position: relative`).'],
+  ['.mx-badge-anchor', 'The element a corner badge is attached to (`position: relative`).'],
 ];
 
 const TOKENS = [
-  ['badge.badge', 'Unit: the badge, at rest (solid, standard), in each look and tone (`accent` … `danger`, `subtle-*`, `outline-*`) and as a `dot`.'],
-  ['badge.height.*, badge.dot-size.*, badge.font-size.*, badge.padding.*', 'The badge and the dot per size.'],
-  ['badge.offset', 'How far a badge on a corner sits in from it.'],
-  ['badge.tone, badge.variant', 'The tone and look a badge takes when none is given.'],
+  ['badge.badge', 'Unit: the badge at rest (solid, standard), in each appearance and tone (`accent` … `danger`, `subtle-*`, `outline-*`) and as a `dot`.'],
+  ['badge.height.*, badge.dot-size.*, badge.font-size.*, badge.padding.*', 'The badge and the dot, per size.'],
+  ['badge.offset', 'The offset of a corner badge from the corner.'],
+  ['badge.tone, badge.variant', 'The default tone and appearance.'],
 ];
 
 export default function BadgePage() {
   return (
     <>
       <p class="lead">
-        <Rich text="A short text, a count or a dot: in a line of text, or on a corner of a button, an avatar or an icon. A count over its maximum shows “99+”, a count of zero hides." />
+        <Rich text="A short text, count or dot, shown inline or on the corner of a button, avatar or icon. A count above its maximum displays as “99+”, and a count of zero is hidden." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -78,7 +78,7 @@ import { Badge } from '@motifx-community/ui';
         </Example>
       </Section>
 
-      <Section anchor="tones" title="Tones and looks">
+      <Section anchor="tones" title="Tones and appearance">
         <Example files={code('Tones.tsx')}>
           <Tones />
         </Example>
@@ -90,9 +90,9 @@ import { Badge } from '@motifx-community/ui';
         </Example>
       </Section>
 
-      <Section anchor="corner" title="On a corner">
+      <Section anchor="corner" title="Corner placement">
         <p>
-          <Rich text="`position` puts the badge on a corner of what it is in. `Badge.attach` does it programmatically, on any component." />
+          <Rich text="`position` places the badge on a corner of its container. `Badge.attach` does the same programmatically on any component." />
         </p>
         <Example files={code('OnCorner.tsx')}>
           <OnCorner />
@@ -111,7 +111,7 @@ import { Badge } from '@motifx-community/ui';
 
       <Section anchor="i18n" title="Localization">
         <p>
-          <Rich text="A count is written in the kit language (`uiLocale`), again when it changes: “1,234” in English, “1.234” in Turkish." />
+          <Rich text="A count is formatted in the kit language (`uiLocale`) and updates when the language changes: “1,234” in English and “1.234” in Turkish." />
         </p>
       </Section>
 

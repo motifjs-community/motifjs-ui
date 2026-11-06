@@ -8,7 +8,7 @@ export default function FormLayoutPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="Lays out the fields of a data object on a grid. Each field gets an editor — by name, or by the type of its value — bound to the object both ways; groups, spans and buttons arrange them; sending the form checks every field first." />
+        <Rich text="Arranges the fields of a data object on a grid. Each field gets an editor, chosen by name or by the type of its value, with two-way binding to the object. Groups, column spans and buttons organize the layout, and submitting the form validates every field first." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -19,7 +19,7 @@ import { FormLayout, type FormItem } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="form" title="A form over an object">
+      <Section anchor="form" title="Form bound to an object">
         <Example files={code('CustomerForm.tsx')} stack>
           <CustomerForm />
         </Example>
@@ -27,7 +27,7 @@ import { FormLayout, type FormItem } from '@motifx-community/ui';
 
       <Section anchor="editors" title="Editors">
         <p>
-          <Rich text="By name: `text`, `password`, `email`, `textarea`, `number`, `date`, `datetime`, `time`, `checkbox`, `switch`, `dropdown`, `combobox`, `lookup`, `radio`, `slider`. Left out, the value picks it: a number gets a NumberBox, a boolean a CheckBox, a Date a DateBox, anything else a TextBox. `editorProps` go to the editor. Your own editors are registered once:" />
+          <Rich text="Editors by name: `text`, `password`, `email`, `textarea`, `number`, `date`, `datetime`, `time`, `checkbox`, `switch`, `dropdown`, `combobox`, `lookup`, `radio` and `slider`. If you omit the name, the value determines the editor: a number uses NumberBox, a boolean uses CheckBox, a Date uses DateBox, and anything else uses TextBox. `editorProps` are passed to the editor. Register custom editors once:" />
         </p>
         <Code
           code={`
@@ -44,13 +44,13 @@ FormLayout.editors.set('color', (props) => new ColorPicker(props));
         <ApiTable
           head={['Prop', 'Type', 'Default', 'Description']}
           rows={[
-            ['data', '`Bind<T | null>`', '—', 'The object the editors show and change.'],
-            ['items', '`Bind<readonly FormItem[]>`', '`[]`', 'The places of the form; a function is followed.'],
-            ['columns', '`Bind<number>`', '`1`', 'Columns of the grid.'],
+            ['data', '`Bind<T | null>`', '—', 'The object the editors display and change.'],
+            ['items', '`Bind<readonly FormItem[]>`', '`[]`', 'The form items. A function is tracked.'],
+            ['columns', '`Bind<number>`', '`1`', 'The number of grid columns.'],
             ['minColumnWidth', '`Bind<string>`', '—', 'As many columns as fit, each at least this wide.'],
             ['labelMode', '`Bind<FieldLabelMode>`', "`'top'`", 'Passed to every editor.'],
-            ['readOnly', '`Bind<boolean>`', '`false`', 'Every editor read-only.'],
-            ['onValidSubmit(e) / onInvalidSubmit(e)', '', '', 'Sent and passed (`{ data, event }`) / sent and failed (`{ valid, invalid }`).'],
+            ['readOnly', '`Bind<boolean>`', '`false`', 'Makes every editor read-only.'],
+            ['onValidSubmit(e) / onInvalidSubmit(e)', '', '', 'Occurs when the form is submitted and valid (`{ data, event }`) or submitted and invalid (`{ valid, invalid }`).'],
           ]}
         />
         <h3>
@@ -59,12 +59,12 @@ FormLayout.editors.set('color', (props) => new ColorPicker(props));
         <ApiTable
           head={['Field', 'Description']}
           rows={[
-            ['field, label, editor, editorProps', 'The property, its caption, its editor and the editor’s props.'],
-            ['required, rules, helpText, enabled, readOnly, visible', 'Passed to the editor (each a value or a function); `visible` hides the place.'],
-            ['colSpan', 'Columns it spans; `\'all\'` for the whole row.'],
-            ['group, items, columns', 'A captioned group with its own columns.'],
-            ['button', 'Button props; `submit: true` sends the form.'],
-            ['template', 'Any component made for the place.'],
+            ['field, label, editor, editorProps', 'The property, its label, its editor and the editor\'s props.'],
+            ['required, rules, helpText, enabled, readOnly, visible', 'Passed to the editor, each as a value or a function. `visible` hides the item.'],
+            ['colSpan', 'The number of columns it spans. Use `\'all\'` for the whole row.'],
+            ['group, items, columns', 'A labeled group with its own columns.'],
+            ['button', 'Button props. `submit: true` submits the form.'],
+            ['template', 'Any component created for this item.'],
           ]}
         />
         <h3>
@@ -73,12 +73,12 @@ FormLayout.editors.set('color', (props) => new ColorPicker(props));
         <ApiTable
           head={['Member', 'Description']}
           rows={[
-            ['validate(), resetValidation(), submit()', 'Check every field, hide the outcome, send the form.'],
+            ['validate(), resetValidation(), submit()', 'Validates every field, clears the results, and submits the form.'],
             ['editorOf(field)', 'The editor of a field.'],
-            ['refresh()', 'Your data object and items may be plain or reactive; the form reads them as they are. After changing them in place, call `refresh()`. Every editor reads its value again, the items their texts and states; items added or removed draw the form again.'],
-            ['refreshField(field)', 'Reads one field of the data object again, after it was changed in place.'],
-            ['validationGroup, isValid', 'The group the fields are checked in.'],
-            ['FormLayout.editors', 'The editors known by name.'],
+            ['refresh()', 'Your data object and items can be plain or reactive, and the form reads them as they are. After changing them in place, call `refresh()`. Every editor re-reads its value, items re-read their text and states, and added or removed items redraw the form.'],
+            ['refreshField(field)', 'Re-reads one field of the data object after it has been changed in place.'],
+            ['validationGroup, isValid', 'The validation group of the fields.'],
+            ['FormLayout.editors', 'The editors registered by name.'],
           ]}
         />
       </Section>

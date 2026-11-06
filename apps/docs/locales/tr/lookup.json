@@ -1,13 +1,13 @@
 {
-  "Picks one row of a table-like list, typically from a data source searched on the server: a customer by its company, contact and city. The field shows the chosen row's text; everything else works as in DropDown.": "Tablo benzeri bir listeden bir satır seçer; genellikle sunucuda aranan bir veri kaynağından: şirketi, yetkilisi ve şehriyle bir müşteri. Field seçili satırın metnini gösterir; geri kalan her şey DropDown'daki gibi çalışır.",
+  "Selects one row from a table-style list, typically from a data source searched on the server, such as a customer by company, contact and city. The field shows the text of the selected row, and everything else works as in DropDown.": "",
   "Columns from a data source": "Veri kaynağından sütunlar",
-  "`columns` lay every row out on one grid under a header; the search box searches the data source's `searchFields`. Rows load where the list is scrolled to.": "`columns` her satırı bir başlık altında tek ızgaraya dizer; arama kutusu veri kaynağının `searchFields` alanlarında arar. Satırlar listenin kaydırıldığı yerde yüklenir.",
-  "A value on no loaded page": "Yüklü sayfada olmayan değer",
-  "A value whose row is not loaded is asked for by key, in one request with the keys other fields and grids over the same source need at that moment. Meanwhile the field waits: a spinner in the arrow's place, the list closed, never the key as its text. A record that carries the name too gives it as `valueText`, and the field shows it at once. A key the server does not have shows itself, muted and underlined, and its title says why; when the request failed, opening the list asks again.": "Satırı yüklü olmayan değer anahtarıyla istenir; aynı kaynağı kullanan diğer field'ların ve grid'lerin o anda istediği anahtarlarla tek istekte. Bu sırada field bekler: okun yerinde spinner, liste kapalı, metin olarak asla anahtar gösterilmez. Adı da taşıyan kayıt onu `valueText` olarak verir, field hemen gösterir. Sunucuda olmayan anahtar soluk ve altı çizili görünür, title nedenini söyler; istek başarısız olduysa listeyi açmak yeniden sorar.",
-  "`{ field, caption?, width?, align? }`: a field name or function, a header text, a CSS grid track, the alignment.": "`{ field, caption?, width?, align? }`: field adı ya da fonksiyon, başlık metni, CSS grid izi, hizalama.",
-  "The header above the rows.": "Satırların üstündeki başlık.",
-  "The least width of the list.": "Listenin en küçük genişliği.",
-  "A search box above the list (DropDown has it off by default).": "Listenin üstünde arama kutusu (DropDown'da varsayılan kapalıdır).",
-  "`items`, `dataSource`, `valueText`, `textField`, `valueField`, `searchDelay`, `clearButton`, validation, keyboard…": "`items`, `dataSource`, `valueText`, `textField`, `valueField`, `searchDelay`, `clearButton`, validation, klavye…",
-  "Your items and columns may be plain or reactive; the lookup reads them as they are. After changing them in place, call `refresh()`.": "Öğeleriniz ve sütunlarınız düz ya da reactive olabilir; lookup onları olduğu gibi okur. Yerinde değiştirdikten sonra `refresh()` çağırın."
+  "`columns` arranges every row on one grid under a header, and the search box searches the data source's `searchFields`. Rows load as the list scrolls.": "",
+  "Values on unloaded pages": "",
+  "A value whose row is not loaded is requested by key, in one request together with the keys other fields and grids on the same source need at that moment. In the meantime, the field shows a spinner in place of the arrow, the list stays closed, and the key is never shown as text. A record that already has the name can provide it through `valueText`, and the field shows it immediately. A key the server does not have appears muted and underlined, with the reason in its title. If the request failed, opening the list tries again.": "",
+  "`{ field, caption?, width?, align? }`: a field name or function, a header text, a CSS grid track and the alignment.": "",
+  "Shows a header above the rows.": "",
+  "The minimum width of the list.": "",
+  "Adds a search box above the list. DropDown has this off by default.": "",
+  "`items`, `dataSource`, `valueText`, `textField`, `valueField`, `searchDelay`, `clearButton`, validation, keyboard support and more.": "",
+  "Your items and columns can be plain or reactive, and the lookup reads them as they are. After changing them in place, call `refresh()`.": ""
 }

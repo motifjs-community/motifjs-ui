@@ -7,45 +7,45 @@ import Shapes from './examples/Shapes';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['shape', '`Bind<SkeletonShape>`', "`'text'`", '`text` (lines), `rect` (a block: a picture, a field), `circle` (an avatar).'],
-  ['lines', '`Bind<number>`', '`1`', 'How many lines of text; the last of several is shorter.'],
-  ['width', '`Bind<string | number | null>`', 'the room it is in', 'A CSS length, or pixels as a number; a circle’s size (default: the language’s).'],
-  ['height', '`Bind<string | number | null>`', 'a line / the language’s', 'A CSS length, or pixels as a number.'],
-  ['animation', '`Bind<SkeletonAnimation>`', 'Set by the design language', '`wave`, `pulse`, `none`. Tactile, Lounge and Fluent sweep a wave, Material and Lilac pulse.'],
-  ['loading', '`Bind<boolean>`', '`true`', 'While `true` the skeleton shows; then its JSX children do.'],
-  ['label', '`Bind<string>`', 'The kit string “Loading…”', 'What screen readers say while it loads.'],
+  ['shape', '`Bind<SkeletonShape>`', "`'text'`", '`text` for lines, `rect` for a block such as an image or field, or `circle` for an avatar.'],
+  ['lines', '`Bind<number>`', '`1`', 'The number of text lines. The last of several lines is shorter.'],
+  ['width', '`Bind<string | number | null>`', 'The available space', 'A CSS length, or a number in pixels. Also sets the size of a circle (the default comes from the design language).'],
+  ['height', '`Bind<string | number | null>`', 'One line, or set by the design language', 'A CSS length, or a number in pixels.'],
+  ['animation', '`Bind<SkeletonAnimation>`', 'Set by the design language', '`wave`, `pulse` or `none`. Tactile, Lounge and Fluent use a wave, and Material and Lilac use a pulse.'],
+  ['loading', '`Bind<boolean>`', '`true`', 'Shows the skeleton while `true`, and then the JSX children.'],
+  ['label', '`Bind<string>`', 'The kit string “Loading…”', 'The text announced by screen readers while loading.'],
   ['visible', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
   ['every prop above', 'read/write', 'Accepts a value or a function, the same as the prop.'],
-  ['content', 'read-only', 'The part holding what shows once loaded, for adding to it programmatically.'],
+  ['content', 'read-only', 'The part that holds the loaded content, for adding to it programmatically.'],
 ];
 
 const A11Y = [
-  ['Loading', 'A `progressbar` with `aria-busy` and a name (“Loading…” in the kit language); the shapes are hidden from screen readers.'],
-  ['Loaded', 'The role and the busy state go; the content is read as it is.'],
-  ['Motion', 'Reduced motion keeps the wave and the pulse still: their duration follows the motion durations.'],
+  ['Loading', 'A `progressbar` with `aria-busy` and a name (“Loading…” in the kit language). The shapes are hidden from screen readers.'],
+  ['Loaded', 'The role and busy state are removed, and the content is read normally.'],
+  ['Motion', 'With reduced motion, the wave and pulse stay still, because their duration follows the motion tokens.'],
 ];
 
 const HOOKS = [
   ['.mx-skeleton', 'The skeleton. `data-shape`, `data-animation`, `data-loading`.'],
-  ['.mx-skeleton__bone', 'One shape (a line, the block, the circle).'],
-  ['.mx-skeleton__content', 'What shows once loaded.'],
+  ['.mx-skeleton__bone', 'A shape (a line, a block or a circle).'],
+  ['.mx-skeleton__content', 'The content shown after loading.'],
 ];
 
 const TOKENS = [
-  ['skeleton.bone', 'Unit: a shape, in each of `text`, `rect`, `circle`; its `color` is what the wave and the pulse mix in.'],
-  ['skeleton.line-height, skeleton.line-gap, skeleton.last-line', 'A line of text, the space between lines, the last line’s share of the width.'],
-  ['skeleton.circle-size, skeleton.rect-height', 'A circle or a block given no size.'],
-  ['skeleton.animation, skeleton.duration, skeleton.easing, skeleton.wave-mix, skeleton.pulse-dim', 'How it moves when not told, how long, at what pace, and how strongly.'],
+  ['skeleton.bone', 'Unit: a shape in `text`, `rect` and `circle`. `color` is the color the wave and pulse blend in.'],
+  ['skeleton.line-height, skeleton.line-gap, skeleton.last-line', 'A line of text, the space between lines, and the width of the last line.'],
+  ['skeleton.circle-size, skeleton.rect-height', 'The default size of a circle or block.'],
+  ['skeleton.animation, skeleton.duration, skeleton.easing, skeleton.wave-mix, skeleton.pulse-dim', 'The default animation, its duration, easing and intensity.'],
 ];
 
 export default function SkeletonPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="The shape of what is loading, so the page keeps its layout while data arrives. Given content, it shows the content in the same place once loading ends." />
+        <Rich text="A placeholder that matches the shape of content that is loading, so the page keeps its layout while data arrives. If you provide content, it replaces the placeholder in the same place when loading ends." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -62,16 +62,16 @@ import { Skeleton } from '@motifx-community/ui';
         </Example>
       </Section>
 
-      <Section anchor="loading" title="Until it loads">
+      <Section anchor="loading" title="Showing content after loading">
         <p>
-          <Rich text="`loading` takes a value or a function; when it turns `false` the JSX children show instead." />
+          <Rich text="`loading` accepts a value or a function. When it becomes `false`, the JSX children appear instead." />
         </p>
         <Example files={code('Loading.tsx')}>
           <Loading />
         </Example>
       </Section>
 
-      <Section anchor="animations" title="Movement">
+      <Section anchor="animations" title="Animation">
         <Example files={code('Animations.tsx')}>
           <Animations />
         </Example>

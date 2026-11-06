@@ -8,59 +8,59 @@ import Selection from './examples/Selection';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-    ['items', '`Bind<readonly (TileViewItem | string)[]>`', '`[]`', 'The tiles in order: `TileViewItem`s (`text`, `widthRatio`, `heightRatio`, `key`, `content`, `enabled`, `data`) or plain texts.'],
-    ['baseItemWidth, baseItemHeight', '`Bind<number>`', '`100`', 'A base cell in pixels; a tile is `widthRatio` × `heightRatio` of them.'],
-    ['direction', '`Bind<TileViewDirection>`', "`'horizontal'`", '`horizontal`: the tiles fill the height in columns and the view scrolls sideways (give it a `height`); `vertical`: they fill the width in rows.'],
+    ['items', '`Bind<readonly (TileViewItem | string)[]>`', '`[]`', 'The tiles in order: `TileViewItem` objects (`text`, `widthRatio`, `heightRatio`, `key`, `content`, `enabled`, `data`) or plain text.'],
+    ['baseItemWidth, baseItemHeight', '`Bind<number>`', '`100`', 'The size of a base cell in pixels. A tile spans `widthRatio` × `heightRatio` cells.'],
+    ['direction', '`Bind<TileViewDirection>`', "`'horizontal'`", '`horizontal` fills the height in columns and scrolls horizontally (set a `height`). `vertical` fills the width in rows.'],
     ['selectionMode', '`Bind<TileViewSelectionMode>`', "`'none'`", '`none`, `single` or `multiple`.'],
-    ['value', '`Bind<string | number | null | (string | number)[]>`', '`null`', 'The chosen tile (`single`): its `key`, else its index; the chosen tiles (`multiple`) as a list. `x-model` binds it two-way.'],
-    ['allowReorder', '`Bind<boolean>`', '`false`', 'The tiles can be put in another order by dragging, or with Ctrl and an arrow key.'],
+    ['value', '`Bind<string | number | null | (string | number)[]>`', '`null`', 'The selected tile (`single`), identified by its `key` or index, or a list of selected tiles (`multiple`). `x-model` provides two-way binding.'],
+    ['allowReorder', '`Bind<boolean>`', '`false`', 'Lets users reorder tiles by dragging or with Ctrl and an arrow key.'],
     ['height', '`Bind<string | number | null>`', '`null`', 'A CSS length or pixels.'],
-    ['label', '`Bind<string>`', 'the kit’s “Tiles”', 'The accessible name.']
+    ['label', '`Bind<string>`', 'The kit string “Tiles”', 'The accessible name.']
 ];
 
 const MEMBERS = [
-    ['onItemClick', 'event', 'A press on a tile that was not a drag (`index`, `item`, `event`); Enter on a focused tile too.'],
-    ['onSelectionChanged', 'event', 'The chosen tiles changed (`indexes`, `items`, `byUser`).'],
-    ['onReordering', 'event', 'A tile is about to be dragged or moved with the keys (`fromIndex`, `toIndex`); `cancel = true` keeps it.'],
-    ['onReordered', 'event', 'A tile was dropped or moved to a new place (`item`, `fromIndex`, `toIndex`): your data is yours to reorder.'],
-    ['selectedIndexes', 'read-only', 'The chosen tiles’ indexes, in tile order.'],
-    ['count', 'read-only', 'How many tiles there are.'],
-    ['isDragging', 'read-only', 'A tile is being dragged.'],
-    ['select(index)', '`void`', 'Chooses a tile programmatically: the only one (`single`), or one more (`multiple`).'],
-    ['indexOf(value), valueAt(index)', '`number`, `string | number`', 'Between a value (a key or an index) and a tile’s index.'],
+    ['onItemClick', 'event', 'Occurs when a tile is clicked without dragging (`index`, `item`, `event`), or when Enter is pressed on a focused tile.'],
+    ['onSelectionChanged', 'event', 'Occurs when the selected tiles change (`indexes`, `items`, `byUser`).'],
+    ['onReordering', 'event', 'Occurs before a tile is dragged or moved with the keyboard (`fromIndex`, `toIndex`). Set `cancel = true` to keep it in place.'],
+    ['onReordered', 'event', 'Occurs after a tile is dropped or moved to a new position (`item`, `fromIndex`, `toIndex`). Your code reorders the data.'],
+    ['selectedIndexes', 'read-only', 'The indexes of the selected tiles, in tile order.'],
+    ['count', 'read-only', 'The number of tiles.'],
+    ['isDragging', 'read-only', 'Indicates that a tile is being dragged.'],
+    ['select(index)', '`void`', 'Selects a tile programmatically, as the only one (`single`) or in addition to others (`multiple`).'],
+    ['indexOf(value), valueAt(index)', '`number`, `string | number`', 'Converts between a value (a key or an index) and a tile index.'],
     ['refresh()', '`void`', 'Re-reads the items after they have been changed in place.']
 ];
 
 const KEYS = [
-    ['Tab', 'One stop: the tile focused last, else the first chosen, else the first.'],
-    ['Arrow keys', 'The nearest tile that way, by where the tiles lie; Home and End the first and the last.'],
-    ['Space', 'Chooses the tile (`single`), or chooses it or lets it go (`multiple`).'],
-    ['Enter', 'A press on the tile: `onItemClick`, and the choice as a press makes it.'],
-    ['Ctrl + Arrow keys', 'With `allowReorder`: moves the tile a place back or on; Ctrl + Home and End to the ends. The move is read out.']
+    ['Tab', 'One Tab stop: the tile focused last, otherwise the first selected tile, otherwise the first tile.'],
+    ['Arrow keys', 'Moves to the nearest tile in that direction, based on tile positions. Home and End move to the first and last tile.'],
+    ['Space', 'Selects the tile (`single`), or toggles it (`multiple`).'],
+    ['Enter', 'Acts as a click on the tile: raises `onItemClick` and applies the selection.'],
+    ['Ctrl + Arrow keys', 'With `allowReorder`, moves the tile one position back or forward. Ctrl + Home and End move it to the ends, and each move is announced.']
 ];
 
 const A11Y = [
-    ['Roles', 'A `list` of `listitem`s without selection; a `listbox` of `option`s with it (`aria-multiselectable` for `multiple`), each `aria-selected`.'],
-    ['Disabled tiles', '`aria-disabled`, skipped by the keys, not chosen by a press.'],
-    ['Dragging', 'A copy of the tile follows the pointer; the tile where the drop would land is marked; Escape lets go. On a touch screen a long press lifts the tile.']
+    ['Roles', 'A `list` of `listitem` elements without selection, or a `listbox` of `option` elements with it (`aria-multiselectable` for `multiple`), each with `aria-selected`.'],
+    ['Disabled tiles', '`aria-disabled`. The tile is skipped by the keyboard and cannot be selected with a click.'],
+    ['Dragging', 'A copy of the tile follows the pointer, the tile at the drop position is marked, and Escape cancels. On a touch screen, a long press lifts the tile.']
 ];
 
 const HOOKS = [
-    ['.mx-tile-view', 'The view. `data-direction`, `data-reorder`, `data-dragging` while a tile is dragged.'],
-    ['.mx-tile-view__tile', 'A tile. `aria-selected`, `aria-disabled`, `data-dragging` (left faint in its place), `data-drop="before|after"` where the drop would land.'],
-    ['.mx-tile-view__text, .mx-tile-view__ghost', 'A tile’s text; the copy after the pointer.']
+    ['.mx-tile-view', 'The view. `data-direction`, `data-reorder`, and `data-dragging` while a tile is dragged.'],
+    ['.mx-tile-view__tile', 'A tile. `aria-selected`, `aria-disabled`, `data-dragging` (shown faded in place), and `data-drop="before|after"` at the drop position.'],
+    ['.mx-tile-view__text, .mx-tile-view__ghost', 'The tile text, and the copy that follows the pointer.']
 ];
 
 const TOKENS = [
-    ['tile-view.tile, .text, .ghost, .view', 'Units: a tile (`hover`, `pressed`, `focus`, `selected`, `disabled`, `dragging`, `target`), its text, the copy after the pointer, the view.'],
-    ['tile-view.gap', 'Between the tiles.']
+    ['tile-view.tile, .text, .ghost, .view', 'Units: a tile (`hover`, `pressed`, `focus`, `selected`, `disabled`, `dragging`, `target`), its text, the drag copy and the view.'],
+    ['tile-view.gap', 'The gap between tiles.']
 ];
 
 export default function TileViewPage() {
     return (
         <>
             <p class="lead">
-              <Rich text="Tiles of different sizes packed on a grid of base cells: a tile is so many cells wide and tall. They fill the height in columns and scroll sideways, or fill the width in rows; they can be chosen, and put in another order by dragging." />
+              <Rich text="Arranges tiles of different sizes on a grid of base cells, where each tile spans a set number of cells. Tiles fill the height in columns and scroll horizontally, or fill the width in rows. They can be selected and reordered by dragging." />
             </p>
 
             <Section anchor="import" title="Import">
@@ -71,27 +71,27 @@ import { TileView } from '@motifx-community/ui';
                 />
             </Section>
 
-            <Section anchor="ways" title="Tiles on a grid">
+            <Section anchor="ways" title="Tile grid">
                 <p>
-                    <Rich text="`baseItemWidth` and `baseItemHeight` are one cell; a tile’s `widthRatio` and `heightRatio` say how many it takes. Down the columns (`horizontal`, the default) the view needs a `height` and scrolls sideways; the tiles are packed so no cell stays empty where a later tile fits." />
+                    <Rich text="`baseItemWidth` and `baseItemHeight` define one cell, and a tile's `widthRatio` and `heightRatio` set how many cells it spans. In the default `horizontal` direction, the view needs a `height` and scrolls horizontally. Tiles are packed so that no cell stays empty where a later tile fits." />
                 </p>
                 <Example stack files={code('Basic.tsx')}>
                     <Basic />
                 </Example>
             </Section>
 
-            <Section anchor="selection" title="Choosing tiles">
+            <Section anchor="selection" title="Selecting tiles">
                 <p>
-                    <Rich text="`selectionMode` makes the tiles options: `single` keeps one, `multiple` any number (Ctrl and a press, or Space, adds and takes away). `value` is the chosen tile’s `key`, else its index, or a list of them; `x-model` binds it two-way. The arrow keys walk the grid by where the tiles lie." />
+                    <Rich text="`selectionMode` makes tiles selectable. `single` keeps one selected, and `multiple` allows any number (Ctrl + click or Space adds and removes). `value` is the `key` or index of the selected tile, or a list of them, and `x-model` provides two-way binding. The arrow keys move through the grid based on tile positions." />
                 </p>
                 <Example stack files={code('Selection.tsx')}>
                     <Selection />
                 </Example>
             </Section>
 
-            <Section anchor="reorder" title="Another order">
+            <Section anchor="reorder" title="Reordering">
                 <p>
-                    <Rich text="With `allowReorder` a tile is dragged to its new place (a long press on a touch screen) or moved with Ctrl and an arrow key. The tile moves and `onReordered` tells the indexes: reorder your data there, as the example does, so the next draw agrees." />
+                    <Rich text="With `allowReorder`, users can drag a tile to a new position (a long press on a touch screen) or move it with Ctrl and an arrow key. The tile moves and `onReordered` reports the indexes. Reorder your data there, as the example does, so the next render matches." />
                 </p>
                 <Example stack files={code('Reorder.tsx')}>
                     <Reorder />
@@ -100,7 +100,7 @@ import { TileView } from '@motifx-community/ui';
 
             <Section anchor="content" title="Any content">
                 <p>
-                    <Rich text="An item’s `content` makes the tile’s content when the tile is made; what is in it works as anywhere else, and a press on a button inside is that button’s. `onItemClick` tells a press on the tile itself." />
+                    <Rich text="An item's `content` creates the tile content when the tile is created, and it behaves the same as anywhere else. A click on a button inside goes to that button. `onItemClick` reports a click on the tile itself." />
                 </p>
                 <Example stack files={code('Content.tsx')}>
                     <Content />

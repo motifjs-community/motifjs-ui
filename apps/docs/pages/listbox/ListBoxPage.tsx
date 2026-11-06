@@ -10,36 +10,36 @@ import Validation from './examples/Validation';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['value', '`Bind<V | V[] | null>`', '`null` / `[]`', 'The chosen value (single) or values (multiple). `x-model` binds it; a change writes a new array.'],
-  ['items / dataSource', '`Bind<readonly T[]>` / `Bind<DataSource | null>`', '—', 'Items in memory, searched here, or a data source of `@motifx-community/data`, searched where it lives. A data source wins.'],
-  ['textField, valueField', '`Bind<ItemField<T>>`', "`'text'`, `'value'`", 'A property name or a function `(item) => …`. Plain values are their own text and value.'],
-  ['iconField, groupField, enabledField', '`Bind<ItemField<T>>`', '—', 'An icon per item; headers between groups (items in memory); items that cannot be chosen.'],
-  ['selectionMode', "`Bind<'single' | 'multiple'>`", "`'single'`", 'One value, or an array of them.'],
-  ['showCheckBoxes', '`Bind<boolean>`', '`true`', 'Multiple: check boxes in front of the items; `false` draws a check mark, and a plain click chooses only that item.'],
-  ['selectAll', '`Bind<boolean>`', '`false`', 'Multiple: a "Select all" row that is checked, empty or shows a dash.'],
-  ['selectionFollowsFocus', '`Bind<boolean>`', '`true`', 'Single: the arrow keys choose as they move. Off: they only move, Space or Enter chooses.'],
-  ['searchEnabled', '`Bind<boolean>`', '`false`', 'A search box above the list.'],
-  ['searchMode', "`Bind<'contains' | 'startswith'>`", "`'contains'`", 'How items in memory match the search.'],
+  ['value', '`Bind<V | V[] | null>`', '`null` / `[]`', 'The selected value (single) or values (multiple). `x-model` binds it, and a change writes a new array.'],
+  ['items / dataSource', '`Bind<readonly T[]>` / `Bind<DataSource | null>`', '—', 'An in-memory array, searched on the client, or a `@motifx-community/data` data source, searched on the server. A data source takes precedence.'],
+  ['textField, valueField', '`Bind<ItemField<T>>`', "`'text'`, `'value'`", 'A property name or a function `(item) => …`. Plain values serve as their own text and value.'],
+  ['iconField, groupField, enabledField', '`Bind<ItemField<T>>`', '—', 'An icon for each item, headers between groups (in-memory items), and items that cannot be selected.'],
+  ['selectionMode', "`Bind<'single' | 'multiple'>`", "`'single'`", 'A single value, or an array of values.'],
+  ['showCheckBoxes', '`Bind<boolean>`', '`true`', 'In multiple selection, shows check boxes in front of the items. `false` draws a check mark instead, and a plain click selects only that item.'],
+  ['selectAll', '`Bind<boolean>`', '`false`', 'In multiple selection, adds a "Select all" row that can be checked, empty or indeterminate.'],
+  ['selectionFollowsFocus', '`Bind<boolean>`', '`true`', 'In single selection, the arrow keys select as they move. When off, they only move, and Space or Enter selects.'],
+  ['searchEnabled', '`Bind<boolean>`', '`false`', 'Adds a search box above the list.'],
+  ['searchMode', "`Bind<'contains' | 'startswith'>`", "`'contains'`", 'How the search matches in-memory items.'],
   ['searchDelay', '`Bind<number>`', '`0` / `250`', 'The delay, in milliseconds, between the last keystroke and the search (in memory / with a data source).'],
-  ['height', '`Bind<number | string | null>`', '—', 'Rows (`8`) or a CSS length (`"12rem"`). Without it the list is as high as its items, up to the list’s `max-height` (`list.container`).'],
-  ['itemTemplate', '`Bind<(item, host) => cleanup | void>`', '—', 'Draws an item your way.'],
-  ['noItemsText', '`Bind<string>`', '—', 'What an empty list says instead of `uiLocale`’s “No items”.'],
+  ['height', '`Bind<number | string | null>`', '—', 'The height, in rows (`8`) or a CSS length (`"12rem"`). Without it, the list is as tall as its items, up to the `max-height` of the list (`list.container`).'],
+  ['itemTemplate', '`Bind<(item, host) => cleanup | void>`', '—', 'Customizes how an item is drawn.'],
+  ['noItemsText', '`Bind<string>`', '—', 'The text for an empty list, which replaces the `uiLocale` “No items” string.'],
   ['label, labelMode, helpText, hint, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup', 'see TextBox', '', 'Field props shared by all editors.'],
 ];
 
 const PROPERTIES = [
   ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
-  ['selectedItems, selectedItem', 'read-only, reactive', 'The items of the chosen values that are known; with a data source the others are asked by key and follow.'],
+  ['selectedItems, selectedItem', 'read-only, reactive', 'The known items for the selected values. With a data source, the others are requested by key and added.'],
   ['listItems', 'read-only', 'The `DataItems` shown in the list, which are the results of the last search.'],
   ['searchBox', 'read-only', 'The search `TextBox` while `searchEnabled` is on.'],
   ['isValid, validationMessage', 'read-only, reactive', 'See TextBox.'],
 ];
 
 const METHODS = [
-  ['selectAllItems()', '`Promise<void>`', 'Multiple: chooses every item the list shows (a data source: after their values load).'],
-  ['clear()', '`void`', 'Chooses nothing.'],
-  ['scrollToItem(item)', '`void`', 'Brings an item into view and highlights it.'],
-  ['refresh()', '`void`', 'Your items may be plain or reactive; the list reads them as they are. After changing them in place, call `refresh()`. It reads which items there are, their texts and values, and the chosen ones again.'],
+  ['selectAllItems()', '`Promise<void>`', 'In multiple selection, selects every item the list shows (with a data source, after their values load).'],
+  ['clear()', '`void`', 'Clears the selection.'],
+  ['scrollToItem(item)', '`void`', 'Scrolls an item into view and highlights it.'],
+  ['refresh()', '`void`', 'Your items can be plain or reactive, and the list reads them as they are. After changing them in place, call `refresh()`. It re-reads the items, their text and values, and the selection.'],
   ['validate(), resetValidation(), focus()', '', 'See TextBox.'],
 ];
 
@@ -49,47 +49,47 @@ const EVENTS = [
 ];
 
 const KEYS = [
-  ['Tab', 'The list is one Tab stop; the search box, when on, is another.'],
-  ['Down, Up, Home, End, Page Down, Page Up', 'Move the highlight; items that cannot be chosen are skipped. Single: the item is chosen too.'],
-  ['A letter', 'The next item starting with it; letters typed quickly search together.'],
-  ['Space, Enter', 'Single: choose the highlighted item. Multiple: choose it or let it go.'],
-  ['Shift + Down / Up', 'Multiple: move and choose or let go of the next item.'],
-  ['Shift + Space', 'Multiple: choose every item from the last one chosen to the highlighted one.'],
-  ['Control + Shift + Home / End', 'Multiple: choose every item from the highlighted one to the first / last.'],
-  ['Control + A', 'Multiple: choose every item, or none when all are chosen.'],
-  ['Down in the search box', 'Go to the list.'],
-  ['Control + click, Shift + click', 'Multiple: add or take away one item; choose the items between.'],
+  ['Tab', 'The list is one Tab stop. The search box, when enabled, is another.'],
+  ['Down, Up, Home, End, Page Down, Page Up', 'Moves the highlight and skips items that cannot be selected. In single selection, the item is also selected.'],
+  ['A letter', 'Moves to the next item that starts with that letter. Letters typed quickly are combined into one search.'],
+  ['Space, Enter', 'In single selection, selects the highlighted item. In multiple selection, selects or deselects it.'],
+  ['Shift + Down / Up', 'In multiple selection, moves and selects or deselects the next item.'],
+  ['Shift + Space', 'In multiple selection, selects every item from the last selected item to the highlighted one.'],
+  ['Control + Shift + Home / End', 'In multiple selection, selects every item from the highlighted one to the first or last item.'],
+  ['Control + A', 'In multiple selection, selects every item, or clears the selection if all are selected.'],
+  ['Down in the search box', 'Moves focus to the list.'],
+  ['Control + click, Shift + click', 'In multiple selection, adds or removes one item, or selects the items in between.'],
 ];
 
 const A11Y = [
-  ['Pattern', 'The APG listbox: the list is `role="listbox"`, focused itself; `aria-activedescendant` names the highlighted option.'],
-  ['Options', '`role="option"` with `aria-selected`; disabled ones `aria-disabled`. Multiple lists are `aria-multiselectable`.'],
-  ['Name', 'The label names the list (`aria-labelledby`); help and errors describe it, `aria-invalid` and `aria-required` tell its state.'],
+  ['Pattern', 'The APG listbox. The list has `role="listbox"` and holds focus itself, and `aria-activedescendant` identifies the highlighted option.'],
+  ['Options', '`role="option"` with `aria-selected`, and `aria-disabled` on disabled items. Multi-select lists have `aria-multiselectable`.'],
+  ['Name', 'The label names the list (`aria-labelledby`), help and error text describe it, and `aria-invalid` and `aria-required` report its state.'],
   ['Groups', 'Each group has `role="group"` and is labeled by its header.'],
-  ['Long lists', 'Only the rows in view are drawn; each option says where it is with `aria-posinset` and `aria-setsize`; rows still loading are `aria-busy`.'],
-  ['Focus', 'The highlight shows while the list is in use; with the keys it also gets the focus ring.'],
+  ['Long lists', 'Only visible rows are rendered. Each option reports its position with `aria-posinset` and `aria-setsize`, and loading rows have `aria-busy`.'],
+  ['Focus', 'The highlight appears while the list is in use, and it also gets the focus ring during keyboard use.'],
 ];
 
 const HOOKS = [
-  ['.mx-list-box', 'Added to the field. `data-selection-mode`, `data-check-boxes`; the field attributes of TextBox.'],
+  ['.mx-list-box', 'Added to the field. `data-selection-mode` and `data-check-boxes`, plus the TextBox field attributes.'],
   ['.mx-list-box__search', 'The search box.'],
-  ['.mx-list, .mx-list__item, .mx-list__header, .mx-list__check', 'The list (shared), its options (`data-active`, `data-selected`), group headers and check boxes.'],
-  ['.mx-list__item[data-select-all]', 'The "Select all" row; `data-mixed` when some items are chosen.'],
+  ['.mx-list, .mx-list__item, .mx-list__header, .mx-list__check', 'The shared list, its options (`data-active`, `data-selected`), group headers and check boxes.'],
+  ['.mx-list__item[data-select-all]', 'The "Select all" row, with `data-mixed` when only some items are selected.'],
 ];
 
 const TOKENS = [
-  ['listbox.container, listbox.box', 'Units: the space around the list box, and around and between its search box and list.'],
-  ['listbox.check', 'Unit: the check box of a row in a list of several choices (`checked`, `disabled`, `checked-disabled`).'],
-  ['listbox.keys, listbox.idle', 'Units: the ring round the row the keys are on (`selected`), and that row while the list is not in use.'],
-  ['listbox.field, listbox.search, listbox.list', 'Places: the field, the search box and the list inside a list box (the list\'s and the field\'s own units, as they look here).'],
-  ['list.*', 'The rows, as for DropDown: height, padding, highlight, chosen item, headers, "Select all".'],
+  ['listbox.container, listbox.box', 'Units: the spacing around the list box, and around and between its search box and list.'],
+  ['listbox.check', 'Unit: the check box of a row in a multi-select list (`checked`, `disabled`, `checked-disabled`).'],
+  ['listbox.keys, listbox.idle', 'Units: the ring around the row with keyboard focus (`selected`), and that row while the list is not in use.'],
+  ['listbox.field, listbox.search, listbox.list', 'Places: the field, search box and list inside a list box, which are the list and field units as they appear here.'],
+  ['list.*', 'The rows, as in DropDown: height, padding, highlight, selected item, headers and "Select all".'],
 ];
 
 export default function ListBoxPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="A list that stays on the page. One item or several are chosen with the keys or the pointer; items come from memory or from a data source, can be searched and grouped, and long lists draw only the rows in view." />
+        <Rich text="A list displayed directly on the page. Users select one or more items with the keyboard or pointer. Items can come from memory or a data source, can be searched and grouped, and long lists render only the visible rows." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -110,9 +110,9 @@ import { data } from '@motifx-community/data';
         </Example>
       </Section>
 
-      <Section anchor="multiple" title="Several items">
+      <Section anchor="multiple" title="Multiple selection">
         <p>
-          <Rich text="With `selectionMode` set to `'multiple'` the value is an array, and every change writes a new one. Each switch below is a prop you can bind." />
+          <Rich text="When `selectionMode` is `'multiple'`, the value is an array and every change writes a new one. Each option below is a prop you can bind." />
         </p>
         <Example files={code('SeveralItems.tsx', 'cities.ts')} stack>
           <SeveralItems />
@@ -121,7 +121,7 @@ import { data } from '@motifx-community/data';
 
       <Section anchor="objects" title="Objects, groups, templates">
         <p>
-          <Rich text="Objects of your own are read through `textField` and `valueField`; `groupField` puts items under headers, `enabledField` keeps some from being chosen, and `itemTemplate` draws an item your way." />
+          <Rich text="Custom objects are read through `textField` and `valueField`. `groupField` places items under headers, `enabledField` disables specific items, and `itemTemplate` customizes how an item is drawn." />
         </p>
         <Example files={code('Countries.tsx')}>
           <Countries />
@@ -130,7 +130,7 @@ import { data } from '@motifx-community/data';
 
       <Section anchor="data" title="From a data source">
         <p>
-          <Rich text="With `dataSource` the list reads a `DataSource` of the data layer, and the search goes to it (its `searchFields`). In `'blocks'` mode only the rows in view load while the list scrolls; chosen values on rows not loaded yet stay chosen, and “Select all” loads the values of every matching row. This one holds 5,000 orders." />
+          <Rich text="With `dataSource`, the list reads a `DataSource` from the data layer, and the search runs there (using its `searchFields`). In `'blocks'` mode, only the visible rows load as the list scrolls. Selected values on unloaded rows stay selected, and “Select all” loads the values of every matching row. This example has 5,000 orders." />
         </p>
         <Example files={code('Orders.tsx')}>
           <Orders />

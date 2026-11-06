@@ -21,7 +21,7 @@
   "The spacing in the box, in a button and in a row.": "",
   "The accepted files, excluding rejected ones. `x-model` provides two-way binding.": "",
   "Allows several files at once. `false` keeps only the most recent one.": "",
-  "What may be chosen, as for `<input type=\"file\">`: `.png,.jpg`, `image/*`, `application/pdf`.": "Seçilebilecekler, `<input type=\"file\">` gibi: `.png,.jpg`, `image/*`, `application/pdf`.",
+  "The accepted file types, as in `<input type=\"file\">`: `.png,.jpg`, `image/*`, `application/pdf`.": "",
   "Size limits in bytes. A file outside the limits is listed as rejected with the reason.": "",
   "The maximum number of files.": "",
   "Allows files to be dropped on the box.": "",

@@ -9,7 +9,7 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 const PROPS = [
     ['value', '`Bind<readonly File[]>`', '`[]`', 'The accepted files, excluding rejected ones. `x-model` provides two-way binding.'],
     ['multiple', '`Bind<boolean>`', '`true`', 'Allows several files at once. `false` keeps only the most recent one.'],
-    ['accept', '`Bind<string>`', "`''`", 'What may be chosen, as for `<input type=\"file\">`: `.png,.jpg`, `image/*`, `application/pdf`.'],
+    ['accept', '`Bind<string>`', "`''`", 'The accepted file types, as in `<input type=\"file\">`: `.png,.jpg`, `image/*`, `application/pdf`.'],
     ['maxFileSize, minFileSize', '`Bind<number | null>`', '`null`', 'Size limits in bytes. A file outside the limits is listed as rejected with the reason.'],
     ['maxFiles', '`Bind<number | null>`', '`null`', 'The maximum number of files.'],
     ['allowDrop', '`Bind<boolean>`', '`true`', 'Allows files to be dropped on the box.'],
@@ -39,7 +39,7 @@ const BEHAVIOUR = [
     ['Refusing', 'A file that does not meet `accept`, the size limits or `maxFiles` is listed as rejected with the reason, and is not added to the value.'],
     ['Uploading', 'Uploads start on selection, on the Upload button, or programmatically. Each row shows progress and a Cancel button during the upload, then “Uploaded” or the failure with Retry. The server response is available as the item\'s `response`, with JSON parsed.'],
     ['Chunks', 'With `chunkSize`, the file is sent in chunks, each in a request with `Content-Range: bytes start-end/total`, and progress covers the whole file.'],
-    ['Removing', 'Each row has a remove button. A running upload is stopped first.']
+    ['Removing chips', 'Each row has a remove button. A running upload is stopped first.']
 ];
 
 const A11Y = [
