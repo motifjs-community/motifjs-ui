@@ -4,7 +4,7 @@ import { notes } from './contents';
 import { fileDocument } from './files';
 import { output, problems, toolDocument } from './tools';
 
-/** Makes a saved document again by its type. */
+/** Recreates a saved document by its type. */
 function restore(saved: TabLayoutDocument): TabDocument {
   if (saved.type === 'file') return fileDocument(saved.id);
   if (saved.type === 'tool') return toolDocument(saved.id, saved.title, saved.id === 'output' ? output : problems);

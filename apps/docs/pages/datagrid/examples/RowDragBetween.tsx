@@ -4,7 +4,7 @@ import type { GridRowDropEventArgs } from '@motifx-community/ui';
 import type { Task } from './task';
 import { makeTasks, taskColumns } from './tasks';
 
-/** Two grids of one `group`: a row dropped on the other grid leaves this one (`onRemove`) and goes there (`onAdd`). */
+/** Two grids in one `group`: a row dropped on the other grid raises `onRemove` here and `onAdd` there. */
 export default function RowDragBetween() {
   const s = reactive({ todo: makeTasks(12), done: makeTasks(4, 101) });
   const columns = taskColumns.filter((c) => c.field !== 'priority');

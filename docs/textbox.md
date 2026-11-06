@@ -121,7 +121,7 @@ const CopyIcon = () => (
   </svg>
 );
 
-/** Fixed text around the value, an icon at the start, and a button of your own in the box. */
+/** Fixed text around the value, an icon at the start, and a custom button in the box. */
 export default function PrefixSuffix() {
   const s = reactive({ site: '', query: '' });
   const link = 'https://motifjs.com/invite/42';
@@ -204,11 +204,11 @@ A field validates itself when it loses focus after a change, and then on every c
 import { reactive } from '@motifx/core';
 import { Button, Stack, TextBox, ValidationGroup } from '@motifx-community/ui';
 
-/** Stands in for a server call: "ada" is taken. */
+/** Simulates a server call: "ada" is taken. */
 const isFree = (value: string) =>
   new Promise<boolean | string>((done) => setTimeout(() => done(value.toLowerCase() === 'ada' ? `“${value}” is taken.` : true), 600));
 
-/** Built-in rules, rules of your own (an async one too), an error from outside, and a group checked on Save. */
+/** Built-in rules, custom rules including an async one, an external error, and a group validated on Save. */
 export default function Validation() {
   const s = reactive({ user: '', serverError: '' as string | null, result: '' });
   const group = new ValidationGroup();

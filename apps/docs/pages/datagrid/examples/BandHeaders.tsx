@@ -36,7 +36,7 @@ const columns: GridColumnItem<Order>[] = [
   },
 ];
 
-/** Band headers: drag a column inside its band or a band among its neighbours, pin and hide bands from their menus. */
+/** Band headers: drag a column inside its band or a band among its neighbors, and pin and hide bands from their menus. */
 export default function BandHeaders() {
   const s = reactive({ csv: '', layout: '' });
   let grid: DataGrid<Order> | null = null;

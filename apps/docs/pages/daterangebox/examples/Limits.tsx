@@ -4,7 +4,7 @@ import { Button, DateRangeBox, Stack, type DateRange } from '@motifx-community/u
 const today = new Date();
 const inMonths = (n: number) => new Date(today.getFullYear(), today.getMonth() + n, today.getDate());
 
-/** A stay of one to fourteen nights, within the next six months, never starting on a Sunday; the message says which rule failed. */
+/** A stay of one to fourteen nights, within the next six months, never starting on a Sunday. The message identifies the rule that failed. */
 export default function Limits() {
     const s = reactive({ stay: [null, null] as DateRange, told: '' });
     let box!: DateRangeBox;

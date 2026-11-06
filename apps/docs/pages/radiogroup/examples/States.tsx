@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, RadioGroup, Stack, ValidationGroup } from '@motifx-community/ui';
 
-/** A choice that must be made, checked with its group, and read-only and disabled groups following state. */
+/** A required choice validated with its group, and read-only and disabled groups that follow state. */
 export default function States() {
   const s = reactive({ payment: null as string | null, editable: true, result: '' });
   const group = new ValidationGroup();

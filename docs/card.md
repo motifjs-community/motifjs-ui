@@ -18,7 +18,7 @@ Every prop accepts a value or a function. When you create the component with `ne
 import { reactive } from '@motifx/core';
 import { Button, Card, Stack } from '@motifx-community/ui';
 
-/** A card from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+/** A card in JSX tracks its functions, and one created with `new` accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ following: false });
   const coded = new Card({ title: 'Made in code', subtitle: 'new Card({ … })', variant: 'outline' });
@@ -47,7 +47,7 @@ import { Button, Card, Stack, type CardVariant } from '@motifx-community/ui';
 
 const VARIANTS: CardVariant[] = ['elevated', 'filled', 'outline'];
 
-/** Each look with a header, content and actions. */
+/** Each appearance with a header, content and actions. */
 export default function Variants() {
   return (
     <Stack orientation="horizontal" wrap align="start" gap="lg">
@@ -135,8 +135,8 @@ import { Button, Card, Stack } from '@motifx-community/ui';
 const PLACES = ['Istanbul', 'Lisbon', 'Kyoto'];
 
 /**
- * A link card: its title is the link and a press anywhere on it follows it (`rel="router"` hands it to the router);
- * its own button stays a button. A selectable card turns on and off with a press or its check box.
+ * A link card: its title is the link, and a click anywhere on the card follows it (`rel="router"` hands it to the router).
+ * Its own button stays a button. A selectable card toggles with a click or with its check box.
  */
 export default function Links() {
   const s = reactive({ picked: [] as string[] });

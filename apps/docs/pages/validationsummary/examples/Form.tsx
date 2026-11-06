@@ -1,6 +1,6 @@
 import { Button, NumberBox, Stack, TextBox, ValidationGroup, ValidationSummary } from '@motifx-community/ui';
 
-/** The failed fields of a form listed above it after Save; a press on a line goes to the field. */
+/** The invalid fields of a form, listed above it after Save. Clicking a line moves to the field. */
 export default function Form() {
     const group = new ValidationGroup();
     return (

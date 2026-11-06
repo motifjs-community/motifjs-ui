@@ -4,7 +4,7 @@ import { Avatar, Button, Stack, type AvatarStatus } from '@motifx-community/ui';
 const PEOPLE = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper'];
 const STATUSES: AvatarStatus[] = ['online', 'away', 'busy', 'offline'];
 
-/** An avatar from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+/** An avatar in JSX tracks its functions, and one created with `new` accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ person: 0, status: 0 });
   const coded = new Avatar({ name: 'Edsger Dijkstra', tone: 'success', shape: 'square' });

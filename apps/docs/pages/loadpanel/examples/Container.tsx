@@ -6,7 +6,7 @@ export default function Container() {
     const s = reactive({ loading: false, result: '' });
     let panel!: Panel;
 
-    // Stands in for a call to the server.
+    // Simulates a server call.
     const load = () => {
         s.loading = true;
         s.result = '';

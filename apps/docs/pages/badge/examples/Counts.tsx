@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Badge, NumberBox, Stack, Switch } from '@motifx-community/ui';
 
-/** A count up to `max` and `max+` beyond it; at 0 it hides unless `showZero`; a dot says only that there is something. */
+/** A count up to `max`, and `max+` beyond it. At 0 it is hidden unless `showZero` is set, and a dot indicates only that something is present. */
 export default function Counts() {
   const s = reactive({ count: 120, max: 99, showZero: false });
 

@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { BottomSheet, Button, Stack, TextBox } from '@motifx-community/ui';
 
-/** A sheet written in JSX and bound to state, and one made in code and shown, both over the whole page. */
+/** A sheet declared in JSX and bound to state, and one created programmatically, both over the whole page. */
 export default function JsxAndCode() {
   const s = reactive({ open: false, name: 'Ada', said: '' });
 

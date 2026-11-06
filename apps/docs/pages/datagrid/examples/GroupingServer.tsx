@@ -5,7 +5,7 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** 100,000 orders grouped on the server: the groups come with their counts, the rows only where the list looks. */
+/** 100,000 orders grouped on the server: the groups arrive with their counts, and rows load only in the visible area. */
 export default function GroupingServer() {
   const s = reactive({ loads: 0 });
   // An adapter that groups (here rows in memory acting as a server) answers `group` itself; one

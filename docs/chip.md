@@ -18,7 +18,7 @@ Every prop accepts a value or a function. When you create the component with `ne
 import { reactive } from '@motifx/core';
 import { Chip, Stack } from '@motifx-community/ui';
 
-/** A chip from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+/** A chip in JSX tracks its functions, and one created with `new` accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ vegan: false });
   const coded = new Chip({ text: 'Spicy', selectable: true });
@@ -40,7 +40,7 @@ import { Chip, Stack, type ChipVariant } from '@motifx-community/ui';
 
 const VARIANTS: ChipVariant[] = ['filled', 'outline'];
 
-// A small star of our own, so the example needs no icon set.
+// An inline star, so that the example needs no icon set.
 const star = () => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 16 16');
@@ -48,7 +48,7 @@ const star = () => {
   return svg;
 };
 
-/** Each look: at rest, selected, with an icon, with an avatar, removable, disabled. */
+/** Each appearance: at rest, selected, with an icon, with an avatar, removable and disabled. */
 export default function Looks() {
   return (
     <Stack>
@@ -75,7 +75,7 @@ import { Chip, Stack, type ChipTone, type ChipVariant } from '@motifx-community/
 const TONES: ChipTone[] = ['standard', 'accent', 'info', 'success', 'caution', 'danger'];
 const VARIANTS: ChipVariant[] = ['filled', 'outline'];
 
-/** Every tone in each look. */
+/** Every tone in each appearance. */
 export default function Tones() {
   return (
     <Stack>
@@ -157,7 +157,7 @@ import { Button, Chip, ChipGroup, Stack } from '@motifx-community/ui';
 
 const PEOPLE = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Edsger Dijkstra'];
 
-/** Removing is yours to do: `onRemove` takes the person out of the list, and the group follows the list. */
+/** Your code performs the removal: `onRemove` removes the person from the list, and the group updates to match. */
 export default function Removing() {
   const s = reactive({ people: PEOPLE.map((name) => ({ name })) });
 

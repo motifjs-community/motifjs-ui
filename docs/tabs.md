@@ -283,7 +283,7 @@ A panel is created the first time it is shown and then kept, so user input is pr
 import { reactive } from '@motifx/core';
 import { Stack, Tab, Tabs, TextBox } from '@motifx-community/ui';
 
-/** Panels built when first shown: one kept, one made again each time it shows. */
+/** Panels created when first shown: one is kept, and one is recreated each time it is shown. */
 export default function LazyPanels() {
   const s = reactive({ builds: 0 });
 

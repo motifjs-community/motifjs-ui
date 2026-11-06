@@ -18,7 +18,7 @@ Every prop accepts a value or a function. When you create the component with `ne
 import { reactive } from '@motifx/core';
 import { Badge, Button } from '@motifx-community/ui';
 
-/** A badge from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+/** A badge in JSX tracks its functions, and one created with `new` accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ unread: 4 });
   const coded = new Badge({ text: 'Beta', tone: 'info', variant: 'subtle' });
@@ -44,7 +44,7 @@ import { Badge, Stack, type BadgeTone, type BadgeVariant } from '@motifx-communi
 const TONES: BadgeTone[] = ['standard', 'accent', 'info', 'success', 'caution', 'danger'];
 const VARIANTS: BadgeVariant[] = ['solid', 'subtle', 'outline'];
 
-/** Every tone in each look. */
+/** Every tone in each appearance. */
 export default function Tones() {
   return (
     <Stack>
@@ -66,7 +66,7 @@ export default function Tones() {
 import { reactive } from '@motifx/core';
 import { Badge, NumberBox, Stack, Switch } from '@motifx-community/ui';
 
-/** A count up to `max` and `max+` beyond it; at 0 it hides unless `showZero`; a dot says only that there is something. */
+/** A count up to `max`, and `max+` beyond it. At 0 it is hidden unless `showZero` is set, and a dot indicates only that something is present. */
 export default function Counts() {
   const s = reactive({ count: 120, max: 99, showZero: false });
 

@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { ColorBox, Stack } from '@motifx-community/ui';
 
-/** Applied with buttons: the value changes on OK, Cancel leaves it; with opacity it keeps `#rrggbbaa`. */
+/** Applied with buttons: the value changes on OK, and Cancel discards the change. With opacity, it keeps `#rrggbbaa`. */
 export default function Buttons() {
   const s = reactive({ overlay: '#00000080' as string | null });
 

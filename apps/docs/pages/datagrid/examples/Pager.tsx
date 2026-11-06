@@ -3,7 +3,7 @@ import { Button, DataGrid, Stack } from '@motifx-community/ui';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** The page sizes, the info text and the full, compact and adaptive looks of the pager. */
+/** The page sizes, the information text, and the full, compact and adaptive pager layouts. */
 export default function Pager() {
   const s = reactive({ look: 'adaptive' as 'adaptive' | 'compact' | 'full', told: '' });
   let grid: DataGrid<Order> | null = null;

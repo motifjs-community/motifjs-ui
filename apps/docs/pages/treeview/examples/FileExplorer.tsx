@@ -5,7 +5,7 @@ import { FILE, FOLDER, icon } from './icon';
 
 const BOX = 'inline-size: 100%; max-inline-size: 26rem; background: var(--mx-color-bg-card)';
 
-/** A made-up disk: each folder's entries. */
+/** A sample disk: the entries of each folder. */
 const DISK: Record<string, string[]> = {
   '/': ['Documents/', 'Pictures/', 'Shared/', 'notes.txt'],
   '/Documents/': ['Invoices/', 'Letters/', 'plan.docx'],

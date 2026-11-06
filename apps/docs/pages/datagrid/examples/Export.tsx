@@ -14,7 +14,7 @@ export default function Export() {
     s.exported = JSON.stringify(rows.slice(0, 2));
   };
 
-  // A grid made with `new` exports without being shown; this one reads the orders of the paged grid.
+  // A grid created with `new` can export without being shown. This one reads the orders of the paged grid.
   const exportServer = async () => {
     const server = new DataGrid<Order>({ dataSource: pagedOrders, columns, label: 'Orders by page', locale: 'en' });
     s.progress = 'starting…';

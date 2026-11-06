@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, Panel, Resizable, Stack } from '@motifx-community/ui';
 
-/** The size goes out to x-model after every resize and comes back: set, kept and restored programmatically. */
+/** The size is written to x-model after every resize and can be set back: set, saved and restored programmatically. */
 export default function Programmatic() {
     const s = reactive({ size: { width: 240, height: 120 } as { width: number; height: number } | null, kept: null as { width: number; height: number } | null });
     return (

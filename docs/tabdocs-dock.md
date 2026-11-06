@@ -19,7 +19,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -77,7 +77,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -126,7 +126,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -184,7 +184,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -233,7 +233,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -534,7 +534,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -644,7 +644,7 @@ export default function CompactBars() {
   docs.dock(toolDocument('outline', 'Outline', outline), 'left');
   docs.dock(toolDocument('problems', 'Problems', problems), 'left');
   docs.dock(toolDocument('output', 'Output', output), 'bottom');
-  // This area's own setting wins over the manager's (null follows it again).
+  // This area's own setting takes precedence over the manager's (null returns to the manager's).
   docs.dockArea('left')!.scrollButtons = () => (s.leftScroll ? true : null);
   const float = () => {
     const doc = docs.findDocument('README.md') ?? docs.open(fileDocument('README.md'))!;
@@ -742,7 +742,7 @@ import { notes } from './contents';
 import { fileDocument } from './files';
 import { output, problems, toolDocument } from './tools';
 
-/** Makes a saved document again by its type. */
+/** Recreates a saved document by its type. */
 function restore(saved: TabLayoutDocument): TabDocument {
   if (saved.type === 'file') return fileDocument(saved.id);
   if (saved.type === 'tool') return toolDocument(saved.id, saved.title, saved.id === 'output' ? output : problems);
@@ -855,7 +855,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },

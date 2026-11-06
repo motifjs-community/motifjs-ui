@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, Stack, Timeline } from '@motifx-community/ui';
 
-/** Any content in a card: a button to act on the event, an icon of your own in the dot. */
+/** Any content in a card: a button that acts on the event, and a custom icon in the marker. */
 export default function Content() {
     const s = reactive({ told: '' });
     const act = (what: string) => (

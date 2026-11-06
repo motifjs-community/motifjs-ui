@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, MultiView, Stack, View } from '@motifx-community/ui';
 
-/** Each page is made when first in sight; with `keepAlive` off, what `content` made is dropped out of sight and made again. */
+/** Each page is created when first visible. With `keepAlive` off, the output of `content` is disposed while hidden and recreated. */
 export default function Lazy() {
     const s = reactive({ made: 0, keep: true });
     let views!: MultiView;

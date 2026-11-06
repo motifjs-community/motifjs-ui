@@ -18,7 +18,7 @@ import { Timeline } from '@motifx-community/ui';
 import { reactive } from '@motifx/core';
 import { Button, Stack, Timeline } from '@motifx-community/ui';
 
-/** A project down the page: a dot per event on the line, coloured by its tone; the cards take turns or fold when told. */
+/** A project shown vertically, with a marker per event colored by its tone. Cards can alternate sides or collapse. */
 export default function Vertical() {
     const s = reactive({ alternate: false, collapsible: false, told: '' });
     return (
@@ -57,7 +57,7 @@ import { Stack, Timeline } from '@motifx-community/ui';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-/** Releases along a line of dates: a press on a date, or the arrow keys, shows that release under the line; the buttons scroll the track. */
+/** Releases along a line of dates. Clicking a date, or using the arrow keys, shows that release below the line, and the buttons scroll the track. */
 export default function Horizontal() {
     const s = reactive({ shown: 'r3' as string | number | null });
     const releases = MONTHS.map((month, i) => ({
@@ -85,7 +85,7 @@ An item's `content` adds custom content to its card, in addition to the text. `i
 import { reactive } from '@motifx/core';
 import { Button, Stack, Timeline } from '@motifx-community/ui';
 
-/** Any content in a card: a button to act on the event, an icon of your own in the dot. */
+/** Any content in a card: a button that acts on the event, and a custom icon in the marker. */
 export default function Content() {
     const s = reactive({ told: '' });
     const act = (what: string) => (

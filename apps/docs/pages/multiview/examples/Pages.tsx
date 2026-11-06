@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { CheckBox, MultiView, Stack, Stepper, TextBox, View } from '@motifx-community/ui';
 
-/** A stepper and a multi-view bound to the same value: a press on a step or a swipe on a page moves both. */
+/** A stepper and a multi-view bound to the same value: clicking a step or swiping a page updates both. */
 export default function Pages() {
     const s = reactive({ page: 0 as string | number | null });
     return (

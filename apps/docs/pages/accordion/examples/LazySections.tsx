@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Accordion, AccordionItem, TextBox } from '@motifx-community/ui';
 
-/** Sections built when first opened: one kept, one made again each time it opens. */
+/** Sections created when first opened: one is kept, and one is recreated each time it opens. */
 export default function LazySections() {
   const s = reactive({ builds: 0 });
   return (

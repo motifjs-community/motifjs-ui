@@ -110,7 +110,7 @@ const PLANS = [
     { name: 'Company', price: '€79', line: 'No limits, a person to call' }
 ];
 
-/** Any content in a pane: a plan each, with its own button; a press on the pane itself is told too. */
+/** Any content in a slide: a plan each, with its own button. A click on the slide itself is also reported. */
 export default function Content() {
     const s = reactive({ told: '' });
     const plan = (p: (typeof PLANS)[number]) => (
@@ -139,7 +139,7 @@ import { reactive } from '@motifx/core';
 import { Button, Gallery, Stack } from '@motifx-community/ui';
 import { scene } from './scenes';
 
-/** A gallery made programmatically without its own buttons or dots: yours move it, and `onSlideChanged` tells where it is. */
+/** A gallery created programmatically without its own buttons or dots: custom buttons navigate, and `onSlideChanged` reports the position. */
 export default function Programmatic() {
     const s = reactive({ at: 0, told: '' });
     const coded = new Gallery({

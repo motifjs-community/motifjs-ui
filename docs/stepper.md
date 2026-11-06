@@ -18,7 +18,7 @@ import { Stepper } from '@motifx-community/ui';
 import { reactive } from '@motifx/core';
 import { Button, Stack, Stepper } from '@motifx-community/ui';
 
-/** A stepper bound with x-model, and one made programmatically and moved with its own methods. */
+/** A stepper bound with x-model, and one created programmatically and moved with its methods. */
 export default function Programmatic() {
     const s = reactive({ step: 0 as string | number | null, at: 0, told: '' });
     const coded = new Stepper({
@@ -71,7 +71,7 @@ const pencil = () => {
     return svg;
 };
 
-/** Completed and failed steps told by the items, an optional step, a disabled one, an icon in place of the number. */
+/** Completed and failed steps set by the items, an optional step, a disabled step, and an icon in place of the number. */
 export default function Statuses() {
     const s = reactive({ paid: false });
     const items = [

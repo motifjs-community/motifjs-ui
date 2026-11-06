@@ -97,7 +97,7 @@
 All strings the grid displays come from `uiLocale.strings` (the `grid…` keys) or from the grid's own `texts`: the toolbar, the search box, the bar, the pager, the column menu, the row states, the action buttons, the filter conditions, the summary strings (`gridSummarySum`, `gridSummarySumOtherColumn`, … `gridSummaryCount`, `gridSummarySeparator`, `gridTotalSummary`) and the announcements. Numbers and dates follow `locale`.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -311,7 +311,7 @@ import { kitTexts } from '../../../shared/kit-texts';
 import type { Order } from './order';
 import { columns } from './orders';
 
-/** Every grid on the page follows `uiLocale.strings`; one grid's own `texts` and `locale` win. */
+/** Every grid on the page uses `uiLocale.strings`, and a grid's own `texts` and `locale` take precedence. */
 export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
@@ -353,7 +353,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -403,7 +403,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;

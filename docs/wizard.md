@@ -18,7 +18,7 @@ Each `WizardStep` is a step and its page. Next validates the kit fields on the p
 import { reactive } from '@motifx/core';
 import { CheckBox, Stack, TextBox, Wizard, WizardStep } from '@motifx-community/ui';
 
-/** Three pages with the kit's fields: Next validates the page first; Finish tells the app. */
+/** Three pages with kit fields: Next validates the page first, and Finish notifies the application. */
 export default function Basic() {
     const s = reactive({ name: '', email: '', city: '', agreed: false, result: '' });
     return (
@@ -52,14 +52,14 @@ export default function Basic() {
 import { Component, reactive } from '@motifx/core';
 import { Button, Stack, Wizard, WizardStep } from '@motifx-community/ui';
 
-// A page made programmatically: any MotifJS component.
+// A page created programmatically: any MotifJS component.
 class Note extends Component<HTMLDivElement, { text: string }> {
     override view() {
         return <p>{this.props.text}</p>;
     }
 }
 
-/** A wizard made programmatically: its steps as props with content factories, moved with its methods, a step added later. */
+/** A wizard created programmatically: its steps as props with content factories, moved with its methods, with a step added later. */
 export default function Programmatic() {
     const s = reactive({ told: '' });
     const wizard = new Wizard({
@@ -121,7 +121,7 @@ export default function Vertical() {
 import { reactive } from '@motifx/core';
 import { Button, Stack, TextBox, Wizard, WizardStep } from '@motifx-community/ui';
 
-/** No bar: buttons of your own drive it; finishing waits for a promise (a server) and may be refused. */
+/** No bar: custom buttons control it, and finishing waits for a promise (a server) and can be refused. */
 export default function Custom() {
     const s = reactive({ code: '', busy: false, note: '' });
     let wizard!: Wizard;

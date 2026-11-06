@@ -7,7 +7,7 @@ const people: Customer[] = [
   { name: 'Alan Turing', email: 'alan@example.com', city: 'London' },
 ];
 
-/** Edit a field: the tab shows a dot in place of its close button, and closing it asks first (`e.promise`). */
+/** Edit a field: the tab shows a dot in place of its close button, and closing it prompts first (`e.promise`). */
 export default function UnsavedChanges() {
   const docs = new TabDocumentManager({ label: 'Customers' });
   docs.element.style.cssText = 'block-size: 28rem; inline-size: 100%';

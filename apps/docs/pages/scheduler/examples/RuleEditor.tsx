@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { RecurrenceEditor } from '@motifx-community/ui';
 
-/** The editor on its own: it reads and writes the rule text, and says it in words under it. */
+/** The standalone editor: it reads and writes the rule text, and describes it in words below. */
 export default function RuleEditor() {
   const s = reactive({ rule: 'FREQ=MONTHLY;BYDAY=2TU;COUNT=6' });
   return (

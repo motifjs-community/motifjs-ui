@@ -4,7 +4,7 @@ import { FILES, fileDocument, source } from './files';
 
 /**
  * Right-click a tab (or press Shift+F10 on it) for its menu, and the empty strip for the group's.
- * `onContextMenuOpening` adds an item for files; a double click on the empty strip makes a new file.
+ * `onContextMenuOpening` adds an item for files, and a double-click on the empty strip creates a new file.
  */
 export default function ContextMenus() {
   const s = reactive({ menus: true, copy: true, split: true, made: 0, said: '' });

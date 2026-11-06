@@ -36,7 +36,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 In `popup` mode, the same form opens in the kit's `MxForm` as a modal window, for both existing and new rows (`addRow()`, “New row”). Focus stays in the window, Enter activates Save and Escape activates Cancel, and focus returns to the row when the window closes. `popup` sets the title and size, and `form` and the columns' `formItem` set the fields.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -80,7 +80,7 @@ export interface Order {
 A column's `validationRules` are validated with the kit's validation rules as a value is entered, and again before its row is saved. `required` and `validate` still run before them. Rules run in order, and `async` rules run last, together. The row waits for their results, with its cell shown as busy in the meantime. A value is not validated twice: only `reevaluate` (on for `async`) and `compare` rules run on every validation of the row. `onRowValidating` occurs after the cells, for the row as a whole. Messages appear in the cells, the form and the window. In this example, the server rejects a customer whose name contains “test”.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -219,7 +219,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -269,7 +269,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -315,7 +315,7 @@ const popupColumns: GridColumn<Order>[] = columns.map((c) =>
   c.field === 'note' ? { ...c, formItem: { colSpan: 'all', label: 'Note for the courier' } } : c.field === 'id' ? { ...c, formItem: { visible: false } } : c,
 );
 
-/** Rows edited and added in a modal window: Enter saves, Escape cancels, focus comes back to the row. */
+/** Rows edited and added in a modal window: Enter saves, Escape cancels, and focus returns to the row. */
 export default function PopupMode() {
   return (
     <DataGrid

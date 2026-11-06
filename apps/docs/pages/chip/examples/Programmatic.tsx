@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Chip, Stack } from '@motifx-community/ui';
 
-/** A chip from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+/** A chip in JSX tracks its functions, and one created with `new` accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ vegan: false });
   const coded = new Chip({ text: 'Spicy', selectable: true });

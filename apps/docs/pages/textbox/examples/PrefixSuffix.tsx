@@ -14,7 +14,7 @@ const CopyIcon = () => (
   </svg>
 );
 
-/** Fixed text around the value, an icon at the start, and a button of your own in the box. */
+/** Fixed text around the value, an icon at the start, and a custom button in the box. */
 export default function PrefixSuffix() {
   const s = reactive({ site: '', query: '' });
   const link = 'https://motifjs.com/invite/42';

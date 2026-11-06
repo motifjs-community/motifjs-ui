@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { CheckBox, Stack, TextBox, Wizard, WizardStep } from '@motifx-community/ui';
 
-/** Three pages with the kit's fields: Next validates the page first; Finish tells the app. */
+/** Three pages with kit fields: Next validates the page first, and Finish notifies the application. */
 export default function Basic() {
     const s = reactive({ name: '', email: '', city: '', agreed: false, result: '' });
     return (

@@ -19,7 +19,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -79,7 +79,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -128,7 +128,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -177,7 +177,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -382,7 +382,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -486,7 +486,7 @@ import { FILES, fileDocument } from './files';
 
 /**
  * Two managers with the same `dragGroup` take each other's tabs and groups. The content moves with
- * its tab, it is not made again: an edit in a moved tab is still there.
+ * its tab, it is not recreated, so an edit in a moved tab is preserved.
  */
 export default function BetweenManagers() {
   const s = reactive({ last: 'Drag a tab from one manager to the other.' });

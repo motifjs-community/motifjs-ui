@@ -3,7 +3,7 @@ import { Button, CheckBox, DataGrid, Stack } from '@motifx-community/ui';
 import type { Order } from './order';
 import { filterColumns, makeOrders } from './orders';
 
-/** Widths, order, sort and filters kept under `layoutKey`; a grid made again gets them back. */
+/** Widths, order, sort and filters saved under `layoutKey`, and restored when a grid is created again. */
 export default function KeepLayout() {
   const s = reactive({ keep: true, shown: true });
   let grid: DataGrid<Order> | null = null;

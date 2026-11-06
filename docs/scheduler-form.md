@@ -466,7 +466,7 @@ type Rated = Booking & { priority?: number };
 
 const COLORS = ['#1565c0', '#2e7d32', '#ad1457', '#ef6c00', '#455a64'];
 
-/** A component of your own as an editor: a row of colours, bound to the form's data. */
+/** A custom component as an editor: a row of colors bound to the form's data. */
 function ColorChoice(form: AppointmentFormContext<Rated>, place: FormTemplateContext) {
   const data = form.data as Record<string, unknown>;
   return (

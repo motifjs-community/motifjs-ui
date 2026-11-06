@@ -4,7 +4,7 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { makeOrders } from './orders';
 
-/** How many times the server below was asked for rows. */
+/** The number of times rows were requested from the server below. */
 export const pagedLoads = reactive({ count: 0 });
 
 const server = new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 250);

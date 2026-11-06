@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { ButtonGroup, Stack } from '@motifx-community/ui';
 
-/** One choice bound with `x-model`; a group made with `new` takes the same properties programmatically. */
+/** One choice bound with `x-model`, and a group created with `new` that accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ view: 'Week' as unknown });
   const coded = new ButtonGroup({ label: 'Density', items: ['Compact', 'Comfortable'], value: 'Compact' });

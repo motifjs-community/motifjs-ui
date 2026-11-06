@@ -13,7 +13,7 @@ const describe = (sel: GridSelection | undefined) =>
 /** Single and multiple selection; over 100,000 rows on a server "all" is a state, never the rows. */
 export default function Selection() {
   const s = reactive({ mode: 'multiple' as 'none' | 'single' | 'multiple', selection: undefined as GridSelection | undefined, note: '' });
-  // The server groups, so "all but these keys" goes to it as a filter.
+  // The server groups, so "all except these keys" is sent to it as a filter.
   const orders = new data.DataSource<Order, number>({ adapter: new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 200), loadMode: 'blocks', pageSize: 100 });
   let grid: DataGrid<Order> | null = null;
   let server: DataGrid<Order> | null = null;

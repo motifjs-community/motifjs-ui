@@ -233,7 +233,7 @@ const SEATS = ['1', '2', '3', '4', '5', '6'].flatMap((row) =>
   })),
 );
 
-/** A tooltip on each of 24 seats, made only when first needed, and one that is removed programmatically. */
+/** A tooltip on each of 24 seats, created only when first needed, and one that is removed programmatically. */
 export default function ManyElements() {
   let removeGuideTip = () => {};
   return (

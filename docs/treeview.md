@@ -301,7 +301,7 @@ import { project } from './project';
 
 const BOX = 'inline-size: 100%; max-inline-size: 26rem; background: var(--mx-color-bg-card)';
 
-/** A tree bound with x-model, and a tree made with `new` whose items change in place and are read again on `refresh()`. */
+/** A tree bound with x-model, and a tree created with `new` whose items change in place and are re-read on `refresh()`. */
 export default function Programmatic() {
   const s = reactive({ file: 'tree' as unknown, clicked: '' });
   const menu = reactive<Entry[]>([
@@ -395,7 +395,7 @@ import { FILE, FOLDER, icon } from './icon';
 
 const BOX = 'inline-size: 100%; max-inline-size: 26rem; background: var(--mx-color-bg-card)';
 
-/** A made-up disk: each folder's entries. */
+/** A sample disk: the entries of each folder. */
 const DISK: Record<string, string[]> = {
   '/': ['Documents/', 'Pictures/', 'Shared/', 'notes.txt'],
   '/Documents/': ['Invoices/', 'Letters/', 'plan.docx'],
@@ -687,7 +687,7 @@ const DEPARTMENTS: Entry[] = Array.from({ length: 50 }, (_, d) => ({
   children: Array.from({ length: 200 }, (_, p) => ({ id: `d${d}p${p}`, text: `Person ${d + 1}.${p + 1}` })),
 }));
 
-/** 50 departments of 200 people, made with `new`: only the rows in view are drawn. */
+/** 50 departments of 200 people, created with `new`. Only the visible rows are rendered. */
 export default function LargeTree() {
   const people = new TreeView<Entry>({ items: DEPARTMENTS, label: 'People', showLines: true });
   people.element.style.blockSize = '20rem';

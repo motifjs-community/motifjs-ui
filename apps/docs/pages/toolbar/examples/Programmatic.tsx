@@ -1,7 +1,7 @@
 import { reactive, type Component } from '@motifx/core';
 import { Button, Toolbar } from '@motifx-community/ui';
 
-/** A toolbar made with `new` and filled with `controls.add`. */
+/** A toolbar created with `new` and filled with `controls.add`. */
 export default function Programmatic() {
   const s = reactive({ log: '' });
   let added = 0;

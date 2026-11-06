@@ -180,7 +180,7 @@ export default function ByKey() {
     { field: 'city', caption: 'City', width: '7rem' },
   ];
   const waiting = reactive({ customer: 1500 as number | null });
-  // A record as it came from the server: the customer's key and, beside it, the name.
+  // A record as returned by the server: the customer's key and, beside it, the name.
   const order = reactive({ customer: 1500 as number | null, customerName: companyOf(1500) });
 
   const another = () => {

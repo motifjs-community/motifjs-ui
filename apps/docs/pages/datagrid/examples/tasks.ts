@@ -5,7 +5,7 @@ const TITLES = ['Write the release notes', 'Fix the login page', 'Review the pul
 const OWNERS = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger'];
 const PRIORITIES = ['Low', 'Normal', 'High'];
 
-/** `n` made-up tasks from id `from`, in their order. */
+/** `n` sample tasks from id `from`, in order. */
 export function makeTasks(n: number, from = 1): Task[] {
   return Array.from({ length: n }, (_, i) => ({
     id: from + i,

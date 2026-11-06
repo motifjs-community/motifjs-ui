@@ -4,7 +4,7 @@ import { kitTexts } from '../../../shared/kit-texts';
 import type { Order } from './order';
 import { columns } from './orders';
 
-/** Every grid on the page follows `uiLocale.strings`; one grid's own `texts` and `locale` win. */
+/** Every grid on the page uses `uiLocale.strings`, and a grid's own `texts` and `locale` take precedence. */
 export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {

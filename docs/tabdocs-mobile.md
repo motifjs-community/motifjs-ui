@@ -99,7 +99,7 @@ import { problems, toolDocument } from './tools';
  * A manager that follows its own width (`presentation: 'auto'`): drag the frame's corner, or pick a
  * width. Under 560 pixels it shows as on a phone; under 1024 as on a tablet when the screen is a touch
  * screen (with a mouse it stays a desktop). A text and a scroll position are kept across every change:
- * the content moves, it is never made again.
+ * the content moves and is never recreated.
  */
 export default function FollowsWidth() {
   const s = reactive({ shown: '', typed: '' });

@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Panel, ScrollView, Stack } from '@motifx-community/ui';
 
-/** Pulled down from the top, the list asks for what is new and shows the panel until the promise settles. */
+/** Pulled down from the top, the list requests new items and shows the panel until the promise settles. */
 export default function Pull() {
     const s = reactive({ notes: ['Welcome aboard', 'Your plan was renewed', 'A new comment on "Roadmap"'], count: 0 });
     const reload = () =>

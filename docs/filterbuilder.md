@@ -468,7 +468,7 @@ import { data } from '@motifx-community/data';
 import { Button, FilterBuilder, Stack } from '@motifx-community/ui';
 import { saleFields } from './sales';
 
-/** Made with `new` and driven programmatically; every change asks first, and a handler may cancel it. */
+/** Created with `new` and controlled programmatically. Every change raises an event first, and a handler can cancel it. */
 export default function Programmatic() {
   const log = reactive({ lines: [] as { id: number; text: string }[], next: 0 });
   const write = (text: string) => {
@@ -577,7 +577,7 @@ import { data } from '@motifx-community/data';
 import { Button, FilterBuilder, uiLocale } from '@motifx-community/ui';
 import { saleFields } from './sales';
 
-/** The builder's texts come from `uiLocale`; `texts` changes some for one builder only. */
+/** The builder's strings come from `uiLocale`, and `texts` overrides some for one builder. */
 export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {

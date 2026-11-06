@@ -18,7 +18,7 @@ JSX children are the content, and `target` specifies the element or component it
 import { reactive } from '@motifx/core';
 import { Button, Popover, Stack, TextBox } from '@motifx-community/ui';
 
-/** A popover with a title, a close button and a small form; one made programmatically for a plain element. */
+/** A popover with a title, a close button and a small form, and one created programmatically for a plain element. */
 export default function Basic() {
     const s = reactive({ open: false, name: 'Ada', saved: '' });
     let button!: Button;
@@ -121,7 +121,7 @@ export default function Placements() {
 import { reactive } from '@motifx/core';
 import { Button, Popover, Stack, TextArea } from '@motifx-community/ui';
 
-/** A press outside does not close it, and onClosing keeps it open while there is unsaved text; Escape and the button close it. */
+/** A click outside does not close it, and onClosing keeps it open while there is unsaved text. Escape and the button close it. */
 export default function Events() {
     const s = reactive({ note: '', told: '' });
     let button!: Button;

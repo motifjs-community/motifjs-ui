@@ -5,10 +5,10 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** 100,000 orders from a server, loaded by blocks only where the list looks. */
+/** 100,000 orders from a server, loaded by blocks only in the visible area. */
 export default function Virtual() {
   const s = reactive({ loads: 0 });
-  // Stands in for a server: new data.ODataAdapter({ url: '/odata/Orders', key: 'OrderID' }) goes in its place.
+  // Simulates a server. In an application, use new data.ODataAdapter({ url: '/odata/Orders', key: 'OrderID' }) here.
   const server = new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 300);
   server.onLoading(() => s.loads++);
   const orders = new data.DataSource<Order, number>({ adapter: server, loadMode: 'blocks', pageSize: 100 });

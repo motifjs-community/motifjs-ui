@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, confirm, messageBox } from '@motifx-community/ui';
 
-/** A message, a question with three answers, a confirmation, and buttons of your own. */
+/** A message, a question with three answers, a confirmation, and custom buttons. */
 export default function MessageBoxes() {
   const answer = reactive({ text: '' });
 

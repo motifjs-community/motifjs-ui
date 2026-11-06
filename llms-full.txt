@@ -286,12 +286,12 @@ The library includes more than fifty components built on a shared base. Each one
 
 | Group | Components |
 | --- | --- |
-| Buttons and commands | [`Button`](button.md) (menu, split, toggle, busy), [`ButtonGroup`](buttongroup.md), [`Toolbar`](toolbar.md), [`MenuBar`](menus.md) and [`ContextMenu`](menus.md) |
-| Editors | [`TextBox`](textbox.md) (mask, validation), [`TextArea`](textarea.md), [`NumberBox`](numberbox.md), [`DateBox`](datebox.md), [`DateRangeBox`](daterangebox.md), [`Calendar`](calendar.md), [`ColorBox`](colorbox.md) and [`ColorPicker`](colorbox.md), [`Slider`](slider.md), [`Rating`](rating.md), [`FileUploader`](fileuploader.md) |
+| Buttons and commands | [`Button`](button.md) (menu, split, toggle, busy), [`ButtonGroup`](buttongroup.md), [`Toolbar`](toolbar.md), [`SpeedDial`](speeddial.md), [`MenuBar`](menus.md) and [`ContextMenu`](menus.md) |
+| Editors | [`TextBox`](textbox.md) (mask, validation), [`TextArea`](textarea.md), [`NumberBox`](numberbox.md), [`DateBox`](datebox.md), [`DateRangeBox`](daterangebox.md), [`Calendar`](calendar.md), [`ColorBox`](colorbox.md) and [`ColorPicker`](colorbox.md), [`Slider`](slider.md), [`Rating`](rating.md), [`FileUploader`](fileuploader.md), [`ValidationSummary`](validationsummary.md) |
 | Choice | [`CheckBox`](checkbox.md), [`Switch`](switch.md), [`RadioGroup`](radiogroup.md), [`DropDown`](dropdown.md), [`ComboBox`](combobox.md) and [`Autocomplete`](combobox.md), [`Lookup`](lookup.md), [`TagBox`](tagbox.md), [`ListBox`](listbox.md) |
-| Display and feedback | [`Badge`](badge.md), [`Avatar`](avatar.md) and [`AvatarGroup`](avatar.md), [`Chip`](chip.md) and [`ChipGroup`](chip.md), [`Card`](card.md), [`Skeleton`](skeleton.md), [`ProgressBar`](progress.md) and [`Spinner`](progress.md), [`LoadPanel`](loadpanel.md), [`Tooltip`](tooltip.md), [`Popover`](popover.md), [`Toast`](toast.md) |
-| Navigation and layers | [`Tabs`](tabs.md), [`Accordion`](accordion.md), [`Breadcrumb`](breadcrumb.md), [`Pagination`](pagination.md), [`Stepper`](stepper.md), [`Wizard`](wizard.md), [`Window`](window.md) and dialog, [`BottomSheet`](bottomsheet.md), [`Drawer`](drawer.md), [`ActionSheet`](actionsheet.md) |
-| Layout | [`Stack`](layout.md), [`Grid`](layout.md), [`DockPanel`](layout.md), [`Panel`](layout.md), [`GroupBox`](layout.md), [`SplitContainer`](layout.md), [`FormLayout`](formlayout.md), [`ScrollView`](scrollview.md) (pull to refresh, load more), [`Sortable`](sortable.md) |
+| Display and feedback | [`Badge`](badge.md), [`Avatar`](avatar.md) and [`AvatarGroup`](avatar.md), [`Chip`](chip.md) and [`ChipGroup`](chip.md), [`Card`](card.md), [`Gallery`](gallery.md), [`TileView`](tileview.md), [`Timeline`](timeline.md), [`Skeleton`](skeleton.md), [`ProgressBar`](progress.md) and [`Spinner`](progress.md), [`LoadPanel`](loadpanel.md), [`Tooltip`](tooltip.md), [`Popover`](popover.md), [`Toast`](toast.md) |
+| Navigation and layers | [`Tabs`](tabs.md), [`Accordion`](accordion.md), [`Breadcrumb`](breadcrumb.md), [`Pagination`](pagination.md), [`Stepper`](stepper.md), [`Wizard`](wizard.md), [`MultiView`](multiview.md), [`Window`](window.md) and dialog, [`BottomSheet`](bottomsheet.md), [`Drawer`](drawer.md), [`ActionSheet`](actionsheet.md) |
+| Layout | [`Stack`](layout.md), [`Grid`](layout.md), [`DockPanel`](layout.md), [`Panel`](layout.md), [`GroupBox`](layout.md), [`SplitContainer`](layout.md), [`Splitter`](splitter.md), [`Resizable`](resizable.md), [`Draggable`](draggable.md), [`FormLayout`](formlayout.md), [`ScrollView`](scrollview.md) (pull to refresh, load more), [`Sortable`](sortable.md) |
 | Data | [`DataGrid`](datagrid.md) (virtual or paged, editing, filters, grouping, master-detail, export), [`TreeView`](treeview.md), [`FilterBuilder`](filterbuilder.md), [`Scheduler`](scheduler.md) (day to timeline, recurrence, resources, iCalendar), [`TabDocumentManager`](tabdocs.md) (tabs, split, dock, new windows); lists and grids read `@motifx-community/data` sources |
 | Base | [`Control`](control.md), [`FocusContainer`](keyboard.md) and [`addShortcut`](keyboard.md), [`uiLocale`](language.md), [the component tokens](tokens.md); `Popup` and `MenuList`, the shared parts a menu or a drop-down opens on |
 
@@ -5063,7 +5063,7 @@ Give controls a `tabIndex`, and the outermost container of the page or window vi
 ```tsx
 import { Button, FocusContainer, Panel, Stack } from '@motifx-community/ui';
 
-/** A container of your own: it runs the Tab order of its controls and remembers the active one. */
+/** A custom container: it manages the Tab order of its controls and remembers the active one. */
 class CustomerEditor extends FocusContainer<HTMLDivElement> {}
 
 /** Tab visits the buttons by `tabIndex`; the container reports its `activeControl` and puts focus back with `restoreFocus()`. */
@@ -5298,7 +5298,7 @@ A custom pack is a plain object of kit strings. `uiLocale.add` registers strings
 ```tsx
 import { Button, DropDown, Stack, uiLocale } from '@motifx-community/ui';
 
-// A few German texts; what is left out stays English.
+// A few German strings. Anything omitted stays in English.
 uiLocale.add('de', {
     close: 'Schließen',
     clear: 'Leeren',
@@ -5309,7 +5309,7 @@ uiLocale.add('de', {
     cancel: 'Abbrechen',
 });
 
-/** A pack of your own: `uiLocale.add` gives a language its texts, `use` switches to it. */
+/** A custom pack: `uiLocale.add` registers strings for a language, and `use` switches to it. */
 export default function OwnPack() {
     return (
         <Stack gap="md">
@@ -5421,7 +5421,7 @@ Dates and numbers follow the kit locale. A control with its own `locale` uses th
 import { reactive } from '@motifx/core';
 import { DateBox, NumberBox, Stack } from '@motifx-community/ui';
 
-/** A control's own `locale` wins over the kit's: these write German and Japanese whatever the kit's language is. */
+/** A control's own `locale` takes precedence over the kit's: these use German and Japanese regardless of the kit language. */
 export default function Formats() {
     const s = reactive({ amount: 98765.43, day: new Date(2026, 2, 18) as Date | null });
     return (
@@ -5492,7 +5492,7 @@ export default function Programmatic() {
     const n = ++added;
     const state = reactive({ marks: '' });
     const b = new Button({ variant: 'outline' });
-    b.text = () => `Button ${n}${state.marks}`; // a function is followed
+    b.text = () => `Button ${n}${state.marks}`; // a function is tracked
     b.motif.on('click', () => (state.marks += ' ✓'));
     toolbar?.controls.add(b);
   };
@@ -5772,7 +5772,7 @@ import { reactive } from '@motifx/core';
 import { Button, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
-/** The name of a split button's arrow, from uiLocale: a shipped language or a text of your own. */
+/** The name of a split button's arrow, from uiLocale: an included language or a custom string. */
 export default function Localization() {
   const s = reactive({ lang: 'en' });
 
@@ -5903,7 +5903,7 @@ Every prop accepts a value or a function, and `x-model` provides two-way binding
 import { reactive } from '@motifx/core';
 import { ButtonGroup, Stack } from '@motifx-community/ui';
 
-/** One choice bound with `x-model`; a group made with `new` takes the same properties programmatically. */
+/** One choice bound with `x-model`, and a group created with `new` that accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ view: 'Week' as unknown });
   const coded = new ButtonGroup({ label: 'Density', items: ['Compact', 'Comfortable'], value: 'Compact' });
@@ -6070,7 +6070,7 @@ export const ImageIcon = icon('M2.5 3.5h11v9h-11zM2.5 10.5l3-3 3 3 2-2 3 3M10 6.
 import { reactive, type Component } from '@motifx/core';
 import { Button, Toolbar } from '@motifx-community/ui';
 
-/** A toolbar made with `new` and filled with `controls.add`. */
+/** A toolbar created with `new` and filled with `controls.add`. */
 export default function Programmatic() {
   const s = reactive({ log: '' });
   let added = 0;
@@ -6514,7 +6514,7 @@ import { SpeedDial } from '@motifx-community/ui';
 import { reactive } from '@motifx/core';
 import { SpeedDial, Stack } from '@motifx-community/ui';
 
-/** Two speed dials in the flow of the page: one fans up, one fans to the end; a press on an action tells. */
+/** Two speed dials in the page flow: one opens upward and one toward the end. Clicking an action reports it. */
 export default function Inline() {
     const s = reactive({ told: '', open: false });
     const actions = [
@@ -6808,7 +6808,7 @@ A `MenuBar` takes its top-level items as `items`, and the `items` of each one de
 import { reactive, type Component } from '@motifx/core';
 import { CheckBox, MenuBar, Stack, type MenuItem } from '@motifx-community/ui';
 
-/** An app's menu bar made with `new`: submenus, check and radio items, shortcuts, access keys, and `onItemClick`. */
+/** An application menu bar created with `new`: submenus, check and radio items, shortcuts, access keys and `onItemClick`. */
 export default function MainMenu() {
   const s = reactive({
     log: 'Nothing chosen yet.',
@@ -7227,7 +7227,7 @@ const CopyIcon = () => (
   </svg>
 );
 
-/** Fixed text around the value, an icon at the start, and a button of your own in the box. */
+/** Fixed text around the value, an icon at the start, and a custom button in the box. */
 export default function PrefixSuffix() {
   const s = reactive({ site: '', query: '' });
   const link = 'https://motifjs.com/invite/42';
@@ -7310,11 +7310,11 @@ A field validates itself when it loses focus after a change, and then on every c
 import { reactive } from '@motifx/core';
 import { Button, Stack, TextBox, ValidationGroup } from '@motifx-community/ui';
 
-/** Stands in for a server call: "ada" is taken. */
+/** Simulates a server call: "ada" is taken. */
 const isFree = (value: string) =>
   new Promise<boolean | string>((done) => setTimeout(() => done(value.toLowerCase() === 'ada' ? `“${value}” is taken.` : true), 600));
 
-/** Built-in rules, rules of your own (an async one too), an error from outside, and a group checked on Save. */
+/** Built-in rules, custom rules including an async one, an external error, and a group validated on Save. */
 export default function Validation() {
   const s = reactive({ user: '', serverError: '' as string | null, result: '' });
   const group = new ValidationGroup();
@@ -8404,7 +8404,7 @@ import { Button, DateRangeBox, Stack, type DateRange } from '@motifx-community/u
 
 const say = (d: Date | null) => (d ? d.toLocaleDateString('en-GB') : '—');
 
-/** A range bound with x-model, and one made programmatically and read through its properties. */
+/** A range bound with x-model, and one created programmatically and read through its properties. */
 export default function Programmatic() {
     const s = reactive({ stay: [new Date(2026, 2, 10), new Date(2026, 2, 14)] as DateRange, told: '' });
     const coded = new DateRangeBox({ label: 'Report period', clearButton: true, onValueChanged: e => (s.told = `${say(e.value[0])} to ${say(e.value[1])}`) });
@@ -8440,14 +8440,14 @@ const day = (offset: number) => {
     return d;
 };
 
-// Ranges of our own, made when chosen so they are about today.
+// Custom ranges, calculated when selected so that they are relative to today.
 const QUARTERS: DateRangePreset[] = [
     { text: 'Next 3 days', range: () => [day(0), day(2)] },
     { text: 'Next week', range: () => [day(1), day(7)] },
     { text: 'Next 90 days', range: () => [day(0), day(89)] }
 ];
 
-/** The kit's presets beside the calendars, and presets of your own. */
+/** The kit's presets beside the calendars, and custom presets. */
 export default function Presets() {
     const s = reactive({ sales: [null, null] as DateRange, plan: [null, null] as DateRange });
     return (
@@ -8470,7 +8470,7 @@ import { Button, DateRangeBox, Stack, type DateRange } from '@motifx-community/u
 const today = new Date();
 const inMonths = (n: number) => new Date(today.getFullYear(), today.getMonth() + n, today.getDate());
 
-/** A stay of one to fourteen nights, within the next six months, never starting on a Sunday; the message says which rule failed. */
+/** A stay of one to fourteen nights, within the next six months, never starting on a Sunday. The message identifies the rule that failed. */
 export default function Limits() {
     const s = reactive({ stay: [null, null] as DateRange, told: '' });
     let box!: DateRangeBox;
@@ -8602,7 +8602,7 @@ import { ColorBox, Stack } from '@motifx-community/ui';
 
 const PALETTE = ['#3b5bdb', '#1971c2', '#0c8599', '#2b8a3e', '#f08c00', '#e8590c', '#e03131', '#c2255c', '#862e9c', '#495057'];
 
-/** A colour field bound with `x-model`: type a hex, or open the picker (Alt+Down); one made with `new` programmatically. */
+/** A color field bound with `x-model`: type a hex value or open the picker (Alt+Down). One is created programmatically with `new`. */
 export default function Programmatic() {
   const s = reactive({ accent: '#3b5bdb' as string | null });
   const coded = new ColorBox({ label: 'Made in code', value: '#2b8a3e', clearButton: true });
@@ -8624,7 +8624,7 @@ import { ColorPicker, Stack } from '@motifx-community/ui';
 
 const PALETTE = ['#ffffff', '#ced4da', '#495057', '#000000', '#e03131', '#f08c00', '#2b8a3e', '#1971c2', '#862e9c', '#3b5bdb80'];
 
-/** The picker on its own, in the page: with opacity (`alpha`) and preset colours. */
+/** The standalone picker in the page, with opacity (`alpha`) and preset colors. */
 export default function Picker() {
   const s = reactive({ color: '#1971c2cc' as string | null });
 
@@ -8643,7 +8643,7 @@ export default function Picker() {
 import { reactive } from '@motifx/core';
 import { ColorBox, Stack } from '@motifx-community/ui';
 
-/** Applied with buttons: the value changes on OK, Cancel leaves it; with opacity it keeps `#rrggbbaa`. */
+/** Applied with buttons: the value changes on OK, and Cancel discards the change. With opacity, it keeps `#rrggbbaa`. */
 export default function Buttons() {
   const s = reactive({ overlay: '#00000080' as string | null });
 
@@ -9262,7 +9262,7 @@ Every prop accepts a value or a function, and `x-model` provides two-way binding
 import { reactive } from '@motifx/core';
 import { Rating, Stack } from '@motifx-community/ui';
 
-/** A rating bound with `x-model`, with a label and a help line like any field; one made with `new` programmatically. */
+/** A rating bound with `x-model`, with a label and help text like any field, and one created with `new` programmatically. */
 export default function Programmatic() {
   const s = reactive({ stars: 3 as number | null });
   const coded = new Rating({ label: 'Made in code', max: 10, value: 7 });
@@ -9307,13 +9307,13 @@ export default function Looks() {
 ```tsx
 import { Rating } from '@motifx-community/ui';
 
-// A heart of our own, as image addresses: an outline and a filled one, drawn in the stars' colours.
+// A custom heart as image addresses: an outline and a filled version, drawn in the star colors.
 const svg = (body: string) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">${body}</svg>`)}`;
 const HEART = 'M8 13.5S2 10 2 5.75A2.75 2.75 0 0 1 8 4.5a2.75 2.75 0 0 1 6 1.25C14 10 8 13.5 8 13.5z';
 const EMPTY = svg(`<path d="${HEART}" fill="none" stroke="black" stroke-width="1.5" stroke-linejoin="round"/>`);
 const FILLED = svg(`<path d="${HEART}" fill="black"/>`);
 
-/** Icons of your own: a name of the kit's set, or an image address. */
+/** Custom icons: a name from the kit's set, or an image address. */
 export default function Icons() {
   return <Rating label="How much do you like it?" emptyIcon={EMPTY} filledIcon={FILLED} value={3} />;
 }
@@ -9389,7 +9389,7 @@ Set `group` to the group the fields join with `validationGroup`. After `group.va
 ```tsx
 import { Button, NumberBox, Stack, TextBox, ValidationGroup, ValidationSummary } from '@motifx-community/ui';
 
-/** The failed fields of a form listed above it after Save; a press on a line goes to the field. */
+/** The invalid fields of a form, listed above it after Save. Clicking a line moves to the field. */
 export default function Form() {
     const group = new ValidationGroup();
     return (
@@ -9415,7 +9415,7 @@ export default function Form() {
 import { reactive } from '@motifx/core';
 import { Button, Stack, TextBox, ValidationGroup, ValidationSummary } from '@motifx-community/ui';
 
-/** A header of its own, or none; the lines tell which field was pressed, and `failed` says how many there are. */
+/** A custom header or none. The lines report which field was clicked, and `failed` reports how many there are. */
 export default function Programmatic() {
     const group = new ValidationGroup();
     const s = reactive({ header: true, told: '', count: 0 });
@@ -9509,7 +9509,7 @@ import { FileUploader } from '@motifx-community/ui';
 import { reactive } from '@motifx/core';
 import { FileUploader, Stack } from '@motifx-community/ui';
 
-// Stands in for a server: takes two seconds per megabyte, reports as it goes, stops on the signal.
+// Simulates a server: takes two seconds per megabyte, reports progress and stops on the signal.
 const send = (file: File, report: (fraction: number) => void, signal: AbortSignal) =>
     new Promise<string>((resolve, reject) => {
         const steps = 20;
@@ -9529,7 +9529,7 @@ const send = (file: File, report: (fraction: number) => void, signal: AbortSigna
         });
     });
 
-/** Files chosen or dropped go up as they come, through your own upload; each row shows progress, cancel, retry, remove. */
+/** Selected or dropped files upload immediately through a custom function, and each row shows progress, cancel, retry and remove. */
 export default function Basic() {
     const s = reactive({ files: [] as readonly File[], told: '' });
     return (
@@ -9592,7 +9592,7 @@ const quick = (file: File, report: (fraction: number) => void) =>
         }, 120);
     });
 
-/** An Upload button sends what was chosen; or nothing goes until code says so. One file only, no dropping. */
+/** An Upload button sends the selected files, or nothing is sent until code requests it. One file only, with no dropping. */
 export default function Modes() {
     const s = reactive({ one: [] as readonly File[] });
     let manual!: FileUploader;
@@ -10339,7 +10339,7 @@ interface Plan {
   price: number;
 }
 
-/** Options from a list of your own objects: after adding or changing some in place, `refresh()` shows them. */
+/** Options from a list of custom objects. After adding or changing some in place, `refresh()` shows them. */
 export default function FromData() {
   const s = reactive({ plan: 2 as number | null });
   const plans = reactive<Plan[]>([
@@ -10473,7 +10473,7 @@ export default function Sizes() {
 import { reactive } from '@motifx/core';
 import { Button, RadioGroup, Stack, ValidationGroup } from '@motifx-community/ui';
 
-/** A choice that must be made, checked with its group, and read-only and disabled groups following state. */
+/** A required choice validated with its group, and read-only and disabled groups that follow state. */
 export default function States() {
   const s = reactive({ payment: null as string | null, editable: true, result: '' });
   const group = new ValidationGroup();
@@ -11090,7 +11090,7 @@ interface Product {
 const categories = ['Beverages', 'Condiments', 'Dairy', 'Grains', 'Produce', 'Seafood'];
 const rows: Product[] = Array.from({ length: 10000 }, (_, i) => ({ id: i + 1, name: `${categories[i % 6]} item ${i + 1}`, category: categories[i % 6] }));
 
-/** 10,000 products behind a server that answers after 300 ms: the search goes to the data source, the value's text is found by key. */
+/** 10,000 products on a server that responds after 300 ms. The search goes to the data source, and the value's text is looked up by key. */
 export default function Products() {
   const line = reactive({ product: 2500 as number | null });
   const products = new data.DataSource<Product, number>({
@@ -11335,7 +11335,7 @@ export default function ByKey() {
     { field: 'city', caption: 'City', width: '7rem' },
   ];
   const waiting = reactive({ customer: 1500 as number | null });
-  // A record as it came from the server: the customer's key and, beside it, the name.
+  // A record as returned by the server: the customer's key and, beside it, the name.
   const order = reactive({ customer: 1500 as number | null, customerName: companyOf(1500) });
 
   const another = () => {
@@ -11629,12 +11629,12 @@ export default function Delay() {
 import { reactive } from '@motifx/core';
 import { Button, Panel, Spinner, Stack, TextBox } from '@motifx-community/ui';
 
-/** A spinner over a panel while its orders load; focus waits on it and comes back. */
+/** A spinner over a panel while its orders load. Focus waits on it and then returns. */
 export default function Cover() {
   const s = reactive({ result: '' });
   let panel: Panel | null = null;
 
-  // Stands in for a call to the server.
+  // Simulates a server call.
   const loadOrders = () => new Promise((resolve) => setTimeout(resolve, 1500));
 
   const load = async () => {
@@ -12009,7 +12009,7 @@ const SEATS = ['1', '2', '3', '4', '5', '6'].flatMap((row) =>
   })),
 );
 
-/** A tooltip on each of 24 seats, made only when first needed, and one that is removed programmatically. */
+/** A tooltip on each of 24 seats, created only when first needed, and one that is removed programmatically. */
 export default function ManyElements() {
   let removeGuideTip = () => {};
   return (
@@ -12137,7 +12137,7 @@ JSX children are the content, and `target` specifies the element or component it
 import { reactive } from '@motifx/core';
 import { Button, Popover, Stack, TextBox } from '@motifx-community/ui';
 
-/** A popover with a title, a close button and a small form; one made programmatically for a plain element. */
+/** A popover with a title, a close button and a small form, and one created programmatically for a plain element. */
 export default function Basic() {
     const s = reactive({ open: false, name: 'Ada', saved: '' });
     let button!: Button;
@@ -12240,7 +12240,7 @@ export default function Placements() {
 import { reactive } from '@motifx/core';
 import { Button, Popover, Stack, TextArea } from '@motifx-community/ui';
 
-/** A press outside does not close it, and onClosing keeps it open while there is unsaved text; Escape and the button close it. */
+/** A click outside does not close it, and onClosing keeps it open while there is unsaved text. Escape and the button close it. */
 export default function Events() {
     const s = reactive({ note: '', told: '' });
     let button!: Button;
@@ -12367,7 +12367,7 @@ export default function Container() {
     const s = reactive({ loading: false, result: '' });
     let panel!: Panel;
 
-    // Stands in for a call to the server.
+    // Simulates a server call.
     const load = () => {
         s.loading = true;
         s.result = '';
@@ -12436,7 +12436,7 @@ export default function Page() {
 import { reactive } from '@motifx/core';
 import { Button, LoadPanel, Panel, Stack } from '@motifx-community/ui';
 
-/** Without the shade, without the pane, without the indicator; a press on the shade may hide it. */
+/** Without the shade, the panel or the indicator. A click on the shade can hide it. */
 export default function Options() {
     const s = reactive({ clear: false, bare: false, words: false });
     let clear!: Panel;
@@ -12550,7 +12550,7 @@ import { toast, Toast, Toaster, type ToastTone, type ToastPosition } from '@moti
 import { reactive } from '@motifx/core';
 import { Button, toast, type Toast } from '@motifx-community/ui';
 
-/** Toasts shown programmatically: the Toast that comes back can be closed and awaited. */
+/** Toasts shown programmatically. The returned Toast can be closed and awaited. */
 export default function Programmatic() {
   const s = reactive({ reason: '' });
 
@@ -12867,7 +12867,7 @@ Every prop accepts a value or a function. When you create the component with `ne
 import { reactive } from '@motifx/core';
 import { Badge, Button } from '@motifx-community/ui';
 
-/** A badge from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+/** A badge in JSX tracks its functions, and one created with `new` accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ unread: 4 });
   const coded = new Badge({ text: 'Beta', tone: 'info', variant: 'subtle' });
@@ -12893,7 +12893,7 @@ import { Badge, Stack, type BadgeTone, type BadgeVariant } from '@motifx-communi
 const TONES: BadgeTone[] = ['standard', 'accent', 'info', 'success', 'caution', 'danger'];
 const VARIANTS: BadgeVariant[] = ['solid', 'subtle', 'outline'];
 
-/** Every tone in each look. */
+/** Every tone in each appearance. */
 export default function Tones() {
   return (
     <Stack>
@@ -12915,7 +12915,7 @@ export default function Tones() {
 import { reactive } from '@motifx/core';
 import { Badge, NumberBox, Stack, Switch } from '@motifx-community/ui';
 
-/** A count up to `max` and `max+` beyond it; at 0 it hides unless `showZero`; a dot says only that there is something. */
+/** A count up to `max`, and `max+` beyond it. At 0 it is hidden unless `showZero` is set, and a dot indicates only that something is present. */
 export default function Counts() {
   const s = reactive({ count: 120, max: 99, showZero: false });
 
@@ -13067,7 +13067,7 @@ import { Avatar, Button, Stack, type AvatarStatus } from '@motifx-community/ui';
 const PEOPLE = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper'];
 const STATUSES: AvatarStatus[] = ['online', 'away', 'busy', 'offline'];
 
-/** An avatar from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+/** An avatar in JSX tracks its functions, and one created with `new` accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ person: 0, status: 0 });
   const coded = new Avatar({ name: 'Edsger Dijkstra', tone: 'success', shape: 'square' });
@@ -13090,7 +13090,7 @@ The picture appears once it has loaded. Until then, or if it fails to load, the 
 ```tsx
 import { Avatar, Stack } from '@motifx-community/ui';
 
-// A picture of our own, so the example needs no network: a sunset as an SVG.
+// An inline SVG sunset, so that the example needs no network access.
 const PICTURE = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="sky" x2="0" y2="1">' +
     '<stop offset="0" stop-color="#3b5bdb"/><stop offset="1" stop-color="#f08c00"/></linearGradient></defs>' +
@@ -13306,7 +13306,7 @@ Every prop accepts a value or a function. When you create the component with `ne
 import { reactive } from '@motifx/core';
 import { Chip, Stack } from '@motifx-community/ui';
 
-/** A chip from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+/** A chip in JSX tracks its functions, and one created with `new` accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ vegan: false });
   const coded = new Chip({ text: 'Spicy', selectable: true });
@@ -13328,7 +13328,7 @@ import { Chip, Stack, type ChipVariant } from '@motifx-community/ui';
 
 const VARIANTS: ChipVariant[] = ['filled', 'outline'];
 
-// A small star of our own, so the example needs no icon set.
+// An inline star, so that the example needs no icon set.
 const star = () => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 16 16');
@@ -13336,7 +13336,7 @@ const star = () => {
   return svg;
 };
 
-/** Each look: at rest, selected, with an icon, with an avatar, removable, disabled. */
+/** Each appearance: at rest, selected, with an icon, with an avatar, removable and disabled. */
 export default function Looks() {
   return (
     <Stack>
@@ -13363,7 +13363,7 @@ import { Chip, Stack, type ChipTone, type ChipVariant } from '@motifx-community/
 const TONES: ChipTone[] = ['standard', 'accent', 'info', 'success', 'caution', 'danger'];
 const VARIANTS: ChipVariant[] = ['filled', 'outline'];
 
-/** Every tone in each look. */
+/** Every tone in each appearance. */
 export default function Tones() {
   return (
     <Stack>
@@ -13445,7 +13445,7 @@ import { Button, Chip, ChipGroup, Stack } from '@motifx-community/ui';
 
 const PEOPLE = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Edsger Dijkstra'];
 
-/** Removing is yours to do: `onRemove` takes the person out of the list, and the group follows the list. */
+/** Your code performs the removal: `onRemove` removes the person from the list, and the group updates to match. */
 export default function Removing() {
   const s = reactive({ people: PEOPLE.map((name) => ({ name })) });
 
@@ -13588,7 +13588,7 @@ Every prop accepts a value or a function. When you create the component with `ne
 import { reactive } from '@motifx/core';
 import { Button, Card, Stack } from '@motifx-community/ui';
 
-/** A card from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+/** A card in JSX tracks its functions, and one created with `new` accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ following: false });
   const coded = new Card({ title: 'Made in code', subtitle: 'new Card({ … })', variant: 'outline' });
@@ -13617,7 +13617,7 @@ import { Button, Card, Stack, type CardVariant } from '@motifx-community/ui';
 
 const VARIANTS: CardVariant[] = ['elevated', 'filled', 'outline'];
 
-/** Each look with a header, content and actions. */
+/** Each appearance with a header, content and actions. */
 export default function Variants() {
   return (
     <Stack orientation="horizontal" wrap align="start" gap="lg">
@@ -13705,8 +13705,8 @@ import { Button, Card, Stack } from '@motifx-community/ui';
 const PLACES = ['Istanbul', 'Lisbon', 'Kyoto'];
 
 /**
- * A link card: its title is the link and a press anywhere on it follows it (`rel="router"` hands it to the router);
- * its own button stays a button. A selectable card turns on and off with a press or its check box.
+ * A link card: its title is the link, and a click anywhere on the card follows it (`rel="router"` hands it to the router).
+ * Its own button stays a button. A selectable card toggles with a click or with its check box.
  */
 export default function Links() {
   const s = reactive({ picked: [] as string[] });
@@ -13938,7 +13938,7 @@ const PLANS = [
     { name: 'Company', price: '€79', line: 'No limits, a person to call' }
 ];
 
-/** Any content in a pane: a plan each, with its own button; a press on the pane itself is told too. */
+/** Any content in a slide: a plan each, with its own button. A click on the slide itself is also reported. */
 export default function Content() {
     const s = reactive({ told: '' });
     const plan = (p: (typeof PLANS)[number]) => (
@@ -13967,7 +13967,7 @@ import { reactive } from '@motifx/core';
 import { Button, Gallery, Stack } from '@motifx-community/ui';
 import { scene } from './scenes';
 
-/** A gallery made programmatically without its own buttons or dots: yours move it, and `onSlideChanged` tells where it is. */
+/** A gallery created programmatically without its own buttons or dots: custom buttons navigate, and `onSlideChanged` reports the position. */
 export default function Programmatic() {
     const s = reactive({ at: 0, told: '' });
     const coded = new Gallery({
@@ -14127,7 +14127,7 @@ export default function Basic() {
 import { reactive } from '@motifx/core';
 import { Stack, TileView } from '@motifx-community/ui';
 
-/** Tiles along the rows, any number of them chosen: a press, Ctrl and a press, Space; the keys walk the grid. */
+/** Tiles along the rows with any number selected: click, Ctrl + click or Space, and the arrow keys move through the grid. */
 export default function Selection() {
     const s = reactive({ chosen: ['tea'] as string | number | null | readonly (string | number)[] });
     return (
@@ -14199,7 +14199,7 @@ const ROOMS = [
     { name: 'Bedroom', temp: 18 }
 ];
 
-/** Any content on a tile: a room each, with its own button; a press on the tile itself is told too. */
+/** Any content on a tile: a room each, with its own button. A click on the tile itself is also reported. */
 export default function Content() {
     const s = reactive({ told: '' });
     const room = (r: (typeof ROOMS)[number]) => (
@@ -14304,7 +14304,7 @@ import { Timeline } from '@motifx-community/ui';
 import { reactive } from '@motifx/core';
 import { Button, Stack, Timeline } from '@motifx-community/ui';
 
-/** A project down the page: a dot per event on the line, coloured by its tone; the cards take turns or fold when told. */
+/** A project shown vertically, with a marker per event colored by its tone. Cards can alternate sides or collapse. */
 export default function Vertical() {
     const s = reactive({ alternate: false, collapsible: false, told: '' });
     return (
@@ -14343,7 +14343,7 @@ import { Stack, Timeline } from '@motifx-community/ui';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-/** Releases along a line of dates: a press on a date, or the arrow keys, shows that release under the line; the buttons scroll the track. */
+/** Releases along a line of dates. Clicking a date, or using the arrow keys, shows that release below the line, and the buttons scroll the track. */
 export default function Horizontal() {
     const s = reactive({ shown: 'r3' as string | number | null });
     const releases = MONTHS.map((month, i) => ({
@@ -14371,7 +14371,7 @@ An item's `content` adds custom content to its card, in addition to the text. `i
 import { reactive } from '@motifx/core';
 import { Button, Stack, Timeline } from '@motifx-community/ui';
 
-/** Any content in a card: a button to act on the event, an icon of your own in the dot. */
+/** Any content in a card: a button that acts on the event, and a custom icon in the marker. */
 export default function Content() {
     const s = reactive({ told: '' });
     const act = (what: string) => (
@@ -14882,7 +14882,7 @@ A panel is created the first time it is shown and then kept, so user input is pr
 import { reactive } from '@motifx/core';
 import { Stack, Tab, Tabs, TextBox } from '@motifx-community/ui';
 
-/** Panels built when first shown: one kept, one made again each time it shows. */
+/** Panels created when first shown: one is kept, and one is recreated each time it is shown. */
 export default function LazyPanels() {
   const s = reactive({ builds: 0 });
 
@@ -15077,7 +15077,7 @@ A step with `href` is a link, and `rel='router'` lets the MotifJS router handle 
 import { reactive } from '@motifx/core';
 import { Breadcrumb, Stack } from '@motifx-community/ui';
 
-/** Links the router takes (`rel="router"`), a step that is a button, the current page last; one made programmatically. */
+/** Links handled by the router (`rel="router"`), a step that is a button, the current page last, and one created programmatically. */
 export default function Programmatic() {
   const s = reactive({ last: '' });
   const coded = new Breadcrumb({ label: 'Settings path', items: ['Settings', 'Account', 'Security'] });
@@ -15206,7 +15206,7 @@ import { Pagination } from '@motifx-community/ui';
 import { reactive } from '@motifx/core';
 import { Pagination, Stack } from '@motifx-community/ui';
 
-/** The page bound with `x-model`, the sizes to choose from; one made with `new` programmatically. */
+/** The page bound with `x-model`, the available sizes, and one created with `new` programmatically. */
 export default function Programmatic() {
   const s = reactive({ page: 3, size: 25 });
   const coded = new Pagination({ label: 'Pages made in code', total: 40, pageSize: 10, mode: 'full', showInfo: false });
@@ -15233,7 +15233,7 @@ export default function Programmatic() {
 ```tsx
 import { Pagination, Stack } from '@motifx-community/ui';
 
-/** The compact look; adaptive in a narrow box (drag its corner); more neighbours; and only the pages. */
+/** The compact layout, adaptive in a narrow box (drag its corner), more neighbors, and page buttons only. */
 export default function Looks() {
   return (
     <Stack gap="lg">
@@ -15325,7 +15325,7 @@ import { Stepper } from '@motifx-community/ui';
 import { reactive } from '@motifx/core';
 import { Button, Stack, Stepper } from '@motifx-community/ui';
 
-/** A stepper bound with x-model, and one made programmatically and moved with its own methods. */
+/** A stepper bound with x-model, and one created programmatically and moved with its methods. */
 export default function Programmatic() {
     const s = reactive({ step: 0 as string | number | null, at: 0, told: '' });
     const coded = new Stepper({
@@ -15378,7 +15378,7 @@ const pencil = () => {
     return svg;
 };
 
-/** Completed and failed steps told by the items, an optional step, a disabled one, an icon in place of the number. */
+/** Completed and failed steps set by the items, an optional step, a disabled step, and an icon in place of the number. */
 export default function Statuses() {
     const s = reactive({ paid: false });
     const items = [
@@ -15567,7 +15567,7 @@ Each `WizardStep` is a step and its page. Next validates the kit fields on the p
 import { reactive } from '@motifx/core';
 import { CheckBox, Stack, TextBox, Wizard, WizardStep } from '@motifx-community/ui';
 
-/** Three pages with the kit's fields: Next validates the page first; Finish tells the app. */
+/** Three pages with kit fields: Next validates the page first, and Finish notifies the application. */
 export default function Basic() {
     const s = reactive({ name: '', email: '', city: '', agreed: false, result: '' });
     return (
@@ -15601,14 +15601,14 @@ export default function Basic() {
 import { Component, reactive } from '@motifx/core';
 import { Button, Stack, Wizard, WizardStep } from '@motifx-community/ui';
 
-// A page made programmatically: any MotifJS component.
+// A page created programmatically: any MotifJS component.
 class Note extends Component<HTMLDivElement, { text: string }> {
     override view() {
         return <p>{this.props.text}</p>;
     }
 }
 
-/** A wizard made programmatically: its steps as props with content factories, moved with its methods, a step added later. */
+/** A wizard created programmatically: its steps as props with content factories, moved with its methods, with a step added later. */
 export default function Programmatic() {
     const s = reactive({ told: '' });
     const wizard = new Wizard({
@@ -15670,7 +15670,7 @@ export default function Vertical() {
 import { reactive } from '@motifx/core';
 import { Button, Stack, TextBox, Wizard, WizardStep } from '@motifx-community/ui';
 
-/** No bar: buttons of your own drive it; finishing waits for a promise (a server) and may be refused. */
+/** No bar: custom buttons control it, and finishing waits for a promise (a server) and can be refused. */
 export default function Custom() {
     const s = reactive({ code: '', busy: false, note: '' });
     let wizard!: Wizard;
@@ -15906,7 +15906,7 @@ A section is created when first opened and then kept (`lazy`, on by default). An
 import { reactive } from '@motifx/core';
 import { Accordion, AccordionItem, TextBox } from '@motifx-community/ui';
 
-/** Sections built when first opened: one kept, one made again each time it opens. */
+/** Sections created when first opened: one is kept, and one is recreated each time it opens. */
 export default function LazySections() {
   const s = reactive({ builds: 0 });
   return (
@@ -16110,7 +16110,7 @@ The `View` children are the pages. `value` is the visible view, identified by it
 import { reactive } from '@motifx/core';
 import { CheckBox, MultiView, Stack, Stepper, TextBox, View } from '@motifx-community/ui';
 
-/** A stepper and a multi-view bound to the same value: a press on a step or a swipe on a page moves both. */
+/** A stepper and a multi-view bound to the same value: clicking a step or swiping a page updates both. */
 export default function Pages() {
     const s = reactive({ page: 0 as string | number | null });
     return (
@@ -16150,7 +16150,7 @@ export default function Pages() {
 import { reactive } from '@motifx/core';
 import { Button, MultiView, Stack, View } from '@motifx-community/ui';
 
-/** Each page is made when first in sight; with `keepAlive` off, what `content` made is dropped out of sight and made again. */
+/** Each page is created when first visible. With `keepAlive` off, the output of `content` is disposed while hidden and recreated. */
 export default function Lazy() {
     const s = reactive({ made: 0, keep: true });
     let views!: MultiView;
@@ -16184,7 +16184,7 @@ Create the component with `new`, add views with `add()` and `insert()`, and remo
 import { reactive } from '@motifx/core';
 import { Button, MultiView, Stack, View } from '@motifx-community/ui';
 
-/** A multi-view made programmatically around the ends: views added, inserted and removed, the sight moved with its methods. */
+/** A looping multi-view created programmatically: views added, inserted and removed, and navigation through its methods. */
 export default function Programmatic() {
     const s = reactive({ told: '', count: 0 });
     let number = 0;
@@ -16316,7 +16316,7 @@ In JSX, `x-model` shows the form while the value is true and writes `false` when
 import { reactive } from '@motifx/core';
 import { Button, MxForm, Stack, TextBox } from '@motifx-community/ui';
 
-/** A form written as a class: its content comes from `view()`, its buttons from the footer. */
+/** A form written as a class: its content comes from `view()`, and its buttons from the footer. */
 export class RenameForm extends MxForm {
   private readonly data = reactive({ name: 'Report.docx' });
 
@@ -16475,7 +16475,7 @@ Enter in a single-line field clicks `acceptButton`, and Escape clicks `cancelBut
 import { reactive } from '@motifx/core';
 import { Button, MxForm, Stack, TextBox } from '@motifx-community/ui';
 
-/** A form written as a class: its content comes from `view()`, its buttons from the footer. */
+/** A form written as a class: its content comes from `view()`, and its buttons from the footer. */
 export class RenameForm extends MxForm {
   private readonly data = reactive({ name: 'Report.docx' });
 
@@ -16554,7 +16554,7 @@ export default function Events() {
 import { reactive } from '@motifx/core';
 import { Button, confirm, messageBox } from '@motifx-community/ui';
 
-/** A message, a question with three answers, a confirmation, and buttons of your own. */
+/** A message, a question with three answers, a confirmation, and custom buttons. */
 export default function MessageBoxes() {
   const answer = reactive({ text: '' });
 
@@ -16798,7 +16798,7 @@ export default function JsxAndCode() {
 import { reactive } from '@motifx/core';
 import { Button, MxForm, Stack, TextBox } from '@motifx-community/ui';
 
-/** A form written as a class: its content comes from `view()`, its buttons from the footer. */
+/** A form written as a class: its content comes from `view()`, and its buttons from the footer. */
 export class RenameForm extends MxForm {
   private readonly data = reactive({ name: 'Report.docx' });
 
@@ -16876,7 +16876,7 @@ In JSX, `x-model` opens and closes it based on state. Programmatically, `show(ho
 import { reactive } from '@motifx/core';
 import { BottomSheet, Button, Stack, TextBox } from '@motifx-community/ui';
 
-/** A sheet written in JSX and bound to state, and one made in code and shown, both over the whole page. */
+/** A sheet declared in JSX and bound to state, and one created programmatically, both over the whole page. */
 export default function JsxAndCode() {
   const s = reactive({ open: false, name: 'Ada', said: '' });
 
@@ -16923,7 +16923,7 @@ import { BottomSheet, Button, RadioGroup, Stack, Switch, type BottomSheetDetent 
 
 const ROWS = Array.from({ length: 30 }, (_, i) => ({ id: i + 1, text: `Place ${i + 1}` }));
 
-/** A sheet over a frame, at a peek, half or full height: drag the handle or the title, flick, use the arrow keys on the handle. Every behaviour is a switch. */
+/** A sheet over a frame, at peek, half or full height. Drag the handle or title, flick, or use the arrow keys on the handle. Every behavior is a setting. */
 export default function Detents() {
   const s = reactive({
     open: true,
@@ -17085,7 +17085,7 @@ The handle and height names, the default name and the close button come from `ui
 import { reactive } from '@motifx/core';
 import { BottomSheet, Button, uiLocale } from '@motifx-community/ui';
 
-/** The handle's name and heights and the close button's name come from uiLocale. */
+/** The handle name, height names and close button name come from uiLocale. */
 export default function Localization() {
   const s = reactive({ open: false, lang: 'en' });
 
@@ -17504,7 +17504,7 @@ import { ContextMenu, RadioGroup, Stack, type ContextMenuPresentation, type Menu
 
 const ROWS = ['Invoice 1042', 'Invoice 1043', 'Invoice 1044'];
 
-/** One ContextMenu, shown as a menu, as an action sheet, or (auto) as a sheet when a finger opened it: long press a row on a phone. */
+/** One ContextMenu, shown as a menu, as an action sheet, or (auto) as a sheet when opened by touch: long press a row on a phone. */
 export default function FromContextMenu() {
   const s = reactive({ presentation: 'auto' as ContextMenuPresentation, said: '' });
   let list!: Component<HTMLUListElement>;
@@ -18255,7 +18255,7 @@ A `collapsible` pane gets a button on the adjacent handle. Enter on the handle a
 import { reactive } from '@motifx/core';
 import { SplitPane, Splitter, Stack } from '@motifx-community/ui';
 
-/** The side panes can be hidden: a button on the handle, Enter on it, or a double press; the middle one cannot. */
+/** The side panes can be collapsed with a button on the handle, Enter on it, or a double-click. The middle pane cannot. */
 export default function Collapsible() {
     const s = reactive({ told: '' });
     return (
@@ -18314,7 +18314,7 @@ After every move, the pane sizes in pixels are written to `x-model`, and `onResi
 import { reactive } from '@motifx/core';
 import { Button, SplitPane, Splitter, Stack } from '@motifx-community/ui';
 
-/** The sizes go out to x-model as pixels after every move, and come back: a layout kept and restored. */
+/** The sizes are written to x-model as pixels after every move and can be set back: a layout saved and restored. */
 export default function Sizes() {
     const s = reactive({ sizes: null as readonly (number | string | null)[] | null, kept: null as readonly number[] | null, moved: 0 });
     return (
@@ -18482,7 +18482,7 @@ export default function Area() {
 import { reactive } from '@motifx/core';
 import { Button, Panel, Resizable, Stack } from '@motifx-community/ui';
 
-/** The size goes out to x-model after every resize and comes back: set, kept and restored programmatically. */
+/** The size is written to x-model after every resize and can be set back: set, saved and restored programmatically. */
 export default function Programmatic() {
     const s = reactive({ size: { width: 240, height: 120 } as { width: number; height: number } | null, kept: null as { width: number; height: number } | null });
     return (
@@ -18665,7 +18665,7 @@ export default function Targets() {
 import { reactive } from '@motifx/core';
 import { Button, Draggable, Panel, Stack } from '@motifx-community/ui';
 
-/** The place goes out to x-model after every drag or key and comes back: moved, kept and restored programmatically. */
+/** The position is written to x-model after every drag or key press and can be set back: moved, saved and restored programmatically. */
 export default function Programmatic() {
     const s = reactive({ at: { x: 0, y: 0 } as { x: number; y: number } | null, kept: null as { x: number; y: number } | null });
     return (
@@ -18782,7 +18782,7 @@ import { Button, ScrollView, Stack, type ScrollViewBars } from '@motifx-communit
 const LINES = Array.from({ length: 40 }, (_, i) => `Line ${i + 1} of a long text that needs a box of its own to scroll in.`);
 const MODES: ScrollViewBars[] = ['onScroll', 'onHover', 'always', 'never'];
 
-/** A box that scrolls, its bars shown as told; moved programmatically to a line and back to the top. */
+/** A scrolling box with configurable scrollbars, moved programmatically to a line and back to the top. */
 export default function Bars() {
     const s = reactive({ bars: 'onScroll' as ScrollViewBars, top: 0 });
     let view!: ScrollView;
@@ -18814,7 +18814,7 @@ With `pullToRefresh`, pulling the content down from the top raises `onPullDown`.
 import { reactive } from '@motifx/core';
 import { Panel, ScrollView, Stack } from '@motifx-community/ui';
 
-/** Pulled down from the top, the list asks for what is new and shows the panel until the promise settles. */
+/** Pulled down from the top, the list requests new items and shows the panel until the promise settles. */
 export default function Pull() {
     const s = reactive({ notes: ['Welcome aboard', 'Your plan was renewed', 'A new comment on "Roadmap"'], count: 0 });
     const reload = () =>
@@ -18855,7 +18855,7 @@ const PAGE = 15;
 const fetchRows = (from: number) =>
     new Promise<string[]>(resolve => setTimeout(() => resolve(Array.from({ length: Math.min(PAGE, TOTAL - from) }, (_, i) => `Order #${1000 + from + i}`)), 800));
 
-/** Near the end the view asks for more; the indicator stays until the rows are in, and `release(true)` ends it for good when there is no more. */
+/** Near the end, the view requests more data. The indicator stays until the rows arrive, and `release(true)` ends it when there is no more. */
 export default function More() {
     const s = reactive({ rows: [] as string[] });
     const more = () =>
@@ -18968,7 +18968,7 @@ JSX children are the items. Drag one, or focus it and press Ctrl + Down. `onReor
 import { reactive } from '@motifx/core';
 import { Panel, Sortable, Stack } from '@motifx-community/ui';
 
-/** Rows put in order by dragging, or with Ctrl + an arrow on the focused row; the app reorders its data when told. */
+/** Rows reordered by dragging, or with Ctrl + arrow key on the focused row. The application reorders its data in the event. */
 export default function Basic() {
     const s = reactive({ steps: ['Collect the order', 'Pack it', 'Print the label', 'Hand it over'], told: '' });
     return (
@@ -19022,7 +19022,7 @@ const row = (task: Task) => {
     return panel;
 };
 
-/** Two lists of one group take each other's items; each list draws its own data and the app moves the task between arrays when told. */
+/** Two lists in one group exchange items. Each list draws its own data, and the application moves the task between arrays in the events. */
 export default function Groups() {
     const s = reactive({
         todo: [{ id: 1, title: 'Write the brief' }, { id: 2, title: 'Book the room' }, { id: 3, title: 'Send the invites' }] as Task[],
@@ -19033,7 +19033,7 @@ export default function Groups() {
         next.splice(e.toIndex, 0, ...next.splice(e.fromIndex, 1));
         s[key] = next;
     };
-    // The item leaves one array when removed and joins the other when added: the lists draw themselves again.
+    // The item leaves one array when removed and joins the other when added, and the lists redraw.
     const remove = (key: 'todo' | 'done') => (e: { fromIndex: number }) => (s[key] = s[key].filter((_, i) => i !== e.fromIndex));
     const add = (key: 'todo' | 'done') => (e: { item: Task; toIndex: number }) => {
         const next = s[key].slice();
@@ -19590,7 +19590,7 @@ import { project } from './project';
 
 const BOX = 'inline-size: 100%; max-inline-size: 26rem; background: var(--mx-color-bg-card)';
 
-/** A tree bound with x-model, and a tree made with `new` whose items change in place and are read again on `refresh()`. */
+/** A tree bound with x-model, and a tree created with `new` whose items change in place and are re-read on `refresh()`. */
 export default function Programmatic() {
   const s = reactive({ file: 'tree' as unknown, clicked: '' });
   const menu = reactive<Entry[]>([
@@ -19684,7 +19684,7 @@ import { FILE, FOLDER, icon } from './icon';
 
 const BOX = 'inline-size: 100%; max-inline-size: 26rem; background: var(--mx-color-bg-card)';
 
-/** A made-up disk: each folder's entries. */
+/** A sample disk: the entries of each folder. */
 const DISK: Record<string, string[]> = {
   '/': ['Documents/', 'Pictures/', 'Shared/', 'notes.txt'],
   '/Documents/': ['Invoices/', 'Letters/', 'plan.docx'],
@@ -19976,7 +19976,7 @@ const DEPARTMENTS: Entry[] = Array.from({ length: 50 }, (_, d) => ({
   children: Array.from({ length: 200 }, (_, p) => ({ id: `d${d}p${p}`, text: `Person ${d + 1}.${p + 1}` })),
 }));
 
-/** 50 departments of 200 people, made with `new`: only the rows in view are drawn. */
+/** 50 departments of 200 people, created with `new`. Only the visible rows are rendered. */
 export default function LargeTree() {
   const people = new TreeView<Entry>({ items: DEPARTMENTS, label: 'People', showLines: true });
   people.element.style.blockSize = '20rem';
@@ -21267,7 +21267,7 @@ import { data } from '@motifx-community/data';
 import { Button, FilterBuilder, Stack } from '@motifx-community/ui';
 import { saleFields } from './sales';
 
-/** Made with `new` and driven programmatically; every change asks first, and a handler may cancel it. */
+/** Created with `new` and controlled programmatically. Every change raises an event first, and a handler can cancel it. */
 export default function Programmatic() {
   const log = reactive({ lines: [] as { id: number; text: string }[], next: 0 });
   const write = (text: string) => {
@@ -21376,7 +21376,7 @@ import { data } from '@motifx-community/data';
 import { Button, FilterBuilder, uiLocale } from '@motifx-community/ui';
 import { saleFields } from './sales';
 
-/** The builder's texts come from `uiLocale`; `texts` changes some for one builder only. */
+/** The builder's strings come from `uiLocale`, and `texts` overrides some for one builder. */
 export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
@@ -21430,7 +21430,7 @@ export interface Order {
 const customers = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Edsger Dijkstra', 'Barbara Liskov', 'Donald Knuth'];
 const cities = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya'];
 
-/** `count` made-up orders, the same every time. */
+/** `count` sample orders, the same every time. */
 export function makeOrders(count: number): Order[] {
   return Array.from({ length: count }, (_, i) => ({
     id: 1001 + i,
@@ -21514,7 +21514,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -21608,7 +21608,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -21702,7 +21702,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -21739,7 +21739,7 @@ export interface Order {
 const customers = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Edsger Dijkstra', 'Barbara Liskov', 'Donald Knuth'];
 const cities = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya'];
 
-/** `count` made-up orders, the same every time. */
+/** `count` sample orders, the same every time. */
 export function makeOrders(count: number): Order[] {
   return Array.from({ length: count }, (_, i) => ({
     id: 1001 + i,
@@ -22007,7 +22007,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -22042,7 +22042,7 @@ export interface Order {
 const customers = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Edsger Dijkstra', 'Barbara Liskov', 'Donald Knuth'];
 const cities = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya'];
 
-/** `count` made-up orders, the same every time. */
+/** `count` sample orders, the same every time. */
 export function makeOrders(count: number): Order[] {
   return Array.from({ length: count }, (_, i) => ({
     id: 1001 + i,
@@ -22060,7 +22060,7 @@ import { reactive } from '@motifx/core';
 import { RadioGroup, Stack, Switch, TabDocument, TabDocumentManager, type ContentLifetime, type TabCloseButton } from '@motifx-community/ui';
 import { notes } from './contents';
 
-/** Every behaviour is a prop, followed live: here bound to the switches above the manager. */
+/** Every behavior is a prop tracked at runtime, bound here to the switches above the manager. */
 export default function Options() {
   const s = reactive({
     closeButton: 'always' as TabCloseButton,
@@ -22217,7 +22217,7 @@ const people: Customer[] = [
   { name: 'Alan Turing', email: 'alan@example.com', city: 'London' },
 ];
 
-/** Edit a field: the tab shows a dot in place of its close button, and closing it asks first (`e.promise`). */
+/** Edit a field: the tab shows a dot in place of its close button, and closing it prompts first (`e.promise`). */
 export default function UnsavedChanges() {
   const docs = new TabDocumentManager({ label: 'Customers' });
   docs.element.style.cssText = 'block-size: 28rem; inline-size: 100%';
@@ -22251,7 +22251,7 @@ import { reactive } from '@motifx/core';
 import { Button, Stack, TabDocument, TabDocumentManager, type TabLayout, type TabLayoutDocument } from '@motifx-community/ui';
 import { notes, ordersGrid } from './contents';
 
-/** Makes a saved document again by its type; its `state` brings what it needs. */
+/** Recreates a saved document by its type, with its `state` providing what it needs. */
 function restore(saved: TabLayoutDocument): TabDocument {
   if (saved.type === 'orders') return new TabDocument({ ...saved, content: () => ordersGrid((saved.state as { count: number }).count) });
   return new TabDocument({ ...saved, content: () => notes(saved.title) });
@@ -22315,7 +22315,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -22364,7 +22364,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -22471,7 +22471,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -22565,7 +22565,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -22659,7 +22659,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -22812,7 +22812,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -23018,7 +23018,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -23047,7 +23047,7 @@ import { Button, RadioGroup, Stack, TabDocument, TabDocumentManager, type TabSho
 import { notes } from './contents';
 import { fileDocument } from './files';
 
-/** A count or a dot over the tab, a colour by what the document needs, and a description only where two titles are the same. */
+/** A count or a dot on the tab, a color for what the document needs, and a description only where two titles are the same. */
 export default function Look() {
   const s = reactive({ unread: 3, errors: 1, description: 'duplicates' as TabShowDescription });
   const docs = new TabDocumentManager({ label: 'Badges and tones', showDescription: () => s.description });
@@ -23149,7 +23149,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -23213,7 +23213,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -23262,7 +23262,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -23369,7 +23369,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -23481,7 +23481,7 @@ import { FILES, fileDocument, source } from './files';
 
 /**
  * Right-click a tab (or press Shift+F10 on it) for its menu, and the empty strip for the group's.
- * `onContextMenuOpening` adds an item for files; a double click on the empty strip makes a new file.
+ * `onContextMenuOpening` adds an item for files, and a double-click on the empty strip creates a new file.
  */
 export default function ContextMenus() {
   const s = reactive({ menus: true, copy: true, split: true, made: 0, said: '' });
@@ -23529,7 +23529,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -23797,7 +23797,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -23842,7 +23842,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -23902,7 +23902,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -23951,7 +23951,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -24000,7 +24000,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -24205,7 +24205,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -24309,7 +24309,7 @@ import { FILES, fileDocument } from './files';
 
 /**
  * Two managers with the same `dragGroup` take each other's tabs and groups. The content moves with
- * its tab, it is not made again: an edit in a moved tab is still there.
+ * its tab, it is not recreated, so an edit in a moved tab is preserved.
  */
 export default function BetweenManagers() {
   const s = reactive({ last: 'Drag a tab from one manager to the other.' });
@@ -24400,7 +24400,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -24458,7 +24458,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -24507,7 +24507,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -24565,7 +24565,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -24614,7 +24614,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -24915,7 +24915,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -25025,7 +25025,7 @@ export default function CompactBars() {
   docs.dock(toolDocument('outline', 'Outline', outline), 'left');
   docs.dock(toolDocument('problems', 'Problems', problems), 'left');
   docs.dock(toolDocument('output', 'Output', output), 'bottom');
-  // This area's own setting wins over the manager's (null follows it again).
+  // This area's own setting takes precedence over the manager's (null returns to the manager's).
   docs.dockArea('left')!.scrollButtons = () => (s.leftScroll ? true : null);
   const float = () => {
     const doc = docs.findDocument('README.md') ?? docs.open(fileDocument('README.md'))!;
@@ -25123,7 +25123,7 @@ import { notes } from './contents';
 import { fileDocument } from './files';
 import { output, problems, toolDocument } from './tools';
 
-/** Makes a saved document again by its type. */
+/** Recreates a saved document by its type. */
 function restore(saved: TabLayoutDocument): TabDocument {
   if (saved.type === 'file') return fileDocument(saved.id);
   if (saved.type === 'tool') return toolDocument(saved.id, saved.title, saved.id === 'output' ? output : problems);
@@ -25236,7 +25236,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -25339,7 +25339,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -25441,7 +25441,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -25535,7 +25535,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -25782,7 +25782,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -25834,7 +25834,7 @@ export default function WindowOptions() {
   docs.element.style.cssText = 'block-size: 28rem; inline-size: 100%';
   docs.open(new TabDocument({ id: 'draft', title: 'Draft', dirty: () => draft.email === '', content: () => customerForm(draft) }));
   docs.open(new TabDocument({ id: 'notes', title: 'Notes', content: () => notes('Notes') }));
-  // A document with unsaved changes asks before it closes, in the main window.
+  // A document with unsaved changes prompts before closing, in the main window.
   docs.onClosing((e) => {
     if (e.document.dirty) e.promise = confirm(`${e.document.title} has unsaved changes. Close it anyway?`, { title: 'Close', tone: 'caution' });
   });
@@ -25864,7 +25864,7 @@ import { reactive } from '@motifx/core';
 import { Button, RadioGroup, Stack, TabDocument, TabDocumentManager, type TabLayout, type TabLayoutDocument, type TabRestoreWindows } from '@motifx-community/ui';
 import { notes, ordersGrid } from './contents';
 
-/** Makes a saved document again by its type. */
+/** Recreates a saved document by its type. */
 function restore(saved: TabLayoutDocument): TabDocument {
   if (saved.type === 'orders') return new TabDocument({ ...saved, content: () => ordersGrid(40) });
   return new TabDocument({ ...saved, content: () => notes(saved.title) });
@@ -26022,7 +26022,7 @@ import { problems, toolDocument } from './tools';
  * A manager that follows its own width (`presentation: 'auto'`): drag the frame's corner, or pick a
  * width. Under 560 pixels it shows as on a phone; under 1024 as on a tablet when the screen is a touch
  * screen (with a mouse it stays a desktop). A text and a scroll position are kept across every change:
- * the content moves, it is never made again.
+ * the content moves and is never recreated.
  */
 export default function FollowsWidth() {
   const s = reactive({ shown: '', typed: '' });
@@ -26281,7 +26281,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -26503,7 +26503,7 @@ export default function Workspace() {
         {
           text: 'Show the activity',
           beginGroup: true,
-          // The close button of its area hides it (it cannot close): shown again, it goes back where it was.
+          // Its area's close button hides it because it cannot close. When shown again, it returns to its previous place.
           click: () => (activity.isHidden ? docs.show(activity, { focus: true }) : activity.dockArea?.autoHidden ? docs.showAutoHidden(activity) : docs.activate(activity, true)),
         },
       ],
@@ -26591,7 +26591,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -26761,7 +26761,7 @@ export default function Views() {
     quarter: false,
     holidays: true,
   });
-  // Every Friday is a holiday here, to show the look.
+  // Every Friday is a holiday here, to show the appearance.
   const friday = (date: Date) => date.getDay() === 5;
   return (
     <div class="sched-demo">
@@ -26826,7 +26826,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 import { Scheduler, type AppointmentTemplateContext } from '@motifx-community/ui';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** The content of each appointment drawn by a template; the scheduler still places, colours and names it. */
+/** The content of each appointment drawn by a template. The scheduler still positions it, colors it and provides its name. */
 export default function Templates() {
   const template = (c: AppointmentTemplateContext<Meeting>) =>
     c.allDay ? (
@@ -26853,7 +26853,7 @@ import { reactive } from '@motifx/core';
 import { Button, Scheduler, Stack } from '@motifx-community/ui';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** A scheduler made with `new`, added programmatically and driven by its methods. */
+/** A scheduler created with `new`, added programmatically and controlled through its methods. */
 export default function Programmatic() {
   const state = reactive({ said: '' });
   let host: Stack | null = null;
@@ -27018,7 +27018,7 @@ import { reactive } from '@motifx/core';
 import { Scheduler } from '@motifx-community/ui';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** A week of appointments; double-click an appointment or a time and the log says what you chose. */
+/** A week of appointments. Double-click an appointment or a time, and the log shows your selection. */
 export default function Basics() {
   const state = reactive({
     appointments: sampleAppointments(),
@@ -27164,13 +27164,13 @@ import { Scheduler } from '@motifx-community/ui';
 import { SlowAdapter } from '../../../shared/slow-adapter';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** Appointments from a data source that answers late, like a server: only the days shown are asked for. */
+/** Appointments from a data source that responds with a delay, like a server. Only the displayed days are requested. */
 export default function FromSource() {
   const asked = reactive({ text: '' });
   const adapter = new SlowAdapter<Meeting, number>({ data: sampleAppointments(), key: 'id' }, 600);
   const source = new data.DataSource<Meeting, number>({
     adapter,
-    // 'all': a view needs every appointment of its days; the scheduler asks for those days only.
+    // 'all': a view needs every appointment of its days, and the scheduler requests only those days.
     loadMode: 'all',
   });
   source.onChanged((e) => {
@@ -27714,7 +27714,7 @@ class PickyService extends SlowAdapter<Meeting, number> {
   }
 }
 
-/** Move an appointment: it waits where it was put while the server saves, and goes back when saving fails. */
+/** Move an appointment: it waits in place while the server saves, and reverts if saving fails. */
 export default function Saving() {
   const s = reactive({ said: 'Move an appointment: it waits for the server; every third change fails.' });
   const source = new data.DataSource<Meeting, number>({ adapter: new PickyService({ data: sampleAppointments(), key: 'id' }, 300), loadMode: 'all' });
@@ -27788,7 +27788,7 @@ export interface Booking {
   endDateTimeZone?: string;
 }
 
-/** Series around this week: a daily standup with one day left out and one moved, a review every other week, a report on the last Friday, an all-day Friday. */
+/** Series around this week: a daily standup with one excluded day and one moved, a review every other week, a report on the last Friday, and an all-day Friday. */
 export function recurringAppointments(): Booking[] {
   const today = new Date();
   const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7));
@@ -27800,7 +27800,7 @@ export function recurringAppointments(): Booking[] {
       startDate: day(-21, 9),
       endDate: day(-21, 9, 30),
       recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
-      // This Tuesday is left out; this Wednesday's is moved (appointment 2).
+      // This Tuesday is excluded, and this Wednesday's occurrence is moved (appointment 2).
       recurrenceException: [day(1, 9), day(2, 9)].map((d) => formatRuleDate({ time: d.getTime(), utc: true, dateOnly: false })).join(','),
     },
     { id: 2, text: 'Team standup', startDate: day(2, 11), endDate: day(2, 11, 30), recurrenceId: 1 },
@@ -27867,7 +27867,7 @@ The appointment form includes it (`editing.allowRecurrence`). On its own, it is 
 import { reactive } from '@motifx/core';
 import { RecurrenceEditor } from '@motifx-community/ui';
 
-/** The editor on its own: it reads and writes the rule text, and says it in words under it. */
+/** The standalone editor: it reads and writes the rule text, and describes it in words below. */
 export default function RuleEditor() {
   const s = reactive({ rule: 'FREQ=MONTHLY;BYDAY=2TU;COUNT=6' });
   return (
@@ -28024,7 +28024,7 @@ import { reactive } from '@motifx/core';
 import { Scheduler, Switch } from '@motifx-community/ui';
 import { recurringAppointments, type Booking } from './recurring-appointments';
 
-/** Series with a rule each; one day left out of the standup, one moved apart. Click one: its tooltip says how it repeats. */
+/** Series with a rule each, one day excluded from the standup and one edited individually. Click one, and its tooltip describes how it repeats. */
 export default function Recurring() {
   const s = reactive({ marks: true });
   return (
@@ -28058,7 +28058,7 @@ export interface Booking {
   endDateTimeZone?: string;
 }
 
-/** Series around this week: a daily standup with one day left out and one moved, a review every other week, a report on the last Friday, an all-day Friday. */
+/** Series around this week: a daily standup with one excluded day and one moved, a review every other week, a report on the last Friday, and an all-day Friday. */
 export function recurringAppointments(): Booking[] {
   const today = new Date();
   const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7));
@@ -28070,7 +28070,7 @@ export function recurringAppointments(): Booking[] {
       startDate: day(-21, 9),
       endDate: day(-21, 9, 30),
       recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
-      // This Tuesday is left out; this Wednesday's is moved (appointment 2).
+      // This Tuesday is excluded, and this Wednesday's occurrence is moved (appointment 2).
       recurrenceException: [day(1, 9), day(2, 9)].map((d) => formatRuleDate({ time: d.getTime(), utc: true, dateOnly: false })).join(','),
     },
     { id: 2, text: 'Team standup', startDate: day(2, 11), endDate: day(2, 11, 30), recurrenceId: 1 },
@@ -28719,7 +28719,7 @@ export default function Grouped() {
 import { Scheduler, type ResourceHeaderContext } from '@motifx-community/ui';
 import { bookings, people, rooms, type Booking, type Person } from './resource-data';
 
-/** A person's head drawn by a template: their initials in their colour, their name and their room. */
+/** A person's header drawn by a template: their initials in their color, their name and their room. */
 function PersonHead(context: ResourceHeaderContext) {
   const person = context.item as Person;
   const initials = context.text
@@ -28740,7 +28740,7 @@ function PersonHead(context: ResourceHeaderContext) {
   );
 }
 
-/** Grouped by person, each head made by `resourceHeaderTemplate`. */
+/** Grouped by person, with each header created by `resourceHeaderTemplate`. */
 export default function HeaderTemplate() {
   const resources = [{ field: 'ownerIds', label: 'People', items: people, allowMultiple: true, useColorAsDefault: true }];
   return (
@@ -29358,7 +29358,7 @@ type Rated = Booking & { priority?: number };
 
 const COLORS = ['#1565c0', '#2e7d32', '#ad1457', '#ef6c00', '#455a64'];
 
-/** A component of your own as an editor: a row of colours, bound to the form's data. */
+/** A custom component as an editor: a row of colors bound to the form's data. */
 function ColorChoice(form: AppointmentFormContext<Rated>, place: FormTemplateContext) {
   const data = form.data as Record<string, unknown>;
   return (
@@ -30724,7 +30724,7 @@ import { jobs, members, type Job } from './timeline-data';
 /**
  * An agenda row drawn by `agendaRowTemplate` (the person's name after the job), and a tooltip of
  * its own (`appointmentTooltipTemplate`) with the time and a button to open the form. The row
- * keeps its colour, keys and name.
+ * keeps its color, keys and accessible name.
  */
 export default function AgendaTemplates() {
   const resources = [{ field: 'ownerId', label: 'Person', items: members, useColorAsDefault: true }];
@@ -31721,7 +31721,7 @@ export interface Booking {
   endDateTimeZone?: string;
 }
 
-/** Series around this week: a daily standup with one day left out and one moved, a review every other week, a report on the last Friday, an all-day Friday. */
+/** Series around this week: a daily standup with one excluded day and one moved, a review every other week, a report on the last Friday, and an all-day Friday. */
 export function recurringAppointments(): Booking[] {
   const today = new Date();
   const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7));
@@ -31733,7 +31733,7 @@ export function recurringAppointments(): Booking[] {
       startDate: day(-21, 9),
       endDate: day(-21, 9, 30),
       recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
-      // This Tuesday is left out; this Wednesday's is moved (appointment 2).
+      // This Tuesday is excluded, and this Wednesday's occurrence is moved (appointment 2).
       recurrenceException: [day(1, 9), day(2, 9)].map((d) => formatRuleDate({ time: d.getTime(), utc: true, dateOnly: false })).join(','),
     },
     { id: 2, text: 'Team standup', startDate: day(2, 11), endDate: day(2, 11, 30), recurrenceId: 1 },
@@ -31784,7 +31784,7 @@ const date = (offset: number) => {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
 };
 
-/** A zone by its Windows name with its VTIMEZONE, a weekly series with one day left out, an all-day event, text folded and escaped. */
+/** A zone with its Windows name and VTIMEZONE, a weekly series with one excluded day, an all-day event, and folded, escaped text. */
 const FILE = [
   'BEGIN:VCALENDAR',
   'VERSION:2.0',
@@ -32083,7 +32083,7 @@ export interface Booking {
   endDateTimeZone?: string;
 }
 
-/** Series around this week: a daily standup with one day left out and one moved, a review every other week, a report on the last Friday, an all-day Friday. */
+/** Series around this week: a daily standup with one excluded day and one moved, a review every other week, a report on the last Friday, and an all-day Friday. */
 export function recurringAppointments(): Booking[] {
   const today = new Date();
   const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7));
@@ -32095,7 +32095,7 @@ export function recurringAppointments(): Booking[] {
       startDate: day(-21, 9),
       endDate: day(-21, 9, 30),
       recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
-      // This Tuesday is left out; this Wednesday's is moved (appointment 2).
+      // This Tuesday is excluded, and this Wednesday's occurrence is moved (appointment 2).
       recurrenceException: [day(1, 9), day(2, 9)].map((d) => formatRuleDate({ time: d.getTime(), utc: true, dateOnly: false })).join(','),
     },
     { id: 2, text: 'Team standup', startDate: day(2, 11), endDate: day(2, 11, 30), recurrenceId: 1 },
@@ -32300,7 +32300,7 @@ import { data } from '@motifx-community/data';
 Pass in-memory rows with `rows` and their key with `rowKey`, and the grid places them in a `DataSource` over an `ArrayAdapter`. Every prop accepts a value or a function. A grid created with `new` is a regular object that you can add to the page, sort and query.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -32364,7 +32364,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 The pager below the rows shows the page sizes (`pageSizeSelector`, with the sizes in `allowedPageSizes` and `all` for one page with every row), “Page 3 of 12 (250 items)” (`pagerInfo`, and `pagerInfoText` with `{0}`, `{1}`, `{2}`), the first, previous, next and last buttons (`pagerNavigation`), and the pages around the current one (`pagerNeighbors`). `pagerDisplayMode` sets its appearance: `full` shows page buttons and sizes as buttons, `compact` shows a page number box and a drop-down of sizes, and `adaptive` (the default) uses `full` while it fits within the grid's width. `pageSize(n)` also changes the rows per page programmatically. In either case, `onPageSizeChanging` can keep the old size, the grid returns to the first page, and with `layoutKey` the size is saved with the layout. PageUp and PageDown change the page (`pageKeys`).
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -32445,7 +32445,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -32495,7 +32495,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -32518,10 +32518,10 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** 100,000 orders from a server, loaded by blocks only where the list looks. */
+/** 100,000 orders from a server, loaded by blocks only in the visible area. */
 export default function Virtual() {
   const s = reactive({ loads: 0 });
-  // Stands in for a server: new data.ODataAdapter({ url: '/odata/Orders', key: 'OrderID' }) goes in its place.
+  // Simulates a server. In an application, use new data.ODataAdapter({ url: '/odata/Orders', key: 'OrderID' }) here.
   const server = new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 300);
   server.onLoading(() => s.loads++);
   const orders = new data.DataSource<Order, number>({ adapter: server, loadMode: 'blocks', pageSize: 100 });
@@ -32569,7 +32569,7 @@ import { DataGrid } from '@motifx-community/ui';
 import { columns, makeOrders } from './orders';
 import { pagedLoads, pagedOrders } from './paged-orders';
 
-/** A server that loads by page makes a paged grid; rows in memory page with `mode="paged"`. */
+/** A source that loads by page creates a paged grid, and in-memory rows use `mode="paged"`. */
 export default function Pages() {
   return (
     <>
@@ -32590,7 +32590,7 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { makeOrders } from './orders';
 
-/** How many times the server below was asked for rows. */
+/** The number of times rows were requested from the server below. */
 export const pagedLoads = reactive({ count: 0 });
 
 const server = new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 250);
@@ -32608,7 +32608,7 @@ import { Button, DataGrid, Stack } from '@motifx-community/ui';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** The page sizes, the info text and the full, compact and adaptive looks of the pager. */
+/** The page sizes, the information text, and the full, compact and adaptive pager layouts. */
 export default function Pager() {
   const s = reactive({ look: 'adaptive' as 'adaptive' | 'compact' | 'full', told: '' });
   let grid: DataGrid<Order> | null = null;
@@ -32703,7 +32703,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 `addRow()` or the toolbar's “New row” opens a row at the bottom (the grid scrolls to the very end, and a virtual list loads only the last block) or at the top, with the first editable cell in edit mode. Tab on the last cell of a new row saves it and opens the next one, Escape discards it, and an untouched row is removed automatically.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -32721,7 +32721,7 @@ export interface Order {
 `actions` defines the buttons for each row, as a list or as a function of the row and its state (`isNew`, `isEditing`, `isDirty`, `isSaving`, `hasError`, `isRemoved`, `isSelected`). When a value read by the function changes, the row's buttons update. Built-in actions are referenced by name. Buttons that do not fit in the column move to the “more” menu, and those listed first stay visible. The column can be at the start or the end, pinned to its edge or scrolling with the rows.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -32741,7 +32741,7 @@ Every row's actions also appear in its context menu (right-click or Shift+F10), 
 After “select all” on a server, the rows are not loaded. Only actions with `onclickSelection` appear in that case, and they receive the selection in the form of `grid.selection` (`all`, `keys`, `except`, `filter`) to send to the server, so that every row does not have to be loaded.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -32802,7 +32802,7 @@ import { columns, makeOrders, newOrder } from './orders';
 
 const MODES: data.SaveMode[] = ['wait', 'background', 'batch'];
 
-/** Edits saved as the save mode says, to a server that turns down a note with "error" in it. */
+/** Edits saved according to the save mode, to a server that rejects a note containing "error". */
 export default function SaveModes() {
   const s = reactive({ saveMode: 'wait' as data.SaveMode });
   const service = new OrderService({ data: makeOrders(30), key: 'id', createKey: (_values, rows) => rows.length + 1 }, 300);
@@ -32879,7 +32879,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -32929,7 +32929,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -33122,7 +33122,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export default function BarActions() {
   const s = reactive({ orders: makeOrders(40), location: 'toolbar' as GridActionLocation, menu: false, note: '' });
   let grid: DataGrid<Order> | null = null;
-  // The grid reads the rows as they are: after a change in place it draws them again and asks their actions again.
+  // The grid reads the rows as they are, so after a change in place it redraws them and re-reads their actions.
   const changed = (rows: readonly Order[]) => {
     grid?.repaintRows(rows.map((row) => row.id));
     grid?.refreshActions();
@@ -33227,7 +33227,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 In `popup` mode, the same form opens in the kit's `MxForm` as a modal window, for both existing and new rows (`addRow()`, “New row”). Focus stays in the window, Enter activates Save and Escape activates Cancel, and focus returns to the row when the window closes. `popup` sets the title and size, and `form` and the columns' `formItem` set the fields.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -33271,7 +33271,7 @@ export interface Order {
 A column's `validationRules` are validated with the kit's validation rules as a value is entered, and again before its row is saved. `required` and `validate` still run before them. Rules run in order, and `async` rules run last, together. The row waits for their results, with its cell shown as busy in the meantime. A value is not validated twice: only `reevaluate` (on for `async`) and `compare` rules run on every validation of the row. `onRowValidating` occurs after the cells, for the row as a whole. Messages appear in the cells, the form and the window. In this example, the server rejects a customer whose name contains “test”.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -33410,7 +33410,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -33460,7 +33460,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -33506,7 +33506,7 @@ const popupColumns: GridColumn<Order>[] = columns.map((c) =>
   c.field === 'note' ? { ...c, formItem: { colSpan: 'all', label: 'Note for the courier' } } : c.field === 'id' ? { ...c, formItem: { visible: false } } : c,
 );
 
-/** Rows edited and added in a modal window: Enter saves, Escape cancels, focus comes back to the row. */
+/** Rows edited and added in a modal window: Enter saves, Escape cancels, and focus returns to the row. */
 export default function PopupMode() {
   return (
     <DataGrid
@@ -33604,7 +33604,7 @@ export default function ValidationRules() {
 The filter row has one cell per column, with a condition chosen in the cell according to the column type (contains, starts with, =, <, between, empty …) and the kit field for the value. Typing applies the filter after a short pause. The header filter lists the column's values with their counts, taking the other filters into account. For in-memory rows, the grid does the counting. An adapter that supports grouping is queried with `group`, and any other server answers through `loadValues`. Both feed the data source's filter (`data.where`, `data.and`, `data.or`), combined with AND.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -33662,7 +33662,7 @@ A column's `headerFilterInterval` groups its header filter. A number column uses
 `headerFilterItems` provides custom header filter entries, as `{ text, value }`, where a value is a value or a filter expression (`data.where('city', 'in', […])`). A function receives the other filters and `values()`, the entries it would list, so that you can add to them. `filterValues` and `filterType` (both can be tracked functions) set the contents of the header filter. `'exclude'` leaves those values out, so values added later appear. In the list, selecting every value and then deselecting some leaves those out in the same way.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -33751,7 +33751,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -33801,7 +33801,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -33906,7 +33906,7 @@ import { columns, makeOrders } from './orders';
 
 const COAST = ['Antalya', 'İstanbul', 'İzmir', 'Trabzon'];
 
-/** The order columns with header filters: amounts in ranges, dates in a tree, cities by entries of their own, statuses left out. */
+/** The order columns with header filters: amounts in ranges, dates in a tree, cities with custom entries, and excluded statuses. */
 const intervalColumns: GridColumn<Order>[] = columns.map((c) => {
   switch (c.field) {
     case 'amount':
@@ -33926,14 +33926,14 @@ const intervalColumns: GridColumn<Order>[] = columns.map((c) => {
         ],
       };
     case 'status':
-      // Every status but Cancelled: statuses that come later show too.
+      // Every status except Cancelled, so statuses added later also appear.
       return { ...c, headerFilter: true, filterValues: ['Cancelled'], filterType: 'exclude' };
     default:
       return c;
   }
 });
 
-/** The header filter in ranges of amounts, a tree of dates, entries of its own, and values left out. */
+/** The header filter with ranges of amounts, a tree of dates, custom entries and excluded values. */
 export default function HeaderFilterIntervals() {
   const s = reactive({ months: false });
   let grid: DataGrid<Order> | null = null;
@@ -34030,7 +34030,7 @@ export default function Search() {
 `customers.ts`
 
 ```tsx
-/** A customer, as another made-up service keeps it. */
+/** A customer, as stored by a second sample service. */
 export interface Customer {
   id: number;
   name: string;
@@ -34041,7 +34041,7 @@ const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara'
 const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
 const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
 
-/** `n` made-up customers, the same ones every time. */
+/** `n` sample customers, the same ones every time. */
 export function makeCustomers(n: number): Customer[] {
   return Array.from({ length: n }, (_, i) => ({
     id: i + 1,
@@ -34167,10 +34167,10 @@ type Sale = { id: number; customerId: number | null; amount: number };
 
 const money = new Intl.NumberFormat('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** Sales in memory whose customer comes from another service: only the customers on the screen are asked for, several in one request. */
+/** In-memory sales whose customer comes from another service: only the customers on screen are requested, several in one request. */
 export default function Lookups() {
   const s = reactive({ requests: 0, keys: 0 });
-  // Stands in for another service: new data.RestAdapter({ url: '/api/customers', key: 'id' }) goes in its place.
+  // Simulates another service. In an application, use new data.RestAdapter({ url: '/api/customers', key: 'id' }) here.
   const service = new SlowAdapter<Customer, number>({ data: makeCustomers(600), key: 'id' }, 400);
   // Counts the requests that turn keys into names; the editor's own list loads are not among them.
   service.onLoading((e) => {
@@ -34229,7 +34229,7 @@ export default function Lookups() {
 `customers.ts`
 
 ```tsx
-/** A customer, as another made-up service keeps it. */
+/** A customer, as stored by a second sample service. */
 export interface Customer {
   id: number;
   name: string;
@@ -34240,7 +34240,7 @@ const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara'
 const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
 const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
 
-/** `n` made-up customers, the same ones every time. */
+/** `n` sample customers, the same ones every time. */
 export function makeCustomers(n: number): Customer[] {
   return Array.from({ length: n }, (_, i) => ({
     id: i + 1,
@@ -34378,12 +34378,12 @@ import { DataGrid, type GridColumn } from '@motifx-community/ui';
 import { SlowAdapter } from '../../../shared/slow-adapter';
 import { makeCustomers, type Customer } from './customers';
 
-/** An invoice as its service sends it: the customer comes along with it (OData `$expand=customer`). */
+/** An invoice as its service returns it, with the customer included (OData `$expand=customer`). */
 type Invoice = { id: number; customerId: number; customer: { name: string }; total: number };
 
 const money = new Intl.NumberFormat('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** The name read from the row itself: the customers' service is asked only to edit. */
+/** The name is read from the row itself, and the customer service is used only for editing. */
 export default function TextFrom() {
   const s = reactive({ requests: 0 });
   const people = makeCustomers(600);
@@ -34391,7 +34391,7 @@ export default function TextFrom() {
     const customer = people[(i * 53) % people.length];
     return { id: i + 1, customerId: customer.id, customer: { name: customer.name }, total: ((i * 4337) % 50_000) / 10 };
   });
-  // Stand in for two services: new data.ODataAdapter({ url: '/odata/Invoices', key: 'id' }) with expand: ['customer'], and the customers'.
+  // Simulate two services: new data.ODataAdapter({ url: '/odata/Invoices', key: 'id' }) with expand: ['customer'], and the customer service.
   const invoiceSource = new data.DataSource<Invoice, number>({ adapter: new SlowAdapter<Invoice, number>({ data: invoices, key: 'id' }, 250), loadMode: 'blocks', pageSize: 100 });
   const customerService = new SlowAdapter<Customer, number>({ data: people, key: 'id' }, 400);
   customerService.onLoading(() => s.requests++);
@@ -34430,7 +34430,7 @@ export default function TextFrom() {
 Rows can be grouped by one or more columns. Each group has a row showing “Column: value (count)”, using the text of a lookup column or the column's format for in-memory rows, with an arrow that expands and collapses it and with lower-level groups indented. Grouped columns are removed from the columns area unless `showWhenGrouped` is set. `groupIndex` on columns sets the initial grouping, and `groupPanel` adds a panel at the start of the toolbar where dropping a header groups by its column. Clicking a chip reverses the order of its groups, and a chip can move along the panel or be dragged back onto the headers to ungroup the column at that position. The column menu provides the same actions from the keyboard. Sorting applies to the rows inside the groups, and the header of a grouped column, like its chip, sorts its groups. `calculateGroupValue` groups by a computed value. In paged mode, pages count both group rows and data rows, and a collapsed group counts as one row.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -34469,7 +34469,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 `summary` calculates values for the rows that match the filter and search. `totalItems` appear in a totals row below the rows, which stays at the bottom while the rows scroll and moves sideways with the columns. `groupItems` appear for each group: after the group row's count, under their column in the group row (`alignByColumn`), or in a footer row after the group's rows (`showInGroupFooter`). An item aggregates a `column` (and its `value` reader) with a `summaryType` of `sum`, `min`, `max`, `avg`, `count` or `custom`, and appears under `showInColumn` (otherwise its own column), with several items in one column stacked. Its text is `displayFormat` (`{0}` for the value and `{1}` for the column), or a string from `summary.texts` and `uiLocale`, formatted by `valueFormat` (`Intl` options or a function, otherwise the column's format), or `customizeText`. A `custom` item uses `calculateCustomSummary` in three stages: `start`, `calculate` per row, and `finalize`. Empty values are excluded (`skipEmptyValues`, and `count` counts every row). Unsaved edits count once saved, or as they are made with `recalculateWhileEditing`. `getTotalSummaryValue(name)` and `getGroupSummaryValue(key, name)` read the values, `onSummaryChanged` reports recalculation, and CSV and `exportRows()` write the footers and totals.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -34591,7 +34591,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -34641,7 +34641,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -34664,7 +34664,7 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** 100,000 orders grouped on the server: the groups come with their counts, the rows only where the list looks. */
+/** 100,000 orders grouped on the server: the groups arrive with their counts, and rows load only in the visible area. */
 export default function GroupingServer() {
   const s = reactive({ loads: 0 });
   // An adapter that groups (here rows in memory acting as a server) answers `group` itself; one
@@ -34794,11 +34794,11 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** 100,000 orders on a server that computes the totals itself and gives the group summaries with the groups. */
+/** 100,000 orders on a server that calculates the totals and returns the group summaries with the groups. */
 export default function SummariesServer() {
   const s = reactive({ asked: 0 });
-  // An adapter with the `summary` capability is asked for the values (`remoteSummary: 'auto'`); one
-  // without it gets every matching row loaded once and the values worked out in the browser.
+  // An adapter with the `summary` capability is asked for the values (`remoteSummary: 'auto'`). Without it,
+  // every matching row is loaded once and the values are calculated in the browser.
   const server = new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 300);
   server.onLoading((e) => {
     if (e.options.summary || e.options.groupSummary) s.asked++;
@@ -34853,7 +34853,7 @@ export default function SummariesServer() {
 `masterDetail` gives every row its own details. The expand column opens a row to display the output of `template` (in this example, another grid over its own data source, filtered by the customer's key) in a row spanning the grid, which stays in place while the columns scroll sideways. Details are created the first time they are shown and kept while the row is open, and they are removed when the row leaves the data or when the grid is disposed. The list stays virtual: each detail is measured as it renders (and again when its content changes size), so the scrollbar, the following rows and navigation to a row stay accurate, and the rows themselves remain a small pool.
 
 ```tsx
-/** A customer, as another made-up service keeps it. */
+/** A customer, as stored by a second sample service. */
 export interface Customer {
   id: number;
   name: string;
@@ -34864,7 +34864,7 @@ const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara'
 const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
 const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
 
-/** `n` made-up customers, the same ones every time. */
+/** `n` sample customers, the same ones every time. */
 export function makeCustomers(n: number): Customer[] {
   return Array.from({ length: n }, (_, i) => ({
     id: i + 1,
@@ -34896,7 +34896,7 @@ Open rows are tracked by key, so sorting, filtering, searching, grouping and pag
 Details can contain any component. In this example, they are tabs with a read-only `FormLayout` for the customer and a list of its orders that is created when the tab is first shown. The row adjusts its height, and the following rows move. `canExpand` hides the arrow for customers without orders, `ctx.collapse()` closes a row from inside its details, and the buttons call `expandAllRows()` and `collapseAllRows()`.
 
 ```tsx
-/** A customer, as another made-up service keeps it. */
+/** A customer, as stored by a second sample service. */
 export interface Customer {
   id: number;
   name: string;
@@ -34907,7 +34907,7 @@ const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara'
 const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
 const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
 
-/** `n` made-up customers, the same ones every time. */
+/** `n` sample customers, the same ones every time. */
 export function makeCustomers(n: number): Customer[] {
   return Array.from({ length: n }, (_, i) => ({
     id: i + 1,
@@ -35060,7 +35060,7 @@ export interface CustomerOrder {
 `customers.ts`
 
 ```tsx
-/** A customer, as another made-up service keeps it. */
+/** A customer, as stored by a second sample service. */
 export interface Customer {
   id: number;
   name: string;
@@ -35071,7 +35071,7 @@ const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara'
 const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
 const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
 
-/** `n` made-up customers, the same ones every time. */
+/** `n` sample customers, the same ones every time. */
 export function makeCustomers(n: number): Customer[] {
   return Array.from({ length: n }, (_, i) => ({
     id: i + 1,
@@ -35093,7 +35093,7 @@ const customers = makeCustomers(60);
 const orders = makeCustomerOrders(customers);
 const money = new Intl.NumberFormat('en', { style: 'currency', currency: 'EUR' });
 
-/** What the details show of a customer: its fields and what its orders come to. */
+/** The details of a customer: its fields and the total of its orders. */
 interface Profile extends Customer {
   orders: number;
   total: string;
@@ -35119,7 +35119,7 @@ const items: FormItem[] = [
   { field: 'total', label: 'Orders total' },
 ];
 
-/** A customer's details: tabs, the first a read-only form; the other tab is made when first shown, and the row grows with it. */
+/** A customer's details: tabs, the first with a read-only form. The other tab is created when first shown, and the row grows with it. */
 function CustomerTabs(props: { ctx: DetailContext<Profile> }) {
   const profile = reactive({ ...props.ctx.row });
   return (
@@ -35183,7 +35183,7 @@ export default function DetailTabs() {
 A band is a header that spans several columns. Give it a `title` and the `columns` under it, which can be columns or other bands to any depth. The header gains one row per band level above the column titles, with each band spanning its columns. A column can be dragged only within its band, and dragging a band moves its columns with it. A band is pinned, hidden and moved as a whole, from its own menu (its header button or Alt+Down) or with `columnOption` by its `name`. In this example, “Payment” spans three columns, and “Order” spans two columns and the “Delivery” band.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -35225,7 +35225,7 @@ Band rows are `row` elements of `columnheader` cells in the header's row group. 
 With `settings.columnHidingEnabled`, the grid hides columns while it is narrower than they are, starting from the last. With `hidingPriority` on some columns, only those hide, lowest first. A “…” column then opens a row's adaptive detail below it, showing the titles and values of the hidden columns (with editors where the row can be edited), one row at a time. This is calculated from the column widths and the grid's width (through a `ResizeObserver`), never from the rendered output, and recalculated whenever either changes. Drag the splitter to see it. Hidden columns still count as visible, so the column chooser, `getVisibleColumns()`, export and copying include them.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -35318,7 +35318,7 @@ const columns: GridColumnItem<Order>[] = [
   },
 ];
 
-/** Band headers: drag a column inside its band or a band among its neighbours, pin and hide bands from their menus. */
+/** Band headers: drag a column inside its band or a band among its neighbors, and pin and hide bands from their menus. */
 export default function BandHeaders() {
   const s = reactive({ csv: '', layout: '' });
   let grid: DataGrid<Order> | null = null;
@@ -35372,7 +35372,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -35422,7 +35422,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -35527,7 +35527,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 Ctrl+C copies the selected rows, or the active cell, as tab-separated text and an HTML table, so a spreadsheet or document receives it as a table. Ctrl+V on a cell writes tab-separated text, from a spreadsheet or copied from the grid, into the editable cells to the right of and below that cell. Each value is interpreted by column type (numbers and dates by locale, yes or no, and a list option by its text) and goes into the row's draft with validation, as if typed. Cells that cannot be edited keep their values. Rows below the active row are saved according to the save mode.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -35568,7 +35568,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 The grid does not include an xlsx writer. The application provides ExcelJS (`npm i exceljs`, an optional peer dependency) and calls `exportDataGrid({ component, worksheet })` from `@motifx-community/ui/excel`, a separate entry point that applications without Excel export never load. With `export: { formats: ['xlsx', 'csv'] }`, the toolbar's export button becomes a menu (“Export all data to Excel”, and “Export selected rows to Excel” with `allowExportSelectedData`). The Excel commands raise `onExporting` with `format: 'xlsx'` and `selectedRowsOnly`, and the handler writes and saves the workbook. In this example, it is a Blob download, with ExcelJS loaded on the first export.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -35603,7 +35603,7 @@ The sheet contains the frozen header row and the rows in grid order with the fil
 PDF export works the same way. The application provides jsPDF (`npm i jspdf`, an optional peer dependency) and calls `exportDataGrid({ jsPDFDocument, component })` from `@motifx-community/ui/pdf`, a separate entry point. Add `'pdf'` to `export.formats`, and the toolbar menu offers “Export all data to PDF” (and the selected rows). The command raises `onExporting` with `format: 'pdf'`, and the handler creates the document, draws the grid on it and saves it. The table is drawn with jsPDF's own calls and no table plugin. It includes the header rows with bands merged over their columns, the rows in grid order with the filter, search, grouping, text and alignment of the grid, the group rows across the row, the group footers and the totals. Columns use the grid's widths, narrowed to fit the page, and rows that do not fit continue on the next page below repeated header rows. In right-to-left layouts, the columns run from the right edge.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -35656,7 +35656,7 @@ const describe = (sel: GridSelection | undefined) =>
 /** Single and multiple selection; over 100,000 rows on a server "all" is a state, never the rows. */
 export default function Selection() {
   const s = reactive({ mode: 'multiple' as 'none' | 'single' | 'multiple', selection: undefined as GridSelection | undefined, note: '' });
-  // The server groups, so "all but these keys" goes to it as a filter.
+  // The server groups, so "all except these keys" is sent to it as a filter.
   const orders = new data.DataSource<Order, number>({ adapter: new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 200), loadMode: 'blocks', pageSize: 100 });
   let grid: DataGrid<Order> | null = null;
   let server: DataGrid<Order> | null = null;
@@ -35713,7 +35713,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -35763,7 +35763,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -35865,7 +35865,7 @@ export default function Export() {
     s.exported = JSON.stringify(rows.slice(0, 2));
   };
 
-  // A grid made with `new` exports without being shown; this one reads the orders of the paged grid.
+  // A grid created with `new` can export without being shown. This one reads the orders of the paged grid.
   const exportServer = async () => {
     const server = new DataGrid<Order>({ dataSource: pagedOrders, columns, label: 'Orders by page', locale: 'en' });
     s.progress = 'starting…';
@@ -35912,7 +35912,7 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { makeOrders } from './orders';
 
-/** How many times the server below was asked for rows. */
+/** The number of times rows were requested from the server below. */
 export const pagedLoads = reactive({ count: 0 });
 
 const server = new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 250);
@@ -36273,7 +36273,7 @@ const TITLES = ['Write the release notes', 'Fix the login page', 'Review the pul
 const OWNERS = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger'];
 const PRIORITIES = ['Low', 'Normal', 'High'];
 
-/** `n` made-up tasks from id `from`, in their order. */
+/** `n` sample tasks from id `from`, in order. */
 export function makeTasks(n: number, from = 1): Task[] {
   return Array.from({ length: n }, (_, i) => ({
     id: from + i,
@@ -36332,7 +36332,7 @@ async function moveTask(id: number, order: number) {
   task.order = order;
 }
 
-/** 10,000 tasks on a server, in the order of their `order` field: a drop tells the server and loads again. */
+/** 10,000 tasks on a server, sorted by their `order` field. A drop notifies the server and reloads. */
 export default function RowReorderServer() {
   const s = reactive({ saved: '' });
   return (
@@ -36349,7 +36349,7 @@ export default function RowReorderServer() {
         rowDragging={{
           allowReordering: true,
           onReorder: (e) => {
-            // The row at `toIndex` gives the place; the grid waits for the promise, the line shown.
+            // The row at `toIndex` gives the position. The grid waits for the promise while the line stays visible.
             const order = (e.toItemData as Task).order;
             e.promise = moveTask(e.itemData.id, order).then(() => {
               s.saved = `Task ${e.itemData.id} moved to order ${order}`;
@@ -36394,7 +36394,7 @@ import type { GridRowDropEventArgs } from '@motifx-community/ui';
 import type { Task } from './task';
 import { makeTasks, taskColumns } from './tasks';
 
-/** Two grids of one `group`: a row dropped on the other grid leaves this one (`onRemove`) and goes there (`onAdd`). */
+/** Two grids in one `group`: a row dropped on the other grid raises `onRemove` here and `onAdd` there. */
 export default function RowDragBetween() {
   const s = reactive({ todo: makeTasks(12), done: makeTasks(4, 101) });
   const columns = taskColumns.filter((c) => c.field !== 'priority');
@@ -36452,7 +36452,7 @@ export default function RowDragBetween() {
 With `selection: 'multiple'`, press on a row and drag over others to select the rows in between, with a frame around them during the drag. A plain drag replaces the selection, Ctrl (⌘ on Apple platforms) adds to it, and Shift extends from the anchor. Over the check boxes, all rows passed take the state of the first one. Near the top or bottom edge, the rows scroll (300 rows in this example), and when grouped, group rows are skipped. `onSelectionChanged` occurs once per row reached, with `e.byDrag`.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -36470,7 +36470,7 @@ export interface Order {
 `cellSelection` draws rectangles of cells as in a spreadsheet. Press on a cell and drag. Ctrl or ⌘ starts another range (`'multiple'`), Shift+click extends the last one from its anchor, and a plain click starts over. Shift and the arrow keys do the same from the keyboard. Ctrl+C copies the ranges as tab-separated text, Ctrl+V pastes into them (one value fills them all), Delete clears them through the normal edit path, and the status bar sums the numbers. The Note column is excluded until you include it.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -36658,7 +36658,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -36708,7 +36708,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -36847,7 +36847,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 In-memory rows also appear page by page, here 100 places at a time, grouped by city. Group rows and data rows both count, so the next city's group appears with its page. Details, selection and group summaries work as in the other modes.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -36873,7 +36873,7 @@ type Reading = { id: number };
 
 const SENSORS = 200;
 
-/** 200 sensors in bands of 20, each reading worked out from the row: no row holds 200 values. */
+/** 200 sensors in bands of 20, with each reading calculated from the row, so no row holds 200 values. */
 const columns: GridColumnItem<Reading>[] = [
   { field: 'id', title: 'Hour', type: 'number', width: 90, sticky: 'start' },
   ...Array.from({ length: SENSORS / 20 }, (_, b) => ({
@@ -36966,10 +36966,10 @@ class OrderServer extends SlowAdapter<Order, number> {
 /** 1,030 orders from a slow server without a count, loaded 50 at a time as the list nears its end. */
 export default function InfiniteScroll() {
   const s = reactive({ loads: 0, parts: 0, preload: false, failing: false });
-  // Stands in for a server: new data.RestAdapter({ url: '/api/orders', key: 'id' }) goes in its place.
+  // Simulates a server. In an application, use new data.RestAdapter({ url: '/api/orders', key: 'id' }) here.
   const server = new OrderServer({ data: makeOrders(1_030), key: 'id', capabilities: { count: false } }, 600);
   server.onLoading(() => s.loads++);
-  // `count: false`: no part asks for a total; a part shorter than 50 rows is the last one.
+  // `count: false`: no page requests a total, and a page shorter than 50 rows is the last one.
   const orders = new data.DataSource<Order, number>({ adapter: server, loadMode: 'blocks', pageSize: 50, count: false });
   let grid: DataGrid<Order> | null = null;
 
@@ -37010,7 +37010,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -37060,7 +37060,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -37134,7 +37134,7 @@ export default function InfiniteGroups() {
 The bar above the rows contains the grid's own items whose features are enabled, at the end, in this order: “New row” (`addRows`, `newRowButton`), “Save changes” and “Discard” (batch mode, `saveButtons`), “Export” (`exportButton`), the column list (`columnChooserButton`) and the search box (`searchPanel`). If there are none, the bar does not appear. `toolbar.items` lists its exact contents: grid items by name, an object with a `name` to change one of them, and custom items, such as a button with `text`, `icon`, `hint` and `click`, or any component with `content`, at the start (`location: 'before'`) or at the end. Buttons that do not fit move to the “more” menu (`overflow`). The grid's own buttons show only their icons in the bar (`showText`), with their text in the menu.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -37163,7 +37163,7 @@ export interface Order {
 `addColumn(column, index?)` adds a column at a position among the data columns, with its own width, visibility and sticky side (or the values in the saved layout). `deleteColumn(field)` removes a column, along with its sort, grouping and filter. `columnOption(field, name, value)` changes one option of a column while it is displayed: its layout (`width`, `visible`, `sticky`, `visibleIndex`), sort, grouping, header filter values, a feature switch, or any field of its definition (`title`, `format`, `lookup`, `cell`, `type` …), and the column is redrawn. `columnOption(field, { … })` changes several at once. The layout, `layoutKey` and `onLayoutChange` follow, and `onOptionChanged` reports each change (`name: 'columns'` for a column added or removed). `columnCount()` and `getVisibleColumns()` read them.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -37181,7 +37181,7 @@ export interface Order {
 With `layoutKey`, the grid saves column widths, order, hidden and pinned columns, the sort, the filters and the search text in the browser's `localStorage`, and a grid created again with the same name, even after a reload, restores them. Storage that is full or blocked is silently skipped. `resetLayout()` (also in the column menu) returns to the column definitions. To store the layout elsewhere, such as on a server, read `layout` and `filters`, listen to `onLayoutChange`, and pass them back through the props of the same names.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -37199,7 +37199,7 @@ export interface Order {
 Every feature has a switch in `settings`, as a value or a function. A column can enable or disable a feature for itself, and its value takes precedence. `grid.settings` and `grid.columnSettings(field)` change them at runtime.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -37292,7 +37292,7 @@ export interface Order {
 Every user action has an event, set as a prop or subscribed to with `grid.onX((e) => …)`. An event raised before an action (`…ing`) can stop it with `e.cancel = true`, and most can change the result (the values sent, the items of a menu or the text copied). In this example, amounts over 900 are bold, rows have a custom menu (right-click or Shift + F10), a change to “Cancelled” is not saved, and the list shows what happened. Methods do the same programmatically: `editCell`, `cellValue`, `navigateToRow`, `columnOption`, `state()` and the others in the [API reference](datagrid-api.md#api).
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -37397,7 +37397,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -37447,7 +37447,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -37470,7 +37470,7 @@ import { filterColumns, makeOrders } from './orders';
 
 const euros = new Intl.NumberFormat('en', { style: 'currency', currency: 'EUR' });
 
-/** Columns added, taken out and changed while the grid shows; the layout, the sort and the filters follow. */
+/** Columns added, removed and changed at runtime, while the layout, sort and filters stay in sync. */
 export default function RuntimeColumns() {
   const s = reactive({ paid: false, city: true, fields: '' });
   let grid: DataGrid<Order> | null = null;
@@ -37523,7 +37523,7 @@ import { Button, CheckBox, DataGrid, Stack } from '@motifx-community/ui';
 import type { Order } from './order';
 import { filterColumns, makeOrders } from './orders';
 
-/** Widths, order, sort and filters kept under `layoutKey`; a grid made again gets them back. */
+/** Widths, order, sort and filters saved under `layoutKey`, and restored when a grid is created again. */
 export default function KeepLayout() {
   const s = reactive({ keep: true, shown: true });
   let grid: DataGrid<Order> | null = null;
@@ -37619,7 +37619,7 @@ import { DataGrid } from '@motifx-community/ui';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** The grid's events: amounts over 900 in bold, a row menu of the page's own, no "Cancelled" saved, and a log of what happened. */
+/** The grid's events: amounts over 900 in bold, a custom row menu, "Cancelled" not saved, and a log of what happened. */
 export default function Events() {
   const s = reactive({ log: [] as { id: number; text: string }[] });
   let next = 0;
@@ -37768,7 +37768,7 @@ export default function Events() {
 All strings the grid displays come from `uiLocale.strings` (the `grid…` keys) or from the grid's own `texts`: the toolbar, the search box, the bar, the pager, the column menu, the row states, the action buttons, the filter conditions, the summary strings (`gridSummarySum`, `gridSummarySumOtherColumn`, … `gridSummaryCount`, `gridSummarySeparator`, `gridTotalSummary`) and the announcements. Numbers and dates follow `locale`.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -37982,7 +37982,7 @@ import { kitTexts } from '../../../shared/kit-texts';
 import type { Order } from './order';
 import { columns } from './orders';
 
-/** Every grid on the page follows `uiLocale.strings`; one grid's own `texts` and `locale` win. */
+/** Every grid on the page uses `uiLocale.strings`, and a grid's own `texts` and `locale` take precedence. */
 export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {
@@ -38024,7 +38024,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -38074,7 +38074,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;

@@ -9,7 +9,7 @@ export interface Order {
 const customers = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Edsger Dijkstra', 'Barbara Liskov', 'Donald Knuth'];
 const cities = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya'];
 
-/** `count` made-up orders, the same every time. */
+/** `count` sample orders, the same every time. */
 export function makeOrders(count: number): Order[] {
   return Array.from({ length: count }, (_, i) => ({
     id: 1001 + i,

@@ -21,7 +21,7 @@ async function moveTask(id: number, order: number) {
   task.order = order;
 }
 
-/** 10,000 tasks on a server, in the order of their `order` field: a drop tells the server and loads again. */
+/** 10,000 tasks on a server, sorted by their `order` field. A drop notifies the server and reloads. */
 export default function RowReorderServer() {
   const s = reactive({ saved: '' });
   return (
@@ -38,7 +38,7 @@ export default function RowReorderServer() {
         rowDragging={{
           allowReordering: true,
           onReorder: (e) => {
-            // The row at `toIndex` gives the place; the grid waits for the promise, the line shown.
+            // The row at `toIndex` gives the position. The grid waits for the promise while the line stays visible.
             const order = (e.toItemData as Task).order;
             e.promise = moveTask(e.itemData.id, order).then(() => {
               s.saved = `Task ${e.itemData.id} moved to order ${order}`;

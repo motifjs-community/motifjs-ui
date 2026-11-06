@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { BottomSheet, Button, uiLocale } from '@motifx-community/ui';
 
-/** The handle's name and heights and the close button's name come from uiLocale. */
+/** The handle name, height names and close button name come from uiLocale. */
 export default function Localization() {
   const s = reactive({ open: false, lang: 'en' });
 

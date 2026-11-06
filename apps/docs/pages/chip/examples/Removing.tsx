@@ -3,7 +3,7 @@ import { Button, Chip, ChipGroup, Stack } from '@motifx-community/ui';
 
 const PEOPLE = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Edsger Dijkstra'];
 
-/** Removing is yours to do: `onRemove` takes the person out of the list, and the group follows the list. */
+/** Your code performs the removal: `onRemove` removes the person from the list, and the group updates to match. */
 export default function Removing() {
   const s = reactive({ people: PEOPLE.map((name) => ({ name })) });
 

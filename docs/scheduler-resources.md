@@ -533,7 +533,7 @@ export default function Grouped() {
 import { Scheduler, type ResourceHeaderContext } from '@motifx-community/ui';
 import { bookings, people, rooms, type Booking, type Person } from './resource-data';
 
-/** A person's head drawn by a template: their initials in their colour, their name and their room. */
+/** A person's header drawn by a template: their initials in their color, their name and their room. */
 function PersonHead(context: ResourceHeaderContext) {
   const person = context.item as Person;
   const initials = context.text
@@ -554,7 +554,7 @@ function PersonHead(context: ResourceHeaderContext) {
   );
 }
 
-/** Grouped by person, each head made by `resourceHeaderTemplate`. */
+/** Grouped by person, with each header created by `resourceHeaderTemplate`. */
 export default function HeaderTemplate() {
   const resources = [{ field: 'ownerIds', label: 'People', items: people, allowMultiple: true, useColorAsDefault: true }];
   return (

@@ -258,12 +258,12 @@ export default function Delay() {
 import { reactive } from '@motifx/core';
 import { Button, Panel, Spinner, Stack, TextBox } from '@motifx-community/ui';
 
-/** A spinner over a panel while its orders load; focus waits on it and comes back. */
+/** A spinner over a panel while its orders load. Focus waits on it and then returns. */
 export default function Cover() {
   const s = reactive({ result: '' });
   let panel: Panel | null = null;
 
-  // Stands in for a call to the server.
+  // Simulates a server call.
   const loadOrders = () => new Promise((resolve) => setTimeout(resolve, 1500));
 
   const load = async () => {

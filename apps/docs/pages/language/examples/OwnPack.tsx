@@ -1,6 +1,6 @@
 import { Button, DropDown, Stack, uiLocale } from '@motifx-community/ui';
 
-// A few German texts; what is left out stays English.
+// A few German strings. Anything omitted stays in English.
 uiLocale.add('de', {
     close: 'Schließen',
     clear: 'Leeren',
@@ -11,7 +11,7 @@ uiLocale.add('de', {
     cancel: 'Abbrechen',
 });
 
-/** A pack of your own: `uiLocale.add` gives a language its texts, `use` switches to it. */
+/** A custom pack: `uiLocale.add` registers strings for a language, and `use` switches to it. */
 export default function OwnPack() {
     return (
         <Stack gap="md">

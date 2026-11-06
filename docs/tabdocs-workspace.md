@@ -77,7 +77,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -299,7 +299,7 @@ export default function Workspace() {
         {
           text: 'Show the activity',
           beginGroup: true,
-          // The close button of its area hides it (it cannot close): shown again, it goes back where it was.
+          // Its area's close button hides it because it cannot close. When shown again, it returns to its previous place.
           click: () => (activity.isHidden ? docs.show(activity, { focus: true }) : activity.dockArea?.autoHidden ? docs.showAutoHidden(activity) : docs.activate(activity, true)),
         },
       ],
@@ -387,7 +387,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },

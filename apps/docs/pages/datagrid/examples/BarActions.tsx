@@ -11,7 +11,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export default function BarActions() {
   const s = reactive({ orders: makeOrders(40), location: 'toolbar' as GridActionLocation, menu: false, note: '' });
   let grid: DataGrid<Order> | null = null;
-  // The grid reads the rows as they are: after a change in place it draws them again and asks their actions again.
+  // The grid reads the rows as they are, so after a change in place it redraws them and re-reads their actions.
   const changed = (rows: readonly Order[]) => {
     grid?.repaintRows(rows.map((row) => row.id));
     grid?.refreshActions();

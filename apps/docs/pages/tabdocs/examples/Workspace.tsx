@@ -194,7 +194,7 @@ export default function Workspace() {
         {
           text: 'Show the activity',
           beginGroup: true,
-          // The close button of its area hides it (it cannot close): shown again, it goes back where it was.
+          // Its area's close button hides it because it cannot close. When shown again, it returns to its previous place.
           click: () => (activity.isHidden ? docs.show(activity, { focus: true }) : activity.dockArea?.autoHidden ? docs.showAutoHidden(activity) : docs.activate(activity, true)),
         },
       ],

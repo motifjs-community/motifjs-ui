@@ -18,7 +18,7 @@ import { FileUploader } from '@motifx-community/ui';
 import { reactive } from '@motifx/core';
 import { FileUploader, Stack } from '@motifx-community/ui';
 
-// Stands in for a server: takes two seconds per megabyte, reports as it goes, stops on the signal.
+// Simulates a server: takes two seconds per megabyte, reports progress and stops on the signal.
 const send = (file: File, report: (fraction: number) => void, signal: AbortSignal) =>
     new Promise<string>((resolve, reject) => {
         const steps = 20;
@@ -38,7 +38,7 @@ const send = (file: File, report: (fraction: number) => void, signal: AbortSigna
         });
     });
 
-/** Files chosen or dropped go up as they come, through your own upload; each row shows progress, cancel, retry, remove. */
+/** Selected or dropped files upload immediately through a custom function, and each row shows progress, cancel, retry and remove. */
 export default function Basic() {
     const s = reactive({ files: [] as readonly File[], told: '' });
     return (
@@ -101,7 +101,7 @@ const quick = (file: File, report: (fraction: number) => void) =>
         }, 120);
     });
 
-/** An Upload button sends what was chosen; or nothing goes until code says so. One file only, no dropping. */
+/** An Upload button sends the selected files, or nothing is sent until code requests it. One file only, with no dropping. */
 export default function Modes() {
     const s = reactive({ one: [] as readonly File[] });
     let manual!: FileUploader;

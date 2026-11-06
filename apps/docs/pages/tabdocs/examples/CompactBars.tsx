@@ -31,7 +31,7 @@ export default function CompactBars() {
   docs.dock(toolDocument('outline', 'Outline', outline), 'left');
   docs.dock(toolDocument('problems', 'Problems', problems), 'left');
   docs.dock(toolDocument('output', 'Output', output), 'bottom');
-  // This area's own setting wins over the manager's (null follows it again).
+  // This area's own setting takes precedence over the manager's (null returns to the manager's).
   docs.dockArea('left')!.scrollButtons = () => (s.leftScroll ? true : null);
   const float = () => {
     const doc = docs.findDocument('README.md') ?? docs.open(fileDocument('README.md'))!;

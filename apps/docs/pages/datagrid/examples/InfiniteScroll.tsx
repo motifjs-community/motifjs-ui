@@ -19,10 +19,10 @@ class OrderServer extends SlowAdapter<Order, number> {
 /** 1,030 orders from a slow server without a count, loaded 50 at a time as the list nears its end. */
 export default function InfiniteScroll() {
   const s = reactive({ loads: 0, parts: 0, preload: false, failing: false });
-  // Stands in for a server: new data.RestAdapter({ url: '/api/orders', key: 'id' }) goes in its place.
+  // Simulates a server. In an application, use new data.RestAdapter({ url: '/api/orders', key: 'id' }) here.
   const server = new OrderServer({ data: makeOrders(1_030), key: 'id', capabilities: { count: false } }, 600);
   server.onLoading(() => s.loads++);
-  // `count: false`: no part asks for a total; a part shorter than 50 rows is the last one.
+  // `count: false`: no page requests a total, and a page shorter than 50 rows is the last one.
   const orders = new data.DataSource<Order, number>({ adapter: server, loadMode: 'blocks', pageSize: 50, count: false });
   let grid: DataGrid<Order> | null = null;
 

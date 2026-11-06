@@ -17,7 +17,7 @@ Set `group` to the group the fields join with `validationGroup`. After `group.va
 ```tsx
 import { Button, NumberBox, Stack, TextBox, ValidationGroup, ValidationSummary } from '@motifx-community/ui';
 
-/** The failed fields of a form listed above it after Save; a press on a line goes to the field. */
+/** The invalid fields of a form, listed above it after Save. Clicking a line moves to the field. */
 export default function Form() {
     const group = new ValidationGroup();
     return (
@@ -43,7 +43,7 @@ export default function Form() {
 import { reactive } from '@motifx/core';
 import { Button, Stack, TextBox, ValidationGroup, ValidationSummary } from '@motifx-community/ui';
 
-/** A header of its own, or none; the lines tell which field was pressed, and `failed` says how many there are. */
+/** A custom header or none. The lines report which field was clicked, and `failed` reports how many there are. */
 export default function Programmatic() {
     const group = new ValidationGroup();
     const s = reactive({ header: true, told: '', count: 0 });

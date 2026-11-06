@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, Stack, TextBox, ValidationGroup, ValidationSummary } from '@motifx-community/ui';
 
-/** A header of its own, or none; the lines tell which field was pressed, and `failed` says how many there are. */
+/** A custom header or none. The lines report which field was clicked, and `failed` reports how many there are. */
 export default function Programmatic() {
     const group = new ValidationGroup();
     const s = reactive({ header: true, told: '', count: 0 });

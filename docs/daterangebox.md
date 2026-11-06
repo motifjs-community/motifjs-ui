@@ -18,7 +18,7 @@ import { Button, DateRangeBox, Stack, type DateRange } from '@motifx-community/u
 
 const say = (d: Date | null) => (d ? d.toLocaleDateString('en-GB') : '—');
 
-/** A range bound with x-model, and one made programmatically and read through its properties. */
+/** A range bound with x-model, and one created programmatically and read through its properties. */
 export default function Programmatic() {
     const s = reactive({ stay: [new Date(2026, 2, 10), new Date(2026, 2, 14)] as DateRange, told: '' });
     const coded = new DateRangeBox({ label: 'Report period', clearButton: true, onValueChanged: e => (s.told = `${say(e.value[0])} to ${say(e.value[1])}`) });
@@ -54,14 +54,14 @@ const day = (offset: number) => {
     return d;
 };
 
-// Ranges of our own, made when chosen so they are about today.
+// Custom ranges, calculated when selected so that they are relative to today.
 const QUARTERS: DateRangePreset[] = [
     { text: 'Next 3 days', range: () => [day(0), day(2)] },
     { text: 'Next week', range: () => [day(1), day(7)] },
     { text: 'Next 90 days', range: () => [day(0), day(89)] }
 ];
 
-/** The kit's presets beside the calendars, and presets of your own. */
+/** The kit's presets beside the calendars, and custom presets. */
 export default function Presets() {
     const s = reactive({ sales: [null, null] as DateRange, plan: [null, null] as DateRange });
     return (
@@ -84,7 +84,7 @@ import { Button, DateRangeBox, Stack, type DateRange } from '@motifx-community/u
 const today = new Date();
 const inMonths = (n: number) => new Date(today.getFullYear(), today.getMonth() + n, today.getDate());
 
-/** A stay of one to fourteen nights, within the next six months, never starting on a Sunday; the message says which rule failed. */
+/** A stay of one to fourteen nights, within the next six months, never starting on a Sunday. The message identifies the rule that failed. */
 export default function Limits() {
     const s = reactive({ stay: [null, null] as DateRange, told: '' });
     let box!: DateRangeBox;

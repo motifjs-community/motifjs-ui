@@ -2,7 +2,7 @@ import { reactive } from '@motifx/core';
 import { Scheduler, Switch } from '@motifx-community/ui';
 import { recurringAppointments, type Booking } from './recurring-appointments';
 
-/** Series with a rule each; one day left out of the standup, one moved apart. Click one: its tooltip says how it repeats. */
+/** Series with a rule each, one day excluded from the standup and one edited individually. Click one, and its tooltip describes how it repeats. */
 export default function Recurring() {
   const s = reactive({ marks: true });
   return (

@@ -9,7 +9,7 @@ const DEPARTMENTS: Entry[] = Array.from({ length: 50 }, (_, d) => ({
   children: Array.from({ length: 200 }, (_, p) => ({ id: `d${d}p${p}`, text: `Person ${d + 1}.${p + 1}` })),
 }));
 
-/** 50 departments of 200 people, made with `new`: only the rows in view are drawn. */
+/** 50 departments of 200 people, created with `new`. Only the visible rows are rendered. */
 export default function LargeTree() {
   const people = new TreeView<Entry>({ items: DEPARTMENTS, label: 'People', showLines: true });
   people.element.style.blockSize = '20rem';

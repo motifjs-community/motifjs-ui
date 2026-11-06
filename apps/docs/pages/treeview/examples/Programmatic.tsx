@@ -5,7 +5,7 @@ import { project } from './project';
 
 const BOX = 'inline-size: 100%; max-inline-size: 26rem; background: var(--mx-color-bg-card)';
 
-/** A tree bound with x-model, and a tree made with `new` whose items change in place and are read again on `refresh()`. */
+/** A tree bound with x-model, and a tree created with `new` whose items change in place and are re-read on `refresh()`. */
 export default function Programmatic() {
   const s = reactive({ file: 'tree' as unknown, clicked: '' });
   const menu = reactive<Entry[]>([

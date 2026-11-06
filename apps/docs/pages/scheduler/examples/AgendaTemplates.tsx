@@ -4,7 +4,7 @@ import { jobs, members, type Job } from './timeline-data';
 /**
  * An agenda row drawn by `agendaRowTemplate` (the person's name after the job), and a tooltip of
  * its own (`appointmentTooltipTemplate`) with the time and a button to open the form. The row
- * keeps its colour, keys and name.
+ * keeps its color, keys and accessible name.
  */
 export default function AgendaTemplates() {
   const resources = [{ field: 'ownerId', label: 'Person', items: members, useColorAsDefault: true }];

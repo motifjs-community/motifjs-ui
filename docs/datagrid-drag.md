@@ -173,7 +173,7 @@ const TITLES = ['Write the release notes', 'Fix the login page', 'Review the pul
 const OWNERS = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger'];
 const PRIORITIES = ['Low', 'Normal', 'High'];
 
-/** `n` made-up tasks from id `from`, in their order. */
+/** `n` sample tasks from id `from`, in order. */
 export function makeTasks(n: number, from = 1): Task[] {
   return Array.from({ length: n }, (_, i) => ({
     id: from + i,
@@ -232,7 +232,7 @@ async function moveTask(id: number, order: number) {
   task.order = order;
 }
 
-/** 10,000 tasks on a server, in the order of their `order` field: a drop tells the server and loads again. */
+/** 10,000 tasks on a server, sorted by their `order` field. A drop notifies the server and reloads. */
 export default function RowReorderServer() {
   const s = reactive({ saved: '' });
   return (
@@ -249,7 +249,7 @@ export default function RowReorderServer() {
         rowDragging={{
           allowReordering: true,
           onReorder: (e) => {
-            // The row at `toIndex` gives the place; the grid waits for the promise, the line shown.
+            // The row at `toIndex` gives the position. The grid waits for the promise while the line stays visible.
             const order = (e.toItemData as Task).order;
             e.promise = moveTask(e.itemData.id, order).then(() => {
               s.saved = `Task ${e.itemData.id} moved to order ${order}`;
@@ -294,7 +294,7 @@ import type { GridRowDropEventArgs } from '@motifx-community/ui';
 import type { Task } from './task';
 import { makeTasks, taskColumns } from './tasks';
 
-/** Two grids of one `group`: a row dropped on the other grid leaves this one (`onRemove`) and goes there (`onAdd`). */
+/** Two grids in one `group`: a row dropped on the other grid raises `onRemove` here and `onAdd` there. */
 export default function RowDragBetween() {
   const s = reactive({ todo: makeTasks(12), done: makeTasks(4, 101) });
   const columns = taskColumns.filter((c) => c.field !== 'priority');

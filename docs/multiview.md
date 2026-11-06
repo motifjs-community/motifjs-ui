@@ -18,7 +18,7 @@ The `View` children are the pages. `value` is the visible view, identified by it
 import { reactive } from '@motifx/core';
 import { CheckBox, MultiView, Stack, Stepper, TextBox, View } from '@motifx-community/ui';
 
-/** A stepper and a multi-view bound to the same value: a press on a step or a swipe on a page moves both. */
+/** A stepper and a multi-view bound to the same value: clicking a step or swiping a page updates both. */
 export default function Pages() {
     const s = reactive({ page: 0 as string | number | null });
     return (
@@ -58,7 +58,7 @@ export default function Pages() {
 import { reactive } from '@motifx/core';
 import { Button, MultiView, Stack, View } from '@motifx-community/ui';
 
-/** Each page is made when first in sight; with `keepAlive` off, what `content` made is dropped out of sight and made again. */
+/** Each page is created when first visible. With `keepAlive` off, the output of `content` is disposed while hidden and recreated. */
 export default function Lazy() {
     const s = reactive({ made: 0, keep: true });
     let views!: MultiView;
@@ -92,7 +92,7 @@ Create the component with `new`, add views with `add()` and `insert()`, and remo
 import { reactive } from '@motifx/core';
 import { Button, MultiView, Stack, View } from '@motifx-community/ui';
 
-/** A multi-view made programmatically around the ends: views added, inserted and removed, the sight moved with its methods. */
+/** A looping multi-view created programmatically: views added, inserted and removed, and navigation through its methods. */
 export default function Programmatic() {
     const s = reactive({ told: '', count: 0 });
     let number = 0;

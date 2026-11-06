@@ -7,7 +7,7 @@
 Rows can be grouped by one or more columns. Each group has a row showing “Column: value (count)”, using the text of a lookup column or the column's format for in-memory rows, with an arrow that expands and collapses it and with lower-level groups indented. Grouped columns are removed from the columns area unless `showWhenGrouped` is set. `groupIndex` on columns sets the initial grouping, and `groupPanel` adds a panel at the start of the toolbar where dropping a header groups by its column. Clicking a chip reverses the order of its groups, and a chip can move along the panel or be dragged back onto the headers to ungroup the column at that position. The column menu provides the same actions from the keyboard. Sorting applies to the rows inside the groups, and the header of a grouped column, like its chip, sorts its groups. `calculateGroupValue` groups by a computed value. In paged mode, pages count both group rows and data rows, and a collapsed group counts as one row.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -46,7 +46,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 `summary` calculates values for the rows that match the filter and search. `totalItems` appear in a totals row below the rows, which stays at the bottom while the rows scroll and moves sideways with the columns. `groupItems` appear for each group: after the group row's count, under their column in the group row (`alignByColumn`), or in a footer row after the group's rows (`showInGroupFooter`). An item aggregates a `column` (and its `value` reader) with a `summaryType` of `sum`, `min`, `max`, `avg`, `count` or `custom`, and appears under `showInColumn` (otherwise its own column), with several items in one column stacked. Its text is `displayFormat` (`{0}` for the value and `{1}` for the column), or a string from `summary.texts` and `uiLocale`, formatted by `valueFormat` (`Intl` options or a function, otherwise the column's format), or `customizeText`. A `custom` item uses `calculateCustomSummary` in three stages: `start`, `calculate` per row, and `finalize`. Empty values are excluded (`skipEmptyValues`, and `count` counts every row). Unsaved edits count once saved, or as they are made with `recalculateWhileEditing`. `getTotalSummaryValue(name)` and `getGroupSummaryValue(key, name)` read the values, `onSummaryChanged` reports recalculation, and CSV and `exportRows()` write the footers and totals.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -168,7 +168,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -218,7 +218,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -241,7 +241,7 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** 100,000 orders grouped on the server: the groups come with their counts, the rows only where the list looks. */
+/** 100,000 orders grouped on the server: the groups arrive with their counts, and rows load only in the visible area. */
 export default function GroupingServer() {
   const s = reactive({ loads: 0 });
   // An adapter that groups (here rows in memory acting as a server) answers `group` itself; one
@@ -371,11 +371,11 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** 100,000 orders on a server that computes the totals itself and gives the group summaries with the groups. */
+/** 100,000 orders on a server that calculates the totals and returns the group summaries with the groups. */
 export default function SummariesServer() {
   const s = reactive({ asked: 0 });
-  // An adapter with the `summary` capability is asked for the values (`remoteSummary: 'auto'`); one
-  // without it gets every matching row loaded once and the values worked out in the browser.
+  // An adapter with the `summary` capability is asked for the values (`remoteSummary: 'auto'`). Without it,
+  // every matching row is loaded once and the values are calculated in the browser.
   const server = new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 300);
   server.onLoading((e) => {
     if (e.options.summary || e.options.groupSummary) s.asked++;

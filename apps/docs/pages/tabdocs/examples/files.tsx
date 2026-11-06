@@ -8,7 +8,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },

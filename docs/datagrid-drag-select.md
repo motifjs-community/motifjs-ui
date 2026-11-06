@@ -7,7 +7,7 @@
 With `selection: 'multiple'`, press on a row and drag over others to select the rows in between, with a frame around them during the drag. A plain drag replaces the selection, Ctrl (⌘ on Apple platforms) adds to it, and Shift extends from the anchor. Over the check boxes, all rows passed take the state of the first one. Near the top or bottom edge, the rows scroll (300 rows in this example), and when grouped, group rows are skipped. `onSelectionChanged` occurs once per row reached, with `e.byDrag`.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -25,7 +25,7 @@ export interface Order {
 `cellSelection` draws rectangles of cells as in a spreadsheet. Press on a cell and drag. Ctrl or ⌘ starts another range (`'multiple'`), Shift+click extends the last one from its anchor, and a plain click starts over. Shift and the arrow keys do the same from the keyboard. Ctrl+C copies the ranges as tab-separated text, Ctrl+V pastes into them (one value fills them all), Delete clears them through the normal edit path, and the status bar sums the numbers. The Note column is excluded until you include it.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -213,7 +213,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -263,7 +263,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;

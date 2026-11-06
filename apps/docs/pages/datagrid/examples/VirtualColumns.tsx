@@ -6,7 +6,7 @@ type Reading = { id: number };
 
 const SENSORS = 200;
 
-/** 200 sensors in bands of 20, each reading worked out from the row: no row holds 200 values. */
+/** 200 sensors in bands of 20, with each reading calculated from the row, so no row holds 200 values. */
 const columns: GridColumnItem<Reading>[] = [
   { field: 'id', title: 'Hour', type: 'number', width: 90, sticky: 'start' },
   ...Array.from({ length: SENSORS / 20 }, (_, b) => ({

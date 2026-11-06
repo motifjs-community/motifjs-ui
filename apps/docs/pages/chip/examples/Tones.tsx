@@ -3,7 +3,7 @@ import { Chip, Stack, type ChipTone, type ChipVariant } from '@motifx-community/
 const TONES: ChipTone[] = ['standard', 'accent', 'info', 'success', 'caution', 'danger'];
 const VARIANTS: ChipVariant[] = ['filled', 'outline'];
 
-/** Every tone in each look. */
+/** Every tone in each appearance. */
 export default function Tones() {
   return (
     <Stack>

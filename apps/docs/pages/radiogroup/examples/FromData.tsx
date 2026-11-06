@@ -7,7 +7,7 @@ interface Plan {
   price: number;
 }
 
-/** Options from a list of your own objects: after adding or changing some in place, `refresh()` shows them. */
+/** Options from a list of custom objects. After adding or changing some in place, `refresh()` shows them. */
 export default function FromData() {
   const s = reactive({ plan: 2 as number | null });
   const plans = reactive<Plan[]>([

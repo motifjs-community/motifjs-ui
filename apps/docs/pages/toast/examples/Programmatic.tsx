@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, toast, type Toast } from '@motifx-community/ui';
 
-/** Toasts shown programmatically: the Toast that comes back can be closed and awaited. */
+/** Toasts shown programmatically. The returned Toast can be closed and awaited. */
 export default function Programmatic() {
   const s = reactive({ reason: '' });
 

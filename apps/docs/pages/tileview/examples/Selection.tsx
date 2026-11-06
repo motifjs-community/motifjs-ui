@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Stack, TileView } from '@motifx-community/ui';
 
-/** Tiles along the rows, any number of them chosen: a press, Ctrl and a press, Space; the keys walk the grid. */
+/** Tiles along the rows with any number selected: click, Ctrl + click or Space, and the arrow keys move through the grid. */
 export default function Selection() {
     const s = reactive({ chosen: ['tea'] as string | number | null | readonly (string | number)[] });
     return (

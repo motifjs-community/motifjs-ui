@@ -57,7 +57,7 @@ interface Plan {
   price: number;
 }
 
-/** Options from a list of your own objects: after adding or changing some in place, `refresh()` shows them. */
+/** Options from a list of custom objects. After adding or changing some in place, `refresh()` shows them. */
 export default function FromData() {
   const s = reactive({ plan: 2 as number | null });
   const plans = reactive<Plan[]>([
@@ -191,7 +191,7 @@ export default function Sizes() {
 import { reactive } from '@motifx/core';
 import { Button, RadioGroup, Stack, ValidationGroup } from '@motifx-community/ui';
 
-/** A choice that must be made, checked with its group, and read-only and disabled groups following state. */
+/** A required choice validated with its group, and read-only and disabled groups that follow state. */
 export default function States() {
   const s = reactive({ payment: null as string | null, editable: true, result: '' });
   const group = new ValidationGroup();

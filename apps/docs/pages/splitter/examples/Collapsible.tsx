@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { SplitPane, Splitter, Stack } from '@motifx-community/ui';
 
-/** The side panes can be hidden: a button on the handle, Enter on it, or a double press; the middle one cannot. */
+/** The side panes can be collapsed with a button on the handle, Enter on it, or a double-click. The middle pane cannot. */
 export default function Collapsible() {
     const s = reactive({ told: '' });
     return (

@@ -6,7 +6,7 @@ import { columns, makeOrders } from './orders';
 
 const COAST = ['Antalya', 'İstanbul', 'İzmir', 'Trabzon'];
 
-/** The order columns with header filters: amounts in ranges, dates in a tree, cities by entries of their own, statuses left out. */
+/** The order columns with header filters: amounts in ranges, dates in a tree, cities with custom entries, and excluded statuses. */
 const intervalColumns: GridColumn<Order>[] = columns.map((c) => {
   switch (c.field) {
     case 'amount':
@@ -26,14 +26,14 @@ const intervalColumns: GridColumn<Order>[] = columns.map((c) => {
         ],
       };
     case 'status':
-      // Every status but Cancelled: statuses that come later show too.
+      // Every status except Cancelled, so statuses added later also appear.
       return { ...c, headerFilter: true, filterValues: ['Cancelled'], filterType: 'exclude' };
     default:
       return c;
   }
 });
 
-/** The header filter in ranges of amounts, a tree of dates, entries of its own, and values left out. */
+/** The header filter with ranges of amounts, a tree of dates, custom entries and excluded values. */
 export default function HeaderFilterIntervals() {
   const s = reactive({ months: false });
   let grid: DataGrid<Order> | null = null;

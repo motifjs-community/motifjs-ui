@@ -144,7 +144,7 @@ export default function Views() {
     quarter: false,
     holidays: true,
   });
-  // Every Friday is a holiday here, to show the look.
+  // Every Friday is a holiday here, to show the appearance.
   const friday = (date: Date) => date.getDay() === 5;
   return (
     <div class="sched-demo">
@@ -209,7 +209,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 import { Scheduler, type AppointmentTemplateContext } from '@motifx-community/ui';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** The content of each appointment drawn by a template; the scheduler still places, colours and names it. */
+/** The content of each appointment drawn by a template. The scheduler still positions it, colors it and provides its name. */
 export default function Templates() {
   const template = (c: AppointmentTemplateContext<Meeting>) =>
     c.allDay ? (
@@ -236,7 +236,7 @@ import { reactive } from '@motifx/core';
 import { Button, Scheduler, Stack } from '@motifx-community/ui';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** A scheduler made with `new`, added programmatically and driven by its methods. */
+/** A scheduler created with `new`, added programmatically and controlled through its methods. */
 export default function Programmatic() {
   const state = reactive({ said: '' });
   let host: Stack | null = null;
@@ -401,7 +401,7 @@ import { reactive } from '@motifx/core';
 import { Scheduler } from '@motifx-community/ui';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** A week of appointments; double-click an appointment or a time and the log says what you chose. */
+/** A week of appointments. Double-click an appointment or a time, and the log shows your selection. */
 export default function Basics() {
   const state = reactive({
     appointments: sampleAppointments(),
@@ -547,13 +547,13 @@ import { Scheduler } from '@motifx-community/ui';
 import { SlowAdapter } from '../../../shared/slow-adapter';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** Appointments from a data source that answers late, like a server: only the days shown are asked for. */
+/** Appointments from a data source that responds with a delay, like a server. Only the displayed days are requested. */
 export default function FromSource() {
   const asked = reactive({ text: '' });
   const adapter = new SlowAdapter<Meeting, number>({ data: sampleAppointments(), key: 'id' }, 600);
   const source = new data.DataSource<Meeting, number>({
     adapter,
-    // 'all': a view needs every appointment of its days; the scheduler asks for those days only.
+    // 'all': a view needs every appointment of its days, and the scheduler requests only those days.
     loadMode: 'all',
   });
   source.onChanged((e) => {

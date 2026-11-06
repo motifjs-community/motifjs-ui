@@ -7,7 +7,7 @@ const PLANS = [
     { name: 'Company', price: '€79', line: 'No limits, a person to call' }
 ];
 
-/** Any content in a pane: a plan each, with its own button; a press on the pane itself is told too. */
+/** Any content in a slide: a plan each, with its own button. A click on the slide itself is also reported. */
 export default function Content() {
     const s = reactive({ told: '' });
     const plan = (p: (typeof PLANS)[number]) => (

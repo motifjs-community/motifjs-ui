@@ -66,7 +66,7 @@ A custom pack is a plain object of kit strings. `uiLocale.add` registers strings
 ```tsx
 import { Button, DropDown, Stack, uiLocale } from '@motifx-community/ui';
 
-// A few German texts; what is left out stays English.
+// A few German strings. Anything omitted stays in English.
 uiLocale.add('de', {
     close: 'Schließen',
     clear: 'Leeren',
@@ -77,7 +77,7 @@ uiLocale.add('de', {
     cancel: 'Abbrechen',
 });
 
-/** A pack of your own: `uiLocale.add` gives a language its texts, `use` switches to it. */
+/** A custom pack: `uiLocale.add` registers strings for a language, and `use` switches to it. */
 export default function OwnPack() {
     return (
         <Stack gap="md">
@@ -189,7 +189,7 @@ Dates and numbers follow the kit locale. A control with its own `locale` uses th
 import { reactive } from '@motifx/core';
 import { DateBox, NumberBox, Stack } from '@motifx-community/ui';
 
-/** A control's own `locale` wins over the kit's: these write German and Japanese whatever the kit's language is. */
+/** A control's own `locale` takes precedence over the kit's: these use German and Japanese regardless of the kit language. */
 export default function Formats() {
     const s = reactive({ amount: 98765.43, day: new Date(2026, 2, 18) as Date | null });
     return (

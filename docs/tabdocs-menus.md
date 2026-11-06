@@ -19,7 +19,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -83,7 +83,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -132,7 +132,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -239,7 +239,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -351,7 +351,7 @@ import { FILES, fileDocument, source } from './files';
 
 /**
  * Right-click a tab (or press Shift+F10 on it) for its menu, and the empty strip for the group's.
- * `onContextMenuOpening` adds an item for files; a double click on the empty strip makes a new file.
+ * `onContextMenuOpening` adds an item for files, and a double-click on the empty strip creates a new file.
  */
 export default function ContextMenus() {
   const s = reactive({ menus: true, copy: true, split: true, made: 0, said: '' });
@@ -399,7 +399,7 @@ export const FileIcon = () => (
   </svg>
 );
 
-/** A few files of a made-up project. */
+/** A few files of a sample project. */
 export const FILES = [
   { path: 'src/index.ts', text: "export { App } from './app';\nexport { router } from './router';" },
   { path: 'src/app.ts', text: "import { Application } from '@motifx/core';\n\nexport const App = Application.CreateBuilder().build();" },
@@ -667,7 +667,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },

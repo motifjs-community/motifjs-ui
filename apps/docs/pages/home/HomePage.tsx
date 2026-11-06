@@ -52,7 +52,7 @@ import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/
                 <Rich text="Buttons and commands" />
               </td>
               <td>
-                <Rich text="[`Button`](/button) (menu, split, toggle, busy), [`ButtonGroup`](/buttongroup), [`Toolbar`](/toolbar), [`MenuBar`](/menus) and [`ContextMenu`](/menus)" />
+                <Rich text="[`Button`](/button) (menu, split, toggle, busy), [`ButtonGroup`](/buttongroup), [`Toolbar`](/toolbar), [`SpeedDial`](/speeddial), [`MenuBar`](/menus) and [`ContextMenu`](/menus)" />
               </td>
             </tr>
             <tr>
@@ -60,7 +60,7 @@ import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/
                 <Rich text="Editors" />
               </td>
               <td>
-                <Rich text="[`TextBox`](/textbox) (mask, validation), [`TextArea`](/textarea), [`NumberBox`](/numberbox), [`DateBox`](/datebox), [`DateRangeBox`](/daterangebox), [`Calendar`](/calendar), [`ColorBox`](/colorbox) and [`ColorPicker`](/colorbox), [`Slider`](/slider), [`Rating`](/rating), [`FileUploader`](/fileuploader)" />
+                <Rich text="[`TextBox`](/textbox) (mask, validation), [`TextArea`](/textarea), [`NumberBox`](/numberbox), [`DateBox`](/datebox), [`DateRangeBox`](/daterangebox), [`Calendar`](/calendar), [`ColorBox`](/colorbox) and [`ColorPicker`](/colorbox), [`Slider`](/slider), [`Rating`](/rating), [`FileUploader`](/fileuploader), [`ValidationSummary`](/validationsummary)" />
               </td>
             </tr>
             <tr>
@@ -76,7 +76,7 @@ import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/
                 <Rich text="Display and feedback" />
               </td>
               <td>
-                <Rich text="[`Badge`](/badge), [`Avatar`](/avatar) and [`AvatarGroup`](/avatar), [`Chip`](/chip) and [`ChipGroup`](/chip), [`Card`](/card), [`Skeleton`](/skeleton), [`ProgressBar`](/progress) and [`Spinner`](/progress), [`LoadPanel`](/loadpanel), [`Tooltip`](/tooltip), [`Popover`](/popover), [`Toast`](/toast)" />
+                <Rich text="[`Badge`](/badge), [`Avatar`](/avatar) and [`AvatarGroup`](/avatar), [`Chip`](/chip) and [`ChipGroup`](/chip), [`Card`](/card), [`Gallery`](/gallery), [`TileView`](/tileview), [`Timeline`](/timeline), [`Skeleton`](/skeleton), [`ProgressBar`](/progress) and [`Spinner`](/progress), [`LoadPanel`](/loadpanel), [`Tooltip`](/tooltip), [`Popover`](/popover), [`Toast`](/toast)" />
               </td>
             </tr>
             <tr>
@@ -84,7 +84,7 @@ import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/
                 <Rich text="Navigation and layers" />
               </td>
               <td>
-                <Rich text="[`Tabs`](/tabs), [`Accordion`](/accordion), [`Breadcrumb`](/breadcrumb), [`Pagination`](/pagination), [`Stepper`](/stepper), [`Wizard`](/wizard), [`Window`](/window) and dialog, [`BottomSheet`](/bottomsheet), [`Drawer`](/drawer), [`ActionSheet`](/actionsheet)" />
+                <Rich text="[`Tabs`](/tabs), [`Accordion`](/accordion), [`Breadcrumb`](/breadcrumb), [`Pagination`](/pagination), [`Stepper`](/stepper), [`Wizard`](/wizard), [`MultiView`](/multiview), [`Window`](/window) and dialog, [`BottomSheet`](/bottomsheet), [`Drawer`](/drawer), [`ActionSheet`](/actionsheet)" />
               </td>
             </tr>
             <tr>
@@ -92,7 +92,7 @@ import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/
                 <Rich text="Layout" />
               </td>
               <td>
-                <Rich text="[`Stack`](/layout), [`Grid`](/layout), [`DockPanel`](/layout), [`Panel`](/layout), [`GroupBox`](/layout), [`SplitContainer`](/layout), [`FormLayout`](/formlayout), [`ScrollView`](/scrollview) (pull to refresh, load more), [`Sortable`](/sortable)" />
+                <Rich text="[`Stack`](/layout), [`Grid`](/layout), [`DockPanel`](/layout), [`Panel`](/layout), [`GroupBox`](/layout), [`SplitContainer`](/layout), [`Splitter`](/splitter), [`Resizable`](/resizable), [`Draggable`](/draggable), [`FormLayout`](/formlayout), [`ScrollView`](/scrollview) (pull to refresh, load more), [`Sortable`](/sortable)" />
               </td>
             </tr>
             <tr>

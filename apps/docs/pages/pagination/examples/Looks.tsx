@@ -1,6 +1,6 @@
 import { Pagination, Stack } from '@motifx-community/ui';
 
-/** The compact look; adaptive in a narrow box (drag its corner); more neighbours; and only the pages. */
+/** The compact layout, adaptive in a narrow box (drag its corner), more neighbors, and page buttons only. */
 export default function Looks() {
   return (
     <Stack gap="lg">

@@ -3,7 +3,7 @@ import { data } from '@motifx-community/data';
 import { Button, FilterBuilder, uiLocale } from '@motifx-community/ui';
 import { saleFields } from './sales';
 
-/** The builder's texts come from `uiLocale`; `texts` changes some for one builder only. */
+/** The builder's strings come from `uiLocale`, and `texts` overrides some for one builder. */
 export default function Localization() {
   const s = reactive({ lang: 'en' });
   const toggle = () => {

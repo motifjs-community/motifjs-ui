@@ -7,7 +7,7 @@
 The filter row has one cell per column, with a condition chosen in the cell according to the column type (contains, starts with, =, <, between, empty …) and the kit field for the value. Typing applies the filter after a short pause. The header filter lists the column's values with their counts, taking the other filters into account. For in-memory rows, the grid does the counting. An adapter that supports grouping is queried with `group`, and any other server answers through `loadValues`. Both feed the data source's filter (`data.where`, `data.and`, `data.or`), combined with AND.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -65,7 +65,7 @@ A column's `headerFilterInterval` groups its header filter. A number column uses
 `headerFilterItems` provides custom header filter entries, as `{ text, value }`, where a value is a value or a filter expression (`data.where('city', 'in', […])`). A function receives the other filters and `values()`, the entries it would list, so that you can add to them. `filterValues` and `filterType` (both can be tracked functions) set the contents of the header filter. `'exclude'` leaves those values out, so values added later appear. In the list, selecting every value and then deselecting some leaves those out in the same way.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -154,7 +154,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -204,7 +204,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -309,7 +309,7 @@ import { columns, makeOrders } from './orders';
 
 const COAST = ['Antalya', 'İstanbul', 'İzmir', 'Trabzon'];
 
-/** The order columns with header filters: amounts in ranges, dates in a tree, cities by entries of their own, statuses left out. */
+/** The order columns with header filters: amounts in ranges, dates in a tree, cities with custom entries, and excluded statuses. */
 const intervalColumns: GridColumn<Order>[] = columns.map((c) => {
   switch (c.field) {
     case 'amount':
@@ -329,14 +329,14 @@ const intervalColumns: GridColumn<Order>[] = columns.map((c) => {
         ],
       };
     case 'status':
-      // Every status but Cancelled: statuses that come later show too.
+      // Every status except Cancelled, so statuses added later also appear.
       return { ...c, headerFilter: true, filterValues: ['Cancelled'], filterType: 'exclude' };
     default:
       return c;
   }
 });
 
-/** The header filter in ranges of amounts, a tree of dates, entries of its own, and values left out. */
+/** The header filter with ranges of amounts, a tree of dates, custom entries and excluded values. */
 export default function HeaderFilterIntervals() {
   const s = reactive({ months: false });
   let grid: DataGrid<Order> | null = null;
@@ -433,7 +433,7 @@ export default function Search() {
 `customers.ts`
 
 ```tsx
-/** A customer, as another made-up service keeps it. */
+/** A customer, as stored by a second sample service. */
 export interface Customer {
   id: number;
   name: string;
@@ -444,7 +444,7 @@ const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara'
 const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
 const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
 
-/** `n` made-up customers, the same ones every time. */
+/** `n` sample customers, the same ones every time. */
 export function makeCustomers(n: number): Customer[] {
   return Array.from({ length: n }, (_, i) => ({
     id: i + 1,

@@ -4,8 +4,8 @@ import { Button, Card, Stack } from '@motifx-community/ui';
 const PLACES = ['Istanbul', 'Lisbon', 'Kyoto'];
 
 /**
- * A link card: its title is the link and a press anywhere on it follows it (`rel="router"` hands it to the router);
- * its own button stays a button. A selectable card turns on and off with a press or its check box.
+ * A link card: its title is the link, and a click anywhere on the card follows it (`rel="router"` hands it to the router).
+ * Its own button stays a button. A selectable card toggles with a click or with its check box.
  */
 export default function Links() {
   const s = reactive({ picked: [] as string[] });

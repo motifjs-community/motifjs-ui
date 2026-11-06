@@ -2,7 +2,7 @@ import { reactive } from '@motifx/core';
 import { Button, Stack, TabDocument, TabDocumentManager, type TabLayout, type TabLayoutDocument } from '@motifx-community/ui';
 import { notes, ordersGrid } from './contents';
 
-/** Makes a saved document again by its type; its `state` brings what it needs. */
+/** Recreates a saved document by its type, with its `state` providing what it needs. */
 function restore(saved: TabLayoutDocument): TabDocument {
   if (saved.type === 'orders') return new TabDocument({ ...saved, content: () => ordersGrid((saved.state as { count: number }).count) });
   return new TabDocument({ ...saved, content: () => notes(saved.title) });

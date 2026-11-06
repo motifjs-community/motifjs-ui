@@ -1,6 +1,7 @@
 import { Component, reactive, RouterView, untracked, useNavigation } from '@motifx/core';
 import { defaultIdentity, identities, type IdentityName, type ThemeChoice } from '@motifx-community/design-system';
 import { Button, TextBox } from '@motifx-community/ui';
+import { version as VERSION } from "../../../package.json";
 import { GROUPS, PAGES, SECTIONS } from '../app/pages';
 import { PageOutline } from '../app/PageOutline';
 import { SiteSettings } from '../app/SiteSettings';
@@ -29,8 +30,6 @@ const STYLES: { id: IdentityName | 'default'; label: string }[] = [defaultIdenti
 
 /** How far below the top bar a section heading may be and still count as the one being read. */
 const READING_LINE = 140;
-
-const VERSION = '0.0.0';
 
 /**
  * The frame of the site: the top bar, the side menu (a drawer on narrow screens), the page the

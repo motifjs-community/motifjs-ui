@@ -21,7 +21,7 @@ import { Button, ScrollView, Stack, type ScrollViewBars } from '@motifx-communit
 const LINES = Array.from({ length: 40 }, (_, i) => `Line ${i + 1} of a long text that needs a box of its own to scroll in.`);
 const MODES: ScrollViewBars[] = ['onScroll', 'onHover', 'always', 'never'];
 
-/** A box that scrolls, its bars shown as told; moved programmatically to a line and back to the top. */
+/** A scrolling box with configurable scrollbars, moved programmatically to a line and back to the top. */
 export default function Bars() {
     const s = reactive({ bars: 'onScroll' as ScrollViewBars, top: 0 });
     let view!: ScrollView;
@@ -53,7 +53,7 @@ With `pullToRefresh`, pulling the content down from the top raises `onPullDown`.
 import { reactive } from '@motifx/core';
 import { Panel, ScrollView, Stack } from '@motifx-community/ui';
 
-/** Pulled down from the top, the list asks for what is new and shows the panel until the promise settles. */
+/** Pulled down from the top, the list requests new items and shows the panel until the promise settles. */
 export default function Pull() {
     const s = reactive({ notes: ['Welcome aboard', 'Your plan was renewed', 'A new comment on "Roadmap"'], count: 0 });
     const reload = () =>
@@ -94,7 +94,7 @@ const PAGE = 15;
 const fetchRows = (from: number) =>
     new Promise<string[]>(resolve => setTimeout(() => resolve(Array.from({ length: Math.min(PAGE, TOTAL - from) }, (_, i) => `Order #${1000 + from + i}`)), 800));
 
-/** Near the end the view asks for more; the indicator stays until the rows are in, and `release(true)` ends it for good when there is no more. */
+/** Near the end, the view requests more data. The indicator stays until the rows arrive, and `release(true)` ends it when there is no more. */
 export default function More() {
     const s = reactive({ rows: [] as string[] });
     const more = () =>

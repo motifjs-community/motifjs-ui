@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, Stack, TextBox, Wizard, WizardStep } from '@motifx-community/ui';
 
-/** No bar: buttons of your own drive it; finishing waits for a promise (a server) and may be refused. */
+/** No bar: custom buttons control it, and finishing waits for a promise (a server) and can be refused. */
 export default function Custom() {
     const s = reactive({ code: '', busy: false, note: '' });
     let wizard!: Wizard;

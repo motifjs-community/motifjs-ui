@@ -2,7 +2,7 @@ import { reactive } from '@motifx/core';
 import { Button, Scheduler, Stack } from '@motifx-community/ui';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** A scheduler made with `new`, added programmatically and driven by its methods. */
+/** A scheduler created with `new`, added programmatically and controlled through its methods. */
 export default function Programmatic() {
   const state = reactive({ said: '' });
   let host: Stack | null = null;

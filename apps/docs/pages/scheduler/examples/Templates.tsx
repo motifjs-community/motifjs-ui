@@ -1,7 +1,7 @@
 import { Scheduler, type AppointmentTemplateContext } from '@motifx-community/ui';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** The content of each appointment drawn by a template; the scheduler still places, colours and names it. */
+/** The content of each appointment drawn by a template. The scheduler still positions it, colors it and provides its name. */
 export default function Templates() {
   const template = (c: AppointmentTemplateContext<Meeting>) =>
     c.allDay ? (

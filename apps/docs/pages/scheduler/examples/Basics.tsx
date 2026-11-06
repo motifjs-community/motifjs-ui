@@ -2,7 +2,7 @@ import { reactive } from '@motifx/core';
 import { Scheduler } from '@motifx-community/ui';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** A week of appointments; double-click an appointment or a time and the log says what you chose. */
+/** A week of appointments. Double-click an appointment or a time, and the log shows your selection. */
 export default function Basics() {
   const state = reactive({
     appointments: sampleAppointments(),

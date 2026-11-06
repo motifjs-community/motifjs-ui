@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, Stack, Stepper } from '@motifx-community/ui';
 
-/** A stepper bound with x-model, and one made programmatically and moved with its own methods. */
+/** A stepper bound with x-model, and one created programmatically and moved with its methods. */
 export default function Programmatic() {
     const s = reactive({ step: 0 as string | number | null, at: 0, told: '' });
     const coded = new Stepper({

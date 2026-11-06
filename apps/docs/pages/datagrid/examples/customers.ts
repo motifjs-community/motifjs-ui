@@ -1,4 +1,4 @@
-/** A customer, as another made-up service keeps it. */
+/** A customer, as stored by a second sample service. */
 export interface Customer {
   id: number;
   name: string;
@@ -9,7 +9,7 @@ const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara'
 const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
 const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
 
-/** `n` made-up customers, the same ones every time. */
+/** `n` sample customers, the same ones every time. */
 export function makeCustomers(n: number): Customer[] {
   return Array.from({ length: n }, (_, i) => ({
     id: i + 1,

@@ -3,7 +3,7 @@ import { ContextMenu, RadioGroup, Stack, type ContextMenuPresentation, type Menu
 
 const ROWS = ['Invoice 1042', 'Invoice 1043', 'Invoice 1044'];
 
-/** One ContextMenu, shown as a menu, as an action sheet, or (auto) as a sheet when a finger opened it: long press a row on a phone. */
+/** One ContextMenu, shown as a menu, as an action sheet, or (auto) as a sheet when opened by touch: long press a row on a phone. */
 export default function FromContextMenu() {
   const s = reactive({ presentation: 'auto' as ContextMenuPresentation, said: '' });
   let list!: Component<HTMLUListElement>;

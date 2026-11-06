@@ -5,11 +5,11 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** 100,000 orders on a server that computes the totals itself and gives the group summaries with the groups. */
+/** 100,000 orders on a server that calculates the totals and returns the group summaries with the groups. */
 export default function SummariesServer() {
   const s = reactive({ asked: 0 });
-  // An adapter with the `summary` capability is asked for the values (`remoteSummary: 'auto'`); one
-  // without it gets every matching row loaded once and the values worked out in the browser.
+  // An adapter with the `summary` capability is asked for the values (`remoteSummary: 'auto'`). Without it,
+  // every matching row is loaded once and the values are calculated in the browser.
   const server = new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 300);
   server.onLoading((e) => {
     if (e.options.summary || e.options.groupSummary) s.asked++;

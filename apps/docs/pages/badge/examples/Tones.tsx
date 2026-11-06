@@ -3,7 +3,7 @@ import { Badge, Stack, type BadgeTone, type BadgeVariant } from '@motifx-communi
 const TONES: BadgeTone[] = ['standard', 'accent', 'info', 'success', 'caution', 'danger'];
 const VARIANTS: BadgeVariant[] = ['solid', 'subtle', 'outline'];
 
-/** Every tone in each look. */
+/** Every tone in each appearance. */
 export default function Tones() {
   return (
     <Stack>

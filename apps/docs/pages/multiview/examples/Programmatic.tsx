@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, MultiView, Stack, View } from '@motifx-community/ui';
 
-/** A multi-view made programmatically around the ends: views added, inserted and removed, the sight moved with its methods. */
+/** A looping multi-view created programmatically: views added, inserted and removed, and navigation through its methods. */
 export default function Programmatic() {
     const s = reactive({ told: '', count: 0 });
     let number = 0;

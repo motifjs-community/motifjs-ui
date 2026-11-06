@@ -2,7 +2,7 @@ import { reactive } from '@motifx/core';
 import { RadioGroup, Stack, Switch, TabDocument, TabDocumentManager, type ContentLifetime, type TabCloseButton } from '@motifx-community/ui';
 import { notes } from './contents';
 
-/** Every behaviour is a prop, followed live: here bound to the switches above the manager. */
+/** Every behavior is a prop tracked at runtime, bound here to the switches above the manager. */
 export default function Options() {
   const s = reactive({
     closeButton: 'always' as TabCloseButton,

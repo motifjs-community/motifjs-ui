@@ -77,7 +77,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -179,7 +179,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -273,7 +273,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -520,7 +520,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -572,7 +572,7 @@ export default function WindowOptions() {
   docs.element.style.cssText = 'block-size: 28rem; inline-size: 100%';
   docs.open(new TabDocument({ id: 'draft', title: 'Draft', dirty: () => draft.email === '', content: () => customerForm(draft) }));
   docs.open(new TabDocument({ id: 'notes', title: 'Notes', content: () => notes('Notes') }));
-  // A document with unsaved changes asks before it closes, in the main window.
+  // A document with unsaved changes prompts before closing, in the main window.
   docs.onClosing((e) => {
     if (e.document.dirty) e.promise = confirm(`${e.document.title} has unsaved changes. Close it anyway?`, { title: 'Close', tone: 'caution' });
   });
@@ -602,7 +602,7 @@ import { reactive } from '@motifx/core';
 import { Button, RadioGroup, Stack, TabDocument, TabDocumentManager, type TabLayout, type TabLayoutDocument, type TabRestoreWindows } from '@motifx-community/ui';
 import { notes, ordersGrid } from './contents';
 
-/** Makes a saved document again by its type. */
+/** Recreates a saved document by its type. */
 function restore(saved: TabLayoutDocument): TabDocument {
   if (saved.type === 'orders') return new TabDocument({ ...saved, content: () => ordersGrid(40) });
   return new TabDocument({ ...saved, content: () => notes(saved.title) });

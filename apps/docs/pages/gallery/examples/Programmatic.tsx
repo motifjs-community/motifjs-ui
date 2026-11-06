@@ -2,7 +2,7 @@ import { reactive } from '@motifx/core';
 import { Button, Gallery, Stack } from '@motifx-community/ui';
 import { scene } from './scenes';
 
-/** A gallery made programmatically without its own buttons or dots: yours move it, and `onSlideChanged` tells where it is. */
+/** A gallery created programmatically without its own buttons or dots: custom buttons navigate, and `onSlideChanged` reports the position. */
 export default function Programmatic() {
     const s = reactive({ at: 0, told: '' });
     const coded = new Gallery({

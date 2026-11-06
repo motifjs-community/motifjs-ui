@@ -16,7 +16,7 @@ import { data } from '@motifx-community/data';
 Pass in-memory rows with `rows` and their key with `rowKey`, and the grid places them in a `DataSource` over an `ArrayAdapter`. Every prop accepts a value or a function. A grid created with `new` is a regular object that you can add to the page, sort and query.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -80,7 +80,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 The pager below the rows shows the page sizes (`pageSizeSelector`, with the sizes in `allowedPageSizes` and `all` for one page with every row), “Page 3 of 12 (250 items)” (`pagerInfo`, and `pagerInfoText` with `{0}`, `{1}`, `{2}`), the first, previous, next and last buttons (`pagerNavigation`), and the pages around the current one (`pagerNeighbors`). `pagerDisplayMode` sets its appearance: `full` shows page buttons and sizes as buttons, `compact` shows a page number box and a drop-down of sizes, and `adaptive` (the default) uses `full` while it fits within the grid's width. `pageSize(n)` also changes the rows per page programmatically. In either case, `onPageSizeChanging` can keep the old size, the grid returns to the first page, and with `layoutKey` the size is saved with the layout. PageUp and PageDown change the page (`pageKeys`).
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -161,7 +161,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -211,7 +211,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -234,10 +234,10 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** 100,000 orders from a server, loaded by blocks only where the list looks. */
+/** 100,000 orders from a server, loaded by blocks only in the visible area. */
 export default function Virtual() {
   const s = reactive({ loads: 0 });
-  // Stands in for a server: new data.ODataAdapter({ url: '/odata/Orders', key: 'OrderID' }) goes in its place.
+  // Simulates a server. In an application, use new data.ODataAdapter({ url: '/odata/Orders', key: 'OrderID' }) here.
   const server = new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 300);
   server.onLoading(() => s.loads++);
   const orders = new data.DataSource<Order, number>({ adapter: server, loadMode: 'blocks', pageSize: 100 });
@@ -285,7 +285,7 @@ import { DataGrid } from '@motifx-community/ui';
 import { columns, makeOrders } from './orders';
 import { pagedLoads, pagedOrders } from './paged-orders';
 
-/** A server that loads by page makes a paged grid; rows in memory page with `mode="paged"`. */
+/** A source that loads by page creates a paged grid, and in-memory rows use `mode="paged"`. */
 export default function Pages() {
   return (
     <>
@@ -306,7 +306,7 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { makeOrders } from './orders';
 
-/** How many times the server below was asked for rows. */
+/** The number of times rows were requested from the server below. */
 export const pagedLoads = reactive({ count: 0 });
 
 const server = new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 250);
@@ -324,7 +324,7 @@ import { Button, DataGrid, Stack } from '@motifx-community/ui';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** The page sizes, the info text and the full, compact and adaptive looks of the pager. */
+/** The page sizes, the information text, and the full, compact and adaptive pager layouts. */
 export default function Pager() {
   const s = reactive({ look: 'adaptive' as 'adaptive' | 'compact' | 'full', told: '' });
   let grid: DataGrid<Order> | null = null;

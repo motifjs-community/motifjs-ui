@@ -2,7 +2,7 @@ import { DataGrid } from '@motifx-community/ui';
 import { columns, makeOrders } from './orders';
 import { pagedLoads, pagedOrders } from './paged-orders';
 
-/** A server that loads by page makes a paged grid; rows in memory page with `mode="paged"`. */
+/** A source that loads by page creates a paged grid, and in-memory rows use `mode="paged"`. */
 export default function Pages() {
   return (
     <>

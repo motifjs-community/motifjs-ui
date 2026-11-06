@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Panel, Sortable, Stack } from '@motifx-community/ui';
 
-/** Rows put in order by dragging, or with Ctrl + an arrow on the focused row; the app reorders its data when told. */
+/** Rows reordered by dragging, or with Ctrl + arrow key on the focused row. The application reorders its data in the event. */
 export default function Basic() {
     const s = reactive({ steps: ['Collect the order', 'Pack it', 'Print the label', 'Hand it over'], told: '' });
     return (

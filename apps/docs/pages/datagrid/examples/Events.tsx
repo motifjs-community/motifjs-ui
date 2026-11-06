@@ -3,7 +3,7 @@ import { DataGrid } from '@motifx-community/ui';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** The grid's events: amounts over 900 in bold, a row menu of the page's own, no "Cancelled" saved, and a log of what happened. */
+/** The grid's events: amounts over 900 in bold, a custom row menu, "Cancelled" not saved, and a log of what happened. */
 export default function Events() {
   const s = reactive({ log: [] as { id: number; text: string }[] });
   let next = 0;

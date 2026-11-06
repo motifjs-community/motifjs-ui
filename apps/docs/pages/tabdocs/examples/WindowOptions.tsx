@@ -26,7 +26,7 @@ export default function WindowOptions() {
   docs.element.style.cssText = 'block-size: 28rem; inline-size: 100%';
   docs.open(new TabDocument({ id: 'draft', title: 'Draft', dirty: () => draft.email === '', content: () => customerForm(draft) }));
   docs.open(new TabDocument({ id: 'notes', title: 'Notes', content: () => notes('Notes') }));
-  // A document with unsaved changes asks before it closes, in the main window.
+  // A document with unsaved changes prompts before closing, in the main window.
   docs.onClosing((e) => {
     if (e.document.dirty) e.promise = confirm(`${e.document.title} has unsaved changes. Close it anyway?`, { title: 'Close', tone: 'caution' });
   });

@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, LoadPanel, Panel, Stack } from '@motifx-community/ui';
 
-/** Without the shade, without the pane, without the indicator; a press on the shade may hide it. */
+/** Without the shade, the panel or the indicator. A click on the shade can hide it. */
 export default function Options() {
     const s = reactive({ clear: false, bare: false, words: false });
     let clear!: Panel;

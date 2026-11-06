@@ -3,7 +3,7 @@ import { ColorBox, Stack } from '@motifx-community/ui';
 
 const PALETTE = ['#3b5bdb', '#1971c2', '#0c8599', '#2b8a3e', '#f08c00', '#e8590c', '#e03131', '#c2255c', '#862e9c', '#495057'];
 
-/** A colour field bound with `x-model`: type a hex, or open the picker (Alt+Down); one made with `new` programmatically. */
+/** A color field bound with `x-model`: type a hex value or open the picker (Alt+Down). One is created programmatically with `new`. */
 export default function Programmatic() {
   const s = reactive({ accent: '#3b5bdb' as string | null });
   const coded = new ColorBox({ label: 'Made in code', value: '#2b8a3e', clearButton: true });

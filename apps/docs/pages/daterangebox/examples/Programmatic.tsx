@@ -3,7 +3,7 @@ import { Button, DateRangeBox, Stack, type DateRange } from '@motifx-community/u
 
 const say = (d: Date | null) => (d ? d.toLocaleDateString('en-GB') : '—');
 
-/** A range bound with x-model, and one made programmatically and read through its properties. */
+/** A range bound with x-model, and one created programmatically and read through its properties. */
 export default function Programmatic() {
     const s = reactive({ stay: [new Date(2026, 2, 10), new Date(2026, 2, 14)] as DateRange, told: '' });
     const coded = new DateRangeBox({ label: 'Report period', clearButton: true, onValueChanged: e => (s.told = `${say(e.value[0])} to ${say(e.value[1])}`) });

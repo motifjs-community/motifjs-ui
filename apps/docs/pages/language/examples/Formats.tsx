@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { DateBox, NumberBox, Stack } from '@motifx-community/ui';
 
-/** A control's own `locale` wins over the kit's: these write German and Japanese whatever the kit's language is. */
+/** A control's own `locale` takes precedence over the kit's: these use German and Japanese regardless of the kit language. */
 export default function Formats() {
     const s = reactive({ amount: 98765.43, day: new Date(2026, 2, 18) as Date | null });
     return (

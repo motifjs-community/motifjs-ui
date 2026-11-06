@@ -1,11 +1,11 @@
 import { reactive } from '@motifx/core';
 import { Button, Stack, TextBox, ValidationGroup } from '@motifx-community/ui';
 
-/** Stands in for a server call: "ada" is taken. */
+/** Simulates a server call: "ada" is taken. */
 const isFree = (value: string) =>
   new Promise<boolean | string>((done) => setTimeout(() => done(value.toLowerCase() === 'ada' ? `“${value}” is taken.` : true), 600));
 
-/** Built-in rules, rules of your own (an async one too), an error from outside, and a group checked on Save. */
+/** Built-in rules, custom rules including an async one, an external error, and a group validated on Save. */
 export default function Validation() {
   const s = reactive({ user: '', serverError: '' as string | null, result: '' });
   const group = new ValidationGroup();

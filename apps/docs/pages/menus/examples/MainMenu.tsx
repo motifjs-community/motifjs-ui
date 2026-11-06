@@ -1,7 +1,7 @@
 import { reactive, type Component } from '@motifx/core';
 import { CheckBox, MenuBar, Stack, type MenuItem } from '@motifx-community/ui';
 
-/** An app's menu bar made with `new`: submenus, check and radio items, shortcuts, access keys, and `onItemClick`. */
+/** An application menu bar created with `new`: submenus, check and radio items, shortcuts, access keys and `onItemClick`. */
 export default function MainMenu() {
   const s = reactive({
     log: 'Nothing chosen yet.',

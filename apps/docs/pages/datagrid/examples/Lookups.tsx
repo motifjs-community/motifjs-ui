@@ -8,10 +8,10 @@ type Sale = { id: number; customerId: number | null; amount: number };
 
 const money = new Intl.NumberFormat('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** Sales in memory whose customer comes from another service: only the customers on the screen are asked for, several in one request. */
+/** In-memory sales whose customer comes from another service: only the customers on screen are requested, several in one request. */
 export default function Lookups() {
   const s = reactive({ requests: 0, keys: 0 });
-  // Stands in for another service: new data.RestAdapter({ url: '/api/customers', key: 'id' }) goes in its place.
+  // Simulates another service. In an application, use new data.RestAdapter({ url: '/api/customers', key: 'id' }) here.
   const service = new SlowAdapter<Customer, number>({ data: makeCustomers(600), key: 'id' }, 400);
   // Counts the requests that turn keys into names; the editor's own list loads are not among them.
   service.onLoading((e) => {

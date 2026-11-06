@@ -32,7 +32,7 @@ export interface Booking {
   endDateTimeZone?: string;
 }
 
-/** Series around this week: a daily standup with one day left out and one moved, a review every other week, a report on the last Friday, an all-day Friday. */
+/** Series around this week: a daily standup with one excluded day and one moved, a review every other week, a report on the last Friday, and an all-day Friday. */
 export function recurringAppointments(): Booking[] {
   const today = new Date();
   const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7));
@@ -44,7 +44,7 @@ export function recurringAppointments(): Booking[] {
       startDate: day(-21, 9),
       endDate: day(-21, 9, 30),
       recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
-      // This Tuesday is left out; this Wednesday's is moved (appointment 2).
+      // This Tuesday is excluded, and this Wednesday's occurrence is moved (appointment 2).
       recurrenceException: [day(1, 9), day(2, 9)].map((d) => formatRuleDate({ time: d.getTime(), utc: true, dateOnly: false })).join(','),
     },
     { id: 2, text: 'Team standup', startDate: day(2, 11), endDate: day(2, 11, 30), recurrenceId: 1 },
@@ -95,7 +95,7 @@ const date = (offset: number) => {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
 };
 
-/** A zone by its Windows name with its VTIMEZONE, a weekly series with one day left out, an all-day event, text folded and escaped. */
+/** A zone with its Windows name and VTIMEZONE, a weekly series with one excluded day, an all-day event, and folded, escaped text. */
 const FILE = [
   'BEGIN:VCALENDAR',
   'VERSION:2.0',
@@ -394,7 +394,7 @@ export interface Booking {
   endDateTimeZone?: string;
 }
 
-/** Series around this week: a daily standup with one day left out and one moved, a review every other week, a report on the last Friday, an all-day Friday. */
+/** Series around this week: a daily standup with one excluded day and one moved, a review every other week, a report on the last Friday, and an all-day Friday. */
 export function recurringAppointments(): Booking[] {
   const today = new Date();
   const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7));
@@ -406,7 +406,7 @@ export function recurringAppointments(): Booking[] {
       startDate: day(-21, 9),
       endDate: day(-21, 9, 30),
       recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
-      // This Tuesday is left out; this Wednesday's is moved (appointment 2).
+      // This Tuesday is excluded, and this Wednesday's occurrence is moved (appointment 2).
       recurrenceException: [day(1, 9), day(2, 9)].map((d) => formatRuleDate({ time: d.getTime(), utc: true, dateOnly: false })).join(','),
     },
     { id: 2, text: 'Team standup', startDate: day(2, 11), endDate: day(2, 11, 30), recurrenceId: 1 },

@@ -4,7 +4,7 @@ import { FILES, fileDocument } from './files';
 
 /**
  * Two managers with the same `dragGroup` take each other's tabs and groups. The content moves with
- * its tab, it is not made again: an edit in a moved tab is still there.
+ * its tab, it is not recreated, so an edit in a moved tab is preserved.
  */
 export default function BetweenManagers() {
   const s = reactive({ last: 'Drag a tab from one manager to the other.' });

@@ -51,7 +51,7 @@ export default function Basic() {
 import { reactive } from '@motifx/core';
 import { Stack, TileView } from '@motifx-community/ui';
 
-/** Tiles along the rows, any number of them chosen: a press, Ctrl and a press, Space; the keys walk the grid. */
+/** Tiles along the rows with any number selected: click, Ctrl + click or Space, and the arrow keys move through the grid. */
 export default function Selection() {
     const s = reactive({ chosen: ['tea'] as string | number | null | readonly (string | number)[] });
     return (
@@ -123,7 +123,7 @@ const ROOMS = [
     { name: 'Bedroom', temp: 18 }
 ];
 
-/** Any content on a tile: a room each, with its own button; a press on the tile itself is told too. */
+/** Any content on a tile: a room each, with its own button. A click on the tile itself is also reported. */
 export default function Content() {
     const s = reactive({ told: '' });
     const room = (r: (typeof ROOMS)[number]) => (

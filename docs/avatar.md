@@ -21,7 +21,7 @@ import { Avatar, Button, Stack, type AvatarStatus } from '@motifx-community/ui';
 const PEOPLE = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper'];
 const STATUSES: AvatarStatus[] = ['online', 'away', 'busy', 'offline'];
 
-/** An avatar from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+/** An avatar in JSX tracks its functions, and one created with `new` accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ person: 0, status: 0 });
   const coded = new Avatar({ name: 'Edsger Dijkstra', tone: 'success', shape: 'square' });
@@ -44,7 +44,7 @@ The picture appears once it has loaded. Until then, or if it fails to load, the 
 ```tsx
 import { Avatar, Stack } from '@motifx-community/ui';
 
-// A picture of our own, so the example needs no network: a sunset as an SVG.
+// An inline SVG sunset, so that the example needs no network access.
 const PICTURE = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="sky" x2="0" y2="1">' +
     '<stop offset="0" stop-color="#3b5bdb"/><stop offset="1" stop-color="#f08c00"/></linearGradient></defs>' +

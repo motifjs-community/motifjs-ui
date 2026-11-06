@@ -4,13 +4,13 @@ import { Scheduler } from '@motifx-community/ui';
 import { SlowAdapter } from '../../../shared/slow-adapter';
 import { sampleAppointments, type Meeting } from './sample-appointments';
 
-/** Appointments from a data source that answers late, like a server: only the days shown are asked for. */
+/** Appointments from a data source that responds with a delay, like a server. Only the displayed days are requested. */
 export default function FromSource() {
   const asked = reactive({ text: '' });
   const adapter = new SlowAdapter<Meeting, number>({ data: sampleAppointments(), key: 'id' }, 600);
   const source = new data.DataSource<Meeting, number>({
     adapter,
-    // 'all': a view needs every appointment of its days; the scheduler asks for those days only.
+    // 'all': a view needs every appointment of its days, and the scheduler requests only those days.
     loadMode: 'all',
   });
   source.onChanged((e) => {

@@ -7,7 +7,7 @@ const customers = makeCustomers(60);
 const orders = makeCustomerOrders(customers);
 const money = new Intl.NumberFormat('en', { style: 'currency', currency: 'EUR' });
 
-/** What the details show of a customer: its fields and what its orders come to. */
+/** The details of a customer: its fields and the total of its orders. */
 interface Profile extends Customer {
   orders: number;
   total: string;
@@ -33,7 +33,7 @@ const items: FormItem[] = [
   { field: 'total', label: 'Orders total' },
 ];
 
-/** A customer's details: tabs, the first a read-only form; the other tab is made when first shown, and the row grows with it. */
+/** A customer's details: tabs, the first with a read-only form. The other tab is created when first shown, and the row grows with it. */
 function CustomerTabs(props: { ctx: DetailContext<Profile> }) {
   const profile = reactive({ ...props.ctx.row });
   return (

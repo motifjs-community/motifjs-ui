@@ -18,7 +18,7 @@ In JSX, `x-model` shows the form while the value is true and writes `false` when
 import { reactive } from '@motifx/core';
 import { Button, MxForm, Stack, TextBox } from '@motifx-community/ui';
 
-/** A form written as a class: its content comes from `view()`, its buttons from the footer. */
+/** A form written as a class: its content comes from `view()`, and its buttons from the footer. */
 export class RenameForm extends MxForm {
   private readonly data = reactive({ name: 'Report.docx' });
 
@@ -177,7 +177,7 @@ Enter in a single-line field clicks `acceptButton`, and Escape clicks `cancelBut
 import { reactive } from '@motifx/core';
 import { Button, MxForm, Stack, TextBox } from '@motifx-community/ui';
 
-/** A form written as a class: its content comes from `view()`, its buttons from the footer. */
+/** A form written as a class: its content comes from `view()`, and its buttons from the footer. */
 export class RenameForm extends MxForm {
   private readonly data = reactive({ name: 'Report.docx' });
 
@@ -256,7 +256,7 @@ export default function Events() {
 import { reactive } from '@motifx/core';
 import { Button, confirm, messageBox } from '@motifx-community/ui';
 
-/** A message, a question with three answers, a confirmation, and buttons of your own. */
+/** A message, a question with three answers, a confirmation, and custom buttons. */
 export default function MessageBoxes() {
   const answer = reactive({ text: '' });
 
@@ -500,7 +500,7 @@ export default function JsxAndCode() {
 import { reactive } from '@motifx/core';
 import { Button, MxForm, Stack, TextBox } from '@motifx-community/ui';
 
-/** A form written as a class: its content comes from `view()`, its buttons from the footer. */
+/** A form written as a class: its content comes from `view()`, and its buttons from the footer. */
 export class RenameForm extends MxForm {
   private readonly data = reactive({ name: 'Report.docx' });
 

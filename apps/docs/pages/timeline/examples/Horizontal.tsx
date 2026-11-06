@@ -3,7 +3,7 @@ import { Stack, Timeline } from '@motifx-community/ui';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-/** Releases along a line of dates: a press on a date, or the arrow keys, shows that release under the line; the buttons scroll the track. */
+/** Releases along a line of dates. Clicking a date, or using the arrow keys, shows that release below the line, and the buttons scroll the track. */
 export default function Horizontal() {
     const s = reactive({ shown: 'r3' as string | number | null });
     const releases = MONTHS.map((month, i) => ({

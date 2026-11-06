@@ -20,7 +20,7 @@ import { ColorBox, Stack } from '@motifx-community/ui';
 
 const PALETTE = ['#3b5bdb', '#1971c2', '#0c8599', '#2b8a3e', '#f08c00', '#e8590c', '#e03131', '#c2255c', '#862e9c', '#495057'];
 
-/** A colour field bound with `x-model`: type a hex, or open the picker (Alt+Down); one made with `new` programmatically. */
+/** A color field bound with `x-model`: type a hex value or open the picker (Alt+Down). One is created programmatically with `new`. */
 export default function Programmatic() {
   const s = reactive({ accent: '#3b5bdb' as string | null });
   const coded = new ColorBox({ label: 'Made in code', value: '#2b8a3e', clearButton: true });
@@ -42,7 +42,7 @@ import { ColorPicker, Stack } from '@motifx-community/ui';
 
 const PALETTE = ['#ffffff', '#ced4da', '#495057', '#000000', '#e03131', '#f08c00', '#2b8a3e', '#1971c2', '#862e9c', '#3b5bdb80'];
 
-/** The picker on its own, in the page: with opacity (`alpha`) and preset colours. */
+/** The standalone picker in the page, with opacity (`alpha`) and preset colors. */
 export default function Picker() {
   const s = reactive({ color: '#1971c2cc' as string | null });
 
@@ -61,7 +61,7 @@ export default function Picker() {
 import { reactive } from '@motifx/core';
 import { ColorBox, Stack } from '@motifx-community/ui';
 
-/** Applied with buttons: the value changes on OK, Cancel leaves it; with opacity it keeps `#rrggbbaa`. */
+/** Applied with buttons: the value changes on OK, and Cancel discards the change. With opacity, it keeps `#rrggbbaa`. */
 export default function Buttons() {
   const s = reactive({ overlay: '#00000080' as string | null });
 

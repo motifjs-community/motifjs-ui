@@ -7,7 +7,7 @@
 The bar above the rows contains the grid's own items whose features are enabled, at the end, in this order: “New row” (`addRows`, `newRowButton`), “Save changes” and “Discard” (batch mode, `saveButtons`), “Export” (`exportButton`), the column list (`columnChooserButton`) and the search box (`searchPanel`). If there are none, the bar does not appear. `toolbar.items` lists its exact contents: grid items by name, an object with a `name` to change one of them, and custom items, such as a button with `text`, `icon`, `hint` and `click`, or any component with `content`, at the start (`location: 'before'`) or at the end. Buttons that do not fit move to the “more” menu (`overflow`). The grid's own buttons show only their icons in the bar (`showText`), with their text in the menu.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -36,7 +36,7 @@ export interface Order {
 `addColumn(column, index?)` adds a column at a position among the data columns, with its own width, visibility and sticky side (or the values in the saved layout). `deleteColumn(field)` removes a column, along with its sort, grouping and filter. `columnOption(field, name, value)` changes one option of a column while it is displayed: its layout (`width`, `visible`, `sticky`, `visibleIndex`), sort, grouping, header filter values, a feature switch, or any field of its definition (`title`, `format`, `lookup`, `cell`, `type` …), and the column is redrawn. `columnOption(field, { … })` changes several at once. The layout, `layoutKey` and `onLayoutChange` follow, and `onOptionChanged` reports each change (`name: 'columns'` for a column added or removed). `columnCount()` and `getVisibleColumns()` read them.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -54,7 +54,7 @@ export interface Order {
 With `layoutKey`, the grid saves column widths, order, hidden and pinned columns, the sort, the filters and the search text in the browser's `localStorage`, and a grid created again with the same name, even after a reload, restores them. Storage that is full or blocked is silently skipped. `resetLayout()` (also in the column menu) returns to the column definitions. To store the layout elsewhere, such as on a server, read `layout` and `filters`, listen to `onLayoutChange`, and pass them back through the props of the same names.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -72,7 +72,7 @@ export interface Order {
 Every feature has a switch in `settings`, as a value or a function. A column can enable or disable a feature for itself, and its value takes precedence. `grid.settings` and `grid.columnSettings(field)` change them at runtime.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -165,7 +165,7 @@ export interface Order {
 Every user action has an event, set as a prop or subscribed to with `grid.onX((e) => …)`. An event raised before an action (`…ing`) can stop it with `e.cancel = true`, and most can change the result (the values sent, the items of a menu or the text copied). In this example, amounts over 900 are bold, rows have a custom menu (right-click or Shift + F10), a change to “Cancelled” is not saved, and the list shows what happened. Methods do the same programmatically: `editCell`, `cellValue`, `navigateToRow`, `columnOption`, `state()` and the others in the [API reference](datagrid-api.md#api).
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -270,7 +270,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -320,7 +320,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -343,7 +343,7 @@ import { filterColumns, makeOrders } from './orders';
 
 const euros = new Intl.NumberFormat('en', { style: 'currency', currency: 'EUR' });
 
-/** Columns added, taken out and changed while the grid shows; the layout, the sort and the filters follow. */
+/** Columns added, removed and changed at runtime, while the layout, sort and filters stay in sync. */
 export default function RuntimeColumns() {
   const s = reactive({ paid: false, city: true, fields: '' });
   let grid: DataGrid<Order> | null = null;
@@ -396,7 +396,7 @@ import { Button, CheckBox, DataGrid, Stack } from '@motifx-community/ui';
 import type { Order } from './order';
 import { filterColumns, makeOrders } from './orders';
 
-/** Widths, order, sort and filters kept under `layoutKey`; a grid made again gets them back. */
+/** Widths, order, sort and filters saved under `layoutKey`, and restored when a grid is created again. */
 export default function KeepLayout() {
   const s = reactive({ keep: true, shown: true });
   let grid: DataGrid<Order> | null = null;
@@ -492,7 +492,7 @@ import { DataGrid } from '@motifx-community/ui';
 import type { Order } from './order';
 import { columns, makeOrders } from './orders';
 
-/** The grid's events: amounts over 900 in bold, a row menu of the page's own, no "Cancelled" saved, and a log of what happened. */
+/** The grid's events: amounts over 900 in bold, a custom row menu, "Cancelled" not saved, and a log of what happened. */
 export default function Events() {
   const s = reactive({ log: [] as { id: number; text: string }[] });
   let next = 0;

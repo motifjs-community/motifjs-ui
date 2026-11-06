@@ -18,7 +18,7 @@ A step with `href` is a link, and `rel='router'` lets the MotifJS router handle 
 import { reactive } from '@motifx/core';
 import { Breadcrumb, Stack } from '@motifx-community/ui';
 
-/** Links the router takes (`rel="router"`), a step that is a button, the current page last; one made programmatically. */
+/** Links handled by the router (`rel="router"`), a step that is a button, the current page last, and one created programmatically. */
 export default function Programmatic() {
   const s = reactive({ last: '' });
   const coded = new Breadcrumb({ label: 'Settings path', items: ['Settings', 'Account', 'Security'] });

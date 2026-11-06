@@ -10,7 +10,7 @@ export default function Programmatic() {
     const n = ++added;
     const state = reactive({ marks: '' });
     const b = new Button({ variant: 'outline' });
-    b.text = () => `Button ${n}${state.marks}`; // a function is followed
+    b.text = () => `Button ${n}${state.marks}`; // a function is tracked
     b.motif.on('click', () => (state.marks += ' ✓'));
     toolbar?.controls.add(b);
   };

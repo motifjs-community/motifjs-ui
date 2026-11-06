@@ -23,7 +23,7 @@ Give controls a `tabIndex`, and the outermost container of the page or window vi
 ```tsx
 import { Button, FocusContainer, Panel, Stack } from '@motifx-community/ui';
 
-/** A container of your own: it runs the Tab order of its controls and remembers the active one. */
+/** A custom container: it manages the Tab order of its controls and remembers the active one. */
 class CustomerEditor extends FocusContainer<HTMLDivElement> {}
 
 /** Tab visits the buttons by `tabIndex`; the container reports its `activeControl` and puts focus back with `restoreFocus()`. */

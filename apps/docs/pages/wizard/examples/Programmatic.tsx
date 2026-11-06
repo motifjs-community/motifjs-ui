@@ -1,14 +1,14 @@
 import { Component, reactive } from '@motifx/core';
 import { Button, Stack, Wizard, WizardStep } from '@motifx-community/ui';
 
-// A page made programmatically: any MotifJS component.
+// A page created programmatically: any MotifJS component.
 class Note extends Component<HTMLDivElement, { text: string }> {
     override view() {
         return <p>{this.props.text}</p>;
     }
 }
 
-/** A wizard made programmatically: its steps as props with content factories, moved with its methods, a step added later. */
+/** A wizard created programmatically: its steps as props with content factories, moved with its methods, with a step added later. */
 export default function Programmatic() {
     const s = reactive({ told: '' });
     const wizard = new Wizard({

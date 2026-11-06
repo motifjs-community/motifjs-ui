@@ -13,7 +13,7 @@ const quick = (file: File, report: (fraction: number) => void) =>
         }, 120);
     });
 
-/** An Upload button sends what was chosen; or nothing goes until code says so. One file only, no dropping. */
+/** An Upload button sends the selected files, or nothing is sent until code requests it. One file only, with no dropping. */
 export default function Modes() {
     const s = reactive({ one: [] as readonly File[] });
     let manual!: FileUploader;

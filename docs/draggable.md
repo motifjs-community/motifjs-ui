@@ -102,7 +102,7 @@ export default function Targets() {
 import { reactive } from '@motifx/core';
 import { Button, Draggable, Panel, Stack } from '@motifx-community/ui';
 
-/** The place goes out to x-model after every drag or key and comes back: moved, kept and restored programmatically. */
+/** The position is written to x-model after every drag or key press and can be set back: moved, saved and restored programmatically. */
 export default function Programmatic() {
     const s = reactive({ at: { x: 0, y: 0 } as { x: number; y: number } | null, kept: null as { x: number; y: number } | null });
     return (

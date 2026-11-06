@@ -153,7 +153,7 @@ interface Product {
 const categories = ['Beverages', 'Condiments', 'Dairy', 'Grains', 'Produce', 'Seafood'];
 const rows: Product[] = Array.from({ length: 10000 }, (_, i) => ({ id: i + 1, name: `${categories[i % 6]} item ${i + 1}`, category: categories[i % 6] }));
 
-/** 10,000 products behind a server that answers after 300 ms: the search goes to the data source, the value's text is found by key. */
+/** 10,000 products on a server that responds after 300 ms. The search goes to the data source, and the value's text is looked up by key. */
 export default function Products() {
   const line = reactive({ product: 2500 as number | null });
   const products = new data.DataSource<Product, number>({

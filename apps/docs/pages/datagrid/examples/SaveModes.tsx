@@ -7,7 +7,7 @@ import { columns, makeOrders, newOrder } from './orders';
 
 const MODES: data.SaveMode[] = ['wait', 'background', 'batch'];
 
-/** Edits saved as the save mode says, to a server that turns down a note with "error" in it. */
+/** Edits saved according to the save mode, to a server that rejects a note containing "error". */
 export default function SaveModes() {
   const s = reactive({ saveMode: 'wait' as data.SaveMode });
   const service = new OrderService({ data: makeOrders(30), key: 'id', createKey: (_values, rows) => rows.length + 1 }, 300);

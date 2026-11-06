@@ -7,7 +7,7 @@ const popupColumns: GridColumn<Order>[] = columns.map((c) =>
   c.field === 'note' ? { ...c, formItem: { colSpan: 'all', label: 'Note for the courier' } } : c.field === 'id' ? { ...c, formItem: { visible: false } } : c,
 );
 
-/** Rows edited and added in a modal window: Enter saves, Escape cancels, focus comes back to the row. */
+/** Rows edited and added in a modal window: Enter saves, Escape cancels, and focus returns to the row. */
 export default function PopupMode() {
   return (
     <DataGrid

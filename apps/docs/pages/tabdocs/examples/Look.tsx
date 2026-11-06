@@ -3,7 +3,7 @@ import { Button, RadioGroup, Stack, TabDocument, TabDocumentManager, type TabSho
 import { notes } from './contents';
 import { fileDocument } from './files';
 
-/** A count or a dot over the tab, a colour by what the document needs, and a description only where two titles are the same. */
+/** A count or a dot on the tab, a color for what the document needs, and a description only where two titles are the same. */
 export default function Look() {
   const s = reactive({ unread: 3, errors: 1, description: 'duplicates' as TabShowDescription });
   const docs = new TabDocumentManager({ label: 'Badges and tones', showDescription: () => s.description });

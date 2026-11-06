@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, Card, Stack } from '@motifx-community/ui';
 
-/** A card from JSX follows its functions; one made with `new` takes the same properties programmatically. */
+/** A card in JSX tracks its functions, and one created with `new` accepts the same properties programmatically. */
 export default function Programmatic() {
   const s = reactive({ following: false });
   const coded = new Card({ title: 'Made in code', subtitle: 'new Card({ … })', variant: 'outline' });

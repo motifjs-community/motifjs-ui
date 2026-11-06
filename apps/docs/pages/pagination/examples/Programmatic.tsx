@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Pagination, Stack } from '@motifx-community/ui';
 
-/** The page bound with `x-model`, the sizes to choose from; one made with `new` programmatically. */
+/** The page bound with `x-model`, the available sizes, and one created with `new` programmatically. */
 export default function Programmatic() {
   const s = reactive({ page: 3, size: 25 });
   const coded = new Pagination({ label: 'Pages made in code', total: 40, pageSize: 10, mode: 'full', showInfo: false });

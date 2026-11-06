@@ -11,7 +11,7 @@ export default function Views() {
     quarter: false,
     holidays: true,
   });
-  // Every Friday is a holiday here, to show the look.
+  // Every Friday is a holiday here, to show the appearance.
   const friday = (date: Date) => date.getDay() === 5;
   return (
     <div class="sched-demo">

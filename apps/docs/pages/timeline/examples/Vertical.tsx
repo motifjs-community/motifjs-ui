@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, Stack, Timeline } from '@motifx-community/ui';
 
-/** A project down the page: a dot per event on the line, coloured by its tone; the cards take turns or fold when told. */
+/** A project shown vertically, with a marker per event colored by its tone. Cards can alternate sides or collapse. */
 export default function Vertical() {
     const s = reactive({ alternate: false, collapsible: false, told: '' });
     return (

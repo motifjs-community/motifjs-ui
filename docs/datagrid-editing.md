@@ -53,7 +53,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 `addRow()` or the toolbar's “New row” opens a row at the bottom (the grid scrolls to the very end, and a virtual list loads only the last block) or at the top, with the first editable cell in edit mode. Tab on the last cell of a new row saves it and opens the next one, Escape discards it, and an untouched row is removed automatically.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -71,7 +71,7 @@ export interface Order {
 `actions` defines the buttons for each row, as a list or as a function of the row and its state (`isNew`, `isEditing`, `isDirty`, `isSaving`, `hasError`, `isRemoved`, `isSelected`). When a value read by the function changes, the row's buttons update. Built-in actions are referenced by name. Buttons that do not fit in the column move to the “more” menu, and those listed first stay visible. The column can be at the start or the end, pinned to its edge or scrolling with the rows.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -91,7 +91,7 @@ Every row's actions also appear in its context menu (right-click or Shift+F10), 
 After “select all” on a server, the rows are not loaded. Only actions with `onclickSelection` appear in that case, and they receive the selection in the form of `grid.selection` (`all`, `keys`, `except`, `filter`) to send to the server, so that every row does not have to be loaded.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -152,7 +152,7 @@ import { columns, makeOrders, newOrder } from './orders';
 
 const MODES: data.SaveMode[] = ['wait', 'background', 'batch'];
 
-/** Edits saved as the save mode says, to a server that turns down a note with "error" in it. */
+/** Edits saved according to the save mode, to a server that rejects a note containing "error". */
 export default function SaveModes() {
   const s = reactive({ saveMode: 'wait' as data.SaveMode });
   const service = new OrderService({ data: makeOrders(30), key: 'id', createKey: (_values, rows) => rows.length + 1 }, 300);
@@ -229,7 +229,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -279,7 +279,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -472,7 +472,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export default function BarActions() {
   const s = reactive({ orders: makeOrders(40), location: 'toolbar' as GridActionLocation, menu: false, note: '' });
   let grid: DataGrid<Order> | null = null;
-  // The grid reads the rows as they are: after a change in place it draws them again and asks their actions again.
+  // The grid reads the rows as they are, so after a change in place it redraws them and re-reads their actions.
   const changed = (rows: readonly Order[]) => {
     grid?.repaintRows(rows.map((row) => row.id));
     grid?.refreshActions();

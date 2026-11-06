@@ -9,7 +9,7 @@ const pencil = () => {
     return svg;
 };
 
-/** Completed and failed steps told by the items, an optional step, a disabled one, an icon in place of the number. */
+/** Completed and failed steps set by the items, an optional step, a disabled step, and an icon in place of the number. */
 export default function Statuses() {
     const s = reactive({ paid: false });
     const items = [

@@ -72,7 +72,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 In-memory rows also appear page by page, here 100 places at a time, grouped by city. Group rows and data rows both count, so the next city's group appears with its page. Details, selection and group summaries work as in the other modes.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -98,7 +98,7 @@ type Reading = { id: number };
 
 const SENSORS = 200;
 
-/** 200 sensors in bands of 20, each reading worked out from the row: no row holds 200 values. */
+/** 200 sensors in bands of 20, with each reading calculated from the row, so no row holds 200 values. */
 const columns: GridColumnItem<Reading>[] = [
   { field: 'id', title: 'Hour', type: 'number', width: 90, sticky: 'start' },
   ...Array.from({ length: SENSORS / 20 }, (_, b) => ({
@@ -191,10 +191,10 @@ class OrderServer extends SlowAdapter<Order, number> {
 /** 1,030 orders from a slow server without a count, loaded 50 at a time as the list nears its end. */
 export default function InfiniteScroll() {
   const s = reactive({ loads: 0, parts: 0, preload: false, failing: false });
-  // Stands in for a server: new data.RestAdapter({ url: '/api/orders', key: 'id' }) goes in its place.
+  // Simulates a server. In an application, use new data.RestAdapter({ url: '/api/orders', key: 'id' }) here.
   const server = new OrderServer({ data: makeOrders(1_030), key: 'id', capabilities: { count: false } }, 600);
   server.onLoading(() => s.loads++);
-  // `count: false`: no part asks for a total; a part shorter than 50 rows is the last one.
+  // `count: false`: no page requests a total, and a page shorter than 50 rows is the last one.
   const orders = new data.DataSource<Order, number>({ adapter: server, loadMode: 'blocks', pageSize: 50, count: false });
   let grid: DataGrid<Order> | null = null;
 
@@ -235,7 +235,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -285,7 +285,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;

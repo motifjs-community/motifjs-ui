@@ -18,7 +18,7 @@ In JSX, `x-model` opens and closes it based on state. Programmatically, `show(ho
 import { reactive } from '@motifx/core';
 import { BottomSheet, Button, Stack, TextBox } from '@motifx-community/ui';
 
-/** A sheet written in JSX and bound to state, and one made in code and shown, both over the whole page. */
+/** A sheet declared in JSX and bound to state, and one created programmatically, both over the whole page. */
 export default function JsxAndCode() {
   const s = reactive({ open: false, name: 'Ada', said: '' });
 
@@ -65,7 +65,7 @@ import { BottomSheet, Button, RadioGroup, Stack, Switch, type BottomSheetDetent 
 
 const ROWS = Array.from({ length: 30 }, (_, i) => ({ id: i + 1, text: `Place ${i + 1}` }));
 
-/** A sheet over a frame, at a peek, half or full height: drag the handle or the title, flick, use the arrow keys on the handle. Every behaviour is a switch. */
+/** A sheet over a frame, at peek, half or full height. Drag the handle or title, flick, or use the arrow keys on the handle. Every behavior is a setting. */
 export default function Detents() {
   const s = reactive({
     open: true,
@@ -227,7 +227,7 @@ The handle and height names, the default name and the close button come from `ui
 import { reactive } from '@motifx/core';
 import { BottomSheet, Button, uiLocale } from '@motifx-community/ui';
 
-/** The handle's name and heights and the close button's name come from uiLocale. */
+/** The handle name, height names and close button name come from uiLocale. */
 export default function Localization() {
   const s = reactive({ open: false, lang: 'en' });
 

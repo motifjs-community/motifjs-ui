@@ -5,7 +5,7 @@ import { filterColumns, makeOrders } from './orders';
 
 const euros = new Intl.NumberFormat('en', { style: 'currency', currency: 'EUR' });
 
-/** Columns added, taken out and changed while the grid shows; the layout, the sort and the filters follow. */
+/** Columns added, removed and changed at runtime, while the layout, sort and filters stay in sync. */
 export default function RuntimeColumns() {
   const s = reactive({ paid: false, city: true, fields: '' });
   let grid: DataGrid<Order> | null = null;

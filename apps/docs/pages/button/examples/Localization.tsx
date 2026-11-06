@@ -2,7 +2,7 @@ import { reactive } from '@motifx/core';
 import { Button, uiLocale } from '@motifx-community/ui';
 import { kitTexts } from '../../../shared/kit-texts';
 
-/** The name of a split button's arrow, from uiLocale: a shipped language or a text of your own. */
+/** The name of a split button's arrow, from uiLocale: an included language or a custom string. */
 export default function Localization() {
   const s = reactive({ lang: 'en' });
 

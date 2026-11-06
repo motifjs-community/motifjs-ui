@@ -7,7 +7,7 @@
 A band is a header that spans several columns. Give it a `title` and the `columns` under it, which can be columns or other bands to any depth. The header gains one row per band level above the column titles, with each band spanning its columns. A column can be dragged only within its band, and dragging a band moves its columns with it. A band is pinned, hidden and moved as a whole, from its own menu (its header button or Alt+Down) or with `columnOption` by its `name`. In this example, “Payment” spans three columns, and “Order” spans two columns and the “Delivery” band.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -49,7 +49,7 @@ Band rows are `row` elements of `columnheader` cells in the header's row group. 
 With `settings.columnHidingEnabled`, the grid hides columns while it is narrower than they are, starting from the last. With `hidingPriority` on some columns, only those hide, lowest first. A “…” column then opens a row's adaptive detail below it, showing the titles and values of the hidden columns (with editors where the row can be edited), one row at a time. This is calculated from the column widths and the grid's width (through a `ResizeObserver`), never from the rendered output, and recalculated whenever either changes. Drag the splitter to see it. Hidden columns still count as visible, so the column chooser, `getVisibleColumns()`, export and copying include them.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -142,7 +142,7 @@ const columns: GridColumnItem<Order>[] = [
   },
 ];
 
-/** Band headers: drag a column inside its band or a band among its neighbours, pin and hide bands from their menus. */
+/** Band headers: drag a column inside its band or a band among its neighbors, and pin and hide bands from their menus. */
 export default function BandHeaders() {
   const s = reactive({ csv: '', layout: '' });
   let grid: DataGrid<Order> | null = null;
@@ -196,7 +196,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -246,7 +246,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;

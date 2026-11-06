@@ -111,10 +111,10 @@ type Sale = { id: number; customerId: number | null; amount: number };
 
 const money = new Intl.NumberFormat('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** Sales in memory whose customer comes from another service: only the customers on the screen are asked for, several in one request. */
+/** In-memory sales whose customer comes from another service: only the customers on screen are requested, several in one request. */
 export default function Lookups() {
   const s = reactive({ requests: 0, keys: 0 });
-  // Stands in for another service: new data.RestAdapter({ url: '/api/customers', key: 'id' }) goes in its place.
+  // Simulates another service. In an application, use new data.RestAdapter({ url: '/api/customers', key: 'id' }) here.
   const service = new SlowAdapter<Customer, number>({ data: makeCustomers(600), key: 'id' }, 400);
   // Counts the requests that turn keys into names; the editor's own list loads are not among them.
   service.onLoading((e) => {
@@ -173,7 +173,7 @@ export default function Lookups() {
 `customers.ts`
 
 ```tsx
-/** A customer, as another made-up service keeps it. */
+/** A customer, as stored by a second sample service. */
 export interface Customer {
   id: number;
   name: string;
@@ -184,7 +184,7 @@ const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara'
 const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
 const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
 
-/** `n` made-up customers, the same ones every time. */
+/** `n` sample customers, the same ones every time. */
 export function makeCustomers(n: number): Customer[] {
   return Array.from({ length: n }, (_, i) => ({
     id: i + 1,
@@ -322,12 +322,12 @@ import { DataGrid, type GridColumn } from '@motifx-community/ui';
 import { SlowAdapter } from '../../../shared/slow-adapter';
 import { makeCustomers, type Customer } from './customers';
 
-/** An invoice as its service sends it: the customer comes along with it (OData `$expand=customer`). */
+/** An invoice as its service returns it, with the customer included (OData `$expand=customer`). */
 type Invoice = { id: number; customerId: number; customer: { name: string }; total: number };
 
 const money = new Intl.NumberFormat('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** The name read from the row itself: the customers' service is asked only to edit. */
+/** The name is read from the row itself, and the customer service is used only for editing. */
 export default function TextFrom() {
   const s = reactive({ requests: 0 });
   const people = makeCustomers(600);
@@ -335,7 +335,7 @@ export default function TextFrom() {
     const customer = people[(i * 53) % people.length];
     return { id: i + 1, customerId: customer.id, customer: { name: customer.name }, total: ((i * 4337) % 50_000) / 10 };
   });
-  // Stand in for two services: new data.ODataAdapter({ url: '/odata/Invoices', key: 'id' }) with expand: ['customer'], and the customers'.
+  // Simulate two services: new data.ODataAdapter({ url: '/odata/Invoices', key: 'id' }) with expand: ['customer'], and the customer service.
   const invoiceSource = new data.DataSource<Invoice, number>({ adapter: new SlowAdapter<Invoice, number>({ data: invoices, key: 'id' }, 250), loadMode: 'blocks', pageSize: 100 });
   const customerService = new SlowAdapter<Customer, number>({ data: people, key: 'id' }, 400);
   customerService.onLoading(() => s.requests++);

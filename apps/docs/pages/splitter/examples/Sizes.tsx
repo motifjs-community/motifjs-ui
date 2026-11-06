@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, SplitPane, Splitter, Stack } from '@motifx-community/ui';
 
-/** The sizes go out to x-model as pixels after every move, and come back: a layout kept and restored. */
+/** The sizes are written to x-model as pixels after every move and can be set back: a layout saved and restored. */
 export default function Sizes() {
     const s = reactive({ sizes: null as readonly (number | string | null)[] | null, kept: null as readonly number[] | null, moved: 0 });
     return (

@@ -15,7 +15,7 @@ class PickyService extends SlowAdapter<Meeting, number> {
   }
 }
 
-/** Move an appointment: it waits where it was put while the server saves, and goes back when saving fails. */
+/** Move an appointment: it waits in place while the server saves, and reverts if saving fails. */
 export default function Saving() {
   const s = reactive({ said: 'Move an appointment: it waits for the server; every third change fails.' });
   const source = new data.DataSource<Meeting, number>({ adapter: new PickyService({ data: sampleAppointments(), key: 'id' }, 300), loadMode: 'all' });

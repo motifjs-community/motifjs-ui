@@ -30,7 +30,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 Ctrl+C copies the selected rows, or the active cell, as tab-separated text and an HTML table, so a spreadsheet or document receives it as a table. Ctrl+V on a cell writes tab-separated text, from a spreadsheet or copied from the grid, into the editable cells to the right of and below that cell. Each value is interpreted by column type (numbers and dates by locale, yes or no, and a list option by its text) and goes into the row's draft with validation, as if typed. Cells that cannot be edited keep their values. Rows below the active row are saved according to the save mode.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -71,7 +71,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 The grid does not include an xlsx writer. The application provides ExcelJS (`npm i exceljs`, an optional peer dependency) and calls `exportDataGrid({ component, worksheet })` from `@motifx-community/ui/excel`, a separate entry point that applications without Excel export never load. With `export: { formats: ['xlsx', 'csv'] }`, the toolbar's export button becomes a menu (“Export all data to Excel”, and “Export selected rows to Excel” with `allowExportSelectedData`). The Excel commands raise `onExporting` with `format: 'xlsx'` and `selectedRowsOnly`, and the handler writes and saves the workbook. In this example, it is a Blob download, with ExcelJS loaded on the first export.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -106,7 +106,7 @@ The sheet contains the frozen header row and the rows in grid order with the fil
 PDF export works the same way. The application provides jsPDF (`npm i jspdf`, an optional peer dependency) and calls `exportDataGrid({ jsPDFDocument, component })` from `@motifx-community/ui/pdf`, a separate entry point. Add `'pdf'` to `export.formats`, and the toolbar menu offers “Export all data to PDF” (and the selected rows). The command raises `onExporting` with `format: 'pdf'`, and the handler creates the document, draws the grid on it and saves it. The table is drawn with jsPDF's own calls and no table plugin. It includes the header rows with bands merged over their columns, the rows in grid order with the filter, search, grouping, text and alignment of the grid, the group rows across the row, the group footers and the totals. Columns use the grid's widths, narrowed to fit the page, and rows that do not fit continue on the next page below repeated header rows. In right-to-left layouts, the columns run from the right edge.
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -159,7 +159,7 @@ const describe = (sel: GridSelection | undefined) =>
 /** Single and multiple selection; over 100,000 rows on a server "all" is a state, never the rows. */
 export default function Selection() {
   const s = reactive({ mode: 'multiple' as 'none' | 'single' | 'multiple', selection: undefined as GridSelection | undefined, note: '' });
-  // The server groups, so "all but these keys" goes to it as a filter.
+  // The server groups, so "all except these keys" is sent to it as a filter.
   const orders = new data.DataSource<Order, number>({ adapter: new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 200), loadMode: 'blocks', pageSize: 100 });
   let grid: DataGrid<Order> | null = null;
   let server: DataGrid<Order> | null = null;
@@ -216,7 +216,7 @@ const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'T
 const STATUSES = ['Draft', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
 const NOTES = ['', 'Leave at the door', 'Call before delivery', 'Gift wrap, please, with a card that says happy birthday', '', 'Fragile'];
 
-/** `n` made-up orders, the same ones every time. */
+/** `n` sample orders, the same ones every time. */
 export function makeOrders(n: number): Order[] {
   const day = Date.UTC(2026, 0, 1);
   return Array.from({ length: n }, (_, i) => ({
@@ -266,7 +266,7 @@ export const newOrder = () => ({ date: today(), status: 'Draft', paid: false });
 `order.ts`
 
 ```tsx
-/** An order, as the examples' made-up server keeps it. */
+/** An order, as stored by the sample server. */
 export interface Order {
   id: number;
   customer: string;
@@ -368,7 +368,7 @@ export default function Export() {
     s.exported = JSON.stringify(rows.slice(0, 2));
   };
 
-  // A grid made with `new` exports without being shown; this one reads the orders of the paged grid.
+  // A grid created with `new` can export without being shown. This one reads the orders of the paged grid.
   const exportServer = async () => {
     const server = new DataGrid<Order>({ dataSource: pagedOrders, columns, label: 'Orders by page', locale: 'en' });
     s.progress = 'starting…';
@@ -415,7 +415,7 @@ import { SlowAdapter } from '../../../shared/slow-adapter';
 import type { Order } from './order';
 import { makeOrders } from './orders';
 
-/** How many times the server below was asked for rows. */
+/** The number of times rows were requested from the server below. */
 export const pagedLoads = reactive({ count: 0 });
 
 const server = new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 250);

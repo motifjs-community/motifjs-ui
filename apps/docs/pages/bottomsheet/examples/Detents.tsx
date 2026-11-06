@@ -3,7 +3,7 @@ import { BottomSheet, Button, RadioGroup, Stack, Switch, type BottomSheetDetent 
 
 const ROWS = Array.from({ length: 30 }, (_, i) => ({ id: i + 1, text: `Place ${i + 1}` }));
 
-/** A sheet over a frame, at a peek, half or full height: drag the handle or the title, flick, use the arrow keys on the handle. Every behaviour is a switch. */
+/** A sheet over a frame, at peek, half or full height. Drag the handle or title, flick, or use the arrow keys on the handle. Every behavior is a setting. */
 export default function Detents() {
   const s = reactive({
     open: true,

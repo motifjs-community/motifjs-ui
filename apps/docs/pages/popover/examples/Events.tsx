@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, Popover, Stack, TextArea } from '@motifx-community/ui';
 
-/** A press outside does not close it, and onClosing keeps it open while there is unsaved text; Escape and the button close it. */
+/** A click outside does not close it, and onClosing keeps it open while there is unsaved text. Escape and the button close it. */
 export default function Events() {
     const s = reactive({ note: '', told: '' });
     let button!: Button;

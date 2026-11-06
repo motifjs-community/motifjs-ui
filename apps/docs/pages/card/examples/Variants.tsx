@@ -2,7 +2,7 @@ import { Button, Card, Stack, type CardVariant } from '@motifx-community/ui';
 
 const VARIANTS: CardVariant[] = ['elevated', 'filled', 'outline'];
 
-/** Each look with a header, content and actions. */
+/** Each appearance with a header, content and actions. */
 export default function Variants() {
   return (
     <Stack orientation="horizontal" wrap align="start" gap="lg">

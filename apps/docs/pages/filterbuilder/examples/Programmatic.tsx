@@ -3,7 +3,7 @@ import { data } from '@motifx-community/data';
 import { Button, FilterBuilder, Stack } from '@motifx-community/ui';
 import { saleFields } from './sales';
 
-/** Made with `new` and driven programmatically; every change asks first, and a handler may cancel it. */
+/** Created with `new` and controlled programmatically. Every change raises an event first, and a handler can cancel it. */
 export default function Programmatic() {
   const log = reactive({ lines: [] as { id: number; text: string }[], next: 0 });
   const write = (text: string) => {

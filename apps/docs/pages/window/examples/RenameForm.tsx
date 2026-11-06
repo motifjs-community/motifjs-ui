@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { Button, MxForm, Stack, TextBox } from '@motifx-community/ui';
 
-/** A form written as a class: its content comes from `view()`, its buttons from the footer. */
+/** A form written as a class: its content comes from `view()`, and its buttons from the footer. */
 export class RenameForm extends MxForm {
   private readonly data = reactive({ name: 'Report.docx' });
 

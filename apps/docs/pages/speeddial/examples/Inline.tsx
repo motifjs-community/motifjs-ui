@@ -1,7 +1,7 @@
 import { reactive } from '@motifx/core';
 import { SpeedDial, Stack } from '@motifx-community/ui';
 
-/** Two speed dials in the flow of the page: one fans up, one fans to the end; a press on an action tells. */
+/** Two speed dials in the page flow: one opens upward and one toward the end. Clicking an action reports it. */
 export default function Inline() {
     const s = reactive({ told: '', open: false });
     const actions = [

@@ -8,7 +8,7 @@ const ROOMS = [
     { name: 'Bedroom', temp: 18 }
 ];
 
-/** Any content on a tile: a room each, with its own button; a press on the tile itself is told too. */
+/** Any content on a tile: a room each, with its own button. A click on the tile itself is also reported. */
 export default function Content() {
     const s = reactive({ told: '' });
     const room = (r: (typeof ROOMS)[number]) => (

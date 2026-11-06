@@ -43,7 +43,7 @@ A `collapsible` pane gets a button on the adjacent handle. Enter on the handle a
 import { reactive } from '@motifx/core';
 import { SplitPane, Splitter, Stack } from '@motifx-community/ui';
 
-/** The side panes can be hidden: a button on the handle, Enter on it, or a double press; the middle one cannot. */
+/** The side panes can be collapsed with a button on the handle, Enter on it, or a double-click. The middle pane cannot. */
 export default function Collapsible() {
     const s = reactive({ told: '' });
     return (
@@ -102,7 +102,7 @@ After every move, the pane sizes in pixels are written to `x-model`, and `onResi
 import { reactive } from '@motifx/core';
 import { Button, SplitPane, Splitter, Stack } from '@motifx-community/ui';
 
-/** The sizes go out to x-model as pixels after every move, and come back: a layout kept and restored. */
+/** The sizes are written to x-model as pixels after every move and can be set back: a layout saved and restored. */
 export default function Sizes() {
     const s = reactive({ sizes: null as readonly (number | string | null)[] | null, kept: null as readonly number[] | null, moved: 0 });
     return (

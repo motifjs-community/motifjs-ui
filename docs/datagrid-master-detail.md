@@ -7,7 +7,7 @@
 `masterDetail` gives every row its own details. The expand column opens a row to display the output of `template` (in this example, another grid over its own data source, filtered by the customer's key) in a row spanning the grid, which stays in place while the columns scroll sideways. Details are created the first time they are shown and kept while the row is open, and they are removed when the row leaves the data or when the grid is disposed. The list stays virtual: each detail is measured as it renders (and again when its content changes size), so the scrollbar, the following rows and navigation to a row stay accurate, and the rows themselves remain a small pool.
 
 ```tsx
-/** A customer, as another made-up service keeps it. */
+/** A customer, as stored by a second sample service. */
 export interface Customer {
   id: number;
   name: string;
@@ -18,7 +18,7 @@ const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara'
 const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
 const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
 
-/** `n` made-up customers, the same ones every time. */
+/** `n` sample customers, the same ones every time. */
 export function makeCustomers(n: number): Customer[] {
   return Array.from({ length: n }, (_, i) => ({
     id: i + 1,
@@ -50,7 +50,7 @@ Open rows are tracked by key, so sorting, filtering, searching, grouping and pag
 Details can contain any component. In this example, they are tabs with a read-only `FormLayout` for the customer and a list of its orders that is created when the tab is first shown. The row adjusts its height, and the following rows move. `canExpand` hides the arrow for customers without orders, `ctx.collapse()` closes a row from inside its details, and the buttons call `expandAllRows()` and `collapseAllRows()`.
 
 ```tsx
-/** A customer, as another made-up service keeps it. */
+/** A customer, as stored by a second sample service. */
 export interface Customer {
   id: number;
   name: string;
@@ -61,7 +61,7 @@ const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara'
 const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
 const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
 
-/** `n` made-up customers, the same ones every time. */
+/** `n` sample customers, the same ones every time. */
 export function makeCustomers(n: number): Customer[] {
   return Array.from({ length: n }, (_, i) => ({
     id: i + 1,
@@ -214,7 +214,7 @@ export interface CustomerOrder {
 `customers.ts`
 
 ```tsx
-/** A customer, as another made-up service keeps it. */
+/** A customer, as stored by a second sample service. */
 export interface Customer {
   id: number;
   name: string;
@@ -225,7 +225,7 @@ const FIRST = ['Ada', 'Grace', 'Alan', 'Cahit', 'Katherine', 'Edsger', 'Barbara'
 const LAST = ['Lovelace', 'Hopper', 'Turing', 'Arf', 'Johnson', 'Dijkstra', 'Liskov', 'Knuth', 'Koman', 'Hamilton', 'Gürsey', 'Yılmaz'];
 const CITIES = ['Ankara', 'Antalya', 'Bursa', 'İstanbul', 'İzmir', 'Konya', 'Trabzon'];
 
-/** `n` made-up customers, the same ones every time. */
+/** `n` sample customers, the same ones every time. */
 export function makeCustomers(n: number): Customer[] {
   return Array.from({ length: n }, (_, i) => ({
     id: i + 1,
@@ -247,7 +247,7 @@ const customers = makeCustomers(60);
 const orders = makeCustomerOrders(customers);
 const money = new Intl.NumberFormat('en', { style: 'currency', currency: 'EUR' });
 
-/** What the details show of a customer: its fields and what its orders come to. */
+/** The details of a customer: its fields and the total of its orders. */
 interface Profile extends Customer {
   orders: number;
   total: string;
@@ -273,7 +273,7 @@ const items: FormItem[] = [
   { field: 'total', label: 'Orders total' },
 ];
 
-/** A customer's details: tabs, the first a read-only form; the other tab is made when first shown, and the row grows with it. */
+/** A customer's details: tabs, the first with a read-only form. The other tab is created when first shown, and the row grows with it. */
 function CustomerTabs(props: { ctx: DetailContext<Profile> }) {
   const profile = reactive({ ...props.ctx.row });
   return (

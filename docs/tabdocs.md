@@ -26,7 +26,7 @@ export interface Order {
 const customers = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Edsger Dijkstra', 'Barbara Liskov', 'Donald Knuth'];
 const cities = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya'];
 
-/** `count` made-up orders, the same every time. */
+/** `count` sample orders, the same every time. */
 export function makeOrders(count: number): Order[] {
   return Array.from({ length: count }, (_, i) => ({
     id: 1001 + i,
@@ -110,7 +110,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -204,7 +204,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -298,7 +298,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -335,7 +335,7 @@ export interface Order {
 const customers = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Edsger Dijkstra', 'Barbara Liskov', 'Donald Knuth'];
 const cities = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya'];
 
-/** `count` made-up orders, the same every time. */
+/** `count` sample orders, the same every time. */
 export function makeOrders(count: number): Order[] {
   return Array.from({ length: count }, (_, i) => ({
     id: 1001 + i,
@@ -603,7 +603,7 @@ export function notes(title: string): ComponentBase {
 
 const CITIES = ['İstanbul', 'Ankara', 'İzmir', 'London', 'New York'];
 
-/** A customer card: text fields and a drop-down list of cities over a reactive customer, and a button that asks in a dialog. */
+/** A customer card: text fields and a city drop-down over a reactive customer, and a button that opens a dialog. */
 export function customerCard(customer: Customer): ComponentBase {
   const items: FormItem[] = [
     { field: 'name', label: 'Name', required: true },
@@ -638,7 +638,7 @@ export interface Order {
 const customers = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Edsger Dijkstra', 'Barbara Liskov', 'Donald Knuth'];
 const cities = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya'];
 
-/** `count` made-up orders, the same every time. */
+/** `count` sample orders, the same every time. */
 export function makeOrders(count: number): Order[] {
   return Array.from({ length: count }, (_, i) => ({
     id: 1001 + i,
@@ -656,7 +656,7 @@ import { reactive } from '@motifx/core';
 import { RadioGroup, Stack, Switch, TabDocument, TabDocumentManager, type ContentLifetime, type TabCloseButton } from '@motifx-community/ui';
 import { notes } from './contents';
 
-/** Every behaviour is a prop, followed live: here bound to the switches above the manager. */
+/** Every behavior is a prop tracked at runtime, bound here to the switches above the manager. */
 export default function Options() {
   const s = reactive({
     closeButton: 'always' as TabCloseButton,
@@ -813,7 +813,7 @@ const people: Customer[] = [
   { name: 'Alan Turing', email: 'alan@example.com', city: 'London' },
 ];
 
-/** Edit a field: the tab shows a dot in place of its close button, and closing it asks first (`e.promise`). */
+/** Edit a field: the tab shows a dot in place of its close button, and closing it prompts first (`e.promise`). */
 export default function UnsavedChanges() {
   const docs = new TabDocumentManager({ label: 'Customers' });
   docs.element.style.cssText = 'block-size: 28rem; inline-size: 100%';
@@ -847,7 +847,7 @@ import { reactive } from '@motifx/core';
 import { Button, Stack, TabDocument, TabDocumentManager, type TabLayout, type TabLayoutDocument } from '@motifx-community/ui';
 import { notes, ordersGrid } from './contents';
 
-/** Makes a saved document again by its type; its `state` brings what it needs. */
+/** Recreates a saved document by its type, with its `state` providing what it needs. */
 function restore(saved: TabLayoutDocument): TabDocument {
   if (saved.type === 'orders') return new TabDocument({ ...saved, content: () => ordersGrid((saved.state as { count: number }).count) });
   return new TabDocument({ ...saved, content: () => notes(saved.title) });

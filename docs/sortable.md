@@ -18,7 +18,7 @@ JSX children are the items. Drag one, or focus it and press Ctrl + Down. `onReor
 import { reactive } from '@motifx/core';
 import { Panel, Sortable, Stack } from '@motifx-community/ui';
 
-/** Rows put in order by dragging, or with Ctrl + an arrow on the focused row; the app reorders its data when told. */
+/** Rows reordered by dragging, or with Ctrl + arrow key on the focused row. The application reorders its data in the event. */
 export default function Basic() {
     const s = reactive({ steps: ['Collect the order', 'Pack it', 'Print the label', 'Hand it over'], told: '' });
     return (
@@ -72,7 +72,7 @@ const row = (task: Task) => {
     return panel;
 };
 
-/** Two lists of one group take each other's items; each list draws its own data and the app moves the task between arrays when told. */
+/** Two lists in one group exchange items. Each list draws its own data, and the application moves the task between arrays in the events. */
 export default function Groups() {
     const s = reactive({
         todo: [{ id: 1, title: 'Write the brief' }, { id: 2, title: 'Book the room' }, { id: 3, title: 'Send the invites' }] as Task[],
@@ -83,7 +83,7 @@ export default function Groups() {
         next.splice(e.toIndex, 0, ...next.splice(e.fromIndex, 1));
         s[key] = next;
     };
-    // The item leaves one array when removed and joins the other when added: the lists draw themselves again.
+    // The item leaves one array when removed and joins the other when added, and the lists redraw.
     const remove = (key: 'todo' | 'done') => (e: { fromIndex: number }) => (s[key] = s[key].filter((_, i) => i !== e.fromIndex));
     const add = (key: 'todo' | 'done') => (e: { item: Task; toIndex: number }) => {
         const next = s[key].slice();

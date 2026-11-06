@@ -2,7 +2,7 @@ import { Chip, Stack, type ChipVariant } from '@motifx-community/ui';
 
 const VARIANTS: ChipVariant[] = ['filled', 'outline'];
 
-// A small star of our own, so the example needs no icon set.
+// An inline star, so that the example needs no icon set.
 const star = () => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 16 16');
@@ -10,7 +10,7 @@ const star = () => {
   return svg;
 };
 
-/** Each look: at rest, selected, with an icon, with an avatar, removable, disabled. */
+/** Each appearance: at rest, selected, with an icon, with an avatar, removable and disabled. */
 export default function Looks() {
   return (
     <Stack>
