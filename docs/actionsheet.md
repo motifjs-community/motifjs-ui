@@ -2,7 +2,7 @@
 
 > Navigation · @motifx-community/ui 0.1.0-beta.3
 
-A list of commands that comes up from the bottom, made of the kit's menu items and large enough for a finger, with a title, a message and a cancel button apart. A context menu opens its items here on a touch screen.
+A list of commands that slides up from the bottom of the screen, built from the kit's menu items and sized for touch. It supports a title, a message and a separate Cancel button. A context menu uses it on touch screens.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { ActionSheet, type ActionSheetProps } from '@motifx-community/ui';
 
 ## Choosing programmatically
 
-`choose()` opens it and resolves with the item chosen, or `null`. An item with `items` opens its submenu in place, with a way back.
+`choose()` opens the sheet and resolves with the selected item, or `null`. An item with `items` opens its submenu in place, with a Back option.
 
 ```tsx
 import { reactive, type Component } from '@motifx/core';
@@ -48,9 +48,9 @@ export default function Choose() {
 }
 ```
 
-## In JSX
+## Using it in JSX
 
-Bound with `x-model`; check and radio items show their marks, `cancelText` names the cancel button.
+Bind it with `x-model`. Check and radio items show their marks, and `cancelText` sets the Cancel button text.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -83,9 +83,9 @@ export default function InJsx() {
 }
 ```
 
-## A context menu on a touch screen
+## Context menus on touch screens
 
-`ContextMenu` has `presentation`: `'menu'` (the default), `'sheet'`, or `'auto'`, which opens an action sheet when a finger opened the menu (a long press). The items, `onOpening` and `onItemClick` stay the same.
+`ContextMenu` has a `presentation` prop: `'menu'` (the default), `'sheet'`, or `'auto'`, which opens an action sheet when a finger opened the menu with a long press. The items, `onOpening` and `onItemClick` stay the same.
 
 ```tsx
 import { reactive, type Component } from '@motifx/core';
@@ -143,44 +143,44 @@ export default function FromContextMenu() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Up, Down, Home, End` | Between the items, round at the ends. |
-| `Enter, Space, an item's `&` letter` | Chooses it; on a submenu, opens it in place. |
-| `A letter` | The next item that starts with it. |
-| `Escape` | Closes it without a choice. |
-| `Tab` | To the cancel button and back. |
+| `Up, Down, Home, End` | Moves between the items, wrapping at the ends. |
+| `Enter, Space, an item's `&` letter` | Selects the item, or opens a submenu in place. |
+| `A letter` | Moves to the next item that starts with that letter. |
+| `Escape` | Closes the sheet without a selection. |
+| `Tab` | Moves to the Cancel button and back. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Dialog and menu` | The sheet is a `dialog` named by its title; the items are a `menu` of `menuitem`, `menuitemcheckbox` and `menuitemradio`, as in the kit's menus. |
-| `Focus` | Opened by a key, on the first item; by a finger or the pointer, on the list. It goes back where it was when the sheet closes. |
-| `Submenus` | Open in place of their menu with "Back" first; the arrow at the end of an item says it has one. |
-| `Touch` | Items are `control.height.lg` high (`actionsheet.item-height`), larger than the 24 pixels WCAG 2.2 asks for. |
+| `Dialog and menu` | The sheet is a `dialog` named by its title. The items are a `menu` of `menuitem`, `menuitemcheckbox` and `menuitemradio` elements, as in the kit's menus. |
+| `Focus` | When opened from the keyboard, focus moves to the first item. When opened by touch or pointer, it moves to the list. Focus returns to where it was when the sheet closes. |
+| `Submenus` | Submenus replace the menu in place, with "Back" as the first item. An arrow at the end of an item indicates a submenu. |
+| `Touch` | Items are `control.height.lg` tall (`actionsheet.item-height`), which exceeds the 24 pixels required by WCAG 2.2. |
 
 ## Localization
 
-Cancel, the way back and its default name come from `uiLocale.strings` (`cancel`, `back`, `actionSheetLabel`); `cancelText` gives one of your own.
+Cancel, Back and the default name come from `uiLocale.strings` (`cancel`, `back`, `actionSheetLabel`). `cancelText` sets custom text.
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
-| `.mx-action-sheet` | On the bottom sheet's layer (`.mx-bottom-sheet`), whose hooks it has. |
-| `.mx-action-sheet__message` | The line under the title. |
+| `.mx-action-sheet` | Built on the bottom sheet layer (`.mx-bottom-sheet`) and its hooks. |
+| `.mx-action-sheet__message` | Text below the title. |
 | `.mx-action-sheet__list` | The menu (`.mx-menu`). |
-| `.mx-action-sheet__cancel` | The row of the cancel button. |
-| `.mx-action-sheet__back` | The mark of the way back. |
+| `.mx-action-sheet__cancel` | The Cancel button row. |
+| `.mx-action-sheet__back` | The Back indicator. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `actionsheet.message, actionsheet.back, actionsheet.cancel` | Units: the message, the mark of the item that goes back out of a submenu (`rtl`), the strip that holds the cancel button. |
-| `actionsheet.menu.*, actionsheet.cancel-button.*, actionsheet.sheet.*` | Places: the items, large enough for a finger; the cancel button; the sheet’s content padding. |
-| `sheet.*` | The surface, the handle and the title, as on the bottom sheet. |
+| `actionsheet.message, actionsheet.back, actionsheet.cancel` | Units: the message, the Back item indicator (`rtl`), and the strip that holds the Cancel button. |
+| `actionsheet.menu.*, actionsheet.cancel-button.*, actionsheet.sheet.*` | Places: touch-sized items, the Cancel button and the sheet content padding. |
+| `sheet.*` | The surface, handle and title, as on the bottom sheet. |
 
 ## API reference
 
@@ -188,22 +188,22 @@ Cancel, the way back and its default name come from `uiLocale.strings` (`cancel`
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `Bind<readonly MenuItem[]>` | `[]` | The commands: the kit's menu items, with their icons, check and radio marks, tones, `&` keys, groups and submenus (shortcuts are not shown). |
-| `title` | `Bind<string>` | `''` | A title above the items; it names the sheet (else `label`, else "Actions"). |
-| `message` | `Bind<string>` | `''` | A line under the title that says what the choice is about. |
-| `showCancel` | `Bind<boolean>` | `true` | A cancel button apart, at the bottom. |
-| `cancelText` | `Bind<string>` | `''` | Its text; empty for `uiLocale`'s Cancel. |
-| `detents` | `Bind<readonly BottomSheetDetent[]>` | `['fit']` | As tall as its items (up to full); any of the bottom sheet's heights. |
-| `onItemClick` | `(e: MenuItemClickEventArgs) => void` | — | An item was chosen, after the sheet closed and the item's own `click` ran. |
-| `every BottomSheet prop` | see BottomSheet |  | Modal, the handle, swipe down, Escape, the scrim and the back button work as on the [BottomSheet page](bottomsheet.md#api). |
+| `items` | `Bind<readonly MenuItem[]>` | `[]` | The commands: kit menu items with icons, check and radio marks, tones, `&` keys, groups and submenus. Shortcuts are not shown. |
+| `title` | `Bind<string>` | `''` | A title above the items, which also names the sheet. Otherwise, the name comes from `label`, or is "Actions". |
+| `message` | `Bind<string>` | `''` | A line below the title that explains the choice. |
+| `showCancel` | `Bind<boolean>` | `true` | Shows a separate Cancel button at the bottom. |
+| `cancelText` | `Bind<string>` | `''` | Its text. An empty value uses the `uiLocale` Cancel string. |
+| `detents` | `Bind<readonly BottomSheetDetent[]>` | `['fit']` | The height of its items, up to full. Any bottom sheet height works. |
+| `onItemClick` | `(e: MenuItemClickEventArgs) => void` | — | Occurs when an item is selected, after the sheet closes and the item's own `click` runs. |
+| `every BottomSheet prop` | see BottomSheet |  | Modal behavior, the handle, swipe down, Escape, the scrim and the back button work as on the [BottomSheet page](bottomsheet.md#api). |
 
 ### Members
 
 | Member | Returns | Description |
 | --- | --- | --- |
-| `choose(items?, host?)` | `Promise<MenuItem \| null>` | Opens it (with these items) and resolves with the item chosen, or `null` when it was closed without one. `host` gives it a place when it has none. |
-| `open(byKeyboard?)` | `boolean` | Opens it; `byKeyboard` puts focus on the first item, else on the list as a menu the pointer opened. |
-| `chosenItem` | read-only | The item chosen the last time it was open. |
+| `choose(items?, host?)` | `Promise<MenuItem \| null>` | Opens the sheet with these items and resolves with the selected item, or `null` if it closes without a selection. `host` gives it a place if it has none. |
+| `open(byKeyboard?)` | `boolean` | Opens the sheet. `byKeyboard` moves focus to the first item. Otherwise, focus moves to the list, as with a menu opened by the pointer. |
+| `chosenItem` | read-only | The item selected the last time the sheet was open. |
 | `menu` | read-only | Its `MenuList`. |
-| `refresh()` | `void` | Your items may be plain or reactive; the sheet reads them as they are. After changing them in place, call `refresh()`. The level shown follows. |
-| `ContextMenu presentation` | `Bind<'menu' \| 'sheet' \| 'auto'>` | On `ContextMenu`, default `'menu'`. `'sheet'` opens its items in an action sheet; `'auto'` does when a finger opened it (a long press), or on a screen with only a coarse pointer when not opened by a key. `onOpening`, `onItemClick` and `onClosed` work the same; `actionSheet` is the sheet. |
+| `refresh()` | `void` | Your items can be plain or reactive, and the sheet reads them as they are. After changing them in place, call `refresh()`. The visible level updates. |
+| `ContextMenu presentation` | `Bind<'menu' \| 'sheet' \| 'auto'>` | On `ContextMenu`, the default is `'menu'`. `'sheet'` opens its items in an action sheet. `'auto'` does so when a finger opened the menu with a long press, or on a screen with only a coarse pointer unless a key opened it. `onOpening`, `onItemClick` and `onClosed` work the same way, and `actionSheet` is the sheet. |

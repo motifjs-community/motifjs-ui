@@ -36,7 +36,6 @@
   "Occurs on a drop elsewhere in this grid, where you move the row in the data. With `promise`, the grid waits for it while keeping the marks visible.": "",
   "Occurs on a drop on another grid of the group: `onRemove` on the source grid and `onAdd` on the target grid.": "",
   "Event field": "",
-  "Value": "",
   "The grid raising the event, the grid the row comes from, and the grid under the pointer (the same while reordering, or `null` when over none).": "",
   "The dragged row, its key and its element.": "",
   "The grid's row indexes (as counted by `focusedRowIndex` and `getVisibleRows()`, also across pages): the current position, and the position after the drop.": "",

@@ -31,8 +31,6 @@
   "On a tablet or phone, swiping in from an edge opens the dock area there as a drawer.": "",
   "On a phone, the browser's back action goes back through the documents once nothing is open on top.": "",
   "How tab menus appear. `null` uses an action sheet on a phone, a sheet for touch on a tablet, and a menu in the desktop presentation.": "",
-  "`{ from, to, width, cancel }`. If canceled, the presentation stays the same until the width or the setting changes again.": "",
-  "The current presentation: `'desktop'`, `'tablet'` or `'phone'`.": "",
   "On a phone, opens or closes the list of open documents. `documentListOpen` is reactive.": "",
   "On a tablet or phone, opens a dock area's drawer or sheet with that document shown, or closes it. `activate(doc)` on a tool, or on a document in a floating window, also opens its drawer or sheet.": "",
   "The area's own setting. `null` uses the manager's setting.": "",

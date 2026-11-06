@@ -2,11 +2,11 @@
 
 > Scheduler · @motifx-community/ui 0.1.0-beta.3
 
-A row per resource with the time running along it: a day, a week, a work week or a month. Appointments at the same time stack in their row, and the row grows to fit them.
+Displays one row per resource, with time running along the row, for a day, a week, a work week or a month. Appointments at the same time stack within a row, and the row grows to fit them.
 
 ## Timeline views
 
-`timelineDay`, `timelineWeek`, `timelineWorkWeek` and `timelineMonth` show the groups as rows (one row without `groups`). The scale over the cells has two tiers: the days over their hours (the months over their days). It stays at the top while the rows scroll, the resource column at the start while the time scrolls. The line at the current time, blocked times and the hours outside work carry over; a drag moves an appointment along its row or to another one, and its ends change its time.
+`timelineDay`, `timelineWeek`, `timelineWorkWeek` and `timelineMonth` show the groups as rows, or a single row without `groups`. The scale above the cells has two tiers: days over hours, or months over days. It stays at the top while the rows scroll, and the resource column stays at the start while the time scrolls. The current time indicator, blocked times and off-hours shading all apply. Dragging moves an appointment along its row or to another row, and dragging its ends changes its time.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -83,7 +83,7 @@ export function jobs(): Job[] {
 
 ## Nested groups
 
-With two kinds in `groups`, each row is an item of the inner kind under its item of the outer kind: the resource column has a level per kind, the outer name on the first of its rows. The time runs right to left in a right-to-left page.
+With two types in `groups`, each row is an item of the inner type under an item of the outer type. The resource column has one level per type, with the outer name on the first of its rows. On right-to-left pages, time runs from right to left.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -160,7 +160,7 @@ export function jobs(): Job[] {
 
 ## Settings per view
 
-Each view may have its own `intervalCount`, `startDate`, `cellDuration`, hours, `groups`, `maxAppointmentsPerCell` and templates; what it leaves out is the scheduler's.
+Each view can have its own `intervalCount`, `startDate`, `cellDuration`, hours, `groups`, `maxAppointmentsPerCell` and templates. Anything it leaves out comes from the scheduler.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -237,7 +237,7 @@ export function jobs(): Job[] {
 
 ## Templates
 
-Every template can be given to the scheduler and to a view; the view's own wins. A template is made once for the element it draws and gets a context whose fields follow it.
+Every template can be set on the scheduler and on a view, and the view's template takes precedence. A template is created once for the element it renders, and receives a context whose fields stay up to date.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -314,35 +314,35 @@ export function jobs(): Job[] {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Left / Right (cells)` | Along the time, mirrored right to left; past the first or the last cell the view moves on. |
-| `Up / Down (cells)` | To the row above or below. |
-| `Home / End, Ctrl + Home / End` | The row’s first and last cell; with Ctrl, of the first and the last row. |
-| `PageUp / PageDown` | A screen of rows. |
+| `Left / Right (cells)` | Moves along the time, mirrored on right-to-left pages. Moving past the first or last cell advances the view. |
+| `Up / Down (cells)` | Moves to the row above or below. |
+| `Home / End, Ctrl + Home / End` | Moves to the first or last cell of the row. With Ctrl, moves to the first or last cell of the first or last row. |
+| `PageUp / PageDown` | Moves up or down one screen of rows. |
 | `Shift + arrows` | Selects cells along the row. |
-| `Left / Right (appointment)` | Moves it a snap step along the time (a day in the timeline month); Shift: its end. |
-| `Up / Down (appointment)` | Moves it to the row above or below (its group changes); Enter saves, Escape takes it back. |
+| `Left / Right (appointment)` | Moves it along the time by a snap step, or by a day in the timeline month. With Shift, changes its end. |
+| `Up / Down (appointment)` | Moves it to the row above or below, which changes its group. Enter saves, and Escape reverts. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Rows` | The rows are a grid’s rows; each cell reads its group, its date and its time, and a blocked time after them. |
-| `Resource column, scale` | Drawn only (`aria-hidden`): every cell names its group and its time. |
-| `Appointments` | Each row’s appointments are in a cell of their own, named by the row; an appointment reads its text, its time and whether it goes on. |
+| `Rows` | The rows are grid rows. Each cell announces its group, date and time, followed by any blocked time. |
+| `Resource column, scale` | Decorative (`aria-hidden`), because every cell names its group and time. |
+| `Appointments` | The appointments of each row are in their own cell, named by the row. An appointment announces its text, its time and whether it continues. |
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
-| `scheduler.scale, scale-upper (`today`), scale-lower (`day-start`, `day`, `weekend`, `today`)` | Units: the head over the cells and its two tiers. |
-| `scheduler.timeline-corner, timeline-corner-label` | Units: the corner over the resource column, the names of the kinds. |
+| `scheduler.scale, scale-upper (`today`), scale-lower (`day-start`, `day`, `weekend`, `today`)` | Units: the header above the cells and its two tiers. |
+| `scheduler.timeline-corner, timeline-corner-label` | Units: the corner above the resource column, and the type names. |
 | `scheduler.resource-cell (`inner`, `first`, `continued`)` | Unit: a level of the resource column. |
-| `scheduler.timeline-row (`first`), timeline-divider (`inner`)` | Units: a row along the time and the line over it; the line where an outer group starts. |
-| `scheduler.cell `line`, `line-hour`, `line-day`` | The cells along the time: the line before each, stronger where an hour and a day start. |
+| `scheduler.timeline-row (`first`), timeline-divider (`inner`)` | Units: a row along the time and the line above it, and the line where an outer group starts. |
+| `scheduler.cell `line`, `line-hour`, `line-day`` | The cells along the time: the line before each cell, which is stronger where an hour or a day starts. |
 | `scheduler.appointment `line`, `line-before`, `line-after`` | An appointment on a lane, and its cut ends. |
-| `timeline-cell-width, timeline-resource-width, timeline-lane-size, timeline-row-min-height` | Plain tokens: a cell’s least width (cells stretch to fill the room when they are few), a level of the resource column, a lane, an empty row. |
+| `timeline-cell-width, timeline-resource-width, timeline-lane-size, timeline-row-min-height` | Plain tokens: the minimum cell width (cells stretch to fill the space when there are few), a level of the resource column, a lane, and an empty row. |
 
 ## API reference
 
@@ -350,36 +350,36 @@ export function jobs(): Job[] {
 
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `type` | `'timelineDay' \\| 'timelineWeek' \\| 'timelineWorkWeek' \\| 'timelineMonth'` | — | A row per group, the time along it: hours of a day, of a week, of a work week; the days of a month. |
-| `intervalCount` | `Bind<number>` | 1 | How many days, weeks or months it shows. |
-| `startDate` | `Bind<Date \\| null>` | `null` | With `intervalCount` over 1: the date its intervals are counted from, so they stay put when the date moves. |
-| `cellDuration` | `Bind<number>` | the scheduler's | Minutes in a cell along the time (the timeline month: a day). |
-| `startDayHour / endDayHour` | `Bind<number>` | the scheduler's | The hours of each day shown; the time before and after is left out. |
-| `groups` | `Bind<string[]>` | the scheduler's | The resource fields the rows are grouped by, outer first; nested groups stand in levels of the resource column. |
-| `maxAppointmentsPerCell` | `Bind<number \\| 'auto'>` | `'auto'` | Lanes a row has before "+N more" (per day); `'auto'`: the row grows to fit them all. |
-| `scrolling` | `Bind<'auto' \\| 'standard' \\| 'virtual'>` | `'auto'` | Every row and cell built, or only what is in view (see Big data). |
-| `name, text` | `string`, `Bind<string>` | the type | Its name for `currentView` and its caption in the bar. |
-| `…Template` | see Templates | the scheduler's | A view’s own template wins; `null` turns one off there. |
+| `type` | `'timelineDay' \\| 'timelineWeek' \\| 'timelineWorkWeek' \\| 'timelineMonth'` | — | One row per group, with time along it: the hours of a day, a week or a work week, or the days of a month. |
+| `intervalCount` | `Bind<number>` | 1 | The number of days, weeks or months shown. |
+| `startDate` | `Bind<Date \\| null>` | `null` | With an `intervalCount` greater than 1, the date intervals are counted from, so that they stay in place when the date changes. |
+| `cellDuration` | `Bind<number>` | The scheduler's value | The minutes in a cell along the time. In the timeline month, a cell is a day. |
+| `startDayHour / endDayHour` | `Bind<number>` | The scheduler's value | The hours shown for each day. Time before and after them is omitted. |
+| `groups` | `Bind<string[]>` | The scheduler's value | The resource fields the rows are grouped by, outer first. Nested groups appear as levels of the resource column. |
+| `maxAppointmentsPerCell` | `Bind<number \\| 'auto'>` | `'auto'` | The number of lanes a row has before "+N more" (per day). With `'auto'`, the row grows to fit them all. |
+| `scrolling` | `Bind<'auto' \\| 'standard' \\| 'virtual'>` | `'auto'` | Whether every row and cell is rendered, or only the visible ones (see Big data). |
+| `name, text` | `string`, `Bind<string>` | The type | Its name for `currentView`, and its caption in the toolbar. |
+| `…Template` | See Templates | The scheduler's value | A view's own template takes precedence, and `null` disables a template for that view. |
 
 ### Templates
 
 | Prop (and view setting) | Type | Description |
 | --- | --- | --- |
-| `appointmentTemplate` | `(context: AppointmentTemplateContext) => Component` | An appointment’s content: `{ appointment, start, end, text, time, allDay, view, group }`. |
-| `appointmentTooltipTemplate` | `(context: TooltipTemplateContext) => Component` | The tooltip’s content: `{ appointment, text, time, canEdit, canDelete, edit(), remove(), close() }`. |
-| `dataCellTemplate` | `(context: CellTemplateContext) => Component` | A cell’s content: `{ start, end, allDay, resources, view, today, work, blocked }`; the cell keeps its look, keys and name. |
-| `dateCellTemplate` | `(context: DateTemplateContext) => Component` | A day’s head (the dates, the month’s weekdays, a timeline’s days): `{ date, weekday, number, today, view, resources }`. |
-| `timeCellTemplate` | `(context: TimeTemplateContext) => Component` | An hour of the ruler and of a timeline’s scale: `{ date, minutes, text, view }`. |
-| `resourceHeaderTemplate` | `(context: ResourceHeaderContext) => Component` | A group’s head: in a timeline, the resource column’s cell. |
-| `agendaRowTemplate` | `(context: AgendaRowContext) => Component` | An agenda row’s content (see Agenda). |
-| `moreListTemplate` | `(context: MoreListContext) => Component` | The list "+N more" opens: `{ date, appointments, choose(appointment, event) }`. |
+| `appointmentTemplate` | `(context: AppointmentTemplateContext) => Component` | An appointment's content: `{ appointment, start, end, text, time, allDay, view, group }`. |
+| `appointmentTooltipTemplate` | `(context: TooltipTemplateContext) => Component` | The tooltip's content: `{ appointment, text, time, canEdit, canDelete, edit(), remove(), close() }`. |
+| `dataCellTemplate` | `(context: CellTemplateContext) => Component` | A cell's content: `{ start, end, allDay, resources, view, today, work, blocked }`. The cell keeps its appearance, keys and accessible name. |
+| `dateCellTemplate` | `(context: DateTemplateContext) => Component` | A day header (dates, weekdays of a month, days of a timeline): `{ date, weekday, number, today, view, resources }`. |
+| `timeCellTemplate` | `(context: TimeTemplateContext) => Component` | An hour of the time ruler or of a timeline scale: `{ date, minutes, text, view }`. |
+| `resourceHeaderTemplate` | `(context: ResourceHeaderContext) => Component` | A group header. In a timeline, this is the cell in the resource column. |
+| `agendaRowTemplate` | `(context: AgendaRowContext) => Component` | An agenda row's content (see Agenda). |
+| `moreListTemplate` | `(context: MoreListContext) => Component` | The list opened by "+N more": `{ date, appointments, choose(appointment, event) }`. |
 
 ### Methods
 
 | Method | Description |
 | --- | --- |
-| `scrollToTime(hour, minute?)` | In a timeline: along to that time on the date shown (else the first day). |
-| `scrollTo(date, resources?)` | Brings a time into view: its cell along the time and the row of `resources` (the group’s values); in the day views its hour and its column. |
+| `scrollToTime(hour, minute?)` | In a timeline, scrolls along to that time on the displayed date, or on the first day if none is given. |
+| `scrollTo(date, resources?)` | Scrolls a time into view: its cell along the time and the row of `resources` (the group's values). In the day views, this is its hour and column. |
 
 ## Example files
 

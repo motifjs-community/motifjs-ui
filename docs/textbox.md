@@ -2,7 +2,7 @@
 
 > Editors · @motifx-community/ui 0.1.0-beta.3
 
-A one-line text field with its label, help text and error: placeholder, prefix and suffix, buttons in the box, a clear button, a password that can be shown, a character counter, an input mask and validation — alone, in a group, or every field in a panel.
+A single-line text input with a label, help text and error display. It supports a placeholder, a prefix and suffix, buttons inside the box, a clear button, a password reveal button, a character counter, an input mask and validation, either on its own, in a group, or across all fields in a panel.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { TextBox, ValidationGroup, validateFields, type ValidationRule } from '@
 
 ## Declarative and programmatic
 
-Every prop takes a value or a function; a function of a reactive object keeps the field in step with it. `x-model` binds the value two-way. Created with `new`, the same properties are set programmatically.
+Every prop accepts a value or a function, and a function that reads a reactive object keeps the field in sync with it. `x-model` provides two-way binding for the value. When you create the component with `new`, set the same properties programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -46,7 +46,7 @@ export default function Programmatic() {
 
 ## Label
 
-The label goes above the box, next to it (`side`), inside it until there is a value (`floating`), or only to screen readers (`hidden`). `&` marks its access key.
+The label can appear above the box, next to it (`side`), inside it until there is a value (`floating`), or only for screen readers (`hidden`). `&` marks its access key.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -100,9 +100,9 @@ export default function VariantsAndSizes() {
 }
 ```
 
-## Prefix, suffix, icon, buttons
+## Prefix, suffix, icon and buttons
 
-`prefix` and `suffix` are fixed text around the value; `icon` sits at the start; `buttons` adds your own, each with its own `enabled`, `visible` and `position`.
+`prefix` and `suffix` add fixed text around the value, and `icon` appears at the start. `buttons` adds custom buttons, each with its own `enabled`, `visible` and `position`.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -140,7 +140,7 @@ export default function PrefixSuffix() {
 }
 ```
 
-## Password, counter
+## Password and character counter
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -160,18 +160,18 @@ export default function PasswordCounter() {
 }
 ```
 
-## Mask
+## Input mask
 
-A mask keeps the text in shape while it is typed, deleted or pasted; the caret skips the fixed characters. The value is the typed characters only, or with `maskValue="formatted"` the text as shown. A mask that is not filled in fails validation.
+A mask keeps the text in the required format as the user types, deletes or pastes, and the caret skips fixed characters. The value contains only the typed characters, or the displayed text with `maskValue="formatted"`. An incomplete mask fails validation.
 
-| Character | Means |
+| Character | Meaning |
 | --- | --- |
 | `0` | A digit. |
-| `9` | A digit that may stay empty. |
+| `9` | An optional digit. |
 | `a` | A letter. |
 | `*` | A letter or a digit. |
-| `\\` | The next character is fixed: `\\0` is a fixed zero. |
-| `anything else` | A fixed character, skipped while typing. |
+| `\\` | Treats the next character as fixed: `\\0` is a fixed zero. |
+| `anything else` | A fixed character, skipped during typing. |
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -198,7 +198,7 @@ export default function Masks() {
 
 ## Validation
 
-A field checks itself when it is left after a change, then on every change until the value passes. `required`, `minLength`, `type="email"` and a mask bring their own rules; `rules` adds yours, async ones too. `error` shows a message from outside, e.g. from the server.
+A field validates itself when it loses focus after a change, and then on every change until the value is valid. `required`, `minLength`, `type="email"` and a mask bring their own rules, and `rules` adds your own, including asynchronous ones. `error` displays a message from an external source, such as the server.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -245,7 +245,7 @@ export default function Validation() {
 }
 ```
 
-Without a group, `validateFields(panel)` checks every field inside a component or an element: a panel, a dialog, a page.
+Without a group, `validateFields(panel)` validates every field inside a component or element, such as a panel, a dialog or a page.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -293,26 +293,26 @@ export default function ReadOnly() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Alt + key (`&Name`)` | Focus the field (Control + Option + key on Apple platforms). |
-| `Enter` | Commits the value (with `updateOn="change"`) and fires `onEnter`. |
-| `Escape` | With `clearButton`, empties a field that has a value; otherwise it goes on to the window around it. |
-| `Tab` | The buttons you add and the password button are Tab stops; the clear button is not (Escape does its job). |
+| `Alt + key (`&Name`)` | Moves focus to the field (Control + Option + key on Apple platforms). |
+| `Enter` | Commits the value (with `updateOn="change"`) and raises `onEnter`. |
+| `Escape` | With `clearButton`, clears a field that has a value. Otherwise, the key passes to the containing window. |
+| `Tab` | Custom buttons and the password button are Tab stops. The clear button is not, because Escape does the same thing. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Element` | A native `<input>`; its `<label>` is tied to it with `for`. |
-| `Description` | `aria-describedby` names the prefix, the suffix and the line under the box. |
-| `Errors` | `aria-invalid="true"`; the message line is a polite live region, so a new error is read out. |
-| `Required` | `aria-required="true"`; the mark after the label is hidden from screen readers. |
-| `Buttons` | The clear and password buttons are named from `uiLocale`; the password button has `aria-pressed`. |
+| `Element` | A native `<input>` associated with its `<label>` through `for`. |
+| `Description` | `aria-describedby` references the prefix, the suffix and the help text. |
+| `Errors` | `aria-invalid="true"`. The message is a polite live region, so new errors are announced. |
+| `Required check boxes` | `aria-required="true"`. The indicator after the label is hidden from screen readers. |
+| `Buttons` | The clear and password buttons get their names from `uiLocale`, and the password button has `aria-pressed`. |
 
 ## Localization
 
-The names of the clear and password buttons and every validation message come from `uiLocale.strings`; every field follows a change at once, errors already shown included.
+The names of the clear and password buttons and all validation messages come from `uiLocale.strings`. Every field updates immediately when they change, including errors already on screen.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -339,27 +339,27 @@ export default function Localization() {
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-field` | The field. `data-size`, `data-variant`, `data-label-mode`, `data-invalid`, `data-readonly`, `data-disabled`, `data-filled`, `data-required`, `data-stretch`. |
 | `.mx-text-box` | Added by TextBox. |
-| `.mx-field__label, .mx-field__box, .mx-field__input` | The label, the box, the input. |
-| `.mx-field__icon, .mx-field__prefix, .mx-field__suffix` | The parts at the sides of the input. |
-| `.mx-field__button, .mx-text-box__clear, .mx-text-box__reveal` | The buttons in the box. |
-| `.mx-field__message, .mx-field__counter` | The line under the box. |
+| `.mx-field__label, .mx-field__box, .mx-field__input` | The label, the box and the input. |
+| `.mx-field__icon, .mx-field__prefix, .mx-field__suffix` | The parts on either side of the input. |
+| `.mx-field__button, .mx-text-box__clear, .mx-text-box__reveal` | Buttons inside the box. |
+| `.mx-field__message, .mx-field__counter` | Help text below the box. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `field.width` | The width when not stretched. |
-| `field.height.*, field.padding.*, field.font-size.*` | Sizes, from the density tokens. |
-| `field.box, field.layer, field.frame, field.indicator, field.ring` | Units: the box, a state layer over its fill, the frame (with `frame-start`, `frame-notch`, `frame-end` around a notch), the line along its bottom and a ring under the keys, each with its box per state: per variant (`filled-…`, `underline-…`), status (`invalid`, `readonly`, `disabled`) and `hover`, `focus`, `pressed`. |
-| `field.label, field.required, field.icon, field.prefix, field.suffix, field.placeholder` | Units: the label (`focus`, `invalid`, `disabled`, `floating-…`), the required mark and the parts beside the text. |
-| `field.slot, field.button, field.glyph, field.button-icon` | Units: the groups of buttons in the box, the buttons (`hover`, `pressed`, `focus`, `disabled`) and what they show. |
-| `field.foot, field.message, field.counter` | Units: the line under the box (`shown`, `invalid`, `disabled`), the help or error text and the counter. |
-| `field.border-width, field.gap, field.label-gap, field.label-width, field.label-font-weight, field.label-font-size` | The frame’s width, spacing and the label. |
-| `field.icon-size, field.button-inset` | Icons, and how far the buttons sit from the box’s edges. |
+| `field.width` | The width when the field is not stretched. |
+| `field.height.*, field.padding.*, field.font-size.*` | Sizes are defined by the density tokens. |
+| `field.box, field.layer, field.frame, field.indicator, field.ring` | Units: the box, a state layer over its fill, the frame (with `frame-start`, `frame-notch` and `frame-end` around a notch), the line along the bottom, and a ring for keyboard focus. Each has a box per state: by variant (`filled-…`, `underline-…`), by status (`invalid`, `readonly`, `disabled`), and for `hover`, `focus` and `pressed`. |
+| `field.label, field.required, field.icon, field.prefix, field.suffix, field.placeholder` | Units: the label (`focus`, `invalid`, `disabled`, `floating-…`), the required indicator and the parts next to the text. |
+| `field.slot, field.button, field.glyph, field.button-icon` | Units: button groups in the box, the buttons (`hover`, `pressed`, `focus`, `disabled`) and their contents. |
+| `field.foot, field.message, field.counter` | Units: the line below the box (`shown`, `invalid`, `disabled`), the help or error text, and the counter. |
+| `field.border-width, field.gap, field.label-gap, field.label-width, field.label-font-weight, field.label-font-size` | Frame width, spacing and the label. |
+| `field.icon-size, field.button-inset` | Icons, and the distance between the buttons and the edges of the box. |
 | `field.floating-height, field.floating-font-size, field.floating-padding, field.notch-gap` | The floating label and the notch cut for it. |
 
 ## API reference
@@ -368,82 +368,82 @@ export default function Localization() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `Bind<string>` | `''` | The text. `x-model` binds it two-way. |
-| `label` | `Bind<string>` | `''` | The caption; `&Name` makes Alt+N focus the field. The same property as `text`. |
-| `labelMode` | `Bind<FieldLabelMode>` | `'top'` | `top`, `side` (next to the box), `floating` (inside the box until there is a value), `hidden` (only for screen readers). |
-| `placeholder` | `Bind<string>` | `''` | Shown while the field is empty. |
-| `helpText` | `Bind<string>` | `''` | A line under the box. An error message takes its place. |
-| `hint` | `Bind<string>` | `''` | A tooltip. |
-| `type` | `Bind<TextBoxType>` | `'text'` | `text`, `password`, `email`, `search`, `tel`, `url`. `email` and `url` also check the format. |
-| `prefix / suffix` | `Bind<string>` | `''` | Fixed text before / after the value inside the box (`https://`, `kg`). |
+| `value` | `Bind<string>` | `''` | The text. `x-model` provides two-way binding. |
+| `label` | `Bind<string>` | `''` | The field label. Writing `&Name` assigns Alt+N as the access key. This is the same property as `text`. |
+| `labelMode` | `Bind<FieldLabelMode>` | `'top'` | `top`, `side` (next to the box), `floating` (inside the box until there is a value) or `hidden` (for screen readers only). |
+| `placeholder` | `Bind<string>` | `''` | Displayed when the field is empty. |
+| `helpText` | `Bind<string>` | `''` | Help text shown below the box. An error message replaces it. |
+| `hint` | `Bind<string>` | `''` | The tooltip text. |
+| `type` | `Bind<TextBoxType>` | `'text'` | `text`, `password`, `email`, `search`, `tel` or `url`. `email` and `url` also validate the format. |
+| `prefix / suffix` | `Bind<string>` | `''` | Fixed text before or after the value inside the box (`https://`, `kg`). |
 | `icon` | `Bind<IconSource \| null>` | — | An icon at the start of the box. |
-| `buttons` | `Bind<readonly FieldButton[]>` | `[]` | Buttons of your own inside the box, at the start or the end. |
-| `clearButton` | `Bind<boolean>` | `false` | A button that empties the field; Escape does the same. |
-| `passwordReveal` | `Bind<boolean>` | `true` | With `type="password"`: a button that shows the password. |
-| `maxLength / minLength` | `Bind<number>` | — | Limits; `minLength` is checked by validation. |
-| `showCounter` | `Bind<boolean>` | `false` | `12/50` under the box (`12` without `maxLength`). |
-| `updateOn` | `Bind<'input' \| 'change'>` | `'input'` | `change`: the value changes when the field is left or Enter is pressed. |
-| `selectOnFocus` | `Bind<boolean>` | `false` | Selects the whole text when the field gets focus. |
+| `buttons` | `Bind<readonly FieldButton[]>` | `[]` | Custom buttons inside the box, at the start or end. |
+| `clearButton` | `Bind<boolean>` | `false` | Shows a button that clears the field. Pressing Escape also clears it. |
+| `passwordReveal` | `Bind<boolean>` | `true` | With `type="password"`, shows a button that reveals the password. |
+| `maxLength / minLength` | `Bind<number>` | — | Length limits. `minLength` is enforced by validation. |
+| `showCounter` | `Bind<boolean>` | `false` | Shows `12/50` below the box (`12` without `maxLength`). |
+| `updateOn` | `Bind<'input' \| 'change'>` | `'input'` | With `change`, the value updates when the field loses focus or the user presses Enter. |
+| `selectOnFocus` | `Bind<boolean>` | `false` | Selects all text when the field receives focus. |
 | `align` | `Bind<'start' \| 'center' \| 'end'>` | `'start'` | Text alignment. |
-| `readOnly` | `Bind<boolean>` | `false` | Can be read, selected and copied, not changed. |
-| `required` | `Bind<boolean>` | `false` | A mark after the label, `aria-required`, and a `required` rule. |
+| `readOnly` | `Bind<boolean>` | `false` | The value can be read, selected and copied, but not changed. |
+| `required` | `Bind<boolean>` | `false` | Adds an indicator after the label, `aria-required` and a `required` rule. |
 | `size` | `Bind<ControlSize>` | `'md'` | `sm`, `md`, `lg`, from the density tokens. |
 | `variant` | `Bind<FieldVariant>` | `'outline'` | `outline`, `filled`, `underline`. |
-| `stretch` | `Bind<boolean>` | `false` | Fills the width of what it sits in. |
-| `mask` | `Bind<string>` | `''` | See Mask. |
-| `maskChars` | `Bind<Record<string, MaskChar>>` | `{}` | Mask characters of your own. |
-| `maskPlaceholder` | `Bind<string>` | `'_'` | Shown in the places not filled yet. |
-| `maskValue` | `Bind<'raw' \| 'formatted'>` | `'raw'` | `raw`: only the typed characters; `formatted`: with the fixed ones. |
-| `showMask` | `Bind<'always' \| 'focus'>` | `'focus'` | `focus`: an empty mask shows only while the field has focus. |
+| `stretch` | `Bind<boolean>` | `false` | Stretches to the full width of its container. |
+| `mask` | `Bind<string>` | `''` | See Input mask. |
+| `maskChars` | `Bind<Record<string, MaskChar>>` | `{}` | Custom mask characters. |
+| `maskPlaceholder` | `Bind<string>` | `'_'` | Shown in positions that are not filled yet. |
+| `maskValue` | `Bind<'raw' \| 'formatted'>` | `'raw'` | `raw` returns only the typed characters, and `formatted` includes the fixed ones. |
+| `showMask` | `Bind<'always' \| 'focus'>` | `'focus'` | With `focus`, an empty mask appears only while the field has focus. |
 | `rules` | `Bind<readonly ValidationRule[]>` | `[]` | See Validation. |
-| `error` | `Bind<string \| null>` | — | An error from outside (the server); shown until cleared. |
+| `error` | `Bind<string \| null>` | — | An error from an external source, such as the server. It stays until cleared. |
 | `validateOn` | `Bind<ValidateOn>` | `'blur'` | `blur`, `input`, `manual`. |
-| `validationGroup` | `Bind<ValidationGroup \| null>` | — | The group it is checked with. |
+| `validationGroup` | `Bind<ValidationGroup \| null>` | — | The group the field is validated with. |
 | `inputMode, autocomplete, spellcheck, name` | `Bind<…>` | — | Passed to the `<input>`. |
-| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | The shared properties of every control. |
+| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. |
 
 ### Properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write, reactive | A value or a function, like the prop: `box.error = () => this.model.nameError` is followed. |
-| `isValid` | read-only, reactive | `false` while an error shows. |
-| `validationMessage` | read-only, reactive | The error shown, `''` without one. |
-| `validating` | read-only, reactive | An asynchronous rule is running. |
-| `maskComplete` | read-only | Every place of the mask is filled. |
+| `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop: `box.error = () => this.model.nameError` is tracked. |
+| `isValid` | read-only, reactive | `false` while an error is displayed. |
+| `validationMessage` | read-only, reactive | The error being displayed, or `''` if there is none. |
+| `validating` | read-only, reactive | Indicates that an asynchronous rule is running. |
+| `maskComplete` | read-only | Indicates that every position of the mask is filled. |
 | `inputElement` | read-only | The native `<input>`. |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `validate()` | `Promise<boolean>` | Checks the value and shows the outcome. |
-| `resetValidation()` | `void` | Hides the outcome of earlier checks. |
-| `focus()` | `boolean` | Focuses the input. |
-| `select()` | `void` | Selects the whole text. |
-| `clear()` | `void` | Empties the field as its clear button does. |
-| `refresh()` | `void` | Your `buttons` may be plain or reactive; the field reads them as they are. After changing them in place, call `refresh()`. Every editor has it; a list editor reads its items again too. |
+| `validate()` | `Promise<boolean>` | Validates the value and displays the result. |
+| `resetValidation()` | `void` | Clears the results of previous validation. |
+| `focus()` | `boolean` | Sets focus on the input. |
+| `select()` | `void` | Selects all text. |
+| `clear()` | `void` | Clears the field, as the clear button does. |
+| `refresh()` | `void` | Your `buttons` can be plain or reactive, and the field reads them as they are. After changing them in place, call `refresh()`. Every editor has this method, and list editors also re-read their items. |
 
 ### Events
 
 | Event | When |
 | --- | --- |
-| `onValueChanged(e)` | The value changed. `e`: `{ value, previousValue, byUser, source, event? }`; `byUser` tells the user programmatically. |
-| `onValidated(e)` | A check ended. `e`: `{ valid, message, source }`. |
-| `onEnter(e)` | Enter was pressed. `e`: `{ value, source, event }`. |
-| `oninput, onchange, onkeydown, onfocusin, onfocusout` | The DOM events of the input reach the field. |
+| `onValueChanged(e)` | Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`. `byUser` distinguishes user input from programmatic changes. |
+| `onValidated(e)` | Occurs when validation finishes. `e`: `{ valid, message, source }`. |
+| `onEnter(e)` | Occurs when the user presses Enter. `e`: `{ value, source, event }`. |
+| `oninput, onchange, onkeydown, onfocusin, onfocusout` | DOM events from the input bubble up to the field. |
 
 ### Validation rules
 
-| Rule | Checks |
+| Rule | Validators |
 | --- | --- |
-| `{ type: 'required' }` | Something must be entered. |
-| `{ type: 'email' } / { type: 'url' }` | An email address / a web address. |
-| `{ type: 'pattern', pattern }` | A `RegExp`, or a string that must match the whole value (like the HTML `pattern`). |
+| `{ type: 'required' }` | A value is required. |
+| `{ type: 'email' } / { type: 'url' }` | An email address or a web address. |
+| `{ type: 'pattern', pattern }` | A `RegExp`, or a string that must match the whole value, like the HTML `pattern` attribute. |
 | `{ type: 'length', min?, max? }` | The number of characters. |
-| `{ type: 'range', min?, max? }` | A number or a date between bounds. |
-| `{ type: 'compare', with, not? }` | Equal to another value (a repeated password), or different with `not`. |
-| `{ type: 'custom', check, ignoreEmpty? }` | `check(value)` returns `true`, `false` or a message, or a promise of one (a server call). |
-| `every rule` | `message` (a value or a function) and `enabled`. Empty values pass every rule but `required` and `compare`. |
+| `{ type: 'range', min?, max? }` | A number or date within a range. |
+| `{ type: 'compare', with, not? }` | Equal to another value, such as a repeated password, or different from it with `not`. |
+| `{ type: 'custom', check, ignoreEmpty? }` | `check(value)` returns `true`, `false`, a message, or a promise of one of these, such as a server call. |
+| `every rule` | `message` (a value or a function) and `enabled`. Empty values pass every rule except `required` and `compare`. |
 
-The frame (`Field`), the mask (`InputMask`, which works on any `<input>`) and validation (`ValidationGroup`, `validateFields`, `checkRules`) are shared parts, exported for other components and your own.
+The frame (`Field`), the mask (`InputMask`, which works on any `<input>`) and validation (`ValidationGroup`, `validateFields`, `checkRules`) are shared parts, exported for use in other components and your own code.

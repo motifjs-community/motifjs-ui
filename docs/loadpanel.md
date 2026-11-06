@@ -2,7 +2,7 @@
 
 > Feedback · @motifx-community/ui 0.1.0-beta.3
 
-A “loading” layer over a container or the whole page: a shade, a pane with the kit’s spinner and a message, a Cancel button when the work can be stopped. Nothing under it can be used meanwhile, and focus comes back afterwards.
+A loading overlay for a container or the whole page. It includes a shade, a panel with the kit spinner and a message, and a Cancel button when the operation can be stopped. The content underneath is unavailable while it is shown, and focus returns afterward.
 
 ## Import
 
@@ -10,9 +10,9 @@ A “loading” layer over a container or the whole page: a shade, a pane with t
 import { LoadPanel } from '@motifx-community/ui';
 ```
 
-## Over a container
+## Covering a container
 
-`target` names the component or element it covers; `value` (or `x-model`) shows and hides it, `show()` and `hide()` programmatically. `delay` keeps quick work from flashing it.
+`target` specifies the component or element to cover. `value` or `x-model` shows and hides the panel, or you can call `show()` and `hide()`. `delay` keeps it from flashing during quick operations.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -48,7 +48,7 @@ export default function Container() {
 }
 ```
 
-## Over the page, with Cancel
+## Covering the page, with Cancel
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -86,7 +86,7 @@ export default function Page() {
 }
 ```
 
-## Shade, pane and indicator
+## Shade, panel and indicator
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -121,40 +121,40 @@ export default function Options() {
 }
 ```
 
-## Behaviour
+## Behavior
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Over a container` | It goes inside the container, over everything in it; the container is `aria-busy` and what is under the panel is inert: nothing there can be pressed or focused. |
-| `Over the page` | Without a `target`, it covers the viewport and the rest of the page is inert. |
-| `Focus` | Focus that was under it waits on the panel (on the Cancel button when there is one) and goes back where it was when the panel hides. |
-| `Delay` | Quick work shows nothing: it comes after `delay`, and a hide before that cancels it. |
-| `Spinner.cover` | The kit’s spinner covers a container programmatically in one call (`Spinner.cover`); the load panel is the component with the pane, the message, the delay and the button. |
+| `Covering a container` | The panel is placed inside the container, above its content. The container gets `aria-busy`, and the content under the panel is inert, so it cannot be clicked or focused. |
+| `Over the page` | Without a `target`, the panel covers the viewport and the rest of the page is inert. |
+| `Focus` | Focus moves from the content underneath to the panel (to the Cancel button if there is one) and returns to its original position when the panel hides. |
+| `Delay` | Quick operations show nothing. The panel appears after `delay`, and hiding it before then cancels it. |
+| `Spinner.cover` | The kit spinner can cover a container with a single call (`Spinner.cover`). LoadPanel is the full component, with the panel, message, delay and button. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Pane` | A `status` region: the message is read when the panel appears, and again when it changes. |
-| `Indicator` | Decorative; the message says what is going on. |
-| `Under it` | `inert` and `aria-busy`, so readers skip it and nothing there takes a press or focus. |
-| `Cancel` | The kit’s button, named in the kit language; Escape presses it. |
+| `Pane` | A `status` region. The message is announced when the panel appears and when it changes. |
+| `Indicator` | Decorative. The message describes what is happening. |
+| `Under it` | `inert` and `aria-busy`, so screen readers skip the content and it cannot receive clicks or focus. |
+| `Cancel` | A kit button named in the kit language. Escape activates it. |
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-load-panel` | The layer. `data-shade`, `data-pane`, `data-page`. |
-| `.mx-load-panel__pane` | The pane. |
+| `.mx-load-panel__pane` | The panel. |
 | `.mx-load-panel__indicator, .mx-load-panel__message, .mx-load-panel__cancel` | The spinner, the message and the button. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `load-panel.shade, .pane, .message` | Units: the layer (`shaded`), the pane (`shown`), the message. |
-| `load-panel.cancel` | Place: the Cancel button’s look (`variant`). |
-| `load-panel.padding, .gap` | The least space to the edge of what it covers; the space between the indicator, the message and the button. |
+| `load-panel.shade, .pane, .message` | Units: the layer (`shaded`), the panel (`shown`) and the message. |
+| `load-panel.cancel` | Place: the appearance of the Cancel button (`variant`). |
+| `load-panel.padding, .gap` | The minimum distance to the edge of the covered area, and the space between the indicator, message and button. |
 
 ## API reference
 
@@ -162,23 +162,23 @@ export default function Options() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `target` | `Bind<ComponentBase \| HTMLElement \| null>` | `null` | What it covers: a component or an element; `null` covers the whole page. |
-| `message` | `Bind<string>` | the kit’s “Loading…” | The message under the indicator. The same property as `text`. |
-| `value` | `Bind<boolean>` | `false` | Shown or not; `x-model` binds it two-way. |
-| `delay` | `Bind<number>` | `0` | Milliseconds before it shows; a hide before that shows nothing. |
-| `shade` | `Bind<boolean>` | `true` | Dims what it covers. |
-| `showPane` | `Bind<boolean>` | `true` | The box behind the indicator and the message. |
-| `showIndicator` | `Bind<boolean>` | `true` | The turning indicator (the kit’s spinner). |
-| `cancelable` | `Bind<boolean>` | `false` | A Cancel button in the pane; Escape presses it too. |
-| `cancelText` | `Bind<string>` | the kit’s “Cancel” | The button’s text. |
-| `closeOnOutside` | `Bind<boolean>` | `false` | A press on the shade hides it. |
+| `target` | `Bind<ComponentBase \| HTMLElement \| null>` | `null` | The area to cover, a component or element. `null` covers the whole page. |
+| `message` | `Bind<string>` | The kit string “Loading…” | The message below the indicator. This is the same property as `text`. |
+| `value` | `Bind<boolean>` | `false` | Indicates whether the panel is shown. `x-model` provides two-way binding. |
+| `delay` | `Bind<number>` | `0` | The delay in milliseconds before it appears. Hiding it before then shows nothing. |
+| `shade` | `Bind<boolean>` | `true` | Dims the covered area. |
+| `showPane` | `Bind<boolean>` | `true` | Shows the box behind the indicator and the message. |
+| `showIndicator` | `Bind<boolean>` | `true` | Shows the rotating indicator (the kit spinner). |
+| `cancelable` | `Bind<boolean>` | `false` | Shows a Cancel button in the panel. Escape activates it too. |
+| `cancelText` | `Bind<string>` | The kit string “Cancel” | The button text. |
+| `closeOnOutside` | `Bind<boolean>` | `false` | Clicking the shade hides the panel. |
 
 ### Events, properties and methods
 
-| Member | Kind | Description |
+| Member | Type | Description |
 | --- | --- | --- |
-| `onShown, onHidden` | event | It came on the screen (after its delay); it went. |
-| `onCancel` | event | The Cancel button was pressed, or Escape; the panel hides after. |
-| `show(), hide(), cancel()` | `boolean` / `void` | Programmatically; `show()` is `false` while it is shown or waiting for its delay. |
-| `isShown` | read-only | Whether it is on the screen now. |
-| `spinner, cancelButton` | read-only | The kit’s spinner and button in the pane. |
+| `onShown, onHidden` | event | Occur when the panel appears (after its delay) and when it is hidden. |
+| `onCancel` | event | Occurs when the Cancel button or Escape is pressed. The panel hides afterward. |
+| `show(), hide(), cancel()` | `boolean` / `void` | Programmatic control. `show()` returns `false` while the panel is shown or waiting for its delay. |
+| `isShown` | read-only | Indicates whether the panel is currently on screen. |
+| `spinner, cancelButton` | read-only | The kit spinner and button in the panel. |

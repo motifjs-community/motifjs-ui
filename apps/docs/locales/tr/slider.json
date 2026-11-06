@@ -8,7 +8,6 @@
   "`step` sets the values a thumb stops at. `ticks` draws a mark at every step, or divides the track into that many equal parts when set to a number. `tickLabels` shows the values under the marks.": "",
   "Value tooltip and format": "",
   "`showValue` displays the value in a tooltip above the thumb, either while it moves (`drag`, which includes keyboard changes) or `always`. `format` formats it with `Intl.NumberFormat`, and `valueText` provides custom text for screen readers.": "",
-  "Vertical orientation": "",
   "`orientation=\"vertical\"` makes the track vertical. Up is greater, and the Up arrow moves the thumb up.": "",
   "Update timing": "",
   "By default, the value updates as the thumb is dragged. With `updateOn=\"change\"`, it updates once when the thumb is released, which is useful for work that should not run on every movement, such as a search. Keyboard changes apply immediately in both cases.": "",

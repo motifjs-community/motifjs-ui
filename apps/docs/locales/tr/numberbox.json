@@ -35,7 +35,6 @@
   "`stacked` shows arrows on top of each other, and `inline` shows − and + side by side.": "",
   "The mouse wheel changes the value while the field has focus.": "Field odaktayken fare tekerleği değeri değiştirir.",
   "The display format without focus: `{ style: 'currency', currency: 'TRY' }`, `{ style: 'percent' }`, `{ minimumFractionDigits: 2 }`…": "",
-  "The page `lang`": "",
   "The locale of the format and of the input.": "",
   "The number of digits after the decimal point. Every value is rounded to this precision (half away from zero) regardless of its source, and displayed with exactly that many digits while the field is not being edited.": "",
   "Brings a value outside `min` and `max` into range when entered. `false` leaves it to the range validation.": "",

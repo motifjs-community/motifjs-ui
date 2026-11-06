@@ -57,7 +57,6 @@
   "The text used to filter rows. Matches appear with their parents expanded.": "",
   "What expands a branch, in addition to its expander and the keyboard.": "",
   "Draws connector lines from each parent to its children.": "",
-  "The accessible name of the tree. `aria-label` and `aria-labelledby` on the tag also work.": "",
   "When more rows than this are on screen, only the visible rows are rendered.": "",
   "Customizes the content of a row.": "",
   "The selected or checked items, in tree order.": "",

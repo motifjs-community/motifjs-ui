@@ -2,7 +2,6 @@
   "A document, a group or a floating window can move into its own browser window and back. Its content moves with it without being recreated, and the new window is part of the same manager, so its tabs, menus, keys and dragging work the same way.": "",
   "Moving to a new window and back": "",
   "Type in the form, choose a city and scroll the orders, then move the tab into a new window. The window opens beside the group at the same size, and shows the same component in the same state. Its title is that of the active document. When you close the window, its documents return to their original group.": "",
-  "Method": "",
   "\"Move into new window\" moves the document or the whole group, or on a floating window's strip, the whole window. In a new window, \"Move back to main window\" returns the document or group.": "",
   "Ctrl + K, then Shift + O moves the active document into a new window (`moveToNewWindow`). Ctrl + K, then Shift + D moves it back (`moveToMainWindow`).": "",
   "Releasing outside the page opens a new window there with the dragged item (`dragOutToNewWindow`). Dragging out of a new window returns the item to the main window, or to the window under the pointer.": "",

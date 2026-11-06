@@ -2,7 +2,7 @@
 
 > Navigation · @motifx-community/ui 0.1.0-beta.3
 
-Anything the user moves with the pointer, a finger or the arrow keys, along an axis or inside a boundary, by a handle or as a copy; and the targets that take it. For items that change places in a list, see [Sortable](sortable.md).
+Makes any content movable with the pointer, touch or the arrow keys, optionally along one axis, inside a boundary, by a handle or as a copy. `DropTarget` defines areas that accept it. To reorder items in a list, see [Sortable](sortable.md).
 
 ## Import
 
@@ -10,9 +10,9 @@ Anything the user moves with the pointer, a finger or the arrow keys, along an a
 import { Draggable, DropTarget } from '@motifx-community/ui';
 ```
 
-## Moving things
+## Moving content
 
-The JSX children are what moves. `boundary` keeps it inside its parent or an element, `axis` keeps it on a line, `handle` names the only part that takes the press and the keys. A drag writes the place to `x-model` and `onDragEnded` tells it; Escape brings it back.
+JSX children are the movable content. `boundary` keeps it inside its parent or an element, `axis` limits it to one direction, and `handle` sets the only part that responds to the pointer and keyboard. A drag writes the position to `x-model`, `onDragEnded` reports it, and Escape returns the content to its start.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -48,7 +48,7 @@ export default function Free() {
 
 ## Drop targets
 
-A `DropTarget` of the same `group` takes a draggable dropped on it and is told in `onDropped` with the draggable’s `data`; `onDragEntering` may refuse. With `clone` a copy follows the pointer and the draggable stays, so one thing can be dropped many times. What a drop does to your data is yours.
+A `DropTarget` in the same `group` accepts a draggable dropped on it and receives the draggable's `data` in `onDropped`. `onDragEntering` can reject it. With `clone`, a copy follows the pointer and the original stays, so one item can be dropped many times. Your code decides what a drop does to your data.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -96,7 +96,7 @@ export default function Targets() {
 
 ## Programmatic use
 
-`position` puts it where you say, in pixels from where it was laid out, and `x-model` takes the place back after every drag or key: kept and restored.
+`position` sets the location in pixels from the element's layout position, and `x-model` receives it after every drag or key press, so you can save and restore it.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -128,33 +128,33 @@ export default function Programmatic() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Tab` | The draggable (or its handle) is one stop. |
-| `Arrow keys` | Move it by `step` pixels along its axis, inside its boundary; the new place is read out. |
-| `Escape` | While dragging: lets go and brings it back where it started. |
+| `Tab` | The draggable, or its handle, is one Tab stop. |
+| `Arrow keys` | Moves it by `step` pixels along its axis and inside its boundary, and the new position is announced. |
+| `Escape` | During a drag, cancels it and returns the item to where it started. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `The draggable` | A `group` with `aria-roledescription="draggable"` named “Move” in the kit language; with a `handle`, that element is a button of that name instead. |
-| `Dragging` | A long press lifts it on a touch screen. While it is dragged it lets the pointer through, so the target under it is found; the copy of a `clone` follows the pointer. |
-| `Targets` | Marked while a drag of their group is under way, while the draggable is over them, and when they refuse it. |
+| `The draggable` | A `group` with `aria-roledescription="draggable"`, named “Move” in the kit language. With a `handle`, that element is a button with this name instead. |
+| `Dragging` | A long press lifts it on a touch screen. During a drag, it lets pointer events pass through so the target underneath can be detected, and a `clone` copy follows the pointer. |
+| `Targets` | Marked while a drag from their group is active, while the draggable is over them, and when they reject it. |
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-draggable` | The draggable. `data-dragging`, `data-handle`, `data-clone`, `data-axis`. |
-| `.mx-draggable__handle, .mx-draggable__ghost` | The handle named by `handle`; the copy after the pointer. |
-| `.mx-drop-target` | A target. `data-drop-active` during a drag of its group, `data-drop-over`, `data-drop-refused`. |
+| `.mx-draggable__handle, .mx-draggable__ghost` | The handle specified by `handle`, and the copy that follows the pointer. |
+| `.mx-drop-target` | A target. `data-drop-active` during a drag from its group, `data-drop-over`, `data-drop-refused`. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `draggable.box, .handle, .ghost` | Units: the draggable (`draggable`, `dragging`, `focus`), its handle (`hover`, `focus`), the copy. |
+| `draggable.box, .handle, .ghost` | Units: the draggable (`draggable`, `dragging`, `focus`), its handle (`hover`, `focus`) and the copy. |
 | `drop-target.target` | Unit: a target (`active`, `over`, `refused`). |
 
 ## API reference
@@ -164,31 +164,31 @@ export default function Programmatic() {
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `axis` | `Bind<DragAxis>` | `'both'` | `both`, `x` or `y`. |
-| `boundary` | `Bind<'parent' \| HTMLElement \| null>` | `null` | The draggable stays inside this: its parent, or an element it lies in. |
-| `handle` | `Bind<string \| null>` | `null` | A selector inside the draggable: only a press there drags it, and it takes the Tab stop and the keys. |
-| `clone` | `Bind<boolean>` | `false` | A copy follows the pointer and the draggable stays where it is; for a drop target to take. |
-| `group` | `Bind<string \| null>` | `null` | Drop targets of the same group take it. |
-| `data` | `unknown` | — | Anything of your own, given to the drop target with the drop. |
-| `step` | `Bind<number>` | `10` | Pixels an arrow key moves it by. |
-| `position` | `Bind<DragPosition \| null>` | `null` | Where it stands, in pixels from where it was laid out: given, it is applied; after every drag or key the new place is written to `x-model`. |
+| `boundary` | `Bind<'parent' \| HTMLElement \| null>` | `null` | The area it stays inside: its parent, or an element that contains it. |
+| `handle` | `Bind<string \| null>` | `null` | A selector inside the draggable. Only this part starts a drag, and it receives the Tab stop and keyboard input. |
+| `clone` | `Bind<boolean>` | `false` | A copy follows the pointer and the draggable stays in place, ready to be dropped on a target. |
+| `group` | `Bind<string \| null>` | `null` | Drop targets in the same group accept it. |
+| `data` | `unknown` | — | Custom data passed to the drop target on drop. |
+| `step` | `Bind<number>` | `10` | The number of pixels an arrow key moves it. |
+| `position` | `Bind<DragPosition \| null>` | `null` | The position in pixels from its layout position. When set, it is applied, and after every drag or key press the new position is written to `x-model`. |
 
 ### DropTarget props and events
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `group` | `Bind<string \| null>` | `null` | Takes the draggables of this group; `null` takes those without one. |
-| `onDragEntering` | event | A draggable came over it (`draggable`, `data`); `cancel = true` refuses it. |
-| `onDragLeaving` | event | The draggable left it. |
-| `onDropped` | event | A draggable was dropped on it: your data is yours to move. |
+| `group` | `Bind<string \| null>` | `null` | Accepts draggables in this group. `null` accepts those without a group. |
+| `onDragEntering` | event | Occurs when a draggable enters (`draggable`, `data`). Set `cancel = true` to reject it. |
+| `onDragLeaving` | event | Occurs when the draggable leaves. |
+| `onDropped` | event | Occurs when a draggable is dropped on it. Your code moves the data. |
 
 ### Events, properties and methods
 
-| Member | Kind | Description |
+| Member | Type | Description |
 | --- | --- | --- |
-| `onDragStarting` | event | A drag is about to begin; `cancel = true` keeps it in place. |
-| `onDragging` | event | It is being dragged (`x`, `y`, the `target` under the pointer). |
-| `onDragEnding` | event | The pointer let go; `cancel = true` brings it back where it started. |
-| `onDragEnded` | event | The drag ended (`x`, `y`, `target`, `dropped`). |
-| `currentPosition` | read-only | Where it stands now. |
-| `isDragging` | read-only | A drag is under way. |
-| `handleElement` | read-only | What takes the press and the keys: the handle, else the draggable itself. |
+| `onDragStarting` | event | Occurs before a drag starts. Set `cancel = true` to keep it in place. |
+| `onDragging` | event | Occurs during a drag (`x`, `y`, and the `target` under the pointer). |
+| `onDragEnding` | event | Occurs when the pointer is released. Set `cancel = true` to return it to where it started. |
+| `onDragEnded` | event | Occurs when the drag ends (`x`, `y`, `target`, `dropped`). |
+| `currentPosition` | read-only | The current position. |
+| `isDragging` | read-only | Indicates that a drag is in progress. |
+| `handleElement` | read-only | The element that handles the pointer and keyboard: the handle, or the draggable itself. |

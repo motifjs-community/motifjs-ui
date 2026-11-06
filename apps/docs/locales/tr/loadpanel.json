@@ -28,7 +28,6 @@
   "Shows the rotating indicator (the kit spinner).": "",
   "Shows a Cancel button in the panel. Escape activates it too.": "",
   "The kit string “Cancel”": "",
-  "The button text.": "",
   "Clicking the shade hides the panel.": "",
   "Occur when the panel appears (after its delay) and when it is hidden.": "",
   "Occurs when the Cancel button or Escape is pressed. The panel hides afterward.": "",

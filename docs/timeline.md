@@ -2,7 +2,7 @@
 
 > Display · @motifx-community/ui 0.1.0-beta.3
 
-Events in time order: down the page, each a card beside a line with a dot; or along a line of dates, where a press on a date shows that event’s card under the line. The dates are written in the kit’s language. For hours on a calendar, see the [Scheduler](scheduler.md).
+Displays events in chronological order. In the vertical layout, each event is a card next to a line with a marker. In the horizontal layout, events appear along a line of dates, and selecting a date shows that event's card below the line. Dates are formatted in the kit language. For scheduling by the hour, see [Scheduler](scheduler.md).
 
 ## Import
 
@@ -10,9 +10,9 @@ Events in time order: down the page, each a card beside a line with a dot; or al
 import { Timeline } from '@motifx-community/ui';
 ```
 
-## Down the page
+## Vertical layout
 
-`items` are the events: a `date`, a `title`, a `description`, a `tone` for the dot and a `glyph` in it. `alternate` puts the cards on either side of the line in turn; `collapsible` folds the descriptions until a card is pressed. `onItemClick` tells a press.
+`items` defines the events, each with a `date`, a `title`, a `description`, a `tone` for the marker and a `glyph` inside it. `alternate` places the cards on alternating sides of the line, and `collapsible` hides descriptions until a card is clicked. `onItemClick` reports the click.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -47,9 +47,9 @@ export default function Vertical() {
 }
 ```
 
-## Along a line of dates
+## Horizontal layout
 
-`orientation='horizontal'` puts the dates on a line that scrolls with the buttons at its ends; the shown event (`value`, `x-model`) has its card under the line. The arrow keys move along the dates. `dateFormat` takes the options of `Intl.DateTimeFormat`.
+`orientation='horizontal'` places the dates on a scrollable line with buttons at each end. The selected event (`value`, `x-model`) shows its card below the line. The arrow keys move between dates, and `dateFormat` accepts `Intl.DateTimeFormat` options.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -79,7 +79,7 @@ export default function Horizontal() {
 
 ## Any content
 
-An item’s `content` makes what goes in its card besides the texts; `icon` puts an icon of your own in the dot. A date with a time is written with it when `dateFormat` says so.
+An item's `content` adds custom content to its card, in addition to the text. `icon` places a custom icon in the marker. A date includes the time when `dateFormat` specifies it.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -114,37 +114,37 @@ export default function Content() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Tab` | Vertical: the cards that fold are stops, one each. Horizontal: the shown date is the one stop; the track’s buttons are stops too. |
-| `Arrow keys` | Horizontal: Left and Right (the other way round in a right-to-left page) show the event before or after; Home and End the first and the last. |
-| `Enter, Space` | On a folding card: unfolds or folds it. On a date: shows it. |
+| `Tab` | In the vertical layout, each collapsible card is a Tab stop. In the horizontal layout, the selected date is one Tab stop, and the track buttons are also Tab stops. |
+| `Arrow keys` | In the horizontal layout, Left and Right show the previous or next event (reversed on right-to-left pages), and Home and End show the first and last. |
+| `Enter, Space` | On a collapsible card, expands or collapses it. On a date, shows it. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Down the page` | A `list` named by `label`, one item per event; a date is a `time` element with its ISO value; a folding card is a button with `aria-expanded` over its description. |
-| `Along the line` | The dates are tabs (`tablist`, `tab`, `aria-selected`) and the card under them the `tabpanel` they control; the buttons at the ends are named “Earlier” and “Later”. |
-| `Dots and glyphs` | Decorative; the tone shows in colour only, so put what matters in the title. |
+| `Vertical layout` | A `list` named by `label`, with one item per event. A date is a `time` element with its ISO value, and a collapsible card is a button with `aria-expanded` that controls its description. |
+| `Along the line` | The dates are tabs (`tablist`, `tab`, `aria-selected`), and the card below them is the `tabpanel` they control. The buttons at the ends are named “Earlier” and “Later”. |
+| `Dots and glyphs` | Decorative. The tone is conveyed only by color, so put important information in the title. |
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-timeline` | The timeline. `data-orientation`, `data-alternate`. |
 | `.mx-timeline__list, .mx-timeline__item` | The list (the line is its `::before`) and an event (`data-tone`, `data-side`, `data-expanded`, `data-selected`). |
-| `.mx-timeline__dot, .mx-timeline__dot-glyph, .mx-timeline__dot-icon` | The dot and what is in it. |
-| `.mx-timeline__card, .mx-timeline__flag, .mx-timeline__detail` | A card down the page, a date along the line, the card under the line. |
-| `.mx-timeline__date, .mx-timeline__title, .mx-timeline__description, .mx-timeline__content` | The texts and the content of your own. |
-| `.mx-timeline__track, .mx-timeline__nav, .mx-timeline__nav-glyph` | The track that scrolls, its buttons and their arrows. |
+| `.mx-timeline__dot, .mx-timeline__dot-glyph, .mx-timeline__dot-icon` | The marker and its content. |
+| `.mx-timeline__card, .mx-timeline__flag, .mx-timeline__detail` | A card in the vertical layout, a date in the horizontal layout, and the card below the line. |
+| `.mx-timeline__date, .mx-timeline__title, .mx-timeline__description, .mx-timeline__content` | The text and custom content. |
+| `.mx-timeline__track, .mx-timeline__nav, .mx-timeline__nav-glyph` | The scrolling track, its buttons and their arrows. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `timeline.line, .dot, .dot-glyph, .card, .flag, .date, .title, .description, .detail, .nav, .nav-glyph` | Units: the line, a dot and its glyph (by tone), a card (`pressable`, `hover`, `pressed`, `focus`, `expanded`), a flag (`hover`, `pressed`, `focus`, `selected`), the texts, the detail, the track buttons. |
-| `timeline.gap, .dot-gap, .track-gap, .row-gap, .mark-size, .line-thickness` | Between events, between a dot and its card, between flags, between the track and the detail; the dot’s size; the line’s thickness. |
+| `timeline.line, .dot, .dot-glyph, .card, .flag, .date, .title, .description, .detail, .nav, .nav-glyph` | Units: the line, a marker and its glyph (by tone), a card (`pressable`, `hover`, `pressed`, `focus`, `expanded`), a date item (`hover`, `pressed`, `focus`, `selected`), the text, the detail card and the track buttons. |
+| `timeline.gap, .dot-gap, .track-gap, .row-gap, .mark-size, .line-thickness` | The gap between events, between a marker and its card, between dates, and between the track and the detail card, plus the marker size and line thickness. |
 
 ## API reference
 
@@ -152,23 +152,23 @@ export default function Content() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `Bind<readonly TimelineItem[]>` | `[]` | The events in order: `date` (a `Date`, an ISO text or milliseconds), `title`, `description`, `glyph` or `icon`, `tone`, `content`, `key`, `data`. |
-| `orientation` | `Bind<TimelineOrientation>` | `'vertical'` | `vertical`: down the page, a card per event; `horizontal`: along a line of dates, the shown event’s card under it. |
-| `alternate` | `Bind<boolean>` | `false` | Vertical: the cards take turns on either side of the line. |
-| `collapsible` | `Bind<boolean>` | `false` | Vertical: a card shows its description only when pressed. |
-| `dateFormat` | `Bind<TimelineDateFormat>` | `'medium'` | `short`, `medium`, `long`, or the options of `Intl.DateTimeFormat`; written in the kit’s language. |
-| `value` | `Bind<string \| number \| null>` | `0` | Horizontal: the event whose card is shown, its `key` else its index. `x-model` binds it two-way. |
-| `label` | `Bind<string>` | the kit’s “Timeline” | What screen readers call it. |
+| `items` | `Bind<readonly TimelineItem[]>` | `[]` | The events in order: `date` (a `Date`, an ISO string or milliseconds), `title`, `description`, `glyph` or `icon`, `tone`, `content`, `key` and `data`. |
+| `orientation` | `Bind<TimelineOrientation>` | `'vertical'` | `vertical` shows a card per event down the page. `horizontal` shows a line of dates with the selected event's card below it. |
+| `alternate` | `Bind<boolean>` | `false` | In the vertical layout, places cards on alternating sides of the line. |
+| `collapsible` | `Bind<boolean>` | `false` | In the vertical layout, shows a card's description only when clicked. |
+| `dateFormat` | `Bind<TimelineDateFormat>` | `'medium'` | `short`, `medium`, `long` or `Intl.DateTimeFormat` options. Dates use the kit language. |
+| `value` | `Bind<string \| number \| null>` | `0` | In the horizontal layout, the event whose card is shown, identified by its `key` or index. `x-model` provides two-way binding. |
+| `label` | `Bind<string>` | The kit string “Timeline” | The accessible name. |
 
 ### Events, properties and methods
 
-| Member | Kind | Description |
+| Member | Type | Description |
 | --- | --- | --- |
-| `onItemClick` | event | A press on an event’s card or flag (`index`, `item`). |
-| `onSelectionChanged` | event | Horizontal: the shown event changed (`index`, `item`, `previous`, `byUser`). |
-| `selectedIndex` | read-only | Horizontal: the index of the shown event; -1 when there is none. |
-| `count` | read-only | How many events there are. |
-| `goTo(event)` | `boolean` | Horizontal: shows an event by index or key; vertical: unfolds its card. |
-| `unfold(event, on), isUnfolded(event)` | `void`, `boolean` | Vertical, `collapsible`: unfolds or folds a card; whether it is unfolded. |
-| `formatDate(date)` | `string` | A date as the timeline writes it. |
-| `refresh()` | `void` | Reads the items again after they were changed in place. |
+| `onItemClick` | event | Occurs when an event's card or date is clicked (`index`, `item`). |
+| `onSelectionChanged` | event | In the horizontal layout, occurs when the selected event changes (`index`, `item`, `previous`, `byUser`). |
+| `selectedIndex` | read-only | In the horizontal layout, the index of the selected event, or -1 if there is none. |
+| `count` | read-only | The number of events. |
+| `goTo(event)` | `boolean` | In the horizontal layout, shows an event by index or key. In the vertical layout, expands its card. |
+| `unfold(event, on), isUnfolded(event)` | `void`, `boolean` | In the vertical layout with `collapsible`, expands or collapses a card, or reports whether it is expanded. |
+| `formatDate(date)` | `string` | Formats a date the same way the timeline does. |
+| `refresh()` | `void` | Re-reads the items after they have been changed in place. |

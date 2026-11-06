@@ -6,7 +6,6 @@
   "With a data source, changes go through its adapter. While saving, the appointment stays where it was placed and cannot be changed. If saving fails, `onDataError` reports it and the appointment reverts.": "",
   "The appointment form": "",
   "`onFormOpening` receives the form's `items` (a `FormLayout`) and its `data`. You can add or remove fields, or cancel and show your own form.": "",
-  "Validation rules": "",
   "`onMoving` and `onResizing` control where an appointment can go. When canceled, the drag shows that it cannot drop there. An appointment's own `allowDrag` and `allowResize` can lock it.": "",
   "Opens the form for a new appointment over the selection.": "",
   "Opens its form. Space shows its tooltip.": "",

@@ -11,7 +11,6 @@
   "Enter starts a new line. Ctrl+Enter (Cmd+Enter on a Mac) raises `onEnter` with the value, which is the usual way to send a message or save a note.": "",
   "Read-only, disabled and required": "",
   "Inserts a new line.": "",
-  "Commits the value (with `updateOn=\"change\"`) and raises `onEnter`.": "",
   "Moves focus out of the field. The clear button is not a Tab stop, because Escape does the same thing.": "",
   "A native `<textarea>` associated with its `<label>` through `for`.": "",
   "If Ctrl+Enter sends something, mention it in the label or help text, as the example above does.": "",

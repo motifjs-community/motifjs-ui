@@ -2,11 +2,11 @@
 
 > TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
 
-Documents and whole groups float in windows of their own in the page and dock again into the documents' groups or into dock areas around them, which fold to the manager's edge. The mouse, the keys and the code do the same, through the same events.
+Documents and whole groups can float in their own windows within the page, and dock again into document groups or into dock areas around them, which can collapse to the edge of the manager. The mouse, the keyboard and the API all perform the same actions through the same events.
 
 ## Tool areas around the documents
 
-A dock area holds groups of its own beside the documents and resizes by its splitter. Folded (the pin in its toolbar, the tab menu, Ctrl+K H, or `autoHide`), only its titles stay at the edge; one of them slides the area out over the documents, and a press outside, Escape or focus leaving slides it back. The close button next to the pin closes the active document, or hides it when it cannot close, as these tools: "Show hidden" in the strip's menu or the "…" menu, or `show`, puts it back where it was.
+A dock area holds its own groups beside the documents and resizes with its splitter. When collapsed (with the pin in its toolbar, the tab menu, Ctrl+K H or `autoHide`), only its titles stay at the edge. Clicking a title slides the area out over the documents, and clicking outside, pressing Escape or moving focus away slides it back. The close button next to the pin closes the active document, or hides it if it cannot be closed, as with these tools. "Show hidden" in the strip menu or the "…" menu, or `show`, returns it to its previous place.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';
@@ -53,18 +53,18 @@ export function fileDocument(path: string, extra: TabDocumentOptions = {}): TabD
 }
 ```
 
-| Dropped on | What happens |
+| Drop target | Result |
 | --- | --- |
-| `A guide of the cross over a group` | Its middle puts the tab (or the group, or the window) into that group; a side splits that group, as an edge zone does without guides. |
-| `A guide at an edge of the manager` | Into the dock area of that side: a tab joins the area's group, a group or a window goes along the area. The area is made when there is none, at `dockAreaSize`. |
-| `A strip` | Among its tabs, as before; a floating window dropped on a strip gives that group all its documents and closes. |
+| `A guide of the cross over a group` | The middle places the tab, group or window into that group, and a side splits that group, as an edge zone does without guides. |
+| `A guide at an edge of the manager` | Places it in the dock area on that side: a tab joins the area's group, and a group or window runs along the area. The area is created if necessary, at `dockAreaSize`. |
+| `A strip` | Among its tabs, as before. A floating window dropped on a strip gives that group all its documents and closes. |
 | `The titles of a folded area` | Into that area. |
-| `Anywhere else (guides on), or outside every manager` | Floats: a window of its own at the pointer, as large as the group it came from (`floatingWindowSize`). A floating window moved by its strip stays where it is let go. |
-| `Over a manager outside its `dragGroup`` | Refused: nothing floats over another manager. |
+| `Anywhere else (guides on), or outside every manager` | Floats in its own window at the pointer, the same size as its original group (`floatingWindowSize`). A floating window moved by its strip stays where it is released. |
+| `Over a manager outside its `dragGroup`` | Refused. Nothing floats over another manager. |
 
 ## Floating windows
 
-A window holds groups as the documents' area does, split and resized the same way. It moves by the empty part of its strips, resizes from its edges and corners, comes to the front when pressed, maximizes within the page, and a double click on its strip docks it back. Its documents keep their content: nothing is made again.
+A window holds groups in the same way as the document area, split and resized the same way. It moves by the empty part of its strips, resizes from its edges and corners, comes to the front when clicked, and maximizes within the page. Double-clicking its strip docks it back. Its documents keep their content, and nothing is recreated.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';
@@ -113,7 +113,7 @@ export function fileDocument(path: string, extra: TabDocumentOptions = {}): TabD
 
 ## Compact bars
 
-The bars of dock areas and floating windows are compact, so that the tabs keep the room: no scroll buttons (the wheel, touch and the keys scroll the strip, and the "…" button tells how many tabs are out of sight), tabs that shrink before they scroll, one document shown as a title with its close button, and only the pin and the close button of an area, or the close button of a window, beside one "…" menu, all of them small buttons, which holds the other buttons above the list of documents. Each part is a setting: the manager's `compact…` props for every area and window, the area's or the window's own (`area.scrollButtons = true`) over them. The documents' bar keeps its whole toolbar by default, and has the same settings without the prefix; new browser windows use it too, as they fill a window of their own.
+The bars of dock areas and floating windows are compact, to leave more space for tabs. There are no scroll buttons (the wheel, touch and keys scroll the strip, and the "…" button shows how many tabs are out of view), tabs shrink before they scroll, a single document appears as a title with its close button, and an area shows only its pin and close button, or a window only its close button, as small buttons beside one "…" menu that holds the other buttons above the document list. Each of these is a setting: the manager's `compact…` props apply to every area and window, and an area's or window's own value (`area.scrollButtons = true`) takes precedence. The document bar keeps its full toolbar by default and has the same settings without the prefix. New browser windows use it too, because they fill their own window.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';
@@ -162,16 +162,16 @@ export function fileDocument(path: string, extra: TabDocumentOptions = {}): TabD
 
 | Prop (documents / compact) | Type | Default | Description |
 | --- | --- | --- | --- |
-| `scrollButtons / compactScrollButtons` | `Bind<boolean>` | `true` / `false` | Buttons that scroll a strip whose tabs do not fit. Without them the wheel (a plain one scrolls sideways), touch and the keys scroll it, a thin scrollbar shows while the pointer is over it, and the "…" button shows how many tabs are not fully in sight ("+2", also in its name). |
-| `tabSize / compactTabSize` | `Bind<'fit' \| 'shrink' \| 'fixed'>` | `'fit'` / `'shrink'` | Shrinking, tabs narrow down to the smallest width, the title cut by an ellipsis (the tooltip and the name keep it whole); only then does the strip scroll. |
-| `tabMinWidth / compactTabMinWidth` | `Bind<number>` | `80` / `64` | The smallest width of a tab, in pixels; a tab keeps its icon, its close button and a few letters whatever it is. |
-| `singleTabTitle / compactSingleTabTitle` | `Bind<boolean>` | `false` / `true` | A strip with one document shows it as a title: icon, title, unsaved mark, badge and its close button (`closeButton`, the document's `closable`). It is still the tab: its menu, keys, drag, double click and tooltip stay. A second document makes tabs again. |
-| `barButtons / compactBarButtons` | `Bind<readonly TabBarButton[] \| 'all' \| 'auto'>` | `'all'` / `'auto'` | The built-in buttons that stay in the toolbar (`'split'`, `'maximize'`, `'lock'`, `'autoHide'`, `'close'`, `'maximizeWindow'`, `'closeWindow'`). The others, the app's buttons (but those with `overflow: 'never'`), Dock back in a window and the group's commands go into one "…" menu, next to its documents and their search. `'auto'`: an area keeps its pin and its close button (`['autoHide', 'close']`), a window its own close button (`['closeWindow']`); a list is followed as it is in both. `'all'`: the whole toolbar, which folds into a menu of its own when narrow, and the list apart. |
-| `barButtonSize / compactBarButtonSize` | `Bind<'normal' \| 'small'>` | `'normal'` / `'small'` | How large the toolbar's buttons are: small ones are squares of 24 pixels (the smallest pointer target WCAG 2.2 asks for) with a smaller mark and tight gaps; the "+2" count fits them. An area's or a window's own `barButtonSize` wins. |
+| `scrollButtons / compactScrollButtons` | `Bind<boolean>` | `true` / `false` | Buttons that scroll a strip whose tabs do not fit. Without them, the wheel (plain scrolling moves sideways), touch and the keys scroll it, a thin scrollbar appears while the pointer is over it, and the "…" button shows how many tabs are not fully visible ("+2", also in its name). |
+| `tabSize / compactTabSize` | `Bind<'fit' \| 'shrink' \| 'fixed'>` | `'fit'` / `'shrink'` | With shrinking, tabs narrow down to the minimum width and the title is truncated with an ellipsis (the tooltip and the accessible name keep it whole). Only then does the strip scroll. |
+| `tabMinWidth / compactTabMinWidth` | `Bind<number>` | `80` / `64` | The minimum width of a tab, in pixels. A tab always keeps its icon, its close button and a few letters. |
+| `singleTabTitle / compactSingleTabTitle` | `Bind<boolean>` | `false` / `true` | A strip with one document shows it as a title: the icon, title, unsaved mark, badge and close button (`closeButton`, and the document's `closable`). It remains a tab, with its menu, keys, drag, double-click and tooltip. A second document brings the tabs back. |
+| `barButtons / compactBarButtons` | `Bind<readonly TabBarButton[] \| 'all' \| 'auto'>` | `'all'` / `'auto'` | The built-in buttons that stay in the toolbar (`'split'`, `'maximize'`, `'lock'`, `'autoHide'`, `'close'`, `'maximizeWindow'`, `'closeWindow'`). The others, application buttons (except those with `overflow: 'never'`), Dock back in a window, and the group commands go into one "…" menu, next to the documents and their search. With `'auto'`, an area keeps its pin and close button (`['autoHide', 'close']`), and a window keeps its close button (`['closeWindow']`). A list applies as it is to both. `'all'` keeps the full toolbar, which collapses into its own menu when narrow, with the document list separate. |
+| `barButtonSize / compactBarButtonSize` | `Bind<'normal' \| 'small'>` | `'normal'` / `'small'` | The size of the toolbar buttons. Small buttons are 24-pixel squares (the minimum pointer target in WCAG 2.2) with a smaller icon and tighter gaps, and the "+2" count fits them. An area's or window's own `barButtonSize` takes precedence. |
 
 ## Settings
 
-Each part is a setting and changes live; a document's own `allowFloat`, `allowDock`, `dockSides` and `allowAutoHide` win over the manager's. Here package.json may not float and README.md docks only at the bottom.
+Every part is a setting that can change at runtime, and a document's own `allowFloat`, `allowDock`, `dockSides` and `allowAutoHide` take precedence over the manager's. In this example, package.json cannot float and README.md docks only at the bottom.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';
@@ -220,7 +220,7 @@ export function fileDocument(path: string, extra: TabDocumentOptions = {}): TabD
 
 ## Saving the whole layout
 
-`saveLayout` writes the dock areas and the floating windows too; `loadLayout` puts them back, and still loads a layout saved before them (version 1).
+`saveLayout` also writes the dock areas and floating windows, and `loadLayout` restores them. Layouts saved in the earlier format (version 1) still load.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';
@@ -267,7 +267,7 @@ export function fileDocument(path: string, extra: TabDocumentOptions = {}): TabD
 }
 ```
 
-## Changing or refusing
+## Changing or canceling
 
 ```tsx
 docs.onDocking((e) => {
@@ -285,28 +285,28 @@ docs.onWindowClosing((e) => {
 
 ## From the keyboard
 
-| Keys | Does |
+| Keys | Action |
 | --- | --- |
 | `Ctrl + K, then O` | Floats the active document (`float`). |
-| `Ctrl + K, then D` | Docks it back where it was (`dock`). |
-| `Ctrl + K, then Alt + an arrow` | Into the dock area on that side (`dockLeft`, `dockRight`, `dockTop`, `dockBottom`). |
-| `Ctrl + K, then H` | Folds the active document's area to its edge, or brings it back (`toggleAutoHide`). |
-| `Ctrl + K, then X` | Hides the focused or active document (`hide`); "Show hidden" in the strip's menu or the "…" menu brings it back. |
-| `F6, Shift + F6` | The next / previous part: the documents, each dock area, each floating window (`nextPart`, `previousPart`). |
-| `Ctrl + K, then Space` | In a window: moves it with the arrows, resizes it with Shift and an arrow; Enter keeps it, Escape puts it back (`moveWindow`, `windowLeft`…`windowTaller`, `windowDone`, `windowCancel`). |
-| `Ctrl + K, then Shift + M; Ctrl + K, then Shift + W` | Maximizes or restores the window; closes it (`maximizeWindow`, `closeWindow`). |
-| `In a folded area's titles` | The arrows go along them (`autoHideNext`, `autoHidePrevious`), Home and End to the ends, Enter or Space slides the area out, Escape back. |
-| `"Move to…"` | Past the edge of the layout, the same arrow goes on to the dock area of that side, then to a window of its own. |
+| `Ctrl + K, then D` | Docks it back in its previous place (`dock`). |
+| `Ctrl + K, then Alt + an arrow` | Docks it in the area on that side (`dockLeft`, `dockRight`, `dockTop`, `dockBottom`). |
+| `Ctrl + K, then H` | Collapses the active document's area to its edge, or restores it (`toggleAutoHide`). |
+| `Ctrl + K, then X` | Hides the focused or active document (`hide`). "Show hidden" in the strip menu or the "…" menu restores it. |
+| `F6, Shift + F6` | Moves to the next or previous part: the documents, each dock area and each floating window (`nextPart`, `previousPart`). |
+| `Ctrl + K, then Space` | In a window, moves it with the arrow keys and resizes it with Shift + arrow. Enter keeps the change, and Escape reverts it (`moveWindow`, `windowLeft`…`windowTaller`, `windowDone`, `windowCancel`). |
+| `Ctrl + K, then Shift + M; Ctrl + K, then Shift + W` | Maximizes or restores the window, or closes it (`maximizeWindow`, `closeWindow`). |
+| `In a folded area's titles` | The arrow keys move along them (`autoHideNext`, `autoHidePrevious`), Home and End move to the ends, Enter or Space slides the area out, and Escape slides it back. |
+| `"Move to…"` | Past the edge of the layout, the same arrow key continues to the dock area on that side, and then to a separate window. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Windows` | A non-modal `dialog` named "Floating window n"; each of its groups is a `group` as in the documents' area. It comes to the front on a press or on focus. |
-| `Dock areas` | A `region` named after its side ("Left dock area"); its splitter is a `separator` with its size as a value, moved by the splitter keys. |
-| `Folded areas` | Their titles are a `toolbar` ("Hidden on the left") of buttons with `aria-expanded` and `aria-controls` the area; one tab stop, the arrows inside. |
-| `Close buttons` | The close button of an area is named after what it does: "Close Notes", or "Hide Explorer" for a document that cannot close. A title in that bar shows no close button of its own. |
-| `Announcements` | Floated, docked (with the area), folded and shown, slid out, hidden and shown again, window closed, maximized and restored, politely. |
+| `Windows` | A non-modal `dialog` named "Floating window n". Each of its groups is a `group`, as in the document area. It comes to the front when clicked or focused. |
+| `Dock areas` | A `region` named after its side ("Left dock area"). Its splitter is a `separator` with its size as a value, moved with the splitter keys. |
+| `Folded areas` | The titles are a `toolbar` ("Hidden on the left") of buttons with `aria-expanded` and with `aria-controls` referencing the area. It is one Tab stop, and the arrow keys move inside it. |
+| `Close buttons` | An area's close button is named after its action: "Close Notes", or "Hide Explorer" for a document that cannot be closed. A title in that bar has no close button of its own. |
+| `Announcements` | Floated, docked (with the area), collapsed and shown, slid out, hidden and shown again, and window closed, maximized and restored are all announced politely. |
 
 ## API
 
@@ -314,97 +314,97 @@ docs.onWindowClosing((e) => {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `allowFloat` | `Bind<boolean>` | `true` | Documents and groups can float; a document's own `allowFloat` wins. |
-| `allowDock` | `Bind<boolean>` | `true` | Documents and groups can go to the dock areas; a document's own `allowDock` wins. |
-| `dockSides` | `Bind<readonly ('left' \| 'right' \| 'top' \| 'bottom')[]>` | all four | Which dock areas documents may go to; a document's own `dockSides` wins. `left` is the start side (the right one right to left). |
-| `allowAutoHide` | `Bind<boolean>` | `true` | Dock areas can fold to the edge; a document with `allowAutoHide: false` keeps its area open. |
-| `allowHide` | `Bind<boolean>` | `true` | Documents can be hidden (`hide`, "Hide", Ctrl+K X, the close button of an area for a document that cannot close) and shown again where they were; a document's own `allowHide` wins. |
-| `dockGuides` | `Bind<boolean>` | `false` | The guides while dragging; a drop away from them and from the strips floats. Off, a group's edge zones work as on the [drag and drop page](tabdocs-drag.md), and only outside the manager a drop floats. |
-| `dockGuideKinds` | `Bind<readonly ('group' \| 'edges')[]>` | both | The cross over the group under the pointer, the four guides at the manager's edges. |
-| `floatingWindowSize` | `Bind<{ width, height } \| null>` | `null` | The size a window opens at; `null`: the size of the group it comes from. |
-| `keepFloatingInView` | `Bind<boolean>` | `true` | Windows stay inside the viewport when moved, resized, or the page gets smaller. |
-| `closeEmptyWindows` | `Bind<boolean>` | `true` | A window whose last document closes closes too; off, it stays with an empty group. |
-| `dockOnDoubleClick` | `Bind<boolean>` | `true` | A double click on the empty part of a window's strip docks it back. |
-| `dockAreaSize` | `Bind<Partial<Record<side, number \| string>>>` | `{ left: 240, right: 240, top: 160, bottom: 200 }` | The size a new area of each side starts with: pixels, or a share such as `'25%'`. |
-| `dockAreaMinSize` | `Bind<number>` | `120` | The smallest size of an area, in pixels; the documents keep `minGroupWidth` / `minGroupHeight`. |
-| `autoHideHover, autoHideDelay` | `Bind<boolean>`, `Bind<number>` | `true`, `500` | Resting the pointer on a folded area's title slides it out after that many milliseconds, and away from it and the area slides it back. |
+| `allowFloat` | `Bind<boolean>` | `true` | Allows documents and groups to float. A document's own `allowFloat` takes precedence. |
+| `allowDock` | `Bind<boolean>` | `true` | Allows documents and groups to move to dock areas. A document's own `allowDock` takes precedence. |
+| `dockSides` | `Bind<readonly ('left' \| 'right' \| 'top' \| 'bottom')[]>` | all four | The dock areas documents can move to. A document's own `dockSides` takes precedence. `left` is the start side (on the right in right-to-left layouts). |
+| `allowAutoHide` | `Bind<boolean>` | `true` | Allows dock areas to collapse to the edge. A document with `allowAutoHide: false` keeps its area open. |
+| `allowHide` | `Bind<boolean>` | `true` | Allows documents to be hidden (`hide`, "Hide", Ctrl+K X, or an area's close button for a document that cannot be closed) and shown again in their previous place. A document's own `allowHide` takes precedence. |
+| `dockGuides` | `Bind<boolean>` | `false` | The guides shown while dragging. A drop away from them and from the strips floats. When disabled, a group's edge zones work as described on the [drag and drop page](tabdocs-drag.md), and a drop floats only outside the manager. |
+| `dockGuideKinds` | `Bind<readonly ('group' \| 'edges')[]>` | both | The cross over the group under the pointer, and the four guides at the edges of the manager. |
+| `floatingWindowSize` | `Bind<{ width, height } \| null>` | `null` | The initial size of a window. `null` uses the size of its original group. |
+| `keepFloatingInView` | `Bind<boolean>` | `true` | Keeps windows inside the viewport when they are moved or resized, or when the page gets smaller. |
+| `closeEmptyWindows` | `Bind<boolean>` | `true` | Closes a window when its last document closes. When disabled, the window stays with an empty group. |
+| `dockOnDoubleClick` | `Bind<boolean>` | `true` | Double-clicking the empty part of a window's strip docks it back. |
+| `dockAreaSize` | `Bind<Partial<Record<side, number \| string>>>` | `{ left: 240, right: 240, top: 160, bottom: 200 }` | The initial size of a new area on each side, in pixels or as a share such as `'25%'`. |
+| `dockAreaMinSize` | `Bind<number>` | `120` | The minimum size of an area, in pixels. The documents keep `minGroupWidth` and `minGroupHeight`. |
+| `autoHideHover, autoHideDelay` | `Bind<boolean>`, `Bind<number>` | `true`, `500` | Resting the pointer on a collapsed area's title slides it out after this many milliseconds, and moving away from it and the area slides it back. |
 
 ### TabDocument
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `allowFloat, allowDock, allowAutoHide` | `Bind<boolean \| undefined>` | This document's own settings; `undefined` follows the manager. |
-| `dockSides` | `Bind<readonly TabDockSide[] \| undefined>` | The dock areas this document may go to. |
-| `allowHide` | `Bind<boolean \| undefined>` | This document's own setting; `undefined` follows the manager. Its `closable` decides what a close button of an area does: close it, or hide it. |
-| `isHidden` | read-only, reactive | Hidden: in no group, its content kept as its `contentLifetime` says; `isOpen` stays `true`. `hide()` and `show(options?)` call the manager. |
-| `window, dockArea` | read-only, reactive | The floating window or the dock area it is in, `null` elsewhere (also on `TabGroup`). |
+| `allowFloat, allowDock, allowAutoHide` | `Bind<boolean \| undefined>` | This document's own settings. `undefined` uses the manager's. |
+| `dockSides` | `Bind<readonly TabDockSide[] \| undefined>` | The dock areas this document can move to. |
+| `allowHide` | `Bind<boolean \| undefined>` | This document's own setting. `undefined` uses the manager's. Its `closable` determines whether an area's close button closes or hides it. |
+| `isHidden` | read-only, reactive | A hidden document is in no group, and its content is kept according to its `contentLifetime`. `isOpen` stays `true`. `hide()` and `show(options?)` call the manager. |
+| `window, dockArea` | read-only, reactive | The floating window or dock area containing it, otherwise `null` (also on `TabGroup`). |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `float(doc \| group, rect?)` | `TabWindow \| null` | Into a window of its own; `rect` is `{ x, y, width, height }` in the viewport. |
-| `dock(doc \| group \| window, side?, size?)` | `boolean` | Into the dock area of `side`, made at `size` when there is none; without a side, back where it was docked before it floated. |
-| `autoHide(area \| doc, on?)` | `boolean` | Folds the area to the edge (`true`) or brings it back. |
-| `showAutoHidden(doc), hideAutoHidden()` | `boolean` | Slides a folded area out with that document shown, or back. |
-| `moveWindow(w, x, y), resizeWindow(w, width, height)` | `boolean` | By code, asking `onLayoutChanging` first; kept in view by `keepFloatingInView`. |
-| `maximizeWindow(w), restoreWindow(w)` | `boolean` | The whole page, and back to its place. |
-| `closeWindow(w)` | `Promise<boolean>` | Closes its documents (each asks through `onClosing`), then the window. Its close button does the same, and hides the documents that cannot close. |
-| `hide(doc)` | `boolean` | Out of its group, not closed: its content is kept as its `contentLifetime` says, and a group, an area or a window it leaves empty goes. |
-| `show(doc, { group?, side?, index?, active?, focus? })` | `boolean` | Back where it was hidden from: its group, else its dock area (made again at its size, folded if it was), else a window where its window was, else among the documents; `group` or `side` name another place. `open(doc)` does the same. |
-| `hiddenDocuments` | read-only, reactive | The hidden documents, in the order they were hidden; `findDocument(id)` finds them too. |
-| `focusWindow(w), focusPart(by?)` | `boolean` | Brings a window to the front with focus where it was; the next (`-1`: previous) part: the documents, each area, each window. |
-| `resizeDockArea(area, size)` | `boolean` | Pixels, or a share such as `'25%'`. |
-| `floatingWindows, dockAreas` | read-only, reactive | The windows, the one at the back first; the areas, the outermost first. `dockArea(side)` finds one. |
-| `saveLayout(), loadLayout(layout, factory?)` | `TabLayout` (version 3) | Also the areas (`side`, `size`, `autoHide`, their layout), the windows (`rect`, `maximized`, where they dock back, their layout) and the hidden documents (`hidden`, with where they go back). Older layouts still load. |
+| `float(doc \| group, rect?)` | `TabWindow \| null` | Moves it into its own window. `rect` is `{ x, y, width, height }` in the viewport. |
+| `dock(doc \| group \| window, side?, size?)` | `boolean` | Moves it into the dock area on `side`, created at `size` if necessary. Without a side, it returns to where it was docked before it floated. |
+| `autoHide(area \| doc, on?)` | `boolean` | Collapses the area to the edge (`true`) or restores it. |
+| `showAutoHidden(doc), hideAutoHidden()` | `boolean` | Slides a collapsed area out with that document shown, or back. |
+| `moveWindow(w, x, y), resizeWindow(w, width, height)` | `boolean` | Programmatic control, raising `onLayoutChanging` first. `keepFloatingInView` keeps the window visible. |
+| `maximizeWindow(w), restoreWindow(w)` | `boolean` | Fills the whole page, and returns to its place. |
+| `closeWindow(w)` | `Promise<boolean>` | Closes its documents (each raising `onClosing`), and then the window. Its close button does the same, and hides documents that cannot be closed. |
+| `hide(doc)` | `boolean` | Removes it from its group without closing it. Its content is kept according to its `contentLifetime`, and a group, area or window it leaves empty is removed. |
+| `show(doc, { group?, side?, index?, active?, focus? })` | `boolean` | Returns it to where it was hidden from: its group, otherwise its dock area (recreated at its size, collapsed if it was), otherwise a window in the same position, otherwise the documents. `group` or `side` names another place. `open(doc)` does the same. |
+| `hiddenDocuments` | read-only, reactive | The hidden documents, in the order they were hidden. `findDocument(id)` also finds them. |
+| `focusWindow(w), focusPart(by?)` | `boolean` | Brings a window to the front with focus where it was, or moves to the next (or with `-1`, previous) part: the documents, each area and each window. |
+| `resizeDockArea(area, size)` | `boolean` | In pixels, or as a share such as `'25%'`. |
+| `floatingWindows, dockAreas` | read-only, reactive | The windows, with the one at the back first, and the areas, with the outermost first. `dockArea(side)` finds one. |
+| `saveLayout(), loadLayout(layout, factory?)` | `TabLayout` (version 3) | Also includes the areas (`side`, `size`, `autoHide`, their layout), the windows (`rect`, `maximized`, where they dock back, their layout) and the hidden documents (`hidden`, with where they return to). Older layouts still load. |
 
 ### TabWindow
 
-| Member | Kind | Description |
+| Member | Type | Description |
 | --- | --- | --- |
-| `rect, isMaximized, isActive` | read-only, reactive | Where it is and how big (as it is restored), maximized, the front window of the page. |
-| `groups, documents, index` | read-only, reactive | Its groups (split as the documents' are), their documents, its place in `floatingWindows`. |
-| `move, resize, maximize, restore, close, dock(side?), focus` | methods | The manager's methods for this window. |
-| `scrollButtons, tabSize, tabMinWidth, singleTabTitle, barButtons, barButtonSize` | `Bind<… \| null>`, reactive | Its strips' own settings, a value or a function; `null` (the default) follows the manager's `compact…` props. Plain values are saved with the layout (`bar`). |
+| `rect, isMaximized, isActive` | read-only, reactive | Its position and size (as restored), whether it is maximized, and whether it is the front window of the page. |
+| `groups, documents, index` | read-only, reactive | Its groups (split in the same way as the document area), their documents, and its position in `floatingWindows`. |
+| `move, resize, maximize, restore, close, dock(side?), focus` | methods | The manager's methods, scoped to this window. |
+| `scrollButtons, tabSize, tabMinWidth, singleTabTitle, barButtons, barButtonSize` | `Bind<… \| null>`, reactive | Its strips' own settings, as a value or a function. `null` (the default) uses the manager's `compact…` props. Plain values are saved with the layout (`bar`). |
 
 ### TabDockArea
 
-| Member | Kind | Description |
+| Member | Type | Description |
 | --- | --- | --- |
-| `side, size, autoHidden, isOpen` | read-only, reactive | Its side; its size as set (pixels or a share); folded to the edge; slid out now. |
-| `groups, documents, index, rect` | read-only | Its groups, their documents, its place in `dockAreas`, its box on the screen. |
+| `side, size, autoHidden, isOpen` | read-only, reactive | Its side, its size as set (in pixels or as a share), whether it is collapsed to the edge, and whether it is slid out. |
+| `groups, documents, index, rect` | read-only | Its groups, their documents, its position in `dockAreas`, and its box on the screen. |
 | `resize(size), autoHide(on?), show(doc?)` | methods | The manager's methods for this area. |
-| `scrollButtons, tabSize, tabMinWidth, singleTabTitle, barButtons, barButtonSize` | `Bind<… \| null>`, reactive | Its strips' own settings (as on `TabWindow`); `null` follows the manager's `compact…` props. |
+| `scrollButtons, tabSize, tabMinWidth, singleTabTitle, barButtons, barButtonSize` | `Bind<… \| null>`, reactive | Its strips' own settings (as on `TabWindow`). `null` uses the manager's `compact…` props. |
 
 ### Events
 
-| Event | What it carries |
+| Event | Contents |
 | --- | --- |
-| `onFloating(e) / onFloated(e)` | `{ document, group, rect }`, cancelable, `rect` may be changed; then `{ document, group, window }`. `document` is `null` for a group. |
-| `onDocking(e) / onDocked(e)` | `{ document, group, window, side, size }`, cancelable, `side` and `size` may be changed (`side: null`: back where it was docked); then `{ document, group, area, side }`. |
-| `onAutoHiding(e) / onAutoHidden(e)` | `{ area, on }`, cancelable; then the same. |
-| `onHiding(e) / onHidden(e)` | `{ document, group }`, cancelable; then the same (`group`: the one it left). |
-| `onShowing(e) / onShown(e)` | `{ document, group, side, index }`, cancelable, `group` and `index` may be changed (`group: null`: an area or a window is made for it); then `{ document, group, index }`. |
-| `onSlideChanging(e) / onSlideChanged(e)` | `{ area, document, open }`: a folded area slides out (`document` shown) or back (`null`); cancelable. |
-| `onWindowClosing(e) / onWindowClosed(e)` | `{ window }`, cancelable; then `{ window, reason }`: `'closed'`, `'docked'` or `'empty'`. |
-| `onLayoutChanging / onLayoutChanged` | Also `'float'`, `'dock'`, `'autoHide'`, `'resizeArea'`, `'moveWindow'`, `'resizeWindow'`, `'maximizeWindow'`, `'restoreWindow'`, `'closeWindow'`, with `window` or `area`; `onLayoutChanged` also `'hide'` and `'show'`. |
-| `onDragOver, onDropping, onDropped` | New `target` kinds: `'dock-guide'` (a guide of the cross, with `group` and `side`), `'dock-area'` (with `dockSide`), `'float'` (with `rect`). |
+| `onFloating(e) / onFloated(e)` | `{ document, group, rect }`, cancelable, and `rect` can be changed. Then `{ document, group, window }`. `document` is `null` for a group. |
+| `onDocking(e) / onDocked(e)` | `{ document, group, window, side, size }`, cancelable, and `side` and `size` can be changed (`side: null` returns it to where it was docked). Then `{ document, group, area, side }`. |
+| `onAutoHiding(e) / onAutoHidden(e)` | `{ area, on }`, cancelable, followed by the same. |
+| `onHiding(e) / onHidden(e)` | `{ document, group }`, cancelable, followed by the same (`group` is the one it left). |
+| `onShowing(e) / onShown(e)` | `{ document, group, side, index }`, cancelable, and `group` and `index` can be changed (`group: null` creates an area or window for it). Then `{ document, group, index }`. |
+| `onSlideChanging(e) / onSlideChanged(e)` | `{ area, document, open }`, cancelable. A collapsed area slides out (with `document` shown) or back (`null`). |
+| `onWindowClosing(e) / onWindowClosed(e)` | `{ window }`, cancelable. Then `{ window, reason }`, where `reason` is `'closed'`, `'docked'` or `'empty'`. |
+| `onLayoutChanging / onLayoutChanged` | Also includes `'float'`, `'dock'`, `'autoHide'`, `'resizeArea'`, `'moveWindow'`, `'resizeWindow'`, `'maximizeWindow'`, `'restoreWindow'` and `'closeWindow'`, with `window` or `area`. `onLayoutChanged` also includes `'hide'` and `'show'`. |
+| `onDragOver, onDropping, onDropped` | Additional `target` types: `'dock-guide'` (a guide of the cross, with `group` and `side`), `'dock-area'` (with `dockSide`) and `'float'` (with `rect`). |
 
 ### Styling hooks
 
-| Selector or token | What |
+| Selector or token | Item |
 | --- | --- |
-| `.mx-tabdocs__window` | A floating window; `data-active`, `data-maximized`, `data-moving`, `data-resizing`. Its place and size are `--_x`, `--_y`, `--_w`, `--_h`. |
-| `.mx-tabdocs__area` | A dock area; `data-side`, `data-auto-hide`, `data-open` (slid out). `.mx-tabdocs__area-sash` is its splitter. |
-| `.mx-tabdocs__autohide, .mx-tabdocs__autohide-tab` | The titles of a folded area; a title has `data-open` while its document is slid out. |
-| `.mx-tabdocs__guide` | A dock guide: `data-kind` (`cross`, `edge`), `data-side`, `data-pointed`. |
-| `.mx-tabdocs__group[data-compact], [data-title], [data-scroll-buttons], [data-tab-size], [data-bar-close]` | A group's bar: compact, one document as a title, with scroll buttons, how its tabs are sized, with a close button of its own (`.mx-tabdocs__bar-close`). |
+| `.mx-tabdocs__window` | A floating window, with `data-active`, `data-maximized`, `data-moving` and `data-resizing`. Its position and size are `--_x`, `--_y`, `--_w` and `--_h`. |
+| `.mx-tabdocs__area` | A dock area, with `data-side`, `data-auto-hide` and `data-open` (slid out). `.mx-tabdocs__area-sash` is its splitter. |
+| `.mx-tabdocs__autohide, .mx-tabdocs__autohide-tab` | The titles of a collapsed area. A title has `data-open` while its document is slid out. |
+| `.mx-tabdocs__guide` | A dock guide, with `data-kind` (`cross`, `edge`), `data-side` and `data-pointed`. |
+| `.mx-tabdocs__group[data-compact], [data-title], [data-scroll-buttons], [data-tab-size], [data-bar-close]` | A group's bar: compact, one document as a title, with scroll buttons, how its tabs are sized, and with its own close button (`.mx-tabdocs__bar-close`). |
 | `.mx-tabdocs__scrollbar, .mx-tabdocs__thumb, .mx-tabdocs__count` | The thin scrollbar of a strip without scroll buttons, and the count on its "…" button. |
-| `.mx-tabdocs__group[data-bar-size]` | The size of its toolbar's buttons: `normal` or `small`. |
-| `tabdocs.scrollbar, thumb, count; bar-button-*, bar-icon-size, title-min` | Their units, and the small toolbar's sizes; its ends leave room for the focus ring (`focus-width`, `focus-offset`). |
-| `tabdocs.window, area, autohide, autohide-tab, autohide-indicator, guide, guide-icon` | Their units (a folded area: `folded`, `folded-left` …; a guide: `edge`, `pointed`); `floating-min-*`, `folded-tab-height`, `guide-room`, `guide-spacing` are sizes. |
+| `.mx-tabdocs__group[data-bar-size]` | The size of its toolbar buttons: `normal` or `small`. |
+| `tabdocs.scrollbar, thumb, count; bar-button-*, bar-icon-size, title-min` | Their units, and the sizes of the small toolbar, whose ends leave space for the focus ring (`focus-width`, `focus-offset`). |
+| `tabdocs.window, area, autohide, autohide-tab, autohide-indicator, guide, guide-icon` | Their units (a collapsed area: `folded`, `folded-left` …; a guide: `edge`, `pointed`). `floating-min-*`, `folded-tab-height`, `guide-room` and `guide-spacing` are sizes. |
 
-The rest of the API is on the [overview](tabdocs.md#api), [Tabs](tabdocs-tabs.md), [Menus and keys](tabdocs-menus.md) and [Drag and drop](tabdocs-drag.md).
+See the [overview](tabdocs.md#api), [Tabs](tabdocs-tabs.md), [Menus and keys](tabdocs-menus.md) and [Drag and drop](tabdocs-drag.md) for the rest of the API.
 
 ## Example files
 

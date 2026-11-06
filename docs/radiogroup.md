@@ -2,7 +2,7 @@
 
 > Choice · @motifx-community/ui 0.1.0-beta.3
 
-A set of options of which one is chosen: from plain values, from your own objects or from a live list; one under the other, side by side or in columns; options that are disabled, hidden or carry a help line; one Tab stop and the arrow keys.
+A set of mutually exclusive options. Options can come from plain values, custom objects or a live list, and can be arranged vertically, horizontally or in columns. Individual options can be disabled, hidden or given help text. The group is a single Tab stop, and the arrow keys move between options.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { RadioGroup, type RadioItem } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-A plain value is its own text. `x-model` binds the chosen value two-way. Created with `new`, the same properties are set programmatically.
+A plain value serves as its own text. `x-model` provides two-way binding for the selected value. When you create the component with `new`, set the same properties programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -43,9 +43,9 @@ export default function Programmatic() {
 }
 ```
 
-## Items from data
+## Binding to data
 
-Objects of your own shape take `itemText` and `itemValue` (a property name or a function). Plain or reactive, the items are read as they are: after adding, removing or renaming some in place, `refresh()` shows them, focus and choice kept.
+Custom objects use `itemText` and `itemValue`, each a property name or a function. Items can be plain or reactive and are read as they are. After adding, removing or renaming items in place, call `refresh()` to update the display, which preserves focus and selection.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -97,9 +97,9 @@ export default function FromData() {
 }
 ```
 
-## Disabled options, help lines, hints
+## Disabled options, help text and hints
 
-A `RadioItem` brings its own `enabled`, `visible`, `hint` and `helpText`, each a value or a function. The arrow keys skip what cannot be chosen.
+A `RadioItem` has its own `enabled`, `visible`, `hint` and `helpText`, each a value or a function. The arrow keys skip options that cannot be selected.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -219,49 +219,49 @@ export default function States() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Tab` | Into the group, onto the chosen option (or the first one that can be chosen); the next Tab leaves the group. |
-| `↓ / →` | Moves to the next option and chooses it, wrapping from the last to the first; skips disabled and hidden options. |
-| `↑ / ←` | The same, backwards. Right to left, ← and → swap. |
-| `Space` | Chooses the focused option. |
-| `Alt + key (`&Name`)` | Focuses the group (Control + Option + key on Apple platforms). |
+| `Tab` | Moves focus into the group, on the selected option or the first available one. The next Tab leaves the group. |
+| `↓ / →` | Moves to the next option and selects it, wrapping from last to first and skipping disabled and hidden options. |
+| `↑ / ←` | Moves the same way, backward. On right-to-left pages, ← and → are swapped. |
+| `Space` | Selects the focused option. |
+| `Alt + key (`&Name`)` | Moves focus to the group (Control + Option + key on Apple platforms). |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Group` | `role="radiogroup"`, named by the field label (`aria-labelledby`); `aria-orientation`, `aria-required`, `aria-readonly`, `aria-invalid` and `aria-describedby` for the line under it. |
-| `Options` | Native `<input type="radio">` sharing a name, each inside its own `<label>`, drawn with `appearance: none`. |
-| `Help text` | An option’s `helpText` sits outside its label and describes it with `aria-describedby`, so it is not part of its name. |
-| `Disabled options` | Native `disabled`: skipped by the keyboard and read out as unavailable. |
-| `Focus` | One Tab stop; the design system focus ring, for the keyboard only. |
+| `Group` | `role="radiogroup"` named by the field label (`aria-labelledby`), with `aria-orientation`, `aria-required`, `aria-readonly`, `aria-invalid`, and `aria-describedby` for the help text. |
+| `Options` | Native `<input type="radio">` elements sharing a name, each inside its own `<label>` and drawn with `appearance: none`. |
+| `Help text` | An option's `helpText` sits outside its label and is linked with `aria-describedby`, so it is not part of the option's name. |
+| `Disabled options` | Native `disabled`: skipped by the keyboard and announced as unavailable. |
+| `Focus` | One Tab stop, with the design system focus ring shown only during keyboard use. |
 
 ## Localization
 
-The group writes no text of its own: the option texts are yours (functions of your language state work). The `required` message comes from `uiLocale.strings`.
+The group has no strings of its own. The option text is yours, and functions of your language state work. The `required` message comes from `uiLocale.strings`.
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-radio-group` | The field. `data-orientation`, `data-columns`, `data-size`, `data-invalid`, `data-readonly`, `data-disabled`, `data-required`. |
-| `.mx-radio-group__list` | The `radiogroup` element; `--_columns` and `--_rows` are set on it with `columns`. |
-| `.mx-radio-group__item, .mx-radio-group__label` | One option, and the label that holds its radio and text. |
-| `.mx-radio-group__input, .mx-radio-group__text, .mx-radio-group__help` | The radio, its text, its help line. |
+| `.mx-radio-group__list` | The `radiogroup` element. `columns` sets `--_columns` and `--_rows` on it. |
+| `.mx-radio-group__item, .mx-radio-group__label` | An option, and the label that holds its radio and text. |
+| `.mx-radio-group__input, .mx-radio-group__text, .mx-radio-group__help` | The radio, its text and its help text. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `radiogroup.circle, radiogroup.dot` | Units: the circle, with every state (`checked`, `invalid`, `hover`, `pressed`, `focus` and their pairs, `disabled`), and the dot of the chosen one (`checked`, `pressed`, `disabled`). |
-| `radiogroup.row, radiogroup.text, radiogroup.help` | Units: an option's row (`hover`, `checked`, `disabled`), its text and its help line. |
-| `radiogroup.halo, radiogroup.ring` | Units: a halo centred on the circle and a ring round an option under the keys, where the language has them. |
-| `radiogroup.options, radiogroup.floating-label` | Units: the options together, and the group's label where it floats. |
+| `radiogroup.circle, radiogroup.dot` | Units: the circle in every state (`checked`, `invalid`, `hover`, `pressed`, `focus` and their combinations, `disabled`), and the dot of the selected option (`checked`, `pressed`, `disabled`). |
+| `radiogroup.row, radiogroup.text, radiogroup.help` | Units: an option's row (`hover`, `checked`, `disabled`), its text and its help text. |
+| `radiogroup.halo, radiogroup.ring` | Units: a halo centered on the circle and a ring around an option during keyboard use, where the design language includes them. |
+| `radiogroup.options, radiogroup.floating-label` | Units: the options as a group, and the group label when it floats. |
 | `radiogroup.size.*, radiogroup.dot-size.*, radiogroup.dot-size-hover.*, radiogroup.dot-size-pressed.*` | The circle and the dot, per size and state. |
-| `radiogroup.height.*, radiogroup.font-size.*` | The row height (density tokens) and the text size. |
-| `radiogroup.gap, radiogroup.column-gap, radiogroup.help-gap` | The space before the text, between options side by side, and above an option's help line. |
-| `radiogroup.press-offset, radiogroup.focus-scope` | How far a press moves the circle, and what the ring under the keys goes round. |
+| `radiogroup.height.*, radiogroup.font-size.*` | Row height (density tokens) and text size. |
+| `radiogroup.gap, radiogroup.column-gap, radiogroup.help-gap` | The space before the text, between side-by-side options, and above an option's help text. |
+| `radiogroup.press-offset, radiogroup.focus-scope` | The distance the circle moves when pressed, and what the keyboard ring surrounds. |
 
 ## API reference
 
@@ -269,56 +269,56 @@ The group writes no text of its own: the option texts are yours (functions of yo
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `Bind<T \| null>` | `null` | The value of the chosen item; `null` when none is chosen. `x-model` binds it two-way. |
-| `items` | `Bind<readonly (RadioItem<T> \| T)[]>` | `[]` | The options. A function is followed: a new list shows at once; items changed in place show after `refresh()`. |
-| `itemText` | `string \| (item) => unknown` | `'text'` | Where an item keeps its text, for objects of your own shape. A reader, not a binding. |
-| `itemValue` | `string \| (item) => T` | `'value'` | Where an item keeps its value. An object without one is its own value. |
-| `label` | `Bind<string>` | `''` | The caption of the group; `&Name` makes Alt+N focus it. The same property as `text`. |
+| `value` | `Bind<T \| null>` | `null` | The value of the selected item, or `null` if none is selected. `x-model` provides two-way binding. |
+| `items` | `Bind<readonly (RadioItem<T> \| T)[]>` | `[]` | The options. A function is tracked, so a new list appears immediately. Items changed in place appear after `refresh()`. |
+| `itemText` | `string \| (item) => unknown` | `'text'` | Where a custom object stores its text. This is a reader, not a binding. |
+| `itemValue` | `string \| (item) => T` | `'value'` | Where an item stores its value. An object without one serves as its own value. |
+| `label` | `Bind<string>` | `''` | The group label. Writing `&Name` makes Alt+N move focus to the group. This is the same property as `text`. |
 | `labelMode` | `Bind<FieldLabelMode>` | `'top'` | `top`, `side` (next to the options) or `hidden` (for screen readers only). |
-| `orientation` | `Bind<RadioGroupOrientation>` | `'vertical'` | `vertical`: one under the other; `horizontal`: side by side, wrapping. |
-| `columns` | `Bind<number>` | `0` | Lays the options out in a grid of this many columns (down the columns when vertical, across when horizontal). |
-| `helpText` | `Bind<string>` | `''` | A line under the group. An error message takes its place. |
+| `orientation` | `Bind<RadioGroupOrientation>` | `'vertical'` | `vertical` stacks the options, and `horizontal` places them side by side and wraps. |
+| `columns` | `Bind<number>` | `0` | Arranges the options in a grid with this many columns (down the columns when vertical, across when horizontal). |
+| `helpText` | `Bind<string>` | `''` | Help text shown below the group. An error message replaces it. |
 | `hint` | `Bind<string>` | `''` | A tooltip on the group. |
-| `readOnly` | `Bind<boolean>` | `false` | The arrows move between the options, nothing can be chosen. |
-| `required` | `Bind<boolean>` | `false` | One option must be chosen. |
+| `readOnly` | `Bind<boolean>` | `false` | The arrow keys move between options, but nothing can be selected. |
+| `required` | `Bind<boolean>` | `false` | An option must be selected. |
 | `size` | `Bind<ControlSize>` | `'md'` | `sm`, `md`, `lg`; the row height follows the density tokens. |
-| `name` | `Bind<string>` | generated | The name the radios are sent with in a form. |
-| `rules, error, validateOn, validationGroup` | see Field |  | Validation, as in every field. |
-| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | The shared properties of every control. |
+| `name` | `Bind<string>` | Generated | The name the radios submit with the form. |
+| `rules, error, validateOn, validationGroup` | see Field |  | Validation works the same way as for all fields. |
+| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. |
 
 ### RadioItem
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `value` | `T` | What `value` becomes when this option is chosen. |
-| `text` | `Bind<string>` | Shown next to the circle. Default: the value as text. |
-| `hint` | `Bind<string>` | A tooltip. |
-| `helpText` | `Bind<string>` | A smaller line under the text; it describes the radio. |
-| `enabled` | `Bind<boolean>` | `false` greys it out; the arrow keys skip it. |
-| `visible` | `Bind<boolean>` | `false` leaves it out. |
+| `value` | `T` | The value of `value` when this option is selected. |
+| `text` | `Bind<string>` | Shown next to the circle. By default, this is the value as text. |
+| `hint` | `Bind<string>` | The tooltip text. |
+| `helpText` | `Bind<string>` | A smaller line below the text that describes the radio. |
+| `enabled` | `Bind<boolean>` | `false` dims the option, and the arrow keys skip it. |
+| `visible` | `Bind<boolean>` | `false` removes the option. |
 
 ### Properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write, reactive | A value or a function, like the prop. |
-| `isValid, validationMessage, validating` | read-only, reactive | The outcome of the last check. |
+| `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
+| `isValid, validationMessage, validating` | read-only, reactive | The result of the last validation. |
 | `listElement` | read-only | The element with `role="radiogroup"`. |
-| `inputs` | read-only | The native radios, in the order of the items. |
+| `inputs` | read-only | The native radios, in item order. |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `focus()` | `boolean` | Focuses the chosen option, or the first one that can be chosen. |
-| `validate()` | `Promise<boolean>` | Checks the value and shows the outcome. |
-| `resetValidation()` | `void` | Hides the outcome of earlier checks. |
-| `refresh()` | `void` | Your items may be plain or reactive; the group reads them as they are. After changing them in place, call `refresh()`. Their texts, values and states are read again; focus stays where it is. |
+| `focus()` | `boolean` | Sets focus on the selected option, or on the first available one. |
+| `validate()` | `Promise<boolean>` | Validates the value and displays the result. |
+| `resetValidation()` | `void` | Clears the results of previous validation. |
+| `refresh()` | `void` | Your items can be plain or reactive, and the group reads them as they are. After changing them in place, call `refresh()`. Their text, values and states are read again, and focus stays where it is. |
 
 ### Events
 
 | Event | When |
 | --- | --- |
-| `onValueChanged(e)` | The value changed. `e`: `{ value, previousValue, byUser, source, event? }`. |
-| `onValidated(e)` | A check ended. `e`: `{ valid, message, source }`. |
-| `onchange, onkeydown, onfocusin, onfocusout` | The DOM events of the radios reach the group. |
+| `onValueChanged(e)` | Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`. |
+| `onValidated(e)` | Occurs when validation finishes. `e`: `{ valid, message, source }`. |
+| `onchange, onkeydown, onfocusin, onfocusout` | DOM events from the radios bubble up to the group. |

@@ -2,7 +2,7 @@
 
 > Data · @motifx-community/ui 0.1.0-beta.3
 
-A filter builder lets people put a filter together by hand: groups joined by And, Or, Not And or Not Or, and conditions of a field, an operation and a value. Its value is the data layer's filter expression, so it goes to rows in memory and to every adapter as it is. The DataGrid opens it from its filter panel; on its own it serves a report screen or a saved search.
+Lets users build a filter visually, using groups joined by And, Or, Not And or Not Or, and conditions made of a field, an operation and a value. Its value is a data layer filter expression, so it works directly with in-memory rows and every adapter. DataGrid opens it from the filter panel, and you can also use it on its own for reports or saved searches.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { FilterBuilder, filterText } from '@motifx-community/ui';
 
 ## The value
 
-`value` is a `data.FilterExpression` (`data.where`, `data.and`, `data.or`, `data.not`) and `x-model` binds it both ways. A condition the user has not given a value yet stays in the tree but out of the value. Each value is edited in place with the kit's editor for the field's type; `filterText` writes any filter as one line with the fields' captions, formats and lookup texts.
+`value` is a `data.FilterExpression` (`data.where`, `data.and`, `data.or`, `data.not`), and `x-model` provides two-way binding. A condition without a value stays in the tree but is left out of the expression. Each value is edited in place with the kit editor for the field's type, and `filterText` renders any filter as a single line using the field captions, formats and lookup text.
 
 ```tsx
 import type { FilterBuilderField } from '@motifx-community/ui';
@@ -59,7 +59,7 @@ export const saleFields: FilterBuilderField[] = [
 
 ## Programmatic use, and the events
 
-Every change the user makes is also a method (`addCondition`, `addGroup`, `removeItem`, `setField`, `setOperation`, `setConditionValue`, `setGroupOperation`, `clear`), and every change asks first: `onItemAdding`, `onItemRemoving` and `onItemChanging` can change it or cancel it, the `…ed` events and `onValueChanged` follow. Here the last condition of the root cannot be taken out.
+Every user action is also a method (`addCondition`, `addGroup`, `removeItem`, `setField`, `setOperation`, `setConditionValue`, `setGroupOperation`, `clear`), and every change raises an event first. `onItemAdding`, `onItemRemoving` and `onItemChanging` can modify or cancel it, followed by the `…ed` events and `onValueChanged`. In this example, the last condition at the root cannot be removed.
 
 ```tsx
 import type { FilterBuilderField } from '@motifx-community/ui';
@@ -106,21 +106,21 @@ export const saleFields: FilterBuilderField[] = [
 
 ## Fields and operations
 
-A field's `dataType` decides the operations it offers (the first is a new condition's) and its editor; `filterOperations` gives a field its own list. The operation names are the data layer's: “Is any of” is `in`, “Is none of” `notin` (`anyof` and `noneof` are read as them).
+A field's `dataType` determines the available operations, where the first is the default for a new condition, and its editor. `filterOperations` sets a custom list for a field. Operation names come from the data layer: “Is any of” is `in` and “Is none of” is `notin` (`anyof` and `noneof` are read as these).
 
 | Field | Operations | Editor |
 | --- | --- | --- |
 | `string (default)` | `contains`, `notcontains`, `startswith`, `endswith`, `=`, `<>`, `isblank`, `isnotblank` | TextBox |
 | `number` | `=`, `<>`, `<`, `>`, `<=`, `>=`, `between`, `isblank`, `isnotblank` | NumberBox (two for `between`) |
-| `date, datetime` | as number | DateBox (two for `between`) |
-| `boolean` | `=`, `<>`, `isblank`, `isnotblank` | DropDown of `trueText` / `falseText` |
+| `date, datetime` | As number | DateBox (two for `between`) |
+| `boolean` | `=`, `<>`, `isblank`, `isnotblank` | DropDown of `trueText` and `falseText` |
 | `object` | `isblank`, `isnotblank` | — |
-| `a `lookup` field` | `=`, `<>`, `isblank`, `isnotblank`, whatever the type | DropDown of the lookup items (searched) |
-| ``in`, `notin` (`anyof`, `noneof`)` | named in `filterOperations` | TagBox: the lookup items, or typed values |
+| `a `lookup` field` | `=`, `<>`, `isblank` and `isnotblank`, regardless of type | DropDown of the lookup items, with search |
+| ``in`, `notin` (`anyof`, `noneof`)` | Set in `filterOperations` | TagBox with the lookup items or typed values |
 
 ## Custom operations
 
-A custom operation has a name, a caption, the data types that offer it, an editor and text of its own, and `calculateFilterExpression`: what the condition is in the value. The value stays an expression every adapter runs; the builder knows its own conditions again while it holds that value, and from any expression when `readFilterExpression` is given.
+A custom operation has a name, a caption, the data types that offer it, its own editor and text, and `calculateFilterExpression`, which defines the condition in the value. The value remains an expression that every adapter can run. The builder recognizes its own conditions while it holds that value, and recognizes any expression when `readFilterExpression` is set.
 
 ```tsx
 import type { FilterBuilderField } from '@motifx-community/ui';
@@ -167,7 +167,7 @@ export const saleFields: FilterBuilderField[] = [
 
 ## Groups, limits and nested fields
 
-`maxGroupLevel` limits how deep groups go (at the limit the add button adds a condition at once), `groupOperations` which joins there are, and `allowHierarchicalFields` turns dotted fields (`customer.address.city`) into submenus.
+`maxGroupLevel` limits nesting depth, and at the limit the add button adds a condition immediately. `groupOperations` sets the available joins, and `allowHierarchicalFields` turns dotted fields (`customer.address.city`) into submenus.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -217,31 +217,31 @@ export default function Limits() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Tab` | Into the tree, to the button focused last; out again. One Tab stop. |
-| `Right / Left` | The next / previous button of the row (the other way round in right-to-left pages). |
-| `Down / Up` | The row below / above, the same button where it has one. |
-| `Home / End; Ctrl + Home / End` | The first / last button of the row; of the tree. |
-| `Enter, Space` | Presses the button: opens its menu, opens the value editor, adds, removes. |
+| `Tab` | Moves focus into the tree, to the button focused last, and out again. The tree is one Tab stop. |
+| `Right / Left` | Moves to the next or previous button in the row, reversed on right-to-left pages. |
+| `Down / Up` | Moves to the row below or above, on the same button where possible. |
+| `Home / End; Ctrl + Home / End` | Moves to the first or last button of the row, or of the tree. |
+| `Enter, Space` | Presses the button, which opens its menu or the value editor, adds or removes. |
 | `Alt + Down` | Opens the menu of a field, operation, group or add button. |
 | `F2` | Opens the value editor. |
 | `Insert` | Adds a condition to the row's group (`addKeys`). |
-| `Delete` | Takes the row's condition or group out (`removeKeys`). |
-| `In the editor: Enter, Escape, Tab` | Keeps the value; gives it up; keeps it and goes on (from “from” to “to” in a range first). |
+| `Delete` | Removes the row's condition or group (`removeKeys`). |
+| `In the editor: Enter, Escape, Tab` | Accepts the value, discards it, or accepts it and moves on (from “from” to “to” in a range). |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Tree` | `role="treegrid"`, named by `label`; each group and condition a `row` with `aria-level`, `aria-posinset` and `aria-setsize`; each button in a `gridcell`. |
-| `Buttons` | Named with what they are: “Field: City”, “Operation: Equals”, “Value: Ankara”, “Group operation: And”, “Add”, “Remove condition”. Menu buttons have `aria-haspopup="menu"` and `aria-expanded`; the choices are `menuitemradio`s. |
-| `Editors` | The kit's fields, named “City value”, “Amount, from” and “Amount, to”. |
-| `Focus` | Roving `tabindex`: one button is in the Tab order. The focus ring shows for the keyboard only. |
+| `Tree` | `role="treegrid"`, named by `label`. Each group and condition is a `row` with `aria-level`, `aria-posinset` and `aria-setsize`, and each button is in a `gridcell`. |
+| `Buttons` | Named by their function: “Field: City”, “Operation: Equals”, “Value: Ankara”, “Group operation: And”, “Add” and “Remove condition”. Menu buttons have `aria-haspopup="menu"` and `aria-expanded`, and the choices are `menuitemradio` elements. |
+| `Editors` | Kit fields named “City value”, “Amount, from” and “Amount, to”. |
+| `Focus` | Roving `tabindex`, so one button is in the Tab order. The focus ring appears only during keyboard use. |
 
 ## Localization
 
-Every text comes from `uiLocale.strings` (`filterBuilder…` and `filterOp…`: the group and operation names, “Add Condition”, “<enter a value>”, the buttons' names); `texts` changes some for one builder, `locale` formats its numbers and dates.
+All strings come from `uiLocale.strings` (`filterBuilder…` and `filterOp…`: group and operation names, “Add Condition”, “<enter a value>” and button names). `texts` overrides some for one builder, and `locale` formats its numbers and dates.
 
 ```tsx
 import type { FilterBuilderField } from '@motifx-community/ui';
@@ -288,23 +288,23 @@ export const saleFields: FilterBuilderField[] = [
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-filter-builder` | The root. |
-| `.mx-filter-builder__tree` | The `treegrid`; `data-size`. |
-| `.mx-filter-builder__row` | A group or a condition: `data-kind` (`'group'`, `'condition'`), `--_level`. |
+| `.mx-filter-builder__tree` | The `treegrid`, with `data-size`. |
+| `.mx-filter-builder__row` | A group or a condition: `data-kind` (`'group'`, `'condition'`) and `--_level`. |
 | `.mx-filter-builder__cell` | A `gridcell`; `data-part` (`'remove'`, `'group'`, `'add'`, `'field'`, `'operation'`, `'value'`). |
-| `.mx-filter-builder__remove, __group, __add, __field, __operation, __value` | The kit buttons; the value button has `data-empty` while it has no value. |
-| `.mx-filter-builder__editor` | The open value editor(s). |
+| `.mx-filter-builder__remove, __group, __add, __field, __operation, __value` | The kit buttons. The value button has `data-empty` while it has no value. |
+| `.mx-filter-builder__editor` | The open value editor or editors. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `filterbuilder.container, filterbuilder.tree, filterbuilder.row, filterbuilder.cell, filterbuilder.editor` | Units: the text, the rows (`group`, `hover`) and the space between them, a button's place, a value's editor. |
-| `filterbuilder.indent` | How far each level moves in. |
-| `filterbuilder.line-width, line-color, line-offset, elbow-length, elbow-color` | The line along each group, and an elbow to each row. |
-| `filterbuilder.value-width` | The least width of a value editor's field. |
+| `filterbuilder.container, filterbuilder.tree, filterbuilder.row, filterbuilder.cell, filterbuilder.editor` | Units: the text, the rows (`group`, `hover`) and the space between them, a button's place, and a value editor. |
+| `filterbuilder.indent` | The indent of each level. |
+| `filterbuilder.line-width, line-color, line-offset, elbow-length, elbow-color` | The line along each group, and the connector to each row. |
+| `filterbuilder.value-width` | The minimum width of a value editor field. |
 
 ## API reference
 
@@ -312,80 +312,80 @@ export const saleFields: FilterBuilderField[] = [
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `Bind<data.FilterExpression \| null>` | `null` | The filter, as the data layer has it. `x-model` binds it two-way. Conditions without their value are left out of it. |
+| `value` | `Bind<data.FilterExpression \| null>` | `null` | The filter, in data layer format. `x-model` provides two-way binding. Conditions without a value are left out. |
 | `fields` | `Bind<FilterBuilderField[]>` | `[]` | The fields conditions are built on (see below). |
-| `customOperations` | `Bind<FilterBuilderCustomOperation[]>` | `[]` | Operations of your own (see below). |
-| `groupOperations` | `Bind<('and' \| 'or' \| 'notAnd' \| 'notOr')[]>` | all four | What a group can join with; the first is a new group's. |
-| `maxGroupLevel` | `Bind<number \| null>` | `null` | `0` allows no groups, `1` groups in the root only, and so on. `null`: no limit. |
-| `allowHierarchicalFields` | `Bind<boolean>` | `false` | Fields with a dotted `dataField` show as submenus of their parts. |
-| `label` | `Bind<string>` | the `filterBuilderLabel` text | The tree's accessible name; `aria-label` / `aria-labelledby` on the tag work too. |
-| `texts` | `Bind<Partial<UiStrings>>` | `{}` | Texts for this builder only, over `uiLocale.strings`. |
-| `locale` | `Bind<string>` | the page's | Locale of numbers and dates. |
+| `customOperations` | `Bind<FilterBuilderCustomOperation[]>` | `[]` | Custom operations (see below). |
+| `groupOperations` | `Bind<('and' \| 'or' \| 'notAnd' \| 'notOr')[]>` | all four | The available group joins. The first is the default for a new group. |
+| `maxGroupLevel` | `Bind<number \| null>` | `null` | `0` allows no groups, `1` allows groups in the root only, and so on. `null` means no limit. |
+| `allowHierarchicalFields` | `Bind<boolean>` | `false` | Shows fields with a dotted `dataField` as submenus of their parts. |
+| `label` | `Bind<string>` | The `filterBuilderLabel` string | The accessible name of the tree. `aria-label` and `aria-labelledby` on the tag also work. |
+| `texts` | `Bind<Partial<UiStrings>>` | `{}` | Strings for this builder only, which override `uiLocale.strings`. |
+| `locale` | `Bind<string>` | From the page | The locale of numbers and dates. |
 | `size` | `Bind<ControlSize>` | `'sm'` | The size of the buttons and editors. |
-| `addKeys, removeKeys` | `Bind<string[]>` | `['Insert']`, `['Delete']` | Keys that add a condition to the focused row's group and take the focused row out. |
-| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | The shared properties of every control. |
+| `addKeys, removeKeys` | `Bind<string[]>` | `['Insert']`, `['Delete']` | Keys that add a condition to the focused row's group and remove the focused row. |
+| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. |
 
 ### FilterBuilderField
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `dataField` | `string` | The field the condition filters; a dotted path for a nested one. |
-| `caption` | `Bind<string>` | Default: the data field in words (`orderDate` → “Order Date”). |
-| `dataType` | `Bind<'string' \| 'number' \| 'date' \| 'datetime' \| 'boolean' \| 'object'>` | Default `'string'`: decides the operations, the editor and how a value reads. |
-| `format` | `Intl` options or `(value) => string` | How a value reads; number and date editors take the options too. |
-| `lookup` | `{ dataSource, valueField?, textField?, allowClearing? }` | The values come from a list: an array or a data source of any adapter. |
-| `filterOperations` | `Bind<string[]>` | The operations offered, in order; custom operations by name. Default: by `dataType`. |
-| `defaultOperation` | `Bind<string>` | A new condition's operation. Default: the first of `filterOperations`. |
-| `editor` | `(ctx) => component` | An editor of your own: `ctx` has `value`, `setValue`, `close`, `field`, `operation`, `condition`, `builder`. |
-| `editorOptions` | `Bind<Record<string, unknown>>` | Props given to the kit editor the builder makes. |
-| `customizeText` | `({ value, valueText, field }) => string` | The text of a value, in the builder and in `filterText`. |
-| `trueText, falseText` | `Bind<string>` | A yes/no field's texts. Default: the `filterBuilderTrue` / `filterBuilderFalse` texts. |
+| `dataField` | `string` | The field the condition filters. Use a dotted path for a nested field. |
+| `caption` | `Bind<string>` | The default is the data field in words (`orderDate` → “Order Date”). |
+| `dataType` | `Bind<'string' \| 'number' \| 'date' \| 'datetime' \| 'boolean' \| 'object'>` | The default is `'string'`. It determines the operations, the editor and how a value is displayed. |
+| `format` | `Intl` options or `(value) => string` | How a value is displayed. Number and date editors also accept the options. |
+| `lookup` | `{ dataSource, valueField?, textField?, allowClearing? }` | The values come from a list: an array, or a data source from any adapter. |
+| `filterOperations` | `Bind<string[]>` | The available operations in order, with custom operations by name. The default depends on `dataType`. |
+| `defaultOperation` | `Bind<string>` | The operation for a new condition. The default is the first of `filterOperations`. |
+| `editor` | `(ctx) => component` | A custom editor. `ctx` provides `value`, `setValue`, `close`, `field`, `operation`, `condition` and `builder`. |
+| `editorOptions` | `Bind<Record<string, unknown>>` | Props passed to the kit editor the builder creates. |
+| `customizeText` | `({ value, valueText, field }) => string` | The display text of a value, in the builder and in `filterText`. |
+| `trueText, falseText` | `Bind<string>` | The text for a yes/no field. The defaults are the `filterBuilderTrue` and `filterBuilderFalse` strings. |
 
 ### FilterBuilderCustomOperation
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `name, caption` | `string`, `Bind<string>` | The name used in `filterOperations`; the text in the menu and in `filterText`. |
-| `dataTypes` | `FilterBuilderDataType[]` | The types whose fields offer it without naming it (only fields without their own `filterOperations`). |
-| `hasValue` | `boolean` | Default `true`; `false` shows no value. |
-| `editor, customizeText` | as on a field | The value's editor and text for this operation. |
-| `calculateFilterExpression` | `(value, field) => data.FilterExpression \| null` | What the condition is in the value: any expression of the data layer, so every adapter runs it. |
-| `readFilterExpression` | `(expression) => { field, value } \| null` | Knows an expression as this operation again, also one read back from storage. Without it the builder knows only the expressions it wrote itself. |
+| `name, caption` | `string`, `Bind<string>` | The name used in `filterOperations`, and the text in the menu and in `filterText`. |
+| `dataTypes` | `FilterBuilderDataType[]` | The data types whose fields offer it automatically, for fields without their own `filterOperations`. |
+| `hasValue` | `boolean` | The default is `true`. `false` shows no value. |
+| `editor, customizeText` | Same as on a field | The value editor and text for this operation. |
+| `calculateFilterExpression` | `(value, field) => data.FilterExpression \| null` | Defines the condition in the value, as any data layer expression, so every adapter can run it. |
+| `readFilterExpression` | `(expression) => { field, value } \| null` | Recognizes an expression as this operation, including one read back from storage. Without it, the builder only recognizes expressions it wrote itself. |
 
 ### Properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write, reactive | A value or a function, like the prop. |
-| `root` | read-only | The tree: `{ kind: 'group', operation, items, parent }` with `{ kind: 'condition', field, operation, value, parent }` items. Change it through the methods. |
-| `filterText` | read-only, reactive | The filter as one line: `[City] Equals 'Ankara' And [Amount] Is greater than '100'`. |
-| `model` | read-only | The `FilterBuilderModel`: a field's operations, texts, the tree of an expression and back. |
-| `treeElement, editingCondition` | read-only | The `role="treegrid"` element; the condition whose editor is open. |
+| `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
+| `root` | read-only | The tree: `{ kind: 'group', operation, items, parent }` containing `{ kind: 'condition', field, operation, value, parent }` items. Change it through the methods. |
+| `filterText` | read-only, reactive | The filter as a single line: `[City] Equals 'Ankara' And [Amount] Is greater than '100'`. |
+| `model` | read-only | The `FilterBuilderModel`, which provides field operations, text, and conversion between expressions and the tree. |
+| `treeElement, editingCondition` | read-only | The `role="treegrid"` element, and the condition whose editor is open. |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `addCondition(group?, dataField?)` | `FilterBuilderCondition \| null` | At the end of a group (the root by default), on a field (the first by default). The events run. |
-| `addGroup(group?)` | `FilterBuilderGroup \| null` | A group with one condition; `null` past `maxGroupLevel`. |
-| `removeItem(item)` | `boolean` | A condition, or a group with what it holds. |
+| `addCondition(group?, dataField?)` | `FilterBuilderCondition \| null` | Adds at the end of a group (the root by default), on a field (the first by default). The events run. |
+| `addGroup(group?)` | `FilterBuilderGroup \| null` | Adds a group with one condition. Returns `null` past `maxGroupLevel`. |
+| `removeItem(item)` | `boolean` | Removes a condition, or a group with its contents. |
 | `setField(condition, dataField), setOperation(condition, op), setConditionValue(condition, value)` | `boolean` | An operation or value that no longer fits the new field is reset. |
 | `setGroupOperation(group, op)` | `boolean` |  |
-| `clear()` | `void` | Empties the tree. |
-| `openEditor(condition), closeEditor(keep?)` | `boolean`, `void` | The value editor, programmatically. |
-| `focusItem(item, part?), focus()` | `boolean` | A row's button (`'remove'`, `'group'`, `'add'`, `'field'`, `'operation'`, `'value'`); the tree's Tab stop. |
+| `clear()` | `void` | Clears the tree. |
+| `openEditor(condition), closeEditor(keep?)` | `boolean`, `void` | Controls the value editor programmatically. |
+| `focusItem(item, part?), focus()` | `boolean` | Sets focus on a row's button (`'remove'`, `'group'`, `'add'`, `'field'`, `'operation'`, `'value'`), or on the tree's Tab stop. |
 | `getFilterExpression()` | `data.FilterExpression \| null` | The value. |
-| `refresh()` | `void` | Your fields and value may be plain or reactive; the builder reads them as they are. After changing them in place, call `refresh()`. The rows are drawn again; a value changed in place is read into the tree. |
+| `refresh()` | `void` | Your fields and value can be plain or reactive, and the builder reads them as they are. After changing them in place, call `refresh()`. The rows redraw, and a value changed in place is read into the tree. |
 
 ### Events
 
 | Event | When |
 | --- | --- |
 | `onValueChanged(e)` | `{ value, previousValue, byUser, source }` |
-| `onItemAdding(e), onItemAdded(e)` | A condition or group is about to be / was added: `{ item, group, byUser, source }`; change `e.item` before it is added, or `e.cancel = true`. |
-| `onItemRemoving(e), onItemRemoved(e)` | `{ item, group, byUser, source }`; `e.cancel = true` keeps it. |
-| `onItemChanging(e), onItemChanged(e)` | `{ item, change: 'field' \| 'operation' \| 'value' \| 'groupOperation', value, previousValue, byUser, source }`; change `e.value`, or `e.cancel = true`. |
-| `onEditorPreparing(e)` | Before a value editor is made: `{ field, operation, value, condition, part: 'value' \| 'from' \| 'to', options, editor, setValue }`. Change `e.options` (the kit editor's props), set `e.editor` to a component of your own (it calls `e.setValue`), or `e.cancel = true` for none. |
+| `onItemAdding(e), onItemAdded(e)` | Occur before and after a condition or group is added: `{ item, group, byUser, source }`. Change `e.item` before it is added, or set `e.cancel = true`. |
+| `onItemRemoving(e), onItemRemoved(e)` | `{ item, group, byUser, source }`. Set `e.cancel = true` to keep it. |
+| `onItemChanging(e), onItemChanged(e)` | `{ item, change: 'field' \| 'operation' \| 'value' \| 'groupOperation', value, previousValue, byUser, source }`. Change `e.value`, or set `e.cancel = true`. |
+| `onEditorPreparing(e)` | Occurs before a value editor is created: `{ field, operation, value, condition, part: 'value' \| 'from' \| 'to', options, editor, setValue }`. Change `e.options` (the kit editor props), set `e.editor` to a custom component that calls `e.setValue`, or set `e.cancel = true` for no editor. |
 | `onEditorPrepared(e)` | `{ field, operation, condition, part, editor }` |
 
 ## Example files

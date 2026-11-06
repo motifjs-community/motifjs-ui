@@ -2,11 +2,11 @@
 
 > TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
 
-A whole screen made of the kit's parts: a menu bar, the manager, a DataGrid with everything turned on, forms and a tool docked at the bottom. Each part is the same component it is on its own page; the manager only holds them.
+A complete screen built from kit components: a menu bar, the manager, a DataGrid with every feature enabled, forms, and a tool docked at the bottom. Each part is the same component documented on its own page, and the manager simply hosts them.
 
 ## An order desk
 
-The orders grid filters, groups, searches, sums, edits in batches and runs row actions, also from its context menu. Its tab shows the unsaved mark while edits wait to be saved. Open a customer from a row (its menu or the actions column): the card opens in the group on the right. Drag a tab to a guide, float it, move it into a new window, or use the menus: the grid keeps its filters, its scroll and its unsaved edits wherever it goes.
+The orders grid supports filtering, grouping, search, summaries, batch editing and row actions, which are also in its context menu. Its tab shows the unsaved mark while edits are waiting to be saved. Open a customer from a row, using its menu or the actions column, and the customer's card opens in the group on the right. Drag a tab to a guide, float it, move it to a new window or use the menus, and the grid keeps its filters, scroll position and unsaved edits wherever it goes.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';

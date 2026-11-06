@@ -2,7 +2,7 @@
 
 > Navigation · @motifx-community/ui 0.1.0-beta.3
 
-Tabs show one panel at a time under a strip of tabs: from JSX or programmatically, closable, with icons and badges, scroll buttons when the tabs do not fit, four placements and panels built when they are first shown.
+Tabs display one panel at a time below a tab strip. You can define them in JSX or programmatically, and they support closable tabs, icons and badges, scroll buttons when tabs overflow, four placements, and panels that are created on first display.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { Tabs, Tab } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-A `<Tab>`'s children are its panel. `value` is the selected tab's `key` (else its index) and `x-model` binds it two-way. Created with `new`, tabs are added, inserted and removed programmatically.
+The children of a `<Tab>` are its panel. `value` is the `key` of the selected tab, or its index, and `x-model` provides two-way binding. When you create the component with `new`, add, insert and remove tabs programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -59,7 +59,7 @@ export default function Programmatic() {
 
 ## Closable tabs
 
-A close button on every tab (`closable`), or on some (a tab's own `closable` wins). Delete or a middle click closes the focused or pointed tab. `onClose` can cancel: ask about unsaved work first.
+`closable` adds a close button to every tab, and a tab's own `closable` takes precedence. Delete or a middle-click closes the focused or hovered tab. `onClose` can cancel the action, for example to confirm unsaved changes.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -108,9 +108,9 @@ export default function Closable() {
 }
 ```
 
-## Many tabs
+## Overflow
 
-When the tabs do not fit, arrow buttons scroll the strip (`scrollButtons`, on by default); the selected tab and the one with focus scroll into view.
+When tabs do not fit, arrow buttons scroll the strip (`scrollButtons`, on by default). The selected tab and the focused tab scroll into view.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -177,7 +177,7 @@ export default function Placement() {
 
 ## Manual activation
 
-By default an arrow key selects the tab it moves to. With `activation="manual"` it only moves focus and Enter or Space selects: better when a panel is slow to show.
+By default, an arrow key selects the tab it moves to. With `activation="manual"`, it only moves focus, and Enter or Space selects the tab. This works better when a panel is slow to display.
 
 ```tsx
 import { Tab, Tabs } from '@motifx-community/ui';
@@ -200,7 +200,7 @@ export default function ManualActivation() {
 }
 ```
 
-## Icons, badges, disabled tabs
+## Icons, badges and disabled tabs
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -277,7 +277,7 @@ export default function VariantsAndSizes() {
 
 ## Lazy panels
 
-A panel is built the first time it is shown and kept afterwards, so what was typed in it stays (`lazy`, on by default; `lazy={false}` builds every panel at once). A tab with a `content` factory and `keepAlive={false}` has its content disposed while hidden and made again when it shows. JSX children are made once by the page, so they are always kept.
+A panel is created the first time it is shown and then kept, so user input is preserved (`lazy`, on by default). `lazy={false}` creates every panel immediately. A tab with a `content` factory and `keepAlive={false}` has its content disposed while hidden and recreated when shown. JSX children are created once by the page, so they are always kept.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -320,29 +320,29 @@ export default function LazyPanels() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Tab` | Into the strip, onto the selected tab; again, into its panel. |
-| `Left / Right` | The previous / next tab, wrapping around (reversed in right-to-left text). With `start` and `end` placement: Up / Down. |
-| `Home / End` | The first / last tab. |
-| `Enter / Space` | Select the focused tab (with `activation="manual"`). |
-| `Delete` | Closes the focused tab when it is closable. |
-| `Alt + key (`&General`)` | Selects that tab and focuses it (Control + Option + key on Apple platforms). |
+| `Tab` | Moves focus to the selected tab, then into its panel. |
+| `Left / Right` | Moves to the previous or next tab, wrapping at the ends (reversed for right-to-left text). With `start` and `end` placement, use Up and Down. |
+| `Home / End` | Moves to the first or last tab. |
+| `Enter / Space` | Selects the focused tab (with `activation="manual"`). |
+| `Delete` | Closes the focused tab if it is closable. |
+| `Alt + key (`&General`)` | Selects that tab and moves focus to it (Control + Option + key on Apple platforms). |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Roles` | `tablist`, `tab` (a `<button>`) and `tabpanel`; `aria-orientation="vertical"` with `start` and `end` placement. |
-| `State` | `aria-selected` on the tabs; `aria-controls` ties a tab to its panel and `aria-labelledby` names the panel by its tab. |
-| `Focus` | One Tab stop in the strip (the selected tab). A panel with nothing focusable in it takes focus itself (`tabindex="0"`), so its text can be reached. |
-| `Disabled tabs` | `aria-disabled="true"`; the arrow keys skip them. |
-| `Close button` | Not a Tab stop and hidden from screen readers (a button inside a tab would be a control inside a control); Delete closes the tab and `aria-keyshortcuts="Delete"` announces it. Its tooltip comes from `uiLocale`. |
-| `Scroll buttons` | For the pointer only, hidden from screen readers: the arrow keys reach every tab and scroll it into view. |
+| `Roles` | `tablist`, `tab` (a `<button>`) and `tabpanel`, with `aria-orientation="vertical"` for `start` and `end` placement. |
+| `State` | `aria-selected` on the tabs. `aria-controls` links a tab to its panel, and `aria-labelledby` names the panel after its tab. |
+| `Focus` | The strip has one Tab stop, on the selected tab. A panel with no focusable content receives focus itself (`tabindex="0"`), so its text can be reached. |
+| `Disabled tabs` | `aria-disabled="true"`. The arrow keys skip these tabs. |
+| `Close button` | Not a Tab stop and hidden from screen readers, because a button inside a tab would be a control within a control. Delete closes the tab, and `aria-keyshortcuts="Delete"` announces it. Its tooltip comes from `uiLocale`. |
+| `Scroll buttons` | These are for pointer use only and are hidden from screen readers. The arrow keys reach every tab and scroll it into view. |
 
 ## Localization
 
-Tabs write one text: the close button's tooltip, `uiLocale.strings.close`. Every tab follows a change at once.
+Tabs have one string of their own, the close button tooltip `uiLocale.strings.close`. Every tab updates immediately when it changes.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -369,25 +369,25 @@ export default function Localization() {
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-tabs` | The root. `data-placement`, `data-variant`, `data-size`, `data-stretch`, `data-overflow`, `data-scroll-buttons`, `data-disabled`. |
-| `.mx-tabs__strip, .mx-tabs__list` | The strip and the tab list in it (the scroll box). |
+| `.mx-tabs__strip, .mx-tabs__list` | The strip and its tab list, which is the scrolling box. |
 | `.mx-tabs__tab` | A tab: `aria-selected`, `aria-disabled`, `data-closable`. |
 | `.mx-tabs__icon, .mx-tabs__label, .mx-tabs__badge, .mx-tabs__close` | The parts of a tab. |
-| `.mx-tabs__scroll` | A scroll button: `data-direction` (`back`, `forward`), `data-end` when it has nowhere to go. |
+| `.mx-tabs__scroll` | A scroll button: `data-direction` (`back`, `forward`), and `data-end` when it cannot scroll further. |
 | `.mx-tabs__panels, .mx-tabs__panel` | The panels and a panel (the tab's own element). |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `tabs.container, tabs.strip, tabs.list, tabs.scroll, tabs.scroll-icon` | Units: the whole, the strip with its line along the panel (`bottom`, `start`, `end`; the pill tray: `pill`, `pill-bottom` …), the row of tabs, the scroll buttons and their glyph. |
+| `tabs.container, tabs.strip, tabs.list, tabs.scroll, tabs.scroll-icon` | Units: the root, the strip with its line along the panel (`bottom`, `start`, `end`; the pill tray: `pill`, `pill-bottom` …), the tab row, the scroll buttons and their glyph. |
 | `tabs.tab, tabs.label, tabs.icon, tabs.badge, tabs.close, tabs.close-icon` | Units: a tab in each state (`hover`, `pressed`, `selected`, `disabled`, `focus`; in the pill variant `pill`, `pill-hover` …) and its parts. |
-| `tabs.indicator, tabs.separator, tabs.panel` | Units: the line variant's mark (`vertical`, `hover`, `selected`, `selected-disabled`), a line between two tabs, the panel (`pill`, `pill-across`, `focus`). |
+| `tabs.indicator, tabs.separator, tabs.panel` | Units: the line variant indicator (`vertical`, `hover`, `selected`, `selected-disabled`), a divider between tabs, and the panel (`pill`, `pill-across`, `focus`). |
 | `tabs.height.*, tabs.pill-height.*, tabs.padding.*, tabs.font-size.*, tabs.line-height.*, tabs.indicator-inset.*` | Sizes per size class. |
-| `tabs.pill-gap, tabs.tab-overlap, tabs.indicator-offset, tabs.indicator-inset-vertical, tabs.close-pull, tabs.vertical-width` | Where the layout puts the pieces: between pills, over the strip's line, the mark, the close button, a vertical strip's width. |
-| `tabs.curve-display, tabs.curve-size, tabs.curve-frame-width, tabs.curve-frame-color` | Outward curves at the selected tab's corners on the panel's side, in its fill. |
+| `tabs.pill-gap, tabs.tab-overlap, tabs.indicator-offset, tabs.indicator-inset-vertical, tabs.close-pull, tabs.vertical-width` | Layout measurements: the gap between pills, the offset over the strip line, the indicator, the close button, and the width of a vertical strip. |
+| `tabs.curve-display, tabs.curve-size, tabs.curve-frame-width, tabs.curve-frame-color` | Outward curves at the corners of the selected tab on the panel side, in its fill color. |
 
 ## API reference
 
@@ -395,62 +395,62 @@ export default function Localization() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `Bind<string \| number \| null>` | the first tab | The selected tab's `key`, else its index. `x-model` binds it two-way. |
-| `selectedIndex` | `Bind<number>` | `0` | The selected tab's index in `tabs`. |
-| `label` | `Bind<string>` | `''` | Names the tab list for screen readers (`aria-label`). The same property as `text`. |
-| `activation` | `Bind<'auto' \| 'manual'>` | `'auto'` | `auto`: an arrow key selects the tab it moves to. `manual`: arrows move focus only; Enter or Space selects. |
-| `placement` | `Bind<TabsPlacement>` | `'top'` | `top`, `bottom`, `start`, `end`. `start` and `end` stack the tabs vertically. |
-| `variant` | `Bind<TabsVariant>` | `'line'` | `line`: a bar on the selected tab. `pill`: the tabs sit on a tray and the selected one is raised. |
+| `value` | `Bind<string \| number \| null>` | The first tab | The `key` of the selected tab, or its index. `x-model` provides two-way binding. |
+| `selectedIndex` | `Bind<number>` | `0` | The index of the selected tab in `tabs`. |
+| `label` | `Bind<string>` | `''` | The accessible name of the tab list (`aria-label`). This is the same property as `text`. |
+| `activation` | `Bind<'auto' \| 'manual'>` | `'auto'` | With `auto`, an arrow key selects the tab it moves to. With `manual`, arrow keys only move focus, and Enter or Space selects. |
+| `placement` | `Bind<TabsPlacement>` | `'top'` | `top`, `bottom`, `start` or `end`. `start` and `end` stack the tabs vertically. |
+| `variant` | `Bind<TabsVariant>` | `'line'` | `line` shows a bar on the selected tab. `pill` places the tabs on a tray and raises the selected one. |
 | `size` | `Bind<ControlSize>` | `'md'` | `sm`, `md`, `lg`, from the density tokens. |
-| `stretch` | `Bind<boolean>` | `false` | The tabs share the whole width. |
-| `scrollButtons` | `Bind<boolean>` | `true` | Arrow buttons at the ends of the strip when the tabs do not fit. Off: a thin scroll bar. |
-| `closable` | `Bind<boolean>` | `false` | Every tab gets a close button. A tab's own `closable` wins. |
-| `lazy` | `Bind<boolean>` | `true` | A panel is built when it is first shown, then kept. A tab's own `lazy` wins. |
-| `keepAlive` | `Bind<boolean>` | `true` | `false`: what a tab's `content` made is disposed while the tab is hidden and made again when it shows. A tab's own `keepAlive` wins. |
-| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | The shared properties of every control. `tabStop={false}` takes the tab strip out of the Tab order. |
+| `stretch` | `Bind<boolean>` | `false` | Makes the tabs share the full width. |
+| `scrollButtons` | `Bind<boolean>` | `true` | Shows arrow buttons at the ends of the strip when tabs do not fit. When off, a thin scrollbar appears. |
+| `closable` | `Bind<boolean>` | `false` | Adds a close button to every tab. A tab's own `closable` takes precedence. |
+| `lazy` | `Bind<boolean>` | `true` | Creates a panel the first time it is shown and then keeps it. A tab's own `lazy` takes precedence. |
+| `keepAlive` | `Bind<boolean>` | `true` | With `false`, content created by a tab's `content` is disposed while hidden and recreated when shown. A tab's own `keepAlive` takes precedence. |
+| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. `tabStop={false}` removes the tab strip from the Tab order. |
 
 ### Tab props
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `title` | `Bind<string>` | `''` | The caption; `&General` makes Alt+G select the tab. The same property as `text`. |
-| `key` | `Bind<string>` | `''` | Names the tab in `value`. The JSX `key` works too. |
+| `title` | `Bind<string>` | `''` | The caption. `&General` makes Alt+G select the tab. This is the same property as `text`. |
+| `key` | `Bind<string>` | `''` | Identifies the tab in `value`. The JSX `key` also works. |
 | `icon` | `Bind<IconSource \| null>` | — | An icon before the title. |
-| `badge` | `Bind<string \| number \| null>` | — | A short text after the title (a count); empty or `null` shows none. |
-| `hint` | `Bind<string>` | `''` | A tooltip. |
-| `closable` | `Bind<boolean \| undefined>` | the Tabs | A close button on this tab. |
-| `lazy, keepAlive` | `Bind<boolean \| undefined>` | the Tabs | This tab's own setting. |
-| `content` | `() => ComponentBase \| ComponentBase[]` | — | Makes the panel content when the panel is built: instead of, or after, the JSX children. |
-| `enabled` | `Bind<boolean>` | `true` | `false`: the tab cannot be selected and the arrow keys skip it. |
-| `visible` | `Bind<boolean>` | `true` | `false`: the tab is left out; a selected one hands the selection to a neighbour. |
+| `badge` | `Bind<string \| number \| null>` | — | Short text after the title, such as a count. An empty value or `null` hides it. |
+| `hint` | `Bind<string>` | `''` | The tooltip text. |
+| `closable` | `Bind<boolean \| undefined>` | From Tabs | Shows a close button on this tab. |
+| `lazy, keepAlive` | `Bind<boolean \| undefined>` | From Tabs | This tab's own setting. |
+| `content` | `() => ComponentBase \| ComponentBase[]` | — | Creates the panel content when the panel is created, either instead of or after the JSX children. |
+| `enabled` | `Bind<boolean>` | `true` | `false` means the tab cannot be selected and the arrow keys skip it. |
+| `visible` | `Bind<boolean>` | `true` | `false` removes the tab. If it is selected, the selection moves to an adjacent tab. |
 
 ### Properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write, reactive | A value or a function, like the prop. |
-| `tabs` | read-only, reactive | The tabs, in strip order. |
-| `selectedTab` | read-only, reactive | The selected `Tab`, `null` when there is none. |
-| `Tab.isSelected, Tab.isClosable` | read-only, reactive | Whether the tab is selected; whether it shows a close button. |
-| `Tab.contentBuilt` | read-only | Whether its panel has been built. |
-| `Tab.owner, Tab.headerElement` | read-only | Its `Tabs`; its button in the strip. A tab's own element is its panel. |
+| `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
+| `tabs` | read-only, reactive | The tabs in strip order. |
+| `selectedTab` | read-only, reactive | The selected `Tab`, or `null` if there is none. |
+| `Tab.isSelected, Tab.isClosable` | read-only, reactive | Indicate whether the tab is selected and whether it shows a close button. |
+| `Tab.contentBuilt` | read-only | Indicates whether its panel has been created. |
+| `Tab.owner, Tab.headerElement` | read-only | Its `Tabs` and its button in the strip. A tab's own element is its panel. |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `add(tab)` | `Tab` | Adds a tab at the end. A tab of another `Tabs` moves here. |
+| `add(tab)` | `Tab` | Adds a tab at the end. A tab from another `Tabs` moves here. |
 | `insert(index, tab)` | `Tab` | Adds a tab at an index. |
-| `remove(tab)` | `boolean` | Removes the tab and disposes it; no `onClose`. The selection and focus move to a neighbour. |
-| `select(tab \| index)` | `boolean` | Selects a tab programmatically; `false` when it is hidden or not there. |
-| `close(tab)` | `boolean` | Closes a tab as its close button does: `onClose` can cancel it. |
-| `focus()` | `boolean` | Focuses the selected tab. |
-| `Tab.select(), Tab.close(), Tab.focus()` | `boolean` | The same, from the tab. |
+| `remove(tab)` | `boolean` | Removes the tab and disposes it, without raising `onClose`. Selection and focus move to an adjacent tab. |
+| `select(tab \| index)` | `boolean` | Selects a tab programmatically. Returns `false` if it is hidden or missing. |
+| `close(tab)` | `boolean` | Closes a tab as its close button does, so `onClose` can cancel it. |
+| `focus()` | `boolean` | Sets focus on the selected tab. |
+| `Tab.select(), Tab.close(), Tab.focus()` | `boolean` | Same as the methods above, called on the tab. |
 
 ### Events
 
 | Event | When |
 | --- | --- |
-| `onSelecting(e)` | The user is about to select a tab. `e`: `{ tab, index, previousTab, previousIndex, cancel, source, event }`; `e.cancel = true` keeps the current one. |
-| `onSelectionChanged(e)` | The selected tab changed. `e`: `{ tab, index, previousTab, previousIndex, byUser, source, event? }`. |
-| `onClose(e)` | A tab is about to close, by its button, Delete, a middle click or `close()`. `e`: `{ tab, index, byUser, cancel, source, event? }`. |
+| `onSelecting(e)` | Occurs before the user selects a tab. `e`: `{ tab, index, previousTab, previousIndex, cancel, source, event }`. Set `e.cancel = true` to keep the current tab. |
+| `onSelectionChanged(e)` | Occurs after the selected tab changes. `e`: `{ tab, index, previousTab, previousIndex, byUser, source, event? }`. |
+| `onClose(e)` | Occurs before a tab closes, from its button, Delete, a middle-click or `close()`. `e`: `{ tab, index, byUser, cancel, source, event? }`. |

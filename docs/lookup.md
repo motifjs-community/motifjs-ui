@@ -2,7 +2,7 @@
 
 > Choice · @motifx-community/ui 0.1.0-beta.3
 
-Picks one row of a table-like list, typically from a data source searched on the server: a customer by its company, contact and city. The field shows the chosen row's text; everything else works as in DropDown.
+Selects one row from a table-style list, typically from a data source searched on the server, such as a customer by company, contact and city. The field shows the text of the selected row, and everything else works as in DropDown.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { Lookup, type LookupColumn } from '@motifx-community/ui';
 
 ## Columns from a data source
 
-`columns` lay every row out on one grid under a header; the search box searches the data source's `searchFields`. Rows load where the list is scrolled to.
+`columns` arranges every row on one grid under a header, and the search box searches the data source's `searchFields`. Rows load as the list scrolls.
 
 ```tsx
 import { data } from '@motifx-community/data';
@@ -33,9 +33,9 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 }
 ```
 
-## A value on no loaded page
+## Values on unloaded pages
 
-A value whose row is not loaded is asked for by key, in one request with the keys other fields and grids over the same source need at that moment. Meanwhile the field waits: a spinner in the arrow's place, the list closed, never the key as its text. A record that carries the name too gives it as `valueText`, and the field shows it at once. A key the server does not have shows itself, muted and underlined, and its title says why; when the request failed, opening the list asks again.
+A value whose row is not loaded is requested by key, in one request together with the keys other fields and grids on the same source need at that moment. In the meantime, the field shows a spinner in place of the arrow, the list stays closed, and the key is never shown as text. A record that already has the name can provide it through `valueText`, and the field shows it immediately. A key the server does not have appears muted and underlined, with the reason in its title. If the request failed, opening the list tries again.
 
 ```tsx
 import { data } from '@motifx-community/data';
@@ -60,12 +60,12 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `columns` | `Bind<readonly LookupColumn[]>` | `[]` | `{ field, caption?, width?, align? }`: a field name or function, a header text, a CSS grid track, the alignment. |
-| `showColumnHeaders` | `Bind<boolean>` | `true` | The header above the rows. |
-| `popupWidth` | `Bind<string>` | `lookup.popup-width` | The least width of the list. |
-| `searchEnabled` | `Bind<boolean>` | `true` | A search box above the list (DropDown has it off by default). |
-| `everything of DropDown` |  |  | `items`, `dataSource`, `valueText`, `textField`, `valueField`, `searchDelay`, `clearButton`, validation, keyboard… |
-| `refresh()` |  |  | Your items and columns may be plain or reactive; the lookup reads them as they are. After changing them in place, call `refresh()`. |
+| `columns` | `Bind<readonly LookupColumn[]>` | `[]` | `{ field, caption?, width?, align? }`: a field name or function, a header text, a CSS grid track and the alignment. |
+| `showColumnHeaders` | `Bind<boolean>` | `true` | Shows a header above the rows. |
+| `popupWidth` | `Bind<string>` | `lookup.popup-width` | The minimum width of the list. |
+| `searchEnabled` | `Bind<boolean>` | `true` | Adds a search box above the list. DropDown has this off by default. |
+| `everything of DropDown` |  |  | `items`, `dataSource`, `valueText`, `textField`, `valueField`, `searchDelay`, `clearButton`, validation, keyboard support and more. |
+| `refresh()` |  |  | Your items and columns can be plain or reactive, and the lookup reads them as they are. After changing them in place, call `refresh()`. |
 
 ## Example files
 

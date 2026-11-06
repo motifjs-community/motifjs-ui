@@ -2,7 +2,7 @@
 
 > TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
 
-A document manager in the way code editors arrange files: documents in tabs, tabs in groups, groups split side by side and one under the other. A document's content is any component, a form, a grid or plain text, and it is moved, never made again, when its tab goes to another group. Everything the user does is a method too, asks first and reports after; the whole layout saves to JSON and comes back. Preview and pinned tabs, sizes and copies are on [Tabs](tabdocs-tabs.md); context menus, lists and keys on [Menus and keys](tabdocs-menus.md).
+A document manager that arranges content the way code editors arrange files: documents in tabs, tabs in groups, and groups split side by side or one above the other. A document's content can be any component, such as a form, a grid or plain text, and it is moved rather than recreated when its tab goes to another group. Every user action is also a method, with a cancelable event before it and a notification after it, and the whole layout can be saved to JSON and restored. Preview and pinned tabs, sizes and copies are covered in [Tabs](tabdocs-tabs.md), and context menus, lists and keyboard shortcuts in [Menus and keys](tabdocs-menus.md).
 
 ## Import
 
@@ -12,7 +12,7 @@ import { TabDocument, TabDocumentManager } from '@motifx-community/ui';
 
 ## Documents, groups and splits
 
-Make a manager, give it a size, and `open` documents in it. `split` opens a new group beside one; drag the line between two groups (or focus it and use the arrows), double click it to even the sizes, double click a tab to give its group all the room. The buttons at the end of each strip split and maximize.
+Create a manager, give it a size, and call `open` to add documents. `split` opens a new group beside an existing one. To resize groups, drag the line between them, or focus it and use the arrow keys. Double-click the line to make the sizes equal, or double-click a tab to give its group all the available space. The buttons at the end of each tab strip split and maximize the group.
 
 ```tsx
 /** An order of the examples. */
@@ -39,7 +39,7 @@ export function makeOrders(count: number): Order[] {
 
 ## Options
 
-Every behaviour is a prop that takes a value or a function, followed live; a document's own `closable` and `contentLifetime` win over the manager's. Here Alpha cannot be closed and Gamma has unsaved changes.
+Every behavior is a prop that accepts a value or a tracked function, and a document's own `closable` and `contentLifetime` take precedence over the manager's. In this example, Alpha cannot be closed and Gamma has unsaved changes.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';
@@ -133,7 +133,7 @@ export function customerCard(customer: Customer): ComponentBase {
 
 ## Programmatic use, and the events
 
-Each thing the user does is also a method (`open`, `close`, `activate`, `split`, `move`, `closeGroup`, `focusGroup`, `maximizeGroup`, `restoreGroups`, `evenSizes`, `resizeGroup`), asks first through a cancelable `on…ing` event and reports through `on…ed`, with `byUser` telling the two apart.
+Every user action is also a method (`open`, `close`, `activate`, `split`, `move`, `closeGroup`, `focusGroup`, `maximizeGroup`, `restoreGroups`, `evenSizes`, `resizeGroup`). Each one raises a cancelable `on…ing` event first and an `on…ed` event afterward, and `byUser` indicates which of the two started it.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';
@@ -227,7 +227,7 @@ export function customerCard(customer: Customer): ComponentBase {
 
 ## Unsaved changes
 
-`dirty` follows a function of the form's data: the tab shows a dot in place of its close button. `onClosing` sets `e.promise` to ask; the document closes when the promise says `true`.
+`dirty` tracks a function of the form's data, and the tab shows a dot in place of its close button. `onClosing` sets `e.promise` to prompt the user, and the document closes when the promise resolves to `true`.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';
@@ -321,7 +321,7 @@ export function customerCard(customer: Customer): ComponentBase {
 
 ## Saving and restoring the layout
 
-`saveLayout()` writes plain JSON: the tree of splits with each child's share, the groups with their documents (`id`, `type`, `title`, `state`, `pinned`, `preview`), the active and recently used tabs, the active and maximized group. `loadLayout(json, factory)` builds it again; the factory makes each document by its `type`.
+`saveLayout()` writes plain JSON containing the tree of splits with each child's share, the groups with their documents (`id`, `type`, `title`, `state`, `pinned`, `preview`), the active and recently used tabs, and the active and maximized groups. `loadLayout(json, factory)` rebuilds it, and the factory creates each document by its `type`.
 
 ```tsx
 /** An order of the examples. */
@@ -348,68 +348,68 @@ export function makeOrders(count: number): Order[] {
 
 ## Content lifetime
 
-`contentLifetime` decides when a document's content is built and how long it lives. Whatever it is, moving a tab or splitting a group never builds the content again: the same component goes along.
+`contentLifetime` determines when a document's content is created and how long it lives. Whatever the setting, moving a tab or splitting a group never recreates the content, because the same component moves with it.
 
-| Lifetime | What happens |
+| Lifetime | Result |
 | --- | --- |
-| `keep (default)` | Built when the document opens; lives, with its state, until it closes. |
-| `lazy` | Built the first time it is shown; then kept. |
-| `dispose` | Built when shown, disposed when hidden; made again from `content` (or the manager's `factory`) the next time, with the document's `state`. A component given as it is cannot be made again, so it is kept. |
+| `keep (default)` | Created when the document opens, and kept with its state until the document closes. |
+| `lazy` | Created the first time it is shown, and then kept. |
+| `dispose` | Created when shown and disposed when hidden. It is created again from `content` (or the manager's `factory`) the next time, with the document's `state`. A component provided directly cannot be recreated, so it is kept. |
 
 ## Keyboard
 
-The keys work while focus is inside the manager; each is a list of chords in `keys`, so any of them can be changed or turned off. A browser tab keeps Ctrl+W, Ctrl+Tab, Ctrl+Page Up / Down and often Ctrl+1…9 for itself, so the keys a manager starts with are ones a browser tab lets through, and the desktop key in brackets works too where it can (an installed app takes the desktop keys, `keyPreset`). The recently used list, back and forward, reopening and the other keys are on [Menus and keys](tabdocs-menus.md#keyboard).
+The keys work while focus is inside the manager. Each one is a list of key combinations in `keys`, so any of them can be changed or disabled. A browser tab reserves Ctrl+W, Ctrl+Tab, Ctrl+Page Up/Down and often Ctrl+1…9, so the default keys are ones a browser lets through. The key in brackets also works where the browser allows it, and an installed app uses the desktop preset (`keyPreset`). The recently used list, back and forward, reopening and the remaining keys are covered in [Menus and keys](tabdocs-menus.md#keyboard).
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Alt + Page Down / Page Up (Ctrl + Page Down / Up)` | The next / previous tab of the active group, around the ends (`nextTab`, `previousTab`). |
+| `Alt + Page Down / Page Up (Ctrl + Page Down / Up)` | Moves to the next or previous tab of the active group, wrapping around at the ends (`nextTab`, `previousTab`). |
 | `Ctrl + Alt + W (Ctrl + W)` | Closes the active document (`closeTab`). |
-| `Ctrl + Alt + 1 … 9 (Ctrl + 1 … 9)` | Focuses group 1 to 9 (`focusGroup`, written `Ctrl+Alt+{n}`). |
-| `Ctrl + \` | Splits the active group to the right; the active document goes along when it is not the only one, or a copy of it (`splitRight`). |
-| `Right / Left, Home / End (on a tab)` | The next / previous, first / last tab; it is activated too unless `activation` is manual (`stripNext`, `stripPrevious`, `stripFirst`, `stripLast`). |
-| `Enter, Space (on a tab)` | Activates it. |
-| `Delete (on a tab)` | Closes it (`closeFocusedTab`). |
-| `Arrows, Home / End (on a splitter)` | Make the group before it smaller or larger by `resizeStep`, as small or as large as it can be (`resizeSmaller`, `resizeLarger`, `resizeMin`, `resizeMax`). |
-| `Tab` | From the strip (one stop: the active tab) to the group buttons, the content, the splitter, the next group. |
+| `Ctrl + Alt + 1 … 9 (Ctrl + 1 … 9)` | Sets focus on group 1 to 9 (`focusGroup`, written as `Ctrl+Alt+{n}`). |
+| `Ctrl + \` | Splits the active group to the right. The active document moves to the new group if it is not the only one, otherwise a copy opens there (`splitRight`). |
+| `Right / Left, Home / End (on a tab)` | Moves to the next, previous, first or last tab, which also activates it unless `activation` is manual (`stripNext`, `stripPrevious`, `stripFirst`, `stripLast`). |
+| `Enter, Space (on a tab)` | Activates the tab. |
+| `Delete (on a tab)` | Closes the tab (`closeFocusedTab`). |
+| `Arrows, Home / End (on a splitter)` | Makes the group before the splitter smaller or larger by `resizeStep`, or as small or as large as possible (`resizeSmaller`, `resizeLarger`, `resizeMin`, `resizeMax`). |
+| `Tab` | Moves from the tab strip (one Tab stop, on the active tab) to the group buttons, the content, the splitter and the next group. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Groups` | Each group is a `group` named “Group 1”, “Group 2”…; with `label` the manager is a `region`. |
-| `Tabs` | A `tablist` per group (“Documents in group 1”) of `tab`s, each controlling its `tabpanel`; a roving `tabindex` keeps one Tab stop per strip. A tab says “unsaved changes” while its document is dirty; `aria-keyshortcuts` names the key that closes it. |
-| `Splitters` | `separator`s with `aria-orientation`, `aria-valuenow` (the share of the group before it, 0 to 100) and `aria-controls`. |
-| `Announcements` | A polite live region says what was opened, closed, moved, split, maximized or restored (`announce`). |
-| `Focus` | A group remembers what had focus in it; closing the focused tab moves focus to the tab that takes its place. |
+| `Groups` | Each group is a `group` named “Group 1”, “Group 2” and so on. With `label`, the manager is a `region`. |
+| `Tabs` | One `tablist` per group (“Documents in group 1”) of `tab` elements, each controlling its `tabpanel`. A roving `tabindex` keeps one Tab stop per strip. A tab announces “unsaved changes” while its document is dirty, and `aria-keyshortcuts` names the key that closes it. |
+| `Splitters` | `separator` elements with `aria-orientation`, `aria-valuenow` (the share of the group before it, from 0 to 100) and `aria-controls`. |
+| `Announcements` | A polite live region announces what was opened, closed, moved, split, maximized or restored (`announce`). |
+| `Focus` | A group remembers where focus was inside it, and closing the focused tab moves focus to the tab that takes its place. |
 
 ## Localization
 
-Every text comes from `uiLocale.strings` (`tabDocs…`: the group and strip names, “No open documents”, “unsaved changes”, the buttons, the announcements), in English and Turkish; `texts` changes some for one manager.
+All text comes from `uiLocale.strings` (`tabDocs…`: group and strip names, “No open documents”, “unsaved changes”, buttons and announcements), in English and Turkish. `texts` overrides some for one manager.
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
-| `.mx-tabdocs` | The root; `data-maximized` while a group is maximized, `data-resizing` while a splitter is dragged; `data-tab-size`, `data-pinned-size`, `data-pinned-row`, `data-wrap`, `data-scroll-buttons` from the props. |
-| `.mx-tabdocs__split` | A split; `data-orientation`. |
+| `.mx-tabdocs` | The root. It has `data-maximized` while a group is maximized and `data-resizing` while a splitter is being dragged, plus `data-tab-size`, `data-pinned-size`, `data-pinned-row`, `data-wrap` and `data-scroll-buttons` from the props. |
+| `.mx-tabdocs__split` | A split, with `data-orientation`. |
 | `.mx-tabdocs__sash` | A splitter (`role="separator"`). |
-| `.mx-tabdocs__group` | A group; `data-active`, `data-empty`, `data-maximized`, `data-locked`. |
-| `.mx-tabdocs__bar, __strip, __tabs, __pinned, __row, __scroll, __actions` | The strip row; the tab list with its scroll buttons; the `tablist`, its pinned row and the row of the others; the kit Toolbar with the group buttons. |
-| `.mx-tabdocs__tab` | A tab; `aria-selected`, `data-dirty`, `data-close` (`always`, `active`), `data-pinned`, `data-preview`, `data-tone`, `data-icon`. |
-| `.mx-tabdocs__icon, __letter, __title, __description, __badge, __pin, __close, __dirty` | The parts of a tab; a badge that is a dot has `data-dot`. |
+| `.mx-tabdocs__group` | A group, with `data-active`, `data-empty`, `data-maximized` and `data-locked`. |
+| `.mx-tabdocs__bar, __strip, __tabs, __pinned, __row, __scroll, __actions` | The strip row, the tab list with its scroll buttons, the `tablist` with its pinned row and the row of other tabs, and the kit Toolbar with the group buttons. |
+| `.mx-tabdocs__tab` | A tab, with `aria-selected`, `data-dirty`, `data-close` (`always`, `active`), `data-pinned`, `data-preview`, `data-tone` and `data-icon`. |
+| `.mx-tabdocs__icon, __letter, __title, __description, __badge, __pin, __close, __dirty` | The parts of a tab. A badge displayed as a dot has `data-dot`. |
 | `.mx-tabdocs__popup, __list-title, __list-note, __list-dirty` | The "…" and recently used lists. |
-| `.mx-tabdocs__panels, __panel, __empty` | The content area, a document's `tabpanel`, the empty group's text. |
+| `.mx-tabdocs__panels, __panel, __empty` | The content area, a document's `tabpanel`, and the text of an empty group. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `tabdocs.manager, group, bar, pinned, panel, empty` | Units: behind the groups, a group, its strip and the line under it, the pinned tabs' row, a panel, an empty group's text. |
-| `tabdocs.tab, indicator, title, letter, pin, description, icon, badge, close, dirty` | Units: a tab (`hover`, `selected`, `before-selected`, `focus`, `dragging`, `title` …; its end side is the line between tabs), the bar on it (`selected`, `active` in the active group), its parts in their tones. |
-| `tabdocs.scroll, scroll-icon, scrollbar, thumb, count, sash, sash-line` | Units: the scroll buttons, the thin scrollbar, the count on "…", a splitter and its line (`across`, `active`). |
-| `tabdocs.tabs-height, tab-inset, tab-spacing, title-max, title-min, icon-room, close-room, pin-room, sash-thickness` | Sizes the layout counts with (a shrinking tab keeps its icon, its close button and a few letters). |
-| `tabdocs.indicator-inset, indicator-inset-start, indicator-inset-end` | Where the bar on a tab stands. |
-| `tabdocs.focus-width, focus-offset, touch-*` | The ring's room at a small toolbar's ends; the sizes for a finger. |
+| `tabdocs.manager, group, bar, pinned, panel, empty` | Units: the area behind the groups, a group, its strip and the line under it, the pinned tabs row, a panel, and the text of an empty group. |
+| `tabdocs.tab, indicator, title, letter, pin, description, icon, badge, close, dirty` | Units: a tab (`hover`, `selected`, `before-selected`, `focus`, `dragging`, `title` …, whose end side is the line between tabs), the bar on it (`selected`, and `active` in the active group), and its parts in each tone. |
+| `tabdocs.scroll, scroll-icon, scrollbar, thumb, count, sash, sash-line` | Units: the scroll buttons, the thin scrollbar, the count on "…", and a splitter and its line (`across`, `active`). |
+| `tabdocs.tabs-height, tab-inset, tab-spacing, title-max, title-min, icon-room, close-room, pin-room, sash-thickness` | Sizes used by the layout (a shrinking tab keeps its icon, its close button and a few letters). |
+| `tabdocs.indicator-inset, indicator-inset-start, indicator-inset-end` | The position of the bar on a tab. |
+| `tabdocs.focus-width, focus-offset, touch-*` | The focus ring's space at the ends of a small toolbar, and the sizes for touch. |
 
 ## API reference
 
@@ -417,95 +417,95 @@ Every text comes from `uiLocale.strings` (`tabDocs…`: the group and strip name
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `label` | `Bind<string>` | `''` | Names the manager: it becomes a `region` landmark. The same property as `text`. |
-| `closeButton` | `Bind<'always' \| 'active' \| 'never'>` | `'always'` | Where tabs show a close button: every tab, the active one and the one under the pointer, none. A document with `closable: false` shows none. |
-| `contentLifetime` | `Bind<'keep' \| 'lazy' \| 'dispose'>` | `'keep'` | When content is built and how long it lives (see below). A document's own value wins. |
-| `closeEmptyGroups` | `Bind<boolean>` | `true` | A group left without documents closes; the last group never does. |
-| `openPosition` | `Bind<'afterActive' \| 'end' \| 'start'>` | `'afterActive'` | Where `open` puts a tab when no `index` is given. |
-| `afterClose` | `Bind<'recent' \| 'left' \| 'right'>` | `'recent'` | Which tab becomes active when the active one closes: the one used last, or a neighbour. |
-| `activation` | `Bind<'auto' \| 'manual'>` | `'auto'` | `auto`: the arrow keys in a strip activate the tab they reach. `manual`: Enter or Space does. |
-| `minGroupWidth, minGroupHeight` | `Bind<number>` | `160`, `100` | The smallest size of a group, in pixels; a splitter stops there. |
+| `label` | `Bind<string>` | `''` | Names the manager, making it a `region` landmark. This is the same property as `text`. |
+| `closeButton` | `Bind<'always' \| 'active' \| 'never'>` | `'always'` | Which tabs show a close button: every tab, the active tab and the tab under the pointer, or none. A document with `closable: false` shows none. |
+| `contentLifetime` | `Bind<'keep' \| 'lazy' \| 'dispose'>` | `'keep'` | When content is created and how long it lives (see below). A document's own value takes precedence. |
+| `closeEmptyGroups` | `Bind<boolean>` | `true` | Closes a group when it has no documents left. The last group never closes. |
+| `openPosition` | `Bind<'afterActive' \| 'end' \| 'start'>` | `'afterActive'` | Where `open` places a tab when no `index` is given. |
+| `afterClose` | `Bind<'recent' \| 'left' \| 'right'>` | `'recent'` | Which tab becomes active when the active tab closes: the most recently used tab, or a neighbor. |
+| `activation` | `Bind<'auto' \| 'manual'>` | `'auto'` | With `auto`, the arrow keys activate the tab they reach. With `manual`, Enter or Space activates it. |
+| `minGroupWidth, minGroupHeight` | `Bind<number>` | `160`, `100` | The minimum size of a group, in pixels. A splitter stops there. |
 | `resizeStep` | `Bind<number>` | `10` | How far a splitter key moves a splitter, in pixels. |
 | `groupActions` | `Bind<boolean>` | `true` | The split, maximize and "…" buttons at the end of each strip. |
-| `maximizeOnDoubleClick` | `Bind<boolean>` | `true` | A double click on a tab maximizes its group, or restores the groups (a preview tab is kept open instead). |
-| `keyPreset` | `Bind<'auto' \| 'browser' \| 'desktop'>` | `'auto'` | The keys a manager starts with: keys a browser tab lets through, or a desktop editor's; `auto` takes the desktop keys in an installed app. |
-| `keys` | `Bind<Partial<TabDocumentKeys>>` | see Keyboard | Changes some keys; the others keep the preset's. An empty list turns a key off. |
-| `factory` | `Bind<(doc) => ComponentBase \| null>` | `null` | Makes the content of a document that brings none, usually by its `type`. |
-| `texts` | `Bind<Partial<UiStrings>>` | `{}` | Texts for this manager only, over `uiLocale.strings`. |
-| `announce` | `Bind<boolean>` | `true` | Opened, closed, moved, split, maximized: said politely to screen readers. |
-| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | The shared properties of every control. |
+| `maximizeOnDoubleClick` | `Bind<boolean>` | `true` | Double-clicking a tab maximizes its group or restores the groups. On a preview tab, it keeps the tab open instead. |
+| `keyPreset` | `Bind<'auto' \| 'browser' \| 'desktop'>` | `'auto'` | The default keys: keys a browser tab lets through, or those of a desktop editor. `auto` uses the desktop keys in an installed app. |
+| `keys` | `Bind<Partial<TabDocumentKeys>>` | see Keyboard | Changes specific keys, and the others keep the preset's values. An empty list disables a key. |
+| `factory` | `Bind<(doc) => ComponentBase \| null>` | `null` | Creates the content of a document that does not provide its own, usually by its `type`. |
+| `texts` | `Bind<Partial<UiStrings>>` | `{}` | Strings for this manager only, which override `uiLocale.strings`. |
+| `announce` | `Bind<boolean>` | `true` | Announces opened, closed, moved, split and maximized states to screen readers. |
+| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. |
 
 ### TabDocument
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `id` | `string` | Stays the same for the document's life; made up when left out. `findDocument(id)` finds it. |
-| `type` | `string` | The key a layout is restored by: the `loadLayout` factory and the manager's `factory` read it. |
-| `title, description` | `Bind<string>` | The tab's text; the description follows it, quieter, and tells two documents of the same title apart. |
-| `icon, badge` | `Bind<IconSource \| null>`, `Bind<string \| number \| null>` | An icon before the title; a short text or count after it. |
-| `tooltip` | `Bind<string>` | Shown when the pointer rests on the tab or the tab has focus. Default: the title and the description. |
-| `dirty` | `Bind<boolean>` | Unsaved changes: a dot takes the close button's place (the button comes back under the pointer), and screen readers hear “unsaved changes”. |
-| `closable` | `Bind<boolean>` | Default `true`. `false`: no close button, and the user cannot close it (code still can). |
-| `pinned, preview` | `Bind<boolean>` | A pinned tab stays at the start; a preview tab gives its place to the next preview. Saved with the layout. See [Tabs](tabdocs-tabs.md). |
-| `badge, tone, actions, clone, allowDuplicate` |  | A count or a dot, a colour, toolbar buttons while active, a copy's content. See [Tabs](tabdocs-tabs.md) and [Menus and keys](tabdocs-menus.md). |
-| `contentLifetime` | `Bind<ContentLifetime \| undefined>` | This document's own lifetime; `undefined` follows the manager. |
-| `content` | `ComponentBase \| (doc) => ComponentBase` | The content: a component, or a function that makes it (and makes it again after `dispose`). |
-| `state` | `Bind<unknown>` | The app's own data for the document, saved with the layout. |
-| `manager, group, isOpen, isActive, contentComponent` | read-only, reactive | Where it is open, and the content made for it. |
+| `id` | `string` | Stays the same for the life of the document, and is generated when omitted. `findDocument(id)` finds a document by it. |
+| `type` | `string` | The key used to restore a layout. The `loadLayout` factory and the manager's `factory` read it. |
+| `title, description` | `Bind<string>` | The tab's text. The description follows it in a lighter style, and distinguishes documents with the same title. |
+| `icon, badge` | `Bind<IconSource \| null>`, `Bind<string \| number \| null>` | An icon before the title, and a short text or count after it. |
+| `tooltip` | `Bind<string>` | Shown when the pointer rests on the tab or the tab has focus. By default, it is the title and the description. |
+| `dirty` | `Bind<boolean>` | Marks unsaved changes. A dot replaces the close button, which returns under the pointer, and screen readers announce “unsaved changes”. |
+| `closable` | `Bind<boolean>` | The default is `true`. With `false`, there is no close button and the user cannot close the document, although code still can. |
+| `pinned, preview` | `Bind<boolean>` | A pinned tab stays at the start, and a preview tab is replaced by the next preview. Both are saved with the layout. See [Tabs](tabdocs-tabs.md). |
+| `badge, tone, actions, clone, allowDuplicate` |  | A count or a dot, a color, toolbar buttons while active, and the content of a copy. See [Tabs](tabdocs-tabs.md) and [Menus and keys](tabdocs-menus.md). |
+| `contentLifetime` | `Bind<ContentLifetime \| undefined>` | This document's own lifetime. `undefined` uses the manager's setting. |
+| `content` | `ComponentBase \| (doc) => ComponentBase` | The content: a component, or a function that creates it (and creates it again after `dispose`). |
+| `state` | `Bind<unknown>` | Application data for the document, saved with the layout. |
+| `manager, group, isOpen, isActive, contentComponent` | read-only, reactive | Where it is open, and the content created for it. |
 | `activate(focus?), close()` | `boolean`, `Promise<boolean>` | The same as the manager's methods. |
 
 ### Properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write, reactive | A value or a function, like the prop. |
+| `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `groups` | read-only, reactive | The groups in layout order: left to right, top to bottom. |
 | `documents` | read-only, reactive | Every open document, group by group. |
-| `activeGroup, activeDocument` | read-only, reactive | The group that has focus or had it last, and its active document. |
-| `maximizedGroup` | read-only, reactive | The maximized group, `null` when none is. |
-| `recentDocuments, closedDocuments, canGoBack, canGoForward` | read-only, reactive | The documents used last, the ones `reopenClosed` can open, and the history. See [Menus and keys](tabdocs-menus.md). |
+| `activeGroup, activeDocument` | read-only, reactive | The group that has or last had focus, and its active document. |
+| `maximizedGroup` | read-only, reactive | The maximized group, or `null` when none is maximized. |
+| `recentDocuments, closedDocuments, canGoBack, canGoForward` | read-only, reactive | The most recently used documents, those `reopenClosed` can open, and the history. See [Menus and keys](tabdocs-menus.md). |
 | `TabDocumentManager.browserKeys, TabDocumentManager.desktopKeys` | static | The two key presets. |
 
 ### TabGroup
 
 | Member | Access | Description |
 | --- | --- | --- |
-| `documents, activeDocument, recentDocuments` | read-only, reactive | In strip order; the active one; the one used last first. |
-| `index, isActive, isMaximized, isEmpty` | read-only, reactive | Its place in `groups`, from 0, and its state. |
-| `locked` | read/write, reactive | A locked group takes no document opened without naming the group. `lock()` and `unlock()` ask first and announce it. |
-| `previewDocument` | read-only, reactive | The group's preview tab's document, if it has one. |
+| `documents, activeDocument, recentDocuments` | read-only, reactive | In strip order, the active document, and the most recently used first. |
+| `index, isActive, isMaximized, isEmpty` | read-only, reactive | Its position in `groups`, starting from 0, and its state. |
+| `locked` | read/write, reactive | A locked group does not receive documents opened without naming the group. `lock()` and `unlock()` raise their events and are announced. |
+| `previewDocument` | read-only, reactive | The document of the group's preview tab, if it has one. |
 | `open(doc, options?), activate(doc), closeAll(), close(), split(direction, doc?), maximize(), lock(), unlock(), focus()` |  | The manager's methods for this group. |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `open(doc, { group?, index?, active?, focus? })` | `TabDocument \| null` | Opens a `TabDocument` (or one made from options) in a group, the active one by default; a document already open is activated. `null` when `onOpening` cancels. |
-| `close(doc)` | `Promise<boolean>` | Closes as the close button does; `false` when `onClosing` keeps it. |
-| `closeAll(group?)` | `Promise<boolean>` | Closes the documents of a group, or of all of them; `false` when some stay. |
-| `activate(doc, focus?)` | `boolean` | Makes it its group's active tab and its group the active group; `focus` moves focus into the content. |
-| `activateNext(group?, focus?), activatePrevious(group?, focus?)` | `boolean` | The next or previous tab, around the ends (Ctrl + Page Down / Up). |
-| `move(doc, group, index?)` | `boolean` | To another place in its group, or to another group. The content goes along as it is. |
-| `split(group, direction, doc?)` | `TabGroup \| null` | A new group on the `'left'`, `'right'`, `'up'` or `'down'` side; `doc` moves into it. `group` `null`: along that edge of the whole layout. |
-| `closeGroup(group)` | `Promise<boolean>` | Closes its documents, then the group. The last group stays, empty. |
-| `focusGroup(group \| index)` | `boolean` | Makes it active and focuses what had focus in it last. |
-| `maximizeGroup(group), restoreGroups()` | `boolean` | One group takes all the room; the others wait, out of sight, as they were. |
-| `evenSizes()` | `boolean` | Every group of every split the same size. |
-| `resizeGroup(group, size)` | `boolean` | A group's size along its split: pixels or a share (`'30%'`); the neighbour after it gives or takes the room. |
+| `open(doc, { group?, index?, active?, focus? })` | `TabDocument \| null` | Opens a `TabDocument`, or one created from options, in a group (the active group by default). An already open document is activated. Returns `null` when `onOpening` cancels. |
+| `close(doc)` | `Promise<boolean>` | Closes the document as the close button does. Returns `false` when `onClosing` keeps it open. |
+| `closeAll(group?)` | `Promise<boolean>` | Closes the documents of a group, or of all groups. Returns `false` when some remain open. |
+| `activate(doc, focus?)` | `boolean` | Makes it the active tab of its group, and that group the active group. `focus` moves focus into the content. |
+| `activateNext(group?, focus?), activatePrevious(group?, focus?)` | `boolean` | Moves to the next or previous tab, wrapping around at the ends (Ctrl + Page Down/Up). |
+| `move(doc, group, index?)` | `boolean` | Moves it to another position in its group, or to another group. The content moves with it unchanged. |
+| `split(group, direction, doc?)` | `TabGroup \| null` | Adds a new group on the `'left'`, `'right'`, `'up'` or `'down'` side, and `doc` moves into it. With a `group` of `null`, the new group runs along that edge of the whole layout. |
+| `closeGroup(group)` | `Promise<boolean>` | Closes the group's documents, and then the group. The last group stays, empty. |
+| `focusGroup(group \| index)` | `boolean` | Makes it active and sets focus on what last had focus in it. |
+| `maximizeGroup(group), restoreGroups()` | `boolean` | Gives one group all the space. The other groups stay hidden, unchanged. |
+| `evenSizes()` | `boolean` | Makes every group of every split the same size. |
+| `resizeGroup(group, size)` | `boolean` | Sets a group's size along its split, in pixels or as a share (`'30%'`). The next group gives up or takes the difference. |
 | `findDocument(id), contentOf(doc)` | `TabDocument \| null`, `ComponentBase \| null` |  |
 | `saveLayout()` | `TabLayout` | The layout as plain JSON (see below). |
-| `loadLayout(layout, factory?)` | `boolean` | Puts a saved layout in place of the current one, whose documents close without asking. `factory(saved)` returns the document, its options or its content. |
+| `loadLayout(layout, factory?)` | `boolean` | Replaces the current layout with a saved one, closing the current documents without prompting. `factory(saved)` returns the document, its options or its content. |
 
 ### Events
 
-| Event | What it carries |
+| Event | Contents |
 | --- | --- |
-| `onOpening(e), onOpened(e)` | `{ document, group, index, active, byUser }`; `opening` is cancelable and may change `group` and `index`. |
-| `onClosing(e), onClosed(e)` | `{ document, group, index, byUser }`; `closing` is cancelable, or sets `e.promise` (`Promise<boolean>`) to ask first. |
-| `onDocumentActivating(e), onDocumentActivated(e)` | `{ document, previous, group, byUser }`; `activating` (a tab is selected) is cancelable; `activated` also runs when another group becomes active. |
-| `onMoving(e), onMoved(e)` | `{ document, from, fromIndex, to, toIndex, byUser }`; `moving` is cancelable. |
-| `onSplitting(e), onSplit(e)` | `{ group, direction, document, byUser }` (and `newGroup` after); `splitting` is cancelable. `group` is `null` when the new group goes along an edge of the whole layout. |
-| `onLayoutChanging(e), onLayoutChanged(e)` | `{ change, group, byUser }`, `change` one of `'split'`, `'closeGroup'`, `'resize'`, `'evenSizes'`, `'maximize'`, `'restore'`, `'move'` (a whole group moved or merged), `'load'`; `changing` is cancelable (a split asks through `onSplitting`). |
+| `onOpening(e), onOpened(e)` | `{ document, group, index, active, byUser }`. `opening` is cancelable and can change `group` and `index`. |
+| `onClosing(e), onClosed(e)` | `{ document, group, index, byUser }`. `closing` is cancelable, or can set `e.promise` (`Promise<boolean>`) to prompt first. |
+| `onDocumentActivating(e), onDocumentActivated(e)` | `{ document, previous, group, byUser }`. `activating` (a tab is being selected) is cancelable, and `activated` also runs when another group becomes active. |
+| `onMoving(e), onMoved(e)` | `{ document, from, fromIndex, to, toIndex, byUser }`. `moving` is cancelable. |
+| `onSplitting(e), onSplit(e)` | `{ group, direction, document, byUser }`, plus `newGroup` afterward. `splitting` is cancelable. `group` is `null` when the new group runs along an edge of the whole layout. |
+| `onLayoutChanging(e), onLayoutChanged(e)` | `{ change, group, byUser }`, where `change` is `'split'`, `'closeGroup'`, `'resize'`, `'evenSizes'`, `'maximize'`, `'restore'`, `'move'` (a whole group moved or merged) or `'load'`. `changing` is cancelable (a split uses `onSplitting`). |
 
 ## Example files
 

@@ -2,7 +2,7 @@
 
 > Display · @motifx-community/ui 0.1.0-beta.3
 
-Someone’s picture, or their initials, or a person icon, with their presence on its corner. A group stacks or spreads them and counts the ones it does not show.
+Represents a person with a picture, initials or an icon, with an optional presence indicator on its corner. A group stacks or spreads avatars and counts the ones it does not show.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { Avatar, AvatarGroup } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-Every prop takes a value or a function. Created with `new`, the same properties are set programmatically.
+Every prop accepts a value or a function. When you create the component with `new`, set the same properties programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -37,9 +37,9 @@ export default function Programmatic() {
 }
 ```
 
-## Picture, initials, icon
+## Picture, initials and icon
 
-The picture shows once it has loaded; until then, and when it cannot load, the initials show. Without a name the person icon does.
+The picture appears once it has loaded. Until then, or if it fails to load, the initials appear. Without a name, the person icon appears.
 
 ```tsx
 import { Avatar, Stack } from '@motifx-community/ui';
@@ -122,7 +122,7 @@ export default function Sizes() {
 
 ## Groups
 
-`max` shows that many and counts the rest in a `+N`; `total` counts those not given as well. The group sets the size of all its avatars.
+`max` sets how many avatars are shown, and the rest are counted in a `+N`. `total` also counts people who are not provided. The group sets the size of all its avatars.
 
 ```tsx
 import { Avatar, AvatarGroup, Stack } from '@motifx-community/ui';
@@ -155,39 +155,39 @@ export default function Groups() {
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Name` | With a name or a label the avatar is an image with that name (`role="img"`); the presence is said after it (“Ada Lovelace, Away”). |
-| `No name` | An avatar with nothing to say (no name, no label, no presence) is hidden from screen readers. |
-| `Picture` | The picture has an empty `alt`: the avatar itself carries the name. |
-| `Group` | `role="group"` with its label; the `+N` says how many are not shown (“8 more people”). |
-| `Colour` | The presence is not said by colour alone: it is in the name screen readers hear, and Fluent draws a mark in the dot. |
+| `Name` | With a name or label, the avatar is an image with that name (`role="img"`), and the presence follows it (“Ada Lovelace, Away”). |
+| `No name` | An avatar with no name, label or presence is hidden from screen readers. |
+| `Picture` | The picture has an empty `alt`, because the avatar carries the name. |
+| `Group` | `role="group"` with its label. The `+N` states how many people are not shown (“8 more people”). |
+| `Colour` | Presence is not conveyed by color alone. It is included in the name screen readers announce, and Fluent draws a mark in the dot. |
 
 ## Localization
 
-Initials are written in the capitals of the kit language (`uiLocale`): “ilgin” is “İ” in Turkish. The presence and the `+N` texts are kit texts (`presenceOnline` … `presenceOffline`, `avatarPresence`, `moreItems`, `avatarGroupMore`) and change with it.
+Initials use the capitalization rules of the kit language (`uiLocale`), so “ilgin” becomes “İ” in Turkish. The presence and `+N` strings are kit strings (`presenceOnline` … `presenceOffline`, `avatarPresence`, `moreItems`, `avatarGroupMore`) and change with the language.
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-avatar` | The avatar. `data-size`, `data-shape`, `data-tone`. |
 | `.mx-avatar__image` | The picture. `data-pending` until it loads. |
 | `.mx-avatar__initials, .mx-avatar__icon` | The initials, and the person icon shown without them. |
 | `.mx-avatar__status` | The presence dot. `data-status`. |
-| `.mx-avatar-group` | The group. `data-size`, `data-layout`; an avatar it does not show has `data-beyond`. |
+| `.mx-avatar-group` | The group. `data-size`, `data-layout`. An avatar that is not shown has `data-beyond`. |
 | `.mx-avatar-group__more` | The `+N` avatar. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
 | `avatar.avatar` | Unit: the avatar at rest (the standard tone) and in each tone. |
-| `avatar.icon, avatar.status, avatar.status-icon` | Units: the person icon; the presence dot (its ring, per presence); a mark inside the dot, per presence. |
+| `avatar.icon, avatar.status, avatar.status-icon` | Units: the person icon, the presence dot and its ring per status, and a mark inside the dot per status. |
 | `avatar.size.*, avatar.font-size.*, avatar.icon-size.*, avatar.status-size.*, avatar.square-radius.*` | The avatar, its initials, its icon, its dot and its square corners, per size. |
-| `avatar.tone, avatar.shape` | The tone and shape an avatar takes when none is given. |
-| `avatar-group.stacked` | Unit: the ring that parts a stacked avatar from the one it covers. |
-| `avatar-group.overlap.*, avatar-group.gap.*, avatar-group.layout` | How far stacked avatars go under each other, the space between spread ones, and the layout taken when none is given. |
+| `avatar.tone, avatar.shape` | The default tone and shape. |
+| `avatar-group.stacked` | Unit: the ring that separates a stacked avatar from the one it overlaps. |
+| `avatar-group.overlap.*, avatar-group.gap.*, avatar-group.layout` | The overlap of stacked avatars, the gap between spread avatars, and the default layout. |
 
 ## API reference
 
@@ -195,44 +195,44 @@ Initials are written in the capitals of the kit language (`uiLocale`): “ilgin�
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `src` | `Bind<string \| null>` | `null` | The picture. Until it loads, or when it cannot, the initials (else the person icon) show. |
-| `name` | `Bind<string>` | `''` | Whose avatar it is: the initials are made from it, and screen readers say it. |
-| `initials` | `Bind<string>` | `''` | Initials of your own instead of the ones made from `name`. |
-| `label` | `Bind<string>` | `''` | What screen readers say instead of the name. |
-| `size` | `Bind<AvatarSize>` | `'md'` | `xs`, `sm`, `md`, `lg`, `xl`. In a group, the group’s. |
-| `shape` | `Bind<AvatarShape>` | the language’s (`circle`) | `circle`, `square` (with the language’s corners for its size). |
-| `tone` | `Bind<AvatarTone>` | the language’s | `standard`, `accent`, `info`, `success`, `caution`, `danger`, or `auto`: one taken from the name, the same for the same name everywhere. Material and Lilac take `accent`, the others `standard`. |
-| `status` | `Bind<AvatarStatus \| null>` | `null` | `online`, `away`, `busy`, `offline`: a presence dot on the lower end corner. |
-| `visible, tabStop` | see Control |  | The shared properties of every control. |
+| `src` | `Bind<string \| null>` | `null` | The picture. Until it loads, or if it fails, the initials appear, or the person icon if there are none. |
+| `name` | `Bind<string>` | `''` | The person's name. It is used to create the initials and is announced by screen readers. |
+| `initials` | `Bind<string>` | `''` | Custom initials that replace the ones created from `name`. |
+| `label` | `Bind<string>` | `''` | The text screen readers announce instead of the name. |
+| `size` | `Bind<AvatarSize>` | `'md'` | `xs`, `sm`, `md`, `lg` or `xl`. In a group, the group's size applies. |
+| `shape` | `Bind<AvatarShape>` | Set by the design language (`circle`) | `circle` or `square` (using the design language's corner radius for the size). |
+| `tone` | `Bind<AvatarTone>` | Set by the design language | `standard`, `accent`, `info`, `success`, `caution`, `danger`, or `auto`, which derives a tone from the name so the same name always has the same tone. Material and Lilac use `accent`, and the others use `standard`. |
+| `status` | `Bind<AvatarStatus \| null>` | `null` | `online`, `away`, `busy` or `offline`: a presence dot on the lower end corner. |
+| `visible, tabStop` | see Control |  | Properties shared by all controls. |
 
 ### Avatar properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write | A value or a function, like the prop. |
-| `shownInitials` | read-only | The initials it shows: the ones given, else the ones made from the name. |
-| `showsPicture` | read-only | Whether the picture is what shows now (it loaded). |
+| `every prop above` | read/write | Accepts a value or a function, the same as the prop. |
+| `shownInitials` | read-only | The displayed initials: the ones provided, otherwise the ones created from the name. |
+| `showsPicture` | read-only | Indicates whether the picture has loaded and is currently shown. |
 
 ### AvatarGroup props
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `size` | `Bind<AvatarSize>` | `'md'` | The size of every avatar in it. |
-| `layout` | `Bind<AvatarGroupLayout>` | the language’s (`stack`) | `stack`: each over the one before it; `spread`: side by side. |
-| `max` | `Bind<number \| null>` | `null` | The most avatars shown; the others are counted in a `+N` after them. |
-| `total` | `Bind<number \| null>` | `null` | How many there are in all, when only some are given; the rest are counted in the `+N`. |
-| `label` | `Bind<string>` | `''` | What screen readers call the group (“Members”). |
+| `size` | `Bind<AvatarSize>` | `'md'` | The size of every avatar in the group. |
+| `layout` | `Bind<AvatarGroupLayout>` | Set by the design language (`stack`) | `stack` overlaps each avatar on the previous one, and `spread` places them side by side. |
+| `max` | `Bind<number \| null>` | `null` | The maximum number of avatars shown. The others are counted in a `+N` after them. |
+| `total` | `Bind<number \| null>` | `null` | The total number of people when only some are provided. The rest are counted in the `+N`. |
+| `label` | `Bind<string>` | `''` | The accessible name of the group (“Members”). |
 
 ### AvatarGroup properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write | A value or a function, like the prop. |
-| `avatars` | read-only | The elements of the avatars given, in order, from JSX lists too (the `+N` is not one of them). |
-| `hiddenCount` | read-only | How many are counted in the `+N`; 0 when it does not show. |
+| `every prop above` | read/write | Accepts a value or a function, the same as the prop. |
+| `avatars` | read-only | The elements of the provided avatars in order, including those from JSX lists. The `+N` is not included. |
+| `hiddenCount` | read-only | The number of people counted in the `+N`, or 0 when it is not shown. |
 
 ### Functions
 
 | Function | Returns | Description |
 | --- | --- | --- |
-| `initialsOf(name, locale)` | `string` | The initials an avatar makes of a name: the first letters of its first and last words, in the capitals of the language. |
+| `initialsOf(name, locale)` | `string` | Creates initials from a name: the first letters of the first and last words, using the capitalization rules of the language. |

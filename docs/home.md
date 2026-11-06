@@ -14,17 +14,17 @@ npm i @motifx/core @motifx-community/ui
 import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/ui';
 ```
 
-## How the components work
+## Component model
 
-- Every component is an object. Write it in JSX and bind it to state, or create it with `new` and add it wherever and whenever you need it — the developer using it decides, both ways are complete.
+- Every component is an object. Declare it in JSX and bind it to state, or instantiate it with `new` and add it to the component tree at runtime. Both approaches expose the same API.
 
-- Lifetime follows ownership: a component dies with the one it belongs to.
+- Lifetime follows ownership: disposing a component also disposes the components it owns.
 
-- Keyboard, focus and ARIA are part of every component, not extras.
+- Every component supports keyboard navigation, focus management and the WAI-ARIA roles and states of its pattern.
 
-## What ships today
+## Components
 
-More than fifty components, every one an object with the same base: focus and the keyboard, the right roles and names for a screen reader, texts in English and Turkish that switch while the app runs, right to left, and a look in each of the design system's five languages (Tactile, Lounge, Material, Fluent, Lilac) painted from component tokens. Each has a page with live examples and its API.
+The library includes more than fifty components built on a shared base. Each one provides keyboard and focus support, accessible roles and names, English and Turkish strings that can be switched at runtime, right-to-left layout, and component tokens for the five design languages of the design system: Tactile, Lounge, Material, Fluent and Lilac. Every component has a reference page with live examples and its full API.
 
 | Group | Components |
 | --- | --- |
@@ -39,13 +39,13 @@ More than fifty components, every one an object with the same base: focus and th
 
 ## Design system
 
-The look comes from `@motifx-community/design-system`: its tokens, three themes, density, fonts and user-preference overrides. `styles.css` imports it first, then this kit's own layer (`mx.components`) adds the [component tokens](tokens.md) and the components. Nothing here is a color or a size of its own.
+Visual styling comes from `@motifx-community/design-system`, which provides design tokens, three themes, density settings, fonts and user-preference overrides. `styles.css` imports it first, then the `mx.components` layer adds the [component tokens](tokens.md) and the components. Components define no colors or sizes of their own.
 
-- Themes: light, dark and high contrast, switched with `data-theme`; the OS preference is the default. Every text/background pair is checked in the design system's build: WCAG AA, AAA in high contrast.
+- Themes: light, dark and high contrast, selected with `data-theme`. The default follows the operating system preference. The design system build verifies every text and background pair against WCAG AA, and against AAA in high contrast.
 
-- Density: `data-density="compact"` shrinks every control, bar and title bar.
+- Density: `data-density="compact"` reduces the size of every control, bar and title bar.
 
-- RTL through logical properties.
+- Right-to-left layout: components are built on CSS logical properties.
 
 ```tsx
 <html data-theme="dark" data-density="compact">

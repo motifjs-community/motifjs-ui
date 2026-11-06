@@ -2,7 +2,7 @@
 
 > Data · @motifx-community/ui 0.1.0-beta.3
 
-A tree view shows items in a hierarchy. Rows open and close, are selected one or many at a time, can carry check boxes that add up to their parents, can be searched, and can load their children when they are first opened. Long trees draw only the rows in view.
+Displays items in a hierarchy. Rows can be expanded and collapsed, selected individually or in groups, and searched. Check boxes can roll up to parent rows, and children can load on demand when a row is first expanded. Large trees render only the visible rows.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { TreeView } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-Items are objects with a `children` array (or a `parentId`, see below). `value` is the selected row's key and `x-model` binds it two-way. Created with `new`, the tree is filled and driven programmatically; items changed in place, plain or reactive, show after `refresh()` (`refreshItem(key)` for one row).
+Items are objects with a `children` array, or with a `parentId` as described below. `value` is the key of the selected row, and `x-model` provides two-way binding. When you create the tree with `new`, fill and control it programmatically. Plain or reactive items changed in place appear after `refresh()`, or `refreshItem(key)` for a single row.
 
 ```tsx
 /** A row of the trees on this page. */
@@ -28,9 +28,9 @@ export interface Entry {
 }
 ```
 
-## File explorer: children that load
+## File explorer with on-demand loading
 
-`loadChildren` loads a row's children the first time it opens; `hasChildren: false` marks a row with nothing to load. While loading the row is busy; when the load fails it says so and offers a retry (here “Shared” fails once). Icons come from `iconField`, here a function.
+`loadChildren` loads the children of a row the first time it expands, and `hasChildren: false` marks a row with nothing to load. The row shows a busy state while loading. If loading fails, the row reports the error and offers a retry (“Shared” fails once in this example). `iconField` provides the icons, and here it is a function.
 
 ```tsx
 /** A row of the trees on this page. */
@@ -48,7 +48,7 @@ export interface Entry {
 
 ## Selection
 
-`selectionMode` is `single` (default), `multiple` or `none`. With `multiple`, Ctrl (⌘) + press adds or removes a row, Shift + press selects a range, and the keys follow the APG multi-select tree.
+`selectionMode` is `single` (the default), `multiple` or `none`. With `multiple`, Ctrl (⌘) + click adds or removes a row, Shift + click selects a range, and the keyboard follows the APG multi-select tree pattern.
 
 ```tsx
 /** A row of the trees on this page. */
@@ -64,9 +64,9 @@ export interface Entry {
 }
 ```
 
-## Check boxes: a permissions tree
+## Check boxes in a permissions tree
 
-`showCheckBoxes` puts a check box on every row. Checking a parent checks its children and a parent shows mixed while only some are (`checkRecursive`, on by default). `checkedKeys` gives and reports the checked rows; Space toggles the focused one.
+`showCheckBoxes` adds a check box to every row. Checking a parent checks its children, and a parent shows an indeterminate state while only some are checked (`checkRecursive`, on by default). `checkedKeys` sets and reports the checked rows, and Space toggles the focused one.
 
 ```tsx
 /** A row of the trees on this page. */
@@ -82,9 +82,9 @@ export interface Entry {
 }
 ```
 
-## Search and filter
+## Search and filtering
 
-`searchEnabled` adds a search box; matches show with their parents, opened, and clearing the search brings the rows back as they were. `searchValue` (or `filter(text)`) filters programmatically; `searchMode` is `contains` or `startswith`.
+`searchEnabled` adds a search box. Matches appear with their parents expanded, and clearing the search restores the previous state. `searchValue` or `filter(text)` filters programmatically, and `searchMode` is `contains` or `startswith`.
 
 ```tsx
 /** A row of the trees on this page. */
@@ -102,7 +102,7 @@ export interface Entry {
 
 ## Flat data, fields and templates
 
-Flat rows name their parent (`parentField`, default `parentId`). Any field can be a property name or a function. `itemTemplate` draws a row's content; `enabledField` and `expandedField` act per row.
+Flat rows reference their parent through `parentField`, which defaults to `parentId`. Any field can be a property name or a function. `itemTemplate` customizes a row's content, and `enabledField` and `expandedField` apply per row.
 
 ```tsx
 /** A row of the trees on this page. */
@@ -120,7 +120,7 @@ export interface Entry {
 
 ## Large trees
 
-Only open rows are drawn, and with more than `virtualFrom` (500) rows on screen only the rows in view are: here 50 departments of 200 people, 10,050 rows when all are open. Give the tree a height so it scrolls inside.
+Only expanded rows are rendered, and when more than `virtualFrom` (500) rows are on screen, only the visible ones are rendered. This example has 50 departments of 200 people, for 10,050 rows when fully expanded. Give the tree a height so that it scrolls internally.
 
 ```tsx
 /** A row of the trees on this page. */
@@ -136,7 +136,7 @@ export interface Entry {
 }
 ```
 
-## Sizes, lines and opening
+## Sizes, connector lines and expand behavior
 
 ```tsx
 /** A row of the trees on this page. */
@@ -154,34 +154,34 @@ export interface Entry {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Tab` | Into the tree, to the focused (else the selected, else the first) row; out again. One Tab stop. |
-| `Down / Up` | The next / previous row on screen. |
-| `Right` | Opens a closed row; on an open one, goes to its first child. Left in right-to-left pages. |
-| `Left` | Closes an open row; on a closed one, goes to its parent. Right in right-to-left pages. |
-| `Home / End, Page Up / Page Down` | The first / last row; a page up or down. |
-| `*` | Opens every sibling of the row. |
-| `A letter` | The next row whose text starts with it (type several quickly for a longer start). |
-| `Enter` | Selects the row (only it, with `multiple`). |
-| `Space` | Toggles the check box when shown; otherwise selects (toggles, with `multiple`). |
-| `Shift + Down / Up` | With `multiple`: moves and toggles the next row. |
-| `Shift + Space, Ctrl + Shift + Home / End, Ctrl + A` | With `multiple`: selects from the last selected row, up to the first / last row, everything. |
-| `Down in the search box` | Into the tree. |
+| `Tab` | Moves focus into the tree, to the focused row, the selected row or the first row, and out again. The tree is one Tab stop. |
+| `Down / Up` | Moves to the next or previous visible row. |
+| `Right` | Expands a collapsed row, or moves to the first child of an expanded row. On right-to-left pages, use Left. |
+| `Left` | Collapses an expanded row, or moves to the parent of a collapsed row. On right-to-left pages, use Right. |
+| `Home / End, Page Up / Page Down` | Moves to the first or last row, or up or down by one page. |
+| `*` | Expands all siblings of the row. |
+| `A letter` | Moves to the next row whose text starts with that character. Type quickly to match a longer prefix. |
+| `Enter` | Selects the row, and with `multiple` selects only that row. |
+| `Space` | Toggles the check box if shown. Otherwise, it selects the row, or toggles it with `multiple`. |
+| `Shift + Down / Up` | With `multiple`, moves and toggles the next row. |
+| `Shift + Space, Ctrl + Shift + Home / End, Ctrl + A` | With `multiple`, selects from the last selected row to the current row, up to the first or last row, or everything. |
+| `Down in the search box` | Moves focus into the tree. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Tree` | `role="tree"`, named by `label` (or `aria-label` / `aria-labelledby` on the tag); `aria-multiselectable` with `multiple`. |
-| `Rows` | `role="treeitem"` with `aria-level`, `aria-setsize`, `aria-posinset`, `aria-expanded` on parents, `aria-selected` (unless `none`), `aria-checked` (`true`, `false`, `mixed`) with check boxes, `aria-disabled`. |
-| `Children` | An open row holds a `role="group"` with its children. A long tree draws its rows flat, with the same levels and positions. |
-| `Loading` | A row whose children load has `aria-busy="true"`; a failed load is described by its message (`aria-describedby`). |
-| `Focus` | Roving `tabindex`: one row is in the Tab order. The focus ring shows for the keyboard only. |
+| `Tree` | `role="tree"`, named by `label`, or by `aria-label` or `aria-labelledby` on the tag, with `aria-multiselectable` for `multiple`. |
+| `Rows` | `role="treeitem"` with `aria-level`, `aria-setsize`, `aria-posinset`, `aria-expanded` on parents, `aria-selected` (unless `none`), `aria-checked` (`true`, `false`, `mixed`) with check boxes, and `aria-disabled`. |
+| `Children` | An expanded row contains a `role="group"` with its children. A large tree renders its rows flat, with the same levels and positions. |
+| `Loading` | A row loading its children has `aria-busy="true"`, and a failed load is described by its message (`aria-describedby`). |
+| `Focus` | Roving `tabindex`, so one row is in the Tab order. The focus ring appears only during keyboard use. |
 
 ## Localization
 
-The tree writes four texts, all from `uiLocale.strings`: `noItems` (nothing to show), `loadFailed` and `retry` (a failed load) and `search` (the search box).
+The tree has four strings, all from `uiLocale.strings`: `noItems` (empty tree), `loadFailed` and `retry` (failed load), and `search` (the search box).
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -208,25 +208,25 @@ export default function Localization() {
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-tree-view` | The root. `data-size`, `data-lines`, `data-checkboxes`, `data-windowed`, `data-empty`, `data-disabled`. |
-| `.mx-tree-view__search, .mx-tree-view__body, .mx-tree-view__empty` | The search box, the tree, the empty text. |
-| `.mx-tree-view__item` | A row and its children: `data-selected`, `data-expanded`, `data-branch`, `data-state`, `data-loading`, `data-error`, `data-disabled`; `--_level`. |
-| `.mx-tree-view__row` | The painted row. |
+| `.mx-tree-view__search, .mx-tree-view__body, .mx-tree-view__empty` | The search box, the tree and the empty text. |
+| `.mx-tree-view__item` | A row and its children: `data-selected`, `data-expanded`, `data-branch`, `data-state`, `data-loading`, `data-error`, `data-disabled` and `--_level`. |
+| `.mx-tree-view__row` | The visible row. |
 | `.mx-tree-view__expander, __check, __icon, __text` | The parts of a row. |
-| `.mx-tree-view__group` | The children of an open row. |
+| `.mx-tree-view__group` | The children of an expanded row. |
 | `.mx-tree-view__error, .mx-tree-view__retry` | A failed load and its retry button. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `treeview.row, treeview.indicator, treeview.expander, treeview.expander-icon, treeview.spinner` | Units: a row in each state (`hover`, `pressed`, `selected`, `selected-hover`, `focus`, `disabled`), the selection mark, the arrow and its plate, the loading ring. |
+| `treeview.row, treeview.indicator, treeview.expander, treeview.expander-icon, treeview.spinner` | Units: a row in each state (`hover`, `pressed`, `selected`, `selected-hover`, `focus`, `disabled`), the selection indicator, the expander and its plate, and the loading ring. |
 | `treeview.check, treeview.mark, treeview.icon, treeview.text, treeview.error, treeview.retry, treeview.empty, treeview.container, treeview.body` | Units: the check box (`hover`, `checked`, `checked-hover`, `disabled`, `checked-disabled`) and the other parts. |
-| `treeview.row-height.*, treeview.padding.*, treeview.font-size.*, treeview.line-height.*, treeview.indent.*` | Sizes per size class, and how far each level moves in. |
-| `treeview.row-spacing, treeview.expander-plate` | The space between two rows; the arrow's plate the lines are centred under. |
-| `treeview.line-width, treeview.line-color, treeview.elbow-length, treeview.elbow-color` | The lines (`showLines`). |
+| `treeview.row-height.*, treeview.padding.*, treeview.font-size.*, treeview.line-height.*, treeview.indent.*` | Sizes per size class, and the indent of each level. |
+| `treeview.row-spacing, treeview.expander-plate` | The space between two rows, and the expander plate the connector lines are centered under. |
+| `treeview.line-width, treeview.line-color, treeview.elbow-length, treeview.elbow-color` | The connector lines (`showLines`). |
 
 ## API reference
 
@@ -234,60 +234,60 @@ export default function Localization() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `Bind<readonly T[]>` | `[]` | Nested items (a `children` array) or flat ones (a `parentId`). A function is followed; items changed in place show after `refresh()`. |
-| `textField, keyField, childrenField, parentField` | `Bind<ItemField<T>>` | `'text'`, `'id'`, `'children'`, `'parentId'` | A property name or a function `(item) => …`. An item without a key is its own key. `parentField` (or items with a `parentId`) makes the list flat. |
-| `iconField, enabledField, expandedField, hasChildrenField` | `Bind<ItemField<T>>` | `'icon'`, `'enabled'`, `'expanded'`, `'hasChildren'` | Per item: an icon, a row that cannot be selected or checked, a row open from the start (a change there opens or closes it), a row that has no children to load. |
-| `loadChildren` | `Bind<(item) => Promise<T[]>>` | — | Loads a row's children when it is first opened; the row is busy meanwhile and offers a retry when it fails. |
+| `items` | `Bind<readonly T[]>` | `[]` | Nested items with a `children` array, or flat items with a `parentId`. A function is tracked, and items changed in place appear after `refresh()`. |
+| `textField, keyField, childrenField, parentField` | `Bind<ItemField<T>>` | `'text'`, `'id'`, `'children'`, `'parentId'` | A property name or a function `(item) => …`. An item without a key serves as its own key. `parentField`, or items with a `parentId`, makes the list flat. |
+| `iconField, enabledField, expandedField, hasChildrenField` | `Bind<ItemField<T>>` | `'icon'`, `'enabled'`, `'expanded'`, `'hasChildren'` | Per item: an icon, whether the row can be selected or checked, whether it starts expanded (changing this expands or collapses it), and whether it has children to load. |
+| `loadChildren` | `Bind<(item) => Promise<T[]>>` | — | Loads the children of a row when it is first expanded. The row shows a busy state meanwhile, and offers a retry if loading fails. |
 | `selectionMode` | `Bind<'none' \| 'single' \| 'multiple'>` | `'single'` | How many rows can be selected. |
-| `value` | `Bind<unknown>` | `null` | The selected key (`single`) or keys (`multiple`). `x-model` binds it two-way. |
-| `expandedKeys` | `Bind<unknown[]>` | `[]` | The open rows. `onExpanded` / `onCollapsed` report the user's changes. |
-| `showCheckBoxes` | `Bind<boolean>` | `false` | A check box on every row. |
-| `checkRecursive` | `Bind<boolean>` | `true` | Checking a parent checks its children; a parent is mixed when some are checked. |
-| `checkedKeys` | `Bind<unknown[]>` | `[]` | The checked rows (a parent is in it when all its children are). `onCheckChanged` reports changes. |
-| `searchEnabled` | `Bind<boolean>` | `false` | A search box at the top. |
-| `searchMode` | `Bind<'contains' \| 'startswith'>` | `'contains'` | How the search matches the row text. |
-| `searchValue` | `Bind<string>` | `''` | The text the rows are filtered by. Matches show with their parents, opened. |
-| `expandOn` | `Bind<'expander' \| 'click' \| 'dblclick'>` | `'expander'` | What opens a branch besides its arrow and the keys. |
-| `showLines` | `Bind<boolean>` | `false` | Lines under each parent, down to its children. |
+| `value` | `Bind<unknown>` | `null` | The selected key (`single`) or keys (`multiple`). `x-model` provides two-way binding. |
+| `expandedKeys` | `Bind<unknown[]>` | `[]` | The expanded rows. `onExpanded` and `onCollapsed` report changes made by the user. |
+| `showCheckBoxes` | `Bind<boolean>` | `false` | Adds a check box to every row. |
+| `checkRecursive` | `Bind<boolean>` | `true` | Checking a parent checks its children, and a parent is indeterminate when only some are checked. |
+| `checkedKeys` | `Bind<unknown[]>` | `[]` | The checked rows. A parent is included when all its children are checked. `onCheckChanged` reports changes. |
+| `searchEnabled` | `Bind<boolean>` | `false` | Adds a search box at the top. |
+| `searchMode` | `Bind<'contains' \| 'startswith'>` | `'contains'` | How the search matches row text. |
+| `searchValue` | `Bind<string>` | `''` | The text used to filter rows. Matches appear with their parents expanded. |
+| `expandOn` | `Bind<'expander' \| 'click' \| 'dblclick'>` | `'expander'` | What expands a branch, in addition to its expander and the keyboard. |
+| `showLines` | `Bind<boolean>` | `false` | Draws connector lines from each parent to its children. |
 | `size` | `Bind<ControlSize>` | `'md'` | `sm`, `md`, `lg`, from the density tokens. |
-| `label` | `Bind<string>` | `''` | The tree's accessible name. `aria-label` / `aria-labelledby` on the tag work too. |
-| `virtualFrom` | `Bind<number>` | `500` | With more rows on screen than this, only the rows in view are drawn. |
-| `itemTemplate` | `Bind<(item, host) => cleanup \| void>` | — | Draws a row's content yourself. |
-| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | The shared properties of every control. |
+| `label` | `Bind<string>` | `''` | The accessible name of the tree. `aria-label` and `aria-labelledby` on the tag also work. |
+| `virtualFrom` | `Bind<number>` | `500` | When more rows than this are on screen, only the visible rows are rendered. |
+| `itemTemplate` | `Bind<(item, host) => cleanup \| void>` | — | Customizes the content of a row. |
+| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. |
 
 ### Properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write, reactive | A value or a function, like the prop. |
-| `selectedItems, checkedItems` | read-only, reactive | The selected / checked items, in tree order. |
+| `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
+| `selectedItems, checkedItems` | read-only, reactive | The selected or checked items, in tree order. |
 | `treeElement` | read-only | The element with `role="tree"`. |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `expand(key), collapse(key)` | `boolean` | Opens / closes a row; children load first if they have to. The cancelable events run. |
-| `expandAll(), collapseAll()` | `void` | Every row whose children are known. No event per row. |
-| `select(key), unselect(key), selectAll(), clearSelection()` | `void` | Programmatically; `select` adds to the selection with `multiple`. |
-| `check(key, checked?), uncheck(key), checkAll(), uncheckAll()` | `void` | Programmatically. |
+| `expand(key), collapse(key)` | `boolean` | Expands or collapses a row, loading its children first if needed. The cancelable events run. |
+| `expandAll(), collapseAll()` | `void` | Applies to every row whose children are known, with no event per row. |
+| `select(key), unselect(key), selectAll(), clearSelection()` | `void` | Programmatic control. `select` adds to the selection with `multiple`. |
+| `check(key, checked?), uncheck(key), checkAll(), uncheckAll()` | `void` | Programmatic control. |
 | `filter(text)` | `void` | Sets `searchValue`. |
-| `scrollTo(key), focusNode(key)` | `boolean` | Opens the row's parents and scrolls it into view (and focuses it). |
-| `reload(key?)` | `void` | Loads a row's children again (all loaded children without a key). |
-| `refresh()` | `void` | Your items may be plain or reactive; the tree reads them as they are. After changing them in place, call `refresh()`. Which items there are, their children, texts and states are read again; children that loaded stay. |
-| `refreshItem(key)` | `void` | Draws one row again after its item was changed in place: its text, icon and state. `refresh()` for its children. |
+| `scrollTo(key), focusNode(key)` | `boolean` | Expands the row's parents, scrolls it into view and sets focus on it. |
+| `reload(key?)` | `void` | Reloads a row's children, or all loaded children when no key is given. |
+| `refresh()` | `void` | Your items can be plain or reactive, and the tree reads them as they are. After changing them in place, call `refresh()`. The items, their children, text and states are read again, and loaded children are kept. |
+| `refreshItem(key)` | `void` | Redraws one row after its item changes in place, including its text, icon and state. Use `refresh()` for its children. |
 | `itemOf(key)` | `T \| undefined` | The item with that key. |
-| `focus()` | `boolean` | Focuses the row Tab reaches. |
+| `focus()` | `boolean` | Sets focus on the row that Tab reaches. |
 
 ### Events
 
 | Event | When |
 | --- | --- |
-| `onExpanding(e), onCollapsing(e)` | A row is about to open / close. `e`: `{ item, key, byUser, cancel, source, event? }`; `e.cancel = true` leaves it. |
-| `onExpanded(e), onCollapsed(e)` | A row opened / closed. `e`: `{ item, key, byUser, source }`. |
+| `onExpanding(e), onCollapsing(e)` | Occurs before a row expands or collapses. `e`: `{ item, key, byUser, cancel, source, event? }`. Set `e.cancel = true` to keep the current state. |
+| `onExpanded(e), onCollapsed(e)` | Occurs after a row expands or collapses. `e`: `{ item, key, byUser, source }`. |
 | `onSelectionChanged(e)` | `{ value, items, byUser, source, event? }` |
-| `onCheckChanged(e)` | `{ item, key, state, keys, byUser, source }`; `item` is `null` when many changed at once. |
-| `onItemClick(e)` | A row was pressed, or Enter was pressed on it. `{ item, key, source, event }` |
+| `onCheckChanged(e)` | `{ item, key, state, keys, byUser, source }`. `item` is `null` when several rows changed at once. |
+| `onItemClick(e)` | Occurs when a row is clicked, or when Enter is pressed on it. `{ item, key, source, event }` |
 
 ## Example files
 

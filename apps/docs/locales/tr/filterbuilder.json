@@ -50,7 +50,6 @@
   "`0` allows no groups, `1` allows groups in the root only, and so on. `null` means no limit.": "",
   "Shows fields with a dotted `dataField` as submenus of their parts.": "",
   "The `filterBuilderLabel` string": "",
-  "The accessible name of the tree. `aria-label` and `aria-labelledby` on the tag also work.": "",
   "Strings for this builder only, which override `uiLocale.strings`.": "",
   "The locale of numbers and dates.": "",
   "The size of the buttons and editors.": "Düğmelerin ve düzenleyicilerin boyutu.",

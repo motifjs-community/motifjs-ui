@@ -17,7 +17,6 @@
   "Validation": "Validation",
   "A field validates itself when it loses focus after a change, and then on every change until the value is valid. `required`, `minLength`, `type=\"email\"` and a mask bring their own rules, and `rules` adds your own, including asynchronous ones. `error` displays a message from an external source, such as the server.": "",
   "Without a group, `validateFields(panel)` validates every field inside a component or element, such as a panel, a dialog or a page.": "",
-  "Commits the value (with `updateOn=\"change\"`) and raises `onEnter`.": "",
   "Custom buttons and the password button are Tab stops. The clear button is not, because Escape does the same thing.": "",
   "A native `<input>` associated with its `<label>` through `for`.": "",
   "`aria-invalid=\"true\"`. The message is a polite live region, so new errors are announced.": "",

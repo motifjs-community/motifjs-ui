@@ -2,7 +2,7 @@
 
 > Feedback · @motifx-community/ui 0.1.0-beta.3
 
-Short notifications at an edge of the window: four tones, an action such as Undo, a time of their own or none, six positions and a limit on how many show at once. Called programmatically; a region of your own can sit in JSX.
+Brief notifications at the edge of the window, with four tones, an optional action such as Undo, a custom duration or none, six positions and a limit on how many appear at once. Show them programmatically, or place a custom region in JSX.
 
 ## Import
 
@@ -10,9 +10,9 @@ Short notifications at an edge of the window: four tones, an action such as Undo
 import { toast, Toast, Toaster, type ToastTone, type ToastPosition } from '@motifx-community/ui';
 ```
 
-## Programmatic and declarative
+## Programmatic and declarative use
 
-`toast.show()` and its tone shortcuts return the `Toast`, an object you can `close()`, `update()` or await. They use `Toaster.default`, made in `document.body` the first time; an app can put a `Toaster` of its own where it wants it in JSX and make it the default.
+`toast.show()` and its tone shortcuts return a `Toast` object that you can `close()`, `update()` or await. They use `Toaster.default`, which is created in `document.body` on first use. An application can place its own `Toaster` anywhere in JSX and make it the default.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -46,7 +46,7 @@ export default function Programmatic() {
 
 ## Tones
 
-`tone` sets the glyph, its color, and how a screen reader reads the toast: politely for `info` and `success`, at once for `caution` and `danger`.
+`tone` sets the glyph, its color, and how screen readers announce the toast: politely for `info` and `success`, and immediately for `caution` and `danger`.
 
 ```tsx
 import { Button, toast, type ToastTone } from '@motifx-community/ui';
@@ -72,7 +72,7 @@ export default function Tones() {
 
 ## Action and Undo
 
-`action` adds a button; it runs `click`, then closes the toast. Make the undone thing come back, rather than asking first.
+`action` adds a button that runs `click` and then closes the toast. Offering Undo is usually better than asking for confirmation first.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -99,9 +99,9 @@ export default function Undo() {
 }
 ```
 
-## Duration and update
+## Duration and updates
 
-`duration` is 5 seconds by default; `0` keeps the toast until it is closed. Every option takes a function too, and `update()` changes a shown toast and starts its time again.
+`duration` is 5 seconds by default, and `0` keeps the toast open until it is closed. Every option also accepts a function, and `update()` changes a visible toast and restarts its timer.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -138,7 +138,7 @@ export default function DurationAndUpdate() {
 
 ## Positions
 
-Six positions; start and end follow the reading direction. The newest toast is nearest the edge. A toast's `position` beats its toaster's.
+There are six positions, and start and end follow the reading direction. The newest toast is closest to the edge. A toast's `position` takes precedence over the toaster's.
 
 ```tsx
 import { Button, toast, type ToastPosition } from '@motifx-community/ui';
@@ -157,9 +157,9 @@ export default function Positions() {
 }
 ```
 
-## A toaster of your own, and max
+## Custom toaster and max
 
-A `Toaster` is the region the toasts show in. `max` limits how many show at once at one position; the rest wait and come in as others close. This one sits right here in the page, so Tab reaches its toasts after these buttons.
+A `Toaster` is the region toasts appear in. `max` limits how many appear at once in one position, and the rest wait until others close. This one is placed directly in the page, so Tab reaches its toasts after these buttons.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -197,25 +197,25 @@ export default function OwnToaster() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `F8 (`hotkey`)` | From anywhere on the page: to the newest toast. In a toast: back to where focus was. |
-| `Tab` | Through the toasts and their buttons. The default toaster is the last thing in the page, so Tab reaches it after the page content. |
-| `Escape` | With focus in a toast: closes it. Focus goes to the next toast, or back to where it came from. |
+| `F8 (`hotkey`)` | From anywhere on the page, moves focus to the newest toast. Inside a toast, returns focus to where it was. |
+| `Tab` | Moves through the toasts and their buttons. The default toaster is the last element on the page, so Tab reaches it after the page content. |
+| `Escape` | With focus in a toast, closes it. Focus moves to the next toast, or back to where it came from. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
 | `Region` | `<section role="region">` named "Notifications" (`uiLocale`), with `aria-keyshortcuts` for the hotkey. |
-| `Read out` | Info and success toasts are read politely (`role="status"`), caution and danger at once (`role="alert"`). `update()` reads it again; a live `text` function does not, so a progress number is not read on every change. |
-| `Focus` | A toast never takes focus. Each toast is a group named by its title and text, and a Tab stop of its own, so one without buttons can be reached too. |
+| `Read out` | Info and success toasts are announced politely (`role="status"`), and caution and danger toasts immediately (`role="alert"`). `update()` announces the toast again. A live `text` function does not, so a progress number is not read on every change. |
+| `Focus` | A toast never takes focus. Each one is a group named by its title and text, and has its own Tab stop, so toasts without buttons can also be reached. |
 | `Time` | Timers stop while the pointer or focus is on the toasts and while the page is hidden (WCAG 2.2.1). Use `duration: 0` for anything the user must act on. |
-| `Motion` | It slides in and fades out with the motion tokens; with reduced motion it just appears. |
+| `Motion` | It slides in and fades out using the motion tokens. When the user prefers reduced motion, it appears without animation. |
 
 ## Localization
 
-The name of the region and of the close button come from `uiLocale.strings` (`notifications`, `close`) and follow a change at once.
+The names of the region and the close button come from `uiLocale.strings` (`notifications`, `close`) and update immediately.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -241,25 +241,25 @@ export default function Localization() {
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-toaster` | The region. |
 | `.mx-toaster__stack` | A stack at one position. `data-position`. |
 | `.mx-toast` | A toast. `data-tone`, `data-state` (`entering`, `shown`, `leaving`). |
-| `.mx-toast__icon, .mx-toast__body, .mx-toast__title, .mx-toast__text` | Its parts. |
-| `.mx-toast__action, .mx-toast__close` | Its buttons (Buttons, `sm`). |
+| `.mx-toast__icon, .mx-toast__body, .mx-toast__title, .mx-toast__text` | The parts of the component. |
+| `.mx-toast__action, .mx-toast__close` | Its buttons (Button, `sm`). |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `toast.width` | The width of a toast (never wider than the window). |
-| `toast.inset, toast.slide, toast.slide-inline` | The distance to the window edge; how far it slides in from its edge (at a corner, also from its side). |
-| `toast.buttons-align` | Where the action and close buttons sit across the toast. |
-| `toast.stack, toast.surface` | Units: the space between toasts; the toast with its box per tone (`success`, `caution`, `danger`) and under the keys (`focus`). |
-| `toast.stripe, toast.timer` | Units a design may show: a stripe along the start edge, and a line that runs out with the time the toast stays; per tone. |
-| `toast.icon, toast.plate, toast.mark` | Units: the tone glyph and a plate behind it, per tone; the tone’s own mark. |
-| `toast.title, toast.message, toast.action-room, toast.close-room` | Units: the title, the message and the room around the buttons (their look is the `action` and `close` places’). |
+| `toast.width` | The width of a toast, which never exceeds the window. |
+| `toast.inset, toast.slide, toast.slide-inline` | The distance to the window edge, and how far the toast slides in from it (at a corner, also from the side). |
+| `toast.buttons-align` | The alignment of the action and close buttons. |
+| `toast.stack, toast.surface` | Units: the space between toasts, and the toast with its box per tone (`success`, `caution`, `danger`) and for keyboard focus (`focus`). |
+| `toast.stripe, toast.timer` | Optional units: a stripe along the start edge, and a line that shrinks with the remaining time, per tone. |
+| `toast.icon, toast.plate, toast.mark` | Units: the tone glyph and a plate behind it, per tone, and the tone's own mark. |
+| `toast.title, toast.message, toast.action-room, toast.close-room` | Units: the title, the message and the spacing around the buttons. Their appearance comes from the `action` and `close` places. |
 
 ## API reference
 
@@ -268,46 +268,46 @@ export default function Localization() {
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `text` | `Bind<string>` | `''` | The message. |
-| `title` | `Bind<string>` | `''` | A bold line above it. |
-| `tone` | `Bind<ToastTone>` | `'info'` | `info`, `success`, `caution`, `danger`: the glyph, its color, and how a screen reader reads it. |
-| `icon` | `Bind<IconSource \| null>` | the tone glyph | An icon of your own; `null` for none. |
-| `duration` | `Bind<number>` | `5000` | Milliseconds it stays; `0` keeps it until it is closed. |
-| `action` | `Bind<ToastAction \| null>` | — | `{ text, click }`: a button in the toast, such as Undo. It runs `click(toast)`, then closes the toast. |
-| `closeButton` | `Bind<boolean>` | `true` | A close button, named from `uiLocale`. |
-| `position` | `Bind<ToastPosition>` | the toaster's | Where it stacks: `top-start`, `top`, `top-end`, `bottom-start`, `bottom`, `bottom-end`. |
-| `onClosed` | `(reason) => void` | — | See the events. |
+| `title` | `Bind<string>` | `''` | A bold line above the message. |
+| `tone` | `Bind<ToastTone>` | `'info'` | `info`, `success`, `caution` or `danger`, which set the glyph, its color and how screen readers announce the toast. |
+| `icon` | `Bind<IconSource \| null>` | The tone glyph | A custom icon, or `null` for none. |
+| `duration` | `Bind<number>` | `5000` | The time it stays, in milliseconds. `0` keeps it open until it is closed. |
+| `action` | `Bind<ToastAction \| null>` | — | `{ text, click }` adds a button to the toast, such as Undo. It runs `click(toast)` and then closes the toast. |
+| `closeButton` | `Bind<boolean>` | `true` | Shows a close button named from `uiLocale`. |
+| `position` | `Bind<ToastPosition>` | From the toaster | The stacking position: `top-start`, `top`, `top-end`, `bottom-start`, `bottom` or `bottom-end`. |
+| `onClosed` | `(reason) => void` | — | See Events. |
 
 ### toast and Toast
 
 | Member | Returns | Description |
 | --- | --- | --- |
 | `toast.show(options \| Toast)` | `Toast` | Shows a toast on `Toaster.default`. |
-| `toast.info / success / caution / danger(text, options?)` | `Toast` | The same with the tone set. |
-| `toast.closeAll()` | `void` | Closes every toast of `Toaster.default`. |
-| `t.close(reason?)` | `void` | Closes it; a closed toast is disposed. |
-| `t.update(options)` | `void` | Changes any of the options, starts its time again and reads it out again. |
-| `t.closed` | `Promise<ToastCloseReason>` | Settles when it closes: `timeout`, `button`, `escape`, `action` or `code`. |
-| `t.onClosed(fn)` | event | The same as an event. |
-| `t.text, t.tone, …` | read/write, reactive | Every option is a property too, taking a value or a function. |
+| `toast.info / success / caution / danger(text, options?)` | `Toast` | Same as `show`, with the tone already set. |
+| `toast.closeAll()` | `void` | Closes every toast on `Toaster.default`. |
+| `t.close(reason?)` | `void` | Closes the toast. A closed toast is disposed. |
+| `t.update(options)` | `void` | Changes any options, restarts the timer and announces the toast again. |
+| `t.closed` | `Promise<ToastCloseReason>` | Resolves when the toast closes, with `timeout`, `button`, `escape`, `action` or `code`. |
+| `t.onClosed(fn)` | event | The same information as an event. |
+| `t.text, t.tone, …` | read/write, reactive | Every option is also a property that accepts a value or a function. |
 
 ### Toaster props
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `position` | `Bind<ToastPosition>` | `'bottom-end'` | Where its toasts stack unless a toast says otherwise. |
-| `max` | `Bind<number>` | `3` | How many show at once at one position; the rest wait their turn. |
-| `hotkey` | `Bind<string>` | `'F8'` | Moves focus to the newest toast, and back again; `''` for none. |
-| `pauseOnHover` | `Bind<boolean>` | `true` | Timers stop while the pointer is over the toasts. They always stop while focus is in them or the page is hidden. |
-| `text` | `Bind<string>` | `uiLocale` notifications | The name of the region. |
+| `position` | `Bind<ToastPosition>` | `'bottom-end'` | The stacking position, unless a toast specifies its own. |
+| `max` | `Bind<number>` | `3` | The number of toasts shown at once in one position. The rest wait their turn. |
+| `hotkey` | `Bind<string>` | `'F8'` | Moves focus to the newest toast and back again. Use `''` for none. |
+| `pauseOnHover` | `Bind<boolean>` | `true` | Pauses timers while the pointer is over the toasts. Timers always stop while focus is inside them or the page is hidden. |
+| `text` | `Bind<string>` | `uiLocale` strings | The name of the region. |
 
 ### Toaster members
 
 | Member | Returns | Description |
 | --- | --- | --- |
-| `Toaster.default` | static, read/write | The toaster `toast` uses: made in `document.body` on first use, or the one you assign. |
-| `show, info, success, caution, danger, closeAll` | methods | As on `toast`, for this toaster. |
+| `Toaster.default` | static, read/write | The toaster used by `toast`, created in `document.body` on first use, or the one you assign. |
+| `show, info, success, caution, danger, closeAll` | methods | Same as on `toast`, for this toaster. |
 | `focusNewest()` | `boolean` | Moves focus to the newest toast. |
-| `toasts` | read-only | The toasts on the screen, then the waiting ones. |
-| `paused` | read-only | Whether the timers are stopped now. |
+| `toasts` | read-only | The toasts on screen, followed by the waiting ones. |
+| `paused` | read-only | Indicates whether the timers are currently paused. |
 
-`enabled`, `visible` and the other shared properties of every control work on both.
+`enabled`, `visible` and the other shared control properties work on both.

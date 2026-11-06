@@ -31,10 +31,8 @@
   "Swiping sideways moves to the next or previous days.": "",
   "Pinching zooms the time scale.": "",
   "The zoom level of the time scale, from 0.5 to 4. At 1, it uses the sizes set by the design language.": "",
-  "`{ from, to, width, cancel }`. If canceled, the presentation stays the same until the width or the setting changes again.": "",
   "`{ from, to, cancel }`, raised when a pinch starts. If canceled, the page zooms instead.": "",
   "`{ from, to }`, raised when the pinch ends.": "",
   "`e.form` is the window, or on a phone the `BottomSheet` that contains the form.": "",
-  "The current presentation: `'desktop'`, `'tablet'` or `'phone'`.": "",
   "The sheets are the kit's [BottomSheet](/bottomsheet) and [ActionSheet](/actionsheet).": "Sheet'ler kitin [BottomSheet](/bottomsheet) ve [ActionSheet](/actionsheet) bileşenleridir."
 }

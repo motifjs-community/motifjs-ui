@@ -2,7 +2,7 @@
 
 > Navigation · @motifx-community/ui 0.1.0-beta.3
 
-The steps of a longer task and where the user stands in them: an indicator and a text per step, a line between them, the steps before the current one completed. The [Wizard](wizard.md) adds a page and the buttons to each step.
+Shows the steps of a longer task and the user's progress through them. Each step has an indicator and text, with a line between steps, and steps before the current one are marked complete. [Wizard](wizard.md) adds a page and navigation buttons to each step.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { Stepper } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-The current step is `value`: a step’s `key`, else its index; `x-model` binds it two-way. Programmatically, `next()`, `previous()` and `goTo()` move it and `onStepChanged` tells.
+`value` is the current step, identified by its `key` or index, and `x-model` provides two-way binding. Programmatically, use `next()`, `previous()` and `goTo()`, and `onStepChanged` reports the change.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -46,18 +46,18 @@ export default function Programmatic() {
 }
 ```
 
-## Statuses
+## Step status
 
-The steps before the current one are completed by themselves. An item may say `status: 'done'` or `'error'` whatever the current step is, be `optional`, be disabled, or carry an `icon` in place of its number; its fields may be functions of your state.
+Steps before the current one are completed automatically. An item can set `status: 'done'` or `'error'` regardless of the current step, be `optional` or disabled, or show an `icon` instead of its number. Its fields can be functions of your state.
 
-| Status | How |
+| Status | Details |
 | --- | --- |
-| `pending` | A step to come: its number in the indicator. |
-| `current` | The step in hand: `aria-current="step"`. |
-| `done` | The steps before the current one, and any step whose item says `status: 'done'`: a check in the indicator, the line before it filled. |
-| `error` | A step whose item says `status: 'error'`: a mark in the indicator, the text in the danger colour; read out as “Needs attention”. |
-| `optional` | Says “Optional” under the text; in linear order it may be skipped. |
-| `disabled` | An item with `enabled: false`, or a step linear order does not reach yet: `aria-disabled`, out of the Tab order. |
+| `pending` | A step not yet reached, with its number in the indicator. |
+| `current` | The active step, with `aria-current="step"`. |
+| `done` | Steps before the current one, and any step with `status: 'done'`. The indicator shows a check, and the line before it is filled. |
+| `error` | A step with `status: 'error'`. The indicator shows a mark, the text uses the danger color, and it is announced as “Needs attention”. |
+| `optional` | Shows “Optional” below the text. In linear mode, the step can be skipped. |
+| `disabled` | An item with `enabled: false`, or a step that linear mode does not reach yet. It has `aria-disabled` and is outside the Tab order. |
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -91,9 +91,9 @@ export default function Statuses() {
 }
 ```
 
-## In order, or free
+## Linear and free navigation
 
-`linear` (the default) lets a press reach only the completed steps and the next one; `linear={false}` lets it reach any. Either way `onStepChanging` is asked first: `cancel` keeps the step, a `promise` waits for a check or a server.
+`linear` (the default) lets the user reach only completed steps and the next one, while `linear={false}` allows any step. In both cases, `onStepChanging` is raised first. `cancel` keeps the current step, and `promise` waits for a validation or a server response.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -124,7 +124,7 @@ export default function Linear() {
 }
 ```
 
-## Orientations
+## Orientation
 
 ```tsx
 import { Stack, Stepper } from '@motifx-community/ui';
@@ -172,39 +172,39 @@ export default function Sizes() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Tab` | One stop: the step focused last, else the current one, else the first that can be reached. |
-| `Arrow keys` | Left and Right (Up and Down standing) move between the steps that can be reached, around the ends; Home and End go to the first and the last. |
-| `Enter, Space` | Choose the focused step; `onStepChanging` may refuse. |
+| `Tab` | One Tab stop: the step focused last, otherwise the current one, otherwise the first reachable step. |
+| `Arrow keys` | Left and Right (Up and Down when vertical) move between reachable steps and wrap at the ends. Home and End move to the first and last. |
+| `Enter, Space` | Selects the focused step, and `onStepChanging` can cancel it. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Landmark` | A `nav` named “Steps” in the kit language, holding an ordered list; several on one page: give each its own `label`. |
-| `A step` | A button whose name reads “Step 2 of 4, Address, Where to send it, Completed”: the position, the texts and the status are all in it. |
-| `Not clickable` | Plain elements: nothing to press, the current one still `aria-current`. |
-| `Lines and marks` | Decorative, hidden from readers. |
+| `Landmark` | A `nav` named “Steps” in the kit language, containing an ordered list. If a page has several, give each one its own `label`. |
+| `A step` | A button whose name includes the position, text and status, such as “Step 2 of 4, Address, Where to send it, Completed”. |
+| `Not clickable` | Plain elements with nothing to press. The current step still has `aria-current`. |
+| `Lines and marks` | Decorative and hidden from screen readers. |
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-stepper` | The stepper. `data-orientation`, `data-labels`, `data-size`. |
-| `.mx-stepper__list, .mx-stepper__item` | The list and each step with its line. `data-status` on the item. |
-| `.mx-stepper__step` | The step: a button or a div. `data-status`, `aria-current`, `aria-disabled`. |
-| `.mx-stepper__indicator, .mx-stepper__number, .mx-stepper__mark, .mx-stepper__icon` | The circle, the number in it, the check or error mark, an icon of your own. |
-| `.mx-stepper__label, .mx-stepper__description, .mx-stepper__note` | The texts. |
-| `.mx-stepper__line` | The line to the next step. `data-status="done"` up to the current one. |
+| `.mx-stepper__list, .mx-stepper__item` | The list and each step with its connector. `data-status` is on the item. |
+| `.mx-stepper__step` | The step, as a button or a div. `data-status`, `aria-current`, `aria-disabled`. |
+| `.mx-stepper__indicator, .mx-stepper__number, .mx-stepper__mark, .mx-stepper__icon` | The circle, the number inside it, the check or error mark, and a custom icon. |
+| `.mx-stepper__label, .mx-stepper__description, .mx-stepper__note` | The text. |
+| `.mx-stepper__line` | The line to the next step. `data-status="done"` up to the current step. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `stepper.step, .indicator, .mark, .label, .description, .note, .line` | Units: the step (`hover`, `pressed`, `focus`, `disabled`, `current`, `done`, `error`), its indicator, the mark (`icon` per state), the texts, the line (`done`); the line turns a quarter in a vertical stepper. |
+| `stepper.step, .indicator, .mark, .label, .description, .note, .line` | Units: the step (`hover`, `pressed`, `focus`, `disabled`, `current`, `done`, `error`), its indicator, the mark (`icon` per state), the text and the line (`done`). In a vertical stepper, the line rotates 90 degrees. |
 | `stepper.size.*, .font-size.*, .padding.*` | The indicator, the text and the space around a step, per size. |
-| `stepper.description-font-size, .gap, .line-gap, .line-min-length` | The second line, the space between indicator and texts, and the line’s margins and least length. |
+| `stepper.description-font-size, .gap, .line-gap, .line-min-length` | The second line, the space between the indicator and text, and the margins and minimum length of the line. |
 
 ## API reference
 
@@ -212,27 +212,27 @@ export default function Sizes() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `Bind<readonly (StepperItem \| string)[]>` | `[]` | The steps in order: `StepperItem`s (`text`, `description`, `key`, `icon`, `status`, `optional`, `enabled`, `data`) or plain texts. |
-| `value` | `Bind<string \| number \| null>` | `0` | The current step: its `key`, else its index; `null` for none. `x-model` binds it two-way. |
-| `linear` | `Bind<boolean>` | `true` | A press reaches a completed step, or the one right after the last completed; optional steps may be skipped. |
+| `items` | `Bind<readonly (StepperItem \| string)[]>` | `[]` | The steps in order: `StepperItem` objects (`text`, `description`, `key`, `icon`, `status`, `optional`, `enabled`, `data`) or plain text. |
+| `value` | `Bind<string \| number \| null>` | `0` | The current step, identified by its `key` or index, or `null` for none. `x-model` provides two-way binding. |
+| `linear` | `Bind<boolean>` | `true` | Lets the user reach a completed step or the one right after the last completed step. Optional steps can be skipped. |
 | `orientation` | `Bind<StepperOrientation>` | `'horizontal'` | `horizontal` or `vertical`. |
-| `labelPosition` | `Bind<StepperLabelPosition>` | `'bottom'` | Horizontal only: the texts under the indicator (`bottom`) or after it (`end`). |
+| `labelPosition` | `Bind<StepperLabelPosition>` | `'bottom'` | In the horizontal orientation, places the text below the indicator (`bottom`) or after it (`end`). |
 | `size` | `Bind<ControlSize>` | `'md'` | `sm`, `md`, `lg`. |
-| `clickable` | `Bind<boolean>` | `true` | `false` shows the way only: no buttons, no Tab stop. |
-| `showNumbers` | `Bind<boolean>` | `true` | The indicator of a step to come shows its number. |
-| `label` | `Bind<string>` | the kit’s “Steps” | What screen readers call it. |
+| `clickable` | `Bind<boolean>` | `true` | `false` makes the stepper display only, with no buttons or Tab stop. |
+| `showNumbers` | `Bind<boolean>` | `true` | Shows the number in the indicator of an upcoming step. |
+| `label` | `Bind<string>` | The kit string “Steps” | The accessible name. |
 
 ### Events, properties and methods
 
-| Member | Kind | Description |
+| Member | Type | Description |
 | --- | --- | --- |
-| `onStepChanging` | event | The current step is about to change (`from`, `to`, `fromItem`, `toItem`, `byUser`). `cancel = true` keeps it; `promise` set to a `Promise<boolean>` waits, and the step changes when it resolves to `true`. |
-| `onStepChanged` | event | The current step changed (`index`, `item`, `previous`, `byUser`). |
-| `selectedIndex` | read-only | The index of the current step; -1 when there is none. |
-| `count` | read-only | How many steps there are. |
-| `canGoNext, canGoPrevious` | read-only | There is an enabled step after, or before, the current one. |
-| `next(), previous()` | `Promise<boolean>` | Goes to the next or the previous enabled step; `false` when there is none or the change was refused. |
-| `goTo(step)` | `Promise<boolean>` | Goes to a step by index or key, whatever the order; `onStepChanging` is asked first. |
-| `statusOf(index)` | `StepperStatus` | `pending`, `current`, `done` or `error`, as drawn. |
-| `canReach(index)` | `boolean` | Whether a press may reach the step. |
-| `refresh()` | `void` | Reads the items again after they were changed in place. |
+| `onStepChanging` | event | Occurs before the current step changes (`from`, `to`, `fromItem`, `toItem`, `byUser`). `cancel = true` keeps it. Setting `promise` to a `Promise<boolean>` waits, and the step changes when it resolves to `true`. |
+| `onStepChanged` | event | Occurs after the current step changes (`index`, `item`, `previous`, `byUser`). |
+| `selectedIndex` | read-only | The index of the current step, or -1 if there is none. |
+| `count` | read-only | The number of steps. |
+| `canGoNext, canGoPrevious` | read-only | Indicates whether there is an enabled step after or before the current one. |
+| `next(), previous()` | `Promise<boolean>` | Moves to the next or previous enabled step. Returns `false` if there is none or the change was canceled. |
+| `goTo(step)` | `Promise<boolean>` | Moves to a step by index or key, in any order. `onStepChanging` is raised first. |
+| `statusOf(index)` | `StepperStatus` | `pending`, `current`, `done` or `error`, as displayed. |
+| `canReach(index)` | `boolean` | Indicates whether the user can reach the step. |
+| `refresh()` | `void` | Re-reads the items after they have been changed in place. |

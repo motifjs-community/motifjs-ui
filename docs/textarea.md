@@ -2,7 +2,7 @@
 
 > Editors · @motifx-community/ui 0.1.0-beta.3
 
-A text field of several lines: a box that grows with the text or that the user drags bigger, a character counter, a clear button, Ctrl+Enter to send, and the label, help text and validation every field has.
+A multi-line text input. The box can grow with its content or be resized by the user, and it supports a character counter, a clear button and Ctrl+Enter to submit, along with the label, help text and validation common to all fields.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { TextArea, type TextAreaProps } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-Every prop takes a value or a function; `x-model` binds the text two-way. Created with `new`, the same properties are set programmatically.
+Every prop accepts a value or a function, and `x-model` provides two-way binding for the text. When you create the component with `new`, set the same properties programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -44,9 +44,9 @@ export default function Programmatic() {
 }
 ```
 
-## Growing with the text
+## Auto-grow
 
-With `autoGrow` the box follows the text: never smaller than `minRows` lines, never taller than `maxRows`; past that it scrolls. A narrower box wraps into more lines and grows too.
+With `autoGrow`, the box adjusts to its content. It stays between `minRows` and `maxRows` lines and scrolls beyond that. When the box gets narrower, text wraps onto more lines and the box grows accordingly.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -59,9 +59,9 @@ export default function AutoGrow() {
 }
 ```
 
-## Resize
+## Resizing
 
-The grip at the corner of the box lets the user drag it taller (`vertical`, the default), in both directions (`both`), or not at all (`none`).
+The grip in the corner of the box lets the user resize it vertically (`vertical`, the default) or in both directions (`both`). Set `none` to disable resizing.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -92,9 +92,9 @@ export default function Resize() {
 }
 ```
 
-## Counter and limits
+## Character counter and limits
 
-`maxLength` stops typing at the limit, `minLength` is checked when the field is left; `showCounter` shows the count under the box.
+`maxLength` stops input at the limit, and `minLength` is checked when the field loses focus. `showCounter` displays the count below the box.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -109,7 +109,7 @@ export default function CounterAndLimits() {
 
 ## Ctrl+Enter
 
-Enter starts a new line. Ctrl+Enter (Cmd+Enter on a Mac) fires `onEnter` with the value: the usual way to send a message or save a note.
+Enter starts a new line. Ctrl+Enter (Cmd+Enter on a Mac) raises `onEnter` with the value, which is the usual way to send a message or save a note.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -170,7 +170,7 @@ export default function LabelModes() {
 }
 ```
 
-## Read-only, disabled, required
+## Read-only, disabled and required
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -193,23 +193,23 @@ export default function States() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Enter` | A new line. |
-| `Ctrl + Enter, Cmd + Enter` | Commits the value (with `updateOn="change"`) and fires `onEnter`: send, save. |
-| `Escape` | With `clearButton`, empties a field that has a value; otherwise it goes on to the window around it. |
-| `Alt + key (`&Name`)` | Focus the field (Control + Option + key on Apple platforms). |
-| `Tab` | Leaves the field; the clear button is not a Tab stop (Escape does its job). |
+| `Enter` | Inserts a new line. |
+| `Ctrl + Enter, Cmd + Enter` | Commits the value (with `updateOn="change"`) and raises `onEnter`. |
+| `Escape` | With `clearButton`, clears a field that has a value. Otherwise, the key passes to the containing window. |
+| `Alt + key (`&Name`)` | Moves focus to the field (Control + Option + key on Apple platforms). |
+| `Tab` | Moves focus out of the field. The clear button is not a Tab stop, because Escape does the same thing. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Element` | A native `<textarea>` (multi-line by nature); its `<label>` is tied to it with `for`. |
-| `Description` | `aria-describedby` names the prefix, the suffix and the line under the box. |
-| `Errors` | `aria-invalid="true"`; the message line is a polite live region. |
-| `Required` | `aria-required="true"`; the mark after the label is hidden from screen readers. |
-| `Ctrl + Enter` | Say it in the label or the help text when it sends something, as in the example above. |
+| `Element` | A native `<textarea>` associated with its `<label>` through `for`. |
+| `Description` | `aria-describedby` references the prefix, the suffix and the help text. |
+| `Errors` | `aria-invalid="true"`. The message is a polite live region. |
+| `Required check boxes` | `aria-required="true"`. The indicator after the label is hidden from screen readers. |
+| `Ctrl + Enter` | If Ctrl+Enter sends something, mention it in the label or help text, as the example above does. |
 
 ## Localization
 
@@ -240,15 +240,15 @@ export default function Localization() {
 
 ## Styling
 
-TextArea uses the field tokens (`field.*`, see TextBox) and has none of its own: the first line lines up with a one-line field of the same size.
+TextArea uses the field tokens (`field.*`, see TextBox) and has none of its own, so its first line aligns with a single-line field of the same size.
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
-| `.mx-field.mx-text-area` | The field. `data-resize`, `data-auto-grow`, and the field attributes (`data-size`, `data-variant`, `data-label-mode`, `data-invalid`, `data-readonly`, `data-disabled`, `data-filled`). |
-| `.mx-field__box` | The box; it carries the resize grip. |
+| `.mx-field.mx-text-area` | The field. `data-resize`, `data-auto-grow` and the field attributes (`data-size`, `data-variant`, `data-label-mode`, `data-invalid`, `data-readonly`, `data-disabled`, `data-filled`). |
+| `.mx-field__box` | The box, which carries the resize grip. |
 | `.mx-field__input.mx-text-area__input` | The textarea. |
 | `.mx-text-area__clear` | The clear button. |
-| `.mx-field__message, .mx-field__counter` | The line under the box. |
+| `.mx-field__message, .mx-field__counter` | Help text below the box. |
 
 ## API reference
 
@@ -256,50 +256,50 @@ TextArea uses the field tokens (`field.*`, see TextBox) and has none of its own:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `Bind<string>` | `''` | The text, lines separated by `\n`. `x-model` binds it two-way. |
-| `label` | `Bind<string>` | `''` | The caption; `&Name` makes Alt+N focus the field. The same property as `text`. |
+| `value` | `Bind<string>` | `''` | The text, with lines separated by `\n`. `x-model` provides two-way binding. |
+| `label` | `Bind<string>` | `''` | The field label. Writing `&Name` assigns Alt+N as the access key. This is the same property as `text`. |
 | `labelMode` | `Bind<FieldLabelMode>` | `'top'` | `top`, `side`, `floating`, `hidden`. |
-| `placeholder` | `Bind<string>` | `''` | Shown while the field is empty. |
-| `rows` | `Bind<number>` | `3` | Visible lines. |
-| `autoGrow` | `Bind<boolean>` | `false` | The box follows the text, from `minRows` to `maxRows` lines, then scrolls. |
-| `minRows` | `Bind<number>` | `rows` | The smallest box with `autoGrow`. |
-| `maxRows` | `Bind<number \| null>` | `null` | The largest box with `autoGrow`; without it the box grows without a limit. |
-| `resize` | `Bind<TextAreaResize>` | `'vertical'` | `none`, `vertical`, `both`: which way the user can drag the box. `none` while `autoGrow` is on. |
-| `maxLength / minLength` | `Bind<number>` | — | Limits; both are checked by validation. |
-| `showCounter` | `Bind<boolean>` | `false` | `12/500` under the box (`12` without `maxLength`). |
-| `clearButton` | `Bind<boolean>` | `false` | A button that empties the field; Escape does the same. |
-| `updateOn` | `Bind<'input' \| 'change'>` | `'input'` | `change`: the value changes when the field is left or Ctrl+Enter is pressed. |
-| `selectOnFocus` | `Bind<boolean>` | `false` | Selects the whole text when the field gets focus. |
-| `wrap` | `Bind<'soft' \| 'hard' \| 'off'>` | `'soft'` | `off` keeps long lines on one line and scrolls sideways. |
-| `helpText, hint, prefix, suffix, icon, buttons` | see TextBox |  | The parts every field has. |
-| `readOnly, required, size, variant, stretch` | see TextBox |  | The states and the look every field has. |
-| `rules, error, validateOn, validationGroup` | see TextBox |  | Validation, as for every field. |
+| `placeholder` | `Bind<string>` | `''` | Displayed when the field is empty. |
+| `rows` | `Bind<number>` | `3` | The number of visible lines. |
+| `autoGrow` | `Bind<boolean>` | `false` | The box adjusts to its content, from `minRows` to `maxRows` lines, and then scrolls. |
+| `minRows` | `Bind<number>` | `rows` | The minimum height with `autoGrow`. |
+| `maxRows` | `Bind<number \| null>` | `null` | The maximum height with `autoGrow`. Without it, the box grows without limit. |
+| `resize` | `Bind<TextAreaResize>` | `'vertical'` | `none`, `vertical` or `both`: the directions the user can resize the box. This is `none` while `autoGrow` is on. |
+| `maxLength / minLength` | `Bind<number>` | — | Length limits. Both are enforced by validation. |
+| `showCounter` | `Bind<boolean>` | `false` | Shows `12/500` below the box (`12` without `maxLength`). |
+| `clearButton` | `Bind<boolean>` | `false` | Shows a button that clears the field. Pressing Escape also clears it. |
+| `updateOn` | `Bind<'input' \| 'change'>` | `'input'` | With `change`, the value updates when the field loses focus or the user presses Ctrl+Enter. |
+| `selectOnFocus` | `Bind<boolean>` | `false` | Selects all text when the field receives focus. |
+| `wrap` | `Bind<'soft' \| 'hard' \| 'off'>` | `'soft'` | `off` keeps long lines on one line and scrolls horizontally. |
+| `helpText, hint, prefix, suffix, icon, buttons` | see TextBox |  | Parts common to all fields. |
+| `readOnly, required, size, variant, stretch` | see TextBox |  | States and appearance common to all fields. |
+| `rules, error, validateOn, validationGroup` | see TextBox |  | Validation works the same way as for all fields. |
 | `spellcheck, name, autocomplete` | `Bind<…>` | — | Passed to the `<textarea>`. |
-| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | The shared properties of every control. |
+| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. |
 
 ### Properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write, reactive | A value or a function, like the prop. |
-| `isValid, validationMessage, validating` | read-only, reactive | The outcome of the checks. |
+| `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
+| `isValid, validationMessage, validating` | read-only, reactive | The validation result. |
 | `textAreaElement` | read-only | The native `<textarea>`. |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `validate()` | `Promise<boolean>` | Checks the value and shows the outcome. |
-| `resetValidation()` | `void` | Hides the outcome of earlier checks. |
-| `focus()` | `boolean` | Focuses the textarea. |
-| `select()` | `void` | Selects the whole text. |
-| `clear()` | `void` | Empties the field as its clear button does. |
+| `validate()` | `Promise<boolean>` | Validates the value and displays the result. |
+| `resetValidation()` | `void` | Clears the results of previous validation. |
+| `focus()` | `boolean` | Sets focus on the textarea. |
+| `select()` | `void` | Selects all text. |
+| `clear()` | `void` | Clears the field, as the clear button does. |
 
 ### Events
 
 | Event | When |
 | --- | --- |
-| `onValueChanged(e)` | The value changed. `e`: `{ value, previousValue, byUser, source, event? }`. |
-| `onValidated(e)` | A check ended. `e`: `{ valid, message, source }`. |
-| `onEnter(e)` | Ctrl+Enter (Cmd+Enter) was pressed. `e`: `{ value, source, event }`. |
-| `oninput, onchange, onkeydown, onfocusin, onfocusout` | The DOM events of the textarea reach the field. |
+| `onValueChanged(e)` | Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`. |
+| `onValidated(e)` | Occurs when validation finishes. `e`: `{ valid, message, source }`. |
+| `onEnter(e)` | Occurs when the user presses Ctrl+Enter (Cmd+Enter). `e`: `{ value, source, event }`. |
+| `oninput, onchange, onkeydown, onfocusin, onfocusout` | DOM events from the textarea bubble up to the field. |

@@ -2,7 +2,7 @@
 
 > Display · @motifx-community/ui 0.1.0-beta.3
 
-A short text, a count or a dot: in a line of text, or on a corner of a button, an avatar or an icon. A count over its maximum shows “99+”, a count of zero hides.
+A short text, count or dot, shown inline or on the corner of a button, avatar or icon. A count above its maximum displays as “99+”, and a count of zero is hidden.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { Badge } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-Every prop takes a value or a function. Created with `new`, the same properties are set programmatically.
+Every prop accepts a value or a function. When you create the component with `new`, set the same properties programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -36,7 +36,7 @@ export default function Programmatic() {
 }
 ```
 
-## Tones and looks
+## Tones and appearance
 
 ```tsx
 import { Badge, Stack, type BadgeTone, type BadgeVariant } from '@motifx-community/ui';
@@ -85,9 +85,9 @@ export default function Counts() {
 }
 ```
 
-## On a corner
+## Corner placement
 
-`position` puts the badge on a corner of what it is in. `Badge.attach` does it programmatically, on any component.
+`position` places the badge on a corner of its container. `Badge.attach` does the same programmatically on any component.
 
 ```tsx
 import { Badge, Button, Stack, type BadgePosition } from '@motifx-community/ui';
@@ -134,32 +134,32 @@ export default function Sizes() {
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Text` | Read where it stands, as part of what it is in. |
-| `label` | With a label the badge is an image with that name (`role="img"`), so a count can say what it counts. |
-| `Dot` | Without a label a dot is hidden from screen readers (`aria-hidden`): give it one when it says something. |
-| `Colour` | The tone is never the only way something is said: pair a tone with a text or a label. |
+| `Text` | A badge is read in place, as part of its container. |
+| `label` | With a label, the badge is an image with that name (`role="img"`), so a count can describe what it counts. |
+| `Dot` | Without a label, a dot is hidden from screen readers (`aria-hidden`). Give it a label when it conveys information. |
+| `Colour` | Do not rely on tone alone to convey meaning. Pair it with text or a label. |
 
 ## Localization
 
-A count is written in the kit language (`uiLocale`), again when it changes: “1,234” in English, “1.234” in Turkish.
+A count is formatted in the kit language (`uiLocale`) and updates when the language changes: “1,234” in English and “1.234” in Turkish.
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-badge` | The badge. `data-tone`, `data-variant`, `data-size`, `data-position`, `data-dot`, `data-empty`. |
-| `.mx-badge-anchor` | What a badge on a corner sits on (`position: relative`). |
+| `.mx-badge-anchor` | The element a corner badge is attached to (`position: relative`). |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `badge.badge` | Unit: the badge, at rest (solid, standard), in each look and tone (`accent` … `danger`, `subtle-*`, `outline-*`) and as a `dot`. |
-| `badge.height.*, badge.dot-size.*, badge.font-size.*, badge.padding.*` | The badge and the dot per size. |
-| `badge.offset` | How far a badge on a corner sits in from it. |
-| `badge.tone, badge.variant` | The tone and look a badge takes when none is given. |
+| `badge.badge` | Unit: the badge at rest (solid, standard), in each appearance and tone (`accent` … `danger`, `subtle-*`, `outline-*`) and as a `dot`. |
+| `badge.height.*, badge.dot-size.*, badge.font-size.*, badge.padding.*` | The badge and the dot, per size. |
+| `badge.offset` | The offset of a corner badge from the corner. |
+| `badge.tone, badge.variant` | The default tone and appearance. |
 
 ## API reference
 
@@ -167,27 +167,27 @@ A count is written in the kit language (`uiLocale`), again when it changes: “1
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `text` | `Bind<string>` | `''` | A short text; shown while there is no `count`. |
-| `count` | `Bind<number \| null>` | `null` | A count, written in the kit language; over `max` it shows `max+`. |
-| `max` | `Bind<number>` | `99` | The highest count written as it is. |
-| `showZero` | `Bind<boolean>` | `false` | A count of 0 shows; without it the badge hides at 0. |
-| `dot` | `Bind<boolean>` | `false` | A dot only: there is something, without saying what. |
-| `tone` | `Bind<BadgeTone>` | the language’s | `standard`, `accent`, `info`, `success`, `caution`, `danger`. Material marks counts in `danger`, the other languages in `accent`. |
-| `variant` | `Bind<BadgeVariant>` | the language’s (`solid`) | `solid`, `subtle`, `outline`. |
+| `text` | `Bind<string>` | `''` | Short text, shown when there is no `count`. |
+| `count` | `Bind<number \| null>` | `null` | A count formatted in the kit language. Above `max`, it shows `max+`. |
+| `max` | `Bind<number>` | `99` | The highest count shown in full. |
+| `showZero` | `Bind<boolean>` | `false` | Shows a count of 0. Without it, the badge hides at 0. |
+| `dot` | `Bind<boolean>` | `false` | Shows a dot only, indicating that something is present. |
+| `tone` | `Bind<BadgeTone>` | Set by the design language | `standard`, `accent`, `info`, `success`, `caution` or `danger`. Material uses `danger` for counts, and the other design languages use `accent`. |
+| `variant` | `Bind<BadgeVariant>` | Set by the design language (`solid`) | `solid`, `subtle`, `outline`. |
 | `size` | `Bind<ControlSize>` | `'md'` | `sm`, `md`, `lg`. |
-| `position` | `Bind<BadgePosition \| null>` | `null` | `top-end`, `top-start`, `bottom-end`, `bottom-start`: on that corner of what it is in, which becomes its anchor. `start` and `end` follow the writing direction. |
-| `label` | `Bind<string>` | `''` | What screen readers say (“3 unread messages”); without it they read the text. |
-| `visible, tabStop` | see Control |  | The shared properties of every control. |
+| `position` | `Bind<BadgePosition \| null>` | `null` | `top-end`, `top-start`, `bottom-end` or `bottom-start`: the corner of the container, which becomes its anchor. `start` and `end` follow the writing direction. |
+| `label` | `Bind<string>` | `''` | The text announced by screen readers (“3 unread messages”). Without it, they read the badge text. |
+| `visible, tabStop` | see Control |  | Properties shared by all controls. |
 
 ### Properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write | A value or a function, like the prop. |
-| `shownText` | read-only | What it shows now: the count as written (`99+`), else the text; `''` for a dot. |
+| `every prop above` | read/write | Accepts a value or a function, the same as the prop. |
+| `shownText` | read-only | The current display text: the formatted count (`99+`), otherwise the text, or `''` for a dot. |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `Badge.attach(target, props?)` | `Badge` | Puts a badge on a corner of a component (`top-end` unless `props` says otherwise). It becomes one of its children and goes with it. |
+| `Badge.attach(target, props?)` | `Badge` | Places a badge on a corner of a component (`top-end` unless `props` specifies otherwise). The badge becomes a child of the component and is disposed with it. |

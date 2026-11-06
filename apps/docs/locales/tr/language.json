@@ -25,7 +25,6 @@
   "Validating a pack": "",
   "In the repository, `npm run locales` validates every pack the kit ships, and `npm run locales -- path/to/de.json` validates one of your own. The strings are defined in `src/locales/en.json`, and a pack uses the same keys in another language.": "",
   "Check": "Check",
-  "Meaning": "",
   "A pack includes every string in `en.json`. A missing string appears in English, and the check reports which one.": "",
   "A key that does not exist in `en.json` is a typo.": "",
   "A string uses the same `{values}` as the English string, in ICU format. Plural forms follow the language.": "",

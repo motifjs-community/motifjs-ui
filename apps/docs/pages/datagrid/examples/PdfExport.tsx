@@ -43,7 +43,7 @@ export default function PdfExport() {
     ],
   };
 
-  // the grid raises onExporting for 'pdf' and the file is made here. jsPDF loads
+  // The grid raises onExporting for 'pdf', and the file is written here. jsPDF loads
   // the first time someone exports.
   const onExporting = async (e: GridExportingEventArgs) => {
     if (e.format !== 'pdf') return;

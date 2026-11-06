@@ -2,7 +2,7 @@
 
 > Navigation · @motifx-community/ui 0.1.0-beta.3
 
-An accordion opens and closes sections under their headers: one at a time or several, kept open, with icons, three looks and sections built when they are first opened.
+An accordion expands and collapses sections under their headers. It supports one or several open sections, sections that stay open, icons, three appearances and sections that are created when first opened.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { Accordion, AccordionItem } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-An `<AccordionItem>`'s children are its section. `value` lists the open items' keys and `x-model` binds it two-way. Created with `new`, items are added and removed programmatically.
+The children of an `<AccordionItem>` are its section. `value` lists the keys of the open items, and `x-model` provides two-way binding. When you create the component with `new`, add and remove items programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -69,9 +69,9 @@ export default function Programmatic() {
 }
 ```
 
-## One or several open
+## Single and multiple expansion
 
-One item is open at a time; with `multiple` several can be. `collapsible={false}` keeps one open: its header cannot close it.
+By default, one item is open at a time. With `multiple`, several can be open. `collapsible={false}` keeps one open, so its header cannot close it.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -107,7 +107,7 @@ export default function OneOrSeveral() {
 
 ## Lazy sections
 
-A section is built when it is first opened and kept afterwards (`lazy`, on by default). An item with a `content` factory and `keepAlive={false}` has its content disposed when it closes and made again when it opens.
+A section is created when first opened and then kept (`lazy`, on by default). An item with a `content` factory and `keepAlive={false}` has its content disposed when it closes and recreated when it opens.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -196,42 +196,42 @@ export default function VariantsAndSizes() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Tab` | From header to header, and into an open section. |
-| `Enter / Space` | Opens or closes the focused item. |
-| `Down / Up` | The next / previous header, wrapping around (with `arrowKeys`). |
-| `Home / End` | The first / last header (with `arrowKeys`). |
-| `Alt + key (`&Shipping`)` | Focuses that header and opens or closes it (Control + Option + key on Apple platforms). |
+| `Tab` | Moves from header to header, and into an open section. |
+| `Enter / Space` | Expands or collapses the focused item. |
+| `Down / Up` | Moves to the next or previous header, wrapping at the ends (with `arrowKeys`). |
+| `Home / End` | Moves to the first or last header (with `arrowKeys`). |
+| `Alt + key (`&Shipping`)` | Moves focus to that header and toggles it (Control + Option + key on Apple platforms). |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
 | `Header` | A `<button>` with `aria-expanded` and `aria-controls`, inside an element with `role="heading"` and `aria-level` (`headingLevel`). |
-| `Section` | `role="region"` named by its header (`aria-labelledby`) while there are six items or fewer, as the APG suggests; `regions` decides. |
-| `Closed sections` | `visibility: hidden` once closed: out of the Tab order and the accessibility tree. |
-| `Kept open` | With `collapsible` off, the header of the item that may not close has `aria-disabled="true"`. |
-| `Motion` | The height animates with the motion tokens; reduced motion turns it off. |
+| `Section` | `role="region"` named by its header (`aria-labelledby`) when there are six items or fewer, as the APG recommends. `regions` controls this. |
+| `Closed sections` | `visibility: hidden` once closed, which removes it from the Tab order and the accessibility tree. |
+| `Kept open` | With `collapsible` off, the header of an item that cannot close has `aria-disabled="true"`. |
+| `Motion` | The height animates using the motion tokens, and reduced motion turns it off. |
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-accordion` | The root. `data-variant`, `data-size`, `data-chevron`, `data-disabled`. |
 | `.mx-accordion__item` | An item: `data-expanded`, `data-disabled`. |
-| `.mx-accordion__heading, .mx-accordion__header` | The heading and the button in it. |
+| `.mx-accordion__heading, .mx-accordion__header` | The heading and its button. |
 | `.mx-accordion__icon, .mx-accordion__label, .mx-accordion__chevron` | The parts of a header. |
 | `.mx-accordion__region, .mx-accordion__body` | The section (animated) and its content. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
 | `accordion.height.*, accordion.padding.*, accordion.font-size.*` | Header sizes, from the density tokens. |
 | `accordion.container, accordion.item` | Units: the accordion and its items per variant (`list`, `list-next`, `separated`, `flush`; `expanded`). |
-| `accordion.header, accordion.icon, accordion.chevron, accordion.plate, accordion.body` | Units: a header (`expanded`, `hover`, `pressed`, `disabled`, `focus`), its icon, the chevron (`open`) and a plate behind it, the open section. |
-| `accordion.chevron-size, accordion.chevron-plate-size, accordion.content-padding` | The chevron’s and the plate’s sizes; the space above and below a section's content. |
+| `accordion.header, accordion.icon, accordion.chevron, accordion.plate, accordion.body` | Units: a header (`expanded`, `hover`, `pressed`, `disabled`, `focus`), its icon, the chevron (`open`) and the plate behind it, and the open section. |
+| `accordion.chevron-size, accordion.chevron-plate-size, accordion.content-padding` | The sizes of the chevron and plate, and the spacing above and below the section content. |
 
 ## API reference
 
@@ -239,57 +239,57 @@ export default function VariantsAndSizes() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `Bind<(string \| number)[]>` | `[]` | The open items' keys (an item without a key: its index). `x-model` binds it two-way. |
-| `multiple` | `Bind<boolean>` | `false` | Several items can be open; otherwise opening one closes the other. |
-| `collapsible` | `Bind<boolean>` | `true` | `false`: one item stays open; its header has `aria-disabled` while it may not close. |
-| `headingLevel` | `Bind<number>` | `3` | The `aria-level` of the headers (1 to 6): fit it to the headings around. |
-| `arrowKeys` | `Bind<boolean>` | `true` | Up, Down, Home and End move between the headers. |
-| `regions` | `Bind<boolean \| 'auto'>` | `'auto'` | Sections are `role="region"` landmarks; `auto` while there are six items or fewer. |
-| `variant` | `Bind<AccordionVariant>` | `'list'` | `list` (one bordered box), `separated` (a card per item), `flush` (lines only). |
+| `value` | `Bind<(string \| number)[]>` | `[]` | The keys of the open items (an item without a key uses its index). `x-model` provides two-way binding. |
+| `multiple` | `Bind<boolean>` | `false` | Allows several items to be open. Otherwise, opening one closes the other. |
+| `collapsible` | `Bind<boolean>` | `true` | With `false`, one item stays open, and its header has `aria-disabled` while it cannot close. |
+| `headingLevel` | `Bind<number>` | `3` | The `aria-level` of the headers (1 to 6). Match it to the surrounding headings. |
+| `arrowKeys` | `Bind<boolean>` | `true` | Up, Down, Home and End move between headers. |
+| `regions` | `Bind<boolean \| 'auto'>` | `'auto'` | Makes sections `role="region"` landmarks. `auto` applies when there are six items or fewer. |
+| `variant` | `Bind<AccordionVariant>` | `'list'` | `list` (one bordered box), `separated` (a card per item) or `flush` (dividers only). |
 | `size` | `Bind<ControlSize>` | `'md'` | `sm`, `md`, `lg`, from the density tokens. |
-| `chevron` | `Bind<AccordionChevron>` | `'end'` | Where the open/closed arrow sits: `end`, `start`, `none`. |
-| `lazy` | `Bind<boolean>` | `true` | A section is built when first opened, then kept. An item's own `lazy` wins. |
-| `keepAlive` | `Bind<boolean>` | `true` | `false`: what an item's `content` made is disposed when it closes and made again when it opens. An item's own `keepAlive` wins. |
-| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | The shared properties of every control. |
+| `chevron` | `Bind<AccordionChevron>` | `'end'` | The position of the chevron: `end`, `start` or `none`. |
+| `lazy` | `Bind<boolean>` | `true` | Creates a section when first opened and then keeps it. An item's own `lazy` takes precedence. |
+| `keepAlive` | `Bind<boolean>` | `true` | With `false`, content created by an item's `content` is disposed when it closes and recreated when it opens. An item's own `keepAlive` takes precedence. |
+| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. |
 
 ### AccordionItem props
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `title` | `Bind<string>` | `''` | The header text; `&Shipping` makes Alt+S open or close it. The same property as `text`. |
-| `key` | `Bind<string>` | `''` | Names the item in `value`. The JSX `key` works too. |
-| `expanded` | `Bind<boolean>` | `false` | Whether the section is open. |
+| `title` | `Bind<string>` | `''` | The header text. `&Shipping` makes Alt+S toggle the item. This is the same property as `text`. |
+| `key` | `Bind<string>` | `''` | Identifies the item in `value`. The JSX `key` also works. |
+| `expanded` | `Bind<boolean>` | `false` | Indicates whether the section is open. |
 | `icon` | `Bind<IconSource \| null>` | — | An icon before the title. |
 | `hint` | `Bind<string>` | `''` | A tooltip on the header. |
-| `lazy, keepAlive` | `Bind<boolean \| undefined>` | the Accordion | This item's own setting. |
-| `content` | `() => ComponentBase \| ComponentBase[]` | — | Makes the section content when it is built: instead of, or after, the JSX children. |
-| `enabled, visible` | `Bind<boolean>` | `true` | A disabled item cannot be opened or closed; a hidden one is left out. |
+| `lazy, keepAlive` | `Bind<boolean \| undefined>` | From Accordion | This item's own setting. |
+| `content` | `() => ComponentBase \| ComponentBase[]` | — | Creates the section content when it is created, either instead of or after the JSX children. |
+| `enabled, visible` | `Bind<boolean>` | `true` | A disabled item cannot be opened or closed, and a hidden item is removed. |
 
 ### Properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write, reactive | A value or a function, like the prop. |
-| `items` | read-only, reactive | The items, in order. |
+| `every prop above` | read/write, reactive | Accepts a value or a function, the same as the prop. |
+| `items` | read-only, reactive | The items in order. |
 | `expandedItems` | read-only, reactive | The open items. |
-| `AccordionItem.contentBuilt` | read-only | Whether its section has been built. |
-| `AccordionItem.owner, headerElement, regionElement` | read-only | Its `Accordion`, its header button, its region. |
+| `AccordionItem.contentBuilt` | read-only | Indicates whether its section has been created. |
+| `AccordionItem.owner, headerElement, regionElement` | read-only | Its `Accordion`, its header button and its region. |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `add(item), insert(index, item)` | `AccordionItem` | Adds an item. An item of another `Accordion` moves here. |
-| `remove(item)` | `boolean` | Removes the item and disposes it; focus inside moves to a neighbour. |
-| `expandAll(), collapseAll()` | `void` | Programmatically. `expandAll` needs `multiple`; with `collapsible` off one item stays open. |
-| `AccordionItem.expand(), collapse()` | `boolean` | As a click would: the cancelable events run. `item.expanded = true` sets it programmatically. |
-| `focus()` | `boolean` | An item focuses its header. |
+| `add(item), insert(index, item)` | `AccordionItem` | Adds an item. An item from another `Accordion` moves here. |
+| `remove(item)` | `boolean` | Removes the item and disposes it. Focus inside moves to an adjacent item. |
+| `expandAll(), collapseAll()` | `void` | Programmatic control. `expandAll` requires `multiple`, and with `collapsible` off one item stays open. |
+| `AccordionItem.expand(), collapse()` | `boolean` | Toggles as a click would, so the cancelable events run. `item.expanded = true` sets the state programmatically. |
+| `focus()` | `boolean` | Sets focus on the item's header. |
 
 ### Events
 
 | Event | When |
 | --- | --- |
-| `onExpanding(e), onCollapsing(e)` | The user is about to open / close an item. `e`: `{ item, index, cancel, source, event? }`; `e.cancel = true` leaves it. |
-| `onExpanded(e), onCollapsed(e)` | An item opened / closed. `e`: `{ item, index, byUser, source }`. |
+| `onExpanding(e), onCollapsing(e)` | Occurs before the user opens or closes an item. `e`: `{ item, index, cancel, source, event? }`. Set `e.cancel = true` to keep the current state. |
+| `onExpanded(e), onCollapsed(e)` | Occurs after an item opens or closes. `e`: `{ item, index, byUser, source }`. |
 
-The accordion writes no text of its own, so it has nothing in `uiLocale`.
+The accordion has no strings of its own, so it adds nothing to `uiLocale`.

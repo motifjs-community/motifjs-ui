@@ -45,7 +45,6 @@
   "The known items for the selected values. With a data source, the others are requested by key and added.": "",
   "The search `TextBox` while `searchEnabled` is on.": "`searchEnabled` açıkken arama `TextBox` bileşeni.",
   "In multiple selection, selects every item the list shows (with a data source, after their values load).": "",
-  "Clears the selection.": "",
   "Scrolls an item into view and highlights it.": "",
   "Your items can be plain or reactive, and the list reads them as they are. After changing them in place, call `refresh()`. It re-reads the items, their text and values, and the selection.": ""
 }

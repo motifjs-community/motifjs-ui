@@ -24,7 +24,6 @@
   "The list and each step with its connector. `data-status` is on the item.": "",
   "The step, as a button or a div. `data-status`, `aria-current`, `aria-disabled`.": "",
   "The circle, the number inside it, the check or error mark, and a custom icon.": "",
-  "The text.": "",
   "The line to the next step. `data-status=\"done\"` up to the current step.": "",
   "Units: the step (`hover`, `pressed`, `focus`, `disabled`, `current`, `done`, `error`), its indicator, the mark (`icon` per state), the text and the line (`done`). In a vertical stepper, the line rotates 90 degrees.": "",
   "The indicator, the text and the space around a step, per size.": "Boyuta göre gösterge, metin ve adım çevresindeki boşluk.",

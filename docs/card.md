@@ -2,7 +2,7 @@
 
 > Display · @motifx-community/ui 0.1.0-beta.3
 
-A surface holding one thing: a picture, a header with an avatar and titles, content and a row of actions. Parts with nothing in them are left out.
+A surface for a single subject, with an optional image, a header with an avatar and titles, content and a row of actions. Empty parts are not rendered.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { Card } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-Every prop takes a value or a function. Created with `new`, the same properties are set programmatically.
+Every prop accepts a value or a function. When you create the component with `new`, set the same properties programmatically.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -40,7 +40,7 @@ export default function Programmatic() {
 }
 ```
 
-## Looks
+## Appearance
 
 ```tsx
 import { Button, Card, Stack, type CardVariant } from '@motifx-community/ui';
@@ -73,7 +73,7 @@ export default function Variants() {
 }
 ```
 
-## Pictures
+## Images
 
 ```tsx
 import { Button, Card, Stack } from '@motifx-community/ui';
@@ -101,7 +101,7 @@ export default function Media() {
 }
 ```
 
-## Clickable
+## Clickable cards
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -192,33 +192,33 @@ export default function Sizes() {
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
 | `Name` | A `group` named by its title (`aria-labelledby`). |
-| `Picture` | Adorns unless `mediaAlt` says what it shows. |
-| `Clickable` | A Tab stop; Enter and Space press it. Buttons inside it stay buttons of their own. |
-| `Link` | The title is a real link (read and followed as one); the card shows its focus. The card’s own buttons stay above it. |
-| `Selectable` | A check box named “Select <title>” in the kit language; the card shows the selection with its frame. |
+| `Picture` | Decorative unless `mediaAlt` describes it. |
+| `Clickable cards` | A Tab stop that responds to Enter and Space. Buttons inside it remain independent. |
+| `Link` | The title is a real link, and the card shows its focus state. The card's own buttons stay above it. |
+| `Selectable` | A check box named “Select <title>” in the kit language. The card shows the selection with its frame. |
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-card` | The card. `data-variant`, `data-size`, `data-orientation`, `data-pressable`, `data-disabled`. |
-| `.mx-card__media` | The picture. |
-| `.mx-card__body` | Header, content and actions. |
+| `.mx-card__media` | The image. |
+| `.mx-card__body` | The header, content and actions. |
 | `.mx-card__header, .mx-card__avatar, .mx-card__heading, .mx-card__title, .mx-card__subtitle, .mx-card__action` | The header and its parts. |
-| `.mx-card__content, .mx-card__footer` | The content, and the row of actions. |
+| `.mx-card__content, .mx-card__footer` | The content and the action row. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `card.card` | Unit: the card at rest, then `elevated`, `filled`, `outline`, `selected`, `hover`, `pressed`, `focus`, `disabled`. |
-| `card.title, card.subtitle, card.content` | Units: the title, the line under it, the content’s text. |
-| `card.padding.*, card.gap.*` | The space around and between the parts, per size. |
-| `card.header-gap, card.footer-gap, card.media-width` | The space in the header and between actions; the picture’s width at the start. |
-| `card.variant, card.footer-align` | The look a card takes when none is given; where the actions sit (Fluent: at the start, the others: at the end). |
+| `card.card` | Unit: the card at rest, then `elevated`, `filled`, `outline`, `selected`, `hover`, `pressed`, `focus` and `disabled`. |
+| `card.title, card.subtitle, card.content` | Units: the title, the subtitle and the content text. |
+| `card.padding.*, card.gap.*` | The spacing around and between the parts, per size. |
+| `card.header-gap, card.footer-gap, card.media-width` | The spacing in the header and between actions, and the width of an image at the start. |
+| `card.variant, card.footer-align` | The default appearance, and the action alignment (start in Fluent, end in the other design languages). |
 
 ## API reference
 
@@ -226,29 +226,29 @@ export default function Sizes() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `title` | `Bind<string>` | `''` | The title; it names the card for screen readers. |
-| `subtitle` | `Bind<string>` | `''` | The line under the title. |
+| `title` | `Bind<string>` | `''` | The title, which also provides the accessible name of the card. |
+| `subtitle` | `Bind<string>` | `''` | Text below the title. |
 | `avatar` | `Bind<AvatarProps \| null>` | `null` | An avatar before the titles (its props). |
-| `action` | `Bind<ComponentBase \| null>` | `null` | Something at the end of the header: a menu button, a badge. |
-| `media` | `Bind<IconSource \| null>` | `null` | A picture running to the card’s edges: an image address, an element or a component. |
-| `mediaAlt` | `Bind<string>` | `''` | What the picture shows, for screen readers, when `media` is an image address. Without it the picture only adorns. |
-| `content` | `Bind<ComponentBase \| null>` | `null` | What fills the content, besides JSX children. |
-| `footer` | `Bind<ComponentBase \| null>` | `null` | A row of actions under the content. A component replaced leaves the card and stays yours. |
-| `variant` | `Bind<CardVariant>` | the language’s (`elevated`) | `elevated`, `filled`, `outline`. |
-| `size` | `Bind<ControlSize>` | `'md'` | The space in and between the parts: `sm`, `md`, `lg`. |
-| `orientation` | `Bind<CardOrientation>` | `'vertical'` | `horizontal` puts the picture at the start. |
-| `clickable` | `Bind<boolean>` | `false` | The whole card can be pressed (`onclick`, Enter, Space). |
-| `href` | `Bind<string \| null>` | `null` | The whole card is a link there: its title is the link, and a press anywhere on the card follows it. |
-| `rel` | `Bind<string>` | `''` | The link’s `rel`; `router` lets the MotifJS router take it. |
-| `selectable` | `Bind<boolean>` | `false` | A check box on its top end corner; a press on the card turns it on and off. |
-| `selected` | `Bind<boolean>` | `false` | Whether it is selected. |
-| `onSelectedChanged` | `CardSelectedChangedEventArgs` |  | It was selected or not any more (`selected`), by the user or by code (`byUser`). |
-| `enabled, visible, tabStop` | see Control |  | The shared properties of every control. |
+| `action` | `Bind<ComponentBase \| null>` | `null` | Content at the end of the header, such as a menu button or a badge. |
+| `media` | `Bind<IconSource \| null>` | `null` | An image that extends to the card edges: an image address, an element or a component. |
+| `mediaAlt` | `Bind<string>` | `''` | Alternative text for the image when `media` is an image address. Without it, the image is decorative. |
+| `content` | `Bind<ComponentBase \| null>` | `null` | The content, in addition to JSX children. |
+| `footer` | `Bind<ComponentBase \| null>` | `null` | A row of actions below the content. A replaced component is removed from the card and stays under your control. |
+| `variant` | `Bind<CardVariant>` | Set by the design language (`elevated`) | `elevated`, `filled`, `outline`. |
+| `size` | `Bind<ControlSize>` | `'md'` | The spacing inside and between the parts: `sm`, `md` or `lg`. |
+| `orientation` | `Bind<CardOrientation>` | `'vertical'` | `horizontal` places the image at the start. |
+| `clickable` | `Bind<boolean>` | `false` | Makes the whole card pressable (`onclick`, Enter, Space). |
+| `href` | `Bind<string \| null>` | `null` | Makes the whole card a link. The title is the link, and clicking anywhere on the card follows it. |
+| `rel` | `Bind<string>` | `''` | The `rel` of the link. `router` lets the MotifJS router handle it. |
+| `selectable` | `Bind<boolean>` | `false` | Adds a check box on the top end corner, and clicking the card toggles it. |
+| `selected` | `Bind<boolean>` | `false` | Indicates whether the card is selected. |
+| `onSelectedChanged` | `CardSelectedChangedEventArgs` |  | Occurs when the selection changes (`selected`), either by the user or programmatically (`byUser`). |
+| `enabled, visible, tabStop` | see Control |  | Properties shared by all controls. |
 
 ### Properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write | A value or a function, like the prop. |
-| `contentPart` | read-only | The part holding the content, for adding to it programmatically. |
-| `avatarControl` | read-only | The avatar before the titles, when it has one. |
+| `every prop above` | read/write | Accepts a value or a function, the same as the prop. |
+| `contentPart` | read-only | The part that holds the content, for adding to it programmatically. |
+| `avatarControl` | read-only | The avatar before the titles, if there is one. |

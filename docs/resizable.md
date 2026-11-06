@@ -2,7 +2,7 @@
 
 > Navigation · @motifx-community/ui 0.1.0-beta.3
 
-A box the user resizes from its sides and corners with the pointer, or with the arrow keys on the grip in its end corner. It keeps to its least and most sizes, stays inside an area when told, and can keep its shape.
+A box that users can resize from its edges and corners with the pointer, or with the arrow keys on the grip in its end corner. It respects minimum and maximum sizes, can stay within an area, and can preserve its aspect ratio.
 
 ## Import
 
@@ -10,9 +10,9 @@ A box the user resizes from its sides and corners with the pointer, or with the 
 import { Resizable } from '@motifx-community/ui';
 ```
 
-## Sides, corners and the grip
+## Edges, corners and the grip
 
-The JSX children are the content. `handles` says which sides and corners take the pointer (`all` by default); the grip in the end corner is the Tab stop, and the arrow keys change the size by `step`. `minWidth`, `minHeight`, `maxWidth` and `maxHeight` hold it. A box laid out by its position (`absolute`, `fixed`) also moves when a start or top side is dragged, so the far side stays; one in the flow only changes size.
+JSX children are the content. `handles` sets which edges and corners respond to the pointer (`all` by default). The grip in the end corner is the Tab stop, and the arrow keys change the size by `step`. `minWidth`, `minHeight`, `maxWidth` and `maxHeight` set the limits. A box positioned with `absolute` or `fixed` also moves when its start or top edge is dragged, so the opposite edge stays in place. A box in the normal flow only changes size.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -34,9 +34,9 @@ export default function Basic() {
 }
 ```
 
-## Inside an area, keeping its shape
+## Staying within an area and keeping the aspect ratio
 
-`area` keeps the box inside its parent, or inside an element given; `keepAspectRatio` changes the other side along. Here only the end side, the bottom and the corner between them resize the picture.
+`area` keeps the box inside its parent or a specified element, and `keepAspectRatio` adjusts the other dimension. In this example, only the end edge, the bottom edge and the corner between them resize the image.
 
 ```tsx
 import { Resizable } from '@motifx-community/ui';
@@ -56,7 +56,7 @@ export default function Area() {
 
 ## Programmatic use
 
-`size` gives the size in pixels and `x-model` takes it back after every resize (`onResized` tells too): a layout kept and restored, or set by a button.
+`size` sets the size in pixels, and `x-model` receives it after every resize (`onResized` also reports it). Use this to save and restore a layout, or to set the size from a button.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -85,33 +85,33 @@ export default function Programmatic() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Tab` | The grip in the end corner is the one stop. |
-| `Arrow keys` | On the grip: Left and Right change the width by `step` (the other way round in a right-to-left page), Up and Down the height; within the limits, the area and the ratio. |
+| `Tab` | The grip in the end corner is the only Tab stop. |
+| `Arrow keys` | On the grip, Left and Right change the width by `step` (reversed on right-to-left pages), and Up and Down change the height, within the limits, the area and the aspect ratio. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `The grip` | A button named “Resize” in the kit language; the new size is read out after every change (“Width 320, height 200”). |
-| `The handles` | Strips along the sides and corners for the pointer only, hidden from readers; the grip gives the keys the same. |
-| `Content` | The JSX children are the content, untouched: a panel, a picture, a form. |
+| `The grip` | A button named “Resize” in the kit language. The new size is announced after every change (“Width 320, height 200”). |
+| `The handles` | Strips along the edges and corners for pointer use only, hidden from screen readers. The grip provides the same function for the keyboard. |
+| `Content` | JSX children are the content and are left unchanged, such as a panel, an image or a form. |
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
-| `.mx-resizable` | The box. `data-resizing` and `data-edge` while a handle is dragged; `data-disabled`. |
-| `.mx-resizable__frame, .mx-resizable__handle` | The frame over the box and its eight handles (`data-edge`, `data-active` while dragged, `hidden` when not asked for). |
+| `.mx-resizable` | The box. `data-resizing` and `data-edge` while a handle is dragged, and `data-disabled`. |
+| `.mx-resizable__frame, .mx-resizable__handle` | The frame over the box and its eight handles (`data-edge`, `data-active` during a drag, and `hidden` when not enabled). |
 | `.mx-resizable__grip, .mx-resizable__grip-glyph` | The grip in the end corner and its glyph. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
 | `resizable.box, .handle, .grip, .grip-glyph` | Units: the box (`resizing`), a handle (`hover`, `active`, `corner`), the grip (`hover`, `pressed`, `focus`) and its glyph (`icon`). |
-| `resizable.edge` | How wide a strip along a side takes the pointer; a corner takes twice that each way. |
+| `resizable.edge` | The width of the pointer target along an edge. A corner is twice that in each direction. |
 
 ## API reference
 
@@ -119,21 +119,21 @@ export default function Programmatic() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handles` | `Bind<ResizeHandles>` | `'all'` | `all`, `edges`, `corners`, or a list of `top`, `bottom`, `start`, `end`, `top-start`, `top-end`, `bottom-start`, `bottom-end`. |
-| `minWidth, minHeight` | `Bind<number>` | `30` | The least width and height, in pixels. |
-| `maxWidth, maxHeight` | `Bind<number \| null>` | `null` | The most width and height, in pixels; `null` for no limit. |
-| `area` | `Bind<'parent' \| HTMLElement \| null>` | `null` | The box stays inside this: its parent, or an element it lies in. |
-| `keepAspectRatio` | `Bind<boolean>` | `false` | The width and the height keep their ratio. |
-| `step` | `Bind<number>` | `10` | Pixels an arrow key changes a side by. |
-| `width, height` | `Bind<number \| string \| null>` | `null` | The size to start with, a CSS length or pixels; without one the content decides. |
-| `size` | `Bind<ResizeSize \| null>` | `null` | The size in pixels: given, it is applied; after every resize the new one is written to `x-model`. |
+| `handles` | `Bind<ResizeHandles>` | `'all'` | `all`, `edges`, `corners`, or a list of `top`, `bottom`, `start`, `end`, `top-start`, `top-end`, `bottom-start` and `bottom-end`. |
+| `minWidth, minHeight` | `Bind<number>` | `30` | The minimum width and height, in pixels. |
+| `maxWidth, maxHeight` | `Bind<number \| null>` | `null` | The maximum width and height, in pixels. `null` means no limit. |
+| `area` | `Bind<'parent' \| HTMLElement \| null>` | `null` | The area the box stays inside: its parent, or an element that contains it. |
+| `keepAspectRatio` | `Bind<boolean>` | `false` | Preserves the ratio of width to height. |
+| `step` | `Bind<number>` | `10` | The number of pixels an arrow key changes an edge. |
+| `width, height` | `Bind<number \| string \| null>` | `null` | The initial size, as a CSS length or in pixels. Without it, the content determines the size. |
+| `size` | `Bind<ResizeSize \| null>` | `null` | The size in pixels. When set, it is applied, and after every resize the new size is written to `x-model`. |
 
 ### Events, properties and methods
 
-| Member | Kind | Description |
+| Member | Type | Description |
 | --- | --- | --- |
-| `onResizeStarting` | event | A resize is about to begin from a handle (`edge`, `width`, `height`); `cancel = true` keeps the size. |
-| `onResizing` | event | The box is being resized (`edge`, `width`, `height` so far). |
-| `onResized` | event | A resize ended: the pointer let go, or a key moved a side. |
-| `currentSize` | read-only | The size in pixels now. |
-| `gripElement` | read-only | The grip in the end corner, the Tab stop that takes the keys. |
+| `onResizeStarting` | event | Occurs before a resize starts from a handle (`edge`, `width`, `height`). Set `cancel = true` to keep the size. |
+| `onResizing` | event | Occurs while the box is being resized (`edge`, and the current `width` and `height`). |
+| `onResized` | event | Occurs when a resize ends, either when the pointer is released or when a key moves an edge. |
+| `currentSize` | read-only | The current size in pixels. |
+| `gripElement` | read-only | The grip in the end corner, which is the Tab stop for keyboard resizing. |

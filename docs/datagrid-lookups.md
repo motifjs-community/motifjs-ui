@@ -4,7 +4,7 @@
 
 ## Lookup columns
 
-A column with `lookup` keeps a key (a customer id) and shows the text of its item, from a `DataSource` of any adapter — another service, another protocol than the rows — or from an array. Only the keys on the screen are asked for: the unknown ones of a moment go out together (`id in [...]`, at most `batchSize` each), or one by one with `resolve: 'byKey'` for a service that gives one item by key. The texts are kept per source and shared by every column and grid using it. While a key loads its cell is empty and busy; a key the source does not have shows as it is, muted, and stops its row from being saved.
+A column with `lookup` holds a key, such as a customer ID, and displays the text of the matching item. Items can come from an array or from a `DataSource` of any adapter, including another service or a different protocol from the rows. Only the keys on screen are requested. Unknown keys at any given moment are sent together (`id in [...]`, up to `batchSize` each), or one at a time with `resolve: 'byKey'` for a service that returns one item by key. Texts are cached per source and shared by every column and grid that uses it. While a key loads, its cell is empty and busy. A key the source does not contain appears as it is, muted, and prevents its row from being saved.
 
 ```tsx
 import { data } from '@motifx-community/data';
@@ -25,7 +25,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 }
 ```
 
-Editing opens a `DropDown` with search (or `editor: 'combobox'`, or the kit's `Lookup` with columns) over a data source of its own on the same adapter, so its search never moves a source the page shows. Typing on the cell opens the list and searches what was typed; the picked text shows at once. `filter(row, context)` narrows the list for the row (by `context.getValue`, so a province just picked counts), `setCellValue` writes other fields with the value — here a new province empties the district — and `onEditorPreparing` changes the editor's props: the district waits for a province (`e.getValue('province')`).
+Editing opens a `DropDown` with search (or `editor: 'combobox'`, or the kit's `Lookup` with columns) over its own data source on the same adapter, so its search never affects a source displayed on the page. Typing on the cell opens the list and searches the typed text, and the selected text appears immediately. `filter(row, context)` narrows the list for the row (through `context.getValue`, so a newly selected province is included), `setCellValue` writes other fields along with the value (in this example, a new province clears the district), and `onEditorPreparing` changes the editor's props, so the district waits for a province (`e.getValue('province')`).
 
 ```tsx
 /** Provinces and their districts, for the cascading lists. */
@@ -59,7 +59,7 @@ export const DISTRICTS: District[] = [
 ];
 ```
 
-When the row already brings the text (OData `$expand`), `textFrom` reads it there and the lookup source is asked only to edit and to list; `sortField` sorts the server by it. Without them a lookup column sorts by its key; rows in memory can sort by the text with `sortBy: 'text'`. The filter row offers “(All)” and the texts (always `=`), the header filter the texts with “(empty)” first, both searched by text and, with `syncLookupFilterValues`, holding only the keys of the rows the other filters leave. Copy and export write the text (`raw`: the key); a pasted text becomes the key of the one item that has it.
+When the row already includes the text (OData `$expand`), `textFrom` reads it from the row, and the lookup source is used only for editing and lists. `sortField` sorts on the server by that field. Without them, a lookup column sorts by its key, and in-memory rows can sort by text with `sortBy: 'text'`. The filter row offers “(All)” and the texts (always `=`), and the header filter lists the texts with “(empty)” first. Both are searched by text and, with `syncLookupFilterValues`, contain only the keys of rows that match the other filters. Copy and export write the text (`raw` writes the key), and pasted text becomes the key of the single item that has it.
 
 ```tsx
 import { data } from '@motifx-community/data';
@@ -80,21 +80,21 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 }
 ```
 
-| Lookup field | What it does |
+| Lookup field | Description |
 | --- | --- |
-| `dataSource` | `Bind<DataSource \| unknown[]>`: the items, searched and resolved on their own service, or an array in memory. |
-| `valueField, textField` | The field that matches the cell value (default: the source’s key; an array of plain values: the value); the text shown, a field or `(item) => text` (default: the value). |
-| `searchFields` | Fields the editor and the text searches look in. Default: `textField` when it is a field. |
-| `filter` | `(row, context) => FilterExpression`: narrows the items for a row (cascading lists: `context.getValue('province')`, the value entered, else the row’s); `null` row: the filter lists. |
-| `allowClearing` | `Bind<boolean>`: a clear button in the editor. Default `false`. |
-| `resolve, batchSize` | `'batch'` (default: keys in one request, `batchSize` 100 each) or `'byKey'` (one request per key). |
-| `sortBy` | `Bind<'key' \| 'text'>`: rows in memory sorted by the key (default) or by the text shown. |
-| `editor, editorOptions` | `'dropdown'` (default), `'combobox'` or `'lookup'`, and props for it (a `Lookup`’s `columns`). A column’s own `editor` still wins and gets the lookup in its context. |
-| `searchLimit` | How many items whose text holds the search panel’s text the search turns into keys, at most. Default 100. |
-| `filterSearchLimit` | The same for the header filter’s search box. Default 1000. |
-| `pageSize` | Items the editor’s list loads per request while it scrolls (a data source). Default 50. |
-| `parallelRequests` | `'byKey'`: requests at the same time. Default 6. |
-| `pasteSearchLimit` | Items a pasted text is looked for in. Default 50. |
+| `dataSource` | `Bind<DataSource \| unknown[]>`. The items, searched and resolved on their own service, or an in-memory array. |
+| `valueField, textField` | The field that matches the cell value (by default, the source's key, or the value itself in an array of plain values), and the displayed text as a field or `(item) => text` (by default, the value). |
+| `searchFields` | The fields searched by the editor and text searches. By default, `textField` when it is a field. |
+| `filter` | `(row, context) => FilterExpression`. Narrows the items for a row (for cascading lists, `context.getValue('province')` returns the entered value, otherwise the row's). `row` is `null` for filter lists. |
+| `allowClearing` | `Bind<boolean>`. Adds a clear button to the editor. The default is `false`. |
+| `resolve, batchSize` | `'batch'` (the default: keys in one request, `batchSize` 100 each) or `'byKey'` (one request per key). |
+| `sortBy` | `Bind<'key' \| 'text'>`. Sorts in-memory rows by key (the default) or by displayed text. |
+| `editor, editorOptions` | `'dropdown'` (the default), `'combobox'` or `'lookup'`, and props for it (such as a `Lookup`'s `columns`). A column's own `editor` still takes precedence and receives the lookup in its context. |
+| `searchLimit` | The maximum number of items containing the search panel's text that the search converts to keys. The default is 100. |
+| `filterSearchLimit` | The same for the header filter's search box. The default is 1000. |
+| `pageSize` | The number of items the editor's list loads per request while scrolling (with a data source). The default is 50. |
+| `parallelRequests` | With `'byKey'`, the number of simultaneous requests. The default is 6. |
+| `pasteSearchLimit` | The number of items searched for pasted text. The default is 50. |
 
 ## Example files
 

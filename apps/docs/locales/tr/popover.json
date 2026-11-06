@@ -32,7 +32,6 @@
   "A custom width, as a CSS length or in pixels.": "",
   "Closes the popover on a click outside it and its target.": "",
   "The time in milliseconds the pointer must rest on the target before it opens, and the time it stays after the pointer leaves both (`showOn: 'hover'`).": "",
-  "Indicates whether it is open. `x-model` provides two-way binding.": "",
   "Occurs when it opens.": "",
   "Occurs before it closes (`reason`). Set `cancel = true` to keep it open.": "",
   "Occurs when it closes, with the reason: `escape`, `outside`, `focus`, `toggle`, `hover`, `close-button` or `code`.": "",

@@ -2,7 +2,6 @@
   "Drag tabs and whole groups as you would in a code editor: along a strip, to another group, beside a group, along an edge of the layout, or between two managers. The same moves are available from the keyboard, and every drop goes through the methods and events of the action it performs.": "",
   "Dragging tabs and groups": "",
   "A copy of the tab follows the pointer. A marker shows the position among tabs, and a translucent area shows which half of a group (or all of it) a drop would take. Pausing on a tab of another group activates it, and the strip scrolls near its ends. The content is moved, never recreated.": "",
-  "Drop target": "",
   "Reorders the tab. A tab dropped among the pinned tabs becomes pinned, and a tab dropped among the others becomes unpinned (`pinOnDrag`).": "",
   "Moves the tab to the position under the pointer, or to the end when dropped on the empty part of a strip.": "",
   "Moves the tab into that group, after its active tab (`openPosition`).": "",

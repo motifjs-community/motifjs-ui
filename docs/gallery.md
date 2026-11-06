@@ -2,7 +2,7 @@
 
 > Display · @motifx-community/ui 0.1.0-beta.3
 
-Panes side by side, one in view or several, moved by the buttons at the sides, the dots under them, a swipe or the arrow keys; a slideshow when told. A pane is an image with a caption, or any content.
+Displays a horizontal set of slides, one or several at a time. Users navigate with the side buttons, the indicator dots, swipe gestures or the arrow keys, and it can run as an automatic slideshow. A slide can be an image with a caption or any other content.
 
 ## Import
 
@@ -10,9 +10,9 @@ Panes side by side, one in view or several, moved by the buttons at the sides, t
 import { Gallery } from '@motifx-community/ui';
 ```
 
-## Pictures with captions
+## Images with captions
 
-`items` are the panes: an address, or an item with `image`, `alt`, `text` and `description`. The pane in view is `value` (a pane’s `key`, else its index), `x-model` binds it two-way. Drag a pane with a finger or the mouse, press an arrow or a dot, or use the keys on the panes.
+`items` defines the slides. Each one is an address or an item with `image`, `alt`, `text` and `description`. `value` is the visible slide, identified by its `key` or index, and `x-model` provides two-way binding. Users can drag a slide with a finger or the mouse, press an arrow or a dot, or use the keyboard.
 
 ```tsx
 import { Gallery } from '@motifx-community/ui';
@@ -37,9 +37,9 @@ export default function Basic() {
 }
 ```
 
-## Loop and slideshow
+## Looping and slideshow
 
-`loop` goes around the ends: the pane on the other side is brought next to the one leaving, so the move never runs back across the panes between. `slideInterval` makes a slideshow; it waits while the pointer rests on the gallery, while focus is inside, while the page is out of sight and under reduced motion, and the button in the bar pauses it. `stretchImages` fills the panes.
+`loop` wraps around at the ends. The slide on the other side moves next to the outgoing one, so the transition never runs back across the slides in between. `slideInterval` starts a slideshow, which pauses while the pointer is over the gallery, while focus is inside it, while the page is hidden, and when the user prefers reduced motion. The button in the bar pauses it manually. `stretchImages` makes images fill the slides.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -72,9 +72,9 @@ export default function Slideshow() {
 }
 ```
 
-## Several panes side by side
+## Multiple slides per view
 
-`itemsPerPage` puts that many panes in the width, the `gap` token between them. The buttons and the keys move one pane at a time and stop when the last pane is in view; the pane in view is the first of them.
+`itemsPerPage` sets how many slides fit in the width, separated by the `gap` token. The buttons and keys move one slide at a time and stop when the last slide is in view. The current slide is the first visible one.
 
 ```tsx
 import { Gallery } from '@motifx-community/ui';
@@ -98,7 +98,7 @@ export default function PerPage() {
 
 ## Any content
 
-An item’s `content` makes the pane’s content when the pane is made; what is in it works as anywhere else. `onItemClick` tells a press on the pane that was not a drag.
+An item's `content` creates the slide content when the slide is created, and it behaves the same as anywhere else. `onItemClick` reports a click on a slide that was not a drag.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -132,7 +132,7 @@ export default function Content() {
 
 ## Programmatic use
 
-Made with `new`, moved with `next()`, `previous()` and `goTo()`; `showNavButtons` and `showIndicator` off leave the moving to your own buttons, `onSlideChanged` tells where it stands.
+Create the gallery with `new` and navigate with `next()`, `previous()` and `goTo()`. With `showNavButtons` and `showIndicator` off, you can use your own buttons, and `onSlideChanged` reports the position.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -174,40 +174,40 @@ export default function Programmatic() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Tab` | The slideshow button, the dots (one stop: the dot of the pane in view), the previous button, the panes, the next button; what is in the pane in view after it. |
-| `Arrow keys` | On the panes or the dots: Left and Right (the other way round in a right-to-left page) move to the previous and the next pane, Home and End to the first and the last. |
-| `Enter, Space` | On a button or a dot: press it. |
+| `Tab` | The slideshow button, the dots (one Tab stop, on the dot of the current slide), the previous button, the slides and the next button, followed by any content in the current slide. |
+| `Arrow keys` | On the slides or dots, Left and Right move to the previous and next slide (reversed on right-to-left pages), and Home and End move to the first and last. |
+| `Enter, Space` | On a button or dot, activates it. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Landmark` | A `region` with `aria-roledescription="carousel"`, named “Gallery” in the kit language; several on one page: give each its own `label`. |
-| `A pane` | A `group` with `aria-roledescription="slide"` named “Slide 2 of 5”; the panes out of view are hidden from readers and from the keys (`inert`). |
-| `Images` | Give each an `alt`; an empty one is a decorative image. The caption is read as the pane’s content. |
-| `Slideshow` | The panes are a live region while it is stopped (`polite`), silent while it runs (`off`), as the carousel pattern asks; the button to stop it comes first in the Tab order. |
-| `Dots and arrows` | Buttons named “Slide 2 of 5”, “Previous slide” and “Next slide”; the dot of the pane in view is `aria-current`; an arrow at an end is `aria-disabled`. |
+| `Landmark` | A `region` with `aria-roledescription="carousel"`, named “Gallery” in the kit language. If a page has several, give each one its own `label`. |
+| `A pane` | A `group` with `aria-roledescription="slide"`, named “Slide 2 of 5”. Slides out of view are hidden from assistive technology and the keyboard (`inert`). |
+| `Images` | Give each image an `alt`. An empty value marks a decorative image. The caption is read as part of the slide. |
+| `Slideshow` | The slides are a live region while stopped (`polite`) and silent while running (`off`), as the carousel pattern requires. The button that stops the slideshow comes first in the Tab order. |
+| `Dots and arrows` | Buttons named “Slide 2 of 5”, “Previous slide” and “Next slide”. The dot of the current slide has `aria-current`, and an arrow at an end has `aria-disabled`. |
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
-| `.mx-gallery` | The gallery. `data-swipe` when a drag moves it, `data-dragging` while one does, `data-playing` while the slideshow is on, `data-stretch`. |
-| `.mx-gallery__viewport, .mx-gallery__track` | The frame that clips the panes and the track that slides in it (`data-dragging`, `data-no-motion`). |
-| `.mx-gallery__item, .mx-gallery__figure, .mx-gallery__image` | A pane (`data-current`, `aria-hidden`), what it shows, the image. |
-| `.mx-gallery__caption, .mx-gallery__title, .mx-gallery__description` | The band over the bottom of a pane and its two lines. |
-| `.mx-gallery__nav, .mx-gallery__arrow` | The previous and next buttons (`data-direction`, `aria-disabled`) and the glyph in them. |
-| `.mx-gallery__bar, .mx-gallery__indicator, .mx-gallery__dot, .mx-gallery__play, .mx-gallery__play-glyph` | The bar over the bottom, the dots (`aria-current`), the slideshow button and its glyph. |
+| `.mx-gallery` | The gallery. `data-swipe` when dragging is enabled, `data-dragging` during a drag, `data-playing` while the slideshow runs, and `data-stretch`. |
+| `.mx-gallery__viewport, .mx-gallery__track` | The frame that clips the slides and the track that moves inside it (`data-dragging`, `data-no-motion`). |
+| `.mx-gallery__item, .mx-gallery__figure, .mx-gallery__image` | A slide (`data-current`, `aria-hidden`), its content and the image. |
+| `.mx-gallery__caption, .mx-gallery__title, .mx-gallery__description` | The caption band over the bottom of a slide and its two lines. |
+| `.mx-gallery__nav, .mx-gallery__arrow` | The previous and next buttons (`data-direction`, `aria-disabled`) and their glyphs. |
+| `.mx-gallery__bar, .mx-gallery__indicator, .mx-gallery__dot, .mx-gallery__play, .mx-gallery__play-glyph` | The bar along the bottom, the dots (`aria-current`), the slideshow button and its glyph. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `gallery.frame, .item, .caption, .title, .description` | Units: the frame (`focus`, `swipeable`, `dragging`), a pane (`current`), the caption and its texts. |
-| `gallery.nav, .arrow, .dot, .play, .play-glyph, .bar` | Units: the side buttons (`hover`, `pressed`, `focus`, `disabled`), their glyph (`icon` per direction), the dots (`current`, `hover`, `pressed`, `focus`), the slideshow button and its glyph (`icon` while `playing`), the bar. |
-| `gallery.gap, .nav-inset, .bar-inset, .indicator-gap, .caption-padding` | Between panes side by side, from the sides and the bottom to what lies over them, between the dots, inside a caption. |
+| `gallery.frame, .item, .caption, .title, .description` | Units: the frame (`focus`, `swipeable`, `dragging`), a slide (`current`), the caption and its text. |
+| `gallery.nav, .arrow, .dot, .play, .play-glyph, .bar` | Units: the side buttons (`hover`, `pressed`, `focus`, `disabled`), their glyphs (`icon` per direction), the dots (`current`, `hover`, `pressed`, `focus`), the slideshow button and its glyph (`icon` while `playing`), and the bar. |
+| `gallery.gap, .nav-inset, .bar-inset, .indicator-gap, .caption-padding` | The gap between side-by-side slides, the offset of overlaid parts from the sides and bottom, the gap between dots, and the caption padding. |
 
 ## API reference
 
@@ -215,30 +215,30 @@ export default function Programmatic() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `Bind<readonly (GalleryItem \| string)[]>` | `[]` | The panes in order: `GalleryItem`s (`image`, `alt`, `text`, `description`, `key`, `content`, `data`) or image addresses. |
-| `value` | `Bind<string \| number \| null>` | `0` | The pane in view: its `key`, else its index. `x-model` binds it two-way. |
-| `loop` | `Bind<boolean>` | `false` | After the last pane comes the first; the move goes around the ends, not back across the panes between. |
-| `showNavButtons` | `Bind<boolean>` | `true` | The previous and next buttons over the sides. |
-| `showIndicator` | `Bind<boolean>` | `true` | The dots under the panes, one per pane. |
-| `slideInterval` | `Bind<number>` | `0` | Milliseconds a pane stays in a slideshow; `0` for none. It pauses under the pointer, while focus is inside, out of sight and under reduced motion. |
-| `pauseOnHover` | `Bind<boolean>` | `true` | The slideshow waits while the pointer rests on the gallery. |
-| `swipeEnabled` | `Bind<boolean>` | `true` | A finger or a pointer drags the panes; a drag far or fast enough lands on the next one. |
-| `itemsPerPage` | `Bind<number>` | `1` | Panes side by side in the width, with the `gap` token between them. |
-| `stretchImages` | `Bind<boolean>` | `false` | An image fills its pane, cut at the edges, instead of fitting inside it whole. |
-| `height` | `Bind<string \| number \| null>` | `null` | A CSS length or pixels. Without one the gallery is as tall as its tallest pane. |
-| `label` | `Bind<string>` | the kit’s “Gallery” | What screen readers call it. |
+| `items` | `Bind<readonly (GalleryItem \| string)[]>` | `[]` | The slides in order: `GalleryItem` objects (`image`, `alt`, `text`, `description`, `key`, `content`, `data`) or image addresses. |
+| `value` | `Bind<string \| number \| null>` | `0` | The current slide, identified by its `key` or index. `x-model` provides two-way binding. |
+| `loop` | `Bind<boolean>` | `false` | The first slide follows the last, and the transition wraps around instead of running back across the slides in between. |
+| `showNavButtons` | `Bind<boolean>` | `true` | Shows previous and next buttons over the sides. |
+| `showIndicator` | `Bind<boolean>` | `true` | Shows indicator dots below the slides, one per slide. |
+| `slideInterval` | `Bind<number>` | `0` | The time each slide stays in a slideshow, in milliseconds. `0` turns it off. The slideshow pauses on hover, while focus is inside, while the page is hidden and when the user prefers reduced motion. |
+| `pauseOnHover` | `Bind<boolean>` | `true` | Pauses the slideshow while the pointer is over the gallery. |
+| `swipeEnabled` | `Bind<boolean>` | `true` | Lets a finger or pointer drag the slides. A drag that is far or fast enough moves to the next slide. |
+| `itemsPerPage` | `Bind<number>` | `1` | The number of slides side by side, with the `gap` token between them. |
+| `stretchImages` | `Bind<boolean>` | `false` | Makes an image fill its slide and crops the edges, instead of fitting the whole image inside. |
+| `height` | `Bind<string \| number \| null>` | `null` | A CSS length or pixels. Without it, the gallery is as tall as its tallest slide. |
+| `label` | `Bind<string>` | The kit string “Gallery” | The accessible name. |
 
 ### Events, properties and methods
 
-| Member | Kind | Description |
+| Member | Type | Description |
 | --- | --- | --- |
-| `onSlideChanging` | event | The pane in view is about to change (`from`, `to`, `fromItem`, `toItem`, `byUser`); `cancel = true` keeps the one there. |
-| `onSlideChanged` | event | The pane in view changed (`index`, `item`, `previous`, `byUser`: by a press, a swipe or a key, else programmatically or the slideshow). |
-| `onItemClick` | event | A press on a pane that was not a drag (`index`, `item`, `event`). |
-| `selectedIndex` | read-only | The index of the pane in view; -1 when there is none. |
-| `count` | read-only | How many panes there are. |
-| `isPlaying` | read-only | The slideshow runs now: not paused, and nothing holds it. |
-| `next(), previous()` | `Promise<boolean>` | Goes to the next or the previous pane; `false` at an end without `loop`, or when the change was refused. |
-| `goTo(pane)` | `Promise<boolean>` | Goes to a pane by index or key; `onSlideChanging` is asked first. |
-| `play(), pause()` | `void` | Starts the slideshow again, or stops it until `play()`; the button in the bar does the same. |
-| `refresh()` | `void` | Reads the items again after they were changed in place. |
+| `onSlideChanging` | event | Occurs before the current slide changes (`from`, `to`, `fromItem`, `toItem`, `byUser`). Set `cancel = true` to keep the current slide. |
+| `onSlideChanged` | event | Occurs after the current slide changes (`index`, `item`, `previous`, and `byUser` for a click, swipe or key, as opposed to code or the slideshow). |
+| `onItemClick` | event | Occurs when a slide is clicked without dragging (`index`, `item`, `event`). |
+| `selectedIndex` | read-only | The index of the current slide, or -1 if there is none. |
+| `count` | read-only | The number of panes. |
+| `isPlaying` | read-only | Indicates that the slideshow is running and nothing is holding it. |
+| `next(), previous()` | `Promise<boolean>` | Moves to the next or previous slide. Returns `false` at an end without `loop`, or if the change was canceled. |
+| `goTo(pane)` | `Promise<boolean>` | Moves to a slide by index or key. `onSlideChanging` is raised first. |
+| `play(), pause()` | `void` | Starts the slideshow again, or stops it until `play()` is called. The button in the bar does the same. |
+| `refresh()` | `void` | Re-reads the items after they have been changed in place. |

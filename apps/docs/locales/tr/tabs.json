@@ -3,7 +3,6 @@
   "The children of a `<Tab>` are its panel. `value` is the `key` of the selected tab, or its index, and `x-model` provides two-way binding. When you create the component with `new`, add, insert and remove tabs programmatically.": "",
   "Closable tabs": "Kapatılabilir sekmeler",
   "`closable` adds a close button to every tab, and a tab's own `closable` takes precedence. Delete or a middle-click closes the focused or hovered tab. `onClose` can cancel the action, for example to confirm unsaved changes.": "",
-  "Overflow": "",
   "When tabs do not fit, arrow buttons scroll the strip (`scrollButtons`, on by default). The selected tab and the focused tab scroll into view.": "",
   "Manual activation": "Elle etkinleştirme",
   "By default, an arrow key selects the tab it moves to. With `activation=\"manual\"`, it only moves focus, and Enter or Space selects the tab. This works better when a panel is slow to display.": "",

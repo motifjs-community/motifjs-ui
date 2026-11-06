@@ -2,7 +2,7 @@
 
 > Buttons · @motifx-community/ui 0.1.0-beta.3
 
-A menu bar of an app (File, Edit, View) and the menu that opens on a right-click. Both show the same menu items: submenus, check and radio items, shortcuts, access keys.
+An application menu bar (File, Edit, View) and a context menu that opens on right-click. Both use the same menu items, which support submenus, check and radio items, shortcuts and access keys.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { MenuBar, ContextMenu, attachContextMenu, type MenuItem } from '@motifx-
 
 ## MenuBar
 
-A `MenuBar` takes its top items as `items`; each one's `items` is its menu. `&File` makes Alt+F open File. Left and Right move along the bar and, while a menu is open, to the next menu; Escape goes back to the bar.
+A `MenuBar` takes its top-level items as `items`, and the `items` of each one define its menu. `&File` assigns Alt+F to open File. Left and Right move along the bar and, while a menu is open, to the next menu. Escape returns to the bar.
 
 ```tsx
 import { reactive, type Component } from '@motifx/core';
@@ -93,28 +93,28 @@ export default function MainMenu() {
 }
 ```
 
-## Submenus, checks, radios, shortcuts
+## Submenus, check items, radio items and shortcuts
 
-An item with `items` opens a submenu at its side: Right (Left in a right-to-left page), Enter or Space open it, Left and Escape close it, and the pointer opens it after a short rest. `checked` makes a check item; `checked` with a `group` one choice of several, shown with a dot. `shortcut` is shown at the end of the item; register the key itself with `addShortcut`. The same items work in `Button`’s menu.
+An item with `items` opens a submenu at its side. Right (Left on right-to-left pages), Enter or Space opens it, Left and Escape close it, and hovering opens it after a short delay. `checked` creates a check item, and `checked` with a `group` creates one choice in a set, shown with a dot. `shortcut` is displayed at the end of the item, so register the key separately with `addShortcut`. The same items work in a `Button` menu.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `text` | `Bind<string>` | The label; `&Copy` makes C choose it while the menu is open (Alt+C on a menu bar’s top item). |
-| `icon, hint` | `Bind<…>` | An icon at the start, a tooltip. |
-| `shortcut` | `Bind<string>` | A key combination shown at the end (`Ctrl+S`). Only shown: register the key with `addShortcut`. |
-| `description` | `Bind<string>` | A second, dimmer text after the label: what tells the item apart, such as a folder. Part of the item’s name, never a key. |
-| `items` | `Bind<readonly MenuItem[]>` | A submenu, opened at the side. |
+| `text` | `Bind<string>` | The label. `&Copy` makes C select the item while the menu is open (Alt+C on a top-level menu bar item). |
+| `icon, hint` | `Bind<…>` | An icon at the start, and a tooltip. |
+| `shortcut` | `Bind<string>` | A key combination displayed at the end (`Ctrl+S`). It is for display only, so register the key with `addShortcut`. |
+| `description` | `Bind<string>` | A second, dimmer text after the label that distinguishes the item, such as a folder name. It is part of the item's name and never a key. |
+| `items` | `Bind<readonly MenuItem[]>` | A submenu that opens at the side. |
 | `checked` | `Bind<boolean>` | A check item (`menuitemcheckbox`). |
-| `group` | `Bind<string>` | With `checked`: one choice of a group (`menuitemradio`), shown with a dot. |
-| `enabled, visible` | `Bind<boolean>` | Dimmed and not chosen, or left out. |
-| `beginGroup` | `Bind<boolean>` | A line before the item. |
-| `tone` | `Bind<'standard' \| 'accent' \| 'success' \| 'caution' \| 'danger'>` | The item in the kit tone color (`danger` for a destructive one); a toolbar button moved into the overflow menu keeps its tone. |
-| `click` | `(e) => void` | Chosen, after the menu closed. `e`: `{ item, source, event }`. |
-| `data` | `unknown` | Your own value. |
+| `group` | `Bind<string>` | With `checked`, one choice in a group (`menuitemradio`), shown with a dot. |
+| `enabled, visible` | `Bind<boolean>` | Dims the item so it cannot be selected, or removes it. |
+| `beginGroup` | `Bind<boolean>` | Draws a separator before the item. |
+| `tone` | `Bind<'standard' \| 'accent' \| 'success' \| 'caution' \| 'danger'>` | Colors the item with a kit tone (`danger` for destructive actions). A toolbar button moved into the overflow menu keeps its tone. |
+| `click` | `(e) => void` | Occurs when the item is selected, after the menu closes. `e`: `{ item, source, event }`. |
+| `data` | `unknown` | A custom value. |
 
 ## ContextMenu
 
-A `ContextMenu` opens on its target’s right-click at the pointer, and with the Menu key or Shift+F10 at the focused element. `onOpening` gets the element (`e.target`) and builds the items for it, here for the row of a list; `e.cancel = true` leaves the browser its own menu. It closes on Escape and a press outside; when the page scrolls it goes along with the element it opened on, and closes once that element is out of sight.
+A `ContextMenu` opens at the pointer when its target is right-clicked, and at the focused element with the Menu key or Shift+F10. `onOpening` receives the element (`e.target`) and builds the items for it, in this case for a row in a list. Setting `e.cancel = true` leaves the browser's own menu. The menu closes on Escape or a click outside. When the page scrolls, it follows the element it opened on and closes once that element is out of view.
 
 ```tsx
 import { reactive, type Component } from '@motifx/core';
@@ -214,50 +214,50 @@ export default function AttachedMenu() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Tab` | Into the menu bar (one stop), and out of it. |
-| `Left / Right` | On the bar: the previous / next top item. In a menu: the neighbour’s menu, or close a submenu (Right opens one). Mirrored right to left. |
-| `Down, Enter, Space` | On the bar: open the menu, first item. Up opens it on the last item. |
-| `Up / Down, Home / End` | In a menu: move between the items, wrapping around. |
-| `A letter` | The next item starting with it; an item’s `&` key chooses it. |
-| `Alt + key` | Opens the top item with that `&` key (Control + Option on Apple platforms). |
-| `Escape` | Closes a submenu, then the menu, back to where it opened. |
-| `F10` | Focuses the menu bar, with `focusOnF10`. |
+| `Tab` | Moves focus into the menu bar (one Tab stop) and out of it. |
+| `Left / Right` | On the bar, moves to the previous or next top-level item. In a menu, moves to the adjacent menu or closes a submenu (Right opens one). These keys are mirrored on right-to-left pages. |
+| `Down, Enter, Space` | On the bar, opens the menu on its first item. Up opens it on the last item. |
+| `Up / Down, Home / End` | In a menu, moves between items and wraps at the ends. |
+| `A letter` | Moves to the next item that starts with that letter. An item's `&` key selects it. |
+| `Alt + key` | Opens the top-level item with that `&` key (Control + Option on Apple platforms). |
+| `Escape` | Closes a submenu, then the menu, and returns to where it opened. |
+| `F10` | Moves focus to the menu bar when `focusOnF10` is set. |
 | `Menu key, Shift+F10` | Opens a context menu at the focused element. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `MenuBar` | `role="menubar"` named by `label`; top items are `menuitem`s with `aria-haspopup` and `aria-expanded`, one Tab stop (roving tabindex). |
-| `Menus` | `role="menu"`; items are `menuitem`, `menuitemcheckbox` or `menuitemradio` with `aria-checked`; disabled ones `aria-disabled`, still reachable. |
-| `Submenus` | The item has `aria-haspopup="menu"` and `aria-expanded`; the submenu opens next to it, focus goes in and comes back. |
-| `Focus` | A menu opened from the keyboard focuses its first item; from the pointer, the menu itself. Closing gives focus back. |
-| `Shortcuts` | The shortcut text is part of the item’s name; access keys are in `aria-keyshortcuts` on the top items. |
+| `MenuBar` | `role="menubar"` named by `label`. Top-level items are `menuitem` elements with `aria-haspopup` and `aria-expanded`, and the bar is one Tab stop (roving tabindex). |
+| `Menus` | `role="menu"`. Items are `menuitem`, `menuitemcheckbox` or `menuitemradio` with `aria-checked`. Disabled items have `aria-disabled` and remain reachable. |
+| `Submenus` | The item has `aria-haspopup="menu"` and `aria-expanded`. The submenu opens next to it, focus moves in and returns when it closes. |
+| `Focus` | A menu opened from the keyboard focuses its first item, and a menu opened with the pointer focuses the menu itself. Closing returns focus. |
+| `Shortcuts` | The shortcut text is part of the item's name. Access keys are exposed through `aria-keyshortcuts` on top-level items. |
 
 ## Localization
 
-Menus write no text of their own: every label, shortcut and name comes from your items, so they follow your own translations (a function in `text` follows a language change at once).
+Menus have no strings of their own. Every label, shortcut and name comes from your items, so they follow your own translations. A function in `text` updates immediately when the language changes.
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
-| `.mx-menubar, .mx-menubar__bar, .mx-menubar__item` | The menu bar, its row, a top item (`aria-expanded="true"` while open). |
-| `.mx-context-menu, .mx-context-menu__anchor` | The context menu (no box of its own) and the point it opens at. |
-| `.mx-menu, .mx-menu__item, .mx-menu__separator` | A menu (shared with Button), an item, a line. |
+| `.mx-menubar, .mx-menubar__bar, .mx-menubar__item` | The menu bar, its row and a top-level item (`aria-expanded="true"` while open). |
+| `.mx-context-menu, .mx-context-menu__anchor` | The context menu, which has no box of its own, and the point it opens at. |
+| `.mx-menu, .mx-menu__item, .mx-menu__separator` | A menu (shared with Button), an item and a separator. |
 | `.mx-menu__check, .mx-menu__icon, .mx-menu__label, .mx-menu__description, .mx-menu__shortcut, .mx-menu__arrow` | The parts of an item. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `menubar.height, menubar.item-height` | The heights of the bar and of a top item. |
-| `menubar.bar, menubar.item, menubar.icon, menubar.mnemonic` | Units: the bar; a top item with its box per state (`hover`, `pressed`, `open`, `disabled`, `focus`); its icon; its access key’s mark (`shown`). |
-| `menu.item, menu.item-height, menu.item-white-space` | Menu items (shared with Button’s menu): the item unit in each state (`highlight`, `pressed`, `focus`, `checked`, `disabled`, `first`, `last`, each tone and `<tone>-highlight`), the row height, whether a text wraps. |
-| `menu.panel, menu.check, menu.icon, menu.check-mark, menu.radio-mark, menu.separator` | Units: the column of items, the leading mark and icon, the check and radio marks, the line between groups. |
-| `menu.label, menu.description, menu.shortcut, menu.arrow` | Units: an item’s text, its description, the shortcut and the submenu arrow. |
+| `menubar.height, menubar.item-height` | The height of the bar and of a top-level item. |
+| `menubar.bar, menubar.item, menubar.icon, menubar.mnemonic` | Units: the bar, a top-level item with its box per state (`hover`, `pressed`, `open`, `disabled`, `focus`), its icon, and its access key indicator (`shown`). |
+| `menu.item, menu.item-height, menu.item-white-space` | Menu items, shared with the Button menu: the item unit in each state (`highlight`, `pressed`, `focus`, `checked`, `disabled`, `first`, `last`, each tone and `<tone>-highlight`), the row height, and text wrapping. |
+| `menu.panel, menu.check, menu.icon, menu.check-mark, menu.radio-mark, menu.separator` | Units: the item column, the leading indicator and icon, the check and radio marks, and the separator between groups. |
+| `menu.label, menu.description, menu.shortcut, menu.arrow` | Units: the item text, its description, the shortcut and the submenu arrow. |
 
 ## API reference
 
@@ -265,48 +265,48 @@ Menus write no text of their own: every label, shortcut and name comes from your
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `Bind<readonly MenuItem[]>` | `[]` | The top items; their `items` are the menus they open. A top item without `items` runs its `click`. |
-| `label` | `Bind<string>` | `''` | Names the bar for screen readers. The same property as `text`. |
-| `focusOnF10` | `Bind<boolean>` | `false` | F10 moves focus to the bar from anywhere on the page. Off by default: browsers use F10. |
-| `openOnHover` | `Bind<boolean>` | `true` | While a menu is open, pointing at another top item opens its menu; pointing at an item opens its submenu. |
-| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | The shared properties of every control. |
+| `items` | `Bind<readonly MenuItem[]>` | `[]` | The top-level items, whose `items` define the menus they open. A top-level item without `items` runs its `click`. |
+| `label` | `Bind<string>` | `''` | The accessible name of the bar. This is the same property as `text`. |
+| `focusOnF10` | `Bind<boolean>` | `false` | F10 moves focus to the bar from anywhere on the page. This is off by default because browsers use F10. |
+| `openOnHover` | `Bind<boolean>` | `true` | While a menu is open, hovering another top-level item opens its menu, and hovering an item opens its submenu. |
+| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. |
 
 ### ContextMenu props
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `Bind<readonly MenuItem[]>` | `[]` | The commands; `onOpening` can give others per element. |
-| `target` | `Bind<Element \| Component \| null>` | its parent | Whose menu it is. Without it, the element the `ContextMenu` is placed in. |
-| `label` | `Bind<string>` | `''` | Names the menu for screen readers. |
-| `keyboard` | `Bind<boolean>` | `true` | The Menu key and Shift+F10 open it at the focused element. |
-| `closeOnScroll` | `Bind<boolean>` | `true` | Scrolling that takes the element it opened on out of sight closes it; until then the menu goes along with that element. |
-| `openOnHover` | `Bind<boolean>` | `true` | Pointing at an item opens its submenu. |
-| `enabled` | `Bind<boolean>` | `true` | `false`: the browser shows its own menu. |
+| `items` | `Bind<readonly MenuItem[]>` | `[]` | The commands. `onOpening` can provide different ones for each element. |
+| `target` | `Bind<Element \| Component \| null>` | Its parent | The element the menu belongs to. If not set, this is the element the `ContextMenu` is placed in. |
+| `label` | `Bind<string>` | `''` | The accessible name of the menu. |
+| `keyboard` | `Bind<boolean>` | `true` | The Menu key and Shift+F10 open the menu at the focused element. |
+| `closeOnScroll` | `Bind<boolean>` | `true` | Scrolling the element out of view closes the menu. Until then, the menu follows the element. |
+| `openOnHover` | `Bind<boolean>` | `true` | Hovering an item opens its submenu. |
+| `enabled` | `Bind<boolean>` | `true` | `false` shows the browser's own menu. |
 
 ### Properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `MenuBar.openItem` | read-only, reactive | The top item whose menu is open. |
-| `ContextMenu.opened` | read-only, reactive | Whether it is open. |
-| `ContextMenu.targetElement` | read-only, reactive | The element it was last opened on. |
-| `ContextMenu.target` | read/write, reactive | The element it listens on. |
+| `MenuBar.openItem` | read-only, reactive | The top-level item whose menu is open. |
+| `ContextMenu.opened` | read-only, reactive | Indicates whether it is open. |
+| `ContextMenu.targetElement` | read-only, reactive | The element the menu was last opened on. |
+| `ContextMenu.target` | read/write, reactive | The element the menu listens on. |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `MenuBar.open(item \| index)` | `boolean` | Opens a top item’s menu with focus on its first item. |
+| `MenuBar.open(item \| index)` | `boolean` | Opens a top-level item's menu with focus on its first item. |
 | `MenuBar.close()` | `void` | Closes the open menu. |
-| `ContextMenu.open(at, target?)` | `boolean` | Opens it programmatically, at `{ x, y }` or at an element. |
+| `ContextMenu.open(at, target?)` | `boolean` | Opens the menu programmatically, at `{ x, y }` or at an element. |
 | `ContextMenu.close()` | `void` | Closes it. |
-| `MenuBar.refresh(), ContextMenu.refresh()` | `void` | Your items may be plain or reactive; the menu reads them as they are. After changing them in place, call `refresh()`. The bar, the open menu and its submenus follow. |
-| `attachContextMenu(target, items)` | `() => void` | Gives an element or component a menu; `items` can be a function of the opening (`e.target`). Returns the remover. |
+| `MenuBar.refresh(), ContextMenu.refresh()` | `void` | Your items can be plain or reactive, and the menu reads them as they are. After changing them in place, call `refresh()`. The bar, the open menu and its submenus update. |
+| `attachContextMenu(target, items)` | `() => void` | Attaches a menu to an element or component. `items` can be a function of the opening event (`e.target`). Returns a function that removes the menu. |
 
 ### Events
 
 | Event | When |
 | --- | --- |
-| `onItemClick(e)` | Both: an item was chosen, after its own `click`. |
-| `ContextMenu.onOpening(e)` | About to open. `e`: `{ target, items, cancel, byKeyboard, event, source }`; set `e.items` for the element, or `e.cancel = true`. |
+| `onItemClick(e)` | On both components, occurs when an item is selected, after its own `click`. |
+| `ContextMenu.onOpening(e)` | Occurs before the menu opens. `e`: `{ target, items, cancel, byKeyboard, event, source }`. Set `e.items` for the element, or set `e.cancel = true`. |
 | `ContextMenu.onClosed(reason)` | `escape`, `outside`, `focus` or `code`. |

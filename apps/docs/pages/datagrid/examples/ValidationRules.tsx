@@ -10,7 +10,7 @@ function customerAllowed(name: string): Promise<{ isValid: boolean; message?: st
   return new Promise((done) => setTimeout(() => done(/test/i.test(name) ? { isValid: false, message: 'The server does not take test customers.' } : { isValid: true }), 500));
 }
 
-/** the standard rule set on the columns, checked as values are written and before a row is saved. */
+/** Validation rules on the columns, checked as values are entered and before a row is saved. */
 const ruleColumns: GridColumn<Order>[] = columns.map((c) => {
   if (c.field === 'customer') {
     return {

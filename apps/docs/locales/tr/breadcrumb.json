@@ -2,7 +2,6 @@
   "Shows the path to the current page. Each step is a link or button, and the current page comes last. Steps that do not fit move into a menu after the first step.": "",
   "Links and buttons": "Bağlantılar ve düğmeler",
   "A step with `href` is a link, and `rel='router'` lets the MotifJS router handle it. A step without `href` is a button, and `onItemClick` reports the click.": "",
-  "Overflow": "",
   "A `nav` named “Breadcrumb” in the kit language, containing an ordered list. If a page has several, give each one its own `label`.": "",
   "`aria-current=\"page\"`. The current page is not a link.": "",
   "Steps that do not fit go into a menu behind a button named “More pages”. Choosing one activates the step itself.": "",

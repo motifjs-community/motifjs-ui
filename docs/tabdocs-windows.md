@@ -2,11 +2,11 @@
 
 > TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
 
-A document, a group or a floating window moves into a browser window of its own, and back. Its content moves with it, nothing is made again, and the new window is a part of the same manager: its tabs, menus, keys and drag work as they do here.
+A document, a group or a floating window can move into its own browser window and back. Its content moves with it without being recreated, and the new window is part of the same manager, so its tabs, menus, keys and dragging work the same way.
 
-## Into a new window and back
+## Moving to a new window and back
 
-Type in the form, choose a city, scroll the orders, then move the tab into a new window: the window opens at the size of the group, beside it, and shows the same component, in the same state. Its title is the active document's. Close the window and its documents come back to the group they came from.
+Type in the form, choose a city and scroll the orders, then move the tab into a new window. The window opens beside the group at the same size, and shows the same component in the same state. Its title is that of the active document. When you close the window, its documents return to their original group.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';
@@ -98,17 +98,17 @@ export function customerCard(customer: Customer): ComponentBase {
 }
 ```
 
-| Way | What it does |
+| Method | Description |
 | --- | --- |
-| `The tab menu, the strip menu` | "Move into new window" moves the document, or the whole group; on a floating window's strip, the whole window. In a new window, "Move back to main window" brings the document (or the group) back. |
-| `The keys` | Ctrl + K, then Shift + O: the active document into a new window (`moveToNewWindow`); Ctrl + K, then Shift + D: back (`moveToMainWindow`). |
-| `A drag past the edge of the browser window` | Let go outside the page, a new window opens there with what was dragged (`dragOutToNewWindow`). Dragged out of a new window, it goes back to the main window, or into the window under the pointer. |
-| `"Move to…"` | Tab and Shift + Tab go through the groups of every window; past floating, the same arrow points at a new window. |
-| `Code` | `moveToNewWindow(doc \| group \| floatingWindow, { rect, url })`, `moveToMainWindow(doc \| group \| window)`, and `move`, `split`, `dock`, `float` with a group of any window. |
+| `The tab menu, the strip menu` | "Move into new window" moves the document or the whole group, or on a floating window's strip, the whole window. In a new window, "Move back to main window" returns the document or group. |
+| `The keys` | Ctrl + K, then Shift + O moves the active document into a new window (`moveToNewWindow`). Ctrl + K, then Shift + D moves it back (`moveToMainWindow`). |
+| `A drag past the edge of the browser window` | Releasing outside the page opens a new window there with the dragged item (`dragOutToNewWindow`). Dragging out of a new window returns the item to the main window, or to the window under the pointer. |
+| `"Move to…"` | Tab and Shift + Tab move through the groups of every window, and past a floating window, the same arrow key selects a new window. |
+| `Code` | `moveToNewWindow(doc \| group \| floatingWindow, { rect, url })`, `moveToMainWindow(doc \| group \| window)`, and `move`, `split`, `dock` and `float` with a group in any window. |
 
-## Closing, blocked windows, events
+## Closing, blocked windows and events
 
-When a new window closes its documents come back, or close (`newWindowCloseAction`): each one asks through `onClosing` as usual, back in the main window, so a document with unsaved changes is asked about there. A browser opens windows for a page only on a click or a key, and may block them anyway: then `onError` tells, and a floating window opens instead (`newWindowFallback`). Here a switch plays the browser that blocks.
+When a new window closes, its documents either return or close (`newWindowCloseAction`). Each one raises `onClosing` as usual in the main window, so the prompt for unsaved changes appears there. Browsers open windows for a page only in response to a click or a key press, and may still block them. In that case, `onError` reports it and a floating window opens instead (`newWindowFallback`). In this example, a switch simulates a browser that blocks the window.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';
@@ -202,7 +202,7 @@ export function customerCard(customer: Customer): ComponentBase {
 
 ## Saving the layout with its windows
 
-`saveLayout` writes each new window: its place on the screen, its layout and the group its documents came from. `loadLayout` puts them back as floating windows by default. To open them as windows again (`restoreWindows: 'reopen'`) the browser wants a click or a key: `loadLayout` called from one opens them right away, and a page that loads its layout on start shows them floating, with a button calling `reopenWindows()`.
+`saveLayout` writes each new window with its position on the screen, its layout and the original group of its documents. By default, `loadLayout` restores them as floating windows. To open them as windows again (`restoreWindows: 'reopen'`), the browser requires a click or a key press. If `loadLayout` is called from one, they open immediately. A page that loads its layout on startup shows them as floating windows, with a button that calls `reopenWindows()`.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';
@@ -303,25 +303,25 @@ reopenButton.onclick = () => docs.reopenWindows();
 
 ## What works in a new window
 
-| Part | How |
+| Part | Details |
 | --- | --- |
-| `Tabs and groups` | Everything a group does: pinning, previews, the "…" list, the recently used list, splitting, the splitters by the mouse and the keys, maximize is the main window's only. |
-| `Menus, lists, tooltips` | They open in the new window's own top layer: the kit's `Popup`, `ContextMenu` and `Tooltip` go to the document of the element they open at. |
-| `Keys` | The manager's keys, every control's shortcuts and access keys: the kit listens in every connected document (`connectDocument`). |
-| `Content` | Any component: a form with a `DropDown`, a `DataGrid` with its filter popup and its keys, an `MxForm` dialog opened from it (in that window). |
-| `Drag and drop` | Inside the window as in the page: strips, the zones or guides of a group, the edges of its layout. No dock areas and no floating there: those are the main window's. |
-| `The look` | The page's style sheets (also constructed ones) and the attributes of `<html>` and `<body>` (`data-theme`, `data-identity`, density, `dir`, `lang`, classes) are copied and followed: change the theme here and every window follows. |
+| `Tabs and groups` | Everything a group does: pinning, previews, the "…" list, the recently used list, splitting, and resizing with the mouse and keyboard. Maximize is available only in the main window. |
+| `Menus, lists, tooltips` | They open in the new window's own top layer, because the kit's `Popup`, `ContextMenu` and `Tooltip` use the document of the element they open at. |
+| `Keys` | The manager's keys, control shortcuts and access keys all work, because the kit listens in every connected document (`connectDocument`). |
+| `Content` | Any component, such as a form with a `DropDown`, a `DataGrid` with its filter popup and keys, or an `MxForm` dialog opened from it in that window. |
+| `Drag and drop` | Inside the window, the same as in the page: strips, the zones or guides of a group, and the edges of its layout. Dock areas and floating are available only in the main window. |
+| `The look` | The page's style sheets (including constructed ones) and the attributes of `<html>` and `<body>` (`data-theme`, `data-identity`, density, `dir`, `lang`, classes) are copied and kept in sync, so a theme change applies to every window. |
 
 ### Limits
 
-| Topic | Why |
+| Topic | Reason |
 | --- | --- |
-| `Frames` | An `<iframe>` in a document loads again when it moves into another window: browsers do that for every moved frame. |
-| ``onMounted` of content made there` | Core waits for the page's own document (CORE-REPORTS R30): the manager lets content it makes in a new window arrive in the page for a moment first. A component an app builds later inside such content gets no `onMounted`. |
-| `The window's place` | Browsers tell when a window is resized, not when it moves: `rect` is read when it is needed. |
-| `A closed window` | It is gone before anything can ask: its documents come back (or close, each one asking in the main window). `onWindowClosing` cannot keep it. |
+| `Frames` | An `<iframe>` in a document reloads when it moves to another window, as browsers do with every moved frame. |
+| ``onMounted` of content made there` | The MotifJS core waits for the page's own document, so the manager lets content it creates in a new window attach to the page briefly first. A component that an application creates later inside such content does not receive `onMounted`. |
+| `The window's place` | Browsers report when a window is resized, but not when it moves, so `rect` is read when it is needed. |
+| `A closed window` | The window is already gone before anything can prevent it. Its documents return or close, each raising its event in the main window, and `onWindowClosing` cannot keep it open. |
 
-## Changing or refusing
+## Changing or canceling
 
 ```tsx
 docs.onWindowOpening((e) => {
@@ -339,11 +339,11 @@ docs.onError((e) => {
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `The window` | Its content is a `main` landmark named after the manager; its groups, strips and tabs are what they are in the page, with the roving tab stop. |
-| `Focus` | Moving into a new window by the user focuses the document there; moving back focuses it in the main window. |
-| `Announcements` | Politely, in the window that has focus: moved into a new window, back in the main window, window closed, the browser did not open the window. |
+| `The window` | Its content is a `main` landmark named after the manager. Its groups, strips and tabs work as they do in the page, with the same roving Tab stop. |
+| `Focus` | When the user moves a document to a new window, focus moves to it there. When it moves back, focus returns to it in the main window. |
+| `Announcements` | Announced politely in the window that has focus: moved to a new window, returned to the main window, window closed, and browser did not open the window. |
 
 ## API
 
@@ -351,64 +351,64 @@ docs.onError((e) => {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `allowNewWindow` | `Bind<boolean>` | `true` | Documents, groups and floating windows may move into new windows; a document's own `allowNewWindow` wins. |
-| `newWindowUrl` | `Bind<string>` | `'about:blank'` | The page a new window opens, on the page's own origin (one of the app's, with nothing in it); it is waited for before the move. |
-| `newWindowTitle` | `Bind<string \| ((doc, window) => string)>` | `'{title} – {page}'` | The window's title: `{title}` is its active document's title, `{page}` the page's title; it follows them. |
-| `newWindowSize` | `Bind<{ width, height } \| null>` | `null` | The size a new window opens at; `null`: the size of what moves into it. |
-| `newWindowFallback` | `Bind<'float' \| 'none'>` | `'float'` | When the browser opens no window: a floating window in the page instead, or nothing. |
-| `newWindowCloseAction` | `Bind<'back' \| 'close'>` | `'back'` | When a new window closes, its documents go back to the main window (into the group they came from), or close; `onWindowClosing` may change it each time. |
-| `restoreWindows` | `Bind<'float' \| 'reopen' \| 'main'>` | `'float'` | What `loadLayout` does with saved new windows: floating windows, windows again (see below), or groups at the right of the main window. |
-| `openWindow` | `(request) => Window \| null` | `window.open` | Opens the window: an application shell, a host page with its own frame, a test. `request` is `{ url, name, features, rect }`. |
-| `dragOutToNewWindow` | `Bind<boolean>` | `true` | A drag let go past the edge of the browser window opens a new window there; past the edge of a new window it goes back. |
+| `allowNewWindow` | `Bind<boolean>` | `true` | Allows documents, groups and floating windows to move into new windows. A document's own `allowNewWindow` takes precedence. |
+| `newWindowUrl` | `Bind<string>` | `'about:blank'` | The page a new window opens, on the page's own origin (an empty page of the application). The move waits for it to load. |
+| `newWindowTitle` | `Bind<string \| ((doc, window) => string)>` | `'{title} – {page}'` | The window's title. `{title}` is the title of the active document and `{page}` is the page title, and it stays up to date. |
+| `newWindowSize` | `Bind<{ width, height } \| null>` | `null` | The initial size of a new window. `null` uses the size of what moves into it. |
+| `newWindowFallback` | `Bind<'float' \| 'none'>` | `'float'` | What happens when the browser does not open a window: a floating window in the page, or nothing. |
+| `newWindowCloseAction` | `Bind<'back' \| 'close'>` | `'back'` | Whether a new window's documents return to the main window (into their original group) or close when it closes. `onWindowClosing` can change this each time. |
+| `restoreWindows` | `Bind<'float' \| 'reopen' \| 'main'>` | `'float'` | How `loadLayout` restores saved new windows: as floating windows, as windows again (see below), or as groups at the right of the main window. |
+| `openWindow` | `(request) => Window \| null` | `window.open` | Opens the window, for an application shell, a host page with its own frame, or a test. `request` is `{ url, name, features, rect }`. |
+| `dragOutToNewWindow` | `Bind<boolean>` | `true` | Dragging past the edge of the browser window opens a new window there, and dragging past the edge of a new window returns the item. |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `moveToNewWindow(target, options?)` | `TabBrowserWindow \| null` | `target`: a document, a group or a floating window; `options`: `{ rect, url }` (`rect` on the screen). `null` when it may not move, `onWindowOpening` cancels, or the browser opens none (then `onError`). |
-| `moveToMainWindow(target)` | `boolean` | A document, a group or a `TabBrowserWindow`: back into the group it came from, else the main window's active one. A window left empty closes. |
-| `closeWindow(window), focusWindow(window)` | `Promise<boolean>`, `boolean` | Also for a new window: closing does what `newWindowCloseAction` says. |
-| `reopenWindows()` | `number` | Opens again the saved windows the browser blocked (`restoreWindows: 'reopen'`); call it from a click or a key. |
-| `browserWindows` | read-only, reactive | The new windows, the one used last at the end. |
-| `saveLayout(), loadLayout(layout, factory?)` | `TabLayout` (version 3) | Also `browserWindows`: `rect` on the screen, the layout, the group they came from (`home`). Versions 1 and 2 still load. |
+| `moveToNewWindow(target, options?)` | `TabBrowserWindow \| null` | `target` is a document, a group or a floating window, and `options` is `{ rect, url }` (`rect` on the screen). Returns `null` when the move is not allowed, `onWindowOpening` cancels it, or the browser opens no window (which also raises `onError`). |
+| `moveToMainWindow(target)` | `boolean` | Returns a document, a group or a `TabBrowserWindow` to its original group, otherwise to the active group of the main window. A window left empty closes. |
+| `closeWindow(window), focusWindow(window)` | `Promise<boolean>`, `boolean` | Also applies to a new window, where closing follows `newWindowCloseAction`. |
+| `reopenWindows()` | `number` | Reopens saved windows that the browser blocked (`restoreWindows: 'reopen'`). Call it from a click or a key press. |
+| `browserWindows` | read-only, reactive | The new windows, with the most recently used last. |
+| `saveLayout(), loadLayout(layout, factory?)` | `TabLayout` (version 3) | Also includes `browserWindows`: `rect` on the screen, the layout, and the original group (`home`). Versions 1 and 2 still load. |
 
 ### TabBrowserWindow
 
-| Member | Kind | Description |
+| Member | Type | Description |
 | --- | --- | --- |
 | `window` | `Window` | The browser window. |
-| `element` | `HTMLDivElement` | The manager's part in that window (`.mx-tabdocs.mx-tabdocs__page`), filling it. |
-| `rect` | read-only | Its place on the screen and the size of its page, in pixels. |
-| `groups, documents, activeGroup, activeDocument, index` | read-only, reactive | What it holds; its title follows `activeDocument`. |
-| `moveToMainWindow(), close(), focus()` | methods | The manager's methods for this window. |
+| `element` | `HTMLDivElement` | The manager's part in that window (`.mx-tabdocs.mx-tabdocs__page`), which fills it. |
+| `rect` | read-only | Its position on the screen and the size of its page, in pixels. |
+| `groups, documents, activeGroup, activeDocument, index` | read-only, reactive | Its contents. The title follows `activeDocument`. |
+| `moveToMainWindow(), close(), focus()` | methods | The manager's methods, scoped to this window. |
 
 ### TabDocument
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `allowNewWindow` | `Bind<boolean \| undefined>` | This document's own setting; `undefined` follows the manager. |
-| `browserWindow` | read-only, reactive | The new window it is in, `null` in the main window (also on `TabGroup`). |
+| `allowNewWindow` | `Bind<boolean \| undefined>` | Overrides the manager's setting for this document. `undefined` inherits the manager's value. |
+| `browserWindow` | read-only, reactive | The new window containing it, or `null` in the main window (also on `TabGroup`). |
 
 ### Events
 
-| Event | What it carries |
+| Event | Contents |
 | --- | --- |
-| `onWindowOpening(e) / onWindowOpened(e)` | `{ document, group, window, rect, url }`, cancelable, `rect` and `url` may be changed (`window`: the floating window that moves); then `{ window, document, group }`. |
-| `onWindowClosing(e) / onWindowClosed(e)` | Also for new windows, with `kind: 'floating' \| 'browser'` and `then: 'back' \| 'close'` (may be changed). Then `reason`: `'closed'`, `'docked'` (brought back), `'empty'` or `'moved'` (a floating window that went into a new window). |
-| `onError(e)` | `{ error, document, group, fallback }`: `'windowBlocked'` (no window came) or `'windowNotUsable'` (a page of another origin); `fallback` may be changed. |
-| `onClosing` | A document of a closed window closes (`newWindowCloseAction: 'close'`) back in the main window, so a dirty one is asked about there. |
-| `onLayoutChanging / onLayoutChanged` | Also `'newWindow'` and `'mainWindow'`, with `window`. |
-| `onDragOver, onDropping, onDropped` | New `target` kinds: `'new-window'` (with `rect` on the screen) and `'main-window'`; an `'edge'` place in a new window has `browserWindow`. |
+| `onWindowOpening(e) / onWindowOpened(e)` | `{ document, group, window, rect, url }`, cancelable, and `rect` and `url` can be changed (`window` is the floating window being moved). Then `{ window, document, group }`. |
+| `onWindowClosing(e) / onWindowClosed(e)` | Also applies to new windows, with `kind: 'floating' \| 'browser'` and `then: 'back' \| 'close'` (which can be changed). `reason` then is `'closed'`, `'docked'` (returned), `'empty'` or `'moved'` (a floating window that moved into a new window). |
+| `onError(e)` | `{ error, document, group, fallback }`, where `error` is `'windowBlocked'` (no window opened) or `'windowNotUsable'` (a page from another origin). `fallback` can be changed. |
+| `onClosing` | A document in a closed window closes in the main window (`newWindowCloseAction: 'close'`), so the prompt for a dirty document appears there. |
+| `onLayoutChanging / onLayoutChanged` | Also includes `'newWindow'` and `'mainWindow'`, with `window`. |
+| `onDragOver, onDropping, onDropped` | Additional `target` types: `'new-window'` (with `rect` on the screen) and `'main-window'`. An `'edge'` position in a new window has `browserWindow`. |
 
 ### For other windows in the kit
 
-| Export | What |
+| Export | Item |
 | --- | --- |
-| `connectDocument(doc), disconnectDocument(doc), pageDocuments()` | The kit's document-wide listeners (keys, access keys, tooltips, the focus guard) work in another same-origin document too; it is disconnected when its window closes. |
-| `mirrorPage(source, target)` | Copies the page's style sheets and the attributes of `<html>` and `<body>` into another document and keeps them in step; returns the function that stops. |
-| `ResizeWatch` | A `ResizeObserver` that follows its elements into another window (a browser's observer only reports elements of its own window). |
+| `connectDocument(doc), disconnectDocument(doc), pageDocuments()` | The kit's document-level listeners (keys, access keys, tooltips, the focus guard) also work in another same-origin document, and are disconnected when its window closes. |
+| `mirrorPage(source, target)` | Copies the page's style sheets and the attributes of `<html>` and `<body>` into another document and keeps them in sync. Returns a function that stops this. |
+| `ResizeWatch` | A `ResizeObserver` that follows its elements into another window, because a browser's observer only reports elements of its own window. |
 
-The rest of the API is on the [overview](tabdocs.md#api), [Tabs](tabdocs-tabs.md), [Menus and keys](tabdocs-menus.md), [Drag and drop](tabdocs-drag.md) and [Dock and floating windows](tabdocs-dock.md).
+See the [overview](tabdocs.md#api), [Tabs](tabdocs-tabs.md), [Menus and keys](tabdocs-menus.md), [Drag and drop](tabdocs-drag.md) and [Dock and floating windows](tabdocs-dock.md) for the rest of the API.
 
 ## Example files
 

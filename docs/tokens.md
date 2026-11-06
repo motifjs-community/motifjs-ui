@@ -2,11 +2,11 @@
 
 > Get started · @motifx-community/ui 0.1.0-beta.3
 
-Five layers. The first four — primitives, the design language's own scales, semantic tokens per theme, density — come from `@motifx-community/design-system` and are listed here for reference. The fifth, the component tokens, is this kit's own: a knob per component, each referencing a design-system token, written in `@layer mx.components`. Every design language gives every one of them its own value.
+The token system has five layers. The first four (primitives, design language scales, semantic tokens per theme, and density) come from `@motifx-community/design-system` and are listed here for reference. The fifth layer, component tokens, belongs to this kit: each component has its own tokens, written in `@layer mx.components`, and each one references a design system token. Every design language provides its own value for each component token.
 
 ## Component ({componentDocs.length})
 
-Source: `tokens/schema/*.json` (names and types) and `tokens/languages/<language>/*.json` (the values; listed here: Tactile's). Override one after `styles.css` to restyle every instance of that component; override the design-system token it references to restyle everything.
+Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<language>/*.json` for values (Tactile values are listed here). Override a component token after `styles.css` to restyle every instance of that component, or override the design system token it references to restyle everything that uses it.
 
 | Token | CSS variable | References | Value |
 | --- | --- | --- | --- |
@@ -4092,7 +4092,7 @@ Source: `tokens/schema/*.json` (names and types) and `tokens/languages/<language
 
 ## Semantic ({semantic.length} per theme)
 
-The theme's language, the only layer a theme redefines — switch the theme above and watch the swatches. Every text/background pair is checked in the design system's build: WCAG AA in light and dark, AAA in high contrast.
+Semantic tokens are the only layer a theme redefines. Switch the theme at the top of the page to see the swatches change. The design system build verifies every text and background pair against WCAG AA in light and dark themes, and against AAA in high contrast.
 
 | Token | CSS variable | Light | Dark | High contrast |
 | --- | --- | --- | --- | --- |
@@ -4174,7 +4174,7 @@ The theme's language, the only layer a theme redefines — switch the theme abov
 
 ## Density ({density.length})
 
-Control heights, paddings, gaps, the pressable edge and the bar height; `data-density="compact"` swaps them all.
+Control heights, padding, gaps, the pressable edge and the bar height. Setting `data-density="compact"` swaps all of them.
 
 | Token | CSS variable | Comfortable | Compact |
 | --- | --- | --- | --- |
@@ -4191,7 +4191,7 @@ Control heights, paddings, gaps, the pressable edge and the bar height; `data-de
 
 ## Identity ({identity.length})
 
-What a design language brings of its own: corner radii, shadows, type and motion. The names are the same in every language; `data-identity` picks whose values apply. Tactile, shown here, is the default.
+These are the values a design language defines for itself: corner radii, shadows, typography and motion. The names are the same in every language, and `data-identity` selects which values apply. The values shown here are from Tactile, the default.
 
 | Token | Type | CSS variable | Value |
 | --- | --- | --- | --- |
@@ -4255,7 +4255,7 @@ What a design language brings of its own: corner radii, shadows, type and motion
 
 ## Primitive ({primitive.length})
 
-The shared palette and scales, the same in every design language. Themes and components never hardcode these values; they reference them.
+The shared palette and scales, identical in every design language. Themes and components reference these values and never hardcode them.
 
 | Token | Type | CSS variable | Value |
 | --- | --- | --- | --- |
@@ -4456,7 +4456,7 @@ The shared palette and scales, the same in every design language. Themes and com
 | `z.overlay` | number | `--mx-z-overlay` | `1300` |
 | `z.toast` | number | `--mx-z-toast` | `1400` |
 
-## Using token names in TS
+## Using token names in TypeScript
 
 ```tsx
 import { cssVar } from '@motifx-community/ui/tokens';

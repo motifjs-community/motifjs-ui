@@ -39,7 +39,6 @@
   "An item's own work hours and days, which override the scheduler's. In nested groups, the innermost item applies.": "",
   "Whether it can be there (`free`) and what conflicts: `overlapping`, `blocked`, `offHours`. `options` accepts `allDay` and `resources`, the values it would have.": "",
   "Its items by type: `{ field, label, items: { value, text, color, item }[] }[]`.": "",
-  "Re-reads the items after they have been changed in place.": "",
   "The data layer filter for a range, now also for the visible resources (`{ roomId: [1, 2] }`, for single-value fields).": "",
   "These also include `resources`, the values its resource fields would get in another group. `cancel` starts as `true` where the time is not free, and `false` allows the move.": "",
   "This also includes `resources`.": "",

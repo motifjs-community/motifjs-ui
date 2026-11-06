@@ -2,23 +2,23 @@
 
 > Foundations · @motifx-community/ui 0.1.0-beta.3
 
-The rules every control follows: Tab order, the active control of a container, focus that never falls to `<body>`, `&File` access keys and app-wide shortcuts.
+Every control follows the same rules for Tab order, the active control of a container, focus handling, `&File` access keys and application-wide shortcuts.
 
-## The rules
+## Validation rules
 
-| Rule | How |
+| Rule | Details |
 | --- | --- |
-| `Tab navigation` | Every control is a Tab stop unless `tabStop = false`; `tabIndex` orders the controls of a container. |
-| `Active control` | Containers (`FocusContainer`) track `activeControl` and put focus back with `restoreFocus()` when they become active again. |
-| `Composite controls` | One Tab stop, arrow keys inside (roving tabindex or `aria-activedescendant`): with the first composite control. |
-| `Focus never on <body>` | Disabling, hiding, removing or disposing the focused part of a control moves focus to the next usable element. |
-| `Focus ring` | Only for keyboard use (`:focus-visible`), the design system's double ring. |
-| `Access keys` | `&Save` in a control text: Alt+S. Underlined while Alt is held. |
-| `Shortcuts` | `addShortcut('Ctrl+S', …)` app-wide, or scoped to a control. |
+| `Tab navigation` | Every control is a Tab stop unless `tabStop = false`. `tabIndex` sets the order of the controls in a container. |
+| `Active control` | Containers (`FocusContainer`) track `activeControl` and restore focus with `restoreFocus()` when they become active again. |
+| `Composite controls` | One Tab stop with arrow keys inside, using a roving tabindex or `aria-activedescendant`. This arrives with the first composite control. |
+| `Focus never on <body>` | When the focused part of a control is disabled, hidden, removed or disposed, focus moves to the next usable element. |
+| `Focus ring` | Shown only during keyboard use (`:focus-visible`), with the design system's double ring. |
+| `Access keys` | `&Save` in a control's text assigns Alt+S. The letter is underlined while Alt is held. |
+| `Shortcuts` | `addShortcut('Ctrl+S', …)` registers a shortcut for the whole application or for one control. |
 
 ## Tab order
 
-Give controls a `tabIndex` and the outermost container of the page or window visits them in ascending order at each level of the control tree; equal indexes (and plain elements, index 0) go in document order. Until a control inside sets a `tabIndex`, Tab is left to the browser. A modal window keeps Tab inside itself; one radio button per group is a stop, as in browsers.
+Give controls a `tabIndex`, and the outermost container of the page or window visits them in ascending order at each level of the control tree. Equal indexes and plain elements (index 0) follow document order. Until a control sets a `tabIndex`, Tab is handled by the browser. A modal window keeps Tab inside itself, and only one radio button per group is a Tab stop, as in browsers.
 
 ```tsx
 import { Button, FocusContainer, Panel, Stack } from '@motifx-community/ui';
@@ -51,7 +51,7 @@ export default function TabOrder() {
 
 ## Active control
 
-A `FocusContainer` knows which control inside holds focus (`activeControl`, reactive) and puts focus back there with `restoreFocus()`: a window coming to the front, a tab page coming back.
+A `FocusContainer` knows which child control holds focus (`activeControl`, reactive) and returns focus to it with `restoreFocus()`. For example, when a window comes to the front or the user returns to a tab page.
 
 ## Access keys
 
@@ -62,17 +62,17 @@ A `FocusContainer` knows which control inside holds focus (`activeControl`, reac
 <input aria-keyshortcuts="Alt+N" />        // plain elements too
 ```
 
-| Topic | Behaviour |
+| Topic | Behavior |
 | --- | --- |
-| `Marker` | `&` before a letter: `&Save`, `Save &as…`. `&&` is a literal ampersand. Only the first marker counts. |
-| `Keys` | Alt + the key; on Apple platforms Control + Option + the key, because Option alone types characters there (browsers use the same keys for HTML `accesskey`). |
-| `What it does` | The key activates the control: a button is focused and clicked (as HTML `accesskey` does), another control is focused (`onAccessKey()`). |
-| `Several with the same key` | Each press moves focus to the next one, activating none. |
-| `Where` | The modal window while one is open, else the window holding focus, else the page outside windows. Disabled and hidden controls are skipped. |
-| `AltGr` | Ignored: AltGr (Ctrl+Alt on Windows) types characters such as `@` on a Turkish keyboard. |
-| `Underline` | Shown while Alt is held (Control + Option on Apple platforms). Tapping Alt (press and release) keeps it shown until Alt is tapped again, another key is pressed or the pointer is used; while the page has access keys, that tap is kept from the browser, which would otherwise move keyboard focus to its menu bar. `data-mx-access-keys="always"` on `<html>` shows it all the time. |
-| `Accessibility` | The accessible name is the plain text; the control gets `aria-keyshortcuts="Alt+S"` (`"Control+Alt+S"` on Apple platforms). |
-| `Plain elements` | Any element with `aria-keyshortcuts="Alt+N"` takes part: a button-like one is clicked, an input focused, a `<label>` focuses its field. |
+| `Marker` | Put `&` before a letter: `&Save`, `Save &as…`. `&&` produces a literal ampersand. Only the first marker counts. |
+| `Keys` | Alt plus the key. On Apple platforms, use Control + Option plus the key, because Option alone types characters there. Browsers use the same keys for HTML `accesskey`. |
+| `Description` | The key activates the control. A button receives focus and is clicked, as with HTML `accesskey`. Any other control receives focus (`onAccessKey()`). |
+| `Several with the same key` | Each press moves focus to the next match without activating it. |
+| `Where` | The modal window if one is open, otherwise the window that has focus, otherwise the page outside any window. Disabled and hidden controls are skipped. |
+| `AltGr` | AltGr (Ctrl+Alt on Windows) is ignored, because it types characters such as `@` on a Turkish keyboard. |
+| `Underline` | Shown while Alt is held (Control + Option on Apple platforms). Tapping Alt keeps the underlines visible until Alt is tapped again, another key is pressed or the pointer is used. While the page has access keys, that tap is not passed to the browser, which would otherwise move keyboard focus to its menu bar. Set `data-mx-access-keys="always"` on `<html>` to show them all the time. |
+| `Accessibility` | The accessible name is the plain text, and the control receives `aria-keyshortcuts="Alt+S"` (`"Control+Alt+S"` on Apple platforms). |
+| `Plain elements` | Any element with `aria-keyshortcuts="Alt+N"` takes part. A button-like element is clicked, an input receives focus, and a `<label>` moves focus to its field. |
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -95,7 +95,7 @@ export default function AccessKeys() {
 }
 ```
 
-Browsers keep a few Alt combinations for their own menus, and they differ per browser and language; test the keys you choose.
+Browsers reserve some Alt combinations for their own menus, and these vary by browser and language. Test the keys you choose.
 
 ## Shortcuts
 
@@ -107,27 +107,27 @@ grid.addShortcut('Delete', () => grid.deleteSelected()); // while focus is in th
 addShortcut('F2', () => rename(), { scope: tree });
 ```
 
-### Chords
+### Key combinations
 
 | Part | Meaning |
 | --- | --- |
 | `Ctrl / Control` | The Ctrl key. |
 | `Alt / Option` | The Alt key (Option on a Mac). |
 | `Shift` | The Shift key. |
-| `Meta / Cmd / Win` | The Windows key, Cmd on a Mac. |
-| `Mod` | Cmd on Apple platforms, Ctrl elsewhere: `Mod+S` saves everywhere. |
-| `keys` | A character (`S`, `1`, `/`), or a `KeyboardEvent.key` name: `Enter`, `Escape` (`Esc`), `Delete` (`Del`), `F2`, `ArrowUp` (`Up`), `Space`, `Plus`… Case does not matter; `Ctrl++` is Ctrl and plus. |
+| `Meta / Cmd / Win` | The Windows key, or Cmd on a Mac. |
+| `Mod` | Cmd on Apple platforms and Ctrl elsewhere, so `Mod+S` saves on every platform. |
+| `keys` | A character (`S`, `1`, `/`) or a `KeyboardEvent.key` name: `Enter`, `Escape` (`Esc`), `Delete` (`Del`), `F2`, `ArrowUp` (`Up`), `Space`, `Plus`… Case does not matter. `Ctrl++` means Ctrl and plus. |
 
-### Which shortcut runs
+### Shortcut precedence
 
-| Rule | Behaviour |
+| Rule | Behavior |
 | --- | --- |
-| `Most specific first` | Shortcuts scoped to the controls holding focus run first, the innermost one first; app-wide ones last. A handler that returns `false` passes the key on. |
-| `Modal windows` | While a modal window is open, only shortcuts scoped inside it run; app-wide ones are silent. |
-| `Windows` | App-wide shortcuts without Ctrl, Alt or Meta (Delete, Escape, a letter) do not run while focus is in a window: those keys belong to the window. Chords with a modifier and F-keys still do. |
-| `Text fields` | A chord without Ctrl, Alt or Meta leaves text fields alone (Delete deletes text) unless `inEditable: true`. F-keys and chords with a modifier work everywhere. |
+| `Most specific first` | Shortcuts scoped to the controls that hold focus run first, starting with the innermost. Application-wide shortcuts run last. A handler that returns `false` passes the key on. |
+| `Modal windows` | While a modal window is open, only shortcuts scoped inside it run. Application-wide shortcuts are suppressed. |
+| `Windows` | Application-wide shortcuts without Ctrl, Alt or Meta (Delete, Escape, a letter) do not run while focus is in a window, because those keys belong to the window. Combinations with a modifier and function keys still run. |
+| `Text fields` | A combination without Ctrl, Alt or Meta does not fire in text fields, so that Delete deletes text, unless you set `inEditable: true`. Function keys and combinations with a modifier work everywhere. |
 | `Disabled scope` | A shortcut scoped to a disabled control does not run. |
-| `Handled` | The key gets `preventDefault()` and stops there. Shortcuts run before access keys: an explicit chord wins over an implicit key. |
+| `Handled` | The key receives `preventDefault()` and goes no further. Shortcuts run before access keys, so an explicit combination takes priority over an implicit key. |
 
 ```tsx
 import { Component, reactive } from '@motifx/core';
@@ -151,9 +151,9 @@ export default class Shortcut extends Component {
 }
 ```
 
-## Focus never on &lt;body&gt;
+## Focus never lands on &lt;body&gt;
 
-When the focused part of a control is disabled, hidden, removed (a list row, a branch) or disposed, focus moves to the next usable element from that spot in the same window, else the one before it. A click on an empty spot still clears focus as usual, and route changes are left to the router.
+When the focused part of a control is disabled, hidden, removed (a list row, a tree branch) or disposed, focus moves to the next usable element from that position in the same window, or to the previous one. Clicking an empty area still clears focus as usual, and route changes are left to the router.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -177,12 +177,12 @@ export default function FocusGuard() {
 
 ## API reference
 
-| Member | Returns / kind | Description |
+| Member | Return value / type | Description |
 | --- | --- | --- |
-| `addShortcut(chord, handler, options?)` | `() => void` | Registers a shortcut; returns the remover. `options.scope`: a component; `options.inEditable`: also in text fields. |
-| `control.addShortcut(chord, handler, options?)` | `() => void` | The same, scoped to the control and removed when it is disposed. |
-| `parseAccessKey(text)` | `{ text, key, index }` | Parses `&Text` for your own controls; render with the `mx-access-key` class and call `setAccessKey(key)`. |
-| `tabIndex` | prop / property | Order inside the container; default 0. |
+| `addShortcut(chord, handler, options?)` | `() => void` | Registers a shortcut and returns a function that removes it. `options.scope` limits it to a component, and `options.inEditable` also enables it in text fields. |
+| `control.addShortcut(chord, handler, options?)` | `() => void` | Registers a shortcut scoped to the control and removes it when the control is disposed. |
+| `parseAccessKey(text)` | `{ text, key, index }` | Parses `&Text` for your own controls. Render the result with the `mx-access-key` class and call `setAccessKey(key)`. |
+| `tabIndex` | prop / property | The order inside the container. The default is 0. |
 | `activeControl / restoreFocus()` | FocusContainer | See the Control page. |
 
-Controls: see `Control` for `tabStop`, `tabIndex`, `focus()`, `onAccessKey()` and `FocusContainer`.
+For `tabStop`, `tabIndex`, `focus()`, `onAccessKey()` and `FocusContainer`, see the `Control` page.

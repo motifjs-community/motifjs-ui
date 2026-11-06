@@ -4,7 +4,7 @@
 
 ## Editing and save modes
 
-Typing on a cell, Enter, F2 or a double-click opens its editor; only the active cell has one. What is typed goes into the row's draft in the grid's `ChangeTracker`, kept by key, and the row is saved when it is left: `wait` sends it and waits, `background` sends it through one queue and goes on, `batch` keeps everything until “Save changes”. A row with a message cannot be left; Escape gives up. This service turns down a note with “error” in it.
+Typing on a cell, pressing Enter or F2, or double-clicking opens its editor, and only the active cell has one. Entered values go into the row's draft in the grid's `ChangeTracker`, stored by key, and the row is saved when the user leaves it. `wait` sends the row and waits for the response, `background` sends it through a single queue and continues, and `batch` keeps everything until “Save changes”. A row with a validation message cannot be left, and Escape cancels the edit. The service in this example rejects a note that contains “error”.
 
 ```tsx
 import { data } from '@motifx-community/data';
@@ -25,9 +25,9 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 }
 ```
 
-## Saving all at once
+## Saving all changes at once
 
-With `saveMode: 'batch'` every edit, new row and deletion waits for `saveChanges()`; then the deletions, the updates and the new rows go out, each kind in one call, and rows the server turns down keep their marks. Here over a server that loads by page: the changes stay while the pages turn, and the page's own buttons follow `hasChanges`.
+With `saveMode: 'batch'`, every edit, new row and deletion waits for `saveChanges()`. Deletions, updates and new rows are then sent, each type in one call, and rows the server rejects keep their marks. This example uses a server that loads by page, so changes persist while the pages change, and the page's own buttons follow `hasChanges`.
 
 ```tsx
 import { data } from '@motifx-community/data';
@@ -50,7 +50,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 
 ## New rows
 
-`addRow()` or the toolbar's “New row” opens a row at the bottom (the grid goes to the very end; in a virtual list only the last block is loaded) or at the top, with its first cell a new row can fill in edit mode. Tab on the last cell of a new row saves it and opens the next one; Escape drops it; one left untouched goes by itself.
+`addRow()` or the toolbar's “New row” opens a row at the bottom (the grid scrolls to the very end, and a virtual list loads only the last block) or at the top, with the first editable cell in edit mode. Tab on the last cell of a new row saves it and opens the next one, Escape discards it, and an untouched row is removed automatically.
 
 ```tsx
 /** An order, as the examples' made-up server keeps it. */
@@ -68,7 +68,7 @@ export interface Order {
 
 ## Row actions
 
-`actions` gives each row its buttons, as a list or as a function of the row and its state (`isNew`, `isEditing`, `isDirty`, `isSaving`, `hasError`, `isRemoved`, `isSelected`); when what the function reads changes, the row's buttons change. The grid's ready actions are named by strings. The buttons that do not fit the column go into the “more” menu, the first ones in the list stay. The column sits at the start or the end, pinned to its edge or scrolling with the rows.
+`actions` defines the buttons for each row, as a list or as a function of the row and its state (`isNew`, `isEditing`, `isDirty`, `isSaving`, `hasError`, `isRemoved`, `isSelected`). When a value read by the function changes, the row's buttons update. Built-in actions are referenced by name. Buttons that do not fit in the column move to the “more” menu, and those listed first stay visible. The column can be at the start or the end, pinned to its edge or scrolling with the rows.
 
 ```tsx
 /** An order, as the examples' made-up server keeps it. */
@@ -84,11 +84,11 @@ export interface Order {
 }
 ```
 
-The actions can show in the toolbar (`actionsLocation: 'toolbar'`, the `rowActions` item) or in the bottom bar (`'bottom'`) instead, for the rows they act on: the selected rows, or the active row without selection (`actionsTarget`). With no row nothing shows; with one row its own actions, as the row would show them; with several only the ones every row has, each with the count of rows it runs on (“Approve (3)”), dimmed while it is disabled for one of them (`actionsMultipleEnabled: 'any'` lets it run on the rows where it is enabled). An action’s `location` wins, so “Approve” can sit in the toolbar while “Edit” stays in the row; the column shows only while an action sits there. `onclickMany` runs once with every row; without it `onclick` runs row by row, a promise waited for, with progress and a Stop button over the rows, and the outcome is announced (“2 of 3 done, 1 failed”). The ready `remove` marks all the rows in batch mode and in the other modes sends them in one save (`ChangeTracker.removeRows`: one request when the adapter saves in batches, OData `$batch`, a REST batch endpoint or a SOAP `save`). An action’s `tone` colours its button and its menu items (`'danger'` for the ready `remove`, `'accent'` for `save`).
+Actions can also appear in the toolbar (`actionsLocation: 'toolbar'`, with the `rowActions` item) or in the bottom bar (`'bottom'`) for the rows they apply to: the selected rows, or the active row when nothing is selected (`actionsTarget`). With no row, nothing appears. With one row, its own actions appear as the row would show them. With several rows, only the actions common to all of them appear, each with a row count (“Approve (3)”), and an action is disabled if it is disabled for any of the rows (`actionsMultipleEnabled: 'any'` runs it on the rows where it is enabled). An action's `location` takes precedence, so “Approve” can be in the toolbar while “Edit” stays in the row, and the column appears only when it contains an action. `onclickMany` runs once with every row. Without it, `onclick` runs row by row and waits for any promise, with progress and a Stop button over the rows, and the outcome is announced (“2 of 3 done, 1 failed”). The built-in `remove` action marks all the rows in batch mode, and in other modes sends them in one save (`ChangeTracker.removeRows`, which is one request when the adapter saves in batches, such as OData `$batch`, a REST batch endpoint or a SOAP `save`). An action's `tone` colors its button and menu items (`'danger'` for the built-in `remove`, and `'accent'` for `save`).
 
-Every row's actions are also in its context menu (right click, Shift+F10), wherever they show: inside a selection of several rows the common ones for all of them. With `actionsDisplay: 'menu'` a row shows only its “more” button, with every action in its menu, and the bars one “Actions” menu button; an action's `menu` keeps it in the menu always, or a button always.
+Every row's actions also appear in its context menu (right-click or Shift+F10), wherever they are displayed. Within a selection of several rows, the menu shows the actions common to all of them. With `actionsDisplay: 'menu'`, a row shows only its “more” button with every action in its menu, and the bars show one “Actions” menu button. An action's `menu` setting keeps it either always in the menu or always as a button.
 
-After “select all” over a server the rows are not loaded: only actions with `onclickSelection` show then, and they get the selection as `grid.selection` has it (`all`, `keys`, `except`, `filter`) to send to the server, so nothing has to load every row.
+After “select all” on a server, the rows are not loaded. Only actions with `onclickSelection` appear in that case, and they receive the selection in the form of `grid.selection` (`all`, `keys`, `except`, `filter`) to send to the server, so that every row does not have to be loaded.
 
 ```tsx
 /** An order, as the examples' made-up server keeps it. */
@@ -104,39 +104,39 @@ export interface Order {
 }
 ```
 
-| Setting | Default | What it does |
+| Setting | Default | Description |
 | --- | --- | --- |
-| `actionsLocation` | `'row'` | Where the actions show: `'row'`, `'toolbar'` (the `rowActions` toolbar item, at the start; place it through `toolbar.items` like the other items) or `'bottom'` (the start of the bottom bar). |
-| `actionsTarget` | `'auto'` | The rows the bars act on: `'selection'`, `'focused'` (the active row) or `'auto'` (the selected rows while selection is on, else the active row). |
-| `actionsDisplay` | `'auto'` | `'auto'`: the buttons that fit, the rest in “more”. `'menu'`: only the “more” button per row (the column is as wide as that button; with an action that is a button always, `actionsWidth`), one “Actions” menu button in the bars. The context menu always lists them all. |
-| `actionsMultipleEnabled` | `'all'` | On several rows an action can be used while it is enabled for all of them, or for any (`'any'`: it runs on those). |
-| `actionsShowCount` | `true` | The count of rows after the text of an action that acts on several (“Approve (3)”). |
-| `actionsStopOnError` | `false` | Row by row, a failed row stops the rest. |
-| `actionsProgress, actionsStopButton` | `true`, `true` | The panel over the rows while an action works on several rows (once one of them returned a promise), and its Stop button. |
-| `actionsContextMenu` | `true` | A row’s actions in its context menu. |
+| `actionsLocation` | `'row'` | Where the actions appear: `'row'`, `'toolbar'` (the `rowActions` toolbar item at the start, which can be placed through `toolbar.items` like other items) or `'bottom'` (the start of the bottom bar). |
+| `actionsTarget` | `'auto'` | The rows the bars act on: `'selection'`, `'focused'` (the active row) or `'auto'` (the selected rows when selection is on, otherwise the active row). |
+| `actionsDisplay` | `'auto'` | `'auto'` shows the buttons that fit, and the rest are in “more”. `'menu'` shows only the “more” button per row (the column is as wide as that button, or `actionsWidth` when an action is always a button) and one “Actions” menu button in the bars. The context menu always lists all of them. |
+| `actionsMultipleEnabled` | `'all'` | Whether an action on several rows is available when it is enabled for all of them, or for any of them (`'any'` runs it on those rows). |
+| `actionsShowCount` | `true` | Adds the row count after the text of an action that applies to several rows (“Approve (3)”). |
+| `actionsStopOnError` | `false` | When running row by row, a failed row stops the remaining rows. |
+| `actionsProgress, actionsStopButton` | `true`, `true` | The panel over the rows while an action runs on several rows (once one of them has returned a promise), and its Stop button. |
+| `actionsContextMenu` | `true` | Includes a row's actions in its context menu. |
 
-| Action field | What it does |
+| Action field | Description |
 | --- | --- |
-| `id, text, icon, showText, hint` | As in the row. Rows share an action by its `id`. |
-| `tone` | `'standard' \| 'accent' \| 'danger'`, default `'standard'`: the colour of its button and of its item in the “more” menu, the context menu and the bars’ “Actions” menu. |
-| `visible, disabled` | `boolean` or `(row, state) => boolean`, asked for each row; several rows: visible for every row, disabled as `actionsMultipleEnabled` says. |
-| `location` | `Bind<'row' \| 'toolbar' \| 'bottom'>`; wins over `actionsLocation`. |
-| `menu` | `Bind<'auto' \| 'always' \| 'never'>`, default `'auto'`: in the “more” menu when it does not fit, always, or never (a button even in the `'menu'` display). |
-| `multiple` | `Bind<boolean>`, default `true` (the ready `edit`: `false`): it can run on several rows. |
-| `multipleEnabled, stopOnError, showCount, contextMenu` | The action’s own `actionsMultipleEnabled`, `actionsStopOnError`, `actionsShowCount`, `actionsContextMenu`; each wins. |
-| `beginGroup` | A line before it in a menu. |
-| `onclick(row, state)` | Runs for one row; on several rows (without `onclickMany`) for each in turn. A promise is waited for; a throw, a rejection or a promise of `false` counts the row as failed. |
-| `onclickMany(rows, e)` | Runs once for several rows (one row too without `onclick`). `e`: `{ location, signal, progress(done, total?) }`; `signal` is aborted by Stop. |
-| `onclickSelection(selection, e)` | Runs for a selection whose rows are not loaded (“select all” over a server), with the selection state; only such actions show then. |
+| `id, text, icon, showText, hint` | The same as in the row. Rows share an action through its `id`. |
+| `tone` | `'standard' \| 'accent' \| 'danger'`, default `'standard'`. The color of its button and of its item in the “more” menu, the context menu and the bars' “Actions” menu. |
+| `visible, disabled` | `boolean` or `(row, state) => boolean`, evaluated for each row. With several rows, it must be visible for every row, and it is disabled as set by `actionsMultipleEnabled`. |
+| `location` | `Bind<'row' \| 'toolbar' \| 'bottom'>`. Takes precedence over `actionsLocation`. |
+| `menu` | `Bind<'auto' \| 'always' \| 'never'>`, default `'auto'`. Whether it moves to the “more” menu when it does not fit, is always there, or never is (a button even with the `'menu'` display). |
+| `multiple` | `Bind<boolean>`, default `true` (`false` for the built-in `edit`). Whether it can run on several rows. |
+| `multipleEnabled, stopOnError, showCount, contextMenu` | The action's own `actionsMultipleEnabled`, `actionsStopOnError`, `actionsShowCount` and `actionsContextMenu`, each of which takes precedence. |
+| `beginGroup` | A separator before it in a menu. |
+| `onclick(row, state)` | Runs for one row. On several rows, without `onclickMany`, it runs for each one in turn. A promise is awaited, and an exception, a rejection or a promise of `false` counts the row as failed. |
+| `onclickMany(rows, e)` | Runs once for several rows, and for one row too if there is no `onclick`. `e` is `{ location, signal, progress(done, total?) }`, and Stop aborts `signal`. |
+| `onclickSelection(selection, e)` | Runs for a selection whose rows are not loaded (“select all” on a server), with the selection state. Only these actions appear in that case. |
 
-| Member | Gets / returns | What it does |
+| Member | Parameters / return value | Description |
 | --- | --- | --- |
-| `onActionRunning` | `{ action, rows, selection, location, cancel }` | An action is about to run (in a row, a bar, a row’s menu or programmatically); `cancel` keeps it from running. `rows` is empty for a selection that is not loaded. |
-| `onActionRan` | `{ action, rows, location, done, failed, canceled, errors }` | An action ran. Without a listener, what failed rows threw goes to the console. |
-| `runAction(id, rows?)` | `Promise<GridActionRanEventArgs \| null>` | Runs an action on `rows`, or on the rows the bars act on now, where it is visible and enabled; `null` when it is not there or was cancelled. |
-| `actionTargets` | `T[]`, reactive | The rows the bars act on now; empty for a selection that is not loaded. |
-| `barActions` | `GridBarAction[]`, reactive | The actions the toolbar and the bottom bar show now: `{ action, location, text, count, disabled, rows }`. |
-| `stopAction()` | `void` | Stops the action working on several rows, as its Stop button does. |
+| `onActionRunning` | `{ action, rows, selection, location, cancel }` | Occurs before an action runs (in a row, a bar, a row's menu or programmatically). Set `cancel` to stop it. `rows` is empty for a selection that is not loaded. |
+| `onActionRan` | `{ action, rows, location, done, failed, canceled, errors }` | Occurs after an action runs. Without a listener, exceptions from failed rows go to the console. |
+| `runAction(id, rows?)` | `Promise<GridActionRanEventArgs \| null>` | Runs an action on `rows`, or on the rows the bars currently act on, where it is visible and enabled. Returns `null` when it is unavailable or was canceled. |
+| `actionTargets` | `T[]`, reactive | The rows the bars currently act on. Empty for a selection that is not loaded. |
+| `barActions` | `GridBarAction[]`, reactive | The actions the toolbar and the bottom bar currently show: `{ action, location, text, count, disabled, rows }`. |
+| `stopAction()` | `void` | Stops the action running on several rows, as its Stop button does. |
 
 ## Example files
 

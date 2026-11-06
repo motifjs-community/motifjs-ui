@@ -75,7 +75,6 @@
   "With `virtual`, only the visible scrolling columns and `extraColumns` on each side have cells. A column's own `columnRenderingMode` takes precedence. See [Virtual columns](/datagrid/scrolling#virtual-columns).": "",
   "Whether virtual columns coming into view are rendered during scrolling, once scrolling stops, or once it stops when rendering took longer than the threshold (ms), and the idle time before they are rendered (ms).": "",
   "The page buttons on each side of the current page, the first, previous, next and last buttons, and “Page 3 of 12 (250 items)”.": "",
-  "`uiLocale` strings": "",
   "The pager's text (`{0}` or `{page}`, `{1}` or `{count}`, `{2}` or `{total}`) and its accessible name.": "",
   "`full` shows page buttons and page sizes as buttons, `compact` shows a page number box and a drop-down of sizes, and `adaptive` uses `full` while it fits in the bar.": "",
   "The page sizes in the pager, and the sizes it offers (numbers and `all`, where `auto` is half, once and twice the page size).": "",

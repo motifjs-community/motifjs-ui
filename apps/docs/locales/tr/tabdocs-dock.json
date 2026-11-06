@@ -2,7 +2,6 @@
   "Documents and whole groups can float in their own windows within the page, and dock again into document groups or into dock areas around them, which can collapse to the edge of the manager. The mouse, the keyboard and the API all perform the same actions through the same events.": "",
   "Tool areas around the documents": "",
   "A dock area holds its own groups beside the documents and resizes with its splitter. When collapsed (with the pin in its toolbar, the tab menu, Ctrl+K H or `autoHide`), only its titles stay at the edge. Clicking a title slides the area out over the documents, and clicking outside, pressing Escape or moving focus away slides it back. The close button next to the pin closes the active document, or hides it if it cannot be closed, as with these tools. \"Show hidden\" in the strip menu or the \"…\" menu, or `show`, returns it to its previous place.": "",
-  "Drop target": "",
   "The middle places the tab, group or window into that group, and a side splits that group, as an edge zone does without guides.": "",
   "Places it in the dock area on that side: a tab joins the area's group, and a group or window runs along the area. The area is created if necessary, at `dockAreaSize`.": "",
   "Among its tabs, as before. A floating window dropped on a strip gives that group all its documents and closes.": "",

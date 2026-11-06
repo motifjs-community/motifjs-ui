@@ -2,7 +2,7 @@
 
 > Buttons · @motifx-community/ui 0.1.0-beta.3
 
-A native `<button>` drawn from the design tokens: three variants, three tones, three sizes, an icon, an `&` access key. It can be a toggle, show that work is running, and open a menu or any content — from the whole button, or with `split` from an arrow next to it while the button keeps its own action.
+A native `<button>` styled with design tokens. It comes in three variants, three tones and three sizes, and supports an icon and an `&` access key. A button can act as a toggle, indicate that work is in progress, and open a menu or any other content, either from the whole button or from an arrow next to it with `split`, so the button keeps its own action.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { Button, type MenuItem } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-Both ways are complete. Every prop takes a value or a function; a function of a reactive object keeps the button in step with it. A property set programmatically takes the same.
+Both approaches are fully supported. Every prop accepts a value or a function, and a function that reads a reactive object keeps the button in sync with it. Setting a property programmatically works the same way.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -41,9 +41,9 @@ export default function Programmatic() {
 }
 ```
 
-## Variants, tones, sizes
+## Variants, tones and sizes
 
-`solid` buttons are pressable: an opaque fill, a bottom edge, a highlight along the top and a small move when pressed. `outline` has a frame, `ghost` shows only on hover. The tone picks the colors; the size the height, from the density tokens (switch Compact above).
+`solid` buttons have an opaque fill, a bottom edge, a highlight along the top and a slight movement when pressed. `outline` buttons have a frame, and `ghost` buttons show a background only on hover. The tone sets the colors, and the size sets the height from the density tokens. Turn on Compact above to see the difference.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -82,9 +82,9 @@ export default function VariantsTonesSizes() {
 }
 ```
 
-## Text, icon, children
+## Text, icons and children
 
-`text` is the caption; JSX children come after it. `icon` takes an image address or any element or component, before the text or after it (`iconPosition`). A button with only an icon needs a name: give it a `hint`.
+`text` sets the caption, and JSX children follow it. `icon` accepts an image address or any element or component, placed before or after the text with `iconPosition`. A button with only an icon needs an accessible name, so give it a `hint`.
 
 ```tsx
 import { Button } from '@motifx-community/ui';
@@ -110,9 +110,9 @@ export default function IconAndChildren() {
 }
 ```
 
-## Toggle
+## Toggle buttons
 
-With `toggle` a click turns `pressed` on and off; `x-model` binds it two-way.
+With `toggle`, a click turns `pressed` on and off. `x-model` provides two-way binding.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -132,9 +132,9 @@ export default function Toggle() {
 }
 ```
 
-## Busy
+## Busy state
 
-While `busy`, a spinner shows over the content, presses are ignored and the size does not change. The text stays for screen readers, with `aria-busy`.
+While `busy` is set, a spinner appears over the content, clicks are ignored and the size does not change. The text remains available to screen readers, and the button gets `aria-busy`.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -153,9 +153,9 @@ export default function Busy() {
 }
 ```
 
-## Disabled
+## Disabled state
 
-A disabled button is natively disabled: it leaves the Tab order and cannot be pressed. With `focusableWhenDisabled` it keeps its place and only gets `aria-disabled`, so a keyboard or screen reader user can still find it — and a hint can say why it is off.
+A disabled button uses the native disabled state, so it leaves the Tab order and cannot be pressed. With `focusableWhenDisabled`, it keeps its place in the Tab order and only gets `aria-disabled`. Keyboard and screen reader users can still reach it, and a hint can explain why it is unavailable.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -176,7 +176,7 @@ export default function Disabled() {
 
 ## Menu
 
-With `menu` the whole button opens a list of commands. Items can have an icon, a check mark, a group line, be disabled or hidden; each `&` key chooses its item while the menu is open. An item field may be a function: the open menu follows what it reads.
+With `menu`, the whole button opens a list of commands. Items can have an icon, a check mark or a group separator, and can be disabled or hidden. While the menu is open, each `&` key selects its item. An item field can be a function, and the open menu tracks what it reads.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -211,9 +211,9 @@ export default function Menu() {
 }
 ```
 
-## Split
+## Split button
 
-With `split` the button keeps its own action (`onclick`) and an arrow next to it opens the menu. The two are separate Tab stops; Alt+Down on the button opens the menu too. `split` can change at any time; a menu itself (`split`, `menu` or `dropDown`) must be there when the button is created, since it makes the button two parts.
+With `split`, the button keeps its own action (`onclick`) and an arrow next to it opens the menu. The two parts are separate Tab stops, and Alt+Down on the button also opens the menu. You can change `split` at any time, but the menu itself (`split`, `menu` or `dropDown`) must exist when the button is created, because it divides the button into two parts.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -245,7 +245,7 @@ export default function Split() {
 
 ## Any content
 
-`dropDown` opens any component instead of a menu: a picker, a small form. Focus goes to its first field; Escape or a press outside closes it.
+`dropDown` opens any component instead of a menu, such as a picker or a small form. Focus moves to its first field, and Escape or a click outside closes it.
 
 ```tsx
 import { Button, Stack } from '@motifx-community/ui';
@@ -273,34 +273,34 @@ export default function DropDown() {
 
 ## Keyboard
 
-| Key | What it does |
+| Key | Description |
 | --- | --- |
-| `Enter, Space` | Press the button. With a menu and no `split`: open the menu, focus on its first item. |
-| `Alt + key (`&Save`)` | Press it (Control + Option + key on Apple platforms). |
-| `Down / Up` | On a button that opens a menu (or on the arrow of a split button): open it, focus on the first / last item. |
-| `Alt + Down` | On the main part of a split button: open the menu. |
-| `In the menu: Down / Up` | The next / previous item, wrapping around. Disabled items are reachable. |
-| `In the menu: Home / End` | The first / last item. |
-| `In the menu: a letter` | The item whose `&` key it is is chosen; otherwise focus goes to the next item starting with it. |
-| `In the menu: Enter, Space` | Choose the focused item. |
-| `Escape` | Close the menu or drop-down; focus goes back to the part that opened it. |
-| `Tab` | Close the menu and go on to the next control. |
+| `Enter, Space` | Presses the button. With a menu and no `split`, it opens the menu and moves focus to the first item. |
+| `Alt + key (`&Save`)` | Presses the button (Control + Option + key on Apple platforms). |
+| `Down / Up` | On a button that opens a menu, or on the arrow of a split button, opens the menu and moves focus to the first or last item. |
+| `Alt + Down` | On the main part of a split button, opens the menu. |
+| `In the menu: Down / Up` | Moves to the next or previous item, wrapping at the ends. Disabled items are reachable. |
+| `In the menu: Home / End` | Moves to the first or last item. |
+| `In the menu: a letter` | Selects the item with that `&` key. Otherwise, focus moves to the next item that starts with that letter. |
+| `In the menu: Enter, Space` | Selects the focused item. |
+| `Escape` | Closes the menu or drop-down, and focus returns to the part that opened it. |
+| `Tab` | Closes the menu and moves to the next control. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Element` | A native `<button>` (two with `split`: the button and the arrow), so forms, Enter, Space and screen readers work as they always do. |
-| `Name` | The text, without the `&` marker. An icon-only button is named by its `hint` (or your `aria-label`). The arrow of a split button is named from `uiLocale` ("More options"). |
-| `Toggle` | `aria-pressed`. |
-| `Busy` | `aria-busy="true"`; the text stays readable under the spinner. |
-| `Menu` | `aria-haspopup="menu"` and `aria-expanded` on the part that opens it; the list is `role="menu"`, items `menuitem` or `menuitemcheckbox` with `aria-checked`, disabled items `aria-disabled`, group lines `separator`. |
-| `Drop-down` | `aria-haspopup="dialog"`; the popup is `role="dialog"`, named by the button's text. Focus goes to its first field. |
-| `Focus ring` | Only for keyboard use, the design system's double ring. |
+| `Element` | A native `<button>` (two with `split`: the button and the arrow), so forms, Enter, Space and screen readers work as expected. |
+| `Name` | The text without the `&` marker. An icon-only button is named by its `hint` or by your `aria-label`. The arrow of a split button gets its name from `uiLocale` ("More options"). |
+| `Toggle buttons` | `aria-pressed`. |
+| `Busy state` | `aria-busy="true"`. The text remains readable under the spinner. |
+| `Menu` | `aria-haspopup="menu"` and `aria-expanded` on the part that opens the menu. The list has `role="menu"`, items are `menuitem` or `menuitemcheckbox` with `aria-checked`, disabled items have `aria-disabled`, and group separators are `separator`. |
+| `Drop-down` | `aria-haspopup="dialog"`. The popup has `role="dialog"` and is named by the button's text. Focus moves to its first field. |
+| `Focus ring` | Shown only during keyboard use, with the design system's double ring. |
 
 ## Localization
 
-The only text a button writes itself is the name of a split button's arrow. It comes from `uiLocale.strings`, which starts with the page's `lang` (English and Turkish ship) and can be set to any `UiStrings`; every button follows at once. The set is kept as it is given: to change one text, assign a new set (`uiLocale.strings = { ...uiLocale.strings, moreOptions: 'Mehr' }`); a text changed inside the set is not seen.
+The only string a button displays on its own is the name of a split button's arrow. It comes from `uiLocale.strings`, which starts from the page's `lang` (English and Turkish are included) and can be set to any `UiStrings`. Every button updates immediately. The set is used as provided, so to change one string, assign a new set: `uiLocale.strings = { ...uiLocale.strings, moreOptions: 'Mehr' }`. Changing a string inside the existing set has no effect.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -330,25 +330,25 @@ export default function Localization() {
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
-| `.mx-button` | The button (or the group of a button with a menu). `data-variant`, `data-tone`, `data-size`, `data-icon-position`, `data-stretch`, `data-pressed`, `data-busy`, `data-icon`, `data-mode="menu\|split"`. |
-| `.mx-button__face` | What is pressed: the button itself, or `.mx-button__main` and `.mx-button__arrow`. |
-| `.mx-button__icon, .mx-button__chevron, .mx-button__spinner` | The icon, the arrow glyph of a menu button, the busy spinner. |
+| `.mx-button` | The button, or the group of a button with a menu. `data-variant`, `data-tone`, `data-size`, `data-icon-position`, `data-stretch`, `data-pressed`, `data-busy`, `data-icon`, `data-mode="menu\|split"`. |
+| `.mx-button__face` | The pressable part: the button itself, or `.mx-button__main` and `.mx-button__arrow`. |
+| `.mx-button__icon, .mx-button__chevron, .mx-button__spinner` | The icon, the arrow glyph of a menu button and the busy spinner. |
 | `.mx-popup` | The surface the menu opens on (`data-side="bottom\|top"`). |
-| `.mx-menu, .mx-menu__item, .mx-menu__separator` | The menu, its items, its group lines. |
+| `.mx-menu, .mx-menu__item, .mx-menu__separator` | The menu, its items and its group separators. |
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
-| `button.face` | Unit: what is pressed, with its frame (the bottom side is a key’s edge), its fill and state layer (`image`) and its focus ring (outline and `glow`). Each look is a state (`accent`, `danger`, `outline`, `outline-accent`, `ghost`, …), and each look in each state too (`hover`, `toggled-hover`, `open`, `pressed`, `focus`, `toggled`, `disabled`: `outline-hover`, `accent-pressed`, …); also `icon-only`, `busy`, and a split button’s `main` and `arrow`. |
-| `button.icon, button.caption, button.chevron, button.spinner, button.divider` | Units: the icon, the text, the arrow of a menu (`open`), the busy spinner and the line of a split button, each look a state. |
-| `button.height.{sm,md,lg}, button.padding.{sm,md,lg}, button.font-size.{sm,md,lg}, button.line-height.{sm,md,lg}` | Sizes, from the density tokens. |
-| `button.press-offset, button.icon-only-square, button.text-box, button.spinner-duration` | How far a solid button moves when pressed, a square icon button, the caption’s line box, the spinner’s turn. |
+| `button.face` | Unit: the pressable part, with its frame (the bottom side is the key edge), its fill and state layer (`image`) and its focus ring (outline and `glow`). Each appearance is a state (`accent`, `danger`, `outline`, `outline-accent`, `ghost`, …), and each appearance has its own states (`hover`, `toggled-hover`, `open`, `pressed`, `focus`, `toggled`, `disabled`: `outline-hover`, `accent-pressed`, …). There are also `icon-only`, `busy`, and the `main` and `arrow` parts of a split button. |
+| `button.icon, button.caption, button.chevron, button.spinner, button.divider` | Units: the icon, the text, the menu arrow (`open`), the busy spinner and the split button divider. Each appearance is a state. |
+| `button.height.{sm,md,lg}, button.padding.{sm,md,lg}, button.font-size.{sm,md,lg}, button.line-height.{sm,md,lg}` | Sizes are defined by the density tokens. |
+| `button.press-offset, button.icon-only-square, button.text-box, button.spinner-duration` | The distance a solid button moves when pressed, the square icon button, the caption line box and the spinner rotation. |
 | `popup.surface, menu.*` | The popup surface and the menu items. |
 
-All of them reference design-system tokens; see [Tokens](tokens.md). Override one after `styles.css` to restyle every button.
+All of these reference design system tokens (see [Tokens](tokens.md)). Override one after `styles.css` to restyle every button.
 
 ## API reference
 
@@ -356,61 +356,61 @@ All of them reference design-system tokens; see [Tokens](tokens.md). Override on
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `text` | `Bind<string>` | `''` | The caption. `&` marks the access key (`&Save` → Alt+S), `&&` is a literal `&`. JSX children come after it. |
-| `variant` | `Bind<ButtonVariant>` | `'solid'` | `solid` (filled, pressable), `outline` (a frame), `ghost` (only on hover). |
-| `tone` | `Bind<ButtonTone>` | `'standard'` | `standard`, `accent` (the main action), `danger` (a destructive one). |
-| `size` | `Bind<ButtonSize>` | `'md'` | `sm`, `md`, `lg`: the density tokens' control heights. |
-| `icon` | `Bind<IconSource \| null>` | — | An image address, or any element or component (an `<svg>` in JSX, an icon font tag). Decorative: hidden from screen readers. |
-| `iconPosition` | `Bind<'start' \| 'end'>` | `'start'` | The icon before or after the text. |
-| `stretch` | `Bind<boolean>` | `false` | Fills the width of what it sits in. |
-| `type` | `Bind<'button' \| 'submit' \| 'reset'>` | `'button'` | The native type. `button` by default, so a button in a form never submits by accident. |
-| `hint` | `Bind<string>` | `''` | A tooltip (`title`). It also names a button that has only an icon. |
-| `toggle` | `Bind<boolean>` | `false` | A toggle button: a click turns `pressed` on and off (`aria-pressed`). |
-| `pressed` | `Bind<boolean>` | `false` | The state of a toggle button. `x-model` binds it two-way. |
-| `busy` | `Bind<boolean>` | `false` | Work is running: a spinner shows over the content, presses are ignored, the size stays, `aria-busy` is set. |
-| `focusableWhenDisabled` | `Bind<boolean>` | `false` | Disabled, it keeps its place in the Tab order with `aria-disabled`, so a screen reader finds it and reads it as dimmed. |
-| `split` | `Bind<boolean>` | `false` | With a menu: the button keeps its own action and an arrow next to it opens the menu. Without it the whole button opens the menu. |
-| `menu` | `Bind<readonly MenuItem[]>` | — | The commands of the menu, read each time it opens. |
-| `dropDown` | `Bind<ComponentBase \| null>` | — | Any content to open instead of a menu: a picker, a small form. |
-| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | The shared properties of every control. |
+| `text` | `Bind<string>` | `''` | The caption. `&` marks the access key (`&Save` → Alt+S), and `&&` produces a literal `&`. JSX children follow it. |
+| `variant` | `Bind<ButtonVariant>` | `'solid'` | `solid` (filled and pressable), `outline` (framed) or `ghost` (visible only on hover). |
+| `tone` | `Bind<ButtonTone>` | `'standard'` | `standard`, `accent` for the primary action, or `danger` for a destructive action. |
+| `size` | `Bind<ButtonSize>` | `'md'` | `sm`, `md` or `lg`, which map to the control heights in the density tokens. |
+| `icon` | `Bind<IconSource \| null>` | — | An image address, or any element or component (an `<svg>` in JSX, an icon font tag). It is decorative and hidden from screen readers. |
+| `iconPosition` | `Bind<'start' \| 'end'>` | `'start'` | Places the icon before or after the text. |
+| `stretch` | `Bind<boolean>` | `false` | Stretches to the full width of its container. |
+| `type` | `Bind<'button' \| 'submit' \| 'reset'>` | `'button'` | The native type. The default is `button`, so a button inside a form never submits by accident. |
+| `hint` | `Bind<string>` | `''` | A tooltip (`title`). It also provides the name of an icon-only button. |
+| `toggle` | `Bind<boolean>` | `false` | Makes it a toggle button. A click turns `pressed` on and off (`aria-pressed`). |
+| `pressed` | `Bind<boolean>` | `false` | The state of a toggle button. `x-model` provides two-way binding. |
+| `busy` | `Bind<boolean>` | `false` | Indicates that work is in progress. A spinner appears over the content, clicks are ignored, the size is preserved and `aria-busy` is set. |
+| `focusableWhenDisabled` | `Bind<boolean>` | `false` | When disabled, the button stays in the Tab order with `aria-disabled`, so a screen reader can find it and announce it as dimmed. |
+| `split` | `Bind<boolean>` | `false` | With a menu, the button keeps its own action and an arrow next to it opens the menu. Without `split`, the whole button opens the menu. |
+| `menu` | `Bind<readonly MenuItem[]>` | — | The menu commands, read each time the menu opens. |
+| `dropDown` | `Bind<ComponentBase \| null>` | — | Any content to open instead of a menu, such as a picker or a small form. |
+| `enabled / disabled, visible, tabStop, tabIndex` | see Control |  | Properties shared by all controls. |
 
 ### Properties
 
 | Property | Access | Description |
 | --- | --- | --- |
-| `every prop above` | read/write, reactive | Set programmatically with a value or a function, like the prop: `b.tone = () => this.state.tone` is followed, `b.tone = 'accent'` replaces it. |
-| `value` | read/write | `pressed`, for `x-model`. |
-| `opened` | read/write, reactive | Whether the menu or drop-down is open; setting it opens or closes it. |
-| `hasMenu` | read-only | Whether it was created with `split`, `menu` or `dropDown`. |
+| `every prop above` | read/write, reactive | Set programmatically with a value or a function, the same as the prop: `b.tone = () => this.state.tone` is tracked, and `b.tone = 'accent'` replaces it. |
+| `value` | read/write | Maps to `pressed` for `x-model`. |
+| `opened` | read/write, reactive | Indicates whether the menu or drop-down is open. Set it to open or close it. |
+| `hasMenu` | read-only | Indicates whether the button was created with `split`, `menu` or `dropDown`. |
 
 ### Methods
 
 | Method | Returns | Description |
 | --- | --- | --- |
-| `open()` | `boolean` | Opens the menu or drop-down with focus on its first item; `false` when there is nothing to open, or it is disabled or busy. |
-| `close()` | `void` | Closes it; focus inside goes back to the part that opened it. |
-| `refresh()` | `void` | Your menu items may be plain or reactive; the button reads them as they are. After changing them in place, call `refresh()`. An open menu shows the change at once. |
-| `focus()` | `boolean` | Focuses the button (its main part with a menu). |
+| `open()` | `boolean` | Opens the menu or drop-down with focus on its first item. Returns `false` if there is nothing to open, or if the button is disabled or busy. |
+| `close()` | `void` | Closes it. If focus is inside, it returns to the part that opened it. |
+| `refresh()` | `void` | Your menu items can be plain or reactive, and the button reads them as they are. After changing them in place, call `refresh()`. An open menu shows the change immediately. |
+| `focus()` | `boolean` | Sets focus on the button, or on its main part if it has a menu. |
 
 ### Events
 
 | Event | When |
 | --- | --- |
-| `onclick` | The DOM click of the button: its own action. With `split`, the arrow and the menu do not fire it; with a menu and no `split`, the click opens the menu. |
-| `onItemClick(e)` | A menu item was chosen, after the item's own `click`. `e`: `{ item, source, event }`. |
+| `onclick` | The DOM click event of the button, which runs its own action. With `split`, the arrow and the menu do not raise it. With a menu and no `split`, the click opens the menu. |
+| `onItemClick(e)` | Occurs when a menu item is selected, after the item's own `click`. `e`: `{ item, source, event }`. |
 
 ### MenuItem
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `text` | `Bind<string>` | The label; `&` marks the key that chooses it while the menu is open. |
-| `icon` | `Bind<IconSource>` | An icon; a function is called each time the item is drawn. |
-| `hint` | `Bind<string>` | A tooltip. |
-| `enabled` | `Bind<boolean>` | `false`: shown dimmed, reachable, cannot be chosen. |
-| `visible` | `Bind<boolean>` | `false`: left out. |
-| `checked` | `Bind<boolean>` | Given, the item is a `menuitemcheckbox` and shows a check mark when `true`. Flip it in its `click`. |
-| `beginGroup` | `Bind<boolean>` | A line before the item. |
-| `click(e)` | function | Runs when it is chosen, after the menu closed. |
-| `data` | `unknown` | The app's own value. |
+| `text` | `Bind<string>` | The label. `&` marks the key that selects it while the menu is open. |
+| `icon` | `Bind<IconSource>` | An icon. A function is called each time the item is drawn. |
+| `hint` | `Bind<string>` | The tooltip text. |
+| `enabled` | `Bind<boolean>` | `false` shows the item dimmed. It stays reachable but cannot be selected. |
+| `visible` | `Bind<boolean>` | `false` removes the item. |
+| `checked` | `Bind<boolean>` | When set, the item is a `menuitemcheckbox` and shows a check mark when `true`. Change it in `click`. |
+| `beginGroup` | `Bind<boolean>` | Draws a separator before the item. |
+| `click(e)` | function | Runs when the item is selected, after the menu closes. |
+| `data` | `unknown` | A custom application value. |
 
-The menu and the surface it opens on are shared parts, `MenuList` and `Popup`, exported for other components to use.
+The menu and the surface it opens on are shared parts, `MenuList` and `Popup`, exported for use in other components.

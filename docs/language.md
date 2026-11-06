@@ -2,7 +2,7 @@
 
 > Foundations · @motifx-community/ui 0.1.0-beta.3
 
-The texts the controls write, the locale their dates and numbers follow, and the direction: one `uiLocale` for the kit, with a pack per language loaded as it is asked for.
+`uiLocale` controls the strings that controls display, the locale used for dates and numbers, and the text direction. The kit has one `uiLocale`, and each language pack is loaded on demand.
 
 ## Import
 
@@ -10,9 +10,9 @@ The texts the controls write, the locale their dates and numbers follow, and the
 import { uiLocale, connectI18n } from '@motifx-community/ui';
 ```
 
-## Switching the language
+## Changing the language
 
-`uiLocale.use('tr')` loads the Turkish pack the first time, then every control on the page draws its texts and formats again. The Language menu in the header of these docs does the same.
+`uiLocale.use('tr')` loads the Turkish pack the first time it is requested. Every control on the page then redraws its strings and formats. The Language menu in the header of these docs does the same thing.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -41,27 +41,27 @@ export default function Switch() {
 }
 ```
 
-## The rules
+## Validation rules
 
-| Rule | How |
+| Rule | Details |
 | --- | --- |
-| `Start` | The page’s `<html lang>`, else the browser’s language. Set `lang` before the first control is made; `uiLocale.ready` settles once that language is in. |
-| `Texts` | Every text a control writes itself (a button’s name, a message, “No items”) comes from the pack of the language in use; English fills what the pack leaves out. |
-| `Formats` | Dates, numbers, the first day of the week and 12 or 24 hours follow `uiLocale.locale`; a control’s own `locale` prop wins for that control. |
-| `Direction` | `uiLocale.dir` is `rtl` for Arabic, Hebrew, Persian, Urdu…; the controls lay themselves out from `<html dir>`, which `@motifx-community/i18n` keeps in step. |
-| `Nothing follows` | A change is one event, `onChanged`: the controls draw again on it, and so can your own texts. No binding reads `uiLocale`. |
-| `Plurals` | A text with a count is an ICU message, `{count, plural, one {# record} other {# records}}`; a pack writes it the way its language counts. |
+| `Start` | The initial language comes from the page's `<html lang>` attribute, or from the browser language if it is not set. Set `lang` before creating the first control. `uiLocale.ready` resolves once that language has loaded. |
+| `Texts` | Every string a control displays on its own, such as a button name, a message or “No items”, comes from the active language pack. English is used for anything the pack does not include. |
+| `Formats` | Dates, numbers, the first day of the week and the 12 or 24-hour clock follow `uiLocale.locale`. A control's own `locale` prop takes precedence for that control. |
+| `Direction` | `uiLocale.dir` is `rtl` for Arabic, Hebrew, Persian, Urdu and similar languages. Controls lay themselves out based on `<html dir>`, which `@motifx-community/i18n` keeps in sync. |
+| `Nothing follows` | A language change raises a single event, `onChanged`. Controls redraw in response, and your own strings can do the same. No binding reads `uiLocale`. |
+| `Plurals` | A string with a count is an ICU message, such as `{count, plural, one {# record} other {# records}}`. Each pack writes it according to the plural rules of its language. |
 
-## Packs
+## Language packs
 
-| Pack | Where it comes from |
+| Pack | Source |
 | --- | --- |
-| `English` | Built in. What a pack leaves out is shown in English. |
-| `Turkish` | `uiLocale.use('tr')` loads it the first time, as a chunk of the package. |
-| `@motifx-community/ui/locales/<language>.json` | The same packs as files, for an app that bundles or serves them its own way: `uiLocale.add('tr', pack)`. |
-| `uiLocale.loader` | Where the kit asks for a pack it does not have: `(language) => fetch(`/i18n/ui/${language}.json`).then((r) => r.json())`. A language without a pack keeps the English texts. |
+| `English` | Built in. Anything a pack does not include appears in English. |
+| `Turkish` | `uiLocale.use('tr')` loads it on first use as a chunk of the package. |
+| `@motifx-community/ui/locales/<language>.json` | The same packs as files, for applications that bundle or serve them separately: `uiLocale.add('tr', pack)`. |
+| `uiLocale.loader` | Sets where the kit requests packs it does not have: `(language) => fetch(`/i18n/ui/${language}.json`).then((r) => r.json())`. A language without a pack keeps the English strings. |
 
-A pack of your own is a plain object of the kit’s texts: `uiLocale.add` gives a language its texts, `use` switches to it. A few texts are enough to start; the rest stay English until the pack has them.
+A custom pack is a plain object of kit strings. `uiLocale.add` registers strings for a language, and `use` switches to it. You can start with a few strings. The rest stay in English until the pack includes them.
 
 ```tsx
 import { Button, DropDown, Stack, uiLocale } from '@motifx-community/ui';
@@ -91,9 +91,9 @@ export default function OwnPack() {
 }
 ```
 
-## With your app’s translations
+## Using your application's translations
 
-An app translated with `@motifx-community/i18n` has one locale already. `connectI18n(i18n)` makes the kit follow it: when the app switches, the kit loads its own pack and switches too. The link is undone by what it returns.
+An application translated with `@motifx-community/i18n` already has a locale. `connectI18n(i18n)` makes the kit follow it: when the application switches language, the kit loads its own pack and switches too. Call the function it returns to disconnect.
 
 ```tsx
 import { Component } from '@motifx/core';
@@ -131,9 +131,9 @@ export default class Connect extends Component<HTMLDivElement> {
 }
 ```
 
-## Your own texts that follow
+## Keeping your own strings in sync
 
-The kit follows nothing: a change of language is told once, through `uiLocale.onChanged`. Keep your own texts with it, and fill the kit’s own texts with `uiLocale.text`, plurals included.
+The kit does not track anything for you. A language change is reported once, through `uiLocale.onChanged`. Update your own strings there, and use `uiLocale.text` to fill in kit strings, including plurals.
 
 ```tsx
 import { Component, reactive } from '@motifx/core';
@@ -181,9 +181,9 @@ export default class OwnTexts extends Component<HTMLDivElement> {
 }
 ```
 
-## Formats of one control
+## Formats for a single control
 
-Dates and numbers follow the kit’s locale. A control given a `locale` of its own writes that one, whatever the kit’s language is.
+Dates and numbers follow the kit locale. A control with its own `locale` uses that locale, regardless of the kit language.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -202,28 +202,28 @@ export default function Formats() {
 }
 ```
 
-## Checking a pack
+## Validating a pack
 
-In the repository, `npm run locales` checks every pack the kit ships, and `npm run locales -- path/to/de.json` one of your own. The texts themselves are in `src/locales/en.json`; a pack is the same keys in another language.
+In the repository, `npm run locales` validates every pack the kit ships, and `npm run locales -- path/to/de.json` validates one of your own. The strings are defined in `src/locales/en.json`, and a pack uses the same keys in another language.
 
-| Check | What it means |
+| Check | Meaning |
 | --- | --- |
-| `Every text` | A pack names every text of `en.json`; one it leaves out is shown in English, and the check says which. |
-| `Only the kit’s texts` | A key `en.json` does not have is a typo. |
-| `The same arguments` | A text fills the same `{values}` as the English one, in ICU; the plural forms are the language’s own. |
-| `The interface` | `UiStrings` and `en.json` name the same keys. |
+| `Every text` | A pack includes every string in `en.json`. A missing string appears in English, and the check reports which one. |
+| `Only the kit’s texts` | A key that does not exist in `en.json` is a typo. |
+| `The same arguments` | A string uses the same `{values}` as the English string, in ICU format. Plural forms follow the language. |
+| `The interface` | `UiStrings` and `en.json` declare the same keys. |
 
 ## API reference
 
 | Member | Type | Description |
 | --- | --- | --- |
-| `uiLocale.use(locale)` | `Promise<void>` | Switches to `locale` (`tr`, `tr-TR`): its pack is loaded first when it is not there, then every control draws again. A later call wins over one still loading. |
-| `uiLocale.locale` | `string` | The locale in use. |
-| `uiLocale.dir` | `'ltr' \| 'rtl'` | The direction of the locale in use. |
-| `uiLocale.strings` | `UiStrings` | The texts in use. Assigning a set changes the texts and keeps the locale: `uiLocale.strings = { ...uiLocale.strings, close: 'Shut' }`. |
-| `uiLocale.text(key, values)` | `string` | A text of the kit with its values filled in: `uiLocale.text('gridRecords', { count: 3 })`. |
-| `uiLocale.add(language, pack)` | `void` | Adds the pack of a language, or more texts to it; a language in use shows them at once. |
-| `uiLocale.loader` | `(language) => Promise<UiPackModule>` | Where packs come from; the package by default. |
-| `uiLocale.ready` | `Promise<void>` | Settles once the starting language is in. |
-| `uiLocale.onChanged` | event | Raised once the language changed, with `locale` and `previous`. |
-| `connectI18n(i18n)` | `() => void` | Keeps the kit’s language with your app’s translations (`@motifx-community/i18n`, or anything with `locale` and `onLocaleChanged`); returns what stops it. |
+| `uiLocale.use(locale)` | `Promise<void>` | Switches to `locale` (`tr`, `tr-TR`). The pack is loaded first if needed, and then every control redraws. A later call takes precedence over one that is still loading. |
+| `uiLocale.locale` | `string` | The active locale. |
+| `uiLocale.dir` | `'ltr' \| 'rtl'` | The text direction of the active locale. |
+| `uiLocale.strings` | `UiStrings` | The active strings. Assigning a set changes the strings and keeps the locale: `uiLocale.strings = { ...uiLocale.strings, close: 'Shut' }`. |
+| `uiLocale.text(key, values)` | `string` | Returns a kit string with its values filled in: `uiLocale.text('gridRecords', { count: 3 })`. |
+| `uiLocale.add(language, pack)` | `void` | Adds the pack for a language, or adds strings to it. The active language shows them immediately. |
+| `uiLocale.loader` | `(language) => Promise<UiPackModule>` | Sets where packs are loaded from. By default, this is the package. |
+| `uiLocale.ready` | `Promise<void>` | Resolves once the initial language has loaded. |
+| `uiLocale.onChanged` | event | Occurs after the language changes, with `locale` and `previous`. |
+| `connectI18n(i18n)` | `() => void` | Keeps the kit language in sync with your application's translations (`@motifx-community/i18n`, or any object with `locale` and `onLocaleChanged`). Returns a function that stops it. |

@@ -2,7 +2,7 @@
 
 > Feedback · @motifx-community/ui 0.1.0-beta.3
 
-Content next to the element it belongs to: a title, a close button, a form, a card. It opens on a press or while the pointer rests on its target, follows it, and points at it with an arrow where the design language has one.
+Displays content next to a related element, such as a title, a close button, a form or a card. It opens on click or on hover, follows its target, and points to it with an arrow where the design language includes one.
 
 ## Import
 
@@ -12,7 +12,7 @@ import { Popover } from '@motifx-community/ui';
 
 ## Declarative and programmatic
 
-The JSX children are the content; `target` names the element or component it opens next to. Programmatically, `content` gives the content and `open()`, `close()` and `toggle()` move it; `value` and `x-model` say whether it is open.
+JSX children are the content, and `target` specifies the element or component it opens next to. Programmatically, `content` sets the content, and `open()`, `close()` and `toggle()` control it. `value` and `x-model` report whether it is open.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -52,9 +52,9 @@ export default function Basic() {
 }
 ```
 
-## While the pointer rests
+## Opening on hover
 
-`showOn: 'hover'` opens it after `delay` while the pointer rests on the target, and when the target has keyboard focus; the pointer may move onto the popover. It closes `hideDelay` after the pointer leaves both.
+`showOn: 'hover'` opens the popover after `delay` while the pointer rests on the target, and when the target has keyboard focus. The pointer can move onto the popover, which closes `hideDelay` after the pointer leaves both.
 
 ```tsx
 import { Avatar, Popover, Stack } from '@motifx-community/ui';
@@ -84,7 +84,7 @@ export default function Hover() {
 }
 ```
 
-## Placements, the arrow and a width
+## Placement, arrow and width
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -153,28 +153,28 @@ export default function Events() {
 }
 ```
 
-## Behaviour
+## Behavior
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Opening` | By a press on the target, by the pointer resting on it (`hover`), or programmatically. It appears in the browser’s top layer, next to the target, and follows it while the page scrolls. |
-| `Focus` | Opened by a press or programmatically, focus moves to the first focusable part inside, else to the popover; it goes back to the target when the popover closes. Opened by hover, focus stays where it is. |
-| `Closing` | Escape, a press outside it and its target, focus leaving both (Tab out), the close button, the target pressed again, or the pointer leaving both (`hover`). `onClosing` may keep it open. |
-| `Placement` | `placement` names the side and the alignment, as for the kit’s popups; without room on that side it opens on the other. |
-| `Where it lives` | Made programmatically, it goes into the nearest container of its target that can hold it, so it stays in the target’s window and landmark. |
+| `Opening` | The popover opens on target click, on hover (`hover`), or programmatically. It appears in the browser's top layer next to the target and follows it as the page scrolls. |
+| `Focus` | When opened by a click or programmatically, focus moves to the first focusable element inside, or to the popover itself, and returns to the target when it closes. When opened by hover, focus stays where it is. |
+| `Closing` | It closes on Escape, a click outside it and its target, focus leaving both (Tab), the close button, another click on the target, or the pointer leaving both (`hover`). `onClosing` can keep it open. |
+| `Placement` | `placement` sets the side and alignment, as in the kit's other popups. If there is no room on that side, it opens on the opposite side. |
+| `Where it lives` | When created programmatically, it is placed in the nearest container of its target that can hold it, so it stays in the target's window and landmark. |
 
 ## Accessibility
 
-| Topic | How |
+| Topic | Details |
 | --- | --- |
-| `Role` | `dialog`, named by its title, else by `label`: give it one. |
-| `Target` | `aria-controls` and `aria-expanded`; `aria-haspopup="dialog"` when a press opens it. |
-| `Keyboard` | Tab moves through the content and out (which closes it); Escape closes and returns focus. A `hover` popover opens on keyboard focus too. |
+| `Role` | `dialog`, named by its title or by `label`. Always provide one of them. |
+| `Target` | `aria-controls` and `aria-expanded`, plus `aria-haspopup="dialog"` when a click opens it. |
+| `Keyboard` | Tab moves through the content and out, which closes the popover. Escape closes it and returns focus. A `hover` popover also opens on keyboard focus. |
 | `Arrow` | Decorative. |
 
 ## Styling
 
-| Hook | What it is |
+| Hook | Description |
 | --- | --- |
 | `.mx-popover` | The popover. `data-side` (`top`, `bottom`, `start`, `end`), `data-arrow`. |
 | `.mx-popover__arrow` | The arrow. |
@@ -183,11 +183,11 @@ export default function Events() {
 
 ### Component tokens
 
-| Token | What it sets |
+| Token | Description |
 | --- | --- |
 | `popover.surface, .arrow, .header, .title, .body` | Units: the surface (`focus`), the arrow (`display`, `size`, its fill and frame), the header, the title and the body. |
-| `popover.close` | Place: the close button’s look (`variant`). |
-| `popover.offset, .enter-offset, .header-gap` | The gap to the target, how far it comes in as it appears, the space between title and close button. |
+| `popover.close` | Place: the appearance of the close button (`variant`). |
+| `popover.offset, .enter-offset, .header-gap` | The gap to the target, the distance it animates in from, and the space between the title and close button. |
 
 ## API reference
 
@@ -196,26 +196,26 @@ export default function Events() {
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `target` | `Bind<Element \| ComponentBase \| null>` | `null` | The element or component it opens next to. |
-| `title` | `Bind<string>` | `''` | A title in the header. The same property as `text`. |
-| `label` | `Bind<string>` | `''` | What screen readers call it when it has no title. |
-| `content` | `Bind<ComponentBase \| null>` | `null` | Content programmatically, after the JSX children. |
-| `showOn` | `Bind<PopoverShowOn>` | `'click'` | `click`: a press on the target toggles it; `hover`: the pointer resting on the target, or keyboard focus on it; `manual`: only code. |
-| `placement` | `Bind<PopupPlacement>` | `'bottom'` | The side and the alignment; it opens on the other side when there is no room. |
-| `arrow` | `Bind<boolean>` | `true` | An arrow towards the target, where the design language draws one. |
-| `showClose` | `Bind<boolean>` | `false` | A close button in the header. |
-| `width` | `Bind<string \| number \| null>` | `null` | A width of its own (a CSS length, or pixels). |
-| `closeOnOutside` | `Bind<boolean>` | `true` | A press outside it and its target closes it. |
-| `delay, hideDelay` | `Bind<number>` | `300`, `200` | Milliseconds the pointer rests on the target before it opens, and it stays after the pointer leaves both (`showOn: 'hover'`). |
-| `value` | `Bind<boolean>` | `false` | Open or not; `x-model` binds it two-way. |
+| `title` | `Bind<string>` | `''` | A title in the header. This is the same property as `text`. |
+| `label` | `Bind<string>` | `''` | The accessible name when there is no title. |
+| `content` | `Bind<ComponentBase \| null>` | `null` | Content set programmatically, shown after the JSX children. |
+| `showOn` | `Bind<PopoverShowOn>` | `'click'` | `click` toggles it when the target is clicked, `hover` opens it on hover or keyboard focus, and `manual` leaves it to your code. |
+| `placement` | `Bind<PopupPlacement>` | `'bottom'` | The side and alignment. It opens on the opposite side if there is no room. |
+| `arrow` | `Bind<boolean>` | `true` | Shows an arrow toward the target, where the design language includes one. |
+| `showClose` | `Bind<boolean>` | `false` | Shows a close button in the header. |
+| `width` | `Bind<string \| number \| null>` | `null` | A custom width, as a CSS length or in pixels. |
+| `closeOnOutside` | `Bind<boolean>` | `true` | Closes the popover on a click outside it and its target. |
+| `delay, hideDelay` | `Bind<number>` | `300`, `200` | The time in milliseconds the pointer must rest on the target before it opens, and the time it stays after the pointer leaves both (`showOn: 'hover'`). |
+| `value` | `Bind<boolean>` | `false` | Indicates whether it is open. `x-model` provides two-way binding. |
 
 ### Events, properties and methods
 
-| Member | Kind | Description |
+| Member | Type | Description |
 | --- | --- | --- |
-| `onOpened` | event | It opened. |
-| `onClosing` | event | About to close (`reason`); `cancel = true` keeps it open. |
-| `onClosed` | event | It closed, with the reason: `escape`, `outside`, `focus`, `toggle`, `hover`, `close-button`, `code`. |
-| `open(), close(reason?), toggle()` | `boolean` / `void` | Programmatically; `open()` is `false` without a target on the page or when disabled. |
-| `place()` | `void` | Lines it up with its target again, after its content changed size. |
-| `isOpen` | read-only | Whether it is open now. |
-| `closeButton, body` | read-only | The close button (the kit’s) and the part that holds the content. |
+| `onOpened` | event | Occurs when it opens. |
+| `onClosing` | event | Occurs before it closes (`reason`). Set `cancel = true` to keep it open. |
+| `onClosed` | event | Occurs when it closes, with the reason: `escape`, `outside`, `focus`, `toggle`, `hover`, `close-button` or `code`. |
+| `open(), close(reason?), toggle()` | `boolean` / `void` | Programmatic control. `open()` returns `false` if there is no target on the page or the popover is disabled. |
+| `place()` | `void` | Repositions it relative to its target after its content changes size. |
+| `isOpen` | read-only | Indicates whether it is currently open. |
+| `closeButton, body` | read-only | The kit close button, and the part that holds the content. |

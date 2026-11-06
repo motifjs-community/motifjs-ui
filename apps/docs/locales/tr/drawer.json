@@ -17,7 +17,6 @@
   "The element a push drawer moves aside, using `--_mx-push`.": "",
   "Units: the dimmed layer, the surface at each edge (`start`, `end`, `top`, `bottom`, which differ in the sides facing the content and the available space), and the surface when pushing content (`push`).": "",
   "The opening size, the maximum share of the available space, the margin around it, and the font family.": "",
-  "Indicates whether it is open. `x-model` provides two-way binding.": "",
   "The edge it slides in from. `start` and `end` follow the reading direction, and `left` and `right` do not.": "",
   "Over the content, or pushing `pushTarget` aside by its size.": "",
   "The element `push` moves aside. Without it, `push` behaves like `over`.": "",
