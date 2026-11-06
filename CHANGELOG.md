@@ -18,7 +18,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `icon`, `activeIcon`, `href`, `badge` and `dot`; `value` and `x-model`; `onSelecting` may refuse,
   `onSelectionChanged`, `onItemClick`; `labelMode`; `position`, `hideOnScroll`, `scrollTarget`. It keeps clear of the
   home indicator of a phone.
-- The glyphs `menu` and `arrow-start`, and the kit strings `navigationMenu`, `navigation` and `appBarActions`.
+- `OtpInput`: a one-time code in a row of boxes, drawn over one real input, so that typing, pasting a whole code, the
+  code a phone offers from a message and screen readers work as in any text box, and it is one Tab stop. `length`,
+  `charset` or `pattern`, `uppercase`, `masked` and `maskCharacter`, `placeholder`, `groupSize` and `separator`,
+  `autoComplete`; a field, with its label, rules and `x-model`; an incomplete code fails on its own; `onCompleted` occurs
+  once for a code, `isComplete`, `clear()`. The boxes run left to right in every page.
+- The glyphs `menu` and `arrow-start`, and the kit strings `navigationMenu`, `navigation`, `appBarActions` and
+  `otpIncomplete`.
 
 ### Documentation
 

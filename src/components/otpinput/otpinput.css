@@ -1,0 +1,110 @@
+/* OtpInput: a row of boxes in a field without a box. The real input lies over the row, unseen, so the page behaves as
+   with any text box; the boxes only draw its characters and caret. The boxes, a character, the caret and the separator
+   are units of the schema; the sizes follow `data-size`. */
+@layer mx.components {
+    .mx-otp-input[data-size='sm'] {
+        --_width: var(--_otp-input-cell-width-sm);
+        --_height: var(--_otp-input-cell-height-sm);
+        --_font: var(--_otp-input-font-size-sm);
+    }
+
+    .mx-otp-input[data-size='md'] {
+        --_width: var(--_otp-input-cell-width-md);
+        --_height: var(--_otp-input-cell-height-md);
+        --_font: var(--_otp-input-font-size-md);
+    }
+
+    .mx-otp-input[data-size='lg'] {
+        --_width: var(--_otp-input-cell-width-lg);
+        --_height: var(--_otp-input-cell-height-lg);
+        --_font: var(--_otp-input-font-size-lg);
+    }
+
+    /* As wide as its boxes, not as a text field; a narrow parent makes the boxes smaller. */
+    .mx-otp-input {
+        --_over: 1;
+
+        inline-size: max-content;
+        max-inline-size: 100%;
+    }
+
+    .mx-otp-input > .mx-field__box {
+        position: relative;
+        inline-size: max-content;
+        max-inline-size: 100%;
+    }
+
+    .mx-otp-input__cells {
+        display: inline-flex;
+        align-items: center;
+        max-inline-size: 100%;
+    }
+
+    .mx-otp-input__cell {
+        position: relative;
+        display: inline-flex;
+        flex: 0 1 auto;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        inline-size: var(--_width);
+        min-inline-size: 0;
+        block-size: var(--_height);
+        font-size: var(--_font);
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* The input covers the row, so pressing, pasting and the menu of the browser work on it. */
+    .mx-otp-input__input {
+        position: absolute;
+        inset: 0;
+        z-index: var(--_over);
+        box-sizing: border-box;
+        inline-size: 100%;
+        block-size: 100%;
+        padding: 0;
+        border: 0;
+        outline: 0;
+        background: none;
+        font-size: var(--_otp-input-input-font-size);
+        color: transparent;
+        caret-color: transparent;
+        cursor: inherit;
+    }
+
+    /* The boxes show where focus is; the ring of an input would run around the whole row. */
+    .mx-otp-input__input:focus-visible {
+        box-shadow: none;
+    }
+
+    .mx-otp-input__input::selection {
+        background: transparent;
+        color: transparent;
+    }
+
+    .mx-otp-input__caret {
+        position: absolute;
+        pointer-events: none;
+        animation: mx-otp-caret 1s step-end infinite;
+    }
+
+    .mx-otp-input__caret[hidden] {
+        display: none;
+    }
+
+    .mx-otp-input__separator {
+        flex: none;
+    }
+
+    @keyframes mx-otp-caret {
+        50% {
+            opacity: 0;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .mx-otp-input__caret {
+            animation: none;
+        }
+    }
+}

@@ -2062,6 +2062,75 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `number-box.glyph.inline-up.icon` | `--mx-number-box-glyph-inline-up-icon` | `` | `var(--mx-icon-plus)` |
 | `number-box.glyph.inline-down.icon` | `--mx-number-box-glyph-inline-down-icon` | `` | `var(--mx-icon-dash)` |
 | `number-box.glyph.stacked.max-height` | `--mx-number-box-glyph-stacked-max-height` | `icon.size.sm` | `0.75rem` |
+| `otp-input.input-font-size` | `--mx-otp-input-input-font-size` | `` | `16px` |
+| `otp-input.cell-width.sm` | `--mx-otp-input-cell-width-sm` | `` | `36px` |
+| `otp-input.cell-width.md` | `--mx-otp-input-cell-width-md` | `` | `44px` |
+| `otp-input.cell-width.lg` | `--mx-otp-input-cell-width-lg` | `` | `52px` |
+| `otp-input.cell-height.sm` | `--mx-otp-input-cell-height-sm` | `` | `40px` |
+| `otp-input.cell-height.md` | `--mx-otp-input-cell-height-md` | `` | `48px` |
+| `otp-input.cell-height.lg` | `--mx-otp-input-cell-height-lg` | `` | `56px` |
+| `otp-input.font-size.sm` | `--mx-otp-input-font-size-sm` | `font.size.body` | `0.875rem` |
+| `otp-input.font-size.md` | `--mx-otp-input-font-size-md` | `font.size.body-large` | `1.125rem` |
+| `otp-input.font-size.lg` | `--mx-otp-input-font-size-lg` | `font.size.subtitle` | `1.25rem` |
+| `otp-input.field.label-mode` | `--mx-otp-input-field-label-mode` | `` | `top` |
+| `otp-input.field.variant` | `--mx-otp-input-field-variant` | `` | `outline` |
+| `otp-input.field.padding.sm` | `--mx-otp-input-field-padding-sm` | `` | `0px` |
+| `otp-input.field.padding.md` | `--mx-otp-input-field-padding-md` | `` | `0px` |
+| `otp-input.field.padding.lg` | `--mx-otp-input-field-padding-lg` | `` | `0px` |
+| `otp-input.field.border-width` | `--mx-otp-input-field-border-width` | `` | `0px` |
+| `otp-input.field.padding-start.sm` | `--mx-otp-input-field-padding-start-sm` | `` | `0px` |
+| `otp-input.field.padding-start.md` | `--mx-otp-input-field-padding-start-md` | `` | `0px` |
+| `otp-input.field.padding-start.lg` | `--mx-otp-input-field-padding-start-lg` | `` | `0px` |
+| `otp-input.field.padding-end.sm` | `--mx-otp-input-field-padding-end-sm` | `` | `0px` |
+| `otp-input.field.padding-end.md` | `--mx-otp-input-field-padding-end-md` | `` | `0px` |
+| `otp-input.field.padding-end.lg` | `--mx-otp-input-field-padding-end-lg` | `` | `0px` |
+| `otp-input.field.box.bg` | `--mx-otp-input-field-box-bg` | `` | `rgb(0 0 0 / 0)` |
+| `otp-input.field.box.hover.bg` | `--mx-otp-input-field-box-hover-bg` | `` | `rgb(0 0 0 / 0)` |
+| `otp-input.field.box.focus.bg` | `--mx-otp-input-field-box-focus-bg` | `` | `rgb(0 0 0 / 0)` |
+| `otp-input.field.box.focus.shadow` | `--mx-otp-input-field-box-focus-shadow` | `` | `0px 0px 0px 0px rgb(0 0 0 / 0)` |
+| `otp-input.field.box.radius` | `--mx-otp-input-field-box-radius` | `` | `0px` |
+| `otp-input.field.box.shadow` | `--mx-otp-input-field-box-shadow` | `` | `0px 0px 0px 0px rgb(0 0 0 / 0)` |
+| `otp-input.field.box.cursor` | `--mx-otp-input-field-box-cursor` | `` | `default` |
+| `otp-input.field.box.disabled.bg` | `--mx-otp-input-field-box-disabled-bg` | `` | `rgb(0 0 0 / 0)` |
+| `otp-input.field.box.disabled.shadow` | `--mx-otp-input-field-box-disabled-shadow` | `` | `0px 0px 0px 0px rgb(0 0 0 / 0)` |
+| `otp-input.field.box.invalid-hover.bg` | `--mx-otp-input-field-box-invalid-hover-bg` | `` | `rgb(0 0 0 / 0)` |
+| `otp-input.field.box.invalid-focus.bg` | `--mx-otp-input-field-box-invalid-focus-bg` | `` | `rgb(0 0 0 / 0)` |
+| `otp-input.field.box.invalid-focus.shadow` | `--mx-otp-input-field-box-invalid-focus-shadow` | `` | `0px 0px 0px 0px rgb(0 0 0 / 0)` |
+| `otp-input.field.box.readonly-focus.shadow` | `--mx-otp-input-field-box-readonly-focus-shadow` | `` | `0px 0px 0px 0px rgb(0 0 0 / 0)` |
+| `otp-input.field.box.readonly-invalid-focus.shadow` | `--mx-otp-input-field-box-readonly-invalid-focus-shadow` | `` | `0px 0px 0px 0px rgb(0 0 0 / 0)` |
+| `otp-input.field.frame.display` | `--mx-otp-input-field-frame-display` | `` | `none` |
+| `otp-input.field.indicator.display` | `--mx-otp-input-field-indicator-display` | `` | `none` |
+| `otp-input.cells.gap` | `--mx-otp-input-cells-gap` | `space.2` | `0.5rem` |
+| `otp-input.cell.bg` | `--mx-otp-input-cell-bg` | `color.bg.card` | `#f5f4f0` |
+| `otp-input.cell.radius` | `--mx-otp-input-cell-radius` | `radius.md` | `0.375rem` |
+| `otp-input.cell.color` | `--mx-otp-input-cell-color` | `color.fg.primary` | `#1d1c1a` |
+| `otp-input.cell.border-width` | `--mx-otp-input-cell-border-width` | `` | `1px` |
+| `otp-input.cell.border-color` | `--mx-otp-input-cell-border-color` | `color.stroke.control.default` | `rgb(0 0 0 / 0.12)` |
+| `otp-input.cell.font-weight` | `--mx-otp-input-cell-font-weight` | `font.weight.semibold` | `600` |
+| `otp-input.cell.border-bottom-width` | `--mx-otp-input-cell-border-bottom-width` | `control.edge.width` | `2px` |
+| `otp-input.cell.border-bottom-color` | `--mx-otp-input-cell-border-bottom-color` | `color.stroke.control.edge` | `rgb(0 0 0 / 0.3)` |
+| `otp-input.cell.hover.border-color` | `--mx-otp-input-cell-hover-border-color` | `color.stroke.control.strong` | `rgb(0 0 0 / 0.4458)` |
+| `otp-input.cell.filled.border-color` | `--mx-otp-input-cell-filled-border-color` | `color.stroke.control.strong` | `rgb(0 0 0 / 0.4458)` |
+| `otp-input.cell.filled.bg` | `--mx-otp-input-cell-filled-bg` | `` | `initial` |
+| `otp-input.cell.active.border-color` | `--mx-otp-input-cell-active-border-color` | `color.accent.solid` | `#c24523` |
+| `otp-input.cell.active.glow` | `--mx-otp-input-cell-active-glow` | `focus.ring.halo` | `0px 0px 0px 1px rgb(255 255 255 / 0.7)` |
+| `otp-input.cell.active.outline-width` | `--mx-otp-input-cell-active-outline-width` | `focus.ring.width` | `2px` |
+| `otp-input.cell.active.outline-color` | `--mx-otp-input-cell-active-outline-color` | `focus.ring.color` | `#1d1c1a` |
+| `otp-input.cell.active.outline-offset` | `--mx-otp-input-cell-active-outline-offset` | `focus.ring.offset` | `1px` |
+| `otp-input.cell.active.border-bottom-width` | `--mx-otp-input-cell-active-border-bottom-width` | `` | `initial` |
+| `otp-input.cell.active.border-bottom-color` | `--mx-otp-input-cell-active-border-bottom-color` | `` | `initial` |
+| `otp-input.cell.active.border-width` | `--mx-otp-input-cell-active-border-width` | `` | `initial` |
+| `otp-input.cell.invalid.border-color` | `--mx-otp-input-cell-invalid-border-color` | `color.danger.solid` | `#b03659` |
+| `otp-input.cell.invalid-active.border-color` | `--mx-otp-input-cell-invalid-active-border-color` | `color.danger.solid` | `#b03659` |
+| `otp-input.cell.readonly.bg` | `--mx-otp-input-cell-readonly-bg` | `color.bg.layer` | `#ebeae5` |
+| `otp-input.cell.disabled.bg` | `--mx-otp-input-cell-disabled-bg` | `color.fill.control.disabled` | `#ebeae5` |
+| `otp-input.cell.disabled.color` | `--mx-otp-input-cell-disabled-color` | `color.fg.disabled` | `#a2a098` |
+| `otp-input.cell.disabled.border-color` | `--mx-otp-input-cell-disabled-border-color` | `color.stroke.control.default` | `rgb(0 0 0 / 0.12)` |
+| `otp-input.caret.width` | `--mx-otp-input-caret-width` | `` | `2px` |
+| `otp-input.caret.height` | `--mx-otp-input-caret-height` | `font.size.body-large` | `1.125rem` |
+| `otp-input.caret.bg` | `--mx-otp-input-caret-bg` | `color.accent.solid` | `#c24523` |
+| `otp-input.separator.color` | `--mx-otp-input-separator-color` | `color.fg.tertiary` | `#8c8a82` |
+| `otp-input.separator.padding-inline` | `--mx-otp-input-separator-padding-inline` | `space.2` | `0.5rem` |
 | `pagination.button-size` | `--mx-pagination-button-size` | `` | `sm` |
 | `pagination.step-variant` | `--mx-pagination-step-variant` | `` | `ghost` |
 | `pagination.page-variant` | `--mx-pagination-page-variant` | `` | `ghost` |

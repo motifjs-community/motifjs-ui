@@ -431,6 +431,38 @@
     --_button-variant: var(--mx-load-panel-cancel-variant);
   }
 
+  /* otp-input: field — The field under the boxes: no text-field box. */
+  .mx-otp-input {
+    --_field-variant: var(--mx-otp-input-field-variant);
+    --_field-label-mode: var(--mx-otp-input-field-label-mode);
+    --_field-padding-sm: var(--mx-otp-input-field-padding-sm);
+    --_field-padding-md: var(--mx-otp-input-field-padding-md);
+    --_field-padding-lg: var(--mx-otp-input-field-padding-lg);
+    --_field-box-bg: var(--mx-otp-input-field-box-bg);
+    --_field-box-hover-bg: var(--mx-otp-input-field-box-hover-bg);
+    --_field-box-focus-bg: var(--mx-otp-input-field-box-focus-bg);
+    --_field-border-width: var(--mx-otp-input-field-border-width);
+    --_field-box-radius: var(--mx-otp-input-field-box-radius);
+    --_field-box-shadow: var(--mx-otp-input-field-box-shadow);
+    --_field-box-focus-shadow: var(--mx-otp-input-field-box-focus-shadow);
+    --_field-box-cursor: var(--mx-otp-input-field-box-cursor);
+    --_field-frame-display: var(--mx-otp-input-field-frame-display);
+    --_field-indicator-display: var(--mx-otp-input-field-indicator-display);
+    --_field-box-disabled-bg: var(--mx-otp-input-field-box-disabled-bg);
+    --_field-box-disabled-shadow: var(--mx-otp-input-field-box-disabled-shadow);
+    --_field-padding-start-sm: var(--mx-otp-input-field-padding-start-sm);
+    --_field-padding-start-md: var(--mx-otp-input-field-padding-start-md);
+    --_field-padding-start-lg: var(--mx-otp-input-field-padding-start-lg);
+    --_field-padding-end-sm: var(--mx-otp-input-field-padding-end-sm);
+    --_field-padding-end-md: var(--mx-otp-input-field-padding-end-md);
+    --_field-padding-end-lg: var(--mx-otp-input-field-padding-end-lg);
+    --_field-box-invalid-hover-bg: var(--mx-otp-input-field-box-invalid-hover-bg);
+    --_field-box-invalid-focus-bg: var(--mx-otp-input-field-box-invalid-focus-bg);
+    --_field-box-invalid-focus-shadow: var(--mx-otp-input-field-box-invalid-focus-shadow);
+    --_field-box-readonly-focus-shadow: var(--mx-otp-input-field-box-readonly-focus-shadow);
+    --_field-box-readonly-invalid-focus-shadow: var(--mx-otp-input-field-box-readonly-invalid-focus-shadow);
+  }
+
   /* popover: close — The close button in the header. */
   .mx-popover__close {
     --_button-variant: var(--mx-popover-close-variant);

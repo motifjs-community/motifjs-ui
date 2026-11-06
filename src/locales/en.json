@@ -422,6 +422,7 @@
   "navigationMenu": "Navigation menu",
   "navigation": "Navigation",
   "appBarActions": "Actions",
+  "otpIncomplete": "Enter all {count} characters.",
   "sheetLabel": "Sheet",
   "sheetHandle": "Sheet height",
   "sheetPeek": "Small",

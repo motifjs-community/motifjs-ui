@@ -5063,6 +5063,100 @@
     max-block-size: var(--_number-box-glyph-stacked-max-height, none);
   }
 
+  .mx-otp-input__cells {
+    gap: var(--_otp-input-cells-gap, normal);
+  }
+
+  .mx-otp-input__cell {
+    background-color: var(--_otp-input-cell-bg, transparent);
+    border-style: solid;
+    border-block-start-width: var(--_otp-input-cell-border-width, 0px);
+    border-inline-end-width: var(--_otp-input-cell-border-width, 0px);
+    border-block-end-width: var(--_otp-input-cell-border-bottom-width, var(--_otp-input-cell-border-width, 0px));
+    border-inline-start-width: var(--_otp-input-cell-border-width, 0px);
+    border-block-start-color: var(--_otp-input-cell-border-color, currentcolor);
+    border-inline-end-color: var(--_otp-input-cell-border-color, currentcolor);
+    border-block-end-color: var(--_otp-input-cell-border-bottom-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-inline-start-color: var(--_otp-input-cell-border-color, currentcolor);
+    border-start-start-radius: var(--_otp-input-cell-radius, 0px);
+    border-start-end-radius: var(--_otp-input-cell-radius, 0px);
+    border-end-start-radius: var(--_otp-input-cell-radius, 0px);
+    border-end-end-radius: var(--_otp-input-cell-radius, 0px);
+    color: var(--_otp-input-cell-color, inherit);
+    font-weight: var(--_otp-input-cell-font-weight, inherit);
+    outline-style: solid;
+    outline-width: 0px;
+  }
+
+  .mx-otp-input:not([data-readonly], [data-disabled], [data-invalid]) > .mx-field__box:hover .mx-otp-input__cell:not([data-active]) {
+    border-block-start-color: var(--_otp-input-cell-hover-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-inline-end-color: var(--_otp-input-cell-hover-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-block-end-color: var(--_otp-input-cell-hover-border-color, var(--_otp-input-cell-border-bottom-color, var(--_otp-input-cell-border-color, currentcolor)));
+    border-inline-start-color: var(--_otp-input-cell-hover-border-color, var(--_otp-input-cell-border-color, currentcolor));
+  }
+
+  .mx-otp-input__cell[data-filled] {
+    background-color: var(--_otp-input-cell-filled-bg, var(--_otp-input-cell-bg, transparent));
+    border-block-start-color: var(--_otp-input-cell-filled-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-inline-end-color: var(--_otp-input-cell-filled-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-block-end-color: var(--_otp-input-cell-filled-border-color, var(--_otp-input-cell-border-bottom-color, var(--_otp-input-cell-border-color, currentcolor)));
+    border-inline-start-color: var(--_otp-input-cell-filled-border-color, var(--_otp-input-cell-border-color, currentcolor));
+  }
+
+  .mx-otp-input__cell[data-active] {
+    border-block-start-width: var(--_otp-input-cell-active-border-width, var(--_otp-input-cell-border-width, 0px));
+    border-inline-end-width: var(--_otp-input-cell-active-border-width, var(--_otp-input-cell-border-width, 0px));
+    border-block-end-width: var(--_otp-input-cell-active-border-bottom-width, var(--_otp-input-cell-active-border-width, var(--_otp-input-cell-border-bottom-width, var(--_otp-input-cell-border-width, 0px))));
+    border-inline-start-width: var(--_otp-input-cell-active-border-width, var(--_otp-input-cell-border-width, 0px));
+    border-block-start-color: var(--_otp-input-cell-active-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-inline-end-color: var(--_otp-input-cell-active-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-block-end-color: var(--_otp-input-cell-active-border-bottom-color, var(--_otp-input-cell-active-border-color, var(--_otp-input-cell-border-bottom-color, var(--_otp-input-cell-border-color, currentcolor))));
+    border-inline-start-color: var(--_otp-input-cell-active-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    box-shadow: var(--_otp-input-cell-active-glow, 0 0 #0000), 0 0 #0000;
+    outline-width: var(--_otp-input-cell-active-outline-width, 0px);
+    outline-color: var(--_otp-input-cell-active-outline-color, currentcolor);
+    outline-offset: var(--_otp-input-cell-active-outline-offset, 0px);
+  }
+
+  .mx-otp-input[data-invalid] .mx-otp-input__cell {
+    border-block-start-color: var(--_otp-input-cell-invalid-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-inline-end-color: var(--_otp-input-cell-invalid-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-block-end-color: var(--_otp-input-cell-invalid-border-color, var(--_otp-input-cell-border-bottom-color, var(--_otp-input-cell-border-color, currentcolor)));
+    border-inline-start-color: var(--_otp-input-cell-invalid-border-color, var(--_otp-input-cell-border-color, currentcolor));
+  }
+
+  .mx-otp-input[data-invalid] .mx-otp-input__cell[data-active] {
+    border-block-start-color: var(--_otp-input-cell-invalid-active-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-inline-end-color: var(--_otp-input-cell-invalid-active-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-block-end-color: var(--_otp-input-cell-invalid-active-border-color, var(--_otp-input-cell-border-bottom-color, var(--_otp-input-cell-border-color, currentcolor)));
+    border-inline-start-color: var(--_otp-input-cell-invalid-active-border-color, var(--_otp-input-cell-border-color, currentcolor));
+  }
+
+  .mx-otp-input[data-readonly] .mx-otp-input__cell {
+    background-color: var(--_otp-input-cell-readonly-bg, var(--_otp-input-cell-bg, transparent));
+  }
+
+  .mx-otp-input[data-disabled] .mx-otp-input__cell {
+    background-color: var(--_otp-input-cell-disabled-bg, var(--_otp-input-cell-bg, transparent));
+    border-block-start-color: var(--_otp-input-cell-disabled-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-inline-end-color: var(--_otp-input-cell-disabled-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    border-block-end-color: var(--_otp-input-cell-disabled-border-color, var(--_otp-input-cell-border-bottom-color, var(--_otp-input-cell-border-color, currentcolor)));
+    border-inline-start-color: var(--_otp-input-cell-disabled-border-color, var(--_otp-input-cell-border-color, currentcolor));
+    color: var(--_otp-input-cell-disabled-color, var(--_otp-input-cell-color, inherit));
+  }
+
+  .mx-otp-input__caret {
+    inline-size: var(--_otp-input-caret-width, auto);
+    block-size: var(--_otp-input-caret-height, auto);
+    background-color: var(--_otp-input-caret-bg, transparent);
+  }
+
+  .mx-otp-input__separator {
+    padding-inline-end: var(--_otp-input-separator-padding-inline, 0px);
+    padding-inline-start: var(--_otp-input-separator-padding-inline, 0px);
+    color: var(--_otp-input-separator-color, inherit);
+  }
+
   .mx-pagination__info {
     margin-block-start: 0px;
     margin-inline-end: 0px;

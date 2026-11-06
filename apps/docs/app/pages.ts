@@ -38,6 +38,7 @@ export const GROUPS = [
       { id: 'numberbox', label: 'NumberBox', title: 'NumberBox', path: '/numberbox', related: ['textbox', 'slider'] },
       { id: 'datebox', label: 'DateBox', title: 'DateBox', path: '/datebox', related: ['calendar', 'textbox'] },
       { id: 'daterangebox', label: 'DateRangeBox', title: 'DateRangeBox', path: '/daterangebox', related: ['datebox', 'calendar'] },
+      { id: 'otpinput', label: 'OtpInput', title: 'OtpInput', path: '/otpinput', related: ['textbox', 'numberbox', 'keyboard'] },
       { id: 'colorbox', label: 'ColorBox', title: 'ColorBox and ColorPicker', path: '/colorbox', related: ['textbox', 'datebox'] },
       { id: 'calendar', label: 'Calendar', title: 'Calendar', path: '/calendar', related: ['datebox'] },
       { id: 'slider', label: 'Slider', title: 'Slider', path: '/slider', related: ['numberbox', 'progress'] },

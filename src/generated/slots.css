@@ -1927,6 +1927,50 @@
     --_number-box-glyph-inline-down-icon: var(--mx-number-box-glyph-inline-down-icon);
   }
 
+  .mx-otp-input {
+    --_otp-input-input-font-size: var(--mx-otp-input-input-font-size);
+    --_otp-input-cell-width-sm: var(--mx-otp-input-cell-width-sm);
+    --_otp-input-cell-width-md: var(--mx-otp-input-cell-width-md);
+    --_otp-input-cell-width-lg: var(--mx-otp-input-cell-width-lg);
+    --_otp-input-cell-height-sm: var(--mx-otp-input-cell-height-sm);
+    --_otp-input-cell-height-md: var(--mx-otp-input-cell-height-md);
+    --_otp-input-cell-height-lg: var(--mx-otp-input-cell-height-lg);
+    --_otp-input-font-size-sm: var(--mx-otp-input-font-size-sm);
+    --_otp-input-font-size-md: var(--mx-otp-input-font-size-md);
+    --_otp-input-font-size-lg: var(--mx-otp-input-font-size-lg);
+    --_otp-input-cells-gap: var(--mx-otp-input-cells-gap);
+    --_otp-input-cell-bg: var(--mx-otp-input-cell-bg);
+    --_otp-input-cell-radius: var(--mx-otp-input-cell-radius);
+    --_otp-input-cell-color: var(--mx-otp-input-cell-color);
+    --_otp-input-cell-border-width: var(--mx-otp-input-cell-border-width);
+    --_otp-input-cell-border-color: var(--mx-otp-input-cell-border-color);
+    --_otp-input-cell-font-weight: var(--mx-otp-input-cell-font-weight);
+    --_otp-input-cell-border-bottom-color: var(--mx-otp-input-cell-border-bottom-color);
+    --_otp-input-cell-hover-border-color: var(--mx-otp-input-cell-hover-border-color);
+    --_otp-input-cell-filled-border-color: var(--mx-otp-input-cell-filled-border-color);
+    --_otp-input-cell-active-border-bottom-width: var(--mx-otp-input-cell-active-border-bottom-width);
+    --_otp-input-cell-active-border-bottom-color: var(--mx-otp-input-cell-active-border-bottom-color);
+    --_otp-input-cell-invalid-border-color: var(--mx-otp-input-cell-invalid-border-color);
+    --_otp-input-cell-invalid-active-border-color: var(--mx-otp-input-cell-invalid-active-border-color);
+    --_otp-input-cell-readonly-bg: var(--mx-otp-input-cell-readonly-bg);
+    --_otp-input-cell-disabled-bg: var(--mx-otp-input-cell-disabled-bg);
+    --_otp-input-cell-disabled-color: var(--mx-otp-input-cell-disabled-color);
+    --_otp-input-cell-disabled-border-color: var(--mx-otp-input-cell-disabled-border-color);
+    --_otp-input-caret-width: var(--mx-otp-input-caret-width);
+    --_otp-input-caret-height: var(--mx-otp-input-caret-height);
+    --_otp-input-caret-bg: var(--mx-otp-input-caret-bg);
+    --_otp-input-separator-color: var(--mx-otp-input-separator-color);
+    --_otp-input-separator-padding-inline: var(--mx-otp-input-separator-padding-inline);
+    --_otp-input-cell-filled-bg: var(--mx-otp-input-cell-filled-bg);
+    --_otp-input-cell-active-glow: var(--mx-otp-input-cell-active-glow);
+    --_otp-input-cell-active-outline-width: var(--mx-otp-input-cell-active-outline-width);
+    --_otp-input-cell-active-outline-color: var(--mx-otp-input-cell-active-outline-color);
+    --_otp-input-cell-active-outline-offset: var(--mx-otp-input-cell-active-outline-offset);
+    --_otp-input-cell-active-border-color: var(--mx-otp-input-cell-active-border-color);
+    --_otp-input-cell-active-border-width: var(--mx-otp-input-cell-active-border-width);
+    --_otp-input-cell-border-bottom-width: var(--mx-otp-input-cell-border-bottom-width);
+  }
+
   .mx-pagination {
     --_pagination-button-size: var(--mx-pagination-button-size);
     --_pagination-step-variant: var(--mx-pagination-step-variant);

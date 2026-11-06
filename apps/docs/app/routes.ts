@@ -17,6 +17,7 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   breadcrumb: () => import('../pages/breadcrumb/BreadcrumbPage'),
   appbar: () => import('../pages/appbar/AppBarPage'),
   bottomnavigation: () => import('../pages/bottomnavigation/BottomNavigationPage'),
+  otpinput: () => import('../pages/otpinput/OtpInputPage'),
   pagination: () => import('../pages/pagination/PaginationPage'),
   stepper: () => import('../pages/stepper/StepperPage'),
   gallery: () => import('../pages/gallery/GalleryPage'),

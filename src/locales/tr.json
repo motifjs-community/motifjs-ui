@@ -422,6 +422,7 @@
   "navigationMenu": "Gezinme menüsü",
   "navigation": "Gezinme",
   "appBarActions": "Eylemler",
+  "otpIncomplete": "{count} karakterin tamamını girin.",
   "sheetLabel": "Alt panel",
   "sheetHandle": "Panel yüksekliği",
   "sheetPeek": "Küçük",

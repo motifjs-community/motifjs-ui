@@ -1,0 +1,114 @@
+{
+  "otp-input": {
+    "$description": "OtpInput: a one-time code in a row of boxes, drawn over one real input.",
+    "$selector": ".mx-otp-input",
+    "input-font-size": {
+      "$type": "dimension",
+      "$description": "The text of the input under the boxes, unseen. Below 16 px a phone zooms in on focus."
+    },
+    "cell-width": {
+      "sm": {
+        "$type": "dimension",
+        "$description": "The width of a box."
+      },
+      "md": {
+        "$type": "dimension"
+      },
+      "lg": {
+        "$type": "dimension"
+      }
+    },
+    "cell-height": {
+      "sm": {
+        "$type": "dimension",
+        "$description": "The height of a box."
+      },
+      "md": {
+        "$type": "dimension"
+      },
+      "lg": {
+        "$type": "dimension"
+      }
+    },
+    "font-size": {
+      "sm": {
+        "$type": "dimension",
+        "$description": "A character in a box."
+      },
+      "md": {
+        "$type": "dimension"
+      },
+      "lg": {
+        "$type": "dimension"
+      }
+    },
+    "$places": {
+      "field": {
+        "$description": "The field under the boxes: no text-field box.",
+        "selector": ".mx-otp-input",
+        "part": "field",
+        "tokens": [
+          "variant",
+          "label-mode",
+          "padding.sm",
+          "padding.md",
+          "padding.lg",
+          "box.bg",
+          "box.hover.bg",
+          "box.focus.bg",
+          "border-width",
+          "box.radius",
+          "box.shadow",
+          "box.focus.shadow",
+          "box.cursor",
+          "frame.display",
+          "indicator.display",
+          "box.disabled.bg",
+          "box.disabled.shadow",
+          "padding-start.sm",
+          "padding-start.md",
+          "padding-start.lg",
+          "padding-end.sm",
+          "padding-end.md",
+          "padding-end.lg",
+          "box.invalid-hover.bg",
+          "box.invalid-focus.bg",
+          "box.invalid-focus.shadow",
+          "box.readonly-focus.shadow",
+          "box.readonly-invalid-focus.shadow"
+        ]
+      }
+    },
+    "$units": {
+      "cells": {
+        "$description": "The row of boxes: `gap` between them.",
+        "selector": ".mx-otp-input__cells"
+      },
+      "cell": {
+        "$description": "A box: `hover`, `active` where the caret is, `filled` with a character, `invalid`, `invalid-active`, `disabled`, `readonly`.",
+        "selector": ".mx-otp-input__cell",
+        "states": {
+          "hover": ".mx-otp-input:not([data-readonly], [data-disabled], [data-invalid]) > .mx-field__box:hover .mx-otp-input__cell:not([data-active])",
+          "filled": ".mx-otp-input__cell[data-filled]",
+          "active": ".mx-otp-input__cell[data-active]",
+          "invalid": ".mx-otp-input[data-invalid] .mx-otp-input__cell",
+          "invalid-active": ".mx-otp-input[data-invalid] .mx-otp-input__cell[data-active]",
+          "readonly": ".mx-otp-input[data-readonly] .mx-otp-input__cell",
+          "disabled": ".mx-otp-input[data-disabled] .mx-otp-input__cell"
+        }
+      },
+      "char": {
+        "$description": "A character, a mark or the placeholder.",
+        "selector": ".mx-otp-input__char"
+      },
+      "caret": {
+        "$description": "The caret in the empty box: `width`, `height`, `bg`.",
+        "selector": ".mx-otp-input__caret"
+      },
+      "separator": {
+        "$description": "The separator between groups of boxes.",
+        "selector": ".mx-otp-input__separator"
+      }
+    }
+  }
+}
