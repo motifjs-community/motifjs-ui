@@ -58,8 +58,7 @@ export default function BadgePage() {
   return (
     <>
       <p class="lead">
-        A short text, a count or a dot: in a line of text, or on a corner of a button, an avatar or an icon. A count
-        over its maximum shows “99+”, a count of zero hides.
+        <Rich text="A short text, a count or a dot: in a line of text, or on a corner of a button, an avatar or an icon. A count over its maximum shows “99+”, a count of zero hides." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -118,16 +117,24 @@ import { Badge } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Properties</h3>
+        <h3>
+          <Rich text="Properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
       </Section>
     </>

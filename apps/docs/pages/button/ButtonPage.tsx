@@ -107,10 +107,7 @@ export default function ButtonPage() {
   return (
     <>
       <p class="lead">
-        A native <code>&lt;button&gt;</code> drawn from the design tokens: three variants, three tones, three sizes, an
-        icon, an <code>&amp;</code> access key. It can be a toggle, show that work is running, and open a menu or any
-        content — from the whole button, or with <code>split</code> from an arrow next to it while the button keeps its
-        own action.
+        <Rich text={'A native `<button>` drawn from the design tokens: three variants, three tones, three sizes, an icon, an `&` access key. It can be a toggle, show that work is running, and open a menu or any content — from the whole button, or with `split` from an arrow next to it while the button keeps its own action.'} />
       </p>
 
       <Section anchor="import" title="Import">
@@ -132,9 +129,7 @@ import { Button, type MenuItem } from '@motifx-community/ui';
 
       <Section anchor="look" title="Variants, tones, sizes">
         <p>
-          <code>solid</code> buttons are pressable: an opaque fill, a bottom edge, a highlight along the top and a small
-          move when pressed. <code>outline</code> has a frame, <code>ghost</code> shows only on hover. The tone picks the
-          colors; the size the height, from the density tokens (switch Compact above).
+          <Rich text="`solid` buttons are pressable: an opaque fill, a bottom edge, a highlight along the top and a small move when pressed. `outline` has a frame, `ghost` shows only on hover. The tone picks the colors; the size the height, from the density tokens (switch Compact above)." />
         </p>
         <Example files={code('VariantsTonesSizes.tsx')} stack>
           <VariantsTonesSizes />
@@ -223,24 +218,35 @@ import { Button, type MenuItem } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
         <p>
-          All of them reference design-system tokens; see <a rel="router" href="/tokens">Tokens</a>. Override one after{' '}
-          <code>styles.css</code> to restyle every button.
+          <Rich text="All of them reference design-system tokens; see [Tokens](/tokens). Override one after `styles.css` to restyle every button." />
         </p>
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Properties</h3>
+        <h3>
+          <Rich text="Properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'When']} rows={EVENTS} />
-        <h3>MenuItem</h3>
+        <h3>
+          <Rich text="MenuItem" />
+        </h3>
         <ApiTable head={['Field', 'Type', 'Description']} rows={ITEM} />
         <p>
           <Rich text="The menu and the surface it opens on are shared parts, `MenuList` and `Popup`, exported for other components to use." />

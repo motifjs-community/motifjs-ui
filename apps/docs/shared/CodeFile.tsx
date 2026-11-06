@@ -1,5 +1,6 @@
 import { reactive } from '@motifx/core';
 import { Button } from '@motifx-community/ui';
+import { tx } from '../app/texts';
 import { Code } from './Code';
 import type { ExampleFile } from './example-file';
 
@@ -17,8 +18,8 @@ export function CodeFile(props: { file: ExampleFile }) {
         class="docs-code-file__copy"
         size="sm"
         variant="ghost"
-        text={() => (s.copied ? 'Copied' : 'Copy')}
-        aria-label={() => (s.copied ? 'Copied' : `Copy ${props.file.name}`)}
+        text={() => tx(s.copied ? 'Copied' : 'Copy')}
+        aria-label={() => (s.copied ? tx('Copied') : `${tx('Copy')} ${props.file.name}`)}
         onclick={copy}
       />
       <Code code={props.file.source} />

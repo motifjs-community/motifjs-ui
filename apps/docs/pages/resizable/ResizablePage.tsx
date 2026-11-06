@@ -51,8 +51,7 @@ export default function ResizablePage() {
     return (
         <>
             <p class="lead">
-                A box the user resizes from its sides and corners with the pointer, or with the arrow keys on the grip in its end corner. It
-                keeps to its least and most sizes, stays inside an area when told, and can keep its shape.
+              <Rich text="A box the user resizes from its sides and corners with the pointer, or with the arrow keys on the grip in its end corner. It keeps to its least and most sizes, stays inside an area when told, and can keep its shape." />
             </p>
 
             <Section anchor="import" title="Import">
@@ -100,14 +99,20 @@ import { Resizable } from '@motifx-community/ui';
 
             <Section anchor="styling" title="Styling">
                 <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-                <h3>Component tokens</h3>
+                <h3>
+                  <Rich text="Component tokens" />
+                </h3>
                 <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
-                <h3>Props</h3>
+                <h3>
+                  <Rich text="Props" />
+                </h3>
                 <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-                <h3>Events, properties and methods</h3>
+                <h3>
+                  <Rich text="Events, properties and methods" />
+                </h3>
                 <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
             </Section>
         </>

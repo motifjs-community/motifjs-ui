@@ -31,8 +31,7 @@ export default function CalendarPage() {
   return (
     <>
       <p class="lead">
-        A month of days to pick a date from, with a year and a decade view to get far quickly. It is the picker of
-        DateBox, and it works on its own.
+        <Rich text="A month of days to pick a date from, with a year and a decade view to get far quickly. It is the picker of DateBox, and it works on its own." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -94,9 +93,13 @@ import { Calendar } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Properties, methods, events</h3>
+        <h3>
+          <Rich text="Properties, methods, events" />
+        </h3>
         <ApiTable
           head={['Member', 'Description']}
           rows={[

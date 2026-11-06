@@ -69,9 +69,7 @@ export default function SplitterPage() {
     return (
         <>
             <p class="lead">
-                Panes side by side or one under the other, as many as needed, with a handle between each two that the pointer drags and the
-                keys move. A handle resizes the two panes beside it; a pane may be hidden from its handle, and may hold another splitter.
-                For two panes with one fixed, see <a rel="router" href="/layout">SplitContainer</a>.
+              <Rich text="Panes side by side or one under the other, as many as needed, with a handle between each two that the pointer drags and the keys move. A handle resizes the two panes beside it; a pane may be hidden from its handle, and may hold another splitter. For two panes with one fixed, see [SplitContainer](/layout)." />
             </p>
 
             <Section anchor="import" title="Import">
@@ -128,16 +126,24 @@ import { Splitter, SplitPane } from '@motifx-community/ui';
 
             <Section anchor="styling" title="Styling">
                 <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-                <h3>Component tokens</h3>
+                <h3>
+                  <Rich text="Component tokens" />
+                </h3>
                 <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
-                <h3>Splitter props</h3>
+                <h3>
+                  <Rich text="Splitter props" />
+                </h3>
                 <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-                <h3>SplitPane props</h3>
+                <h3>
+                  <Rich text="SplitPane props" />
+                </h3>
                 <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PANE_PROPS} />
-                <h3>Events, properties and methods</h3>
+                <h3>
+                  <Rich text="Events, properties and methods" />
+                </h3>
                 <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
             </Section>
         </>

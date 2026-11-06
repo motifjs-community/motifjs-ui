@@ -83,8 +83,7 @@ export default function CheckBoxPage() {
   return (
     <>
       <p class="lead">
-        A checkbox with its caption: checked, unchecked or indeterminate, three states on request, read-only, required
-        and checked with its group. A native checkbox underneath, drawn from the design tokens.
+        <Rich text="A checkbox with its caption: checked, unchecked or indeterminate, three states on request, read-only, required and checked with its group. A native checkbox underneath, drawn from the design tokens." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -168,18 +167,28 @@ import { CheckBox } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Properties</h3>
+        <h3>
+          <Rich text="Properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'When']} rows={EVENTS} />
         <p>
           <Rich text="`ToggleField`, the base CheckBox and Switch share (the caption next to a native checkbox, read-only, the access key), is exported for controls of your own." />

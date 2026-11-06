@@ -141,11 +141,7 @@ export default function TabDocsPage() {
   return (
     <>
       <p class="lead">
-        A document manager in the way code editors arrange files: documents in tabs, tabs in groups, groups split side by side and one under the
-        other. A document's content is any component, a form, a grid or plain text, and it is moved, never made again, when its tab goes to another
-        group. Everything the user does is a method too, asks first and reports after; the whole layout saves to JSON and comes back. Preview and
-        pinned tabs, sizes and copies are on <a rel="router" href="/tabdocs/tabs">Tabs</a>; context menus, lists and keys on{' '}
-        <a rel="router" href="/tabdocs/menus">Menus and keys</a>.
+        <Rich text="A document manager in the way code editors arrange files: documents in tabs, tabs in groups, groups split side by side and one under the other. A document's content is any component, a form, a grid or plain text, and it is moved, never made again, when its tab goes to another group. Everything the user does is a method too, asks first and reports after; the whole layout saves to JSON and comes back. Preview and pinned tabs, sizes and copies are on [Tabs](/tabdocs/tabs); context menus, lists and keys on [Menus and keys](/tabdocs/menus)." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -227,22 +223,36 @@ import { TabDocument, TabDocumentManager } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>TabDocument</h3>
+        <h3>
+          <Rich text="TabDocument" />
+        </h3>
         <ApiTable head={['Field', 'Type', 'Description']} rows={DOCUMENT} />
-        <h3>Properties</h3>
+        <h3>
+          <Rich text="Properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>TabGroup</h3>
+        <h3>
+          <Rich text="TabGroup" />
+        </h3>
         <ApiTable head={['Member', 'Access', 'Description']} rows={GROUP} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
       </Section>
     </>

@@ -8,9 +8,7 @@ export default function FormLayoutPage() {
   return (
     <>
       <p class="lead">
-        Lays out the fields of a data object on a grid. Each field gets an editor — by name, or by the type of its value
-        — bound to the object both ways; groups, spans and buttons arrange them; sending the form checks every field
-        first.
+        <Rich text="Lays out the fields of a data object on a grid. Each field gets an editor — by name, or by the type of its value — bound to the object both ways; groups, spans and buttons arrange them; sending the form checks every field first." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -40,7 +38,9 @@ FormLayout.editors.set('color', (props) => new ColorPicker(props));
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable
           head={['Prop', 'Type', 'Default', 'Description']}
           rows={[
@@ -53,7 +53,9 @@ FormLayout.editors.set('color', (props) => new ColorPicker(props));
             ['onValidSubmit(e) / onInvalidSubmit(e)', '', '', 'Sent and passed (`{ data, event }`) / sent and failed (`{ valid, invalid }`).'],
           ]}
         />
-        <h3>FormItem</h3>
+        <h3>
+          <Rich text="FormItem" />
+        </h3>
         <ApiTable
           head={['Field', 'Description']}
           rows={[
@@ -65,7 +67,9 @@ FormLayout.editors.set('color', (props) => new ColorPicker(props));
             ['template', 'Any component made for the place.'],
           ]}
         />
-        <h3>Members</h3>
+        <h3>
+          <Rich text="Members" />
+        </h3>
         <ApiTable
           head={['Member', 'Description']}
           rows={[

@@ -101,8 +101,7 @@ export default function SchedulerPage() {
   return (
     <>
       <p class="lead">
-        Appointments over days and hours: day, week, work week and month views, all-day and multi-day bars, appointments at the same time side by side, and "+N
-        more" where a day is full. From an array or a data source, with every setting live.
+        <Rich text={'Appointments over days and hours: day, week, work week and month views, all-day and multi-day bars, appointments at the same time side by side, and "+N more" where a day is full. From an array or a data source, with every setting live.'} />
       </p>
 
       <Section anchor="import" title="Import">
@@ -200,11 +199,17 @@ import { Scheduler } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Methods and properties</h3>
+        <h3>
+          <Rich text="Methods and properties" />
+        </h3>
         <ApiTable head={['Member', 'Description']} rows={MEMBERS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'Arguments']} rows={EVENTS} />
       </Section>
     </>

@@ -118,7 +118,7 @@ export default function Animations() {
 | `lines` | `Bind<number>` | `1` | How many lines of text; the last of several is shorter. |
 | `width` | `Bind<string \| number \| null>` | the room it is in | A CSS length, or pixels as a number; a circle’s size (default: the language’s). |
 | `height` | `Bind<string \| number \| null>` | a line / the language’s | A CSS length, or pixels as a number. |
-| `animation` | `Bind<SkeletonAnimation>` | the language’s | `wave`, `pulse`, `none`. Fluent and the desktop languages sweep a wave, Material and Lilac pulse. |
+| `animation` | `Bind<SkeletonAnimation>` | the language’s | `wave`, `pulse`, `none`. Tactile, Lounge and Fluent sweep a wave, Material and Lilac pulse. |
 | `loading` | `Bind<boolean>` | `true` | While `true` the skeleton shows; then its JSX children do. |
 | `label` | `Bind<string>` | the kit’s “Loading…” | What screen readers say while it loads. |
 | `visible` | see Control |  | The shared properties of every control. |

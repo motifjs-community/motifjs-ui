@@ -2966,7 +2966,7 @@ Source: `tokens/schema/*.json` (names and types) and `tokens/languages/<language
 | `speed-dial.main-glyph.size` | `--mx-speed-dial-main-glyph-size` | `` | `1.25rem` |
 | `speed-dial.main-glyph.bg` | `--mx-speed-dial-main-glyph-bg` | `color.accent.on-solid` | `#ffffff` |
 | `speed-dial.main-text.font-weight` | `--mx-speed-dial-main-text-font-weight` | `font.weight.semibold` | `600` |
-| `speed-dial.action.size` | `--mx-speed-dial-action-size` | `` | `2.25rem` |
+| `speed-dial.action.size` | `--mx-speed-dial-action-size` | `` | `2.625rem` |
 | `speed-dial.action.radius` | `--mx-speed-dial-action-radius` | `radius.full` | `9999px` |
 | `speed-dial.action.bg` | `--mx-speed-dial-action-bg` | `color.fill.control.default` | `#f5f4f0` |
 | `speed-dial.action.color` | `--mx-speed-dial-action-color` | `color.fg.primary` | `#1d1c1a` |
@@ -2981,7 +2981,7 @@ Source: `tokens/schema/*.json` (names and types) and `tokens/languages/<language
 | `speed-dial.action.border-width` | `--mx-speed-dial-action-border-width` | `border.width.1` | `1px` |
 | `speed-dial.action.border-color` | `--mx-speed-dial-action-border-color` | `color.stroke.control.strong` | `rgb(0 0 0 / 0.4458)` |
 | `speed-dial.action.shadow` | `--mx-speed-dial-action-shadow` | `` | `initial` |
-| `speed-dial.action-icon.size` | `--mx-speed-dial-action-icon-size` | `` | `1rem` |
+| `speed-dial.action-icon.size` | `--mx-speed-dial-action-icon-size` | `` | `1.25rem` |
 | `speed-dial.action-icon.bg` | `--mx-speed-dial-action-icon-bg` | `color.fg.primary` | `#1d1c1a` |
 | `speed-dial.label.bg` | `--mx-speed-dial-label-bg` | `color.bg.glass` | `rgb(248 247 243 / 0.78)` |
 | `speed-dial.label.color` | `--mx-speed-dial-label-color` | `color.fg.primary` | `#1d1c1a` |

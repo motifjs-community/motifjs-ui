@@ -10,6 +10,7 @@ import {
   type ThemeChoice,
 } from '@motifx-community/design-system';
 import { uiLocale } from '@motifx-community/ui';
+import { useLanguage } from './texts';
 
 function stored(key: string): string | null {
   try {
@@ -28,7 +29,7 @@ function store(key: string, value: string | null): void {
   }
 }
 
-/** The reader's choices for the whole site: design language, theme, density, the controls' language and direction, kept between visits. */
+/** The reader's choices for the whole site: design language, theme, density, language and direction, kept between visits. */
 export class SiteSettings {
   private readonly state = reactive({
     identity: getIdentity(),
@@ -69,7 +70,7 @@ export class SiteSettings {
     store('mx-docs-density', on ? 'compact' : null);
   }
 
-  /** The language the kit's controls write in (`uiLocale`); its pack is loaded the first time. */
+  /** The language of the site's content and of the kit's controls (`uiLocale`); both are loaded the first time. */
   get language(): string {
     return this.state.language;
   }
@@ -77,6 +78,7 @@ export class SiteSettings {
     this.state.language = code;
     document.documentElement.lang = code;
     void uiLocale.use(code);
+    void useLanguage(code);
     store('mx-docs-language', code === 'en' ? null : code);
   }
 

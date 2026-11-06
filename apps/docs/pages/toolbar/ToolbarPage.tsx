@@ -76,9 +76,7 @@ export default function ToolbarPage() {
   return (
     <>
       <p class="lead">
-        A bar of commands: buttons, toggle buttons, menus and fields in groups between separators. It is one Tab stop and the
-        arrow keys move inside it; items that do not fit move into a “more” menu at the end. Items come as data, as JSX
-        children, or both.
+        <Rich text="A bar of commands: buttons, toggle buttons, menus and fields in groups between separators. It is one Tab stop and the arrow keys move inside it; items that do not fit move into a “more” menu at the end. Items come as data, as JSX children, or both." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -147,20 +145,32 @@ import { Toolbar, ToolbarSeparator, type ToolbarItem } from '@motifx-community/u
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>ToolbarItem</h3>
+        <h3>
+          <Rich text="ToolbarItem" />
+        </h3>
         <ApiTable head={['Field', 'Type', 'Description']} rows={ITEM} />
-        <h3>Properties</h3>
+        <h3>
+          <Rich text="Properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'When']} rows={EVENTS} />
       </Section>
     </>

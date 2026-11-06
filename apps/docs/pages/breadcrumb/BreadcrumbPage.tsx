@@ -44,8 +44,7 @@ export default function BreadcrumbPage() {
   return (
     <>
       <p class="lead">
-        The way to the current page: each step a link or a button, the current page last. Steps that do not fit go
-        into a menu after the first.
+        <Rich text="The way to the current page: each step a link or a button, the current page last. Steps that do not fit go into a menu after the first." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -83,14 +82,20 @@ import { Breadcrumb } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Events and properties</h3>
+        <h3>
+          <Rich text="Events and properties" />
+        </h3>
         <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
       </Section>
     </>

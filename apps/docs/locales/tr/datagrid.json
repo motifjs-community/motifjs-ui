@@ -1,0 +1,10 @@
+{
+  "A grid for data entry and large data: rows in memory or from any adapter of the data layer, a virtual list or pages, sorting, column layout, editing with the kit's editors, new rows with the Tab chain, three save modes, row actions, selection, filters, a search panel, grouping, summaries, a toolbar, lookup columns from other services, copy and paste, export and a layout that is kept — and every feature can be turned off, for the grid or for one column.": "",
+  "Give rows in memory with `rows` and their key with `rowKey`; the grid puts them in a `DataSource` over an `ArrayAdapter` itself. Every prop takes a value or a function. Created with `new`, the grid is an object like any other: add it, sort it, ask it.": "",
+  "Server data, virtual": "",
+  "With a `DataSource` that loads by `blocks`, the scroll bar is sized from the total and only the rows where the list looks are asked for. A jump (Ctrl+End, dragging the bar) asks only where it lands; a block left behind while loading is aborted. A row that has not come yet shows as a placeholder. Above 10 million pixels of rows the bar is scaled.": "",
+  "Pages": "",
+  "A `DataSource` that loads by `page` makes a paged grid: one page is asked for at a time, and a sort goes back to the first page. Rows in memory page with `mode` set to `paged`.": "",
+  "Pager": "",
+  "The pager under the rows shows the page sizes (`pageSizeSelector`, the sizes of `allowedPageSizes`, `all` for one page with every row), “Page 3 of 12 (250 items)” (`pagerInfo`, `pagerInfoText` with `{0}`, `{1}`, `{2}`), the first, previous, next and last buttons (`pagerNavigation`) and the pages around the current one (`pagerNeighbors`). `pagerDisplayMode` picks its look: `full` with page buttons and the sizes as buttons, `compact` with a box for the page number and a drop-down of the sizes, `adaptive` (the default) full while it fits in the grid's width. The rows per page change programmatically with `pageSize(n)` too; either way `onPageSizeChanging` can keep the old size, the grid goes back to the first page, and with `layoutKey` the size is kept with the layout. PageUp and PageDown turn the page (`pageKeys`).": ""
+}

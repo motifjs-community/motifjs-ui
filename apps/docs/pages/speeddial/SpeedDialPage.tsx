@@ -66,9 +66,7 @@ export default function SpeedDialPage() {
     return (
         <>
             <p class="lead">
-                A round button in a corner of the page, on an edge or in the flow, that opens its actions when pressed: round buttons in a
-                line with a label beside each, or on a circle, a half or a quarter of one around it with a tooltip each. With one action, the
-                main button does it itself.
+              <Rich text="A round button in a corner of the page, on an edge or in the flow, that opens its actions when pressed: round buttons in a line with a label beside each, or on a circle, a half or a quarter of one around it with a tooltip each. With one action, the main button does it itself." />
             </p>
 
             <Section anchor="import" title="Import">
@@ -152,14 +150,20 @@ import { SpeedDial } from '@motifx-community/ui';
 
             <Section anchor="styling" title="Styling">
                 <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-                <h3>Component tokens</h3>
+                <h3>
+                  <Rich text="Component tokens" />
+                </h3>
                 <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
-                <h3>Props</h3>
+                <h3>
+                  <Rich text="Props" />
+                </h3>
                 <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-                <h3>Events, properties and methods</h3>
+                <h3>
+                  <Rich text="Events, properties and methods" />
+                </h3>
                 <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
             </Section>
         </>

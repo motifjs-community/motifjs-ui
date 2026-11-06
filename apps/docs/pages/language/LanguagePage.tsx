@@ -48,8 +48,7 @@ export default function LanguagePage() {
     return (
         <>
             <p class="lead">
-                The texts the controls write, the locale their dates and numbers follow, and the direction: one <code>uiLocale</code> for the
-                kit, with a pack per language loaded as it is asked for.
+              <Rich text="The texts the controls write, the locale their dates and numbers follow, and the direction: one `uiLocale` for the kit, with a pack per language loaded as it is asked for." />
             </p>
 
             <Section anchor="import" title="Import">

@@ -50,8 +50,7 @@ export default function SchedulerTimelinePage() {
   return (
     <>
       <p class="lead">
-        A row per resource with the time running along it: a day, a week, a work week or a month. Appointments at the same time stack in their row,
-        and the row grows to fit them.
+        <Rich text="A row per resource with the time running along it: a day, a week, a work week or a month. Appointments at the same time stack in their row, and the row grows to fit them." />
       </p>
 
       <Section anchor="views" title="Timeline views">
@@ -121,11 +120,17 @@ export default function SchedulerTimelinePage() {
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Timeline views</h3>
+        <h3>
+          <Rich text="Timeline views" />
+        </h3>
         <ApiTable head={['Setting', 'Type', 'Default', 'Description']} rows={VIEW} />
-        <h3>Templates</h3>
+        <h3>
+          <Rich text="Templates" />
+        </h3>
         <ApiTable head={['Prop (and view setting)', 'Type', 'Description']} rows={TEMPLATES} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Description']} rows={METHODS} />
       </Section>
     </>

@@ -43,8 +43,7 @@ export default function DateBoxPage() {
   return (
     <>
       <p class="lead">
-        A date, a time or both. It is typed in the order of the locale through a mask, or picked from a calendar and a
-        list of times; <code>min</code>, <code>max</code> and <code>disabledDates</code> limit both ways.
+        <Rich text="A date, a time or both. It is typed in the order of the locale through a mask, or picked from a calendar and a list of times; `min`, `max` and `disabledDates` limit both ways." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -112,9 +111,13 @@ import { DateBox } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Properties, methods, events</h3>
+        <h3>
+          <Rich text="Properties, methods, events" />
+        </h3>
         <ApiTable
           head={['Member', 'Description']}
           rows={[

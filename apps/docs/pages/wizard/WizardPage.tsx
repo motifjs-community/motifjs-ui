@@ -73,8 +73,7 @@ export default function WizardPage() {
     return (
         <>
             <p class="lead">
-                A task in steps: a <a rel="router" href="/stepper">Stepper</a> above or beside one page per step, and the Back and Next
-                buttons under them. Next validates the page first; on the last step it finishes.
+              <Rich text="A task in steps: a [Stepper](/stepper) above or beside one page per step, and the Back and Next buttons under them. Next validates the page first; on the last step it finishes." />
             </p>
 
             <Section anchor="import" title="Import">
@@ -124,16 +123,24 @@ import { Wizard, WizardStep } from '@motifx-community/ui';
 
             <Section anchor="styling" title="Styling">
                 <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-                <h3>Component tokens</h3>
+                <h3>
+                  <Rich text="Component tokens" />
+                </h3>
                 <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
-                <h3>Wizard props</h3>
+                <h3>
+                  <Rich text="Wizard props" />
+                </h3>
                 <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-                <h3>WizardStep props</h3>
+                <h3>
+                  <Rich text="WizardStep props" />
+                </h3>
                 <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={STEP_PROPS} />
-                <h3>Events, properties and methods</h3>
+                <h3>
+                  <Rich text="Events, properties and methods" />
+                </h3>
                 <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
             </Section>
         </>

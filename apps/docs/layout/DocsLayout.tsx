@@ -4,6 +4,7 @@ import { Button, TextBox } from '@motifx-community/ui';
 import { GROUPS, PAGES, SECTIONS } from '../app/pages';
 import { PageOutline } from '../app/PageOutline';
 import { SiteSettings } from '../app/SiteSettings';
+import { tx } from '../app/texts';
 import { MenuIcon, SearchIcon, SourceIcon } from './icons';
 
 const THEMES: { id: ThemeChoice; label: string }[] = [
@@ -49,6 +50,10 @@ export class DocsLayout extends Component<HTMLDivElement> {
       untracked(() => this.pageChanged(first));
       first = false;
     });
+    this.bindings.watch(() => {
+      const page = this.page;
+      document.title = page && page.id !== 'home' ? `${tx(page.title)} · MotifJS UI` : 'MotifJS UI';
+    });
   }
 
   override onMounted(): void {
@@ -84,8 +89,6 @@ export class DocsLayout extends Component<HTMLDivElement> {
   }
 
   private pageChanged(first: boolean): void {
-    const page = this.page;
-    document.title = page && page.id !== 'home' ? `${page.title} · MotifJS UI` : 'MotifJS UI';
     this.state.navOpen = false;
     // A new page is read from its top: focus goes there, as after a full page load.
     if (!first) this.main?.element.focus({ preventScroll: true });
@@ -105,7 +108,7 @@ export class DocsLayout extends Component<HTMLDivElement> {
   /** A page matches the filter by its label, its title or its group's title ("grid" finds every DataGrid page). */
   private matches(page: { label: string; title: string }, group: string): boolean {
     const filter = this.state.filter.trim().toLocaleLowerCase();
-    return !filter || [page.label, page.title, group].some((text) => text.toLocaleLowerCase().includes(filter));
+    return !filter || [page.label, page.title, group].some((text) => text.toLocaleLowerCase().includes(filter) || tx(text).toLocaleLowerCase().includes(filter));
   }
 
   /** A group shows its pages unless closed; a filter shows every match. */
@@ -127,14 +130,14 @@ export class DocsLayout extends Component<HTMLDivElement> {
     return (
       <>
         <a class="docs-skip" href="#content">
-          Skip to content
+          {() => tx('Skip to content')}
         </a>
         <header class="docs-topbar">
           <Button
             class="docs-menu-toggle"
             variant="ghost"
             icon={() => <MenuIcon />}
-            hint="Menu"
+            hint={() => tx('Menu')}
             aria-controls="docs-sidebar"
             aria-expanded={() => s.navOpen}
             onclick={() => (s.navOpen = !s.navOpen)}
@@ -146,51 +149,51 @@ export class DocsLayout extends Component<HTMLDivElement> {
               MotifJS <strong>UI</strong>
             </span>
           </a>
-          <nav class="docs-topnav" aria-label="Site">
+          <nav class="docs-topnav" aria-label={() => tx('Site')}>
             {SECTIONS.map((section) => (
               <a key={section.title} rel="router" href={section.path} aria-current={() => (this.page?.section === section.title ? 'true' : false)}>
-                {section.title}
+                {() => tx(section.title)}
               </a>
             ))}
           </nav>
           <div class="docs-topbar__tools">
             <Button
-              text="Style"
+              text={() => tx('Style')}
               size="sm"
               variant="ghost"
               menu={STYLES.map((t) => ({ text: t.label, checked: () => settings.identity === t.id, click: () => (settings.identity = t.id) }))}
             />
             <Button
-              text="Theme"
+              text={() => tx('Theme')}
               size="sm"
               variant="ghost"
-              menu={THEMES.map((t) => ({ text: t.label, checked: () => settings.theme === t.id, click: () => (settings.theme = t.id) }))}
+              menu={THEMES.map((t) => ({ text: () => tx(t.label), checked: () => settings.theme === t.id, click: () => (settings.theme = t.id) }))}
             />
             <Button
-              text="Language"
+              text={() => tx('Language')}
               size="sm"
               variant="ghost"
               menu={LANGUAGES.map((l) => ({ text: l.label, checked: () => settings.language === l.id, click: () => (settings.language = l.id) }))}
             />
-            <Button text="Compact" size="sm" variant="ghost" toggle x-model={() => settings.compact} />
+            <Button text={() => tx('Compact')} size="sm" variant="ghost" toggle x-model={() => settings.compact} />
             <Button text="RTL" size="sm" variant="ghost" toggle x-model={() => settings.rtl} />
             <a class="docs-topbar__link" href="https://motifjs.com">
               motifjs.com
             </a>
-            <a class="docs-topbar__source" href="https://github.com/motifjs-community/motifjs-ui" aria-label="Source on GitHub">
+            <a class="docs-topbar__source" href="https://github.com/motifjs-community/motifjs-ui" aria-label={() => tx('Source on GitHub')}>
               <SourceIcon />
             </a>
           </div>
         </header>
 
         <div class="docs-scrim" onclick={() => (s.navOpen = false)} />
-        <nav id="docs-sidebar" class="docs-sidebar" aria-label="Documentation">
+        <nav id="docs-sidebar" class="docs-sidebar" aria-label={() => tx('Documentation')}>
           <TextBox
             class="docs-filter"
             type="search"
-            label="Search pages"
+            label={() => tx('Search pages')}
             labelMode="hidden"
-            placeholder="Search pages"
+            placeholder={() => tx('Search pages')}
             variant="underline"
             icon={() => <SearchIcon />}
             clearButton
@@ -203,13 +206,13 @@ export class DocsLayout extends Component<HTMLDivElement> {
                 <svg viewBox="0 0 16 16" aria-hidden="true">
                   <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
-                {group.title}
+                {() => tx(group.title)}
               </button>
               <ul x-wait={() => !this.groupOpen(group.title)}>
                 {group.pages.map((p) => (
                   <li key={p.id} x-wait={() => !this.matches(p, group.title)}>
                     <a rel="router" href={p.path} aria-current={() => (this.nav.meta.page === p.id ? 'page' : false)}>
-                      {p.label}
+                      {() => tx(p.label)}
                     </a>
                   </li>
                 ))}
@@ -217,51 +220,51 @@ export class DocsLayout extends Component<HTMLDivElement> {
             </div>
           ))}
           <p class="docs-sidebar__empty" x-wait={() => PAGES.some((p) => this.matches(p, p.group))}>
-            No page matches.
+            {() => tx('No page matches.')}
           </p>
         </nav>
 
         <main id="content" class="docs-main" tabindex="-1" ref={(c: Component<HTMLElement>) => (this.main = c)}>
           <header class="docs-pagehead">
-            <h1>{() => this.page?.title ?? 'Page not found'}</h1>
-            <span class="docs-pagehead__tag">{() => this.page?.group ?? ''}</span>
+            <h1>{() => tx(this.page?.title ?? 'Page not found')}</h1>
+            <span class="docs-pagehead__tag">{() => tx(this.page?.group ?? '')}</span>
             <span class="docs-pagehead__version">@motifx-community/ui {VERSION}</span>
           </header>
           <div class="docs-body">
             <article class="docs-article">
               <RouterView />
-              <nav class="docs-pager" aria-label="Previous and next page">
+              <nav class="docs-pager" aria-label={() => tx('Previous and next page')}>
                 <a class="docs-pager__link" rel="router prev" href={() => this.neighbour(-1)?.path ?? '/'} x-wait={() => !this.neighbour(-1)}>
-                  <small>Previous</small>
-                  <span>{() => this.neighbour(-1)?.title ?? ''}</span>
+                  <small>{() => tx('Previous')}</small>
+                  <span>{() => tx(this.neighbour(-1)?.title ?? '')}</span>
                 </a>
                 <span x-wait={() => !!this.neighbour(-1)} />
                 <a class="docs-pager__link docs-pager__link--next" rel="router next" href={() => this.neighbour(1)?.path ?? '/'} x-wait={() => !this.neighbour(1)}>
-                  <small>Next</small>
-                  <span>{() => this.neighbour(1)?.title ?? ''}</span>
+                  <small>{() => tx('Next')}</small>
+                  <span>{() => tx(this.neighbour(1)?.title ?? '')}</span>
                 </a>
               </nav>
             </article>
             <div class="docs-rail">
-              <nav aria-label="On this page" x-wait={() => !outline.sections.length}>
-                <p class="docs-rail__title">On this page</p>
+              <nav aria-label={() => tx('On this page')} x-wait={() => !outline.sections.length}>
+                <p class="docs-rail__title">{() => tx('On this page')}</p>
                 <ul class="docs-rail__sections">
                   {outline.sections.map((entry) => (
                     <li key={entry.anchor}>
                       <a href={`#${entry.anchor}`} aria-current={() => (outline.current === entry.anchor ? 'location' : false)}>
-                        {entry.title}
+                        {() => tx(entry.title)}
                       </a>
                     </li>
                   ))}
                 </ul>
               </nav>
-              <nav aria-label="Related pages" x-wait={() => !this.page?.related.length}>
-                <p class="docs-rail__title">Related pages</p>
+              <nav aria-label={() => tx('Related pages')} x-wait={() => !this.page?.related.length}>
+                <p class="docs-rail__title">{() => tx('Related pages')}</p>
                 <ul class="docs-rail__related">
                   {(this.page?.related ?? []).map((id) => PAGES.find((p) => p.id === id)!).map((p) => (
                     <li key={p.id}>
                       <a rel="router" href={p.path}>
-                        {p.title}
+                        {() => tx(p.title)}
                       </a>
                     </li>
                   ))}

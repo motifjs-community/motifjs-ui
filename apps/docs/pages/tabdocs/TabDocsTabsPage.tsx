@@ -62,8 +62,7 @@ export default function TabDocsTabsPage() {
   return (
     <>
       <p class="lead">
-        What a tab does in a code editor: preview tabs that the next preview replaces, pinned tabs that stay at the start, tabs that shrink, wrap or
-        scroll, counts and colours, and the same document open in two groups.
+        <Rich text="What a tab does in a code editor: preview tabs that the next preview replaces, pinned tabs that stay at the start, tabs that shrink, wrap or scroll, counts and colours, and the same document open in two groups." />
       </p>
 
       <Section anchor="preview" title="Preview tabs">
@@ -124,13 +123,21 @@ docs.onClosing((e) => {
       </Section>
 
       <Section anchor="api" title="API">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>TabDocument</h3>
+        <h3>
+          <Rich text="TabDocument" />
+        </h3>
         <ApiTable head={['Field', 'Type', 'Description']} rows={DOCUMENT} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
         <p>
           <Rich text="The rest of the API is on the [overview](/tabdocs#api); the menus, the lists and the keys on [Menus and keys](/tabdocs/menus)." />

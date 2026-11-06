@@ -61,8 +61,7 @@ export default function DraggablePage() {
     return (
         <>
             <p class="lead">
-                Anything the user moves with the pointer, a finger or the arrow keys, along an axis or inside a boundary, by a handle or as a copy;
-                and the targets that take it. For items that change places in a list, see <a rel="router" href="/sortable">Sortable</a>.
+              <Rich text="Anything the user moves with the pointer, a finger or the arrow keys, along an axis or inside a boundary, by a handle or as a copy; and the targets that take it. For items that change places in a list, see [Sortable](/sortable)." />
             </p>
 
             <Section anchor="import" title="Import">
@@ -110,16 +109,24 @@ import { Draggable, DropTarget } from '@motifx-community/ui';
 
             <Section anchor="styling" title="Styling">
                 <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-                <h3>Component tokens</h3>
+                <h3>
+                  <Rich text="Component tokens" />
+                </h3>
                 <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
-                <h3>Draggable props</h3>
+                <h3>
+                  <Rich text="Draggable props" />
+                </h3>
                 <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-                <h3>DropTarget props and events</h3>
+                <h3>
+                  <Rich text="DropTarget props and events" />
+                </h3>
                 <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={TARGET_PROPS} />
-                <h3>Events, properties and methods</h3>
+                <h3>
+                  <Rich text="Events, properties and methods" />
+                </h3>
                 <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
             </Section>
         </>

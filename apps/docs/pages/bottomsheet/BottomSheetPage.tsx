@@ -90,9 +90,7 @@ export default function BottomSheetPage() {
   return (
     <>
       <p class="lead">
-        A panel that comes up from the bottom of the page or of a container and stops at a few heights: a peek, half,
-        full, as tall as its content, or heights of your own. Dragged by its handle and its title, flicked, swiped down to
-        close; modal or not, with the browser's back closing it on a phone.
+        <Rich text="A panel that comes up from the bottom of the page or of a container and stops at a few heights: a peek, half, full, as tall as its content, or heights of your own. Dragged by its handle and its title, flicked, swiped down to close; modal or not, with the browser's back closing it on a phone." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -153,14 +151,20 @@ import { BottomSheet, type BottomSheetDetent } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Members and events</h3>
+        <h3>
+          <Rich text="Members and events" />
+        </h3>
         <ApiTable head={['Member', 'Returns', 'Description']} rows={MEMBERS} />
         <p>
           <Rich text="Every prop is a property too, taking a value or a function. The shared parts (the panel, the scrim, modality, focus and the back button) are `OverlayPanel`'s, which `Drawer` and `ActionSheet` build on as well." />

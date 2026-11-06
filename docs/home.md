@@ -2,13 +2,15 @@
 
 > Get started · @motifx-community/ui 0.1.0-beta.3
 
-Components for MotifJS that work the way desktop UI does — created when needed, shown anywhere, closed and disposed like windows — drawn from the MotifJS design system's tokens.
+Components for MotifJS: objects you create when you need them, show anywhere and dispose when you are done, drawn from the MotifJS design system's tokens.
 
 ## Install
 
 ```tsx
 npm i @motifx/core @motifx-community/ui
+```
 
+```tsx
 import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/ui';
 ```
 
@@ -26,14 +28,14 @@ More than fifty components, every one an object with the same base: focus and th
 
 | Group | Components |
 | --- | --- |
-| Buttons and commands | [`Button`](button.md) (menu, split, toggle, busy), [`ButtonGroup`](buttongroup.md), [`Toolbar`](toolbar.md), [`MenuBar` and `ContextMenu`](menus.md) |
-| Editors | [`TextBox`](textbox.md) (mask, validation), [`TextArea`](textarea.md), [`NumberBox`](numberbox.md), [`DateBox`](datebox.md), [`DateRangeBox`](daterangebox.md), [`Calendar`](calendar.md), [`ColorBox` and `ColorPicker`](colorbox.md), [`Slider`](slider.md), [`Rating`](rating.md), [`FileUploader`](fileuploader.md) |
-| Choice | [`CheckBox`](checkbox.md), [`Switch`](switch.md), [`RadioGroup`](radiogroup.md), [`DropDown`](dropdown.md), [`ComboBox` and `Autocomplete`](combobox.md), [`Lookup`](lookup.md), [`TagBox`](tagbox.md), [`ListBox`](listbox.md) |
-| Display and feedback | [`Badge`](badge.md), [`Avatar` and `AvatarGroup`](avatar.md), [`Chip` and `ChipGroup`](chip.md), [`Card`](card.md), [`Skeleton`](skeleton.md), [`ProgressBar` and `Spinner`](progress.md), [`LoadPanel`](loadpanel.md), [`Tooltip`](tooltip.md), [`Popover`](popover.md), [`Toast`](toast.md) |
-| Navigation and layers | [`Tabs`](tabs.md), [`Accordion`](accordion.md), [`Breadcrumb`](breadcrumb.md), [`Pagination`](pagination.md), [`Stepper`](stepper.md), [`Wizard`](wizard.md), [`Window` and dialog](window.md), [`BottomSheet`](bottomsheet.md), [`Drawer`](drawer.md), [`ActionSheet`](actionsheet.md) |
-| Layout | [`Stack`, `Grid`, `DockPanel`, `Panel`, `GroupBox`, `SplitContainer`](layout.md), [`FormLayout`](formlayout.md), [`ScrollView`](scrollview.md) (pull to refresh, load more), [`Sortable`](sortable.md) |
+| Buttons and commands | [`Button`](button.md) (menu, split, toggle, busy), [`ButtonGroup`](buttongroup.md), [`Toolbar`](toolbar.md), [`MenuBar`](menus.md) and [`ContextMenu`](menus.md) |
+| Editors | [`TextBox`](textbox.md) (mask, validation), [`TextArea`](textarea.md), [`NumberBox`](numberbox.md), [`DateBox`](datebox.md), [`DateRangeBox`](daterangebox.md), [`Calendar`](calendar.md), [`ColorBox`](colorbox.md) and [`ColorPicker`](colorbox.md), [`Slider`](slider.md), [`Rating`](rating.md), [`FileUploader`](fileuploader.md) |
+| Choice | [`CheckBox`](checkbox.md), [`Switch`](switch.md), [`RadioGroup`](radiogroup.md), [`DropDown`](dropdown.md), [`ComboBox`](combobox.md) and [`Autocomplete`](combobox.md), [`Lookup`](lookup.md), [`TagBox`](tagbox.md), [`ListBox`](listbox.md) |
+| Display and feedback | [`Badge`](badge.md), [`Avatar`](avatar.md) and [`AvatarGroup`](avatar.md), [`Chip`](chip.md) and [`ChipGroup`](chip.md), [`Card`](card.md), [`Skeleton`](skeleton.md), [`ProgressBar`](progress.md) and [`Spinner`](progress.md), [`LoadPanel`](loadpanel.md), [`Tooltip`](tooltip.md), [`Popover`](popover.md), [`Toast`](toast.md) |
+| Navigation and layers | [`Tabs`](tabs.md), [`Accordion`](accordion.md), [`Breadcrumb`](breadcrumb.md), [`Pagination`](pagination.md), [`Stepper`](stepper.md), [`Wizard`](wizard.md), [`Window`](window.md) and dialog, [`BottomSheet`](bottomsheet.md), [`Drawer`](drawer.md), [`ActionSheet`](actionsheet.md) |
+| Layout | [`Stack`](layout.md), [`Grid`](layout.md), [`DockPanel`](layout.md), [`Panel`](layout.md), [`GroupBox`](layout.md), [`SplitContainer`](layout.md), [`FormLayout`](formlayout.md), [`ScrollView`](scrollview.md) (pull to refresh, load more), [`Sortable`](sortable.md) |
 | Data | [`DataGrid`](datagrid.md) (virtual or paged, editing, filters, grouping, master-detail, export), [`TreeView`](treeview.md), [`FilterBuilder`](filterbuilder.md), [`Scheduler`](scheduler.md) (day to timeline, recurrence, resources, iCalendar), [`TabDocumentManager`](tabdocs.md) (tabs, split, dock, new windows); lists and grids read `@motifx-community/data` sources |
-| Base | [`Control`](control.md), [`FocusContainer` and `addShortcut`](keyboard.md), [`uiLocale`](language.md), [the component tokens](tokens.md); `Popup` and `MenuList`, the shared parts a menu or a drop-down opens on |
+| Base | [`Control`](control.md), [`FocusContainer`](keyboard.md) and [`addShortcut`](keyboard.md), [`uiLocale`](language.md), [the component tokens](tokens.md); `Popup` and `MenuList`, the shared parts a menu or a drop-down opens on |
 
 ## Design system
 
@@ -47,7 +49,9 @@ The look comes from `@motifx-community/design-system`: its tokens, three themes,
 
 ```tsx
 <html data-theme="dark" data-density="compact">
+```
 
+```tsx
 /* your accent, after styles.css: a design-system override restyles every component */
 :root {
   --mx-color-accent-solid: #8764b8;

@@ -10,8 +10,7 @@ export default function LookupPage() {
   return (
     <>
       <p class="lead">
-        Picks one row of a table-like list, typically from a data source searched on the server: a customer by its
-        company, contact and city. The field shows the chosen row's text; everything else works as in DropDown.
+        <Rich text="Picks one row of a table-like list, typically from a data source searched on the server: a customer by its company, contact and city. The field shows the chosen row's text; everything else works as in DropDown." />
       </p>
 
       <Section anchor="import" title="Import">

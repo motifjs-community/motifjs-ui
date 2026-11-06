@@ -126,9 +126,7 @@ export default function FilterBuilderPage() {
   return (
     <>
       <p class="lead">
-        A filter builder lets people put a filter together by hand: groups joined by And, Or, Not And or Not Or, and conditions of a field, an
-        operation and a value. Its value is the data layer's filter expression, so it goes to rows in memory and to every adapter as it is. The
-        DataGrid opens it from its filter panel; on its own it serves a report screen or a saved search.
+        <Rich text="A filter builder lets people put a filter together by hand: groups joined by And, Or, Not And or Not Or, and conditions of a field, an operation and a value. Its value is the data layer's filter expression, so it goes to rows in memory and to every adapter as it is. The DataGrid opens it from its filter panel; on its own it serves a report screen or a saved search." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -201,22 +199,36 @@ import { FilterBuilder, filterText } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>FilterBuilderField</h3>
+        <h3>
+          <Rich text="FilterBuilderField" />
+        </h3>
         <ApiTable head={['Field', 'Type', 'Description']} rows={FIELD} />
-        <h3>FilterBuilderCustomOperation</h3>
+        <h3>
+          <Rich text="FilterBuilderCustomOperation" />
+        </h3>
         <ApiTable head={['Field', 'Type', 'Description']} rows={CUSTOM} />
-        <h3>Properties</h3>
+        <h3>
+          <Rich text="Properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'When']} rows={EVENTS} />
       </Section>
     </>

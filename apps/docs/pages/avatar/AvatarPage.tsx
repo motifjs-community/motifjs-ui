@@ -72,8 +72,7 @@ export default function AvatarPage() {
   return (
     <>
       <p class="lead">
-        Someone’s picture, or their initials, or a person icon, with their presence on its corner. A group stacks or
-        spreads them and counts the ones it does not show.
+        <Rich text="Someone’s picture, or their initials, or a person icon, with their presence on its corner. A group stacks or spreads them and counts the ones it does not show." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -135,20 +134,32 @@ import { Avatar, AvatarGroup } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Avatar props</h3>
+        <h3>
+          <Rich text="Avatar props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Avatar properties</h3>
+        <h3>
+          <Rich text="Avatar properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>AvatarGroup props</h3>
+        <h3>
+          <Rich text="AvatarGroup props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={GROUP_PROPS} />
-        <h3>AvatarGroup properties</h3>
+        <h3>
+          <Rich text="AvatarGroup properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={GROUP_PROPERTIES} />
-        <h3>Functions</h3>
+        <h3>
+          <Rich text="Functions" />
+        </h3>
         <ApiTable head={['Function', 'Returns', 'Description']} rows={FUNCTIONS} />
       </Section>
     </>

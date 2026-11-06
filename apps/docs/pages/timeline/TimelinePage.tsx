@@ -57,9 +57,7 @@ export default function TimelinePage() {
     return (
         <>
             <p class="lead">
-                Events in time order: down the page, each a card beside a line with a dot; or along a line of dates, where a press on a date
-                shows that event’s card under the line. The dates are written in the kit’s language. For hours on a calendar, see the{' '}
-                <a rel="router" href="/scheduler">Scheduler</a>.
+              <Rich text="Events in time order: down the page, each a card beside a line with a dot; or along a line of dates, where a press on a date shows that event’s card under the line. The dates are written in the kit’s language. For hours on a calendar, see the [Scheduler](/scheduler)." />
             </p>
 
             <Section anchor="import" title="Import">
@@ -107,14 +105,20 @@ import { Timeline } from '@motifx-community/ui';
 
             <Section anchor="styling" title="Styling">
                 <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-                <h3>Component tokens</h3>
+                <h3>
+                  <Rich text="Component tokens" />
+                </h3>
                 <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
-                <h3>Props</h3>
+                <h3>
+                  <Rich text="Props" />
+                </h3>
                 <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-                <h3>Events, properties and methods</h3>
+                <h3>
+                  <Rich text="Events, properties and methods" />
+                </h3>
                 <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
             </Section>
         </>

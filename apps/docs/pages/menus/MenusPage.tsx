@@ -100,8 +100,7 @@ export default function MenusPage() {
   return (
     <>
       <p class="lead">
-        A menu bar of an app (File, Edit, View) and the menu that opens on a right-click. Both show the same menu items: submenus,
-        check and radio items, shortcuts, access keys.
+        <Rich text="A menu bar of an app (File, Edit, View) and the menu that opens on a right-click. Both show the same menu items: submenus, check and radio items, shortcuts, access keys." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -156,20 +155,32 @@ import { MenuBar, ContextMenu, attachContextMenu, type MenuItem } from '@motifx-
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>MenuBar props</h3>
+        <h3>
+          <Rich text="MenuBar props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={BAR_PROPS} />
-        <h3>ContextMenu props</h3>
+        <h3>
+          <Rich text="ContextMenu props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={MENU_PROPS} />
-        <h3>Properties</h3>
+        <h3>
+          <Rich text="Properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'When']} rows={EVENTS} />
       </Section>
     </>

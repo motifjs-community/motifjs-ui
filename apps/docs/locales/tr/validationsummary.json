@@ -1,0 +1,23 @@
+{
+  "The failed fields of a `ValidationGroup`, one line each with the field’s label and its message, under a header; a press on a line goes to the field. It draws itself again whenever a field of the group is checked or reset, and stays out of sight while nothing has failed.": "",
+  "Above a form": "",
+  "Give it the `group` the fields join with `validationGroup`. After `group.validate()` the failed fields are listed; a field that passes again leaves the list, and `group.reset()` empties it. A press on a line focuses the field (`focusOnClick`).": "",
+  "`header` gives the line above the list, `showHeader` hides it; `onItemClick` tells which line was pressed, `failed` and `count` say what is listed.": "",
+  "A live region (`polite`): the lines are read out when they appear; out of sight while nothing has failed.": "",
+  "A button with the field’s label and its message (“E-mail: Enter a valid e-mail address”); a press focuses the field.": "",
+  "The mark before the header is decorative.": "",
+  "The summary. `data-empty` while nothing has failed.": "",
+  "The header, its glyph, its text.": "",
+  "The list, a line, the button in it.": "",
+  "Units: the box, the glyph before the header (`icon`), the header’s text, a line (`hover`, `focus`).": "",
+  "Between the header and the list; between the lines.": "",
+  "The group whose failed fields are listed.": "",
+  "the kit’s “Please correct the following”": "",
+  "The line above the list.": "",
+  "The header is shown.": "",
+  "A press on a line focuses its field.": "",
+  "A line was pressed (`target`, `text`).": "",
+  "The failed targets listed now, in the group’s order.": "",
+  "How many lines there are.": "",
+  "Draws the lines again from the fields as they are now.": ""
+}

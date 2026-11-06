@@ -89,8 +89,7 @@ export default function TabDocsWindowsPage() {
   return (
     <>
       <p class="lead">
-        A document, a group or a floating window moves into a browser window of its own, and back. Its content moves with it, nothing is made again, and
-        the new window is a part of the same manager: its tabs, menus, keys and drag work as they do here.
+        <Rich text="A document, a group or a floating window moves into a browser window of its own, and back. Its content moves with it, nothing is made again, and the new window is a part of the same manager: its tabs, menus, keys and drag work as they do here." />
       </p>
 
       <Section anchor="move" title="Into a new window and back">
@@ -131,7 +130,9 @@ reopenButton.onclick = () => docs.reopenWindows();
 
       <Section anchor="inside" title="What works in a new window">
         <ApiTable head={['Part', 'How']} rows={INSIDE} />
-        <h3>Limits</h3>
+        <h3>
+          <Rich text="Limits" />
+        </h3>
         <ApiTable head={['Topic', 'Why']} rows={LIMITS} />
       </Section>
 
@@ -158,17 +159,29 @@ docs.onError((e) => {
       </Section>
 
       <Section anchor="api" title="API">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>TabBrowserWindow</h3>
+        <h3>
+          <Rich text="TabBrowserWindow" />
+        </h3>
         <ApiTable head={['Member', 'Kind', 'Description']} rows={WINDOW} />
-        <h3>TabDocument</h3>
+        <h3>
+          <Rich text="TabDocument" />
+        </h3>
         <ApiTable head={['Field', 'Type', 'Description']} rows={DOCUMENT} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
-        <h3>For other windows in the kit</h3>
+        <h3>
+          <Rich text="For other windows in the kit" />
+        </h3>
         <ApiTable head={['Export', 'What']} rows={KIT} />
         <p>
           <Rich text="The rest of the API is on the [overview](/tabdocs#api), [Tabs](/tabdocs/tabs), [Menus and keys](/tabdocs/menus), [Drag and drop](/tabdocs/drag) and [Dock and floating windows](/tabdocs/dock)." />

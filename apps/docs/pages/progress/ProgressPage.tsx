@@ -83,8 +83,7 @@ export default function ProgressPage() {
   return (
     <>
       <p class="lead">
-        ProgressBar shows how far some work is, as a line or a circle, or that it runs when that is not known. Spinner says "busy, wait": a
-        turning ring, alone or over a panel while it loads, shown only after a delay so quick work does not flash it.
+        <Rich text={'ProgressBar shows how far some work is, as a line or a circle, or that it runs when that is not known. Spinner says "busy, wait": a turning ring, alone or over a panel while it loads, shown only after a delay so quick work does not flash it.'} />
       </p>
 
       <Section anchor="import" title="Import">
@@ -176,16 +175,24 @@ import { ProgressBar, Spinner, type ProgressTone } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>ProgressBar props</h3>
+        <h3>
+          <Rich text="ProgressBar props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={BAR_PROPS} />
-        <h3>Spinner props</h3>
+        <h3>
+          <Rich text="Spinner props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={SPINNER_PROPS} />
-        <h3>Properties and methods</h3>
+        <h3>
+          <Rich text="Properties and methods" />
+        </h3>
         <ApiTable head={['Member', 'Access / returns', 'Description']} rows={MEMBERS} />
       </Section>
     </>

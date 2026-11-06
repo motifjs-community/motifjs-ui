@@ -65,9 +65,7 @@ export default function FileUploaderPage() {
     return (
         <>
             <p class="lead">
-                Files chosen with a button or dropped on the box, listed with their size and what happens to them: uploaded as they come,
-                on a button or programmatically, with progress, cancel, retry and remove on each. Files outside the limits are listed with the
-                reason.
+              <Rich text="Files chosen with a button or dropped on the box, listed with their size and what happens to them: uploaded as they come, on a button or programmatically, with progress, cancel, retry and remove on each. Files outside the limits are listed with the reason." />
             </p>
 
             <Section anchor="import" title="Import">
@@ -126,14 +124,20 @@ import { FileUploader } from '@motifx-community/ui';
 
             <Section anchor="styling" title="Styling">
                 <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-                <h3>Component tokens</h3>
+                <h3>
+                  <Rich text="Component tokens" />
+                </h3>
                 <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
-                <h3>Props</h3>
+                <h3>
+                  <Rich text="Props" />
+                </h3>
                 <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-                <h3>Events, properties and methods</h3>
+                <h3>
+                  <Rich text="Events, properties and methods" />
+                </h3>
                 <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
             </Section>
         </>

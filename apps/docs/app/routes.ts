@@ -1,6 +1,7 @@
 import type { RouteItem } from '@motifx/core';
 import { DocsLayout } from '../layout/DocsLayout';
 import { PAGES, type PageId } from './pages';
+import { loadPage } from './texts';
 
 const LOAD: Record<PageId, () => Promise<unknown>> = {
   home: () => import('../pages/home/HomePage'),
@@ -100,11 +101,14 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   'datagrid-api': () => import('../pages/datagrid/DataGridApiPage'),
 };
 
+/** A page and its texts in the reader's language. */
+const open = (id: PageId) => () => Promise.all([LOAD[id](), loadPage(id)]).then(([page]) => page);
+
 /** One layout; every page is loaded when it is first opened. */
 export const routes: RouteItem[] = [
   {
     path: '/',
     control: DocsLayout,
-    childs: PAGES.map((page) => ({ path: page.path, name: page.id, meta: { page: page.id }, control: LOAD[page.id] }) as RouteItem),
+    childs: PAGES.map((page) => ({ path: page.path, name: page.id, meta: { page: page.id }, control: open(page.id) }) as RouteItem),
   },
 ];

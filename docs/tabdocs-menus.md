@@ -119,7 +119,7 @@ export function fileDocument(path: string, extra: TabDocumentOptions = {}): TabD
 
 ## Recently used, back and forward, reopen
 
-The recently used list switches between documents the way a desktop editor does with Ctrl+Tab. `goBack` and `goForward` follow the documents activated in every group; `reopenClosed` opens the last closed one where it was.
+The recently used list switches between documents the way code editors do with Ctrl+Tab. `goBack` and `goForward` follow the documents activated in every group; `reopenClosed` opens the last closed one where it was.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';

@@ -70,8 +70,7 @@ export default function ColorBoxPage() {
   return (
     <>
       <p class="lead">
-        A colour as a field, with a picker in a popup; or the picker on its own. The picker has an area of saturation and
-        brightness, a hue strip, an opacity strip, inputs for the channels and preset colours.
+        <Rich text="A colour as a field, with a picker in a popup; or the picker on its own. The picker has an area of saturation and brightness, a hue strip, an opacity strip, inputs for the channels and preset colours." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -113,18 +112,28 @@ import { ColorBox, ColorPicker } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>ColorBox props</h3>
+        <h3>
+          <Rich text="ColorBox props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={BOX_PROPS} />
-        <h3>ColorBox properties, methods and events</h3>
+        <h3>
+          <Rich text="ColorBox properties, methods and events" />
+        </h3>
         <ApiTable head={['Member', 'Kind', 'Description']} rows={BOX_MEMBERS} />
-        <h3>ColorPicker props</h3>
+        <h3>
+          <Rich text="ColorPicker props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PICKER_PROPS} />
-        <h3>Functions</h3>
+        <h3>
+          <Rich text="Functions" />
+        </h3>
         <ApiTable head={['Function', 'Returns', 'Description']} rows={FUNCTIONS} />
       </Section>
     </>

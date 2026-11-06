@@ -69,8 +69,7 @@ export default function GalleryPage() {
     return (
         <>
             <p class="lead">
-                Panes side by side, one in view or several, moved by the buttons at the sides, the dots under them, a swipe or the arrow
-                keys; a slideshow when told. A pane is an image with a caption, or any content.
+              <Rich text="Panes side by side, one in view or several, moved by the buttons at the sides, the dots under them, a swipe or the arrow keys; a slideshow when told. A pane is an image with a caption, or any content." />
             </p>
 
             <Section anchor="import" title="Import">
@@ -136,14 +135,20 @@ import { Gallery } from '@motifx-community/ui';
 
             <Section anchor="styling" title="Styling">
                 <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-                <h3>Component tokens</h3>
+                <h3>
+                  <Rich text="Component tokens" />
+                </h3>
                 <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
-                <h3>Props</h3>
+                <h3>
+                  <Rich text="Props" />
+                </h3>
                 <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-                <h3>Events, properties and methods</h3>
+                <h3>
+                  <Rich text="Events, properties and methods" />
+                </h3>
                 <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
             </Section>
         </>

@@ -59,8 +59,7 @@ export default function ActionSheetPage() {
   return (
     <>
       <p class="lead">
-        A list of commands that comes up from the bottom, made of the kit's menu items and large enough for a finger, with
-        a title, a message and a cancel button apart. A context menu opens its items here on a touch screen.
+        <Rich text="A list of commands that comes up from the bottom, made of the kit's menu items and large enough for a finger, with a title, a message and a cancel button apart. A context menu opens its items here on a touch screen." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -114,14 +113,20 @@ import { ActionSheet, type ActionSheetProps } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Members</h3>
+        <h3>
+          <Rich text="Members" />
+        </h3>
         <ApiTable head={['Member', 'Returns', 'Description']} rows={MEMBERS} />
       </Section>
     </>

@@ -98,8 +98,7 @@ export default function TabDocsDragPage() {
   return (
     <>
       <p class="lead">
-        Tabs and whole groups dragged as in a code editor: along a strip, to another group, beside a group or along an edge of the layout, between two
-        managers, and the same moves from the keyboard. Every drop goes through the methods and events of what it does.
+        <Rich text="Tabs and whole groups dragged as in a code editor: along a strip, to another group, beside a group or along an edge of the layout, between two managers, and the same moves from the keyboard. Every drop goes through the methods and events of what it does." />
       </p>
 
       <Section anchor="drag" title="Dragging tabs and groups">
@@ -138,7 +137,9 @@ export default function TabDocsDragPage() {
           <MoveWithKeys />
         </Example>
         <ApiTable head={['Browser', 'Installed app (desktop keys)', 'Does']} rows={KEYS} />
-        <h3>In “Move to…”</h3>
+        <h3>
+          <Rich text="In “Move to…”" />
+        </h3>
         <ApiTable head={['Key', 'Does']} rows={MOVE_KEYS} />
       </Section>
 
@@ -165,17 +166,29 @@ docs.onDropping((e) => {
       </Section>
 
       <Section anchor="api" title="API">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>TabGroup</h3>
+        <h3>
+          <Rich text="TabGroup" />
+        </h3>
         <ApiTable head={['Property', 'Type', 'Default', 'Description']} rows={GROUP} />
-        <h3>TabDocument</h3>
+        <h3>
+          <Rich text="TabDocument" />
+        </h3>
         <ApiTable head={['Field', 'Type', 'Description']} rows={DOCUMENT} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
-        <h3>Styling hooks</h3>
+        <h3>
+          <Rich text="Styling hooks" />
+        </h3>
         <ApiTable head={['Selector or token', 'What']} rows={STYLING} />
         <p>
           <Rich text="The rest of the API is on the [overview](/tabdocs#api), [Tabs](/tabdocs/tabs) and [Menus and keys](/tabdocs/menus)." />

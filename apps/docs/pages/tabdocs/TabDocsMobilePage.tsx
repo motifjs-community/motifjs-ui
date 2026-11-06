@@ -55,9 +55,7 @@ export default function TabDocsMobilePage() {
   return (
     <>
       <p class="lead">
-        On a tablet and a phone a layout of groups, splits and dock areas does not fit as it is. The manager keeps the
-        layout and shows it another way: the same documents, groups and areas, the same saved JSON, the content moved and
-        never made again. It goes by its own width, not by the device; on a touch screen its tabs and buttons get larger.
+        <Rich text="On a tablet and a phone a layout of groups, splits and dock areas does not fit as it is. The manager keeps the layout and shows it another way: the same documents, groups and areas, the same saved JSON, the content moved and never made again. It goes by its own width, not by the device; on a touch screen its tabs and buttons get larger." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -108,9 +106,13 @@ import { TabDocumentManager, type TabPresentation, type TabDockPresentation } fr
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Members</h3>
+        <h3>
+          <Rich text="Members" />
+        </h3>
         <ApiTable head={['Member', 'Returns', 'Description']} rows={MEMBERS} />
         <p>
           <Rich text="The drawers and sheets are the kit's [Drawer](/drawer) and [BottomSheet](/bottomsheet), the action sheet its [ActionSheet](/actionsheet)." />

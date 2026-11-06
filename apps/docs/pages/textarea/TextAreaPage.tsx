@@ -83,8 +83,7 @@ export default function TextAreaPage() {
   return (
     <>
       <p class="lead">
-        A text field of several lines: a box that grows with the text or that the user drags bigger, a character counter, a
-        clear button, Ctrl+Enter to send, and the label, help text and validation every field has.
+        <Rich text="A text field of several lines: a box that grows with the text or that the user drags bigger, a character counter, a clear button, Ctrl+Enter to send, and the label, help text and validation every field has." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -177,13 +176,21 @@ import { TextArea, type TextAreaProps } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Properties</h3>
+        <h3>
+          <Rich text="Properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'When']} rows={EVENTS} />
       </Section>
     </>

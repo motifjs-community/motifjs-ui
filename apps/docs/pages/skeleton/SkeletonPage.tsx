@@ -11,7 +11,7 @@ const PROPS = [
   ['lines', '`Bind<number>`', '`1`', 'How many lines of text; the last of several is shorter.'],
   ['width', '`Bind<string | number | null>`', 'the room it is in', 'A CSS length, or pixels as a number; a circle’s size (default: the language’s).'],
   ['height', '`Bind<string | number | null>`', 'a line / the language’s', 'A CSS length, or pixels as a number.'],
-  ['animation', '`Bind<SkeletonAnimation>`', 'the language’s', '`wave`, `pulse`, `none`. Fluent and the desktop languages sweep a wave, Material and Lilac pulse.'],
+  ['animation', '`Bind<SkeletonAnimation>`', 'the language’s', '`wave`, `pulse`, `none`. Tactile, Lounge and Fluent sweep a wave, Material and Lilac pulse.'],
   ['loading', '`Bind<boolean>`', '`true`', 'While `true` the skeleton shows; then its JSX children do.'],
   ['label', '`Bind<string>`', 'the kit’s “Loading…”', 'What screen readers say while it loads.'],
   ['visible', 'see Control', '', 'The shared properties of every control.'],
@@ -45,8 +45,7 @@ export default function SkeletonPage() {
   return (
     <>
       <p class="lead">
-        The shape of what is loading, so the page keeps its layout while data arrives. Given content, it shows the
-        content in the same place once loading ends.
+        <Rich text="The shape of what is loading, so the page keeps its layout while data arrives. Given content, it shows the content in the same place once loading ends." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -84,14 +83,20 @@ import { Skeleton } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Properties</h3>
+        <h3>
+          <Rich text="Properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
       </Section>
     </>

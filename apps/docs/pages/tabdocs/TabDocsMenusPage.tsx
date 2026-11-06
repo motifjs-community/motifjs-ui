@@ -81,8 +81,7 @@ export default function TabDocsMenusPage() {
   return (
     <>
       <p class="lead">
-        The commands around the tabs: context menus on tabs and on the empty strip, a searchable list of a group's documents, the app's own toolbar
-        buttons, the recently used list, back and forward, reopening what was closed, locked groups, and the keys for all of them.
+        <Rich text="The commands around the tabs: context menus on tabs and on the empty strip, a searchable list of a group's documents, the app's own toolbar buttons, the recently used list, back and forward, reopening what was closed, locked groups, and the keys for all of them." />
       </p>
 
       <Section anchor="context-menus" title="Context menus">
@@ -106,7 +105,7 @@ export default function TabDocsMenusPage() {
 
       <Section anchor="recent" title="Recently used, back and forward, reopen">
         <p>
-          <Rich text="The recently used list switches between documents the way a desktop editor does with Ctrl+Tab. `goBack` and `goForward` follow the documents activated in every group; `reopenClosed` opens the last closed one where it was." />
+          <Rich text="The recently used list switches between documents the way code editors do with Ctrl+Tab. `goBack` and `goForward` follow the documents activated in every group; `reopenClosed` opens the last closed one where it was." />
         </p>
         <Example files={code('Recent.tsx', 'files.tsx')} stack>
           <Recent />
@@ -140,13 +139,21 @@ new TabDocumentManager({ keyPreset: 'desktop', keys: { closeTab: ['Ctrl+Q'] } })
       </Section>
 
       <Section anchor="api" title="API">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>TabDocument</h3>
+        <h3>
+          <Rich text="TabDocument" />
+        </h3>
         <ApiTable head={['Field', 'Type', 'Description']} rows={DOCUMENT} />
-        <h3>Methods and properties</h3>
+        <h3>
+          <Rich text="Methods and properties" />
+        </h3>
         <ApiTable head={['Member', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
         <p>
           <Rich text="The rest of the API is on the [overview](/tabdocs#api); preview and pinned tabs, sizes and copies on [Tabs](/tabdocs/tabs)." />

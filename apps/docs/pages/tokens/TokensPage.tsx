@@ -1,4 +1,4 @@
-import { Code, Section } from '../../shared/doc';
+import { Code, Rich, Section } from '../../shared/doc';
 import componentJson from '../../../../src/generated/token-docs.json';
 import lightJson from '@motifx-community/design-system/json/light.json';
 import darkJson from '@motifx-community/design-system/json/dark.json';
@@ -57,26 +57,29 @@ export default function TokensPage() {
   return (
     <>
       <p class="lead">
-        Five layers. The first four — primitives, the design language's own scales, semantic tokens per theme,
-        density — come from <code>@motifx-community/design-system</code> and are listed here for reference. The fifth, the component
-        tokens, is this kit's own: a knob per component, each referencing a design-system token, written in{' '}
-        <code>@layer mx.components</code>. Every design language gives every one of them its own value.
+        <Rich text="Five layers. The first four — primitives, the design language's own scales, semantic tokens per theme, density — come from `@motifx-community/design-system` and are listed here for reference. The fifth, the component tokens, is this kit's own: a knob per component, each referencing a design-system token, written in `@layer mx.components`. Every design language gives every one of them its own value." />
       </p>
 
       <Section anchor="component" title="Component ({componentDocs.length})">
         <p>
-          Source: <code>tokens/schema/*.json</code> (names and types) and <code>tokens/languages/&lt;language&gt;/*.json</code>{' '}
-          (the values; listed here: Tactile's). Override one after <code>styles.css</code> to restyle
-          every instance of that component; override the design-system token it references to restyle everything.
+          <Rich text="Source: `tokens/schema/*.json` (names and types) and `tokens/languages/<language>/*.json` (the values; listed here: Tactile's). Override one after `styles.css` to restyle every instance of that component; override the design-system token it references to restyle everything." />
         </p>
         <div class="table-scroll" tabindex="0">
           <table class="token-table">
             <thead>
               <tr>
-                <th>Token</th>
-                <th>CSS variable</th>
-                <th>References</th>
-                <th>Value</th>
+                <th>
+                  <Rich text="Token" />
+                </th>
+                <th>
+                  <Rich text="CSS variable" />
+                </th>
+                <th>
+                  <Rich text="References" />
+                </th>
+                <th>
+                  <Rich text="Value" />
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -101,19 +104,27 @@ export default function TokensPage() {
 
       <Section anchor="semantic" title="Semantic ({semantic.length} per theme)">
         <p>
-          The theme's language, the only layer a theme redefines — switch the theme above and watch the swatches.
-          Every text/background pair is checked in the design system's build: WCAG AA in light and dark, AAA in high
-          contrast.
+          <Rich text="The theme's language, the only layer a theme redefines — switch the theme above and watch the swatches. Every text/background pair is checked in the design system's build: WCAG AA in light and dark, AAA in high contrast." />
         </p>
         <div class="table-scroll" tabindex="0">
           <table class="token-table">
             <thead>
               <tr>
-                <th>Token</th>
-                <th>CSS variable</th>
-                <th>Light</th>
-                <th>Dark</th>
-                <th>High contrast</th>
+                <th>
+                  <Rich text="Token" />
+                </th>
+                <th>
+                  <Rich text="CSS variable" />
+                </th>
+                <th>
+                  <Rich text="Light" />
+                </th>
+                <th>
+                  <Rich text="Dark" />
+                </th>
+                <th>
+                  <Rich text="High contrast" />
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -143,17 +154,24 @@ export default function TokensPage() {
 
       <Section anchor="density" title="Density ({density.length})">
         <p>
-          Control heights, paddings, gaps, the pressable edge and the bar height; <code>data-density="compact"</code>{' '}
-          swaps them all.
+          <Rich text={'Control heights, paddings, gaps, the pressable edge and the bar height; `data-density="compact"` swaps them all.'} />
         </p>
         <div class="table-scroll" tabindex="0">
           <table class="token-table">
             <thead>
               <tr>
-                <th>Token</th>
-                <th>CSS variable</th>
-                <th>Comfortable</th>
-                <th>Compact</th>
+                <th>
+                  <Rich text="Token" />
+                </th>
+                <th>
+                  <Rich text="CSS variable" />
+                </th>
+                <th>
+                  <Rich text="Comfortable" />
+                </th>
+                <th>
+                  <Rich text="Compact" />
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -180,17 +198,24 @@ export default function TokensPage() {
 
       <Section anchor="identity" title="Identity ({identity.length})">
         <p>
-          What a design language brings of its own: corner radii, shadows, type and motion. The names are the same in
-          every language; <code>data-identity</code> picks whose values apply. Tactile, shown here, is the default.
+          <Rich text="What a design language brings of its own: corner radii, shadows, type and motion. The names are the same in every language; `data-identity` picks whose values apply. Tactile, shown here, is the default." />
         </p>
         <div class="table-scroll" tabindex="0">
           <table class="token-table">
             <thead>
               <tr>
-                <th>Token</th>
-                <th>Type</th>
-                <th>CSS variable</th>
-                <th>Value</th>
+                <th>
+                  <Rich text="Token" />
+                </th>
+                <th>
+                  <Rich text="Type" />
+                </th>
+                <th>
+                  <Rich text="CSS variable" />
+                </th>
+                <th>
+                  <Rich text="Value" />
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -214,15 +239,25 @@ export default function TokensPage() {
       </Section>
 
       <Section anchor="primitive" title="Primitive ({primitive.length})">
-        <p>The shared palette and scales, the same in every design language. Themes and components never hardcode these values; they reference them.</p>
+        <p>
+          <Rich text="The shared palette and scales, the same in every design language. Themes and components never hardcode these values; they reference them." />
+        </p>
         <div class="table-scroll" tabindex="0">
           <table class="token-table">
             <thead>
               <tr>
-                <th>Token</th>
-                <th>Type</th>
-                <th>CSS variable</th>
-                <th>Value</th>
+                <th>
+                  <Rich text="Token" />
+                </th>
+                <th>
+                  <Rich text="Type" />
+                </th>
+                <th>
+                  <Rich text="CSS variable" />
+                </th>
+                <th>
+                  <Rich text="Value" />
+                </th>
               </tr>
             </thead>
             <tbody>

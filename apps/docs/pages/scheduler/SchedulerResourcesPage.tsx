@@ -59,8 +59,7 @@ export default function SchedulerResourcesPage() {
   return (
     <>
       <p class="lead">
-        Rooms, people and any other kind of resource: they colour the appointments, split the columns into groups (nested, or under each date), say when
-        each one works and when nothing may be put in.
+        <Rich text="Rooms, people and any other kind of resource: they colour the appointments, split the columns into groups (nested, or under each date), say when each one works and when nothing may be put in." />
       </p>
 
       <Section anchor="resources" title="Resources">
@@ -144,13 +143,21 @@ source.setFilter(rangeFilter(scheduler.visibleRange, scheduler.fields, { resourc
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>SchedulerResource</h3>
+        <h3>
+          <Rich text="SchedulerResource" />
+        </h3>
         <ApiTable head={['Member', 'Type', 'Default', 'Description']} rows={RESOURCE} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'Arguments']} rows={EVENTS} />
       </Section>
     </>

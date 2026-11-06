@@ -85,8 +85,7 @@ export default function ToastPage() {
   return (
     <>
       <p class="lead">
-        Short notifications at an edge of the window: four tones, an action such as Undo, a time of their own or none,
-        six positions and a limit on how many show at once. Called programmatically; a region of your own can sit in JSX.
+        <Rich text="Short notifications at an edge of the window: four tones, an action such as Undo, a time of their own or none, six positions and a limit on how many show at once. Called programmatically; a region of your own can sit in JSX." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -170,18 +169,28 @@ import { toast, Toast, Toaster, type ToastTone, type ToastPosition } from '@moti
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Toast options and props</h3>
+        <h3>
+          <Rich text="Toast options and props" />
+        </h3>
         <ApiTable head={['Option', 'Type', 'Default', 'Description']} rows={OPTIONS} />
-        <h3>toast and Toast</h3>
+        <h3>
+          <Rich text="toast and Toast" />
+        </h3>
         <ApiTable head={['Member', 'Returns', 'Description']} rows={TOAST_API} />
-        <h3>Toaster props</h3>
+        <h3>
+          <Rich text="Toaster props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={TOASTER_PROPS} />
-        <h3>Toaster members</h3>
+        <h3>
+          <Rich text="Toaster members" />
+        </h3>
         <ApiTable head={['Member', 'Returns', 'Description']} rows={TOASTER_API} />
         <p>
           <Rich text="`enabled`, `visible` and the other shared properties of every control work on both." />

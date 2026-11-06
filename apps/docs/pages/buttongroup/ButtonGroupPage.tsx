@@ -54,8 +54,7 @@ export default function ButtonGroupPage() {
   return (
     <>
       <p class="lead">
-        Buttons that belong together: a segmented choice of one or several, or a row of actions. The buttons are the
-        kit’s own, touching by default.
+        <Rich text="Buttons that belong together: a segmented choice of one or several, or a row of actions. The buttons are the kit’s own, touching by default." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -97,14 +96,20 @@ import { ButtonGroup } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Events, properties and methods</h3>
+        <h3>
+          <Rich text="Events, properties and methods" />
+        </h3>
         <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
       </Section>
     </>

@@ -49,8 +49,7 @@ export default function SchedulerFormPage() {
   return (
     <>
       <p class="lead">
-        The appointment form set up without events: which fields, in which order, in groups and tabs; editors of your own; checks per field; fields shown or
-        locked for one appointment only. Or a form of your own.
+        <Rich text="The appointment form set up without events: which fields, in which order, in groups and tabs; editors of your own; checks per field; fields shown or locked for one appointment only. Or a form of your own." />
       </p>
 
       <Section anchor="declared" title="Items, groups and tabs">
@@ -97,15 +96,25 @@ FormLayout.editors.set('priority', (props) => new Slider({ ...props, min: 1, max
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>editing.form</h3>
+        <h3>
+          <Rich text="editing.form" />
+        </h3>
         <ApiTable head={['Member', 'Type', 'Default', 'Description']} rows={FORM} />
-        <h3>Built-in items</h3>
+        <h3>
+          <Rich text="Built-in items" />
+        </h3>
         <ApiTable head={['Name', 'What it is']} rows={NAMES} />
-        <h3>SchedulerFormItem</h3>
+        <h3>
+          <Rich text="SchedulerFormItem" />
+        </h3>
         <ApiTable head={['Member', 'What it does']} rows={ITEM} />
-        <h3>How they combine</h3>
+        <h3>
+          <Rich text="How they combine" />
+        </h3>
         <ApiTable head={['Case', 'What happens']} rows={CHANGES} />
-        <h3>FormLayout</h3>
+        <h3>
+          <Rich text="FormLayout" />
+        </h3>
         <ApiTable
           head={['Member', 'What it does']}
           rows={[

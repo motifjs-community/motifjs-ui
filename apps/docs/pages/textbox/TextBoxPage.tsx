@@ -134,9 +134,7 @@ export default function TextBoxPage() {
   return (
     <>
       <p class="lead">
-        A one-line text field with its label, help text and error: placeholder, prefix and suffix, buttons in the box,
-        a clear button, a password that can be shown, a character counter, an input mask and validation — alone, in a
-        group, or every field in a panel.
+        <Rich text="A one-line text field with its label, help text and error: placeholder, prefix and suffix, buttons in the box, a clear button, a password that can be shown, a character counter, an input mask and validation — alone, in a group, or every field in a panel." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -236,20 +234,32 @@ import { TextBox, ValidationGroup, validateFields, type ValidationRule } from '@
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Properties</h3>
+        <h3>
+          <Rich text="Properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'When']} rows={EVENTS} />
-        <h3>Validation rules</h3>
+        <h3>
+          <Rich text="Validation rules" />
+        </h3>
         <ApiTable head={['Rule', 'Checks']} rows={RULES} />
         <p>
           <Rich text="The frame (`Field`), the mask (`InputMask`, which works on any `<input>`) and validation (`ValidationGroup`, `validateFields`, `checkRules`) are shared parts, exported for other components and your own." />

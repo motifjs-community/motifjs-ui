@@ -43,8 +43,7 @@ export default function SchedulerICalendarPage() {
   return (
     <>
       <p class="lead">
-        Appointments out to an iCalendar file and back in (RFC 5545), for use with other calendar applications; and
-        the scheduler on paper.
+        <Rich text="Appointments out to an iCalendar file and back in (RFC 5545), for use with other calendar applications; and the scheduler on paper." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -97,11 +96,17 @@ import { Scheduler, parseICalendar, writeICalendar } from '@motifx-community/ui'
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'Arguments', 'When']} rows={EVENTS} />
-        <h3>The iCalendar part</h3>
+        <h3>
+          <Rich text="The iCalendar part" />
+        </h3>
         <p>
           <Rich text="The reader and the writer are DOM-free parts of the kit, usable without a scheduler." />
         </p>

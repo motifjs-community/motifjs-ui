@@ -72,8 +72,7 @@ export default function SchedulerRecurrencePage() {
   return (
     <>
       <p class="lead">
-        Appointments that repeat by an RFC 5545 rule, with times left out and occurrences changed apart; a question on what a change reaches; an editor of the rule;
-        and the days on the clock of any time zone, summer time included.
+        <Rich text="Appointments that repeat by an RFC 5545 rule, with times left out and occurrences changed apart; a question on what a change reaches; an editor of the rule; and the days on the clock of any time zone, summer time included." />
       </p>
 
       <Section anchor="recurring" title="Recurring appointments">
@@ -154,15 +153,25 @@ FormLayout.editors.set('recurrence', (p) => new RecurrenceEditor(p));
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'Arguments']} rows={EVENTS} />
-        <h3>RecurrenceEditor</h3>
+        <h3>
+          <Rich text="RecurrenceEditor" />
+        </h3>
         <ApiTable head={['Member', 'Type', 'Default', 'Description']} rows={EDITOR} />
-        <h3>Parts</h3>
+        <h3>
+          <Rich text="Parts" />
+        </h3>
         <ApiTable head={['Part', 'What it does']} rows={PARTS} />
       </Section>
     </>

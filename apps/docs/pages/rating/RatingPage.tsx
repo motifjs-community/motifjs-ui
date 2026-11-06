@@ -46,8 +46,7 @@ export default function RatingPage() {
   return (
     <>
       <p class="lead">
-        A row of stars to give a score or to show one, whole or by halves. It is a field: label, help text, rules and
-        `x-model` work as in every field.
+        <Rich text="A row of stars to give a score or to show one, whole or by halves. It is a field: label, help text, rules and `x-model` work as in every field." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -89,12 +88,16 @@ import { Rating } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
       </Section>
     </>

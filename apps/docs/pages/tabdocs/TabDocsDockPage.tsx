@@ -131,8 +131,7 @@ export default function TabDocsDockPage() {
   return (
     <>
       <p class="lead">
-        Documents and whole groups float in windows of their own in the page and dock again into the documents' groups or into dock areas around them,
-        which fold to the manager's edge. The mouse, the keys and the code do the same, through the same events.
+        <Rich text="Documents and whole groups float in windows of their own in the page and dock again into the documents' groups or into dock areas around them, which fold to the manager's edge. The mouse, the keys and the code do the same, through the same events." />
       </p>
 
       <Section anchor="ide" title="Tool areas around the documents">
@@ -209,19 +208,33 @@ docs.onWindowClosing((e) => {
       </Section>
 
       <Section anchor="api" title="API">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>TabDocument</h3>
+        <h3>
+          <Rich text="TabDocument" />
+        </h3>
         <ApiTable head={['Field', 'Type', 'Description']} rows={DOCUMENT} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>TabWindow</h3>
+        <h3>
+          <Rich text="TabWindow" />
+        </h3>
         <ApiTable head={['Member', 'Kind', 'Description']} rows={WINDOW} />
-        <h3>TabDockArea</h3>
+        <h3>
+          <Rich text="TabDockArea" />
+        </h3>
         <ApiTable head={['Member', 'Kind', 'Description']} rows={AREA} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
-        <h3>Styling hooks</h3>
+        <h3>
+          <Rich text="Styling hooks" />
+        </h3>
         <ApiTable head={['Selector or token', 'What']} rows={STYLING} />
         <p>
           <Rich text="The rest of the API is on the [overview](/tabdocs#api), [Tabs](/tabdocs/tabs), [Menus and keys](/tabdocs/menus) and [Drag and drop](/tabdocs/drag)." />

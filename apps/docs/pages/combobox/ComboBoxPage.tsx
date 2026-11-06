@@ -32,8 +32,7 @@ export default function ComboBoxPage() {
   return (
     <>
       <p class="lead">
-        A text field with a list that follows what is typed. The items come from memory or from a data source of the
-        data layer, searched on the server. <code>Autocomplete</code> is the free-text kind: the value is the text.
+        <Rich text="A text field with a list that follows what is typed. The items come from memory or from a data source of the data layer, searched on the server. `Autocomplete` is the free-text kind: the value is the text." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -82,9 +81,13 @@ import { data } from '@motifx-community/data';
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Properties, methods, events</h3>
+        <h3>
+          <Rich text="Properties, methods, events" />
+        </h3>
         <ApiTable
           head={['Member', 'Description']}
           rows={[

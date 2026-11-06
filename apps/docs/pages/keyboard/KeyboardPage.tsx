@@ -59,8 +59,7 @@ export default function KeyboardPage() {
   return (
     <>
       <p class="lead">
-        The rules every control follows: Tab order, the active control of a container, focus that never falls to{' '}
-        <code>&lt;body&gt;</code>, <code>&amp;File</code> access keys and app-wide shortcuts.
+        <Rich text={'The rules every control follows: Tab order, the active control of a container, focus that never falls to `<body>`, `&File` access keys and app-wide shortcuts.'} />
       </p>
 
       <Section anchor="rules" title="The rules">
@@ -69,10 +68,7 @@ export default function KeyboardPage() {
 
       <Section anchor="tab" title="Tab order">
         <p>
-          Give controls a <code>tabIndex</code> and the outermost container of the page or window visits them in
-          ascending order at each level of the control tree; equal indexes (and plain elements, index 0) go in document
-          order. Until a control inside sets a <code>tabIndex</code>, Tab is left to the browser. A modal window keeps Tab
-          inside itself; one radio button per group is a stop, as in browsers.
+          <Rich text="Give controls a `tabIndex` and the outermost container of the page or window visits them in ascending order at each level of the control tree; equal indexes (and plain elements, index 0) go in document order. Until a control inside sets a `tabIndex`, Tab is left to the browser. A modal window keeps Tab inside itself; one radio button per group is a stop, as in browsers." />
         </p>
         <Example files={code('TabOrder.tsx')}>
           <TabOrder />
@@ -81,9 +77,7 @@ export default function KeyboardPage() {
 
       <Section anchor="active" title="Active control">
         <p>
-          A <code>FocusContainer</code> knows which control inside holds focus (<code>activeControl</code>, reactive)
-          and puts focus back there with <code>restoreFocus()</code>: a window coming to the front, a tab page coming
-          back.
+          <Rich text="A `FocusContainer` knows which control inside holds focus (`activeControl`, reactive) and puts focus back there with `restoreFocus()`: a window coming to the front, a tab page coming back." />
         </p>
       </Section>
 
@@ -101,8 +95,7 @@ export default function KeyboardPage() {
           <AccessKeys />
         </Example>
         <p class="docs-note">
-          Browsers keep a few Alt combinations for their own menus, and they differ per browser and language; test the
-          keys you choose.
+          <Rich text="Browsers keep a few Alt combinations for their own menus, and they differ per browser and language; test the keys you choose." />
         </p>
       </Section>
 
@@ -116,9 +109,13 @@ grid.addShortcut('Delete', () => grid.deleteSelected()); // while focus is in th
 addShortcut('F2', () => rename(), { scope: tree });
 `}
         />
-        <h3>Chords</h3>
+        <h3>
+          <Rich text="Chords" />
+        </h3>
         <ApiTable head={['Part', 'Meaning']} rows={CHORDS} />
-        <h3>Which shortcut runs</h3>
+        <h3>
+          <Rich text="Which shortcut runs" />
+        </h3>
         <ApiTable head={['Rule', 'Behaviour']} rows={SHORTCUT_RULES} />
         <Example files={code('Shortcut.tsx')}>
           <Shortcut />
@@ -127,9 +124,7 @@ addShortcut('F2', () => rename(), { scope: tree });
 
       <Section anchor="guard" title="Focus never on &lt;body&gt;">
         <p>
-          When the focused part of a control is disabled, hidden, removed (a list row, a branch) or disposed, focus moves
-          to the next usable element from that spot in the same window, else the one before it. A click on an empty spot
-          still clears focus as usual, and route changes are left to the router.
+          <Rich text="When the focused part of a control is disabled, hidden, removed (a list row, a branch) or disposed, focus moves to the next usable element from that spot in the same window, else the one before it. A click on an empty spot still clears focus as usual, and route changes are left to the router." />
         </p>
         <Example files={code('FocusGuard.tsx')} stack>
           <FocusGuard />

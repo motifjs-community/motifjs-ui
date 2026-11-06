@@ -155,10 +155,7 @@ export default function LayoutPage() {
   return (
     <>
       <p class="lead">
-        Containers that place controls: <code>Stack</code> (a row or a column), <code>Grid</code> (rows and columns),{' '}
-        <code>Panel</code> (a plain box that can scroll), <code>GroupBox</code> (a titled frame), <code>DockPanel</code> (children
-        stuck to its edges) and <code>SplitContainer</code> (two panes and a splitter). All of them are controls: they disable
-        and hide what is inside, and lay out children added at any time.
+        <Rich text="Containers that place controls: `Stack` (a row or a column), `Grid` (rows and columns), `Panel` (a plain box that can scroll), `GroupBox` (a titled frame), `DockPanel` (children stuck to its edges) and `SplitContainer` (two panes and a splitter). All of them are controls: they disable and hide what is inside, and lay out children added at any time." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -265,7 +262,9 @@ import { Stack, Grid, Panel, GroupBox, DockPanel, SplitContainer, type LayoutSpa
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
@@ -273,25 +272,45 @@ import { Stack, Grid, Panel, GroupBox, DockPanel, SplitContainer, type LayoutSpa
         <p>
           <Rich text="Every container also has the shared properties of `Control`: `enabled` / `disabled` (cascading to everything inside), `visible`, `tabStop`, `tabIndex`." />
         </p>
-        <h3>Stack props</h3>
+        <h3>
+          <Rich text="Stack props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={STACK_PROPS} />
-        <h3>Grid props</h3>
+        <h3>
+          <Rich text="Grid props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={GRID_PROPS} />
-        <h3>Panel props</h3>
+        <h3>
+          <Rich text="Panel props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PANEL_PROPS} />
-        <h3>GroupBox props</h3>
+        <h3>
+          <Rich text="GroupBox props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={GROUP_PROPS} />
-        <h3>DockPanel props</h3>
+        <h3>
+          <Rich text="DockPanel props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={DOCK_PROPS} />
-        <h3>SplitContainer props</h3>
+        <h3>
+          <Rich text="SplitContainer props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={SPLIT_PROPS} />
-        <h3>Props a child gives its container</h3>
+        <h3>
+          <Rich text="Props a child gives its container" />
+        </h3>
         <ApiTable head={['Prop', 'Read by', 'Type', 'Description']} rows={CHILD_PROPS} />
-        <h3>Properties</h3>
+        <h3>
+          <Rich text="Properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'When']} rows={EVENTS} />
         <p>
           <Rich text="`ChildSettings` — the part that reads a child's settings from its props and follows children added later — is exported for containers of your own." />

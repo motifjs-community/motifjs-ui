@@ -71,10 +71,7 @@ export default function ControlPage() {
   return (
     <>
       <p class="lead">
-        The base of every control in the package. It gives each one the same{' '}
-        <code>text</code>, <code>enabled</code>, <code>visible</code> and <code>tabStop</code>, and the same focus
-        methods, whether the control is written in JSX and bound to state or created with <code>new</code> and changed
-        programmatically.
+        <Rich text="The base of every control in the package. It gives each one the same `text`, `enabled`, `visible` and `tabStop`, and the same focus methods, whether the control is written in JSX and bound to state or created with `new` and changed programmatically." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -84,13 +81,14 @@ import { Control, type ControlProps } from '@motifx-community/ui';
 `}
         />
         <p>
-          Every component of the package (<a rel="router" href="/button">Button</a>, …) extends it; extend it for your own
-          controls.
+          <Rich text="Every component of the package ([Button](/button), …) extends it; extend it for your own controls." />
         </p>
       </Section>
 
       <Section anchor="ways" title="Declarative and programmatic">
-        <p>Both ways are complete; the developer using the control decides.</p>
+        <p>
+          <Rich text="Both ways are complete; the developer using the control decides." />
+        </p>
         <Code
           code={`
 // JSX, bound to state
@@ -105,7 +103,7 @@ unread.text = () => \`Unread (\${this.mail.count})\`; // a function is followed
 `}
         />
         <p>
-          <code>Badge</code> is the control written in <a href="#own">Writing a control</a>.
+          <Rich text="`Badge` is the control written in [Writing a control](#own)." />
         </p>
         <Example files={code('AddProgrammatically.tsx')}>
           <AddProgrammatically />
@@ -137,17 +135,11 @@ unread.text = () => \`Unread (\${this.mail.count})\`; // a function is followed
 
       <Section anchor="enabled" title="Enabled">
         <p>
-          Disabling a control disables everything inside it — other controls and plain elements alike, as a disabled{' '}
-          <code>&lt;fieldset&gt;</code> does for form fields —
-          and enabling it puts every element back exactly as it was. An element that was disabled on its own stays
-          disabled; content added while the control is disabled is disabled too; a change the app makes in the meantime
-          (a bound <code>disabled</code>) is what gets restored. Disabled containers nest: an element stays disabled while
-          any of them, or its own value, says so.
+          <Rich text="Disabling a control disables everything inside it — other controls and plain elements alike, as a disabled `<fieldset>` does for form fields — and enabling it puts every element back exactly as it was. An element that was disabled on its own stays disabled; content added while the control is disabled is disabled too; a change the app makes in the meantime (a bound `disabled`) is what gets restored. Disabled containers nest: an element stays disabled while any of them, or its own value, says so." />
         </p>
         <ApiTable head={['What', 'What happens']} rows={DISABLED} />
         <p>
-          If focus was inside, it moves to the next usable element in the same window (or the one before it) instead of
-          falling to <code>&lt;body&gt;</code>.
+          <Rich text="If focus was inside, it moves to the next usable element in the same window (or the one before it) instead of falling to `<body>`." />
         </p>
         <Example files={code('EnabledPanel.tsx')} stack>
           <EnabledPanel />
@@ -156,9 +148,7 @@ unread.text = () => \`Unread (\${this.mail.count})\`; // a function is followed
 
       <Section anchor="visible" title="Visible and TabStop">
         <p>
-          <code>visible</code> uses core <code>hide()</code> / <code>show()</code>: a hidden control leaves the page and
-          comes back in place, with its state. If focus was inside, it moves on first. <code>tabStop = false</code> only
-          skips the control on Tab.
+          <Rich text="`visible` uses core `hide()` / `show()`: a hidden control leaves the page and comes back in place, with its state. If focus was inside, it moves on first. `tabStop = false` only skips the control on Tab." />
         </p>
       </Section>
 
@@ -171,18 +161,13 @@ panel.focusWithin;   // focus is somewhere inside
 `}
         />
         <p>
-          Focus never falls to <code>&lt;body&gt;</code> because of a control: disabling, hiding, removing or disposing
-          the focused part moves focus to the next usable element. Focus rings show only for keyboard use (
-          <code>:focus-visible</code>). Tab order, access keys and shortcuts:{' '}
-          <a rel="router" href="/keyboard">Keyboard and focus</a>.
+          <Rich text="Focus never falls to `<body>` because of a control: disabling, hiding, removing or disposing the focused part moves focus to the next usable element. Focus rings show only for keyboard use (`:focus-visible`). Tab order, access keys and shortcuts: [Keyboard and focus](/keyboard)." />
         </p>
       </Section>
 
       <Section anchor="container" title="FocusContainer">
         <p>
-          A control that remembers which control inside it is active and is a scope for Tab; the package's windows, tab
-          pages and document views will be ones. The outermost container of a page or window
-          also runs the <code>tabIndex</code> order (see <a rel="router" href="/keyboard">Keyboard and focus</a>).
+          <Rich text="A control that remembers which control inside it is active and is a scope for Tab; the package's windows, tab pages and document views will be ones. The outermost container of a page or window also runs the `tabIndex` order (see [Keyboard and focus](/keyboard))." />
         </p>
         <Code
           code={`
@@ -198,8 +183,7 @@ editor.restoreFocus();          // back to where focus was when it was last acti
 
       <Section anchor="own" title="Writing a control">
         <p>
-          Extend <code>Control</code>, set the root element, and render <code>text</code> (and your own properties) with{' '}
-          <code>observeProperty</code>: no effect is created, the callback runs on every change.
+          <Rich text="Extend `Control`, set the root element, and render `text` (and your own properties) with `observeProperty`: no effect is created, the callback runs on every change." />
         </p>
         <Code
           code={`
@@ -230,16 +214,24 @@ class Badge extends Control<HTMLSpanElement, BadgeProps> {
       </Section>
 
       <Section anchor="cost" title="Performance">
-        <p>The base adds no listeners per control and pays only for what is used.</p>
+        <p>
+          <Rich text="The base adds no listeners per control and pays only for what is used." />
+        </p>
         <ApiTable head={['Case', 'Cost']} rows={COST} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Properties</h3>
+        <h3>
+          <Rich text="Properties" />
+        </h3>
         <ApiTable head={['Property', 'Type', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
       </Section>
 

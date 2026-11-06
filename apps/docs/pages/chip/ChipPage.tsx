@@ -82,8 +82,7 @@ export default function ChipPage() {
   return (
     <>
       <p class="lead">
-        A short text with an icon or an avatar before it: a filter to turn on, a choice among a few, or something
-        picked that can be removed. A group selects one or several and moves between them with the arrow keys.
+        <Rich text="A short text with an icon or an avatar before it: a filter to turn on, a choice among a few, or something picked that can be removed. A group selects one or several and moves between them with the arrow keys." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -155,22 +154,36 @@ import { Chip, ChipGroup } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
-        <h3>Component tokens</h3>
+        <h3>
+          <Rich text="Component tokens" />
+        </h3>
         <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Chip props</h3>
+        <h3>
+          <Rich text="Chip props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Chip events</h3>
+        <h3>
+          <Rich text="Chip events" />
+        </h3>
         <ApiTable head={['Event', 'Arguments', 'Description']} rows={EVENTS} />
-        <h3>Chip properties</h3>
+        <h3>
+          <Rich text="Chip properties" />
+        </h3>
         <ApiTable head={['Property', 'Access', 'Description']} rows={PROPERTIES} />
-        <h3>Chip methods</h3>
+        <h3>
+          <Rich text="Chip methods" />
+        </h3>
         <ApiTable head={['Method', 'Returns', 'Description']} rows={METHODS} />
-        <h3>ChipGroup props</h3>
+        <h3>
+          <Rich text="ChipGroup props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={GROUP_PROPS} />
-        <h3>ChipGroup events, properties and methods</h3>
+        <h3>
+          <Rich text="ChipGroup events, properties and methods" />
+        </h3>
         <ApiTable head={['Member', 'Kind', 'Description']} rows={GROUP_MEMBERS} />
       </Section>
     </>

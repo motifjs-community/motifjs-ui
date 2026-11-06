@@ -1,0 +1,13 @@
+{
+  "Picks one row of a table-like list, typically from a data source searched on the server: a customer by its company, contact and city. The field shows the chosen row's text; everything else works as in DropDown.": "",
+  "Columns from a data source": "",
+  "`columns` lay every row out on one grid under a header; the search box searches the data source's `searchFields`. Rows load where the list is scrolled to.": "",
+  "A value on no loaded page": "",
+  "A value whose row is not loaded is asked for by key, in one request with the keys other fields and grids over the same source need at that moment. Meanwhile the field waits: a spinner in the arrow's place, the list closed, never the key as its text. A record that carries the name too gives it as `valueText`, and the field shows it at once. A key the server does not have shows itself, muted and underlined, and its title says why; when the request failed, opening the list asks again.": "",
+  "`{ field, caption?, width?, align? }`: a field name or function, a header text, a CSS grid track, the alignment.": "",
+  "The header above the rows.": "",
+  "The least width of the list.": "",
+  "A search box above the list (DropDown has it off by default).": "",
+  "`items`, `dataSource`, `valueText`, `textField`, `valueField`, `searchDelay`, `clearButton`, validation, keyboard…": "",
+  "Your items and columns may be plain or reactive; the lookup reads them as they are. After changing them in place, call `refresh()`.": ""
+}

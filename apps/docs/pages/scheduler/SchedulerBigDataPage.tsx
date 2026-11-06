@@ -21,7 +21,7 @@ export default function SchedulerBigDataPage() {
   return (
     <>
       <p class="lead">
-        Thousands of resources and appointments: the scheduler builds only what is in view, and lays out only what changed.
+        <Rich text="Thousands of resources and appointments: the scheduler builds only what is in view, and lays out only what changed." />
       </p>
 
       <Section anchor="timeline" title="1,000 resources, 10,000 appointments">

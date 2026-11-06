@@ -4,9 +4,8 @@
 [![CI](https://github.com/motifjs-community/motifjs-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/motifjs-community/motifjs-ui/actions/workflows/ci.yml)
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-UI components for **MotifJS** (`@motifx/core`) that work the way desktop UI does: a component is an
-object you create when you need it, show anywhere, and close like a window — or write in JSX and
-bind to state. Everything is drawn from the [MotifJS design system](https://github.com/motifjs-community/motifjs-design-system)
+UI components for **MotifJS** (`@motifx/core`). A component is an object you create when you need it,
+show anywhere and dispose when you are done, or write in JSX and bind to state. Everything is drawn from the [MotifJS design system](https://github.com/motifjs-community/motifjs-design-system)
 (`@motifx-community/design-system`): its tokens, themes, density, fonts and user-preference
 overrides. This package adds the components and their component tokens, nothing else.
 

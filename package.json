@@ -59,6 +59,7 @@
     "language": "node scripts/new-language.mjs",
     "build": "npm run tokens && vite build && tsc -p tsconfig.build.json && node scripts/build-css.mjs && node scripts/copy-locales.mjs",
     "docs:build": "npm run tokens && vite build apps/docs",
+    "docs:texts": "node scripts/docs-texts.mjs",
     "docs:deploy": "npm run docs:build && node scripts/deploy-docs.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

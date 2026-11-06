@@ -56,8 +56,7 @@ export default function SchedulerEditingPage() {
   return (
     <>
       <p class="lead">
-        Appointments are added, moved, resized, copied and deleted with the pointer, the keys and code; every change asks its event first, can wait for a
-        server, and goes back when saving fails.
+        <Rich text="Appointments are added, moved, resized, copied and deleted with the pointer, the keys and code; every change asks its event first, can wait for a server, and goes back when saving fails." />
       </p>
 
       <Section anchor="editing" title="Drag, resize, edit">
@@ -107,11 +106,17 @@ export default function SchedulerEditingPage() {
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Methods</h3>
+        <h3>
+          <Rich text="Methods" />
+        </h3>
         <ApiTable head={['Method', 'Description']} rows={METHODS} />
-        <h3>Events</h3>
+        <h3>
+          <Rich text="Events" />
+        </h3>
         <ApiTable head={['Event', 'Arguments']} rows={EVENTS} />
       </Section>
     </>

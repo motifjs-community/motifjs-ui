@@ -10,7 +10,7 @@ Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with
 
 ## Get started
 
-- [@motifx-community/ui](docs/home.md): Components for MotifJS that work the way desktop UI does — created when needed, shown anywhere, closed and disposed like windows — drawn from the MotifJS…
+- [@motifx-community/ui](docs/home.md): Components for MotifJS: objects you create when you need them, show anywhere and dispose when you are done, drawn from the MotifJS design system's tokens.
 - [Showcase: an order screen](docs/showcase.md): An order screen built with the kit, the way a MotifJS app is built: the state and the operations live in a model (`OrderModel`), the page binds to it. The…
 - [Design tokens](docs/tokens.md): Five layers. The first four — primitives, the design language's own scales, semantic tokens per theme, density — come from `@motifx-community/design-system`…
 
@@ -260,13 +260,15 @@ tokens, with examples.
 
 > Get started · @motifx-community/ui 0.1.0-beta.3
 
-Components for MotifJS that work the way desktop UI does — created when needed, shown anywhere, closed and disposed like windows — drawn from the MotifJS design system's tokens.
+Components for MotifJS: objects you create when you need them, show anywhere and dispose when you are done, drawn from the MotifJS design system's tokens.
 
 ## Install
 
 ```tsx
 npm i @motifx/core @motifx-community/ui
+```
 
+```tsx
 import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/ui';
 ```
 
@@ -284,14 +286,14 @@ More than fifty components, every one an object with the same base: focus and th
 
 | Group | Components |
 | --- | --- |
-| Buttons and commands | [`Button`](button.md) (menu, split, toggle, busy), [`ButtonGroup`](buttongroup.md), [`Toolbar`](toolbar.md), [`MenuBar` and `ContextMenu`](menus.md) |
-| Editors | [`TextBox`](textbox.md) (mask, validation), [`TextArea`](textarea.md), [`NumberBox`](numberbox.md), [`DateBox`](datebox.md), [`DateRangeBox`](daterangebox.md), [`Calendar`](calendar.md), [`ColorBox` and `ColorPicker`](colorbox.md), [`Slider`](slider.md), [`Rating`](rating.md), [`FileUploader`](fileuploader.md) |
-| Choice | [`CheckBox`](checkbox.md), [`Switch`](switch.md), [`RadioGroup`](radiogroup.md), [`DropDown`](dropdown.md), [`ComboBox` and `Autocomplete`](combobox.md), [`Lookup`](lookup.md), [`TagBox`](tagbox.md), [`ListBox`](listbox.md) |
-| Display and feedback | [`Badge`](badge.md), [`Avatar` and `AvatarGroup`](avatar.md), [`Chip` and `ChipGroup`](chip.md), [`Card`](card.md), [`Skeleton`](skeleton.md), [`ProgressBar` and `Spinner`](progress.md), [`LoadPanel`](loadpanel.md), [`Tooltip`](tooltip.md), [`Popover`](popover.md), [`Toast`](toast.md) |
-| Navigation and layers | [`Tabs`](tabs.md), [`Accordion`](accordion.md), [`Breadcrumb`](breadcrumb.md), [`Pagination`](pagination.md), [`Stepper`](stepper.md), [`Wizard`](wizard.md), [`Window` and dialog](window.md), [`BottomSheet`](bottomsheet.md), [`Drawer`](drawer.md), [`ActionSheet`](actionsheet.md) |
-| Layout | [`Stack`, `Grid`, `DockPanel`, `Panel`, `GroupBox`, `SplitContainer`](layout.md), [`FormLayout`](formlayout.md), [`ScrollView`](scrollview.md) (pull to refresh, load more), [`Sortable`](sortable.md) |
+| Buttons and commands | [`Button`](button.md) (menu, split, toggle, busy), [`ButtonGroup`](buttongroup.md), [`Toolbar`](toolbar.md), [`MenuBar`](menus.md) and [`ContextMenu`](menus.md) |
+| Editors | [`TextBox`](textbox.md) (mask, validation), [`TextArea`](textarea.md), [`NumberBox`](numberbox.md), [`DateBox`](datebox.md), [`DateRangeBox`](daterangebox.md), [`Calendar`](calendar.md), [`ColorBox`](colorbox.md) and [`ColorPicker`](colorbox.md), [`Slider`](slider.md), [`Rating`](rating.md), [`FileUploader`](fileuploader.md) |
+| Choice | [`CheckBox`](checkbox.md), [`Switch`](switch.md), [`RadioGroup`](radiogroup.md), [`DropDown`](dropdown.md), [`ComboBox`](combobox.md) and [`Autocomplete`](combobox.md), [`Lookup`](lookup.md), [`TagBox`](tagbox.md), [`ListBox`](listbox.md) |
+| Display and feedback | [`Badge`](badge.md), [`Avatar`](avatar.md) and [`AvatarGroup`](avatar.md), [`Chip`](chip.md) and [`ChipGroup`](chip.md), [`Card`](card.md), [`Skeleton`](skeleton.md), [`ProgressBar`](progress.md) and [`Spinner`](progress.md), [`LoadPanel`](loadpanel.md), [`Tooltip`](tooltip.md), [`Popover`](popover.md), [`Toast`](toast.md) |
+| Navigation and layers | [`Tabs`](tabs.md), [`Accordion`](accordion.md), [`Breadcrumb`](breadcrumb.md), [`Pagination`](pagination.md), [`Stepper`](stepper.md), [`Wizard`](wizard.md), [`Window`](window.md) and dialog, [`BottomSheet`](bottomsheet.md), [`Drawer`](drawer.md), [`ActionSheet`](actionsheet.md) |
+| Layout | [`Stack`](layout.md), [`Grid`](layout.md), [`DockPanel`](layout.md), [`Panel`](layout.md), [`GroupBox`](layout.md), [`SplitContainer`](layout.md), [`FormLayout`](formlayout.md), [`ScrollView`](scrollview.md) (pull to refresh, load more), [`Sortable`](sortable.md) |
 | Data | [`DataGrid`](datagrid.md) (virtual or paged, editing, filters, grouping, master-detail, export), [`TreeView`](treeview.md), [`FilterBuilder`](filterbuilder.md), [`Scheduler`](scheduler.md) (day to timeline, recurrence, resources, iCalendar), [`TabDocumentManager`](tabdocs.md) (tabs, split, dock, new windows); lists and grids read `@motifx-community/data` sources |
-| Base | [`Control`](control.md), [`FocusContainer` and `addShortcut`](keyboard.md), [`uiLocale`](language.md), [the component tokens](tokens.md); `Popup` and `MenuList`, the shared parts a menu or a drop-down opens on |
+| Base | [`Control`](control.md), [`FocusContainer`](keyboard.md) and [`addShortcut`](keyboard.md), [`uiLocale`](language.md), [the component tokens](tokens.md); `Popup` and `MenuList`, the shared parts a menu or a drop-down opens on |
 
 ## Design system
 
@@ -305,7 +307,9 @@ The look comes from `@motifx-community/design-system`: its tokens, three themes,
 
 ```tsx
 <html data-theme="dark" data-density="compact">
+```
 
+```tsx
 /* your accent, after styles.css: a design-system override restyles every component */
 :root {
   --mx-color-accent-solid: #8764b8;
@@ -3295,7 +3299,7 @@ Source: `tokens/schema/*.json` (names and types) and `tokens/languages/<language
 | `speed-dial.main-glyph.size` | `--mx-speed-dial-main-glyph-size` | `` | `1.25rem` |
 | `speed-dial.main-glyph.bg` | `--mx-speed-dial-main-glyph-bg` | `color.accent.on-solid` | `#ffffff` |
 | `speed-dial.main-text.font-weight` | `--mx-speed-dial-main-text-font-weight` | `font.weight.semibold` | `600` |
-| `speed-dial.action.size` | `--mx-speed-dial-action-size` | `` | `2.25rem` |
+| `speed-dial.action.size` | `--mx-speed-dial-action-size` | `` | `2.625rem` |
 | `speed-dial.action.radius` | `--mx-speed-dial-action-radius` | `radius.full` | `9999px` |
 | `speed-dial.action.bg` | `--mx-speed-dial-action-bg` | `color.fill.control.default` | `#f5f4f0` |
 | `speed-dial.action.color` | `--mx-speed-dial-action-color` | `color.fg.primary` | `#1d1c1a` |
@@ -3310,7 +3314,7 @@ Source: `tokens/schema/*.json` (names and types) and `tokens/languages/<language
 | `speed-dial.action.border-width` | `--mx-speed-dial-action-border-width` | `border.width.1` | `1px` |
 | `speed-dial.action.border-color` | `--mx-speed-dial-action-border-color` | `color.stroke.control.strong` | `rgb(0 0 0 / 0.4458)` |
 | `speed-dial.action.shadow` | `--mx-speed-dial-action-shadow` | `` | `initial` |
-| `speed-dial.action-icon.size` | `--mx-speed-dial-action-icon-size` | `` | `1rem` |
+| `speed-dial.action-icon.size` | `--mx-speed-dial-action-icon-size` | `` | `1.25rem` |
 | `speed-dial.action-icon.bg` | `--mx-speed-dial-action-icon-bg` | `color.fg.primary` | `#1d1c1a` |
 | `speed-dial.label.bg` | `--mx-speed-dial-label-bg` | `color.bg.glass` | `rgb(248 247 243 / 0.78)` |
 | `speed-dial.label.color` | `--mx-speed-dial-label-color` | `color.fg.primary` | `#1d1c1a` |
@@ -14578,7 +14582,7 @@ export default function Animations() {
 | `lines` | `Bind<number>` | `1` | How many lines of text; the last of several is shorter. |
 | `width` | `Bind<string \| number \| null>` | the room it is in | A CSS length, or pixels as a number; a circle’s size (default: the language’s). |
 | `height` | `Bind<string \| number \| null>` | a line / the language’s | A CSS length, or pixels as a number. |
-| `animation` | `Bind<SkeletonAnimation>` | the language’s | `wave`, `pulse`, `none`. Fluent and the desktop languages sweep a wave, Material and Lilac pulse. |
+| `animation` | `Bind<SkeletonAnimation>` | the language’s | `wave`, `pulse`, `none`. Tactile, Lounge and Fluent sweep a wave, Material and Lilac pulse. |
 | `loading` | `Bind<boolean>` | `true` | While `true` the skeleton shows; then its JSX children do. |
 | `label` | `Bind<string>` | the kit’s “Loading…” | What screen readers say while it loads. |
 | `visible` | see Control |  | The shared properties of every control. |
@@ -23245,7 +23249,7 @@ export function fileDocument(path: string, extra: TabDocumentOptions = {}): TabD
 
 ## Recently used, back and forward, reopen
 
-The recently used list switches between documents the way a desktop editor does with Ctrl+Tab. `goBack` and `goForward` follow the documents activated in every group; `reopenClosed` opens the last closed one where it was.
+The recently used list switches between documents the way code editors do with Ctrl+Tab. `goBack` and `goForward` follow the documents activated in every group; `reopenClosed` opens the last closed one where it was.
 
 ```tsx
 import type { ComponentBase } from '@motifx/core';

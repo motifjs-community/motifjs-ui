@@ -45,8 +45,7 @@ export default function SchedulerMobilePage() {
   return (
     <>
       <p class="lead">
-        On a tablet and a phone the scheduler keeps its appointments, views and date and shows them another way: a phone gets
-        the agenda, a compact bar and sheets from the bottom; a finger lifts, resizes, swipes and pinches.
+        <Rich text="On a tablet and a phone the scheduler keeps its appointments, views and date and shows them another way: a phone gets the agenda, a compact bar and sheets from the bottom; a finger lifts, resizes, swipes and pinches." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -109,9 +108,13 @@ import { Scheduler, type SchedulerPresentation } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="api" title="API reference">
-        <h3>Props</h3>
+        <h3>
+          <Rich text="Props" />
+        </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
-        <h3>Members</h3>
+        <h3>
+          <Rich text="Members" />
+        </h3>
         <ApiTable head={['Member', 'Returns', 'Description']} rows={MEMBERS} />
         <p>
           <Rich text="The sheets are the kit's [BottomSheet](/bottomsheet) and [ActionSheet](/actionsheet)." />

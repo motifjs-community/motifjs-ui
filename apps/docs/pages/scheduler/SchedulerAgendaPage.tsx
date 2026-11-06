@@ -26,7 +26,9 @@ const KEYS = [
 export default function SchedulerAgendaPage() {
   return (
     <>
-      <p class="lead">The coming days as a list: each day with its appointments in time order, a day with none left out.</p>
+      <p class="lead">
+        <Rich text="The coming days as a list: each day with its appointments in time order, a day with none left out." />
+      </p>
 
       <Section anchor="agenda" title="Agenda">
         <p>
