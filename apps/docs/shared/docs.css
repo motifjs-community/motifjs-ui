@@ -638,6 +638,20 @@
   font-size: var(--mx-font-size-body);
 }
 
+/* The colours of code, from the design language's roles: they change with it and with the theme. */
+.docs-main pre {
+  --shiki-foreground: var(--mx-color-fg-primary);
+  --shiki-token-keyword: var(--mx-color-accent-fg);
+  --shiki-token-string: var(--mx-color-success-fg);
+  --shiki-token-string-expression: var(--mx-color-success-fg);
+  --shiki-token-constant: var(--mx-color-caution-fg);
+  --shiki-token-function: var(--mx-color-danger-fg);
+  --shiki-token-parameter: var(--mx-color-fg-primary);
+  --shiki-token-comment: var(--mx-color-fg-secondary);
+  --shiki-token-punctuation: var(--mx-color-fg-secondary);
+  --shiki-token-link: var(--mx-color-accent-fg);
+}
+
 .docs-main p > code,
 .docs-main li > code,
 .docs-main td > code {

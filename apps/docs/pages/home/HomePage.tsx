@@ -10,10 +10,9 @@ export default function HomePage() {
       </p>
 
       <Section anchor="install" title="Install">
+        <Code lang="bash" code="npm i @motifx/core @motifx-community/ui" />
         <Code
           code={`
-npm i @motifx/core @motifx-community/ui
-
 import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/ui';
 `}
         />
@@ -162,10 +161,10 @@ import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/
           </li>
           <li>RTL through logical properties.</li>
         </ul>
+        <Code lang="html" code={`<html data-theme="dark" data-density="compact">`} />
         <Code
+          lang="css"
           code={`
-<html data-theme="dark" data-density="compact">
-
 /* your accent, after styles.css: a design-system override restyles every component */
 :root {
   --mx-color-accent-solid: #8764b8;
