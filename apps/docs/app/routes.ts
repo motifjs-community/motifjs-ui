@@ -15,6 +15,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   rating: () => import('../pages/rating/RatingPage'),
   colorbox: () => import('../pages/colorbox/ColorBoxPage'),
   breadcrumb: () => import('../pages/breadcrumb/BreadcrumbPage'),
+  appbar: () => import('../pages/appbar/AppBarPage'),
+  bottomnavigation: () => import('../pages/bottomnavigation/BottomNavigationPage'),
   pagination: () => import('../pages/pagination/PaginationPage'),
   stepper: () => import('../pages/stepper/StepperPage'),
   gallery: () => import('../pages/gallery/GalleryPage'),

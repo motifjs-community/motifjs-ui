@@ -1,0 +1,84 @@
+{
+  "app-bar": {
+    "$description": "AppBar: the top bar of an application, with a navigation button, a logo, titles, a control and commands.",
+    "$selector": ".mx-app-bar",
+    "title-least": {
+      "$type": "dimension",
+      "$description": "The room the titles keep before commands move into the menu."
+    },
+    "$units": {
+      "bar": {
+        "$description": "The bar: `lifted` while content scrolls under it, `accent` in the accent tone.",
+        "selector": ".mx-app-bar",
+        "states": {
+          "lifted": ".mx-app-bar[data-lifted]",
+          "accent": ".mx-app-bar[data-tone='accent']"
+        }
+      },
+      "row": {
+        "$description": "The row of parts: its height and side padding; `prominent` when the title has a row of its own.",
+        "selector": ".mx-app-bar__row",
+        "states": {
+          "prominent": ".mx-app-bar[data-prominent] > .mx-app-bar__row"
+        }
+      },
+      "start": {
+        "$description": "The navigation button and the logo.",
+        "selector": ".mx-app-bar__start"
+      },
+      "logo": {
+        "$description": "The logo: `size` its height and width.",
+        "selector": ".mx-app-bar__logo"
+      },
+      "titles": {
+        "$description": "The title and the subtitle together: `prominent` on a row of their own, lined up with the buttons above; `alone` with no button before them.",
+        "selector": ".mx-app-bar__titles",
+        "states": {
+          "prominent": ".mx-app-bar[data-prominent] .mx-app-bar__titles",
+          "alone": ".mx-app-bar__start[hidden] + .mx-app-bar__titles"
+        }
+      },
+      "title": {
+        "$description": "The title: `prominent` on its own row, `accent` in the accent tone.",
+        "selector": ".mx-app-bar__title",
+        "states": {
+          "prominent": ".mx-app-bar[data-prominent] .mx-app-bar__title",
+          "accent": ".mx-app-bar[data-tone='accent'] .mx-app-bar__title"
+        }
+      },
+      "subtitle": {
+        "$description": "The subtitle: `accent` in the accent tone.",
+        "selector": ".mx-app-bar__subtitle",
+        "states": {
+          "accent": ".mx-app-bar[data-tone='accent'] .mx-app-bar__subtitle"
+        }
+      },
+      "content": {
+        "$description": "The control between the titles and the commands.",
+        "selector": ".mx-app-bar__content"
+      }
+    },
+    "$places": {
+      "toolbar": {
+        "$description": "The commands: a toolbar without a fill or padding of its own, part of the bar.",
+        "selector": ".mx-app-bar__actions > .mx-toolbar",
+        "part": "toolbar",
+        "tokens": [
+          "bar.bg",
+          "bar.padding-block",
+          "bar.padding-inline"
+        ]
+      },
+      "button": {
+        "$description": "A button of an accent bar: its text and the fill under the pointer, against the accent color.",
+        "selector": ".mx-app-bar[data-tone='accent'] .mx-button",
+        "part": "button",
+        "tokens": [
+          "face.ghost.color",
+          "face.ghost-hover.bg",
+          "face.ghost-pressed.bg"
+        ]
+      }
+    }
+  }
+}

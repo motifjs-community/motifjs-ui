@@ -22,7 +22,6 @@
   "Moves to the next or previous item, wrapping at the ends. Disabled items are reachable.": "Bir sonraki veya önceki öğeye geçer, uçlarda başa veya sona döner. Devre dışı öğelere ulaşılabilir.",
   "Moves to the first or last item.": "İlk veya son öğeye geçer.",
   "Selects the item with that `&` key. Otherwise, focus moves to the next item that starts with that letter.": "O `&` tuşuna sahip öğeyi seçer. Aksi halde odak, o harfle başlayan bir sonraki öğeye taşınır.",
-  "Selects the focused item.": "Odaklanılmış öğeyi seçer.",
   "Closes the menu or drop-down, and focus returns to the part that opened it.": "Menüyü veya açılır içeriği kapatır, odak onu açan parçaya döner.",
   "Closes the menu and moves to the next control.": "Menüyü kapatır ve bir sonraki control'e geçer.",
   "A native `<button>` (two with `split`: the button and the arrow), so forms, Enter, Space and screen readers work as expected.": "Yerel bir `<button>` (`split` ile iki tane: düğme ve ok). Böylece formlar, Enter, Space ve ekran okuyucular beklendiği gibi çalışır.",

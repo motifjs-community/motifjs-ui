@@ -1,0 +1,54 @@
+{
+  "bottom-navigation": {
+    "$description": "BottomNavigation: the destinations of an application at the bottom of the screen, each an icon over a label.",
+    "$selector": ".mx-bottom-navigation",
+    "$units": {
+      "bar": {
+        "$description": "The bar.",
+        "selector": ".mx-bottom-navigation"
+      },
+      "list": {
+        "$description": "The row of items: its height and padding.",
+        "selector": ".mx-bottom-navigation__list"
+      },
+      "item": {
+        "$description": "An item: `hover`, `pressed`, `focus`, `selected`, `disabled`.",
+        "selector": ".mx-bottom-navigation__item",
+        "defaults": {
+          "cursor": "default"
+        },
+        "states": {
+          "hover": ".mx-bottom-navigation__item:not([aria-disabled='true']):hover",
+          "pressed": {
+            "selector": ".mx-bottom-navigation__item:not([aria-disabled='true']):active",
+            "from": "hover"
+          },
+          "focus": ".mx-bottom-navigation__item:focus-visible",
+          "selected": ".mx-bottom-navigation__item[data-selected]",
+          "disabled": ".mx-bottom-navigation__item[aria-disabled='true']"
+        }
+      },
+      "indicator": {
+        "$description": "The mark of the selected item, behind or above the icon. A language without one leaves it at no size.",
+        "selector": ".mx-bottom-navigation__indicator",
+        "defaults": {
+          "opacity": "0"
+        },
+        "states": {
+          "selected": ".mx-bottom-navigation__item[data-selected] > .mx-bottom-navigation__indicator"
+        }
+      },
+      "icon-host": {
+        "$description": "The box of the icon: `size` its width and height.",
+        "selector": ".mx-bottom-navigation__icon-host"
+      },
+      "label": {
+        "$description": "The label: `selected` on the selected item.",
+        "selector": ".mx-bottom-navigation__label",
+        "states": {
+          "selected": ".mx-bottom-navigation__item[data-selected] > .mx-bottom-navigation__label"
+        }
+      }
+    }
+  }
+}

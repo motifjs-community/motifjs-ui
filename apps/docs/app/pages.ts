@@ -87,6 +87,8 @@ export const GROUPS = [
     title: 'Navigation',
     section: 'Components',
     pages: [
+      { id: 'appbar', label: 'AppBar', title: 'AppBar', path: '/appbar', related: ['toolbar', 'bottomnavigation', 'drawer'] },
+      { id: 'bottomnavigation', label: 'BottomNavigation', title: 'BottomNavigation', path: '/bottomnavigation', related: ['appbar', 'tabs', 'badge'] },
       { id: 'tabs', label: 'Tabs', title: 'Tabs', path: '/tabs', related: ['accordion', 'keyboard'] },
       { id: 'breadcrumb', label: 'Breadcrumb', title: 'Breadcrumb', path: '/breadcrumb', related: ['tabs', 'menus'] },
       { id: 'pagination', label: 'Pagination', title: 'Pagination', path: '/pagination', related: ['datagrid', 'breadcrumb'] },

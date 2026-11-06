@@ -434,6 +434,9 @@ export interface UiStrings {
   tabDocsHidden: string;
   tabDocsShown: string;
   back: string;
+  navigationMenu: string;
+  navigation: string;
+  appBarActions: string;
   /** BottomSheet, ActionSheet and Drawer: their names when they have no title, the sheet's handle and its heights. `{height}` is filled in. */
   sheetLabel: string;
   sheetHandle: string;

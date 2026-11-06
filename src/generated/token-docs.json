@@ -567,6 +567,272 @@
     "value": "rgb(0 0 0 / 0.1)"
   },
   {
+    "name": "app-bar.title-least",
+    "cssVar": "--mx-app-bar-title-least",
+    "type": "dimension",
+    "ref": null,
+    "value": "96px"
+  },
+  {
+    "name": "app-bar.bar.bg",
+    "cssVar": "--mx-app-bar-bar-bg",
+    "type": "color",
+    "ref": "color.bg.bar",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "app-bar.bar.color",
+    "cssVar": "--mx-app-bar-bar-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "app-bar.bar.border-bottom-width",
+    "cssVar": "--mx-app-bar-bar-border-bottom-width",
+    "type": "dimension",
+    "ref": "control.edge.width",
+    "value": "2px"
+  },
+  {
+    "name": "app-bar.bar.border-color",
+    "cssVar": "--mx-app-bar-bar-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.edge",
+    "value": "rgb(0 0 0 / 0.3)"
+  },
+  {
+    "name": "app-bar.bar.shadow",
+    "cssVar": "--mx-app-bar-bar-shadow",
+    "type": "shadow",
+    "ref": null,
+    "value": "0 0 #0000"
+  },
+  {
+    "name": "app-bar.bar.lifted.bg",
+    "cssVar": "--mx-app-bar-bar-lifted-bg",
+    "type": "color",
+    "ref": "color.bg.bar",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "app-bar.bar.lifted.shadow",
+    "cssVar": "--mx-app-bar-bar-lifted-shadow",
+    "type": "shadow",
+    "ref": "shadow.4",
+    "value": "0px 2px 4px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)"
+  },
+  {
+    "name": "app-bar.bar.accent.bg",
+    "cssVar": "--mx-app-bar-bar-accent-bg",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
+    "name": "app-bar.bar.accent.color",
+    "cssVar": "--mx-app-bar-bar-accent-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "app-bar.bar.accent.border-color",
+    "cssVar": "--mx-app-bar-bar-accent-border-color",
+    "type": "color",
+    "ref": null,
+    "value": "rgb(0 0 0 / 0)"
+  },
+  {
+    "name": "app-bar.row.min-height",
+    "cssVar": "--mx-app-bar-row-min-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "56px"
+  },
+  {
+    "name": "app-bar.row.padding-inline",
+    "cssVar": "--mx-app-bar-row-padding-inline",
+    "type": "dimension",
+    "ref": "space.3",
+    "value": "0.75rem"
+  },
+  {
+    "name": "app-bar.row.gap",
+    "cssVar": "--mx-app-bar-row-gap",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "app-bar.row.prominent.padding-block",
+    "cssVar": "--mx-app-bar-row-prominent-padding-block",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "app-bar.start.gap",
+    "cssVar": "--mx-app-bar-start-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "app-bar.logo.size",
+    "cssVar": "--mx-app-bar-logo-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "28px"
+  },
+  {
+    "name": "app-bar.titles.gap",
+    "cssVar": "--mx-app-bar-titles-gap",
+    "type": "dimension",
+    "ref": "space.0",
+    "value": "0px"
+  },
+  {
+    "name": "app-bar.titles.prominent.padding-inline",
+    "cssVar": "--mx-app-bar-titles-prominent-padding-inline",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "app-bar.titles.alone.padding-start",
+    "cssVar": "--mx-app-bar-titles-alone-padding-start",
+    "type": "dimension",
+    "ref": null,
+    "value": "initial"
+  },
+  {
+    "name": "app-bar.title.font-size",
+    "cssVar": "--mx-app-bar-title-font-size",
+    "type": "dimension",
+    "ref": "font.size.body-large",
+    "value": "1.125rem"
+  },
+  {
+    "name": "app-bar.title.font-weight",
+    "cssVar": "--mx-app-bar-title-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
+  },
+  {
+    "name": "app-bar.title.line-height",
+    "cssVar": "--mx-app-bar-title-line-height",
+    "type": "dimension",
+    "ref": "font.line.body-large",
+    "value": "1.5rem"
+  },
+  {
+    "name": "app-bar.title.letter-spacing",
+    "cssVar": "--mx-app-bar-title-letter-spacing",
+    "type": "dimension",
+    "ref": null,
+    "value": "0px"
+  },
+  {
+    "name": "app-bar.title.prominent.font-size",
+    "cssVar": "--mx-app-bar-title-prominent-font-size",
+    "type": "dimension",
+    "ref": "font.size.title",
+    "value": "1.75rem"
+  },
+  {
+    "name": "app-bar.title.prominent.line-height",
+    "cssVar": "--mx-app-bar-title-prominent-line-height",
+    "type": "dimension",
+    "ref": "font.line.title",
+    "value": "2.25rem"
+  },
+  {
+    "name": "app-bar.title.accent.color",
+    "cssVar": "--mx-app-bar-title-accent-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "app-bar.subtitle.font-size",
+    "cssVar": "--mx-app-bar-subtitle-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "app-bar.subtitle.line-height",
+    "cssVar": "--mx-app-bar-subtitle-line-height",
+    "type": "dimension",
+    "ref": "font.line.caption",
+    "value": "1rem"
+  },
+  {
+    "name": "app-bar.subtitle.color",
+    "cssVar": "--mx-app-bar-subtitle-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "app-bar.subtitle.accent.color",
+    "cssVar": "--mx-app-bar-subtitle-accent-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "app-bar.content.padding-inline",
+    "cssVar": "--mx-app-bar-content-padding-inline",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "app-bar.toolbar.bar.bg",
+    "cssVar": "--mx-app-bar-toolbar-bar-bg",
+    "type": "color",
+    "ref": null,
+    "value": "rgb(0 0 0 / 0)"
+  },
+  {
+    "name": "app-bar.toolbar.bar.padding-block",
+    "cssVar": "--mx-app-bar-toolbar-bar-padding-block",
+    "type": "dimension",
+    "ref": "space.0",
+    "value": "0px"
+  },
+  {
+    "name": "app-bar.toolbar.bar.padding-inline",
+    "cssVar": "--mx-app-bar-toolbar-bar-padding-inline",
+    "type": "dimension",
+    "ref": "space.0",
+    "value": "0px"
+  },
+  {
+    "name": "app-bar.button.face.ghost.color",
+    "cssVar": "--mx-app-bar-button-face-ghost-color",
+    "type": "color",
+    "ref": "color.accent.on-solid",
+    "value": "#ffffff"
+  },
+  {
+    "name": "app-bar.button.face.ghost-hover.bg",
+    "cssVar": "--mx-app-bar-button-face-ghost-hover-bg",
+    "type": "color",
+    "ref": null,
+    "value": "rgb(255 255 255 / 0.14)"
+  },
+  {
+    "name": "app-bar.button.face.ghost-pressed.bg",
+    "cssVar": "--mx-app-bar-button-face-ghost-pressed-bg",
+    "type": "color",
+    "ref": null,
+    "value": "rgb(255 255 255 / 0.22)"
+  },
+  {
     "name": "avatar-group.layout",
     "cssVar": "--mx-avatar-group-layout",
     "type": "keyword",
@@ -1461,6 +1727,223 @@
     "type": "dimension",
     "ref": "space.0",
     "value": "0px"
+  },
+  {
+    "name": "bottom-navigation.bar.bg",
+    "cssVar": "--mx-bottom-navigation-bar-bg",
+    "type": "color",
+    "ref": "color.bg.bar",
+    "value": "#ebeae5"
+  },
+  {
+    "name": "bottom-navigation.bar.border-top-width",
+    "cssVar": "--mx-bottom-navigation-bar-border-top-width",
+    "type": "dimension",
+    "ref": "control.edge.width",
+    "value": "2px"
+  },
+  {
+    "name": "bottom-navigation.bar.border-color",
+    "cssVar": "--mx-bottom-navigation-bar-border-color",
+    "type": "color",
+    "ref": "color.stroke.control.edge",
+    "value": "rgb(0 0 0 / 0.3)"
+  },
+  {
+    "name": "bottom-navigation.bar.shadow",
+    "cssVar": "--mx-bottom-navigation-bar-shadow",
+    "type": "shadow",
+    "ref": null,
+    "value": "0 0 #0000"
+  },
+  {
+    "name": "bottom-navigation.list.min-height",
+    "cssVar": "--mx-bottom-navigation-list-min-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "60px"
+  },
+  {
+    "name": "bottom-navigation.list.padding-block",
+    "cssVar": "--mx-bottom-navigation-list-padding-block",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "bottom-navigation.list.padding-inline",
+    "cssVar": "--mx-bottom-navigation-list-padding-inline",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "bottom-navigation.list.gap",
+    "cssVar": "--mx-bottom-navigation-list-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "bottom-navigation.item.color",
+    "cssVar": "--mx-bottom-navigation-item-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "bottom-navigation.item.gap",
+    "cssVar": "--mx-bottom-navigation-item-gap",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "bottom-navigation.item.radius",
+    "cssVar": "--mx-bottom-navigation-item-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "bottom-navigation.item.padding-block",
+    "cssVar": "--mx-bottom-navigation-item-padding-block",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "bottom-navigation.item.hover.color",
+    "cssVar": "--mx-bottom-navigation-item-hover-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "bottom-navigation.item.focus.glow",
+    "cssVar": "--mx-bottom-navigation-item-focus-glow",
+    "type": "shadow",
+    "ref": "focus.ring.halo",
+    "value": "0px 0px 0px 1px rgb(255 255 255 / 0.7)"
+  },
+  {
+    "name": "bottom-navigation.item.focus.outline-width",
+    "cssVar": "--mx-bottom-navigation-item-focus-outline-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "bottom-navigation.item.focus.outline-color",
+    "cssVar": "--mx-bottom-navigation-item-focus-outline-color",
+    "type": "color",
+    "ref": "focus.ring.color",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "bottom-navigation.item.focus.outline-offset",
+    "cssVar": "--mx-bottom-navigation-item-focus-outline-offset",
+    "type": "dimension",
+    "ref": "focus.ring.offset",
+    "value": "1px"
+  },
+  {
+    "name": "bottom-navigation.item.selected.color",
+    "cssVar": "--mx-bottom-navigation-item-selected-color",
+    "type": "color",
+    "ref": "color.accent.fg",
+    "value": "#983318"
+  },
+  {
+    "name": "bottom-navigation.item.disabled.color",
+    "cssVar": "--mx-bottom-navigation-item-disabled-color",
+    "type": "color",
+    "ref": "color.fg.disabled",
+    "value": "#a2a098"
+  },
+  {
+    "name": "bottom-navigation.indicator.width",
+    "cssVar": "--mx-bottom-navigation-indicator-width",
+    "type": "dimension",
+    "ref": null,
+    "value": "0px"
+  },
+  {
+    "name": "bottom-navigation.indicator.height",
+    "cssVar": "--mx-bottom-navigation-indicator-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "0px"
+  },
+  {
+    "name": "bottom-navigation.indicator.radius",
+    "cssVar": "--mx-bottom-navigation-indicator-radius",
+    "type": "dimension",
+    "ref": "radius.none",
+    "value": "0px"
+  },
+  {
+    "name": "bottom-navigation.indicator.bg",
+    "cssVar": "--mx-bottom-navigation-indicator-bg",
+    "type": "color",
+    "ref": null,
+    "value": "rgb(0 0 0 / 0)"
+  },
+  {
+    "name": "bottom-navigation.indicator.margin-top",
+    "cssVar": "--mx-bottom-navigation-indicator-margin-top",
+    "type": "dimension",
+    "ref": null,
+    "value": "0px"
+  },
+  {
+    "name": "bottom-navigation.indicator.selected.opacity",
+    "cssVar": "--mx-bottom-navigation-indicator-selected-opacity",
+    "type": "number",
+    "ref": null,
+    "value": 1
+  },
+  {
+    "name": "bottom-navigation.icon-host.size",
+    "cssVar": "--mx-bottom-navigation-icon-host-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "22px"
+  },
+  {
+    "name": "bottom-navigation.label.font-size",
+    "cssVar": "--mx-bottom-navigation-label-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "bottom-navigation.label.font-weight",
+    "cssVar": "--mx-bottom-navigation-label-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.medium",
+    "value": "500"
+  },
+  {
+    "name": "bottom-navigation.label.line-height",
+    "cssVar": "--mx-bottom-navigation-label-line-height",
+    "type": "dimension",
+    "ref": "font.line.caption",
+    "value": "1rem"
+  },
+  {
+    "name": "bottom-navigation.label.letter-spacing",
+    "cssVar": "--mx-bottom-navigation-label-letter-spacing",
+    "type": "dimension",
+    "ref": null,
+    "value": "0px"
+  },
+  {
+    "name": "bottom-navigation.label.selected.font-weight",
+    "cssVar": "--mx-bottom-navigation-label-selected-font-weight",
+    "type": "fontWeight",
+    "ref": "font.weight.semibold",
+    "value": "600"
   },
   {
     "name": "breadcrumb.font-size.sm",

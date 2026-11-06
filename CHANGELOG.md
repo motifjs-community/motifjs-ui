@@ -6,6 +6,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### New components
+
+- `AppBar`: the top bar of an application, a `<header>`. A menu or back button (`navigation`, `navigationGlyph`,
+  `navigationLabel`, `onNavigationClick`), a `logo`, a `title` with a `subtitle` (`titleAlign`, `headingLevel`), a
+  control as JSX children or `content`, and `actions`, the same items as `Toolbar`, so that commands that do not fit
+  move into its menu. `tone`, `prominent`; `position`; `scrollBehavior` raises the bar over what scrolls or moves it
+  away while scrolling down, and focus brings it back (`scrollTarget`). It keeps clear of the notch of a phone.
+- `BottomNavigation`: the destinations of an application at the bottom of the screen, a `<nav>`. One Tab stop with the
+  arrow keys, Home and End inside it, and `aria-current` on the selected item. `items` with `glyph`, `activeGlyph`,
+  `icon`, `activeIcon`, `href`, `badge` and `dot`; `value` and `x-model`; `onSelecting` may refuse,
+  `onSelectionChanged`, `onItemClick`; `labelMode`; `position`, `hideOnScroll`, `scrollTarget`. It keeps clear of the
+  home indicator of a phone.
+- The glyphs `menu` and `arrow-start`, and the kit strings `navigationMenu`, `navigation` and `appBarActions`.
+
+### Documentation
+
+- The README says that design languages are independent interpretations.
+
 ## [0.1.0-beta.5] - 2026-11-06
 
 ### Changed

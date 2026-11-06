@@ -30,7 +30,6 @@
   "Distance from the edges, gap between buttons (the radius preserves this gap in circular layouts), and gap between an action and its label.": "Kenarlardan uzaklık, düğmeler arasındaki boşluk (dairesel yerleşimlerde yarıçap bu boşluğu korur) ve action ile label'ı arasındaki boşluk.",
   "The actions, in order: `text`, `glyph` (from the kit's set) or `icon` (custom), `tooltip`, `enabled`, `visible`, `click`, `key` and `data`. If one action is visible, the main button performs it directly.": "Action'lar, sırasıyla: `text`, `glyph` (kitin kümesinden) veya `icon` (özel), `tooltip`, `enabled`, `visible`, `click`, `key` ve `data`. Tek action görünürse ana düğme onu doğrudan çalıştırır.",
   "The glyph of the main button, and its glyph while the actions are open.": "Ana düğmenin glyph'i ve action'lar açıkken gösterdiği glyph.",
-  "The kit string “Actions”": "Kit metni “Action'lar”",
   "The accessible name of the main button, and its text when `extended` is set.": "Ana düğmenin erişilebilir adı ve `extended` ayarlıyken metni.",
   "Shows `text` next to the glyph on the main button.": "Ana düğmede glyph'in yanında `text` gösterir.",
   "`linear`, `circle`, `semi-circle` or `quarter-circle`: a line from the main button, or a circular layout around it.": "`linear`, `circle`, `semi-circle` veya `quarter-circle`: ana düğmeden çıkan bir çizgi veya çevresinde dairesel bir yerleşim.",

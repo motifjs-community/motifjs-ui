@@ -29,6 +29,20 @@
     --_button-face-font-weight: var(--mx-actionsheet-cancel-button-face-font-weight);
   }
 
+  /* app-bar: toolbar — The commands: a toolbar without a fill or padding of its own, part of the bar. */
+  .mx-app-bar__actions > .mx-toolbar {
+    --_toolbar-bar-bg: var(--mx-app-bar-toolbar-bar-bg);
+    --_toolbar-bar-padding-block: var(--mx-app-bar-toolbar-bar-padding-block);
+    --_toolbar-bar-padding-inline: var(--mx-app-bar-toolbar-bar-padding-inline);
+  }
+
+  /* app-bar: button — A button of an accent bar: its text and the fill under the pointer, against the accent color. */
+  .mx-app-bar[data-tone='accent'] .mx-button {
+    --_button-face-ghost-color: var(--mx-app-bar-button-face-ghost-color);
+    --_button-face-ghost-hover-bg: var(--mx-app-bar-button-face-ghost-hover-bg);
+    --_button-face-ghost-pressed-bg: var(--mx-app-bar-button-face-ghost-pressed-bg);
+  }
+
   /* breadcrumb: more — The button of the steps that do not fit: an icon without the menu arrow. */
   .mx-breadcrumb__more > .mx-button {
     --_button-chevron-display: var(--mx-breadcrumb-more-chevron-display);

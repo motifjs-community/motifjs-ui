@@ -1,0 +1,203 @@
+{
+  "app-bar": {
+    "title-least": {
+      "$value": {
+        "value": 96,
+        "unit": "px"
+      }
+    },
+    "bar": {
+      "bg": {
+        "$value": "{color.bg.bar}"
+      },
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "border-bottom-width": {
+        "$value": "{border.width.1}"
+      },
+      "border-color": {
+        "$value": "{color.stroke.divider}"
+      },
+      "shadow": {
+        "$value": "none"
+      },
+      "lifted": {
+        "bg": {
+          "$value": "{color.bg.bar}"
+        },
+        "shadow": {
+          "$value": "{shadow.2}"
+        }
+      },
+      "accent": {
+        "bg": {
+          "$value": "{color.accent.solid}"
+        },
+        "color": {
+          "$value": "{color.accent.on-solid}"
+        },
+        "border-color": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0,
+              0,
+              0
+            ],
+            "alpha": 0
+          }
+        }
+      }
+    },
+    "row": {
+      "min-height": {
+        "$value": {
+          "value": 48,
+          "unit": "px"
+        }
+      },
+      "padding-inline": {
+        "$value": "{space.2}"
+      },
+      "gap": {
+        "$value": "{space.2}"
+      },
+      "prominent": {
+        "padding-block": {
+          "$value": "{space.2}"
+        }
+      }
+    },
+    "start": {
+      "gap": {
+        "$value": "{space.1}"
+      }
+    },
+    "logo": {
+      "size": {
+        "$value": {
+          "value": 24,
+          "unit": "px"
+        }
+      }
+    },
+    "titles": {
+      "gap": {
+        "$value": "{space.0}"
+      },
+      "prominent": {
+        "padding-inline": {
+          "$value": "{space.2}"
+        }
+      }
+    },
+    "title": {
+      "font-size": {
+        "$value": "{font.size.body}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.semibold}"
+      },
+      "line-height": {
+        "$value": "{font.line.body}"
+      },
+      "letter-spacing": {
+        "$value": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "prominent": {
+        "font-size": {
+          "$value": "{font.size.subtitle}"
+        },
+        "line-height": {
+          "$value": "{font.line.subtitle}"
+        }
+      },
+      "accent": {
+        "color": {
+          "$value": "{color.accent.on-solid}"
+        }
+      }
+    },
+    "subtitle": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "accent": {
+        "color": {
+          "$value": "{color.accent.on-solid}"
+        }
+      }
+    },
+    "content": {
+      "padding-inline": {
+        "$value": "{space.2}"
+      }
+    },
+    "toolbar": {
+      "bar": {
+        "bg": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0,
+              0,
+              0
+            ],
+            "alpha": 0
+          }
+        },
+        "padding-block": {
+          "$value": "{space.0}"
+        },
+        "padding-inline": {
+          "$value": "{space.0}"
+        }
+      }
+    },
+    "button": {
+      "face": {
+        "ghost": {
+          "color": {
+            "$value": "{color.accent.on-solid}"
+          }
+        },
+        "ghost-hover": {
+          "bg": {
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                1,
+                1,
+                1
+              ],
+              "alpha": 0.14
+            }
+          }
+        },
+        "ghost-pressed": {
+          "bg": {
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                1,
+                1,
+                1
+              ],
+              "alpha": 0.22
+            }
+          }
+        }
+      }
+    }
+  }
+}

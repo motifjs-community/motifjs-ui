@@ -33,6 +33,8 @@ export * from './components/tileview';
 export * from './components/resizable';
 export * from './components/draggable';
 export * from './components/speeddial';
+export * from './components/appbar';
+export * from './components/bottomnavigation';
 export * from './components/validationsummary';
 export * from './components/timeline';
 export * from './components/popover';

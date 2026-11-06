@@ -43,7 +43,7 @@ component (`npm run dev`).
 | --- | --- |
 | Buttons and commands | `Button` (menu, split, drop-down, toggle, busy), `ButtonGroup` (segmented choice), `Toolbar` (overflow menu), `MenuBar`, `ContextMenu`, `SpeedDial` (linear, circle, semi-circle and quarter-circle layouts) |
 | Display | `Badge`, `Avatar`, `AvatarGroup`, `Chip`, `ChipGroup`, `Card`, `Skeleton`, `Gallery` (slides, dots, slideshow), `TileView` (selectable, reorderable tiles on a grid), `Timeline` (vertical, or horizontal along a line of dates) |
-| Navigation | `Tabs`, `Accordion`, `Breadcrumb`, `Pagination`, `Stepper`, `Wizard`, `MultiView` (swipeable pages), `TabDocumentManager` |
+| Navigation | `AppBar`, `BottomNavigation`, `Tabs`, `Accordion`, `Breadcrumb`, `Pagination`, `Stepper`, `Wizard`, `MultiView` (swipeable pages), `TabDocumentManager` |
 | More editors | `Rating`, `ColorBox`, `ColorPicker` |
 | Scheduling | `Scheduler` (day, week, month, timeline, agenda; recurrence, resources, iCalendar) |
 | Editors | `TextBox` (mask, validation), `TextArea` (auto-grow), `NumberBox` (locale formats, spin), `DateBox` (date, time, both), `DateRangeBox` (two months, presets, length limits), `Calendar`, `Slider` (range), `FileUploader` (drop, limits, chunks, progress), `ValidationSummary` (the invalid fields of a group, with links to them) |
@@ -87,7 +87,8 @@ addShortcut('Mod+K', () => palette.open()); // app-wide
   `tokens/languages/<language>/`, such as Material's 56 px filled text field with square bottom corners or Fluent's
   20 px check box. Languages do not inherit from each other, and adding one only requires new files. Decisions that
   apply to every component at once, such as focus, raised surfaces, elevation and selection, come from the design system
-  role tokens that the component tokens reference.
+  role tokens that the component tokens reference. Design languages are independent interpretations and are not
+  affiliated with their owners.
 - Application CSS outside a layer takes precedence over both packages. Override a design system token to restyle
   everything that uses it:
 

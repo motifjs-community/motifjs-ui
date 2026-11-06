@@ -1,0 +1,150 @@
+{
+  "bottom-navigation": {
+    "bar": {
+      "bg": {
+        "$value": "{color.bg.bar}"
+      },
+      "border-top-width": {
+        "$value": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "border-color": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0,
+            0
+          ],
+          "alpha": 0
+        }
+      },
+      "shadow": {
+        "$value": "{elevation.card}"
+      }
+    },
+    "list": {
+      "min-height": {
+        "$value": {
+          "value": 68,
+          "unit": "px"
+        }
+      },
+      "padding-block": {
+        "$value": "{space.2}"
+      },
+      "padding-inline": {
+        "$value": "{space.1}"
+      },
+      "gap": {
+        "$value": "{space.1}"
+      }
+    },
+    "item": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "gap": {
+        "$value": "{space.1}"
+      },
+      "radius": {
+        "$value": "{radius.md}"
+      },
+      "padding-block": {
+        "$value": "{space.1}"
+      },
+      "hover": {
+        "color": {
+          "$value": "{color.fg.primary}"
+        }
+      },
+      "focus": {
+        "glow": {
+          "$value": "{focus.ring.halo}"
+        },
+        "outline-width": {
+          "$value": "{focus.ring.width}"
+        },
+        "outline-color": {
+          "$value": "{focus.ring.color}"
+        },
+        "outline-offset": {
+          "$value": "{focus.ring.offset}"
+        }
+      },
+      "selected": {
+        "color": {
+          "$value": "{color.selection.fg}"
+        }
+      },
+      "disabled": {
+        "color": {
+          "$value": "{color.fg.disabled}"
+        }
+      }
+    },
+    "indicator": {
+      "width": {
+        "$value": {
+          "value": 56,
+          "unit": "px"
+        }
+      },
+      "height": {
+        "$value": {
+          "value": 30,
+          "unit": "px"
+        }
+      },
+      "radius": {
+        "$value": "{radius.lg}"
+      },
+      "bg": {
+        "$value": "{color.selection.bg}"
+      },
+      "margin-top": {
+        "$value": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "selected": {
+        "opacity": {
+          "$value": 1
+        }
+      }
+    },
+    "icon-host": {
+      "size": {
+        "$value": {
+          "value": 22,
+          "unit": "px"
+        }
+      }
+    },
+    "label": {
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "font-weight": {
+        "$value": "{font.weight.medium}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "letter-spacing": {
+        "$value": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "selected": {
+        "font-weight": {
+          "$value": "{font.weight.semibold}"
+        }
+      }
+    }
+  }
+}

@@ -72,6 +72,8 @@ Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with
 
 ## Navigation
 
+- [AppBar](docs/appbar.md): The top bar of an application, with a navigation button, a logo, a title, a control and commands. The commands are a `Toolbar`, so those that do not fit…
+- [BottomNavigation](docs/bottomnavigation.md): The destinations of an application at the bottom of the screen, each an icon with a label. The bar is one Tab stop, marks the selected item for screen…
 - [Tabs](docs/tabs.md): Tabs display one panel at a time below a tab strip. You can define them in JSX or programmatically, and they support closable tabs, icons and badges, scroll…
 - [Breadcrumb](docs/breadcrumb.md): Shows the path to the current page. Each step is a link or button, and the current page comes last. Steps that do not fit move into a menu after the first step.
 - [Pagination](docs/pagination.md): Navigates through pages of items, with page size options, the current position, navigation buttons and a button for each nearby page. It switches to a…
@@ -432,6 +434,44 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `actionsheet.cancel.padding` | `--mx-actionsheet-cancel-padding` | `space.2` | `0.5rem` |
 | `actionsheet.cancel.border-top-width` | `--mx-actionsheet-cancel-border-top-width` | `border.width.1` | `1px` |
 | `actionsheet.cancel.border-top-color` | `--mx-actionsheet-cancel-border-top-color` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
+| `app-bar.title-least` | `--mx-app-bar-title-least` | `` | `96px` |
+| `app-bar.bar.bg` | `--mx-app-bar-bar-bg` | `color.bg.bar` | `#ebeae5` |
+| `app-bar.bar.color` | `--mx-app-bar-bar-color` | `color.fg.primary` | `#1d1c1a` |
+| `app-bar.bar.border-bottom-width` | `--mx-app-bar-bar-border-bottom-width` | `control.edge.width` | `2px` |
+| `app-bar.bar.border-color` | `--mx-app-bar-bar-border-color` | `color.stroke.control.edge` | `rgb(0 0 0 / 0.3)` |
+| `app-bar.bar.shadow` | `--mx-app-bar-bar-shadow` | `` | `0 0 #0000` |
+| `app-bar.bar.lifted.bg` | `--mx-app-bar-bar-lifted-bg` | `color.bg.bar` | `#ebeae5` |
+| `app-bar.bar.lifted.shadow` | `--mx-app-bar-bar-lifted-shadow` | `shadow.4` | `0px 2px 4px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)` |
+| `app-bar.bar.accent.bg` | `--mx-app-bar-bar-accent-bg` | `color.accent.solid` | `#c24523` |
+| `app-bar.bar.accent.color` | `--mx-app-bar-bar-accent-color` | `color.accent.on-solid` | `#ffffff` |
+| `app-bar.bar.accent.border-color` | `--mx-app-bar-bar-accent-border-color` | `` | `rgb(0 0 0 / 0)` |
+| `app-bar.row.min-height` | `--mx-app-bar-row-min-height` | `` | `56px` |
+| `app-bar.row.padding-inline` | `--mx-app-bar-row-padding-inline` | `space.3` | `0.75rem` |
+| `app-bar.row.gap` | `--mx-app-bar-row-gap` | `space.2` | `0.5rem` |
+| `app-bar.row.prominent.padding-block` | `--mx-app-bar-row-prominent-padding-block` | `space.2` | `0.5rem` |
+| `app-bar.start.gap` | `--mx-app-bar-start-gap` | `space.1` | `0.25rem` |
+| `app-bar.logo.size` | `--mx-app-bar-logo-size` | `` | `28px` |
+| `app-bar.titles.gap` | `--mx-app-bar-titles-gap` | `space.0` | `0px` |
+| `app-bar.titles.prominent.padding-inline` | `--mx-app-bar-titles-prominent-padding-inline` | `space.2` | `0.5rem` |
+| `app-bar.titles.alone.padding-start` | `--mx-app-bar-titles-alone-padding-start` | `` | `initial` |
+| `app-bar.title.font-size` | `--mx-app-bar-title-font-size` | `font.size.body-large` | `1.125rem` |
+| `app-bar.title.font-weight` | `--mx-app-bar-title-font-weight` | `font.weight.semibold` | `600` |
+| `app-bar.title.line-height` | `--mx-app-bar-title-line-height` | `font.line.body-large` | `1.5rem` |
+| `app-bar.title.letter-spacing` | `--mx-app-bar-title-letter-spacing` | `` | `0px` |
+| `app-bar.title.prominent.font-size` | `--mx-app-bar-title-prominent-font-size` | `font.size.title` | `1.75rem` |
+| `app-bar.title.prominent.line-height` | `--mx-app-bar-title-prominent-line-height` | `font.line.title` | `2.25rem` |
+| `app-bar.title.accent.color` | `--mx-app-bar-title-accent-color` | `color.accent.on-solid` | `#ffffff` |
+| `app-bar.subtitle.font-size` | `--mx-app-bar-subtitle-font-size` | `font.size.caption` | `0.75rem` |
+| `app-bar.subtitle.line-height` | `--mx-app-bar-subtitle-line-height` | `font.line.caption` | `1rem` |
+| `app-bar.subtitle.color` | `--mx-app-bar-subtitle-color` | `color.fg.secondary` | `#5e5c55` |
+| `app-bar.subtitle.accent.color` | `--mx-app-bar-subtitle-accent-color` | `color.accent.on-solid` | `#ffffff` |
+| `app-bar.content.padding-inline` | `--mx-app-bar-content-padding-inline` | `space.2` | `0.5rem` |
+| `app-bar.toolbar.bar.bg` | `--mx-app-bar-toolbar-bar-bg` | `` | `rgb(0 0 0 / 0)` |
+| `app-bar.toolbar.bar.padding-block` | `--mx-app-bar-toolbar-bar-padding-block` | `space.0` | `0px` |
+| `app-bar.toolbar.bar.padding-inline` | `--mx-app-bar-toolbar-bar-padding-inline` | `space.0` | `0px` |
+| `app-bar.button.face.ghost.color` | `--mx-app-bar-button-face-ghost-color` | `color.accent.on-solid` | `#ffffff` |
+| `app-bar.button.face.ghost-hover.bg` | `--mx-app-bar-button-face-ghost-hover-bg` | `` | `rgb(255 255 255 / 0.14)` |
+| `app-bar.button.face.ghost-pressed.bg` | `--mx-app-bar-button-face-ghost-pressed-bg` | `` | `rgb(255 255 255 / 0.22)` |
 | `avatar-group.layout` | `--mx-avatar-group-layout` | `` | `stack` |
 | `avatar-group.overlap.xs` | `--mx-avatar-group-overlap-xs` | `` | `0.25rem` |
 | `avatar-group.overlap.sm` | `--mx-avatar-group-overlap-sm` | `` | `0.25rem` |
@@ -560,6 +600,37 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `badge.badge.outline-danger.color` | `--mx-badge-badge-outline-danger-color` | `color.danger.fg` | `#b03659` |
 | `badge.badge.outline-danger.border-color` | `--mx-badge-badge-outline-danger-border-color` | `color.danger.fg` | `#b03659` |
 | `badge.badge.dot.padding-inline` | `--mx-badge-badge-dot-padding-inline` | `space.0` | `0px` |
+| `bottom-navigation.bar.bg` | `--mx-bottom-navigation-bar-bg` | `color.bg.bar` | `#ebeae5` |
+| `bottom-navigation.bar.border-top-width` | `--mx-bottom-navigation-bar-border-top-width` | `control.edge.width` | `2px` |
+| `bottom-navigation.bar.border-color` | `--mx-bottom-navigation-bar-border-color` | `color.stroke.control.edge` | `rgb(0 0 0 / 0.3)` |
+| `bottom-navigation.bar.shadow` | `--mx-bottom-navigation-bar-shadow` | `` | `0 0 #0000` |
+| `bottom-navigation.list.min-height` | `--mx-bottom-navigation-list-min-height` | `` | `60px` |
+| `bottom-navigation.list.padding-block` | `--mx-bottom-navigation-list-padding-block` | `space.1` | `0.25rem` |
+| `bottom-navigation.list.padding-inline` | `--mx-bottom-navigation-list-padding-inline` | `space.1` | `0.25rem` |
+| `bottom-navigation.list.gap` | `--mx-bottom-navigation-list-gap` | `space.1` | `0.25rem` |
+| `bottom-navigation.item.color` | `--mx-bottom-navigation-item-color` | `color.fg.secondary` | `#5e5c55` |
+| `bottom-navigation.item.gap` | `--mx-bottom-navigation-item-gap` | `space.1` | `0.25rem` |
+| `bottom-navigation.item.radius` | `--mx-bottom-navigation-item-radius` | `radius.md` | `0.375rem` |
+| `bottom-navigation.item.padding-block` | `--mx-bottom-navigation-item-padding-block` | `space.1` | `0.25rem` |
+| `bottom-navigation.item.hover.color` | `--mx-bottom-navigation-item-hover-color` | `color.fg.primary` | `#1d1c1a` |
+| `bottom-navigation.item.focus.glow` | `--mx-bottom-navigation-item-focus-glow` | `focus.ring.halo` | `0px 0px 0px 1px rgb(255 255 255 / 0.7)` |
+| `bottom-navigation.item.focus.outline-width` | `--mx-bottom-navigation-item-focus-outline-width` | `focus.ring.width` | `2px` |
+| `bottom-navigation.item.focus.outline-color` | `--mx-bottom-navigation-item-focus-outline-color` | `focus.ring.color` | `#1d1c1a` |
+| `bottom-navigation.item.focus.outline-offset` | `--mx-bottom-navigation-item-focus-outline-offset` | `focus.ring.offset` | `1px` |
+| `bottom-navigation.item.selected.color` | `--mx-bottom-navigation-item-selected-color` | `color.accent.fg` | `#983318` |
+| `bottom-navigation.item.disabled.color` | `--mx-bottom-navigation-item-disabled-color` | `color.fg.disabled` | `#a2a098` |
+| `bottom-navigation.indicator.width` | `--mx-bottom-navigation-indicator-width` | `` | `0px` |
+| `bottom-navigation.indicator.height` | `--mx-bottom-navigation-indicator-height` | `` | `0px` |
+| `bottom-navigation.indicator.radius` | `--mx-bottom-navigation-indicator-radius` | `radius.none` | `0px` |
+| `bottom-navigation.indicator.bg` | `--mx-bottom-navigation-indicator-bg` | `` | `rgb(0 0 0 / 0)` |
+| `bottom-navigation.indicator.margin-top` | `--mx-bottom-navigation-indicator-margin-top` | `` | `0px` |
+| `bottom-navigation.indicator.selected.opacity` | `--mx-bottom-navigation-indicator-selected-opacity` | `` | `1` |
+| `bottom-navigation.icon-host.size` | `--mx-bottom-navigation-icon-host-size` | `` | `22px` |
+| `bottom-navigation.label.font-size` | `--mx-bottom-navigation-label-font-size` | `font.size.caption` | `0.75rem` |
+| `bottom-navigation.label.font-weight` | `--mx-bottom-navigation-label-font-weight` | `font.weight.medium` | `500` |
+| `bottom-navigation.label.line-height` | `--mx-bottom-navigation-label-line-height` | `font.line.caption` | `1rem` |
+| `bottom-navigation.label.letter-spacing` | `--mx-bottom-navigation-label-letter-spacing` | `` | `0px` |
+| `bottom-navigation.label.selected.font-weight` | `--mx-bottom-navigation-label-selected-font-weight` | `font.weight.semibold` | `600` |
 | `breadcrumb.font-size.sm` | `--mx-breadcrumb-font-size-sm` | `font.size.caption` | `0.75rem` |
 | `breadcrumb.font-size.md` | `--mx-breadcrumb-font-size-md` | `font.size.body` | `0.875rem` |
 | `breadcrumb.font-size.lg` | `--mx-breadcrumb-font-size-lg` | `` | `1rem` |
@@ -14753,6 +14824,466 @@ export default function Animations() {
 | --- | --- | --- |
 | `every prop above` | read/write | Accepts a value or a function, the same as the prop. |
 | `content` | read-only | The part that holds the loaded content, for adding to it programmatically. |
+
+## Feedback
+
+Loading issues…
+
+
+---
+
+# AppBar
+
+> Navigation · @motifx-community/ui 0.1.0-beta.5
+
+The top bar of an application, with a navigation button, a logo, a title, a control and commands. The commands are a `Toolbar`, so those that do not fit move into a menu.
+
+## Import
+
+```tsx
+import { AppBar } from '@motifx-community/ui';
+```
+
+## Title and commands
+
+`navigation` adds a button at the start of the bar, and `onNavigationClick` reports it. `actions` takes the same items as `Toolbar.items`. Make the window narrower to see commands move into the menu.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { AppBar, Stack } from '@motifx-community/ui';
+
+const icon = (name: string) => () => <span class="mx-glyph" data-icon={name} />;
+
+/** A title, a menu button and commands. Commands that do not fit move into the "more" menu. */
+export default function Basic() {
+    const s = reactive({ told: 'nothing yet' });
+    const actions = [
+        { icon: icon('search'), hint: 'Search', click: () => (s.told = 'search') },
+        { icon: icon('download'), hint: 'Download', click: () => (s.told = 'download') },
+        { icon: icon('trash'), hint: 'Delete', click: () => (s.told = 'delete') }
+    ];
+    return (
+        <Stack gap="md" style="inline-size: 100%">
+            <AppBar class="ab-basic" position="static" title="Orders" subtitle="This week" navigation="menu" actions={actions} onNavigationClick={() => (s.told = 'the menu')} />
+            <output class="ab-told">{() => `Pressed: ${s.told}`}</output>
+        </Stack>
+    );
+}
+```
+
+## Title and tone
+
+`titleAlign` centers the title, `tone` gives the bar the accent color, and `prominent` puts a larger title on a row of its own.
+
+```tsx
+import { AppBar, Stack } from '@motifx-community/ui';
+
+const icon = (name: string) => () => <span class="mx-glyph" data-icon={name} />;
+
+/** A centered title, the accent tone, and a prominent title on a row of its own. */
+export default function Looks() {
+    const actions = [{ icon: icon('search'), hint: 'Search' }];
+    return (
+        <Stack gap="md" style="inline-size: 100%">
+            <AppBar class="ab-center" position="static" title="Invoice" navigation="back" titleAlign="center" actions={actions} />
+            <AppBar class="ab-accent" position="static" title="Inbox" tone="accent" navigation="menu" actions={actions} />
+            <AppBar class="ab-prominent" position="static" title="Reports" prominent navigation="back" actions={actions} />
+        </Stack>
+    );
+}
+```
+
+## A control in the bar
+
+JSX children lie between the title and the commands. This is the place for a search box.
+
+```tsx
+import { AppBar, TextBox } from '@motifx-community/ui';
+
+/** A control between the title and the commands, written as a JSX child. */
+export default function WithContent() {
+    return (
+        <AppBar class="ab-content" position="static" title="Customers" style="inline-size: 100%">
+            <TextBox label="Search" labelMode="hidden" placeholder="Search customers" />
+        </AppBar>
+    );
+}
+```
+
+## Scrolling
+
+By default, the bar sticks to the top of what scrolls. `scrollBehavior` raises it over the content or moves it away while scrolling down. Scroll the box to compare them.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { AppBar, ButtonGroup, Stack } from '@motifx-community/ui';
+
+const ROWS = Array.from({ length: 30 }, (_, i) => `Order ${i + 1}`);
+
+/** The bar sticks to the top of the box that scrolls. `lift` raises it over the content, `hide` moves it away. */
+export default function Scrolling() {
+    const s = reactive({ behavior: 'lift' as 'none' | 'lift' | 'hide' });
+    return (
+        <Stack gap="md" style="inline-size: 100%">
+            <ButtonGroup
+                label="Scroll behavior"
+                x-model={() => s.behavior}
+                items={[
+                    { value: 'none', text: 'None' },
+                    { value: 'lift', text: 'Lift' },
+                    { value: 'hide', text: 'Hide' }
+                ]}
+            />
+            <div class="ab-scroll" tabindex="0" style="block-size: 260px; overflow: auto; border: 1px solid var(--mx-color-stroke-divider)">
+                <AppBar class="ab-scrolling" title="Orders" navigation="menu" scrollBehavior={() => s.behavior} />
+                {ROWS.map(row => (
+                    <p key={row} style="margin: 0; padding: 12px 16px">
+                        {row}
+                    </p>
+                ))}
+            </div>
+        </Stack>
+    );
+}
+```
+
+## Programmatic use
+
+`new AppBar(props)` creates the bar without JSX. Each prop is also a property.
+
+```tsx
+import { Component } from '@motifx/core';
+import { AppBar, Button, Stack } from '@motifx-community/ui';
+
+/** A bar created programmatically. Each prop is also a property that can be set later. */
+export default class Programmatic extends Component<HTMLDivElement> {
+    constructor() {
+        super('div');
+        const bar = new AppBar({ title: 'Draft', position: 'static', navigation: 'back' });
+        const rename = new Button({ text: 'Rename', variant: 'outline', onclick: () => (bar.title = 'Final') });
+        const stack = new Stack({ gap: 'md' });
+        stack.controls.add(bar, rename);
+        this.controls.add(stack);
+    }
+}
+```
+
+## API reference
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `title, subtitle` | `Bind<string>` | `''` | The title, and a smaller line under it. |
+| `titleAlign` | `Bind<'start' \| 'center'>` | `'start'` | A centered title stays in the middle of the bar whatever lies beside it. |
+| `headingLevel` | `Bind<number \| null>` | `null` | Makes the title a heading of this level. |
+| `logo` | `Bind<IconSource \| null>` | `null` | An image address, an element or a component before the title. |
+| `navigation` | `Bind<'none' \| 'menu' \| 'back'>` | `'none'` | The button at the start of the bar. |
+| `navigationGlyph` | `Bind<string>` | `'menu'`, `'arrow-start'` | The glyph of that button. The back arrow is mirrored in a right-to-left page. |
+| `navigationLabel` | `Bind<string>` | A kit string | The accessible name of that button. |
+| `actions` | `Bind<readonly ToolbarItem[]>` | `[]` | The commands at the end of the bar, the same items as `Toolbar.items`. |
+| `actionsLabel` | `Bind<string>` | The kit string “Actions” | The accessible name of the commands. |
+| `overflow` | `Bind<ToolbarOverflow>` | `'menu'` | How commands that do not fit are handled. |
+| `content` | `Bind<ComponentBase \| null>` | `null` | A control between the title and the commands, the same as JSX children. |
+| `tone` | `Bind<'surface' \| 'accent'>` | `'surface'` | The color of the bar. |
+| `prominent` | `Bind<boolean>` | `false` | Puts a larger title on a row of its own under the buttons. |
+| `position` | `Bind<'static' \| 'sticky' \| 'fixed'>` | `'sticky'` | How the bar stays on the page. |
+| `scrollBehavior` | `Bind<'none' \| 'lift' \| 'hide'>` | `'none'` | `lift` raises the bar over the content that scrolls under it. `hide` also moves it away while scrolling down, and brings it back while scrolling up. |
+| `scrollTarget` | `Bind<HTMLElement \| null>` | The nearest ancestor that scrolls | What `scrollBehavior` watches. Without a scrolling ancestor, it is the page. |
+
+### Events
+
+| Event | Type | Description |
+| --- | --- | --- |
+| `onNavigationClick` | `{ navigation, originalEvent, source }` | Occurs when the button at the start of the bar is pressed. |
+
+### Accessibility
+
+| Topic | Details |
+| --- | --- |
+| `Landmark` | The bar is a `<header>`, which is a banner landmark when it is not inside a sectioning element. |
+| `Heading` | Use `headingLevel` when the title is the heading of the page. |
+| `Commands` | The commands are a `Toolbar` with an accessible name: one Tab stop, with the arrow keys, Home and End inside it. |
+| `Focus` | A bar moved away by `hide` comes back when focus enters it. |
+
+### Styling hooks
+
+| Hook | Description |
+| --- | --- |
+| `.mx-app-bar` | The bar. `data-tone`, `data-position`, `data-title-align`, `data-prominent`, `data-lifted` and `data-hidden` describe its state. |
+| `.mx-app-bar__row, .mx-app-bar__start, .mx-app-bar__navigation, .mx-app-bar__logo` | The row, the start of the bar, the navigation button and the logo. |
+| `.mx-app-bar__titles, .mx-app-bar__title, .mx-app-bar__subtitle` | The titles. |
+| `.mx-app-bar__content, .mx-app-bar__actions` | The control and the commands. |
+
+### Design tokens
+
+| Token | Description |
+| --- | --- |
+| `app-bar.bar, .row, .start, .logo, .titles, .title, .subtitle, .content` | Units: the bar (`lifted`, `accent`), the row (`prominent`), the title (`prominent`, `accent`) and the subtitle (`accent`). |
+| `app-bar.title-least` | The room the titles keep before commands move into the menu. |
+| `app-bar.toolbar, .button` | Places: the commands, and a button of an accent bar. |
+
+## Feedback
+
+Loading issues…
+
+
+---
+
+# BottomNavigation
+
+> Navigation · @motifx-community/ui 0.1.0-beta.5
+
+The destinations of an application at the bottom of the screen, each an icon with a label. The bar is one Tab stop, marks the selected item for screen readers and keeps clear of the home indicator of a phone.
+
+## Import
+
+```tsx
+import { BottomNavigation } from '@motifx-community/ui';
+```
+
+## Destinations
+
+`items` defines the destinations, and `x-model` binds the selected one. `badge` shows a count on the icon, `dot` shows a dot, and `activeGlyph` changes the glyph while the item is selected.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { BottomNavigation, Stack } from '@motifx-community/ui';
+
+/** Three destinations bound to a value, with a count on one of them. */
+export default function Basic() {
+    const s = reactive({ page: 'home', unread: 3 });
+    return (
+        <Stack gap="md" style="inline-size: 100%; max-inline-size: 420px">
+            <BottomNavigation
+                class="bn-basic"
+                position="static"
+                x-model={() => s.page}
+                items={[
+                    { value: 'home', text: 'Home', glyph: 'star', activeGlyph: 'star-filled' },
+                    { value: 'inbox', text: 'Inbox', glyph: 'file', badge: () => s.unread },
+                    { value: 'calendar', text: 'Calendar', glyph: 'calendar' },
+                    { value: 'profile', text: 'Profile', glyph: 'person', dot: true }
+                ]}
+            />
+            <output class="bn-told">{() => `Page: ${s.page}`}</output>
+        </Stack>
+    );
+}
+```
+
+## Labels
+
+`labelMode` shows the labels always, only on the selected item, or never. A label out of view stays as the accessible name of the item.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { BottomNavigation, ButtonGroup, Stack } from '@motifx-community/ui';
+
+const ITEMS = [
+    { value: 'home', text: 'Home', glyph: 'star' },
+    { value: 'search', text: 'Search', glyph: 'search' },
+    { value: 'alarms', text: 'Alarms', glyph: 'clock' },
+    { value: 'locked', text: 'Locked', glyph: 'lock', enabled: false }
+];
+
+/** `labelMode`: a label out of view stays as the accessible name of the item. */
+export default function Labels() {
+    const s = reactive({ mode: 'active' as 'always' | 'active' | 'never', page: 'home' });
+    return (
+        <Stack gap="md" style="inline-size: 100%; max-inline-size: 420px">
+            <ButtonGroup
+                label="Label mode"
+                x-model={() => s.mode}
+                items={[
+                    { value: 'always', text: 'Always' },
+                    { value: 'active', text: 'Active' },
+                    { value: 'never', text: 'Never' }
+                ]}
+            />
+            <BottomNavigation class="bn-labels" label="Sections" position="static" labelMode={() => s.mode} x-model={() => s.page} items={ITEMS} />
+        </Stack>
+    );
+}
+```
+
+## Refusing a change
+
+`onSelecting` occurs before the selection changes, and setting `cancel` keeps the current item.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { BottomNavigation, Stack, Switch } from '@motifx-community/ui';
+
+/** `onSelecting` keeps the page while there are unsaved changes. */
+export default function Guarded() {
+    const s = reactive({ page: 'edit', dirty: true, told: '' });
+    return (
+        <Stack gap="md" style="inline-size: 100%; max-inline-size: 420px">
+            <Switch label="Unsaved changes" x-model={() => s.dirty} />
+            <BottomNavigation
+                class="bn-guarded"
+                label="Document"
+                position="static"
+                x-model={() => s.page}
+                onSelecting={e => {
+                    e.cancel = s.dirty;
+                    s.told = s.dirty ? 'Save your changes first.' : '';
+                }}
+                items={[
+                    { value: 'edit', text: 'Edit', glyph: 'pencil' },
+                    { value: 'files', text: 'Files', glyph: 'file' },
+                    { value: 'share', text: 'Share', glyph: 'upload' }
+                ]}
+            />
+            <output class="bn-guard-told">{() => s.told}</output>
+        </Stack>
+    );
+}
+```
+
+## In a screen
+
+By default, the bar is fixed to the bottom of the viewport. In a box that scrolls, use `position='sticky'`. `hideOnScroll` moves it away while scrolling down.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { AppBar, BottomNavigation } from '@motifx-community/ui';
+
+const ROWS = Array.from({ length: 30 }, (_, i) => `Message ${i + 1}`);
+
+/** A phone screen: the two bars around a box that scrolls. Scrolling down moves the bottom bar away. */
+export default function Screen() {
+    const s = reactive({ page: 'mail' });
+    return (
+        <div class="bn-screen" tabindex="0" style="position: relative; inline-size: min(100%, 390px); block-size: 420px; overflow: auto; border: 1px solid var(--mx-color-stroke-divider)">
+            <AppBar title="Messages" navigation="menu" />
+            {ROWS.map(row => (
+                <p key={row} style="margin: 0; padding: 12px 16px">
+                    {row}
+                </p>
+            ))}
+            <BottomNavigation
+                class="bn-scroll"
+                label="Screens"
+                position="sticky"
+                hideOnScroll
+                x-model={() => s.page}
+                items={[
+                    { value: 'mail', text: 'Messages', glyph: 'file' },
+                    { value: 'calendar', text: 'Calendar', glyph: 'calendar' },
+                    { value: 'profile', text: 'Profile', glyph: 'person' }
+                ]}
+            />
+        </div>
+    );
+}
+```
+
+## Programmatic use
+
+`new BottomNavigation(props)` creates the bar without JSX. Each prop is also a property.
+
+```tsx
+import { Component } from '@motifx/core';
+import { BottomNavigation, Button, Stack } from '@motifx-community/ui';
+
+/** A bar created programmatically. Each prop is also a property that can be set later. */
+export default class Programmatic extends Component<HTMLDivElement> {
+    constructor() {
+        super('div');
+        const bar = new BottomNavigation({
+            label: 'Search pages',
+            position: 'static',
+            value: 'home',
+            items: [
+                { value: 'home', text: 'Home', glyph: 'star' },
+                { value: 'search', text: 'Search', glyph: 'search' }
+            ]
+        });
+        const go = new Button({ text: 'Go to Search', variant: 'outline', onclick: () => (bar.value = 'search') });
+        const stack = new Stack({ gap: 'md' });
+        stack.controls.add(bar, go);
+        this.controls.add(stack);
+    }
+}
+```
+
+## API reference
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `items` | `Bind<readonly BottomNavigationItem[]>` | `[]` | The destinations. The bar is designed for three to five; use a `Drawer` for more. |
+| `value` | `Bind<string \| number \| null>` | `null` | The `value` of the selected item. `x-model` provides two-way binding. |
+| `label` | `Bind<string>` | The kit string “Navigation” | The accessible name of the bar. |
+| `labelMode` | `Bind<'always' \| 'active' \| 'never'>` | `'always'` | When items show their labels. A label out of view stays as the accessible name of the item. |
+| `position` | `Bind<'fixed' \| 'sticky' \| 'static'>` | `'fixed'` | How the bar stays on the page. |
+| `hideOnScroll` | `Bind<boolean>` | `false` | Moves the bar away while scrolling down, and brings it back while scrolling up. |
+| `scrollTarget` | `Bind<HTMLElement \| null>` | The nearest ancestor that scrolls | What `hideOnScroll` watches. Without a scrolling ancestor, it is the page. |
+
+### Item fields
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string \| number` | Its position | What `value` is when this item is selected. |
+| `text` | `Bind<string>` | — | The label, which is also the accessible name. |
+| `glyph, activeGlyph` | `Bind<string>` | `''` | The glyph, and the glyph while selected. |
+| `icon, activeIcon` | `Bind<IconSource \| null>` | `null` | An image, an element or a component, used instead of a glyph. |
+| `href, rel, target` | `Bind<string>` | `''` | Make the item a link. Use `rel: 'router'` for routed pages. |
+| `badge` | `Bind<number \| null>` | `null` | A count in a badge on the icon. |
+| `dot` | `Bind<boolean>` | `false` | A dot on the icon instead of a count. |
+| `enabled, visible` | `Bind<boolean>` | `true` | A disabled item is dimmed and cannot be selected. A hidden item is removed. |
+| `click` | `(e) => void` | — | Occurs when the item is pressed. |
+| `data` | `unknown` | — | A custom application value for the item. |
+
+### Properties and methods
+
+| Member | Type | Description |
+| --- | --- | --- |
+| `selectedItem` | `BottomNavigationItem \| null` | The selected item. |
+| `focus()` | `boolean` | Moves focus to the item Tab reaches. |
+
+### Events
+
+| Event | Type | Description |
+| --- | --- | --- |
+| `onSelecting` | `{ value, previous, item, previousItem, originalEvent, source, cancel }` | Occurs before the selection changes. Setting `cancel` keeps the current item, and a link is not followed. |
+| `onSelectionChanged` | `{ value, previous, item, previousItem, originalEvent, source }` | Occurs after the selection changes. |
+| `onItemClick` | `{ item, value, originalEvent, source }` | Occurs when an item is pressed, after its own `click`. |
+
+### Keyboard
+
+| Key | Description |
+| --- | --- |
+| `Tab` | Moves focus into the bar, to the selected item, and out of it. |
+| `Left, Right` | Moves between the items, wrapping around at the ends. The direction follows the page. |
+| `Home, End` | Moves to the first or the last item. |
+| `Enter, Space` | Selects the focused item. |
+
+### Accessibility
+
+| Topic | Details |
+| --- | --- |
+| `Landmark` | The bar is a `<nav>` with an accessible name. |
+| `Selected item` | `aria-current="page"` marks it for screen readers. |
+| `Disabled item` | `aria-disabled="true"`; the arrow keys pass over it. |
+| `Focus` | A bar moved away by `hideOnScroll` comes back when focus enters it. |
+
+### Styling hooks
+
+| Hook | Description |
+| --- | --- |
+| `.mx-bottom-navigation` | The bar. `data-label-mode`, `data-position` and `data-hidden` describe its state. |
+| `.mx-bottom-navigation__list, .mx-bottom-navigation__item` | The row and an item. `data-selected` and `aria-disabled` describe an item. |
+| `.mx-bottom-navigation__indicator, .mx-bottom-navigation__icon-host, .mx-bottom-navigation__glyph, .mx-bottom-navigation__icon, .mx-bottom-navigation__label, .mx-bottom-navigation__badge` | The mark of the selected item, the box of the icon, its glyph or icon, the label and the badge. |
+
+### Design tokens
+
+| Token | Description |
+| --- | --- |
+| `bottom-navigation.bar, .list, .item, .indicator, .icon-host, .label` | Units: the bar, the row, an item (`hover`, `pressed`, `focus`, `selected`, `disabled`), the mark (`selected`), the box of the icon and the label (`selected`). |
 
 ## Feedback
 

@@ -91,6 +91,44 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `actionsheet.cancel.padding` | `--mx-actionsheet-cancel-padding` | `space.2` | `0.5rem` |
 | `actionsheet.cancel.border-top-width` | `--mx-actionsheet-cancel-border-top-width` | `border.width.1` | `1px` |
 | `actionsheet.cancel.border-top-color` | `--mx-actionsheet-cancel-border-top-color` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
+| `app-bar.title-least` | `--mx-app-bar-title-least` | `` | `96px` |
+| `app-bar.bar.bg` | `--mx-app-bar-bar-bg` | `color.bg.bar` | `#ebeae5` |
+| `app-bar.bar.color` | `--mx-app-bar-bar-color` | `color.fg.primary` | `#1d1c1a` |
+| `app-bar.bar.border-bottom-width` | `--mx-app-bar-bar-border-bottom-width` | `control.edge.width` | `2px` |
+| `app-bar.bar.border-color` | `--mx-app-bar-bar-border-color` | `color.stroke.control.edge` | `rgb(0 0 0 / 0.3)` |
+| `app-bar.bar.shadow` | `--mx-app-bar-bar-shadow` | `` | `0 0 #0000` |
+| `app-bar.bar.lifted.bg` | `--mx-app-bar-bar-lifted-bg` | `color.bg.bar` | `#ebeae5` |
+| `app-bar.bar.lifted.shadow` | `--mx-app-bar-bar-lifted-shadow` | `shadow.4` | `0px 2px 4px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)` |
+| `app-bar.bar.accent.bg` | `--mx-app-bar-bar-accent-bg` | `color.accent.solid` | `#c24523` |
+| `app-bar.bar.accent.color` | `--mx-app-bar-bar-accent-color` | `color.accent.on-solid` | `#ffffff` |
+| `app-bar.bar.accent.border-color` | `--mx-app-bar-bar-accent-border-color` | `` | `rgb(0 0 0 / 0)` |
+| `app-bar.row.min-height` | `--mx-app-bar-row-min-height` | `` | `56px` |
+| `app-bar.row.padding-inline` | `--mx-app-bar-row-padding-inline` | `space.3` | `0.75rem` |
+| `app-bar.row.gap` | `--mx-app-bar-row-gap` | `space.2` | `0.5rem` |
+| `app-bar.row.prominent.padding-block` | `--mx-app-bar-row-prominent-padding-block` | `space.2` | `0.5rem` |
+| `app-bar.start.gap` | `--mx-app-bar-start-gap` | `space.1` | `0.25rem` |
+| `app-bar.logo.size` | `--mx-app-bar-logo-size` | `` | `28px` |
+| `app-bar.titles.gap` | `--mx-app-bar-titles-gap` | `space.0` | `0px` |
+| `app-bar.titles.prominent.padding-inline` | `--mx-app-bar-titles-prominent-padding-inline` | `space.2` | `0.5rem` |
+| `app-bar.titles.alone.padding-start` | `--mx-app-bar-titles-alone-padding-start` | `` | `initial` |
+| `app-bar.title.font-size` | `--mx-app-bar-title-font-size` | `font.size.body-large` | `1.125rem` |
+| `app-bar.title.font-weight` | `--mx-app-bar-title-font-weight` | `font.weight.semibold` | `600` |
+| `app-bar.title.line-height` | `--mx-app-bar-title-line-height` | `font.line.body-large` | `1.5rem` |
+| `app-bar.title.letter-spacing` | `--mx-app-bar-title-letter-spacing` | `` | `0px` |
+| `app-bar.title.prominent.font-size` | `--mx-app-bar-title-prominent-font-size` | `font.size.title` | `1.75rem` |
+| `app-bar.title.prominent.line-height` | `--mx-app-bar-title-prominent-line-height` | `font.line.title` | `2.25rem` |
+| `app-bar.title.accent.color` | `--mx-app-bar-title-accent-color` | `color.accent.on-solid` | `#ffffff` |
+| `app-bar.subtitle.font-size` | `--mx-app-bar-subtitle-font-size` | `font.size.caption` | `0.75rem` |
+| `app-bar.subtitle.line-height` | `--mx-app-bar-subtitle-line-height` | `font.line.caption` | `1rem` |
+| `app-bar.subtitle.color` | `--mx-app-bar-subtitle-color` | `color.fg.secondary` | `#5e5c55` |
+| `app-bar.subtitle.accent.color` | `--mx-app-bar-subtitle-accent-color` | `color.accent.on-solid` | `#ffffff` |
+| `app-bar.content.padding-inline` | `--mx-app-bar-content-padding-inline` | `space.2` | `0.5rem` |
+| `app-bar.toolbar.bar.bg` | `--mx-app-bar-toolbar-bar-bg` | `` | `rgb(0 0 0 / 0)` |
+| `app-bar.toolbar.bar.padding-block` | `--mx-app-bar-toolbar-bar-padding-block` | `space.0` | `0px` |
+| `app-bar.toolbar.bar.padding-inline` | `--mx-app-bar-toolbar-bar-padding-inline` | `space.0` | `0px` |
+| `app-bar.button.face.ghost.color` | `--mx-app-bar-button-face-ghost-color` | `color.accent.on-solid` | `#ffffff` |
+| `app-bar.button.face.ghost-hover.bg` | `--mx-app-bar-button-face-ghost-hover-bg` | `` | `rgb(255 255 255 / 0.14)` |
+| `app-bar.button.face.ghost-pressed.bg` | `--mx-app-bar-button-face-ghost-pressed-bg` | `` | `rgb(255 255 255 / 0.22)` |
 | `avatar-group.layout` | `--mx-avatar-group-layout` | `` | `stack` |
 | `avatar-group.overlap.xs` | `--mx-avatar-group-overlap-xs` | `` | `0.25rem` |
 | `avatar-group.overlap.sm` | `--mx-avatar-group-overlap-sm` | `` | `0.25rem` |
@@ -219,6 +257,37 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `badge.badge.outline-danger.color` | `--mx-badge-badge-outline-danger-color` | `color.danger.fg` | `#b03659` |
 | `badge.badge.outline-danger.border-color` | `--mx-badge-badge-outline-danger-border-color` | `color.danger.fg` | `#b03659` |
 | `badge.badge.dot.padding-inline` | `--mx-badge-badge-dot-padding-inline` | `space.0` | `0px` |
+| `bottom-navigation.bar.bg` | `--mx-bottom-navigation-bar-bg` | `color.bg.bar` | `#ebeae5` |
+| `bottom-navigation.bar.border-top-width` | `--mx-bottom-navigation-bar-border-top-width` | `control.edge.width` | `2px` |
+| `bottom-navigation.bar.border-color` | `--mx-bottom-navigation-bar-border-color` | `color.stroke.control.edge` | `rgb(0 0 0 / 0.3)` |
+| `bottom-navigation.bar.shadow` | `--mx-bottom-navigation-bar-shadow` | `` | `0 0 #0000` |
+| `bottom-navigation.list.min-height` | `--mx-bottom-navigation-list-min-height` | `` | `60px` |
+| `bottom-navigation.list.padding-block` | `--mx-bottom-navigation-list-padding-block` | `space.1` | `0.25rem` |
+| `bottom-navigation.list.padding-inline` | `--mx-bottom-navigation-list-padding-inline` | `space.1` | `0.25rem` |
+| `bottom-navigation.list.gap` | `--mx-bottom-navigation-list-gap` | `space.1` | `0.25rem` |
+| `bottom-navigation.item.color` | `--mx-bottom-navigation-item-color` | `color.fg.secondary` | `#5e5c55` |
+| `bottom-navigation.item.gap` | `--mx-bottom-navigation-item-gap` | `space.1` | `0.25rem` |
+| `bottom-navigation.item.radius` | `--mx-bottom-navigation-item-radius` | `radius.md` | `0.375rem` |
+| `bottom-navigation.item.padding-block` | `--mx-bottom-navigation-item-padding-block` | `space.1` | `0.25rem` |
+| `bottom-navigation.item.hover.color` | `--mx-bottom-navigation-item-hover-color` | `color.fg.primary` | `#1d1c1a` |
+| `bottom-navigation.item.focus.glow` | `--mx-bottom-navigation-item-focus-glow` | `focus.ring.halo` | `0px 0px 0px 1px rgb(255 255 255 / 0.7)` |
+| `bottom-navigation.item.focus.outline-width` | `--mx-bottom-navigation-item-focus-outline-width` | `focus.ring.width` | `2px` |
+| `bottom-navigation.item.focus.outline-color` | `--mx-bottom-navigation-item-focus-outline-color` | `focus.ring.color` | `#1d1c1a` |
+| `bottom-navigation.item.focus.outline-offset` | `--mx-bottom-navigation-item-focus-outline-offset` | `focus.ring.offset` | `1px` |
+| `bottom-navigation.item.selected.color` | `--mx-bottom-navigation-item-selected-color` | `color.accent.fg` | `#983318` |
+| `bottom-navigation.item.disabled.color` | `--mx-bottom-navigation-item-disabled-color` | `color.fg.disabled` | `#a2a098` |
+| `bottom-navigation.indicator.width` | `--mx-bottom-navigation-indicator-width` | `` | `0px` |
+| `bottom-navigation.indicator.height` | `--mx-bottom-navigation-indicator-height` | `` | `0px` |
+| `bottom-navigation.indicator.radius` | `--mx-bottom-navigation-indicator-radius` | `radius.none` | `0px` |
+| `bottom-navigation.indicator.bg` | `--mx-bottom-navigation-indicator-bg` | `` | `rgb(0 0 0 / 0)` |
+| `bottom-navigation.indicator.margin-top` | `--mx-bottom-navigation-indicator-margin-top` | `` | `0px` |
+| `bottom-navigation.indicator.selected.opacity` | `--mx-bottom-navigation-indicator-selected-opacity` | `` | `1` |
+| `bottom-navigation.icon-host.size` | `--mx-bottom-navigation-icon-host-size` | `` | `22px` |
+| `bottom-navigation.label.font-size` | `--mx-bottom-navigation-label-font-size` | `font.size.caption` | `0.75rem` |
+| `bottom-navigation.label.font-weight` | `--mx-bottom-navigation-label-font-weight` | `font.weight.medium` | `500` |
+| `bottom-navigation.label.line-height` | `--mx-bottom-navigation-label-line-height` | `font.line.caption` | `1rem` |
+| `bottom-navigation.label.letter-spacing` | `--mx-bottom-navigation-label-letter-spacing` | `` | `0px` |
+| `bottom-navigation.label.selected.font-weight` | `--mx-bottom-navigation-label-selected-font-weight` | `font.weight.semibold` | `600` |
 | `breadcrumb.font-size.sm` | `--mx-breadcrumb-font-size-sm` | `font.size.caption` | `0.75rem` |
 | `breadcrumb.font-size.md` | `--mx-breadcrumb-font-size-md` | `font.size.body` | `0.875rem` |
 | `breadcrumb.font-size.lg` | `--mx-breadcrumb-font-size-lg` | `` | `1rem` |

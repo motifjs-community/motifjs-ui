@@ -1,0 +1,121 @@
+/* AppBar: the row with the start (navigation button, logo), the titles, a control and the commands, on a grid so that a
+   centered title stays in the middle whatever lies beside it. `prominent` gives the titles a row of their own. The bar
+   sticks or is fixed to the top, keeps clear of the notch, and `data-hidden` moves it out of sight. The bar, its row, the
+   logo and the texts are units of the schema; every look belongs to the languages. */
+@layer mx.components {
+    .mx-app-bar {
+        --_over: 6;
+
+        box-sizing: border-box;
+        inline-size: 100%;
+        padding-block-start: env(safe-area-inset-top);
+        padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+        transition:
+            translate var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+            box-shadow var(--mx-motion-duration-fast) var(--mx-motion-easing-standard),
+            background-color var(--mx-motion-duration-fast) var(--mx-motion-easing-standard);
+    }
+
+    /* Fixed to the viewport, the bar is part of the page and takes the page's layer. Sticky, it may lie in a box that
+       scrolls, so it only rises above what scrolls with it (the sticky rows of a grid), under what the page keeps on top. */
+    .mx-app-bar[data-position='sticky'] {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: var(--_over);
+    }
+
+    .mx-app-bar[data-position='fixed'] {
+        position: fixed;
+        inset-block-start: 0;
+        inset-inline: 0;
+        z-index: var(--mx-z-sticky);
+    }
+
+    .mx-app-bar[data-hidden] {
+        translate: 0 -100%;
+    }
+
+    /* The title keeps room for itself: commands that do not fit go into the menu first. */
+    .mx-app-bar__row {
+        display: grid;
+        grid-template-columns: auto minmax(var(--_app-bar-title-least), 1fr) minmax(0, auto);
+        grid-template-areas: 'start titles actions';
+        align-items: center;
+        box-sizing: border-box;
+    }
+
+    /* The side columns share what is left, so the title stays in the middle of the bar. */
+    .mx-app-bar[data-title-align='center'] > .mx-app-bar__row {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    }
+
+    .mx-app-bar[data-title-align='center'] .mx-app-bar__titles {
+        text-align: center;
+    }
+
+    .mx-app-bar__row:has(> .mx-app-bar__content:not([hidden])) {
+        grid-template-columns: auto auto minmax(0, 1fr) minmax(0, auto);
+        grid-template-areas: 'start titles content actions';
+    }
+
+    .mx-app-bar[data-prominent] > .mx-app-bar__row {
+        grid-template-columns: auto minmax(0, 1fr) minmax(0, auto);
+        grid-template-areas:
+            'start content actions'
+            'titles titles titles';
+    }
+
+    .mx-app-bar__start {
+        grid-area: start;
+        display: flex;
+        align-items: center;
+        min-inline-size: 0;
+    }
+
+    .mx-app-bar__logo {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mx-app-bar__logo > img {
+        display: block;
+        block-size: 100%;
+    }
+
+    .mx-app-bar__titles {
+        grid-area: titles;
+        min-inline-size: 0;
+    }
+
+    .mx-app-bar__title,
+    .mx-app-bar__subtitle {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .mx-app-bar__content {
+        grid-area: content;
+        display: flex;
+        align-items: center;
+        min-inline-size: 0;
+    }
+
+    .mx-app-bar__actions {
+        grid-area: actions;
+        display: flex;
+        justify-content: flex-end;
+        min-inline-size: 0;
+    }
+
+    .mx-app-bar__actions > .mx-toolbar {
+        min-inline-size: 0;
+    }
+
+    /* A back arrow points to where the page came from. */
+    .mx-app-bar__navigation[data-back]:dir(rtl) .mx-glyph {
+        scale: -1 1;
+    }
+}
