@@ -6,52 +6,52 @@ import Looks from './examples/Looks';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['page', '`Bind<number>`', '`1`', 'The page, from 1.'],
-  ['value', '`Bind<number>`', '', 'The same as `page`: what `x-model` binds, two-way.'],
-  ['total', '`Bind<number>`', '`0`', 'How many items there are in all; the pages are counted from it and `pageSize`.'],
-  ['pageSize', '`Bind<number>`', '`10`', 'Items per page; 0: all on one page.'],
-  ['pageCount', '`Bind<number | null>`', '`null`', 'How many pages, when there is no `total` to count them from.'],
-  ['pageSizes', '`Bind<readonly number[]>`', '`[]`', 'The page sizes to choose from (0: all). Another size keeps the first item of the page in view.'],
+  ['page', '`Bind<number>`', '`1`', 'The page number, starting from 1.'],
+  ['value', '`Bind<number>`', '', 'Same as `page`. This is what `x-model` binds, with two-way binding.'],
+  ['total', '`Bind<number>`', '`0`', 'The total number of items. The page count is derived from this and `pageSize`.'],
+  ['pageSize', '`Bind<number>`', '`10`', 'The number of items per page. 0 shows all items on one page.'],
+  ['pageCount', '`Bind<number | null>`', '`null`', 'The number of pages, when there is no `total`.'],
+  ['pageSizes', '`Bind<readonly number[]>`', '`[]`', 'The available page sizes (0 means all). Changing the size keeps the first item of the page in view.'],
   ['showInfo', '`Bind<boolean>`', '`true`', '“Page 3 of 12 (250 items)”.'],
-  ['showNavigation', '`Bind<boolean>`', '`true`', 'The first, previous, next and last steps.'],
-  ['neighbors', '`Bind<number>`', '`1`', 'Page buttons on each side of the current one.'],
-  ['mode', '`Bind<PaginationMode>`', "`'adaptive'`", '`full`, `compact` (a page number box and a drop-down of sizes), `adaptive`: compact while the full one does not fit.'],
-  ['infoText', '`Bind<string>`', "`''`", 'The info of your own: `{page}`, `{count}` and `{total}` are filled in.'],
-  ['label', '`Bind<string>`', 'The kit string “Pages”', 'What screen readers call it; several on a page need one each.'],
+  ['showNavigation', '`Bind<boolean>`', '`true`', 'The first, previous, next and last buttons.'],
+  ['neighbors', '`Bind<number>`', '`1`', 'The number of page buttons on each side of the current page.'],
+  ['mode', '`Bind<PaginationMode>`', "`'adaptive'`", '`full`, `compact` (a page number box and a drop-down of sizes), or `adaptive`, which is compact when the full layout does not fit.'],
+  ['infoText', '`Bind<string>`', "`''`", 'Custom information text. `{page}`, `{count}` and `{total}` are replaced with their values.'],
+  ['label', '`Bind<string>`', 'The kit string “Pages”', 'The accessible name. If a page has several, each one needs its own.'],
 ];
 
 const MEMBERS = [
-  ['onPageChanged', 'event', 'The page or the page size changed (`page`, `pageSize`), by the user or by code (`byUser`).'],
-  ['goTo(page)', 'method', 'Goes to a page (from 1), as a press would.'],
-  ['pageCount', 'read', 'How many pages there are now.'],
-  ['compact', 'read-only', 'Whether the compact look shows now.'],
+  ['onPageChanged', 'event', 'Occurs when the page or the page size changes (`page`, `pageSize`), either by the user or programmatically (`byUser`).'],
+  ['goTo(page)', 'method', 'Goes to a page, starting from 1, as a click would.'],
+  ['pageCount', 'Read-only', 'The current number of pages.'],
+  ['compact', 'read-only', 'Indicates whether the compact layout is currently shown.'],
 ];
 
 const A11Y = [
-  ['Landmark', 'A `nav` named “Pages” (or its label) in the kit language.'],
-  ['Pages', 'Each page button is named “Page 5”; the current one is `aria-current="page"`.'],
-  ['Steps', 'Named First page, Previous page, Next page, Last page; disabled at the ends.'],
-  ['Compact', 'The page number box is named “Page number”; the info stays readable while hidden.'],
+  ['Landmark', 'A `nav` named “Pages” in the kit language, or by its label.'],
+  ['Pages', 'Each page button is named “Page 5”, and the current one has `aria-current="page"`.'],
+  ['Steps', 'Named First page, Previous page, Next page and Last page, and disabled at the ends.'],
+  ['Compact', 'The page number box is named “Page number”, and the information stays available to screen readers while hidden.'],
 ];
 
 const HOOKS = [
   ['.mx-pagination', 'The pagination. `data-look`: `full` or `compact`.'],
-  ['.mx-pagination__sizes, __size, __size-list', 'The page sizes, as buttons or as a drop-down.'],
-  ['.mx-pagination__info, __step, __pages, __page, __gap', 'The info, a step (`data-step`), the page buttons and the gaps.'],
-  ['.mx-pagination__jump, __number', 'The compact look’s page number box.'],
+  ['.mx-pagination__sizes, __size, __size-list', 'The page sizes, as buttons or a drop-down.'],
+  ['.mx-pagination__info, __step, __pages, __page, __gap', 'The information text, a navigation button (`data-step`), the page buttons and the gaps.'],
+  ['.mx-pagination__jump, __number', 'The page number box in the compact layout.'],
 ];
 
 const TOKENS = [
-  ['pagination.button-size, .step-variant, .page-variant, .page-tone, .current-variant, .current-tone', 'The look of its buttons: the same as the grid’s pager in each language.'],
-  ['pagination.info', 'Unit: the info’s text.'],
-  ['pagination.gap, .step-overlap, .number-width, .size-width', 'The space between parts, the double arrows, the compact look’s boxes.'],
+  ['pagination.button-size, .step-variant, .page-variant, .page-tone, .current-variant, .current-tone', 'The appearance of its buttons, which matches the DataGrid pager in each design language.'],
+  ['pagination.info', 'Unit: the information text.'],
+  ['pagination.gap, .step-overlap, .number-width, .size-width', 'The spacing between parts, the double arrows and the boxes in the compact layout.'],
 ];
 
 export default function PaginationPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="Moving through pages of items: the sizes to choose from, where the page stands, the steps and a button per page around the current one. It turns compact when it does not fit. It looks and works as the grid’s pager." />
+        <Rich text="Navigates through pages of items, with page size options, the current position, navigation buttons and a button for each nearby page. It switches to a compact layout when it does not fit, and it looks and works like the DataGrid pager." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -64,7 +64,7 @@ import { Pagination } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="`x-model` binds the page; `onPageChanged` tells the page size too, so the data can be loaded for both." />
+          <Rich text="`x-model` binds the page, and `onPageChanged` also reports the page size, so data can be loaded for both." />
         </p>
         <Example files={code('Programmatic.tsx')}>
           <Programmatic />

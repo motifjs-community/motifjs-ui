@@ -12,66 +12,66 @@ import ShowOn from './examples/ShowOn';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['target', '`Bind<Element | ComponentBase | null>`', '—', 'What it describes. A function is fine for a component that comes later in the view (`() => this.save`).'],
-  ['text', '`Bind<string>`', "`''`", 'What it says.'],
-  ['content', '`Bind<ComponentBase | null>`', '—', 'Any content after the text, made the first time it shows. JSX children work too. Nothing interactive.'],
-  ['placement', '`Bind<PopupPlacement>`', "`'top'`", '`top`, `bottom`, `start`, `end`, each with `-start` / `-end`. It opens on the other side when there is no room; start and end follow the reading direction.'],
-  ['delay', '`Bind<number>`', '`500`', 'Milliseconds the pointer rests on the target before it shows. Keyboard focus shows it at once.'],
-  ['hideDelay', '`Bind<number>`', '`150`', 'Milliseconds it stays after the pointer leaves, so the pointer can move onto it.'],
-  ['showOn', '`Bind<TooltipShowOn>`', "`'hover-focus'`", '`hover-focus`, `focus` (keyboard focus only), `manual` (only `open()`).'],
-  ['enabled', '`Bind<boolean>`', '`true`', '`false`: it never shows, and closes if it is open.'],
+  ['target', '`Bind<Element | ComponentBase | null>`', '—', 'The element it describes. A function works for a component that appears later in the view (`() => this.save`).'],
+  ['text', '`Bind<string>`', "`''`", 'The tooltip text.'],
+  ['content', '`Bind<ComponentBase | null>`', '—', 'Any content after the text, created the first time the tooltip appears. JSX children work too. Do not include interactive content.'],
+  ['placement', '`Bind<PopupPlacement>`', "`'top'`", '`top`, `bottom`, `start` or `end`, each with `-start` or `-end`. It opens on the opposite side if there is no room, and start and end follow the reading direction.'],
+  ['delay', '`Bind<number>`', '`500`', 'The time in milliseconds the pointer must rest on the target before the tooltip appears. Keyboard focus shows it immediately.'],
+  ['hideDelay', '`Bind<number>`', '`150`', 'The time in milliseconds it stays after the pointer leaves, so the pointer can move onto it.'],
+  ['showOn', '`Bind<TooltipShowOn>`', "`'hover-focus'`", '`hover-focus`, `focus` (keyboard focus only) or `manual` (only `open()`).'],
+  ['enabled', '`Bind<boolean>`', '`true`', '`false` keeps the tooltip from appearing and closes it if it is open.'],
   ['onOpened, onClosed', '`() => void`', '—', 'See Events.'],
 ];
 
 const PROPERTIES = [
   ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
-  ['opened', 'read/write, reactive', 'Whether it is shown; setting it opens or closes it.'],
-  ['Tooltip.skipDelay', 'static, read/write', 'Milliseconds after a tooltip closes during which the next one shows at once (default `300`; `0` turns it off).'],
+  ['opened', 'read/write, reactive', 'Indicates whether it is visible. Set it to open or close the tooltip.'],
+  ['Tooltip.skipDelay', 'static, read/write', 'The time in milliseconds after a tooltip closes during which the next one appears immediately. The default is `300`, and `0` turns it off.'],
 ];
 
 const METHODS = [
-  ['open()', '`boolean`', 'Shows it now, whatever `showOn` says; `false` without a target on the page, or when disabled.'],
-  ['close()', '`void`', 'Hides it.'],
-  ['place()', '`void`', 'Lines it up with its target again, e.g. after the target moved.'],
-  ['addTooltip(target, text | options)', '`() => void`', 'A tooltip for one element, made on first use; returns the function that removes it. For a component it goes with the component.'],
+  ['open()', '`boolean`', 'Shows the tooltip now, regardless of `showOn`. Returns `false` if there is no target on the page or the tooltip is disabled.'],
+  ['close()', '`void`', 'Hides the tooltip.'],
+  ['place()', '`void`', 'Repositions it relative to its target, for example after the target moves.'],
+  ['addTooltip(target, text | options)', '`() => void`', 'Adds a tooltip to one element, created on first use, and returns a function that removes it. For a component, it is removed along with the component.'],
 ];
 
 const EVENTS = [
   ['onOpened', 'Occurs after it is shown.'],
-  ['onClosed', 'It was hidden.'],
+  ['onClosed', 'Occurs after it is hidden.'],
 ];
 
 const KEYS = [
-  ['Tab (focus on the target)', 'Shows it at once; leaving the target hides it.'],
-  ['Escape', 'Hides it; focus stays where it is. Only the tooltip closes, not the window around it.'],
+  ['Tab (focus on the target)', 'Shows the tooltip immediately. Leaving the target hides it.'],
+  ['Escape', 'Hides the tooltip while focus stays in place. Only the tooltip closes, not the surrounding window.'],
 ];
 
 const A11Y = [
-  ['Role', '`role="tooltip"`, one element per tooltip.'],
-  ['Description', 'While it is shown the target (its focusable part, e.g. the input of a TextBox) has `aria-describedby` pointing to it, next to its own descriptions.'],
-  ['Focus', 'It never takes focus and holds nothing interactive. For buttons or links next to an element, open a drop-down (Button `dropDown`).'],
+  ['Role', '`role="tooltip"`, with one element per tooltip.'],
+  ['Description', 'While it is visible, the target or its focusable part, such as the input of a TextBox, has `aria-describedby` pointing to the tooltip, along with its own descriptions.'],
+  ['Focus', 'A tooltip never receives focus and contains nothing interactive. For buttons or links next to an element, open a drop-down (Button `dropDown`).'],
   ['WCAG 1.4.13', 'Dismissible (Escape), hoverable (the pointer can move onto it) and persistent (it stays until the pointer or focus leaves).'],
-  ['Pointer only?', 'Never: whatever it says must also be reachable without it. An icon-only button still needs its own name (`aria-label`).'],
-  ['Touch', 'A touch does not show it; give touch users the information another way.'],
+  ['Pointer only?', 'Tooltip content must also be available another way. An icon-only button still needs its own name (`aria-label`).'],
+  ['Touch', 'Touch does not show a tooltip, so provide the information another way for touch users.'],
 ];
 
 const HOOKS = [
-  ['.mx-tooltip', 'The tooltip. `data-side` tells the side it opened on (`top`, `bottom`, `start`, `end`).'],
+  ['.mx-tooltip', 'The tooltip. `data-side` reports the side it opened on (`top`, `bottom`, `start`, `end`).'],
   ['.mx-tooltip__text', 'The text.'],
 ];
 
 const TOKENS = [
-  ['tooltip.offset, tooltip.enter-offset', 'The gap to its target, and how far it comes in from it.'],
-  ['tooltip.surface', 'Unit: the tooltip with its box (`max-width`: the widest it gets before it wraps; `rich`: with content of its own).'],
-  ['tooltip.arrow, tooltip.text', 'Units: an arrow towards the target a design may show, and the text.'],
-  ['tooltip.text-align', 'How its text lines up.'],
+  ['tooltip.offset, tooltip.enter-offset', 'The gap to the target, and the distance it animates in from.'],
+  ['tooltip.surface', 'Unit: the tooltip and its box (`max-width` sets the width before wrapping, and `rich` applies with custom content).'],
+  ['tooltip.arrow, tooltip.text', 'Units: an optional arrow toward the target, and the text.'],
+  ['tooltip.text-align', 'The text alignment.'],
 ];
 
 export default function TooltipPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="A short description shown next to an element: after the pointer rests on it, when it gets keyboard focus, or programmatically. It can be hovered, Escape hides it, and one is open at a time on the page." />
+        <Rich text="A short description shown next to an element when the pointer rests on it, when it receives keyboard focus, or programmatically. Users can hover over the tooltip, Escape dismisses it, and only one is open at a time on the page." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -84,7 +84,7 @@ import { Tooltip, addTooltip, type TooltipShowOn } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="In JSX a tooltip is placed anywhere and pointed at its `target`; where it sits does not matter. Programmatically, `new Tooltip({ target, text })` needs nothing else: it puts itself into the page when it first shows, and goes when its target component does." />
+          <Rich text="In JSX, place a tooltip anywhere and point it at its `target`. Its position in the markup does not matter. Programmatically, `new Tooltip({ target, text })` is all you need: it adds itself to the page the first time it appears and is removed along with its target component." />
         </p>
         <Example files={code('Programmatic.tsx')}>
           <Programmatic />
@@ -93,16 +93,16 @@ import { Tooltip, addTooltip, type TooltipShowOn } from '@motifx-community/ui';
 
       <Section anchor="icon" title="Icon-only buttons">
         <p>
-          <Rich text="A button with only an icon needs its own name (`aria-label`); the tooltip shows it to sighted users and adds the shortcut as a description. Moving from one button to the next shows the next tooltip at once." />
+          <Rich text="A button with only an icon needs its own accessible name (`aria-label`). The tooltip displays that information and adds the shortcut as a description. Moving from one button to the next shows the next tooltip immediately." />
         </p>
         <Example files={code('IconButtons.tsx')}>
           <IconButtons />
         </Example>
       </Section>
 
-      <Section anchor="field" title="On a field">
+      <Section anchor="field" title="Tooltips on fields">
         <p>
-          <Rich text="On a TextBox the whole field shows it on hover, and its input is described by it while it shows, also on keyboard focus." />
+          <Rich text="On a TextBox, the whole field shows the tooltip on hover, and the input is described by it while it is visible, including on keyboard focus." />
         </p>
         <Example files={code('OnField.tsx')}>
           <OnField />
@@ -111,7 +111,7 @@ import { Tooltip, addTooltip, type TooltipShowOn } from '@motifx-community/ui';
 
       <Section anchor="placement" title="Placement">
         <p>
-          <Rich text="`top` by default. It opens on the other side when there is no room, and `start` / `end` follow the reading direction (try the RTL switch at the top)." />
+          <Rich text="The default is `top`. The tooltip opens on the opposite side if there is no room, and `start` and `end` follow the reading direction. Try the RTL switch at the top of the page." />
         </p>
         <Example files={code('Placement.tsx')} stack>
           <Placement />
@@ -120,7 +120,7 @@ import { Tooltip, addTooltip, type TooltipShowOn } from '@motifx-community/ui';
 
       <Section anchor="delay" title="Delay">
         <p>
-          <Rich text="The pointer rests `delay` milliseconds on the target before it shows (500 by default); `hideDelay` keeps it a moment after the pointer leaves. Right after one closed, the next shows at once (`Tooltip.skipDelay`)." />
+          <Rich text="The pointer must rest on the target for `delay` milliseconds (500 by default) before the tooltip appears, and `hideDelay` keeps it open briefly after the pointer leaves. Immediately after one closes, the next appears without a delay (`Tooltip.skipDelay`)." />
         </p>
         <Example files={code('Delay.tsx')}>
           <Delay />
@@ -129,25 +129,25 @@ import { Tooltip, addTooltip, type TooltipShowOn } from '@motifx-community/ui';
 
       <Section anchor="content" title="Rich content">
         <p>
-          <Rich text="JSX children or `content` (any component) come after the text. Keep it short and never put buttons or links in it: a tooltip cannot take focus." />
+          <Rich text="JSX children or `content` (any component) appear after the text. Keep it short and never include buttons or links, because a tooltip cannot receive focus." />
         </p>
         <Example files={code('RichContent.tsx')}>
           <RichContent />
         </Example>
       </Section>
 
-      <Section anchor="show-on" title="When it shows">
+      <Section anchor="show-on" title="Display triggers">
         <p>
-          <Rich text="`showOn` picks what shows it: `hover-focus` (default), `focus` (keyboard focus only) or `manual` (only `open()` / `opened`). `enabled` turns a tooltip off." />
+          <Rich text="`showOn` sets what displays the tooltip: `hover-focus` (the default), `focus` (keyboard focus only) or `manual` (only `open()` and `opened`). `enabled` turns a tooltip off." />
         </p>
         <Example files={code('ShowOn.tsx')}>
           <ShowOn />
         </Example>
       </Section>
 
-      <Section anchor="many" title="Many elements">
+      <Section anchor="many" title="Tooltips on many elements">
         <p>
-          <Rich text="`addTooltip(target, text)` gives an element a tooltip that is made only when it is first needed; every tooltip on the page shares one set of document listeners, so hundreds of them cost next to nothing. It returns the function that removes it." />
+          <Rich text="`addTooltip(target, text)` gives an element a tooltip that is created only when first needed. All tooltips on the page share one set of document listeners, so hundreds of them have almost no cost. The function returns a remover." />
         </p>
         <Example files={code('ManyElements.tsx')} stack>
           <ManyElements />
