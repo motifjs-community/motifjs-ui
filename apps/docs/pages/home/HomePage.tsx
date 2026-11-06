@@ -17,23 +17,23 @@ import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/
         />
       </Section>
 
-      <Section anchor="how" title="How the components work">
+      <Section anchor="how" title="Component model">
         <ul class="docs-list">
           <li>
-            <Rich text="Every component is an object. Write it in JSX and bind it to state, or create it with `new` and add it wherever and whenever you need it — the developer using it decides, both ways are complete." />
+            <Rich text="Every component is an object. Declare it in JSX and bind it to state, or instantiate it with `new` and add it to the component tree at runtime. Both approaches expose the same API." />
           </li>
           <li>
-            <Rich text="Lifetime follows ownership: a component dies with the one it belongs to." />
+            <Rich text="Lifetime follows ownership: disposing a component also disposes the components it owns." />
           </li>
           <li>
-            <Rich text="Keyboard, focus and ARIA are part of every component, not extras." />
+            <Rich text="Every component supports keyboard navigation, focus management and the WAI-ARIA roles and states of its pattern." />
           </li>
         </ul>
       </Section>
 
-      <Section anchor="today" title="What ships today">
+      <Section anchor="today" title="Components">
         <p>
-          <Rich text="More than fifty components, every one an object with the same base: focus and the keyboard, the right roles and names for a screen reader, texts in English and Turkish that switch while the app runs, right to left, and a look in each of the design system's five languages (Tactile, Lounge, Material, Fluent, Lilac) painted from component tokens. Each has a page with live examples and its API." />
+          <Rich text="The library includes more than fifty components built on a shared base. Each one provides keyboard and focus support, accessible roles and names, English and Turkish strings that can be switched at runtime, right-to-left layout, and component tokens for the five design languages of the design system: Tactile, Lounge, Material, Fluent and Lilac. Every component has a reference page with live examples and its full API." />
         </p>
         <table class="token-table api-table">
           <thead>
@@ -117,17 +117,17 @@ import { Button, Control, FocusContainer, addShortcut } from '@motifx-community/
 
       <Section anchor="design" title="Design system">
         <p>
-          <Rich text="The look comes from `@motifx-community/design-system`: its tokens, three themes, density, fonts and user-preference overrides. `styles.css` imports it first, then this kit's own layer (`mx.components`) adds the [component tokens](/tokens) and the components. Nothing here is a color or a size of its own." />
+          <Rich text="Visual styling comes from `@motifx-community/design-system`, which provides design tokens, three themes, density settings, fonts and user-preference overrides. `styles.css` imports it first, then the `mx.components` layer adds the [component tokens](/tokens) and the components. Components define no colors or sizes of their own." />
         </p>
         <ul class="docs-list">
           <li>
-            <Rich text="Themes: light, dark and high contrast, switched with `data-theme`; the OS preference is the default. Every text/background pair is checked in the design system's build: WCAG AA, AAA in high contrast." />
+            <Rich text="Themes: light, dark and high contrast, selected with `data-theme`. The default follows the operating system preference. The design system build verifies every text and background pair against WCAG AA, and against AAA in high contrast." />
           </li>
           <li>
-            <Rich text={'Density: `data-density="compact"` shrinks every control, bar and title bar.'} />
+            <Rich text={'Density: `data-density="compact"` reduces the size of every control, bar and title bar.'} />
           </li>
           <li>
-            <Rich text="RTL through logical properties." />
+            <Rich text="Right-to-left layout: components are built on CSS logical properties." />
           </li>
         </ul>
         <Code lang="html" code={`<html data-theme="dark" data-density="compact">`} />
