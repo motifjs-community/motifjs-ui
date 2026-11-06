@@ -1030,10 +1030,10 @@
     --mx-speed-dial-main-hover-cursor: pointer;
     --mx-speed-dial-main-extended-width: auto;
     --mx-speed-dial-main-glyph-size: 1.25rem;
-    --mx-speed-dial-action-size: 2.25rem;
+    --mx-speed-dial-action-size: 2.625rem;
     --mx-speed-dial-action-hover-cursor: pointer;
     --mx-speed-dial-action-shadow: initial;
-    --mx-speed-dial-action-icon-size: 1rem;
+    --mx-speed-dial-action-icon-size: 1.25rem;
     --mx-spinner-size-md: 1.5rem;
     --mx-spinner-size-lg: 2.5rem;
     --mx-spinner-ring-width-md: 0.1875rem;
@@ -4273,7 +4273,7 @@
     --mx-slider-core-pressed-scale: 0.8333;
     --mx-slider-bubble-padding-block: 0.4375rem;
     --mx-slider-bubble-padding-inline: 0.5625rem;
-    --mx-speed-dial-action-size: 2rem;
+    --mx-speed-dial-action-size: 2.5rem;
     --mx-spinner-size-md: 2rem;
     --mx-spinner-ring-width-md: 0.25rem;
     --mx-spinner-track-color: rgb(0 0 0 / 0);
@@ -5046,10 +5046,9 @@
     --mx-scheduler-unavailable-image: initial;
     --mx-sortable-line-height: 1px;
     --mx-speed-dial-main-size: 3.25rem;
-    --mx-speed-dial-action-size: 2.5rem;
+    --mx-speed-dial-action-size: 2.75rem;
     --mx-speed-dial-action-border-width: initial;
     --mx-speed-dial-action-border-color: initial;
-    --mx-speed-dial-action-icon-size: 1.125rem;
     --mx-speed-dial-label-border-width: initial;
     --mx-speed-dial-label-border-color: initial;
     --mx-stepper-size-md: 1.875rem;
@@ -5597,11 +5596,11 @@
     --mx-speed-dial-main-size: 3.5rem;
     --mx-speed-dial-main-radius: 1rem;
     --mx-speed-dial-main-glyph-size: 1.5rem;
-    --mx-speed-dial-action-size: 2.5rem;
+    --mx-speed-dial-action-size: 3rem;
     --mx-speed-dial-action-radius: 0.75rem;
     --mx-speed-dial-action-border-width: initial;
     --mx-speed-dial-action-border-color: initial;
-    --mx-speed-dial-action-icon-size: 1.25rem;
+    --mx-speed-dial-action-icon-size: 1.5rem;
     --mx-speed-dial-label-border-width: initial;
     --mx-speed-dial-label-border-color: initial;
     --mx-spinner-size-md: 48px;

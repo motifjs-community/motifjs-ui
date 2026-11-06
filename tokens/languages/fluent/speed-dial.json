@@ -91,7 +91,7 @@
     "action": {
       "size": {
         "$value": {
-          "value": 2,
+          "value": 2.5,
           "unit": "rem"
         }
       },
@@ -146,7 +146,7 @@
     "action-icon": {
       "size": {
         "$value": {
-          "value": 1,
+          "value": 1.25,
           "unit": "rem"
         }
       },

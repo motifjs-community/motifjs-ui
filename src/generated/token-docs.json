@@ -20702,7 +20702,7 @@
     "cssVar": "--mx-speed-dial-action-size",
     "type": "dimension",
     "ref": null,
-    "value": "2.25rem"
+    "value": "2.625rem"
   },
   {
     "name": "speed-dial.action.radius",
@@ -20807,7 +20807,7 @@
     "cssVar": "--mx-speed-dial-action-icon-size",
     "type": "dimension",
     "ref": null,
-    "value": "1rem"
+    "value": "1.25rem"
   },
   {
     "name": "speed-dial.action-icon.bg",
