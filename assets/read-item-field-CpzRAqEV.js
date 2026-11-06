@@ -1,0 +1,1 @@
+import{C as e,un as t}from"./doc-B1CtlCkV.js";function n(n,r,i){return typeof r==`function`?t(()=>r(n)):typeof n!=`object`||!n?n:e(n,r??i)}export{n as t};

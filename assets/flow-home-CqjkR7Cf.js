@@ -1,0 +1,1 @@
+function e(e){for(let t=e.parentElement;t;t=t.parentElement)if(t.matches(`div, section, main, article, aside, nav, header, footer, form, dialog, fieldset, li, dd, td, th, body`)&&!t.closest(`button, a, label, summary, [role="button"], [role="link"], [role="option"], [role="menuitem"], [role="tab"]`))return t;return e.ownerDocument.body}export{e as t};

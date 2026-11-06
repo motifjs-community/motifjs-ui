@@ -1,0 +1,1 @@
+import{an as e}from"./doc-B1CtlCkV.js";import{i as t}from"./item-own-value-yYXkkdgf.js";import{t as n}from"./slow-adapter-Qu7CbQ8l.js";import{r}from"./orders-CbyWxhLV.js";var i=e({count:0}),a=new n({data:r(1e5),key:`id`},250);a.onLoading(()=>i.count++);var o=new t.DataSource({adapter:a,loadMode:`page`,pageSize:20});export{o as n,i as t};

@@ -1,0 +1,1 @@
+function e(e,t,n,r,i){if(!(r>0)||!(i>0)||n<=t)return 0;let a=e-t,o=n-e,s=e=>Math.max(1,Math.round(i*Math.min(1,(r-Math.max(0,e))/r)));return a<r&&a<=o?-s(a):o<r?s(o):0}export{e as t};

@@ -1,0 +1,41 @@
+import{a as e,an as t,i as n,n as r,nn as i,r as a,rn as o,t as s}from"./doc-B1CtlCkV.js";import{t as c}from"./Stack-AS0iyAxC.js";import{t as l}from"./Pagination-DD7HPFFg.js";import{t as u}from"./sources-BXVvOiIY.js";var d=`import { Pagination, Stack } from '@motifx-community/ui';\r
+\r
+/** The compact layout, adaptive in a narrow box (drag its corner), more neighbors, and page buttons only. */\r
+export default function Looks() {\r
+  return (\r
+    <Stack gap="lg">\r
+      <Pagination label="Compact" mode="compact" total={500} pageSizes={[20, 50]} pageSize={20} page={4} />\r
+      <div style="resize: horizontal; overflow: hidden; inline-size: 26rem; min-inline-size: 22rem; max-inline-size: 100%">\r
+        <Pagination label="Adaptive" total={500} pageSizes={[20, 50]} pageSize={20} page={4} showInfo={false} />\r
+      </div>\r
+      <Pagination label="Two each side" mode="full" neighbors={2} total={1000} page={10} showInfo={false} />\r
+      <Pagination label="Pages only" mode="full" pageCount={7} page={2} showInfo={false} showNavigation={false} />\r
+    </Stack>\r
+  );\r
+}\r
+`,f=`import { reactive } from '@motifx/core';\r
+import { Pagination, Stack } from '@motifx-community/ui';\r
+\r
+/** The page bound with \`x-model\`, the available sizes, and one created with \`new\` programmatically. */\r
+export default function Programmatic() {\r
+  const s = reactive({ page: 3, size: 25 });\r
+  const coded = new Pagination({ label: 'Pages made in code', total: 40, pageSize: 10, mode: 'full', showInfo: false });\r
+\r
+  return (\r
+    <Stack gap="lg">\r
+      <Pagination\r
+        label="Orders"\r
+        total={1234}\r
+        pageSizes={[10, 25, 50, 0]}\r
+        pageSize={() => s.size}\r
+        x-model={() => s.page}\r
+        onPageChanged={(e) => e.byUser && (s.size = e.pageSize)}\r
+      />\r
+      <span>{() => \`Page \${s.page}, \${s.size || 'all'} per page\`}</span>\r
+      <span onConfig={(c) => c.controls.add(coded)} />\r
+    </Stack>\r
+  );\r
+}\r
+`;function p(){let e=t({page:3,size:25}),n=new l({label:`Pages made in code`,total:40,pageSize:10,mode:`full`,showInfo:!1});return i(c,{gap:`lg`,runover:{},childs:[i(l,{label:`Orders`,total:1234,pageSizes:[10,25,50,0],pageSize:()=>e.size,onPageChanged:t=>t.byUser&&(e.size=t.pageSize),runover:{initializeComponent:t=>{t.bindings.model(()=>e.page,t=>{let n=e;n!=null&&typeof n.page!=`function`&&(n.page=t)})}},childs:[]}),i(`span`,{initializeComponent:t=>{t.bindings.method(()=>`Page ${e.page}, ${e.size||`all`} per page`)}},1),i(`span`,{onConfig:e=>e.controls.add(n)})]})}function m(){return i(c,{gap:`lg`,runover:{},childs:[i(l,{label:`Compact`,mode:`compact`,total:500,pageSizes:[20,50],pageSize:20,page:4,runover:{},childs:[]}),i(`div`,{initializeComponent:e=>{e.style(`resize: horizontal; overflow: hidden; inline-size: 26rem; min-inline-size: 22rem; max-inline-size: 100%`);let t=i(l,{label:`Adaptive`,total:500,pageSizes:[20,50],pageSize:20,page:4,showInfo:!1,runover:{},childs:[]});e.controls.add(t)}},1),i(l,{label:`Two each side`,mode:`full`,neighbors:2,total:1e3,page:10,showInfo:!1,runover:{},childs:[]}),i(l,{label:`Pages only`,mode:`full`,pageCount:7,page:2,showInfo:!1,showNavigation:!1,runover:{},childs:[]})]})}var h=u(Object.assign({"./examples/Looks.tsx":d,"./examples/Programmatic.tsx":f})),g=[[`page`,"`Bind<number>`","`1`",`The page number, starting from 1.`],[`value`,"`Bind<number>`",``,"Same as `page`. This is what `x-model` binds, with two-way binding."],[`total`,"`Bind<number>`","`0`","The total number of items. The page count is derived from this and `pageSize`."],[`pageSize`,"`Bind<number>`","`10`",`The number of items per page. 0 shows all items on one page.`],[`pageCount`,"`Bind<number | null>`","`null`","The number of pages, when there is no `total`."],[`pageSizes`,"`Bind<readonly number[]>`","`[]`",`The available page sizes (0 means all). Changing the size keeps the first item of the page in view.`],[`showInfo`,"`Bind<boolean>`","`true`",`“Page 3 of 12 (250 items)”.`],[`showNavigation`,"`Bind<boolean>`","`true`",`The first, previous, next and last buttons.`],[`neighbors`,"`Bind<number>`","`1`",`The number of page buttons on each side of the current page.`],[`mode`,"`Bind<PaginationMode>`","`'adaptive'`","`full`, `compact` (a page number box and a drop-down of sizes), or `adaptive`, which is compact when the full layout does not fit."],[`infoText`,"`Bind<string>`","`''`","Custom information text. `{page}`, `{count}` and `{total}` are replaced with their values."],[`label`,"`Bind<string>`",`The kit string “Pages”`,`The accessible name. If a page has several, each one needs its own.`]],_=[[`onPageChanged`,`event`,"Occurs when the page or the page size changes (`page`, `pageSize`), either by the user or programmatically (`byUser`)."],[`goTo(page)`,`method`,`Goes to a page, starting from 1, as a click would.`],[`pageCount`,`Read-only`,`The current number of pages.`],[`compact`,`read-only`,`Indicates whether the compact layout is currently shown.`]],v=[[`Landmark`,"A `nav` named “Pages” in the kit language, or by its label."],[`Paging`,'Each page button is named “Page 5”, and the current one has `aria-current="page"`.'],[`Steps`,`Named First page, Previous page, Next page and Last page, and disabled at the ends.`],[`Compact`,`The page number box is named “Page number”, and the information stays available to screen readers while hidden.`]],y=[[`.mx-pagination`,"The pagination. `data-look`: `full` or `compact`."],[`.mx-pagination__sizes, __size, __size-list`,`The page sizes, as buttons or a drop-down.`],[`.mx-pagination__info, __step, __pages, __page, __gap`,"The information text, a navigation button (`data-step`), the page buttons and the gaps."],[`.mx-pagination__jump, __number`,`The page number box in the compact layout.`]],b=[[`pagination.button-size, .step-variant, .page-variant, .page-tone, .current-variant, .current-tone`,`The appearance of its buttons, which matches the DataGrid pager in each design language.`],[`pagination.info`,`Unit: the information text.`],[`pagination.gap, .step-overlap, .number-width, .size-width`,`The spacing between parts, the double arrows and the boxes in the compact layout.`]];function x(){return o({initializeComponent:t=>{{let o=i(`p`,{initializeComponent:e=>{e.class.add(`lead`);let t=i(a,{text:`Navigates through pages of items, with page size options, the current position, navigation buttons and a button for each nearby page. It switches to a compact layout when it does not fit, and it looks and works like the DataGrid pager.`,runover:{},childs:[]});e.controls.add(t)}},1);t.controls.add(o);let c=i(n,{anchor:`import`,title:`Import`,runover:{},childs:[i(e,{code:`
+import { Pagination } from '@motifx-community/ui';
+`,runover:{},childs:[]})]});t.controls.add(c);let l=i(n,{anchor:`ways`,title:`Declarative and programmatic`,runover:{},childs:[i(`p`,{initializeComponent:e=>{let t=i(a,{text:"`x-model` binds the page, and `onPageChanged` also reports the page size, so data can be loaded for both.",runover:{},childs:[]});e.controls.add(t)}},1),i(r,{files:h(`Programmatic.tsx`),runover:{},childs:[i(p,{runover:{},childs:[]})]})]});t.controls.add(l);let u=i(n,{anchor:`looks`,title:`Appearance`,runover:{},childs:[i(r,{files:h(`Looks.tsx`),runover:{},childs:[i(m,{runover:{},childs:[]})]})]});t.controls.add(u);let d=i(n,{anchor:`a11y`,title:`Accessibility`,runover:{},childs:[i(s,{head:[`Topic`,`Details`],rows:v,runover:{},childs:[]})]});t.controls.add(d);let f=i(n,{anchor:`styling`,title:`Styling`,runover:{},childs:[i(s,{head:[`Hook`,`Description`],rows:y,runover:{},childs:[]}),i(`h3`,{initializeComponent:e=>{let t=i(a,{text:`Component tokens`,runover:{},childs:[]});e.controls.add(t)}},1),i(s,{head:[`Token`,`Description`],rows:b,runover:{},childs:[]})]});t.controls.add(f);let x=i(n,{anchor:`api`,title:`API reference`,runover:{},childs:[i(`h3`,{initializeComponent:e=>{let t=i(a,{text:`Props`,runover:{},childs:[]});e.controls.add(t)}},1),i(s,{head:[`Prop`,`Type`,`Default`,`Description`],rows:g,runover:{},childs:[]}),i(`h3`,{initializeComponent:e=>{let t=i(a,{text:`Events, properties and methods`,runover:{},childs:[]});e.controls.add(t)}},1),i(s,{head:[`Member`,`Type`,`Description`],rows:_,runover:{},childs:[]})]});t.controls.add(x)}}})}export{x as default};

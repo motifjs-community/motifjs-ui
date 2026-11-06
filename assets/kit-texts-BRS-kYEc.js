@@ -1,0 +1,1 @@
+import{Mt as e,an as t}from"./doc-B1CtlCkV.js";var n=t({strings:e.strings,locale:e.locale});e.onChanged(()=>{n.strings=e.strings,n.locale=e.locale});export{n as t};

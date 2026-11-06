@@ -1,0 +1,1 @@
+function e(e,t){let n=[];for(let r=e;r&&r!==t&&r.parentElement;r=r.parentElement){for(let e of Array.from(r.parentElement.children))e===r||e.hasAttribute(`inert`)||e.localName===`script`||e.localName===`style`||(e.setAttribute(`inert`,``),n.push(e));if(r.parentElement===t)break}return()=>{for(let e of n)e.removeAttribute(`inert`)}}export{e as t};

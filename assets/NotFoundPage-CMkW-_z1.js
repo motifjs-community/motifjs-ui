@@ -1,0 +1,1 @@
+import{nn as e,r as t}from"./doc-B1CtlCkV.js";function n(){return e(`p`,{initializeComponent:n=>{n.class.add(`lead`);let r=e(t,{text:`There is no page at this address. Start from the [overview](/) or pick one on the left.`,runover:{},childs:[]});n.controls.add(r)}},1)}export{n as default};
