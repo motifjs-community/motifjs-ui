@@ -11,19 +11,19 @@ import Steps from './examples/Steps';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['value', '`Bind<number | null>`', '`null`', 'The number; `null` when empty. `x-model` binds it two-way.'],
-  ['min / max', '`Bind<number | null>`', '`null`', 'Bounds: steps stop there, Home / End go there, entered values are kept inside (see `clamp`), the range is checked.'],
-  ['step', '`Bind<number>`', '`1`', 'What the arrow keys, the spin buttons and the wheel add.'],
-  ['largeStep', '`Bind<number>`', '10 × `step`', 'What PageUp / PageDown add.'],
-  ['showSpinButtons', '`Bind<boolean>`', '`true`', 'The up and down buttons in the box.'],
-  ['spinLayout', '`Bind<SpinLayout>`', "`'stacked'`", '`stacked`: arrows on top of each other; `inline`: − and + side by side.'],
+  ['value', '`Bind<number | null>`', '`null`', 'The number, or `null` when empty. `x-model` provides two-way binding.'],
+  ['min / max', '`Bind<number | null>`', '`null`', 'The limits. Steps stop there, Home and End go there, entered values are kept inside (see `clamp`), and the range is validated.'],
+  ['step', '`Bind<number>`', '`1`', 'The amount added by the arrow keys, the spin buttons and the wheel.'],
+  ['largeStep', '`Bind<number>`', '10 × `step`', 'The amount added by PageUp and PageDown.'],
+  ['showSpinButtons', '`Bind<boolean>`', '`true`', 'Shows up and down buttons in the box.'],
+  ['spinLayout', '`Bind<SpinLayout>`', "`'stacked'`", '`stacked` shows arrows on top of each other, and `inline` shows − and + side by side.'],
   ['wheel', '`Bind<boolean>`', '`false`', 'The mouse wheel changes the value while the field has focus.'],
-  ['format', '`Bind<Intl.NumberFormatOptions>`', '`{}`', 'How the value shows without focus: `{ style: \'currency\', currency: \'TRY\' }`, `{ style: \'percent\' }`, `{ minimumFractionDigits: 2 }`…'],
-  ['locale', '`Bind<string>`', 'the page `lang`', 'The locale of the format and of what is typed.'],
-  ['decimals', '`Bind<number | null>`', '`null`', 'Digits after the point: every value is rounded to them (half away from zero), wherever it comes from, and shown with exactly that many while the field is not edited.'],
-  ['clamp', '`Bind<boolean>`', '`true`', 'A value outside `min` / `max` is brought inside when entered; `false` leaves it to the range check.'],
-  ['allowEmpty', '`Bind<boolean>`', '`true`', 'An empty field is `null`; `false` puts `min` (or 0) in its place when the field is left.'],
-  ['updateOn', "`Bind<'input' | 'change'>`", "`'input'`", '`input`: the value changes as soon as the text is a whole number in range; `change`: when the field is left or Enter is pressed.'],
+  ['format', '`Bind<Intl.NumberFormatOptions>`', '`{}`', 'The display format without focus: `{ style: \'currency\', currency: \'TRY\' }`, `{ style: \'percent\' }`, `{ minimumFractionDigits: 2 }`…'],
+  ['locale', '`Bind<string>`', 'The page `lang`', 'The locale of the format and of the input.'],
+  ['decimals', '`Bind<number | null>`', '`null`', 'The number of digits after the decimal point. Every value is rounded to this precision (half away from zero) regardless of its source, and displayed with exactly that many digits while the field is not being edited.'],
+  ['clamp', '`Bind<boolean>`', '`true`', 'Brings a value outside `min` and `max` into range when entered. `false` leaves it to the range validation.'],
+  ['allowEmpty', '`Bind<boolean>`', '`true`', 'An empty field is `null`. `false` replaces it with `min` (or 0) when the field loses focus.'],
+  ['updateOn', "`Bind<'input' | 'change'>`", "`'input'`", 'With `input`, the value updates as soon as the text is a complete number in range. With `change`, it updates when the field loses focus or the user presses Enter.'],
   ['placeholder', '`Bind<string>`', "`''`", 'Displayed when the field is empty.'],
   ['selectOnFocus', '`Bind<boolean>`', '`false`', 'Selects all text when the field receives focus.'],
   ['align', "`Bind<'start' | 'center' | 'end'>`", "`'start'`", 'Text alignment.'],
@@ -35,15 +35,15 @@ const PROPS = [
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop. `locale` reads back the locale in use.'],
-  ['formattedValue', 'read-only, reactive', 'The value as it shows without focus, `\'\'` when empty.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop. `locale` returns the locale in use.'],
+  ['formattedValue', 'read-only, reactive', 'The value as displayed without focus, or `\'\'` when empty.'],
   ['isValid, validationMessage, validating', 'read-only, reactive', 'The validation result.'],
   ['inputElement', 'read-only', 'The native `<input>`.'],
 ];
 
 const METHODS = [
-  ['stepUp(times = 1)', '`void`', 'Adds `step` × `times`, kept within `min` / `max`.'],
-  ['stepDown(times = 1)', '`void`', 'Takes `step` × `times` away.'],
+  ['stepUp(times = 1)', '`void`', 'Adds `step` × `times`, kept within `min` and `max`.'],
+  ['stepDown(times = 1)', '`void`', 'Subtracts `step` × `times`.'],
   ['validate()', '`Promise<boolean>`', 'Validates the value and displays the result.'],
   ['resetValidation()', '`void`', 'Clears the results of previous validation.'],
   ['focus()', '`boolean`', 'Sets focus on the input.'],
@@ -51,45 +51,45 @@ const METHODS = [
 ];
 
 const EVENTS = [
-  ['onValueChanged(e)', 'The value changed. `e`: `{ value, previousValue, byUser, source, event? }`; a held spin button reports every step.'],
+  ['onValueChanged(e)', 'Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`. A held spin button reports every step.'],
   ['onValidated(e)', 'Occurs when validation finishes. `e`: `{ valid, message, source }`.'],
   ['onEnter(e)', 'Occurs when the user presses Enter. `e`: `{ value, source, event }`.'],
 ];
 
 const KEYS = [
-  ['Up / Down arrow', 'Adds / takes away `step`.'],
-  ['PageUp / PageDown', 'Adds / takes away `largeStep`.'],
-  ['Home / End', 'Goes to `min` / `max` when they are set; otherwise moves the caret.'],
-  ['Enter', 'Enters the typed text (rounded, kept in range) and fires `onEnter`.'],
-  ['Mouse wheel', 'With `wheel`, steps while the field has focus.'],
+  ['Up / Down arrow', 'Adds or subtracts `step`.'],
+  ['PageUp / PageDown', 'Adds or subtracts `largeStep`.'],
+  ['Home / End', 'Goes to `min` or `max` when set. Otherwise, moves the caret.'],
+  ['Enter', 'Commits the typed text, rounded and within range, and raises `onEnter`.'],
+  ['Mouse wheel', 'With `wheel`, changes the value by one step while the field has focus.'],
   ['Alt + key (`&Name`)', 'Moves focus to the field (Control + Option + key on Apple platforms).'],
 ];
 
 const A11Y = [
-  ['Role', '`spinbutton` on a text `<input inputmode="decimal">`, so phones show a number keyboard and any locale can be typed.'],
+  ['Role', '`spinbutton` on a text `<input inputmode="decimal">`, so phones show a numeric keyboard and any locale can be typed.'],
   ['Value', '`aria-valuenow`, `aria-valuemin`, `aria-valuemax`, and `aria-valuetext` with the formatted value (`₺1.234,50`).'],
-  ['Spin buttons', 'Named “Increase” / “Decrease” from `uiLocale`; not Tab stops (the arrow keys do their job).'],
+  ['Spin buttons', 'Named “Increase” and “Decrease” from `uiLocale`. They are not Tab stops, because the arrow keys do the same thing.'],
   ['Errors', '`aria-invalid="true"`. The message is a polite live region.'],
 ];
 
 const HOOKS = [
-  ['.mx-field.mx-number-box', 'The field. `data-spin` while the spin buttons show, and the field attributes.'],
+  ['.mx-field.mx-number-box', 'The field. `data-spin` while spin buttons are shown, plus the field attributes.'],
   ['.mx-number-box__spin', 'The spin buttons; `data-layout="stacked" | "inline"`.'],
   ['.mx-number-box__step', 'One spin button; `data-step="up" | "down"`.'],
 ];
 
 const TOKENS = [
-  ['number-box.spin, number-box.step, number-box.glyph', 'Units: the spin buttons together (`stacked`, `inline`, `disabled`), each step (`up`, `down`, `next`, `hover`, `pressed`, `disabled`) and its glyph.'],
-  ['number-box.spin-layout, number-box.spin-order', 'Where the steps stand (stacked at the end, or one on each side) and in which order.'],
-  ['number-box.spin-inset', 'The space around the stacked spin buttons.'],
-  ['field.*', 'Everything else, as for TextBox.'],
+  ['number-box.spin, number-box.step, number-box.glyph', 'Units: the spin button group (`stacked`, `inline`, `disabled`), each step (`up`, `down`, `next`, `hover`, `pressed`, `disabled`) and its glyph.'],
+  ['number-box.spin-layout, number-box.spin-order', 'Where the steps are placed (stacked at the end, or one on each side) and their order.'],
+  ['number-box.spin-inset', 'The space around stacked spin buttons.'],
+  ['field.*', 'Everything else works as in TextBox.'],
 ];
 
 export default function NumberBoxPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="A number field: arrow keys, PageUp / PageDown and spin buttons that repeat while held, bounds, a step without float noise, a format for display (currency, percent) and typing in the locale’s own way." />
+        <Rich text="A numeric input with arrow key support, PageUp and PageDown, spin buttons that repeat while held, min and max limits, exact decimal stepping, display formats such as currency and percent, and locale-aware input." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -102,16 +102,16 @@ import { NumberBox, type NumberBoxProps } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="`x-model` binds a number (`null` when empty). Created with `new`, the same properties are set programmatically." />
+          <Rich text="`x-model` binds a number (`null` when empty). When you create the component with `new`, set the same properties programmatically." />
         </p>
         <Example files={code('Programmatic.tsx')} stack>
           <Programmatic />
         </Example>
       </Section>
 
-      <Section anchor="steps" title="Steps and keys">
+      <Section anchor="steps" title="Steps and keyboard input">
         <p>
-          <Rich text="Up / Down add `step`, PageUp / PageDown add `largeStep` (10 × `step` by default), Home / End go to `min` / `max`. Steps are added on the decimal digits, so 0.1 + 0.2 is 0.3. With `wheel`, the mouse wheel steps while the field has focus." />
+          <Rich text="Up and Down add `step`, PageUp and PageDown add `largeStep` (10 × `step` by default), and Home and End go to `min` and `max`. Steps are calculated on the decimal digits, so 0.1 + 0.2 equals 0.3. With `wheel`, the mouse wheel changes the value while the field has focus." />
         </p>
         <Example files={code('Steps.tsx')}>
           <Steps />
@@ -120,7 +120,7 @@ import { NumberBox, type NumberBoxProps } from '@motifx-community/ui';
 
       <Section anchor="spin" title="Spin buttons">
         <p>
-          <Rich text="Pressing a spin button steps once; holding it repeats until it is let go or a bound is reached. They sit on top of each other (`stacked`) or side by side (`inline`), or not at all." />
+          <Rich text="Clicking a spin button changes the value by one step. Holding it repeats until the button is released or a limit is reached. The buttons can be `stacked`, `inline` or hidden." />
         </p>
         <Example files={code('SpinButtons.tsx')} stack>
           <SpinButtons />
@@ -129,25 +129,25 @@ import { NumberBox, type NumberBoxProps } from '@motifx-community/ui';
 
       <Section anchor="format" title="Format and locale">
         <p>
-          <Rich text="Without focus the value shows through `Intl.NumberFormat` with `format` and `locale` (the page `lang` by default); with focus it turns into the plain number to edit. What is typed is read in that locale: `1.234,5` in Turkish, `1,234.5` in English; a `.` also works as the decimal point where it cannot be a group separator. A percent is edited as shown: 12.5 for 0.125." />
+          <Rich text="Without focus, the value is displayed through `Intl.NumberFormat` using `format` and `locale` (the page `lang` by default). With focus, it switches to a plain number for editing. Input is parsed in the same locale: `1.234,5` in Turkish and `1,234.5` in English. A `.` also works as the decimal point where it cannot be a group separator. A percent is edited as displayed, so 0.125 is entered as 12.5." />
         </p>
         <Example files={code('Format.tsx')} stack>
           <Format />
         </Example>
       </Section>
 
-      <Section anchor="range" title="Min, max and clamp">
+      <Section anchor="range" title="Min, max and clamping">
         <p>
-          <Rich text="An entered value outside `min` / `max` is brought inside when the field is left. With `clamp={false}` it stays as typed and the range check reports it." />
+          <Rich text="A value outside `min` and `max` is brought into range when the field loses focus. With `clamp={false}`, it stays as typed and the range validation reports it." />
         </p>
         <Example files={code('MinMaxClamp.tsx')}>
           <MinMaxClamp />
         </Example>
       </Section>
 
-      <Section anchor="decimals" title="Decimals and empty">
+      <Section anchor="decimals" title="Decimals and empty values">
         <p>
-          <Rich text="`decimals` rounds every value, the one given as well as the one entered, and shows exactly that many digits while the field is not edited (`72.50`); `format` can show them otherwise. An empty field is `null`; with `allowEmpty={false}` it gets `min` (or 0) when the field is left." />
+          <Rich text="`decimals` rounds every value, whether set in code or entered by the user, and displays exactly that many digits while the field is not being edited (`72.50`). `format` can override how they are displayed. An empty field is `null`. With `allowEmpty={false}`, it receives `min` (or 0) when it loses focus." />
         </p>
         <Example files={code('DecimalsAndEmpty.tsx')}>
           <DecimalsAndEmpty />
@@ -164,7 +164,7 @@ import { NumberBox, type NumberBoxProps } from '@motifx-community/ui';
 
       <Section anchor="i18n" title="Localization">
         <p>
-          <Rich text="The names of the spin buttons and the range messages come from `uiLocale.strings`; numbers follow `locale`." />
+          <Rich text="The spin button names and range messages come from `uiLocale.strings`. Numbers follow `locale`." />
         </p>
         <Example files={code('Localization.tsx')}>
           <Localization />

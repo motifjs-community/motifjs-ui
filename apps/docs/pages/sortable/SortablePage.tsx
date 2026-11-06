@@ -31,7 +31,7 @@ const MEMBERS = [
 const BEHAVIOUR = [
     ['Dragging', 'With the pointer after a few pixels; with a finger after a long press (a finger that moves before that scrolls). A copy follows the pointer, the item stays faint in its place, a line shows where it would land; the list scrolls near its edges.'],
     ['Dropping', 'The item’s element moves there at once and `onReorder` says from where to where: your data is yours to reorder. Across sortables of a group, `onRemove` and `onAdd` say the same on both sides.'],
-    ['Items from data', 'With `items`, each item keeps its component as the order changes (the rows are keyed by item): reordering your array moves the rows, no row is made again.'],
+    ['Binding to data', 'With `items`, each item keeps its component as the order changes (the rows are keyed by item): reordering your array moves the rows, no row is made again.'],
     ['Keys', 'The focused item (its handle when there is one) takes Ctrl + Up / Down (Left / Right side by side), Ctrl + Home / End; each move is told to `onReorder` and read out.'],
     ['Escape', 'Cancels a drag; nothing moves.']
 ];

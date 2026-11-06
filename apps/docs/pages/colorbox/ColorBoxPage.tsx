@@ -7,70 +7,70 @@ import Picker from './examples/Picker';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const BOX_PROPS = [
-  ['value', '`Bind<string | null>`', '`null`', 'The colour, kept as `#rrggbb` (`#rrggbbaa` with `alpha`); any `#…` or `rgb(…)` form is read. Two-way with `x-model`.'],
-  ['alpha', '`Bind<boolean>`', '`false`', 'An opacity strip and input; the value keeps its opacity.'],
-  ['palette', '`Bind<readonly string[] | null>`', '`null`', 'Preset colours in the popup.'],
-  ['apply', '`Bind<ColorBoxApply>`', "`'instantly'`", '`instantly`: the value follows every move in the popup; `useButtons`: it changes on OK, Cancel leaves it.'],
-  ['clearButton', '`Bind<boolean>`', '`false`', 'A button that empties it.'],
-  ['placeholder', '`Bind<string>`', "`''`", 'Shown while it is empty.'],
-  ['label, helpText, readOnly, required, rules, size…', 'see Field', '', 'Everything a field has. Text that is not a colour is reported as not valid.'],
+  ['value', '`Bind<string | null>`', '`null`', 'The color, stored as `#rrggbb` (`#rrggbbaa` with `alpha`). Any `#…` or `rgb(…)` form is accepted. `x-model` provides two-way binding.'],
+  ['alpha', '`Bind<boolean>`', '`false`', 'Adds an opacity slider and input, and the value keeps its opacity.'],
+  ['palette', '`Bind<readonly string[] | null>`', '`null`', 'Preset colors in the popup.'],
+  ['apply', '`Bind<ColorBoxApply>`', "`'instantly'`", 'With `instantly`, the value follows every change in the popup. With `useButtons`, it changes on OK, and Cancel discards the change.'],
+  ['clearButton', '`Bind<boolean>`', '`false`', 'Shows a button that clears the field.'],
+  ['placeholder', '`Bind<string>`', "`''`", 'Displayed when the field is empty.'],
+  ['label, helpText, readOnly, required, rules, size…', 'see Field', '', 'All standard field props. Text that is not a color is reported as invalid.'],
 ];
 
 const BOX_MEMBERS = [
-  ['open(), close()', 'methods', 'Opens or closes the picker (Alt+Down opens it too).'],
-  ['opened', 'read-only', 'Whether the picker is open.'],
-  ['onOpened, onClosed', 'events', 'The picker opened, or closed (with the reason).'],
-  ['picker', 'read-only', 'The `ColorPicker` in the popup, once it was opened.'],
-  ['clear()', 'method', 'Empties it.'],
+  ['open(), close()', 'methods', 'Opens or closes the picker (Alt+Down also opens it).'],
+  ['opened', 'read-only', 'Indicates whether the picker is open.'],
+  ['onOpened, onClosed', 'events', 'Occurs when the picker opens or closes (with the reason).'],
+  ['picker', 'read-only', 'The `ColorPicker` in the popup, after it has been opened.'],
+  ['clear()', 'method', 'Clears the value.'],
 ];
 
 const PICKER_PROPS = [
-  ['value', '`Bind<string | null>`', '`null`', 'The colour; it follows every move. Two-way with `x-model`.'],
-  ['alpha', '`Bind<boolean>`', '`false`', 'An opacity strip and input.'],
-  ['palette', '`Bind<readonly string[] | null>`', '`null`', 'Preset colours to choose with one press.'],
-  ['showInputs', '`Bind<boolean>`', '`true`', 'The hex and red, green, blue inputs.'],
-  ['eyeDropper', '`Bind<boolean>`', '`true`', 'A button that picks a colour from the screen, where the browser can (EyeDropper).'],
-  ['onValueChanged', '`ColorChangedEventArgs`', '', 'The colour changed (`value`), by the user or by code (`byUser`).'],
+  ['value', '`Bind<string | null>`', '`null`', 'The color, updated with every change. `x-model` provides two-way binding.'],
+  ['alpha', '`Bind<boolean>`', '`false`', 'Adds an opacity slider and input.'],
+  ['palette', '`Bind<readonly string[] | null>`', '`null`', 'Preset colors that can be selected with one click.'],
+  ['showInputs', '`Bind<boolean>`', '`true`', 'Shows the hex and red, green and blue inputs.'],
+  ['eyeDropper', '`Bind<boolean>`', '`true`', 'Shows a button that picks a color from the screen, in browsers that support EyeDropper.'],
+  ['onValueChanged', '`ColorChangedEventArgs`', '', 'Occurs when the color changes (`value`), either through user input or programmatically (`byUser`).'],
 ];
 
 const FUNCTIONS = [
-  ['parseColor(text)', '`ColorRgba | null`', 'Reads `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb(…)`, `rgba(…)`.'],
-  ['formatColor(rgba)', '`string`', '`#rrggbb`, or `#rrggbbaa` when it is not opaque.'],
+  ['parseColor(text)', '`ColorRgba | null`', 'Parses `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb(…)` and `rgba(…)`.'],
+  ['formatColor(rgba)', '`string`', 'Returns `#rrggbb`, or `#rrggbbaa` when the color is not opaque.'],
 ];
 
 const KEYS = [
-  ['Arrow keys', 'On the area: saturation (left, right) and brightness (up, down); on a strip: hue or opacity. Shift moves by 10.'],
-  ['Home, End', 'A strip’s ends.'],
-  ['Alt+Down', 'In the colour box: opens the picker.'],
-  ['Enter', 'In the colour box: takes the hex typed.'],
+  ['Arrow keys', 'In the area, arrow keys change saturation (Left, Right) and brightness (Up, Down). On a slider, they change hue or opacity. Shift moves in steps of 10.'],
+  ['Home, End', 'Moves to either end of a slider.'],
+  ['Alt+Down', 'In the color box, opens the picker.'],
+  ['Enter', 'In the color box, applies the typed hex value.'],
 ];
 
 const A11Y = [
-  ['Handles', 'Sliders named “Saturation and brightness”, “Hue”, “Opacity”, saying where they stand, in the kit language.'],
-  ['Inputs', 'Kit text and number boxes, each with its label (Hex, Red, Green, Blue, Opacity).'],
-  ['Presets', 'Buttons named by their colour; the chosen one is pressed (`aria-pressed`).'],
-  ['Popup', 'A dialog named “Choose color”; focus goes to the area and comes back to the box.'],
+  ['Handles', 'Sliders named “Saturation and brightness”, “Hue” and “Opacity”, which announce their position in the kit language.'],
+  ['Inputs', 'Kit text and number boxes, each with a label (Hex, Red, Green, Blue, Opacity).'],
+  ['Presets', 'Buttons named by their color. The selected one is pressed (`aria-pressed`).'],
+  ['Popup', 'A dialog named “Choose color”. Focus moves to the area and returns to the box when it closes.'],
 ];
 
 const HOOKS = [
   ['.mx-color-picker', 'The picker. `data-alpha`.'],
-  ['.mx-color-picker__area, __strip, __hue, __alpha, __thumb', 'The area, the strips and their handles.'],
+  ['.mx-color-picker__area, __strip, __hue, __alpha, __thumb', 'The area, the sliders and their handles.'],
   ['.mx-color-picker__preview, __inputs, __hex, __channel, __swatches, __swatch, __pick', 'The rest of the picker.'],
-  ['.mx-color-box, .mx-color-box__swatch, .mx-color-box__toggle, .mx-color-box__popup', 'The colour box and its parts.'],
+  ['.mx-color-box, .mx-color-box__swatch, .mx-color-box__toggle, .mx-color-box__popup', 'The color box and its parts.'],
 ];
 
 const TOKENS = [
-  ['color-picker.area, .strip, .thumb, .preview, .swatch', 'Units: their corners, the handle’s ring and focus, a preset’s hover, chosen and focus looks.'],
-  ['color-picker.width, .gap, .area-height, .strip-height, .thumb-size, .preview-size, .swatch-size, .swatch-gap', 'The picker’s sizes and spaces.'],
-  ['color-picker.checker-*, color-box.checker-*', 'The checker under a see-through colour.'],
-  ['color-box.swatch, color-box.swatch-size, color-box.popup-gap', 'The swatch in the box, and the space in the popup.'],
+  ['color-picker.area, .strip, .thumb, .preview, .swatch', 'Units: corners, the handle\'s ring and focus state, and the hover, selected and focus states of a preset.'],
+  ['color-picker.width, .gap, .area-height, .strip-height, .thumb-size, .preview-size, .swatch-size, .swatch-gap', 'The sizes and spacing of the picker.'],
+  ['color-picker.checker-*, color-box.checker-*', 'The checkerboard behind a transparent color.'],
+  ['color-box.swatch, color-box.swatch-size, color-box.popup-gap', 'The swatch in the box and the spacing in the popup.'],
 ];
 
 export default function ColorBoxPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="A colour as a field, with a picker in a popup; or the picker on its own. The picker has an area of saturation and brightness, a hue strip, an opacity strip, inputs for the channels and preset colours." />
+        <Rich text="A color field with a popup picker, or the picker on its own. The picker has a saturation and brightness area, a hue slider, an opacity slider, channel inputs and preset colors." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -81,22 +81,22 @@ import { ColorBox, ColorPicker } from '@motifx-community/ui';
         />
       </Section>
 
-      <Section anchor="ways" title="A colour field">
+      <Section anchor="ways" title="Color field">
         <p>
-          <Rich text="Type a hex or any `rgb(…)` form, or open the picker; the value is kept as hex. Every prop takes a value or a function." />
+          <Rich text="Type a hex value or any `rgb(…)` form, or open the picker. The value is stored as hex. Every prop accepts a value or a function." />
         </p>
         <Example files={code('Programmatic.tsx')}>
           <Programmatic />
         </Example>
       </Section>
 
-      <Section anchor="picker" title="The picker on its own">
+      <Section anchor="picker" title="Standalone picker">
         <Example files={code('Picker.tsx')}>
           <Picker />
         </Example>
       </Section>
 
-      <Section anchor="buttons" title="OK and Cancel">
+      <Section anchor="buttons" title="OK and Cancel buttons">
         <Example files={code('Buttons.tsx')}>
           <Buttons />
         </Example>

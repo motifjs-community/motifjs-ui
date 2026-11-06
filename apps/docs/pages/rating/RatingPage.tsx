@@ -7,46 +7,46 @@ import Looks from './examples/Looks';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['value', '`Bind<number | null>`', '`null`', 'The score, rounded to `step`; `null`: none. Two-way with `x-model`.'],
-  ['max', '`Bind<number>`', '`5`', 'How many stars.'],
-  ['step', '`Bind<1 | 0.5>`', '`1`', '`0.5` takes halves: a press on a star’s first half, or the arrow keys.'],
-  ['allowClear', '`Bind<boolean>`', '`true`', 'A press on the value chosen, Delete or Backspace leave none.'],
-  ['preview', '`Bind<boolean>`', '`true`', 'Under the pointer, the stars show what a press would give.'],
-  ['tone', '`Bind<RatingTone>`', 'Set by the design language', '`accent`, `neutral`. Gold stars of your own: give `rating.fill.accent.bg` your colour.'],
-  ['emptyIcon, filledIcon', '`Bind<string | null>`', 'Set by the design language', 'The shape of an empty and of a filled star: a name of the kit’s icon set, or an image address (drawn in the stars’ colours).'],
-  ['label, helpText, readOnly, required, rules, size…', 'see Field', '', 'Everything a field has: a rating is one.'],
+  ['value', '`Bind<number | null>`', '`null`', 'The score, rounded to `step`. `null` means no score. `x-model` provides two-way binding.'],
+  ['max', '`Bind<number>`', '`5`', 'The number of stars.'],
+  ['step', '`Bind<1 | 0.5>`', '`1`', '`0.5` allows half stars, using the first half of a star or the arrow keys.'],
+  ['allowClear', '`Bind<boolean>`', '`true`', 'Clicking the selected value, or pressing Delete or Backspace, clears the score.'],
+  ['preview', '`Bind<boolean>`', '`true`', 'On hover, the stars preview the score a click would set.'],
+  ['tone', '`Bind<RatingTone>`', 'Set by the design language', '`accent` or `neutral`. For custom gold stars, set the color in `rating.fill.accent.bg`.'],
+  ['emptyIcon, filledIcon', '`Bind<string | null>`', 'Set by the design language', 'The shape of an empty and a filled star: a name from the kit\'s icon set, or an image address (drawn in the star colors).'],
+  ['label, helpText, readOnly, required, rules, size…', 'see Field', '', 'All standard field props, because a rating is a field.'],
 ];
 
 const KEYS = [
-  ['Arrow keys', 'One step up or down (by halves with `step={0.5}`).'],
-  ['Home, End', 'None (or the least, without `allowClear`), and every star.'],
-  ['1 … 9', 'That many stars.'],
-  ['Delete, Backspace', 'None (with `allowClear`).'],
+  ['Arrow keys', 'Increases or decreases the score by one step (by half with `step={0.5}`).'],
+  ['Home, End', 'Sets no stars (the minimum, without `allowClear`), or all stars.'],
+  ['1 … 9', 'Sets that number of stars.'],
+  ['Delete, Backspace', 'Clears the score (with `allowClear`).'],
 ];
 
 const A11Y = [
-  ['Role', 'A `slider` from 0 to `max`, named by its label; the value is said as “3 of 5”, or “Not rated”, in the kit language.'],
-  ['Read-only', '`aria-readonly`; the stars only show the score.'],
+  ['Role', 'A `slider` from 0 to `max`, named by its label. The value is announced as “3 of 5” or “Not rated” in the kit language.'],
+  ['Read-only', '`aria-readonly`. The stars only display the score.'],
 ];
 
 const HOOKS = [
   ['.mx-rating', 'The field. `data-tone`, `data-size`, `data-readonly`, `data-disabled`.'],
-  ['.mx-rating__stars', 'The row of stars: the slider, which takes the focus.'],
-  ['.mx-rating__item, .mx-rating__star, .mx-rating__fill', 'One star, its empty shape and its filled part (`--_fill`: the share filled).'],
+  ['.mx-rating__stars', 'The row of stars, which is the slider and receives focus.'],
+  ['.mx-rating__item, .mx-rating__star, .mx-rating__fill', 'One star, its empty shape and its filled part (`--_fill`: the filled share).'],
 ];
 
 const TOKENS = [
-  ['rating.stars, rating.item, rating.star, rating.fill', 'Units: the row (focus, disabled), a star growing under the pointer, the empty shape, the filled part in each tone.'],
+  ['rating.stars, rating.item, rating.star, rating.fill', 'Units: the row (focus, disabled), a star growing on hover, the empty shape, and the filled part in each tone.'],
   ['rating.size.*, rating.gap.*', 'A star and the space between stars, per size.'],
-  ['rating.tone', 'The tone when none is given.'],
-  ['rating.field.*', 'Place: the field under a rating, without a box.'],
+  ['rating.tone', 'The default tone.'],
+  ['rating.field.*', 'Place: the field below a rating, without a box.'],
 ];
 
 export default function RatingPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="A row of stars to give a score or to show one, whole or by halves. It is a field: label, help text, rules and `x-model` work as in every field." />
+        <Rich text="A row of stars for entering or displaying a score, in whole or half steps. Rating is a field, so the label, help text, rules and `x-model` work the same way as on any other field." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -59,20 +59,20 @@ import { Rating } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function; `x-model` binds the score two-way. Under the pointer the stars show what a press would give." />
+          <Rich text="Every prop accepts a value or a function, and `x-model` provides two-way binding for the score. On hover, the stars preview the score a click would set." />
         </p>
         <Example files={code('Programmatic.tsx')}>
           <Programmatic />
         </Example>
       </Section>
 
-      <Section anchor="looks" title="Halves, sizes, tones">
+      <Section anchor="looks" title="Half stars, sizes and tones">
         <Example files={code('Looks.tsx')}>
           <Looks />
         </Example>
       </Section>
 
-      <Section anchor="icons" title="Icons of your own">
+      <Section anchor="icons" title="Custom icons">
         <Example files={code('Icons.tsx')}>
           <Icons />
         </Example>

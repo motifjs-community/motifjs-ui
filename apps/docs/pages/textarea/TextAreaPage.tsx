@@ -12,21 +12,21 @@ import States from './examples/States';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['value', '`Bind<string>`', "`''`", 'The text, lines separated by `\\n`. `x-model` binds it two-way.'],
+  ['value', '`Bind<string>`', "`''`", 'The text, with lines separated by `\\n`. `x-model` provides two-way binding.'],
   ['label', '`Bind<string>`', "`''`", 'The field label. Writing `&Name` assigns Alt+N as the access key. This is the same property as `text`.'],
   ['labelMode', '`Bind<FieldLabelMode>`', "`'top'`", '`top`, `side`, `floating`, `hidden`.'],
   ['placeholder', '`Bind<string>`', "`''`", 'Displayed when the field is empty.'],
-  ['rows', '`Bind<number>`', '`3`', 'Visible lines.'],
-  ['autoGrow', '`Bind<boolean>`', '`false`', 'The box follows the text, from `minRows` to `maxRows` lines, then scrolls.'],
-  ['minRows', '`Bind<number>`', '`rows`', 'The smallest box with `autoGrow`.'],
-  ['maxRows', '`Bind<number | null>`', '`null`', 'The largest box with `autoGrow`; without it the box grows without a limit.'],
-  ['resize', '`Bind<TextAreaResize>`', "`'vertical'`", '`none`, `vertical`, `both`: which way the user can drag the box. `none` while `autoGrow` is on.'],
-  ['maxLength / minLength', '`Bind<number>`', '—', 'Limits; both are checked by validation.'],
-  ['showCounter', '`Bind<boolean>`', '`false`', '`12/500` under the box (`12` without `maxLength`).'],
+  ['rows', '`Bind<number>`', '`3`', 'The number of visible lines.'],
+  ['autoGrow', '`Bind<boolean>`', '`false`', 'The box adjusts to its content, from `minRows` to `maxRows` lines, and then scrolls.'],
+  ['minRows', '`Bind<number>`', '`rows`', 'The minimum height with `autoGrow`.'],
+  ['maxRows', '`Bind<number | null>`', '`null`', 'The maximum height with `autoGrow`. Without it, the box grows without limit.'],
+  ['resize', '`Bind<TextAreaResize>`', "`'vertical'`", '`none`, `vertical` or `both`: the directions the user can resize the box. This is `none` while `autoGrow` is on.'],
+  ['maxLength / minLength', '`Bind<number>`', '—', 'Length limits. Both are enforced by validation.'],
+  ['showCounter', '`Bind<boolean>`', '`false`', 'Shows `12/500` below the box (`12` without `maxLength`).'],
   ['clearButton', '`Bind<boolean>`', '`false`', 'Shows a button that clears the field. Pressing Escape also clears it.'],
-  ['updateOn', "`Bind<'input' | 'change'>`", "`'input'`", '`change`: the value changes when the field is left or Ctrl+Enter is pressed.'],
+  ['updateOn', "`Bind<'input' | 'change'>`", "`'input'`", 'With `change`, the value updates when the field loses focus or the user presses Ctrl+Enter.'],
   ['selectOnFocus', '`Bind<boolean>`', '`false`', 'Selects all text when the field receives focus.'],
-  ['wrap', "`Bind<'soft' | 'hard' | 'off'>`", "`'soft'`", '`off` keeps long lines on one line and scrolls sideways.'],
+  ['wrap', "`Bind<'soft' | 'hard' | 'off'>`", "`'soft'`", '`off` keeps long lines on one line and scrolls horizontally.'],
   ['helpText, hint, prefix, suffix, icon, buttons', 'see TextBox', '', 'Parts common to all fields.'],
   ['readOnly, required, size, variant, stretch', 'see TextBox', '', 'States and appearance common to all fields.'],
   ['rules, error, validateOn, validationGroup', 'see TextBox', '', 'Validation works the same way as for all fields.'],
@@ -43,7 +43,7 @@ const PROPERTIES = [
 const METHODS = [
   ['validate()', '`Promise<boolean>`', 'Validates the value and displays the result.'],
   ['resetValidation()', '`void`', 'Clears the results of previous validation.'],
-  ['focus()', '`boolean`', 'Focuses the textarea.'],
+  ['focus()', '`boolean`', 'Sets focus on the textarea.'],
   ['select()', '`void`', 'Selects all text.'],
   ['clear()', '`void`', 'Clears the field, as the clear button does.'],
 ];
@@ -51,29 +51,29 @@ const METHODS = [
 const EVENTS = [
   ['onValueChanged(e)', 'Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`.'],
   ['onValidated(e)', 'Occurs when validation finishes. `e`: `{ valid, message, source }`.'],
-  ['onEnter(e)', 'Ctrl+Enter (Cmd+Enter) was pressed. `e`: `{ value, source, event }`.'],
-  ['oninput, onchange, onkeydown, onfocusin, onfocusout', 'The DOM events of the textarea reach the field.'],
+  ['onEnter(e)', 'Occurs when the user presses Ctrl+Enter (Cmd+Enter). `e`: `{ value, source, event }`.'],
+  ['oninput, onchange, onkeydown, onfocusin, onfocusout', 'DOM events from the textarea bubble up to the field.'],
 ];
 
 const KEYS = [
-  ['Enter', 'A new line.'],
-  ['Ctrl + Enter, Cmd + Enter', 'Commits the value (with `updateOn="change"`) and fires `onEnter`: send, save.'],
+  ['Enter', 'Inserts a new line.'],
+  ['Ctrl + Enter, Cmd + Enter', 'Commits the value (with `updateOn="change"`) and raises `onEnter`.'],
   ['Escape', 'With `clearButton`, clears a field that has a value. Otherwise, the key passes to the containing window.'],
   ['Alt + key (`&Name`)', 'Moves focus to the field (Control + Option + key on Apple platforms).'],
-  ['Tab', 'Leaves the field; the clear button is not a Tab stop (Escape does its job).'],
+  ['Tab', 'Moves focus out of the field. The clear button is not a Tab stop, because Escape does the same thing.'],
 ];
 
 const A11Y = [
-  ['Element', 'A native `<textarea>` (multi-line by nature); its `<label>` is tied to it with `for`.'],
+  ['Element', 'A native `<textarea>` associated with its `<label>` through `for`.'],
   ['Description', '`aria-describedby` references the prefix, the suffix and the help text.'],
   ['Errors', '`aria-invalid="true"`. The message is a polite live region.'],
-  ['Required', '`aria-required="true"`. The indicator after the label is hidden from screen readers.'],
-  ['Ctrl + Enter', 'Say it in the label or the help text when it sends something, as in the example above.'],
+  ['Required check boxes', '`aria-required="true"`. The indicator after the label is hidden from screen readers.'],
+  ['Ctrl + Enter', 'If Ctrl+Enter sends something, mention it in the label or help text, as the example above does.'],
 ];
 
 const HOOKS = [
-  ['.mx-field.mx-text-area', 'The field. `data-resize`, `data-auto-grow`, and the field attributes (`data-size`, `data-variant`, `data-label-mode`, `data-invalid`, `data-readonly`, `data-disabled`, `data-filled`).'],
-  ['.mx-field__box', 'The box; it carries the resize grip.'],
+  ['.mx-field.mx-text-area', 'The field. `data-resize`, `data-auto-grow` and the field attributes (`data-size`, `data-variant`, `data-label-mode`, `data-invalid`, `data-readonly`, `data-disabled`, `data-filled`).'],
+  ['.mx-field__box', 'The box, which carries the resize grip.'],
   ['.mx-field__input.mx-text-area__input', 'The textarea.'],
   ['.mx-text-area__clear', 'The clear button.'],
   ['.mx-field__message, .mx-field__counter', 'Help text below the box.'],
@@ -83,7 +83,7 @@ export default function TextAreaPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="A text field of several lines: a box that grows with the text or that the user drags bigger, a character counter, a clear button, Ctrl+Enter to send, and the label, help text and validation every field has." />
+        <Rich text="A multi-line text input. The box can grow with its content or be resized by the user, and it supports a character counter, a clear button and Ctrl+Enter to submit, along with the label, help text and validation common to all fields." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -96,34 +96,34 @@ import { TextArea, type TextAreaProps } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function; `x-model` binds the text two-way. Created with `new`, the same properties are set programmatically." />
+          <Rich text="Every prop accepts a value or a function, and `x-model` provides two-way binding for the text. When you create the component with `new`, set the same properties programmatically." />
         </p>
         <Example files={code('Programmatic.tsx')} stack>
           <Programmatic />
         </Example>
       </Section>
 
-      <Section anchor="grow" title="Growing with the text">
+      <Section anchor="grow" title="Auto-grow">
         <p>
-          <Rich text="With `autoGrow` the box follows the text: never smaller than `minRows` lines, never taller than `maxRows`; past that it scrolls. A narrower box wraps into more lines and grows too." />
+          <Rich text="With `autoGrow`, the box adjusts to its content. It stays between `minRows` and `maxRows` lines and scrolls beyond that. When the box gets narrower, text wraps onto more lines and the box grows accordingly." />
         </p>
         <Example files={code('AutoGrow.tsx')}>
           <AutoGrow />
         </Example>
       </Section>
 
-      <Section anchor="resize" title="Resize">
+      <Section anchor="resize" title="Resizing">
         <p>
-          <Rich text="The grip at the corner of the box lets the user drag it taller (`vertical`, the default), in both directions (`both`), or not at all (`none`)." />
+          <Rich text="The grip in the corner of the box lets the user resize it vertically (`vertical`, the default) or in both directions (`both`). Set `none` to disable resizing." />
         </p>
         <Example files={code('Resize.tsx')} stack>
           <Resize />
         </Example>
       </Section>
 
-      <Section anchor="counter" title="Counter and limits">
+      <Section anchor="counter" title="Character counter and limits">
         <p>
-          <Rich text="`maxLength` stops typing at the limit, `minLength` is checked when the field is left; `showCounter` shows the count under the box." />
+          <Rich text="`maxLength` stops input at the limit, and `minLength` is checked when the field loses focus. `showCounter` displays the count below the box." />
         </p>
         <Example files={code('CounterAndLimits.tsx')}>
           <CounterAndLimits />
@@ -132,7 +132,7 @@ import { TextArea, type TextAreaProps } from '@motifx-community/ui';
 
       <Section anchor="enter" title="Ctrl+Enter">
         <p>
-          <Rich text="Enter starts a new line. Ctrl+Enter (Cmd+Enter on a Mac) fires `onEnter` with the value: the usual way to send a message or save a note." />
+          <Rich text="Enter starts a new line. Ctrl+Enter (Cmd+Enter on a Mac) raises `onEnter` with the value, which is the usual way to send a message or save a note." />
         </p>
         <Example files={code('CtrlEnter.tsx')} stack>
           <CtrlEnter />
@@ -145,7 +145,7 @@ import { TextArea, type TextAreaProps } from '@motifx-community/ui';
         </Example>
       </Section>
 
-      <Section anchor="states" title="Read-only, disabled, required">
+      <Section anchor="states" title="Read-only, disabled and required">
         <Example files={code('States.tsx')}>
           <States />
         </Example>
@@ -170,7 +170,7 @@ import { TextArea, type TextAreaProps } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <p>
-          <Rich text="TextArea uses the field tokens (`field.*`, see TextBox) and has none of its own: the first line lines up with a one-line field of the same size." />
+          <Rich text="TextArea uses the field tokens (`field.*`, see TextBox) and has none of its own, so its first line aligns with a single-line field of the same size." />
         </p>
         <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
       </Section>
