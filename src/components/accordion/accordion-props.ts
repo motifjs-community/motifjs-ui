@@ -6,7 +6,7 @@ import type { AccordionExpandedEventArgs } from './accordion-expanded-event-args
 import type { AccordionExpandingEventArgs } from './accordion-expanding-event-args';
 import type { AccordionVariant } from './accordion-variant';
 
-/** Props of `Accordion`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `Accordion`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface AccordionProps extends ControlProps {
   /** The open items' keys (an item without a key: its index). `x-model` binds it two-way. */
   value?: Bind<readonly (string | number)[] | null | undefined>;

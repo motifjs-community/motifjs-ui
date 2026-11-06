@@ -80,7 +80,7 @@ export class MoveByKeys {
     // The keys come to the window the move started in: the main one, or a new window.
     const view = (source ?? subject.group.element).ownerDocument.defaultView ?? window;
     const key = (e: KeyboardEvent) => untracked(() => this.key(e));
-    // A press anywhere, or the window losing focus, ends it.
+    // A click anywhere, or the window losing focus, ends it.
     const away = () => untracked(() => this.end(false));
     view.addEventListener('keydown', key, true);
     view.addEventListener('pointerdown', away, true);

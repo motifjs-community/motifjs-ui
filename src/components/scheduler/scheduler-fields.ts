@@ -12,7 +12,7 @@ export interface SchedulerFields {
   allDay: string;
   /** Default `'description'`. */
   description: string;
-  /** Default `'color'`: a CSS colour of its own. */
+  /** Default `'color'`: a CSS color of its own. */
   color: string;
   /** Default `'disabled'`. */
   disabled: string;
@@ -28,7 +28,7 @@ export interface SchedulerFields {
   allowDelete: string;
   /** Default `'recurrenceRule'`: how it repeats, an RFC 5545 rule (`FREQ=WEEKLY;BYDAY=MO,WE`); empty for once. */
   recurrenceRule: string;
-  /** Default `'recurrenceException'`: the times of a series left out (`EXDATE`), a text apart by commas or a list of dates. */
+  /** Default `'recurrenceException'`: the times of a series omitted (`EXDATE`), a text apart by commas or a list of dates. */
   recurrenceException: string;
   /** Default `'recurrenceId'`: on an occurrence changed apart from its series, the key of that series. */
   recurrenceId: string;

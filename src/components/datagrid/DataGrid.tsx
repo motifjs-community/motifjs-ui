@@ -270,10 +270,10 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private readonly dragSelect: DragSelect<T>;
   /** The active cell when the last press in the rows came, before it moved there: a Shift+click range starts from it. */
   private pressFrom: { row: number; field: string } | null = null;
-  /** A row drag selection: the selection before it (Escape puts it back), and whether its rows are selected or taken out. */
+  /** A row drag selection: the selection before it (Escape puts it back), and whether its rows are selected or removed. */
   private rowDragBefore: ReturnType<GridModel<T>['selection']['save']> | null = null;
   private rowDragOn = true;
-  /** The selected cells' summary, and what it was worked out for. */
+  /** The selected cells' summary, and what it was calculated for. */
   private cellSummaryCache: { key: string; value: { summary: GridCellSummary; column: string | null } } | null = null;
   private readonly totalRow: TotalRow<T>;
   private readonly pager: GridPager<T>;
@@ -323,7 +323,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   private pendingInvalid: string | null = null;
   /** Stops following a `searchText` function. */
   private stopSearchBinding: (() => void) | null = null;
-  /** A key `onKeyHandling` cancelled: the grid leaves it alone. */
+  /** A key `onKeyHandling` canceled: the grid leaves it alone. */
   private skippedKey: KeyboardEvent | null = null;
   /** The row being edited in the edit form (`editMode` `'form'`, `'popup'`), and the window it is in. */
   private formEdit: { mode: 'form' | 'popup'; rowId: string; row: T; form: EditForm<T>; window: MxForm | null } | null = null;
@@ -634,14 +634,14 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.text = value;
   }
 
-  /** The feature switches, live: `grid.settings.resizable = false`; a function is followed. */
+  /** The feature switches, live: `grid.settings.resizable = false`, and a function is tracked. */
   get settings(): GridSettings {
     return this.model.settings.view;
   }
 
   /**
    * The bar above the rows, live: `grid.toolbar.items = ['searchPanel', { text: 'Refresh', click }]`;
-   * a function is followed. `visible` left out shows the bar while it has an item.
+   * a function is tracked. `visible` omitted shows the bar while it has an item.
    */
   get toolbar(): GridToolbarOptions {
     return this.toolbarSwitches.view as GridToolbarOptions;
@@ -655,18 +655,18 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.exportSwitches.view as GridExportSettings;
   }
 
-  /** The edit form of `editMode` `'form'` and `'popup'`, live: `grid.form.colCount = 3`; a function is followed. */
+  /** The edit form of `editMode` `'form'` and `'popup'`, live: `grid.form.colCount = 3`, and a function is tracked. */
   get form(): GridEditForm {
     return this.formSwitches.view as GridEditForm;
   }
 
-  /** The window of `editMode: 'popup'`, live: `grid.popup.width = '40rem'`; a function is followed. */
+  /** The window of `editMode: 'popup'`, live: `grid.popup.width = '40rem'`, and a function is tracked. */
   get popup(): GridEditPopup {
     return this.popupSwitches.view as GridEditPopup;
   }
 
   /**
-   * One column's own feature switches, live. A value set here wins over `settings`; `undefined`
+   * One column's own feature switches, live. A value set here takes precedence over `settings`; `undefined`
    * follows `settings` again.
    * @example grid.columnSettings('amount').movable = false;
    */
@@ -823,7 +823,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /**
    * Loads the rows again, keeping the position, and the texts of the lookup columns; saved new rows
    * leave the new-row area and take their place among the rows. Everything that shows the app's data
-   * is read again too (`repaint()`), and the summaries are worked out again.
+   * is read again too (`repaint()`), and the summaries are calculated again.
    */
   refresh() {
     this.dropForm();
@@ -839,7 +839,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.refreshLookups();
   }
 
-  /** Raised before a cell editor is made: change its props (`e.options`), or `e.cancel` the edit. */
+  /** Raised before a cell editor is created: change its props (`e.options`), or `e.cancel` the edit. */
   get onEditorPreparing(): MotifEvent<GridEditorPreparingEventArgs<T>> {
     return this.on(this.model.events.editorPreparing);
   }
@@ -908,7 +908,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * Deletes a row (default: the active one) as the save mode says: `batch` marks it until
+   * Deletes a row (default: the active one) according to the save mode: `batch` marks it until
    * `saveChanges()`, `wait` sends it and resolves when the answer is in, `background` sends it
    * through the queue. A new row never saved is just dropped. With `confirmDelete` (and not in batch
    * mode) the user is asked first. Resolves to `false` when it failed or was not confirmed.
@@ -1010,7 +1010,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.model.events.event(emitter);
   }
 
-  /** Raised after an editor was made, in a cell or in the edit form. */
+  /** Raised after an editor was created, in a cell or in the edit form. */
   get onEditorPrepared(): MotifEvent<GridEditorPreparedEventArgs<T>> {
     return this.on(this.model.events.editorPrepared);
   }
@@ -1342,7 +1342,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /**
    * The value a cell shows (its unsaved edit when there is one). With `value`, writes it as the user
-   * would: into the row's draft, checked, and sent as the save mode says (batch: on `saveChanges()`).
+   * would: into the row's draft, checked, and sent according to the save mode (batch: on `saveChanges()`).
    */
   cellValue(rowIndex: number, field: string, value?: unknown): unknown {
     const { model } = this;
@@ -1741,7 +1741,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     model.events.tell(model.events.optionChanged, () => ({ name, field: id, value: read(name), previous }));
   }
 
-  /** Other fields of a column's definition: the column is made again with them, its layout, sort and filter kept. */
+  /** Other fields of a column's definition: the column is recreated with them, its layout, sort and filter kept. */
   private changeDefinition(field: string, change: Record<string, unknown>) {
     const { model } = this;
     const cols = model.columns;
@@ -1833,7 +1833,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /** What the user set up: the layout (columns, sort, grouping), filters, search text, page and page size, selection and active row. */
   state(): GridStateValue;
-  /** Puts a state back (parts left out stay as they are). */
+  /** Puts a state back (parts omitted stay as they are). */
   state(value: Partial<GridStateValue>): void;
   state(value?: Partial<GridStateValue>): GridStateValue | void {
     if (value === undefined) {
@@ -1890,9 +1890,9 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * Runs an action programmatically, as a press does: on `rows`, or on the rows the bars act on now. Rows
+   * Runs an action programmatically, as a click does: on `rows`, or on the rows the bars act on now. Rows
    * share an action by its `id`; it runs only where it is visible and enabled for them. Resolves to
-   * the outcome, or `null` when the action is not there or `onActionRunning` cancelled it.
+   * the outcome, or `null` when the action is not there or `onActionRunning` canceled it.
    */
   runAction(id: string, rows?: readonly T[]): Promise<GridActionRanEventArgs<T> | null> {
     const sets = this.model.actionSets;
@@ -1933,7 +1933,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.on(this.model.events.selectionChanging);
   }
 
-  /** Selected rows. Reactive. With "all" selected, the total of the filter less the rows taken out. */
+  /** Selected rows. Reactive. With "all" selected, the total of the filter less the rows removed. */
   get selectedCount(): number {
     return this.model.selection.count(this.model.dataTotal);
   }
@@ -1969,7 +1969,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /**
    * The selection as a filter of the data layer, for work on the server: the selected keys, or the
-   * filter of "all" without the rows taken out. `undefined` when nothing is selected or the key is
+   * filter of "all" without the rows removed. `undefined` when nothing is selected or the key is
    * not one field.
    */
   get selectionFilter(): data.FilterExpression | null | undefined {
@@ -2013,7 +2013,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /**
    * The cell ranges (`settings.cellSelection`), each from the cell it was started on to its far
    * corner, by row key and field. Reactive. Assign to set them (`[]` clears them); a range whose
-   * corner names no row or column is left out.
+   * corner names no row or column is omitted.
    */
   get cellRanges(): GridCellRange[] {
     void this.model.cellRanges.state.version;
@@ -2036,7 +2036,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   /**
-   * Selects the cells from `from` to `to` (one cell when it is left out), in place of the ranges
+   * Selects the cells from `from` to `to` (one cell when it is omitted), in place of the ranges
    * there are, or after them (`add`, with `cellSelection: 'multiple'`). Returns whether it shows.
    */
   selectCells(from: GridCellPoint, to: GridCellPoint = from, add = false): boolean {
@@ -2114,7 +2114,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.stopFilterValueBinding = follow(this, 'filterValue', value, (next) => this.takeFilterValue(next));
   }
 
-  /** Whether the filter value applies (the filter panel's check box). Reactive; a function is followed. */
+  /** Whether the filter value applies (the filter panel's check box). Reactive, and a function is tracked. */
   get filterEnabled(): boolean {
     return this.model.filters.enabled;
   }
@@ -2144,12 +2144,12 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.props.filterPanelText ? this.props.filterPanelText({ text, filterValue: value }) : text;
   }
 
-  /** The filter builder the filter panel opens, live: `grid.filterBuilder.maxGroupLevel = 1`; a function is followed. */
+  /** The filter builder the filter panel opens, live: `grid.filterBuilder.maxGroupLevel = 1`, and a function is tracked. */
   get filterBuilder(): GridFilterBuilderOptions {
     return this.builderOptions.view;
   }
 
-  /** The window the filter builder opens in, live: `grid.filterBuilderPopup.width = '50rem'`; a function is followed. */
+  /** The window the filter builder opens in, live: `grid.filterBuilderPopup.width = '50rem'`, and a function is tracked. */
   get filterBuilderPopup(): GridFilterBuilderPopup {
     return this.builderPopupSwitches.view as GridFilterBuilderPopup;
   }
@@ -2199,7 +2199,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /**
    * The search panel's text: the rows shown hold it in a searchable column. Reactive. Assigning
-   * searches at once; a function is followed.
+   * searches at once, and a function is tracked.
    */
   get searchText(): string {
     return this.model.search.state.text;
@@ -2344,7 +2344,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   // Details (master-detail).
 
-  /** The `masterDetail` options, live: `grid.masterDetail.enabled = true`; a function is followed, `onOptionChanged` tells `masterDetail.enabled` …. */
+  /** The `masterDetail` options, live: `grid.masterDetail.enabled = true`, and a function is tracked, `onOptionChanged` tells `masterDetail.enabled` …. */
   get masterDetail(): GridMasterDetail<T> {
     return this.model.details.options.view as GridMasterDetail<T>;
   }
@@ -2405,7 +2405,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   // Adaptive columns.
 
-  /** The `adaptiveDetail` options, live: `grid.adaptiveDetail.colCount = 1`; a function is followed, `onOptionChanged` tells `adaptiveDetail.colCount` …. */
+  /** The `adaptiveDetail` options, live: `grid.adaptiveDetail.colCount = 1`, and a function is tracked, `onOptionChanged` tells `adaptiveDetail.colCount` …. */
   get adaptiveDetail(): GridAdaptiveDetail {
     return this.model.adaptive.options.view as GridAdaptiveDetail;
   }
@@ -2501,7 +2501,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.model.summaries.reread();
   }
 
-  /** Raised when the summary values were worked out again. */
+  /** Raised when the summary values were calculated again. */
   get onSummaryChanged(): MotifEvent<GridSummaryChangedEventArgs> {
     return this.on(this.model.events.summaryChanged);
   }
@@ -2538,7 +2538,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
    * Pastes as Ctrl+V does: tab-separated text into the cells the user can fill, from the active cell
    * (with cell ranges: from the last range's first cell) rightwards and downwards; one value alone
    * fills every cell of the ranges. Values go into the rows' drafts and are checked like typed ones;
-   * rows other than the active one are saved as the save mode says. Returns the number of cells written.
+   * rows other than the active one are saved according to the save mode. Returns the number of cells written.
    */
   paste(text: string): number {
     const { model } = this;
@@ -2571,7 +2571,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   /**
    * The rows of the filter in the sort order, with the visible exportable columns in display order,
    * as objects by field: the text the cells show, or their values (`values: 'raw'`). Rows in memory
-   * are taken as they are; a server's are asked for in parts (`pageSize`) through the data source.
+   * are taken as they are; a server's are requested in parts (`pageSize`) through the data source.
    * Group footers follow their rows and the row of totals comes last, as objects of the same fields
    * with the texts they show (`summaries: false` leaves them out).
    */
@@ -2883,7 +2883,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
       },
     );
 
-    // The columns the width hides: worked out from the widths kept and the viewport's width only, so
+    // The columns the width hides: calculated from the widths kept and the viewport's width only, so
     // hiding them cannot feed back into it.
     this.whenChanged(
       () => [model.columns.fitWidth(model.state.width).join('\n')],
@@ -2987,7 +2987,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
   }
 
   override onBuilt() {
-    // Drawn once all of it is in the grid: a part not wanted now is taken out of its place.
+    // Drawn once all of it is in the grid: a part not wanted now is removed of its place.
     this.drawShell();
     this.topBar.arrange();
     // Header cells and rows are built in definition order; put them in display order.
@@ -3707,7 +3707,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     void win.showDialog(this);
   }
 
-  /** Save in the edit form: every field is kept, the row checked and saved as the save mode says; the form closes once it is. */
+  /** Save in the edit form: every field is kept, the row checked and saved according to the save mode; the form closes once it is. */
   private async saveForm(): Promise<boolean> {
     const fe = this.formEdit;
     const { model } = this;
@@ -3852,7 +3852,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return this.model.editMode === 'cell' && !!rowId && !this.model.isNew(rowId);
   }
 
-  /** In `'cell'` mode the cell just kept is saved now: the row is left (checked, then sent as the save mode says). */
+  /** In `'cell'` mode the cell just kept is saved now: the row is left (checked, then sent according to the save mode). */
   private saveCell() {
     if (this.savesEachCell(this.model.state.session)) this.leaveRowThen(() => this.focusActive(false));
   }
@@ -4249,7 +4249,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     });
   }
 
-  /** A press on a cell of another row: leave the current row first (it may block or wait). */
+  /** A click on a cell of another row: leave the current row first (it may block or wait). */
   private onPointerDown(e: PointerEvent) {
     if (e.button !== 0) return;
     const { activeRow, activeField } = this.model.state;
@@ -4419,7 +4419,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (!model.columns.isInternal(field) && this.columnSetting(field, 'startEditAction') === 'click' && view.index === model.state.activeRow && field === model.state.activeField) this.startEdit();
   }
 
-  /** Opens or closes a group, telling it before (it can be cancelled) and after. */
+  /** Opens or closes a group, telling it before (it can be canceled) and after. */
   private toggleGroup(node: GroupNode, open: boolean): boolean {
     const { model } = this;
     if (model.groups.isExpanded(node) === open) return false;
@@ -4431,7 +4431,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     return true;
   }
 
-  /** Opens or closes the details of grid row `i`, telling it before (it can be cancelled) and after. */
+  /** Opens or closes the details of grid row `i`, telling it before (it can be canceled) and after. */
   private toggleDetail(i: number, open: boolean): boolean {
     const { model } = this;
     const id = model.detailId(i);
@@ -4569,7 +4569,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
 
   /**
    * Opens or closes the adaptive detail of grid row `i` (a data or new row, while columns are
-   * hidden), telling it before (it can be cancelled) and after. Another row's open one closes first.
+   * hidden), telling it before (it can be canceled) and after. Another row's open one closes first.
    */
   private toggleAdaptive(i: number, open: boolean): boolean {
     const { model } = this;
@@ -5462,7 +5462,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     if (r.set([entry])) this.announceCells();
   }
 
-  /** Delete on cell ranges: every cell of them the user can fill is emptied, as typing would, and the rows are saved as the save mode says. */
+  /** Delete on cell ranges: every cell of them the user can fill is emptied, as typing would, and the rows are saved according to the save mode. */
   private clearRangeCells() {
     const { model } = this;
     const st = model.state;
@@ -5486,7 +5486,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     model.announce(model.text('gridCellsCleared', { count: result.cells }));
   }
 
-  /** After cells were written (paste, Delete): rows other than the active one are saved as the save mode says, the active one stays in edit. */
+  /** After cells were written (paste, Delete): rows other than the active one are saved according to the save mode, the active one stays in edit. */
   private saveWritten(result: PasteResult, activeId: string | undefined) {
     const { model } = this;
     const save = (rowId: string) => {
@@ -5516,7 +5516,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     } else model.announce(model.text('gridCellRangesSelected', { count: r.count(), ranges: n }));
   }
 
-  /** The summary of the selected cells, worked out once per change, and the column all its numbers come from (for their format). */
+  /** The summary of the selected cells, calculated once per change, and the column all its numbers come from (for their format). */
   private summarizeCells(): { summary: GridCellSummary; column: string | null } {
     const { model } = this;
     const st = model.state;
@@ -5680,7 +5680,7 @@ export class DataGrid<T = any> extends Control<HTMLDivElement, DataGridProps<T>>
     this.dropped(rows);
   }
 
-  /** A press on an action button: the action runs, the "more" button opens its menu. */
+  /** A click on an action button: the action runs, the "more" button opens its menu. */
   private pressAction(button: HTMLElement) {
     const view = this.body.rowOf(button);
     const hit = view?.actions?.actionOf(button);

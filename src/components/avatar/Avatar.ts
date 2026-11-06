@@ -17,7 +17,7 @@ const OWN = ['src', 'name', 'initials', 'label', 'size', 'shape', 'tone', 'statu
 
 const SHOWN = ['src', 'name', 'initials', 'label', 'status'] as const;
 
-// The name too: `tone: 'auto'` takes its colour from it.
+// The name too: `tone: 'auto'` takes its color from it.
 const LOOK = ['size', 'shape', 'tone', 'name'] as const;
 
 const PRESENCE: Record<AvatarStatus, keyof UiStrings> = {

@@ -8,7 +8,7 @@ import type { StepperOrientation } from './stepper-orientation';
 import type { WizardFinishingEventArgs } from './wizard-finishing-event-args';
 import type { WizardStepProps } from './wizard-step-props';
 
-/** Props of `Wizard`. Each one is also a settable property; a function is followed. */
+/** Props of `Wizard`. Each prop is also a settable property, and a function is tracked. */
 export interface WizardProps extends ControlProps {
     /** Steps made programmatically, each as the props of a `WizardStep` (`title`, `content`, …); the JSX `WizardStep` children come first. */
     steps?: readonly WizardStepProps[];

@@ -5,7 +5,7 @@ import type { GalleryItemClickEventArgs } from './gallery-item-click-event-args'
 import type { SlideChangedEventArgs } from './slide-changed-event-args';
 import type { SlideChangingEventArgs } from './slide-changing-event-args';
 
-/** Props of `Gallery`. Each one is also a settable property; a function is followed. */
+/** Props of `Gallery`. Each prop is also a settable property, and a function is tracked. */
 export interface GalleryProps extends ControlProps {
     /** The panes in order: `GalleryItem`s or image addresses. */
     items?: Bind<readonly (GalleryItem | string)[]>;
@@ -34,6 +34,6 @@ export interface GalleryProps extends ControlProps {
     /** The pane in view is about to change; cancelable. */
     onSlideChanging?: (e: SlideChangingEventArgs) => void;
     onSlideChanged?: (e: SlideChangedEventArgs) => void;
-    /** A press on a pane that was not a drag. */
+    /** A click on a pane that was not a drag. */
     onItemClick?: (e: GalleryItemClickEventArgs) => void;
 }

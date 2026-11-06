@@ -51,7 +51,7 @@ interface Parts<T> {
   /** The chosen values, for quick lookups while drawing. */
   chosen: Set<unknown>;
   search: TextBox | null;
-  /** Where the last choice was made: Shift extends from there. */
+  /** Where the last choice was created: Shift extends from there. */
   anchor: number;
   timer: ReturnType<typeof setTimeout> | undefined;
   /** Drawing waits until the constructor has bound every prop. */
@@ -496,14 +496,14 @@ export class ListBox<T = unknown, V = unknown> extends Field<V | V[] | null, Lis
     const el = list.element;
     el.addEventListener('keydown', (e) => this.keyDown(e));
     el.addEventListener('focus', () => this.gotFocus());
-    // The list keeps focus off its options; a press still focuses the list itself, without the
+    // The list keeps focus off its options; a click still focuses the list itself, without the
     // keyboard ring (Chrome would show it when the focus before came from the keyboard).
     el.addEventListener('mousedown', (e) => {
       if (e.button !== 0 || !this.enabled) return;
       el.removeAttribute('data-keys');
       if (el.ownerDocument.activeElement !== el) el.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
     });
-    // Keys after a press bring the ring back (`data-keys`); the browser would not.
+    // Keys after a click bring the ring back (`data-keys`); the browser would not.
     el.addEventListener('keydown', (e) => {
       if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key !== 'Shift' && e.key !== 'Tab') el.setAttribute('data-keys', '');
     });

@@ -154,7 +154,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
     });
   }
 
-  // Who may change what: the appointment's own field wins over `editing`, and so do its resources' (a field of that name on a resource item).
+  // Who may change what: the appointment's own field takes precedence over `editing`, and so do its resources' (a field of that name on a resource item).
 
   private own(item: T, field: keyof SchedulerFields): boolean | undefined {
     const name = this.host.fields()[field];
@@ -628,7 +628,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
     return map;
   }
 
-  /** A resource's picker: a drop-down, or a tag box for several; each item with its colour. */
+  /** A resource's picker: a drop-down, or a tag box for several; each item with its color. */
   private resourceItem(kind: ResourceKind<unknown>): FormItem {
     const swatch = (row: unknown) => {
       const color = kind.colorOf(row);
@@ -755,7 +755,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
 
   /**
    * The tooltip shows its appointment again: another one, or its fields read again. The built-in one draws itself; a
-   * template's content is made again (it reads the appointment as it is then); a phone's sheet gets its texts again.
+   * template's content is recreated (it reads the appointment as it is then); a phone's sheet gets its texts again.
    */
   private drawTooltip(): void {
     const popup = this.tooltipPopup;
@@ -767,7 +767,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
     this.drawSheet?.();
   }
 
-  /** The template the popup's content was made with (`null`: the built-in tooltip). */
+  /** The template the popup's content was created with (`null`: the built-in tooltip). */
   private tooltipTemplate: unknown = undefined;
   /** The content of the popup now. */
   private tooltipContent: ComponentBase | null = null;
@@ -1169,7 +1169,7 @@ export class AppointmentEditor<T> implements DragHost<T> {
   }
 }
 
-/** Whether an event let it happen: not cancelled, and its promise (if it set one) resolved to `true`. */
+/** Whether an event let it happen: not canceled, and its promise (if it set one) resolved to `true`. */
 async function allowed(e: { cancel: boolean; promise?: Promise<boolean> }): Promise<boolean> {
   if (e.cancel) return false;
   if (!e.promise) return true;

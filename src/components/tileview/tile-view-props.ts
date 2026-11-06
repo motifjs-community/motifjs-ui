@@ -11,7 +11,7 @@ export type TileViewDirection = 'horizontal' | 'vertical';
 /** `none`: nothing is chosen; `single`: one tile; `multiple`: any number. */
 export type TileViewSelectionMode = 'none' | 'single' | 'multiple';
 
-/** Props of `TileView`. Each one is also a settable property; a function is followed. */
+/** Props of `TileView`. Each prop is also a settable property, and a function is tracked. */
 export interface TileViewProps extends ControlProps {
     /** The tiles in order: `TileViewItem`s or plain texts. */
     items?: Bind<readonly (TileViewItem | string)[]>;
@@ -31,7 +31,7 @@ export interface TileViewProps extends ControlProps {
     height?: Bind<string | number | null>;
     /** What screen readers call it. Default: the kit's "Tiles". */
     label?: Bind<string>;
-    /** A press on a tile that was not a drag. */
+    /** A click on a tile that was not a drag. */
     onItemClick?: (e: TileClickEventArgs) => void;
     onSelectionChanged?: (e: TileSelectionChangedEventArgs) => void;
     /** A tile is about to be dragged; cancelable. */

@@ -4,7 +4,7 @@ import type { ControlSize } from '../../core/control-size';
 import type { BreadcrumbItem } from './breadcrumb-item';
 import type { BreadcrumbItemClickEventArgs } from './breadcrumb-item-click-event-args';
 
-/** Props of `Breadcrumb`. Each one is also a settable property; a function is followed. */
+/** Props of `Breadcrumb`. Each prop is also a settable property, and a function is tracked. */
 export interface BreadcrumbProps extends ControlProps {
   /** The steps, the current page last: `BreadcrumbItem`s or plain texts. */
   items?: Bind<readonly (BreadcrumbItem | string)[]>;

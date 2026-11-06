@@ -260,7 +260,7 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
     renderItems(): void {
         this.stopItems?.();
         const items = givenList(this.peekProperty<readonly unknown[]>('actions'));
-        // The actions' own functions are followed; the list and the drawing are not.
+        // The actions' own functions are tracked; the list and the drawing are not.
         this.stopItems = follow(
             this,
             'actions',
@@ -289,7 +289,7 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
         };
     }
 
-    // The action buttons are made again when the actions are others; otherwise written in place.
+    // The action buttons are recreated when the actions are others; otherwise written in place.
     drawActions(): void {
         const stale = this.parts.length !== this.looks.length || this.parts.some((p, i) => p.item !== this.looks[i].item);
         if (stale) {
@@ -390,7 +390,7 @@ export class SpeedDial extends Control<HTMLDivElement, SpeedDialProps> {
         return (up || along || 'up') as SpeedDialDirection;
     }
 
-    // What an action's tooltip shows; its own word wins over the speed dial's.
+    // What an action's tooltip shows; its own word takes precedence over the speed dial's.
     tooltipOf(look: Look, side: Side): SpeedDialTooltip | null {
         const own = look.tooltip;
         const all = this.tooltip;

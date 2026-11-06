@@ -53,7 +53,7 @@ function removeToken(el: Element, name: string, token: string): void {
 /**
  * A short description shown next to an element: after the pointer rests on it, when it gets
  * keyboard focus, or programmatically. The pointer can move onto the tooltip without closing it; Escape,
- * a press, leaving focus and scrolling close it. One tooltip is open at a time on the page, and
+ * a click, leaving focus and scrolling close it. One tooltip is open at a time on the page, and
  * all of them share one set of document listeners. It never takes focus and holds nothing
  * interactive; the target is described by it (`aria-describedby`) while it is shown.
  *

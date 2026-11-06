@@ -192,7 +192,7 @@ export class GridRow<T> {
     this.redraw();
   }
 
-  /** A column taken out loses its cell, and its own content goes. */
+  /** A column removed loses its cell, and its own content goes. */
   removeColumn(field: string) {
     this.cells.get(field)?.remove();
     this.cells.delete(field);
@@ -512,7 +512,7 @@ export class GridRow<T> {
   private drawLookup(cell: HTMLDivElement, text: Text, col: GridColumn<T>) {
     const model = this.model;
     const { row, rowId } = this;
-    // Keys are asked for once the body is measured, so the first request holds every key on the screen.
+    // Keys are requested once the body is measured, so the first request holds every key on the screen.
     const value = model.value(rowId, row, col);
     const look = model.lookups.cell(col, row, value, model.isChanged(rowId, col.field), model.state.measured);
     this.write(col.field, text, look.text, value);

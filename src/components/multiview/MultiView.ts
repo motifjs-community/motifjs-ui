@@ -165,7 +165,7 @@ export class MultiView extends Control<HTMLDivElement, MultiViewProps> {
         return view;
     }
 
-    /** Removes a view and disposes it; the sight moves to a neighbour. */
+    /** Removes a view and disposes it; the sight moves to a neighbor. */
     remove(view: View): boolean {
         if (!this.views.includes(view)) return false;
         this.forget(view);

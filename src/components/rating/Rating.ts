@@ -21,7 +21,7 @@ const maskOf = (icon: string | null | undefined): string =>
 
 /**
  * A row of stars to give a score, or to show one (`readOnly`): whole stars or halves (`step`), any number of them
- * (`max`). Under the pointer the stars show what a press would give; a press on the value chosen clears it. A field:
+ * (`max`). Under the pointer the stars show what a click would give; a click on the value chosen clears it. A field:
  * label, help text, rules and `x-model` work as in every field. Keyboard: the arrow keys change it by a step,
  * Home and End go to the ends, a digit gives that many stars, Delete clears.
  *

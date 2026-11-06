@@ -1,7 +1,7 @@
 import type { data } from '@motifx-community/data';
 import type { GridColumn } from './grid-column';
 
-/** What `loadValues` is asked for: a part of the distinct values of a column. */
+/** What `loadValues` is requested: a part of the distinct values of a column. */
 export interface GridValuesRequest<T> {
   column: GridColumn<T>;
   /** The text typed in the list's search box. */

@@ -63,7 +63,7 @@ export class UiLocale {
 
   /**
    * Switches to `locale`: its pack (`tr-TR`, else `tr`) is loaded first when it is not there, so no control shows
-   * half its texts in the old language; until then the old one stays. A later call wins over one still loading.
+   * half its texts in the old language; until then the old one stays. A later call takes precedence over one still loading.
    * A language without a pack keeps the built-in texts and still writes dates and numbers its way.
    */
   async use(locale: string): Promise<void> {

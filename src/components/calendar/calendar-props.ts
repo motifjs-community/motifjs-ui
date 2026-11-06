@@ -3,7 +3,7 @@ import type { ControlProps } from '../../core/control';
 import type { ValueChangedEventArgs } from '../../parts/field/value-changed-event-args';
 import type { CalendarView } from './calendar-view';
 
-/** Props of `Calendar`. Each one is also a settable, reactive property. */
+/** Props of `Calendar`. Each prop is also a settable, reactive property. */
 export interface CalendarProps extends ControlProps {
   /** Two-way with `x-model`. */
   value?: Bind<Date | null>;
@@ -21,7 +21,7 @@ export interface CalendarProps extends ControlProps {
   showTodayButton?: Bind<boolean>;
   /** The view on screen. Default `'month'`; the user moves between views too. */
   currentView?: Bind<CalendarView>;
-  /** The view a choice is made in: `'year'` picks a month, `'decade'` a year. Default `'month'`. */
+  /** The view a choice is created in: `'year'` picks a month, `'decade'` a year. Default `'month'`. */
   minView?: Bind<CalendarView>;
   /** A range drawn over the days (its ends and the days between), for a date range box; the value is still one day. */
   rangeStart?: Bind<Date | null>;

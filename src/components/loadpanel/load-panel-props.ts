@@ -2,7 +2,7 @@ import type { Bind } from '@motifx/core';
 import type { ControlProps } from '../../core/control';
 import type { LoadPanelTarget } from './load-panel-target';
 
-/** Props of `LoadPanel`. Each one is also a settable property; a function is followed. */
+/** Props of `LoadPanel`. Each prop is also a settable property, and a function is tracked. */
 export interface LoadPanelProps extends ControlProps {
     /** What it covers: a component or an element; `null` (the default) covers the whole page. */
     target?: Bind<LoadPanelTarget | undefined>;
@@ -22,7 +22,7 @@ export interface LoadPanelProps extends ControlProps {
     cancelable?: Bind<boolean>;
     /** The Cancel button's text. Default: the kit's "Cancel". */
     cancelText?: Bind<string>;
-    /** A press on the shade hides it. Default `false`. */
+    /** A click on the shade hides it. Default `false`. */
     closeOnOutside?: Bind<boolean>;
     onShown?: () => void;
     onHidden?: () => void;

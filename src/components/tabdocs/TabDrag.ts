@@ -14,7 +14,7 @@ import type { TabGroup } from './TabGroup';
 import type { TabRect } from './tab-rect';
 import { inViewport, noteOffset, offsetOf } from './screen-offsets';
 
-/** A press on a tab or on a group's empty bar that may become a drag. */
+/** A click on a tab or on a group's empty bar that may become a drag. */
 interface Press {
   pointerId: number;
   pointerType: string;
@@ -214,7 +214,7 @@ export class TabDrag {
     return dropped;
   }
 
-  /** Stops a drag (or a press that may become one); `quiet` says nothing. */
+  /** Stops a drag (or a click that may become one); `quiet` says nothing. */
   cancel(quiet = false): void {
     this.press = null;
     this.release();
@@ -255,7 +255,7 @@ export class TabDrag {
     });
   }
 
-  /** The document of a tab, or the group of an empty bar, that a press there would drag. */
+  /** The document of a tab, or the group of an empty bar, that a click there would drag. */
   private subjectAt(target: EventTarget | null): { subject: TabDragSubject; source: HTMLElement } | null {
     const m = this.manager;
     const el = isElement(target) ? target : null;
@@ -603,7 +603,7 @@ export class TabDrag {
     }
   }
 
-  /** The click that follows a drop is not a click on the tab; the next press is a press again. */
+  /** The click that follows a drop is not a click on the tab; the next press is a click again. */
   private swallowClick(): void {
     const view = (this.session?.space ?? this.manager.element.ownerDocument).defaultView;
     if (!view) return;

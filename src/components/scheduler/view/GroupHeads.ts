@@ -28,7 +28,7 @@ interface Drawn {
  * draw a head's content. It follows nothing: its view draws it.
  */
 export class GroupHeads<T> extends Component<HTMLDivElement, Props<T>> {
-  /** Its parts are made (in `onConfigured`): until then a draw has nothing to draw on. */
+  /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
   private rows!: KeyedParts<HeaderRow, Component<HTMLDivElement>>;
   /** The heads of each row. */

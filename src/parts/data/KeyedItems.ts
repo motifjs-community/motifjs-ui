@@ -21,7 +21,7 @@ const sameText = (a: string, b: string, locale: string) => foldText(a.trim(), lo
 
 /**
  * Items by key, from a data source of the data layer (any adapter) or an array: what a grid cell, a
- * drop-down's field or a filter list needs to turn a key into its item. Keys are asked for when they
+ * drop-down's field or a filter list needs to turn a key into its item. Keys are requested when they
  * are needed and only once: the keys asked for in the same moment go out together, in one request
  * per `batchSize` keys (`valueField in [...]`), or one request per key for a service that only gives
  * one item by key (`resolve: 'byKey'`). There is one cache per source and value field, shared by
@@ -212,7 +212,7 @@ export class KeyedItems<T = unknown> {
     return { items: all.slice(skip, skip + take), total: all.length };
   }
 
-  /** Forgets everything; keys are asked for again when they are needed. */
+  /** Forgets everything; keys are requested again when they are needed. */
   clear() {
     this.generation++;
     this.entries.clear();
@@ -322,7 +322,7 @@ export class KeyedItems<T = unknown> {
     if (fresh.length) this.resolvedEmitter.fire(fresh);
   }
 
-  /** The adapter saved or was told of changes: those keys are asked for again (all of them when the value is not the key). */
+  /** The adapter saved or was told of changes: those keys are requested again (all of them when the value is not the key). */
   private changed(changes: readonly data.PushedChange<any, any>[]) {
     if (this.valueField && this.valueField !== this.batchFieldOfKey()) {
       if (this.entries.size) this.clear();

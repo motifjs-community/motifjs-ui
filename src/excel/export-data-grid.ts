@@ -142,7 +142,7 @@ function writeCell<T>(excelCell: Cell, cell: GridSheetCell<T>, rowType: RowType,
 }
 
 function numberFormatOf(writer: ColumnWriter, value: number): string | undefined {
-  // The format depends only on the fraction digits a value shows: worked out once per count.
+  // The format depends only on the fraction digits a value shows: calculated once per count.
   const shown = writer.number!.formatToParts(Math.abs(value));
   const key = `${shown.find((p) => p.type === 'fraction')?.value.length ?? 0}`;
   if (!writer.numbers.has(key)) writer.numbers.set(key, excelNumberFormat(writer.number!, value));

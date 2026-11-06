@@ -13,7 +13,7 @@ import { windowStack } from './window-stack';
 // installed the first time a shortcut or an access key is registered, in the
 // page's document and in each one connected to it (`connectDocument`).
 //
-// Order: an explicit chord wins over an implicit access key.
+// Order: an explicit chord takes precedence over an implicit access key.
 //   1. shortcuts: the most specific scope that holds focus first, app-wide last;
 //   2. access keys (Alt + letter; Control + Option + letter on Apple
 //      platforms) of the active window, else of the page.

@@ -50,7 +50,7 @@ interface Parts {
   version: Signal<number>;
   /** Bumped by `refreshField`, by field. */
   fieldVersions: Map<string, Signal<number>>;
-  /** The items and the data the form was made of: a `reState()` that finds the same ones makes nothing again. */
+  /** The items and the data the form was created of: a `reState()` that finds the same ones makes nothing again. */
   madeOf: { items: unknown; data: unknown } | null;
 }
 
@@ -109,7 +109,7 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
       void this.submit(e);
     });
     this.motif.on('x:built', () => {
-      // Items and data: what the form is made of.
+      // Items and data: what the form is created of.
       follow(
         this,
         'form',
@@ -318,7 +318,7 @@ export class FormLayout<T extends object = Record<string, unknown>> extends Cont
     cell.className = 'mx-form-layout__item';
     if (item.colSpan === 'all') cell.dataset.span = 'all';
     else if (item.colSpan && item.colSpan > 1) cell.style.setProperty('--_form-span', String(item.colSpan));
-    // The items' own functions are followed; their fields are read again by `refresh`.
+    // The items' own functions are tracked; their fields are read again by `refresh`.
     parts.stops.push(
       follow(
         this,

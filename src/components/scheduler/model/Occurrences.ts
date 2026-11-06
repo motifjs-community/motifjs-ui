@@ -23,10 +23,10 @@ export interface OccurrencesOptions<T> {
 
 /**
  * The occurrences of the series among the appointments: each a plain object of the kit's with the
- * series' fields and its own start and end, made once and kept while it is asked for again (so its
+ * series' fields and its own start and end, made once and kept while it is requested again (so its
  * box stays the same). A series repeats on the wall clock of its start's time zone (or the
  * scheduler's), so it keeps its hour over summer time; an all-day series keeps its days. Times in
- * its exception field are left out. The series' fields are read as they are, plain or reactive.
+ * its exception field are omitted. The series' fields are read as they are, plain or reactive.
  */
 export class Occurrences<T> {
   private readonly rules = new Map<string, RecurrenceRule | null>();
@@ -96,7 +96,7 @@ export class Occurrences<T> {
     return out;
   }
 
-  /** Forgets the occurrences not asked for since the last call (made again when they are). */
+  /** Forgets the occurrences not asked for since the last call (recreated when they are). */
   sweep(): void {
     for (const id of this.made.keys()) if (!this.used.has(id)) this.made.delete(id);
     this.used.clear();

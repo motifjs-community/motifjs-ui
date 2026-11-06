@@ -200,7 +200,7 @@ export class ButtonGroup<T = unknown> extends Control<HTMLDivElement, ButtonGrou
     const items = givenList(this.peekProperty<readonly unknown[]>('items'));
     const textField = this.peekProperty<ItemField<unknown>>('itemText');
     const valueField = this.peekProperty<ItemField<unknown>>('itemValue');
-    // The items' own functions are followed; the list, the fields and drawing are not.
+    // The items' own functions are tracked; the list, the fields and drawing are not.
     this.stopItems = follow(
       this,
       'items',

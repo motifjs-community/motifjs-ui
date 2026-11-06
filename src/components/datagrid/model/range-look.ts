@@ -1,6 +1,6 @@
 import type { RangeBox } from './range-box';
 
-/** What the rows need to draw the cell ranges and a drag's run, worked out once per change for all of them. */
+/** What the rows need to draw the cell ranges and a drag's run, calculated once per change for all of them. */
 export interface RangeLook {
   /** Cells can be selected (`cellSelection` is on). */
   on: boolean;

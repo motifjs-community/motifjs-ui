@@ -5,7 +5,7 @@ import type { ProgressLabelPosition } from './progress-label-position';
 import type { ProgressShape } from './progress-shape';
 import type { ProgressTone } from './progress-tone';
 
-/** Props of `ProgressBar`. Each one is also a settable, reactive property. */
+/** Props of `ProgressBar`. Each prop is also a settable, reactive property. */
 export interface ProgressBarProps extends ControlProps {
   /** How far the work is; `null` (the default) when that is not known: the bar then runs to and fro, a circle turns. */
   value?: Bind<number | null>;

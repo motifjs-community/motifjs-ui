@@ -51,7 +51,7 @@ export class TabWindow extends TabBarSettings {
     const frame = resizeFrame(doc, 'mx-tabdocs__window-frame', 'mx-tabdocs__window-edge');
     el.append(this.body, frame);
     this.entry = { element: el, setActive: (on) => this.markActive(on) };
-    // A press or focus anywhere in it brings it to the front.
+    // A click or focus anywhere in it brings it to the front.
     const front = () => untracked(() => this.bringToFront());
     el.addEventListener('pointerdown', front, true);
     el.addEventListener('focusin', front);
@@ -189,7 +189,7 @@ export class TabWindow extends TabBarSettings {
     return !!view && view.getComputedStyle(this.element).direction === 'rtl';
   }
 
-  /** A press on an edge or a corner: the window follows it until it is let go. */
+  /** A click on an edge or a corner: the window follows it until it is let go. */
   private resizeStart(e: PointerEvent): void {
     const handle = (e.target as Element).closest<HTMLElement>('.mx-tabdocs__window-edge');
     const owner = this.owner;

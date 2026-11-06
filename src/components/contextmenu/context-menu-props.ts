@@ -7,7 +7,7 @@ import type { ContextMenuOpeningEventArgs } from './context-menu-opening-event-a
 import type { ContextMenuPresentation } from './context-menu-presentation';
 import type { ContextMenuTarget } from './context-menu-target';
 
-/** Props of `ContextMenu`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `ContextMenu`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface ContextMenuProps extends ControlProps {
   /** Names the menu for screen readers. The same property as `text`. */
   label?: Bind<string>;

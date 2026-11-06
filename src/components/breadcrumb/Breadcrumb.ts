@@ -141,7 +141,7 @@ export class Breadcrumb extends Control<HTMLElement, BreadcrumbProps> {
   private renderItems(): void {
     this.stopItems?.();
     const items = givenList(this.peekProperty<readonly unknown[]>('items'));
-    // The items' own functions are followed; the list and drawing are not.
+    // The items' own functions are tracked; the list and drawing are not.
     this.stopItems = follow(
       this,
       'items',
@@ -164,7 +164,7 @@ export class Breadcrumb extends Control<HTMLElement, BreadcrumbProps> {
     };
   }
 
-  /** The steps are made again: their kind (link, button, current) depends on what they say. */
+  /** The steps are recreated: their kind (link, button, current) depends on what they say. */
   private drawSteps(): void {
     for (const step of this.steps) void step.li.dispose();
     const current = this.peekProperty<boolean | undefined>('lastIsCurrent') !== false;
@@ -206,7 +206,7 @@ export class Breadcrumb extends Control<HTMLElement, BreadcrumbProps> {
     mark.element.setAttribute('aria-hidden', 'true');
   }
 
-  /** A step pressed: told first; a link is followed unless cancelled, a disabled one never. */
+  /** A step pressed: told first; a link is followed unless canceled, a disabled one never. */
   private pressed(index: number, e: Event): void {
     const look = this.looks[index];
     if (!look || !look.enabled) {

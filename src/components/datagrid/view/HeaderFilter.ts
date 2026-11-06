@@ -123,7 +123,7 @@ export class HeaderFilter<T> {
       height: Math.max(1, Math.floor(model.settings.get('headerFilterRows'))),
       value: this.excluding ? [] : entries(),
       itemTemplate: (item, host) => this.drawItem(item, host),
-      // Every value chosen: what is taken away next is left out; none chosen: what is chosen next is kept.
+      // Every value chosen: what is taken away next is omitted; none chosen: what is chosen next is kept.
       onValueChanged: (e) => {
         if (!e.byUser) return;
         const chosen = Array.isArray(e.value) ? e.value.length : 0;

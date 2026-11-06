@@ -21,7 +21,7 @@ export interface TabProps extends ControlProps {
   closable?: Bind<boolean | undefined>;
   /** Builds the panel when it is first shown. */
   lazy?: Bind<boolean | undefined>;
-  /** `false`: what `content` made is disposed while the tab is hidden and made again when it shows. */
+  /** `false`: what `content` made is disposed while the tab is hidden and recreated when it shows. */
   keepAlive?: Bind<boolean | undefined>;
   /** Makes the panel content, called when the panel is built (instead of, or after, the JSX children). */
   content?: ContentFactory;

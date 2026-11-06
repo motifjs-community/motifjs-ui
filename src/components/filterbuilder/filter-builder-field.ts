@@ -7,7 +7,7 @@ import type { FilterBuilderValueInfo } from './filter-builder-value-info';
 
 /**
  * A field the user can build conditions on. `caption`, `dataType`, `filterOperations`,
- * `defaultOperation`, `trueText`, `falseText` and `editorOptions` are values or functions that are followed.
+ * `defaultOperation`, `trueText`, `falseText` and `editorOptions` are values or tracked functions.
  *
  * @example
  * { dataField: 'amount', caption: 'Amount', dataType: 'number', format: { style: 'currency', currency: 'EUR' } }

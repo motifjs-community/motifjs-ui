@@ -42,7 +42,7 @@ export class SlideTrack {
         const move = (e: PointerEvent) => this.pointerMove(e);
         const up = (e: PointerEvent) => this.pointerUp(e, false);
         const cancel = (e: PointerEvent) => this.pointerUp(e, true);
-        // The click that follows a drag is not a press on what is under the pointer.
+        // The click that follows a drag is not a click on what is under the pointer.
         const click = (e: MouseEvent) => {
             if (!this.swallowClick) return;
             this.swallowClick = false;

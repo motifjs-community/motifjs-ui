@@ -7,7 +7,7 @@ import { dayCells } from '../model/view-kind';
 
 const MINUTE = 60_000;
 const DAY = 86_400_000;
-/** Pixels the pointer moves before a press becomes a drag. */
+/** Pixels the pointer moves before a click becomes a drag. */
 const THRESHOLD = 4;
 /** A finger held this long starts a drag (a shorter touch scrolls or taps). */
 const LONG_PRESS = 450;
@@ -83,7 +83,7 @@ export class AppointmentDrag<T> {
   }
 
   /**
-   * A press on an appointment (or on one of its edges) in a group: it becomes a drag once the pointer
+   * A click on an appointment (or on one of its edges) in a group: it becomes a drag once the pointer
    * moves; a finger's once it is held (`now`: a handle, once it moves).
    */
   begin(item: T, mode: DragMode, e: PointerEvent, group = -1, now = false): void {

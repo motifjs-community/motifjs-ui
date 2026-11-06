@@ -7,7 +7,7 @@ import type { ToolbarItemClickEventArgs } from './toolbar-item-click-event-args'
 import type { ToolbarOrientation } from './toolbar-orientation';
 import type { ToolbarOverflow } from './toolbar-overflow';
 
-/** Props of `Toolbar`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `Toolbar`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface ToolbarProps extends ControlProps {
   /** Names the toolbar for screen readers. The same property as `text`. */
   label?: Bind<string>;

@@ -9,7 +9,7 @@ export interface StripRow<T> {
   /** Its columns: a day, in a group. */
   columns: SchedulerColumn[];
   pieces: StripPiece<T>[];
-  /** Per column: the appointments left out. */
+  /** Per column: the appointments omitted. */
   more: number[];
   /** Per column: the line "+N more" goes on. */
   moreAt: number[];

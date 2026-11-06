@@ -7,7 +7,7 @@ import type { CardOrientation } from './card-orientation';
 import type { CardSelectedChangedEventArgs } from './card-selected-changed-event-args';
 import type { CardVariant } from './card-variant';
 
-/** Props of `Card`. Each one is also a settable property; a function is followed. */
+/** Props of `Card`. Each prop is also a settable property, and a function is tracked. */
 export interface CardProps extends ControlProps {
   /** The title; it names the card for screen readers. */
   title?: Bind<string>;
@@ -33,11 +33,11 @@ export interface CardProps extends ControlProps {
   orientation?: Bind<CardOrientation>;
   /** The whole card can be pressed (`onclick`, Enter, Space). Default `false`. */
   clickable?: Bind<boolean>;
-  /** The whole card is a link there: its title is the link, and a press anywhere on the card follows it. */
+  /** The whole card is a link there: its title is the link, and a click anywhere on the card follows it. */
   href?: Bind<string | null>;
   /** The link's `rel`; `'router'` lets the MotifJS router take it. */
   rel?: Bind<string>;
-  /** A check box on its top end corner, and a press on the card turns it on and off. Default `false`. */
+  /** A check box on its top end corner, and a click on the card turns it on and off. Default `false`. */
   selectable?: Bind<boolean>;
   /** Whether it is selected. Default `false`. */
   selected?: Bind<boolean>;

@@ -7,7 +7,7 @@ import type { FormEventArgs } from './form-event-args';
 import type { FormStartPosition } from './form-start-position';
 import type { FormWindowState } from './form-window-state';
 
-/** Props of `MxForm`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `MxForm`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface FormProps extends ControlProps {
   /** The title in the title bar; it names the form. The same property as `text`. */
   title?: Bind<string>;

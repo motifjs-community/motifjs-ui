@@ -42,7 +42,7 @@ export class AutoHideStrip {
     });
     el.addEventListener('keydown', (e) => untracked(() => this.key(e)));
     el.addEventListener('mousedown', (e) => {
-      // A press slides the area out; focus goes into it from there.
+      // A click slides the area out; focus goes into it from there.
       if (this.documentAt(e.target)) e.preventDefault();
     });
     el.addEventListener('pointerover', (e) => untracked(() => this.hoverOn(this.documentAt(e.target))));

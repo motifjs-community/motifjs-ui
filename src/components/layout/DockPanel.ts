@@ -85,12 +85,12 @@ export class DockPanel extends Control<HTMLDivElement, DockPanelProps> {
     return dock && DOCKS.has(dock) ? dock : 'fill';
   }
 
-  /** Docks a child programmatically: a value, or a function that is followed. */
+  /** Docks a child programmatically: a value, or a tracked function. */
   setDock(child: ComponentBase, dock: Bind<Dock>): void {
     this.settings.set(child, 'dock', dock);
   }
 
-  /** Sets the anchors of a `float` child programmatically; each is a value or a function. Fields left out stay. */
+  /** Sets the anchors of a `float` child programmatically; each is a value or a function. Fields omitted stay. */
   setAnchors(child: ComponentBase, anchors: Omit<DockChildProps, 'dock'>): void {
     for (const [name] of ANCHORS) if (anchors[name] !== undefined) this.settings.set(child, name, anchors[name]);
   }

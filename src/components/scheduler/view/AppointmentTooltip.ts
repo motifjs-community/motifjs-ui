@@ -20,12 +20,12 @@ type ResourceLine = ReturnType<SchedulerHost<unknown>['resources']['itemsOf']>[n
 type ResourceItem = ResourceLine['items'][number];
 
 /**
- * What a click on an appointment shows: its colour, text, time (and on its own zone's clock), how it repeats, its
+ * What a click on an appointment shows: its color, text, time (and on its own zone's clock), how it repeats, its
  * resources and its description, with Edit and Delete. Its fields are read as they are; `refresh` shows them again. It
- * follows nothing: it draws itself when it is made and on `refresh`.
+ * follows nothing: it draws itself when it is created and on `refresh`.
  */
 export class AppointmentTooltip<T> extends Component<HTMLDivElement, Props<T>> {
-  /** Its parts are made (in `onConfigured`): until then a draw has nothing to draw on. */
+  /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
   private editButton!: Button;
   private deleteButton!: Button;
@@ -134,7 +134,7 @@ export class AppointmentTooltip<T> extends Component<HTMLDivElement, Props<T>> {
     return host.text('schedulerInZone', { time: host.format.timeRange(time.start, time.end, zone), zone: zone.replace(/_/g, ' ') });
   }
 
-  /** A line per kind of resource it has: the kind's name, then its items with their colours. */
+  /** A line per kind of resource it has: the kind's name, then its items with their colors. */
   private makeLine(line: ResourceLine): Component<HTMLDivElement> {
     const c = new Component<HTMLDivElement>('div');
     c.element.className = 'mx-scheduler__tooltip-resource';
@@ -166,7 +166,7 @@ export class AppointmentTooltip<T> extends Component<HTMLDivElement, Props<T>> {
     drawn.items.show(line.items);
   }
 
-  /** Its own colour, else its resources'. */
+  /** Its own color, else its resources'. */
   private color(): Record<string, string> {
     const { host, item: shownItem } = this.props;
     const item = shownItem();

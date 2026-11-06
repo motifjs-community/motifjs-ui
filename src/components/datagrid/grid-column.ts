@@ -110,7 +110,7 @@ export interface GridColumn<T = any> {
   headerFilterItems?: GridHeaderFilterItems<T>;
   /** The values chosen in the header filter, followed when a function. The grid's `filters` hold them as the column's `values`. */
   filterValues?: Bind<readonly unknown[] | undefined>;
-  /** `'exclude'`: the rows with `filterValues` are left out instead of kept. Followed when a function. Default `'include'`. */
+  /** `'exclude'`: the rows with `filterValues` are omitted instead of kept. Followed when a function. Default `'include'`. */
   filterType?: Bind<'include' | 'exclude'>;
   /** An empty value stops the row from being saved. */
   required?: boolean;

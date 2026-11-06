@@ -7,13 +7,13 @@ import type { StepperItem } from './stepper-item';
 import type { StepperLabelPosition } from './stepper-label-position';
 import type { StepperOrientation } from './stepper-orientation';
 
-/** Props of `Stepper`. Each one is also a settable property; a function is followed. */
+/** Props of `Stepper`. Each prop is also a settable property, and a function is tracked. */
 export interface StepperProps extends ControlProps {
     /** The steps in order: `StepperItem`s or plain texts. */
     items?: Bind<readonly (StepperItem | string)[]>;
     /** The current step: its `key`, else its index. `x-model` binds it two-way. Default `0`; `null` for none. */
     value?: Bind<string | number | null>;
-    /** The steps are taken in order: a press reaches a completed step, or the one right after the last completed. Default `true`. */
+    /** The steps are taken in order: a click reaches a completed step, or the one right after the last completed. Default `true`. */
     linear?: Bind<boolean>;
     /** Default `'horizontal'`. */
     orientation?: Bind<StepperOrientation>;

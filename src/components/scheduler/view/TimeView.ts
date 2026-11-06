@@ -53,7 +53,7 @@ interface HourDrawn {
  * clock the layer, anything else all of it), on `reState()` and when an option or a text it shows changes.
  */
 export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
-  /** Its parts are made (in `onConfigured`): until then a draw has nothing to draw on. */
+  /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
   private headEl: HTMLElement | null = null;
   private scroller: HTMLElement | null = null;
@@ -65,7 +65,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
 
   // Many columns of many rows. A row's cells stand in places, as many as the columns built, and each place shows the
   // column the window puts there: as the view scrolls a place shows another column and is written again, and no cell
-  // is made or dropped. A cell is written when it is made and again only when what it shows changes.
+  // is created or dropped. A cell is written when it is created and again only when what it shows changes.
   private places: number[] = [];
   private writer!: CellWriter<CellSpot>;
   private lit: number[] = [];
@@ -96,7 +96,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
   private readonly hourDrawn = new WeakMap<Component<HTMLDivElement>, HourDrawn>();
   /** The column each "+N more" button stands for, as last drawn. */
   private readonly moreOf = new WeakMap<Element, SchedulerColumn>();
-  /** The cell template the cells were made with: another one makes them again. */
+  /** The cell template the cells were created with: another one makes them again. */
   private cellTemplate: CellTemplate | undefined = undefined;
 
   constructor(props: Props<T>) {
@@ -139,7 +139,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
   }
 
   // Only what changed is drawn: the layout all of it; the window the lists of what it shows (a box that stays is only
-  // drawn again, one that comes in is made); the clock what is in the layer; the focus its cells.
+  // drawn again, one that comes in is created); the clock what is in the layer; the focus its cells.
   private changed(change: ModelChange): void {
     if (this.isDisposed) return;
     if (change === 'focus') return this.writeFocus(false);
@@ -216,7 +216,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
     return this.places;
   }
 
-  /** The rows' cells, made again for another cell template. */
+  /** The rows' cells, recreated for another cell template. */
   private makeCells(template: CellTemplate): void {
     const parts = this.parts;
     this.cellTemplate = template;
@@ -291,7 +291,7 @@ export class TimeView<T> extends Component<HTMLDivElement, Props<T>> {
     }
   }
 
-  /** A place's cell; a cell template draws into it once it is made, and follows the column shown there. */
+  /** A place's cell; a cell template draws into it once it is created, and follows the column shown there. */
   private makeCell(place: number, slot: TimeSlot | null, template: CellTemplate): Component<HTMLDivElement> {
     const c = new Component<HTMLDivElement>('div');
     c.element.className = slot ? 'mx-scheduler__cell' : 'mx-scheduler__cell mx-scheduler__all-day-cell';

@@ -20,7 +20,7 @@ interface Placed<T> {
   /** The form item given for the field, if any. */
   item: FormItem;
   editor: CellEditor<T> | null;
-  /** The value the editor was made with. */
+  /** The value the editor was created with. */
   value: unknown;
   /** The form draws the editor's label mode and message, unless the app gives them. */
   drawsLabelMode: boolean;
@@ -32,7 +32,7 @@ interface Placed<T> {
  * column, each the editor its cell would get (by type, a lookup's, the column's own) with its frame
  * and label. The fields stand for the row's draft: a value is written when its field is left or an
  * item is picked, the grid's checks show their messages on the fields, and a field whose value
- * changed through another one (`setCellValue`) is made again. Save and Cancel are its own buttons,
+ * changed through another one (`setCellValue`) is recreated. Save and Cancel are its own buttons,
  * under the fields or in the window that holds the form. It follows nothing of the grid: it draws
  * itself again whenever the grid tells a change.
  */
@@ -76,7 +76,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     this.saveButton.element.addEventListener('click', () => host.save());
     this.cancelButton.element.addEventListener('click', () => host.cancel());
     this.buttons.controls.add(this.saveButton, this.cancelButton);
-    // A press keeps focus in the field: leaving it would take its message away and move the buttons under the pointer.
+    // A click keeps focus in the field: leaving it would take its message away and move the buttons under the pointer.
     this.buttons.element.addEventListener('pointerdown', (e) => {
       if ((e.target as Element).closest?.('button')) e.preventDefault();
     });
@@ -231,7 +231,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     return item;
   }
 
-  /** A column's place in the form: a holder its editor is made in when the form lays it out. */
+  /** A column's place in the form: a holder its editor is created in when the form lays it out. */
   private fieldItem(field: string, given: FormItem): FormItem | null {
     const own = this.model.columns.get(field).formItem ?? {};
     if (given.visible === undefined && own.visible === false) return null;
@@ -302,7 +302,7 @@ export class EditForm<T> extends Component<HTMLDivElement> {
     this.host.prepared(field, row, entered, isNew, editor);
   }
 
-  /** Fields whose value in the draft is not the one their editor was made with are made again. */
+  /** Fields whose value in the draft is not the one their editor was created with are recreated. */
   private follow() {
     const { model, rowId, row } = this;
     for (const [field, p] of this.placed) {

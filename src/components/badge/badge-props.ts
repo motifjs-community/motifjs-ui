@@ -5,7 +5,7 @@ import type { BadgePosition } from './badge-position';
 import type { BadgeTone } from './badge-tone';
 import type { BadgeVariant } from './badge-variant';
 
-/** Props of `Badge`. Each one is also a settable property; a function is followed. */
+/** Props of `Badge`. Each prop is also a settable property, and a function is tracked. */
 export interface BadgeProps extends ControlProps {
   /** A count, written in the kit's language; over `max` it shows `max+`. `null`: the text shows instead. */
   count?: Bind<number | null>;

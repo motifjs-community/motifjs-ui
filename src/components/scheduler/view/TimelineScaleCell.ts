@@ -12,11 +12,11 @@ interface Props<T> {
 
 /**
  * A head cell of a timeline: a month or a day over the cells (upper tier), a day or an hour (lower tier). It follows
- * nothing: it draws itself when it is made, when the scale hands it its cell again (`show`), on `reState()` and when an
+ * nothing: it draws itself when it is created, when the scale hands it its cell again (`show`), on `reState()` and when an
  * option or a text it shows changes; a template may draw a day or an hour.
  */
 export class TimelineScaleCell<T> extends Component<HTMLDivElement, Props<T>> {
-  /** Its parts are made (in `onConfigured`): until then a draw has nothing to draw on. */
+  /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
   private cell: ScaleCell;
   private content: Component<HTMLDivElement> | null = null;

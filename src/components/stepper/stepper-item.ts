@@ -10,7 +10,7 @@ export interface StepperItem {
     key?: string;
     /** Drawn in the indicator in place of the number. */
     icon?: Bind<IconSource | null>;
-    /** `done` or `error` whatever the current step is; left out, the steps before the current one are done. */
+    /** `done` or `error` whatever the current step is; omitted, the steps before the current one are done. */
     status?: Bind<'done' | 'error' | 'pending' | null>;
     /** May be skipped in linear order; says so under the text. */
     optional?: Bind<boolean>;

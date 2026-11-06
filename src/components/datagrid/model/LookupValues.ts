@@ -105,7 +105,7 @@ export class LookupValues<T> {
     const result = await source.adapter.load({ filter, group: [{ field }], skip, take, count: true, select: [field], signal });
     const groups = result.groups ?? [];
     await items.request(groups.map((g) => g.key));
-    // Keys the source does not have are left out, as the list shows the source's items.
+    // Keys the source does not have are omitted, as the list shows the source's items.
     const values = groups.filter((g) => !lookups.isMissing(col, g.key)).map((g) => entry(g.key, g.count));
     return { values, total: (result.groupCount ?? skip + groups.length) - (groups.length - values.length) };
   }

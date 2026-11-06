@@ -3,7 +3,7 @@ import type { ControlProps } from '../../core/control';
 import type { ChipGroupSelection } from './chip-group-selection';
 import type { ChipGroupValueChangedEventArgs } from './chip-group-value-changed-event-args';
 
-/** Props of `ChipGroup`. Each one is also a settable property; a function is followed. */
+/** Props of `ChipGroup`. Each prop is also a settable property, and a function is tracked. */
 export interface ChipGroupProps extends ControlProps {
   /** Default `'none'`. */
   selection?: Bind<ChipGroupSelection>;

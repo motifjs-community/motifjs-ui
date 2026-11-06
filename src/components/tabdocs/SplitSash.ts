@@ -4,7 +4,7 @@ import type { TabDocumentManager } from './TabDocumentManager';
 const SASHES = new WeakMap<Element, SplitSash>();
 
 /**
- * The splitter between two neighbours of a split, or between a dock area and the documents (the
+ * The splitter between two neighbors of a split, or between a dock area and the documents (the
  * ARIA window splitter pattern): the pointer drags it, the keys move it (see the manager's `keys`),
  * a double click evens a split's sizes or gives a dock area its first size again.
  */

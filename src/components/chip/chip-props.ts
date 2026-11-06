@@ -8,7 +8,7 @@ import type { ChipSelectedChangedEventArgs } from './chip-selected-changed-event
 import type { ChipTone } from './chip-tone';
 import type { ChipVariant } from './chip-variant';
 
-/** Props of `Chip`. Each one is also a settable property; a function is followed. */
+/** Props of `Chip`. Each prop is also a settable property, and a function is tracked. */
 export interface ChipProps extends ControlProps {
   /** What it stands for in a group's value. Default: its text. */
   value?: Bind<unknown>;

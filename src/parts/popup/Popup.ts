@@ -11,7 +11,7 @@ const hasPopover = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prot
 /**
  * A surface shown next to an anchor, above everything else (the browser's top layer): a menu, a
  * drop-down list, a picker. It follows the anchor while the page scrolls or resizes, opens on the
- * other side when there is no room, and closes on Escape, on a press outside it and its toggle,
+ * other side when there is no room, and closes on Escape, on a click outside it and its toggle,
  * and when focus leaves both. Focus inside goes back to the toggle when it closes. Its content is
  * whatever is added to its `controls`; presses inside do not reach the component that hosts it.
  * Opened next to an anchor in another document (a window the app opened), it goes there.

@@ -4,7 +4,7 @@ import type { GridLoadPanel } from './grid-load-panel';
 export interface GridExportOptions {
   /** The text the cells show, or their values (numbers and dates in a neutral form). Default `'shown'`. */
   values?: 'shown' | 'raw';
-  /** Only the selected rows ("all" selected over a server: the filter less the rows taken out). Default `false`. */
+  /** Only the selected rows ("all" selected over a server: the filter less the rows removed). Default `false`. */
   selected?: boolean;
   /** Rows asked for per request when the data comes from a server. Default `1000`. */
   pageSize?: number;

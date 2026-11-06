@@ -89,7 +89,7 @@ const PARTS = Symbol('mx.overlay');
 /**
  * What a bottom sheet, a drawer and an action sheet share: a panel that slides in over the page or
  * over a container, with a scrim under it, a title and a close button, a content area and a footer.
- * Modal, nothing around it can be used (it is made inert) and Tab stays inside. Escape, a press on
+ * Modal, nothing around it can be used (it is created inert) and Tab stays inside. Escape, a click on
  * the scrim and the browser's back close it (each an option); focus moves in when it opens and goes
  * back when it closes. Every opening and closing asks first (`onOpening`, `onClosing`) and reports
  * after (`onOpened`, `onClosed`). A subclass names its parts (`static overlayClass`), places the

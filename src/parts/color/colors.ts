@@ -4,7 +4,7 @@ import type { ColorRgba } from './color-rgba';
 const clamp = (n: number, low: number, high: number) => Math.min(Math.max(n, low), high);
 
 /**
- * Reads a colour written as `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb(…)` or `rgba(…)`; `null` when it is none
+ * Reads a color written as `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb(…)` or `rgba(…)`; `null` when it is none
  * of them.
  */
 export function parseColor(text: string | null | undefined): ColorRgba | null {

@@ -15,7 +15,7 @@ export interface ResizeSize {
     height: number;
 }
 
-/** Props of `Resizable`. Each one is also a settable property; a function is followed. */
+/** Props of `Resizable`. Each prop is also a settable property, and a function is tracked. */
 export interface ResizableProps extends ControlProps {
     /** Default `'all'`. */
     handles?: Bind<ResizeHandles>;

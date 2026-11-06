@@ -220,7 +220,7 @@ export class Stepper extends Control<HTMLElement, StepperProps> {
         return look.status ?? (index < current ? 'done' : 'pending');
     }
 
-    /** Whether a press may reach the step at `index`: enabled, and in linear order with every step before it done or optional. */
+    /** Whether a click may reach the step at `index`: enabled, and in linear order with every step before it done or optional. */
     canReach(index: number): boolean {
         const look = this.looks[index];
         if (!look || !look.enabled) {
@@ -284,7 +284,7 @@ export class Stepper extends Control<HTMLElement, StepperProps> {
     renderItems(): void {
         this.stopItems?.();
         const items = givenList(this.peekProperty<readonly unknown[]>('items'));
-        // The items' own functions are followed; the list and drawing are not.
+        // The items' own functions are tracked; the list and drawing are not.
         this.stopItems = follow(
             this,
             'items',
@@ -313,7 +313,7 @@ export class Stepper extends Control<HTMLElement, StepperProps> {
         };
     }
 
-    // The steps are made again when their count or their kind (a button, or not) changes; otherwise written in place.
+    // The steps are recreated when their count or their kind (a button, or not) changes; otherwise written in place.
     drawSteps(): void {
         const clickable = this.peekProperty<boolean | undefined>('clickable') !== false;
         const tag = clickable ? 'button' : 'div';

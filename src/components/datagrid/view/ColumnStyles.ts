@@ -13,7 +13,7 @@ const escapeAttr = (v: string) => v.replace(/["\\]/g, '\\$&');
  */
 export class ColumnStyles<T> {
   private css = '';
-  /** The text the sheet holds: written again only when it changes, since writing a sheet has every element's style worked out again. */
+  /** The text the sheet holds: written again only when it changes, since writing a sheet has every element's style calculated again. */
   private written: string | null = null;
   private sheet: CSSStyleSheet | null = null;
   private root: Document | ShadowRoot | null = null;

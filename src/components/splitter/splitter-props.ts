@@ -4,7 +4,7 @@ import type { LayoutOrientation } from '../layout/layout-orientation';
 import type { SplitterCollapseEventArgs } from './splitter-collapse-event-args';
 import type { SplitterResizeEventArgs } from './splitter-resize-event-args';
 
-/** Props of `Splitter`. Each one is also a settable property; a function is followed. */
+/** Props of `Splitter`. Each prop is also a settable property, and a function is tracked. */
 export interface SplitterProps extends ControlProps {
     /** `horizontal`: the panes side by side; `vertical`: one under the other. Default `'horizontal'`. */
     orientation?: Bind<LayoutOrientation>;

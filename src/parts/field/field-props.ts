@@ -11,7 +11,7 @@ import type { ValidateOn } from './validate-on';
 import type { ValidatedEventArgs } from './validated-event-args';
 import type { ValueChangedEventArgs } from './value-changed-event-args';
 
-/** Props every field has. Each one is also a settable, reactive property. */
+/** Props every field has. Each prop is also a settable, reactive property. */
 export interface FieldProps<T> extends ControlProps {
   /** Two-way with `x-model`. */
   value?: Bind<T>;

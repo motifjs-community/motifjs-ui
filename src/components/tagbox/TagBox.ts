@@ -498,7 +498,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
     const values = this.values();
     const max = this.peekProperty<number>('maxTags') ?? 0;
     const shown = max > 0 && values.length > max ? max : values.length;
-    // Only the tags shown are asked for by key.
+    // Only the tags shown are requested by key.
     parts.known.lookUp(values.slice(0, shown), () => {
       if (this.isDisposed) return;
       this.renderTags();
@@ -787,7 +787,7 @@ export class TagBox<T = unknown, V = unknown> extends Field<V[], TagBoxProps<T, 
       this.inputElement.focus();
     });
     const box = input.parentElement!;
-    // A press in the box, on a tag too, keeps focus in the input.
+    // A click in the box, on a tag too, keeps focus in the input.
     box.addEventListener('mousedown', (e) => {
       const target = e.target as Element;
       if (target === input || target.closest('.mx-field__button')) return;

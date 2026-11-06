@@ -2,7 +2,7 @@ import type { Bind } from '@motifx/core';
 import type { ControlProps } from '../../core/control';
 import type { DropEventArgs } from './drop-event-args';
 
-/** Props of `DropTarget`. Each one is also a settable property; a function is followed. */
+/** Props of `DropTarget`. Each prop is also a settable property, and a function is tracked. */
 export interface DropTargetProps extends ControlProps {
     /** Takes the draggables of this group; `null` takes those without one. Default `null`. */
     group?: Bind<string | null>;

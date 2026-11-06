@@ -8,7 +8,7 @@ import { unescapeText } from './unescape-text';
 /**
  * Reads an iCalendar file (RFC 5545): its events, the time zones it writes and its name. Several
  * calendars in one file are merged; to-dos, journals, free/busy times and the blocks inside an
- * event (alarms) are left out, and so are lines it cannot read. It never throws on a bad file.
+ * event (alarms) are omitted, and so are lines it cannot read. It never throws on a bad file.
  *
  * @example
  * const calendar = parseICalendar(text);

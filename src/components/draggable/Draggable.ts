@@ -315,7 +315,7 @@ export class Draggable extends Control<HTMLDivElement, DraggableProps> {
             this.end(null, false);
             return;
         }
-        // The click that follows the drop is not a press on what is under the pointer.
+        // The click that follows the drop is not a click on what is under the pointer.
         const win = this.element.ownerDocument.defaultView ?? window;
         const swallow = (ev: MouseEvent) => {
             ev.stopPropagation();

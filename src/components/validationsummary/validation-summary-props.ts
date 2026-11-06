@@ -3,7 +3,7 @@ import type { ControlProps } from '../../core/control';
 import type { ValidationGroup } from '../../parts/validation/ValidationGroup';
 import type { SummaryItemClickEventArgs } from './summary-item-click-event-args';
 
-/** Props of `ValidationSummary`. Each one is also a settable property; a function is followed. */
+/** Props of `ValidationSummary`. Each prop is also a settable property, and a function is tracked. */
 export interface ValidationSummaryProps extends ControlProps {
     /** The group whose failed fields are listed. */
     group?: Bind<ValidationGroup | null>;
@@ -11,7 +11,7 @@ export interface ValidationSummaryProps extends ControlProps {
     header?: Bind<string>;
     /** Default `true`. */
     showHeader?: Bind<boolean>;
-    /** A press on a line focuses its field. Default `true`. */
+    /** A click on a line focuses its field. Default `true`. */
     focusOnClick?: Bind<boolean>;
     /** A line was pressed. */
     onItemClick?: (e: SummaryItemClickEventArgs) => void;

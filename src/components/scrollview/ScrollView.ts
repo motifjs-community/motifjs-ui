@@ -276,7 +276,7 @@ export class ScrollView extends Control<HTMLDivElement, ScrollViewProps> {
         return true;
     }
 
-    /** Looks at the position again (the content changed): near the end, more is asked for. */
+    /** Looks at the position again (the content changed): near the end, more is requested. */
     update(): void {
         this.ended = false;
         this.check();

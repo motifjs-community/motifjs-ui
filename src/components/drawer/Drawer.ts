@@ -43,7 +43,7 @@ const PARTS = Symbol('mx.drawer');
  * follow the reading direction), the top or the bottom. It covers the content (`over`) or moves it
  * aside (`push`, with `pushTarget`). A finger swiping it back towards its edge closes it, and one
  * swiping in from the edge opens it (`edgeSwipe`). Like a bottom sheet it is a dialog: modal over
- * the content by default, with Escape, a press on the scrim and the browser's back closing it,
+ * the content by default, with Escape, a click on the scrim and the browser's back closing it,
  * and focus moved in and back again.
  *
  * @example

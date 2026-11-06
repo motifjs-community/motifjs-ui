@@ -330,7 +330,7 @@ export class Button extends Control<HTMLElement, ButtonProps> {
   }
 
   private listen(): void {
-    // Busy: a press does nothing, before any other listener sees it.
+    // Busy: a click does nothing, before any other listener sees it.
     this.element.addEventListener(
       'click',
       (e) => {

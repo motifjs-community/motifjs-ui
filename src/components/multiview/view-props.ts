@@ -1,7 +1,7 @@
 import type { Bind, ComponentBase } from '@motifx/core';
 import type { ControlProps } from '../../core/control';
 
-/** Props of `View`, one page of a `MultiView`. Each one is also a settable property; a function is followed. */
+/** Props of `View`, one page of a `MultiView`. Each prop is also a settable property, and a function is tracked. */
 export interface ViewProps extends ControlProps {
     /** Names the view in the multi-view's `value`; without one its index does. The JSX `key` is read too. */
     key?: Bind<string>;

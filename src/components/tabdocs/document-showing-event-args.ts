@@ -10,7 +10,7 @@ import type { TabGroup } from './TabGroup';
  */
 export interface DocumentShowingEventArgs extends EventArgs {
   document: TabDocument;
-  /** The group it goes into; `null` when a dock area (`side`) or a floating window is made for it. */
+  /** The group it goes into; `null` when a dock area (`side`) or a floating window is created for it. */
   group: TabGroup | null;
   /** The dock area it goes into, `null` elsewhere. */
   side: TabDockSide | null;

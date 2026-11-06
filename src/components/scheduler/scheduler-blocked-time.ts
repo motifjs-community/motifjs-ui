@@ -11,6 +11,6 @@ export interface SchedulerBlockedTime {
   allDay?: boolean;
   /** It repeats by an RFC 5545 rule (`FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR`), on the scheduler's clock. */
   recurrenceRule?: string;
-  /** The resources it is for, by field; left out, it is for every one. */
+  /** The resources it is for, by field; omitted, it is for every one. */
   resources?: Record<string, unknown>;
 }

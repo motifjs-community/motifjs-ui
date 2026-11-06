@@ -15,7 +15,7 @@ import { uiLocale } from '../../core/ui-locale';
 
 /**
  * An open document in the manager: its tab in a group's strip and its panel. Both move with it from
- * group to group; the content in the panel is never made again for a move.
+ * group to group; the content in the panel is never recreated for a move.
  */
 export class DocumentTab {
   readonly header: HTMLButtonElement;
@@ -189,7 +189,7 @@ export class DocumentTab {
   }
 
   private release(): void {
-    // A component given as it is cannot be made again: it stays.
+    // A component given as it is cannot be recreated: it stays.
     if (!this.content || !this.manager.canRemake(this.document)) return;
     const made = this.content;
     this.content = null;

@@ -320,7 +320,7 @@ export class Wizard extends Control<HTMLDivElement, WizardProps> {
         return ok;
     }
 
-    /** The stepper's items are made again from the steps: a step changed, came or went. */
+    /** The stepper's items are recreated from the steps: a step changed, came or went. */
     stepsChanged(): void {
         if (!this.ready) {
             return;

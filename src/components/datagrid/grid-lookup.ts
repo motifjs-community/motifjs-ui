@@ -4,7 +4,7 @@ import type { data } from '@motifx-community/data';
 /**
  * Where a lookup column's texts come from: the cell keeps a key (a customer id), the grid shows the
  * text of its item (the customer's name). The items may live on another service than the rows, over
- * another adapter; only the keys on the screen are asked for, several at once.
+ * another adapter; only the keys on the screen are requested, several at once.
  *
  * @example
  * { field: 'customerId', title: 'Customer', lookup: { dataSource: customers, valueField: 'id', textField: 'name' } }

@@ -11,7 +11,7 @@ interface Snapshot {
 
 /**
  * The selected rows, by row id (the key as text) with their keys. One by one, or "all": every row
- * of the filter at that moment but the ones taken out, so selecting all never needs the rows. A
+ * of the filter at that moment but the ones removed, so selecting all never needs the rows. A
  * Shift range starts from an anchor and adds to what was selected before it. Reads are reactive
  * through `state.version`.
  */
@@ -65,7 +65,7 @@ export class RowSelection {
     return this.state.all ? false : this.keys.size === 0;
   }
 
-  /** The number of rows taken out of "all", or picked one by one. */
+  /** The number of rows removed of "all", or picked one by one. */
   get size(): number {
     void this.state.version;
     return this.state.all ? this.except.size : this.keys.size;
@@ -181,7 +181,7 @@ export class RowSelection {
     else this.setAnchor(-1);
   }
 
-  /** Ids picked one by one (or taken out of "all"). */
+  /** Ids picked one by one (or removed of "all"). */
   ids(): string[] {
     void this.state.version;
     return [...(this.state.all ? this.except : this.keys).keys()];
@@ -211,7 +211,7 @@ export class RowSelection {
     this.before = { all: this.state.all, keys: new Map(this.keys), except: new Map(this.except), filter: this.filter, anchor: this.anchorIndex, base: this.base };
   }
 
-  /** The change is made: the guard is asked first, then it shows and is told. Returns whether it stays. */
+  /** The change is created: the guard is asked first, then it shows and is told. Returns whether it stays. */
   private changed(): boolean {
     const before = this.before;
     this.before = null;
@@ -240,7 +240,7 @@ export class RowSelection {
   }
 }
 
-/** Selects a row or takes it out in `list`: the rows picked, or (`all`) the rows left out. Returns whether it changed. */
+/** Selects a row or takes it out in `list`: the rows picked, or (`all`) the rows omitted. Returns whether it changed. */
 function putIn(list: Map<string, unknown>, all: boolean, id: string, key: unknown, on: boolean): boolean {
   const listed = on !== all;
   if (listed === list.has(id)) return false;

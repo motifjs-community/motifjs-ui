@@ -7,7 +7,7 @@ import type { TabWindow } from './TabWindow';
 /**
  * A floating window moved and resized from the keyboard: the arrow keys move it, with Shift they
  * make it narrower, wider, shorter or taller, a step (`resizeStep`) at a time. Enter keeps it
- * there, Escape puts it back; a press anywhere keeps it too.
+ * there, Escape puts it back; a click anywhere keeps it too.
  */
 export class WindowByKeys {
   private current: { window: TabWindow; start: TabRect; stop: () => void } | null = null;

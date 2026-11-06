@@ -15,7 +15,7 @@ export interface OwnWork {
  * scheduler's refresh.
  */
 export class ResourceKind<R = unknown> {
-  /** The items by their value, made again when the list read is another one. */
+  /** The items by their value, recreated when the list read is another one. */
   private indexed: readonly R[] | null = null;
   private byValue = new Map<string, R>();
 

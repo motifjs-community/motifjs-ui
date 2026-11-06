@@ -8,7 +8,7 @@ import type { ButtonGroupItemClickEventArgs } from './button-group-item-click-ev
 import type { ButtonGroupSelection } from './button-group-selection';
 import type { ButtonGroupValueChangedEventArgs } from './button-group-value-changed-event-args';
 
-/** Props of `ButtonGroup`. Each one is also a settable property; a function is followed. */
+/** Props of `ButtonGroup`. Each prop is also a settable property, and a function is tracked. */
 export interface ButtonGroupProps<T = unknown> extends ControlProps {
   /** The buttons: `ButtonGroupItem`s, plain values (each its own text), or objects of your own shape with `itemText` / `itemValue`. */
   items?: Bind<readonly (ButtonGroupItem<T> | T)[]>;

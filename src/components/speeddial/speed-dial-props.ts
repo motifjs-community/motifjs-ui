@@ -17,7 +17,7 @@ export type SpeedDialPosition = 'bottom-end' | 'bottom-start' | 'top-end' | 'top
 /** What `position` is measured in: the viewport, or the nearest positioned parent. */
 export type SpeedDialRelativeTo = 'viewport' | 'parent';
 
-/** Props of `SpeedDial`. Each one is also a settable property; a function is followed. */
+/** Props of `SpeedDial`. Each prop is also a settable property, and a function is tracked. */
 export interface SpeedDialProps extends ControlProps {
     /** The actions, in the order they fan out. With one shown, the main button does it itself. */
     actions?: Bind<readonly SpeedDialAction[]>;
@@ -41,7 +41,7 @@ export interface SpeedDialProps extends ControlProps {
     relativeTo?: Bind<SpeedDialRelativeTo>;
     /** The actions are open. `x-model` binds it two-way. Default `false`. */
     open?: Bind<boolean>;
-    /** A press on an action closes the fan. Default `true`. */
+    /** A click on an action closes the fan. Default `true`. */
     closeOnAction?: Bind<boolean>;
     /** The actions' labels are shown beside them while open. Default: in a line yes, around the button no. */
     showLabels?: Bind<boolean>;

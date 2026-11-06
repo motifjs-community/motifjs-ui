@@ -20,15 +20,15 @@ const isLine = <T>(piece: Piece<T>): piece is LinePiece<T> => 'from' in piece;
 
 /**
  * One appointment, or the part of it on one day, one week or one row of a timeline: placed by its piece's fields,
- * coloured by the appointment's own colour (else its resources'), its content the template's or its text and time.
+ * colored by the appointment's own color (else its resources'), its content the template's or its text and time.
  * An occurrence of a series carries the series mark, one changed apart the exception mark, and a box that may not
  * go where it is being moved the drop mark, where the design language draws them.
  *
- * It follows nothing: it draws itself when it is made, when its view hands it a piece again (`show`), on
+ * It follows nothing: it draws itself when it is created, when its view hands it a piece again (`show`), on
  * `reState()` and when an option or a text it shows changes.
  */
 export class AppointmentBox<T> extends Component<HTMLDivElement, Props<T>> {
-  /** Its parts are made (in `onConfigured`): until then a draw has nothing to draw on. */
+  /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
   private piece: Piece<T>;
   private content: Component<HTMLElement> | null = null;
@@ -241,7 +241,7 @@ export class AppointmentBox<T> extends Component<HTMLDivElement, Props<T>> {
 
   private press(mode: DragMode) {
     return (e: PointerEvent) => {
-      // A press on an appointment selects no cells.
+      // A click on an appointment selects no cells.
       e.stopPropagation();
       if (mode !== 'move' || this.host.canDrag(this.item())) this.host.appointmentPointerDown(this.piece, mode, e);
     };

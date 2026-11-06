@@ -32,7 +32,7 @@ interface Slot {
 /**
  * How a manager shows its layout on a tablet and a phone; on a desktop it does nothing. The layout
  * (groups, splits, dock areas, windows) stays as it is and saves the same: only where things are
- * shown changes, and content is moved, never made again.
+ * shown changes, and content is moved, never recreated.
  *
  * - Tablet: at most two groups side by side, the others folded as tabs into the group beside them;
  *   dock areas in drawers from their edge (the bottom one in a sheet), opened from the titles along

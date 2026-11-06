@@ -57,7 +57,7 @@ export abstract class ToggleField<T, TProps extends ToggleFieldProps<T> = Toggle
     this.commit(this.nextValue());
   }
 
-  /** The access key focuses the box and clicks it, as a press on its caption does. */
+  /** The access key focuses the box and clicks it, as a click on its caption does. */
   override onAccessKey(): boolean {
     if (!this.focus()) return false;
     this.inputElement.click();

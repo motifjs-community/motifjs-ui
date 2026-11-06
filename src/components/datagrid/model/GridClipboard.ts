@@ -75,7 +75,7 @@ export class GridClipboard<T> {
     return { text: writeDelimited(head ? [head, ...lines] : lines, '\t'), html: htmlTable(head, lines), rows: lines.length, cells };
   }
 
-  /** Writes one pasted text into every cell of the ranges the user can fill (rows still loading are left out). */
+  /** Writes one pasted text into every cell of the ranges the user can fill (rows still loading are omitted). */
   fill(text: string): PasteResult {
     const { model } = this;
     const cols = model.columns;
@@ -146,7 +146,7 @@ export class GridClipboard<T> {
     const col = model.columns.get(field);
     const read = col.lookup ? this.lookupKey(rowId, row, field, text) : model.formatter.parse(col, text, model.value(rowId, row, col));
     if (read instanceof Promise) {
-      // The source is asked for the text; the cell is busy until it answers.
+      // The source is requested the text; the cell is busy until it answers.
       model.writeLater(rowId, row, field, read, model.dataIndex(r));
       result.cells++;
     } else if (read.ok) {

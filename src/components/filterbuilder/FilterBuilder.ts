@@ -248,7 +248,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     return this.parts.root;
   }
 
-  /** The filter as one line of text (`[City] Equals 'Ankara' And …`), conditions without their value left out. Reactive. */
+  /** The filter as one line of text (`[City] Equals 'Ankara' And …`), conditions without their value omitted. Reactive. */
   get filterText(): string {
     void this.parts.version.n;
     return this.parts.model.treeText(this.parts.root);
@@ -298,7 +298,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
   get onItemAdded(): MotifEvent<FilterBuilderItemAddedEventArgs> {
     return this.parts.itemAdded.event;
   }
-  /** A condition or group is about to be taken out; `e.cancel = true` keeps it. */
+  /** A condition or group is about to be removed; `e.cancel = true` keeps it. */
   get onItemRemoving(): MotifEvent<FilterBuilderItemRemovingEventArgs> {
     return this.parts.itemRemoving.event;
   }
@@ -476,7 +476,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
     return this.ask(g, 'groupOperation', operation, g.operation, byUser, (v) => (g.operation = v as FilterBuilderGroupOperation));
   }
 
-  /** Runs the changing event, the change and the changed event; `false` when it was cancelled. */
+  /** Runs the changing event, the change and the changed event; `false` when it was canceled. */
   private ask(item: FilterBuilderItem, change: FilterBuilderItemChange, value: unknown, previousValue: unknown, byUser: boolean, apply: (value: unknown) => void, focus = byUser): boolean {
     const parts = this.parts;
     const e: FilterBuilderItemChangingEventArgs = { item, change, value, previousValue, byUser, source: this, cancel: false };
@@ -549,7 +549,7 @@ export class FilterBuilder extends Control<HTMLDivElement, FilterBuilderProps> {
   /** Reads what the rows show, so the drawing effect follows it. */
   private watchOptions() {
     const model = this.parts.model;
-    // The props and the options' own functions are followed; the lists and the fields are read again by `refresh`.
+    // The props and the options' own functions are tracked; the lists and the fields are read again by `refresh`.
     for (const field of model.fields()) {
       for (const key of ['caption', 'dataType', 'filterOperations', 'defaultOperation', 'trueText', 'falseText'] as const) givenField(field, key);
     }

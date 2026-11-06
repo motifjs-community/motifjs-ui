@@ -5,7 +5,7 @@ import type { TabLayoutBar } from './tab-layout-bar';
 import type { TabSize } from './tab-size';
 
 /**
- * The look of the strips of a dock area or a floating window. Each setting is a value or a
+ * The appearance of the strips of a dock area or a floating window. Each setting is a value or a
  * function, which is followed; `null` (the default) follows the manager's `compact…` prop of the
  * same name.
  */

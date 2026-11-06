@@ -3,7 +3,7 @@ import type { ControlProps } from '../../core/control';
 import type { SkeletonAnimation } from './skeleton-animation';
 import type { SkeletonShape } from './skeleton-shape';
 
-/** Props of `Skeleton`. Each one is also a settable property; a function is followed. */
+/** Props of `Skeleton`. Each prop is also a settable property, and a function is tracked. */
 export interface SkeletonProps extends ControlProps {
   /** Default `'text'`. */
   shape?: Bind<SkeletonShape>;

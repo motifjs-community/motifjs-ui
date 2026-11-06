@@ -2,7 +2,7 @@ import { Component, type ComponentBase } from '@motifx/core';
 import type { IconSource } from './icon-source';
 import { isNode } from './node-kind';
 
-// Each write below is made only when the value changed: an attribute, a style or a text written again with the same
+// Each write below is created only when the value changed: an attribute, a style or a text written again with the same
 // value still has the browser work out the styles of what it touches again.
 
 /** A mark written as `"true"`, or taken away. */
@@ -81,7 +81,7 @@ export function iconPart(parent: ComponentBase, source: IconSource, alt = ''): C
 const placeholders = new WeakMap<Element, Comment>();
 
 /**
- * In the page or not, in its place: taken out, a placeholder keeps its place, and it comes back there. For a part
+ * In the page or not, in its place: removed, a placeholder keeps its place, and it comes back there. For a part
  * whose parent is not changed while it is out (what `x-display` does for JSX).
  */
 export function kept(el: HTMLElement, on: boolean): void {

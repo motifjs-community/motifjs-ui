@@ -10,7 +10,7 @@ import { isElement } from './node-kind';
 
 /** Elements with a native `disabled`: the browser blocks them and exposes the state. */
 const NATIVE = 'button, input, select, textarea, fieldset, optgroup, option';
-/** Other focusable elements: taken out of the tab order and marked `aria-disabled`. */
+/** Other focusable elements: removed of the tab order and marked `aria-disabled`. */
 const FOCUSABLE = 'a[href], area[href], [tabindex], [contenteditable]:not([contenteditable="false"]), summary, iframe';
 const DISABLEABLE = `${NATIVE}, ${FOCUSABLE}`;
 /** Elements that keep focus while disabled (a control asked for it): only `aria-disabled`, so they stay in the tab order. */

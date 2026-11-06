@@ -118,7 +118,7 @@ export interface SchedulerProps<T> extends ControlProps, SchedulerTemplates<T> {
   /** Occurrences of a series, and ones changed apart from it, carry a mark where the design language draws one. Default `true`. */
   recurrenceMarks?: Bind<boolean>;
   /**
-   * The kinds of resources the appointments use (rooms, people): they colour the appointments,
+   * The kinds of resources the appointments use (rooms, people): they color the appointments,
    * group the columns (`groups`) and each gets a picker in the form.
    */
   resources?: Bind<readonly SchedulerResource<any>[]>;

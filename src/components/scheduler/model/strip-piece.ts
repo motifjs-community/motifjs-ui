@@ -9,7 +9,7 @@ export interface StripPiece<T> {
   group: number;
   /** Its line in the row, from 0. */
   lane: number;
-  /** Lines past what the row has room for are left out ("+N more"). */
+  /** Lines past what the row has room for are omitted ("+N more"). */
   hidden: boolean;
   before: boolean;
   after: boolean;
@@ -19,7 +19,7 @@ export interface StripPiece<T> {
   end: Date;
   draft: boolean;
   invalid: boolean;
-  /** The appointment's text, colour and whether it is disabled, as its box shows them. */
+  /** The appointment's text, color and whether it is disabled, as its box shows them. */
   text: string;
   color: string;
   disabled: boolean;

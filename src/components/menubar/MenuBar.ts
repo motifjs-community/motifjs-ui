@@ -195,7 +195,7 @@ export class MenuBar extends Control<HTMLDivElement, MenuBarProps> {
     const parts = this.parts;
     parts.stopDrawing?.();
     const items = this.peekProperty<readonly MenuItem[]>('items') ?? [];
-    // The items' own functions are followed; the list and the fields are not.
+    // The items' own functions are tracked; the list and the fields are not.
     parts.stopDrawing = follow(this, 'items', () => {
       const looks = givenList(items).map((item): ItemLook => {
         const children = givenList(givenField<readonly MenuItem[] | undefined>(item, 'items'));

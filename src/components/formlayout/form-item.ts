@@ -15,7 +15,7 @@ export interface FormItem {
   field?: string;
   label?: Bind<string>;
   /**
-   * By name, or by the type of the value when left out. A function makes the editor from the props
+   * By name, or by the type of the value when omitted. A function makes the editor from the props
    * a named one gets (`label`, `value`, `onValueChanged`, `validationGroup`, `rules` …): any
    * component that takes them is an editor.
    */

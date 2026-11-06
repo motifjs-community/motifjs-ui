@@ -19,7 +19,7 @@ export interface TimelineRow<T> {
   lanes: number;
   /** Its height in pixels: the lanes it takes, or the least a row has. */
   height: number;
-  /** The days with appointments left out (by the day's index) and how many, and the lane "+N more" stands on. */
+  /** The days with appointments omitted (by the day's index) and how many, and the lane "+N more" stands on. */
   more: { day: number; count: number }[];
   moreLane: number;
 }

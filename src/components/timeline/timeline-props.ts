@@ -10,7 +10,7 @@ export type TimelineOrientation = 'vertical' | 'horizontal';
 /** How a date is written: a preset, or the options of `Intl.DateTimeFormat`. */
 export type TimelineDateFormat = 'short' | 'medium' | 'long' | Intl.DateTimeFormatOptions;
 
-/** Props of `Timeline`. Each one is also a settable property; a function is followed. */
+/** Props of `Timeline`. Each prop is also a settable property, and a function is tracked. */
 export interface TimelineProps extends ControlProps {
     /** The events, in order. */
     items?: Bind<readonly TimelineItem[]>;
@@ -26,7 +26,7 @@ export interface TimelineProps extends ControlProps {
     value?: Bind<string | number | null>;
     /** What screen readers call it. Default: the kit's "Timeline". */
     label?: Bind<string>;
-    /** A press on an event's card or flag. */
+    /** A click on an event's card or flag. */
     onItemClick?: (e: TimelineItemClickEventArgs) => void;
     /** Horizontal: the shown event changed. */
     onSelectionChanged?: (e: TimelineSelectionChangedEventArgs) => void;

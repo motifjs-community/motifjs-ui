@@ -359,7 +359,7 @@ interface Parts<T> {
   lastContent: string;
   /** The view whose hours were scrolled to last, so a new date does not scroll again. */
   scrolledFor: string;
-  /** A press is selecting cells. */
+  /** A click is selecting cells. */
   selecting: boolean;
   /** Focus goes to the cell once the next view is on the page. */
   focusWhenShown: boolean;
@@ -411,10 +411,10 @@ interface Parts<T> {
  * the data source's changes show at once). It moves by day, week or month (today, previous, next, a date chosen from a
  * calendar), selects cells with the pointer and the keyboard, places appointments at the same
  * time side by side, shows all-day and multi-day ones as bars, and what does not fit a month day
- * as "+N more". Resources colour the appointments and split the columns into groups (nested, or
+ * as "+N more". Resources color the appointments and split the columns into groups (nested, or
  * under each date); blocked times, work hours per resource and an overlap rule say where an
- * appointment may go. Every setting is a value or a function that is followed; a view's own
- * settings win over the scheduler's.
+ * appointment may go. Every setting is a value or a tracked function; a view's own
+ * settings take precedence over the scheduler's.
  *
  * @example
  * <Scheduler appointments={state.meetings} currentView="week" startDayHour={7} onAppointmentDblClick={(e) => open(e.appointment)} />
@@ -1149,7 +1149,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   /** Selects cells from `start` to `end` (in the days shown), or none with `null`. */
   selectCells(cell: SchedulerCell | null): boolean {
     const model = this.parts.model;
-    // A date or a view asked for just before is worked out first: the cells are found in the days shown then.
+    // A date or a view asked for just before is calculated first: the cells are found in the days shown then.
     model.flush();
     if (!cell) {
       model.clearSelection();
@@ -1211,7 +1211,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
       timeZone: zone.name || undefined,
     });
   }
-  /** Asks the user what a change (or a delete) of an occurrence reaches; `null` when the question is cancelled. */
+  /** Asks the user what a change (or a delete) of an occurrence reaches; `null` when the question is canceled. */
   askSeries(appointment: T, action: SeriesAction = 'update'): Promise<SeriesScope | null> {
     return this.parts.editor.askSeries(appointment, action);
   }
@@ -1252,7 +1252,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
 
   /**
    * Writes the appointments as an iCalendar file (RFC 5545): those of the days shown, all the ones
-   * loaded, or those of a range; a series goes whole with its rule, the times left out and the
+   * loaded, or those of a range; a series goes whole with its rule, the times omitted and the
    * occurrences changed apart, each zone used with its definition. Asks `onICalendarExporting`
    * first; `null` when it said no.
    */
@@ -1289,7 +1289,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
 
   /**
    * Prints the scheduler alone: the days shown, every row and column built and nothing scrolled,
-   * the colours kept, the bar left out. Asks `onPrinting` first; `false` when it said no. (The
+   * the colors kept, the bar omitted. Asks `onPrinting` first; `false` when it said no. (The
    * browser's own print prints it the same way, beside the rest of the page.)
    */
   async print(): Promise<boolean> {
@@ -1538,7 +1538,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     });
   }
 
-  /** The view shown in the content: made again only when its kind changes. */
+  /** The view shown in the content: recreated only when its kind changes. */
   private drawContent(): void {
     const parts = this.parts;
     const content = parts.content;
@@ -1941,7 +1941,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     });
   }
 
-  /** With remote filtering, the data source is asked for the days shown only (and, grouped, for the resources shown). */
+  /** With remote filtering, the data source is requested the days shown only (and, grouped, for the resources shown). */
   private filterSource(): void {
     const source = this.dataSource;
     if (!source) return;
@@ -2196,7 +2196,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
     });
   }
 
-  /** On paper a big view is built whole: the view is worked out again for it, and back after. */
+  /** On paper a big view is built whole: the view is calculated again for it, and back after. */
   private setPrinting(on: boolean): void {
     const parts = this.parts;
     if (parts.version.printing === on) return;
@@ -2566,7 +2566,7 @@ export class Scheduler<T = Record<string, unknown>> extends Control<HTMLDivEleme
   }
 
   /**
-   * What the "+N more" popup shows: the template's content, made again each time it opens (it reads the day and the
+   * What the "+N more" popup shows: the template's content, recreated each time it opens (it reads the day and the
    * appointments as they are then), else the list, drawn again.
    */
   private drawMorePopup(): void {

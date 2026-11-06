@@ -236,7 +236,7 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
         return this.changed.event;
     }
 
-    /** A press on a pane that was not a drag. */
+    /** A click on a pane that was not a drag. */
     get onItemClick(): MotifEvent<GalleryItemClickEventArgs> {
         return this.itemClick.event;
     }
@@ -318,7 +318,7 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
     renderItems(): void {
         this.stopItems?.();
         const items = givenList(this.peekProperty<readonly unknown[]>('items'));
-        // The items' own functions are followed; the list and the drawing are not.
+        // The items' own functions are tracked; the list and the drawing are not.
         this.stopItems = follow(
             this,
             'items',
@@ -345,7 +345,7 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
         };
     }
 
-    // The panes are made again when the items are others; otherwise written in place.
+    // The panes are recreated when the items are others; otherwise written in place.
     drawPanes(): void {
         const stale = this.panes.length !== this.looks.length || this.panes.some((pane, i) => pane.item !== this.looks[i].item);
         if (stale) {
@@ -503,7 +503,7 @@ export class Gallery extends Control<HTMLElement, GalleryProps> {
         this.playButton.element.addEventListener('click', () => (this.playing ? this.pause() : this.play()));
         this.viewport.element.addEventListener('keydown', e => this.keyDown(e, false));
         this.indicator.element.addEventListener('keydown', e => this.keyDown(e, true));
-        // A press on a button or a link inside the pane is that control's, not the pane's.
+        // A click on a button or a link inside the pane is that control's, not the pane's.
         this.list.element.addEventListener('click', e => {
             const target = e.target as Element;
             const el = target.closest('.mx-gallery__item');

@@ -3,7 +3,7 @@ import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
 import type { FieldProps } from '../../parts/field/field-props';
 import type { SpinLayout } from './spin-layout';
 
-/** Props of `NumberBox`: the field props plus its own. Each one is also a settable, reactive property. */
+/** Props of `NumberBox`: the field props plus its own. Each prop is also a settable, reactive property. */
 export interface NumberBoxProps extends FieldProps<number | null> {
   min?: Bind<number | null>;
   max?: Bind<number | null>;

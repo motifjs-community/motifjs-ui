@@ -369,7 +369,7 @@ export class ComboBox<T = unknown, V = unknown> extends Field<V | null, ComboBox
     input.addEventListener('input', () => this.typed());
     input.addEventListener('keydown', (e) => this.keyDown(e));
     input.addEventListener('blur', () => {
-      // Leaving for the list (a press on an option) is not leaving.
+      // Leaving for the list (a click on an option) is not leaving.
       if (this.element.contains(document.activeElement)) return;
       if (this.comboParts.editing) this.finish();
     });

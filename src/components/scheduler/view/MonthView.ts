@@ -42,7 +42,7 @@ interface WeekLayer<T> {
  * it shows), as it does on `reState()` and when an option or a text it shows changes.
  */
 export class MonthView<T> extends Component<HTMLDivElement, Props<T>> {
-  /** Its parts are made (in `onConfigured`): until then a draw has nothing to draw on. */
+  /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
   private grid: HTMLElement | null = null;
   private lane: HTMLElement | null = null;
@@ -66,7 +66,7 @@ export class MonthView<T> extends Component<HTMLDivElement, Props<T>> {
   /** The day number of each cell. */
   private readonly numberOf = new WeakMap<Element, HTMLElement>();
   private readonly layerOf = new WeakMap<Component<HTMLDivElement>, WeekLayer<T>>();
-  /** The cell template the cells were made with: another one makes them again. */
+  /** The cell template the cells were created with: another one makes them again. */
   private cellTemplate: CellTemplate | undefined = undefined;
 
   constructor(props: Props<T>) {
@@ -167,7 +167,7 @@ export class MonthView<T> extends Component<HTMLDivElement, Props<T>> {
     };
   }
 
-  /** The weeks' cells, made again for another cell template; the template draws into each cell, after its number. */
+  /** The weeks' cells, recreated for another cell template; the template draws into each cell, after its number. */
   private makeWeeks(template: CellTemplate): void {
     const parts = this.parts;
     this.cellTemplate = template;

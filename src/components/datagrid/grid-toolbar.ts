@@ -10,7 +10,7 @@ import type { GridToolbarItemName } from './grid-toolbar-item-name';
  * out. Read and change it later through `grid.toolbar`.
  */
 export interface GridToolbar {
-  /** `true` always shows the bar, `false` never; left out, it shows while it has an item. */
+  /** `true` always shows the bar, `false` never; omitted, it shows while it has an item. */
   visible?: Bind<boolean | undefined>;
   items?: Bind<readonly (GridToolbarItem | GridToolbarItemName)[] | undefined>;
 }

@@ -71,7 +71,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
   // Headers are direct children of the row (no fragment in between), so `arrange` can move them.
   override initializeComponent() {
     const cells: ComponentBase[] = [];
-    // While columns are virtual a header is made when its column is first drawn.
+    // While columns are virtual a header is created when its column is first drawn.
     for (const field of this.grid.columns.state.order) if (this.grid.columnWindow.has(field)) cells.push(this.cell(this.grid.columns.get(field)));
     const indicator = new Component<HTMLDivElement>('div');
     indicator.element.className = 'mx-data-grid__drop';
@@ -169,7 +169,7 @@ export class HeaderRow<T> extends Component<HTMLDivElement> {
     untracked(() => (field === SELECT_FIELD ? this.drawSelect() : this.drawCell(field)));
   }
 
-  /** A column taken out loses its header, and its own header content. */
+  /** A column removed loses its header, and its own header content. */
   removeColumn(field: string) {
     const cell = this.cells.get(field);
     this.cells.delete(field);

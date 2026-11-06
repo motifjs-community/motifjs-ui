@@ -70,7 +70,7 @@ import type { TabPresentation } from './tab-presentation';
 import type { TabNarrowBars } from './tab-narrow-bars';
 import type { TabTabletWhen } from './tab-tablet-when';
 
-/** Props of `TabDocumentManager`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `TabDocumentManager`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface TabDocumentManagerProps extends ControlProps {
   /** Names the manager: it becomes a `region` landmark. The same property as `text`. */
   label?: Bind<string>;
@@ -170,7 +170,7 @@ export interface TabDocumentManagerProps extends ControlProps {
   menuItems?: Bind<Partial<Record<TabMenuCommand, boolean>>>;
   /** Makes a new document: a double click on the empty strip and the strip menu use it. */
   newDocument?: TabNewDocument | null;
-  /** The same document may be open in several groups, each copy with content of its own. A document's own value wins. Default `false`. */
+  /** The same document may be open in several groups, each copy with content of its own. A document's own value takes precedence. Default `false`. */
   allowDuplicate?: Bind<boolean>;
   /** Splitting with a document copies it into the new group when it may be open twice; otherwise it moves. Default `true`. */
   splitCopies?: Bind<boolean>;
@@ -188,7 +188,7 @@ export interface TabDocumentManagerProps extends ControlProps {
   layoutEdgeDrop?: Bind<boolean>;
   /** How deep the band along the layout's edges is, in pixels. Default 16. */
   layoutEdgeSize?: Bind<number>;
-  /** How far the pointer moves, in pixels, before a press becomes a drag. Default 5. */
+  /** How far the pointer moves, in pixels, before a click becomes a drag. Default 5. */
   dragThreshold?: Bind<number>;
   /** How long a finger or a pen rests on a tab, in milliseconds, before it drags it (a swipe before that scrolls the strip). Default 500. */
   longPressDelay?: Bind<number>;

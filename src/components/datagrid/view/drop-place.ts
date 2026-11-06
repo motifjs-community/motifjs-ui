@@ -1,4 +1,4 @@
-/** Where a dragged column or band lands among its neighbours, and where the mark between them goes. */
+/** Where a dragged column or band lands among its neighbors, and where the mark between them goes. */
 export interface DropPlace {
   /** Its place among them after the drop. */
   target: number;
@@ -7,8 +7,8 @@ export interface DropPlace {
 }
 
 /**
- * The place a column or band dragged to `x` lands: the number of neighbours whose centre lies
- * before the pointer, kept within `lo`…`hi`. `rects` are the neighbours on the screen, the dragged
+ * The place a column or band dragged to `x` lands: the number of neighbors whose centre lies
+ * before the pointer, kept within `lo`…`hi`. `rects` are the neighbors on the screen, the dragged
  * one at `from` among them.
  */
 export function dropPlace(rects: readonly { left: number; right: number }[], from: number, lo: number, hi: number, x: number, rtl: boolean): DropPlace {

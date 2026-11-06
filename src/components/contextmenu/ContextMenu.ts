@@ -50,7 +50,7 @@ const PARTS = Symbol('mx.contextmenu');
 /**
  * A menu that opens on an element's right-click (or long press), at the pointer, and from the
  * keyboard with the Menu key or Shift+F10, at the focused element. `onOpening` builds the items
- * for the element it opened on (a row of a list) or cancels. It closes on Escape, a press outside
+ * for the element it opened on (a row of a list) or cancels. It closes on Escape, a click outside
  * it and focus leaving it; when the page scrolls it goes along with the element it opened on, and
  * closes once that element is out of sight. The items are `MenuItem`s: submenus, check and radio
  * items, shortcuts. Opened on an element in another document (a window the app opened), the menu
@@ -84,7 +84,7 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
     if (own.onItemClick) this.onItemClick(own.onItemClick);
     if (own.onClosed) this.onClosed(own.onClosed);
     parts.source = own.target;
-    // A target given as a function may name a component made after this one (a ref): read it once both are made.
+    // A target given as a function may name a component made after this one (a ref): read it once both are created.
     if (own.target !== undefined && typeof own.target !== 'function') this.followTarget();
     else queueMicrotask(() => this.followTarget());
     this.motif.on('x:built', () => queueMicrotask(() => this.followTarget()));
@@ -437,7 +437,7 @@ export class ContextMenu extends Control<HTMLDivElement, ContextMenuProps> {
   }
 
   /**
-   * A press that moves focus can make the browser scroll a moment later, and the reader may scroll
+   * A click that moves focus can make the browser scroll a moment later, and the reader may scroll
    * too: the menu goes along with the element it opened on, and closes only once it is out of sight.
    */
   private onScroll(e: Event): void {

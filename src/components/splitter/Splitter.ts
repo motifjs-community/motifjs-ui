@@ -186,7 +186,7 @@ export class Splitter extends Control<HTMLDivElement, SplitterProps> {
         return true;
     }
 
-    /** Hides a pane, the neighbours taking its room; `false` when it is not here, hidden already, or `onCollapsing` refused. */
+    /** Hides a pane, the neighbors taking its room; `false` when it is not here, hidden already, or `onCollapsing` refused. */
     collapse(pane: SplitPane | number): boolean {
         return this.fold(pane, true, false);
     }

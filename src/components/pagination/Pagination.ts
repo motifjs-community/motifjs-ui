@@ -211,7 +211,7 @@ export class Pagination extends Control<HTMLElement, PaginationProps> {
     return mode === 'compact' || (mode === 'adaptive' && this.narrow);
   }
 
-  /** Goes to a page (from 1), as a press would. */
+  /** Goes to a page (from 1), as a click would. */
   goTo(page: number, byUser = false): void {
     const next = Math.min(Math.max(Math.round(page), 1), this.count);
     if (next === this.current) {

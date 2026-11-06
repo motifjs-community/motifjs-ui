@@ -112,7 +112,7 @@ export class MenuList extends Component<HTMLDivElement> {
   setItems(items: Bind<readonly MenuItem[]>): void {
     this.stopDrawing?.();
     this.given = items;
-    // The getter and the items' own functions are followed; the list and the fields are not, nor is drawing.
+    // The getter and the items' own functions are tracked; the list and the fields are not, nor is drawing.
     this.stopDrawing = follow(this, 'items', () => {
       const looks = givenList(read(items)).map((item): ItemLook => {
         const group = givenField<string | undefined>(item, 'group');

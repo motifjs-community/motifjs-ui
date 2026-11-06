@@ -499,7 +499,7 @@ export class Slider extends Field<SliderValue, SliderProps> {
     return Math.min(max, Math.max(min, toNumber(origin, min)));
   }
 
-  /** Marks inside the active segment are drawn in its colour. */
+  /** Marks inside the active segment are drawn in its color. */
   private markTicks(from: number, to: number): void {
     const parts = this.sliderParts;
     parts.tickValues.forEach((v, i) => parts.ticks.children[i]?.toggleAttribute('data-active', v >= from && v <= to));
@@ -693,7 +693,7 @@ export class Slider extends Field<SliderValue, SliderProps> {
       const box = hit.getBoundingClientRect();
       offset = position - (this.positionOf({ clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }) ?? position);
     }
-    // A press on a thumb focuses it the browser's way; a press beside it focuses it on release,
+    // A click on a thumb focuses it the browser's way; a click beside it focuses it on release,
     // after the browser's own focus handling, so the keyboard focus ring stays away in both cases.
     parts.drag = { thumb, offset, pointer: e.pointerId, moving, focus: !hit };
     try {

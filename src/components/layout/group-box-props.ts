@@ -4,7 +4,7 @@ import type { GroupBoxToggledEventArgs } from './group-box-toggled-event-args';
 import type { GroupBoxVariant } from './group-box-variant';
 import type { LayoutSpace } from './layout-space';
 
-/** Props of `GroupBox`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `GroupBox`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface GroupBoxProps extends ControlProps {
   /** The title; `&Address` makes Alt+A focus the first control inside. The same property as `text`. */
   title?: Bind<string>;

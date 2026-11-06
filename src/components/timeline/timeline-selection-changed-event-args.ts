@@ -6,7 +6,7 @@ export interface TimelineSelectionChangedEventArgs {
     /** The item as given; `null` when there is none. */
     item: unknown;
     previous: number;
-    /** By a press or a key, else from code. */
+    /** By a click or a key, else from code. */
     byUser: boolean;
     source: Timeline;
 }

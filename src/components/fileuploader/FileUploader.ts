@@ -320,7 +320,7 @@ export class FileUploader extends Field<readonly File[], FileUploaderProps> {
         return Promise.all(waiting.map(i => this.uploadItem(i))).then(() => undefined);
     }
 
-    /** Stops the upload of a file (or of every one); the file stays, listed as cancelled. */
+    /** Stops the upload of a file (or of every one); the file stays, listed as canceled. */
     abort(item?: UploadItem): void {
         const parts = this.uploadParts;
         for (const i of item ? [item] : [...parts.jobs.keys()]) parts.jobs.get(i)?.abort();

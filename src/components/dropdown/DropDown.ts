@@ -55,10 +55,10 @@ interface Parts<T> {
 
 /**
  * Picks one item from a list (the APG select-only combobox): the field shows the chosen item, the
- * list opens below it with the keyboard or a press, and can be searched. Items are plain values,
+ * list opens below it with the keyboard or a click, and can be searched. Items are plain values,
  * `DropDownItem`s or your own objects read through `textField` / `valueField`.
  *
- * From a data source, a value on no loaded page is asked for by key: meanwhile the field shows
+ * From a data source, a value on no loaded page is requested by key: meanwhile the field shows
  * `valueText` when it is given, else it waits (a spinner in the arrow's place, the list closed).
  * A key the source does not have shows itself, marked.
  *
@@ -298,7 +298,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     }
   }
 
-  /** For subclasses: the popup and its list were made (e.g. to add a header above the list). */
+  /** For subclasses: the popup and its list were created (e.g. to add a header above the list). */
   protected popupCreated(_popup: Popup, _list: OptionList<T>): void {}
 
   protected createControl(): HTMLElement {
@@ -461,7 +461,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
       const target = e.target as Element;
       return !!target.closest('.mx-field__box') && !target.closest('.mx-field__button');
     };
-    // A press anywhere in the box toggles the list; focus stays on the field.
+    // A click anywhere in the box toggles the list; focus stays on the field.
     this.element.addEventListener('mousedown', (e) => {
       if (!inBox(e) || e.target === display) return;
       e.preventDefault();
@@ -677,7 +677,7 @@ export class DropDown<T = unknown, V = unknown> extends Field<V | null, DropDown
     parts.stopLanguage = () => changed.dispose();
   }
 
-  /** The spinner in the arrow's place while the value's item is asked for; made the first time it is needed. */
+  /** The spinner in the arrow's place while the value's item is requested; made the first time it is needed. */
   private addSpinner(): void {
     const parts = this.dropParts;
     if (parts.spinner) return;

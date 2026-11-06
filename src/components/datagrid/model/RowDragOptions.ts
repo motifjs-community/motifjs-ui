@@ -46,7 +46,7 @@ const HANDLERS = ['onDragStart', 'onDragMove', 'onDragChange', 'onDragEnd', 'onR
 type Handlers<T> = Pick<GridRowDragging<T>, (typeof HANDLERS)[number]>;
 
 /**
- * The `rowDragging` options: the values (each a value or a function that is followed) and the
+ * The `rowDragging` options: the values (each a value or a tracked function) and the
  * handlers and `dragTemplate`, which are kept as they are. `view` reads and assigns both.
  */
 export class RowDragOptions<T> {

@@ -1,6 +1,6 @@
 /**
  * A cell as the PDF draws it (`PdfCell`): its text and look. `customizeCell` changes it
- * before the rows are measured; sizes are in the units the jsPDF document was made with, the font
+ * before the rows are measured; sizes are in the units the jsPDF document was created with, the font
  * size in points.
  */
 export interface PdfCell {

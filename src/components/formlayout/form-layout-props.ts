@@ -4,7 +4,7 @@ import type { FieldLabelMode } from '../../parts/field/field-label-mode';
 import type { ValidationResult } from '../../parts/validation/validation-result';
 import type { FormItem } from './form-item';
 
-/** Props of `FormLayout`. Each one is also a settable, reactive property. */
+/** Props of `FormLayout`. Each prop is also a settable, reactive property. */
 export interface FormLayoutProps<T extends object> extends ControlProps {
   /** The object the editors show and change, usually a reactive one. */
   data?: Bind<T | null>;

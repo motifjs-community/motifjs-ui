@@ -131,7 +131,7 @@ export class GridModel<T> {
   } as GridState) as GridState;
   /** The new-row area, in display order. */
   readonly addedRows: AddedRow<T>[] = [];
-  /** The rows, their source and their unsaved changes; made again when the data props change. */
+  /** The rows, their source and their unsaved changes; recreated when the data props change. */
   data!: GridData<T>;
   /** Raised when sort changes, so "next error" knows which last-seen positions still hold. */
   generation = 0;
@@ -198,7 +198,7 @@ export class GridModel<T> {
   private lastLayout: GridLayout | null = null;
   /** What a new row starts with while it is being made (`onInitNewRow` may change it). */
   private initialRow: Partial<T> | null = null;
-  /** Listeners on the data and its tracker, made again with them. */
+  /** Listeners on the data and its tracker, recreated with them. */
   private dataSubscriptions: IDisposable[] = [];
   /** The columns' `validationRules` and what they found. */
   readonly rules = new CellRules<T>((key) => this.text(key));
@@ -430,7 +430,7 @@ export class GridModel<T> {
     return this.data.tracker.saveMode;
   }
 
-  /** The save mode the data is made with: `'batch'` for `editMode: 'batch'`, else the `saveMode` prop (default `'wait'`). */
+  /** The save mode the data is created with: `'batch'` for `editMode: 'batch'`, else the `saveMode` prop (default `'wait'`). */
   wantedSaveMode(): data.SaveMode {
     return this.settings.get('editMode') === 'batch' ? 'batch' : (read(this.props.saveMode) ?? 'wait');
   }
@@ -1031,7 +1031,7 @@ export class GridModel<T> {
     }
   }
 
-  /** The user left the row: it is sent as the save mode says, after the work it waits for. `true` when the grid may go on at once, else whether the save worked. */
+  /** The user left the row: it is sent according to the save mode, after the work it waits for. `true` when the grid may go on at once, else whether the save worked. */
   commit(rowId: string): true | Promise<boolean> {
     const wait = this.settling.get(rowId);
     if (wait?.size) {
@@ -1064,7 +1064,7 @@ export class GridModel<T> {
     if (rec) this.data.tracker.discard(rec.row);
   }
 
-  /** Deletes rows in one save as the save mode says; `index` is where each row was (-1: not shown). */
+  /** Deletes rows in one save according to the save mode; `index` is where each row was (-1: not shown). */
   removeRows(rows: readonly { rowId: string; row: T; index: number }[]): Promise<boolean> {
     for (const { rowId, index } of rows) if (index >= 0) this.lastSeen.set(rowId, { index, generation: this.generation });
     return this.data.tracker.removeRows(rows.map(({ rowId, row }) => this.edit(rowId)?.row ?? row));
@@ -1171,7 +1171,7 @@ export class GridModel<T> {
     return given && typeof given !== 'function' ? givenList(given) : null;
   }
 
-  /** The actions a row shows, in order: names turned into the ready actions, the hidden ones left out. Reactive. */
+  /** The actions a row shows, in order: names turned into the ready actions, the hidden ones omitted. Reactive. */
   rowActions(row: T, state: RowState): GridAction<T>[] {
     void this.actionSets.version;
     const given = this.props.actions;
@@ -1479,7 +1479,7 @@ export class GridModel<T> {
     this.keepActiveFieldVisible();
   }
 
-  /** A column reads its rows another way now (`type`, `value`, `lookup` …): its texts and the rows are asked for again. */
+  /** A column reads its rows another way now (`type`, `value`, `lookup` …): its texts and the rows are requested again. */
   columnReadChanged(field: string) {
     const col = this.columns.get(field);
     if (col.lookup) this.lookups.refresh([col]);
@@ -1643,7 +1643,7 @@ export class GridModel<T> {
     const visible = cols.visible();
     const field = this.state.activeField;
     if (visible.includes(field) || (cols.isBand(field) && cols.bandShown(field))) return;
-    // A band header left out: its first column shown, else the first data column.
+    // A band header omitted: its first column shown, else the first data column.
     const under = cols.isBand(field) ? cols.leavesIn(field, visible)[0] : undefined;
     this.state.activeField = under ?? cols.visibleData()[0] ?? visible[0] ?? '';
     this.stateChanged('activeField');
@@ -1818,7 +1818,7 @@ export class GridModel<T> {
     return (validate && untracked(() => validate(value, row, entered))) || '';
   }
 
-  /** A lookup key not known yet is asked for; one the source does not have stops the row from being saved. */
+  /** A lookup key not known yet is requested; one the source does not have stops the row from being saved. */
   private checkKey(rowId: string, row: T, col: GridColumn<T>, value: unknown) {
     const items = this.lookups.items(col);
     const known = items?.get(value);

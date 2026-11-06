@@ -37,7 +37,7 @@ const same = (a: readonly unknown[], b: readonly unknown[]) => a.length === b.le
 /**
  * The bar above the rows, on the kit's `Toolbar` (one Tab stop, arrow keys between its items, a
  * "more" menu for what does not fit): the grid's own items whose features are on, or the items the
- * app lists, the `before` ones at the start and the `after` ones at the end. Items are made once
+ * app lists, the `before` ones at the start and the `after` ones at the end. Items are created once
  * and kept while they stay. It follows nothing of the grid: the grid draws it again (`draw`) whenever
  * it tells a change; what the app's items give as functions is followed, once for all of them.
  */
@@ -51,7 +51,7 @@ export class GridToolbar<T> {
   private nextId = 0;
   /** The list last placed, to place again when the row actions get another button. */
   private placed: { list: readonly Entry[]; after: readonly boolean[] } | null = null;
-  /** What the list was worked out from last time: it is worked out again only when this changes. */
+  /** What the list was calculated from last time: it is calculated again only when this changes. */
   private listSeen: unknown[] = [];
   /** The fields of the app's items, as the follow read them last. */
   private values = new WeakMap<GridToolbarItem, Partial<Record<Field, unknown>>>();
@@ -273,7 +273,7 @@ export class GridToolbar<T> {
         else own?.run(button.element);
       });
     }
-    // The grid's own icon is made once; the app's is given again only when the follow reads another.
+    // The grid's own icon is created once; the app's is given again only when the follow reads another.
     const ownIcon = own?.icon ?? null;
     let icon: unknown = undefined;
     let menu: unknown[] | null = null;

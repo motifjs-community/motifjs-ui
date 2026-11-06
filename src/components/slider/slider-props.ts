@@ -4,7 +4,7 @@ import type { SliderOrientation } from './slider-orientation';
 import type { SliderShowValue } from './slider-show-value';
 import type { SliderValue } from './slider-value';
 
-/** Props of `Slider`: the field props plus its own. Each one is also a settable, reactive property. */
+/** Props of `Slider`: the field props plus its own. Each prop is also a settable, reactive property. */
 export interface SliderProps extends FieldProps<SliderValue> {
   /** Default `0`. */
   min?: Bind<number>;

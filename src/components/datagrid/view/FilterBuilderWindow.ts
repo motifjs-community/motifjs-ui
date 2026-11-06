@@ -75,7 +75,7 @@ export class FilterBuilderWindow<T> {
           (builder as unknown as Record<string, unknown>)[name] = options[name];
         }
         const nowFields = builderFields(model, this.customOperations());
-        // By what a field is, not by its objects, which are made anew each time.
+        // By what a field is, not by its objects, which are created anew each time.
         const fieldsKey = nowFields.flatMap((f) => [f.dataField, f.dataType, f.lookup?.dataSource, f.lookup?.valueField, f.lookup?.textField, String(read(f.filterOperations) ?? '')]);
         if (fieldsKey.length !== fields.length || fieldsKey.some((v, i) => !Object.is(v, fields[i]))) {
           fields = fieldsKey;

@@ -5,7 +5,7 @@ import type { FieldProps } from '../../parts/field/field-props';
 import type { MaskChar } from '../../parts/mask/mask-char';
 import type { TextBoxType } from './text-box-type';
 
-/** Props of `TextBox`: the field props plus its own. Each one is also a settable, reactive property. */
+/** Props of `TextBox`: the field props plus its own. Each prop is also a settable, reactive property. */
 export interface TextBoxProps extends FieldProps<string> {
   /** Default `'text'`. */
   type?: Bind<TextBoxType>;

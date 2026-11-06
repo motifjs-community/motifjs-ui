@@ -10,7 +10,7 @@ export interface GridSelection {
   all: boolean;
   /** Keys of the selected rows, while `all` is `false`. */
   keys: unknown[];
-  /** Keys of the rows left out, while `all` is `true`. */
+  /** Keys of the rows omitted, while `all` is `true`. */
   except: unknown[];
   /** The rows' filter when everything was selected (the source's filter, the grid's filters in it). */
   filter: data.FilterExpression | null;

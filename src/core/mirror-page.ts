@@ -2,7 +2,7 @@
 const SHEET_CHECK = 1000;
 
 /**
- * Gives `target` (the document of a window the app opened) the look of `source`, the page: its
+ * Gives `target` (the document of a window the app opened) the appearance of `source`, the page: its
  * style sheets (`<link rel="stylesheet">`, `<style>` and constructed sheets) and the attributes
  * of `<html>` and `<body>` the design system reads (`data-theme`, `data-identity`, density, `dir`,
  * `lang`, classes, inline style). It keeps watching: a sheet added, changed or removed later (a

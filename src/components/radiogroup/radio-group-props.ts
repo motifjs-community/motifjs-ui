@@ -4,7 +4,7 @@ import type { ItemField } from '../../parts/list/item-field';
 import type { RadioGroupOrientation } from './radio-group-orientation';
 import type { RadioItem } from './radio-item';
 
-/** Props of `RadioGroup`. Each one is also a settable, reactive property. */
+/** Props of `RadioGroup`. Each prop is also a settable, reactive property. */
 export interface RadioGroupProps<T = unknown> extends FieldProps<T | null> {
   /** The options: `RadioItem`s, plain values (each its own text), or objects of your own shape with `itemText` / `itemValue`. */
   items?: Bind<readonly (RadioItem<T> | T)[]>;

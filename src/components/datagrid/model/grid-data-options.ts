@@ -3,7 +3,7 @@ import type { DataState } from './data-state';
 import type { GroupLevel } from './group-level';
 import type { GroupNode } from './group-node';
 
-/** What `GridData` is made of. */
+/** What `GridData` is created of. */
 export interface GridDataOptions<T> {
   source: data.DataSource<T, unknown>;
   /** The grid made the source (for its `rows`) and disposes it. */
@@ -28,7 +28,7 @@ export interface GridDataOptions<T> {
   expanded: (node: GroupNode) => boolean;
   /** Whether each open group ends with a footer row. */
   footers: () => boolean;
-  /** The group summaries a server is asked for with its groups; `null` when they can only be computed in memory, which then groups the rows. */
+  /** The group summaries a server is requested with its groups; `null` when they can only be computed in memory, which then groups the rows. */
   groupSummary: () => readonly data.SummaryItem[] | null;
   /** The locale group keys are compared in. */
   locale: () => string | undefined;

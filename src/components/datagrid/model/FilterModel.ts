@@ -258,7 +258,7 @@ export class FilterModel<T> {
     this.tell();
   }
 
-  /** Every column's filter at once: the ones left out go. */
+  /** Every column's filter at once: the ones omitted go. */
   private putAll(next: Record<string, ColumnFilter>) {
     for (const field of [...this.byField.keys()]) if (!Object.hasOwn(next, field)) this.put(field, undefined);
     for (const [field, f] of Object.entries(next)) this.put(field, f);

@@ -4,14 +4,14 @@ import type { FieldProps } from '../../parts/field/field-props';
 import type { ItemField } from '../../parts/list/item-field';
 import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
 
-/** Props of `DropDown`: the field props plus its own. Each one is also a settable, reactive property. */
+/** Props of `DropDown`: the field props plus its own. Each prop is also a settable, reactive property. */
 export interface DropDownProps<T, V> extends FieldProps<V | null> {
-  /** Plain values, `DropDownItem`s, or objects of your own read through the `…Field` props. A function is followed. */
+  /** Plain values, `DropDownItem`s, or objects of your own read through the `…Field` props. A function is tracked. */
   items?: Bind<readonly T[]>;
   /** Items from the data layer; the search box searches it (`searchFields`). Wins over `items`. */
   dataSource?: Bind<data.DataSource<T, unknown> | null>;
   /**
-   * The value's text while its item is asked for from `dataSource` (the record often carries it:
+   * The value's text while its item is requested from `dataSource` (the record often carries it:
    * `valueText={() => order.customerName}`): the field shows it at once instead of waiting.
    */
   valueText?: Bind<string>;

@@ -4,7 +4,7 @@ import type { SortableDragEventArgs } from './sortable-drag-event-args';
 import type { SortableDropEventArgs } from './sortable-drop-event-args';
 import type { SortableOrientation } from './sortable-orientation';
 
-/** Props of `Sortable`. Each one is also a settable property; a function is followed. */
+/** Props of `Sortable`. Each prop is also a settable property, and a function is tracked. */
 export interface SortableProps<T = unknown> extends ControlProps {
     /** The items, drawn with `itemTemplate`; without them the JSX children are the items. */
     items?: Bind<readonly T[]>;

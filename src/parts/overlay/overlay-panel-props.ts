@@ -6,7 +6,7 @@ import type { OverlayContainer } from './overlay-container';
 import type { OverlayEventArgs } from './overlay-event-args';
 import type { OverlayOpeningEventArgs } from './overlay-opening-event-args';
 
-/** Props every overlay panel (a bottom sheet, a drawer, an action sheet) understands. Each one is also a settable, reactive property. */
+/** Props every overlay panel (a bottom sheet, a drawer, an action sheet) understands. Each prop is also a settable, reactive property. */
 export interface OverlayPanelProps extends ControlProps {
   /** A title at the top; it names the panel. The same property as `text`. */
   title?: Bind<string>;
@@ -18,7 +18,7 @@ export interface OverlayPanelProps extends ControlProps {
   modal?: Bind<boolean>;
   /** A dimmed layer under it. Default: when modal. */
   scrim?: Bind<boolean>;
-  /** Opens over this element (it must be a positioned box; a static one is made relative while open); `null` over the page. Default `null`. */
+  /** Opens over this element (it must be a positioned box; a static one is created relative while open); `null` over the page. Default `null`. */
   container?: Bind<OverlayContainer>;
   /** What fills it (besides JSX children). */
   content?: Bind<ComponentBase | null>;
@@ -28,7 +28,7 @@ export interface OverlayPanelProps extends ControlProps {
   showClose?: Bind<boolean>;
   /** Escape closes it. Default `true`. */
   closeOnEscape?: Bind<boolean>;
-  /** A press on the scrim closes it. Default `true`. */
+  /** A click on the scrim closes it. Default `true`. */
   closeOnScrim?: Bind<boolean>;
   /** The browser's back (Android's back button, the back gesture) closes it, through the session history, leaving no entry behind. Default `true`. */
   closeOnBack?: Bind<boolean>;

@@ -23,7 +23,7 @@ export class DataItems<T> implements ItemSource<T>, IDisposable {
 
   /** How an item is searched in memory. */
   textOf: (item: T) => string = (item) => String(item);
-  /** The field of an item that holds its value, when it is not the source's key: a value on no loaded page is asked for by it. */
+  /** The field of an item that holds its value, when it is not the source's key: a value on no loaded page is requested by it. */
   valueField: string | undefined;
   searchMode: 'contains' | 'startswith' = 'contains';
 

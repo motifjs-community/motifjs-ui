@@ -27,7 +27,7 @@ export interface SeriesEditOptions<T> {
 /**
  * What a change to an occurrence of a series comes to, without writing it:
  * - this occurrence: a new appointment in its place (naming its series by `recurrenceId`) and its
- *   time left out of the series (`EXDATE`);
+ *   time omitted of the series (`EXDATE`);
  * - this and the following: the series ends before it (`UNTIL`, or a smaller `COUNT`) and a new
  *   series starts from it, with the change;
  * - the whole series: the series takes the change; a time moved moves every occurrence by as much
@@ -113,7 +113,7 @@ export class SeriesEdit<T> {
     return { [field]: addRuleDate(givenField(series, field), this.dateOf(info)) } as Partial<T>;
   }
 
-  /** How many times the rule happens before an occurrence (they count, left out or not). */
+  /** How many times the rule happens before an occurrence (they count, omitted or not). */
   private countBefore(series: T, info: OccurrenceInfo<T>, rule: RecurrenceRule): number {
     const start = toDate(givenField(series, this.options.fields().start))!;
     const allDay = this.allDay(series);

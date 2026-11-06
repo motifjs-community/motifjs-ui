@@ -207,7 +207,7 @@ export class Tabs extends Control<HTMLDivElement, TabsProps> {
     return tab;
   }
 
-  /** Removes a tab and disposes it; the selection moves to a neighbour. No `onClose`. */
+  /** Removes a tab and disposes it; the selection moves to a neighbor. No `onClose`. */
   remove(tab: Tab): boolean {
     if (!this.tabsNow().includes(tab)) return false;
     const active = deepActiveElement();

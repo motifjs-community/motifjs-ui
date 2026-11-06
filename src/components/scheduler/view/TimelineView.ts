@@ -34,7 +34,7 @@ const CACHED_ROWS = 60;
  * `reState()` and when an option or a text it shows changes.
  */
 export class TimelineView<T> extends Component<HTMLDivElement, Props<T>> {
-  /** Its parts are made (in `onConfigured`): until then a draw has nothing to draw on. */
+  /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
   private scroller: HTMLElement | null = null;
   private rows: Virtualization<TimelineRow<T>> | null = null;
@@ -63,7 +63,7 @@ export class TimelineView<T> extends Component<HTMLDivElement, Props<T>> {
   private lines: KeyedParts<TimelineRow<T>, TimelineLine<T>> | null = null;
   /** The rows the virtual list has made, while they live. */
   private readonly shownLines = new Set<TimelineLine<T>>();
-  /** What the rows were made for: virtual or not, and the cell template. */
+  /** What the rows were created for: virtual or not, and the cell template. */
   private madeFor: { virtual: boolean; cellTemplate: unknown } | null = null;
   private stopFollow: (() => void) | null = null;
 

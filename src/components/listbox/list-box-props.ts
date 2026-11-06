@@ -5,7 +5,7 @@ import type { ItemField } from '../../parts/list/item-field';
 import type { ItemTemplate } from './item-template';
 import type { ListSelectionMode } from './list-selection-mode';
 
-/** Props of `ListBox`: the field props plus its own. Each one is also a settable, reactive property. */
+/** Props of `ListBox`: the field props plus its own. Each prop is also a settable, reactive property. */
 export interface ListBoxProps<T, V> extends FieldProps<V | V[] | null> {
   /** Items in memory; searched here. */
   items?: Bind<readonly T[]>;

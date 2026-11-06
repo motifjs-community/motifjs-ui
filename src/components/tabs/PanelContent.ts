@@ -6,7 +6,7 @@ export type ContentFactory = () => ComponentBase | readonly ComponentBase[];
 /**
  * The content of a panel that is built when it is first shown: the JSX children, kept once
  * placed, and what a `content` factory makes, which can be dropped while the panel is hidden
- * and made again the next time.
+ * and recreated the next time.
  */
 export class PanelContent {
   private placedChildren = false;

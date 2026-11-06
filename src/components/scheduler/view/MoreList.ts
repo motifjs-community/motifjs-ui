@@ -31,7 +31,7 @@ interface ItemDrawn<T> {
  * scheduler draws it when it opens it; an appointment's fields are read as they are.
  */
 export class MoreList<T> extends Component<HTMLDivElement, Props<T>> {
-  /** Its parts are made (in `onConfigured`): until then a draw has nothing to draw on. */
+  /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
   private title!: HTMLElement;
   private items!: KeyedParts<T, Component<HTMLDivElement>>;

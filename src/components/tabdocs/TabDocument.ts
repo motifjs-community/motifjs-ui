@@ -56,7 +56,7 @@ const NO_ACTIONS: readonly ToolbarItem[] = [];
 export class TabDocument {
   readonly id: string;
   readonly type: string;
-  /** What `contentComponent` is made from. */
+  /** What `contentComponent` is created from. */
   content: TabDocumentContent | null;
   /** Makes the content of a copy in another group. */
   clone: TabContentClone | null;

@@ -4,7 +4,7 @@ import type { GridAction } from './grid-action';
 export interface GridBuiltInActions<T> {
   /** Opens the editor of the row's first cell the user can fill. */
   edit: GridAction<T>;
-  /** Deletes the row as the save mode says. */
+  /** Deletes the row according to the save mode. */
   remove: GridAction<T>;
   /** Takes a deletion mark back (batch mode). */
   restore: GridAction<T>;

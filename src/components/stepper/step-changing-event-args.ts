@@ -11,7 +11,7 @@ export interface StepChangingEventArgs extends EventArgs {
     /** The items as given; `null` when there is none (no current step). */
     fromItem: unknown;
     toItem: unknown;
-    /** By a press on a step, else programmatically. */
+    /** By a click on a step, else programmatically. */
     byUser: boolean;
     promise?: Promise<boolean>;
     source: Stepper;

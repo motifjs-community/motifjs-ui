@@ -57,7 +57,7 @@ interface Parts {
   stopMoreLabel: (() => void) | null;
   restyleQueued: boolean;
   layoutQueued: boolean;
-  /** The size the overflow was worked out for. */
+  /** The size the overflow was calculated for. */
   laidOut: number;
   itemClick: Emitter<ToolbarItemClickEventArgs>;
 }
@@ -219,7 +219,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
     const parts = this.parts;
     parts.stopItems?.();
     const items = this.peekProperty<readonly ToolbarItem[]>('items') ?? [];
-    // The getter and the items' own functions are followed; the list and the fields are not.
+    // The getter and the items' own functions are tracked; the list and the fields are not.
     parts.stopItems = follow(
       this,
       'items',
@@ -293,7 +293,7 @@ export class Toolbar extends Control<HTMLDivElement, ToolbarProps> {
   private itemPressed(item: ToolbarItem, button: Button, event: Event): void {
     const args: ToolbarItemClickEventArgs = { item, source: this, event };
     givenValue<ToolbarItem['click']>(item, 'click')?.(args);
-    // A press set the toggle's own state; one bound to the app follows the app again.
+    // A click set the toggle's own state; one bound to the app follows the app again.
     const pressed = givenValue<ToolbarItem['pressed']>(item, 'pressed');
     if (typeof pressed === 'function') button.pressed = pressed;
     this.parts.itemClick.fire(args);

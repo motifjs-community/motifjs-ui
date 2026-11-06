@@ -3,7 +3,7 @@ import type { ControlProps } from '../../core/control';
 import type { AvatarGroupLayout } from './avatar-group-layout';
 import type { AvatarSize } from './avatar-size';
 
-/** Props of `AvatarGroup`. Each one is also a settable property; a function is followed. */
+/** Props of `AvatarGroup`. Each prop is also a settable property, and a function is tracked. */
 export interface AvatarGroupProps extends ControlProps {
   /** The size of every avatar in it. Default `'md'`. */
   size?: Bind<AvatarSize>;

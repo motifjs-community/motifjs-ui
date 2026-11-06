@@ -3,7 +3,7 @@ import type { SchedulerViewType } from '../scheduler-view-type';
 
 /**
  * Dates and times as the scheduler writes them, in its locale and on its clock (`Intl` with its
- * time zone); the formatters are made once per locale and zone.
+ * time zone); the formatters are created once per locale and zone.
  */
 export class SchedulerFormat {
   private made = '';

@@ -11,7 +11,7 @@ interface ChildSettingsHandler {
 
 /**
  * The settings a layout container reads from its children (`dock`, `row`, `grow`…). A child
- * says them in its own props, a value or a function that is followed, whatever kind of
+ * says them in its own props, a value or a tracked function, whatever kind of
  * component it is; code can set them later with `set`. Children added at any time are picked
  * up through the container's own `controladded` event, so nothing watches the DOM and nothing
  * runs on resize.
@@ -54,7 +54,7 @@ export class ChildSettings {
     return this.values.get(child)?.get(name);
   }
 
-  /** Sets a child's setting programmatically: a value, or a function that is followed. */
+  /** Sets a child's setting programmatically: a value, or a tracked function. */
   set(child: ComponentBase, name: string, value: Bind<unknown>): void {
     if (!this.tracked.has(child)) return;
     this.bind(child, name, value);

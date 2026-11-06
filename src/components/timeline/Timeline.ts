@@ -172,7 +172,7 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
         this.assignProperty('label', value);
     }
 
-    /** A press on an event's card or flag (`index`, `item`). */
+    /** A click on an event's card or flag (`index`, `item`). */
     get onItemClick(): MotifEvent<TimelineItemClickEventArgs> {
         return this.itemClick.event;
     }
@@ -258,7 +258,7 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
     renderItems(): void {
         this.stopItems?.();
         const items = givenList(this.peekProperty<readonly unknown[]>('items'));
-        // The items' own functions are followed; the list and the drawing are not.
+        // The items' own functions are tracked; the list and the drawing are not.
         this.stopItems = follow(
             this,
             'items',
@@ -289,7 +289,7 @@ export class Timeline extends Control<HTMLDivElement, TimelineProps> {
         };
     }
 
-    // The rows are made again when the events are others, or the timeline turned or became collapsible.
+    // The rows are recreated when the events are others, or the timeline turned or became collapsible.
     drawEntries(): void {
         const as = this.orientation;
         const stale = this.drawnAs !== as || this.entries.length !== this.looks.length || this.entries.some((entry, i) => entry.item !== this.looks[i].item) || this.entries.some(entry => (entry.face.element.tagName === 'BUTTON') !== this.pressable());

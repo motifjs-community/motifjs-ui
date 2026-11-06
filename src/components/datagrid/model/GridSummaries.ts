@@ -41,9 +41,9 @@ interface Edits<T> {
 
 /**
  * The grid's summaries: the items of the `summary` prop as they read now, their values and their
- * texts. Totals of rows in memory are worked out at once; a source that loads pages or blocks asks
+ * texts. Totals of rows in memory are calculated at once; a source that loads pages or blocks asks
  * its adapter (`remoteSummary`) or loads every matching row once per row set and works them out
- * here. Group values come with a server's groups, or are worked out per group the first time a row
+ * here. Group values come with a server's groups, or are calculated per group the first time a row
  * shows it. Unsaved changes count while `recalculateWhileEditing` is on; saved ones always do.
  */
 export class GridSummaries<T> {
@@ -93,7 +93,7 @@ export class GridSummaries<T> {
     return this.look.peek();
   }
 
-  /** The items and the rows are read again, and the values worked out again: something was changed in place. */
+  /** The items and the rows are read again, and the values calculated again: something was changed in place. */
   reread() {
     this.look.value = this.look.peek() + 1;
     this.tell();
@@ -140,7 +140,7 @@ export class GridSummaries<T> {
     return JSON.stringify([part(this.totalItems()), part(this.groupItems()), readField(c, 'recalculateWhileEditing'), readField(c, 'skipEmptyValues'), s.get('remoteSummary'), s.get('groupLoadPageSize')]);
   }
 
-  /** The items as a server is asked for them, or `null` when the browser has to work them out. */
+  /** The items as a server is requested them, or `null` when the browser has to work them out. */
   serverItems(items: readonly PlacedItem[], adapter: data.DataAdapter<T, unknown>): data.SummaryItem[] | null {
     const remote = this.model.settings.get('remoteSummary');
     if (remote === false || (remote === 'auto' && !adapter.capabilities.summary)) return null;
@@ -212,7 +212,7 @@ export class GridSummaries<T> {
     );
   }
 
-  /** The values of `groupItems` for a group: a server's, or worked out from its rows once. Reactive. */
+  /** The values of `groupItems` for a group: a server's, or calculated from its rows once. Reactive. */
   groupValues(node: GroupNode): readonly unknown[] {
     void this.state.version;
     const items = this.groupItems();

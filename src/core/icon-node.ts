@@ -5,7 +5,7 @@ import { isNode } from './node-kind';
 /**
  * The node that shows an icon: an `<img>` for an address, the element itself, or the built element
  * of a component. `release` disposes a component when the icon goes away. `doc`: the document
- * the `<img>` is made in, the page's by default.
+ * the `<img>` is created in, the page's by default.
  */
 export function iconNode(source: IconSource, doc: Document = document): { node: Node; release: () => void } {
   if (typeof source === 'string') {

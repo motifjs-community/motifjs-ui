@@ -3,7 +3,7 @@ import type { OverlayPanelProps } from '../../parts/overlay/overlay-panel-props'
 import type { DrawerMode } from './drawer-mode';
 import type { DrawerSide } from './drawer-side';
 
-/** Props of `Drawer`: the shared `OverlayPanelProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `Drawer`: the shared `OverlayPanelProps` plus its own. Each prop is also a settable, reactive property. */
 export interface DrawerProps extends OverlayPanelProps {
   /** The edge it slides in from. Default `'start'`. */
   side?: Bind<DrawerSide>;

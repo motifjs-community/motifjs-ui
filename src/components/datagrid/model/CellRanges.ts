@@ -28,7 +28,7 @@ export class CellRanges<T> {
   private list: CellRangeEntry[] = [];
   private found: { key: string; boxes: RangeBox[] } | null = null;
   private readonly changedEmitter = new Emitter<GridCellRange[]>();
-  /** The rows' look, worked out once per change and read by every row. */
+  /** The rows' look, calculated once per change and read by every row. */
   private readonly lookOf = createLazyComputed(() => this.findLook());
 
   readonly onChanged: MotifEvent<GridCellRange[]> = this.changedEmitter.event;
@@ -99,7 +99,7 @@ export class CellRanges<T> {
     return axis.slice(Math.min(i, j), Math.max(i, j) + 1);
   }
 
-  /** The ranges in the rows shown now, cut to their first and last data rows; ranges with no data row left out. Reactive. */
+  /** The ranges in the rows shown now, cut to their first and last data rows; ranges with no data row omitted. Reactive. */
   boxes(): RangeBox[] {
     const m = this.model;
     const st = m.state;
@@ -135,7 +135,7 @@ export class CellRanges<T> {
     let out: Map<string, string> | null = null;
     boxes.forEach((box, k) => {
       if (index < box.top || index > box.bottom) return;
-      // Edges against the columns as they show: a column left out of the range between two in it breaks the frame.
+      // Edges against the columns as they show: a column omitted of the range between two in it breaks the frame.
       const fields = shown;
       const has = (f: string | undefined) => f !== undefined && selectable.has(f) && box.fields.has(f);
       fields.forEach((field, c) => {

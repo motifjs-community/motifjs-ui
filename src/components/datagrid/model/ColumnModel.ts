@@ -52,7 +52,7 @@ const isBandItem = <T,>(item: GridColumnItem<T>): item is GridBand<T> => Array.i
  * change. Display order is always start-sticky columns, then the free ones, then end-sticky ones,
  * each group in `order`. Bands (`GridBand`) sit over their columns: a band's columns stay together
  * in `order`, pinned, hidden and moved with it; they move only among themselves. Columns the width
- * hides (`columnHidingEnabled`) are left out of `visible()` and still count as shown everywhere else.
+ * hides (`columnHidingEnabled`) are omitted of `visible()` and still count as shown everywhere else.
  */
 export class ColumnModel<T> {
   readonly defs = new Map<string, GridColumn<T>>();

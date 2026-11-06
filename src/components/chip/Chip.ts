@@ -21,7 +21,7 @@ const STATE = ['selectable', 'selected', 'clickable', 'removable', 'tabStop'] as
 /**
  * A short text with an icon or an avatar before it and a remove button after it. It can be pressed
  * (`clickable`), turned on and off (`selectable`, a filter) or removed (`removable`: its button and
- * Delete / Backspace raise `onRemove`, removing it is yours to do). Its look defaults to the design
+ * Delete / Backspace raise `onRemove`, your code performs the removal). Its appearance defaults to the design
  * language's. In a `ChipGroup` that selects, the group decides which chips are selected.
  *
  * @example
@@ -29,7 +29,7 @@ const STATE = ['selectable', 'selected', 'clickable', 'removable', 'tabStop'] as
  * <Chip text={() => this.user.name} avatar={{ name: this.user.name }} removable onRemove={() => this.removeUser()} />
  */
 export class Chip extends Control<HTMLSpanElement, ChipProps> {
-  /** A look not given is the design language's. */
+  /** An appearance that is not set comes from the design language. */
   private readonly look = new LanguageLook(this.element, { variant: '--_chip-variant', check: '--_chip-check' }, () => this.renderLook());
   private readonly removed = new Emitter<ChipRemoveEventArgs>();
   private readonly selectedChanged = new Emitter<ChipSelectedChangedEventArgs>();

@@ -1,7 +1,7 @@
 import type { LayoutOrientation } from '../layout/layout-orientation';
 import type { SplitSash } from './SplitSash';
 
-/** What a splitter resizes: a split's neighbours, or a dock area against the documents. */
+/** What a splitter resizes: a split's neighbors, or a dock area against the documents. */
 export interface SashOwner {
   /** `horizontal`: side by side, the splitter moves along the line. */
   readonly orientation: LayoutOrientation;

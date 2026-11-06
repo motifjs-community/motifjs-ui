@@ -504,7 +504,7 @@ export class Calendar extends Control<HTMLDivElement, CalendarProps> {
     this.activate(new Date(Number(cell.dataset.date)), e);
   }
 
-  /** Enter or a press on a cell: a choice in the smallest view, else one view closer. */
+  /** Enter or a click on a cell: a choice in the smallest view, else one view closer. */
   private activate(date: Date, event: Event): void {
     const parts = this.parts;
     const minView = this.peekProperty<CalendarView>('minView') ?? 'month';

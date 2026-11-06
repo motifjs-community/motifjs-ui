@@ -217,7 +217,7 @@ export class RadioGroup<T = unknown> extends Field<T | null, RadioGroupProps<T>>
     const items = givenList(this.peekProperty<readonly unknown[]>('items'));
     const textField = this.peekProperty<ItemField<unknown>>('itemText');
     const valueField = this.peekProperty<ItemField<unknown>>('itemValue');
-    // The items' own functions are followed; the list, the fields and drawing are not.
+    // The items' own functions are tracked; the list, the fields and drawing are not.
     parts.stopItems = follow(
       this,
       'items',

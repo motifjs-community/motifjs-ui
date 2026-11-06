@@ -21,7 +21,7 @@ export function onNodesMoved(moved: () => void): () => void {
       observer.observe(doc, { childList: true, subtree: true });
       return () => {
         observer.disconnect();
-        // Its window is closing: what is taken out of it now goes unseen by the observer.
+        // Its window is closing: what is removed of it now goes unseen by the observer.
         queueMicrotask(tell);
       };
     });

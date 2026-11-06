@@ -173,7 +173,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     this.relayout(true);
   }
 
-  /** Disposes every row's details (another template); they are made again when they show. */
+  /** Disposes every row's details (another template); they are recreated when they show. */
   dropDetails() {
     for (const detail of [...this.details.values()]) this.dropDetail(detail);
     this.refreshDetails();
@@ -478,7 +478,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     return out.sort((a, b) => a.index - b.index);
   }
 
-  /** The rows drawn now, top to bottom, where they are laid out on the screen (the room made for a dragged row, moving or not, left out). */
+  /** The rows drawn now, top to bottom, where they are laid out on the screen (the room made for a dragged row, moving or not, omitted). */
   placed(): { index: number; element: HTMLElement; top: number; bottom: number }[] {
     const base = this.element.getBoundingClientRect().top;
     return this.drawn().map(({ index, element }) => {
@@ -490,7 +490,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   }
 
   /**
-   * The look of a row drag: rows moved by what `shift` gives for their index (the room made for the
+   * The appearance of a row drag: rows moved by what `shift` gives for their index (the room made for the
    * row, `'push'`), now and as they scroll, until it is `null`; grid row `source` marked as the one
    * dragged (-1: none), as a gap with `push`.
    */
@@ -600,7 +600,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
     for (const row of this.footerPool) row.addColumn(field);
   }
 
-  /** A column taken out, or made again: its cells go from every pooled row. */
+  /** A column removed, or recreated: its cells go from every pooled row. */
   removeColumn(field: string) {
     for (const row of this.pool) row.removeColumn(field);
     for (const row of this.groupPool) row.removeColumn(field);
@@ -858,7 +858,7 @@ export class GridBody<T> extends Component<HTMLDivElement> {
   }
 
   /**
-   * The adaptive detail under grid row `at` while that row is drawn (made the first time, made again
+   * The adaptive detail under grid row `at` while that row is drawn (made the first time, recreated
    * for another row or another row object), parked while it is not; gone once it is closed. Returns
    * it when it is drawn now and was not before.
    */

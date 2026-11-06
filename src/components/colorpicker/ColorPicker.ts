@@ -16,7 +16,7 @@ const OWN = ['value', 'alpha', 'palette', 'showInputs', 'eyeDropper'] as const;
 
 const HUES = 'linear-gradient(to right, rgb(255 0 0), rgb(255 255 0), rgb(0 255 0), rgb(0 255 255), rgb(0 0 255), rgb(255 0 255), rgb(255 0 0))';
 
-/** The browser's screen colour picker, where there is one. */
+/** The browser's screen color picker, where there is one. */
 interface EyeDropperLike {
   open(): Promise<{ sRGBHex: string }>;
 }
@@ -29,8 +29,8 @@ interface Track {
 }
 
 /**
- * Choosing a colour: an area of saturation and brightness, a hue strip and an opacity strip (`alpha`), the hex and
- * red, green, blue inputs, preset colours (`palette`) and, where the browser can, a colour picked from the screen.
+ * Choosing a color: an area of saturation and brightness, a hue strip and an opacity strip (`alpha`), the hex and
+ * red, green, blue inputs, preset colors (`palette`) and, where the browser can, a color picked from the screen.
  * The value follows every move. Keyboard: on a handle the arrow keys move it by 1 (by 10 with Shift), Home and End
  * go to the ends.
  *
@@ -39,7 +39,7 @@ interface Track {
  */
 export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
   private readonly changed = new Emitter<ColorChangedEventArgs>();
-  /** The colour as the handles hold it: the hue stays when the colour turns grey. */
+  /** The color as the handles hold it: the hue stays when the color turns grey. */
   private hsva: ColorHsva = { h: 0, s: 0, v: 0, a: 1 };
   private readonly area: Track;
   private readonly hue: Track;
@@ -134,7 +134,7 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
     this.assignProperty('eyeDropper', value);
   }
 
-  /** The colour changed, by the user or by code (`e.byUser`). */
+  /** The color changed, by the user or by code (`e.byUser`). */
   get onValueChanged(): MotifEvent<ColorChangedEventArgs> {
     return this.changed.event;
   }
@@ -145,7 +145,7 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
     return document.activeElement === this.area.thumb.element;
   }
 
-  /** An area or a strip with its handle: pressed or dragged, the position sets the colour; the handle takes the keys. */
+  /** An area or a strip with its handle: pressed or dragged, the position sets the color; the handle takes the keys. */
   private track(className: string, set: (x: number, y: number) => void, parent: Control | Component = this): Track {
     const box = part<HTMLDivElement>(parent as Control, 'div', className);
     const thumb = part<HTMLDivElement>(box, 'div', 'mx-color-picker__thumb');
@@ -207,7 +207,7 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
       const { sRGBHex } = await new Picker().open();
       if (!this.isDisposed) this.typedHex(sRGBHex);
     } catch {
-      // Closed without a colour.
+      // Closed without a color.
     }
   }
 
@@ -252,7 +252,7 @@ export class ColorPicker extends Control<HTMLDivElement, ColorPickerProps> {
     this.byUser = true;
     this.changeProperty('value', next);
     this.byUser = false;
-    // `x-model` takes the user's colour back.
+    // `x-model` takes the user's color back.
     this.bindings.writeModel(next);
   }
 

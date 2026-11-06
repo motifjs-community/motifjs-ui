@@ -4,7 +4,7 @@ import type { GridSummaryType } from './grid-summary-type';
 
 /**
  * One item of the total summary: a value of a column's rows shown in the row under the rows. Every
- * field but `customizeText` is a value or a function that is followed.
+ * field but `customizeText` is a value or a tracked function.
  *
  * @example
  * { column: 'amount', summaryType: 'sum', valueFormat: { style: 'currency', currency: 'EUR' } }
@@ -25,7 +25,7 @@ export interface GridSummaryItem {
   valueFormat?: Bind<Intl.NumberFormatOptions | Intl.DateTimeFormatOptions | undefined> | ((value: unknown) => string);
   /** The item's text, `{0}` the formatted value, `{1}` the column's title. Default: a text of `summary.texts`. */
   displayFormat?: Bind<string | undefined>;
-  /** The item's text from its value and formatted value; wins over `displayFormat`. */
+  /** The item's text from its value and formatted value; takes precedence over `displayFormat`. */
   customizeText?: (info: GridSummaryTextInfo) => string;
   /** Default: the alignment of the column it shows under. */
   alignment?: Bind<'start' | 'center' | 'end' | undefined>;

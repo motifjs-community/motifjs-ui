@@ -102,7 +102,7 @@ export class ICalendarBridge<T> {
     for (const { event, values } of apart) {
       const series = byUid.get(event.uid);
       const id = event.recurrenceId!;
-      // The time it replaces is left out of its series.
+      // The time it replaces is omitted of its series.
       if (series) {
         const zone = String(series[f.startTimeZone] || own);
         const left = readRuleDates(series[f.recurrenceException]);

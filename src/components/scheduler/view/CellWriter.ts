@@ -2,7 +2,7 @@ import { untracked, type ComponentBase } from '@motifx/core';
 import { CellAttributes } from './CellAttributes';
 
 /**
- * The cells of a big grid, written once when they are made and again only when what they show changes: a cell
+ * The cells of a big grid, written once when they are created and again only when what they show changes: a cell
  * has no bindings of its own (thousands of them would each follow the same few values), the view calls `writeLook`
  * or `writeFocus` from one watch of those values, and listens once for all its cells (`placeOf`).
  */
@@ -17,7 +17,7 @@ export class CellWriter<K> {
     private readonly focus: (key: K, cell: CellAttributes) => void,
   ) {}
 
-  /** A cell was made: written at once. */
+  /** A cell was created: written at once. */
   add(id: number, key: K, c: ComponentBase): void {
     untracked(() => {
       this.cells.set(id, { key, c });
@@ -28,7 +28,7 @@ export class CellWriter<K> {
     });
   }
 
-  /** Every cell went (they are made again). */
+  /** Every cell went (they are recreated). */
   clear(): void {
     this.cells.clear();
   }

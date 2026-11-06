@@ -5,7 +5,7 @@ import type { TooltipTarget } from '../tooltip/tooltip-target';
 import type { PopoverClosingEventArgs } from './popover-closing-event-args';
 import type { PopoverShowOn } from './popover-show-on';
 
-/** Props of `Popover`. Each one is also a settable property; a function is followed. */
+/** Props of `Popover`. Each prop is also a settable property, and a function is tracked. */
 export interface PopoverProps extends ControlProps {
     /** The element or component it opens next to. */
     target?: Bind<TooltipTarget | null | undefined>;
@@ -25,7 +25,7 @@ export interface PopoverProps extends ControlProps {
     showClose?: Bind<boolean>;
     /** A width of its own (a CSS length, or pixels); without one it takes its content's. */
     width?: Bind<string | number | null>;
-    /** Closes on a press outside it and its target. Default `true`. */
+    /** Closes on a click outside it and its target. Default `true`. */
     closeOnOutside?: Bind<boolean>;
     /** Milliseconds the pointer rests on the target before it opens (`showOn: 'hover'`). Default 300. */
     delay?: Bind<number>;

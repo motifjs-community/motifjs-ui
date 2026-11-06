@@ -57,7 +57,7 @@ const PARTS = Symbol('mx.bottom-sheet');
  * mouse drag it by its handle and its title from height to height, a flick goes on to the next one,
  * and dragging it down past the lowest one closes it; the content takes the sheet along when it
  * cannot scroll that way. The handle is a slider for the keyboard (the arrow keys, Home and End).
- * It is a dialog: modal by default, with Escape, a press on the scrim and the browser's back
+ * It is a dialog: modal by default, with Escape, a click on the scrim and the browser's back
  * closing it, focus moved in and back again; it keeps clear of the screen's safe areas.
  *
  * @example

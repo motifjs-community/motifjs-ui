@@ -3,7 +3,7 @@ import type { EnterKeyEventArgs } from '../../parts/field/enter-key-event-args';
 import type { FieldProps } from '../../parts/field/field-props';
 import type { TextAreaResize } from './text-area-resize';
 
-/** Props of `TextArea`: the field props plus its own. Each one is also a settable, reactive property. */
+/** Props of `TextArea`: the field props plus its own. Each prop is also a settable, reactive property. */
 export interface TextAreaProps extends FieldProps<string> {
   placeholder?: Bind<string>;
   /** Visible lines. Default `3`. */

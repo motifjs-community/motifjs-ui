@@ -45,7 +45,7 @@ export class TabSplit implements SashOwner {
     child.parentSplit = this;
   }
 
-  /** Takes a child out; its room goes to the neighbour before it (after it, for the first). */
+  /** Takes a child out; its room goes to the neighbor before it (after it, for the first). */
   remove(child: LayoutItem): void {
     const index = this.children.indexOf(child);
     if (index < 0) return;

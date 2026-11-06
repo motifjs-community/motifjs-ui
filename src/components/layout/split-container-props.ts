@@ -5,7 +5,7 @@ import type { SplitPanel } from './split-panel';
 import type { SplitPosition } from './split-position';
 import type { SplitterMovedEventArgs } from './splitter-moved-event-args';
 
-/** Props of `SplitContainer`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `SplitContainer`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface SplitContainerProps extends ControlProps {
   /** `'horizontal'`: the panes side by side (default); `'vertical'`: one over the other. */
   orientation?: Bind<LayoutOrientation>;

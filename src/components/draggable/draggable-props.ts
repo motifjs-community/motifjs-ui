@@ -11,13 +11,13 @@ export interface DragPosition {
     y: number;
 }
 
-/** Props of `Draggable`. Each one is also a settable property; a function is followed. */
+/** Props of `Draggable`. Each prop is also a settable property, and a function is tracked. */
 export interface DraggableProps extends ControlProps {
     /** Default `'both'`. */
     axis?: Bind<DragAxis>;
     /** The draggable stays inside this: its parent, or an element it lies in. Default `null`, no limit. */
     boundary?: Bind<'parent' | HTMLElement | null>;
-    /** A selector inside the draggable: only a press there drags it, and it takes the keys. Default `null`, the whole draggable. */
+    /** A selector inside the draggable: only a click there drags it, and it takes the keys. Default `null`, the whole draggable. */
     handle?: Bind<string | null>;
     /** A copy follows the pointer and the draggable stays where it is; for a drop target to take. Default `false`. */
     clone?: Bind<boolean>;

@@ -17,7 +17,7 @@ const faceOf = (button: Button): HTMLElement =>
  * The actions of the target rows in the toolbar or the bottom bar, as kit buttons the bar holds
  * (so its arrow keys and its "more" menu treat them as its own): one button per action, in order,
  * and one "Actions" menu button for those that go into a menu (`actionsDisplay: 'menu'`, an action's
- * `menu: 'always'`). Buttons are made as more are needed and kept, hidden while unused. It follows
+ * `menu: 'always'`). Buttons are created as more are needed and kept, hidden while unused. It follows
  * nothing: the bar that holds it draws it again (`draw`) whenever the grid tells a change.
  */
 export class BarButtons<T> {

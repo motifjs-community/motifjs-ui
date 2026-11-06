@@ -14,7 +14,7 @@ function isSource(value: unknown): value is Source {
 
 /**
  * The resource kinds of a scheduler: their items (an array, or a data source loaded once and then
- * followed), the values an appointment has of each, and the colour they give it. The items and
+ * followed), the values an appointment has of each, and the color they give it. The items and
  * their fields are read as they are, plain or reactive: a change in place shows after `refresh()`.
  * Nothing here follows anything: a change is said (`refresh()`, `listChanged()`, a data source's
  * change) and told to `onChanged` listeners.
@@ -77,7 +77,7 @@ export class Resources {
   }
 
   /**
-   * The colour resources give an appointment: of the kind marked `useColorAsDefault`, else of the
+   * The color resources give an appointment: of the kind marked `useColorAsDefault`, else of the
    * first kind whose item has one. In a group, the group's item of that kind.
    */
   colorOf(values: Record<string, unknown[]>, group: SchedulerGroup | null = null, kinds: ResourceKind<unknown>[] = this.kinds()): string {

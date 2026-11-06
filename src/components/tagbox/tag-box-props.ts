@@ -5,7 +5,7 @@ import type { ItemField } from '../../parts/list/item-field';
 import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
 import type { ItemTemplate } from '../listbox/item-template';
 
-/** Props of `TagBox`: the field props plus its own. Each one is also a settable, reactive property. */
+/** Props of `TagBox`: the field props plus its own. Each prop is also a settable, reactive property. */
 export interface TagBoxProps<T, V> extends FieldProps<V[]> {
   /** Items in memory; searched here. */
   items?: Bind<readonly T[]>;
@@ -41,7 +41,7 @@ export interface TagBoxProps<T, V> extends FieldProps<V[]> {
   selectAll?: Bind<boolean>;
   /** Chosen items leave the list (items in memory). */
   hideSelected?: Bind<boolean>;
-  /** A press on the field opens the list. Default `true`. */
+  /** A click on the field opens the list. Default `true`. */
   openOnFieldClick?: Bind<boolean>;
   /** The arrow that opens the whole list. Default `true`. */
   showDropDownButton?: Bind<boolean>;

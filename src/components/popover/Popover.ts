@@ -32,11 +32,11 @@ function elementOf(target: TooltipTarget | null | undefined): HTMLElement | null
 }
 
 /**
- * Content next to the element it belongs to: a title, a close button, anything in it. It opens on a press on its
+ * Content next to the element it belongs to: a title, a close button, anything in it. It opens on a click on its
  * target (`showOn: 'click'`), when the pointer rests on the target (`'hover'`) or programmatically; it follows the target
  * while the page scrolls, opens on the other side when there is no room, and points at the target with an arrow
- * where the design language draws one. Focus goes in when it opens by a press and back to the target when it
- * closes; Escape, a press outside, focus leaving and the close button close it.
+ * where the design language draws one. Focus goes in when it opens by a click and back to the target when it
+ * closes; Escape, a click outside, focus leaving and the close button close it.
  *
  * @example
  * <Button ref={b => (this.info = b)} text="Details" />
@@ -299,7 +299,7 @@ export class Popover extends Control<HTMLDivElement, PopoverProps> {
         }
         if (this.anchor) {
             put(this.anchor, 'aria-expanded', 'false');
-            // Focus that leaves on its own (Tab, a press elsewhere) goes where it was going.
+            // Focus that leaves on its own (Tab, a click elsewhere) goes where it was going.
             if (focusInside && reason !== 'focus') this.anchor.focus({ preventScroll: true });
         }
         this.tell(false);

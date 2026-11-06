@@ -8,7 +8,7 @@ import type { ToastTone } from './toast-tone';
 
 /**
  * Props of `Toast`, and what `toast.show()` takes: the shared `ControlProps` (`text` is the
- * message) plus its own. Each one is also a settable, reactive property.
+ * message) plus its own. Each prop is also a settable, reactive property.
  */
 export interface ToastProps extends ControlProps {
   /** A bold line above the text. */

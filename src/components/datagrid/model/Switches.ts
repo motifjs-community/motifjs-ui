@@ -2,7 +2,7 @@ import { reactive, untracked } from '@motifx/core';
 import { givenValue } from '../../../core/given-field';
 
 /**
- * Named values that are each a plain value or a function that is followed (a function without
+ * Named values that are each a plain value or a tracked function (a function without
  * parameters is a getter; one with parameters is kept as the value). `get` reads one, tracked, and
  * falls back to the defaults; `view` is an object whose fields read and assign them, so
  * `grid.settings.striped = () => state.zebra` binds and `grid.settings.striped = true` sets.

@@ -7,7 +7,7 @@ import type { GridRowDropEventArgs } from './grid-row-drop-event-args';
  * onto a row (`allowDropInsideItem`), or to another grid of the same `group`. The grid shows where
  * the row would land and tells it in the events; your handlers move the data. Rows also move with
  * the keyboard (`moveUpKeys`, `moveDownKeys`) and with `moveRow()`. Every field but the handlers and
- * `dragTemplate` is a value or a function that is followed; read and change them later through
+ * `dragTemplate` is a value or a tracked function; read and change them later through
  * `grid.rowDragging`.
  */
 export interface GridRowDragging<T = any> {

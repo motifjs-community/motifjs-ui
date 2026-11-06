@@ -95,7 +95,7 @@ interface Parts {
  * It reads and writes an RFC 5545 rule (`value`, two-way with `x-model`) and says it in plain words
  * under it. The scheduler's appointment form holds one; it works on its own anywhere else, and in
  * a `FormLayout` (`FormLayout.editors.set('recurrence', (p) => new RecurrenceEditor(p))`). Its editors
- * are made once and written by hand when a choice, a property or the language changes.
+ * are created once and written by hand when a choice, a property or the language changes.
  *
  * @example
  * <RecurrenceEditor x-model={() => state.rule} start={() => state.start} />

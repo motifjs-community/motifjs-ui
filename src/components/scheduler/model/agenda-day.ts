@@ -2,7 +2,7 @@ import type { AgendaPiece } from './agenda-piece';
 import type { SchedulerDay } from './scheduler-day';
 import type { SchedulerGroup } from './scheduler-group';
 
-/** A day of the agenda (in a group, with groups) and its appointments in time order; a day with none is left out. */
+/** A day of the agenda (in a group, with groups) and its appointments in time order; a day with none is omitted. */
 export interface AgendaDay<T> {
   key: string;
   day: SchedulerDay;

@@ -1,4 +1,4 @@
-/** The summary values were worked out again. */
+/** The summary values were calculated again. */
 export interface GridSummaryChangedEventArgs {
   /** The values of `summary.totalItems`, in order. */
   readonly total: readonly unknown[];

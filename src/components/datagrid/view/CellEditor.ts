@@ -30,7 +30,7 @@ type Options = Record<string, unknown>;
  * The editor of the cell in edit mode: a kit field drawn without its frame inside the cell (a
  * `TextBox`, a `NumberBox`, a `DateBox`, a `CheckBox` or a `DropDown`, by the column type; a
  * `DropDown`, `ComboBox` or `Lookup` over the items of a lookup column), or the column's own
- * `editor`. Only one exists at a time in the cells; it is made when editing starts and disposed when
+ * `editor`. Only one exists at a time in the cells; it is created when editing starts and disposed when
  * it ends. The edit form makes one per field, with its frame and label (`form`: the field props the
  * form gives). `prepare` sees the kit field's props first and may change them, or say no (`false`).
  */
@@ -38,7 +38,7 @@ export class CellEditor<T> {
   readonly kind: EditorKind;
   /** The element placed in the cell. */
   readonly box: Component<HTMLDivElement>;
-  /** The edit was called off before the editor was made. */
+  /** The edit was called off before the editor was created. */
   readonly cancelled: boolean = false;
   private readonly field: Field<any> | null = null;
   /** A custom editor's content, when it is a component. */
@@ -58,7 +58,7 @@ export class CellEditor<T> {
     readonly column: GridColumn<T>,
     /** The row itself. */
     private readonly row: T,
-    /** The values entered in the row when the editor is made. */
+    /** The values entered in the row when the editor is created. */
     private readonly entered: data.RowCheckContext<T>,
     private readonly value: unknown,
     private readonly initialText: string | undefined,

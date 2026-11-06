@@ -21,7 +21,7 @@ export interface TimedPiece<T> {
   draft: boolean;
   /** …where it may not go. */
   invalid: boolean;
-  /** The appointment's text, colour and whether it is disabled, as its box shows them. */
+  /** The appointment's text, color and whether it is disabled, as its box shows them. */
   text: string;
   color: string;
   disabled: boolean;

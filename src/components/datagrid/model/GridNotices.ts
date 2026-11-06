@@ -1,7 +1,7 @@
 /**
  * What changed in the grid's own state, told by the parts that changed it and heard by the views once a turn: a view
  * draws again what the names concern. A name is a part of the state (`columns`, `selection`…), or for the grid's own
- * fields `grid.` and the field (`grid.activeRow`). Nothing is followed: a change is told where it is made.
+ * fields `grid.` and the field (`grid.activeRow`). Nothing is followed: a change is told where it is created.
  */
 export class GridNotices {
   private readonly told = new Set<string>();

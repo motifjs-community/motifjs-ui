@@ -3,7 +3,7 @@ import type { ControlProps } from '../../core/control';
 import type { MenuItem } from '../../parts/menu/menu-item';
 import type { MenuItemClickEventArgs } from '../../parts/menu/menu-item-click-event-args';
 
-/** Props of `MenuBar`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `MenuBar`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface MenuBarProps extends ControlProps {
   /** Names the bar for screen readers. The same property as `text`. */
   label?: Bind<string>;

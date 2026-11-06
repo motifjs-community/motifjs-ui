@@ -8,7 +8,7 @@ export interface SlideChangingEventArgs extends EventArgs {
     /** The items as given; `null` when there is none. */
     fromItem: unknown;
     toItem: unknown;
-    /** By a press, a swipe or a key, else programmatically or the slideshow. */
+    /** By a click, a swipe or a key, else programmatically or the slideshow. */
     byUser: boolean;
     source: Gallery;
     event?: Event;

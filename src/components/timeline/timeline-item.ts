@@ -1,7 +1,7 @@
 import type { Bind, ComponentBase } from '@motifx/core';
 import type { IconSource } from '../../core/icon-source';
 
-/** The colour of an event's dot and flag. */
+/** The color of an event's dot and flag. */
 export type TimelineTone = 'default' | 'accent' | 'success' | 'caution' | 'danger' | 'info';
 
 /** One event on the `Timeline`. Each field may be a function of your state. */

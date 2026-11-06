@@ -14,7 +14,7 @@ export interface LinePiece<T> {
   span: number;
   /** Its lane in the row, from 0. */
   lane: number;
-  /** Lanes past what the row has room for are left out ("+N more"). */
+  /** Lanes past what the row has room for are omitted ("+N more"). */
   hidden: boolean;
   /** It began before what is shown, or goes on after it. */
   before: boolean;

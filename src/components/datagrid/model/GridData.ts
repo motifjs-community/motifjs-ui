@@ -15,7 +15,7 @@ type Status = DataState['status'];
  * where the view is) and a `ChangeTracker` over it, read the way the grid numbers its rows.
  *
  * - `'all'`: the rows in order; saved new rows the grid still shows where they were entered (the
- *   tracker keeps them until a reload) are left out of them, matched by key, so no row shows twice.
+ *   tracker keeps them until a reload) are omitted of them, matched by key, so no row shows twice.
  * - `'page'`: the loaded page; while another page loads its rows are not known yet.
  * - `'blocks'`: what is loaded where the view is.
  *
@@ -444,7 +444,7 @@ export class GridData<T> {
     });
   }
 
-  /** The open groups changed: the list is made again. */
+  /** The open groups changed: the list is recreated. */
   regroupView() {
     this.view = null;
     untracked(() => this.state.version++);

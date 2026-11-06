@@ -251,7 +251,7 @@ export class Sortable<T = unknown> extends Control<HTMLDivElement, SortableProps
             this.drawItems();
             return;
         }
-        // The list is read once per refresh; its items' own functions are followed.
+        // The list is read once per refresh; its items' own functions are tracked.
         const items = givenList(given);
         this.stopItems = follow(this, 'items', () => items.slice(), list => this.drawRows(list));
     }
@@ -368,7 +368,7 @@ export class Sortable<T = unknown> extends Control<HTMLDivElement, SortableProps
         if (this.move(from, to, e)) focused.focus({ preventScroll: true });
     }
 
-    // A press on an item (its handle when there is one): a drag may follow.
+    // A click on an item (its handle when there is one): a drag may follow.
     pointerDown(e: PointerEvent): void {
         if (e.button !== 0 || this.session || !this.isEnabled || this.peekProperty<boolean | undefined>('allowReordering') === false) {
             return;
@@ -458,7 +458,7 @@ export class Sortable<T = unknown> extends Control<HTMLDivElement, SortableProps
             this.end(null, false);
             return;
         }
-        // The click that follows the drop is not a press on the item.
+        // The click that follows the drop is not a click on the item.
         const win = s.element.ownerDocument.defaultView ?? window;
         const swallow = (ev: MouseEvent) => {
             ev.stopPropagation();

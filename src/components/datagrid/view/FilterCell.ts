@@ -185,7 +185,7 @@ export class FilterCell<T> {
 
   /**
    * A lookup column's list: "(All)" first, then the texts of its keys, searched by text. Its values
-   * are asked for the first time it opens, and again when the other filters changed since.
+   * are requested the first time it opens, and again when the other filters changed since.
    */
   private lookupList(label: () => string, get: () => ColumnFilter, set: (change: Partial<ColumnFilter>, typed: boolean) => void): DropDown<GridFilterValue, unknown> {
     const model = this.model;

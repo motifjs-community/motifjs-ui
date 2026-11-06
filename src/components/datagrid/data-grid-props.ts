@@ -92,7 +92,7 @@ import type { GridValuesResult } from './grid-values-result';
 import type { NewRowOptions } from './new-row-options';
 import type { RowState } from './row-state';
 
-/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form`, `popup`, `filterBuilder`, `filterBuilderPopup`, `masterDetail`, `adaptiveDetail` and `rowDragging` (whose fields are) and the callbacks is a value or a function that is followed. */
+/** Props of `DataGrid`. Every one but `columns`, `rowKey`, `sort`, `layout`, `layoutKey`, `filters`, `toolbar`, `export`, `form`, `popup`, `filterBuilder`, `filterBuilderPopup`, `masterDetail`, `adaptiveDetail` and `rowDragging` (whose fields are) and the callbacks is a value or a tracked function. */
 export interface DataGridProps<T> extends ControlProps {
   /**
    * Column definitions, in their initial order, and bands over them (`{ title, columns: [...] }`).
@@ -135,7 +135,7 @@ export interface DataGridProps<T> extends ControlProps {
   onLayoutChanging?: (e: GridLayoutChangingEventArgs) => void;
   /**
    * A name to keep the layout, the filters and the search text under in the browser's `localStorage`:
-   * they come back when a grid with the same name is made again, over `layout`, `sort`, `filters` and
+   * they come back when a grid with the same name is recreated, over `layout`, `sort`, `filters` and
    * `searchText`.
    */
   layoutKey?: string;
@@ -187,24 +187,24 @@ export interface DataGridProps<T> extends ControlProps {
   onActionRunning?: (e: GridActionRunningEventArgs<T>) => void;
   /** An action ran: on how many rows it worked or failed, and whether it was stopped. */
   onActionRan?: (e: GridActionRanEventArgs<T>) => void;
-  /** Keys of the selected rows; a function is followed. The user's changes come through `onSelectionChanged`. */
+  /** Keys of the selected rows, and a function is tracked. The user's changes come through `onSelectionChanged`. */
   selectedKeys?: Bind<readonly unknown[]>;
   /** The selection is about to change; `e.cancel` keeps it. */
   onSelectionChanging?: (e: GridSelectionChangingEventArgs) => void;
   onSelectionChanged?: (e: GridSelectionChangedEventArgs) => void;
-  /** The cell ranges (`settings.cellSelection`); a function is followed. The user's changes come through `onCellSelectionChanged`. */
+  /** The cell ranges (`settings.cellSelection`), and a function is tracked. The user's changes come through `onCellSelectionChanged`. */
   cellRanges?: Bind<readonly GridCellRange[]>;
   /** The cell ranges are about to change; `e.cancel` keeps them. */
   onCellSelectionChanging?: (e: GridCellSelectionChangingEventArgs) => void;
   onCellSelectionChanged?: (e: GridCellSelectionChangedEventArgs) => void;
-  /** Before an editor of a cell or of an edit form field is made: change its props (`e.options`), or `e.cancel` it. */
+  /** Before an editor of a cell or of an edit form field is created: change its props (`e.options`), or `e.cancel` it. */
   onEditorPreparing?: (e: GridEditorPreparingEventArgs<T>) => void;
-  /** An editor was made, in a cell or in the edit form. */
+  /** An editor was created, in a cell or in the edit form. */
   onEditorPrepared?: (e: GridEditorPreparedEventArgs<T>) => void;
   /** A row is checked before it is saved, after its cells: add or remove messages, or `e.isValid = false`. */
   onRowValidating?: (e: GridRowValidatingEventArgs<T>) => void;
   /**
-   * The search panel's text: the rows that hold it in a searchable column. A function is followed;
+   * The search panel's text: the rows that hold it in a searchable column. A function is tracked;
    * what the user types comes through `onSearchTextChanged`.
    */
   searchText?: Bind<string>;
@@ -218,7 +218,7 @@ export interface DataGridProps<T> extends ControlProps {
    * Read and change it later through `grid.summary`.
    */
   summary?: Bind<GridSummary<T>>;
-  /** The summary values were worked out again (new data, or unsaved changes with `recalculateWhileEditing`). */
+  /** The summary values were calculated again (new data, or unsaved changes with `recalculateWhileEditing`). */
   onSummaryChanged?: (e: GridSummaryChangedEventArgs) => void;
   /** Content of your own in every group row whose column has no `groupCell`, made once per pooled group row. */
   groupCell?: (ctx: GroupCellContext<T>) => unknown;
@@ -256,10 +256,10 @@ export interface DataGridProps<T> extends ControlProps {
   /**
    * The filter value, as the data layer has it: the filter builder's conditions, and with
    * `settings.filterSyncEnabled` the filter row's and header filters' too (those they can show go
-   * to them). A function is followed; the user's changes come through `onFilterChanged` (`e.filterValue`).
+   * to them). A function is tracked; the user's changes come through `onFilterChanged` (`e.filterValue`).
    */
   filterValue?: Bind<data.FilterExpression | null>;
-  /** Whether the filter value applies: the filter panel's check box. A function is followed. Default `true`. */
+  /** Whether the filter value applies: the filter panel's check box. A function is tracked. Default `true`. */
   filterEnabled?: Bind<boolean>;
   /** The text of the filter panel, from the one it would show. */
   filterPanelText?: (e: GridFilterPanelTextInfo) => string;
@@ -323,7 +323,7 @@ export interface DataGridProps<T> extends ControlProps {
   onFocusedRowChanged?: (e: GridFocusedRowChangedEventArgs<T>) => void;
   /** A key is about to be handled by the grid (`onKeyDown`); `e.cancel` stops the grid's handling. */
   onKeyHandling?: (e: GridKeyHandlingEventArgs) => void;
-  /** A setting of the grid, a column or the toolbar was assigned, or a column was added or taken out (`name: 'columns'`). */
+  /** A setting of the grid, a column or the toolbar was assigned, or a column was added or removed (`name: 'columns'`). */
   onOptionChanged?: (e: GridOptionChangedEventArgs) => void;
   /** An export is about to start; change `e.options`, or `e.cancel`. */
   onExporting?: (e: GridExportingEventArgs) => void;

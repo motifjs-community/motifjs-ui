@@ -82,7 +82,7 @@ export interface SchedulerModelOptions<T> {
   draft?: () => Draft<T> | null;
   /** The clock the days and hours are on. Default: the browser's. */
   zone?: () => TimeZone;
-  /** The resource kinds: the colours they give, and the groups of the columns. */
+  /** The resource kinds: the colors they give, and the groups of the columns. */
   resources?: Resources;
   /** The scheduler's work hours (a resource's own win). Default 9 to 17. */
   workHours?: () => { start: number; end: number };
@@ -111,7 +111,7 @@ interface Entry<T> {
   values: Record<string, unknown[]>;
   /** What its box writes and paints, read here so a plain object's change reaches the box too. */
   text: string;
-  /** Its own colour; a box without one takes its resources'. */
+  /** Its own color; a box without one takes its resources'. */
   color: string;
   disabled: boolean;
   series: boolean;
@@ -178,7 +178,7 @@ interface ModelState<T> {
  *
  * The appointments and their fields are read as they are, plain or reactive, and read again on
  * `refresh` (the scheduler's, its edits, its data source's changes). Nothing in the model is
- * reactive and nothing is followed: its state is plain, worked out when `update` asks for it, and
+ * reactive and nothing is followed: its state is plain, calculated when `update` asks for it, and
  * what changed is told to `onChanged` listeners, which draw it.
  */
 export class SchedulerModel<T> {
@@ -225,7 +225,7 @@ export class SchedulerModel<T> {
   /** The appointments of the days shown, read once for every layout until they change (a drag only adds its draft). */
   private base: Entry<T>[] = [];
   private baseById = new Map<string, Entry<T>>();
-  /** The base's appointments by the group they are in, made again when the base or the groups change. */
+  /** The base's appointments by the group they are in, recreated when the base or the groups change. */
   private buckets: { revision: number; groups: string; byGroup: Entry<T>[][] } = { revision: -1, groups: '', byGroup: [] };
   /** The groups each appointment read is in, and the groups by their key. */
   private groupsCache = new WeakMap<Entry<T>, { version: number; list: number[] }>();
@@ -294,7 +294,7 @@ export class SchedulerModel<T> {
   }
 
   /**
-   * Asks for `step` and every step after it to be worked out again (an option changed, the
+   * Asks for `step` and every step after it to be calculated again (an option changed, the
    * appointments, a measure, a drag): once, in the next microtask, however many ask before then.
    */
   update(step: ModelStep = 'groups'): void {
@@ -350,7 +350,7 @@ export class SchedulerModel<T> {
     }
   }
 
-  /** Moves now on (the scheduler's clock): the days are worked out again when today is another day. */
+  /** Moves now on (the scheduler's clock): the days are calculated again when today is another day. */
   setNow(now: number): void {
     const before = this.todayWall();
     this.state.now = now;
@@ -1152,7 +1152,7 @@ export class SchedulerModel<T> {
   private collect(): void {
     const days = this.state.days.map((d) => d.wall);
     void this.state.changes;
-    // The colours resources give: which kind colours (a function there is followed), read again with their items.
+    // The colors resources give: which kind colors (a function there is followed), read again with their items.
     for (const kind of this.options.resources?.kinds() ?? []) void kind.useColorAsDefault, void kind.items;
     const zone = this.zone;
     const entries = days.length ? this.read(zone.date(days[0]), zone.date(days[days.length - 1] + DAY), null) : [];
@@ -1289,7 +1289,7 @@ export class SchedulerModel<T> {
     });
   }
 
-  /** The appointments read, by the group they are in: made again when they or the groups change; a draft changes only its own groups. */
+  /** The appointments read, by the group they are in: recreated when they or the groups change; a draft changes only its own groups. */
   private byGroup(groups: SchedulerGroup[], view: ResolvedView, moved: string | null, extra: Entry<T> | null): Entry<T>[][] {
     if (!groups.length) return [];
     const key = this.indexGroups(groups);
@@ -1311,7 +1311,7 @@ export class SchedulerModel<T> {
     return out;
   }
 
-  /** The groups by their key, made again when they change; the key of them all. */
+  /** The groups by their key, recreated when they change; the key of them all. */
   private indexGroups(groups: SchedulerGroup[]): string {
     const key = groups.map((g) => g.key).join('#');
     if (key !== this.groupIndex.key) this.groupIndex = { key, version: this.groupIndex.version + 1, keys: new Map(groups.map((g) => [g.key, g.index])) };
@@ -1451,7 +1451,7 @@ export class SchedulerModel<T> {
     };
   }
 
-  /** An entry's colour in a column: its own, else its resources' (the group's item, where it is grouped by the colouring kind). */
+  /** An entry's color in a column: its own, else its resources' (the group's item, where it is grouped by the colouring kind). */
   private colorIn(entry: Entry<T>, group: SchedulerGroup | null): string {
     return entry.color || this.options.resources?.colorOf(entry.values, group, this.kindsNow ?? undefined) || '';
   }
@@ -1634,7 +1634,7 @@ export class SchedulerModel<T> {
    * Lays out a row of a timeline on its own: each appointment of its group from where it starts to
    * where it ends along the row (cut to the days and hours shown), stacked on the lowest lane free;
    * the row is as tall as its lanes. With a number for `maxAppointmentsPerCell`, lanes past it are
-   * left out and each day says how many ("+N more").
+   * omitted and each day says how many ("+N more").
    */
   /** What a row's layout comes from, besides the view's settings: its group and each appointment's time and look. */
   private markOf(row: TimelineRow<T>, entries: Entry<T>[]): string {
@@ -1757,7 +1757,7 @@ export class SchedulerModel<T> {
     };
   }
 
-  /** The agenda: in each group, each day with its appointments in time order (one that lasts days on each of them); a day with none is left out. */
+  /** The agenda: in each group, each day with its appointments in time order (one that lasts days on each of them); a day with none is omitted. */
   private placeAgenda(groups: (SchedulerGroup | null)[], entriesOf: (group: SchedulerGroup | null) => Entry<T>[]): void {
     const zone = this.zone;
     const days = this.state.days;

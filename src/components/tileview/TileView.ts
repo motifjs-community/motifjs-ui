@@ -187,7 +187,7 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
         this.assignProperty('label', value);
     }
 
-    /** A press on a tile that was not a drag. */
+    /** A click on a tile that was not a drag. */
     get onItemClick(): MotifEvent<TileClickEventArgs> {
         return this.itemClick.event;
     }
@@ -255,7 +255,7 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
     renderItems(): void {
         this.stopItems?.();
         const items = givenList(this.peekProperty<readonly unknown[]>('items'));
-        // The items' own functions are followed; the list and the drawing are not.
+        // The items' own functions are tracked; the list and the drawing are not.
         this.stopItems = follow(
             this,
             'items',
@@ -480,7 +480,7 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
         return true;
     }
 
-    // A press on a tile: a drag may follow (a long press with a finger).
+    // A click on a tile: a drag may follow (a long press with a finger).
     pointerDown(e: PointerEvent): void {
         if (e.button !== 0 || this.session || !this.isEnabled || !this.allowReorder) return;
         const target = e.target as HTMLElement;
@@ -548,7 +548,7 @@ export class TileView extends Control<HTMLDivElement, TileViewProps> {
             this.end(null, false);
             return;
         }
-        // The click that follows the drop is not a press on the tile.
+        // The click that follows the drop is not a click on the tile.
         const win = s.element.ownerDocument.defaultView ?? window;
         const swallow = (ev: MouseEvent) => {
             ev.stopPropagation();

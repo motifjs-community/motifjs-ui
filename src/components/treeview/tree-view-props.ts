@@ -12,9 +12,9 @@ import type { TreeViewLoadChildren } from './tree-view-load-children';
 import type { TreeViewSelectionChangedEventArgs } from './tree-view-selection-changed-event-args';
 import type { TreeViewSelectionMode } from './tree-view-selection-mode';
 
-/** Props of `TreeView`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `TreeView`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface TreeViewProps<T> extends ControlProps {
-  /** Nested items (a `children` array) or flat ones (a `parentId`). A function is followed; a reactive array is followed in place. */
+  /** Nested items (a `children` array) or flat ones (a `parentId`). A function is tracked; a reactive array is followed in place. */
   items?: Bind<readonly T[]>;
   /** Default `'text'` of an object item, the item itself otherwise. */
   textField?: Bind<ItemField<T>>;

@@ -17,7 +17,7 @@ import type { SchedulerHost } from './scheduler-host';
 interface Props<T> {
   host: SchedulerHost<T>;
   row: TimelineRow<T>;
-  /** Draws each cell's content; decided when the rows are made. */
+  /** Draws each cell's content; decided when the rows are created. */
   cellTemplate: ((context: CellTemplateContext) => ComponentBase) | null;
   /** The rows the virtual list keeps off screen (`true`), by the row's own number. */
   away: Record<number, boolean>;
@@ -33,12 +33,12 @@ let made = 0;
  * the time (only the ones built, each placed at its own cell), and over them its appointments, each on its lane, with
  * "+N more" per day and the line at the time it is now.
  *
- * It follows nothing. It draws itself when it is made, when its view tells it to (`draw`), on `reState()`, and as the
+ * It follows nothing. It draws itself when it is created, when its view tells it to (`draw`), on `reState()`, and as the
  * model says: the focus and the selection move, the window moves along the time, the time it is now moves on. A row
  * the virtual list keeps off screen draws what it missed when it is back.
  */
 export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
-  /** Its parts are made (in `onConfigured`): until then a draw has nothing to draw on. */
+  /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
   private readonly id = ++made;
   /** Something changed while the row was off screen. */
@@ -114,7 +114,7 @@ export class TimelineLine<T> extends Component<HTMLDivElement, Props<T>> {
       if (at) host.cellDblClick(at, e);
     });
     // A row has a cell for each place along the time in view, and many rows are on screen: a cell is written once
-    // when it is made, and again only when what it shows changes (the row writes all its cells at once).
+    // when it is created, and again only when what it shows changes (the row writes all its cells at once).
     this.cells = new CellWriter<TimeTick>(
       (tick, cell) =>
         cell

@@ -23,14 +23,14 @@ interface Parts {
   toggle: HTMLButtonElement;
   popup: Popup | null;
   picker: ColorPicker | null;
-  /** The text typed is not a colour. */
+  /** The text typed is not a color. */
   unfinished: boolean;
   opened: Emitter<void>;
   closed: Emitter<PopupCloseReason>;
 }
 
 /**
- * A colour as a field: its hex written in the box, a swatch of it at the start, and a picker in a popup (the area,
+ * A color as a field: its hex written in the box, a swatch of it at the start, and a picker in a popup (the area,
  * the strips, the inputs and the presets of `ColorPicker`). With `apply: 'useButtons'` the popup has OK and Cancel.
  * Alt+Down opens it.
  *
@@ -167,7 +167,7 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     return null;
   }
 
-  /** Any colour form it reads is kept as `#rrggbb` (or `#rrggbbaa` with `alpha`). */
+  /** Any color form it reads is kept as `#rrggbb` (or `#rrggbbaa` with `alpha`). */
   protected override normalizeValue(value: string | null): string | null {
     const rgba = parseColor(value);
     if (!rgba) return null;
@@ -212,7 +212,7 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     return self[PARTS]!;
   }
 
-  /** What is typed becomes the value when it is a colour; empty text empties it. */
+  /** What is typed becomes the value when it is a color; empty text empties it. */
   private typed(e: Event): void {
     const parts = this.colorParts;
     const text = this.inputElement.value.trim();
@@ -266,7 +266,7 @@ export class ColorBox extends Field<string | null, ColorBoxProps> {
     return popup;
   }
 
-  /** OK: the colour in the picker becomes the value. */
+  /** OK: the color in the picker becomes the value. */
   private applyChosen(): void {
     const chosen = this.colorParts.picker?.value ?? null;
     this.commit(chosen);

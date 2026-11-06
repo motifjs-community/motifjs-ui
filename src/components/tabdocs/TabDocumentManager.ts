@@ -308,7 +308,7 @@ interface Parts {
   /** The dock areas by side, and the order they nest in (the outermost first). */
   areas: Map<TabDockSide, TabDockArea>;
   order: TabDockSide[];
-  /** The floating windows, in the order they were made. */
+  /** The floating windows, in the order they were created. */
   windows: TabWindow[];
   dockTarget: DockDropTarget | null;
   windowKeys: WindowByKeys | null;
@@ -388,8 +388,8 @@ const PARTS = Symbol('mx.tab-document-manager');
 
 /**
  * Documents in tabs, in groups that split side by side and one under the other, as code editors
- * have them. A document's content is any component; it is moved, never made again, when its tab
- * moves to another group. Tabs can be previews, pinned, coloured and counted; each group has a
+ * have them. A document's content is any component; it is moved, never recreated, when its tab
+ * moves to another group. Tabs can be previews, pinned, colored and counted; each group has a
  * list of its documents, every tab and the strip a context menu, and the recently used documents
  * are a key away. Every user action is also a method, asks first (`on…ing`, cancelable) and
  * reports after (`on…ed`). The layout saves to JSON and loads back.
@@ -1375,7 +1375,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   get onDropping(): MotifEvent<TabDropEventArgs> {
     return this.parts.dropping.event;
   }
-  /** A drop was made (after the `moved`, `split`… events of what it did). */
+  /** A drop was created (after the `moved`, `split`… events of what it did). */
   get onDropped(): MotifEvent<TabDroppedEventArgs> {
     return this.parts.dropped.event;
   }
@@ -1644,7 +1644,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   /**
    * Moves a whole group with its documents: beside another group (`left`, `right`, `up`, `down`),
    * into it (`center`: its documents join that group), or along an edge of the layout (`target`
-   * `null`). Nothing is made again.
+   * `null`). Nothing is recreated.
    */
   moveGroup(group: TabGroup, target: TabGroup | null, side: TabDropSide): boolean {
     return untracked(() => this.moveGroupBy(group, target, side, false));
@@ -1691,7 +1691,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return untracked(() => this.evenSizesBy(null, false));
   }
 
-  /** Sets a group's size along its split: pixels, or a share such as `'30%'`. The neighbour after it (before it, for the last) gives or takes the room. */
+  /** Sets a group's size along its split: pixels, or a share such as `'30%'`. The neighbor after it (before it, for the last) gives or takes the room. */
   resizeGroup(group: TabGroup, size: number | string): boolean {
     return untracked(() => {
       const split = group.parentSplit;
@@ -1882,10 +1882,10 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   /**
    * Moves a document, a whole group or a floating window with all it holds into a new browser
    * window (`window.open`, or `openWindow`), at `options.rect` on the screen (by default as large
-   * as what moves, beside it). The content moves, it is not made again. Returns the window, `null`
+   * as what moves, beside it). The content moves, it is not recreated. Returns the window, `null`
    * when it may not move, `onWindowOpening` cancels, or the browser opens none (`onError` tells,
    * and `newWindowFallback` may float it instead). A page given in `newWindowUrl` is waited for:
-   * the move is made once it has loaded (`onWindowOpened`), and this returns `null`.
+   * the move is created once it has loaded (`onWindowOpened`), and this returns `null`.
    */
   moveToNewWindow(target: TabDocument | TabGroup | TabWindow, options: TabNewWindowOptions = {}): TabBrowserWindow | null {
     return untracked(() => {
@@ -2028,7 +2028,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   /**
    * Puts a saved layout back in place of the current one, whose documents close without asking
    * (and whose new windows close). `factory` makes each document again (by its `type`); without it
-   * a document is made from what was saved and its content comes from the manager's `factory`. A
+   * a document is created from what was saved and its content comes from the manager's `factory`. A
    * document saved twice comes back as a copy of the first one. Saved new windows come back as
    * `restoreWindows` says.
    */
@@ -2176,7 +2176,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return this.factory?.(document) ?? null;
   }
 
-  /** @internal Whether the content can be made again after it was let go. */
+  /** @internal Whether the content can be recreated after it was let go. */
   canRemake(document: TabDocument): boolean {
     return typeof document.content === 'function' || (!document.content && !!this.factory);
   }
@@ -2505,7 +2505,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     this.parts.dropping.fire(e);
   }
 
-  /** @internal The drop was made: `onDropped`, with where it ended up. */
+  /** @internal The drop was created: `onDropped`, with where it ended up. */
   dropped(place: TabDropPlace, subject: TabDragSubject, byKeyboard: boolean): void {
     const owner = place.manager ?? this;
     const result = owner.parts.dropResult;
@@ -2663,7 +2663,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return true;
   }
 
-  /** @internal Moves a document into a group of another manager: its tab, panel and content go along, nothing is made again. */
+  /** @internal Moves a document into a group of another manager: its tab, panel and content go along, nothing is recreated. */
   moveAcross(doc: TabDocument, group: TabGroup, index: number | undefined, byUser: boolean): boolean {
     const parts = this.parts;
     const tab = parts.tabs.get(doc);
@@ -3112,7 +3112,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return at(group, this.insertIndex(group));
   }
 
-  /** The group a hidden document goes back into when there is none: in a dock area made again, or a floating window, or the documents' group. */
+  /** The group a hidden document goes back into when there is none: in a dock area recreated, or a floating window, or the documents' group. */
   private makeHome(place: { group: TabGroup | null; side: TabDockSide | null; size: number | string | null; autoHide: boolean; rect: TabRect | null }): TabGroup {
     if (place.group && this.groups.includes(place.group)) return place.group;
     if (!place.side && !place.rect) return this.targetGroupOutside() ?? this.targetGroup();
@@ -3160,7 +3160,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     this.renderHistory();
   }
 
-  /** A closed document leaves the history, and is kept for `reopenClosed` when its content can be made again. */
+  /** A closed document leaves the history, and is kept for `reopenClosed` when its content can be recreated. */
   private remember(doc: TabDocument, group: TabGroup, index: number): void {
     const parts = this.parts;
     this.forget(doc);
@@ -4555,7 +4555,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return w;
   }
 
-  /** A group near `group` that stays where it is: its neighbour, else the documents' active one. */
+  /** A group near `group` that stays where it is: its neighbor, else the documents' active one. */
   private nearGroup(group: TabGroup): TabGroup | null {
     const host = this.hostOf(group);
     const own = host === undefined ? [] : this.hostGroups(host).filter((g) => g !== group);
@@ -4742,7 +4742,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
   }
 
   /**
-   * While an area is slid out: a press outside it, Escape in it, or focus leaving it closes it. A
+   * While an area is slid out: a click outside it, Escape in it, or focus leaving it closes it. A
    * menu or a popup opened from it (the tab's menu, a list) counts as inside.
    */
   private watchSlide(area: TabDockArea): () => void {
@@ -5018,7 +5018,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
     return saved;
   }
 
-  /** A hidden document `saveLayout` wrote: made again, its content kept aside as its lifetime says, and where it goes back to. */
+  /** A hidden document `saveLayout` wrote: recreated, its content kept aside as its lifetime says, and where it goes back to. */
   private readHidden(saved: TabLayoutHidden, groups: readonly TabGroup[], factory: TabLayoutFactory | undefined, made: Map<string, TabDocument>): void {
     if (!saved?.document || made.has(saved.document.id)) return;
     const doc = this.restoreDocument(saved.document, factory);
@@ -5093,7 +5093,7 @@ export class TabDocumentManager extends FocusContainer<HTMLDivElement, TabDocume
       try {
         parts.keyStops.push(addShortcut(chord, (e) => untracked(() => run(e)), { scope: this }));
       } catch {
-        // A chord without a key is left out.
+        // A chord without a key is omitted.
       }
     };
     const each = (name: keyof TabDocumentKeys, run: (e: KeyboardEvent) => boolean) => {

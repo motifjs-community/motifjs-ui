@@ -4,8 +4,8 @@ import type { SchedulerTemplates } from './scheduler-templates';
 import type { SchedulerViewType } from './scheduler-view-type';
 
 /**
- * One view the scheduler offers. Its own settings and templates win over the scheduler's; every one
- * is a value or a function that is followed.
+ * One view the scheduler offers. Its own settings and templates take precedence over the scheduler's; every one
+ * is a value or a tracked function.
  */
 export interface SchedulerView<T = any> extends SchedulerTemplates<T> {
   type: SchedulerViewType;

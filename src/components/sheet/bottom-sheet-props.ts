@@ -4,7 +4,7 @@ import type { BottomSheetDetent } from './bottom-sheet-detent';
 import type { DetentChangedEventArgs } from './detent-changed-event-args';
 import type { DetentChangingEventArgs } from './detent-changing-event-args';
 
-/** Props of `BottomSheet`: the shared `OverlayPanelProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `BottomSheet`: the shared `OverlayPanelProps` plus its own. Each prop is also a settable, reactive property. */
 export interface BottomSheetProps extends OverlayPanelProps {
   /** The heights it stops at, in any order. Default `['half', 'full']`. */
   detents?: Bind<readonly BottomSheetDetent[]>;

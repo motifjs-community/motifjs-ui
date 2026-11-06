@@ -5,7 +5,7 @@ import type { GridToolbarItemClickEventArgs } from './grid-toolbar-item-click-ev
 /**
  * An item of the grid's toolbar: a button of your own, your own component (`content`), or one of the
  * grid's items (`name`) with some of its fields changed. Every field but `name`, `content` and
- * `click` is a value or a function that is followed.
+ * `click` is a value or a tracked function.
  *
  * @example
  * { text: 'Refresh', icon: () => refreshIcon(), location: 'before', click: () => grid.refresh() }

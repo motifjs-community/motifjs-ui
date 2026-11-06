@@ -178,7 +178,7 @@ export class GridEvents<T> {
     return (this.counts.get(emitter) ?? 0) > 0;
   }
 
-  /** Fires a cancelable event; whether it may go on (nobody listens, or nobody cancelled). */
+  /** Fires a cancelable event; whether it may go on (nobody listens, or nobody canceled). */
   ask<A extends EventArgs>(emitter: Emitter<A>, args: () => A): boolean {
     if (!this.listened(emitter)) return true;
     const e = args();
@@ -186,7 +186,7 @@ export class GridEvents<T> {
     return !e.cancel;
   }
 
-  /** Fires an event when someone listens; the args are made only then. */
+  /** Fires an event when someone listens; the args are created only then. */
   tell<A>(emitter: Emitter<A>, args: () => A) {
     if (this.listened(emitter)) emitter.fire(args());
   }

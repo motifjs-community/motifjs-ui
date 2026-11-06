@@ -4,7 +4,7 @@ import type { FilterBuilderCondition } from './filter-builder-condition';
 import type { FilterBuilderField } from './filter-builder-field';
 import type { FilterBuilderOperation } from './filter-builder-operation';
 
-/** A value editor was made and placed. */
+/** A value editor was created and placed. */
 export interface FilterBuilderEditorPreparedEventArgs {
   field: FilterBuilderField;
   operation: FilterBuilderOperation;

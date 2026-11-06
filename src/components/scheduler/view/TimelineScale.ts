@@ -22,7 +22,7 @@ interface Kind {
  * window moving along the time draws its tiers.
  */
 export class TimelineScale<T> extends Component<HTMLDivElement, Props<T>> {
-  /** Its parts are made (in `onConfigured`): until then a draw has nothing to draw on. */
+  /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
   private corner!: KeyedParts<Kind, Component<HTMLDivElement>>;
   private readonly tiers: KeyedParts<ScaleCell, TimelineScaleCell<T>>[] = [];

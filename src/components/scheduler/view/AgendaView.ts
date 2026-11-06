@@ -38,14 +38,14 @@ interface RowDrawn<T> {
 
 /**
  * The agenda: the coming days (in each group, with groups) with their appointments in time order, a day with none
- * left out. It is a list: the arrows move over its rows (the focused one is the selected one), Space shows the tooltip,
+ * omitted. It is a list: the arrows move over its rows (the focused one is the selected one), Space shows the tooltip,
  * Enter opens the form, as a click and a double click do.
  *
  * It follows nothing: whatever the model tells, and when the focus moves, it draws itself again (each part only what
  * it shows), as it does on `reState()` and when an option or a text it shows changes.
  */
 export class AgendaView<T> extends Component<HTMLDivElement, Props<T>> {
-  /** Its parts are made (in `onConfigured`): until then a draw has nothing to draw on. */
+  /** Its parts are created (in `onConfigured`): until then a draw has nothing to draw on. */
   private made = false;
   private list!: Component<HTMLDivElement>;
   private empty!: Component<HTMLDivElement>;

@@ -33,7 +33,7 @@ export interface ColumnFeatures {
   filterBuilder: boolean;
   /** The column's cells go into what Ctrl+C copies. Default `true`. */
   copyable: boolean;
-  /** The column's cells can be selected in cell ranges (`cellSelection`); off, a range leaves them out and a press there draws none. Default `true`. */
+  /** The column's cells can be selected in cell ranges (`cellSelection`); off, a range leaves them out and a click there draws none. Default `true`. */
   cellSelectable: boolean;
   /** The column goes into `exportCsv()` and `exportRows()`. Default `true`. */
   exportable: boolean;
@@ -44,7 +44,7 @@ export interface ColumnFeatures {
   syncLookupFilterValues: boolean;
   /**
    * The search panel looks in this column. Default `true`; a column that turns its own filters off
-   * (`filterRow: false` and no `headerFilter: true`, or the other way round) is left out unless it
+   * (`filterRow: false` and no `headerFilter: true`, or the other way round) is omitted unless it
    * sets `searchable` itself.
    */
   searchable: boolean;

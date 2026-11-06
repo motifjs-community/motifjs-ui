@@ -6,11 +6,11 @@ import type { DragSelectHost } from './drag-select-host';
 import type { GridBody } from './GridBody';
 import { nextFrame, stopFrame } from './next-frame';
 
-/** What a press inside a cell leaves to the cell's own content: links, buttons, fields, the editor. */
+/** What a click inside a cell leaves to the cell's own content: links, buttons, fields, the editor. */
 const OWN_CONTROLS =
   'a[href], button, input, select, textarea, label, summary, [contenteditable]:not([contenteditable="false"]), [role="button"], [role="link"], [role="switch"], [role="checkbox"]:not(.mx-data-grid__check), .mx-data-grid__editor';
 
-/** A press that may become a drag selection. */
+/** A click that may become a drag selection. */
 interface Press {
   pointerId: number;
   kind: 'rows' | 'cells';
@@ -40,7 +40,7 @@ interface Area {
 }
 
 /**
- * Selecting by dragging: a press on a row or a cell that moves past `dragSelectionThreshold` selects
+ * Selecting by dragging: a click on a row or a cell that moves past `dragSelectionThreshold` selects
  * the rows passed (multiple selection) or draws a range of cells (`cellSelection`), live; a shorter
  * move stays a click, so clicks that select or start editing work as before. Near or past an edge the
  * rows scroll, down and sideways, frame by frame, and the cells that come into view are taken in. On
@@ -66,7 +66,7 @@ export class DragSelect<T> {
     this.end(false);
   }
 
-  /** A press in the rows: watched when a drag selection may start from it. Returns whether it is. */
+  /** A click in the rows: watched when a drag selection may start from it. Returns whether it is. */
   press(e: PointerEvent): boolean {
     const { model } = this;
     if (e.button !== 0 || this.pressed || e.altKey || untracked(() => model.state.busy)) return false;
@@ -119,7 +119,7 @@ export class DragSelect<T> {
     };
   }
 
-  /** The rows changed while a drag runs (rows that were loading came): the selection is made again where the pointer is. */
+  /** The rows changed while a drag runs (rows that were loading came): the selection is recreated where the pointer is. */
   refresh() {
     const p = this.pressed;
     if (!p?.started) return;
@@ -127,7 +127,7 @@ export class DragSelect<T> {
     this.track();
   }
 
-  /** What a press on grid row `index`, column `field` would select by dragging; `null` for nothing. */
+  /** What a click on grid row `index`, column `field` would select by dragging; `null` for nothing. */
   private kindAt(index: number, field: string): 'rows' | 'cells' | null {
     const { model } = this;
     const settings = model.settings;

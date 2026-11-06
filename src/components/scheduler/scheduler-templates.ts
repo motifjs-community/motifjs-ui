@@ -13,7 +13,7 @@ type Template<C> = Bind<((context: C) => ComponentBase) | null>;
 
 /**
  * The templates a scheduler draws with, component-wide or for one view (a view's own wins). Each
- * is made once for the element it draws and gets a context whose fields follow the element.
+ * is created once for the element it draws and gets a context whose fields follow the element.
  */
 export interface SchedulerTemplates<T> {
   /** An appointment's content, in place of its text and time. */
@@ -28,7 +28,7 @@ export interface SchedulerTemplates<T> {
   timeCellTemplate?: Template<TimeTemplateContext>;
   /** A group's head (a resource item). */
   resourceHeaderTemplate?: Template<ResourceHeaderContext>;
-  /** An agenda row's content, in place of its time, colour and text. */
+  /** An agenda row's content, in place of its time, color and text. */
   agendaRowTemplate?: Template<AgendaRowContext<T>>;
   /** The list "+N more" opens. */
   moreListTemplate?: Template<MoreListContext<T>>;

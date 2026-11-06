@@ -611,7 +611,7 @@ export class MxForm extends FocusContainer<HTMLDialogElement, FormProps> {
       if (parts.open) this.finishClose(el.returnValue || 'cancel', 'user');
     });
     parts.bar.addEventListener('pointerdown', (e) => this.barPointerDown(e));
-    // A press on the title bar keeps focus where it is (barPointerDown gives it back).
+    // A click on the title bar keeps focus where it is (barPointerDown gives it back).
     parts.bar.addEventListener('mousedown', (e) => !(e.target as Element).closest('button') && e.preventDefault());
     parts.bar.addEventListener('dblclick', (e) => {
       if ((e.target as Element).closest('button') || !this.showMaximize) return;

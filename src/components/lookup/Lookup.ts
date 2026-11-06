@@ -73,7 +73,7 @@ export class Lookup<T = unknown, V = unknown> extends DropDown<T, V> {
     list.element.before(header);
     popup.element.classList.add('mx-lookup__popup');
     parts.header = header;
-    // The columns given and their own functions are followed; the list and the fields are not.
+    // The columns given and their own functions are tracked; the list and the fields are not.
     parts.stopHeader = follow(
       this,
       'header',

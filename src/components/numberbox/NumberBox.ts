@@ -645,7 +645,7 @@ export class NumberBox extends Field<number | null, NumberBoxProps> {
       parts.repeat = setTimeout(again, HOLD[0]);
     });
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(type, () => this.stopRepeat());
-    // A press made with the pointer already counted; a click from assistive technology has no pointer.
+    // A click made with the pointer already counted; a click from assistive technology has no pointer.
     button.addEventListener('click', (e) => {
       if (e.detail === 0) this.spin(delta(), e);
     });

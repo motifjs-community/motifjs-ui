@@ -206,7 +206,7 @@ export class FilterBuilderModel {
     return many[0];
   }
 
-  /** Whether a condition has what its operation needs; one that has not is left out of the value. */
+  /** Whether a condition has what its operation needs; one that has not is omitted of the value. */
   isComplete(c: FilterBuilderCondition): boolean {
     if (!this.hasValue(c.operation)) return true;
     const v = c.value;
@@ -217,7 +217,7 @@ export class FilterBuilderModel {
 
   // Expressions.
 
-  /** The data layer's filter a group stands for; conditions without their value are left out. */
+  /** The data layer's filter a group stands for; conditions without their value are omitted. */
   toExpression(group: FilterBuilderGroup): data.FilterExpression | null {
     const parts = group.items.map((item) => (item.kind === 'group' ? this.toExpression(item) : this.conditionExpression(item)));
     const joined = group.operation === 'or' || group.operation === 'notOr' ? data.or(...parts) : data.and(...parts);
@@ -323,7 +323,7 @@ export class FilterBuilderModel {
     return e ? this.groupLine(this.fromExpression(e), false) : '';
   }
 
-  /** The text of the tree as it is (conditions without their value left out). */
+  /** The text of the tree as it is (conditions without their value omitted). */
   treeText(group: FilterBuilderGroup): string {
     return this.groupLine(group, false);
   }
@@ -373,7 +373,7 @@ export class FilterBuilderModel {
     }
   }
 
-  /** A lookup value's text; one not known yet is asked for, and the texts are drawn again when it comes. */
+  /** A lookup value's text; one not known yet is requested, and the texts are drawn again when it comes. */
   private lookupText(field: FilterBuilderField, v: unknown): string {
     const lookup = givenValue<FilterBuilderLookup>(field, 'lookup');
     const source = givenField<data.DataSource<any, any> | readonly unknown[] | undefined>(lookup, 'dataSource');

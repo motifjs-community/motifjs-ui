@@ -11,8 +11,8 @@ import { fillSummaryCell } from './summary-cell';
  * One pooled group row of the body: an arrow, "Column: value", the row count and the group summary
  * items in one cell that spans the columns, moved in by its level. Items aligned by column
  * (`alignByColumn`) get cells of their own under their columns, and the group's cell ends before
- * the first of them. Like the data rows it is made once and shows other groups while the user
- * scrolls; a column's own `groupCell` content is made the first time the row shows a group of that
+ * the first of them. Like the data rows it is created once and shows other groups while the user
+ * scrolls; a column's own `groupCell` content is created the first time the row shows a group of that
  * column, and kept. It follows nothing: it is drawn when it shows another group, and the body draws
  * again the parts that read what the grid tells (`drawLook`, `drawText`, `drawSummary`).
  */
@@ -121,7 +121,7 @@ export class GroupRow<T> {
     if (this.node && this.model.columns.defs.get(this.node.field)?.lookup) this.redraw();
   }
 
-  /** A column taken out, or made again: its aligned cell and its own content go. */
+  /** A column removed, or recreated: its aligned cell and its own content go. */
   removeColumn(field: string) {
     this.aligned.get(field)?.remove();
     this.aligned.delete(field);
@@ -209,7 +209,7 @@ export class GroupRow<T> {
     for (const [field, el] of this.own) el.hidden = field !== node.field;
     this.text.hidden = !!custom;
     if (custom) return;
-    // Lookup keys are asked for once the body is measured, as cells do.
+    // Lookup keys are requested once the body is measured, as cells do.
     const value = model.groupValue(node, model.state.measured);
     this.caption.data = `${model.text('gridGroupText', { title: model.columns.title(node.field), value: value.text })} `;
     this.count.data = model.columns.can(node.field, 'groupCount') ? model.text('gridGroupCount', { count: model.formatter.count(node.count) }) : '';

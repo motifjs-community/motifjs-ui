@@ -34,7 +34,7 @@ const OWN = [
   'selected',
 ] as const;
 
-/** What a press on a selectable card leaves to itself: its own buttons, links and fields. */
+/** What a click on a selectable card leaves to itself: its own buttons, links and fields. */
 const OWN_PRESS = 'a, button, input, select, textarea, [role="button"], [role="checkbox"], [tabindex]';
 
 /** The parts that hold a component given in a prop. */
@@ -43,7 +43,7 @@ type Slot = 'action' | 'content' | 'footer';
 /**
  * A surface holding one thing: a picture running to its edges, a header (avatar, title, subtitle and an
  * action), content (JSX children or `content`) and a row of actions (`footer`). Parts with nothing in them
- * are left out. Its look defaults to the design language's; `clickable` makes the whole card pressable.
+ * are omitted. Its appearance defaults to the design language's; `clickable` makes the whole card pressable.
  *
  * @example
  * <Card title="Ada Lovelace" subtitle="Mathematician" avatar={{ name: 'Ada Lovelace' }} footer={<Button text="Follow" />}>
@@ -51,7 +51,7 @@ type Slot = 'action' | 'content' | 'footer';
  * </Card>
  */
 export class Card extends Control<HTMLDivElement, CardProps> {
-  /** A look not given is the design language's. */
+  /** An appearance that is not set comes from the design language. */
   private readonly look = new LanguageLook(this.element, { variant: '--_card-variant' }, () => this.renderLook());
   private readonly mediaPart: Component<HTMLDivElement>;
   private readonly headerPart: Component<HTMLDivElement>;
@@ -256,7 +256,7 @@ export class Card extends Control<HTMLDivElement, CardProps> {
     if (slot === 'action') this.renderHeader();
   }
 
-  /** A press on a selectable card turns it on and off, unless it was on one of its own buttons, links or fields. */
+  /** A click on a selectable card turns it on and off, unless it was on one of its own buttons, links or fields. */
   private pressed(e: MouseEvent): void {
     if (!this.peekProperty('selectable') || !this.isEnabled) return;
     // Its own controls keep their press (the check box turns it on and off itself).

@@ -16,7 +16,7 @@ import type { FilterBuilderItemRemovedEventArgs } from './filter-builder-item-re
 import type { FilterBuilderItemRemovingEventArgs } from './filter-builder-item-removing-event-args';
 import type { FilterBuilderValueChangedEventArgs } from './filter-builder-value-changed-event-args';
 
-/** Props of `FilterBuilder`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `FilterBuilder`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface FilterBuilderProps extends ControlProps {
   /** The filter, as the data layer has it. `x-model` binds it two-way. */
   value?: Bind<data.FilterExpression | null>;
@@ -46,7 +46,7 @@ export interface FilterBuilderProps extends ControlProps {
   /** A condition or group is about to be added; cancelable. */
   onItemAdding?: (e: FilterBuilderItemAddingEventArgs) => void;
   onItemAdded?: (e: FilterBuilderItemAddedEventArgs) => void;
-  /** A condition or group is about to be taken out; cancelable. */
+  /** A condition or group is about to be removed; cancelable. */
   onItemRemoving?: (e: FilterBuilderItemRemovingEventArgs) => void;
   onItemRemoved?: (e: FilterBuilderItemRemovedEventArgs) => void;
   /** A field, operation, value or group operation is about to change; cancelable. */

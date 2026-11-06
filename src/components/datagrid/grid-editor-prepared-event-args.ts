@@ -1,6 +1,6 @@
 import type { ComponentBase } from '@motifx/core';
 
-/** An editor was made, in a cell or in the edit form: set it up further (it is disposed when the edit ends). */
+/** An editor was created, in a cell or in the edit form: set it up further (it is disposed when the edit ends). */
 export interface GridEditorPreparedEventArgs<T> {
   readonly field: string;
   /** The row itself. */

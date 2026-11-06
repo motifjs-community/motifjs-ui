@@ -151,7 +151,7 @@ export class Grid extends Control<HTMLDivElement, GridProps> {
     return cell as GridCell;
   }
 
-  /** Places a child programmatically; each field is a value or a function that is followed. Fields left out stay. */
+  /** Places a child programmatically; each field is a value or a tracked function. Fields omitted stay. */
   setCell(child: ComponentBase, cell: GridCell): void {
     for (const name of CELL) if (cell[name] !== undefined) this.settings.set(child, name, cell[name]);
   }

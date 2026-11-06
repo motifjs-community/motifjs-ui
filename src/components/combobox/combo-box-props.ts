@@ -4,7 +4,7 @@ import type { FieldProps } from '../../parts/field/field-props';
 import type { ItemField } from '../../parts/list/item-field';
 import type { PopupCloseReason } from '../../parts/popup/popup-close-reason';
 
-/** Props of `ComboBox`: the field props plus its own. Each one is also a settable, reactive property. */
+/** Props of `ComboBox`: the field props plus its own. Each prop is also a settable, reactive property. */
 export interface ComboBoxProps<T, V> extends FieldProps<V | null> {
   /** Items in memory; searched here. */
   items?: Bind<readonly T[]>;

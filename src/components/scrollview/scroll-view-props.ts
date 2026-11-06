@@ -6,7 +6,7 @@ import type { ScrollEventArgs } from './scroll-event-args';
 import type { ScrollViewBars } from './scroll-view-bars';
 import type { ScrollViewDirection } from './scroll-view-direction';
 
-/** Props of `ScrollView`. Each one is also a settable property; a function is followed. */
+/** Props of `ScrollView`. Each prop is also a settable property, and a function is tracked. */
 export interface ScrollViewProps extends ControlProps {
     /** Default `'vertical'`. */
     direction?: Bind<ScrollViewDirection>;

@@ -133,7 +133,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
     parts.label.addEventListener('click', () => {
       if (!labelable(parts.control)) this.focus();
     });
-    // A press anywhere in the box, outside the editor and its buttons, puts focus in the editor.
+    // A click anywhere in the box, outside the editor and its buttons, puts focus in the editor.
     parts.box.addEventListener('mousedown', (e) => {
       const target = e.target as Element;
       if (e.button !== 0 || parts.control.contains(target)) return;
@@ -448,7 +448,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
 
   /**
    * Shows or removes the button that empties the field (named from `uiLocale`, not a Tab stop);
-   * `clear` runs on a press, then the field gets focus. `className` is the subclass's own hook.
+   * `clear` runs on a click, then the field gets focus. `className` is the subclass's own hook.
    */
   protected showClearButton(on: boolean, clear: (event: MouseEvent) => void, className: string): void {
     const parts = this.parts;
@@ -700,7 +700,7 @@ export abstract class Field<T, TProps extends FieldProps<T> = FieldProps<T>> ext
       this.drawButtons([]);
       return;
     }
-    // The buttons' own functions are followed; the list, the fields and drawing are not.
+    // The buttons' own functions are tracked; the list, the fields and drawing are not.
     parts.stopButtons = follow(this, 'buttons', () => {
       const looks = givenList(list).map((button) => ({
         button,

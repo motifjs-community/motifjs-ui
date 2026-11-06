@@ -8,7 +8,7 @@ import type { ToolbarItemType } from './toolbar-item-type';
 
 /**
  * One item of `Toolbar.items`, drawn as a `Button` (or a separator). Every field but `click` and
- * `data` is a value or a function: a function is followed.
+ * `data` is a value or a function: a function is tracked.
  */
 export interface ToolbarItem {
   /** Default `'button'`. */
@@ -18,7 +18,7 @@ export interface ToolbarItem {
   icon?: Bind<IconSource | null | undefined>;
   /** A tooltip; the name of a button that only has an icon. */
   hint?: Bind<string>;
-  /** The colour of the button, by what it does. Default `'standard'`. */
+  /** The color of the button, by what it does. Default `'standard'`. */
   tone?: Bind<ButtonTone>;
   /** A toggle's state. Given as a function, the item follows it: `click` changes what it reads. */
   pressed?: Bind<boolean>;

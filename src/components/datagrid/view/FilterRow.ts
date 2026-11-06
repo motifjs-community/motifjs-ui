@@ -6,7 +6,7 @@ import { placeInOrder } from './place-in-order';
 
 /**
  * The filter row under the header: a cell per column, built when the row first shows; a column's
- * editors are made the first time its cell is needed. Cells are plain elements carrying
+ * editors are created the first time its cell is needed. Cells are plain elements carrying
  * `data-field`, so the grid's per-column sheet pins and hides them with the headers.
  */
 export class FilterRow<T> extends Component<HTMLDivElement> {
@@ -93,7 +93,7 @@ export class FilterRow<T> extends Component<HTMLDivElement> {
     this.element.append(cell);
   }
 
-  /** A column taken out, or made again: its cell and editors go. */
+  /** A column removed, or recreated: its cell and editors go. */
   removeColumn(field: string) {
     this.filterCells.get(field)?.dispose();
     this.filterCells.delete(field);

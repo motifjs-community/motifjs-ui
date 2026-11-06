@@ -13,7 +13,7 @@ export interface SplitPaneProps extends PanelProps {
     maxSize?: Bind<number | null>;
     /** The handles next to it can hide it (a button on the handle, Enter on it). `undefined` follows the splitter. */
     collapsible?: Bind<boolean | undefined>;
-    /** Hidden, the neighbours taking its room. Default `false`. */
+    /** Hidden, the neighbors taking its room. Default `false`. */
     collapsed?: Bind<boolean>;
     /** The handles next to it can change its size. Default `true`. */
     resizable?: Bind<boolean>;

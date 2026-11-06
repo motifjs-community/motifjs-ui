@@ -31,7 +31,7 @@ export class LookupTexts<T> {
     private readonly texts: { missing: () => string },
   ) {}
 
-  /** The cache of a lookup column's source now (the source may be a function that is followed). */
+  /** The cache of a lookup column's source now (the source may be a tracked function). */
   items(col: GridColumn<T>): KeyedItems<any> | null {
     const lookup = col.lookup;
     if (!lookup) return null;
@@ -67,7 +67,7 @@ export class LookupTexts<T> {
 
   /**
    * What a lookup cell shows for `value`: a text the user chose, the row's own text (`textFrom`) while
-   * the value is the row's, the item's text, nothing while it loads (the key is asked for), or the key
+   * the value is the row's, the item's text, nothing while it loads (the key is requested), or the key
    * itself when the source does not have it.
    */
   cell(col: GridColumn<T>, row: T | undefined, value: unknown, edited: boolean, ask = true): LookupCell {
@@ -195,7 +195,7 @@ export class LookupTexts<T> {
     return col.sortField ?? (typeof col.textFrom === 'string' ? col.textFrom : col.field);
   }
 
-  /** Forgets the texts of these columns; they are asked for again. */
+  /** Forgets the texts of these columns; they are requested again. */
   refresh(cols: readonly GridColumn<T>[]) {
     const seen = new Set<KeyedItems<any>>();
     for (const col of cols) {

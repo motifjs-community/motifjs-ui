@@ -2,7 +2,7 @@ import type { Bind } from '@motifx/core';
 import type { DateKind } from '../../parts/dates/date-kind';
 import type { FieldProps } from '../../parts/field/field-props';
 
-/** Props of `DateBox`: the field props plus its own. Each one is also a settable, reactive property. */
+/** Props of `DateBox`: the field props plus its own. Each prop is also a settable, reactive property. */
 export interface DateBoxProps extends FieldProps<Date | null> {
   /** Default `'date'`. */
   type?: Bind<DateKind>;

@@ -4,7 +4,7 @@ import type { ToastPosition } from './toast-position';
 
 /**
  * Props of `Toaster`: the shared `ControlProps` (`text` names the region; `uiLocale`'s
- * `notifications` by default) plus its own. Each one is also a settable, reactive property.
+ * `notifications` by default) plus its own. Each prop is also a settable, reactive property.
  */
 export interface ToasterProps extends ControlProps {
   /** Where its toasts stack unless a toast says otherwise. Default `'bottom-end'`. */

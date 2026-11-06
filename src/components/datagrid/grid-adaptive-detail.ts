@@ -5,7 +5,7 @@ import type { FieldLabelMode } from '../../parts/field/field-label-mode';
  * The adaptive detail of a row: while columns hide to fit the width (`columnHidingEnabled`,
  * `hidingPriority`), the "…" cell opens a row under the row with their titles and values, laid out
  * by the kit's `FormLayout` (editors where the row can be edited in its cells). One row has it open
- * at a time. Every field is a value or a function that is followed; read and change it later
+ * at a time. Every field is a value or a tracked function; read and change it later
  * through `grid.adaptiveDetail`.
  */
 export interface GridAdaptiveDetail {

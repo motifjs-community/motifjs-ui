@@ -26,7 +26,7 @@ interface Told {
 
 /**
  * The failed fields of a `ValidationGroup`, one line each with the field's label and its message, under a header;
- * a press on a line focuses the field. It draws itself again whenever a field of the group is checked, and stays
+ * a click on a line focuses the field. It draws itself again whenever a field of the group is checked, and stays
  * out of sight while nothing has failed.
  *
  * @example

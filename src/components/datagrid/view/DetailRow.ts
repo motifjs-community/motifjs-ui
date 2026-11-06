@@ -8,7 +8,7 @@ import { isNode } from '../../../core/node-kind';
 /**
  * The details of one row (`masterDetail`): a row element under its master row with one cell across
  * the grid, holding what the template made for the row. It is not pooled: the content belongs to its
- * row, is made the first time the details show and is kept while the row is open, also out of view
+ * row, is created the first time the details show and is kept while the row is open, also out of view
  * (parked: laid out but not drawn, so the content keeps its scroll positions), until it is disposed.
  * A row's adaptive detail (`kind: 'adaptive'`, the values of the columns the width hides) is one too,
  * with content of its own (`make`).
@@ -60,7 +60,7 @@ export class DetailRow<T> {
     this.box = box;
   }
 
-  /** What the content was made as, once it is: a component, or `null`. */
+  /** What the content was created as, once it is: a component, or `null`. */
   get component(): ComponentBase | null {
     return this.content;
   }

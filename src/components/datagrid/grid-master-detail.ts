@@ -4,7 +4,7 @@ import type { DetailContext } from './detail-context';
 /**
  * Details under the rows: a row opens to show what `template` makes for it (another grid, a form,
  * tabs), in a row of its own across the grid. Every field but `template`, `canExpand` and `height`
- * as a function of the row is a value or a function that is followed. Read and change it later
+ * as a function of the row is a value or a tracked function. Read and change it later
  * through `grid.masterDetail`.
  */
 export interface GridMasterDetail<T> {
@@ -20,7 +20,7 @@ export interface GridMasterDetail<T> {
   keepDetails?: Bind<boolean>;
   /**
    * Paged grid: the details of the rows of the page left keep what they hold while the user pages, up to `keepLimit`;
-   * off, another page or page size disposes them, and they are made again when their page shows (a row stays open).
+   * off, another page or page size disposes them, and they are recreated when their page shows (a row stays open).
    * Default `false`.
    */
   keepAcrossPages?: Bind<boolean>;
@@ -28,7 +28,7 @@ export interface GridMasterDetail<T> {
   height?: Bind<number | undefined> | ((row: T) => number);
   /** Height details count at before they are drawn and measured, while none is; then the average of those measured. Default `200`. */
   estimatedHeight?: Bind<number>;
-  /** Open details out of view that keep their content; past it, the ones seen longest ago are disposed and made again when they show. Default `100`. */
+  /** Open details out of view that keep their content; past it, the ones seen longest ago are disposed and recreated when they show. Default `100`. */
   keepLimit?: Bind<number>;
   /** Width of the expand column, in pixels. Default `36`. */
   columnWidth?: Bind<number>;

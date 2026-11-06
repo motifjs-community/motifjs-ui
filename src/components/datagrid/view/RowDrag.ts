@@ -114,7 +114,7 @@ export class RowDrag<T> {
     DRAGGERS.delete(this);
   }
 
-  /** A press on a row: a drag may start once the pointer moves far enough. Returns whether it is watched. */
+  /** A click on a row: a drag may start once the pointer moves far enough. Returns whether it is watched. */
   press(e: PointerEvent): boolean {
     const { model, options } = this;
     if (e.button !== 0 || this.session || !untracked(() => options.enabled) || model.state.busy || model.state.session) return false;

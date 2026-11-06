@@ -25,7 +25,7 @@ function utcTime(year: number, month: number, day: number, hours: number, minute
  * fields (`Date.UTC(2026, 9, 25, 2, 30)` is half past two on the clock), so days and hours can be
  * counted on it without summer time getting in the way. A time the clock skips (the hour put
  * forward) is moved on by the gap; a time it shows twice (the hour put back) is the first one,
- * unless the later is asked for.
+ * unless the later is requested.
  *
  * @example
  * const berlin = TimeZone.of('Europe/Berlin');

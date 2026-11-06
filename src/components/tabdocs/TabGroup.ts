@@ -648,7 +648,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     row.scrollBy({ left: direction * (rtl ? -1 : 1) * row.clientWidth * 0.8, behavior: smooth ? 'smooth' : 'auto' });
   }
 
-  /** The app's buttons, made again only when `toolbarItems` is another function. */
+  /** The app's buttons, recreated only when `toolbarItems` is another function. */
   private appItems(): readonly ToolbarItem[] {
     const parts = this.parts;
     const make = parts.manager.toolbarItems;
@@ -875,7 +875,7 @@ export class TabGroup extends FocusContainer<HTMLDivElement> {
     // touchmove listener from the start, so a tab dragged after a long press can stop the scroll.
     bar.element.addEventListener('touchmove', (e) => manager.holdTouch(e), { passive: false });
     bar.element.addEventListener('mousedown', (e) => {
-      // A press on the empty strip leaves focus where it is (the page around would take it).
+      // A click on the empty strip leaves focus where it is (the page around would take it).
       if (this.isStripSpace(e.target)) e.preventDefault();
     });
     bar.element.addEventListener('dblclick', (e) => {

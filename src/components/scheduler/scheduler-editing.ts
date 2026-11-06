@@ -1,6 +1,6 @@
 import type { SchedulerForm } from './scheduler-form';
 
-/** What the user may change, and the form. Each is a switch of its own; an appointment's own field (`fields.allowDrag`…) wins over it. */
+/** What the user may change, and the form. Each is a switch of its own; an appointment's own field (`fields.allowDrag`…) takes precedence over it. */
 export interface SchedulerEditing<T = unknown> {
   /** A double click (or Enter) on cells opens the form for a new appointment. Default `true`. */
   allowAdding: boolean;

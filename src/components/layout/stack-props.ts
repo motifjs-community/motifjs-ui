@@ -5,7 +5,7 @@ import type { LayoutOrientation } from './layout-orientation';
 import type { LayoutSpace } from './layout-space';
 import type { StackJustify } from './stack-justify';
 
-/** Props of `Stack`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `Stack`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface StackProps extends ControlProps {
   /** Default `'vertical'`. */
   orientation?: Bind<LayoutOrientation>;

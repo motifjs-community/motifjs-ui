@@ -8,7 +8,7 @@ import type { TabsActivation } from './tabs-activation';
 import type { TabsPlacement } from './tabs-placement';
 import type { TabsVariant } from './tabs-variant';
 
-/** Props of `Tabs`: the shared `ControlProps` plus its own. Each one is also a settable, reactive property. */
+/** Props of `Tabs`: the shared `ControlProps` plus its own. Each prop is also a settable, reactive property. */
 export interface TabsProps extends ControlProps {
   /** Names the tab list for screen readers. The same property as `text`. */
   label?: Bind<string>;

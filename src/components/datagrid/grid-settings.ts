@@ -113,7 +113,7 @@ export interface GridSettings extends ColumnFeatures {
   cellSelection: 'none' | 'single' | 'multiple';
   /** Ranges are drawn by dragging over the cells (off: only Shift+click and the keys draw them). Default `true`. */
   cellDragSelection: boolean;
-  /** Pixels the pointer moves after a press before a drag selection starts; a shorter move is a click. Default `5`. */
+  /** Pixels the pointer moves after a click before a drag selection starts; a shorter move is a click. Default `5`. */
   dragSelectionThreshold: number;
   /** While rows or cells are selected by dragging, the rows scroll when the pointer is near or past an edge, down and sideways. Default `true`. */
   dragSelectionAutoScroll: boolean;
@@ -249,7 +249,7 @@ export interface GridSettings extends ColumnFeatures {
    * `'virtual'`: only the scrolling columns in view (and `extraColumns` on each side) get cells, in
    * every row, the header and the filter, group and summary rows; pinned columns, the active column
    * and the columns that set `columnRenderingMode: 'standard'` always do. `'standard'`: every
-   * column gets its cells. A column's own value wins. Default `'standard'`.
+   * column gets its cells. A column's own value takes precedence. Default `'standard'`.
    */
   columnRenderingMode: 'standard' | 'virtual';
   /** Columns drawn beyond the ones in view on each side while columns are virtual, so a quick sideways scroll shows no gap. Default `2`. */

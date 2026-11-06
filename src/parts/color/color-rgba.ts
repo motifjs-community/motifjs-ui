@@ -1,4 +1,4 @@
-/** A colour by its channels: red, green, blue (0–255), alpha (0–1). */
+/** A color by its channels: red, green, blue (0–255), alpha (0–1). */
 export interface ColorRgba {
   r: number;
   g: number;

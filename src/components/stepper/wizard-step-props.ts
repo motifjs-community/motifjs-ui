@@ -22,7 +22,7 @@ export interface WizardStepProps extends ControlProps {
     error?: Bind<boolean>;
     /** Builds the page when it is first shown. */
     lazy?: Bind<boolean | undefined>;
-    /** `false`: what `content` made is disposed while the page is hidden and made again when it shows. */
+    /** `false`: what `content` made is disposed while the page is hidden and recreated when it shows. */
     keepAlive?: Bind<boolean | undefined>;
     /** The kit's fields on the page are validated before the wizard moves on from it. Default `true`. */
     validateFields?: Bind<boolean>;

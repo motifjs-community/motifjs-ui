@@ -2,7 +2,7 @@ import type { ICalendarComponent } from './icalendar-component';
 import { readContentLine } from './read-content-line';
 import { unfoldLines } from './unfold-lines';
 
-/** The blocks of a file as a tree; lines that are not content lines, and properties outside any block, are left out. */
+/** The blocks of a file as a tree; lines that are not content lines, and properties outside any block, are omitted. */
 export function readComponents(text: string): ICalendarComponent[] {
   const roots: ICalendarComponent[] = [];
   const open: ICalendarComponent[] = [];

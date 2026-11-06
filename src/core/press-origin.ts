@@ -1,7 +1,7 @@
 import { eachDocument } from './page-documents';
 import { isHtmlElement } from './node-kind';
 
-// Where a press began, for a design language to draw from: a part that shows presses carries
+// Where a click began, for a design language to draw from: a part that shows presses carries
 // `data-mx-press`; while it is held it gets `data-pressed`, and `--_press-x` / `--_press-y` hold the
 // point (pixels from its top left corner) a ripple or a state layer grows from. Keys press it from its
 // middle. One listener per document for all of them.

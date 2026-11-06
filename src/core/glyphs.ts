@@ -1,6 +1,6 @@
 /**
  * The kit's glyphs, by name: each is a `span.mx-glyph` that CSS draws (a mask of `--mx-icon-<name>`
- * in the text colour). A design language brings its own set as tokens (`tokens/icons/<language>.icons.json`)
+ * in the text color). A design language brings its own set as tokens (`tokens/icons/<language>.icons.json`)
  * and nothing here changes; the names and the kit's own drawings are in `tokens/icons/kit.icons.json`.
  */
 export function glyph(name: string): HTMLSpanElement {

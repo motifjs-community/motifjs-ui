@@ -7,7 +7,7 @@ import type { GridSummaryTexts } from './grid-summary-texts';
 /**
  * The `summary` prop: values of the rows under the filter and the search, in a row under the rows
  * (`totalItems`) and for each group (`groupItems`). Every field but `calculateCustomSummary` is a
- * value or a function that is followed.
+ * value or a tracked function.
  *
  * @example
  * summary={{ totalItems: [{ column: 'amount', summaryType: 'sum' }], groupItems: [{ column: 'id', summaryType: 'count' }] }}

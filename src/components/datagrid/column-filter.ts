@@ -16,6 +16,6 @@ export interface ColumnFilter {
    * (`headerFilterItems`, a filter expression too).
    */
   values?: readonly unknown[];
-  /** `'exclude'`: the rows with `values` are left out instead of kept. Default `'include'`. */
+  /** `'exclude'`: the rows with `values` are omitted instead of kept. Default `'include'`. */
   filterType?: 'include' | 'exclude';
 }

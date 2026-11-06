@@ -3,7 +3,7 @@ import type { ControlProps } from '../../core/control';
 import type { ViewSelectingEventArgs } from './view-selecting-event-args';
 import type { ViewSelectionChangedEventArgs } from './view-selection-changed-event-args';
 
-/** Props of `MultiView`. Each one is also a settable property; a function is followed. */
+/** Props of `MultiView`. Each prop is also a settable property, and a function is tracked. */
 export interface MultiViewProps extends ControlProps {
     /** The view in sight: its `key`, else its index. `x-model` binds it two-way. Default `0`. */
     value?: Bind<string | number | null>;

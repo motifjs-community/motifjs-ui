@@ -3,7 +3,7 @@ import type { ControlProps } from '../../core/control';
 import type { PageChangedEventArgs } from './page-changed-event-args';
 import type { PaginationMode } from './pagination-mode';
 
-/** Props of `Pagination`. Each one is also a settable property; a function is followed. */
+/** Props of `Pagination`. Each prop is also a settable property, and a function is tracked. */
 export interface PaginationProps extends ControlProps {
   /** The page, from 1. Default `1`. */
   page?: Bind<number>;

@@ -9,7 +9,7 @@ import type { PdfRowExportingArgs } from './pdf-row-exporting-args';
 /**
  * Options of `exportDataGrid` (`pdfExporter.exportDataGrid` options, and a few of our
  * own). Every field but `jsPDFDocument` and `component` has a default. Sizes are in the units the
- * jsPDF document was made with.
+ * jsPDF document was created with.
  */
 export interface PdfExportOptions<T = any> {
   /** The jsPDF document to draw on (`new jsPDF()`); the table starts on its current page. */
@@ -18,7 +18,7 @@ export interface PdfExportOptions<T = any> {
   component: DataGrid<T>;
   /** Where the table starts, from the top left margin, on its first page. Default `{ x: 0, y: 0 }`. */
   topLeft?: { x?: number; y?: number };
-  /** Each column's width, in order; one left out takes the grid's. Default: the grid's widths, made to fit the page. */
+  /** Each column's width, in order; one omitted takes the grid's. Default: the grid's widths, made to fit the page. */
   columnWidths?: readonly (number | undefined)[];
   /** Space kept free at the page's edges. Default 40 points on every side. */
   margin?: PdfMargin;
