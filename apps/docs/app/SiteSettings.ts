@@ -37,6 +37,7 @@ export class SiteSettings {
     compact: getDensity() === 'compact',
     rtl: document.documentElement.dir === 'rtl',
     language: stored('mx-docs-language') ?? 'en',
+    noticeClosed: stored('mx-docs-notice-closed') !== null,
   });
 
   constructor() {
@@ -80,6 +81,15 @@ export class SiteSettings {
     void uiLocale.use(code);
     void useLanguage(code);
     store('mx-docs-language', code === 'en' ? null : code);
+  }
+
+  /** The translation notice over the pages was closed; it stays closed. */
+  get noticeClosed(): boolean {
+    return this.state.noticeClosed;
+  }
+  set noticeClosed(closed: boolean) {
+    this.state.noticeClosed = closed;
+    store('mx-docs-notice-closed', closed ? '1' : null);
   }
 
   get rtl(): boolean {

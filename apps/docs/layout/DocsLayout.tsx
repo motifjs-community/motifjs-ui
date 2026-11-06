@@ -5,6 +5,7 @@ import { GROUPS, PAGES, SECTIONS } from '../app/pages';
 import { PageOutline } from '../app/PageOutline';
 import { SiteSettings } from '../app/SiteSettings';
 import { tx } from '../app/texts';
+import { Rich } from '../shared/doc';
 import { MenuIcon, SearchIcon, SourceIcon } from './icons';
 
 const THEMES: { id: ThemeChoice; label: string }[] = [
@@ -93,6 +94,12 @@ export class DocsLayout extends Component<HTMLDivElement> {
     // A new page is read from its top: focus goes there, as after a full page load.
     if (!first) this.main?.element.focus({ preventScroll: true });
     requestAnimationFrame(() => this.followScroll());
+  }
+
+  /** The button goes with the notice, so focus moves on to the page. */
+  private closeNotice(): void {
+    this.settings.noticeClosed = true;
+    this.main?.element.focus({ preventScroll: true });
   }
 
   /** The section being read: the last one whose heading has passed the reading line. */
@@ -230,6 +237,20 @@ export class DocsLayout extends Component<HTMLDivElement> {
             <span class="docs-pagehead__tag">{() => tx(this.page?.group ?? '')}</span>
             <span class="docs-pagehead__version">@motifx-community/ui {VERSION}</span>
           </header>
+          <aside class="docs-notice" role="note" x-wait={() => settings.noticeClosed}>
+            <span class="mx-glyph docs-notice__icon" data-icon="caution" aria-hidden="true" />
+            <p>
+              <Rich text="Parts of this topic may have been translated by a machine or AI. Please [tell us](https://github.com/motifjs-community/motifjs-ui/issues) about any parts you think are wrong." />
+            </p>
+            <Button
+              class="docs-notice__close"
+              size="sm"
+              variant="ghost"
+              icon={() => <span class="mx-glyph" data-icon="dismiss" aria-hidden="true" />}
+              hint={() => tx('Close')}
+              onclick={() => this.closeNotice()}
+            />
+          </aside>
           <div class="docs-body">
             <article class="docs-article">
               <RouterView />

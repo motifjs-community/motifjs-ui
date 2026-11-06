@@ -257,10 +257,17 @@
 
 /* The page: its head, the cards, the column on the right. */
 
+/* Two columns: the content, centred in what the side menu and the rail leave, and the rail at the window's end. */
 .docs-main {
+  display: grid;
   grid-area: main;
+  grid-template-columns: minmax(0, 1fr) var(--docs-rail);
+  grid-template-rows: auto auto 1fr;
+  column-gap: var(--mx-space-10);
+  align-items: start;
   min-inline-size: 0;
-  padding: var(--mx-space-8) var(--mx-space-10) var(--mx-space-16);
+  padding-block: var(--mx-space-8) var(--mx-space-16);
+  padding-inline: var(--mx-space-10) var(--mx-space-6);
 }
 
 /* Focused only as the target of the skip link. */
@@ -273,8 +280,53 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--mx-space-3);
-  max-inline-size: calc(var(--docs-content) + var(--docs-rail) + var(--mx-space-10));
+  grid-column: 1;
+  grid-row: 1;
+  inline-size: 100%;
+  max-inline-size: var(--docs-content);
+  margin-inline: auto;
   margin-block-end: var(--mx-space-6);
+}
+
+/* The notice over every page's content: it has to read as a warning. */
+.docs-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--mx-space-3);
+  box-sizing: border-box;
+  grid-column: 1;
+  grid-row: 2;
+  inline-size: 100%;
+  max-inline-size: var(--docs-content);
+  margin-inline: auto;
+  margin-block-end: var(--mx-space-6);
+  padding: var(--mx-space-3) var(--mx-space-4);
+  color: var(--mx-color-fg-primary);
+  background: var(--mx-color-caution-subtle);
+  border: var(--mx-border-width-1) solid var(--mx-color-caution-fg);
+  border-inline-start-width: var(--mx-space-1);
+  border-radius: var(--mx-radius-md);
+}
+
+.docs-notice p {
+  flex: 1;
+  margin: 0;
+}
+
+.docs-notice__close {
+  flex: none;
+}
+
+.docs-notice a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.docs-notice__icon {
+  flex: none;
+  inline-size: var(--mx-space-5);
+  block-size: var(--mx-space-5);
+  color: var(--mx-color-caution-fg);
 }
 
 /* A long name ("TabDocumentManager:") breaks on a phone instead of widening the page. */
@@ -301,18 +353,19 @@
 }
 
 .docs-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--docs-rail);
-  max-inline-size: calc(var(--docs-content) + var(--docs-rail) + var(--mx-space-10));
-  align-items: start;
-  gap: var(--mx-space-10);
+  display: contents;
 }
 
 .docs-article {
   display: flex;
   flex-direction: column;
   gap: var(--mx-space-6);
+  grid-column: 1;
+  grid-row: 3;
+  inline-size: 100%;
   min-inline-size: 0;
+  max-inline-size: var(--docs-content);
+  margin-inline: auto;
 }
 
 /* The page's opening words and every section sit on cards. */
@@ -431,6 +484,8 @@
   position: sticky;
   inset-block-start: calc(var(--docs-topbar) + var(--mx-space-8));
   display: flex;
+  grid-column: 2;
+  grid-row: 1 / span 3;
   flex-direction: column;
   gap: var(--mx-space-8);
   max-block-size: calc(100vh - var(--docs-topbar) - 2 * var(--mx-space-8));
@@ -529,8 +584,9 @@
 /* Narrower windows. */
 
 @media (width < 80rem) {
-  .docs-body {
+  .docs-main {
     grid-template-columns: minmax(0, 1fr);
+    padding-inline-end: var(--mx-space-10);
   }
 
   .docs-rail {
