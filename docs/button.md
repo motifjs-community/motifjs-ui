@@ -1,6 +1,6 @@
 # Button
 
-> Buttons · @motifx-community/ui 0.1.0-beta.3
+> Buttons · @motifx-community/ui 0.1.0-beta.4
 
 A native `<button>` styled with design tokens. It comes in three variants, three tones and three sizes, and supports an icon and an `&` access key. A button can act as a toggle, indicate that work is in progress, and open a menu or any other content, either from the whole button or from an arrow next to it with `split`, so the button keeps its own action.
 
@@ -414,3 +414,7 @@ All of these reference design system tokens (see [Tokens](tokens.md)). Override 
 | `data` | `unknown` | A custom application value. |
 
 The menu and the surface it opens on are shared parts, `MenuList` and `Popup`, exported for use in other components.
+
+## Feedback
+
+Loading issues…

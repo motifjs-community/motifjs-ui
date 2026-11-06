@@ -1,6 +1,6 @@
 # Toast
 
-> Feedback · @motifx-community/ui 0.1.0-beta.3
+> Feedback · @motifx-community/ui 0.1.0-beta.4
 
 Brief notifications at the edge of the window, with four tones, an optional action such as Undo, a custom duration or none, six positions and a limit on how many appear at once. Show them programmatically, or place a custom region in JSX.
 
@@ -311,3 +311,7 @@ export default function Localization() {
 | `paused` | read-only | Indicates whether the timers are currently paused. |
 
 `enabled`, `visible` and the other shared control properties work on both.
+
+## Feedback
+
+Loading issues…

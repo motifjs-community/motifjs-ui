@@ -1,6 +1,6 @@
 # Tabs
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Tabs display one panel at a time below a tab strip. You can define them in JSX or programmatically, and they support closable tabs, icons and badges, scroll buttons when tabs overflow, four placements, and panels that are created on first display.
 
@@ -454,3 +454,7 @@ export default function Localization() {
 | `onSelecting(e)` | Occurs before the user selects a tab. `e`: `{ tab, index, previousTab, previousIndex, cancel, source, event }`. Set `e.cancel = true` to keep the current tab. |
 | `onSelectionChanged(e)` | Occurs after the selected tab changes. `e`: `{ tab, index, previousTab, previousIndex, byUser, source, event? }`. |
 | `onClose(e)` | Occurs before a tab closes, from its button, Delete, a middle-click or `close()`. `e`: `{ tab, index, byUser, cancel, source, event? }`. |
+
+## Feedback
+
+Loading issues…

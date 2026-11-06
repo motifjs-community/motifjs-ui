@@ -1,6 +1,6 @@
 # Calendar
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A month view for selecting a date, with year and decade views for quick navigation. It serves as the DateBox picker and can also be used on its own.
 
@@ -134,3 +134,7 @@ export default function Views() {
 | `canChoose(date)` | Indicates whether a day can be selected. |
 | `focus()` | Sets focus on the day with the Tab stop. |
 | `onValueChanged(e)` | `{ value, previousValue, byUser, source, event? }`. |
+
+## Feedback
+
+Loading issues…

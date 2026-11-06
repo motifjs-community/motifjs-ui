@@ -1,6 +1,6 @@
 # @motifx-community/ui
 
-> Get started · @motifx-community/ui 0.1.0-beta.3
+> Get started · @motifx-community/ui 0.1.0-beta.4
 
 Components for MotifJS: objects you create when you need them, show anywhere and dispose when you are done, drawn from the MotifJS design system's tokens.
 
@@ -60,3 +60,7 @@ Visual styling comes from `@motifx-community/design-system`, which provides desi
   --mx-color-accent-fg: #5c2e91;
 }
 ```
+
+## Feedback
+
+Loading issues…

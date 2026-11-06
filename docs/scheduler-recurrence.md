@@ -1,6 +1,6 @@
 # Scheduler: Recurrence and time zones
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Recurring appointments based on RFC 5545 rules, with exceptions and individually edited occurrences, a prompt that asks what a change should apply to, a recurrence editor, and time zone support that handles daylight saving time.
 
@@ -198,7 +198,7 @@ export default function TimeZones() {
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `timeZone` | `Bind<string \| null>` | `null` uses the browser time zone | The time zone for days and hours, as an IANA name (`Europe/Istanbul`). Conversion uses `Intl` only. |
-| `seriesEdit` | `Bind<'ask' \\| 'occurrence' \\| 'following' \\| 'series'>` | `'ask'` | What changing or deleting an occurrence applies to. `ask` prompts the user. In code, it applies to the occurrence unless the call specifies otherwise. |
+| `seriesEdit` | `Bind<'ask' \\| 'occurrence' \\| 'following' \\| 'series'>` | `'ask'` | What changing or deleting an occurrence applies to. `ask` prompts the user. Programmatically, it applies to the occurrence unless the call specifies otherwise. |
 | `recurrenceMarks` | `Bind<boolean>` | `true` | The indicators of an occurrence and of an individually edited one, where the design language draws them. |
 | `editing.allowRecurrence` | `boolean` | `true` | Includes the recurrence editor in the form. |
 | `editing.allowTimeZones` | `boolean` | `false` | Includes a time zone picker and a "Separate end time zone" check box in the form (`separateEndZone` in the form `data` and `items`), which shows a picker for the end. When unchecked, the end follows the start zone. It is not available for all-day appointments. |
@@ -252,6 +252,10 @@ export default function TimeZones() {
 | `describeRecurrence(rule, start, options)` | Describes a rule in plain words. |
 | `readRuleDates, addRuleDate, filterRuleDates, parseRuleDate, formatRuleDate` | Exception dates as stored in the field. |
 | `rangeFilter(range, fields)` | The data layer filter for a range: it starts before the range ends and either ends at or after the range starts or has a rule. The scheduler's `remoteFiltering` uses it. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

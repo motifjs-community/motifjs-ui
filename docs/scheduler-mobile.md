@@ -1,6 +1,6 @@
 # Scheduler: Tablet and phone
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 On tablets and phones, the scheduler keeps its appointments, views and date, and changes how it presents them. On a phone, it shows the agenda, a compact toolbar and bottom sheets. Touch gestures can lift and resize appointments, swipe between days, and pinch to zoom.
 
@@ -419,6 +419,10 @@ export function sampleAppointments(): Meeting[] {
 | `currentPresentation` | read-only, reactive | The current presentation: `'desktop'`, `'tablet'` or `'phone'`. |
 
 The sheets are the kit's [BottomSheet](bottomsheet.md) and [ActionSheet](actionsheet.md).
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

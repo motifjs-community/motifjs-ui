@@ -1,6 +1,6 @@
 # Language
 
-> Foundations · @motifx-community/ui 0.1.0-beta.3
+> Foundations · @motifx-community/ui 0.1.0-beta.4
 
 `uiLocale` controls the strings that controls display, the locale used for dates and numbers, and the text direction. The kit has one `uiLocale`, and each language pack is loaded on demand.
 
@@ -227,3 +227,7 @@ In the repository, `npm run locales` validates every pack the kit ships, and `np
 | `uiLocale.ready` | `Promise<void>` | Resolves once the initial language has loaded. |
 | `uiLocale.onChanged` | event | Occurs after the language changes, with `locale` and `previous`. |
 | `connectI18n(i18n)` | `() => void` | Keeps the kit language in sync with your application's translations (`@motifx-community/i18n`, or any object with `locale` and `onLocaleChanged`). Returns a function that stops it. |
+
+## Feedback
+
+Loading issues…

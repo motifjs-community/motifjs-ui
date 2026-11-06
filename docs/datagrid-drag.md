@@ -1,6 +1,6 @@
 # DataGrid: Row drag and drop
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Reorder rows
 
@@ -114,6 +114,10 @@ export interface Task {
 | --- | --- |
 | `Ctrl+Shift+Up / Ctrl+Shift+Down on a row (`moveUpKeys`, `moveDownKeys`)` | Moves the active row one position up or down (`allowReordering`). The row stays active, and the move is announced (“Row moved to position 3 of 20”). |
 | `Escape while dragging` | Cancels the drag, and nothing is dropped. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

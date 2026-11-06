@@ -1,6 +1,6 @@
 # DataGrid
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 A grid for data entry and large data sets. Rows can be in memory or come from any data layer adapter, and can be displayed in a virtual list or in pages. It supports sorting, column layout, editing with kit editors, new rows with Tab navigation, three save modes, row actions, selection, filters, a search panel, grouping, summaries, a toolbar, lookup columns from other services, copy and paste, export, and a persistent layout. Every feature can be disabled for the grid or for a single column.
 
@@ -92,6 +92,10 @@ export interface Order {
   note: string;
 }
 ```
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

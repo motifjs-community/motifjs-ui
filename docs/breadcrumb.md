@@ -1,6 +1,6 @@
 # Breadcrumb
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Shows the path to the current page. Each step is a link or button, and the current page comes last. Steps that do not fit move into a menu after the first step.
 
@@ -123,3 +123,7 @@ export default function Sizes() {
 | --- | --- | --- |
 | `onItemClick` | event | Occurs when a step is pressed, on the breadcrumb or in its menu (`item`, `index`). Set `cancel = true` to prevent following a link. |
 | `collapsed` | read-only | The indexes of the steps currently in the menu. |
+
+## Feedback
+
+Loading issues…

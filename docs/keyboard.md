@@ -1,6 +1,6 @@
 # Keyboard and focus
 
-> Foundations · @motifx-community/ui 0.1.0-beta.3
+> Foundations · @motifx-community/ui 0.1.0-beta.4
 
 Every control follows the same rules for Tab order, the active control of a container, focus handling, `&File` access keys and application-wide shortcuts.
 
@@ -186,3 +186,7 @@ export default function FocusGuard() {
 | `activeControl / restoreFocus()` | FocusContainer | See the Control page. |
 
 For `tabStop`, `tabIndex`, `focus()`, `onAccessKey()` and `FocusContainer`, see the `Control` page.
+
+## Feedback
+
+Loading issues…

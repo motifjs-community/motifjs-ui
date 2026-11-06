@@ -1,6 +1,6 @@
 # Rating
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A row of stars for entering or displaying a score, in whole or half steps. Rating is a field, so the label, help text, rules and `x-model` work the same way as on any other field.
 
@@ -122,3 +122,7 @@ export default function Icons() {
 | `tone` | `Bind<RatingTone>` | Set by the design language | `accent` or `neutral`. For custom gold stars, set the color in `rating.fill.accent.bg`. |
 | `emptyIcon, filledIcon` | `Bind<string \| null>` | Set by the design language | The shape of an empty and a filled star: a name from the kit's icon set, or an image address (drawn in the star colors). |
 | `label, helpText, readOnly, required, rules, size…` | see Field |  | All standard field props, because a rating is a field. |
+
+## Feedback
+
+Loading issues…

@@ -1,6 +1,6 @@
 # TabDocumentManager: New windows
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 A document, a group or a floating window can move into its own browser window and back. Its content moves with it without being recreated, and the new window is part of the same manager, so its tabs, menus, keys and dragging work the same way.
 
@@ -409,6 +409,10 @@ docs.onError((e) => {
 | `ResizeWatch` | A `ResizeObserver` that follows its elements into another window, because a browser's observer only reports elements of its own window. |
 
 See the [overview](tabdocs.md#api), [Tabs](tabdocs-tabs.md), [Menus and keys](tabdocs-menus.md), [Drag and drop](tabdocs-drag.md) and [Dock and floating windows](tabdocs-dock.md) for the rest of the API.
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

@@ -1,6 +1,6 @@
 # @motifx-community/ui
 
-> UI components for MotifJS (@motifx/core) on the MotifJS design system. Version 0.1.0-beta.3: a preview, its API may still change before 1.0.
+> UI components for MotifJS (@motifx/core) on the MotifJS design system. Version 0.1.0-beta.4: a preview, its API may still change before 1.0.
 
 Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with `new`, whose every prop takes a value or a function (`Bind<T>`); `x-model` binds a value two-way. The look is the design system’s (`@motifx-community/design-system`): five design languages (`data-identity`), light and dark themes, density.
 
@@ -112,7 +112,7 @@ Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with
 ## Scheduler
 
 - [Scheduler](docs/scheduler.md): A full-featured calendar for appointments across days and hours. It provides day, week, work week and month views, all-day and multi-day bars, side-by-side…
-- [Scheduler: Editing](docs/scheduler-editing.md): Users can add, move, resize, copy and delete appointments with the pointer and the keyboard, and you can do the same in code. Every change raises its event…
+- [Scheduler: Editing](docs/scheduler-editing.md): Users can add, move, resize, copy and delete appointments with the pointer and the keyboard, and you can do the same programmatically. Every change raises…
 - [Scheduler: Recurrence and time zones](docs/scheduler-recurrence.md): Recurring appointments based on RFC 5545 rules, with exceptions and individually edited occurrences, a prompt that asks what a change should apply to, a…
 - [Scheduler: Resources and groups](docs/scheduler-resources.md): Resources such as rooms, people and equipment can color appointments, divide columns into groups (nested or under each date), and define when each resource…
 - [Scheduler: The appointment form](docs/scheduler-form.md): Configure the appointment form without handling events. You can choose its fields and their order, arrange them in groups and tabs, use custom editors, add…
@@ -120,7 +120,7 @@ Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with
 - [Scheduler: Agenda](docs/scheduler-agenda.md): Displays upcoming days as a list, with each day's appointments in time order. Days without appointments are omitted.
 - [Scheduler: Big data](docs/scheduler-big-data.md): Handles thousands of resources and appointments. The scheduler renders only what is visible, and recalculates the layout only for what has changed.
 - [Scheduler: Tablet and phone](docs/scheduler-mobile.md): On tablets and phones, the scheduler keeps its appointments, views and date, and changes how it presents them. On a phone, it shows the agenda, a compact…
-- [Scheduler: iCalendar and print](docs/scheduler-icalendar.md): Exports appointments to an iCalendar file (RFC 5545) and imports them back, for use with other calendar applications. The scheduler can also…
+- [Scheduler: iCalendar and print](docs/scheduler-icalendar.md): Exports appointments to an iCalendar file (RFC 5545) and imports them back, for use with other calendar applications. The scheduler can also be printed.
 
 ## DataGrid
 
@@ -258,7 +258,7 @@ tokens, with examples.
 
 # @motifx-community/ui
 
-> Get started · @motifx-community/ui 0.1.0-beta.3
+> Get started · @motifx-community/ui 0.1.0-beta.4
 
 Components for MotifJS: objects you create when you need them, show anywhere and dispose when you are done, drawn from the MotifJS design system's tokens.
 
@@ -319,21 +319,29 @@ Visual styling comes from `@motifx-community/design-system`, which provides desi
 }
 ```
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Showcase: an order screen
 
-> Get started · @motifx-community/ui 0.1.0-beta.3
+> Get started · @motifx-community/ui 0.1.0-beta.4
 
 An order entry screen built with the kit, structured the way a MotifJS application is normally built: state and operations live in a model (`OrderModel`), and the page binds to it. The customer list is a data source of 5,000 rows that responds like a server.
+
+## Feedback
+
+No open issues for this page.
 
 
 ---
 
 # Design tokens
 
-> Get started · @motifx-community/ui 0.1.0-beta.3
+> Get started · @motifx-community/ui 0.1.0-beta.4
 
 The token system has five layers. The first four (primitives, design language scales, semantic tokens per theme, and density) come from `@motifx-community/design-system` and are listed here for reference. The fifth layer, component tokens, belongs to this kit: each component has its own tokens, written in `@layer mx.components`, and each one references a design system token. Every design language provides its own value for each component token.
 
@@ -4799,12 +4807,16 @@ cssVar('color.accent.solid');  // 'var(--mx-color-accent-solid)' — a design-sy
 // and apps that need only the design system import cssVar from there
 ```
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Control
 
-> Foundations · @motifx-community/ui 0.1.0-beta.3
+> Foundations · @motifx-community/ui 0.1.0-beta.4
 
 `Control` is the base class of every control in the package. It provides the same `text`, `enabled`, `visible` and `tabStop` properties and the same focus methods, whether a control is declared in JSX and bound to state or created with `new` and changed programmatically.
 
@@ -5035,12 +5047,16 @@ The base class adds no per-control listeners, and you pay only for what you use.
 
 - Arrow key navigation inside composite controls (one Tab stop with arrow keys inside) arrives with the first composite control.
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Keyboard and focus
 
-> Foundations · @motifx-community/ui 0.1.0-beta.3
+> Foundations · @motifx-community/ui 0.1.0-beta.4
 
 Every control follows the same rules for Tab order, the active control of a container, focus handling, `&File` access keys and application-wide shortcuts.
 
@@ -5227,12 +5243,16 @@ export default function FocusGuard() {
 
 For `tabStop`, `tabIndex`, `focus()`, `onAccessKey()` and `FocusContainer`, see the `Control` page.
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Language
 
-> Foundations · @motifx-community/ui 0.1.0-beta.3
+> Foundations · @motifx-community/ui 0.1.0-beta.4
 
 `uiLocale` controls the strings that controls display, the locale used for dates and numbers, and the text direction. The kit has one `uiLocale`, and each language pack is loaded on demand.
 
@@ -5460,12 +5480,16 @@ In the repository, `npm run locales` validates every pack the kit ships, and `np
 | `uiLocale.onChanged` | event | Occurs after the language changes, with `locale` and `previous`. |
 | `connectI18n(i18n)` | `() => void` | Keeps the kit language in sync with your application's translations (`@motifx-community/i18n`, or any object with `locale` and `onLocaleChanged`). Returns a function that stops it. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Button
 
-> Buttons · @motifx-community/ui 0.1.0-beta.3
+> Buttons · @motifx-community/ui 0.1.0-beta.4
 
 A native `<button>` styled with design tokens. It comes in three variants, three tones and three sizes, and supports an icon and an `&` access key. A button can act as a toggle, indicate that work is in progress, and open a menu or any other content, either from the whole button or from an arrow next to it with `split`, so the button keeps its own action.
 
@@ -5880,12 +5904,16 @@ All of these reference design system tokens (see [Tokens](tokens.md)). Override 
 
 The menu and the surface it opens on are shared parts, `MenuList` and `Popup`, exported for use in other components.
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # ButtonGroup
 
-> Buttons · @motifx-community/ui 0.1.0-beta.3
+> Buttons · @motifx-community/ui 0.1.0-beta.4
 
 A set of related buttons, used as a segmented selection of one or more options or as a row of actions. The buttons are standard kit buttons and are attached by default.
 
@@ -6025,12 +6053,16 @@ export default function Looks() {
 | `isSelected(value)` | `boolean` | Indicates whether the button for `value` is selected or on. |
 | `refresh()` | `void` | Re-reads the items after they have been changed in place. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Toolbar
 
-> Buttons · @motifx-community/ui 0.1.0-beta.3
+> Buttons · @motifx-community/ui 0.1.0-beta.4
 
 A command bar that holds buttons, toggle buttons, menus and fields, organized in groups with separators. The toolbar is a single Tab stop, and the arrow keys move between its controls. Items that do not fit move into an overflow menu at the end. You can define items as data, as JSX children, or both.
 
@@ -6283,6 +6315,10 @@ export default function Localization() {
 | --- | --- |
 | `onItemClick(e)` | Occurs when an item in `items` is pressed, after its own `click`. `e`: `{ item, source, event }`. |
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `Editor.tsx`
@@ -6496,7 +6532,7 @@ export default function SizeAndOrientation() {
 
 # SpeedDial
 
-> Buttons · @motifx-community/ui 0.1.0-beta.3
+> Buttons · @motifx-community/ui 0.1.0-beta.4
 
 A floating action button that opens a set of related actions. Place it in a corner, on an edge or inline. Actions appear in a line with labels, or on a full, half or quarter circle around the button with tooltips. If there is only one action, the main button performs it directly.
 
@@ -6785,12 +6821,16 @@ export default function Single() {
 | `show(), close(), toggle()` | `void` | Opens or closes the actions. |
 | `refresh()` | `void` | Re-reads the actions after they have been changed in place. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # MenuBar and ContextMenu
 
-> Buttons · @motifx-community/ui 0.1.0-beta.3
+> Buttons · @motifx-community/ui 0.1.0-beta.4
 
 An application menu bar (File, Edit, View) and a context menu that opens on right-click. Both use the same menu items, which support submenus, check and radio items, shortcuts and access keys.
 
@@ -7101,12 +7141,16 @@ Menus have no strings of their own. Every label, shortcut and name comes from yo
 | `ContextMenu.onOpening(e)` | Occurs before the menu opens. `e`: `{ target, items, cancel, byKeyboard, event, source }`. Set `e.items` for the element, or set `e.cancel = true`. |
 | `ContextMenu.onClosed(reason)` | `escape`, `outside`, `focus` or `code`. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # TextBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A single-line text input with a label, help text and error display. It supports a placeholder, a prefix and suffix, buttons inside the box, a clear button, a password reveal button, a character counter, an input mask and validation, either on its own, in a group, or across all fields in a panel.
 
@@ -7554,12 +7598,16 @@ export default function Localization() {
 
 The frame (`Field`), the mask (`InputMask`, which works on any `<input>`) and validation (`ValidationGroup`, `validateFields`, `checkRules`) are shared parts, exported for use in other components and your own code.
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # TextArea
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A multi-line text input. The box can grow with its content or be resized by the user, and it supports a character counter, a clear button and Ctrl+Enter to submit, along with the label, help text and validation common to all fields.
 
@@ -7863,12 +7911,16 @@ TextArea uses the field tokens (`field.*`, see TextBox) and has none of its own,
 | `onEnter(e)` | Occurs when the user presses Ctrl+Enter (Cmd+Enter). `e`: `{ value, source, event }`. |
 | `oninput, onchange, onkeydown, onfocusin, onfocusout` | DOM events from the textarea bubble up to the field. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # NumberBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A numeric input with arrow key support, PageUp and PageDown, spin buttons that repeat while held, min and max limits, exact decimal stepping, display formats such as currency and percent, and locale-aware input.
 
@@ -8176,12 +8228,16 @@ export default function Localization() {
 | `onValidated(e)` | Occurs when validation finishes. `e`: `{ valid, message, source }`. |
 | `onEnter(e)` | Occurs when the user presses Enter. `e`: `{ value, source, event }`. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # DateBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 An input for a date, a time or both. Users can type through a mask in the locale's order, or pick from a calendar and a list of times. `min`, `max` and `disabledDates` apply to both methods.
 
@@ -8381,12 +8437,16 @@ export default function Localization() {
 
 The date helpers are shared: `datePatternOf(locale, kind)`, `dateToDigits`, `digitsToDate`.
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # DateRangeBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A single field for a start date and an end date. Users can type through two masks, or pick from two side-by-side months and a list of presets, within the allowed dates and range length. The value is a `[start, end]` pair.
 
@@ -8577,12 +8637,16 @@ export default function DateTime() {
 | `validate(), validationMessage, isValid` |  | Works the same way as on all fields. Validation covers incomplete dates, dates outside `min`, `max` or `disabledDates`, a start after the end, and ranges shorter than `minDays` or longer than `maxDays`. |
 | `onValueChanged` | event | Occurs when the pair changes (`value`, `previousValue`, `byUser`). |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # ColorBox and ColorPicker
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A color field with a popup picker, or the picker on its own. The picker has a saturation and brightness area, a hue slider, an opacity slider, channel inputs and preset colors.
 
@@ -8734,12 +8798,16 @@ export default function Buttons() {
 | `parseColor(text)` | `ColorRgba \| null` | Parses `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb(…)` and `rgba(…)`. |
 | `formatColor(rgba)` | `string` | Returns `#rrggbb`, or `#rrggbbaa` when the color is not opaque. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Calendar
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A month view for selecting a date, with year and decade views for quick navigation. It serves as the DateBox picker and can also be used on its own.
 
@@ -8874,12 +8942,16 @@ export default function Views() {
 | `focus()` | Sets focus on the day with the Tab stop. |
 | `onValueChanged(e)` | `{ value, previousValue, byUser, source, event? }`. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Slider
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 Selects a value on a track by dragging a thumb or using the keyboard. It supports a single number or a range with two thumbs, steps, labeled tick marks, a value tooltip, a vertical orientation and number formatting, along with the label, help text and validation common to all fields.
 
@@ -9239,12 +9311,16 @@ export default function Localization() {
 | `onValueChanged(e)` | Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`. |
 | `onValidated(e)` | Occurs when validation finishes. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Rating
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A row of stars for entering or displaying a score, in whole or half steps. Rating is a field, so the label, help text, rules and `x-model` work the same way as on any other field.
 
@@ -9367,12 +9443,16 @@ export default function Icons() {
 | `emptyIcon, filledIcon` | `Bind<string \| null>` | Set by the design language | The shape of an empty and a filled star: a name from the kit's icon set, or an image address (drawn in the star colors). |
 | `label, helpText, readOnly, required, rules, size…` | see Field |  | All standard field props, because a rating is a field. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # ValidationSummary
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 Lists the invalid fields of a `ValidationGroup` under a header, with each field's label and message on its own line. Clicking a line moves focus to the field. The summary updates whenever a field in the group is validated or reset, and it is hidden when there are no errors.
 
@@ -9486,12 +9566,16 @@ export default function Programmatic() {
 | `count` | read-only | The number of lines. |
 | `refresh()` | `void` | Redraws the lines from the current state of the fields. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # FileUploader
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 Lets users select files with a button or drop them on the box. Files are listed with their size and status, and can upload automatically, on a button click or programmatically, with progress, cancel, retry and remove for each file. Files that exceed the limits are listed with the reason.
 
@@ -9691,12 +9775,16 @@ The uploader posts a form with the file in `uploadField` (`file` by default) to 
 | `onFileRemoved, onUploadStarted, onProgress, onUploaded, onUploadError, onUploadAborted` | event | Reports each stage of a file's upload, with `item` and `file`, and `error` on failure. |
 | `onValueChanged` | event | Occurs when the accepted files change. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # CheckBox
 
-> Choice · @motifx-community/ui 0.1.0-beta.3
+> Choice · @motifx-community/ui 0.1.0-beta.4
 
 A check box with a label that can be checked, unchecked or indeterminate. It supports an optional three-state cycle, read-only and required states, and validation with its group. It is a native check box styled with design tokens.
 
@@ -10031,12 +10119,16 @@ export default function Localization() {
 
 `ToggleField`, the base class shared by CheckBox and Switch, provides a label next to a native check box, read-only behavior and the access key. It is exported for use in your own controls.
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Switch
 
-> Choice · @motifx-community/ui 0.1.0-beta.3
+> Choice · @motifx-community/ui 0.1.0-beta.4
 
 An on/off switch with a label. It has a track with a sliding thumb, optional on/off text inside or next to the track, and read-only and required states. It is a native check box with the switch role.
 
@@ -10277,12 +10369,16 @@ A switch has no strings of its own. `onText` and `offText` are yours and can be 
 | `onValidated(e)` | Occurs when validation finishes. `e`: `{ valid, message, source }`. |
 | `onclick, onchange, onfocusin, onfocusout` | DOM events from the input bubble up to the field. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # RadioGroup
 
-> Choice · @motifx-community/ui 0.1.0-beta.3
+> Choice · @motifx-community/ui 0.1.0-beta.4
 
 A set of mutually exclusive options. Options can come from plain values, custom objects or a live list, and can be arranged vertically, horizontally or in columns. Individual options can be disabled, hidden or given help text. The group is a single Tab stop, and the arrow keys move between options.
 
@@ -10605,12 +10701,16 @@ The group has no strings of its own. The option text is yours, and functions of 
 | `onValidated(e)` | Occurs when validation finishes. `e`: `{ valid, message, source }`. |
 | `onchange, onkeydown, onfocusin, onfocusout` | DOM events from the radios bubble up to the group. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # DropDown
 
-> Choice · @motifx-community/ui 0.1.0-beta.3
+> Choice · @motifx-community/ui 0.1.0-beta.4
 
 Selects one item from a list. The field shows the selected item, and the list opens below it on click or from the keyboard. The list can be searched, grouped and customized, and it stays fast with thousands of items.
 
@@ -10857,6 +10957,10 @@ A prop that accepts a function as its value (`textField`, a template) uses the f
 
 The list is a shared part, `OptionList`, exported for use in combo boxes, list boxes and your own controls.
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `Programmatic.tsx`
@@ -10937,7 +11041,7 @@ export default function Validation() {
 
 # ComboBox and Autocomplete
 
-> Choice · @motifx-community/ui 0.1.0-beta.3
+> Choice · @motifx-community/ui 0.1.0-beta.4
 
 A text input with a list that filters as the user types. Items can come from memory or from a data layer source that is searched on the server. `Autocomplete` is the free-text variant, where the value is the text itself.
 
@@ -11031,6 +11135,10 @@ export const cities = ['Adana', 'Ankara', 'Antalya', 'Bursa', 'Diyarbakır', 'Er
 | `onValueChanged, onOpened, onClosed, onValidated` | Same as DropDown. |
 
 The items logic is a shared part: `DataItems` supplies any list control from an array or a data source.
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -11155,7 +11263,7 @@ export default function CustomValues() {
 
 # Lookup
 
-> Choice · @motifx-community/ui 0.1.0-beta.3
+> Choice · @motifx-community/ui 0.1.0-beta.4
 
 Selects one row from a table-style list, typically from a data source searched on the server, such as a customer by company, contact and city. The field shows the text of the selected row, and everything else works as in DropDown.
 
@@ -11221,6 +11329,10 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 | `searchEnabled` | `Bind<boolean>` | `true` | Adds a search box above the list. DropDown has this off by default. |
 | `everything of DropDown` |  |  | `items`, `dataSource`, `valueText`, `textField`, `valueField`, `searchDelay`, `clearButton`, validation, keyboard support and more. |
 | `refresh()` |  |  | Your items and columns can be plain or reactive, and the lookup reads them as they are. After changing them in place, call `refresh()`. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -11371,7 +11483,7 @@ export default function ByKey() {
 
 # ProgressBar and Spinner
 
-> Feedback · @motifx-community/ui 0.1.0-beta.3
+> Feedback · @motifx-community/ui 0.1.0-beta.4
 
 ProgressBar shows how far an operation has progressed, as a line or a circle, or indicates activity when the progress is unknown. Spinner shows that the system is busy. It is a rotating ring that can stand alone or cover a panel while it loads, and it can wait for a delay so that quick operations do not cause a flash.
 
@@ -11771,12 +11883,16 @@ export default function Localization() {
 | `Spinner: waiting` | read-only | Indicates that it is still within its delay. |
 | `Spinner.cover(target, props?)` | `() => void` | Covers a component or element with a spinner. Call the returned function to remove it. See Covering a panel. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Tooltip
 
-> Feedback · @motifx-community/ui 0.1.0-beta.3
+> Feedback · @motifx-community/ui 0.1.0-beta.4
 
 A short description shown next to an element when the pointer rests on it, when it receives keyboard focus, or programmatically. Users can hover over the tooltip, Escape dismisses it, and only one is open at a time on the page.
 
@@ -12114,12 +12230,16 @@ export default function ManyElements() {
 | `onOpened` | Occurs after it is shown. |
 | `onClosed` | Occurs after it is hidden. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Popover
 
-> Feedback · @motifx-community/ui 0.1.0-beta.3
+> Feedback · @motifx-community/ui 0.1.0-beta.4
 
 Displays content next to a related element, such as a title, a close button, a form or a card. It opens on click or on hover, follows its target, and points to it with an arrow where the design language includes one.
 
@@ -12339,12 +12459,16 @@ export default function Events() {
 | `isOpen` | read-only | Indicates whether it is currently open. |
 | `closeButton, body` | read-only | The kit close button, and the part that holds the content. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # LoadPanel
 
-> Feedback · @motifx-community/ui 0.1.0-beta.3
+> Feedback · @motifx-community/ui 0.1.0-beta.4
 
 A loading overlay for a container or the whole page. It includes a shade, a panel with the kit spinner and a message, and a Cancel button when the operation can be stopped. The content underneath is unavailable while it is shown, and focus returns afterward.
 
@@ -12527,12 +12651,16 @@ export default function Options() {
 | `isShown` | read-only | Indicates whether the panel is currently on screen. |
 | `spinner, cancelButton` | read-only | The kit spinner and button in the panel. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Toast
 
-> Feedback · @motifx-community/ui 0.1.0-beta.3
+> Feedback · @motifx-community/ui 0.1.0-beta.4
 
 Brief notifications at the edge of the window, with four tones, an optional action such as Undo, a custom duration or none, six positions and a limit on how many appear at once. Show them programmatically, or place a custom region in JSX.
 
@@ -12844,12 +12972,16 @@ export default function Localization() {
 
 `enabled`, `visible` and the other shared control properties work on both.
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Badge
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 A short text, count or dot, shown inline or on the corner of a button, avatar or icon. A count above its maximum displays as “99+”, and a count of zero is hidden.
 
@@ -13041,12 +13173,16 @@ A count is formatted in the kit language (`uiLocale`) and updates when the langu
 | --- | --- | --- |
 | `Badge.attach(target, props?)` | `Badge` | Places a badge on a corner of a component (`top-end` unless `props` specifies otherwise). The badge becomes a child of the component and is disposed with it. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Avatar and AvatarGroup
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 Represents a person with a picture, initials or an icon, with an optional presence indicator on its corner. A group stacks or spreads avatars and counts the ones it does not show.
 
@@ -13283,12 +13419,16 @@ Initials use the capitalization rules of the kit language (`uiLocale`), so “il
 | --- | --- | --- |
 | `initialsOf(name, locale)` | `string` | Creates initials from a name: the first letters of the first and last words, using the capitalization rules of the language. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Chip and ChipGroup
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 A compact element with short text and an optional leading icon or avatar. Use it as a filter, as a choice among a few options, or to represent a selected item that can be removed. A group handles single or multiple selection and arrow key navigation.
 
@@ -13565,12 +13705,16 @@ The remove button's name is the `removeItem` kit string (“Remove {text}”) an
 | `chips` | read-only | The chips in order, including those from JSX lists. |
 | `isSelected(value)` | `boolean` | Indicates whether the chip for `value` is selected. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Card
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 A surface for a single subject, with an optional image, a header with an avatar and titles, content and a row of actions. Empty parts are not rendered.
 
@@ -13823,12 +13967,16 @@ export default function Sizes() {
 | `contentPart` | read-only | The part that holds the content, for adding to it programmatically. |
 | `avatarControl` | read-only | The avatar before the titles, if there is one. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Gallery
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 Displays a horizontal set of slides, one or several at a time. Users navigate with the side buttons, the indicator dots, swipe gestures or the arrow keys, and it can run as an automatic slideshow. A slide can be an image with a caption or any other content.
 
@@ -14071,12 +14219,16 @@ export default function Programmatic() {
 | `play(), pause()` | `void` | Starts the slideshow again, or stops it until `play()` is called. The button in the bar does the same. |
 | `refresh()` | `void` | Re-reads the items after they have been changed in place. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # TileView
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 Arranges tiles of different sizes on a grid of base cells, where each tile spans a set number of cells. Tiles fill the height in columns and scroll horizontally, or fill the width in rows. They can be selected and reordered by dragging.
 
@@ -14281,12 +14433,16 @@ export default function Content() {
 | `indexOf(value), valueAt(index)` | `number`, `string \| number` | Converts between a value (a key or an index) and a tile index. |
 | `refresh()` | `void` | Re-reads the items after they have been changed in place. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Timeline
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 Displays events in chronological order. In the vertical layout, each event is a card next to a line with a marker. In the horizontal layout, events appear along a line of dates, and selecting a date shows that event's card below the line. Dates are formatted in the kit language. For scheduling by the hour, see [Scheduler](scheduler.md).
 
@@ -14459,12 +14615,16 @@ export default function Content() {
 | `formatDate(date)` | `string` | Formats a date the same way the timeline does. |
 | `refresh()` | `void` | Re-reads the items after they have been changed in place. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Skeleton
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 A placeholder that matches the shape of content that is loading, so the page keeps its layout while data arrives. If you provide content, it replaces the placeholder in the same place when loading ends.
 
@@ -14594,12 +14754,16 @@ export default function Animations() {
 | `every prop above` | read/write | Accepts a value or a function, the same as the prop. |
 | `content` | read-only | The part that holds the loaded content, for adding to it programmatically. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Tabs
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Tabs display one panel at a time below a tab strip. You can define them in JSX or programmatically, and they support closable tabs, icons and badges, scroll buttons when tabs overflow, four placements, and panels that are created on first display.
 
@@ -15054,12 +15218,16 @@ export default function Localization() {
 | `onSelectionChanged(e)` | Occurs after the selected tab changes. `e`: `{ tab, index, previousTab, previousIndex, byUser, source, event? }`. |
 | `onClose(e)` | Occurs before a tab closes, from its button, Delete, a middle-click or `close()`. `e`: `{ tab, index, byUser, cancel, source, event? }`. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Breadcrumb
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Shows the path to the current page. Each step is a link or button, and the current page comes last. Steps that do not fit move into a menu after the first step.
 
@@ -15183,12 +15351,16 @@ export default function Sizes() {
 | `onItemClick` | event | Occurs when a step is pressed, on the breadcrumb or in its menu (`item`, `index`). Set `cancel = true` to prevent following a link. |
 | `collapsed` | read-only | The indexes of the steps currently in the menu. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Pagination
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Navigates through pages of items, with page size options, the current position, navigation buttons and a button for each nearby page. It switches to a compact layout when it does not fit, and it looks and works like the DataGrid pager.
 
@@ -15302,12 +15474,16 @@ export default function Looks() {
 | `pageCount` | Read-only | The current number of pages. |
 | `compact` | read-only | Indicates whether the compact layout is currently shown. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Stepper
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Shows the steps of a longer task and the user's progress through them. Each step has an indicator and text, with a line between steps, and steps before the current one are marked complete. [Wizard](wizard.md) adds a page and navigation buttons to each step.
 
@@ -15544,12 +15720,16 @@ export default function Sizes() {
 | `canReach(index)` | `boolean` | Indicates whether the user can reach the step. |
 | `refresh()` | `void` | Re-reads the items after they have been changed in place. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Wizard
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Guides the user through a multi-step task. It combines a [Stepper](stepper.md) above or next to one page per step with Back and Next buttons below. Next validates the page first, and on the last step it finishes the wizard.
 
@@ -15788,12 +15968,16 @@ export default function Custom() {
 | `isLast, isFinished` | read-only | Indicate whether the current step is the last reachable one (Next finishes), and whether the wizard has finished. |
 | `previousButton, nextButton` | read-only | The kit buttons in the bar, for a custom icon or appearance. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Accordion
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 An accordion expands and collapses sections under their headers. It supports one or several open sections, sections that stay open, icons, three appearances and sections that are created when first opened.
 
@@ -16087,12 +16271,16 @@ export default function VariantsAndSizes() {
 
 The accordion has no strings of its own, so it adds nothing to `uiLocale`.
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # MultiView
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Displays one page at a time from a horizontal set. Users move between pages with a swipe or drag, and you can navigate with `next()`, `previous()` and `goTo()`, or with [Tabs](tabs.md), a [Stepper](stepper.md) or buttons bound to the same value. It works like the panels of a tab control without the tab strip.
 
@@ -16293,12 +16481,16 @@ export default function Programmatic() {
 | `add(view), insert(index, view)` | `View` | Adds a view at the end or at an index. A view from another multi-view moves here. |
 | `remove(view)` | `boolean` | Removes a view and disposes it. The display moves to an adjacent view. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Window and dialog
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 A window or dialog built on the native `<dialog>` element. A single form can be shown as modeless or modal, depending on how you open it. It has a title bar, can be moved, resized, minimized and maximized, and Enter and Escape activate its buttons. Forms can open other forms, and `messageBox` and `confirm` cover common prompts.
 
@@ -16740,6 +16932,10 @@ export default function Localization() {
 | `messageBox(options)` | `Promise<FormResult>` | Shows a modal message: `title`, `text`, `buttons` (`ok`, `cancel`, `yes`, `no` or `{ text, result, tone }`), `tone` (`info`, `success`, `caution`, `danger`), `defaultButton` and `host`. |
 | `confirm(text, options?)` | `Promise<boolean>` | Shows OK and Cancel, and resolves to `true` for OK. |
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `JsxAndCode.tsx`
@@ -16858,7 +17054,7 @@ export default function DefaultButtons() {
 
 # BottomSheet
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 A panel that slides up from the bottom of the page or a container and stops at set heights: peek, half, full, the height of its content, or custom values. Users can drag it by its handle and title, flick it, and swipe down to close it. It can be modal or non-modal, and the back button closes it on phones.
 
@@ -17173,12 +17369,16 @@ export default function Localization() {
 
 Every prop is also a property that accepts a value or a function. The shared parts (the panel, scrim, modality, focus handling and back button) come from `OverlayPanel`, which `Drawer` and `ActionSheet` also use.
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Drawer
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 A panel that slides in from an edge of the page or a container, either over the content or pushing it aside. Users can swipe it in from the edge and back out, and Escape, the scrim and the browser's back action close it.
 
@@ -17406,12 +17606,16 @@ Its default name and the close button come from `uiLocale.strings` (`drawerLabel
 | `isOpen` | read-only, reactive | Indicates whether it is open. |
 | `onOpening / onOpened / onClosing / onClosed` | events | Same as on a bottom sheet. A swipe back closes it with `reason: 'swipe'`, and an edge swipe canceled by `onOpening` does not move it. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # ActionSheet
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 A list of commands that slides up from the bottom of the screen, built from the kit's menu items and sized for touch. It supports a title, a message and a separate Cancel button. A context menu uses it on touch screens.
 
@@ -17619,12 +17823,16 @@ Cancel, Back and the default name come from `uiLocale.strings` (`cancel`, `back`
 | `refresh()` | `void` | Your items can be plain or reactive, and the sheet reads them as they are. After changing them in place, call `refresh()`. The visible level updates. |
 | `ContextMenu presentation` | `Bind<'menu' \| 'sheet' \| 'auto'>` | On `ContextMenu`, the default is `'menu'`. `'sheet'` opens its items in an action sheet. `'auto'` does so when a finger opened the menu with a long press, or on a screen with only a coarse pointer unless a key opened it. `onOpening`, `onItemClick` and `onClosed` work the same way, and `actionSheet` is the sheet. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Layout
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Container controls for arranging other controls: `Stack` (a row or column), `Grid` (rows and columns), `Panel` (a plain box that can scroll), `GroupBox` (a titled frame), `DockPanel` (children docked to its edges) and `SplitContainer` (two panes with a splitter). All of them are controls, so they can disable and hide their content, and they lay out children added at any time.
 
@@ -18207,12 +18415,16 @@ Every container also has the properties shared by `Control`: `enabled` and `disa
 
 `ChildSettings`, which reads a child's settings from its props and tracks children added later, is exported for use in your own containers.
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Splitter
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Divides space into any number of resizable panes, arranged side by side or stacked. A handle between each pair of panes can be dragged or moved with the keyboard, and it resizes the two panes next to it. Panes can be collapsed from their handle and can contain another splitter. For two panes where one has a fixed size, see [SplitContainer](layout.md).
 
@@ -18415,12 +18627,16 @@ export default function Sizes() {
 | `remove(pane)` | `boolean` | Removes a pane and disposes it. |
 | `collapse(pane), expand(pane)` | `boolean` | Collapses or expands a pane, by index or object. `onCollapsing` is raised first. A pane's own `collapse()` and `expand()` do the same. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Resizable
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 A box that users can resize from its edges and corners with the pointer, or with the arrow keys on the grip in its end corner. It respects minimum and maximum sizes, can stay within an area, and can preserve its aspect ratio.
 
@@ -18558,12 +18774,16 @@ export default function Programmatic() {
 | `currentSize` | read-only | The current size in pixels. |
 | `gripElement` | read-only | The grip in the end corner, which is the Tab stop for keyboard resizing. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Draggable and DropTarget
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Makes any content movable with the pointer, touch or the arrow keys, optionally along one axis, inside a boundary, by a handle or as a copy. `DropTarget` defines areas that accept it. To reorder items in a list, see [Sortable](sortable.md).
 
@@ -18756,12 +18976,16 @@ export default function Programmatic() {
 | `isDragging` | read-only | Indicates that a drag is in progress. |
 | `handleElement` | read-only | The element that handles the pointer and keyboard: the handle, or the draggable itself. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # ScrollView
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 A scrollable container with configurable scrollbars, pull-to-refresh, and load-on-scroll near the end of the content. You can scroll it programmatically to a position or an element.
 
@@ -18945,12 +19169,16 @@ export default function More() {
 | `isRefreshing, isLoading` | read-only | Indicates that a refresh or a load is in progress. |
 | `content` | read-only | The element that holds the children, between the two panels. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # Sortable
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Lets users reorder items by dragging them with the pointer or a finger, or with the keyboard. Lists in the same group can exchange items. A drop moves the element and reports the indexes, while your data stays under your control.
 
@@ -19162,12 +19390,16 @@ export default function Handle() {
 | `isDragging` | read-only | Indicates that an item is being dragged. |
 | `refresh()` | `void` | Re-reads the items after they have been changed in place. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # FormLayout
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Arranges the fields of a data object on a grid. Each field gets an editor, chosen by name or by the type of its value, with two-way binding to the object. Groups, column spans and buttons organize the layout, and submitting the form validates every field first.
 
@@ -19284,12 +19516,16 @@ FormLayout.editors.set('color', (props) => new ColorPicker(props));
 | `validationGroup, isValid` | The validation group of the fields. |
 | `FormLayout.editors` | The editors registered by name. |
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # TreeView
 
-> Data · @motifx-community/ui 0.1.0-beta.3
+> Data · @motifx-community/ui 0.1.0-beta.4
 
 Displays items in a hierarchy. Rows can be expanded and collapsed, selected individually or in groups, and searched. Check boxes can roll up to parent rows, and children can load on demand when a row is first expanded. Large trees render only the visible rows.
 
@@ -19577,6 +19813,10 @@ export default function Localization() {
 | `onSelectionChanged(e)` | `{ value, items, byUser, source, event? }` |
 | `onCheckChanged(e)` | `{ item, key, state, keys, byUser, source }`. `item` is `null` when several rows changed at once. |
 | `onItemClick(e)` | Occurs when a row is clicked, or when Enter is pressed on it. `{ item, key, source, event }` |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -20056,7 +20296,7 @@ export default function SizesAndLines() {
 
 # ListBox
 
-> Data · @motifx-community/ui 0.1.0-beta.3
+> Data · @motifx-community/ui 0.1.0-beta.4
 
 A list displayed directly on the page. Users select one or more items with the keyboard or pointer. Items can come from memory or a data source, can be searched and grouped, and long lists render only the visible rows.
 
@@ -20309,6 +20549,10 @@ A prop that accepts a function as its value (`textField`, a template) uses the f
 | `onValueChanged(e)` | `{ value, previousValue, byUser, source, event? }` |
 | `onValidated(e)` | See TextBox. |
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `Programmatic.tsx`
@@ -20434,7 +20678,7 @@ export default function Validation() {
 
 # TagBox
 
-> Data · @motifx-community/ui 0.1.0-beta.3
+> Data · @motifx-community/ui 0.1.0-beta.4
 
 Selects multiple items. Selected items appear as tags in the field, followed by a text input that searches the list. Items can come from memory or from a data source, and typed text can become a custom tag.
 
@@ -20697,6 +20941,10 @@ export const skills = ['CSS', 'Go', 'HTML', 'Java', 'JavaScript', 'Kotlin', 'Pyt
 | `onClosed(reason)` | Occurs when the list closes. The reason is `'escape'`, `'outside'`, `'focus'` or `'code'`. |
 | `onValidated(e)` | See TextBox. |
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `Programmatic.tsx`
@@ -20799,7 +21047,7 @@ export default function Localization() {
 
 # FilterBuilder
 
-> Data · @motifx-community/ui 0.1.0-beta.3
+> Data · @motifx-community/ui 0.1.0-beta.4
 
 Lets users build a filter visually, using groups joined by And, Or, Not And or Not Or, and conditions made of a field, an operation and a value. Its value is a data layer filter expression, so it works directly with in-memory rows and every adapter. DataGrid opens it from the filter panel, and you can also use it on its own for reports or saved searches.
 
@@ -21187,6 +21435,10 @@ export const saleFields: FilterBuilderField[] = [
 | `onEditorPreparing(e)` | Occurs before a value editor is created: `{ field, operation, value, condition, part: 'value' \| 'from' \| 'to', options, editor, setValue }`. Change `e.options` (the kit editor props), set `e.editor` to a custom component that calls `e.setValue`, or set `e.cancel = true` for no editor. |
 | `onEditorPrepared(e)` | `{ field, operation, condition, part, editor }` |
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `Basic.tsx`
@@ -21404,7 +21656,7 @@ export default function Localization() {
 
 # TabDocumentManager
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 A document manager that arranges content the way code editors arrange files: documents in tabs, tabs in groups, and groups split side by side or one above the other. A document's content can be any component, such as a form, a grid or plain text, and it is moved rather than recreated when its tab goes to another group. Every user action is also a method, with a cancelable event before it and a notification after it, and the whole layout can be saved to JSON and restored. Preview and pinned tabs, sizes and copies are covered in [Tabs](tabdocs-tabs.md), and context menus, lists and keyboard shortcuts in [Menus and keys](tabdocs-menus.md).
 
@@ -21911,6 +22163,10 @@ All text comes from `uiLocale.strings` (`tabDocs…`: group and strip names, “
 | `onSplitting(e), onSplit(e)` | `{ group, direction, document, byUser }`, plus `newGroup` afterward. `splitting` is cancelable. `group` is `null` when the new group runs along an edge of the whole layout. |
 | `onLayoutChanging(e), onLayoutChanged(e)` | `{ change, group, byUser }`, where `change` is `'split'`, `'closeGroup'`, `'resize'`, `'evenSizes'`, `'maximize'`, `'restore'`, `'move'` (a whole group moved or merged) or `'load'`. `changing` is cancelable (a split uses `onSplitting`). |
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `Overview.tsx`
@@ -22296,7 +22552,7 @@ export default function SaveRestore() {
 
 # TabDocumentManager: Tabs
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 Tabs that behave as they do in code editors: preview tabs replaced by the next preview, pinned tabs that stay at the start, tabs that shrink, wrap or scroll, counts and colors, and the same document open in two groups.
 
@@ -22751,6 +23007,10 @@ docs.onClosing((e) => {
 
 See the [overview](tabdocs.md#api) for the rest of the API, and [Menus and keys](tabdocs-menus.md) for menus, lists and keys.
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `Preview.tsx`
@@ -23130,7 +23390,7 @@ export default function Duplicates() {
 
 # TabDocumentManager: Menus and keys
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 The commands around tabs: context menus on tabs and on the empty strip, a searchable list of a group's documents, application toolbar buttons, the recently used list, back and forward, reopening closed documents, locked groups, and keyboard shortcuts for all of them.
 
@@ -23469,6 +23729,10 @@ new TabDocumentManager({ keyPreset: 'desktop', keys: { closeTab: ['Ctrl+Q'] } })
 | `onLocking(e), onLocked(e), onUnlocking(e), onUnlocked(e)` | `{ group, byUser }`. The `…ing` events are cancelable. |
 
 See the [overview](tabdocs.md#api) for the rest of the API, and [Tabs](tabdocs-tabs.md) for preview and pinned tabs, sizes and copies.
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -23823,7 +24087,7 @@ export function customerCard(customer: Customer): ComponentBase {
 
 # TabDocumentManager: Drag and drop
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 Drag tabs and whole groups as you would in a code editor: along a strip, to another group, beside a group, along an edge of the layout, or between two managers. The same moves are available from the keyboard, and every drop goes through the methods and events of the action it performs.
 
@@ -24147,6 +24411,10 @@ docs.onDropping((e) => {
 
 See the [overview](tabdocs.md#api), [Tabs](tabdocs-tabs.md) and [Menus and keys](tabdocs-menus.md) for the rest of the API.
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `DragDrop.tsx`
@@ -24381,7 +24649,7 @@ export default function MoveWithKeys() {
 
 # TabDocumentManager: Dock and floating windows
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 Documents and whole groups can float in their own windows within the page, and dock again into document groups or into dock areas around them, which can collapse to the edge of the manager. The mouse, the keyboard and the API all perform the same actions through the same events.
 
@@ -24786,6 +25054,10 @@ docs.onWindowClosing((e) => {
 | `tabdocs.window, area, autohide, autohide-tab, autohide-indicator, guide, guide-icon` | Their units (a collapsed area: `folded`, `folded-left` …; a guide: `edge`, `pointed`). `floating-min-*`, `folded-tab-height`, `guide-room` and `guide-spacing` are sizes. |
 
 See the [overview](tabdocs.md#api), [Tabs](tabdocs-tabs.md), [Menus and keys](tabdocs-menus.md) and [Drag and drop](tabdocs-drag.md) for the rest of the API.
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -25262,7 +25534,7 @@ export function customerCard(customer: Customer): ComponentBase {
 
 # TabDocumentManager: New windows
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 A document, a group or a floating window can move into its own browser window and back. Its content moves with it without being recreated, and the new window is part of the same manager, so its tabs, menus, keys and dragging work the same way.
 
@@ -25672,6 +25944,10 @@ docs.onError((e) => {
 
 See the [overview](tabdocs.md#api), [Tabs](tabdocs-tabs.md), [Menus and keys](tabdocs-menus.md), [Drag and drop](tabdocs-drag.md) and [Dock and floating windows](tabdocs-dock.md) for the rest of the API.
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `NewWindow.tsx`
@@ -25923,7 +26199,7 @@ export default function WindowLayout() {
 
 # TabDocumentManager: Tablet and phone
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 On tablets and phones, a layout of groups, splits and dock areas does not fit as designed. The manager keeps the layout and changes how it is presented: the documents, groups, areas and saved JSON stay the same, and content is moved rather than recreated. The presentation depends on the manager's own width rather than the device, and on touch screens its tabs and buttons are larger.
 
@@ -26199,12 +26475,16 @@ Android's Back button and the browser's back gesture use the session history. Ea
 
 The drawers and sheets are the kit's [Drawer](drawer.md) and [BottomSheet](bottomsheet.md), and the action sheet is its [ActionSheet](actionsheet.md).
 
+## Feedback
+
+Loading issues…
+
 
 ---
 
 # TabDocumentManager: A whole workspace
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 A complete screen built from kit components: a menu bar, the manager, a DataGrid with every feature enabled, forms, and a tool docked at the bottom. Each part is the same component documented on its own page, and the manager simply hosts them.
 
@@ -26301,6 +26581,10 @@ export function customerCard(customer: Customer): ComponentBase {
   );
 }
 ```
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -26617,7 +26901,7 @@ export function customerCard(customer: Customer): ComponentBase {
 
 # Scheduler
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 A full-featured calendar for appointments across days and hours. It provides day, week, work week and month views, all-day and multi-day bars, side-by-side display of overlapping appointments, and a "+N more" link when a day is full. Appointments can come from an array or a data source, and every setting can change at runtime.
 
@@ -27009,6 +27293,10 @@ Dates and times come from `Intl` using `locale` (12 or 24-hour clock, first day 
 | `onContentReady` | `{ range, appointments }`: after a load, a new date or view, or new data. |
 | `onMoreOpening` | `{ date, appointments, cancel }`: "+N more" was clicked. Cancel to display the day yourself. |
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `Basics.tsx`
@@ -27213,9 +27501,9 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 
 # Scheduler: Editing
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
-Users can add, move, resize, copy and delete appointments with the pointer and the keyboard, and you can do the same in code. Every change raises its event first, can wait for a server, and is reverted if saving fails.
+Users can add, move, resize, copy and delete appointments with the pointer and the keyboard, and you can do the same programmatically. Every change raises its event first, can wait for a server, and is reverted if saving fails.
 
 ## Drag, resize and edit
 
@@ -27516,7 +27804,7 @@ export default function EditProgrammatically() {
 | --- | --- |
 | `addAppointment(values)` | Adds an appointment to the source (the array or, through the data source, the server) and resolves to it. |
 | `updateAppointment(appointment, changes)` | Changes its fields. Resolves to `false` if an event canceled it or saving failed. |
-| `deleteAppointment(appointment)` | Deletes it. There is no confirmation when called from code. |
+| `deleteAppointment(appointment)` | Deletes it. There is no confirmation when called programmatically. |
 | `showAppointmentForm(appointment?, cell?)` | Opens the form for an appointment, or for a new one at `cell` (the selection by default). |
 | `showTooltip(appointment, anchor?) / hideTooltip()` | Controls its tooltip. |
 
@@ -27531,6 +27819,10 @@ export default function EditProgrammatically() {
 | `onMoveStart / onMoving / onMoveEnd` | `{ appointment, start, end, allDay, copy, byKeys, cancel }`. Canceling `moving` marks a position as invalid. |
 | `onResizeStart / onResizing / onResizeEnd` | The same, for resizing. |
 | `onDataError` | `{ operation, appointment, error }`: saving failed, and the appointment reverted. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -27762,7 +28054,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 
 # Scheduler: Recurrence and time zones
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Recurring appointments based on RFC 5545 rules, with exceptions and individually edited occurrences, a prompt that asks what a change should apply to, a recurrence editor, and time zone support that handles daylight saving time.
 
@@ -27960,7 +28252,7 @@ export default function TimeZones() {
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `timeZone` | `Bind<string \| null>` | `null` uses the browser time zone | The time zone for days and hours, as an IANA name (`Europe/Istanbul`). Conversion uses `Intl` only. |
-| `seriesEdit` | `Bind<'ask' \\| 'occurrence' \\| 'following' \\| 'series'>` | `'ask'` | What changing or deleting an occurrence applies to. `ask` prompts the user. In code, it applies to the occurrence unless the call specifies otherwise. |
+| `seriesEdit` | `Bind<'ask' \\| 'occurrence' \\| 'following' \\| 'series'>` | `'ask'` | What changing or deleting an occurrence applies to. `ask` prompts the user. Programmatically, it applies to the occurrence unless the call specifies otherwise. |
 | `recurrenceMarks` | `Bind<boolean>` | `true` | The indicators of an occurrence and of an individually edited one, where the design language draws them. |
 | `editing.allowRecurrence` | `boolean` | `true` | Includes the recurrence editor in the form. |
 | `editing.allowTimeZones` | `boolean` | `false` | Includes a time zone picker and a "Separate end time zone" check box in the form (`separateEndZone` in the form `data` and `items`), which shows a picker for the end. When unchecked, the end follows the start zone. It is not available for all-day appointments. |
@@ -28014,6 +28306,10 @@ export default function TimeZones() {
 | `describeRecurrence(rule, start, options)` | Describes a rule in plain words. |
 | `readRuleDates, addRuleDate, filterRuleDates, parseRuleDate, formatRuleDate` | Exception dates as stored in the field. |
 | `rangeFilter(range, fields)` | The data layer filter for a range: it starts before the range ends and either ends at or after the range starts or has a rule. The scheduler's `remoteFiltering` uses it. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -28186,7 +28482,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 
 # Scheduler: Resources and groups
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Resources such as rooms, people and equipment can color appointments, divide columns into groups (nested or under each date), and define when each resource is available and when time is blocked.
 
@@ -28570,6 +28866,10 @@ source.setFilter(rangeFilter(scheduler.visibleRange, scheduler.fields, { resourc
 | `onAppointmentClick / DblClick` | `group` provides the resource values of the clicked group. |
 | `onCellClick / DblClick` | `cell.resources` provides the group of the cell, and a new appointment there receives these values. |
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `Resources.tsx`
@@ -28892,7 +29192,7 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 
 # Scheduler: The appointment form
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Configure the appointment form without handling events. You can choose its fields and their order, arrange them in groups and tabs, use custom editors, add validation per field, and show or lock fields for specific appointments. You can also replace the form with your own.
 
@@ -29234,6 +29534,10 @@ export function bookings(): Booking[] {
 | `FormItem.template(context)` | Receives `{ data, field, validationGroup }`. |
 | `editor: 'tagbox'` | A tag box specified by name. |
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `DeclaredForm.tsx`
@@ -29527,7 +29831,7 @@ export default function OwnForm() {
 
 # Scheduler: Timeline
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Displays one row per resource, with time running along the row, for a day, a week, a work week or a month. Appointments at the same time stack within a row, and the row grows to fit them.
 
@@ -29908,6 +30212,10 @@ export function jobs(): Job[] {
 | `scrollToTime(hour, minute?)` | In a timeline, scrolls along to that time on the displayed date, or on the first day if none is given. |
 | `scrollTo(date, resources?)` | Scrolls a time into view: its cell along the time and the row of `resources` (the group's values). In the day views, this is its hour and column. |
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `Timeline.tsx`
@@ -30163,7 +30471,7 @@ export default function TimelineTemplates() {
 
 # Scheduler: Agenda
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Displays upcoming days as a list, with each day's appointments in time order. Days without appointments are omitted.
 
@@ -30476,6 +30784,10 @@ export function jobs(): Job[] {
 | `appointmentTooltipTemplate` | `Bind<((context: TooltipTemplateContext) => Component) \\| null>` | `null` | The tooltip's content, in every view. |
 | `texts.schedulerNoAppointments` | `string` | "No appointments" | The message shown when the displayed days have no appointments (`uiLocale`). |
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `Agenda.tsx`
@@ -30764,7 +31076,7 @@ export default function AgendaTemplates() {
 
 # Scheduler: Big data
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Handles thousands of resources and appointments. The scheduler renders only what is visible, and recalculates the layout only for what has changed.
 
@@ -30882,6 +31194,10 @@ export function tasks(count: number, resources: number, day = new Date()): Task[
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `scrolling` | `Bind<'auto' \| 'standard' \| 'virtual'>` | `'auto'` | `'standard'` renders every row and cell, and `'virtual'` renders only the visible ones. `'auto'` switches to virtual above about 2,000 cells (rows × cells along the time, or columns × time rows). A view's own value takes precedence. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -31021,7 +31337,7 @@ export default function BigWeek() {
 
 # Scheduler: Tablet and phone
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 On tablets and phones, the scheduler keeps its appointments, views and date, and changes how it presents them. On a phone, it shows the agenda, a compact toolbar and bottom sheets. Touch gestures can lift and resize appointments, swipe between days, and pinch to zoom.
 
@@ -31441,6 +31757,10 @@ export function sampleAppointments(): Meeting[] {
 
 The sheets are the kit's [BottomSheet](bottomsheet.md) and [ActionSheet](actionsheet.md).
 
+## Feedback
+
+Loading issues…
+
 ## Example files
 
 `Presentations.tsx`
@@ -31689,7 +32009,7 @@ export default function Touch() {
 
 # Scheduler: iCalendar and print
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Exports appointments to an iCalendar file (RFC 5545) and imports them back, for use with other calendar applications. The scheduler can also be printed.
 
@@ -31784,7 +32104,7 @@ const date = (offset: number) => {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
 };
 
-/** A zone with its Windows name and VTIMEZONE, a weekly series with one excluded day, an all-day event, and folded, escaped text. */
+/** A typical calendar export: a zone with its Windows name and VTIMEZONE, a weekly series with one excluded day, an all-day event, and folded, escaped text. */
 const FILE = [
   'BEGIN:VCALENDAR',
   'VERSION:2.0',
@@ -32024,6 +32344,10 @@ The reader and writer have no DOM dependency and can be used without a scheduler
 | `writeICalendar(options)` | `string` | `{ events, name, prodId, method, timeZones, stamp }`. |
 | `timeZoneLines(zone, fromYear, toYear)` | `string[]` | Returns the VTIMEZONE of an IANA zone, using `Intl`. |
 | `icalendarMoment(date, zones, fallback)` | `number` | Returns the moment a date in a file refers to: in UTC, an IANA zone, the file's VTIMEZONE, or otherwise `fallback`. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -32284,7 +32608,7 @@ export function sampleAppointments(): Meeting[] {
 
 # DataGrid
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 A grid for data entry and large data sets. Rows can be in memory or come from any data layer adapter, and can be displayed in a virtual list or in pages. It supports sorting, column layout, editing with kit editors, new rows with Tab navigation, three save modes, row actions, selection, filters, a search panel, grouping, summaries, a toolbar, lookup columns from other services, copy and paste, export, and a persistent layout. Every feature can be disabled for the grid or for a single column.
 
@@ -32376,6 +32700,10 @@ export interface Order {
   note: string;
 }
 ```
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -32650,7 +32978,7 @@ export default function Pager() {
 
 # DataGrid: Editing
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Editing and save modes
 
@@ -32787,6 +33115,10 @@ export interface Order {
 | `actionTargets` | `T[]`, reactive | The rows the bars currently act on. Empty for a selection that is not loaded. |
 | `barActions` | `GridBarAction[]`, reactive | The actions the toolbar and the bottom bar currently show: `{ action, location, text, count, disabled, rows }`. |
 | `stopAction()` | `void` | Stops the action running on several rows, as its Stop button does. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -33191,7 +33523,7 @@ export default function BarActions() {
 
 # DataGrid: Edit forms and popups
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Edit forms and popups
 
@@ -33316,6 +33648,10 @@ Every rule accepts a `message` (`Bind<string>`). Without it, the text comes from
 | `cancelEditData()` | `void` | Discards the current edit, as Cancel does, and in batch mode every unsaved change. |
 | `closeEditCell()` | `boolean` | Keeps the open editor's value and closes it. In a form, it keeps every field's value. |
 | `form, popup` | read/write, live | `grid.form.colCount = 3`, `grid.popup.width = '40rem'`. A function is tracked, and `onOptionChanged` reports `form.colCount`, `popup.width` and so on. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -33597,7 +33933,7 @@ export default function ValidationRules() {
 
 # DataGrid: Filtering and search
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Filters
 
@@ -33699,6 +34035,10 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
   }
 }
 ```
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -34056,7 +34396,7 @@ export function makeCustomers(n: number): Customer[] {
 
 # DataGrid: Lookup columns
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Lookup columns
 
@@ -34151,6 +34491,10 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 | `pageSize` | The number of items the editor's list loads per request while scrolling (with a data source). The default is 50. |
 | `parallelRequests` | With `'byKey'`, the number of simultaneous requests. The default is 6. |
 | `pasteSearchLimit` | The number of items searched for pasted text. The default is 50. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -34423,7 +34767,7 @@ export default function TextFrom() {
 
 # DataGrid: Grouping and summaries
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Grouping
 
@@ -34523,6 +34867,10 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 | `skipEmptyValues` | Excludes empty values for this item. The default is `summary.skipEmptyValues`. |
 | `visible` | Whether the item appears. The default is the `totalSummary` (`groupSummary`) setting. |
 | `showInGroupFooter, alignByColumn` | For group items: places them in the group footer, or under their column in the group row, except under the first column, which holds the text. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -34846,7 +35194,7 @@ export default function SummariesServer() {
 
 # DataGrid: Master-detail
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Master-detail
 
@@ -34947,6 +35295,10 @@ The arrow is a button with `aria-expanded` and `aria-controls`, and the row also
 | `expandAllRows() / collapseAllRows()` | `void` | Opens or closes every row's details at once, without row events (as `expandAll()` does for groups). |
 | `masterDetail` | read/write, live | `grid.masterDetail.enabled = true`. A function is tracked reactively. |
 | `getVisibleRows()` | `GridVisibleRow[]` | A row's details are listed directly after it, with `rowType: 'detail'` and with its index and key. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -35176,7 +35528,7 @@ export default function DetailTabs() {
 
 # DataGrid: Bands and adaptive columns
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Band headers
 
@@ -35274,6 +35626,10 @@ The detail is a separate row directly after its row, before the row's master-det
 | `adaptiveHiddenColumns` | `string[]`, reactive | The columns currently hidden by width, in display order. |
 | `adaptiveDetail` | read/write, live | `grid.adaptiveDetail.colCount = 1`. `onOptionChanged` reports `adaptiveDetail.colCount`. |
 | `getVisibleRows()` | `GridVisibleRow[]` | The open detail directly after its row, with `rowType: 'detailAdaptive'`, before the row's master-detail. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -35497,7 +35853,7 @@ export default function AdaptiveColumns() {
 
 # DataGrid: Selection and export
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Selection
 
@@ -35635,6 +35991,10 @@ The built-in jsPDF fonts (Helvetica, Times, Courier) support Latin-1 only. Turki
 | `loadPanel` | On | The panel over the rows while they load, with the progress and a Stop button: `true` / `false`, or `{ enabled, text, showProgress, cancelButton }`. |
 | `headers, groups, summaries` | `true` | The header rows, one row per group, group summary items, footers and totals. |
 | `pageSize, onProgress, signal` | The `exportPageSize` setting | The rows per request to a server, a callback after each part, and a signal that stops the export (the promise rejects with an `AbortError`, and nothing is drawn). |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -36100,7 +36460,7 @@ export default function PdfExport() {
 
 # DataGrid: Row drag and drop
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Reorder rows
 
@@ -36214,6 +36574,10 @@ export interface Task {
 | --- | --- |
 | `Ctrl+Shift+Up / Ctrl+Shift+Down on a row (`moveUpKeys`, `moveDownKeys`)` | Moves the active row one position up or down (`allowReordering`). The row stays active, and the move is announced (“Row moved to position 3 of 20”). |
 | `Escape while dragging` | Cancels the drag, and nothing is dropped. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -36445,7 +36809,7 @@ export default function RowDragBetween() {
 
 # DataGrid: Selecting by dragging
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Rows
 
@@ -36608,6 +36972,10 @@ With `cellSelection` on, the grid is `aria-multiselectable` and every selectable
 | `datagrid.range-border-color, range-border-width` | The frame around a range. |
 | `datagrid.range-anchor-fill` | The cell the last range started on (the design language's surface). |
 | `datagrid.row-run-border-color, row-run-border-width` | The frame around the rows a drag selects, shown during the drag. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -36775,7 +37143,7 @@ export default function CellRanges() {
 
 # DataGrid: Scrolling
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Scrolling modes
 
@@ -36939,6 +37307,10 @@ export default function VirtualColumns() {
 | `Ctrl+End` | In infinite mode, moves to the last displayed row, and the next page loads. |
 | `Down, Page Down on the last rows` | In infinite mode, the view nears the end and the next page loads. |
 | `Home, End, Tab, Left / Right` | With virtual columns, moves into a column without cells, which is rendered and scrolled into view. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -37127,7 +37499,7 @@ export default function InfiniteGroups() {
 
 # DataGrid: Layout and events
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Toolbar
 
@@ -37342,6 +37714,10 @@ export interface Order {
 | `onContextMenuPreparing` | `{ target, field, row?, rowIndex, items }` | yes | Occurs before a header's column menu (`header`) or a row's menu (`row`: a right-click or the Menu key) opens. `items` holds the row's actions, and the menu opens only if it has items. Change `items`. |
 | `onActionRunning / onActionRan` | `{ action, rows, selection, location }` / `{ action, rows, location, done, failed, canceled, errors }` | yes / — | Occur before and after an action runs. See [Row actions](datagrid-editing.md#actions). |
 | `onToolbarPreparing` | `{ items }` |  | Occurs when the toolbar is laid out. Change the list of items it uses. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
@@ -37671,7 +38047,7 @@ export default function Events() {
 
 # DataGrid: API reference
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Columns
 
@@ -37849,7 +38225,7 @@ export interface Order {
 | `label` | `Bind<string>` | `uiLocale` “Data grid” | The accessible name. This is the same as `text`. |
 | `texts / locale` | `Bind<Partial<UiStrings>>` / `Bind<string>` | — / page language | Strings for this grid only, and the locale of numbers, dates and sorting. |
 | `rowHeight` | `Bind<number>` | from CSS | A fixed row height. By default, the density determines it. |
-| `actions` | `GridActionItem[] \| (row, state) => GridActionItem[]` | — | The buttons of each row: actions, or the names of built-in ones (`edit`, `remove`, `restore`, `save`, `cancel`). A function is called per row, again when the row's state changes (edited, saved or deleted), and on `refreshActions()` or `repaintRows(keys)`. |
+| `actions` | `GridActionItem[] \| (row, state) => GridActionItem[]` | — | The buttons of each row: actions, or the names of built-in ones (`edit`, `remove`, `restore`, `save`, `cancel`). A function is called per row, again when the row's state changes (edited, saved, selected or deleted), and on `refreshActions()` or `repaintRows(keys)`. |
 | `selectedKeys / onSelectionChanged` | `Bind<unknown[]>` / `(e) => void` | — | The keys of the selected rows (a function is tracked), reported after every selection change (`e.byDrag` when rows are selected by dragging). |
 | `cellRanges / onCellSelectionChanging / onCellSelectionChanged` | `Bind<GridCellRange[]>` / `(e) => void` | — | The cell ranges (`settings.cellSelection`, and a function is tracked), with an event before a change (`e.cancel`) and after it (`e.byDrag` while one is drawn). See [Selecting by dragging](datagrid-drag-select.md#cells). |
 | `filters` | `GridFilters` | — | The initial filters, by field: `{ city: { op: '=', value: 'Ankara' }, status: { values: ['Draft'] } }`. |
@@ -37970,6 +38346,10 @@ export interface Order {
 | `state() / state(value)` | `GridStateValue` / `void` | Saves and restores what the user set up: columns, sort, grouping, filters, search text, page and page size, selected keys, and the active row. |
 
 The rows and their saving belong to the data layer. `grid.dataSource` and `grid.changeTracker` are a `DataSource` and a `ChangeTracker` from `@motifx-community/data`, with their own events (`onChanged`). `changeTracker.removeRows(rows)` and `removeKeys(keys)` delete several rows in one save, as `deleteRows` does.
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

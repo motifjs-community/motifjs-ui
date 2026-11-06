@@ -1,6 +1,6 @@
 # MultiView
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Displays one page at a time from a horizontal set. Users move between pages with a swipe or drag, and you can navigate with `next()`, `previous()` and `goTo()`, or with [Tabs](tabs.md), a [Stepper](stepper.md) or buttons bound to the same value. It works like the panels of a tab control without the tab strip.
 
@@ -200,3 +200,7 @@ export default function Programmatic() {
 | `goTo(view)` | `Promise<boolean>` | Moves to a view by index, key or `View` object. `onSelecting` is raised first. A view's own `select()` does the same. |
 | `add(view), insert(index, view)` | `View` | Adds a view at the end or at an index. A view from another multi-view moves here. |
 | `remove(view)` | `boolean` | Removes a view and disposes it. The display moves to an adjacent view. |
+
+## Feedback
+
+Loading issues…

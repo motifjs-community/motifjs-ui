@@ -1,6 +1,6 @@
 # Avatar and AvatarGroup
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 Represents a person with a picture, initials or an icon, with an optional presence indicator on its corner. A group stacks or spreads avatars and counts the ones it does not show.
 
@@ -236,3 +236,7 @@ Initials use the capitalization rules of the kit language (`uiLocale`), so “il
 | Function | Returns | Description |
 | --- | --- | --- |
 | `initialsOf(name, locale)` | `string` | Creates initials from a name: the first letters of the first and last words, using the capitalization rules of the language. |
+
+## Feedback
+
+Loading issues…

@@ -1,6 +1,6 @@
 # Gallery
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 Displays a horizontal set of slides, one or several at a time. Users navigate with the side buttons, the indicator dots, swipe gestures or the arrow keys, and it can run as an automatic slideshow. A slide can be an image with a caption or any other content.
 
@@ -242,3 +242,7 @@ export default function Programmatic() {
 | `goTo(pane)` | `Promise<boolean>` | Moves to a slide by index or key. `onSlideChanging` is raised first. |
 | `play(), pause()` | `void` | Starts the slideshow again, or stops it until `play()` is called. The button in the bar does the same. |
 | `refresh()` | `void` | Re-reads the items after they have been changed in place. |
+
+## Feedback
+
+Loading issues…

@@ -1,6 +1,6 @@
 # DataGrid: Lookup columns
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Lookup columns
 
@@ -95,6 +95,10 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 | `pageSize` | The number of items the editor's list loads per request while scrolling (with a data source). The default is 50. |
 | `parallelRequests` | With `'byKey'`, the number of simultaneous requests. The default is 6. |
 | `pasteSearchLimit` | The number of items searched for pasted text. The default is 50. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

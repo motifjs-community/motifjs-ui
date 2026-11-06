@@ -1,6 +1,6 @@
 # DataGrid: Grouping and summaries
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Grouping
 
@@ -100,6 +100,10 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 | `skipEmptyValues` | Excludes empty values for this item. The default is `summary.skipEmptyValues`. |
 | `visible` | Whether the item appears. The default is the `totalSummary` (`groupSummary`) setting. |
 | `showInGroupFooter, alignByColumn` | For group items: places them in the group footer, or under their column in the group row, except under the first column, which holds the text. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

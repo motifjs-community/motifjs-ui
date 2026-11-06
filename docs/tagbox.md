@@ -1,6 +1,6 @@
 # TagBox
 
-> Data · @motifx-community/ui 0.1.0-beta.3
+> Data · @motifx-community/ui 0.1.0-beta.4
 
 Selects multiple items. Selected items appear as tags in the field, followed by a text input that searches the list. Items can come from memory or from a data source, and typed text can become a custom tag.
 
@@ -262,6 +262,10 @@ export const skills = ['CSS', 'Go', 'HTML', 'Java', 'JavaScript', 'Kotlin', 'Pyt
 | `onOpened()` | Occurs when the list opens. |
 | `onClosed(reason)` | Occurs when the list closes. The reason is `'escape'`, `'outside'`, `'focus'` or `'code'`. |
 | `onValidated(e)` | See TextBox. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

@@ -1,6 +1,6 @@
 # Draggable and DropTarget
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Makes any content movable with the pointer, touch or the arrow keys, optionally along one axis, inside a boundary, by a handle or as a copy. `DropTarget` defines areas that accept it. To reorder items in a list, see [Sortable](sortable.md).
 
@@ -192,3 +192,7 @@ export default function Programmatic() {
 | `currentPosition` | read-only | The current position. |
 | `isDragging` | read-only | Indicates that a drag is in progress. |
 | `handleElement` | read-only | The element that handles the pointer and keyboard: the handle, or the draggable itself. |
+
+## Feedback
+
+Loading issues…

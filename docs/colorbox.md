@@ -1,6 +1,6 @@
 # ColorBox and ColorPicker
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A color field with a popup picker, or the picker on its own. The picker has a saturation and brightness area, a hue slider, an opacity slider, channel inputs and preset colors.
 
@@ -151,3 +151,7 @@ export default function Buttons() {
 | --- | --- | --- |
 | `parseColor(text)` | `ColorRgba \| null` | Parses `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb(…)` and `rgba(…)`. |
 | `formatColor(rgba)` | `string` | Returns `#rrggbb`, or `#rrggbbaa` when the color is not opaque. |
+
+## Feedback
+
+Loading issues…

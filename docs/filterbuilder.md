@@ -1,6 +1,6 @@
 # FilterBuilder
 
-> Data · @motifx-community/ui 0.1.0-beta.3
+> Data · @motifx-community/ui 0.1.0-beta.4
 
 Lets users build a filter visually, using groups joined by And, Or, Not And or Not Or, and conditions made of a field, an operation and a value. Its value is a data layer filter expression, so it works directly with in-memory rows and every adapter. DataGrid opens it from the filter panel, and you can also use it on its own for reports or saved searches.
 
@@ -387,6 +387,10 @@ export const saleFields: FilterBuilderField[] = [
 | `onItemChanging(e), onItemChanged(e)` | `{ item, change: 'field' \| 'operation' \| 'value' \| 'groupOperation', value, previousValue, byUser, source }`. Change `e.value`, or set `e.cancel = true`. |
 | `onEditorPreparing(e)` | Occurs before a value editor is created: `{ field, operation, value, condition, part: 'value' \| 'from' \| 'to', options, editor, setValue }`. Change `e.options` (the kit editor props), set `e.editor` to a custom component that calls `e.setValue`, or set `e.cancel = true` for no editor. |
 | `onEditorPrepared(e)` | `{ field, operation, condition, part, editor }` |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

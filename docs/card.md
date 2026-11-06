@@ -1,6 +1,6 @@
 # Card
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 A surface for a single subject, with an optional image, a header with an avatar and titles, content and a row of actions. Empty parts are not rendered.
 
@@ -252,3 +252,7 @@ export default function Sizes() {
 | `every prop above` | read/write | Accepts a value or a function, the same as the prop. |
 | `contentPart` | read-only | The part that holds the content, for adding to it programmatically. |
 | `avatarControl` | read-only | The avatar before the titles, if there is one. |
+
+## Feedback
+
+Loading issues…

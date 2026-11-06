@@ -1,6 +1,6 @@
 # DataGrid: Filtering and search
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Filters
 
@@ -102,6 +102,10 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
   }
 }
 ```
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

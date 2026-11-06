@@ -1,6 +1,6 @@
 # SpeedDial
 
-> Buttons · @motifx-community/ui 0.1.0-beta.3
+> Buttons · @motifx-community/ui 0.1.0-beta.4
 
 A floating action button that opens a set of related actions. Place it in a corner, on an edge or inline. Actions appear in a line with labels, or on a full, half or quarter circle around the button with tooltips. If there is only one action, the main button performs it directly.
 
@@ -288,3 +288,7 @@ export default function Single() {
 | `mainElement` | read-only | The main button. |
 | `show(), close(), toggle()` | `void` | Opens or closes the actions. |
 | `refresh()` | `void` | Re-reads the actions after they have been changed in place. |
+
+## Feedback
+
+Loading issues…

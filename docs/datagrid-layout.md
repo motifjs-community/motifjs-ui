@@ -1,6 +1,6 @@
 # DataGrid: Layout and events
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Toolbar
 
@@ -215,6 +215,10 @@ export interface Order {
 | `onContextMenuPreparing` | `{ target, field, row?, rowIndex, items }` | yes | Occurs before a header's column menu (`header`) or a row's menu (`row`: a right-click or the Menu key) opens. `items` holds the row's actions, and the menu opens only if it has items. Change `items`. |
 | `onActionRunning / onActionRan` | `{ action, rows, selection, location }` / `{ action, rows, location, done, failed, canceled, errors }` | yes / — | Occur before and after an action runs. See [Row actions](datagrid-editing.md#actions). |
 | `onToolbarPreparing` | `{ items }` |  | Occurs when the toolbar is laid out. Change the list of items it uses. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

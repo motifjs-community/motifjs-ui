@@ -1,6 +1,6 @@
 # TextArea
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A multi-line text input. The box can grow with its content or be resized by the user, and it supports a character counter, a clear button and Ctrl+Enter to submit, along with the label, help text and validation common to all fields.
 
@@ -303,3 +303,7 @@ TextArea uses the field tokens (`field.*`, see TextBox) and has none of its own,
 | `onValidated(e)` | Occurs when validation finishes. `e`: `{ valid, message, source }`. |
 | `onEnter(e)` | Occurs when the user presses Ctrl+Enter (Cmd+Enter). `e`: `{ value, source, event }`. |
 | `oninput, onchange, onkeydown, onfocusin, onfocusout` | DOM events from the textarea bubble up to the field. |
+
+## Feedback
+
+Loading issues…

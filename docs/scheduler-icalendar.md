@@ -1,6 +1,6 @@
 # Scheduler: iCalendar and print
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Exports appointments to an iCalendar file (RFC 5545) and imports them back, for use with other calendar applications. The scheduler can also be printed.
 
@@ -95,7 +95,7 @@ const date = (offset: number) => {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
 };
 
-/** A zone with its Windows name and VTIMEZONE, a weekly series with one excluded day, an all-day event, and folded, escaped text. */
+/** A typical calendar export: a zone with its Windows name and VTIMEZONE, a weekly series with one excluded day, an all-day event, and folded, escaped text. */
 const FILE = [
   'BEGIN:VCALENDAR',
   'VERSION:2.0',
@@ -335,6 +335,10 @@ The reader and writer have no DOM dependency and can be used without a scheduler
 | `writeICalendar(options)` | `string` | `{ events, name, prodId, method, timeZones, stamp }`. |
 | `timeZoneLines(zone, fromYear, toYear)` | `string[]` | Returns the VTIMEZONE of an IANA zone, using `Intl`. |
 | `icalendarMoment(date, zones, fallback)` | `number` | Returns the moment a date in a file refers to: in UTC, an IANA zone, the file's VTIMEZONE, or otherwise `fallback`. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

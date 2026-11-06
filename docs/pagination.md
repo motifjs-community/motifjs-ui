@@ -1,6 +1,6 @@
 # Pagination
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Navigates through pages of items, with page size options, the current position, navigation buttons and a button for each nearby page. It switches to a compact layout when it does not fit, and it looks and works like the DataGrid pager.
 
@@ -113,3 +113,7 @@ export default function Looks() {
 | `goTo(page)` | method | Goes to a page, starting from 1, as a click would. |
 | `pageCount` | Read-only | The current number of pages. |
 | `compact` | read-only | Indicates whether the compact layout is currently shown. |
+
+## Feedback
+
+Loading issues…

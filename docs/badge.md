@@ -1,6 +1,6 @@
 # Badge
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 A short text, count or dot, shown inline or on the corner of a button, avatar or icon. A count above its maximum displays as “99+”, and a count of zero is hidden.
 
@@ -191,3 +191,7 @@ A count is formatted in the kit language (`uiLocale`) and updates when the langu
 | Method | Returns | Description |
 | --- | --- | --- |
 | `Badge.attach(target, props?)` | `Badge` | Places a badge on a corner of a component (`top-end` unless `props` specifies otherwise). The badge becomes a child of the component and is disposed with it. |
+
+## Feedback
+
+Loading issues…

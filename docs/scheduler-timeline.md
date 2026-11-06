@@ -1,6 +1,6 @@
 # Scheduler: Timeline
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Displays one row per resource, with time running along the row, for a day, a week, a work week or a month. Appointments at the same time stack within a row, and the row grows to fit them.
 
@@ -380,6 +380,10 @@ export function jobs(): Job[] {
 | --- | --- |
 | `scrollToTime(hour, minute?)` | In a timeline, scrolls along to that time on the displayed date, or on the first day if none is given. |
 | `scrollTo(date, resources?)` | Scrolls a time into view: its cell along the time and the row of `resources` (the group's values). In the day views, this is its hour and column. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

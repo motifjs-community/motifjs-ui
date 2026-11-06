@@ -1,6 +1,6 @@
 # Scheduler: Resources and groups
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Resources such as rooms, people and equipment can color appointments, divide columns into groups (nested or under each date), and define when each resource is available and when time is blocked.
 
@@ -383,6 +383,10 @@ source.setFilter(rangeFilter(scheduler.visibleRange, scheduler.fields, { resourc
 | `onMoveStart / onMoveEnd …` | This also includes `resources`. |
 | `onAppointmentClick / DblClick` | `group` provides the resource values of the clicked group. |
 | `onCellClick / DblClick` | `cell.resources` provides the group of the cell, and a new appointment there receives these values. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

@@ -1,6 +1,6 @@
 # ListBox
 
-> Data · @motifx-community/ui 0.1.0-beta.3
+> Data · @motifx-community/ui 0.1.0-beta.4
 
 A list displayed directly on the page. Users select one or more items with the keyboard or pointer. Items can come from memory or a data source, can be searched and grouped, and long lists render only the visible rows.
 
@@ -252,6 +252,10 @@ A prop that accepts a function as its value (`textField`, a template) uses the f
 | --- | --- |
 | `onValueChanged(e)` | `{ value, previousValue, byUser, source, event? }` |
 | `onValidated(e)` | See TextBox. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

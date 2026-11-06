@@ -1,6 +1,6 @@
 # DataGrid: Bands and adaptive columns
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Band headers
 
@@ -98,6 +98,10 @@ The detail is a separate row directly after its row, before the row's master-det
 | `adaptiveHiddenColumns` | `string[]`, reactive | The columns currently hidden by width, in display order. |
 | `adaptiveDetail` | read/write, live | `grid.adaptiveDetail.colCount = 1`. `onOptionChanged` reports `adaptiveDetail.colCount`. |
 | `getVisibleRows()` | `GridVisibleRow[]` | The open detail directly after its row, with `rowType: 'detailAdaptive'`, before the row's master-detail. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

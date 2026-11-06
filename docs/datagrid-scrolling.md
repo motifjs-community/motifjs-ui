@@ -1,6 +1,6 @@
 # DataGrid: Scrolling
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Scrolling modes
 
@@ -164,6 +164,10 @@ export default function VirtualColumns() {
 | `Ctrl+End` | In infinite mode, moves to the last displayed row, and the next page loads. |
 | `Down, Page Down on the last rows` | In infinite mode, the view nears the end and the next page loads. |
 | `Home, End, Tab, Left / Right` | With virtual columns, moves into a column without cells, which is rendered and scrolled into view. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

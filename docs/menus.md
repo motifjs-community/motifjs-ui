@@ -1,6 +1,6 @@
 # MenuBar and ContextMenu
 
-> Buttons · @motifx-community/ui 0.1.0-beta.3
+> Buttons · @motifx-community/ui 0.1.0-beta.4
 
 An application menu bar (File, Edit, View) and a context menu that opens on right-click. Both use the same menu items, which support submenus, check and radio items, shortcuts and access keys.
 
@@ -310,3 +310,7 @@ Menus have no strings of their own. Every label, shortcut and name comes from yo
 | `onItemClick(e)` | On both components, occurs when an item is selected, after its own `click`. |
 | `ContextMenu.onOpening(e)` | Occurs before the menu opens. `e`: `{ target, items, cancel, byKeyboard, event, source }`. Set `e.items` for the element, or set `e.cancel = true`. |
 | `ContextMenu.onClosed(reason)` | `escape`, `outside`, `focus` or `code`. |
+
+## Feedback
+
+Loading issues…

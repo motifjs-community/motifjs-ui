@@ -1,6 +1,6 @@
 # TileView
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 Arranges tiles of different sizes on a grid of base cells, where each tile spans a set number of cells. Tiles fill the height in columns and scroll horizontally, or fill the width in rows. They can be selected and reordered by dragging.
 
@@ -204,3 +204,7 @@ export default function Content() {
 | `select(index)` | `void` | Selects a tile programmatically, as the only one (`single`) or in addition to others (`multiple`). |
 | `indexOf(value), valueAt(index)` | `number`, `string \| number` | Converts between a value (a key or an index) and a tile index. |
 | `refresh()` | `void` | Re-reads the items after they have been changed in place. |
+
+## Feedback
+
+Loading issues…

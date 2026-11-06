@@ -1,6 +1,6 @@
 # TabDocumentManager: Drag and drop
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 Drag tabs and whole groups as you would in a code editor: along a strip, to another group, beside a group, along an edge of the layout, or between two managers. The same moves are available from the keyboard, and every drop goes through the methods and events of the action it performs.
 
@@ -323,6 +323,10 @@ docs.onDropping((e) => {
 | `tabdocs.drop, drop-fill, insert, ghost` | Their units (the drag image: `copy`, `refused`; a dragged tab: the `dragging` state of the `tab` unit). |
 
 See the [overview](tabdocs.md#api), [Tabs](tabdocs-tabs.md) and [Menus and keys](tabdocs-menus.md) for the rest of the API.
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

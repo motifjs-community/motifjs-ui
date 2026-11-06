@@ -1,6 +1,6 @@
 # Toolbar
 
-> Buttons · @motifx-community/ui 0.1.0-beta.3
+> Buttons · @motifx-community/ui 0.1.0-beta.4
 
 A command bar that holds buttons, toggle buttons, menus and fields, organized in groups with separators. The toolbar is a single Tab stop, and the arrow keys move between its controls. Items that do not fit move into an overflow menu at the end. You can define items as data, as JSX children, or both.
 
@@ -252,6 +252,10 @@ export default function Localization() {
 | Event | When |
 | --- | --- |
 | `onItemClick(e)` | Occurs when an item in `items` is pressed, after its own `click`. `e`: `{ item, source, event }`. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

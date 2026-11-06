@@ -6,6 +6,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0-beta.4] - 2026-11-06
+
+### Fixed
+
+- Focus on open passes over an iframe in `MxForm`, `Drawer`, `BottomSheet` and `Popover`, and in a `GroupBox` and a
+  document tab. Keys pressed inside an iframe never reach the page, so Escape could not close the panel. Tab still
+  reaches the iframe.
+- When the focused element is disabled, hidden or removed (the focus guard, `enabled`, `Accordion`, `Tabs`), focus moves
+  to the next stop that is not an iframe, and to an iframe only when nothing else is left.
+- `Button`: an icon written as a condition in JSX now appears, and changes with its condition.
+- `Button`: an icon larger than the icon box of the language stays centered in the button; the box grows with it.
+
+### Documentation
+
+- Every page ends with a Feedback section: the open and closed issues of that page, and a link to file a new one.
+- The version in the page head comes from the package.
+- All pages, API tables and examples rewritten in English, and all texts translated to Turkish from the new English.
+- The comments on the public API rewritten, so that editors show the same wording as the documentation.
+- Names of other products removed from the source, the documentation and this changelog.
+
 ## [0.1.0-beta.3] - 2026-11-06
 
 ### New components

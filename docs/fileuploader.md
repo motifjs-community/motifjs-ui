@@ -1,6 +1,6 @@
 # FileUploader
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 Lets users select files with a button or drop them on the box. Files are listed with their size and status, and can upload automatically, on a button click or programmatically, with progress, cancel, retry and remove for each file. Files that exceed the limits are listed with the reason.
 
@@ -199,3 +199,7 @@ The uploader posts a form with the file in `uploadField` (`file` by default) to 
 | `onFilesAdded` | event | Occurs when files are selected or dropped (`files`, `refused`). Set `cancel = true` to accept none. |
 | `onFileRemoved, onUploadStarted, onProgress, onUploaded, onUploadError, onUploadAborted` | event | Reports each stage of a file's upload, with `item` and `file`, and `error` on failure. |
 | `onValueChanged` | event | Occurs when the accepted files change. |
+
+## Feedback
+
+Loading issues…

@@ -1,6 +1,6 @@
 # Splitter
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Divides space into any number of resizable panes, arranged side by side or stacked. A handle between each pair of panes can be dragged or moved with the keyboard, and it resizes the two panes next to it. Panes can be collapsed from their handle and can contain another splitter. For two panes where one has a fixed size, see [SplitContainer](layout.md).
 
@@ -202,3 +202,7 @@ export default function Sizes() {
 | `add(pane), insert(index, pane)` | `SplitPane` | Adds a pane at the end or at an index. |
 | `remove(pane)` | `boolean` | Removes a pane and disposes it. |
 | `collapse(pane), expand(pane)` | `boolean` | Collapses or expands a pane, by index or object. `onCollapsing` is raised first. A pane's own `collapse()` and `expand()` do the same. |
+
+## Feedback
+
+Loading issues…

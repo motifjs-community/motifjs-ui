@@ -1,6 +1,6 @@
 # Chip and ChipGroup
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 A compact element with short text and an optional leading icon or avatar. Use it as a filter, as a choice among a few options, or to represent a selected item that can be removed. A group handles single or multiple selection and arrow key navigation.
 
@@ -276,3 +276,7 @@ The remove button's name is the `removeItem` kit string (“Remove {text}”) an
 | `onValueChanged` | event | Occurs when the value changes (`value`), either through user input or programmatically (`byUser`). |
 | `chips` | read-only | The chips in order, including those from JSX lists. |
 | `isSelected(value)` | `boolean` | Indicates whether the chip for `value` is selected. |
+
+## Feedback
+
+Loading issues…

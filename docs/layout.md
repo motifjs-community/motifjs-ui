@@ -1,6 +1,6 @@
 # Layout
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Container controls for arranging other controls: `Stack` (a row or column), `Grid` (rows and columns), `Panel` (a plain box that can scroll), `GroupBox` (a titled frame), `DockPanel` (children docked to its edges) and `SplitContainer` (two panes with a splitter). All of them are controls, so they can disable and hide their content, and they lay out children added at any time.
 
@@ -582,3 +582,7 @@ Every container also has the properties shared by `Control`: `enabled` and `disa
 | `GroupBox.onToggled(e)` | Occurs when the content is shown or hidden. `e`: `{ collapsed, byUser, source }`. |
 
 `ChildSettings`, which reads a child's settings from its props and tracks children added later, is exported for use in your own containers.
+
+## Feedback
+
+Loading issues…

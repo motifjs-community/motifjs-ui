@@ -1,6 +1,6 @@
 # DataGrid: Editing
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Editing and save modes
 
@@ -137,6 +137,10 @@ export interface Order {
 | `actionTargets` | `T[]`, reactive | The rows the bars currently act on. Empty for a selection that is not loaded. |
 | `barActions` | `GridBarAction[]`, reactive | The actions the toolbar and the bottom bar currently show: `{ action, location, text, count, disabled, rows }`. |
 | `stopAction()` | `void` | Stops the action running on several rows, as its Stop button does. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

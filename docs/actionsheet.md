@@ -1,6 +1,6 @@
 # ActionSheet
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 A list of commands that slides up from the bottom of the screen, built from the kit's menu items and sized for touch. It supports a title, a message and a separate Cancel button. A context menu uses it on touch screens.
 
@@ -207,3 +207,7 @@ Cancel, Back and the default name come from `uiLocale.strings` (`cancel`, `back`
 | `menu` | read-only | Its `MenuList`. |
 | `refresh()` | `void` | Your items can be plain or reactive, and the sheet reads them as they are. After changing them in place, call `refresh()`. The visible level updates. |
 | `ContextMenu presentation` | `Bind<'menu' \| 'sheet' \| 'auto'>` | On `ContextMenu`, the default is `'menu'`. `'sheet'` opens its items in an action sheet. `'auto'` does so when a finger opened the menu with a long press, or on a screen with only a coarse pointer unless a key opened it. `onOpening`, `onItemClick` and `onClosed` work the same way, and `actionSheet` is the sheet. |
+
+## Feedback
+
+Loading issues…

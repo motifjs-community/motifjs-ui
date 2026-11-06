@@ -1,6 +1,6 @@
 # Drawer
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 A panel that slides in from an edge of the page or a container, either over the content or pushing it aside. Users can swipe it in from the edge and back out, and Escape, the scrim and the browser's back action close it.
 
@@ -227,3 +227,7 @@ Its default name and the close button come from `uiLocale.strings` (`drawerLabel
 | `open(), close(reason?), toggle(), show(host)` | `boolean` | Same as on a bottom sheet. |
 | `isOpen` | read-only, reactive | Indicates whether it is open. |
 | `onOpening / onOpened / onClosing / onClosed` | events | Same as on a bottom sheet. A swipe back closes it with `reason: 'swipe'`, and an edge swipe canceled by `onOpening` does not move it. |
+
+## Feedback
+
+Loading issues…

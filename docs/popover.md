@@ -1,6 +1,6 @@
 # Popover
 
-> Feedback · @motifx-community/ui 0.1.0-beta.3
+> Feedback · @motifx-community/ui 0.1.0-beta.4
 
 Displays content next to a related element, such as a title, a close button, a form or a card. It opens on click or on hover, follows its target, and points to it with an arrow where the design language includes one.
 
@@ -219,3 +219,7 @@ export default function Events() {
 | `place()` | `void` | Repositions it relative to its target after its content changes size. |
 | `isOpen` | read-only | Indicates whether it is currently open. |
 | `closeButton, body` | read-only | The kit close button, and the part that holds the content. |
+
+## Feedback
+
+Loading issues…

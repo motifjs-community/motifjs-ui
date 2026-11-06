@@ -1,6 +1,6 @@
 # ScrollView
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 A scrollable container with configurable scrollbars, pull-to-refresh, and load-on-scroll near the end of the content. You can scroll it programmatically to a position or an element.
 
@@ -183,3 +183,7 @@ export default function More() {
 | `scrollTop, scrollLeft` | read-only | The current scroll position. |
 | `isRefreshing, isLoading` | read-only | Indicates that a refresh or a load is in progress. |
 | `content` | read-only | The element that holds the children, between the two panels. |
+
+## Feedback
+
+Loading issues…

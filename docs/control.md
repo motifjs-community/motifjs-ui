@@ -1,6 +1,6 @@
 # Control
 
-> Foundations · @motifx-community/ui 0.1.0-beta.3
+> Foundations · @motifx-community/ui 0.1.0-beta.4
 
 `Control` is the base class of every control in the package. It provides the same `text`, `enabled`, `visible` and `tabStop` properties and the same focus methods, whether a control is declared in JSX and bound to state or created with `new` and changed programmatically.
 
@@ -230,3 +230,7 @@ The base class adds no per-control listeners, and you pay only for what you use.
 ## Not yet available
 
 - Arrow key navigation inside composite controls (one Tab stop with arrow keys inside) arrives with the first composite control.
+
+## Feedback
+
+Loading issues…

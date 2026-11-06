@@ -1,6 +1,6 @@
 # TabDocumentManager: Menus and keys
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 The commands around tabs: context menus on tabs and on the empty strip, a searchable list of a group's documents, application toolbar buttons, the recently used list, back and forward, reopening closed documents, locked groups, and keyboard shortcuts for all of them.
 
@@ -339,6 +339,10 @@ new TabDocumentManager({ keyPreset: 'desktop', keys: { closeTab: ['Ctrl+Q'] } })
 | `onLocking(e), onLocked(e), onUnlocking(e), onUnlocked(e)` | `{ group, byUser }`. The `…ing` events are cancelable. |
 
 See the [overview](tabdocs.md#api) for the rest of the API, and [Tabs](tabdocs-tabs.md) for preview and pinned tabs, sizes and copies.
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

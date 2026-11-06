@@ -1,6 +1,6 @@
 # Wizard
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Guides the user through a multi-step task. It combines a [Stepper](stepper.md) above or next to one page per step with Back and Next buttons below. Next validates the page first, and on the last step it finishes the wizard.
 
@@ -238,3 +238,7 @@ export default function Custom() {
 | `stepper, steps, currentStep, selectedIndex` | read-only | The `Stepper`, the `WizardStep` objects in order, the current step and its index. |
 | `isLast, isFinished` | read-only | Indicate whether the current step is the last reachable one (Next finishes), and whether the wizard has finished. |
 | `previousButton, nextButton` | read-only | The kit buttons in the bar, for a custom icon or appearance. |
+
+## Feedback
+
+Loading issues…

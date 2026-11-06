@@ -1,6 +1,6 @@
 # ProgressBar and Spinner
 
-> Feedback · @motifx-community/ui 0.1.0-beta.3
+> Feedback · @motifx-community/ui 0.1.0-beta.4
 
 ProgressBar shows how far an operation has progressed, as a line or a circle, or indicates activity when the progress is unknown. Spinner shows that the system is busy. It is a rotating ring that can stand alone or cover a panel while it loads, and it can wait for a delay so that quick operations do not cause a flash.
 
@@ -399,3 +399,7 @@ export default function Localization() {
 | `Spinner: every prop` | read/write, reactive | Accepts a value or a function, the same as the prop. |
 | `Spinner: waiting` | read-only | Indicates that it is still within its delay. |
 | `Spinner.cover(target, props?)` | `() => void` | Covers a component or element with a spinner. Call the returned function to remove it. See Covering a panel. |
+
+## Feedback
+
+Loading issues…

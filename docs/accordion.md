@@ -1,6 +1,6 @@
 # Accordion
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 An accordion expands and collapses sections under their headers. It supports one or several open sections, sections that stay open, icons, three appearances and sections that are created when first opened.
 
@@ -293,3 +293,7 @@ export default function VariantsAndSizes() {
 | `onExpanded(e), onCollapsed(e)` | Occurs after an item opens or closes. `e`: `{ item, index, byUser, source }`. |
 
 The accordion has no strings of its own, so it adds nothing to `uiLocale`.
+
+## Feedback
+
+Loading issues…

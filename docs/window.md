@@ -1,6 +1,6 @@
 # Window and dialog
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 A window or dialog built on the native `<dialog>` element. A single form can be shown as modeless or modal, depending on how you open it. It has a title bar, can be moved, resized, minimized and maximized, and Enter and Escape activate its buttons. Forms can open other forms, and `messageBox` and `confirm` cover common prompts.
 
@@ -441,6 +441,10 @@ export default function Localization() {
 | --- | --- | --- |
 | `messageBox(options)` | `Promise<FormResult>` | Shows a modal message: `title`, `text`, `buttons` (`ok`, `cancel`, `yes`, `no` or `{ text, result, tone }`), `tone` (`info`, `success`, `caution`, `danger`), `defaultButton` and `host`. |
 | `confirm(text, options?)` | `Promise<boolean>` | Shows OK and Cancel, and resolves to `true` for OK. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

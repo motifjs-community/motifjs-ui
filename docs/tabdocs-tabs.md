@@ -1,6 +1,6 @@
 # TabDocumentManager: Tabs
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 Tabs that behave as they do in code editors: preview tabs replaced by the next preview, pinned tabs that stay at the start, tabs that shrink, wrap or scroll, counts and colors, and the same document open in two groups.
 
@@ -454,6 +454,10 @@ docs.onClosing((e) => {
 | `onSplitting(e), onSplit(e)` | Also includes `copy`: whether the document is copied (`splitting`), and the copy created (`split`). |
 
 See the [overview](tabdocs.md#api) for the rest of the API, and [Menus and keys](tabdocs-menus.md) for menus, lists and keys.
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

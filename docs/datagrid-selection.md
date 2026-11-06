@@ -1,6 +1,6 @@
 # DataGrid: Selection and export
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Selection
 
@@ -138,6 +138,10 @@ The built-in jsPDF fonts (Helvetica, Times, Courier) support Latin-1 only. Turki
 | `loadPanel` | On | The panel over the rows while they load, with the progress and a Stop button: `true` / `false`, or `{ enabled, text, showProgress, cancelButton }`. |
 | `headers, groups, summaries` | `true` | The header rows, one row per group, group summary items, footers and totals. |
 | `pageSize, onProgress, signal` | The `exportPageSize` setting | The rows per request to a server, a callback after each part, and a signal that stops the export (the promise rejects with an `AbortError`, and nothing is drawn). |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

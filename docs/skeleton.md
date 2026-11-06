@@ -1,6 +1,6 @@
 # Skeleton
 
-> Display · @motifx-community/ui 0.1.0-beta.3
+> Display · @motifx-community/ui 0.1.0-beta.4
 
 A placeholder that matches the shape of content that is loading, so the page keeps its layout while data arrives. If you provide content, it replaces the placeholder in the same place when loading ends.
 
@@ -129,3 +129,7 @@ export default function Animations() {
 | --- | --- | --- |
 | `every prop above` | read/write | Accepts a value or a function, the same as the prop. |
 | `content` | read-only | The part that holds the loaded content, for adding to it programmatically. |
+
+## Feedback
+
+Loading issues…

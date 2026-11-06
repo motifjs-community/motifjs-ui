@@ -1,6 +1,6 @@
 # TextBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A single-line text input with a label, help text and error display. It supports a placeholder, a prefix and suffix, buttons inside the box, a clear button, a password reveal button, a character counter, an input mask and validation, either on its own, in a group, or across all fields in a panel.
 
@@ -447,3 +447,7 @@ export default function Localization() {
 | `every rule` | `message` (a value or a function) and `enabled`. Empty values pass every rule except `required` and `compare`. |
 
 The frame (`Field`), the mask (`InputMask`, which works on any `<input>`) and validation (`ValidationGroup`, `validateFields`, `checkRules`) are shared parts, exported for use in other components and your own code.
+
+## Feedback
+
+Loading issues…

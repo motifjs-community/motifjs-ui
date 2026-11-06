@@ -1,6 +1,6 @@
 # Lookup
 
-> Choice · @motifx-community/ui 0.1.0-beta.3
+> Choice · @motifx-community/ui 0.1.0-beta.4
 
 Selects one row from a table-style list, typically from a data source searched on the server, such as a customer by company, contact and city. The field shows the text of the selected row, and everything else works as in DropDown.
 
@@ -66,6 +66,10 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
 | `searchEnabled` | `Bind<boolean>` | `true` | Adds a search box above the list. DropDown has this off by default. |
 | `everything of DropDown` |  |  | `items`, `dataSource`, `valueText`, `textField`, `valueField`, `searchDelay`, `clearButton`, validation, keyboard support and more. |
 | `refresh()` |  |  | Your items and columns can be plain or reactive, and the lookup reads them as they are. After changing them in place, call `refresh()`. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

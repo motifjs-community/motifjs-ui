@@ -1,6 +1,6 @@
 # Design tokens
 
-> Get started · @motifx-community/ui 0.1.0-beta.3
+> Get started · @motifx-community/ui 0.1.0-beta.4
 
 The token system has five layers. The first four (primitives, design language scales, semantic tokens per theme, and density) come from `@motifx-community/design-system` and are listed here for reference. The fifth layer, component tokens, belongs to this kit: each component has its own tokens, written in `@layer mx.components`, and each one references a design system token. Every design language provides its own value for each component token.
 
@@ -4465,3 +4465,7 @@ cssVar('color.accent.solid');  // 'var(--mx-color-accent-solid)' — a design-sy
 // component tokens join as components bring them; names are typo-checked,
 // and apps that need only the design system import cssVar from there
 ```
+
+## Feedback
+
+Loading issues…

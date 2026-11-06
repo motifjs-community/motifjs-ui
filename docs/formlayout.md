@@ -1,6 +1,6 @@
 # FormLayout
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Arranges the fields of a data object on a grid. Each field gets an editor, chosen by name or by the type of its value, with two-way binding to the object. Groups, column spans and buttons organize the layout, and submitting the form validates every field first.
 
@@ -116,3 +116,7 @@ FormLayout.editors.set('color', (props) => new ColorPicker(props));
 | `refreshField(field)` | Re-reads one field of the data object after it has been changed in place. |
 | `validationGroup, isValid` | The validation group of the fields. |
 | `FormLayout.editors` | The editors registered by name. |
+
+## Feedback
+
+Loading issues…

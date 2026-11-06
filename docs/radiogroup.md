@@ -1,6 +1,6 @@
 # RadioGroup
 
-> Choice · @motifx-community/ui 0.1.0-beta.3
+> Choice · @motifx-community/ui 0.1.0-beta.4
 
 A set of mutually exclusive options. Options can come from plain values, custom objects or a live list, and can be arranged vertically, horizontally or in columns. Individual options can be disabled, hidden or given help text. The group is a single Tab stop, and the arrow keys move between options.
 
@@ -322,3 +322,7 @@ The group has no strings of its own. The option text is yours, and functions of 
 | `onValueChanged(e)` | Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`. |
 | `onValidated(e)` | Occurs when validation finishes. `e`: `{ valid, message, source }`. |
 | `onchange, onkeydown, onfocusin, onfocusout` | DOM events from the radios bubble up to the group. |
+
+## Feedback
+
+Loading issues…

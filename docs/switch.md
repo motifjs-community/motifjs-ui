@@ -1,6 +1,6 @@
 # Switch
 
-> Choice · @motifx-community/ui 0.1.0-beta.3
+> Choice · @motifx-community/ui 0.1.0-beta.4
 
 An on/off switch with a label. It has a track with a sliding thumb, optional on/off text inside or next to the track, and read-only and required states. It is a native check box with the switch role.
 
@@ -240,3 +240,7 @@ A switch has no strings of its own. `onText` and `offText` are yours and can be 
 | `onValueChanged(e)` | Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`. |
 | `onValidated(e)` | Occurs when validation finishes. `e`: `{ valid, message, source }`. |
 | `onclick, onchange, onfocusin, onfocusout` | DOM events from the input bubble up to the field. |
+
+## Feedback
+
+Loading issues…

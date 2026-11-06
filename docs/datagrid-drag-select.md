@@ -1,6 +1,6 @@
 # DataGrid: Selecting by dragging
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Rows
 
@@ -163,6 +163,10 @@ With `cellSelection` on, the grid is `aria-multiselectable` and every selectable
 | `datagrid.range-border-color, range-border-width` | The frame around a range. |
 | `datagrid.range-anchor-fill` | The cell the last range started on (the design language's surface). |
 | `datagrid.row-run-border-color, row-run-border-width` | The frame around the rows a drag selects, shown during the drag. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

@@ -1,6 +1,6 @@
 # DropDown
 
-> Choice · @motifx-community/ui 0.1.0-beta.3
+> Choice · @motifx-community/ui 0.1.0-beta.4
 
 Selects one item from a list. The field shows the selected item, and the list opens below it on click or from the keyboard. The list can be searched, grouped and customized, and it stays fast with thousands of items.
 
@@ -246,6 +246,10 @@ A prop that accepts a function as its value (`textField`, a template) uses the f
 | `onValidated(e)` | See TextBox. |
 
 The list is a shared part, `OptionList`, exported for use in combo boxes, list boxes and your own controls.
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

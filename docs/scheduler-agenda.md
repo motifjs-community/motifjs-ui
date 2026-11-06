@@ -1,6 +1,6 @@
 # Scheduler: Agenda
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Displays upcoming days as a list, with each day's appointments in time order. Days without appointments are omitted.
 
@@ -312,6 +312,10 @@ export function jobs(): Job[] {
 | `agendaRowTemplate` | `Bind<((context: AgendaRowContext) => Component) \\| null>` | `null` | A row's content: `{ appointment, start, end, text, time, allDay, date, group }`. The row keeps its color, keys and accessible name. |
 | `appointmentTooltipTemplate` | `Bind<((context: TooltipTemplateContext) => Component) \\| null>` | `null` | The tooltip's content, in every view. |
 | `texts.schedulerNoAppointments` | `string` | "No appointments" | The message shown when the displayed days have no appointments (`uiLocale`). |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

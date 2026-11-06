@@ -1,6 +1,6 @@
 # Resizable
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 A box that users can resize from its edges and corners with the pointer, or with the arrow keys on the grip in its end corner. It respects minimum and maximum sizes, can stay within an area, and can preserve its aspect ratio.
 
@@ -137,3 +137,7 @@ export default function Programmatic() {
 | `onResized` | event | Occurs when a resize ends, either when the pointer is released or when a key moves an edge. |
 | `currentSize` | read-only | The current size in pixels. |
 | `gripElement` | read-only | The grip in the end corner, which is the Tab stop for keyboard resizing. |
+
+## Feedback
+
+Loading issues…

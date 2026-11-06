@@ -1,6 +1,6 @@
 # Stepper
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 Shows the steps of a longer task and the user's progress through them. Each step has an indicator and text, with a line between steps, and steps before the current one are marked complete. [Wizard](wizard.md) adds a page and navigation buttons to each step.
 
@@ -236,3 +236,7 @@ export default function Sizes() {
 | `statusOf(index)` | `StepperStatus` | `pending`, `current`, `done` or `error`, as displayed. |
 | `canReach(index)` | `boolean` | Indicates whether the user can reach the step. |
 | `refresh()` | `void` | Re-reads the items after they have been changed in place. |
+
+## Feedback
+
+Loading issues…

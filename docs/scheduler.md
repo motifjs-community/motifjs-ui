@@ -1,6 +1,6 @@
 # Scheduler
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 A full-featured calendar for appointments across days and hours. It provides day, week, work week and month views, all-day and multi-day bars, side-by-side display of overlapping appointments, and a "+N more" link when a day is full. Appointments can come from an array or a data source, and every setting can change at runtime.
 
@@ -391,6 +391,10 @@ Dates and times come from `Intl` using `locale` (12 or 24-hour clock, first day 
 | `onSelectionChanged` | `{ selection }`: the selected cells as one time range, or `null`. |
 | `onContentReady` | `{ range, appointments }`: after a load, a new date or view, or new data. |
 | `onMoreOpening` | `{ date, appointments, cancel }`: "+N more" was clicked. Cancel to display the day yourself. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

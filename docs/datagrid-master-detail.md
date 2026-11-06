@@ -1,6 +1,6 @@
 # DataGrid: Master-detail
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Master-detail
 
@@ -101,6 +101,10 @@ The arrow is a button with `aria-expanded` and `aria-controls`, and the row also
 | `expandAllRows() / collapseAllRows()` | `void` | Opens or closes every row's details at once, without row events (as `expandAll()` does for groups). |
 | `masterDetail` | read/write, live | `grid.masterDetail.enabled = true`. A function is tracked reactively. |
 | `getVisibleRows()` | `GridVisibleRow[]` | A row's details are listed directly after it, with `rowType: 'detail'` and with its index and key. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

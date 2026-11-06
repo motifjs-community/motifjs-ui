@@ -1,6 +1,6 @@
 # BottomSheet
 
-> Navigation · @motifx-community/ui 0.1.0-beta.3
+> Navigation · @motifx-community/ui 0.1.0-beta.4
 
 A panel that slides up from the bottom of the page or a container and stops at set heights: peek, half, full, the height of its content, or custom values. Users can drag it by its handle and title, flick it, and swipe down to close it. It can be modal or non-modal, and the back button closes it on phones.
 
@@ -314,3 +314,7 @@ export default function Localization() {
 | `onDetentChanging / onDetentChanged` | events | `{ from, to, byUser, cancel, source }`. `to` can be changed, and if canceled the sheet returns to where it was. |
 
 Every prop is also a property that accepts a value or a function. The shared parts (the panel, scrim, modality, focus handling and back button) come from `OverlayPanel`, which `Drawer` and `ActionSheet` also use.
+
+## Feedback
+
+Loading issues…

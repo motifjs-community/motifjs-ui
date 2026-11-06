@@ -1,6 +1,6 @@
 # Scheduler: Big data
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.3
+> Scheduler · @motifx-community/ui 0.1.0-beta.4
 
 Handles thousands of resources and appointments. The scheduler renders only what is visible, and recalculates the layout only for what has changed.
 
@@ -118,6 +118,10 @@ export function tasks(count: number, resources: number, day = new Date()): Task[
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `scrolling` | `Bind<'auto' \| 'standard' \| 'virtual'>` | `'auto'` | `'standard'` renders every row and cell, and `'virtual'` renders only the visible ones. `'auto'` switches to virtual above about 2,000 cells (rows × cells along the time, or columns × time rows). A view's own value takes precedence. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

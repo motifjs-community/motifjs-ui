@@ -1,6 +1,6 @@
 # CheckBox
 
-> Choice · @motifx-community/ui 0.1.0-beta.3
+> Choice · @motifx-community/ui 0.1.0-beta.4
 
 A check box with a label that can be checked, unchecked or indeterminate. It supports an optional three-state cycle, read-only and required states, and validation with its group. It is a native check box styled with design tokens.
 
@@ -334,3 +334,7 @@ export default function Localization() {
 | `onclick, onchange, onfocusin, onfocusout` | DOM events from the input bubble up to the field. |
 
 `ToggleField`, the base class shared by CheckBox and Switch, provides a label next to a native check box, read-only behavior and the access key. It is exported for use in your own controls.
+
+## Feedback
+
+Loading issues…

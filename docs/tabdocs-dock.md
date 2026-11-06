@@ -1,6 +1,6 @@
 # TabDocumentManager: Dock and floating windows
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.3
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
 
 Documents and whole groups can float in their own windows within the page, and dock again into document groups or into dock areas around them, which can collapse to the edge of the manager. The mouse, the keyboard and the API all perform the same actions through the same events.
 
@@ -405,6 +405,10 @@ docs.onWindowClosing((e) => {
 | `tabdocs.window, area, autohide, autohide-tab, autohide-indicator, guide, guide-icon` | Their units (a collapsed area: `folded`, `folded-left` …; a guide: `edge`, `pointed`). `floating-min-*`, `folded-tab-height`, `guide-room` and `guide-spacing` are sizes. |
 
 See the [overview](tabdocs.md#api), [Tabs](tabdocs-tabs.md), [Menus and keys](tabdocs-menus.md) and [Drag and drop](tabdocs-drag.md) for the rest of the API.
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

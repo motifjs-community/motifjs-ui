@@ -1,6 +1,6 @@
 # DataGrid: API reference
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Columns
 
@@ -178,7 +178,7 @@ export interface Order {
 | `label` | `Bind<string>` | `uiLocale` “Data grid” | The accessible name. This is the same as `text`. |
 | `texts / locale` | `Bind<Partial<UiStrings>>` / `Bind<string>` | — / page language | Strings for this grid only, and the locale of numbers, dates and sorting. |
 | `rowHeight` | `Bind<number>` | from CSS | A fixed row height. By default, the density determines it. |
-| `actions` | `GridActionItem[] \| (row, state) => GridActionItem[]` | — | The buttons of each row: actions, or the names of built-in ones (`edit`, `remove`, `restore`, `save`, `cancel`). A function is called per row, again when the row's state changes (edited, saved or deleted), and on `refreshActions()` or `repaintRows(keys)`. |
+| `actions` | `GridActionItem[] \| (row, state) => GridActionItem[]` | — | The buttons of each row: actions, or the names of built-in ones (`edit`, `remove`, `restore`, `save`, `cancel`). A function is called per row, again when the row's state changes (edited, saved, selected or deleted), and on `refreshActions()` or `repaintRows(keys)`. |
 | `selectedKeys / onSelectionChanged` | `Bind<unknown[]>` / `(e) => void` | — | The keys of the selected rows (a function is tracked), reported after every selection change (`e.byDrag` when rows are selected by dragging). |
 | `cellRanges / onCellSelectionChanging / onCellSelectionChanged` | `Bind<GridCellRange[]>` / `(e) => void` | — | The cell ranges (`settings.cellSelection`, and a function is tracked), with an event before a change (`e.cancel`) and after it (`e.byDrag` while one is drawn). See [Selecting by dragging](datagrid-drag-select.md#cells). |
 | `filters` | `GridFilters` | — | The initial filters, by field: `{ city: { op: '=', value: 'Ankara' }, status: { values: ['Draft'] } }`. |
@@ -299,6 +299,10 @@ export interface Order {
 | `state() / state(value)` | `GridStateValue` / `void` | Saves and restores what the user set up: columns, sort, grouping, filters, search text, page and page size, selected keys, and the active row. |
 
 The rows and their saving belong to the data layer. `grid.dataSource` and `grid.changeTracker` are a `DataSource` and a `ChangeTracker` from `@motifx-community/data`, with their own events (`onChanged`). `changeTracker.removeRows(rows)` and `removeKeys(keys)` delete several rows in one save, as `deleteRows` does.
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 

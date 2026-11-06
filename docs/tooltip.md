@@ -1,6 +1,6 @@
 # Tooltip
 
-> Feedback · @motifx-community/ui 0.1.0-beta.3
+> Feedback · @motifx-community/ui 0.1.0-beta.4
 
 A short description shown next to an element when the pointer rests on it, when it receives keyboard focus, or programmatically. Users can hover over the tooltip, Escape dismisses it, and only one is open at a time on the page.
 
@@ -337,3 +337,7 @@ export default function ManyElements() {
 | --- | --- |
 | `onOpened` | Occurs after it is shown. |
 | `onClosed` | Occurs after it is hidden. |
+
+## Feedback
+
+Loading issues…

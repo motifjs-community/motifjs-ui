@@ -1,6 +1,6 @@
 # NumberBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A numeric input with arrow key support, PageUp and PageDown, spin buttons that repeat while held, min and max limits, exact decimal stepping, display formats such as currency and percent, and locale-aware input.
 
@@ -307,3 +307,7 @@ export default function Localization() {
 | `onValueChanged(e)` | Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`. A held spin button reports every step. |
 | `onValidated(e)` | Occurs when validation finishes. `e`: `{ valid, message, source }`. |
 | `onEnter(e)` | Occurs when the user presses Enter. `e`: `{ value, source, event }`. |
+
+## Feedback
+
+Loading issues…

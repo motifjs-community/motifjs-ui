@@ -1,6 +1,6 @@
 # ButtonGroup
 
-> Buttons · @motifx-community/ui 0.1.0-beta.3
+> Buttons · @motifx-community/ui 0.1.0-beta.4
 
 A set of related buttons, used as a segmented selection of one or more options or as a row of actions. The buttons are standard kit buttons and are attached by default.
 
@@ -139,3 +139,7 @@ export default function Looks() {
 | `buttons` | read-only | The kit buttons in the group, in item order. |
 | `isSelected(value)` | `boolean` | Indicates whether the button for `value` is selected or on. |
 | `refresh()` | `void` | Re-reads the items after they have been changed in place. |
+
+## Feedback
+
+Loading issues…

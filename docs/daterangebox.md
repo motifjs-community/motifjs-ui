@@ -1,6 +1,6 @@
 # DateRangeBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.3
+> Editors · @motifx-community/ui 0.1.0-beta.4
 
 A single field for a start date and an end date. Users can type through two masks, or pick from two side-by-side months and a list of presets, within the allowed dates and range length. The value is a `[start, end]` pair.
 
@@ -190,3 +190,7 @@ export default function DateTime() {
 | `clear()` | `void` | Clears both ends. |
 | `validate(), validationMessage, isValid` |  | Works the same way as on all fields. Validation covers incomplete dates, dates outside `min`, `max` or `disabledDates`, a start after the end, and ranges shorter than `minDays` or longer than `maxDays`. |
 | `onValueChanged` | event | Occurs when the pair changes (`value`, `previousValue`, `byUser`). |
+
+## Feedback
+
+Loading issues…

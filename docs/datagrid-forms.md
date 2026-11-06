@@ -1,6 +1,6 @@
 # DataGrid: Edit forms and popups
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.3
+> DataGrid · @motifx-community/ui 0.1.0-beta.4
 
 ## Edit forms and popups
 
@@ -125,6 +125,10 @@ Every rule accepts a `message` (`Bind<string>`). Without it, the text comes from
 | `cancelEditData()` | `void` | Discards the current edit, as Cancel does, and in batch mode every unsaved change. |
 | `closeEditCell()` | `boolean` | Keeps the open editor's value and closes it. In a form, it keeps every field's value. |
 | `form, popup` | read/write, live | `grid.form.colCount = 3`, `grid.popup.width = '40rem'`. A function is tracked, and `onOptionChanged` reports `form.colCount`, `popup.width` and so on. |
+
+## Feedback
+
+Loading issues…
 
 ## Example files
 
