@@ -15,34 +15,34 @@ const PROPS = [
   ['labelMode', '`Bind<FieldLabelMode>`', "`'top'`", '`hidden` keeps the caption for screen readers only; every other mode shows it next to the track.'],
   ['onText / offText', '`Bind<string>`', "`''`", 'A short text for each state, e.g. `On` / `Off`.'],
   ['showStateText', '`Bind<SwitchStateText>`', "`'inside'`", 'Where that text shows: `inside` the track, `beside` it, or `none`.'],
-  ['helpText', '`Bind<string>`', "`''`", 'A line under the caption. An error message takes its place.'],
-  ['hint', '`Bind<string>`', "`''`", 'A tooltip.'],
+  ['helpText', '`Bind<string>`', "`''`", 'Help text shown below the label. An error message replaces it.'],
+  ['hint', '`Bind<string>`', "`''`", 'The tooltip text.'],
   ['readOnly', '`Bind<boolean>`', '`false`', 'Focusable and read out, but it does not flip.'],
   ['required', '`Bind<boolean>`', '`false`', 'It must be on.'],
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`; the row height follows the density tokens.'],
   ['stretch', '`Bind<boolean>`', '`false`', 'Fills the width; with `labelPosition="start"` the track goes to the far end.'],
-  ['name', '`Bind<string>`', "`''`", 'The name it is sent with in a form.'],
-  ['rules, error, validateOn, validationGroup', 'see Field', '', 'Validation, as in every field.'],
-  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'The shared properties of every control.'],
+  ['name', '`Bind<string>`', "`''`", 'The name submitted with the form.'],
+  ['rules, error, validateOn, validationGroup', 'see Field', '', 'Validation works the same way as for all fields.'],
+  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
-  ['isValid, validationMessage, validating', 'read-only, reactive', 'The outcome of the last check.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
+  ['isValid, validationMessage, validating', 'read-only, reactive', 'The result of the last validation.'],
   ['inputElement', 'read-only', 'The native `<input type="checkbox" role="switch">`.'],
 ];
 
 const METHODS = [
   ['toggle()', '`void`', 'Flips it as a click does.'],
-  ['validate()', '`Promise<boolean>`', 'Checks the value and shows the outcome.'],
-  ['resetValidation()', '`void`', 'Hides the outcome of earlier checks.'],
+  ['validate()', '`Promise<boolean>`', 'Validates the value and displays the result.'],
+  ['resetValidation()', '`void`', 'Clears the results of previous validation.'],
   ['focus()', '`boolean`', 'Focuses the switch.'],
 ];
 
 const EVENTS = [
-  ['onValueChanged(e)', 'The value changed. `e`: `{ value, previousValue, byUser, source, event? }`.'],
-  ['onValidated(e)', 'A check ended. `e`: `{ valid, message, source }`.'],
-  ['onclick, onchange, onfocusin, onfocusout', 'The DOM events of the input reach the field.'],
+  ['onValueChanged(e)', 'Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`.'],
+  ['onValidated(e)', 'Occurs when validation finishes. `e`: `{ valid, message, source }`.'],
+  ['onclick, onchange, onfocusin, onfocusout', 'DOM events from the input bubble up to the field.'],
 ];
 
 const KEYS = [
@@ -54,7 +54,7 @@ const KEYS = [
 const A11Y = [
   ['Element', 'A native `<input type="checkbox" role="switch">`: screen readers say "switch, on / off"; the browser gives it Space, the form value, `:checked` and `:disabled`, and its caption is a `<label for>`, so a click on the caption flips it.'],
   ['On / off text', 'Drawn for the eye only (`aria-hidden`): the state is read out from the switch itself.'],
-  ['Read-only', '`aria-readonly="true"`; it keeps its place in the Tab order.'],
+  ['Read-only', '`aria-readonly="true"`. The field stays in the Tab order.'],
   ['Motion', 'The thumb slides with the motion tokens; it stops sliding when the user asks for reduced motion.'],
   ['Focus', 'The design system focus ring around the track, for the keyboard only.'],
 ];
@@ -73,7 +73,7 @@ const TOKENS = [
   ['switch.text, switch.side-text', 'Units: the on / off text in the track and beside it.'],
   ['switch.track-width.*, switch.track-height.*', 'The track, per size.'],
   ['switch.thumb-size.*, switch.thumb-size-checked.*, switch.thumb-size-hover.*, switch.thumb-size-pressed.*, switch.thumb-inset, switch.thumb-stretch', 'The thumb per size and state, the space around it, and how far it stretches while pressed.'],
-  ['switch.height.*, switch.font-size.*', 'The row height (density tokens) and the caption size.'],
+  ['switch.height.*, switch.font-size.*', 'Row height (density tokens) and label size.'],
   ['switch.text-padding, switch.gap', 'The space of the on / off text, and before the caption.'],
 ];
 
@@ -94,7 +94,7 @@ import { Switch } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set programmatically." />
+          <Rich text="Every prop accepts a value or a function, and `x-model` provides two-way binding for the value. When you create the component with `new`, set the same properties programmatically." />
         </p>
         <Example files={code('Programmatic.tsx')} stack>
           <Programmatic />
@@ -132,11 +132,11 @@ import { Switch } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -146,11 +146,11 @@ import { Switch } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

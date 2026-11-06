@@ -32,11 +32,11 @@ const PROPS = [
   ['label', '`Bind<string>`', "`''`", 'The tree\'s accessible name. `aria-label` / `aria-labelledby` on the tag work too.'],
   ['virtualFrom', '`Bind<number>`', '`500`', 'With more rows on screen than this, only the rows in view are drawn.'],
   ['itemTemplate', '`Bind<(item, host) => cleanup | void>`', '—', 'Draws a row\'s content yourself.'],
-  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'The shared properties of every control.'],
+  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['selectedItems, checkedItems', 'read-only, reactive', 'The selected / checked items, in tree order.'],
   ['treeElement', 'read-only', 'The element with `role="tree"`.'],
 ];
@@ -189,11 +189,11 @@ import { TreeView } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -206,11 +206,11 @@ import { TreeView } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

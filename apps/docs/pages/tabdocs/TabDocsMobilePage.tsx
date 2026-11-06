@@ -31,7 +31,7 @@ const BACK = [
 const PROPS = [
   ['presentation', "`Bind<'auto' | 'desktop' | 'tablet' | 'phone'>`", "`'auto'`", 'How the layout shows: by the manager\'s own width, or always one way.'],
   ['phoneWidth', '`Bind<number>`', '`560`', 'Under this width (in pixels of the manager, not of the screen) `auto` shows it as on a phone, whatever the pointer.'],
-  ['tabletWidth', '`Bind<number>`', '`1024`', 'Under this width `auto` shows it as on a tablet, on a touch screen (see `tabletWhen`).'],
+  ['tabletWidth', '`Bind<number>`', '`1024`', 'Below this width, `auto` uses the tablet presentation on touch screens (see `tabletWhen`).'],
   ['tabletWhen', "`Bind<'touch' | 'width'>`", "`'touch'`", "`'touch'`: the tablet layout only when the screen's pointer is a finger (`(pointer: coarse)`, followed live); with a mouse a narrow manager stays a desktop until it is under `phoneWidth`. `'width'`: the width alone."],
   ['narrowBars', "`Bind<'compact' | 'documents'>`", "`'compact'`", "How the documents' groups' bars look on a tablet or a phone: with the `compact…` settings (no scroll buttons, shrinking tabs, small buttons, a single document as a title), as in the dock areas; `'documents'` keeps the desktop bar. Change the `compact…` props to change that look."],
   ['phoneDockMode', "`Bind<'auto' | 'sheet' | 'drawer' | 'hidden'>`", "`'sheet'`", 'How dock areas show on a phone; an area\'s own `phoneDockMode` wins.'],
@@ -67,7 +67,7 @@ import { TabDocumentManager, type TabPresentation, type TabDockPresentation } fr
       </Section>
 
       <Section anchor="ways" title="Three ways to show one layout">
-        <ApiTable head={['Presentation', 'What shows']} rows={WAYS} />
+        <ApiTable head={['Presentation', 'Displayed content']} rows={WAYS} />
         <p>
           <Rich text="Pick one: the layout under it does not change. Save the layout in each presentation: the JSON is the same." />
         </p>
@@ -76,7 +76,7 @@ import { TabDocumentManager, type TabPresentation, type TabDockPresentation } fr
         </Example>
       </Section>
 
-      <Section anchor="width" title="By its own width">
+      <Section anchor="width" title="Based on its own width">
         <p>
           <Rich text="With `presentation: 'auto'` (the default) the manager watches its own width and the screen's pointer. Under `phoneWidth` (560) it shows as on a phone, whatever the pointer: phones are 360 to 430 pixels wide, while a manager of about 590 beside a desktop page's side column stays a desktop. Under `tabletWidth` (1024) it shows as on a tablet when the screen is a touch screen; with a mouse it stays a desktop (`tabletWhen: 'width'` lets the width alone decide). An app changes both limits to fit its layout. Drag the frame's corner: what you type in the note and how far a file is scrolled stay." />
         </p>
@@ -95,7 +95,7 @@ import { TabDocumentManager, type TabPresentation, type TabDockPresentation } fr
       </Section>
 
       <Section anchor="list" title="The phone's list of documents">
-        <ApiTable head={['Gesture or key', 'What it does']} rows={LIST} />
+        <ApiTable head={['Gesture or key', 'Description']} rows={LIST} />
       </Section>
 
       <Section anchor="back" title="The back button">

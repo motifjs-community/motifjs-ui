@@ -8,7 +8,7 @@ import Localization from './examples/Localization';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['value', '`Bind<boolean>`', '`false`', 'Whether it is open. `x-model` binds it two-way: the user closing it writes `false`.'],
+  ['value', '`Bind<boolean>`', '`false`', 'Indicates whether it is open. `x-model` provides two-way binding, so `false` is written when the user closes it.'],
   ['title', '`Bind<string>`', "`''`", 'A title at the top; it names the dialog. The same property as `text`.'],
   ['label', '`Bind<string>`', "`''`", 'Names it for screen readers when it has no title (else "Sheet", from `uiLocale`).'],
   ['detents', '`Bind<readonly BottomSheetDetent[]>`', "`['half', 'full']`", "The heights it stops at: `'peek'` (`sheet.peek-height`), `'half'`, `'full'` (the room but `sheet.top-gap`), `'fit'` (as tall as its content), pixels, or a share such as `'40%'`."],
@@ -28,12 +28,12 @@ const PROPS = [
   ['focusOnOpen', '`Bind<boolean>`', 'when modal', 'Focus moves in when it opens: `[autofocus]`, the first field, the first control, else the panel.'],
   ['returnFocus', '`Bind<boolean>`', '`true`', 'Focus goes back where it was when it closes.'],
   ['disposeOnClose', '`Bind<boolean>`', 'see text', 'Disposed when it closes: by default when `show` put it in its host.'],
-  ['enabled, visible', 'see Control', '', 'The shared properties of every control.'],
+  ['enabled, visible', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const MEMBERS = [
   ['open()', '`boolean`', 'Opens it at `detent`; `false` when `onOpening` said no. Placed nowhere, it opens from the end of the page (or in its container).'],
-  ['close(reason?)', '`boolean`', 'Closes it; `false` when `onClosing` kept it open.'],
+  ['close(reason?)', '`boolean`', 'Closes it. Returns `false` if `onClosing` canceled the close.'],
   ['toggle()', '`boolean`', 'Opens or closes it.'],
   ['show(host, disposeRef?)', '`boolean`', 'Adds it to `host` (a component or the application) unless it is placed, and opens it; it is disposed when it closes.'],
   ['snapTo(detent)', '`boolean`', 'Moves it to a height (and opens it there when closed).'],
@@ -47,7 +47,7 @@ const MEMBERS = [
 
 const KEYS = [
   ['Escape', 'Closes it (`closeOnEscape`).'],
-  ['Tab, Shift+Tab', 'Through its controls; modal, it goes round inside.'],
+  ['Tab, Shift+Tab', 'Moves through its controls. In a modal, focus cycles within it.'],
   ['Up, Right, Page Up (on the handle)', 'The next taller height.'],
   ['Down, Left, Page Down (on the handle)', 'The next lower height; it does not close it.'],
   ['Home, End (on the handle)', 'The lowest and the tallest height.'],
@@ -65,7 +65,7 @@ const A11Y = [
   ['Dialog', 'The panel is `role="dialog"`, named by its title (else `label`, else "Sheet"), `aria-modal` when modal. What is around it is made `inert`, so screen readers and the keys stay inside.'],
   ['Handle', '`role="slider"`, vertical, named "Sheet height"; its value is the share of the full height, read as the height\'s name ("Half height").'],
   ['Focus', 'Moves in when it opens (modal by default) and back to where it was when it closes.'],
-  ['Motion', 'It slides with the motion tokens; with reduced motion it just appears.'],
+  ['Motion', 'Slides in using the motion tokens. When the user prefers reduced motion, it appears without animation.'],
   ['Safe areas', 'The panel keeps clear of the screen\'s rounded corners and bars (`env(safe-area-inset-*)`).'],
 ];
 
@@ -81,7 +81,7 @@ const HOOKS = [
 const TOKENS = [
   ['sheet.scrim, sheet.panel', 'Units: the dimmed layer; the surface (`max-width`: how wide it gets on a large screen; `full`: its top corners once it reaches the top of the room).'],
   ['sheet.handle, sheet.grip', 'Units: the handle (`focus`: the keys) and its grip.'],
-  ['sheet.header, sheet.title, sheet.tools, sheet.body, sheet.footer', 'Units: inside (`body.focus`: a ring inside the content).'],
+  ['sheet.header, sheet.title, sheet.tools, sheet.body, sheet.footer', 'Units: the content area (`body.focus`: a focus ring inside the content).'],
   ['sheet.top-gap, sheet.peek-height, sheet.inset', 'The gap it leaves at the top at full height, the peek height, the room around the panel.'],
   ['sheet.handle-area, sheet.font-family', 'The handle’s grab area; the type’s family.'],
 ];
@@ -129,15 +129,15 @@ import { BottomSheet, type BottomSheetDetent } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="touch" title="Finger and mouse">
-        <ApiTable head={['Gesture', 'What it does']} rows={TOUCH} />
+        <ApiTable head={['Gesture', 'Description']} rows={TOUCH} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -150,11 +150,11 @@ import { BottomSheet, type BottomSheetDetent } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

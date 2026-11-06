@@ -17,34 +17,34 @@ const PROPS = [
   ['labelPosition', "`Bind<'start' | 'end'>`", "`'end'`", 'The caption after the box (`end`) or before it (`start`), in the reading direction.'],
   ['labelMode', '`Bind<FieldLabelMode>`', "`'top'`", '`hidden` keeps the caption for screen readers only; every other mode shows it next to the box.'],
   ['threeState', '`Bind<boolean>`', '`false`', 'A click goes unchecked → checked → indeterminate. Without it a click only checks and unchecks; code can still set `null`.'],
-  ['helpText', '`Bind<string>`', "`''`", 'A line under the caption. An error message takes its place.'],
-  ['hint', '`Bind<string>`', "`''`", 'A tooltip.'],
+  ['helpText', '`Bind<string>`', "`''`", 'Help text shown below the label. An error message replaces it.'],
+  ['hint', '`Bind<string>`', "`''`", 'The tooltip text.'],
   ['readOnly', '`Bind<boolean>`', '`false`', 'Focusable and read out, but a click or Space changes nothing.'],
   ['required', '`Bind<boolean>`', '`false`', 'It must be checked: a mark after the caption, `aria-required` and a `required` rule.'],
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`; the row height follows the density tokens.'],
   ['stretch', '`Bind<boolean>`', '`false`', 'Fills the width of what it sits in; with `labelPosition="start"` the box goes to the far end.'],
-  ['name', '`Bind<string>`', "`''`", 'The name it is sent with in a form.'],
-  ['rules, error, validateOn, validationGroup', 'see Field', '', 'Validation, as in every field.'],
-  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'The shared properties of every control.'],
+  ['name', '`Bind<string>`', "`''`", 'The name submitted with the form.'],
+  ['rules, error, validateOn, validationGroup', 'see Field', '', 'Validation works the same way as for all fields.'],
+  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
-  ['isValid, validationMessage, validating', 'read-only, reactive', 'The outcome of the last check.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
+  ['isValid, validationMessage, validating', 'read-only, reactive', 'The result of the last validation.'],
   ['inputElement', 'read-only', 'The native `<input type="checkbox">`.'],
 ];
 
 const METHODS = [
   ['toggle()', '`void`', 'Changes the value as a click does (with `threeState`, to the next of the three).'],
-  ['validate()', '`Promise<boolean>`', 'Checks the value and shows the outcome.'],
-  ['resetValidation()', '`void`', 'Hides the outcome of earlier checks.'],
+  ['validate()', '`Promise<boolean>`', 'Validates the value and displays the result.'],
+  ['resetValidation()', '`void`', 'Clears the results of previous validation.'],
   ['focus()', '`boolean`', 'Focuses the box.'],
 ];
 
 const EVENTS = [
   ['onValueChanged(e)', 'The value changed. `e`: `{ value, previousValue, byUser, source, event? }`; `null` stays `null`.'],
-  ['onValidated(e)', 'A check ended. `e`: `{ valid, message, source }`.'],
-  ['onclick, onchange, onfocusin, onfocusout', 'The DOM events of the input reach the field.'],
+  ['onValidated(e)', 'Occurs when validation finishes. `e`: `{ valid, message, source }`.'],
+  ['onclick, onchange, onfocusin, onfocusout', 'DOM events from the input bubble up to the field.'],
 ];
 
 const KEYS = [
@@ -56,7 +56,7 @@ const KEYS = [
 const A11Y = [
   ['Element', 'A native `<input type="checkbox">` drawn with `appearance: none`; its caption is a `<label for>`, so a click on the caption toggles it.'],
   ['Indeterminate', 'The native `indeterminate` state: read out as "mixed".'],
-  ['Read-only', '`aria-readonly="true"`; it keeps its place in the Tab order.'],
+  ['Read-only', '`aria-readonly="true"`. The field stays in the Tab order.'],
   ['Errors', '`aria-invalid="true"`; the line under the caption is a polite live region and describes the box.'],
   ['Focus', 'The design system focus ring, for the keyboard only.'],
 ];
@@ -75,7 +75,7 @@ const TOKENS = [
   ['checkbox.halo, checkbox.ring', 'Units: a halo centred on the box (`checked`, `hover`, `focus`, `pressed`) and a ring round the box and its caption under the keys, where the language has them.'],
   ['checkbox.label, checkbox.control', 'Units: the caption (`disabled`) and the row it sits in.'],
   ['checkbox.size.*, checkbox.mark-size.*', 'The box and its mark, per size.'],
-  ['checkbox.height.*, checkbox.font-size.*', 'The row height (density tokens) and the caption size.'],
+  ['checkbox.height.*, checkbox.font-size.*', 'Row height (density tokens) and label size.'],
   ['checkbox.gap, checkbox.press-offset, checkbox.focus-scope', 'The space before the caption, how far a press moves the box, and what the ring under the keys goes round (`box` or `item`).'],
 ];
 
@@ -96,7 +96,7 @@ import { CheckBox } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set programmatically." />
+          <Rich text="Every prop accepts a value or a function, and `x-model` provides two-way binding for the value. When you create the component with `new`, set the same properties programmatically." />
         </p>
         <Example files={code('Programmatic.tsx')} stack>
           <Programmatic />
@@ -149,11 +149,11 @@ import { CheckBox } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -166,11 +166,11 @@ import { CheckBox } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

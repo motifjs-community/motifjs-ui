@@ -15,27 +15,27 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 
 const PROPS = [
   ['value', '`Bind<string>`', "`''`", 'The text. `x-model` binds it two-way.'],
-  ['label', '`Bind<string>`', "`''`", 'The caption; `&Name` makes Alt+N focus the field. The same property as `text`.'],
+  ['label', '`Bind<string>`', "`''`", 'The field label. Writing `&Name` assigns Alt+N as the access key. This is the same property as `text`.'],
   ['labelMode', '`Bind<FieldLabelMode>`', "`'top'`", '`top`, `side` (next to the box), `floating` (inside the box until there is a value), `hidden` (only for screen readers).'],
-  ['placeholder', '`Bind<string>`', "`''`", 'Shown while the field is empty.'],
+  ['placeholder', '`Bind<string>`', "`''`", 'Displayed when the field is empty.'],
   ['helpText', '`Bind<string>`', "`''`", 'A line under the box. An error message takes its place.'],
-  ['hint', '`Bind<string>`', "`''`", 'A tooltip.'],
+  ['hint', '`Bind<string>`', "`''`", 'The tooltip text.'],
   ['type', '`Bind<TextBoxType>`', "`'text'`", '`text`, `password`, `email`, `search`, `tel`, `url`. `email` and `url` also check the format.'],
   ['prefix / suffix', '`Bind<string>`', "`''`", 'Fixed text before / after the value inside the box (`https://`, `kg`).'],
   ['icon', '`Bind<IconSource | null>`', '—', 'An icon at the start of the box.'],
   ['buttons', '`Bind<readonly FieldButton[]>`', '`[]`', 'Buttons of your own inside the box, at the start or the end.'],
-  ['clearButton', '`Bind<boolean>`', '`false`', 'A button that empties the field; Escape does the same.'],
+  ['clearButton', '`Bind<boolean>`', '`false`', 'Shows a button that clears the field. Pressing Escape also clears it.'],
   ['passwordReveal', '`Bind<boolean>`', '`true`', 'With `type="password"`: a button that shows the password.'],
   ['maxLength / minLength', '`Bind<number>`', '—', 'Limits; `minLength` is checked by validation.'],
   ['showCounter', '`Bind<boolean>`', '`false`', '`12/50` under the box (`12` without `maxLength`).'],
   ['updateOn', "`Bind<'input' | 'change'>`", "`'input'`", '`change`: the value changes when the field is left or Enter is pressed.'],
-  ['selectOnFocus', '`Bind<boolean>`', '`false`', 'Selects the whole text when the field gets focus.'],
+  ['selectOnFocus', '`Bind<boolean>`', '`false`', 'Selects all text when the field receives focus.'],
   ['align', "`Bind<'start' | 'center' | 'end'>`", "`'start'`", 'Text alignment.'],
   ['readOnly', '`Bind<boolean>`', '`false`', 'Can be read, selected and copied, not changed.'],
   ['required', '`Bind<boolean>`', '`false`', 'A mark after the label, `aria-required`, and a `required` rule.'],
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`, from the density tokens.'],
   ['variant', '`Bind<FieldVariant>`', "`'outline'`", '`outline`, `filled`, `underline`.'],
-  ['stretch', '`Bind<boolean>`', '`false`', 'Fills the width of what it sits in.'],
+  ['stretch', '`Bind<boolean>`', '`false`', 'Stretches to the full width of its container.'],
   ['mask', '`Bind<string>`', "`''`", 'See Mask.'],
   ['maskChars', '`Bind<Record<string, MaskChar>>`', '`{}`', 'Mask characters of your own.'],
   ['maskPlaceholder', '`Bind<string>`', "`'_'`", 'Shown in the places not filled yet.'],
@@ -46,7 +46,7 @@ const PROPS = [
   ['validateOn', '`Bind<ValidateOn>`', "`'blur'`", '`blur`, `input`, `manual`.'],
   ['validationGroup', '`Bind<ValidationGroup | null>`', '—', 'The group it is checked with.'],
   ['inputMode, autocomplete, spellcheck, name', '`Bind<…>`', '—', 'Passed to the `<input>`.'],
-  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'The shared properties of every control.'],
+  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
@@ -59,19 +59,19 @@ const PROPERTIES = [
 ];
 
 const METHODS = [
-  ['validate()', '`Promise<boolean>`', 'Checks the value and shows the outcome.'],
-  ['resetValidation()', '`void`', 'Hides the outcome of earlier checks.'],
-  ['focus()', '`boolean`', 'Focuses the input.'],
-  ['select()', '`void`', 'Selects the whole text.'],
-  ['clear()', '`void`', 'Empties the field as its clear button does.'],
+  ['validate()', '`Promise<boolean>`', 'Validates the value and displays the result.'],
+  ['resetValidation()', '`void`', 'Clears the results of previous validation.'],
+  ['focus()', '`boolean`', 'Sets focus on the input.'],
+  ['select()', '`void`', 'Selects all text.'],
+  ['clear()', '`void`', 'Clears the field, as the clear button does.'],
   ['refresh()', '`void`', 'Your `buttons` may be plain or reactive; the field reads them as they are. After changing them in place, call `refresh()`. Every editor has it; a list editor reads its items again too.'],
 ];
 
 const EVENTS = [
   ['onValueChanged(e)', 'The value changed. `e`: `{ value, previousValue, byUser, source, event? }`; `byUser` tells the user programmatically.'],
-  ['onValidated(e)', 'A check ended. `e`: `{ valid, message, source }`.'],
-  ['onEnter(e)', 'Enter was pressed. `e`: `{ value, source, event }`.'],
-  ['oninput, onchange, onkeydown, onfocusin, onfocusout', 'The DOM events of the input reach the field.'],
+  ['onValidated(e)', 'Occurs when validation finishes. `e`: `{ valid, message, source }`.'],
+  ['onEnter(e)', 'Occurs when the user presses Enter. `e`: `{ value, source, event }`.'],
+  ['oninput, onchange, onkeydown, onfocusin, onfocusout', 'DOM events from the input bubble up to the field.'],
 ];
 
 const RULES = [
@@ -95,17 +95,17 @@ const MASK = [
 ];
 
 const KEYS = [
-  ['Alt + key (`&Name`)', 'Focus the field (Control + Option + key on Apple platforms).'],
+  ['Alt + key (`&Name`)', 'Moves focus to the field (Control + Option + key on Apple platforms).'],
   ['Enter', 'Commits the value (with `updateOn="change"`) and fires `onEnter`.'],
-  ['Escape', 'With `clearButton`, empties a field that has a value; otherwise it goes on to the window around it.'],
+  ['Escape', 'With `clearButton`, clears a field that has a value. Otherwise, the key passes to the containing window.'],
   ['Tab', 'The buttons you add and the password button are Tab stops; the clear button is not (Escape does its job).'],
 ];
 
 const A11Y = [
   ['Element', 'A native `<input>`; its `<label>` is tied to it with `for`.'],
-  ['Description', '`aria-describedby` names the prefix, the suffix and the line under the box.'],
+  ['Description', '`aria-describedby` references the prefix, the suffix and the help text.'],
   ['Errors', '`aria-invalid="true"`; the message line is a polite live region, so a new error is read out.'],
-  ['Required', '`aria-required="true"`; the mark after the label is hidden from screen readers.'],
+  ['Required', '`aria-required="true"`. The indicator after the label is hidden from screen readers.'],
   ['Buttons', 'The clear and password buttons are named from `uiLocale`; the password button has `aria-pressed`.'],
 ];
 
@@ -114,13 +114,13 @@ const HOOKS = [
   ['.mx-text-box', 'Added by TextBox.'],
   ['.mx-field__label, .mx-field__box, .mx-field__input', 'The label, the box, the input.'],
   ['.mx-field__icon, .mx-field__prefix, .mx-field__suffix', 'The parts at the sides of the input.'],
-  ['.mx-field__button, .mx-text-box__clear, .mx-text-box__reveal', 'The buttons in the box.'],
-  ['.mx-field__message, .mx-field__counter', 'The line under the box.'],
+  ['.mx-field__button, .mx-text-box__clear, .mx-text-box__reveal', 'Buttons inside the box.'],
+  ['.mx-field__message, .mx-field__counter', 'Help text below the box.'],
 ];
 
 const TOKENS = [
   ['field.width', 'The width when not stretched.'],
-  ['field.height.*, field.padding.*, field.font-size.*', 'Sizes, from the density tokens.'],
+  ['field.height.*, field.padding.*, field.font-size.*', 'Sizes are defined by the density tokens.'],
   ['field.box, field.layer, field.frame, field.indicator, field.ring', 'Units: the box, a state layer over its fill, the frame (with `frame-start`, `frame-notch`, `frame-end` around a notch), the line along its bottom and a ring under the keys, each with its box per state: per variant (`filled-…`, `underline-…`), status (`invalid`, `readonly`, `disabled`) and `hover`, `focus`, `pressed`.'],
   ['field.label, field.required, field.icon, field.prefix, field.suffix, field.placeholder', 'Units: the label (`focus`, `invalid`, `disabled`, `floating-…`), the required mark and the parts beside the text.'],
   ['field.slot, field.button, field.glyph, field.button-icon', 'Units: the groups of buttons in the box, the buttons (`hover`, `pressed`, `focus`, `disabled`) and what they show.'],
@@ -188,7 +188,7 @@ import { TextBox, ValidationGroup, validateFields, type ValidationRule } from '@
         <p>
           <Rich text={'A mask keeps the text in shape while it is typed, deleted or pasted; the caret skips the fixed characters. The value is the typed characters only, or with `maskValue="formatted"` the text as shown. A mask that is not filled in fails validation.'} />
         </p>
-        <ApiTable head={['Character', 'Means']} rows={MASK} />
+        <ApiTable head={['Character', 'Meaning']} rows={MASK} />
         <Example files={code('Masks.tsx')} stack>
           <Masks />
         </Example>
@@ -216,11 +216,11 @@ import { TextBox, ValidationGroup, validateFields, type ValidationRule } from '@
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -233,11 +233,11 @@ import { TextBox, ValidationGroup, validateFields, type ValidationRule } from '@
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

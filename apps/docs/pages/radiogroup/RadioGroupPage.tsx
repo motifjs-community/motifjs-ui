@@ -24,36 +24,36 @@ const PROPS = [
   ['required', '`Bind<boolean>`', '`false`', 'One option must be chosen.'],
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`; the row height follows the density tokens.'],
   ['name', '`Bind<string>`', 'generated', 'The name the radios are sent with in a form.'],
-  ['rules, error, validateOn, validationGroup', 'see Field', '', 'Validation, as in every field.'],
-  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'The shared properties of every control.'],
+  ['rules, error, validateOn, validationGroup', 'see Field', '', 'Validation works the same way as for all fields.'],
+  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const ITEM = [
   ['value', '`T`', 'What `value` becomes when this option is chosen.'],
   ['text', '`Bind<string>`', 'Shown next to the circle. Default: the value as text.'],
-  ['hint', '`Bind<string>`', 'A tooltip.'],
+  ['hint', '`Bind<string>`', 'The tooltip text.'],
   ['helpText', '`Bind<string>`', 'A smaller line under the text; it describes the radio.'],
   ['enabled', '`Bind<boolean>`', '`false` greys it out; the arrow keys skip it.'],
   ['visible', '`Bind<boolean>`', '`false` leaves it out.'],
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
-  ['isValid, validationMessage, validating', 'read-only, reactive', 'The outcome of the last check.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
+  ['isValid, validationMessage, validating', 'read-only, reactive', 'The result of the last validation.'],
   ['listElement', 'read-only', 'The element with `role="radiogroup"`.'],
   ['inputs', 'read-only', 'The native radios, in the order of the items.'],
 ];
 
 const METHODS = [
   ['focus()', '`boolean`', 'Focuses the chosen option, or the first one that can be chosen.'],
-  ['validate()', '`Promise<boolean>`', 'Checks the value and shows the outcome.'],
-  ['resetValidation()', '`void`', 'Hides the outcome of earlier checks.'],
+  ['validate()', '`Promise<boolean>`', 'Validates the value and displays the result.'],
+  ['resetValidation()', '`void`', 'Clears the results of previous validation.'],
   ['refresh()', '`void`', 'Your items may be plain or reactive; the group reads them as they are. After changing them in place, call `refresh()`. Their texts, values and states are read again; focus stays where it is.'],
 ];
 
 const EVENTS = [
-  ['onValueChanged(e)', 'The value changed. `e`: `{ value, previousValue, byUser, source, event? }`.'],
-  ['onValidated(e)', 'A check ended. `e`: `{ valid, message, source }`.'],
+  ['onValueChanged(e)', 'Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`.'],
+  ['onValidated(e)', 'Occurs when validation finishes. `e`: `{ valid, message, source }`.'],
   ['onchange, onkeydown, onfocusin, onfocusout', 'The DOM events of the radios reach the group.'],
 ];
 
@@ -152,11 +152,11 @@ import { RadioGroup, type RadioItem } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -166,11 +166,11 @@ import { RadioGroup, type RadioItem } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

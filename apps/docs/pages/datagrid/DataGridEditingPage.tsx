@@ -57,7 +57,7 @@ export default function DataGridEditingPage() {
           <BarActions />
         </Example>
         <ApiTable
-          head={['Setting', 'Default', 'What it does']}
+          head={['Setting', 'Default', 'Description']}
           rows={[
             ['actionsLocation', "`'row'`", "Where the actions show: `'row'`, `'toolbar'` (the `rowActions` toolbar item, at the start; place it through `toolbar.items` like the other items) or `'bottom'` (the start of the bottom bar)."],
             ['actionsTarget', "`'auto'`", "The rows the bars act on: `'selection'`, `'focused'` (the active row) or `'auto'` (the selected rows while selection is on, else the active row)."],
@@ -70,7 +70,7 @@ export default function DataGridEditingPage() {
           ]}
         />
         <ApiTable
-          head={['Action field', 'What it does']}
+          head={['Action field', 'Description']}
           rows={[
             ['id, text, icon, showText, hint', 'As in the row. Rows share an action by its `id`.'],
             ['tone', "`'standard' | 'accent' | 'danger'`, default `'standard'`: the colour of its button and of its item in the “more” menu, the context menu and the bars’ “Actions” menu."],
@@ -86,7 +86,7 @@ export default function DataGridEditingPage() {
           ]}
         />
         <ApiTable
-          head={['Member', 'Gets / returns', 'What it does']}
+          head={['Member', 'Gets / returns', 'Description']}
           rows={[
             ['onActionRunning', '`{ action, rows, selection, location, cancel }`', 'An action is about to run (in a row, a bar, a row’s menu or programmatically); `cancel` keeps it from running. `rows` is empty for a selection that is not loaded.'],
             ['onActionRan', '`{ action, rows, location, done, failed, canceled, errors }`', 'An action ran. Without a listener, what failed rows threw goes to the console.'],

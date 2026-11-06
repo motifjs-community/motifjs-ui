@@ -58,12 +58,12 @@ export default function SchedulerAgendaPage() {
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
         <ApiTable
-          head={['Topic', 'How']}
+          head={['Topic', 'Details']}
           rows={[
             ['List', 'A list box; each day (in its group) is a group of options named by the day.'],
             ['Rows', 'An option per appointment: its text, its time, whether it goes on and how it repeats. The focused row is the selected one.'],
@@ -74,7 +74,7 @@ export default function SchedulerAgendaPage() {
 
       <Section anchor="styling" title="Styling">
         <ApiTable
-          head={['Hook', 'What it is']}
+          head={['Hook', 'Description']}
           rows={[
             ['scheduler.agenda, agenda-group (`first`), agenda-resource', 'Units: the list, a day (and the line over it), a group’s name.'],
             ['scheduler.agenda-day (`today`), agenda-weekday (`today`), agenda-month, day-number `agenda`', 'Units: a day’s head and its parts.'],

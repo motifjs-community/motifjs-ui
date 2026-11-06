@@ -20,11 +20,11 @@ const BAR_PROPS = [
   ['labelPosition', "`Bind<'top' | 'bottom' | 'side'>`", "`'top'` (`'bottom'` for a circle)", '`top`: the label and the value above the bar; `bottom`: under it; `side`: the label before it, the value after it.'],
   ['showValue', '`Bind<boolean>`', '`false`', 'Writes the percent (whole, rounded down) or `valueText`.'],
   ['valueText', '`(value, fraction) => string`', '—', 'The text for a value, shown and read out (`3 of 12 files`). A function, so it is stored as it is, not bound.'],
-  ['locale', '`Bind<string>`', "the page's `lang`", 'The locale of the percent.'],
+  ['locale', '`Bind<string>`', "The page `lang`", 'The locale of the percent.'],
   ['tone', '`Bind<ProgressTone>`', "`'accent'`", '`accent`, `neutral`, `success`, `caution`, `danger`.'],
   ['size', '`Bind<ControlSize>`', "`'md'`", 'The thickness, and the size of a circle: `sm`, `md`, `lg`.'],
-  ['stretch', '`Bind<boolean>`', '`false`', 'Fills the width of what it sits in.'],
-  ['visible, enabled, …', 'see Control', '', 'The shared properties of every control.'],
+  ['stretch', '`Bind<boolean>`', '`false`', 'Stretches to the full width of its container.'],
+  ['visible, enabled, …', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const SPINNER_PROPS = [
@@ -38,9 +38,9 @@ const SPINNER_PROPS = [
 ];
 
 const MEMBERS = [
-  ['ProgressBar: every prop', 'read/write, reactive', 'A value or a function, like the prop.'],
+  ['ProgressBar: every prop', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['ProgressBar: fraction', 'read-only, reactive', 'How much is done, from 0 to 1; `null` while it is not known.'],
-  ['Spinner: every prop', 'read/write, reactive', 'A value or a function, like the prop.'],
+  ['Spinner: every prop', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['Spinner: waiting', 'read-only', 'Still inside its delay.'],
   ['Spinner.cover(target, props?)', '`() => void`', 'Covers a component or an element with a spinner; call the returned function to take it away. See Cover.'],
 ];
@@ -161,7 +161,7 @@ import { ProgressBar, Spinner, type ProgressTone } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -174,11 +174,11 @@ import { ProgressBar, Spinner, type ProgressTone } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

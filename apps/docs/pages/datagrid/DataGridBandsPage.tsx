@@ -66,7 +66,7 @@ export default function DataGridBandsPage() {
         <Example files={withOrders('BandHeaders.tsx')} stack>
           <BandHeaders />
         </Example>
-        <ApiTable head={['Band field', 'Type', 'Default', 'What it does']} rows={BAND_FIELDS} />
+        <ApiTable head={['Band field', 'Type', 'Default', 'Description']} rows={BAND_FIELDS} />
         <ApiTable head={['Topic', 'How bands do it']} rows={BAND_RULES} />
         <p>
           <Rich text="Band rows are `row`s of `columnheader`s in the head's row group: a band's header carries the `aria-colindex` of its first column and `aria-colspan` its columns, the columns keep their own index, and the band rows count in `aria-rowindex` and `aria-rowcount`. Over a pinned column no band covers an empty piece stays with the column, so the band rows scroll under it." />
@@ -80,18 +80,18 @@ export default function DataGridBandsPage() {
         <Example files={withOrders('AdaptiveColumns.tsx')} stack>
           <AdaptiveColumns />
         </Example>
-        <ApiTable head={['Option', 'Type', 'Default', 'What it does']} rows={ADAPTIVE_OPTIONS} />
+        <ApiTable head={['Option', 'Type', 'Default', 'Description']} rows={ADAPTIVE_OPTIONS} />
         <p>
           <Rich text="The detail is a row of its own right after its row, before the row's master-detail when both are open (order): measured as it is drawn, in the reading order (`aria-owns`), counted in `aria-rowindex`, its one cell named “Hidden columns of row 3” (`gridAdaptiveOf`; `gridAdaptive` names the “…” and its column). Grouped rows, paging and the virtual list keep it under its row; a wider grid with nothing hidden closes it." />
         </p>
       </Section>
 
       <Section anchor="bands-keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="adaptive-api" title="Events and methods">
-        <ApiTable head={['Member', 'Gets or returns', 'What it does']} rows={ADAPTIVE_API} />
+        <ApiTable head={['Member', 'Parameters or return value', 'Description']} rows={ADAPTIVE_API} />
       </Section>
     </>
   );

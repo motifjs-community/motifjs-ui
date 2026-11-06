@@ -43,7 +43,7 @@ const A11Y = [
 
 const HOOKS = [
   ['.mx-action-sheet', 'On the bottom sheet\'s layer (`.mx-bottom-sheet`), whose hooks it has.'],
-  ['.mx-action-sheet__message', 'The line under the title.'],
+  ['.mx-action-sheet__message', 'Text below the title.'],
   ['.mx-action-sheet__list', 'The menu (`.mx-menu`).'],
   ['.mx-action-sheet__cancel', 'The row of the cancel button.'],
   ['.mx-action-sheet__back', 'The mark of the way back.'],
@@ -98,11 +98,11 @@ import { ActionSheet, type ActionSheetProps } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -112,11 +112,11 @@ import { ActionSheet, type ActionSheetProps } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

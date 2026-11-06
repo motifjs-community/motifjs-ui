@@ -67,7 +67,7 @@ const HOOKS = [
   ['.mx-toaster', 'The region.'],
   ['.mx-toaster__stack', 'A stack at one position. `data-position`.'],
   ['.mx-toast', 'A toast. `data-tone`, `data-state` (`entering`, `shown`, `leaving`).'],
-  ['.mx-toast__icon, .mx-toast__body, .mx-toast__title, .mx-toast__text', 'Its parts.'],
+  ['.mx-toast__icon, .mx-toast__body, .mx-toast__title, .mx-toast__text', 'The parts of the component.'],
   ['.mx-toast__action, .mx-toast__close', 'Its buttons (Buttons, `sm`).'],
 ];
 
@@ -151,11 +151,11 @@ import { toast, Toast, Toaster, type ToastTone, type ToastPosition } from '@moti
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -168,11 +168,11 @@ import { toast, Toast, Toaster, type ToastTone, type ToastPosition } from '@moti
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

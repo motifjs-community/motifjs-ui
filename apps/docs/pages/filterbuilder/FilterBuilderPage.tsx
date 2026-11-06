@@ -27,10 +27,10 @@ const PROPS = [
   ['allowHierarchicalFields', '`Bind<boolean>`', '`false`', 'Fields with a dotted `dataField` show as submenus of their parts.'],
   ['label', '`Bind<string>`', "the `filterBuilderLabel` text", 'The tree\'s accessible name; `aria-label` / `aria-labelledby` on the tag work too.'],
   ['texts', '`Bind<Partial<UiStrings>>`', '`{}`', 'Texts for this builder only, over `uiLocale.strings`.'],
-  ['locale', '`Bind<string>`', 'the page\'s', 'Locale of numbers and dates.'],
+  ['locale', '`Bind<string>`', 'From the page', 'Locale of numbers and dates.'],
   ['size', '`Bind<ControlSize>`', "`'sm'`", 'The size of the buttons and editors.'],
   ['addKeys, removeKeys', '`Bind<string[]>`', "`['Insert']`, `['Delete']`", 'Keys that add a condition to the focused row\'s group and take the focused row out.'],
-  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'The shared properties of every control.'],
+  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const FIELD = [
@@ -57,7 +57,7 @@ const CUSTOM = [
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['root', 'read-only', 'The tree: `{ kind: \'group\', operation, items, parent }` with `{ kind: \'condition\', field, operation, value, parent }` items. Change it through the methods.'],
   ['filterText', 'read-only, reactive', 'The filter as one line: `[City] Equals \'Ankara\' And [Amount] Is greater than \'100\'`.'],
   ['model', 'read-only', 'The `FilterBuilderModel`: a field\'s operations, texts, the tree of an expression and back.'],
@@ -181,11 +181,11 @@ import { FilterBuilder, filterText } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -198,11 +198,11 @@ import { FilterBuilder, filterText } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

@@ -27,7 +27,7 @@ export default class ShowcasePage extends Component {
     return (
       <>
         <p class="lead">
-          <Rich text="An order screen built with the kit, the way a MotifJS app is built: the state and the operations live in a model (`OrderModel`), the page binds to it. The customer list is a data source of 5,000 rows that answers like a server." />
+          <Rich text="An order entry screen built with the kit, structured the way a MotifJS application is normally built: state and operations live in a model (`OrderModel`), and the page binds to it. The customer list is a data source of 5,000 rows that responds like a server." />
         </p>
 
         <div class="showcase">

@@ -19,7 +19,7 @@ const PROPS = [
   ['chevron', '`Bind<AccordionChevron>`', "`'end'`", 'Where the open/closed arrow sits: `end`, `start`, `none`.'],
   ['lazy', '`Bind<boolean>`', '`true`', 'A section is built when first opened, then kept. An item\'s own `lazy` wins.'],
   ['keepAlive', '`Bind<boolean>`', '`true`', '`false`: what an item\'s `content` made is disposed when it closes and made again when it opens. An item\'s own `keepAlive` wins.'],
-  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'The shared properties of every control.'],
+  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const ITEM_PROPS = [
@@ -34,7 +34,7 @@ const ITEM_PROPS = [
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['items', 'read-only, reactive', 'The items, in order.'],
   ['expandedItems', 'read-only, reactive', 'The open items.'],
   ['AccordionItem.contentBuilt', 'read-only', 'Whether its section has been built.'],
@@ -134,19 +134,19 @@ import { Accordion, AccordionItem } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

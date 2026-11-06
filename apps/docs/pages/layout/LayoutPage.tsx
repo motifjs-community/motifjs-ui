@@ -93,7 +93,7 @@ const CHILD_PROPS = [
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['SplitContainer.first, second', 'read-only', 'The panes, two `Panel`s: `split.first.controls.add(…)`, `split.second.scrollable = true`.'],
   ['SplitContainer.splitterElement', 'read-only', 'The `role="separator"` element.'],
   ['SplitContainer.value', 'read/write', '`position`, for `x-model`.'],
@@ -188,7 +188,7 @@ import { Stack, Grid, Panel, GroupBox, DockPanel, SplitContainer, type LayoutSpa
         <p>
           <Rich text="`gap` and `padding` take a step of the spacing scale, a number of pixels or any CSS length." />
         </p>
-        <ApiTable head={['Value', 'Means']} rows={SPACE} />
+        <ApiTable head={['Value', 'Meaning']} rows={SPACE} />
         <Example files={code('Spacing.tsx')} stack>
           <Spacing />
         </Example>
@@ -198,7 +198,7 @@ import { Stack, Grid, Panel, GroupBox, DockPanel, SplitContainer, type LayoutSpa
         <p>
           <Rich text="Rows and columns written like CSS. Children fill the cells in order, or say where they go: `row`, `column`, `rowSpan`, `columnSpan`, counted from 1." />
         </p>
-        <ApiTable head={['Tracks', 'Means']} rows={TRACKS} />
+        <ApiTable head={['Tracks', 'Meaning']} rows={TRACKS} />
         <Example title="A form" files={code('GridForm.tsx')} stack>
           <GridForm />
         </Example>
@@ -244,11 +244,11 @@ import { Stack, Grid, Panel, GroupBox, DockPanel, SplitContainer, type LayoutSpa
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -261,11 +261,11 @@ import { Stack, Grid, Panel, GroupBox, DockPanel, SplitContainer, type LayoutSpa
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

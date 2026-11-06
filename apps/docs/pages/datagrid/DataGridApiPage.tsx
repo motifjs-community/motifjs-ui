@@ -47,7 +47,7 @@ const PROPS = [
   ['loadValues', '`(request) => { values, total }`', '—', 'The values of a header filter from a server that cannot group: `{ column, search, filter, skip, take, signal }`.'],
   ['onEditorPrepared / onRowValidating', '`(e) => void`', '—', 'An editor was made, in a cell or the edit form; a row is checked before it is saved (add messages, or `isValid = false`). See [Events and methods](/datagrid/forms#form-api).'],
   ['onEditorPreparing', '`(e) => void`', '—', 'Before a cell editor is made: `{ field, row, values, getValue, isNew, options, cancel }` (`row` is the row itself, `values` what was entered in it, `getValue(field)` the entered value else the row’s). Change `e.options`, the editor’s props (`enabled = false` disables it), or set `e.cancel`.'],
-  ['enabled / disabled, visible, tabStop', 'see Control', '', 'The shared properties of every control.'],
+  ['enabled / disabled, visible, tabStop', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const COLUMN_FIELDS = [
@@ -106,7 +106,7 @@ const PROPERTIES = [
   ['summaryStatus', 'read-only, reactive', '`\'loading\'` while a server works out the totals (or every row loads for them), `\'error\'` when that failed, else `\'ready\'`.'],
   ['onRowExpanding, onRowExpanded, onRowCollapsing, onRowCollapsed, onGroupingChanging, onGroupingChanged, onGroupDropping', 'event', 'Subscribe with `grid.onRowExpanded((e) => …)`; the same as the props.'],
   ['form, popup', 'read/write, live', "`grid.form.colCount = 3`, `grid.popup.title = 'Order'`; a function is followed."],
-  ['masterDetail', 'read/write, live', '`grid.masterDetail.enabled = true`; a function is followed.'],
+  ['masterDetail', 'read/write, live', '`grid.masterDetail.enabled = true`. A function is tracked reactively.'],
   ['adaptiveDetail, adaptiveHiddenColumns', 'read/write, live; read-only, reactive', '`grid.adaptiveDetail.colCount = 1`; the columns the width hides now.'],
   ['toolbar', 'read/write, live', '`grid.toolbar.items = [\'searchPanel\', { text: \'Refresh\', click }]`, `grid.toolbar.visible = false`; a function is followed. The items are kept as given (`grid.toolbar.items` is your array): after a change in place call `repaint()`.'],
   ['export', 'read/write, live', '`grid.export.formats = [\'xlsx\', \'csv\']`, `grid.export.allowExportSelectedData = true`; a function is followed.'],
@@ -215,7 +215,7 @@ const A11Y = [
   ['Sorting', '`aria-sort` on the first sorted header.'],
   ['Messages', 'A cell with a message has `aria-invalid` and is described by it while it is active; the status cell names the row’s state, not only with a color.'],
   ['Announcements', 'Sorting, moving, saving, errors, copying, pasting and exports are announced through a polite live region.'],
-  ['Busy', '`aria-busy` while the first rows load and while a row is saved in `wait` mode; on a lookup cell while its text loads, and on a cell while its `setCellValue` runs.'],
+  ['Busy state', '`aria-busy` while the first rows load and while a row is saved in `wait` mode; on a lookup cell while its text loads, and on a cell while its `setCellValue` runs.'],
   ['Lookup keys', 'A key the lookup source does not have is not shown only by its color: it is underlined and its hint (“Not found in the list”) shows on hover and focus.'],
   ['Actions', 'Real buttons with the action’s text as their name (also when only the icon shows, with the text as a tooltip); one of them is in the cell’s roving focus; the “more” button has `aria-haspopup="menu"` and is named “More actions for row N”. In the toolbar and the bottom bar a button that acts on several rows is named with the count (“Approve, 3 rows”) and described by what the bar acts on (“Actions for 3 selected rows”), said politely when that changes; nothing there moves focus by itself.'],
   ['Selection', '`aria-multiselectable` on the grid, `aria-selected` on every row while selection is on; the check boxes are `role="checkbox"` with `aria-checked` (`mixed` in the header).'],
@@ -266,15 +266,15 @@ export default function DataGridApiPage() {
   return (
     <>
       <Section anchor="columns" title="Columns">
-        <ApiTable head={['Field', 'What it does']} rows={COLUMN_FIELDS} />
+        <ApiTable head={['Field', 'Description']} rows={COLUMN_FIELDS} />
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -287,11 +287,11 @@ export default function DataGridApiPage() {
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

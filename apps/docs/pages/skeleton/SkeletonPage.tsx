@@ -11,14 +11,14 @@ const PROPS = [
   ['lines', '`Bind<number>`', '`1`', 'How many lines of text; the last of several is shorter.'],
   ['width', '`Bind<string | number | null>`', 'the room it is in', 'A CSS length, or pixels as a number; a circle’s size (default: the language’s).'],
   ['height', '`Bind<string | number | null>`', 'a line / the language’s', 'A CSS length, or pixels as a number.'],
-  ['animation', '`Bind<SkeletonAnimation>`', 'the language’s', '`wave`, `pulse`, `none`. Tactile, Lounge and Fluent sweep a wave, Material and Lilac pulse.'],
+  ['animation', '`Bind<SkeletonAnimation>`', 'Set by the design language', '`wave`, `pulse`, `none`. Tactile, Lounge and Fluent sweep a wave, Material and Lilac pulse.'],
   ['loading', '`Bind<boolean>`', '`true`', 'While `true` the skeleton shows; then its JSX children do.'],
-  ['label', '`Bind<string>`', 'the kit’s “Loading…”', 'What screen readers say while it loads.'],
-  ['visible', 'see Control', '', 'The shared properties of every control.'],
+  ['label', '`Bind<string>`', 'The kit string “Loading…”', 'What screen readers say while it loads.'],
+  ['visible', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write', 'Accepts a value or a function, the same as the prop.'],
   ['content', 'read-only', 'The part holding what shows once loaded, for adding to it programmatically.'],
 ];
 
@@ -78,15 +78,15 @@ import { Skeleton } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

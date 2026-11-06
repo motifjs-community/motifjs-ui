@@ -43,7 +43,7 @@ export default function DataGridLookupsPage() {
         <Example files={[...code('TextFrom.tsx', 'customers.ts'), slowAdapterFile]} stack>
           <TextFrom />
         </Example>
-        <ApiTable head={['Lookup field', 'What it does']} rows={LOOKUP_FIELDS} />
+        <ApiTable head={['Lookup field', 'Description']} rows={LOOKUP_FIELDS} />
       </Section>
     </>
   );

@@ -23,7 +23,7 @@ const FORM = [
   ['form.items', '`Bind<(string | FormItem)[]>`', 'every column', 'What the form holds, in order: a column by field name, or a kit `FormItem`. An item whose `field` is a column’s gets that column’s editor (by type, a lookup’s, the column’s own `editor`), with the item’s `label`, `colSpan`, `helpText`, `visible` and `editorProps`; groups (`group`, `items`, `columns`), buttons and `template`s are the form’s own. By default every column, the visible ones first, hidden ones too; a column the user cannot fill shows read-only.'],
   ['form.colCount', '`Bind<number>`', '`2`', 'Columns of the form.'],
   ['form.minColWidth', '`Bind<string>`', '—', 'As many columns as fit, each at least this wide; `colCount` is the most.'],
-  ['form.labelMode', "`Bind<'top' | 'side' | 'floating' | 'hidden'>`", "`'top'`", 'Where the labels go.'],
+  ['form.labelMode', "`Bind<'top' | 'side' | 'floating' | 'hidden'>`", "`'top'`", 'Label placement.'],
   ['popup.title, popup.showTitle', '`Bind<string>`, `Bind<boolean>`', '“Edit row” / “New row”, `true`', 'The window’s title; hidden, it still names the window for screen readers.'],
   ['popup.width, popup.height', '`Bind<number | string>`', 'as the form needs', 'A CSS length, or pixels.'],
   ['popup.resizable, popup.movable', '`Bind<boolean>`', '`true`', 'Resized from its edges, moved by its title bar.'],
@@ -85,9 +85,9 @@ export default function DataGridFormsPage() {
         <Example files={withOrders('PopupMode.tsx')} stack>
           <PopupMode />
         </Example>
-        <ApiTable head={['Setting', 'Default', 'What it does']} rows={SETTINGS} />
-        <ApiTable head={['Prop', 'Type', 'Default', 'What it does']} rows={FORM} />
-        <ApiTable head={['Column field', 'Type', 'What it does']} rows={COLUMN} />
+        <ApiTable head={['Setting', 'Default', 'Description']} rows={SETTINGS} />
+        <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={FORM} />
+        <ApiTable head={['Column field', 'Type', 'Description']} rows={COLUMN} />
       </Section>
 
       <Section anchor="rules" title="Validation rules">
@@ -104,8 +104,8 @@ export default function DataGridFormsPage() {
       </Section>
 
       <Section anchor="form-api" title="Events and methods">
-        <ApiTable head={['Event', 'Gets', 'When']} rows={EVENTS} />
-        <ApiTable head={['Member', 'Returns', 'What it does']} rows={METHODS} />
+        <ApiTable head={['Event', 'Parameters', 'When']} rows={EVENTS} />
+        <ApiTable head={['Member', 'Returns', 'Description']} rows={METHODS} />
       </Section>
     </>
   );

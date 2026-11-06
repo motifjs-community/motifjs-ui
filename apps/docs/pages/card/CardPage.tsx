@@ -11,7 +11,7 @@ const code = sources(import.meta.glob('./examples/*.tsx', { query: '?raw', impor
 
 const PROPS = [
   ['title', '`Bind<string>`', "`''`", 'The title; it names the card for screen readers.'],
-  ['subtitle', '`Bind<string>`', "`''`", 'The line under the title.'],
+  ['subtitle', '`Bind<string>`', "`''`", 'Text below the title.'],
   ['avatar', '`Bind<AvatarProps | null>`', '`null`', 'An avatar before the titles (its props).'],
   ['action', '`Bind<ComponentBase | null>`', '`null`', 'Something at the end of the header: a menu button, a badge.'],
   ['media', '`Bind<IconSource | null>`', '`null`', 'A picture running to the card’s edges: an image address, an element or a component.'],
@@ -27,11 +27,11 @@ const PROPS = [
   ['selectable', '`Bind<boolean>`', '`false`', 'A check box on its top end corner; a press on the card turns it on and off.'],
   ['selected', '`Bind<boolean>`', '`false`', 'Whether it is selected.'],
   ['onSelectedChanged', '`CardSelectedChangedEventArgs`', '', 'It was selected or not any more (`selected`), by the user or by code (`byUser`).'],
-  ['enabled, visible, tabStop', 'see Control', '', 'The shared properties of every control.'],
+  ['enabled, visible, tabStop', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write', 'Accepts a value or a function, the same as the prop.'],
   ['contentPart', 'read-only', 'The part holding the content, for adding to it programmatically.'],
   ['avatarControl', 'read-only', 'The avatar before the titles, when it has one.'],
 ];
@@ -77,14 +77,14 @@ import { Card } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function. Created with `new`, the same properties are set programmatically." />
+          <Rich text="Every prop accepts a value or a function. When you create the component with `new`, set the same properties programmatically." />
         </p>
         <Example files={code('Programmatic.tsx')}>
           <Programmatic />
         </Example>
       </Section>
 
-      <Section anchor="variants" title="Looks">
+      <Section anchor="variants" title="Appearance">
         <Example files={code('Variants.tsx')}>
           <Variants />
         </Example>
@@ -115,15 +115,15 @@ import { Card } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

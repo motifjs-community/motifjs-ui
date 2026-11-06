@@ -59,14 +59,14 @@ const KEYS = [
   ['Alt + Page Down / Page Up', 'Ctrl + Page Down / Page Up', 'The next / previous tab (`nextTab`, `previousTab`).'],
   ['Ctrl + Alt + 1 … 9', 'Ctrl + 1 … 9', 'Focuses a group (`focusGroup`).'],
   ['Ctrl + E, Ctrl + Shift + E', 'Ctrl + Tab, Ctrl + Shift + Tab', 'The recently used list: opens it, then walks it while Ctrl is held; letting go opens the highlighted document (`recentNext`, `recentPrevious`).'],
-  ['Alt + Left / Right', 'the same', 'Back and forward (`goBack`, `goForward`).'],
+  ['Alt + Left / Right', 'Same', 'Back and forward (`goBack`, `goForward`).'],
   ['Ctrl + Alt + Shift + T', 'Ctrl + Shift + T', 'Reopens the document closed last (`reopenClosed`).'],
-  ['Ctrl + K, then W / U', 'the same', 'Closes the group\'s documents / the saved ones (`closeAllTabs`, `closeSavedTabs`).'],
-  ['Ctrl + K, then Enter', 'the same', 'Keeps a preview tab (`keepOpen`).'],
-  ['Ctrl + K, then Shift + Enter', 'the same', 'Pins or unpins the active document (`togglePin`).'],
-  ['Ctrl + K, then Ctrl + P', 'the same', 'Opens the "…" list (`showOpenList`).'],
-  ['Ctrl + \\', 'the same', 'Splits to the right (`splitRight`).'],
-  ['Shift + F10, the Menu key', 'the same', 'The context menu of the focused tab.'],
+  ['Ctrl + K, then W / U', 'Same', 'Closes the group\'s documents / the saved ones (`closeAllTabs`, `closeSavedTabs`).'],
+  ['Ctrl + K, then Enter', 'Same', 'Keeps a preview tab (`keepOpen`).'],
+  ['Ctrl + K, then Shift + Enter', 'Same', 'Pins or unpins the active document (`togglePin`).'],
+  ['Ctrl + K, then Ctrl + P', 'Same', 'Opens the "…" list (`showOpenList`).'],
+  ['Ctrl + \\', 'Same', 'Splits to the right (`splitRight`).'],
+  ['Shift + F10, the Menu key', 'Same', 'The context menu of the focused tab.'],
 ];
 
 const A11Y = [
@@ -125,7 +125,7 @@ export default function TabDocsMenusPage() {
         <p>
           <Rich text="A page in a browser tab never receives Ctrl+W, Ctrl+Tab, Ctrl+Shift+T, Ctrl+Page Up / Down and often Ctrl+1…9: the browser keeps them. So a manager starts with keys that reach it there, the way the web version of the editor picks them (Ctrl+Alt for a Ctrl the browser keeps; Ctrl+E, the quick-open key, for the recent list), and keeps the desktop key as a second one. An installed app (display mode standalone) gets every key: there `keyPreset: 'auto'` takes `TabDocumentManager.desktopKeys`. `keys` changes any of them; an empty list turns one off." />
         </p>
-        <ApiTable head={['Browser tab', 'Installed app', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Browser tab', 'Installed app', 'Description']} rows={KEYS} />
         <Code
           code={`
 // The desktop keys everywhere, and Ctrl+Q to close.
@@ -135,7 +135,7 @@ new TabDocumentManager({ keyPreset: 'desktop', keys: { closeTab: ['Ctrl+Q'] } })
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="api" title="API">
@@ -154,7 +154,7 @@ new TabDocumentManager({ keyPreset: 'desktop', keys: { closeTab: ['Ctrl+Q'] } })
         <h3>
           <Rich text="Events" />
         </h3>
-        <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
+        <ApiTable head={['Event', 'Contents']} rows={EVENTS} />
         <p>
           <Rich text="The rest of the API is on the [overview](/tabdocs#api); preview and pinned tabs, sizes and copies on [Tabs](/tabdocs/tabs)." />
         </p>

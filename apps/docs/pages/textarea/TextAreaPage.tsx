@@ -13,9 +13,9 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 
 const PROPS = [
   ['value', '`Bind<string>`', "`''`", 'The text, lines separated by `\\n`. `x-model` binds it two-way.'],
-  ['label', '`Bind<string>`', "`''`", 'The caption; `&Name` makes Alt+N focus the field. The same property as `text`.'],
+  ['label', '`Bind<string>`', "`''`", 'The field label. Writing `&Name` assigns Alt+N as the access key. This is the same property as `text`.'],
   ['labelMode', '`Bind<FieldLabelMode>`', "`'top'`", '`top`, `side`, `floating`, `hidden`.'],
-  ['placeholder', '`Bind<string>`', "`''`", 'Shown while the field is empty.'],
+  ['placeholder', '`Bind<string>`', "`''`", 'Displayed when the field is empty.'],
   ['rows', '`Bind<number>`', '`3`', 'Visible lines.'],
   ['autoGrow', '`Bind<boolean>`', '`false`', 'The box follows the text, from `minRows` to `maxRows` lines, then scrolls.'],
   ['minRows', '`Bind<number>`', '`rows`', 'The smallest box with `autoGrow`.'],
@@ -23,34 +23,34 @@ const PROPS = [
   ['resize', '`Bind<TextAreaResize>`', "`'vertical'`", '`none`, `vertical`, `both`: which way the user can drag the box. `none` while `autoGrow` is on.'],
   ['maxLength / minLength', '`Bind<number>`', '—', 'Limits; both are checked by validation.'],
   ['showCounter', '`Bind<boolean>`', '`false`', '`12/500` under the box (`12` without `maxLength`).'],
-  ['clearButton', '`Bind<boolean>`', '`false`', 'A button that empties the field; Escape does the same.'],
+  ['clearButton', '`Bind<boolean>`', '`false`', 'Shows a button that clears the field. Pressing Escape also clears it.'],
   ['updateOn', "`Bind<'input' | 'change'>`", "`'input'`", '`change`: the value changes when the field is left or Ctrl+Enter is pressed.'],
-  ['selectOnFocus', '`Bind<boolean>`', '`false`', 'Selects the whole text when the field gets focus.'],
+  ['selectOnFocus', '`Bind<boolean>`', '`false`', 'Selects all text when the field receives focus.'],
   ['wrap', "`Bind<'soft' | 'hard' | 'off'>`", "`'soft'`", '`off` keeps long lines on one line and scrolls sideways.'],
-  ['helpText, hint, prefix, suffix, icon, buttons', 'see TextBox', '', 'The parts every field has.'],
-  ['readOnly, required, size, variant, stretch', 'see TextBox', '', 'The states and the look every field has.'],
-  ['rules, error, validateOn, validationGroup', 'see TextBox', '', 'Validation, as for every field.'],
+  ['helpText, hint, prefix, suffix, icon, buttons', 'see TextBox', '', 'Parts common to all fields.'],
+  ['readOnly, required, size, variant, stretch', 'see TextBox', '', 'States and appearance common to all fields.'],
+  ['rules, error, validateOn, validationGroup', 'see TextBox', '', 'Validation works the same way as for all fields.'],
   ['spellcheck, name, autocomplete', '`Bind<…>`', '—', 'Passed to the `<textarea>`.'],
-  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'The shared properties of every control.'],
+  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
-  ['isValid, validationMessage, validating', 'read-only, reactive', 'The outcome of the checks.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
+  ['isValid, validationMessage, validating', 'read-only, reactive', 'The validation result.'],
   ['textAreaElement', 'read-only', 'The native `<textarea>`.'],
 ];
 
 const METHODS = [
-  ['validate()', '`Promise<boolean>`', 'Checks the value and shows the outcome.'],
-  ['resetValidation()', '`void`', 'Hides the outcome of earlier checks.'],
+  ['validate()', '`Promise<boolean>`', 'Validates the value and displays the result.'],
+  ['resetValidation()', '`void`', 'Clears the results of previous validation.'],
   ['focus()', '`boolean`', 'Focuses the textarea.'],
-  ['select()', '`void`', 'Selects the whole text.'],
-  ['clear()', '`void`', 'Empties the field as its clear button does.'],
+  ['select()', '`void`', 'Selects all text.'],
+  ['clear()', '`void`', 'Clears the field, as the clear button does.'],
 ];
 
 const EVENTS = [
-  ['onValueChanged(e)', 'The value changed. `e`: `{ value, previousValue, byUser, source, event? }`.'],
-  ['onValidated(e)', 'A check ended. `e`: `{ valid, message, source }`.'],
+  ['onValueChanged(e)', 'Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`.'],
+  ['onValidated(e)', 'Occurs when validation finishes. `e`: `{ valid, message, source }`.'],
   ['onEnter(e)', 'Ctrl+Enter (Cmd+Enter) was pressed. `e`: `{ value, source, event }`.'],
   ['oninput, onchange, onkeydown, onfocusin, onfocusout', 'The DOM events of the textarea reach the field.'],
 ];
@@ -58,16 +58,16 @@ const EVENTS = [
 const KEYS = [
   ['Enter', 'A new line.'],
   ['Ctrl + Enter, Cmd + Enter', 'Commits the value (with `updateOn="change"`) and fires `onEnter`: send, save.'],
-  ['Escape', 'With `clearButton`, empties a field that has a value; otherwise it goes on to the window around it.'],
-  ['Alt + key (`&Name`)', 'Focus the field (Control + Option + key on Apple platforms).'],
+  ['Escape', 'With `clearButton`, clears a field that has a value. Otherwise, the key passes to the containing window.'],
+  ['Alt + key (`&Name`)', 'Moves focus to the field (Control + Option + key on Apple platforms).'],
   ['Tab', 'Leaves the field; the clear button is not a Tab stop (Escape does its job).'],
 ];
 
 const A11Y = [
   ['Element', 'A native `<textarea>` (multi-line by nature); its `<label>` is tied to it with `for`.'],
-  ['Description', '`aria-describedby` names the prefix, the suffix and the line under the box.'],
-  ['Errors', '`aria-invalid="true"`; the message line is a polite live region.'],
-  ['Required', '`aria-required="true"`; the mark after the label is hidden from screen readers.'],
+  ['Description', '`aria-describedby` references the prefix, the suffix and the help text.'],
+  ['Errors', '`aria-invalid="true"`. The message is a polite live region.'],
+  ['Required', '`aria-required="true"`. The indicator after the label is hidden from screen readers.'],
   ['Ctrl + Enter', 'Say it in the label or the help text when it sends something, as in the example above.'],
 ];
 
@@ -76,7 +76,7 @@ const HOOKS = [
   ['.mx-field__box', 'The box; it carries the resize grip.'],
   ['.mx-field__input.mx-text-area__input', 'The textarea.'],
   ['.mx-text-area__clear', 'The clear button.'],
-  ['.mx-field__message, .mx-field__counter', 'The line under the box.'],
+  ['.mx-field__message, .mx-field__counter', 'Help text below the box.'],
 ];
 
 export default function TextAreaPage() {
@@ -152,11 +152,11 @@ import { TextArea, type TextAreaProps } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -172,7 +172,7 @@ import { TextArea, type TextAreaProps } from '@motifx-community/ui';
         <p>
           <Rich text="TextArea uses the field tokens (`field.*`, see TextBox) and has none of its own: the first line lines up with a one-line field of the same size." />
         </p>
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
       </Section>
 
       <Section anchor="api" title="API reference">

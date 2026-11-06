@@ -18,7 +18,7 @@ const PROPS = [
     ['locale, displayFormat, firstDayOfWeek, showWeekNumbers, showSeconds', '', '', 'As on the `DateBox`.'],
     ['startPlaceholder, endPlaceholder', '`Bind<string>`', "`''`", 'Shown in an empty box.'],
     ['clearButton, showPickerButton', '`Bind<boolean>`', '`false`, `true`', 'The clear button; the button that opens the calendars.'],
-    ['label, helpText, required, rules, readOnly, size, variant…', '', '', 'The field props, as on every editor.']
+    ['label, helpText, required, rules, readOnly, size, variant…', '', '', 'Field props shared by all editors.']
 ];
 
 const MEMBERS = [
@@ -47,7 +47,7 @@ const A11Y = [
 const HOOKS = [
     ['.mx-date-range-box', 'The field. `data-type`.'],
     ['.mx-date-range-box__start, .mx-date-range-box__end, .mx-date-range-box__separator', 'The inputs and the glyph between them.'],
-    ['.mx-date-range-box__toggle, .mx-date-range-box__clear', 'The buttons in the box.'],
+    ['.mx-date-range-box__toggle, .mx-date-range-box__clear', 'Buttons inside the box.'],
     ['.mx-date-range-box__popup, .mx-date-range-box__calendar, .mx-date-range-box__presets', 'The popup, each calendar, the presets.']
 ];
 
@@ -103,20 +103,20 @@ import { DateRangeBox, type DateRange } from '@motifx-community/ui';
                 </Example>
             </Section>
 
-            <Section anchor="behaviour" title="Behaviour">
-                <ApiTable head={['Topic', 'How']} rows={BEHAVIOUR} />
+            <Section anchor="behaviour" title="Behavior">
+                <ApiTable head={['Topic', 'Details']} rows={BEHAVIOUR} />
             </Section>
 
             <Section anchor="a11y" title="Accessibility">
-                <ApiTable head={['Topic', 'How']} rows={A11Y} />
+                <ApiTable head={['Topic', 'Details']} rows={A11Y} />
             </Section>
 
             <Section anchor="styling" title="Styling">
-                <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+                <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
                 <h3>
                   <Rich text="Component tokens" />
                 </h3>
-                <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+                <ApiTable head={['Token', 'Description']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
@@ -127,7 +127,7 @@ import { DateRangeBox, type DateRange } from '@motifx-community/ui';
                 <h3>
                   <Rich text="Events, properties and methods" />
                 </h3>
-                <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
+                <ApiTable head={['Member', 'Type', 'Description']} rows={MEMBERS} />
             </Section>
         </>
     );

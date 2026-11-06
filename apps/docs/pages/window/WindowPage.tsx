@@ -11,7 +11,7 @@ import ModalAndModeless from './examples/ModalAndModeless';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['value', '`Bind<boolean>`', '`false`', 'Whether it is open. `x-model` binds it two-way: the user closing it writes `false`.'],
+  ['value', '`Bind<boolean>`', '`false`', 'Indicates whether it is open. `x-model` provides two-way binding, so `false` is written when the user closes it.'],
   ['modal', '`Bind<boolean>`', '`false`', 'Opened through `value`, it is modal.'],
   ['title', '`Bind<string>`', "`''`", 'The title in the title bar; it names the form. The same property as `text`.'],
   ['content', '`Bind<ComponentBase | null>`', '—', 'What fills the content area, next to JSX children and `view()`.'],
@@ -32,7 +32,7 @@ const PROPS = [
   ['width / height', '`Bind<number | string>`', 'content size', 'A CSS length; a number is pixels.'],
   ['alert', '`Bind<boolean>`', '`false`', '`role="alertdialog"`: something urgent.'],
   ['disposeOnClose', '`Bind<boolean>`', 'see text', 'Default: disposed when `show` / `showDialog` added it to the host; a JSX form is hidden.'],
-  ['enabled / disabled, visible', 'see Control', '', 'The shared properties of every control.'],
+  ['enabled / disabled, visible', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
@@ -46,7 +46,7 @@ const PROPERTIES = [
 const METHODS = [
   ['show(host, disposeRef?)', '`void`', 'Shows it modeless in `host` (a component or the application); it dies with `disposeRef`, else the host.'],
   ['showDialog(host, disposeRef?)', '`Promise<FormResult>`', 'Shows it modal; resolves with the result when it closes.'],
-  ['close(result?)', '`boolean`', 'Closes it; `false` when `onClosing` kept it open.'],
+  ['close(result?)', '`boolean`', 'Closes it. Returns `false` if `onClosing` canceled the close.'],
   ['activate()', '`void`', 'Brings it to the front with focus on its last active control.'],
   ['minimize(), maximize(), restore()', '`void`', 'Set `windowState`.'],
   ['center()', '`void`', 'Puts it back in the middle of the viewport.'],
@@ -55,7 +55,7 @@ const METHODS = [
 
 const EVENTS = [
   ['onLoaded(e)', 'Before it is shown the first time: the place to fill it.'],
-  ['onShown(e)', 'It was shown.'],
+  ['onShown(e)', 'Occurs after it is shown.'],
   ['onActivate(e) / onDeactivate(e)', 'It became the front window / another one did.'],
   ['onClosing(e)', 'It is about to close. `e`: `{ result, reason, source, cancel }`; `cancel = true` keeps it open (not when its owner is going away).'],
   ['onClosed(e)', 'It closed. `e`: `{ result, reason, source }`; `reason` is `user` (close button, Escape), `code` or `owner`.'],
@@ -173,11 +173,11 @@ import { MxForm, messageBox, confirm, type FormResult } from '@motifx-community/
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -190,11 +190,11 @@ import { MxForm, messageBox, confirm, type FormResult } from '@motifx-community/
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

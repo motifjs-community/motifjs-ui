@@ -43,7 +43,7 @@ export default function SchedulerBigDataPage() {
       </Section>
 
       <Section anchor="how" title="How it stays fast">
-        <ApiTable head={['Part', 'How']} rows={HOW} />
+        <ApiTable head={['Part', 'Details']} rows={HOW} />
         <Code
           code={`
 // A data source is asked for what is shown: the days, and the resources of the groups.

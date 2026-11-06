@@ -22,7 +22,7 @@ const PROPS = [
 
 const MEMBERS = [
   ['open(), close(reason?), toggle(), show(host)', '`boolean`', 'As on a bottom sheet.'],
-  ['isOpen', 'read-only, reactive', 'Whether it is open.'],
+  ['isOpen', 'read-only, reactive', 'Indicates whether it is open.'],
   ['onOpening / onOpened / onClosing / onClosed', 'events', "As on a bottom sheet; a swipe back closes with `reason: 'swipe'`. A swipe from the edge that `onOpening` refuses does not move it."],
 ];
 
@@ -36,19 +36,19 @@ const A11Y = [
   ['Dialog', 'The panel is `role="dialog"`, named by its title, else `label`, else "Side panel"; `aria-modal` when modal, and what is around it is `inert`.'],
   ['Focus', 'Moves in when it opens modal, back where it was when it closes.'],
   ['Reading direction', '`start` is the left edge left to right and the right edge right to left; the slide follows.'],
-  ['Motion', 'It slides with the motion tokens; with reduced motion it just appears.'],
+  ['Motion', 'Slides in using the motion tokens. When the user prefers reduced motion, it appears without animation.'],
 ];
 
 const HOOKS = [
   ['.mx-drawer', 'The layer. `data-side` (`start`, `end`, `top`, `bottom`), `data-mode`, `data-open`, `data-modal`, `data-scrim`, `data-contained`, `data-dragging`.'],
   ['.mx-drawer__panel', 'The dialog. `--_size`, and `--_shift-x` / `--_shift-y` while a finger moves it.'],
-  ['.mx-drawer__scrim, __header, __title, __tools, __close, __body, __footer', 'Its parts.'],
+  ['.mx-drawer__scrim, __header, __title, __tools, __close, __body, __footer', 'The parts of the component.'],
   ['[data-mx-drawer-push]', 'The element a push drawer moves aside, by `--_mx-push`.'],
 ];
 
 const TOKENS = [
   ['drawer.scrim, drawer.panel', 'Units: the dimmed layer; the surface at each edge (`start`, `end`, `top`, `bottom`: its sides towards the content and the room differ) and pushing the content (`push`).'],
-  ['drawer.header, drawer.title, drawer.tools, drawer.body, drawer.footer', 'Units: inside (`body.focus`: a ring inside the content).'],
+  ['drawer.header, drawer.title, drawer.tools, drawer.body, drawer.footer', 'Units: the content area (`body.focus`: a focus ring inside the content).'],
   ['drawer.size, drawer.max-size, drawer.inset, drawer.font-family', 'The size it opens at, the most of the room it takes, the room around it; the type’s family.'],
 ];
 
@@ -92,11 +92,11 @@ import { Drawer, type DrawerSide, type DrawerMode } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="touch" title="Finger and keys">
-        <ApiTable head={['Gesture or key', 'What it does']} rows={[...GESTURES, ['Escape', 'Closes it.'], ['Tab, Shift+Tab', 'Through its controls; modal, it goes round inside.']]} />
+        <ApiTable head={['Gesture or key', 'Description']} rows={[...GESTURES, ['Escape', 'Closes it.'], ['Tab, Shift+Tab', 'Moves through its controls. In a modal, focus cycles within it.']]} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -106,11 +106,11 @@ import { Drawer, type DrawerSide, type DrawerMode } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

@@ -38,7 +38,7 @@ export default function DataGridGroupingPage() {
           <SummariesServer />
         </Example>
         <ApiTable
-          head={['Field', 'What it does']}
+          head={['Field', 'Description']}
           rows={[
             ['totalItems, groupItems', 'The items of the row of totals and of each group; a function is followed. The items are kept as given: after a change in place call `grid.refreshSummary()`.'],
             ['calculateCustomSummary', '`(e) => void` with `{ name, summaryProcess, value, totalValue, groupIndex, component }`: one function for every `custom` item; set `e.totalValue` at `start`, fold `e.value` (the column’s value, or the row without a column) into it at each `calculate`, adjust it at `finalize`.'],
@@ -48,7 +48,7 @@ export default function DataGridGroupingPage() {
           ]}
         />
         <ApiTable
-          head={['Item field', 'What it does']}
+          head={['Item field', 'Description']}
           rows={[
             ['column', 'The column aggregated. Without one, `count` counts rows and `custom` gets the rows themselves.'],
             ['summaryType', "`'sum' | 'min' | 'max' | 'avg' | 'count' | 'custom'`, default `'count'`."],

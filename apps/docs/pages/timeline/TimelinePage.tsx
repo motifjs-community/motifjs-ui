@@ -13,7 +13,7 @@ const PROPS = [
     ['collapsible', '`Bind<boolean>`', '`false`', 'Vertical: a card shows its description only when pressed.'],
     ['dateFormat', '`Bind<TimelineDateFormat>`', "`'medium'`", '`short`, `medium`, `long`, or the options of `Intl.DateTimeFormat`; written in the kit’s language.'],
     ['value', '`Bind<string | number | null>`', '`0`', 'Horizontal: the event whose card is shown, its `key` else its index. `x-model` binds it two-way.'],
-    ['label', '`Bind<string>`', 'the kit’s “Timeline”', 'What screen readers call it.']
+    ['label', '`Bind<string>`', 'the kit’s “Timeline”', 'The accessible name.']
 ];
 
 const MEMBERS = [
@@ -24,7 +24,7 @@ const MEMBERS = [
     ['goTo(event)', '`boolean`', 'Horizontal: shows an event by index or key; vertical: unfolds its card.'],
     ['unfold(event, on), isUnfolded(event)', '`void`, `boolean`', 'Vertical, `collapsible`: unfolds or folds a card; whether it is unfolded.'],
     ['formatDate(date)', '`string`', 'A date as the timeline writes it.'],
-    ['refresh()', '`void`', 'Reads the items again after they were changed in place.']
+    ['refresh()', '`void`', 'Re-reads the items after they have been changed in place.']
 ];
 
 const KEYS = [
@@ -96,19 +96,19 @@ import { Timeline } from '@motifx-community/ui';
             </Section>
 
             <Section anchor="keyboard" title="Keyboard">
-                <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+                <ApiTable head={['Key', 'Description']} rows={KEYS} />
             </Section>
 
             <Section anchor="a11y" title="Accessibility">
-                <ApiTable head={['Topic', 'How']} rows={A11Y} />
+                <ApiTable head={['Topic', 'Details']} rows={A11Y} />
             </Section>
 
             <Section anchor="styling" title="Styling">
-                <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+                <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
                 <h3>
                   <Rich text="Component tokens" />
                 </h3>
-                <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+                <ApiTable head={['Token', 'Description']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
@@ -119,7 +119,7 @@ import { Timeline } from '@motifx-community/ui';
                 <h3>
                   <Rich text="Events, properties and methods" />
                 </h3>
-                <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
+                <ApiTable head={['Member', 'Type', 'Description']} rows={MEMBERS} />
             </Section>
         </>
     );

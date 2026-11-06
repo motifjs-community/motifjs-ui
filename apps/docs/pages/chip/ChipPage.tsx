@@ -18,10 +18,10 @@ const PROPS = [
   ['selected', '`Bind<boolean>`', '`false`', 'Whether it is on.'],
   ['clickable', '`Bind<boolean>`', '`false`', 'It can be pressed like a button (`onclick`).'],
   ['removable', '`Bind<boolean>`', '`false`', 'A remove button after the text; it and Delete / Backspace raise `onRemove`.'],
-  ['variant', '`Bind<ChipVariant>`', 'the language’s', '`filled`, `outline`. Material draws chips outlined, the other languages filled.'],
+  ['variant', '`Bind<ChipVariant>`', 'Set by the design language', '`filled`, `outline`. Material draws chips outlined, the other languages filled.'],
   ['tone', '`Bind<ChipTone>`', "`'standard'`", '`standard`, `accent`, `info`, `success`, `caution`, `danger`; a selected chip shows the selection instead.'],
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`.'],
-  ['enabled, visible, tabStop', 'see Control', '', 'The shared properties of every control.'],
+  ['enabled, visible, tabStop', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const EVENTS = [
@@ -30,7 +30,7 @@ const EVENTS = [
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write', 'Accepts a value or a function, the same as the prop.'],
   ['avatarControl', 'read-only', 'The avatar before the text, when it has one.'],
 ];
 
@@ -44,7 +44,7 @@ const GROUP_PROPS = [
 ];
 
 const GROUP_MEMBERS = [
-  ['onValueChanged', 'event', 'The value changed (`value`), by the user or by code (`byUser`).'],
+  ['onValueChanged', 'event', 'Occurs when the value changes (`value`), either through user input or programmatically (`byUser`).'],
   ['chips', 'read-only', 'The chips in it, in order, from JSX lists too.'],
   ['isSelected(value)', '`boolean`', 'Whether the chip of `value` is selected.'],
 ];
@@ -59,7 +59,7 @@ const A11Y = [
   ['Selectable', 'A button with `aria-pressed`.'],
   ['In a group that selects', 'The group is a `listbox` (`aria-multiselectable` for several), each chip an `option` with `aria-selected`.'],
   ['Remove', 'The remove button is named “Remove Ada” in the kit language; the keyboard reaches it through Delete on the chip.'],
-  ['Disabled', 'Out of the Tab order and marked `aria-disabled`.'],
+  ['Disabled state', 'Out of the Tab order and marked `aria-disabled`.'],
 ];
 
 const HOOKS = [
@@ -95,7 +95,7 @@ import { Chip, ChipGroup } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function. Created with `new`, the same properties are set programmatically." />
+          <Rich text="Every prop accepts a value or a function. When you create the component with `new`, set the same properties programmatically." />
         </p>
         <Example files={code('Programmatic.tsx')}>
           <Programmatic />
@@ -139,11 +139,11 @@ import { Chip, ChipGroup } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -153,11 +153,11 @@ import { Chip, ChipGroup } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
@@ -184,7 +184,7 @@ import { Chip, ChipGroup } from '@motifx-community/ui';
         <h3>
           <Rich text="ChipGroup events, properties and methods" />
         </h3>
-        <ApiTable head={['Member', 'Kind', 'Description']} rows={GROUP_MEMBERS} />
+        <ApiTable head={['Member', 'Type', 'Description']} rows={GROUP_MEMBERS} />
       </Section>
     </>
   );

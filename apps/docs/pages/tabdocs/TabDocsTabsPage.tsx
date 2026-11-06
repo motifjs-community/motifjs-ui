@@ -29,7 +29,7 @@ const DOCUMENT = [
   ['badge', '`Bind<string | number | boolean | null>`', 'A count or short text after the title; `true` shows a dot.'],
   ['tone', "`Bind<'warning' | 'danger' | 'success' | 'accent' | null>`", 'Colours the title and the badge.'],
   ['description', '`Bind<string>`', 'Shown as `showDescription` says, and in the lists of documents.'],
-  ['allowDuplicate', '`Bind<boolean | undefined>`', 'This document\'s own setting; `undefined` follows the manager.'],
+  ['allowDuplicate', '`Bind<boolean | undefined>`', 'Overrides the manager\'s setting for this document. `undefined` inherits the manager\'s value.'],
   ['clone', '`(copy) => ComponentBase | null`', 'Makes the content of a copy in another group. Without it a `content` function is called again, or the manager\'s `factory` makes it; a component given as it is cannot be copied.'],
   ['original', 'read-only', 'For a copy, the document it was copied from; `null` for the document itself. A copy has the same `id` and `type` and shares every field but `pinned`, `preview` and `contentLifetime`.'],
 ];
@@ -119,7 +119,7 @@ docs.onClosing((e) => {
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="api" title="API">
@@ -138,7 +138,7 @@ docs.onClosing((e) => {
         <h3>
           <Rich text="Events" />
         </h3>
-        <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
+        <ApiTable head={['Event', 'Contents']} rows={EVENTS} />
         <p>
           <Rich text="The rest of the API is on the [overview](/tabdocs#api); the menus, the lists and the keys on [Menus and keys](/tabdocs/menus)." />
         </p>

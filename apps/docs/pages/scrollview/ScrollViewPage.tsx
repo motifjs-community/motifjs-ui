@@ -13,7 +13,7 @@ const PROPS = [
     ['loadOnReachBottom', '`Bind<boolean>`', '`false`', 'Scrolling near the end asks `onReachBottom` for more; so does content that does not reach the end.'],
     ['reachBottomOffset', '`Bind<number>`', '`100`', 'Pixels before the end at which `onReachBottom` is asked.'],
     ['pullDownText, releaseText, refreshingText', '`Bind<string>`', 'the kit’s texts', 'The pull panel’s texts: while pulling, once far enough, while refreshing.'],
-    ['reachBottomText', '`Bind<string>`', 'the kit’s “Loading…”', 'The text under the content while more loads.'],
+    ['reachBottomText', '`Bind<string>`', 'The kit string “Loading…”', 'The text under the content while more loads.'],
     ['label', '`Bind<string>`', "`''`", 'What screen readers call the scrolling region.']
 ];
 
@@ -101,20 +101,20 @@ import { ScrollView } from '@motifx-community/ui';
                 </Example>
             </Section>
 
-            <Section anchor="behaviour" title="Behaviour">
-                <ApiTable head={['Topic', 'How']} rows={BEHAVIOUR} />
+            <Section anchor="behaviour" title="Behavior">
+                <ApiTable head={['Topic', 'Details']} rows={BEHAVIOUR} />
             </Section>
 
             <Section anchor="a11y" title="Accessibility">
-                <ApiTable head={['Topic', 'How']} rows={A11Y} />
+                <ApiTable head={['Topic', 'Details']} rows={A11Y} />
             </Section>
 
             <Section anchor="styling" title="Styling">
-                <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+                <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
                 <h3>
                   <Rich text="Component tokens" />
                 </h3>
-                <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+                <ApiTable head={['Token', 'Description']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
@@ -125,7 +125,7 @@ import { ScrollView } from '@motifx-community/ui';
                 <h3>
                   <Rich text="Events, properties and methods" />
                 </h3>
-                <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
+                <ApiTable head={['Member', 'Type', 'Description']} rows={MEMBERS} />
             </Section>
         </>
     );

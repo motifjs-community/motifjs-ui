@@ -39,7 +39,7 @@ const GROUP = [
   ['dropSides', '`Bind<readonly TabDropSide[] | null>`', '`null`', 'The group\'s own drop sides; `null` follows the manager. Saved with the layout.'],
 ];
 
-const DOCUMENT = [['allowDrag', '`Bind<boolean | undefined>`', 'This document\'s own setting; `undefined` follows the manager.']];
+const DOCUMENT = [['allowDrag', '`Bind<boolean | undefined>`', 'Overrides the manager\'s setting for this document. `undefined` inherits the manager\'s value.']];
 
 const METHODS = [
   ['move(doc, group, index?)', '`boolean`', 'What a drop on a strip or into a group does (milestone 1).'],
@@ -65,9 +65,9 @@ const EVENTS = [
 
 const KEYS = [
   ['Alt + Shift + Page Up / Page Down', 'Ctrl + Shift + Page Up / Page Down', 'The active tab a place along its strip (`moveTabLeft`, `moveTabRight`).'],
-  ['Ctrl + Alt + Right / Left', 'the same', 'The active document to the next / previous group (`moveToNextGroup`, `moveToPreviousGroup`).'],
-  ['Ctrl + K, then Shift + an arrow', 'the same', 'To the group on that side, or into a new group there (`moveToGroupLeft`, `…Right`, `…Up`, `…Down`).'],
-  ['Ctrl + K, then M', 'the same', '"Move to…" for the active document (`moveTo`); the tab\'s menu and the strip\'s menu have it too.'],
+  ['Ctrl + Alt + Right / Left', 'Same', 'The active document to the next / previous group (`moveToNextGroup`, `moveToPreviousGroup`).'],
+  ['Ctrl + K, then Shift + an arrow', 'Same', 'To the group on that side, or into a new group there (`moveToGroupLeft`, `…Right`, `…Up`, `…Down`).'],
+  ['Ctrl + K, then M', 'Same', '"Move to…" for the active document (`moveTo`); the tab\'s menu and the strip\'s menu have it too.'],
 ];
 
 const MOVE_KEYS = [
@@ -108,7 +108,7 @@ export default function TabDocsDragPage() {
         <Example files={code('DragDrop.tsx', 'files.tsx')} stack>
           <DragDrop />
         </Example>
-        <ApiTable head={['Dropped', 'What happens']} rows={DROPS} />
+        <ApiTable head={['Dropped', 'Result']} rows={DROPS} />
       </Section>
 
       <Section anchor="options" title="Settings">
@@ -136,11 +136,11 @@ export default function TabDocsDragPage() {
         <Example files={code('MoveWithKeys.tsx', 'files.tsx')} stack>
           <MoveWithKeys />
         </Example>
-        <ApiTable head={['Browser', 'Installed app (desktop keys)', 'Does']} rows={KEYS} />
+        <ApiTable head={['Browser', 'Installed app (desktop keys)', 'Action']} rows={KEYS} />
         <h3>
           <Rich text="In “Move to…”" />
         </h3>
-        <ApiTable head={['Key', 'Does']} rows={MOVE_KEYS} />
+        <ApiTable head={['Key', 'Action']} rows={MOVE_KEYS} />
       </Section>
 
       <Section anchor="events" title="Changing or refusing a drop">
@@ -162,7 +162,7 @@ docs.onDropping((e) => {
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="api" title="API">
@@ -185,11 +185,11 @@ docs.onDropping((e) => {
         <h3>
           <Rich text="Events" />
         </h3>
-        <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
+        <ApiTable head={['Event', 'Contents']} rows={EVENTS} />
         <h3>
           <Rich text="Styling hooks" />
         </h3>
-        <ApiTable head={['Selector or token', 'What']} rows={STYLING} />
+        <ApiTable head={['Selector or token', 'Item']} rows={STYLING} />
         <p>
           <Rich text="The rest of the API is on the [overview](/tabdocs#api), [Tabs](/tabdocs/tabs) and [Menus and keys](/tabdocs/menus)." />
         </p>

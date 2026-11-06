@@ -41,7 +41,7 @@ export default function DataGridFilteringPage() {
         <Example files={[...withOrders('FilterPanel.tsx'), slowAdapterFile]} stack>
           <FilterPanel />
         </Example>
-        <ApiTable head={['Option', 'What it does']} rows={PANEL.map(([name, type, def, what]) => [name, `${what} ${type === 'methods' || type === 'events' ? '' : `${type}${def && def !== '—' ? `, default ${def}` : ''}.`}`.trim()])} />
+        <ApiTable head={['Option', 'Description']} rows={PANEL.map(([name, type, def, what]) => [name, `${what} ${type === 'methods' || type === 'events' ? '' : `${type}${def && def !== '—' ? `, default ${def}` : ''}.`}`.trim()])} />
       </Section>
 
       <Section anchor="intervals" title="Ranges, dates and entries">

@@ -33,7 +33,7 @@ const MEMBERS = [
     ['onCollapsed', 'event', 'A pane was hidden or shown again.'],
     ['panes', 'read-only', 'The panes in order, hidden ones too.'],
     ['currentSizes', 'read-only', 'The panes’ pixels along the split now; 0 for a hidden pane.'],
-    ['count', 'read-only', 'How many panes there are.'],
+    ['count', 'read-only', 'The number of panes.'],
     ['add(pane), insert(index, pane)', '`SplitPane`', 'Adds a pane at the end or at an index.'],
     ['remove(pane)', '`boolean`', 'Removes a pane and disposes it.'],
     ['collapse(pane), expand(pane)', '`boolean`', 'Hides a pane (by index or the pane itself), or shows it again; `onCollapsing` is asked first. A pane’s own `collapse()` and `expand()` do the same.']
@@ -107,7 +107,7 @@ import { Splitter, SplitPane } from '@motifx-community/ui';
                 </Example>
             </Section>
 
-            <Section anchor="sizes" title="Keeping the layout">
+            <Section anchor="sizes" title="Persisting the layout">
                 <p>
                     <Rich text="After every move the panes’ pixels are written to `x-model` (and `onResized` tells). Give them back as `sizes` to restore a layout; `null` starts from the panes’ own sizes again." />
                 </p>
@@ -117,19 +117,19 @@ import { Splitter, SplitPane } from '@motifx-community/ui';
             </Section>
 
             <Section anchor="keyboard" title="Keyboard">
-                <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+                <ApiTable head={['Key', 'Description']} rows={KEYS} />
             </Section>
 
             <Section anchor="a11y" title="Accessibility">
-                <ApiTable head={['Topic', 'How']} rows={A11Y} />
+                <ApiTable head={['Topic', 'Details']} rows={A11Y} />
             </Section>
 
             <Section anchor="styling" title="Styling">
-                <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+                <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
                 <h3>
                   <Rich text="Component tokens" />
                 </h3>
-                <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+                <ApiTable head={['Token', 'Description']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
@@ -144,7 +144,7 @@ import { Splitter, SplitPane } from '@motifx-community/ui';
                 <h3>
                   <Rich text="Events, properties and methods" />
                 </h3>
-                <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
+                <ApiTable head={['Member', 'Type', 'Description']} rows={MEMBERS} />
             </Section>
         </>
     );

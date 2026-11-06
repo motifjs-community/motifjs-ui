@@ -10,8 +10,8 @@ const PROPS = [
   ['value', '`Bind<Date | null>`', '`null`', 'The chosen date. `x-model` binds it two-way.'],
   ['min / max', '`Bind<Date | null>`', '—', 'Days outside cannot be chosen; the arrows stop there.'],
   ['disabledDates', '`Bind<(date) => boolean>`', '—', 'Days that cannot be chosen.'],
-  ['locale', '`Bind<string>`', "the page's", 'Month and day names, and where weeks start.'],
-  ['firstDayOfWeek', '`Bind<number | null>`', 'the locale’s', '0 Sunday … 6 Saturday.'],
+  ['locale', '`Bind<string>`', "From the page", 'Month and day names, and where weeks start.'],
+  ['firstDayOfWeek', '`Bind<number | null>`', 'the locale’s', '0 (Sunday) through 6 (Saturday).'],
   ['showWeekNumbers', '`Bind<boolean>`', '`false`', 'ISO week numbers before each week.'],
   ['showOtherMonths', '`Bind<boolean>`', '`true`', 'Days of the months before and after.'],
   ['showTodayButton', '`Bind<boolean>`', '`false`', 'A Today button under the grid.'],
@@ -64,12 +64,12 @@ import { Calendar } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
         <ApiTable
-          head={['Topic', 'How']}
+          head={['Topic', 'Details']}
           rows={[
             ['Pattern', 'The APG date picker grid: `role="grid"`, one Tab stop on the focused day, the arrows inside.'],
             ['Cells', 'Each day is named in full ("Sunday, 25 October 2026"); `aria-selected`, `aria-current="date"` for today, `aria-disabled`.'],
@@ -81,7 +81,7 @@ import { Calendar } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable
-          head={['Hook', 'What it is']}
+          head={['Hook', 'Description']}
           rows={[
             ['.mx-calendar', '`data-view="month|year|decade"`.'],
             ['.mx-calendar__header, __previous, __title, __next', 'The header.'],

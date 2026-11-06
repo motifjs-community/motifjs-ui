@@ -87,7 +87,7 @@ import { Scheduler, parseICalendar, writeICalendar } from '@motifx-community/ui'
 
       <Section anchor="styling" title="Styling">
         <ApiTable
-          head={['Hook', 'What it is']}
+          head={['Hook', 'Description']}
           rows={[
             ['scheduler.scheduler `print`, appointment `print`', 'Unit states: the look on paper, where a language draws it otherwise (no card frame).'],
             ['[data-printing]', 'On the scheduler while it prints; `print()` also marks the page so only this scheduler prints.'],

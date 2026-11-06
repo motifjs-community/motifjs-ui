@@ -25,7 +25,7 @@ const PROPS = [
   ['factory', '`Bind<(doc) => ComponentBase | null>`', '`null`', 'Makes the content of a document that brings none, usually by its `type`.'],
   ['texts', '`Bind<Partial<UiStrings>>`', '`{}`', 'Texts for this manager only, over `uiLocale.strings`.'],
   ['announce', '`Bind<boolean>`', '`true`', 'Opened, closed, moved, split, maximized: said politely to screen readers.'],
-  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'The shared properties of every control.'],
+  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const DOCUMENT = [
@@ -46,7 +46,7 @@ const DOCUMENT = [
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['groups', 'read-only, reactive', 'The groups in layout order: left to right, top to bottom.'],
   ['documents', 'read-only, reactive', 'Every open document, group by group.'],
   ['activeGroup, activeDocument', 'read-only, reactive', 'The group that has focus or had it last, and its active document.'],
@@ -201,18 +201,18 @@ import { TabDocument, TabDocumentManager } from '@motifx-community/ui';
         <p>
           <Rich text="`contentLifetime` decides when a document's content is built and how long it lives. Whatever it is, moving a tab or splitting a group never builds the content again: the same component goes along." />
         </p>
-        <ApiTable head={['Lifetime', 'What happens']} rows={LIFETIME} />
+        <ApiTable head={['Lifetime', 'Result']} rows={LIFETIME} />
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
         <p>
           <Rich text="The keys work while focus is inside the manager; each is a list of chords in `keys`, so any of them can be changed or turned off. A browser tab keeps Ctrl+W, Ctrl+Tab, Ctrl+Page Up / Down and often Ctrl+1…9 for itself, so the keys a manager starts with are ones a browser tab lets through, and the desktop key in brackets works too where it can (an installed app takes the desktop keys, `keyPreset`). The recently used list, back and forward, reopening and the other keys are on [Menus and keys](/tabdocs/menus#keyboard)." />
         </p>
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -222,11 +222,11 @@ import { TabDocument, TabDocumentManager } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
@@ -253,7 +253,7 @@ import { TabDocument, TabDocumentManager } from '@motifx-community/ui';
         <h3>
           <Rich text="Events" />
         </h3>
-        <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
+        <ApiTable head={['Event', 'Contents']} rows={EVENTS} />
       </Section>
     </>
   );

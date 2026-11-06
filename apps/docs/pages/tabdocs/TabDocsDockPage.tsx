@@ -71,7 +71,7 @@ const METHODS = [
 const WINDOW = [
   ['rect, isMaximized, isActive', 'read-only, reactive', 'Where it is and how big (as it is restored), maximized, the front window of the page.'],
   ['groups, documents, index', 'read-only, reactive', 'Its groups (split as the documents\' are), their documents, its place in `floatingWindows`.'],
-  ['move, resize, maximize, restore, close, dock(side?), focus', 'methods', 'The manager\'s methods for this window.'],
+  ['move, resize, maximize, restore, close, dock(side?), focus', 'methods', 'The manager\'s methods, scoped to this window.'],
   ['scrollButtons, tabSize, tabMinWidth, singleTabTitle, barButtons, barButtonSize', '`Bind<… | null>`, reactive', 'Its strips\' own settings, a value or a function; `null` (the default) follows the manager\'s `compact…` props. Plain values are saved with the layout (`bar`).'],
 ];
 
@@ -141,7 +141,7 @@ export default function TabDocsDockPage() {
         <Example files={code('DockIde.tsx', 'tools.tsx', 'files.tsx')} stack>
           <DockIde />
         </Example>
-        <ApiTable head={['Dropped on', 'What happens']} rows={DROPS} />
+        <ApiTable head={['Dropped on', 'Result']} rows={DROPS} />
       </Section>
 
       <Section anchor="windows" title="Floating windows">
@@ -181,7 +181,7 @@ export default function TabDocsDockPage() {
         </Example>
       </Section>
 
-      <Section anchor="events" title="Changing or refusing">
+      <Section anchor="events" title="Changing or canceling">
         <Code
           code={`
 docs.onDocking((e) => {
@@ -200,11 +200,11 @@ docs.onWindowClosing((e) => {
       </Section>
 
       <Section anchor="keys" title="From the keyboard">
-        <ApiTable head={['Keys', 'Does']} rows={KEYS} />
+        <ApiTable head={['Keys', 'Action']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="api" title="API">
@@ -223,19 +223,19 @@ docs.onWindowClosing((e) => {
         <h3>
           <Rich text="TabWindow" />
         </h3>
-        <ApiTable head={['Member', 'Kind', 'Description']} rows={WINDOW} />
+        <ApiTable head={['Member', 'Type', 'Description']} rows={WINDOW} />
         <h3>
           <Rich text="TabDockArea" />
         </h3>
-        <ApiTable head={['Member', 'Kind', 'Description']} rows={AREA} />
+        <ApiTable head={['Member', 'Type', 'Description']} rows={AREA} />
         <h3>
           <Rich text="Events" />
         </h3>
-        <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
+        <ApiTable head={['Event', 'Contents']} rows={EVENTS} />
         <h3>
           <Rich text="Styling hooks" />
         </h3>
-        <ApiTable head={['Selector or token', 'What']} rows={STYLING} />
+        <ApiTable head={['Selector or token', 'Item']} rows={STYLING} />
         <p>
           <Rich text="The rest of the API is on the [overview](/tabdocs#api), [Tabs](/tabdocs/tabs), [Menus and keys](/tabdocs/menus) and [Drag and drop](/tabdocs/drag)." />
         </p>

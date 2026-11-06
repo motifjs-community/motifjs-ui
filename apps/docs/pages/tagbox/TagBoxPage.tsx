@@ -11,9 +11,9 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 
 const PROPS = [
   ['value', '`Bind<V[]>`', '`[]`', 'The values of the chosen items. `x-model` binds it; every change writes a new array.'],
-  ['items / dataSource', '`Bind<readonly T[]>` / `Bind<DataSource | null>`', '—', 'Items in memory, searched here, or a data source of `@motifx-community/data`, searched where it lives.'],
+  ['items / dataSource', '`Bind<readonly T[]>` / `Bind<DataSource | null>`', '—', 'An in-memory array, searched on the client, or a `@motifx-community/data` data source, searched on the server.'],
   ['textField, valueField, iconField, groupField, enabledField', '`Bind<ItemField<T>>`', '—', 'As for ListBox; groups for items in memory.'],
-  ['placeholder', '`Bind<string>`', "`''`", 'Shown while nothing is chosen.'],
+  ['placeholder', '`Bind<string>`', "`''`", 'Displayed when no item is selected.'],
   ['searchMode, minSearchLength, searchDelay', '', "`'contains'`, `0`, `0` / `250`", 'How and when the typed text searches, as for ComboBox.'],
   ['acceptCustomValue', '`Bind<boolean>`', '`false`', 'Enter adds text that matches no item as a tag of its own.'],
   ['customValue', '`Bind<(text) => V | null>`', 'the text', 'Makes the value of a typed text; `null` turns it down.'],
@@ -27,14 +27,14 @@ const PROPS = [
   ['showDropDownButton, clearButton', '`Bind<boolean>`', '`true`, `false`', 'The arrow that opens every item; the button that removes every tag.'],
   ['itemTemplate, tagTemplate', '`Bind<(item, host) => cleanup | void>`', '—', 'Draws an item of the list / a tag your way.'],
   ['matchWidth', '`Bind<boolean>`', '`true`', 'The list is at least as wide as the field.'],
-  ['label, labelMode, helpText, hint, prefix, icon, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup', 'see TextBox', '', 'The field props every editor has.'],
+  ['label, labelMode, helpText, hint, prefix, icon, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup', 'see TextBox', '', 'Field props shared by all editors.'],
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['selectedItems', 'read-only, reactive', 'The items of the chosen values that are known; with a data source the others are found by key.'],
-  ['listItems', 'read-only', 'The `DataItems` the list shows (what the last search matched).'],
-  ['opened', 'read/write, reactive', 'Whether the list is open; setting it opens or closes it.'],
+  ['listItems', 'read-only', 'The `DataItems` shown in the list, which are the results of the last search.'],
+  ['opened', 'read/write, reactive', 'Indicates whether the list is open. Set it to open or close the list.'],
   ['inputElement', 'read-only', 'The text input.'],
 ];
 
@@ -48,14 +48,14 @@ const METHODS = [
 
 const EVENTS = [
   ['onValueChanged(e)', '`{ value, previousValue, byUser, source, event? }`'],
-  ['onOpened()', 'The list opened.'],
+  ['onOpened()', 'Occurs when the list opens.'],
   ['onClosed(reason)', "The list closed: `'escape'`, `'outside'`, `'focus'` or `'code'`."],
   ['onValidated(e)', 'See TextBox.'],
 ];
 
 const KEYS = [
-  ['Typing', 'Searches and opens the list; the first match is highlighted.'],
-  ['Down / Up, Alt + Down', 'Open the list with every item; move in it.'],
+  ['Typing', 'Searches and opens the list, highlighting the first match.'],
+  ['Down / Up, Alt + Down', 'Opens the list with all items, or moves the highlight within it.'],
   ['Enter', 'Choose the highlighted item or let it go; the list stays open. With `acceptCustomValue`, text that matches no item becomes a tag.'],
   ['Backspace in an empty input', 'Remove the last tag.'],
   ['Left at the start of the input', 'Go to the last tag.'],
@@ -67,7 +67,7 @@ const KEYS = [
 
 const A11Y = [
   ['Pattern', 'The APG combobox with a multi-select listbox: the input is `role="combobox"`, `aria-autocomplete="list"`, `aria-expanded`, `aria-controls`; the list is `aria-multiselectable`.'],
-  ['Highlight', '`aria-activedescendant` names the highlighted option; focus stays in the input.'],
+  ['Highlight', '`aria-activedescendant` identifies the highlighted option while focus stays in the input.'],
   ['Tags', 'A `role="list"` of `role="listitem"`s; each has a remove button named “Remove …” from `uiLocale`, and the “+3” tag lists the rest in its title.'],
   ['Name', 'The label names the input; help and errors describe it.'],
 ];
@@ -147,11 +147,11 @@ import { data } from '@motifx-community/data';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -164,11 +164,11 @@ import { data } from '@motifx-community/data';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

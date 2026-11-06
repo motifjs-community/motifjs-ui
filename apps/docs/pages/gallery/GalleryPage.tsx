@@ -20,7 +20,7 @@ const PROPS = [
     ['itemsPerPage', '`Bind<number>`', '`1`', 'Panes side by side in the width, with the `gap` token between them.'],
     ['stretchImages', '`Bind<boolean>`', '`false`', 'An image fills its pane, cut at the edges, instead of fitting inside it whole.'],
     ['height', '`Bind<string | number | null>`', '`null`', 'A CSS length or pixels. Without one the gallery is as tall as its tallest pane.'],
-    ['label', '`Bind<string>`', 'the kit’s “Gallery”', 'What screen readers call it.']
+    ['label', '`Bind<string>`', 'the kit’s “Gallery”', 'The accessible name.']
 ];
 
 const MEMBERS = [
@@ -28,12 +28,12 @@ const MEMBERS = [
     ['onSlideChanged', 'event', 'The pane in view changed (`index`, `item`, `previous`, `byUser`: by a press, a swipe or a key, else programmatically or the slideshow).'],
     ['onItemClick', 'event', 'A press on a pane that was not a drag (`index`, `item`, `event`).'],
     ['selectedIndex', 'read-only', 'The index of the pane in view; -1 when there is none.'],
-    ['count', 'read-only', 'How many panes there are.'],
+    ['count', 'read-only', 'The number of panes.'],
     ['isPlaying', 'read-only', 'The slideshow runs now: not paused, and nothing holds it.'],
     ['next(), previous()', '`Promise<boolean>`', 'Goes to the next or the previous pane; `false` at an end without `loop`, or when the change was refused.'],
     ['goTo(pane)', '`Promise<boolean>`', 'Goes to a pane by index or key; `onSlideChanging` is asked first.'],
     ['play(), pause()', '`void`', 'Starts the slideshow again, or stops it until `play()`; the button in the bar does the same.'],
-    ['refresh()', '`void`', 'Reads the items again after they were changed in place.']
+    ['refresh()', '`void`', 'Re-reads the items after they have been changed in place.']
 ];
 
 const KEYS = [
@@ -126,19 +126,19 @@ import { Gallery } from '@motifx-community/ui';
             </Section>
 
             <Section anchor="keyboard" title="Keyboard">
-                <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+                <ApiTable head={['Key', 'Description']} rows={KEYS} />
             </Section>
 
             <Section anchor="a11y" title="Accessibility">
-                <ApiTable head={['Topic', 'How']} rows={A11Y} />
+                <ApiTable head={['Topic', 'Details']} rows={A11Y} />
             </Section>
 
             <Section anchor="styling" title="Styling">
-                <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+                <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
                 <h3>
                   <Rich text="Component tokens" />
                 </h3>
-                <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+                <ApiTable head={['Token', 'Description']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
@@ -149,7 +149,7 @@ import { Gallery } from '@motifx-community/ui';
                 <h3>
                   <Rich text="Events, properties and methods" />
                 </h3>
-                <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
+                <ApiTable head={['Member', 'Type', 'Description']} rows={MEMBERS} />
             </Section>
         </>
     );

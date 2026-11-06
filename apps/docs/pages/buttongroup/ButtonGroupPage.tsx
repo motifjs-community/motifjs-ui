@@ -7,36 +7,36 @@ import Selections from './examples/Selections';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['items', '`Bind<readonly (ButtonGroupItem<T> | T)[]>`', '`[]`', 'The buttons: `ButtonGroupItem`s (`value`, `text`, `icon`, `hint`, `enabled`, `visible`), plain values (each its own text), or objects of your own shape.'],
-  ['itemText, itemValue', '`ItemField`', "`'text'`, `'value'`", 'Where an item of your own shape keeps its text and its value: a property name or a function.'],
-  ['selection', '`Bind<ButtonGroupSelection>`', "`'single'`", '`single`: one of them; `multiple`: each on and off; `none`: only actions.'],
-  ['value', '`Bind<T | readonly T[] | null>`', '`null` / `[]`', 'The chosen value, or an array of the values turned on. Two-way with `x-model`; a change gives a new array.'],
-  ['allowEmpty', '`Bind<boolean>`', '`false`', '`single`: pressing the chosen button again leaves none chosen.'],
-  ['attached', '`Bind<boolean>`', 'the language’s (`true`)', 'The buttons touch, sharing their edges.'],
-  ['variant', '`Bind<ButtonVariant>`', 'the language’s (`outline`)', 'The look of every button.'],
+  ['items', '`Bind<readonly (ButtonGroupItem<T> | T)[]>`', '`[]`', 'The buttons: `ButtonGroupItem` objects (`value`, `text`, `icon`, `hint`, `enabled`, `visible`), plain values that serve as their own text, or objects of any shape.'],
+  ['itemText, itemValue', '`ItemField`', "`'text'`, `'value'`", 'The location of the text and value in a custom object: a property name or a function.'],
+  ['selection', '`Bind<ButtonGroupSelection>`', "`'single'`", '`single` selects one button, `multiple` toggles each button, and `none` makes them actions only.'],
+  ['value', '`Bind<T | readonly T[] | null>`', '`null` / `[]`', 'The selected value, or an array of the values that are on. `x-model` provides two-way binding, and each change produces a new array.'],
+  ['allowEmpty', '`Bind<boolean>`', '`false`', 'With `single`, pressing the selected button again clears the selection.'],
+  ['attached', '`Bind<boolean>`', 'Set by the design language (`true`)', 'The buttons are attached and share their edges.'],
+  ['variant', '`Bind<ButtonVariant>`', 'Set by the design language (`outline`)', 'The appearance of every button.'],
   ['size', '`Bind<ButtonSize>`', "`'md'`", '`sm`, `md`, `lg`.'],
-  ['stretch', '`Bind<boolean>`', '`false`', 'Fills the width, the buttons sharing it.'],
-  ['label', '`Bind<string>`', "`''`", 'What screen readers call the group (“Text alignment”).'],
-  ['enabled, visible', 'see Control', '', 'The shared properties of every control.'],
+  ['stretch', '`Bind<boolean>`', '`false`', 'Stretches to the full width, with the buttons sharing it evenly.'],
+  ['label', '`Bind<string>`', "`''`", 'The accessible name of the group (“Text alignment”).'],
+  ['enabled, visible', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const MEMBERS = [
-  ['onValueChanged', 'event', 'The value changed (`value`), by the user or by code (`byUser`).'],
-  ['onItemClick', 'event', 'A button was pressed (`item`, `value`), with any selection.'],
-  ['buttons', 'read-only', 'The kit buttons of the group, in the order of the items.'],
-  ['isSelected(value)', '`boolean`', 'Whether the button of `value` is chosen or on.'],
-  ['refresh()', '`void`', 'Reads the items again after they were changed in place.'],
+  ['onValueChanged', 'event', 'Occurs when the value changes (`value`), either through user input or programmatically (`byUser`).'],
+  ['onItemClick', 'event', 'Occurs when a button is pressed (`item`, `value`), with any selection mode.'],
+  ['buttons', 'read-only', 'The kit buttons in the group, in item order.'],
+  ['isSelected(value)', '`boolean`', 'Indicates whether the button for `value` is selected or on.'],
+  ['refresh()', '`void`', 'Re-reads the items after they have been changed in place.'],
 ];
 
 const KEYS = [
-  ['Tab', 'One stop: the button focused last, else the chosen one, else the first.'],
-  ['Arrow keys, Home, End', 'Move between the buttons (disabled ones are skipped).'],
-  ['Space, Enter', 'Press the button: choose it, turn it on or off, or do its action.'],
+  ['Tab', 'One Tab stop: the button focused last, otherwise the selected one, otherwise the first.'],
+  ['Arrow keys, Home, End', 'Moves between the buttons, skipping disabled ones.'],
+  ['Space, Enter', 'Presses the button, which selects it, toggles it or runs its action.'],
 ];
 
 const A11Y = [
   ['Group', '`role="group"` with its label.'],
-  ['Buttons', 'Kit buttons; with a selection each says whether it is on (`aria-pressed`). A button with only an icon is named by its `hint`.'],
+  ['Buttons', 'Kit buttons. With a selection, each one reports whether it is on (`aria-pressed`). An icon-only button is named by its `hint`.'],
 ];
 
 const HOOKS = [
@@ -45,16 +45,16 @@ const HOOKS = [
 ];
 
 const TOKENS = [
-  ['button-group.item.*', 'Place: each button’s look in a group (`variant`) and the look of the chosen one (`face.*-toggled.*`).'],
-  ['button-group.inner-start.*, button-group.inner-end.*', 'Places: the corners where two buttons touch.'],
-  ['button-group.attached, button-group.gap', 'Whether buttons touch when not told, and the space between them when they do not.'],
+  ['button-group.item.*', 'Place: the appearance of each button in a group (`variant`) and of the selected one (`face.*-toggled.*`).'],
+  ['button-group.inner-start.*, button-group.inner-end.*', 'Places: the corners where two buttons meet.'],
+  ['button-group.attached, button-group.gap', 'Whether buttons are attached by default, and the gap between them when they are not.'],
 ];
 
 export default function ButtonGroupPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="Buttons that belong together: a segmented choice of one or several, or a row of actions. The buttons are the kit’s own, touching by default." />
+        <Rich text="A set of related buttons, used as a segmented selection of one or more options or as a row of actions. The buttons are standard kit buttons and are attached by default." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -67,14 +67,14 @@ import { ButtonGroup } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set programmatically." />
+          <Rich text="Every prop accepts a value or a function, and `x-model` provides two-way binding for the value. When you create the component with `new`, set the same properties programmatically." />
         </p>
         <Example files={code('Programmatic.tsx')}>
           <Programmatic />
         </Example>
       </Section>
 
-      <Section anchor="selections" title="Several, or only actions">
+      <Section anchor="selections" title="Multiple selection and action groups">
         <Example files={code('Selections.tsx')}>
           <Selections />
         </Example>
@@ -87,19 +87,19 @@ import { ButtonGroup } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
@@ -110,7 +110,7 @@ import { ButtonGroup } from '@motifx-community/ui';
         <h3>
           <Rich text="Events, properties and methods" />
         </h3>
-        <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
+        <ApiTable head={['Member', 'Type', 'Description']} rows={MEMBERS} />
       </Section>
     </>
   );

@@ -25,7 +25,7 @@ const GESTURES = [
 const PROPS = [
   ['presentation', "`Bind<'auto' | 'desktop' | 'tablet' | 'phone'>`", "`'auto'`", 'How it shows itself: by its own width, or always one way. The appointments, the views and the date stay the same.'],
   ['phoneWidth', '`Bind<number>`', '`560`', 'Under this width (of the scheduler, not of the screen) `auto` shows it as on a phone, whatever the pointer.'],
-  ['tabletWidth', '`Bind<number>`', '`1024`', 'Under this width `auto` shows it as on a tablet, on a touch screen (see `tabletWhen`).'],
+  ['tabletWidth', '`Bind<number>`', '`1024`', 'Below this width, `auto` uses the tablet presentation on touch screens (see `tabletWhen`).'],
   ['tabletWhen', "`Bind<'touch' | 'width'>`", "`'touch'`", "`'touch'`: as on a tablet only when the screen's pointer is a finger (`(pointer: coarse)`, followed live); `'width'`: the width alone."],
   ['phoneView', '`Bind<string | null>`', "`'agenda'`", 'The view (by name or type) it shows as on a phone; a day when the views have none of it. Going back, it shows the view it had, unless the user chose another. `null` keeps the view.'],
   ['tabletView', '`Bind<string | null>`', '`null`', 'The same, as on a tablet; `null` keeps the view.'],
@@ -57,13 +57,13 @@ import { Scheduler, type SchedulerPresentation } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="ways" title="Three ways to show one scheduler">
-        <ApiTable head={['Presentation', 'What shows']} rows={WAYS} />
+        <ApiTable head={['Presentation', 'Displayed content']} rows={WAYS} />
         <Example files={code('Presentations.tsx', 'sample-appointments.ts')}>
           <Presentations />
         </Example>
       </Section>
 
-      <Section anchor="width" title="By its own width">
+      <Section anchor="width" title="Based on its own width">
         <p>
           <Rich text="With `presentation: 'auto'` (the default) it watches its own width and the screen's pointer, as the [TabDocumentManager](/tabdocs/mobile) does: under `phoneWidth` (560) as on a phone, under `tabletWidth` (1024) as on a tablet on a touch screen. Phones are 360 to 430 pixels wide." />
         </p>
@@ -76,7 +76,7 @@ import { Scheduler, type SchedulerPresentation } from '@motifx-community/ui';
         <p>
           <Rich text="The listeners are on the scheduler before a finger lands, so a lifted appointment, a swipe and a pinch keep the page still; anything else scrolls natively. After a drag no click follows, and nothing a finger touched stays looking hovered. Open this page on a phone, or with the browser's touch emulation." />
         </p>
-        <ApiTable head={['Gesture', 'What it does']} rows={GESTURES} />
+        <ApiTable head={['Gesture', 'Description']} rows={GESTURES} />
         <Example files={code('Touch.tsx', 'sample-appointments.ts')}>
           <Touch />
         </Example>
@@ -84,7 +84,7 @@ import { Scheduler, type SchedulerPresentation } from '@motifx-community/ui';
 
       <Section anchor="a11y" title="Accessibility">
         <ApiTable
-          head={['Topic', 'How']}
+          head={['Topic', 'Details']}
           rows={[
             ['Without gestures', 'Everything a gesture does has a button or a key: the month opens the calendar, the arrows move the focused appointment (Shift: its end), N and P the days.'],
             ['Sheets', 'The tooltip and the form are dialogs: focus moves in and back, Escape and the back button close them.'],
@@ -95,7 +95,7 @@ import { Scheduler, type SchedulerPresentation } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable
-          head={['Hook', 'What it is']}
+          head={['Hook', 'Description']}
           rows={[
             ['scheduler.bar `phone`', 'Unit: the bar as on a phone.'],
             ['scheduler.appointment `lifted`, `selected`', 'Unit states: the appointment a finger holds, and the one it let go (with its handles).'],

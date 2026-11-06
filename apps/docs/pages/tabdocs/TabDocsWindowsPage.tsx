@@ -56,11 +56,11 @@ const WINDOW = [
   ['element', '`HTMLDivElement`', 'The manager\'s part in that window (`.mx-tabdocs.mx-tabdocs__page`), filling it.'],
   ['rect', 'read-only', 'Its place on the screen and the size of its page, in pixels.'],
   ['groups, documents, activeGroup, activeDocument, index', 'read-only, reactive', 'What it holds; its title follows `activeDocument`.'],
-  ['moveToMainWindow(), close(), focus()', 'methods', 'The manager\'s methods for this window.'],
+  ['moveToMainWindow(), close(), focus()', 'methods', 'The manager\'s methods, scoped to this window.'],
 ];
 
 const DOCUMENT = [
-  ['allowNewWindow', '`Bind<boolean | undefined>`', 'This document\'s own setting; `undefined` follows the manager.'],
+  ['allowNewWindow', '`Bind<boolean | undefined>`', 'Overrides the manager\'s setting for this document. `undefined` inherits the manager\'s value.'],
   ['browserWindow', 'read-only, reactive', 'The new window it is in, `null` in the main window (also on `TabGroup`).'],
 ];
 
@@ -99,7 +99,7 @@ export default function TabDocsWindowsPage() {
         <Example files={code('NewWindow.tsx', 'contents.tsx')} stack>
           <NewWindow />
         </Example>
-        <ApiTable head={['Way', 'What it does']} rows={WAYS} />
+        <ApiTable head={['Way', 'Description']} rows={WAYS} />
       </Section>
 
       <Section anchor="closing" title="Closing, blocked windows, events">
@@ -129,14 +129,14 @@ reopenButton.onclick = () => docs.reopenWindows();
       </Section>
 
       <Section anchor="inside" title="What works in a new window">
-        <ApiTable head={['Part', 'How']} rows={INSIDE} />
+        <ApiTable head={['Part', 'Details']} rows={INSIDE} />
         <h3>
           <Rich text="Limits" />
         </h3>
         <ApiTable head={['Topic', 'Why']} rows={LIMITS} />
       </Section>
 
-      <Section anchor="events" title="Changing or refusing">
+      <Section anchor="events" title="Changing or canceling">
         <Code
           code={`
 docs.onWindowOpening((e) => {
@@ -155,7 +155,7 @@ docs.onError((e) => {
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="api" title="API">
@@ -170,7 +170,7 @@ docs.onError((e) => {
         <h3>
           <Rich text="TabBrowserWindow" />
         </h3>
-        <ApiTable head={['Member', 'Kind', 'Description']} rows={WINDOW} />
+        <ApiTable head={['Member', 'Type', 'Description']} rows={WINDOW} />
         <h3>
           <Rich text="TabDocument" />
         </h3>
@@ -178,11 +178,11 @@ docs.onError((e) => {
         <h3>
           <Rich text="Events" />
         </h3>
-        <ApiTable head={['Event', 'What it carries']} rows={EVENTS} />
+        <ApiTable head={['Event', 'Contents']} rows={EVENTS} />
         <h3>
           <Rich text="For other windows in the kit" />
         </h3>
-        <ApiTable head={['Export', 'What']} rows={KIT} />
+        <ApiTable head={['Export', 'Item']} rows={KIT} />
         <p>
           <Rich text="The rest of the API is on the [overview](/tabdocs#api), [Tabs](/tabdocs/tabs), [Menus and keys](/tabdocs/menus), [Drag and drop](/tabdocs/drag) and [Dock and floating windows](/tabdocs/dock)." />
         </p>

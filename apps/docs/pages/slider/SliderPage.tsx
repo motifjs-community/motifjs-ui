@@ -26,20 +26,20 @@ const PROPS = [
   ['tickLabels', '`Bind<boolean>`', '`false`', 'The values under the marks, or at the two ends without marks.'],
   ['showValue', "`Bind<'never' | 'drag' | 'always'>`", "`'never'`", 'A bubble with the value over the thumb: never, while it is moved (by the pointer or the keys), or always.'],
   ['format', '`Bind<Intl.NumberFormatOptions | null>`', '`null`', 'How the bubble, the tick labels and screen readers write the value.'],
-  ['locale', '`Bind<string>`', "the page's `lang`", 'The locale of `format`.'],
+  ['locale', '`Bind<string>`', "The page `lang`", 'The locale of `format`.'],
   ['valueText', '`(value: number) => string`', '—', 'What screen readers say for a value. A function, so it is stored as it is, not bound.'],
   ['updateOn', "`Bind<'input' | 'change'>`", "`'input'`", '`change`: the value changes when the thumb is let go; the thumb still moves.'],
   ['name', '`Bind<string>`', "`''`", 'The name it is sent with in a form; a range sends two values.'],
   ['helpText, hint, prefix, suffix, icon', 'see TextBox', '', 'The parts every field has; `prefix` and `suffix` sit at the two ends of the track.'],
   ['readOnly', '`Bind<boolean>`', '`false`', 'Can be focused and read, not moved.'],
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`: the rail and the thumbs.'],
-  ['stretch', '`Bind<boolean>`', '`false`', 'Fills the width of what it sits in.'],
-  ['rules, error, validateOn, validationGroup', 'see TextBox', '', 'Validation, as in every field.'],
-  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'The shared properties of every control.'],
+  ['stretch', '`Bind<boolean>`', '`false`', 'Stretches to the full width of its container.'],
+  ['rules, error, validateOn, validationGroup', 'see TextBox', '', 'Validation works the same way as for all fields.'],
+  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['thumbElements', 'read-only', 'The thumb elements, `[start, end]` (the end one is hidden without `range`).'],
   ['isValid, validationMessage, validating', 'read-only, reactive', 'As in every field.'],
 ];
@@ -51,7 +51,7 @@ const METHODS = [
 ];
 
 const EVENTS = [
-  ['onValueChanged(e)', 'The value changed. `e`: `{ value, previousValue, byUser, source, event? }`.'],
+  ['onValueChanged(e)', 'Occurs when the value changes. `e`: `{ value, previousValue, byUser, source, event? }`.'],
   ['onValidated(e)', 'A check ended.'],
 ];
 
@@ -114,7 +114,7 @@ import { Slider, type SliderValue } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function; `x-model` binds the value two-way. Created with `new`, the same properties are set programmatically." />
+          <Rich text="Every prop accepts a value or a function, and `x-model` provides two-way binding for the value. When you create the component with `new`, set the same properties programmatically." />
         </p>
         <Example files={code('Programmatic.tsx')} stack>
           <Programmatic />
@@ -182,11 +182,11 @@ import { Slider, type SliderValue } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -199,11 +199,11 @@ import { Slider, type SliderValue } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

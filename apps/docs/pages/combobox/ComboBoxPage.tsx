@@ -9,11 +9,11 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 
 const PROPS = [
   ['value', '`Bind<V | null>`', '`null`', 'The value of the chosen item; `x-model` binds it.'],
-  ['items / dataSource', '`Bind<readonly T[]>` / `Bind<DataSource | null>`', '—', 'Items in memory, searched here, or a data source of `@motifx-community/data`, searched where it lives.'],
+  ['items / dataSource', '`Bind<readonly T[]>` / `Bind<DataSource | null>`', '—', 'An in-memory array, searched on the client, or a `@motifx-community/data` data source, searched on the server.'],
   ['textField, valueField, iconField, groupField, enabledField', '`Bind<ItemField<T>>`', '—', 'As for DropDown; groups for items in memory.'],
   ['searchMode', "`Bind<'contains' | 'startswith'>`", "`'contains'`", 'How items in memory match.'],
   ['minSearchLength', '`Bind<number>`', '`0`', 'Characters to type before the list opens.'],
-  ['searchDelay', '`Bind<number>`', '`0` / `250`', 'Milliseconds after the last key before searching (in memory / a data source).'],
+  ['searchDelay', '`Bind<number>`', '`0` / `250`', 'The delay, in milliseconds, between the last keystroke and the search (in memory / with a data source).'],
   ['acceptCustomValue', '`Bind<boolean>`', '`false`', 'Text that matches no item becomes the value; otherwise the field goes back to the chosen item.'],
   ['autoHighlight', '`Bind<boolean>`', '`true`', 'The first match is highlighted, so Enter takes it.'],
   ['showDropDownButton, clearButton', '`Bind<boolean>`', '`true`, `false`', 'The arrow that opens every item; the button that empties it.'],
@@ -21,8 +21,8 @@ const PROPS = [
 ];
 
 const KEYS = [
-  ['Typing', 'Searches and opens the list; the first match is highlighted.'],
-  ['Down / Up, Alt + Down', 'Open the list with every item; move in it.'],
+  ['Typing', 'Searches and opens the list, highlighting the first match.'],
+  ['Down / Up, Alt + Down', 'Opens the list with all items, or moves the highlight within it.'],
   ['Enter', 'Take the highlighted item (or the text, see `acceptCustomValue`) and close.'],
   ['Tab, leaving', 'An item whose text is the text is taken; otherwise the custom value or the chosen item again.'],
   ['Escape', 'Close the list; closed, undo the typing; then, with `clearButton`, empty it.'],
@@ -66,15 +66,15 @@ import { data } from '@motifx-community/data';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
         <ApiTable
-          head={['Topic', 'How']}
+          head={['Topic', 'Details']}
           rows={[
             ['Pattern', 'The APG combobox with list autocomplete: the input is `role="combobox"`, `aria-autocomplete="list"`, `aria-expanded`, `aria-controls`.'],
-            ['Highlight', '`aria-activedescendant` names the highlighted option; focus stays in the input.'],
+            ['Highlight', '`aria-activedescendant` identifies the highlighted option while focus stays in the input.'],
             ['Loading', 'Rows not loaded yet are options with `aria-busy`, reading "Loading…" from `uiLocale`.'],
           ]}
         />
@@ -92,7 +92,7 @@ import { data } from '@motifx-community/data';
           head={['Member', 'Description']}
           rows={[
             ['selectedItem', 'The item of the value, when known.'],
-            ['listItems', 'The `DataItems` the list shows (what the last search matched).'],
+            ['listItems', 'The `DataItems` shown in the list, which are the results of the last search.'],
             ['opened, open(), close(), clear()', 'The list and the value.'],
             ['refresh()', 'Your items may be plain or reactive; the box reads them as they are. After changing them in place, call `refresh()`. The open list and the text of the value follow. Autocomplete has it too.'],
             ['onValueChanged, onOpened, onClosed, onValidated', 'As for DropDown.'],

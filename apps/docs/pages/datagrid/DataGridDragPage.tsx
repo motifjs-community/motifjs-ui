@@ -90,18 +90,18 @@ export default function DataGridDragPage() {
       </Section>
 
       <Section anchor="drag-options" title="Options">
-        <ApiTable head={['rowDragging', 'Type', 'Default', 'What it does']} rows={OPTIONS} />
+        <ApiTable head={['rowDragging', 'Type', 'Default', 'Description']} rows={OPTIONS} />
         <ApiTable head={['Topic', 'How dragging does it']} rows={RULES} />
       </Section>
 
       <Section anchor="drag-events" title="Events and methods">
         <ApiTable head={['rowDragging handler', 'When']} rows={EVENTS} />
         <ApiTable head={['Field of the event', 'What it holds']} rows={ARGS} />
-        <ApiTable head={['Member', 'Gets or returns', 'What it does']} rows={API} />
+        <ApiTable head={['Member', 'Parameters or return value', 'Description']} rows={API} />
       </Section>
 
       <Section anchor="drag-keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
     </>
   );

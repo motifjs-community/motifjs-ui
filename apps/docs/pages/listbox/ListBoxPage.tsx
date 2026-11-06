@@ -20,17 +20,17 @@ const PROPS = [
   ['selectionFollowsFocus', '`Bind<boolean>`', '`true`', 'Single: the arrow keys choose as they move. Off: they only move, Space or Enter chooses.'],
   ['searchEnabled', '`Bind<boolean>`', '`false`', 'A search box above the list.'],
   ['searchMode', "`Bind<'contains' | 'startswith'>`", "`'contains'`", 'How items in memory match the search.'],
-  ['searchDelay', '`Bind<number>`', '`0` / `250`', 'Milliseconds after the last key before searching (in memory / a data source).'],
+  ['searchDelay', '`Bind<number>`', '`0` / `250`', 'The delay, in milliseconds, between the last keystroke and the search (in memory / with a data source).'],
   ['height', '`Bind<number | string | null>`', '—', 'Rows (`8`) or a CSS length (`"12rem"`). Without it the list is as high as its items, up to the list’s `max-height` (`list.container`).'],
   ['itemTemplate', '`Bind<(item, host) => cleanup | void>`', '—', 'Draws an item your way.'],
   ['noItemsText', '`Bind<string>`', '—', 'What an empty list says instead of `uiLocale`’s “No items”.'],
-  ['label, labelMode, helpText, hint, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup', 'see TextBox', '', 'The field props every editor has.'],
+  ['label, labelMode, helpText, hint, readOnly, required, size, variant, stretch, rules, error, validateOn, validationGroup', 'see TextBox', '', 'Field props shared by all editors.'],
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['selectedItems, selectedItem', 'read-only, reactive', 'The items of the chosen values that are known; with a data source the others are asked by key and follow.'],
-  ['listItems', 'read-only', 'The `DataItems` the list shows (what the last search matched).'],
+  ['listItems', 'read-only', 'The `DataItems` shown in the list, which are the results of the last search.'],
   ['searchBox', 'read-only', 'The search `TextBox` while `searchEnabled` is on.'],
   ['isValid, validationMessage', 'read-only, reactive', 'See TextBox.'],
 ];
@@ -65,7 +65,7 @@ const A11Y = [
   ['Pattern', 'The APG listbox: the list is `role="listbox"`, focused itself; `aria-activedescendant` names the highlighted option.'],
   ['Options', '`role="option"` with `aria-selected`; disabled ones `aria-disabled`. Multiple lists are `aria-multiselectable`.'],
   ['Name', 'The label names the list (`aria-labelledby`); help and errors describe it, `aria-invalid` and `aria-required` tell its state.'],
-  ['Groups', 'Each group is `role="group"` named by its header.'],
+  ['Groups', 'Each group has `role="group"` and is labeled by its header.'],
   ['Long lists', 'Only the rows in view are drawn; each option says where it is with `aria-posinset` and `aria-setsize`; rows still loading are `aria-busy`.'],
   ['Focus', 'The highlight shows while the list is in use; with the keys it also gets the focus ring.'],
 ];
@@ -103,7 +103,7 @@ import { data } from '@motifx-community/data';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="`items` can be plain values; `x-model` binds the value. Created with `new`, the same properties are set programmatically." />
+          <Rich text="`items` can be plain values, and `x-model` binds the selected value. When you create the component with `new`, set the same properties programmatically." />
         </p>
         <Example files={code('Programmatic.tsx', 'cities.ts')}>
           <Programmatic />
@@ -144,11 +144,11 @@ import { data } from '@motifx-community/data';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -161,11 +161,11 @@ import { data } from '@motifx-community/data';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
@@ -174,7 +174,7 @@ import { data } from '@motifx-community/data';
         </h3>
         <ApiTable head={['Prop', 'Type', 'Default', 'Description']} rows={PROPS} />
         <p>
-          <Rich text="A prop whose value is a function of its own (`textField`, a template) takes the function itself when it has parameters; a function without parameters is a getter, as for every other prop." />
+          <Rich text="A prop that accepts a function as its value (`textField`, a template) uses the function as is when it has parameters. A function without parameters is treated as a getter, as with every other prop." />
         </p>
         <h3>
           <Rich text="Properties" />

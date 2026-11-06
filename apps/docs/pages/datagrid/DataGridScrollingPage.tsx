@@ -75,7 +75,7 @@ export default function DataGridScrollingPage() {
         <p>
           <Rich text="The `mode` prop picks how the rows are reached. Every mode draws only the rows in view from a small pool of rows, so the page never holds one element per row." />
         </p>
-        <ApiTable head={['Mode', 'What it does']} rows={MODES} />
+        <ApiTable head={['Mode', 'Description']} rows={MODES} />
       </Section>
 
       <Section anchor="infinite" title="Infinite scrolling">
@@ -85,8 +85,8 @@ export default function DataGridScrollingPage() {
         <Example files={[...code('InfiniteScroll.tsx', 'orders.ts', 'order.ts'), slowAdapterFile]} stack>
           <InfiniteScroll />
         </Example>
-        <ApiTable head={['Option', 'Type', 'Default', 'What it does']} rows={INFINITE_OPTIONS} />
-        <ApiTable head={['Member', 'Gets or returns', 'What it does']} rows={INFINITE_API} />
+        <ApiTable head={['Option', 'Type', 'Default', 'Description']} rows={INFINITE_OPTIONS} />
+        <ApiTable head={['Member', 'Parameters or return value', 'Description']} rows={INFINITE_API} />
         <ApiTable head={['Topic', 'How infinite mode does it']} rows={INFINITE_RULES} />
       </Section>
 
@@ -106,12 +106,12 @@ export default function DataGridScrollingPage() {
         <Example files={code('VirtualColumns.tsx')} stack>
           <VirtualColumns />
         </Example>
-        <ApiTable head={['Option', 'Type', 'Default', 'What it does']} rows={COLUMN_OPTIONS} />
+        <ApiTable head={['Option', 'Type', 'Default', 'Description']} rows={COLUMN_OPTIONS} />
         <ApiTable head={['Topic', 'How virtual columns do it']} rows={COLUMN_RULES} />
       </Section>
 
       <Section anchor="scrolling-keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
     </>
   );

@@ -8,7 +8,7 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 
 const PROPS = [
     ['target', '`Bind<ComponentBase | HTMLElement | null>`', '`null`', 'What it covers: a component or an element; `null` covers the whole page.'],
-    ['message', '`Bind<string>`', 'the kit’s “Loading…”', 'The message under the indicator. The same property as `text`.'],
+    ['message', '`Bind<string>`', 'The kit string “Loading…”', 'The message under the indicator. The same property as `text`.'],
     ['value', '`Bind<boolean>`', '`false`', 'Shown or not; `x-model` binds it two-way.'],
     ['delay', '`Bind<number>`', '`0`', 'Milliseconds before it shows; a hide before that shows nothing.'],
     ['shade', '`Bind<boolean>`', '`true`', 'Dims what it covers.'],
@@ -90,20 +90,20 @@ import { LoadPanel } from '@motifx-community/ui';
                 </Example>
             </Section>
 
-            <Section anchor="behaviour" title="Behaviour">
-                <ApiTable head={['Topic', 'How']} rows={BEHAVIOUR} />
+            <Section anchor="behaviour" title="Behavior">
+                <ApiTable head={['Topic', 'Details']} rows={BEHAVIOUR} />
             </Section>
 
             <Section anchor="a11y" title="Accessibility">
-                <ApiTable head={['Topic', 'How']} rows={A11Y} />
+                <ApiTable head={['Topic', 'Details']} rows={A11Y} />
             </Section>
 
             <Section anchor="styling" title="Styling">
-                <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+                <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
                 <h3>
                   <Rich text="Component tokens" />
                 </h3>
-                <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+                <ApiTable head={['Token', 'Description']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
@@ -114,7 +114,7 @@ import { LoadPanel } from '@motifx-community/ui';
                 <h3>
                   <Rich text="Events, properties and methods" />
                 </h3>
-                <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
+                <ApiTable head={['Member', 'Type', 'Description']} rows={MEMBERS} />
             </Section>
         </>
     );

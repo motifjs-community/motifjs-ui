@@ -38,7 +38,7 @@ const PROPS = [
   ],
   ['currentView', '`Bind<string>`', 'the week', 'The view on screen, by name.'],
   ['currentDate', '`Bind<Date>`', 'today', 'The date the view shows.'],
-  ['firstDayOfWeek', '`Bind<number | null>`', "the locale's", '0 Sunday … 6 Saturday.'],
+  ['firstDayOfWeek', '`Bind<number | null>`', "the locale's", '0 (Sunday) through 6 (Saturday).'],
   ['workDays', '`Bind<number[]>`', 'Monday–Friday', 'The work week, and the days shaded apart.'],
   ['workStartHour / workEndHour', '`Bind<number>`', '9 / 17', 'The work hours; the rest is shaded.'],
   ['startDayHour / endDayHour', '`Bind<number>`', '0 / 24', 'The hours the day columns show.'],
@@ -52,7 +52,7 @@ const PROPS = [
   ['dimPast', '`Bind<boolean>`', '`false`', 'Appointments that have ended look quieter.'],
   ['scrollHour', '`Bind<number | null>`', 'work start', 'The hour the day columns scroll to; by default the work start, or now later on today.'],
   ['toolbar', '`Bind<boolean>`', '`true`', 'The bar with today, previous, next, the date and the views.'],
-  ['locale', '`Bind<string>`', "the page's", 'Dates, times and the week.'],
+  ['locale', '`Bind<string>`', "From the page", 'Dates, times and the week.'],
   ['appointmentTemplate', '`Bind<(context) => Component>`', '—', 'Draws an appointment’s content: `{ appointment, start, end, text, time, allDay, view }`.'],
   ['texts', '`Bind<Partial<UiStrings>>`', '—', 'Its own texts over `uiLocale`.'],
   ['keys', '`Bind<Partial<SchedulerKeys>>`', 'see Keyboard', 'Its keys; an empty list turns one off.'],
@@ -155,12 +155,12 @@ import { Scheduler } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
         <ApiTable
-          head={['Topic', 'How']}
+          head={['Topic', 'Details']}
           rows={[
             [
               'Cells',
@@ -181,7 +181,7 @@ import { Scheduler } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable
-          head={['Hook', 'What it is']}
+          head={['Hook', 'Description']}
           rows={[
             ['.mx-scheduler', '`data-view="day|week|workWeek|month"`.'],
             ['.mx-scheduler__bar, __title, __view-button', 'The bar.'],

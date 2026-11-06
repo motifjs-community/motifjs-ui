@@ -98,24 +98,24 @@ export default function DataGridDragSelectPage() {
       </Section>
 
       <Section anchor="drag-select-options" title="Options">
-        <ApiTable head={['settings', 'Type', 'Default', 'What it does']} rows={OPTIONS} />
+        <ApiTable head={['settings', 'Type', 'Default', 'Description']} rows={OPTIONS} />
         <ApiTable head={['What changes', 'What happens to the ranges']} rows={RULES} />
         <ApiTable head={['Next to', 'How they share the pointer']} rows={CLASHES} />
       </Section>
 
       <Section anchor="drag-select-api" title="Events and methods">
-        <ApiTable head={['Member', 'Gets or returns', 'What it does']} rows={API} />
+        <ApiTable head={['Member', 'Parameters or return value', 'Description']} rows={API} />
       </Section>
 
       <Section anchor="drag-select-keyboard" title="Keyboard and screen readers">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
         <p>
           <Rich text="With `cellSelection` on, the grid is `aria-multiselectable` and every selectable cell carries `aria-selected`. What a drag or a key selected is said politely: “4 rows selected”, “3 × 5 cells selected”, “12 cells selected in 2 ranges” (`gridRowsSelected`, `gridCellsSelected`, `gridCellRangesSelected`, in English and Turkish)." />
         </p>
       </Section>
 
       <Section anchor="drag-select-tokens" title="Tokens">
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
     </>
   );

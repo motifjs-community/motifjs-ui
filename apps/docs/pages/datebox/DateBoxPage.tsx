@@ -11,7 +11,7 @@ const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: '
 const PROPS = [
   ['value', '`Bind<Date | null>`', '`null`', 'The date. `x-model` binds it two-way.'],
   ['type', "`Bind<'date' | 'time' | 'datetime'>`", "`'date'`", 'A day, a time of day, or both.'],
-  ['locale', '`Bind<string>`', "the page's", 'The order of the parts (`25.10.2026`, `10/25/2026`), month and day names, where weeks start.'],
+  ['locale', '`Bind<string>`', "From the page", 'The order of the parts (`25.10.2026`, `10/25/2026`), month and day names, where weeks start.'],
   ['min / max', '`Bind<Date | null>`', '—', 'Limits for typing and picking; checked by validation.'],
   ['disabledDates', '`Bind<(date) => boolean>`', '—', 'Days that cannot be chosen, e.g. weekends.'],
   ['displayFormat', '`Bind<Intl.DateTimeFormatOptions | null>`', '—', 'How the value reads while the field is not edited: `{ dateStyle: \'long\' }`.'],
@@ -21,7 +21,7 @@ const PROPS = [
   ['timeStep', '`Bind<number>`', '`30`', 'The minutes between the times offered.'],
   ['showSeconds', '`Bind<boolean>`', '`false`', 'Seconds in the time.'],
   ['firstDayOfWeek, showWeekNumbers, showTodayButton', 'see Calendar', '', 'Passed to the calendar.'],
-  ['label, helpText, required, rules, readOnly, size, variant, …', 'see TextBox', '', 'The field props every editor has.'],
+  ['label, helpText, required, rules, readOnly, size, variant, …', 'see TextBox', '', 'Field props shared by all editors.'],
 ];
 
 const KEYS = [
@@ -82,11 +82,11 @@ import { DateBox } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -100,7 +100,7 @@ import { DateBox } from '@motifx-community/ui';
 
       <Section anchor="styling" title="Styling">
         <ApiTable
-          head={['Hook', 'What it is']}
+          head={['Hook', 'Description']}
           rows={[
             ['.mx-date-box', 'Added to the field; `data-type="date|time|datetime"`.'],
             ['.mx-date-box__toggle, .mx-date-box__clear', 'The picker and clear buttons.'],
@@ -123,7 +123,7 @@ import { DateBox } from '@motifx-community/ui';
           rows={[
             ['unfinished', 'The text typed is not a whole, real date yet.'],
             ['opened, open(), close()', 'The picker.'],
-            ['clear()', 'Empties the value.'],
+            ['clear()', 'Clears the value.'],
             ['inputElement', 'The native `<input>`.'],
             ['onValueChanged, onOpened, onClosed, onValidated', 'As for DropDown and TextBox.'],
           ]}

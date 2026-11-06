@@ -24,36 +24,36 @@ const PROPS = [
   ['clamp', '`Bind<boolean>`', '`true`', 'A value outside `min` / `max` is brought inside when entered; `false` leaves it to the range check.'],
   ['allowEmpty', '`Bind<boolean>`', '`true`', 'An empty field is `null`; `false` puts `min` (or 0) in its place when the field is left.'],
   ['updateOn', "`Bind<'input' | 'change'>`", "`'input'`", '`input`: the value changes as soon as the text is a whole number in range; `change`: when the field is left or Enter is pressed.'],
-  ['placeholder', '`Bind<string>`', "`''`", 'Shown while the field is empty.'],
-  ['selectOnFocus', '`Bind<boolean>`', '`false`', 'Selects the whole text when the field gets focus.'],
+  ['placeholder', '`Bind<string>`', "`''`", 'Displayed when the field is empty.'],
+  ['selectOnFocus', '`Bind<boolean>`', '`false`', 'Selects all text when the field receives focus.'],
   ['align', "`Bind<'start' | 'center' | 'end'>`", "`'start'`", 'Text alignment.'],
-  ['label, labelMode, helpText, hint, prefix, suffix, icon, buttons', 'see TextBox', '', 'The parts every field has.'],
-  ['readOnly, required, size, variant, stretch', 'see TextBox', '', 'The states and the look every field has.'],
-  ['rules, error, validateOn, validationGroup', 'see TextBox', '', 'Validation, as for every field.'],
+  ['label, labelMode, helpText, hint, prefix, suffix, icon, buttons', 'see TextBox', '', 'Parts common to all fields.'],
+  ['readOnly, required, size, variant, stretch', 'see TextBox', '', 'States and appearance common to all fields.'],
+  ['rules, error, validateOn, validationGroup', 'see TextBox', '', 'Validation works the same way as for all fields.'],
   ['name, autocomplete', '`Bind<string>`', "—, `'off'`", 'Passed to the `<input>`.'],
-  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'The shared properties of every control.'],
+  ['enabled / disabled, visible, tabStop, tabIndex', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
   ['every prop above', 'read/write, reactive', 'A value or a function, like the prop. `locale` reads back the locale in use.'],
   ['formattedValue', 'read-only, reactive', 'The value as it shows without focus, `\'\'` when empty.'],
-  ['isValid, validationMessage, validating', 'read-only, reactive', 'The outcome of the checks.'],
+  ['isValid, validationMessage, validating', 'read-only, reactive', 'The validation result.'],
   ['inputElement', 'read-only', 'The native `<input>`.'],
 ];
 
 const METHODS = [
   ['stepUp(times = 1)', '`void`', 'Adds `step` × `times`, kept within `min` / `max`.'],
   ['stepDown(times = 1)', '`void`', 'Takes `step` × `times` away.'],
-  ['validate()', '`Promise<boolean>`', 'Checks the value and shows the outcome.'],
-  ['resetValidation()', '`void`', 'Hides the outcome of earlier checks.'],
-  ['focus()', '`boolean`', 'Focuses the input.'],
-  ['select()', '`void`', 'Selects the whole text.'],
+  ['validate()', '`Promise<boolean>`', 'Validates the value and displays the result.'],
+  ['resetValidation()', '`void`', 'Clears the results of previous validation.'],
+  ['focus()', '`boolean`', 'Sets focus on the input.'],
+  ['select()', '`void`', 'Selects all text.'],
 ];
 
 const EVENTS = [
   ['onValueChanged(e)', 'The value changed. `e`: `{ value, previousValue, byUser, source, event? }`; a held spin button reports every step.'],
-  ['onValidated(e)', 'A check ended. `e`: `{ valid, message, source }`.'],
-  ['onEnter(e)', 'Enter was pressed. `e`: `{ value, source, event }`.'],
+  ['onValidated(e)', 'Occurs when validation finishes. `e`: `{ valid, message, source }`.'],
+  ['onEnter(e)', 'Occurs when the user presses Enter. `e`: `{ value, source, event }`.'],
 ];
 
 const KEYS = [
@@ -62,14 +62,14 @@ const KEYS = [
   ['Home / End', 'Goes to `min` / `max` when they are set; otherwise moves the caret.'],
   ['Enter', 'Enters the typed text (rounded, kept in range) and fires `onEnter`.'],
   ['Mouse wheel', 'With `wheel`, steps while the field has focus.'],
-  ['Alt + key (`&Name`)', 'Focus the field (Control + Option + key on Apple platforms).'],
+  ['Alt + key (`&Name`)', 'Moves focus to the field (Control + Option + key on Apple platforms).'],
 ];
 
 const A11Y = [
   ['Role', '`spinbutton` on a text `<input inputmode="decimal">`, so phones show a number keyboard and any locale can be typed.'],
   ['Value', '`aria-valuenow`, `aria-valuemin`, `aria-valuemax`, and `aria-valuetext` with the formatted value (`₺1.234,50`).'],
   ['Spin buttons', 'Named “Increase” / “Decrease” from `uiLocale`; not Tab stops (the arrow keys do their job).'],
-  ['Errors', '`aria-invalid="true"`; the message line is a polite live region.'],
+  ['Errors', '`aria-invalid="true"`. The message is a polite live region.'],
 ];
 
 const HOOKS = [
@@ -155,11 +155,11 @@ import { NumberBox, type NumberBoxProps } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -172,11 +172,11 @@ import { NumberBox, type NumberBoxProps } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

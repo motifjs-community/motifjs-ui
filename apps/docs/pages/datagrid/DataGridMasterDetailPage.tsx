@@ -39,7 +39,7 @@ const METHODS = [
   ['expandRow(key) / collapseRow(key)', '`boolean`', 'Opens or closes a row’s details by its key, as the arrow does (the events come, `cancel` holds); a row not loaded, or one without details, does not.'],
   ['isRowExpanded(key)', '`boolean`', 'Whether a row’s details are open. Reactive.'],
   ['expandAllRows() / collapseAllRows()', '`void`', 'Opens or closes every row’s details at once, without row events (as `expandAll()` does for groups).'],
-  ['masterDetail', 'read/write, live', '`grid.masterDetail.enabled = true`; a function is followed.'],
+  ['masterDetail', 'read/write, live', '`grid.masterDetail.enabled = true`. A function is tracked reactively.'],
   ['getVisibleRows()', '`GridVisibleRow[]`', "A row's details are listed right after it, `rowType: 'detail'`, with its index and key."],
 ];
 
@@ -53,7 +53,7 @@ export default function DataGridMasterDetailPage() {
         <Example files={code('MasterDetail.tsx', 'customer-orders.ts', 'customer-order.ts', 'customers.ts')} stack>
           <MasterDetail />
         </Example>
-        <ApiTable head={['Option', 'Type', 'Default', 'What it does']} rows={OPTIONS} />
+        <ApiTable head={['Option', 'Type', 'Default', 'Description']} rows={OPTIONS} />
         <p>
           <Rich text="Open rows are kept by key: sorting, the filters, the search, grouping and paging leave them open, and a row that comes back after a filter opens again. Selecting and editing the rows work as before; a row edited in the edit form keeps its details under the form. Copying and exporting leave the details out, and the saved layout does not keep which rows are open." />
         </p>
@@ -72,12 +72,12 @@ export default function DataGridMasterDetailPage() {
         <p>
           <Rich text="The arrow is a button with `aria-expanded` and `aria-controls`; the row says `aria-expanded` too. A row's details are a row of their own in the grid's reading order (`aria-owns`), right after it and counted in `aria-rowindex` and `aria-rowcount`, with one cell across the columns named “Details of row 3” (`gridDetailsOf`, `gridDetails` for the arrow and its column; both in `uiLocale` and the grid's `texts`)." />
         </p>
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="detail-api" title="Events and methods">
-        <ApiTable head={['Event', 'Gets', 'When']} rows={EVENTS} />
-        <ApiTable head={['Member', 'Returns', 'What it does']} rows={METHODS} />
+        <ApiTable head={['Event', 'Parameters', 'When']} rows={EVENTS} />
+        <ApiTable head={['Member', 'Returns', 'Description']} rows={METHODS} />
       </Section>
     </>
   );

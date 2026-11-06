@@ -12,7 +12,7 @@ const PROPS = [
   ['maxItems', '`Bind<number | null>`', 'as many as fit', 'The most steps shown; the first and the last stay, those between go into the menu.'],
   ['lastIsCurrent', '`Bind<boolean>`', '`true`', 'The last step is the current page: not pressable, `aria-current="page"`.'],
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`.'],
-  ['label', '`Bind<string>`', 'the kit’s “Breadcrumb”', 'What screen readers call it.'],
+  ['label', '`Bind<string>`', 'the kit’s “Breadcrumb”', 'The accessible name.'],
 ];
 
 const MEMBERS = [
@@ -24,7 +24,7 @@ const A11Y = [
   ['Landmark', 'A `nav` named “Breadcrumb” in the kit language, holding an ordered list. Several on one page: give each its own `label`.'],
   ['Current page', '`aria-current="page"`; it is not a link.'],
   ['Menu', 'The steps that do not fit are a menu behind a button named “More pages”; choosing one presses the step itself.'],
-  ['Disabled', '`aria-disabled`; a disabled link loses its address.'],
+  ['Disabled state', '`aria-disabled`; a disabled link loses its address.'],
 ];
 
 const HOOKS = [
@@ -77,15 +77,15 @@ import { Breadcrumb } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">
@@ -96,7 +96,7 @@ import { Breadcrumb } from '@motifx-community/ui';
         <h3>
           <Rich text="Events and properties" />
         </h3>
-        <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
+        <ApiTable head={['Member', 'Type', 'Description']} rows={MEMBERS} />
       </Section>
     </>
   );

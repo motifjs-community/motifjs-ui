@@ -80,7 +80,7 @@ export default function DataGridSelectionPage() {
         <p>
           <Rich text="The sheet holds the header row (frozen), the rows in the grid's order with its filter, search and grouping — every matching row, a server's loaded in parts while a panel over the rows shows the progress and a button that stops it — the group rows (“Column: value” with their summary items, those aligned by column under their columns) with outline levels Excel folds, the group footers and the totals. Numbers stay numbers with a number format made from the column's `Intl` format, dates stay dates, yes/no cells are Excel's `TRUE` / `FALSE` (`booleanText` writes the grid's text), lookup and list cells hold their texts, a column with a `format` function its text, and widths follow the grid. `customizeCell({ gridCell, excelCell })` changes any cell; `gridCell` has `rowType`, `column`, `data`, `value`, `groupIndex`, `groupSummaryItems` and `totalSummaryItemName`. The promise resolves with the cells written, `{ from, to }`." />
         </p>
-        <ApiTable head={['exportDataGrid option', 'Default', 'What it does']} rows={EXCEL_OPTIONS} />
+        <ApiTable head={['exportDataGrid option', 'Default', 'Description']} rows={EXCEL_OPTIONS} />
       </Section>
 
       <Section anchor="pdf" title="Export to PDF">
@@ -93,7 +93,7 @@ export default function DataGridSelectionPage() {
         <p>
           <Rich text="jsPDF's own fonts (Helvetica, Times, Courier) write Latin-1 only: Turkish letters such as İ, ş and ğ, and Cyrillic, Greek or Arabic text, need a TrueType font that has them, added to the document before the export (`doc.addFileToVFS`, `doc.addFont`, `doc.setFont`) — with a bold style too, which group rows and totals use. This example fetches Noto Sans the first time it exports and keeps jsPDF's font when it cannot. The promise resolves with where the table ends (`{ page, y }`), to go on writing under it." />
         </p>
-        <ApiTable head={['exportDataGrid option', 'Default', 'What it does']} rows={PDF_OPTIONS} />
+        <ApiTable head={['exportDataGrid option', 'Default', 'Description']} rows={PDF_OPTIONS} />
       </Section>
     </>
   );

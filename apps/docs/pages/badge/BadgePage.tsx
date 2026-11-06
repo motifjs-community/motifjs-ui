@@ -14,16 +14,16 @@ const PROPS = [
   ['max', '`Bind<number>`', '`99`', 'The highest count written as it is.'],
   ['showZero', '`Bind<boolean>`', '`false`', 'A count of 0 shows; without it the badge hides at 0.'],
   ['dot', '`Bind<boolean>`', '`false`', 'A dot only: there is something, without saying what.'],
-  ['tone', '`Bind<BadgeTone>`', 'the language’s', '`standard`, `accent`, `info`, `success`, `caution`, `danger`. Material marks counts in `danger`, the other languages in `accent`.'],
+  ['tone', '`Bind<BadgeTone>`', 'Set by the design language', '`standard`, `accent`, `info`, `success`, `caution`, `danger`. Material marks counts in `danger`, the other languages in `accent`.'],
   ['variant', '`Bind<BadgeVariant>`', 'the language’s (`solid`)', '`solid`, `subtle`, `outline`.'],
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`.'],
   ['position', '`Bind<BadgePosition | null>`', '`null`', '`top-end`, `top-start`, `bottom-end`, `bottom-start`: on that corner of what it is in, which becomes its anchor. `start` and `end` follow the writing direction.'],
   ['label', '`Bind<string>`', "`''`", 'What screen readers say (“3 unread messages”); without it they read the text.'],
-  ['visible, tabStop', 'see Control', '', 'The shared properties of every control.'],
+  ['visible, tabStop', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write', 'Accepts a value or a function, the same as the prop.'],
   ['shownText', 'read-only', 'What it shows now: the count as written (`99+`), else the text; `\'\'` for a dot.'],
 ];
 
@@ -71,7 +71,7 @@ import { Badge } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function. Created with `new`, the same properties are set programmatically." />
+          <Rich text="Every prop accepts a value or a function. When you create the component with `new`, set the same properties programmatically." />
         </p>
         <Example files={code('Programmatic.tsx')}>
           <Programmatic />
@@ -106,7 +106,7 @@ import { Badge } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -116,11 +116,11 @@ import { Badge } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

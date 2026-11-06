@@ -15,13 +15,13 @@ const PROPS = [
   ['label', '`Bind<string>`', "`''`", 'What screen readers say instead of the name.'],
   ['size', '`Bind<AvatarSize>`', "`'md'`", '`xs`, `sm`, `md`, `lg`, `xl`. In a group, the group’s.'],
   ['shape', '`Bind<AvatarShape>`', 'the language’s (`circle`)', '`circle`, `square` (with the language’s corners for its size).'],
-  ['tone', '`Bind<AvatarTone>`', 'the language’s', '`standard`, `accent`, `info`, `success`, `caution`, `danger`, or `auto`: one taken from the name, the same for the same name everywhere. Material and Lilac take `accent`, the others `standard`.'],
+  ['tone', '`Bind<AvatarTone>`', 'Set by the design language', '`standard`, `accent`, `info`, `success`, `caution`, `danger`, or `auto`: one taken from the name, the same for the same name everywhere. Material and Lilac take `accent`, the others `standard`.'],
   ['status', '`Bind<AvatarStatus | null>`', '`null`', '`online`, `away`, `busy`, `offline`: a presence dot on the lower end corner.'],
-  ['visible, tabStop', 'see Control', '', 'The shared properties of every control.'],
+  ['visible, tabStop', 'see Control', '', 'Properties shared by all controls.'],
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write', 'Accepts a value or a function, the same as the prop.'],
   ['shownInitials', 'read-only', 'The initials it shows: the ones given, else the ones made from the name.'],
   ['showsPicture', 'read-only', 'Whether the picture is what shows now (it loaded).'],
 ];
@@ -35,7 +35,7 @@ const GROUP_PROPS = [
 ];
 
 const GROUP_PROPERTIES = [
-  ['every prop above', 'read/write', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write', 'Accepts a value or a function, the same as the prop.'],
   ['avatars', 'read-only', 'The elements of the avatars given, in order, from JSX lists too (the `+N` is not one of them).'],
   ['hiddenCount', 'read-only', 'How many are counted in the `+N`; 0 when it does not show.'],
 ];
@@ -85,7 +85,7 @@ import { Avatar, AvatarGroup } from '@motifx-community/ui';
 
       <Section anchor="ways" title="Declarative and programmatic">
         <p>
-          <Rich text="Every prop takes a value or a function. Created with `new`, the same properties are set programmatically." />
+          <Rich text="Every prop accepts a value or a function. When you create the component with `new`, set the same properties programmatically." />
         </p>
         <Example files={code('Programmatic.tsx')}>
           <Programmatic />
@@ -123,7 +123,7 @@ import { Avatar, AvatarGroup } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -133,11 +133,11 @@ import { Avatar, AvatarGroup } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

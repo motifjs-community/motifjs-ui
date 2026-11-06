@@ -25,7 +25,7 @@ const MEMBERS = [
     ['move(fromIndex, toIndex)', '`boolean`', 'Moves an item programmatically as a drop would, telling `onReorder`.'],
     ['elements', 'read-only', 'The items’ elements, in order.'],
     ['isDragging', 'read-only', 'An item is being dragged.'],
-    ['refresh()', '`void`', 'Reads the items again after they were changed in place.']
+    ['refresh()', '`void`', 'Re-reads the items after they have been changed in place.']
 ];
 
 const BEHAVIOUR = [
@@ -93,20 +93,20 @@ import { Sortable } from '@motifx-community/ui';
                 </Example>
             </Section>
 
-            <Section anchor="behaviour" title="Behaviour">
-                <ApiTable head={['Topic', 'How']} rows={BEHAVIOUR} />
+            <Section anchor="behaviour" title="Behavior">
+                <ApiTable head={['Topic', 'Details']} rows={BEHAVIOUR} />
             </Section>
 
             <Section anchor="a11y" title="Accessibility">
-                <ApiTable head={['Topic', 'How']} rows={A11Y} />
+                <ApiTable head={['Topic', 'Details']} rows={A11Y} />
             </Section>
 
             <Section anchor="styling" title="Styling">
-                <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+                <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
                 <h3>
                   <Rich text="Component tokens" />
                 </h3>
-                <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+                <ApiTable head={['Token', 'Description']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
@@ -117,7 +117,7 @@ import { Sortable } from '@motifx-community/ui';
                 <h3>
                   <Rich text="Events, properties and methods" />
                 </h3>
-                <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
+                <ApiTable head={['Member', 'Type', 'Description']} rows={MEMBERS} />
             </Section>
         </>
     );

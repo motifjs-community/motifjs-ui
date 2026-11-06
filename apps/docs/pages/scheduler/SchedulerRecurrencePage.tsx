@@ -125,12 +125,12 @@ FormLayout.editors.set('recurrence', (p) => new RecurrenceEditor(p));
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
         <ApiTable
-          head={['Topic', 'How']}
+          head={['Topic', 'Details']}
           rows={[
             ['Occurrences', 'An occurrence is named with how its series repeats; one changed apart says so. The marks are only drawn (`aria-hidden`).'],
             ['The question', 'A modal form: its choices are radio buttons under the question, the first one chosen.'],
@@ -141,7 +141,7 @@ FormLayout.editors.set('recurrence', (p) => new RecurrenceEditor(p));
 
       <Section anchor="styling" title="Styling">
         <ApiTable
-          head={['Hook', 'What it is']}
+          head={['Hook', 'Description']}
           rows={[
             ['.mx-scheduler__appointment', '`data-series`, `data-exception`.'],
             ['scheduler.series-mark, exception-mark', 'Units: the marks (`bar`, `chip`, `open`, `past`, `disabled`); a language that has none leaves them out.'],
@@ -172,7 +172,7 @@ FormLayout.editors.set('recurrence', (p) => new RecurrenceEditor(p));
         <h3>
           <Rich text="Parts" />
         </h3>
-        <ApiTable head={['Part', 'What it does']} rows={PARTS} />
+        <ApiTable head={['Part', 'Description']} rows={PARTS} />
       </Section>
     </>
   );

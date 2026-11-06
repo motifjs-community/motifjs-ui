@@ -33,7 +33,7 @@ const TAB_PROPS = [
   ['key', '`Bind<string>`', "`''`", 'Names the tab in `value`. The JSX `key` works too.'],
   ['icon', '`Bind<IconSource | null>`', '—', 'An icon before the title.'],
   ['badge', '`Bind<string | number | null>`', '—', 'A short text after the title (a count); empty or `null` shows none.'],
-  ['hint', '`Bind<string>`', "`''`", 'A tooltip.'],
+  ['hint', '`Bind<string>`', "`''`", 'The tooltip text.'],
   ['closable', '`Bind<boolean | undefined>`', 'the Tabs', 'A close button on this tab.'],
   ['lazy, keepAlive', '`Bind<boolean | undefined>`', 'the Tabs', 'This tab\'s own setting.'],
   ['content', '`() => ComponentBase | ComponentBase[]`', '—', 'Makes the panel content when the panel is built: instead of, or after, the JSX children.'],
@@ -42,7 +42,7 @@ const TAB_PROPS = [
 ];
 
 const PROPERTIES = [
-  ['every prop above', 'read/write, reactive', 'A value or a function, like the prop.'],
+  ['every prop above', 'read/write, reactive', 'Accepts a value or a function, the same as the prop.'],
   ['tabs', 'read-only, reactive', 'The tabs, in strip order.'],
   ['selectedTab', 'read-only, reactive', 'The selected `Tab`, `null` when there is none.'],
   ['Tab.isSelected, Tab.isClosable', 'read-only, reactive', 'Whether the tab is selected; whether it shows a close button.'],
@@ -181,11 +181,11 @@ import { Tabs, Tab } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="i18n" title="Localization">
@@ -198,11 +198,11 @@ import { Tabs, Tab } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

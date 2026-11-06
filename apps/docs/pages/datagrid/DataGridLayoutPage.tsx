@@ -130,7 +130,7 @@ export default function DataGridLayoutPage() {
           <Toolbar />
         </Example>
         <ApiTable
-          head={['Item field', 'What it does']}
+          head={['Item field', 'Description']}
           rows={[
             ['name', 'One of the grid’s items (`groupPanel`, `rowActions`, `searchPanel`, `addRowButton`, `saveButton`, `revertButton`, `exportButton`, `columnChooserButton`) to change, or a name of your own. A grid item whose feature is off stays out.'],
             ['location', "`'before'` or `'after'` (default; the group panel and `rowActions` `'before'`): which end of the bar."],
@@ -153,7 +153,7 @@ export default function DataGridLayoutPage() {
         </Example>
       </Section>
 
-      <Section anchor="layout" title="Keeping the layout">
+      <Section anchor="layout" title="Persisting the layout">
         <p>
           <Rich text="With `layoutKey` the grid keeps the column widths, order, hidden and pinned columns, the sort, the filters and the search text in the browser's `localStorage`, and a grid made again with the same name — after a reload too — gets them back. Storage that is full or blocked is skipped quietly. `resetLayout()` (also in the column menu) goes back to the column definitions. To keep the layout elsewhere, a server for instance, read `layout` and `filters`, listen to `onLayoutChange`, and give them back through the props of the same names." />
         </p>
@@ -169,7 +169,7 @@ export default function DataGridLayoutPage() {
         <Example files={withOrders('Switches.tsx')} stack>
           <Switches />
         </Example>
-        <ApiTable head={['Setting', 'Default', 'What it does']} rows={SETTINGS} />
+        <ApiTable head={['Setting', 'Default', 'Description']} rows={SETTINGS} />
       </Section>
 
       <Section anchor="events" title="Events">
@@ -179,7 +179,7 @@ export default function DataGridLayoutPage() {
         <Example files={withOrders('Events.tsx')} stack>
           <Events />
         </Example>
-        <ApiTable head={['Event', 'Gets', 'Cancel', 'When']} rows={EVENTS} />
+        <ApiTable head={['Event', 'Parameters', 'Cancel', 'When']} rows={EVENTS} />
       </Section>
     </>
   );

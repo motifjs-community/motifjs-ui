@@ -90,12 +90,12 @@ export default function SchedulerTimelinePage() {
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
         <ApiTable
-          head={['Topic', 'How']}
+          head={['Topic', 'Details']}
           rows={[
             ['Rows', 'The rows are a grid’s rows; each cell reads its group, its date and its time, and a blocked time after them.'],
             ['Resource column, scale', 'Drawn only (`aria-hidden`): every cell names its group and its time.'],
@@ -106,7 +106,7 @@ export default function SchedulerTimelinePage() {
 
       <Section anchor="styling" title="Styling">
         <ApiTable
-          head={['Hook', 'What it is']}
+          head={['Hook', 'Description']}
           rows={[
             ['scheduler.scale, scale-upper (`today`), scale-lower (`day-start`, `day`, `weekend`, `today`)', 'Units: the head over the cells and its two tiers.'],
             ['scheduler.timeline-corner, timeline-corner-label', 'Units: the corner over the resource column, the names of the kinds.'],

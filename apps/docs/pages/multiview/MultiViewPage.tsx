@@ -13,7 +13,7 @@ const PROPS = [
     ['animated', '`Bind<boolean>`', '`true`', 'The views slide into sight. `false` shows the next one at once.'],
     ['lazy', '`Bind<boolean>`', '`true`', 'A view is built when first in sight, then kept (a view’s own `lazy` wins).'],
     ['keepAlive', '`Bind<boolean>`', '`true`', '`false` disposes what a view’s `content` made while the view is out of sight (a view’s own `keepAlive` wins).'],
-    ['label', '`Bind<string>`', 'the kit’s “Pages”', 'What screen readers call it.']
+    ['label', '`Bind<string>`', 'The kit string “Pages”', 'The accessible name.']
 ];
 
 const VIEW_PROPS = [
@@ -96,15 +96,15 @@ import { MultiView, View } from '@motifx-community/ui';
             </Section>
 
             <Section anchor="a11y" title="Accessibility">
-                <ApiTable head={['Topic', 'How']} rows={A11Y} />
+                <ApiTable head={['Topic', 'Details']} rows={A11Y} />
             </Section>
 
             <Section anchor="styling" title="Styling">
-                <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+                <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
                 <h3>
                   <Rich text="Component tokens" />
                 </h3>
-                <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+                <ApiTable head={['Token', 'Description']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
@@ -119,7 +119,7 @@ import { MultiView, View } from '@motifx-community/ui';
                 <h3>
                   <Rich text="Events, properties and methods" />
                 </h3>
-                <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
+                <ApiTable head={['Member', 'Type', 'Description']} rows={MEMBERS} />
             </Section>
         </>
     );

@@ -17,7 +17,7 @@ const PROPS = [
     ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`.'],
     ['clickable', '`Bind<boolean>`', '`true`', '`false` shows the way only: no buttons, no Tab stop.'],
     ['showNumbers', '`Bind<boolean>`', '`true`', 'The indicator of a step to come shows its number.'],
-    ['label', '`Bind<string>`', 'the kit’s “Steps”', 'What screen readers call it.']
+    ['label', '`Bind<string>`', 'The kit string “Steps”', 'The accessible name.']
 ];
 
 const MEMBERS = [
@@ -30,7 +30,7 @@ const MEMBERS = [
     ['goTo(step)', '`Promise<boolean>`', 'Goes to a step by index or key, whatever the order; `onStepChanging` is asked first.'],
     ['statusOf(index)', '`StepperStatus`', '`pending`, `current`, `done` or `error`, as drawn.'],
     ['canReach(index)', '`boolean`', 'Whether a press may reach the step.'],
-    ['refresh()', '`void`', 'Reads the items again after they were changed in place.']
+    ['refresh()', '`void`', 'Re-reads the items after they have been changed in place.']
 ];
 
 const STATUSES = [
@@ -98,7 +98,7 @@ import { Stepper } from '@motifx-community/ui';
                 <p>
                     <Rich text="The steps before the current one are completed by themselves. An item may say `status: 'done'` or `'error'` whatever the current step is, be `optional`, be disabled, or carry an `icon` in place of its number; its fields may be functions of your state." />
                 </p>
-                <ApiTable head={['Status', 'How']} rows={STATUSES} />
+                <ApiTable head={['Status', 'Details']} rows={STATUSES} />
                 <Example stack files={code('Statuses.tsx')}>
                     <Statuses />
                 </Example>
@@ -126,19 +126,19 @@ import { Stepper } from '@motifx-community/ui';
             </Section>
 
             <Section anchor="keyboard" title="Keyboard">
-                <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+                <ApiTable head={['Key', 'Description']} rows={KEYS} />
             </Section>
 
             <Section anchor="a11y" title="Accessibility">
-                <ApiTable head={['Topic', 'How']} rows={A11Y} />
+                <ApiTable head={['Topic', 'Details']} rows={A11Y} />
             </Section>
 
             <Section anchor="styling" title="Styling">
-                <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+                <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
                 <h3>
                   <Rich text="Component tokens" />
                 </h3>
-                <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+                <ApiTable head={['Token', 'Description']} rows={TOKENS} />
             </Section>
 
             <Section anchor="api" title="API reference">
@@ -149,7 +149,7 @@ import { Stepper } from '@motifx-community/ui';
                 <h3>
                   <Rich text="Events, properties and methods" />
                 </h3>
-                <ApiTable head={['Member', 'Kind', 'Description']} rows={MEMBERS} />
+                <ApiTable head={['Member', 'Type', 'Description']} rows={MEMBERS} />
             </Section>
         </>
     );

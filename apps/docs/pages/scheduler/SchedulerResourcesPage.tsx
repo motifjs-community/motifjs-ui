@@ -114,12 +114,12 @@ source.setFilter(rangeFilter(scheduler.visibleRange, scheduler.fields, { resourc
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
         <ApiTable
-          head={['Topic', 'How']}
+          head={['Topic', 'Details']}
           rows={[
             ['Cells', 'A cell reads its group before its time ("Atlas, Ana Silva, Monday 26 October, 09:00") and a blocked time after it ("not available: Lunch").'],
             ['Heads', 'The heads of the groups are drawn only (`aria-hidden`): every cell names its group.'],
@@ -130,7 +130,7 @@ source.setFilter(rangeFilter(scheduler.visibleRange, scheduler.fields, { resourc
 
       <Section anchor="styling" title="Styling">
         <ApiTable
-          head={['Hook', 'What it is']}
+          head={['Hook', 'Description']}
           rows={[
             ['scheduler.group-header (`inner`, `month`), group-swatch', 'Units: a group’s head at each level, and its item’s colour before the name.'],
             ['scheduler.group-divider (`inner`, `head`)', 'Unit: the line between groups (by date, between days), down the heads and the cells.'],

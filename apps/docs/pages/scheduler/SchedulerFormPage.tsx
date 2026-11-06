@@ -16,9 +16,9 @@ const FORM = [
   ],
   ['columns', '`number`', '`2`', 'Columns of the form (a group and a tab may have their own).'],
   ['minColumnWidth', '`string`', '—', 'With it, as many columns as fit, each at least this wide; `columns` is the most.'],
-  ['labelMode', '`Bind<FieldLabelMode>`', 'the language’s', 'Where the labels go.'],
+  ['labelMode', '`Bind<FieldLabelMode>`', 'Set by the design language', 'Label placement.'],
   ['title', '`FormBind<string>`', 'New / Edit appointment', 'The form’s title; a function of the form may say it per appointment.'],
-  ['width', '`string`', 'the language’s', 'The form’s width, a CSS length.'],
+  ['width', '`string`', 'Set by the design language', 'The form’s width, a CSS length.'],
 ];
 
 const NAMES = [
@@ -103,20 +103,20 @@ FormLayout.editors.set('priority', (props) => new Slider({ ...props, min: 1, max
         <h3>
           <Rich text="Built-in items" />
         </h3>
-        <ApiTable head={['Name', 'What it is']} rows={NAMES} />
+        <ApiTable head={['Name', 'Description']} rows={NAMES} />
         <h3>
           <Rich text="SchedulerFormItem" />
         </h3>
-        <ApiTable head={['Member', 'What it does']} rows={ITEM} />
+        <ApiTable head={['Member', 'Description']} rows={ITEM} />
         <h3>
           <Rich text="How they combine" />
         </h3>
-        <ApiTable head={['Case', 'What happens']} rows={CHANGES} />
+        <ApiTable head={['Case', 'Result']} rows={CHANGES} />
         <h3>
           <Rich text="FormLayout" />
         </h3>
         <ApiTable
-          head={['Member', 'What it does']}
+          head={['Member', 'Description']}
           rows={[
             ['FormItem.tabs', 'Tabs of items in any `FormLayout`; a check shows the tab of the first field that failed.'],
             ['FormItem.editor (a function)', 'Makes the editor from the props a named one gets.'],

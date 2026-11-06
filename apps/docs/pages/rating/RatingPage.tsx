@@ -12,8 +12,8 @@ const PROPS = [
   ['step', '`Bind<1 | 0.5>`', '`1`', '`0.5` takes halves: a press on a star’s first half, or the arrow keys.'],
   ['allowClear', '`Bind<boolean>`', '`true`', 'A press on the value chosen, Delete or Backspace leave none.'],
   ['preview', '`Bind<boolean>`', '`true`', 'Under the pointer, the stars show what a press would give.'],
-  ['tone', '`Bind<RatingTone>`', 'the language’s', '`accent`, `neutral`. Gold stars of your own: give `rating.fill.accent.bg` your colour.'],
-  ['emptyIcon, filledIcon', '`Bind<string | null>`', 'the language’s', 'The shape of an empty and of a filled star: a name of the kit’s icon set, or an image address (drawn in the stars’ colours).'],
+  ['tone', '`Bind<RatingTone>`', 'Set by the design language', '`accent`, `neutral`. Gold stars of your own: give `rating.fill.accent.bg` your colour.'],
+  ['emptyIcon, filledIcon', '`Bind<string | null>`', 'Set by the design language', 'The shape of an empty and of a filled star: a name of the kit’s icon set, or an image address (drawn in the stars’ colours).'],
   ['label, helpText, readOnly, required, rules, size…', 'see Field', '', 'Everything a field has: a rating is one.'],
 ];
 
@@ -79,19 +79,19 @@ import { Rating } from '@motifx-community/ui';
       </Section>
 
       <Section anchor="keyboard" title="Keyboard">
-        <ApiTable head={['Key', 'What it does']} rows={KEYS} />
+        <ApiTable head={['Key', 'Description']} rows={KEYS} />
       </Section>
 
       <Section anchor="a11y" title="Accessibility">
-        <ApiTable head={['Topic', 'How']} rows={A11Y} />
+        <ApiTable head={['Topic', 'Details']} rows={A11Y} />
       </Section>
 
       <Section anchor="styling" title="Styling">
-        <ApiTable head={['Hook', 'What it is']} rows={HOOKS} />
+        <ApiTable head={['Hook', 'Description']} rows={HOOKS} />
         <h3>
           <Rich text="Component tokens" />
         </h3>
-        <ApiTable head={['Token', 'What it sets']} rows={TOKENS} />
+        <ApiTable head={['Token', 'Description']} rows={TOKENS} />
       </Section>
 
       <Section anchor="api" title="API reference">

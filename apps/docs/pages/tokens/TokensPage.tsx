@@ -57,12 +57,12 @@ export default function TokensPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="Five layers. The first four — primitives, the design language's own scales, semantic tokens per theme, density — come from `@motifx-community/design-system` and are listed here for reference. The fifth, the component tokens, is this kit's own: a knob per component, each referencing a design-system token, written in `@layer mx.components`. Every design language gives every one of them its own value." />
+        <Rich text="The token system has five layers. The first four (primitives, design language scales, semantic tokens per theme, and density) come from `@motifx-community/design-system` and are listed here for reference. The fifth layer, component tokens, belongs to this kit: each component has its own tokens, written in `@layer mx.components`, and each one references a design system token. Every design language provides its own value for each component token." />
       </p>
 
       <Section anchor="component" title="Component ({componentDocs.length})">
         <p>
-          <Rich text="Source: `tokens/schema/*.json` (names and types) and `tokens/languages/<language>/*.json` (the values; listed here: Tactile's). Override one after `styles.css` to restyle every instance of that component; override the design-system token it references to restyle everything." />
+          <Rich text="Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<language>/*.json` for values (Tactile values are listed here). Override a component token after `styles.css` to restyle every instance of that component, or override the design system token it references to restyle everything that uses it." />
         </p>
         <div class="table-scroll" tabindex="0">
           <table class="token-table">
@@ -104,7 +104,7 @@ export default function TokensPage() {
 
       <Section anchor="semantic" title="Semantic ({semantic.length} per theme)">
         <p>
-          <Rich text="The theme's language, the only layer a theme redefines — switch the theme above and watch the swatches. Every text/background pair is checked in the design system's build: WCAG AA in light and dark, AAA in high contrast." />
+          <Rich text="Semantic tokens are the only layer a theme redefines. Switch the theme at the top of the page to see the swatches change. The design system build verifies every text and background pair against WCAG AA in light and dark themes, and against AAA in high contrast." />
         </p>
         <div class="table-scroll" tabindex="0">
           <table class="token-table">
@@ -154,7 +154,7 @@ export default function TokensPage() {
 
       <Section anchor="density" title="Density ({density.length})">
         <p>
-          <Rich text={'Control heights, paddings, gaps, the pressable edge and the bar height; `data-density="compact"` swaps them all.'} />
+          <Rich text={'Control heights, padding, gaps, the pressable edge and the bar height. Setting `data-density="compact"` swaps all of them.'} />
         </p>
         <div class="table-scroll" tabindex="0">
           <table class="token-table">
@@ -198,7 +198,7 @@ export default function TokensPage() {
 
       <Section anchor="identity" title="Identity ({identity.length})">
         <p>
-          <Rich text="What a design language brings of its own: corner radii, shadows, type and motion. The names are the same in every language; `data-identity` picks whose values apply. Tactile, shown here, is the default." />
+          <Rich text="These are the values a design language defines for itself: corner radii, shadows, typography and motion. The names are the same in every language, and `data-identity` selects which values apply. The values shown here are from Tactile, the default." />
         </p>
         <div class="table-scroll" tabindex="0">
           <table class="token-table">
@@ -240,7 +240,7 @@ export default function TokensPage() {
 
       <Section anchor="primitive" title="Primitive ({primitive.length})">
         <p>
-          <Rich text="The shared palette and scales, the same in every design language. Themes and components never hardcode these values; they reference them." />
+          <Rich text="The shared palette and scales, identical in every design language. Themes and components reference these values and never hardcode them." />
         </p>
         <div class="table-scroll" tabindex="0">
           <table class="token-table">
@@ -280,7 +280,7 @@ export default function TokensPage() {
         </div>
       </Section>
 
-      <Section anchor="ts" title="Using token names in TS">
+      <Section anchor="ts" title="Using token names in TypeScript">
         <Code
           code={`
 import { cssVar } from '@motifx-community/ui/tokens';
