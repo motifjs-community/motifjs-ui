@@ -13,7 +13,7 @@ const PROPS = [
   ['collapsible', '`Bind<boolean>`', '`true`', 'With `false`, one item stays open, and its header has `aria-disabled` while it cannot close.'],
   ['headingLevel', '`Bind<number>`', '`3`', 'The `aria-level` of the headers (1 to 6). Match it to the surrounding headings.'],
   ['arrowKeys', '`Bind<boolean>`', '`true`', 'Up, Down, Home and End move between headers.'],
-  ['regions', "`Bind<boolean | 'auto'>`", "`'auto'`", 'Sections are `role=\"region\"` landmarks; `auto` while there are six items or fewer.'],
+  ['regions', "`Bind<boolean | 'auto'>`", "`'auto'`", 'Makes sections `role=\"region\"` landmarks. `auto` applies when there are six items or fewer.'],
   ['variant', '`Bind<AccordionVariant>`', "`'list'`", '`list` (one bordered box), `separated` (a card per item) or `flush` (dividers only).'],
   ['size', '`Bind<ControlSize>`', "`'md'`", '`sm`, `md`, `lg`, from the density tokens.'],
   ['chevron', '`Bind<AccordionChevron>`', "`'end'`", 'The position of the chevron: `end`, `start` or `none`.'],

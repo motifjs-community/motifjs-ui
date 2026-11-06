@@ -30,7 +30,7 @@
   "With `false`, one item stays open, and its header has `aria-disabled` while it cannot close.": "",
   "The `aria-level` of the headers (1 to 6). Match it to the surrounding headings.": "",
   "Up, Down, Home and End move between headers.": "",
-  "Sections are `role=\"region\"` landmarks; `auto` while there are six items or fewer.": "Bölümler `role=\"region\"` landmark'larıdır; altı ya da daha az öğe varken `auto`.",
+  "Makes sections `role=\"region\"` landmarks. `auto` applies when there are six items or fewer.": "",
   "`list` (one bordered box), `separated` (a card per item) or `flush` (dividers only).": "",
   "The position of the chevron: `end`, `start` or `none`.": "",
   "Creates a section when first opened and then keeps it. An item's own `lazy` takes precedence.": "",
