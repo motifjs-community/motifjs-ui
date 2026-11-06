@@ -25,7 +25,7 @@ Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with
 - [Button](docs/button.md): A native `<button>` drawn from the design tokens: three variants, three tones, three sizes, an icon, an `&` access key. It can be a toggle, show that work…
 - [ButtonGroup](docs/buttongroup.md): Buttons that belong together: a segmented choice of one or several, or a row of actions. The buttons are the kit’s own, touching by default.
 - [Toolbar](docs/toolbar.md): A bar of commands: buttons, toggle buttons, menus and fields in groups between separators. It is one Tab stop and the arrow keys move inside it; items that…
-- [SpeedDial](docs/speeddial.md): A round button in a corner of the page, or in the flow, that fans out its actions when pressed: each a round button with a glyph and a label beside it. With…
+- [SpeedDial](docs/speeddial.md): A round button in a corner of the page, on an edge or in the flow, that opens its actions when pressed: round buttons in a line with a label beside each, or…
 - [MenuBar and ContextMenu](docs/menus.md): A menu bar of an app (File, Edit, View) and the menu that opens on a right-click. Both show the same menu items: submenus, check and radio items, shortcuts,…
 
 ## Editors
@@ -54,7 +54,7 @@ Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with
 ## Feedback
 
 - [ProgressBar and Spinner](docs/progress.md): ProgressBar shows how far some work is, as a line or a circle, or that it runs when that is not known. Spinner says "busy, wait": a turning ring, alone or…
-- [Tooltip](docs/tooltip.md): A short description shown next to an element: after the pointer rests on it, when it gets keyboard focus, or programmatically. It can be hovered, Escape hides it,…
+- [Tooltip](docs/tooltip.md): A short description shown next to an element: after the pointer rests on it, when it gets keyboard focus, or programmatically. It can be hovered, Escape…
 - [Popover](docs/popover.md): Content next to the element it belongs to: a title, a close button, a form, a card. It opens on a press or while the pointer rests on its target, follows…
 - [LoadPanel](docs/loadpanel.md): A “loading” layer over a container or the whole page: a shade, a pane with the kit’s spinner and a message, a Cancel button when the work can be stopped.…
 - [Toast](docs/toast.md): Short notifications at an edge of the window: four tones, an action such as Undo, a time of their own or none, six positions and a limit on how many show at…
@@ -6494,7 +6494,7 @@ export default function SizeAndOrientation() {
 
 > Buttons · @motifx-community/ui 0.1.0-beta.3
 
-A round button in a corner of the page, or in the flow, that fans out its actions when pressed: each a round button with a glyph and a label beside it. With one action, the main button does it itself.
+A round button in a corner of the page, on an edge or in the flow, that opens its actions when pressed: round buttons in a line with a label beside each, or on a circle, a half or a quarter of one around it with a tooltip each. With one action, the main button does it itself.
 
 ## Import
 
@@ -6502,9 +6502,9 @@ A round button in a corner of the page, or in the flow, that fans out its action
 import { SpeedDial } from '@motifx-community/ui';
 ```
 
-## A fan of actions
+## In a line
 
-`actions` are the buttons that fan out in `direction`; each has a `glyph` of the kit’s set or an `icon` of your own, a `text` shown as its label, and a `click`. `open` and `x-model` say whether the fan is out. Here in the flow of the page (`position='inline'`).
+`actions` are the buttons that go out in `direction`; each has a `glyph` of the kit’s set or an `icon` of your own, a `text` shown as its label, and a `click`. `open` and `x-model` say whether the fan is out. Here in the flow of the page (`position='inline'`).
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -6531,9 +6531,134 @@ export default function Inline() {
 }
 ```
 
+## On a circle
+
+`layout='circle'` lays the actions evenly around the main button, the first in `direction`. They come out from under the button and go back there. `radius` sets how far out; by itself it is just enough to keep the actions `gap` apart and clear of the button. Around the button the labels are off and the actions have tooltips, because labels would run into each other; `showLabels` and `tooltip` say otherwise. Here it is in the centre of its box: `relativeTo='parent'` measures `position` in the nearest positioned parent.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Button, SpeedDial, Stack } from '@motifx-community/ui';
+
+/** The actions on a whole circle around the button, in the centre of a box; by default just far enough out to keep them apart. */
+export default function Circle() {
+    const s = reactive({ radius: null as number | null, told: '' });
+    const actions = [
+        { text: 'Edit', glyph: 'pencil', click: () => (s.told = 'edit') },
+        { text: 'Refresh', glyph: 'repeat', click: () => (s.told = 'refresh') },
+        { text: 'Delete', glyph: 'trash', click: () => (s.told = 'delete') },
+        { text: 'Upload', glyph: 'upload', click: () => (s.told = 'upload') },
+        { text: 'Download', glyph: 'download', click: () => (s.told = 'download') }
+    ];
+    return (
+        <Stack gap="sm" style="inline-size: 100%">
+            <Stack orientation="horizontal" wrap align="center">
+                <Button text="Radius by itself" variant="outline" onclick={() => (s.radius = null)} />
+                <Button text="Radius 120" variant="outline" onclick={() => (s.radius = 120)} />
+                <output class="sd-circle-told">{() => s.told}</output>
+            </Stack>
+            <div style="position: relative; inline-size: 100%; block-size: 22rem">
+                <SpeedDial class="sd-circle" layout="circle" position="center" relativeTo="parent" radius={() => s.radius} text="Tools" actions={actions} />
+            </div>
+        </Stack>
+    );
+}
+```
+
+## On a half circle
+
+`layout='semi-circle'` lays them on half a circle with `direction` in its middle, which suits the middle of an edge: `position` takes `top`, `bottom`, `start` and `end`, and `direction` follows from it, into the page.
+
+```tsx
+import { SpeedDial } from '@motifx-community/ui';
+
+const ACTIONS = [
+    { text: 'Edit', glyph: 'pencil' },
+    { text: 'Refresh', glyph: 'repeat' },
+    { text: 'Delete', glyph: 'trash' },
+    { text: 'Upload', glyph: 'upload' },
+    { text: 'Download', glyph: 'download' }
+];
+
+/** A half circle on the middle of each edge of a box: `direction` follows from `position`, into the box. */
+export default function SemiCircle() {
+    return (
+        <div class="sd-semi" style="position: relative; inline-size: 100%; block-size: 26rem">
+            <SpeedDial class="sd-semi-top" layout="semi-circle" position="top" relativeTo="parent" text="Tools at the top" actions={ACTIONS} />
+            <SpeedDial class="sd-semi-start" layout="semi-circle" position="start" relativeTo="parent" text="Tools at the start" actions={ACTIONS} />
+            <SpeedDial class="sd-semi-end" layout="semi-circle" position="end" relativeTo="parent" text="Tools at the end" actions={ACTIONS} />
+            <SpeedDial class="sd-semi-bottom" layout="semi-circle" position="bottom" relativeTo="parent" text="Tools at the bottom" actions={ACTIONS} />
+        </div>
+    );
+}
+```
+
+## On a quarter circle
+
+`layout='quarter-circle'` lays them on a quarter of a circle, which suits a corner: `direction` follows from `position` again, and is a diagonal such as `up-start` when you set it.
+
+```tsx
+import { SpeedDial } from '@motifx-community/ui';
+
+const ACTIONS = [
+    { text: 'Edit', glyph: 'pencil' },
+    { text: 'Refresh', glyph: 'repeat' },
+    { text: 'Delete', glyph: 'trash' },
+    { text: 'Upload', glyph: 'upload' },
+    { text: 'Download', glyph: 'download' }
+];
+
+/** A quarter circle in each corner of a box: `direction` follows from `position`, into the box. */
+export default function QuarterCircle() {
+    return (
+        <div class="sd-quarter" style="position: relative; inline-size: 100%; block-size: 26rem">
+            <SpeedDial class="sd-quarter-top-start" layout="quarter-circle" position="top-start" relativeTo="parent" text="Tools, top start" actions={ACTIONS} />
+            <SpeedDial class="sd-quarter-top-end" layout="quarter-circle" position="top-end" relativeTo="parent" text="Tools, top end" actions={ACTIONS} />
+            <SpeedDial class="sd-quarter-bottom-start" layout="quarter-circle" position="bottom-start" relativeTo="parent" text="Tools, bottom start" actions={ACTIONS} />
+            <SpeedDial class="sd-quarter-bottom-end" layout="quarter-circle" position="bottom-end" relativeTo="parent" text="Tools, bottom end" actions={ACTIONS} />
+        </div>
+    );
+}
+```
+
+## Tooltips
+
+`tooltip` on the speed dial turns tooltips on or off for all its actions and passes options to each; `tooltip` on an action wins, with a text of its own, options, or `false`. Each is the kit’s `Tooltip`, on the outer side of the action unless `placement` says another. With one action, the main button carries its tooltip.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Button, SpeedDial, Stack } from '@motifx-community/ui';
+
+/** Tooltips on the actions: the speed dial's options for all, a text or options of an action's own, none on one. */
+export default function Tooltips() {
+    const s = reactive({ on: true });
+    return (
+        <Stack gap="md" style="inline-size: 100%">
+            <Button class="sd-tips-toggle" text="Tooltips" variant="outline" toggle x-model={() => s.on} />
+            <div style="min-block-size: 5rem; padding-block-start: 2rem">
+                <SpeedDial
+                    class="sd-tips"
+                    position="inline"
+                    direction="end"
+                    text="Edit"
+                    closeOnAction={false}
+                    showLabels={false}
+                    tooltip={() => (s.on ? { placement: 'top', delay: 100 } : false)}
+                    actions={[
+                        { text: 'Edit', glyph: 'pencil' },
+                        { text: 'Upload', glyph: 'upload', tooltip: 'Upload a new version, up to 20 MB' },
+                        { text: 'Delete', glyph: 'trash', tooltip: { text: 'Kept in the bin for 30 days', placement: 'bottom' } },
+                        { text: 'Save', glyph: 'save', tooltip: false }
+                    ]}
+                />
+            </div>
+        </Stack>
+    );
+}
+```
+
 ## In a corner of the viewport
 
-By default it is fixed to the bottom end corner of the viewport, `inset` away from the edges; `position` names another corner. Switch it on here to see it over the page.
+By default it is fixed to the bottom end corner of the viewport, `inset` away from the edges; `position` names another place. Switch it on here to see it over the page.
 
 ```tsx
 import { reactive } from '@motifx/core';
@@ -6555,7 +6680,6 @@ export default function Corner() {
                 class="sd-corner"
                 visible={() => s.on}
                 position={() => s.position}
-                direction={() => (s.position.startsWith('top') ? 'down' : 'up')}
                 text="Create"
                 actions={[
                     { text: 'Document', glyph: 'file', click: () => (s.told = 'a document') },
@@ -6596,10 +6720,10 @@ export default function Single() {
 | Key | What it does |
 | --- | --- |
 | `Tab` | The main button is the one stop; the actions are reached with the arrow keys. |
-| `Arrow keys` | On the main button, the key along the fan opens it on the first action (the other way, on the last); on the actions they move, around the ends. Up and Down for a fan that stands, Left and Right for one that lies. |
+| `Arrow keys` | On the main button, the key along the actions opens them on the first (the other way, on the last); on the actions they move, around the ends. Up and Down for a line that stands, Left and Right for one that lies; around the button either pair, Down and Right forward along the circle. |
 | `Home, End` | The first and the last action. |
 | `Enter, Space` | Press the main button or the focused action. |
-| `Escape` | Closes the actions and puts the focus back on the main button; so does a press outside, and Tab. |
+| `Escape` | Closes the actions and puts the focus back on the main button; so does a press outside, and Tab. While a tooltip is shown, the first Escape hides the tooltip. |
 
 ## Accessibility
 
@@ -6607,22 +6731,23 @@ export default function Single() {
 | --- | --- |
 | `The main button` | A button named by `text` (“Actions” in the kit language) with `aria-haspopup="menu"` and `aria-expanded`; with one action shown it is that action, named by it. |
 | `The actions` | A `menu` of `menuitem`s named by their labels; out of sight they are hidden from readers and keys (`inert`). |
-| `Labels and glyphs` | The labels are shown beside the actions while open and carry the names; the glyphs are decorative. |
+| `Labels and glyphs` | The labels are shown beside the actions while open; the name is on the action either way. The glyphs are decorative. |
+| `Tooltips` | The kit’s `Tooltip`: on keyboard focus too, dismissed with Escape, described with `aria-describedby`. A touch does not show one, so where the glyph alone does not say it on a touch screen, keep the labels on. |
 
 ## Styling
 
 | Hook | What it is |
 | --- | --- |
-| `.mx-speed-dial` | The speed dial. `data-position`, `data-direction`, `data-open`, `data-labels`, `data-extended`, `data-single`. |
+| `.mx-speed-dial` | The speed dial. `data-layout`, `data-position`, `data-relative`, `data-direction`, `data-open`, `data-labels`, `data-extended`, `data-single`. |
 | `.mx-speed-dial__main, .mx-speed-dial__main-glyph, .mx-speed-dial__main-text` | The main button, its glyph and its text. |
-| `.mx-speed-dial__fan, .mx-speed-dial__action, .mx-speed-dial__action-icon, .mx-speed-dial__label` | The fan, an action (`aria-disabled`), its glyph or icon, its label. |
+| `.mx-speed-dial__fan, .mx-speed-dial__action, .mx-speed-dial__action-icon, .mx-speed-dial__label` | The fan, an action (`aria-disabled`, `data-side`: where its label and tooltip go), its glyph or icon, its label. |
 
 ### Component tokens
 
 | Token | What it sets |
 | --- | --- |
 | `speed-dial.main, .main-glyph, .main-text, .action, .action-icon, .label, .fan` | Units: the main button (`hover`, `pressed`, `focus`, `open`, `extended`, `disabled`), its glyph (`open`) and text, an action (`hover`, `pressed`, `focus`, `disabled`), its glyph, the label, the fan. |
-| `speed-dial.inset, .gap, .label-gap` | From the viewport’s edges, between the buttons, between an action and its label. |
+| `speed-dial.inset, .gap, .label-gap` | From the edges, between the buttons (around the button too: the radius keeps this gap), between an action and its label. |
 
 ## API reference
 
@@ -6630,15 +6755,19 @@ export default function Single() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `actions` | `Bind<readonly SpeedDialAction[]>` | `[]` | The actions in the order they fan out: `text`, `glyph` (of the kit’s set) or `icon` (yours), `enabled`, `visible`, `click`, `key`, `data`. With one shown, the main button does it itself. |
+| `actions` | `Bind<readonly SpeedDialAction[]>` | `[]` | The actions in order: `text`, `glyph` (of the kit’s set) or `icon` (yours), `tooltip`, `enabled`, `visible`, `click`, `key`, `data`. With one shown, the main button does it itself. |
 | `glyph, openGlyph` | `Bind<string>` | `'plus'`, `'dismiss'` | The main button’s glyph, and its glyph while the actions are open. |
 | `text` | `Bind<string>` | the kit’s “Actions” | What screen readers call the main button, and its text when `extended`. |
 | `extended` | `Bind<boolean>` | `false` | The main button shows its `text` beside the glyph. |
-| `direction` | `Bind<SpeedDialDirection>` | `'up'` | `up`, `down`, `start` or `end`: where the actions fan out. |
-| `position` | `Bind<SpeedDialPosition>` | `'bottom-end'` | A corner of the viewport it is fixed to (`bottom-end`, `bottom-start`, `top-end`, `top-start`), or `inline` in the flow. |
+| `layout` | `Bind<SpeedDialLayout>` | `'linear'` | `linear`, `circle`, `semi-circle` or `quarter-circle`: in a line from the main button, or around it. |
+| `radius` | `Bind<number \| null>` | by itself | Around the button: pixels from its centre to the actions’ centres. By itself it is just enough to keep them apart. An `extended` main button is wider than this reckons with, so give it one. |
+| `direction` | `Bind<SpeedDialDirection>` | into the page | `up`, `down`, `start`, `end` or a diagonal such as `up-start`: where the actions go, the middle of the arc around the button. A line takes the first word of a diagonal. By itself it is away from the edges `position` names, and `up` in the centre and inline. |
+| `position` | `Bind<SpeedDialPosition>` | `'bottom-end'` | A corner (`bottom-end`, `bottom-start`, `top-end`, `top-start`), the middle of an edge (`top`, `bottom`, `start`, `end`), `center`, or `inline` in the flow. |
+| `relativeTo` | `Bind<SpeedDialRelativeTo>` | `'viewport'` | What `position` is measured in: `viewport`, or `parent`, the nearest positioned parent. |
 | `open` | `Bind<boolean>` | `false` | The actions are open. `x-model` binds it two-way. |
 | `closeOnAction` | `Bind<boolean>` | `true` | A press on an action closes the fan. |
-| `showLabels` | `Bind<boolean>` | `true` | The actions’ labels are shown beside them while open. |
+| `showLabels` | `Bind<boolean>` | in a line yes, around no | The actions’ labels are shown beside them while open. |
+| `tooltip` | `Bind<boolean \| SpeedDialTooltip>` | while the labels are off | Tooltips on the actions, with their `text`. Options go to each `Tooltip` (`placement`, `delay`, `hideDelay`, `showOn`, `content`…). By default they open on the outer side after 200 ms. An action’s own `tooltip` wins: a text, options, or `false` for none. |
 
 ### Events, properties and methods
 

@@ -17,7 +17,6 @@ export default function Corner() {
                 class="sd-corner"
                 visible={() => s.on}
                 position={() => s.position}
-                direction={() => (s.position.startsWith('top') ? 'down' : 'up')}
                 text="Create"
                 actions={[
                     { text: 'Document', glyph: 'file', click: () => (s.told = 'a document') },

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mountHost, tick } from '../../../tests/helpers';
 import { enStrings, uiLocale } from '../../core/ui-locale';
 import { SpeedDial } from './SpeedDial';
+import type { SpeedDialLayout } from './speed-dial-props';
 
 const hosts: Component[] = [];
 
@@ -110,6 +111,105 @@ describe('SpeedDial', () => {
         expect(document.activeElement).toBe(c);
         d.close();
         expect(told).toEqual(['open true', 'close true', 'open true', 'close false']);
+    });
+
+    it('around the button: the angles of each layout over the shown actions, the sides, the direction into the page, the radius', async () => {
+        const s = reactive({ layout: 'circle' as SpeedDialLayout, radius: null as number | null });
+        let d!: SpeedDial;
+        page(
+            <SpeedDial
+                ref={(x: SpeedDial) => (d = x)}
+                position="bottom-end"
+                layout={() => s.layout}
+                radius={() => s.radius}
+                actions={[{ text: 'A', glyph: 'pencil' }, { text: 'B', glyph: 'trash' }, { text: 'Gone', glyph: 'file', visible: false }, { text: 'C', glyph: 'save' }, { text: 'D', glyph: 'upload' }]}
+            />
+        );
+        await settle();
+        const angles = () => actions(d).filter(a => !a.hidden).map(a => a.style.getPropertyValue('--_angle'));
+        const sides = () => actions(d).filter(a => !a.hidden).map(a => a.dataset.side);
+        expect(d.element.dataset.layout).toBe('circle');
+        expect(d.element.dataset.direction).toBe('up-start');
+        expect(angles()).toEqual(['225deg', '315deg', '405deg', '495deg']);
+        expect(d.element.style.getPropertyValue('--_step')).toBe('90deg');
+        expect(sides()).toEqual(['start', 'end', 'end', 'start']);
+        expect(d.showLabels).toBe(false);
+        expect(d.element.hasAttribute('data-labels')).toBe(false);
+        s.layout = 'quarter-circle';
+        await settle();
+        expect(angles()).toEqual(['180deg', '210deg', '240deg', '270deg']);
+        expect(sides()).toEqual(['start', 'start', 'start', 'top']);
+        s.layout = 'semi-circle';
+        await settle();
+        expect(angles()).toEqual(['135deg', '195deg', '255deg', '315deg']);
+        d.direction = 'up';
+        await settle();
+        expect(d.element.dataset.direction).toBe('up');
+        expect(angles()).toEqual(['180deg', '240deg', '300deg', '360deg']);
+        expect(d.element.style.getPropertyValue('--_radius')).toBe('');
+        s.radius = 90;
+        await settle();
+        expect(d.element.style.getPropertyValue('--_radius')).toBe('90px');
+        d.position = 'top-start';
+        await settle();
+        d.direction = 'down-end';
+        d.layout = 'linear';
+        await settle();
+        expect(d.element.dataset.direction).toBe('down');
+        expect(angles()).toEqual(['', '', '', '']);
+        expect(d.element.style.getPropertyValue('--_radius')).toBe('');
+        expect(sides()).toEqual(['end', 'end', 'end', 'end']);
+        expect(d.showLabels).toBe(true);
+        expect(d.element.hasAttribute('data-labels')).toBe(true);
+        d.layout = 'circle';
+        await settle();
+        const first = actions(d)[0];
+        d.show();
+        await settle();
+        first.focus();
+        key(first, 'ArrowRight');
+        expect(document.activeElement).toBe(actions(d)[1]);
+        key(actions(d)[1], 'ArrowUp');
+        expect(document.activeElement).toBe(first);
+    });
+
+    it('the tooltips: on by themselves while the labels are off, the speed dial\'s options, an action\'s own word, gone on close', async () => {
+        let d!: SpeedDial;
+        page(
+            <SpeedDial
+                ref={(x: SpeedDial) => (d = x)}
+                position="inline"
+                layout="circle"
+                actions={[{ text: 'Edit', glyph: 'pencil' }, { text: 'Upload', glyph: 'upload', tooltip: 'Up to 20 MB' }, { text: 'Delete', glyph: 'trash', tooltip: { placement: 'bottom', delay: 0 } }, { text: 'Save', glyph: 'save', tooltip: false }]}
+            />
+        );
+        await settle();
+        const tips = () => d.parts.map(p => p.tooltip);
+        expect(tips().map(t => t?.text ?? null)).toEqual(['Edit', 'Up to 20 MB', 'Delete', null]);
+        expect(tips()[0]!.delay).toBe(200);
+        expect(tips()[2]!.delay).toBe(0);
+        expect(tips()[2]!.placement).toBe('bottom');
+        expect(tips()[0]!.placement).toBe(actions(d)[0].dataset.side);
+        d.tooltip = false;
+        await settle();
+        expect(tips().map(t => t?.text ?? null)).toEqual([null, 'Up to 20 MB', 'Delete', null]);
+        d.tooltip = { delay: 50, placement: 'top' };
+        await settle();
+        expect(tips()[0]!.delay).toBe(50);
+        expect(tips()[0]!.placement).toBe('top');
+        expect(tips()[1]!.placement).toBe('top');
+        d.tooltip = true;
+        d.show();
+        await settle();
+        tips()[0]!.open();
+        await settle();
+        expect(tips()[0]!.opened).toBe(true);
+        d.close();
+        await settle();
+        expect(tips()[0]!.opened).toBe(false);
+        d.actions = [{ text: 'One', glyph: 'save', tooltip: 'Saves it' }];
+        await settle();
+        expect(d.mainTooltip?.text).toBe('Saves it');
     });
 
     it('with one action shown, the main button does it itself; a press outside closes the fan', async () => {

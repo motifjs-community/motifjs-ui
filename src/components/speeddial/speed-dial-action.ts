@@ -1,6 +1,7 @@
 import type { Bind } from '@motifx/core';
 import type { IconSource } from '../../core/icon-source';
 import type { SpeedDialActionClickEventArgs } from './speed-dial-action-click-event-args';
+import type { SpeedDialTooltip } from './speed-dial-tooltip';
 
 /** One action of the `SpeedDial`: a round button with a glyph or an icon, its text as a label beside it. */
 export interface SpeedDialAction {
@@ -12,6 +13,8 @@ export interface SpeedDialAction {
     glyph?: Bind<string>;
     /** An icon of your own: an address, an element or a component, in place of the glyph. */
     icon?: IconSource;
+    /** Its tooltip: a text of its own, its options, or `false` for none. Wins over the speed dial's `tooltip`. */
+    tooltip?: Bind<string | boolean | SpeedDialTooltip>;
     /** Default `true`. */
     enabled?: Bind<boolean>;
     /** Default `true`. */
