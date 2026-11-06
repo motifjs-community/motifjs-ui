@@ -46,7 +46,7 @@ try {
 }
 
 // Asked for only after a press, or on the page that is not found: no walk over the pages reaches them.
-const ON_DEMAND = ['Hide code', 'Copy', 'Copied', 'System', 'Light', 'Dark', 'High contrast', 'Page not found', 'No page matches.'];
+const ON_DEMAND = ['Hide code', 'Copy', 'Copied', 'System', 'Light', 'Dark', 'High contrast', 'Page not found', 'No page matches.', 'Feedback', 'Submit GitHub Issue', 'Issues for this page', 'Open Issues', 'Closed Issues', 'Loading issues…', 'Issues could not be loaded.', 'View all issues', 'No open issues for this page.', 'No closed issues for this page.', 'opened on {date}', 'closed on {date}'];
 
 // On every page: the frame. On several pages: shared, so it is translated once.
 const counts = new Map(ON_DEMAND.map((text) => [text, 2]));

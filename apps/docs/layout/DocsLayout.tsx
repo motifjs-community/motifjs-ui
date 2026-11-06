@@ -7,6 +7,7 @@ import { PageOutline } from '../app/PageOutline';
 import { SiteSettings } from '../app/SiteSettings';
 import { tx } from '../app/texts';
 import { Rich } from '../shared/doc';
+import { PageFeedback } from '../shared/PageFeedback';
 import { MenuIcon, SearchIcon, SourceIcon } from './icons';
 
 const THEMES: { id: ThemeChoice; label: string }[] = [
@@ -253,6 +254,7 @@ export class DocsLayout extends Component<HTMLDivElement> {
           <div class="docs-body">
             <article class="docs-article">
               <RouterView />
+              <PageFeedback />
               <nav class="docs-pager" aria-label={() => tx('Previous and next page')}>
                 <a class="docs-pager__link" rel="router prev" href={() => this.neighbour(-1)?.path ?? '/'} x-wait={() => !this.neighbour(-1)}>
                   <small>{() => tx('Previous')}</small>

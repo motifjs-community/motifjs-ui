@@ -541,6 +541,53 @@
   text-decoration: underline;
 }
 
+/* The foot of a page: an issue for it, and the issues already filed. */
+
+.docs-feedback {
+  margin-block-start: var(--mx-space-8);
+  padding: var(--mx-space-5) var(--mx-space-6);
+  background: var(--mx-color-bg-surface);
+  border: var(--mx-border-width-1, 1px) solid var(--mx-color-border-subtle);
+  border-radius: var(--mx-radius-md);
+}
+
+.docs-feedback h2 {
+  margin-block: 0 var(--mx-space-3);
+}
+
+.docs-feedback__tabs {
+  margin-block-start: var(--mx-space-4);
+}
+
+.docs-feedback__status {
+  margin-block: var(--mx-space-3) 0;
+  color: var(--mx-color-fg-secondary);
+}
+
+.docs-feedback__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.docs-feedback__issue {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-1);
+  padding-block: var(--mx-space-3);
+  border-block-end: var(--mx-border-width-1, 1px) solid var(--mx-color-border-subtle);
+}
+
+.docs-article .docs-feedback__link {
+  color: var(--mx-color-fg-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.docs-article .docs-feedback__link:hover {
+  text-decoration: underline;
+}
+
 /* Previous and next page. */
 
 .docs-pager {

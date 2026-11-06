@@ -35,7 +35,7 @@ const EVENTS = [
 const METHODS = [
   ['addAppointment(values)', 'Adds an appointment to the source (the array or, through the data source, the server) and resolves to it.'],
   ['updateAppointment(appointment, changes)', 'Changes its fields. Resolves to `false` if an event canceled it or saving failed.'],
-  ['deleteAppointment(appointment)', 'Deletes it. There is no confirmation when called from code.'],
+  ['deleteAppointment(appointment)', 'Deletes it. There is no confirmation when called programmatically.'],
   ['showAppointmentForm(appointment?, cell?)', 'Opens the form for an appointment, or for a new one at `cell` (the selection by default).'],
   ['showTooltip(appointment, anchor?) / hideTooltip()', 'Controls its tooltip.'],
 ];
@@ -56,7 +56,7 @@ export default function SchedulerEditingPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="Users can add, move, resize, copy and delete appointments with the pointer and the keyboard, and you can do the same in code. Every change raises its event first, can wait for a server, and is reverted if saving fails." />
+        <Rich text="Users can add, move, resize, copy and delete appointments with the pointer and the keyboard, and you can do the same programmatically. Every change raises its event first, can wait for a server, and is reverted if saving fails." />
       </p>
 
       <Section anchor="editing" title="Drag, resize and edit">

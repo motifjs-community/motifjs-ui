@@ -14,7 +14,7 @@ const PROPS = [
     'seriesEdit',
     "`Bind<'ask' \\| 'occurrence' \\| 'following' \\| 'series'>`",
     "`'ask'`",
-    'What changing or deleting an occurrence applies to. `ask` prompts the user. In code, it applies to the occurrence unless the call specifies otherwise.',
+    'What changing or deleting an occurrence applies to. `ask` prompts the user. Programmatically, it applies to the occurrence unless the call specifies otherwise.',
   ],
   ['recurrenceMarks', '`Bind<boolean>`', '`true`', 'The indicators of an occurrence and of an individually edited one, where the design language draws them.'],
   ['editing.allowRecurrence', '`boolean`', '`true`', 'Includes the recurrence editor in the form.'],

@@ -1,5 +1,5 @@
 {
-  "Users can add, move, resize, copy and delete appointments with the pointer and the keyboard, and you can do the same in code. Every change raises its event first, can wait for a server, and is reverted if saving fails.": "Kullanıcılar randevuları işaretçi ve klavyeyle ekleyebilir, taşıyabilir, yeniden boyutlandırabilir, kopyalayabilir ve silebilir; aynı işlemleri kodla da yapabilirsiniz. Her değişiklik önce event'ini tetikler, sunucuyu bekleyebilir ve kaydetme başarısız olursa geri alınır.",
+  "Users can add, move, resize, copy and delete appointments with the pointer and the keyboard, and you can do the same programmatically. Every change raises its event first, can wait for a server, and is reverted if saving fails.": "Kullanıcılar randevuları işaretçi ve klavyeyle ekleyebilir, taşıyabilir, yeniden boyutlandırabilir, kopyalayabilir ve silebilir; aynı işlemleri kodla da yapabilirsiniz. Her değişiklik önce event'ini tetikler, sunucuyu bekleyebilir ve kaydetme başarısız olursa geri alınır.",
   "Drag, resize and edit": "Sürükleme, yeniden boyutlandırma ve düzenleme",
   "While dragging, the appointment itself moves to the new position, on the `snapMinutes` step, and the view scrolls near the edges. On touch screens, a long press starts a drag.": "Sürüklerken randevunun kendisi `snapMinutes` adımıyla yeni konuma hareket eder, görünüm kenarlara yakınken kaydırılır. Dokunmatik ekranlarda uzun basış sürüklemeyi başlatır.",
   "Saving to a server": "Sunucuya kaydetmek",
@@ -22,7 +22,7 @@
   "Clicking an appointment shows its tooltip with Edit and Delete.": "Randevuya tıklamak Düzenle ve Sil içeren tooltip'ini gösterir.",
   "Adds an appointment to the source (the array or, through the data source, the server) and resolves to it.": "Kaynağa (diziye veya veri kaynağı üzerinden sunucuya) randevu ekler ve onunla çözümlenir.",
   "Changes its fields. Resolves to `false` if an event canceled it or saving failed.": "Field'larını değiştirir. Bir event iptal ettiyse veya kaydetme başarısız olduysa `false` ile çözümlenir.",
-  "Deletes it. There is no confirmation when called from code.": "Siler. Koddan çağrıldığında onay istenmez.",
+  "Deletes it. There is no confirmation when called programmatically.": "Siler. Koddan çağrıldığında onay istenmez.",
   "Opens the form for an appointment, or for a new one at `cell` (the selection by default).": "Bir randevunun veya `cell` konumunda yeni randevunun (varsayılan olarak seçim) formunu açar.",
   "Controls its tooltip.": "Tooltip'ini denetler.",
   "`{ appointment, byUser, cancel, promise? }`. The values can still be changed, and `promise` waits, for example for a server.": "`{ appointment, byUser, cancel, promise? }`. Değerler yine değiştirilebilir, `promise` örneğin sunucuyu bekler.",

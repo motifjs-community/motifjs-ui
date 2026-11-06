@@ -10,7 +10,7 @@ const date = (offset: number) => {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
 };
 
-/** A zone with its Windows name and VTIMEZONE, a weekly series with one excluded day, an all-day event, and folded, escaped text. */
+/** A typical calendar export: a zone with its Windows name and VTIMEZONE, a weekly series with one excluded day, an all-day event, and folded, escaped text. */
 const FILE = [
   'BEGIN:VCALENDAR',
   'VERSION:2.0',
