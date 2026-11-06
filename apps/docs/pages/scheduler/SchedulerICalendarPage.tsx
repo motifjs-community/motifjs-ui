@@ -7,43 +7,43 @@ import PrintCalendar from './examples/PrintCalendar';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const FIELDS = [
-  ['UID', 'The appointment’s key; an occurrence changed apart takes its series’ key. Read in, the UID is the new appointment’s key (with a data source, the adapter gives the key).'],
-  ['DTSTART, DTEND (DURATION read too)', 'On the appointment’s own zone (`fields.startTimeZone`, `endTimeZone`), else the scheduler’s `timeZone`, else the browser’s, with `TZID`; an all-day one as dates (`VALUE=DATE`, the end the day after).'],
-  ['SUMMARY, DESCRIPTION', 'The text and the description; escaped and folded at 75 octets as RFC 5545 says.'],
-  ['RRULE', 'The series’ rule; an `UNTIL` on the wall clock is written in UTC, as the RFC asks of a rule with a zone.'],
-  ['EXDATE', 'The times left out of a series, in the form of its start.'],
-  ['RECURRENCE-ID', 'An occurrence changed apart: the time of its series it replaces (the left-out time nearest to it). Read in, the series leaves that time out and the event names it (`fields.recurrenceId`).'],
-  ['VTIMEZONE', 'Written for every zone used, from the browser’s own time zone data (a rule a year when the changes follow one). Read in, a zone that is not an IANA name (`W. Europe Standard Time`) is followed by its VTIMEZONE.'],
-  ['STATUS:CANCELLED', 'Read in: a cancelled occurrence is left out of its series; a cancelled event is not added.'],
+  ['UID', 'The appointment\'s key. An individually edited occurrence uses the key of its series. On import, the UID becomes the new appointment\'s key (with a data source, the adapter assigns the key).'],
+  ['DTSTART, DTEND (DURATION read too)', 'In the appointment\'s own zone (`fields.startTimeZone`, `endTimeZone`), otherwise the scheduler\'s `timeZone`, otherwise the browser\'s, with `TZID`. All-day appointments are written as dates (`VALUE=DATE`), with the end on the following day.'],
+  ['SUMMARY, DESCRIPTION', 'The text and the description, escaped and folded at 75 octets as RFC 5545 requires.'],
+  ['RRULE', 'The series rule. An `UNTIL` in wall clock time is written in UTC, as the RFC requires for a rule with a time zone.'],
+  ['EXDATE', 'The times excluded from a series, in the same form as its start.'],
+  ['RECURRENCE-ID', 'An individually edited occurrence: the time in its series that it replaces (the excluded time closest to it). On import, the series excludes that time and the event references it (`fields.recurrenceId`).'],
+  ['VTIMEZONE', 'Written for every zone used, from the browser\'s own time zone data (with one rule per year when the changes follow a pattern). On import, a zone that is not an IANA name (such as `W. Europe Standard Time`) follows its VTIMEZONE.'],
+  ['STATUS:CANCELLED', 'On import, a canceled occurrence is excluded from its series, and a canceled event is not added.'],
 ];
 
 const METHODS = [
-  ['exportICalendar(options?)', '`string | null`', "`{ range: 'visible' (default) | 'all' | { start, end }, appointments, name }`: the file's text; `null` when `onICalendarExporting` said no."],
-  ['importICalendar(text)', '`Promise<ICalendarImportResult | null>`', '`{ added, updated, failed }`: each event added through the data layer (with `onAppointmentAdding` first); an event whose UID is an appointment’s key changes it.'],
-  ['print()', '`Promise<boolean>`', 'Prints the scheduler alone; `false` when `onPrinting` said no.'],
+  ['exportICalendar(options?)', '`string | null`', "`{ range: 'visible' (default) | 'all' | { start, end }, appointments, name }`. Returns the file's text, or `null` if `onICalendarExporting` canceled the export."],
+  ['importICalendar(text)', '`Promise<ICalendarImportResult | null>`', '`{ added, updated, failed }`. Each event is added through the data layer, with `onAppointmentAdding` first. An event whose UID matches an appointment\'s key updates that appointment.'],
+  ['print()', '`Promise<boolean>`', 'Prints the scheduler alone. Returns `false` if `onPrinting` canceled it.'],
 ];
 
 const EVENTS = [
-  ['onICalendarExporting', '`{ appointments, range, cancel }`', 'Before writing; change `appointments` to write others.'],
-  ['onICalendarExported', '`{ text, appointments }`', 'After writing.'],
-  ['onICalendarImporting', '`{ text, appointments, cancel }`', 'Before adding: `appointments` are the values read, to change or filter.'],
-  ['onICalendarImported', '`{ added, updated, failed }`', 'After adding.'],
-  ['onPrinting', '`{ cancel }`', 'Before the print dialog.'],
-  ['onPrinted', '`{}`', 'The print dialog closed (also after the browser’s own print).'],
+  ['onICalendarExporting', '`{ appointments, range, cancel }`', 'Occurs before writing. Change `appointments` to export different ones.'],
+  ['onICalendarExported', '`{ text, appointments }`', 'Occurs after writing.'],
+  ['onICalendarImporting', '`{ text, appointments, cancel }`', 'Occurs before adding. `appointments` holds the values read, which you can change or filter.'],
+  ['onICalendarImported', '`{ added, updated, failed }`', 'Occurs after adding.'],
+  ['onPrinting', '`{ cancel }`', 'Occurs before the print dialog opens.'],
+  ['onPrinted', '`{}`', 'Occurs when the print dialog closes, including after the browser\'s own print command.'],
 ];
 
 const PARTS = [
-  ['parseICalendar(text)', '`ICalendar`', 'The events, the time zones and the calendar’s name of a file; folded lines, escaped text, several calendars, components inside events; never throws.'],
+  ['parseICalendar(text)', '`ICalendar`', 'Returns the events, time zones and calendar name of a file. It handles folded lines, escaped text, multiple calendars and components inside events, and never throws.'],
   ['writeICalendar(options)', '`string`', '`{ events, name, prodId, method, timeZones, stamp }`.'],
-  ['timeZoneLines(zone, fromYear, toYear)', '`string[]`', 'The VTIMEZONE of an IANA zone, from `Intl`.'],
-  ['icalendarMoment(date, zones, fallback)', '`number`', 'The moment a date of a file names: UTC, an IANA zone, the file’s VTIMEZONE, else `fallback`.'],
+  ['timeZoneLines(zone, fromYear, toYear)', '`string[]`', 'Returns the VTIMEZONE of an IANA zone, using `Intl`.'],
+  ['icalendarMoment(date, zones, fallback)', '`number`', 'Returns the moment a date in a file refers to: in UTC, an IANA zone, the file\'s VTIMEZONE, or otherwise `fallback`.'],
 ];
 
 export default function SchedulerICalendarPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="Appointments out to an iCalendar file and back in (RFC 5545), for use with other calendar applications; and the scheduler on paper." />
+        <Rich text="Exports appointments to an iCalendar file (RFC 5545) and imports them back, for use with other calendar applications. The scheduler can also be printed." />
       </p>
 
       <Section anchor="import" title="Import">
@@ -56,29 +56,29 @@ import { Scheduler, parseICalendar, writeICalendar } from '@motifx-community/ui'
 
       <Section anchor="export" title="Export">
         <p>
-          <Rich text="`exportICalendar()` writes the appointments of the days shown, or all of them. A series goes whole with its rule, so another calendar repeats it the same way." />
+          <Rich text="`exportICalendar()` writes the appointments of the displayed days, or all appointments. A series is exported whole with its rule, so another calendar repeats it the same way." />
         </p>
         <Example files={code('ExportCalendar.tsx', 'recurring-appointments.ts')}>
           <ExportCalendar />
         </Example>
       </Section>
 
-      <Section anchor="Read-only" title="Import a file">
+      <Section anchor="Read-only" title="Importing a file">
         <p>
-          <Rich text="`importICalendar(text)` reads the events and adds them as any new appointment is added: to the array, or through a data source's adapter." />
+          <Rich text="`importICalendar(text)` reads the events and adds them in the same way as any new appointment: to the array, or through a data source's adapter." />
         </p>
         <Example files={code('ImportCalendar.tsx')}>
           <ImportCalendar />
         </Example>
       </Section>
 
-      <Section anchor="fields" title="What is written and read">
+      <Section anchor="fields" title="What is exported and imported">
         <ApiTable head={['iCalendar', 'The appointment']} rows={FIELDS} />
       </Section>
 
-      <Section anchor="print" title="Print">
+      <Section anchor="print" title="Printing">
         <p>
-          <Rich text="On paper every hour, row and column is built and shown (a big view is built whole while it prints), nothing is scrolled, the colours are kept and the bar is left out; a week of the month, a timeline row, a day of the agenda and an appointment are not split between pages." />
+          <Rich text="When printing, every hour, row and column is rendered and visible (a large view is rendered in full for printing), nothing scrolls, colors are preserved, and the toolbar is omitted. A week of the month, a timeline row, a day of the agenda and an appointment are not split across pages." />
         </p>
         <Example files={code('PrintCalendar.tsx', 'sample-appointments.ts')}>
           <PrintCalendar />
@@ -89,8 +89,8 @@ import { Scheduler, parseICalendar, writeICalendar } from '@motifx-community/ui'
         <ApiTable
           head={['Hook', 'Description']}
           rows={[
-            ['scheduler.scheduler `print`, appointment `print`', 'Unit states: the look on paper, where a language draws it otherwise (no card frame).'],
-            ['[data-printing]', 'On the scheduler while it prints; `print()` also marks the page so only this scheduler prints.'],
+            ['scheduler.scheduler `print`, appointment `print`', 'Unit states: the printed appearance, where a design language differs on paper (for example, no card frame).'],
+            ['[data-printing]', 'Set on the scheduler while printing. `print()` also marks the page so that only this scheduler prints.'],
           ]}
         />
       </Section>
@@ -105,10 +105,10 @@ import { Scheduler, parseICalendar, writeICalendar } from '@motifx-community/ui'
         </h3>
         <ApiTable head={['Event', 'Arguments', 'When']} rows={EVENTS} />
         <h3>
-          <Rich text="The iCalendar part" />
+          <Rich text="The iCalendar utilities" />
         </h3>
         <p>
-          <Rich text="The reader and the writer are DOM-free parts of the kit, usable without a scheduler." />
+          <Rich text="The reader and writer have no DOM dependency and can be used without a scheduler." />
         </p>
         <ApiTable head={['Function', 'Returns', 'Description']} rows={PARTS} />
       </Section>

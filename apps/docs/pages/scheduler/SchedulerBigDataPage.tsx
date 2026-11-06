@@ -6,27 +6,27 @@ import BigWeek from './examples/BigWeek';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const HOW = [
-  ['Rows of a timeline', 'Through `Virtualization`: only the rows in view (and a few on each side) are built. Each row is as tall as its lanes; the model works the height out (lanes × lane height), the list reads it. While an appointment is dragged its rows grow in place and the list is given the heights after.'],
-  ['Cells along the time', 'A window kept by the model (`setWindow`): the cells and appointments of the part in view and a screen on each side. Scrolling moves the window on by a few cells at a time; the rows show it through a keyed `.map` over the window’s slice.'],
-  ['Columns of a day or a week', 'The same window over the columns: with many groups only the columns in view are built, each at its own place.'],
-  ['Layout', 'Each row of a timeline is laid out on its own; a drag lays out only the rows it was and is in. The appointments are read once for every layout until they change.'],
-  ['Data source', 'The range shown is what is asked for (`rangeFilter`), with the resources shown when grouped by a field of one value.'],
+  ['Rows of a timeline', 'Uses `Virtualization` to render only the visible rows, plus a few on each side. Each row is as tall as its lanes. The model calculates the height (lanes × lane height) and the list reads it. While an appointment is being dragged, its rows grow in place, and the list receives the new heights afterward.'],
+  ['Cells along the time', 'The model keeps a window (`setWindow`) of the cells and appointments in the visible area, plus one screen on each side. Scrolling moves the window by a few cells at a time, and the rows render it through a keyed `.map` over that part of the data.'],
+  ['Columns of a day or a week', 'The same window applies to columns, so with many groups only the visible columns are rendered, each in its own position.'],
+  ['Layout', 'Each timeline row has its own layout, so a drag recalculates only the rows it leaves and enters. Appointments are read once for all layouts until they change.'],
+  ['Data source', 'Only the displayed range is requested (`rangeFilter`), along with the displayed resources when grouping by a single-value field.'],
 ];
 
 const PROPS = [
-  ['scrolling', "`Bind<'auto' \| 'standard' \| 'virtual'>`", "`'auto'`", "Every row and cell built (`'standard'`), or only what is in view (`'virtual'`); `'auto'`: virtual past about 2,000 cells (rows × cells along the time, columns × time rows). A view’s own wins."],
+  ['scrolling', "`Bind<'auto' \| 'standard' \| 'virtual'>`", "`'auto'`", "`'standard'` renders every row and cell, and `'virtual'` renders only the visible ones. `'auto'` switches to virtual above about 2,000 cells (rows × cells along the time, or columns × time rows). A view's own value takes precedence."],
 ];
 
 export default function SchedulerBigDataPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="Thousands of resources and appointments: the scheduler builds only what is in view, and lays out only what changed." />
+        <Rich text="Handles thousands of resources and appointments. The scheduler renders only what is visible, and recalculates the layout only for what has changed." />
       </p>
 
       <Section anchor="timeline" title="1,000 resources, 10,000 appointments">
         <p>
-          <Rich text="A timeline week with a row for each of 1,000 lines and 10,000 tasks over them (generated). Scroll down and sideways: the rows, cells and tasks in view are built as they come. The line under it says how long the first show took and how many elements the scheduler holds." />
+          <Rich text="A timeline week with one row for each of 1,000 lines and 10,000 generated tasks. Scroll down and sideways, and the visible rows, cells and tasks are rendered as they appear. The status line below shows the time taken by the first render and the number of elements the scheduler holds." />
         </p>
         <Example files={code('BigTimeline.tsx', 'big-data.ts')}>
           <BigTimeline />
@@ -35,7 +35,7 @@ export default function SchedulerBigDataPage() {
 
       <Section anchor="groups" title="200 groups in a week">
         <p>
-          <Rich text="A week grouped by 200 lines: 1,400 columns of 48 cells and 4,000 tasks. Only the columns in view (and a screen on each side) are built." />
+          <Rich text="A week grouped by 200 lines, for 1,400 columns of 48 cells and 4,000 tasks. Only the visible columns, plus one screen on each side, are rendered." />
         </p>
         <Example files={code('BigWeek.tsx', 'big-data.ts')}>
           <BigWeek />

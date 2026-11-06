@@ -7,41 +7,41 @@ import GroupedAgenda from './examples/GroupedAgenda';
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
 const PROPS = [
-  ['agendaDuration', '`Bind<number>`', '7', 'The days the agenda shows, from the date shown; a view’s own wins. Previous and next move by them.'],
-  ['groups', '`Bind<string[]>`', '`[]`', 'With groups, each group’s days stand under its name (the group’s own appointments).'],
-  ['agendaRowTemplate', '`Bind<((context: AgendaRowContext) => Component) \\| null>`', '`null`', 'A row’s content: `{ appointment, start, end, text, time, allDay, date, group }`; the row keeps its colour, keys and name.'],
-  ['appointmentTooltipTemplate', '`Bind<((context: TooltipTemplateContext) => Component) \\| null>`', '`null`', 'The tooltip’s content, in every view.'],
-  ['texts.schedulerNoAppointments', '`string`', '"No appointments"', 'What it says when its days have none (`uiLocale`).'],
+  ['agendaDuration', '`Bind<number>`', '7', 'The number of days the agenda shows, starting from the displayed date. A view\'s own value takes precedence. Previous and next move by this number.'],
+  ['groups', '`Bind<string[]>`', '`[]`', 'With groups, each group\'s days appear under its name, with that group\'s appointments.'],
+  ['agendaRowTemplate', '`Bind<((context: AgendaRowContext) => Component) \\| null>`', '`null`', 'A row\'s content: `{ appointment, start, end, text, time, allDay, date, group }`. The row keeps its color, keys and accessible name.'],
+  ['appointmentTooltipTemplate', '`Bind<((context: TooltipTemplateContext) => Component) \\| null>`', '`null`', 'The tooltip\'s content, in every view.'],
+  ['texts.schedulerNoAppointments', '`string`', '"No appointments"', 'The message shown when the displayed days have no appointments (`uiLocale`).'],
 ];
 
 const KEYS = [
-  ['Up / Down', 'The row above or below (it is the selected one).'],
-  ['Home / End, PageUp / PageDown', 'The first and the last row; a screen of rows.'],
-  ['Space', 'Shows the tooltip, as a click does.'],
-  ['Enter', 'Opens the form, as a double click does.'],
-  ['Delete', 'Deletes the appointment (asking first).'],
-  ['T, N / P, A', 'Today, the next and the previous days; `keys.agendaView` (A) shows the agenda.'],
+  ['Up / Down', 'Moves to the row above or below and selects it.'],
+  ['Home / End, PageUp / PageDown', 'Moves to the first or last row, or up or down one screen of rows.'],
+  ['Space', 'Shows the tooltip, like a click.'],
+  ['Enter', 'Opens the form, like a double-click.'],
+  ['Delete', 'Deletes the appointment, after confirmation.'],
+  ['T, N / P, A', 'Today, and the next and previous days. `keys.agendaView` (A) shows the agenda.'],
 ];
 
 export default function SchedulerAgendaPage() {
   return (
     <>
       <p class="lead">
-        <Rich text="The coming days as a list: each day with its appointments in time order, a day with none left out." />
+        <Rich text="Displays upcoming days as a list, with each day's appointments in time order. Days without appointments are omitted." />
       </p>
 
       <Section anchor="agenda" title="Agenda">
         <p>
-          <Rich text="`agenda` lists `agendaDuration` days from the date shown (7 by default). An appointment that lasts days is on each of them; one that takes the day says so. The list is a list box: the arrows move over its rows, and Space and Enter do what a click and a double click do." />
+          <Rich text="`agenda` lists `agendaDuration` days, starting from the displayed date (7 by default). A multi-day appointment appears on each of its days, and an all-day appointment is labeled as such. The list is a list box, so the arrow keys move between rows, and Space and Enter act like a click and a double-click." />
         </p>
         <Example files={code('Agenda.tsx', 'sample-appointments.ts')}>
           <Agenda />
         </Example>
       </Section>
 
-      <Section anchor="groups" title="By resource">
+      <Section anchor="groups" title="Grouping by resource">
         <p>
-          <Rich text="With `groups`, each group's days stand under its name. A data source is asked for the days shown, as in the other views." />
+          <Rich text="With `groups`, each group's days appear under its name. As in other views, a data source is asked only for the displayed days." />
         </p>
         <Example files={code('GroupedAgenda.tsx', 'timeline-data.ts')}>
           <GroupedAgenda />
@@ -50,7 +50,7 @@ export default function SchedulerAgendaPage() {
 
       <Section anchor="templates" title="Templates">
         <p>
-          <Rich text="`agendaRowTemplate` draws a row's content; `appointmentTooltipTemplate` the tooltip's, here and in every view." />
+          <Rich text="`agendaRowTemplate` customizes a row's content, and `appointmentTooltipTemplate` customizes the tooltip here and in every view." />
         </p>
         <Example files={code('AgendaTemplates.tsx', 'timeline-data.ts')}>
           <AgendaTemplates />
@@ -65,9 +65,9 @@ export default function SchedulerAgendaPage() {
         <ApiTable
           head={['Topic', 'Details']}
           rows={[
-            ['List', 'A list box; each day (in its group) is a group of options named by the day.'],
-            ['Rows', 'An option per appointment: its text, its time, whether it goes on and how it repeats. The focused row is the selected one.'],
-            ['Empty', 'With no appointments the list is left out and the text says so.'],
+            ['List', 'A list box. Each day, within its group, is a group of options named by the day.'],
+            ['Rows', 'One option per appointment, with its text, its time, whether it continues and how it repeats. The focused row is the selected row.'],
+            ['Empty', 'When there are no appointments, the list is omitted and a message appears instead.'],
           ]}
         />
       </Section>
@@ -76,11 +76,11 @@ export default function SchedulerAgendaPage() {
         <ApiTable
           head={['Hook', 'Description']}
           rows={[
-            ['scheduler.agenda, agenda-group (`first`), agenda-resource', 'Units: the list, a day (and the line over it), a group’s name.'],
-            ['scheduler.agenda-day (`today`), agenda-weekday (`today`), agenda-month, day-number `agenda`', 'Units: a day’s head and its parts.'],
-            ['scheduler.agenda-row (`hover`, `selected`, `open`, `focus`, `past`, `disabled`), agenda-content', 'Units: a row and its parts side by side.'],
-            ['scheduler.agenda-time, agenda-dot, agenda-text, agenda-empty', 'Units: the time column, the appointment’s colour (none unless a language draws it), the text, the empty text.'],
-            ['agenda-time-width', 'Plain token: the time column’s width.'],
+            ['scheduler.agenda, agenda-group (`first`), agenda-resource', 'Units: the list, a day and the line above it, and a group name.'],
+            ['scheduler.agenda-day (`today`), agenda-weekday (`today`), agenda-month, day-number `agenda`', 'Units: a day header and its parts.'],
+            ['scheduler.agenda-row (`hover`, `selected`, `open`, `focus`, `past`, `disabled`), agenda-content', 'Units: a row and its side-by-side parts.'],
+            ['scheduler.agenda-time, agenda-dot, agenda-text, agenda-empty', 'Units: the time column, the appointment color (hidden unless a design language draws it), the text and the empty message.'],
+            ['agenda-time-width', 'Plain token: the width of the time column.'],
           ]}
         />
       </Section>
