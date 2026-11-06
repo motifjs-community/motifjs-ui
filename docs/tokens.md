@@ -1,6 +1,6 @@
 # Design tokens
 
-> Get started · @motifx-community/ui 0.1.0-beta.4
+> Get started · @motifx-community/ui 0.1.0-beta.5
 
 The token system has five layers. The first four (primitives, design language scales, semantic tokens per theme, and density) come from `@motifx-community/design-system` and are listed here for reference. The fifth layer, component tokens, belongs to this kit: each component has its own tokens, written in `@layer mx.components`, and each one references a design system token. Every design language provides its own value for each component token.
 
@@ -4189,9 +4189,9 @@ Control heights, padding, gaps, the pressable edge and the bar height. Setting `
 | `control.press.offset` | `--mx-control-press-offset` | `1px` | `1px` |
 | `bar.height` | `--mx-bar-height` | `2.25rem` | `1.75rem` |
 
-## Identity ({identity.length})
+## Design language ({designLanguage.length})
 
-These are the values a design language defines for itself: corner radii, shadows, typography and motion. The names are the same in every language, and `data-identity` selects which values apply. The values shown here are from Tactile, the default.
+These are the values a design language defines for itself: corner radii, shadows, typography and motion. The names are the same in every language, and `data-design-language` selects which values apply. The values shown here are from Tactile, the default.
 
 | Token | Type | CSS variable | Value |
 | --- | --- | --- | --- |

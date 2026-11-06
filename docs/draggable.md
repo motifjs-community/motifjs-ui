@@ -1,6 +1,6 @@
 # Draggable and DropTarget
 
-> Navigation · @motifx-community/ui 0.1.0-beta.4
+> Navigation · @motifx-community/ui 0.1.0-beta.5
 
 Makes any content movable with the pointer, touch or the arrow keys, optionally along one axis, inside a boundary, by a handle or as a copy. `DropTarget` defines areas that accept it. To reorder items in a list, see [Sortable](sortable.md).
 

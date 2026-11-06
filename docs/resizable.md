@@ -1,6 +1,6 @@
 # Resizable
 
-> Navigation · @motifx-community/ui 0.1.0-beta.4
+> Navigation · @motifx-community/ui 0.1.0-beta.5
 
 A box that users can resize from its edges and corners with the pointer, or with the arrow keys on the grip in its end corner. It respects minimum and maximum sizes, can stay within an area, and can preserve its aspect ratio.
 

@@ -1,6 +1,6 @@
 # DataGrid: Selecting by dragging
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.4
+> DataGrid · @motifx-community/ui 0.1.0-beta.5
 
 ## Rows
 

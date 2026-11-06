@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0-beta.5] - 2026-11-06
+
+### Changed
+
+- Breaking: needs `@motifx-community/design-system` 0.1.0-beta.2, where a design language is called that in code too.
+  Write `data-design-language` instead of `data-identity` and `setDesignLanguage()` instead of `setIdentity()`; the
+  other names are in the changelog of the design system. Components and tokens keep their names and their look.
+
+### Documentation
+
+- The picker in the page head is called Design language, and so is the token group on the Tokens page.
+- The tools in the page head scroll sideways in a narrow window, so that they no longer widen the page.
+
 ## [0.1.0-beta.4] - 2026-11-06
 
 ### Fixed

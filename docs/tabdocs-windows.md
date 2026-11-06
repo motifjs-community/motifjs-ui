@@ -1,6 +1,6 @@
 # TabDocumentManager: New windows
 
-> TabDocumentManager · @motifx-community/ui 0.1.0-beta.4
+> TabDocumentManager · @motifx-community/ui 0.1.0-beta.5
 
 A document, a group or a floating window can move into its own browser window and back. Its content moves with it without being recreated, and the new window is part of the same manager, so its tabs, menus, keys and dragging work the same way.
 
@@ -310,7 +310,7 @@ reopenButton.onclick = () => docs.reopenWindows();
 | `Keys` | The manager's keys, control shortcuts and access keys all work, because the kit listens in every connected document (`connectDocument`). |
 | `Content` | Any component, such as a form with a `DropDown`, a `DataGrid` with its filter popup and keys, or an `MxForm` dialog opened from it in that window. |
 | `Drag and drop` | Inside the window, the same as in the page: strips, the zones or guides of a group, and the edges of its layout. Dock areas and floating are available only in the main window. |
-| `The look` | The page's style sheets (including constructed ones) and the attributes of `<html>` and `<body>` (`data-theme`, `data-identity`, density, `dir`, `lang`, classes) are copied and kept in sync, so a theme change applies to every window. |
+| `The look` | The page's style sheets (including constructed ones) and the attributes of `<html>` and `<body>` (`data-theme`, `data-design-language`, density, `dir`, `lang`, classes) are copied and kept in sync, so a theme change applies to every window. |
 
 ### Limits
 
