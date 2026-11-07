@@ -578,3 +578,22 @@ describe('an icon written as a condition in JSX', () => {
     expect(b.element.querySelector('.mx-button__icon')).toBeNull();
   });
 });
+
+describe('a toggle bound one way', () => {
+  it('keeps following its state after a click', async () => {
+    const s = reactive({ on: false });
+    const button = new Button({ text: 'Bold', toggle: true, pressed: () => s.on });
+    page(button);
+    button.element.click();
+    expect(button.pressed).toBe(true);
+    s.on = true;
+    await settle();
+    s.on = false;
+    await settle();
+    expect(button.pressed).toBe(false);
+    expect(button.element.getAttribute('aria-pressed')).toBe('false');
+    s.on = true;
+    await settle();
+    expect(button.pressed).toBe(true);
+  });
+});

@@ -354,8 +354,10 @@ export class Button extends Control<HTMLElement, ButtonProps> {
       return;
     }
     if (!this.peekProperty('toggle')) return;
-    this.pressed = !this.peekProperty('pressed');
-    this.bindings.writeModel(this.pressed);
+    // A click is the reader's change: a state bound with a function keeps following it, and x-model hears the change.
+    const next = !this.peekProperty('pressed');
+    this.changeProperty('pressed', next);
+    this.bindings.writeModel(next);
   }
 
   private faceKeyDown(e: KeyboardEvent): void {
