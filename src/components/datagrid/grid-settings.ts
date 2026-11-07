@@ -252,9 +252,9 @@ export interface GridSettings extends ColumnFeatures {
   groupExpandMode: 'button' | 'rowClick';
   /**
    * What groups the rows of a data source: `'auto'` uses its adapter when it supports grouping and the
-   * source loads by blocks (otherwise the browser), `true` uses the adapter whenever the source loads by
-   * blocks and every level has a field to group by, and `false` always uses the browser, from every
-   * matching row. The default is `'auto'`.
+   * source loads by pages or blocks (otherwise the browser), `true` uses the adapter whenever the source
+   * loads by pages or blocks and every level has a field to group by, and `false` always uses the browser,
+   * from every matching row. The default is `'auto'`.
    */
   remoteGrouping: 'auto' | boolean;
   /**

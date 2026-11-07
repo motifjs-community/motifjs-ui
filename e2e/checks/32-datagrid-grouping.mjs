@@ -106,6 +106,32 @@ export default async function ({ page, base, check, axeSource }) {
     `${counts.join(' · ')} · ${(await loads()) - before} load(s), ${shipped} rows drawn`,
   );
 
+  // A server that groups, with a pager: each page asks only for its own rows, and a page seen before is not asked again.
+  const paged = '.dg-grouping-pages';
+  await page.locator(paged).scrollIntoViewIfNeeded();
+  const pageRows = (s) => page.evaluate((sel) => [...document.querySelectorAll(`${sel} .mx-data-grid__body > .mx-data-grid__row:not(.mx-data-grid__group-row):not([hidden])`)].filter((r) => !r.hasAttribute('data-loading')).sort((a, b) => Number(a.getAttribute('aria-rowindex')) - Number(b.getAttribute('aria-rowindex'))).map((r) => r.querySelector('[data-field="id"]')?.textContent), s);
+  await page.waitForFunction((s) => [...document.querySelectorAll(`${s} .mx-data-grid__body > .mx-data-grid__row:not(.mx-data-grid__group-row):not([hidden]):not([data-loading])`)].length > 0, paged);
+  const pagedLoads = async () => Number((await page.locator('.dg-grouping-pages-loads').textContent()).match(/^(\d+)/)[1]);
+  const firstPage = await pageRows(paged);
+  const atStart = await pagedLoads();
+  const next = page.locator(paged).getByRole('button', { name: 'Next page' });
+  await next.click();
+  await page.waitForFunction(([s, first]) => {
+    const ids = [...document.querySelectorAll(`${s} .mx-data-grid__body > .mx-data-grid__row:not(.mx-data-grid__group-row):not([hidden]):not([data-loading])`)].map((r) => r.querySelector('[data-field="id"]')?.textContent);
+    return ids.length > 0 && ids[0] !== first[0];
+  }, [paged, firstPage]);
+  const secondPage = await pageRows(paged);
+  const afterNext = await pagedLoads();
+  await page.locator(paged).getByRole('button', { name: 'Previous page' }).click();
+  await page.waitForTimeout(500);
+  const backAgain = await pageRows(paged);
+  const afterBack = await pagedLoads();
+  check(
+    'datagrid grouping: with a pager, a server groups too; each page loads only its own rows, once',
+    atStart <= 4 && afterNext - atStart === 1 && afterBack === afterNext && firstPage.length > 0 && secondPage.length === 20 && backAgain.join() === firstPage.join(),
+    `${atStart} load(s) to start, +${afterNext - atStart} for the next page, +${afterBack - afterNext} back · ${firstPage.length} then ${secondPage.length} rows · back: ${backAgain.slice(0, 3).join(',')} vs ${firstPage.slice(0, 3).join(',')}`,
+  );
+
   await page.addScriptTag({ content: axeSource });
   const axe = await page.evaluate(async () => (await window.axe.run(document.querySelector('section[aria-labelledby="grouping"]'))).violations.map((v) => `${v.id}: ${v.nodes.length}`));
   check('datagrid grouping: axe clean with group rows, chips and the panel', axe.length === 0, axe.join('; '));

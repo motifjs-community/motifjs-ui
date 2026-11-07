@@ -289,6 +289,35 @@ describe('grouping on a server', () => {
     await grid.dispose();
   });
 
+  it('groups on the server over a source that loads pages, loading only the rows of the page shown', async () => {
+    const server = new Server({ data: makeRows(300).map((r, i) => ({ ...r, city: CITIES[Math.floor(i / 100)] })), key: 'id' });
+    const source = new data.DataSource<Row, number>({ adapter: server, loadMode: 'page', pageSize: 10 });
+    const grid = await make({ dataSource: source, rows: undefined, columns: columns().map((c) => (c.field === 'city' ? { ...c, groupIndex: 0, autoExpandGroup: false } : c)) });
+    expect(lines(grid)).toEqual(['+ City: Ankara (100)', '+ City: Bursa (100)', '+ City: İzmir (100)']);
+    expect(server.requests.some((r) => r.groupsOnly)).toBe(true);
+    // Never every row at once.
+    expect(server.requests.some((r) => !r.groupsOnly && r.take === undefined)).toBe(false);
+    server.requests.length = 0;
+    expect(grid.expandGroup(['izm'])).toBe(true);
+    await settle();
+    // Three group rows and seven of İzmir's rows on the first page of ten places.
+    expect(server.requests.map((r) => [r.skip, r.take])).toEqual([[200, 7]]);
+    expect(lines(grid)).toEqual(['+ City: Ankara (100)', '+ City: Bursa (100)', '> City: İzmir (100)', '201', '202', '203', '204', '205', '206', '207']);
+    expect(grid.pageCount).toBe(11);
+    server.requests.length = 0;
+    grid.page = 1;
+    await settle();
+    expect(server.requests.map((r) => [r.skip, r.take])).toEqual([[207, 10]]);
+    expect(lines(grid)).toEqual(['208', '209', '210', '211', '212', '213', '214', '215', '216', '217']);
+    // Back on a page already seen: nothing is asked again.
+    server.requests.length = 0;
+    grid.page = 0;
+    await settle();
+    expect(server.requests.length).toBe(0);
+    expect(lines(grid).slice(3, 5)).toEqual(['201', '202']);
+    await grid.dispose();
+  });
+
   it('groups the rows in memory when the adapter cannot group', async () => {
     const server = new Server({ data: makeRows(30), key: 'id', capabilities: { group: false } });
     const source = new data.DataSource<Row, number>({ adapter: server, loadMode: 'blocks', pageSize: 10 });

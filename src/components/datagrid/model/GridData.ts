@@ -20,9 +20,10 @@ type Status = DataState['status'];
  * - `'blocks'`: what is loaded where the view is.
  *
  * Grouped, the places are those of the grouped list (`GroupView`): group rows and, in open groups,
- * data rows. An adapter that groups, under blocks, gives the groups (keys and counts) and the blocks
- * come in group order, so only what the view shows is loaded; otherwise every matching row is here
- * and grouped in memory, as with rows in memory.
+ * data rows. An adapter that groups, under pages or blocks, gives the groups (keys and counts), and
+ * only the rows the view shows are loaded, in group order: blocks by the source, pages here, a range
+ * at a time (the grid pages over the grouped list itself). Otherwise every matching row is here and
+ * grouped in memory, as with rows in memory.
  *
  * Infinite, the places shown end where the parts loaded so far end: blocks load part by part from
  * the start (the end is known when a part comes back short), anything else (rows in memory, groups)
@@ -75,6 +76,13 @@ export class GridData<T> {
   private failed = false;
   /** Infinite over blocks: the places the view asked for last. */
   private shown: [number, number] = [0, 0];
+  /** Grouped by a server over pages: the rows loaded so far by their index in group order, those on the way, and the failures. */
+  private pageRows = new Map<number, T>();
+  private pageKeys: Map<string, number> | null = null;
+  private pageWaiting = new Set<number>();
+  private pageFailed = 0;
+  private pageController: AbortController | undefined;
+  private pageGeneration = 0;
   private readonly partLoaded: (skip: number, count: number) => void;
 
   /** Tells that fields of `state` changed (the grid tells its views). */
@@ -274,12 +282,17 @@ export class GridData<T> {
     return this.groupMode !== null;
   }
 
+  /** Grouped by a server over a source that loads pages: the rows of the groups load here, a range at a time. */
+  private get pagesOnServer(): boolean {
+    return this.groupMode === 'server' && this.source.loadMode === 'page';
+  }
+
   /** The data row at place `index`, or `undefined` while it is not loaded (or a group row or footer is there). */
   rowAt(index: number): T | undefined {
     if (this.groupMode) {
       const entry = this.groupView()?.itemAt(index);
       if (!entry || entry.node) return undefined;
-      return this.groupMode === 'memory' ? this.grouped[entry.data] : this.source.rowAt(entry.data);
+      return this.rowOfData(entry.data);
     }
     const s = this.source;
     if (s.loadMode === 'blocks') return s.rowAt(index);
@@ -295,6 +308,7 @@ export class GridData<T> {
   /** A data row by its index among the rows in group order (grouped); `undefined` while it is not loaded. */
   rowOfData(d: number): T | undefined {
     if (this.groupMode === 'memory') return this.grouped[d];
+    if (this.pagesOnServer) return this.pageRows.get(d);
     return this.groupMode === 'server' ? this.source.rowAt(d) : this.rowAt(d);
   }
 
@@ -368,6 +382,10 @@ export class GridData<T> {
 
   /** The view shows places `first` to `end - 1`: blocks load what is missing; `immediate` skips the wait after a jump. */
   ensure(first: number, end: number, immediate: boolean) {
+    if (this.pagesOnServer) {
+      this.loadRuns(this.groupView()?.rowsBetween(first, end) ?? []);
+      return;
+    }
     if (this.source.loadMode !== 'blocks' || this.groupMode === 'memory') return;
     if (this.byParts) {
       const stop = Math.min(end, this.reach);
@@ -385,7 +403,7 @@ export class GridData<T> {
 
   /** Keeps the block of the row at place `index` loaded; -1 lets it go. */
   pin(index: number) {
-    if (this.groupMode === 'memory') return;
+    if (this.groupMode === 'memory' || this.pagesOnServer) return;
     if (!this.groupMode || index < 0) {
       this.source.pin(index);
       return;
@@ -420,9 +438,10 @@ export class GridData<T> {
     if (options.remote !== undefined) this.remote = options.remote;
     if (options.loadSize !== undefined) this.loadSize = Math.max(0, Math.floor(options.loadSize));
     // Group summaries only memory can compute keep the grouping in memory too.
-    const possible = levels.length > 0 && source.loadMode === 'blocks' && levels.every((l) => l.serverField !== null) && untracked(() => this.groupSummary()) !== null;
+    const possible = levels.length > 0 && source.loadMode !== 'all' && levels.every((l) => l.serverField !== null) && untracked(() => this.groupSummary()) !== null;
     const server = possible && (this.remote === true || (this.remote === 'auto' && source.adapter.capabilities.group));
     this.groupMode = !levels.length ? null : server ? 'server' : 'memory';
+    this.dropPageRows();
     this.stopGroupLoad();
     this.tree = [];
     this.view = null;
@@ -464,7 +483,15 @@ export class GridData<T> {
       this.changed('version');
     }
     if (this.groupMode && this.groupState === 'error') this.reloadGroups();
-    else void this.source.retry();
+    else if (this.pagesOnServer && this.pageFailed) {
+      // The ranges that failed load again as the view asks for them.
+      this.pageFailed = 0;
+      untracked(() => {
+        this.state.failedBlocks = this.source.failedBlocks;
+        this.changed('failedBlocks');
+        this.rowsChanged();
+      });
+    } else void this.source.retry();
   }
 
   /** Place of a data row, found by its key; -1 when it is not loaded or a collapsed group hides it. */
@@ -491,6 +518,7 @@ export class GridData<T> {
   dataIndexOf(row: T): number {
     const s = this.source;
     if (!s.adapter.keys.hasKey(row)) return -1;
+    if (this.pagesOnServer) return this.pageKeyIndex().get(this.keyIdOf(row)) ?? -1;
     if (this.groupMode === 'server') return s.indexOfKey(s.adapter.keyOf(row));
     this.groupView();
     if (!this.groupedIndex) {
@@ -506,6 +534,7 @@ export class GridData<T> {
     const keys = this.source.adapter.keys;
     if (!keys.hasKey(row)) return false;
     if (this.allRows) return this.allByKey().has(this.keyIdOf(row));
+    if (this.pagesOnServer && this.pageKeyIndex().has(this.keyIdOf(row))) return true;
     return this.source.indexOfKey(keys.keyOf(row)) >= 0;
   }
 
@@ -515,12 +544,17 @@ export class GridData<T> {
       const row = this.allByKey().get(this.source.adapter.keyString(key));
       if (row !== undefined) return row;
     }
+    if (this.pagesOnServer) {
+      const d = this.pageKeyIndex().get(this.source.adapter.keyString(key));
+      if (d !== undefined) return this.pageRows.get(d);
+    }
     return this.source.rowByKey(key);
   }
 
   /** Every row the grid holds now: all of them in memory, the page, or the blocks loaded. */
   forEachLoaded(fn: (row: T) => void) {
     if (this.allRows) for (const row of this.allRows) fn(row);
+    else if (this.pagesOnServer) for (const row of this.pageRows.values()) fn(row);
     else this.source.forEachLoaded((row) => fn(row));
   }
 
@@ -553,6 +587,7 @@ export class GridData<T> {
   }
 
   dispose() {
+    this.dropPageRows();
     this.stopGroupLoad();
     this.dropEveryRow();
     for (const s of this.subscriptions) s.dispose();
@@ -628,7 +663,7 @@ export class GridData<T> {
       else if (reason === 'loading' && this.sourceStatus === 'error') this.sourceStatus = 'loading';
       else if (reason === 'loaded') this.sourceStatus = 'ready';
       else if (reason === 'failed' && s.status === 'error') this.sourceStatus = 'error';
-      st.failedBlocks = s.failedBlocks;
+      st.failedBlocks = s.failedBlocks + this.pageFailed;
       this.changed('failedBlocks');
       // Infinite: a new query starts from the first part; a part that came (or failed) shows.
       if (reason === 'query' || reason === 'cleared') this.startOver();
@@ -649,6 +684,7 @@ export class GridData<T> {
 
   /** A server's groups: keys and counts of every level, and their summaries, no rows. */
   private loadGroups() {
+    this.dropPageRows();
     const items = this.levels.map((l) => ({ field: l.serverField!, dir: l.dir }));
     const summary = untracked(() => this.groupSummary());
     const groupSummary = summary?.length ? summary : undefined;
@@ -712,6 +748,75 @@ export class GridData<T> {
     this.everyController?.abort();
     this.everyController = undefined;
     this.everyLoad = undefined;
+  }
+
+  /**
+   * Grouped by a server over pages: loads the rows of these runs (indexes in group order) that are neither loaded nor
+   * on the way, each stretch in one request, in the order the source gets (the groups first).
+   */
+  private loadRuns(runs: readonly (readonly [number, number])[]) {
+    const stretches: [number, number][] = [];
+    for (const [first, end] of runs) {
+      let at = first;
+      while (at < end) {
+        while (at < end && (this.pageRows.has(at) || this.pageWaiting.has(at))) at++;
+        const from = at;
+        while (at < end && !this.pageRows.has(at) && !this.pageWaiting.has(at)) at++;
+        if (at > from) stretches.push([from, at]);
+      }
+    }
+    if (!stretches.length) return;
+    this.pageController ??= new AbortController();
+    const signal = this.pageController.signal;
+    const generation = this.pageGeneration;
+    const sort = this.sourceSort();
+    for (const [from, end] of stretches) {
+      for (let i = from; i < end; i++) this.pageWaiting.add(i);
+      this.source.loadRange({ skip: from, take: end - from, sort, signal }).then(
+        (result) => {
+          if (generation !== this.pageGeneration) return;
+          for (let i = from; i < end; i++) this.pageWaiting.delete(i);
+          result.rows.forEach((row, i) => this.pageRows.set(from + i, row));
+          this.pageKeys = null;
+          untracked(() => this.rowsChanged());
+        },
+        (error: unknown) => {
+          if (generation !== this.pageGeneration || data.isAbortError(error)) return;
+          for (let i = from; i < end; i++) this.pageWaiting.delete(i);
+          this.pageFailed++;
+          untracked(() => {
+            this.state.failedBlocks = this.source.failedBlocks + this.pageFailed;
+            this.changed('failedBlocks');
+          });
+        },
+      );
+    }
+  }
+
+  /** Grouped by a server over pages: the loaded rows by key, for finding a row's place. */
+  private pageKeyIndex(): Map<string, number> {
+    if (!this.pageKeys) {
+      const index = new Map<string, number>();
+      for (const [d, row] of this.pageRows) index.set(this.keyIdOf(row), d);
+      this.pageKeys = index;
+    }
+    return this.pageKeys;
+  }
+
+  /** Another row set or other groups: the rows loaded for the groups go, and what is on the way is dropped. */
+  private dropPageRows() {
+    this.pageGeneration++;
+    this.pageController?.abort();
+    this.pageController = undefined;
+    this.pageRows.clear();
+    this.pageKeys = null;
+    this.pageWaiting.clear();
+    if (!this.pageFailed) return;
+    this.pageFailed = 0;
+    untracked(() => {
+      this.state.failedBlocks = this.source.failedBlocks;
+      this.changed('failedBlocks');
+    });
   }
 
   /** Groups the rows in memory: the source's rows, or every matching row loaded apart. */

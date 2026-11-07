@@ -129,7 +129,7 @@ export interface Order {
 | `groupExpandMode` | `'button'` | A group expands from its arrow and the keyboard, or with `rowClick` from a click anywhere on its row. A column can set its own value. |
 | `groupCount` | `true` | Group rows show their row count. A column can set its own value. |
 | `groupToggleKeys, groupArrowKeys` | `['Enter', ' ']`, `true` | The keys that expand and collapse a group row. Right and Left expand, collapse, and move in and out. |
-| `remoteGrouping` | `'auto'` | What groups a data source's rows: `auto` uses its adapter when it supports grouping (blocks), `true` always uses the adapter when the source loads by blocks, and `false` always uses the browser, from every matching row. |
+| `remoteGrouping` | `'auto'` | What groups a data source's rows: `auto` uses its adapter when it supports grouping (pages or blocks), `true` always uses the adapter when the source loads by pages or blocks, and `false` always uses the browser, from every matching row. |
 | `groupLoadPageSize` | `0` | For grouping or summaries in the browser over a source that loads pages or blocks, the rows per request while every matching row loads (0 means one request). |
 | `totalSummary, groupSummary` | `true` | The totals row with the items of `summary.totalItems`, and the items of `summary.groupItems` in group rows and footers. An item's `visible` takes precedence. |
 | `totalSummaryTabStop` | `true` | Makes the totals row a separate Tab stop after the rows. |

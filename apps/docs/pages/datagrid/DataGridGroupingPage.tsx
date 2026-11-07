@@ -3,6 +3,7 @@ import { slowAdapterFile } from '../../shared/slow-adapter-file';
 import { withOrders } from './code';
 import Grouping from './examples/Grouping';
 import GroupingServer from './examples/GroupingServer';
+import GroupingServerPages from './examples/GroupingServerPages';
 import Summaries from './examples/Summaries';
 import SummariesServer from './examples/SummariesServer';
 
@@ -17,10 +18,16 @@ export default function DataGridGroupingPage() {
           <Grouping />
         </Example>
         <p>
-          <Rich text="On a server, a `DataSource` that loads by `blocks` over an adapter that supports grouping is asked only for the groups and their counts (`loadGroups`, `group` with `groupsOnly`). Rows arrive in group order, in blocks, only for expanded groups in the visible area. In this example, the groups start collapsed (`autoExpandGroup: false`). An adapter that cannot group (OData, REST), a source that loads by page, or a `calculateGroupValue` function loads every matching row and groups them in the browser. Filters, search and selection work with groups, and “select all” still means every row of the filter. CSV export writes a “Column: value” line before each group, and `group` is saved with the layout." />
+          <Rich text="On a server, a `DataSource` that loads by `blocks` or by `page` over an adapter that supports grouping is asked only for the groups and their counts (`loadGroups`, `group` with `groupsOnly`). Rows arrive in group order, only for expanded groups: in blocks for the visible area while scrolling, or for the page shown with a pager. In this example, the groups start collapsed (`autoExpandGroup: false`). An adapter that cannot group (OData, REST) or a `calculateGroupValue` function loads every matching row and groups them in the browser. Filters, search and selection work with groups, and “select all” still means every row of the filter. CSV export writes a “Column: value” line before each group, and `group` is saved with the layout." />
         </p>
         <Example files={[...withOrders('GroupingServer.tsx'), slowAdapterFile]} stack>
           <GroupingServer />
+        </Example>
+        <p>
+          <Rich text="With a pager, a source that loads by `page` is grouped on the server too. The pager counts group rows and data rows together, and each page asks only for the rows it shows (`loadRange`), so a page seen before is not loaded again." />
+        </p>
+        <Example files={[...withOrders('GroupingServerPages.tsx'), slowAdapterFile]} stack>
+          <GroupingServerPages />
         </Example>
       </Section>
 

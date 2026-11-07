@@ -20,7 +20,28 @@ export interface Order {
 }
 ```
 
-On a server, a `DataSource` that loads by `blocks` over an adapter that supports grouping is asked only for the groups and their counts (`loadGroups`, `group` with `groupsOnly`). Rows arrive in group order, in blocks, only for expanded groups in the visible area. In this example, the groups start collapsed (`autoExpandGroup: false`). An adapter that cannot group (OData, REST), a source that loads by page, or a `calculateGroupValue` function loads every matching row and groups them in the browser. Filters, search and selection work with groups, and “select all” still means every row of the filter. CSV export writes a “Column: value” line before each group, and `group` is saved with the layout.
+On a server, a `DataSource` that loads by `blocks` or by `page` over an adapter that supports grouping is asked only for the groups and their counts (`loadGroups`, `group` with `groupsOnly`). Rows arrive in group order, only for expanded groups: in blocks for the visible area while scrolling, or for the page shown with a pager. In this example, the groups start collapsed (`autoExpandGroup: false`). An adapter that cannot group (OData, REST) or a `calculateGroupValue` function loads every matching row and groups them in the browser. Filters, search and selection work with groups, and “select all” still means every row of the filter. CSV export writes a “Column: value” line before each group, and `group` is saved with the layout.
+
+```tsx
+import { data } from '@motifx-community/data';
+
+/** Rows in memory that answer a little later, the way a server does; for the examples. */
+export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
+  constructor(
+    options: data.ArrayAdapterOptions<T>,
+    private readonly delayMs = 300,
+  ) {
+    super(options);
+  }
+
+  override async load(options: data.LoadOptions = {}): Promise<data.LoadResult<T>> {
+    await new Promise((done) => setTimeout(done, this.delayMs));
+    return super.load(options);
+  }
+}
+```
+
+With a pager, a source that loads by `page` is grouped on the server too. The pager counts group rows and data rows together, and each page asks only for the rows it shows (`loadRange`), so a page seen before is not loaded again.
 
 ```tsx
 import { data } from '@motifx-community/data';
@@ -297,6 +318,45 @@ export class SlowAdapter<T extends object, K> extends data.ArrayAdapter<T, K> {
     await new Promise((done) => setTimeout(done, this.delayMs));
     return super.load(options);
   }
+}
+```
+
+`GroupingServerPages.tsx`
+
+```tsx
+import { reactive } from '@motifx/core';
+import { data } from '@motifx-community/data';
+import { DataGrid, Stack } from '@motifx-community/ui';
+import { SlowAdapter } from '../../../shared/slow-adapter';
+import type { Order } from './order';
+import { columns, makeOrders } from './orders';
+
+/** 100,000 orders grouped on the server with a pager: each page asks only for its own rows. */
+export default function GroupingServerPages() {
+  const s = reactive({ loads: 0 });
+  const server = new SlowAdapter<Order, number>({ data: makeOrders(100_000), key: 'id' }, 300);
+  server.onLoading(() => s.loads++);
+  const orders = new data.DataSource<Order, number>({ adapter: server, loadMode: 'page', pageSize: 20 });
+  const grouped = columns.map((c) => (c.field === 'status' ? { ...c, groupIndex: 0 } : c));
+  let grid: DataGrid<Order> | null = null;
+
+  return (
+    <>
+      <DataGrid
+        class="dg-grouping-pages"
+        style="block-size: 32rem"
+        dataSource={orders}
+        columns={grouped}
+        label="100,000 orders by status, page by page"
+        locale="en"
+        settings={{ groupPanel: true }}
+        ref={(g: DataGrid<Order>) => (grid = g)}
+      />
+      <Stack orientation="horizontal" wrap align="center">
+        <output class="dg-grouping-pages-loads">{() => `${s.loads} loads for ${grid?.total ?? 0} rows`}</output>
+      </Stack>
+    </>
+  );
 }
 ```
 
