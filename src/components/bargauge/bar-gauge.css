@@ -1,0 +1,76 @@
+/* BarGauge: bars bent round one middle, the values at their ends outside, and a legend under them. `--_bar` is the color
+   of a bar. */
+@layer mx.components {
+    .mx-bar-gauge {
+        position: relative;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        box-sizing: border-box;
+        inline-size: var(--_drawn-width, var(--_bar-gauge-size));
+        max-inline-size: 100%;
+    }
+
+    .mx-bar-gauge__svg {
+        display: block;
+        overflow: visible;
+    }
+
+    .mx-bar-gauge__track,
+    .mx-bar-gauge__labels {
+        fill: currentcolor;
+    }
+
+    .mx-bar-gauge__bar {
+        fill: var(--_bar);
+    }
+
+    .mx-bar-gauge__labels,
+    .mx-bar-gauge__probe {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .mx-bar-gauge__probe {
+        visibility: hidden;
+    }
+
+    .mx-bar-gauge__connectors {
+        fill: none;
+        stroke: currentcolor;
+        stroke-width: var(--_bar-gauge-connector-width);
+    }
+
+    .mx-bar-gauge__legend {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--_bar-gauge-spacing) calc(var(--_bar-gauge-spacing) * 3);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .mx-bar-gauge__entry {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--_bar-gauge-spacing);
+        white-space: nowrap;
+    }
+
+    .mx-bar-gauge__swatch {
+        inline-size: var(--_bar-gauge-swatch);
+        block-size: var(--_bar-gauge-swatch);
+        border-radius: var(--_bar-gauge-swatch-radius);
+        background: var(--_bar);
+    }
+
+    .mx-bar-gauge__tip {
+        position: absolute;
+        z-index: var(--_over);
+        translate: -50% calc(-100% - var(--_bar-gauge-spacing) * 2);
+        white-space: nowrap;
+        pointer-events: none;
+
+        --_over: 2;
+    }
+}

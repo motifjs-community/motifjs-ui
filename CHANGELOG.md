@@ -50,11 +50,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `zoom` lets the reader drag, use Ctrl and the wheel, or + and - to zoom in on positions, with `zoomTo()`, `resetZoom()`
   and `onZoomChanged`; a zoom into 100,000 values draws in about a tenth of a second. `span` on the position axis follows
   live data, and changed values move from where they were. `references` draws lines and bands; `pointSelection`,
-  `selectedPoints`, `clearSelection()` and `onSelectionChanged` choose values.
+  `selectedPoints`, `clearSelection()` and `onSelectionChanged` choose values. The table view is the kit's `DataGrid`, so
+  100,000 rows open at once and scroll; live updates move from the values last drawn, without flicker.
+- `Sparkline`: a chart the size of a word, for a trend beside a number, in a sentence or a row of a table. `line`, `area`,
+  `bar` and `winloss`; `highlight` marks the first, last, lowest or highest value, `referenceLine` draws a line at a
+  value or the average; the value under the pointer shows above it, and its name sums the values up.
+- `Gauge`: a value against its scale, as an arc, a whole circle, a half or a quarter (`angle`, `rotation`), or a straight
+  bar across or upright (`orientation`). `scale` shows the ends or ticks (`tickInterval`, `ticks`, `minorTicks`), and a
+  `min` above `max` runs it down. `ranges` with a tone, a color of your own or the next chart color; the fill takes the
+  color of the range it is in. The value shows as a fill from `baseValue`, and with `marker`: a needle (`needleShape`), a
+  triangle, a circle, a rhombus, a line or a callout. `marks` show targets and limits with names, read with the value. It
+  is a meter for assistive technology, and values that come quicker than the motion are drawn at once.
+- `BarGauge`: several values against one scale, as bars bent round one middle. Values at the ends of the bars on lines
+  that move apart, a `legend`, a tooltip, `baseValue` for bars both ways, rows read through `valueField`, `nameField` and
+  `colorField`, and a changing number of bars, each new one growing from the base value.
 
 ### Documentation
 
 - The README says that design languages are independent interpretations.
+- Charts and gauges have their own groups in the sidebar, an overview and a page for each kind and part. The sidebar
+  starts with its groups closed, and remembers which are open and how far it was scrolled.
 
 ## [0.1.0-beta.5] - 2026-11-06
 

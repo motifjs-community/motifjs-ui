@@ -1,0 +1,4 @@
+{
+  "Ranges show a low and a high value for each position, as a band or as floating bars.": "Aralıklar her konum için bir alt ve bir üst değeri bant ya da yüzen çubuklar olarak gösterir.",
+  "`rangeArea` and `rangeBar` draw from `lowField` to `highField`, and other series share the axis.": "`rangeArea` ve `rangeBar`, `lowField` değerinden `highField` değerine kadar çizer; diğer seriler aynı ekseni paylaşır."
+}

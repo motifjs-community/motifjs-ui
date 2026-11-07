@@ -637,5 +637,15 @@
   "chartShare": "Share",
   "chartRange": "{low} – {high}",
   "chartPrices": "Open {open}, high {high}, low {low}, close {close}",
-  "chartResetZoom": "Reset zoom"
+  "chartResetZoom": "Reset zoom",
+  "sparklineName": "Trend",
+  "sparklineSummary": "{name}: {count, number} values, from {first} to {last}, lowest {min}, highest {max}",
+  "gaugeName": "Gauge",
+  "gaugeValueIn": "{value}, {range}",
+  "gaugeMark": "{label}: {value}",
+  "barGaugeName": "Bar gauge",
+  "barGaugeBar": "{name}: {value}",
+  "barGaugeSummary": "{name}: {values}",
+  "gaugeMarkAt": "mark at {value}",
+  "chartTime": "Time"
 }

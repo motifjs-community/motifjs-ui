@@ -1,0 +1,12 @@
+{
+  "A marker points at the value: a needle from the middle of an arc, a shape on or beside the track, or a callout that writes the value.": "İşaretçi değeri gösterir: yayın ortasından bir ibre, izin üzerinde ya da yanında bir şekil, ya da değeri yazan bir balon.",
+  "Needles": "İbreler",
+  "`marker: 'needle'` draws a needle from the middle, and `needleShape` sets how: narrowing to its tip, straight, or straight with its tip in the color of the value's range.": "`marker: 'needle'` ortadan bir ibre çizer, `needleShape` nasıl çizileceğini belirler: ucuna doğru incelen, düz ya da ucu değerin aralığının renginde olan düz ibre.",
+  "Shapes on the track": "İz üzerindeki şekiller",
+  "A triangle points at the value from outside the track; a circle, a rhombus and a line sit on it. Turn `fill` off to show the value with the marker alone.": "Üçgen değeri izin dışından gösterir; daire, eşkenar dörtgen ve çizgi izin üzerinde durur. Değeri yalnızca işaretçiyle göstermek için `fill` kapatılır.",
+  "Callout": "Balon",
+  "`marker: 'text'` writes the value in a callout that points at it: inside an arc, beside a bar. The value in the middle is then left out.": "`marker: 'text'` değeri onu gösteren bir balonun içine yazar: yayda içeride, çubukta yanında. Bu durumda ortadaki değer gösterilmez.",
+  "Every marker works on a straight gauge too; a needle is drawn there as a triangle.": "Her işaretçi düz göstergede de çalışır; orada ibre üçgen olarak çizilir.",
+  "Marker and fill together": "İşaretçi ve dolgu birlikte",
+  "A marker over the fill keeps the value easy to find on a long scale.": "Dolgunun üstündeki bir işaretçi, uzun bir ölçekte değerin kolay bulunmasını sağlar."
+}

@@ -1,0 +1,5 @@
+{
+  "Large data stays quick: long lines are thinned to the width with their peaks kept, and the reader zooms in for detail.": "Büyük veri hızlı kalır: uzun çizgiler tepeleri korunarak genişliğe göre seyreltilir, okuyucu ayrıntı için yakınlaştırır.",
+  "Zooming into large data": "Büyük veride yakınlaştırma",
+  "`zoom` lets the reader drag across the plot to zoom in, use Ctrl and the wheel to zoom around the pointer, Shift and the wheel to move along, and + and - with the keyboard. A button in the title row shows all of it again, and the value axis fits what is in view. `zoomTo()` and `resetZoom()` do the same programmatically.": "`zoom` okuyucunun çizim alanında sürükleyerek yakınlaştırmasını, Ctrl ve tekerlekle işaretçinin çevresinde yakınlaştırmasını, Shift ve tekerlekle ilerlemesini, klavyede + ve - tuşlarını kullanmasını sağlar. Başlık satırındaki düğme her şeyi yeniden gösterir; değer ekseni görünen kısma uyar. `zoomTo()` ve `resetZoom()` aynısını programatik olarak yapar."
+}

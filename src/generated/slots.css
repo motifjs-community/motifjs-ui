@@ -245,6 +245,43 @@
     --_badge-badge-dot-padding-inline: var(--mx-badge-badge-dot-padding-inline);
   }
 
+  .mx-bar-gauge {
+    --_bar-gauge-size: var(--mx-bar-gauge-size);
+    --_bar-gauge-thickness: var(--mx-bar-gauge-thickness);
+    --_bar-gauge-gap: var(--mx-bar-gauge-gap);
+    --_bar-gauge-indent: var(--mx-bar-gauge-indent);
+    --_bar-gauge-spacing: var(--mx-bar-gauge-spacing);
+    --_bar-gauge-connector-width: var(--mx-bar-gauge-connector-width);
+    --_bar-gauge-swatch: var(--mx-bar-gauge-swatch);
+    --_bar-gauge-swatch-radius: var(--mx-bar-gauge-swatch-radius);
+    --_bar-gauge-series-1: var(--mx-bar-gauge-series-1);
+    --_bar-gauge-series-2: var(--mx-bar-gauge-series-2);
+    --_bar-gauge-series-3: var(--mx-bar-gauge-series-3);
+    --_bar-gauge-series-4: var(--mx-bar-gauge-series-4);
+    --_bar-gauge-series-5: var(--mx-bar-gauge-series-5);
+    --_bar-gauge-series-6: var(--mx-bar-gauge-series-6);
+    --_bar-gauge-series-7: var(--mx-bar-gauge-series-7);
+    --_bar-gauge-series-8: var(--mx-bar-gauge-series-8);
+    --_bar-gauge-root-color: var(--mx-bar-gauge-root-color);
+    --_bar-gauge-root-gap: var(--mx-bar-gauge-root-gap);
+    --_bar-gauge-track-color: var(--mx-bar-gauge-track-color);
+    --_bar-gauge-labels-color: var(--mx-bar-gauge-labels-color);
+    --_bar-gauge-labels-font-size: var(--mx-bar-gauge-labels-font-size);
+    --_bar-gauge-labels-line-height: var(--mx-bar-gauge-labels-line-height);
+    --_bar-gauge-connector-color: var(--mx-bar-gauge-connector-color);
+    --_bar-gauge-legend-color: var(--mx-bar-gauge-legend-color);
+    --_bar-gauge-legend-font-size: var(--mx-bar-gauge-legend-font-size);
+    --_bar-gauge-legend-line-height: var(--mx-bar-gauge-legend-line-height);
+    --_bar-gauge-tip-color: var(--mx-bar-gauge-tip-color);
+    --_bar-gauge-tip-bg: var(--mx-bar-gauge-tip-bg);
+    --_bar-gauge-tip-font-size: var(--mx-bar-gauge-tip-font-size);
+    --_bar-gauge-tip-line-height: var(--mx-bar-gauge-tip-line-height);
+    --_bar-gauge-tip-padding-inline: var(--mx-bar-gauge-tip-padding-inline);
+    --_bar-gauge-tip-radius: var(--mx-bar-gauge-tip-radius);
+    --_bar-gauge-tip-shadow: var(--mx-bar-gauge-tip-shadow);
+    --_bar-gauge-tip-margin-bottom: var(--mx-bar-gauge-tip-margin-bottom);
+  }
+
   .mx-barcode {
     --_barcode-height: var(--mx-barcode-height);
     --_barcode-sheet-bg: var(--mx-barcode-sheet-bg);
@@ -736,19 +773,6 @@
     --_chart-legend-key-width: var(--mx-chart-legend-key-width);
     --_chart-legend-key-height: var(--mx-chart-legend-key-height);
     --_chart-legend-key-radius: var(--mx-chart-legend-key-radius);
-    --_chart-table-radius: var(--mx-chart-table-radius);
-    --_chart-table-font-size: var(--mx-chart-table-font-size);
-    --_chart-table-head-color: var(--mx-chart-table-head-color);
-    --_chart-table-head-font-weight: var(--mx-chart-table-head-font-weight);
-    --_chart-table-head-padding-block: var(--mx-chart-table-head-padding-block);
-    --_chart-table-head-padding-inline: var(--mx-chart-table-head-padding-inline);
-    --_chart-table-head-border-bottom-width: var(--mx-chart-table-head-border-bottom-width);
-    --_chart-table-head-border-bottom-color: var(--mx-chart-table-head-border-bottom-color);
-    --_chart-table-cell-color: var(--mx-chart-table-cell-color);
-    --_chart-table-cell-padding-block: var(--mx-chart-table-cell-padding-block);
-    --_chart-table-cell-padding-inline: var(--mx-chart-table-cell-padding-inline);
-    --_chart-table-cell-border-bottom-width: var(--mx-chart-table-cell-border-bottom-width);
-    --_chart-table-cell-border-bottom-color: var(--mx-chart-table-cell-border-bottom-color);
     --_chart-center-value-color: var(--mx-chart-center-value-color);
     --_chart-center-value-font-size: var(--mx-chart-center-value-font-size);
     --_chart-center-value-font-weight: var(--mx-chart-center-value-font-weight);
@@ -1810,6 +1834,57 @@
     --_gallery-dot-border-width: var(--mx-gallery-dot-border-width);
     --_gallery-dot-border-color: var(--mx-gallery-dot-border-color);
     --_gallery-dot-current-border-color: var(--mx-gallery-dot-current-border-color);
+  }
+
+  .mx-gauge {
+    --_gauge-size: var(--mx-gauge-size);
+    --_gauge-thickness: var(--mx-gauge-thickness);
+    --_gauge-range-width: var(--mx-gauge-range-width);
+    --_gauge-length: var(--mx-gauge-length);
+    --_gauge-tick-length: var(--mx-gauge-tick-length);
+    --_gauge-tick-width: var(--mx-gauge-tick-width);
+    --_gauge-marker-size: var(--mx-gauge-marker-size);
+    --_gauge-spacing: var(--mx-gauge-spacing);
+    --_gauge-series-1: var(--mx-gauge-series-1);
+    --_gauge-series-2: var(--mx-gauge-series-2);
+    --_gauge-series-3: var(--mx-gauge-series-3);
+    --_gauge-series-4: var(--mx-gauge-series-4);
+    --_gauge-series-5: var(--mx-gauge-series-5);
+    --_gauge-series-6: var(--mx-gauge-series-6);
+    --_gauge-series-7: var(--mx-gauge-series-7);
+    --_gauge-series-8: var(--mx-gauge-series-8);
+    --_gauge-fill: var(--mx-gauge-fill);
+    --_gauge-good: var(--mx-gauge-good);
+    --_gauge-warning: var(--mx-gauge-warning);
+    --_gauge-danger: var(--mx-gauge-danger);
+    --_gauge-root-color: var(--mx-gauge-root-color);
+    --_gauge-root-gap: var(--mx-gauge-root-gap);
+    --_gauge-track-color: var(--mx-gauge-track-color);
+    --_gauge-needle-color: var(--mx-gauge-needle-color);
+    --_gauge-value-color: var(--mx-gauge-value-color);
+    --_gauge-value-font-size: var(--mx-gauge-value-font-size);
+    --_gauge-value-font-weight: var(--mx-gauge-value-font-weight);
+    --_gauge-value-line-height: var(--mx-gauge-value-line-height);
+    --_gauge-label-color: var(--mx-gauge-label-color);
+    --_gauge-label-font-size: var(--mx-gauge-label-font-size);
+    --_gauge-label-line-height: var(--mx-gauge-label-line-height);
+    --_gauge-scale-color: var(--mx-gauge-scale-color);
+    --_gauge-scale-font-size: var(--mx-gauge-scale-font-size);
+    --_gauge-scale-line-height: var(--mx-gauge-scale-line-height);
+    --_gauge-tick-color: var(--mx-gauge-tick-color);
+    --_gauge-mark-color: var(--mx-gauge-mark-color);
+    --_gauge-callout-color: var(--mx-gauge-callout-color);
+    --_gauge-callout-bg: var(--mx-gauge-callout-bg);
+    --_gauge-callout-font-size: var(--mx-gauge-callout-font-size);
+    --_gauge-callout-line-height: var(--mx-gauge-callout-line-height);
+    --_gauge-tip-color: var(--mx-gauge-tip-color);
+    --_gauge-tip-bg: var(--mx-gauge-tip-bg);
+    --_gauge-tip-font-size: var(--mx-gauge-tip-font-size);
+    --_gauge-tip-line-height: var(--mx-gauge-tip-line-height);
+    --_gauge-tip-padding-inline: var(--mx-gauge-tip-padding-inline);
+    --_gauge-tip-radius: var(--mx-gauge-tip-radius);
+    --_gauge-tip-shadow: var(--mx-gauge-tip-shadow);
+    --_gauge-tip-margin-bottom: var(--mx-gauge-tip-margin-bottom);
   }
 
   .mx-glyph {
@@ -2994,6 +3069,30 @@
     --_sortable-ghost-radius: var(--mx-sortable-ghost-radius);
     --_sortable-ghost-shadow: var(--mx-sortable-ghost-shadow);
     --_sortable-ghost-opacity: var(--mx-sortable-ghost-opacity);
+  }
+
+  .mx-sparkline {
+    --_sparkline-width: var(--mx-sparkline-width);
+    --_sparkline-height: var(--mx-sparkline-height);
+    --_sparkline-color: var(--mx-sparkline-color);
+    --_sparkline-rise: var(--mx-sparkline-rise);
+    --_sparkline-fall: var(--mx-sparkline-fall);
+    --_sparkline-line-width: var(--mx-sparkline-line-width);
+    --_sparkline-area-opacity: var(--mx-sparkline-area-opacity);
+    --_sparkline-bar-gap: var(--mx-sparkline-bar-gap);
+    --_sparkline-bar-radius: var(--mx-sparkline-bar-radius);
+    --_sparkline-marker-size: var(--mx-sparkline-marker-size);
+    --_sparkline-marker-ring: var(--mx-sparkline-marker-ring);
+    --_sparkline-reference-width: var(--mx-sparkline-reference-width);
+    --_sparkline-root-color: var(--mx-sparkline-root-color);
+    --_sparkline-tip-color: var(--mx-sparkline-tip-color);
+    --_sparkline-tip-bg: var(--mx-sparkline-tip-bg);
+    --_sparkline-tip-font-size: var(--mx-sparkline-tip-font-size);
+    --_sparkline-tip-line-height: var(--mx-sparkline-tip-line-height);
+    --_sparkline-tip-padding-inline: var(--mx-sparkline-tip-padding-inline);
+    --_sparkline-tip-radius: var(--mx-sparkline-tip-radius);
+    --_sparkline-tip-shadow: var(--mx-sparkline-tip-shadow);
+    --_sparkline-tip-margin-bottom: var(--mx-sparkline-tip-margin-bottom);
   }
 
   .mx-speed-dial {

@@ -1,7 +1,7 @@
 /** Real-browser checks of the chart types beyond lines and bars: parts of a whole, radar, heat map, candles, waterfall. */
 export default async function ({ page, base, check }) {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto(base + 'chart', { waitUntil: 'load' });
+    await page.goto(base + 'chart/pie', { waitUntil: 'load' });
     await page.locator('.ch-parts').waitFor();
     await page.waitForTimeout(400);
 
@@ -30,11 +30,17 @@ export default async function ({ page, base, check }) {
     await page.waitForTimeout(120);
     check('the same parts as a pie, with no total in a hole', (await parts.locator('.mx-chart__slice').count()) === before && (await parts.locator('.mx-chart__center-value').count()) === 0);
 
+    await page.goto(base + 'chart/funnel', { waitUntil: 'load' });
+    await page.locator('.ch-funnel').waitFor();
+    await page.waitForTimeout(300);
     // A funnel: stages top to bottom, each narrower, centered on one line.
     const stages = await page.locator('.ch-funnel .mx-chart__slice').evaluateAll(els => els.map(el => { const b = el.getBoundingClientRect(); return { top: b.top, width: b.width, middle: b.left + b.width / 2 }; }));
     const centered = stages.every(s => Math.abs(s.middle - stages[0].middle) <= 0.75);
     check('a funnel narrows down the page, its stages on one center line', stages.length === 5 && stages.every((s, i) => !i || (s.top > stages[i - 1].top && s.width < stages[i - 1].width)) && centered, JSON.stringify(stages.map(s => Math.round(s.width))));
 
+    await page.goto(base + 'chart/radar', { waitUntil: 'load' });
+    await page.locator('.ch-radar').waitFor();
+    await page.waitForTimeout(300);
     // A radar: no label covers another.
     const crowded = await page.locator('.ch-radar').evaluate(el => {
         const boxes = [...el.querySelectorAll('.mx-chart__ticks text')].map(t => t.getBoundingClientRect());
@@ -42,6 +48,9 @@ export default async function ({ page, base, check }) {
     });
     check('the names and the rings of a radar do not cover each other', !crowded);
 
+    await page.goto(base + 'chart/heatmap', { waitUntil: 'load' });
+    await page.locator('.ch-heat').waitFor();
+    await page.waitForTimeout(300);
     // A heat map: one cell under the pointer, its own value.
     const heat = page.locator('.ch-heat');
     await heat.scrollIntoViewIfNeeded();
@@ -56,6 +65,9 @@ export default async function ({ page, base, check }) {
     const cellBoxes = await heat.locator('.mx-chart__cell').evaluateAll(els => els.length);
     check('seven colors at most, one path each', cellBoxes > 1 && cellBoxes <= 7, String(cellBoxes));
 
+    await page.goto(base + 'chart/candles', { waitUntil: 'load' });
+    await page.locator('.ch-candles').waitFor();
+    await page.waitForTimeout(300);
     // Candles: a rising one is hollow, a falling one filled.
     const candles = await page.locator('.ch-candles').evaluate(el => {
         const rise = getComputedStyle(el.querySelector('.mx-chart__rise'));
@@ -64,13 +76,20 @@ export default async function ({ page, base, check }) {
     });
     check('a rising candle is hollow and a falling one filled, in two colors', candles.riseFill !== candles.riseStroke && candles.fallFill === candles.fallStroke && candles.riseStroke !== candles.fallStroke, JSON.stringify(candles));
 
+    await page.goto(base + 'chart/waterfall', { waitUntil: 'load' });
+    await page.locator('.ch-waterfall').waitFor();
+    await page.waitForTimeout(300);
     // A waterfall: the line between the steps, and totals that start at zero.
     const fall = await page.locator('.ch-waterfall').evaluate(el => ({ connectors: (el.querySelector('.mx-chart__line').getAttribute('d') ?? '').split('M').length - 1, signs: [...el.querySelectorAll('.mx-chart__labels text')].map(t => t.textContent) }));
     check('a waterfall joins its steps and signs its changes', fall.connectors === 7 && fall.signs.some(t => t.startsWith('+')) && fall.signs.some(t => /^[-−]/.test(t)), JSON.stringify(fall));
 
+    await page.goto(base + 'chart/pie', { waitUntil: 'load' });
+    await page.locator('.ch-parts').waitFor();
+    await page.waitForTimeout(300);
     // The keyboard reaches a part as it reaches a position.
-    await parts.locator('.mx-chart__plot').focus();
+    const parts2 = page.locator('.ch-parts');
+    await parts2.locator('.mx-chart__plot').focus();
     await page.keyboard.press('ArrowRight');
-    const said = await parts.locator('[role="status"]').textContent();
+    const said = await parts2.locator('[role="status"]').textContent();
     check('the arrows walk the parts and say each one', said.includes('Direct'), said);
 }

@@ -86,7 +86,6 @@
   "Clears the tree.": "Ağacı temizler.",
   "Controls the value editor programmatically.": "Değer editörünü programmatic olarak denetler.",
   "Sets focus on a row's button (`'remove'`, `'group'`, `'add'`, `'field'`, `'operation'`, `'value'`), or on the tree's Tab stop.": "Odağı bir satırın düğmesine (`'remove'`, `'group'`, `'add'`, `'field'`, `'operation'`, `'value'`) veya ağacın Tab durağına taşır.",
-  "The value.": "Değer.",
   "Your fields and value can be plain or reactive, and the builder reads them as they are. After changing them in place, call `refresh()`. The rows redraw, and a value changed in place is read into the tree.": "Field'larınız ve değeriniz düz veya reaktif olabilir, oluşturucu onları olduğu gibi okur. Yerinde değiştirdikten sonra `refresh()` çağırın. Satırlar yeniden çizilir, yerinde değiştirilen değer ağaca okunur.",
   "Occur before and after a condition or group is added: `{ item, group, byUser, source }`. Change `e.item` before it is added, or set `e.cancel = true`.": "Bir koşul veya grup eklenmeden önce ve sonra oluşur: `{ item, group, byUser, source }`. Eklenmeden önce `e.item` değerini değiştirin veya `e.cancel = true` ayarlayın.",
   "`{ item, group, byUser, source }`. Set `e.cancel = true` to keep it.": "`{ item, group, byUser, source }`. Korumak için `e.cancel = true` ayarlayın.",

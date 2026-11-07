@@ -18,10 +18,6 @@
         block-size: var(--_height);
     }
 
-    .mx-chart[data-mode='table'] {
-        block-size: auto;
-        max-block-size: var(--_height);
-    }
 
     .mx-chart__head {
         grid-area: head;
@@ -370,24 +366,9 @@
         min-block-size: 0;
     }
 
-    .mx-chart__table table {
-        inline-size: 100%;
-        border-collapse: collapse;
-    }
-
-    .mx-chart__table th,
-    .mx-chart__table td {
-        text-align: start;
-        white-space: nowrap;
-    }
-
-    .mx-chart__table td {
-        text-align: end;
-        font-variant-numeric: tabular-nums;
-    }
-
-    .mx-chart__table thead th:not(:first-child) {
-        text-align: end;
+    /* The table is the kit's grid: it fills the chart's room and scrolls only the rows in view. */
+    .mx-chart__table > .mx-data-grid {
+        block-size: 100%;
     }
 
     @keyframes mx-chart-reveal-back {

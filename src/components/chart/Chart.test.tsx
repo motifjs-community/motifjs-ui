@@ -211,9 +211,9 @@ describe('Chart', () => {
         await settle();
         expect(chart.element.getAttribute('data-mode')).toBe('table');
         expect(changed.mock.calls[0][0].mode).toBe('table');
-        const cells = $$(chart, '.mx-chart__table tbody tr')[1].children;
-        expect([...cells].map(c => c.textContent)).toEqual(['Feb', '20', '10']);
-        expect($$(chart, '.mx-chart__table thead th').map(c => c.textContent)).toEqual([uiLocale.strings.chartPosition, 'A', 'B']);
+        expect(chart.tablePart.texts()[1]).toEqual(['Feb', '20', '10']);
+        expect(chart.tablePart.shape?.columns.map(c => c.title)).toEqual([uiLocale.strings.chartPosition, 'A', 'B']);
+        expect(chart.tablePart.grid).not.toBeNull();
         expect($(chart, '.mx-chart__area-box').hidden).toBe(true);
         button.click();
         await settle();
@@ -223,7 +223,7 @@ describe('Chart', () => {
 
     it('can open as a table, and leave the button out', () => {
         const chart = make({ mode: 'table', tableButton: false });
-        expect($$(chart, '.mx-chart__table td').length).toBeGreaterThan(0);
+        expect(chart.tablePart.texts().length).toBeGreaterThan(0);
         expect($(chart, '.mx-chart__tools').hidden).toBe(true);
     });
 
@@ -316,19 +316,19 @@ describe('Chart', () => {
     it('reads in the language of the kit', async () => {
         const rows = [{ k: 'a', v: 1234.5 }];
         const chart = make({ data: rows, xField: 'k', series: [{ yField: 'v' }], mode: 'table' });
-        expect($(chart, '.mx-chart__table td').textContent).toBe(new Intl.NumberFormat(uiLocale.locale).format(1234.5));
+        expect(chart.tablePart.texts()[0][1]).toBe(new Intl.NumberFormat(uiLocale.locale).format(1234.5));
     });
 
     it('takes a format of the series over the axis', () => {
         const chart = make({ mode: 'table', yAxis: { format: v => `axis ${v}` }, series: [{ yField: 'a', name: 'A', format: { style: 'currency', currency: 'EUR' } }] });
-        expect($(chart, '.mx-chart__table td').textContent).toContain('10');
-        expect($(chart, '.mx-chart__table td').textContent).not.toContain('axis');
+        expect(chart.tablePart.texts()[0][1]).toContain('10');
+        expect(chart.tablePart.texts()[0][1]).not.toContain('axis');
     });
 
     it('writes a bubble size in the table too', () => {
         const rows = [{ x: 1, y: 2, s: 9 }];
         const chart = make({ data: rows, xField: 'x', mode: 'table', series: [{ type: 'bubble', yField: 'y', sizeField: 's', name: 'B' }] });
-        expect($(chart, '.mx-chart__table td').textContent).toBe('2 (9)');
+        expect(chart.tablePart.texts()[0][1]).toBe('2 (9)');
     });
 
     it('breaks a line at an empty value', () => {

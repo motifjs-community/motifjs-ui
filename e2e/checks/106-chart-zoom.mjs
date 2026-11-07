@@ -1,7 +1,7 @@
 /** Real-browser checks of zoom on 100,000 values, live data, references and choosing values. */
 export default async function ({ page, base, check }) {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto(base + 'chart', { waitUntil: 'load' });
+    await page.goto(base + 'chart/zoom', { waitUntil: 'load' });
     const zoom = page.locator('.ch-zoom');
     await zoom.waitFor();
     await zoom.scrollIntoViewIfNeeded();
@@ -60,6 +60,22 @@ export default async function ({ page, base, check }) {
     await page.waitForTimeout(150);
     check('0 shows all of it again', (await told.textContent()) === 'All of it');
 
+    // The table of 100,000 rows: the kit's grid draws only the rows in view.
+    const started2 = Date.now();
+    await zoom.locator('.mx-chart__tools button').last().click();
+    await zoom.locator('.mx-data-grid [role="row"]').nth(2).waitFor();
+    const opened = Date.now() - started2;
+    const rows = await zoom.evaluate(el => ({ count: el.querySelector('[role="grid"]').getAttribute('aria-rowcount'), drawn: el.querySelectorAll('[role="row"]').length }));
+    check('a table of 100,000 rows opens in under a second, drawing only the rows in view', opened < 1000 && rows.count === '100001' && rows.drawn < 100, `${opened} ms, ${JSON.stringify(rows)}`);
+    await zoom.locator('.mx-data-grid__viewport').evaluate(el => (el.scrollTop = el.scrollHeight));
+    await page.waitForTimeout(250);
+    const lastRow = zoom.locator('[role="row"][aria-rowindex="100001"]');
+    check('and scrolls to its last row', (await lastRow.count()) === 1 && (await lastRow.textContent()).includes('2026'));
+    await zoom.locator('.mx-chart__tools button').last().click();
+
+    await page.goto(base + 'chart/live', { waitUntil: 'load' });
+    await page.locator('.ch-stream').waitFor();
+    await page.waitForTimeout(300);
     // Live data: new values arrive, and the axis moves on.
     const stream = page.locator('.ch-stream');
     await stream.scrollIntoViewIfNeeded();
@@ -71,6 +87,9 @@ export default async function ({ page, base, check }) {
     check('live data moves the axis on and draws the new values', first.x !== later.x && first.line !== later.line, `${first.x} → ${later.x}`);
     await stream.locator('xpath=..').getByRole('button', { name: 'Pause' }).click();
 
+    await page.goto(base + 'chart/references', { waitUntil: 'load' });
+    await page.locator('.ch-refs').waitFor();
+    await page.waitForTimeout(300);
     // References: a dashed line with its label, and a band under the bars.
     const refs = await page.locator('.ch-refs').evaluate(el => ({
         dash: getComputedStyle(el.querySelector('.mx-chart__reference')).strokeDasharray,

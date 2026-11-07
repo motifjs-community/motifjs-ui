@@ -184,3 +184,17 @@ describe('round shapes', () => {
         expect(arcPath(50, 50, 0, 40, 1, 1)).toBe('');
     });
 });
+
+describe('motion', () => {
+    it('reads a duration in seconds or in milliseconds', async () => {
+        const { motionOf } = await import('./chart-text');
+        const el = document.createElement('div');
+        document.body.append(el);
+        el.style.setProperty('--a', '.167s');
+        el.style.setProperty('--b', '83ms');
+        expect(motionOf(el, '--a')).toBeCloseTo(167, 6);
+        expect(motionOf(el, '--b')).toBe(83);
+        expect(motionOf(el, '--none')).toBe(0);
+        el.remove();
+    });
+});

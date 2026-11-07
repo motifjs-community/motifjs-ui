@@ -148,8 +148,7 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         surface.append(this.tooltipPart.element);
         this.legendPart = new ChartLegend(el.ownerDocument, id => this.toggleEntry(id));
         el.append(this.legendPart.element);
-        this.tablePart = new ChartTable(el.ownerDocument);
-        el.append(this.tablePart.element);
+        this.tablePart = new ChartTable(this);
         this.status = part<HTMLDivElement>(this, 'div', 'mx-sr-only');
         this.status.element.setAttribute('role', 'status');
 
@@ -581,7 +580,7 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         // The plot's formats are the table's: it needs the model it would draw.
         const model = this.model;
         if (!model) return;
-        this.tablePart.draw(model, this.plot, this.accessibleName, this.xAxis.title ?? uiLocale.strings.chartPosition);
+        this.tablePart.draw(model, this.plot, this.accessibleName, this.xAxis.title ?? (model.kind === 'time' ? uiLocale.strings.chartTime : uiLocale.strings.chartPosition));
     }
 
     /** The plot of a family, made the first time it is needed; the others step aside. */

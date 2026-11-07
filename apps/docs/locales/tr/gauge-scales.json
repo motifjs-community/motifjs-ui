@@ -1,0 +1,12 @@
+{
+  "The scale tells the reader how to read the value: its ends, ticks with their values, or nothing at all.": "Ölçek okuyucuya değeri nasıl okuyacağını anlatır: uçları, değerleriyle ölçek çizgileri ya da hiçbir şey.",
+  "Ticks": "Ölçek çizgileri",
+  "`scale: 'ticks'` draws ticks with their values. `tickInterval` sets the step, or an even step that fits the size is chosen. `minorTicks` puts small ticks between them.": "`scale: 'ticks'` ölçek çizgilerini değerleriyle çizer. `tickInterval` aralığı belirler; verilmezse boyuta uyan düzgün bir aralık seçilir. `minorTicks` aralarına küçük çizgiler koyar.",
+  "Ticks of your own": "Özel ölçek çizgileri",
+  "`ticks` places ticks only at the values given, where they mean something.": "`ticks` ölçek çizgilerini yalnızca verilen, anlam taşıyan değerlere yerleştirir.",
+  "A scale that runs down": "Azalan ölçek",
+  "A `min` above `max` runs the scale the other way, for what is counted down.": "`max` değerinden büyük bir `min`, geri sayılan değerler için ölçeği ters yönde çalıştırır.",
+  "`format` writes the value and the scale: options of the browser's number format, in the language of the page, or a function of your own.": "`format` değeri ve ölçeği yazar: sayfanın dilinde tarayıcının sayı biçimi seçenekleri ya da özel bir fonksiyon.",
+  "Ends, ticks or nothing": "Uçlar, çizgiler ya da hiçbiri",
+  "`scale` shows the two ends, `'ends'`, ticks, `'ticks'`, or nothing, `'none'`, where the value alone is enough.": "`scale` iki ucu (`'ends'`), ölçek çizgilerini (`'ticks'`) ya da değerin tek başına yettiği yerde hiçbir şeyi (`'none'`) gösterir."
+}

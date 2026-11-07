@@ -1,0 +1,128 @@
+{
+  "gauge": {
+    "$description": "Gauge: a value against its scale, as an arc, a circle or a bar.",
+    "$selector": ".mx-gauge",
+    "size": {
+      "$type": "dimension",
+      "$description": "The width of an arc or a circle."
+    },
+    "thickness": {
+      "$type": "dimension",
+      "$description": "How thick the track and the fill are."
+    },
+    "range-width": {
+      "$type": "dimension",
+      "$description": "How thick the band of a range is, outside the track."
+    },
+    "length": {
+      "$type": "dimension",
+      "$description": "The length of an upright straight gauge."
+    },
+    "tick-length": {
+      "$type": "dimension",
+      "$description": "How long a tick of the scale is; a small tick is half as long."
+    },
+    "tick-width": {
+      "$type": "dimension",
+      "$description": "How thick the ticks, and the outline of a callout, are."
+    },
+    "marker-size": {
+      "$type": "dimension",
+      "$description": "The size of a marker or a mark: a triangle, a circle, a rhombus, the pointer of a callout."
+    },
+    "spacing": {
+      "$type": "dimension",
+      "$description": "The room between the track, the ranges, the marks, the ticks and their values."
+    },
+    "series-1": {
+      "$type": "color",
+      "$description": "Color 1 of the ranges that have neither a tone nor a color."
+    },
+    "series-2": {
+      "$type": "color",
+      "$description": "Color 2 of the ranges that have neither a tone nor a color."
+    },
+    "series-3": {
+      "$type": "color",
+      "$description": "Color 3 of the ranges that have neither a tone nor a color."
+    },
+    "series-4": {
+      "$type": "color",
+      "$description": "Color 4 of the ranges that have neither a tone nor a color."
+    },
+    "series-5": {
+      "$type": "color",
+      "$description": "Color 5 of the ranges that have neither a tone nor a color."
+    },
+    "series-6": {
+      "$type": "color",
+      "$description": "Color 6 of the ranges that have neither a tone nor a color."
+    },
+    "series-7": {
+      "$type": "color",
+      "$description": "Color 7 of the ranges that have neither a tone nor a color."
+    },
+    "series-8": {
+      "$type": "color",
+      "$description": "Color 8 of the ranges that have neither a tone nor a color."
+    },
+    "fill": {
+      "$type": "color",
+      "$description": "The fill, outside any range with a tone."
+    },
+    "good": {
+      "$type": "color",
+      "$description": "The fill in a range whose tone is good."
+    },
+    "warning": {
+      "$type": "color",
+      "$description": "The fill in a range whose tone is warning."
+    },
+    "danger": {
+      "$type": "color",
+      "$description": "The fill in a range whose tone is danger."
+    },
+    "$units": {
+      "root": {
+        "$description": "The gauge as a whole.",
+        "selector": ".mx-gauge"
+      },
+      "track": {
+        "$description": "The track: `color` paints it.",
+        "selector": ".mx-gauge__track"
+      },
+      "needle": {
+        "$description": "The needle: `color` paints it.",
+        "selector": ".mx-gauge__needle"
+      },
+      "value": {
+        "$description": "The value in the middle.",
+        "selector": ".mx-gauge__value"
+      },
+      "label": {
+        "$description": "What it measures.",
+        "selector": ".mx-gauge__label"
+      },
+      "scale": {
+        "$description": "The values of the scale.",
+        "selector": ".mx-gauge__scale, .mx-gauge__probe"
+      },
+      "tick": {
+        "$description": "The ticks of the scale: `color` paints them.",
+        "selector": ".mx-gauge__ticks, .mx-gauge__minor"
+      },
+      "mark": {
+        "$description": "A mark of another value: `color` paints it.",
+        "selector": ".mx-gauge__mark"
+      },
+      "callout": {
+        "$description": "The value in a callout.",
+        "selector": ".mx-gauge__callout"
+      },
+      "tip": {
+        "$description": "The value or the mark under the pointer.",
+        "selector": ".mx-gauge__tip"
+      }
+    }
+  }
+}

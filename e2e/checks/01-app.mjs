@@ -2,6 +2,8 @@
 export default async function ({ page, base, check }) {
   await page.goto(base, { waitUntil: 'load' });
   await page.evaluate(() => (window.__sameDocument = true));
+  const editors = page.getByRole('button', { name: 'Editors', exact: true });
+  if ((await editors.getAttribute('aria-expanded')) !== 'true') await editors.click();
   await page.locator('.docs-sidebar a', { hasText: 'TextBox' }).click();
   await page.waitForURL(/\/textbox$/);
   await page.locator('section[aria-labelledby="mask"]').waitFor();
@@ -50,7 +52,10 @@ export default async function ({ page, base, check }) {
   const gridPages = await page.locator('.docs-sidebar li:visible').allTextContents();
   check('…and finds pages by their group and title too', gridPages.includes('Overview') && gridPages.includes('Editing') && gridPages.includes('API reference'), gridPages.join());
   await page.locator('.docs-filter input').fill('');
-  await page.getByRole('button', { name: 'Foundations', exact: true }).click();
+  // Groups start closed: open this one, then its title closes it.
+  const foundations = page.getByRole('button', { name: 'Foundations', exact: true });
+  if ((await foundations.getAttribute('aria-expanded')) !== 'true') await foundations.click();
+  await foundations.click();
   check('a group closes from its title', !(await page.locator('.docs-sidebar a', { hasText: 'Control' }).isVisible()));
   await page.getByRole('button', { name: 'Foundations', exact: true }).click();
   await page.locator('#menu').evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));

@@ -1,0 +1,4 @@
+{
+  "A funnel follows a quantity through stages in order, and shows how much of it is left at each one.": "Huni bir miktarı sıralı aşamalar boyunca izler ve her aşamada ne kadarının kaldığını gösterir.",
+  "`funnel` shows stages in the order of the rows, each with the share of the first stage that is left. The stages take one hue, darker towards the first, as they are in order.": "`funnel` aşamaları satırların sırasıyla, her biri ilk aşamadan kalan payla birlikte gösterir. Aşamalar sıralı olduğu için tek bir renk tonu alır ve ilk aşamaya doğru koyulaşır."
+}

@@ -26,7 +26,6 @@
   "The size of the image in pixels. The height keeps the shape of the pad.": "Görselin piksel cinsinden boyutu. Yükseklik alanın oranını korur.",
   "The color of the lines, which does not depend on the theme.": "Temaya bağlı olmayan çizgi rengi.",
   "Transparent": "Saydam",
-  "Types": "Tipler",
   "One line drawn without lifting the pen.": "Kalem kaldırılmadan çizilen tek çizgi.",
   "`x` and `y` run from `0` to `1` across the pad, so a signature fits a pad of any size. `pressure` runs from `0` to `1`.": "`x` ve `y` alan boyunca `0` ile `1` arasındadır; böylece imza her boyuttaki alana sığar. `pressure` `0` ile `1` arasındadır.",
   "Occurs when the pen touches the pad.": "Kalem alana değdiğinde oluşur.",

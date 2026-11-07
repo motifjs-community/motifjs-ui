@@ -1,32 +1,34 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
-import Areas from './examples/Areas';
-import Zoom from './examples/Zoom';
-import Streaming from './examples/Streaming';
-import Selection from './examples/Selection';
-import References from './examples/References';
-import Waterfall from './examples/Waterfall';
-import Ranges from './examples/Ranges';
-import Radar from './examples/Radar';
-import Parts from './examples/Parts';
-import Heatmap from './examples/Heatmap';
-import Funnel from './examples/Funnel';
-import Candles from './examples/Candles';
 import Basic from './examples/Basic';
 import Export from './examples/Export';
-import Gaps from './examples/Gaps';
-import Horizontal from './examples/Horizontal';
-import Lines from './examples/Lines';
-import Live from './examples/Live';
-import Negative from './examples/Negative';
 import Programmatic from './examples/Programmatic';
-import Scatter from './examples/Scatter';
 import Source from './examples/Source';
 import States from './examples/States';
-import Stacked from './examples/Stacked';
-import TimeAxis from './examples/TimeAxis';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
+
+const KINDS = [
+    ['[Lines and areas](/chart/lines)', '`line`, `area`', 'Change along an axis, over time or across categories.'],
+    ['[Bars](/chart/bars)', '`bar`', 'Amounts compared on a common baseline, side by side or stacked.'],
+    ['[Scatter and bubble](/chart/scatter)', '`scatter`, `bubble`', 'How two numbers relate, with a third as the size.'],
+    ['[Pie and donut](/chart/pie)', '`pie`, `donut`', 'The parts of one whole, at a glance.'],
+    ['[Funnel](/chart/funnel)', '`funnel`', 'A quantity through stages in order.'],
+    ['[Radar](/chart/radar)', '`radar`', 'Several measures at once, around a center.'],
+    ['[Heat map](/chart/heatmap)', '`heatmap`', 'A value for each pair of two categories, as a color.'],
+    ['[Ranges](/chart/ranges)', '`rangeArea`, `rangeBar`', 'A low and a high value for each position.'],
+    ['[Candles](/chart/candles)', '`candlestick`, `ohlc`', 'Four prices for each position.'],
+    ['[Waterfall](/chart/waterfall)', '`waterfall`', 'A start becoming an end through changes.'],
+];
+
+const WORK = [
+    ['[Zoom and large data](/chart/zoom)', 'Hundreds of thousands of values, zoomed in by a drag, the wheel or the keys.'],
+    ['[Live data](/chart/live)', 'Reactive values and a moving window over the latest ones.'],
+    ['[References and selection](/chart/references)', 'Targets, limits and periods, and values chosen by a click.'],
+    ['[Sparkline](/sparkline)', 'A chart the size of a word, in text and in tables.'],
+    ['[Gauge](/gauge)', 'A value against its scale, on an arc or a bar, with ticks, markers and marks.'],
+    ['[BarGauge](/bar-gauge)', 'Several values against one scale, as bars bent round one middle.'],
+];
 
 const PROPS = [
     ['data', '`Bind<T[] | null>`', '`null`', 'The rows. The chart reads them and never changes them. After an in-place change, call `refresh()`.'],
@@ -183,184 +185,12 @@ import { Chart } from '@motifx-community/ui';
                 </Example>
             </Section>
 
-            <Section anchor="lines" title="Lines">
+            <Section anchor="kinds" title="Kinds of charts">
                 <p>
-                    <Rich text="A line is the default series type. `smooth` curves the line without adding a peak that is not in the data, and `labels` shows selected values on the chart. Point to a position to read every series at that position." />
+                    <Rich text="A series says how it draws with `type`, and a chart draws the family of its first series. Each kind has its own page." />
                 </p>
-                <Example files={code('Lines.tsx', 'sales.ts')}>
-                    <Lines />
-                </Example>
-            </Section>
-
-            <Section anchor="areas" title="Areas">
-                <p>
-                    <Rich text="`stacked` adds the areas together, so that the top line shows the total." />
-                </p>
-                <Example files={code('Areas.tsx', 'sales.ts')}>
-                    <Areas />
-                </Example>
-            </Section>
-
-            <Section anchor="stacked" title="Grouped and stacked bars">
-                <p>
-                    <Rich text="Bars are grouped side by side by default. `stacked` places them on top of each other, as values or as percentages. Use `stack` on a series to assign it to a named stack." />
-                </p>
-                <Example stack files={code('Stacked.tsx', 'sales.ts')}>
-                    <Stacked />
-                </Example>
-            </Section>
-
-            <Section anchor="horizontal" title="Horizontal charts">
-                <p>
-                    <Rich text="`horizontal` suits long category names and rankings. Rows keep the order in which they are provided." />
-                </p>
-                <Example files={code('Horizontal.tsx')}>
-                    <Horizontal />
-                </Example>
-            </Section>
-
-            <Section anchor="negative" title="Negative values">
-                <p>
-                    <Rich text="Bars extend in both directions from zero. A label that does not fit or that would cover another label is omitted, and its value remains available in the tooltip and the table view." />
-                </p>
-                <Example files={code('Negative.tsx')}>
-                    <Negative />
-                </Example>
-            </Section>
-
-            <Section anchor="scatter" title="Scatter and bubble charts">
-                <p>
-                    <Rich text="`scatter` and `bubble` plot two numeric values. `sizeField` adds a third value to a bubble, represented by its area. The pointer selects the nearest point." />
-                </p>
-                <Example files={code('Scatter.tsx')}>
-                    <Scatter />
-                </Example>
-            </Section>
-
-            <Section anchor="parts" title="Pie and donut">
-                <p>
-                    <Rich text="`pie` and `donut` split one whole into its parts. Shares are written inside the slices that have room for them, the legend names every part, and a donut shows the total in its middle. For close values, bars compare more exactly." />
-                </p>
-                <Example stack files={code('Parts.tsx')}>
-                    <Parts />
-                </Example>
-            </Section>
-
-            <Section anchor="funnel" title="Funnel">
-                <p>
-                    <Rich text="`funnel` shows stages in the order of the rows, each with the share of the first stage that is left. The stages take one hue, darker towards the first, as they are in order." />
-                </p>
-                <Example files={code('Funnel.tsx')}>
-                    <Funnel />
-                </Example>
-            </Section>
-
-            <Section anchor="radar" title="Radar">
-                <p>
-                    <Rich text="`radar` places a spoke for each category around a center and draws a shape for each series." />
-                </p>
-                <Example files={code('Radar.tsx')}>
-                    <Radar />
-                </Example>
-            </Section>
-
-            <Section anchor="heatmap" title="Heat map">
-                <p>
-                    <Rich text="`heatmap` places a cell at each pair of `xField` and `yField`, colored by `valueField` in seven steps of one hue. Values on both sides of zero take two hues that meet in a neutral middle." />
-                </p>
-                <Example files={code('Heatmap.tsx')}>
-                    <Heatmap />
-                </Example>
-            </Section>
-
-            <Section anchor="ranges" title="Ranges">
-                <p>
-                    <Rich text="`rangeArea` and `rangeBar` draw from `lowField` to `highField`, and other series share the axis." />
-                </p>
-                <Example files={code('Ranges.tsx')}>
-                    <Ranges />
-                </Example>
-            </Section>
-
-            <Section anchor="candles" title="Candles">
-                <p>
-                    <Rich text="`candlestick` and `ohlc` show four prices for each position: `openField`, `highField`, `lowField` and `closeField`. Rising and falling take the design language's colors for good and bad, and a rising candle is hollow as well." />
-                </p>
-                <Example stack files={code('Candles.tsx')}>
-                    <Candles />
-                </Example>
-            </Section>
-
-            <Section anchor="waterfall" title="Waterfall">
-                <p>
-                    <Rich text="`waterfall` adds each change to the last one, and a row with `totalField` set shows the total so far. A thin line carries the total from one step to the next." />
-                </p>
-                <Example files={code('Waterfall.tsx')}>
-                    <Waterfall />
-                </Example>
-            </Section>
-
-            <Section anchor="time" title="Dates">
-                <p>
-                    <Rich text="Date values produce a time axis, with marks on round days and months in the language of the page. Long series are reduced to what the width can display, and their peaks are preserved." />
-                </p>
-                <Example files={code('TimeAxis.tsx')}>
-                    <TimeAxis />
-                </Example>
-            </Section>
-
-            <Section anchor="gaps" title="Missing values">
-                <p>
-                    <Rich text="A missing value breaks the line, because nothing was measured at that position. `gaps` connects across it or treats it as zero, and `step` draws a stepped line." />
-                </p>
-                <Example files={code('Gaps.tsx')}>
-                    <Gaps />
-                </Example>
-            </Section>
-
-            <Section anchor="live" title="Reactive data">
-                <p>
-                    <Rich text="A function prop follows reactive data. For plain data, call `reState()`, or `refresh()` after an in-place change." />
-                </p>
-                <Example stack files={code('Live.tsx')}>
-                    <Live />
-                </Example>
-            </Section>
-
-            <Section anchor="zoom" title="Zooming into large data">
-                <p>
-                    <Rich text="`zoom` lets the reader drag across the plot to zoom in, use Ctrl and the wheel to zoom around the pointer, Shift and the wheel to move along, and + and - with the keyboard. A button in the title row shows all of it again, and the value axis fits what is in view. `zoomTo()` and `resetZoom()` do the same programmatically." />
-                </p>
-                <Example stack files={code('Zoom.tsx')}>
-                    <Zoom />
-                </Example>
-            </Section>
-
-            <Section anchor="streaming" title="Live data">
-                <p>
-                    <Rich text="`span` on the position axis shows only the latest stretch: a time in milliseconds, a number, or a count of categories. When the values change, the marks move from where they were, over the design language's motion." />
-                </p>
-                <Example stack files={code('Streaming.tsx')}>
-                    <Streaming />
-                </Example>
-            </Section>
-
-            <Section anchor="references" title="Reference lines and bands">
-                <p>
-                    <Rich text="`references` draws a line at a value or a position, or a band between two, with an optional label." />
-                </p>
-                <Example files={code('References.tsx', 'sales.ts')}>
-                    <References />
-                </Example>
-            </Section>
-
-            <Section anchor="selection" title="Choosing values">
-                <p>
-                    <Rich text="`pointSelection` lets a click or Enter choose one value or several. `onSelectionChanged` gives the values chosen, `selectedPoints` reads them and `clearSelection()` lets them go." />
-                </p>
-                <Example stack files={code('Selection.tsx', 'sales.ts')}>
-                    <Selection />
-                </Example>
+                <ApiTable head={['Page', 'Types', 'Shows']} rows={KINDS} />
+                <ApiTable head={['Page', 'For']} rows={WORK} />
             </Section>
 
             <Section anchor="source" title="Data sources">

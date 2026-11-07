@@ -1,0 +1,74 @@
+/* Sparkline: an inline box the size of a word, its SVG taking its measures, and a small value above it under the pointer.
+   `--_mark` is its color, `--_surface` the background behind it, written when it draws. */
+@layer mx.components {
+    .mx-sparkline {
+        --_height: var(--_sparkline-height);
+        --_mark: var(--_sparkline-color);
+
+        position: relative;
+        display: inline-block;
+        box-sizing: border-box;
+        inline-size: var(--_sparkline-width);
+        block-size: var(--_height);
+        vertical-align: middle;
+    }
+
+    .mx-sparkline__svg {
+        position: absolute;
+        inset: 0;
+        display: block;
+        overflow: visible;
+    }
+
+    .mx-sparkline__line {
+        fill: none;
+        stroke: var(--_mark);
+        stroke-width: var(--_sparkline-line-width);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .mx-sparkline__area {
+        fill: var(--_mark);
+        fill-opacity: var(--_sparkline-area-opacity);
+    }
+
+    .mx-sparkline[data-type='bar'] .mx-sparkline__area {
+        fill-opacity: 1;
+    }
+
+    .mx-sparkline__rise {
+        fill: var(--_sparkline-rise);
+    }
+
+    .mx-sparkline__fall {
+        fill: var(--_sparkline-fall);
+    }
+
+    .mx-sparkline__dot,
+    .mx-sparkline__active {
+        fill: var(--_mark);
+        stroke: var(--_surface);
+        stroke-width: var(--_sparkline-marker-ring);
+        paint-order: stroke;
+    }
+
+    .mx-sparkline__reference {
+        fill: none;
+        stroke: currentcolor;
+        stroke-width: var(--_sparkline-reference-width);
+        stroke-dasharray: 2 2;
+        shape-rendering: crispedges;
+    }
+
+    .mx-sparkline__tip {
+        position: absolute;
+        inset-block-end: 100%;
+        z-index: var(--_over);
+        translate: -50% 0;
+        white-space: nowrap;
+        pointer-events: none;
+
+        --_over: 2;
+    }
+}

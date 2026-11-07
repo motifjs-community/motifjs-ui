@@ -1,0 +1,96 @@
+{
+  "bar-gauge": {
+    "$description": "BarGauge: several values as bars bent round one middle.",
+    "$selector": ".mx-bar-gauge",
+    "size": {
+      "$type": "dimension",
+      "$description": "The width of the bars' whole circle."
+    },
+    "thickness": {
+      "$type": "dimension",
+      "$description": "How thick a bar is, at most; many bars are thinner."
+    },
+    "gap": {
+      "$type": "dimension",
+      "$description": "The room between two bars."
+    },
+    "indent": {
+      "$type": "dimension",
+      "$description": "How far out of the bars the values are written."
+    },
+    "spacing": {
+      "$type": "dimension",
+      "$description": "The room between a line and its value, and between the entries of the legend."
+    },
+    "connector-width": {
+      "$type": "dimension",
+      "$description": "How thick the line from a bar to its value is."
+    },
+    "swatch": {
+      "$type": "dimension",
+      "$description": "The size of a bar's color in the legend."
+    },
+    "swatch-radius": {
+      "$type": "dimension",
+      "$description": "How round a bar's color in the legend is."
+    },
+    "series-1": {
+      "$type": "color",
+      "$description": "Color 1 of the bars."
+    },
+    "series-2": {
+      "$type": "color",
+      "$description": "Color 2 of the bars."
+    },
+    "series-3": {
+      "$type": "color",
+      "$description": "Color 3 of the bars."
+    },
+    "series-4": {
+      "$type": "color",
+      "$description": "Color 4 of the bars."
+    },
+    "series-5": {
+      "$type": "color",
+      "$description": "Color 5 of the bars."
+    },
+    "series-6": {
+      "$type": "color",
+      "$description": "Color 6 of the bars."
+    },
+    "series-7": {
+      "$type": "color",
+      "$description": "Color 7 of the bars."
+    },
+    "series-8": {
+      "$type": "color",
+      "$description": "Color 8 of the bars."
+    },
+    "$units": {
+      "root": {
+        "$description": "The bar gauge as a whole.",
+        "selector": ".mx-bar-gauge"
+      },
+      "track": {
+        "$description": "The track behind a bar: `color` paints it.",
+        "selector": ".mx-bar-gauge__track"
+      },
+      "labels": {
+        "$description": "The values at the ends of the bars.",
+        "selector": ".mx-bar-gauge__labels, .mx-bar-gauge__probe"
+      },
+      "connector": {
+        "$description": "The line from a bar to its value: `color` paints it.",
+        "selector": ".mx-bar-gauge__connectors"
+      },
+      "legend": {
+        "$description": "The legend under the bars.",
+        "selector": ".mx-bar-gauge__legend"
+      },
+      "tip": {
+        "$description": "The bar under the pointer.",
+        "selector": ".mx-bar-gauge__tip"
+      }
+    }
+  }
+}

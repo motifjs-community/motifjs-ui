@@ -1,0 +1,11 @@
+{
+  "Lines and areas show how values change along an axis: over time, or from one category to the next.": "Çizgiler ve alanlar değerlerin bir eksen boyunca nasıl değiştiğini gösterir: zaman içinde ya da bir kategoriden diğerine.",
+  "Lines": "Çizgiler",
+  "A line is the default series type. `smooth` curves the line without adding a peak that is not in the data, and `labels` shows selected values on the chart. Point to a position to read every series at that position.": "Çizgi varsayılan seri türüdür. `smooth` çizgiyi veride olmayan bir tepe eklemeden yumuşatır, `labels` seçilen değerleri grafikte gösterir. Bir konumun üzerine gelindiğinde oradaki tüm seriler okunur.",
+  "Areas": "Alanlar",
+  "`stacked` adds the areas together, so that the top line shows the total.": "`stacked` alanları toplar, böylece en üstteki çizgi toplamı gösterir.",
+  "Dates": "Tarihler",
+  "Date values produce a time axis, with marks on round days and months in the language of the page. Long series are reduced to what the width can display, and their peaks are preserved.": "Tarih değerleri, işaretleri sayfanın dilinde yuvarlak gün ve aylara denk gelen bir zaman ekseni oluşturur. Uzun seriler genişliğin gösterebileceği kadar seyreltilir ve tepeleri korunur.",
+  "Missing values": "Eksik değerler",
+  "A missing value breaks the line, because nothing was measured at that position. `gaps` connects across it or treats it as zero, and `step` draws a stepped line.": "Eksik değer çizgiyi keser, çünkü o konumda ölçüm yoktur. `gaps` üzerinden geçerek birleştirir ya da sıfır sayar, `step` basamaklı çizgi çizer."
+}

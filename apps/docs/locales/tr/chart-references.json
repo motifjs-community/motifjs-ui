@@ -1,0 +1,7 @@
+{
+  "Reference lines and bands give the values a target, a limit or a period, and the reader can choose values to act on.": "Referans çizgileri ve bantları değerlere bir hedef, bir sınır ya da bir dönem verir; okuyucu üzerinde işlem yapacağı değerleri seçebilir.",
+  "Reference lines and bands": "Referans çizgileri ve bantları",
+  "`references` draws a line at a value or a position, or a band between two, with an optional label.": "`references` bir değerde ya da konumda bir çizgi veya ikisi arasında bir bant çizer; isteğe bağlı bir etiket alabilir.",
+  "Choosing values": "Değer seçme",
+  "`pointSelection` lets a click or Enter choose one value or several. `onSelectionChanged` gives the values chosen, `selectedPoints` reads them and `clearSelection()` lets them go.": "`pointSelection` tıklamayla veya Enter ile bir ya da birden çok değer seçilmesini sağlar. `onSelectionChanged` seçilen değerleri verir, `selectedPoints` onları okur, `clearSelection()` seçimi kaldırır."
+}

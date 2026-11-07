@@ -516,6 +516,46 @@
     padding-inline-start: var(--_badge-badge-dot-padding-inline, var(--_padding));
   }
 
+  .mx-bar-gauge {
+    gap: var(--_bar-gauge-root-gap, normal);
+    color: var(--_bar-gauge-root-color, inherit);
+  }
+
+  .mx-bar-gauge__track {
+    color: var(--_bar-gauge-track-color, inherit);
+  }
+
+  .mx-bar-gauge__labels, .mx-bar-gauge__probe {
+    color: var(--_bar-gauge-labels-color, inherit);
+    font-size: var(--_bar-gauge-labels-font-size, inherit);
+    line-height: var(--_bar-gauge-labels-line-height, inherit);
+  }
+
+  .mx-bar-gauge__connectors {
+    color: var(--_bar-gauge-connector-color, inherit);
+  }
+
+  .mx-bar-gauge__legend {
+    color: var(--_bar-gauge-legend-color, inherit);
+    font-size: var(--_bar-gauge-legend-font-size, inherit);
+    line-height: var(--_bar-gauge-legend-line-height, inherit);
+  }
+
+  .mx-bar-gauge__tip {
+    margin-block-end: var(--_bar-gauge-tip-margin-bottom, 0px);
+    padding-inline-end: var(--_bar-gauge-tip-padding-inline, 0px);
+    padding-inline-start: var(--_bar-gauge-tip-padding-inline, 0px);
+    background-color: var(--_bar-gauge-tip-bg, transparent);
+    border-start-start-radius: var(--_bar-gauge-tip-radius, 0px);
+    border-start-end-radius: var(--_bar-gauge-tip-radius, 0px);
+    border-end-start-radius: var(--_bar-gauge-tip-radius, 0px);
+    border-end-end-radius: var(--_bar-gauge-tip-radius, 0px);
+    box-shadow: var(--_bar-gauge-tip-shadow, none);
+    color: var(--_bar-gauge-tip-color, inherit);
+    font-size: var(--_bar-gauge-tip-font-size, inherit);
+    line-height: var(--_bar-gauge-tip-line-height, inherit);
+  }
+
   .mx-barcode {
     padding-block-start: var(--_barcode-sheet-padding-block, 0px);
     padding-block-end: var(--_barcode-sheet-padding-block, 0px);
@@ -1634,43 +1674,6 @@
     border-start-end-radius: var(--_chart-legend-key-radius, 0px);
     border-end-start-radius: var(--_chart-legend-key-radius, 0px);
     border-end-end-radius: var(--_chart-legend-key-radius, 0px);
-  }
-
-  .mx-chart__table {
-    border-start-start-radius: var(--_chart-table-radius, 0px);
-    border-start-end-radius: var(--_chart-table-radius, 0px);
-    border-end-start-radius: var(--_chart-table-radius, 0px);
-    border-end-end-radius: var(--_chart-table-radius, 0px);
-    font-size: var(--_chart-table-font-size, inherit);
-  }
-
-  .mx-chart__table th {
-    padding-block-start: var(--_chart-table-head-padding-block, 0px);
-    padding-inline-end: var(--_chart-table-head-padding-inline, 0px);
-    padding-block-end: var(--_chart-table-head-padding-block, 0px);
-    padding-inline-start: var(--_chart-table-head-padding-inline, 0px);
-    border-style: solid;
-    border-block-start-width: 0px;
-    border-inline-end-width: 0px;
-    border-block-end-width: var(--_chart-table-head-border-bottom-width, 0px);
-    border-inline-start-width: 0px;
-    border-block-end-color: var(--_chart-table-head-border-bottom-color, currentcolor);
-    color: var(--_chart-table-head-color, inherit);
-    font-weight: var(--_chart-table-head-font-weight, inherit);
-  }
-
-  .mx-chart__table td {
-    padding-block-start: var(--_chart-table-cell-padding-block, 0px);
-    padding-inline-end: var(--_chart-table-cell-padding-inline, 0px);
-    padding-block-end: var(--_chart-table-cell-padding-block, 0px);
-    padding-inline-start: var(--_chart-table-cell-padding-inline, 0px);
-    border-style: solid;
-    border-block-start-width: 0px;
-    border-inline-end-width: 0px;
-    border-block-end-width: var(--_chart-table-cell-border-bottom-width, 0px);
-    border-inline-start-width: 0px;
-    border-block-end-color: var(--_chart-table-cell-border-bottom-color, currentcolor);
-    color: var(--_chart-table-cell-color, inherit);
   }
 
   .mx-chart__center-value {
@@ -4619,6 +4622,68 @@
     --_icon: var(--_gallery-play-glyph-playing-icon, var(--_gallery-play-glyph-icon, none));
   }
 
+  .mx-gauge {
+    gap: var(--_gauge-root-gap, normal);
+    color: var(--_gauge-root-color, inherit);
+  }
+
+  .mx-gauge__track {
+    color: var(--_gauge-track-color, inherit);
+  }
+
+  .mx-gauge__needle {
+    color: var(--_gauge-needle-color, inherit);
+  }
+
+  .mx-gauge__value {
+    color: var(--_gauge-value-color, inherit);
+    font-size: var(--_gauge-value-font-size, inherit);
+    font-weight: var(--_gauge-value-font-weight, inherit);
+    line-height: var(--_gauge-value-line-height, inherit);
+  }
+
+  .mx-gauge__label {
+    color: var(--_gauge-label-color, inherit);
+    font-size: var(--_gauge-label-font-size, inherit);
+    line-height: var(--_gauge-label-line-height, inherit);
+  }
+
+  .mx-gauge__scale, .mx-gauge__probe {
+    color: var(--_gauge-scale-color, inherit);
+    font-size: var(--_gauge-scale-font-size, inherit);
+    line-height: var(--_gauge-scale-line-height, inherit);
+  }
+
+  .mx-gauge__ticks, .mx-gauge__minor {
+    color: var(--_gauge-tick-color, inherit);
+  }
+
+  .mx-gauge__mark {
+    color: var(--_gauge-mark-color, inherit);
+  }
+
+  .mx-gauge__callout {
+    background-color: var(--_gauge-callout-bg, transparent);
+    color: var(--_gauge-callout-color, inherit);
+    font-size: var(--_gauge-callout-font-size, inherit);
+    line-height: var(--_gauge-callout-line-height, inherit);
+  }
+
+  .mx-gauge__tip {
+    margin-block-end: var(--_gauge-tip-margin-bottom, 0px);
+    padding-inline-end: var(--_gauge-tip-padding-inline, 0px);
+    padding-inline-start: var(--_gauge-tip-padding-inline, 0px);
+    background-color: var(--_gauge-tip-bg, transparent);
+    border-start-start-radius: var(--_gauge-tip-radius, 0px);
+    border-start-end-radius: var(--_gauge-tip-radius, 0px);
+    border-end-start-radius: var(--_gauge-tip-radius, 0px);
+    border-end-end-radius: var(--_gauge-tip-radius, 0px);
+    box-shadow: var(--_gauge-tip-shadow, none);
+    color: var(--_gauge-tip-color, inherit);
+    font-size: var(--_gauge-tip-font-size, inherit);
+    line-height: var(--_gauge-tip-line-height, inherit);
+  }
+
   :where(.mx-glyph) {
     inline-size: var(--_glyph-size);
     block-size: var(--_glyph-size);
@@ -7460,6 +7525,25 @@
     border-end-end-radius: var(--_sortable-ghost-radius, 0px);
     box-shadow: var(--_sortable-ghost-shadow, none);
     opacity: var(--_sortable-ghost-opacity, 1);
+  }
+
+  .mx-sparkline {
+    color: var(--_sparkline-root-color, inherit);
+  }
+
+  .mx-sparkline__tip {
+    margin-block-end: var(--_sparkline-tip-margin-bottom, 0px);
+    padding-inline-end: var(--_sparkline-tip-padding-inline, 0px);
+    padding-inline-start: var(--_sparkline-tip-padding-inline, 0px);
+    background-color: var(--_sparkline-tip-bg, transparent);
+    border-start-start-radius: var(--_sparkline-tip-radius, 0px);
+    border-start-end-radius: var(--_sparkline-tip-radius, 0px);
+    border-end-start-radius: var(--_sparkline-tip-radius, 0px);
+    border-end-end-radius: var(--_sparkline-tip-radius, 0px);
+    box-shadow: var(--_sparkline-tip-shadow, none);
+    color: var(--_sparkline-tip-color, inherit);
+    font-size: var(--_sparkline-tip-font-size, inherit);
+    line-height: var(--_sparkline-tip-line-height, inherit);
   }
 
   .mx-speed-dial__main {

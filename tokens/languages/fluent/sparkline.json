@@ -1,0 +1,92 @@
+{
+  "sparkline": {
+    "width": {
+      "$value": {
+        "value": 96,
+        "unit": "px"
+      }
+    },
+    "height": {
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      }
+    },
+    "color": {
+      "$value": "{color.chart.series-1}"
+    },
+    "rise": {
+      "$value": "{color.success.fg}"
+    },
+    "fall": {
+      "$value": "{color.danger.fg}"
+    },
+    "line-width": {
+      "$value": {
+        "value": 1.5,
+        "unit": "px"
+      }
+    },
+    "area-opacity": {
+      "$value": 0.16
+    },
+    "bar-gap": {
+      "$value": {
+        "value": 1,
+        "unit": "px"
+      }
+    },
+    "bar-radius": {
+      "$value": {
+        "value": 1,
+        "unit": "px"
+      }
+    },
+    "marker-size": {
+      "$value": {
+        "value": 6,
+        "unit": "px"
+      }
+    },
+    "marker-ring": {
+      "$value": {
+        "value": 1.5,
+        "unit": "px"
+      }
+    },
+    "reference-width": {
+      "$value": "{border.width.1}"
+    },
+    "root": {
+      "color": {
+        "$value": "{color.fg.tertiary}"
+      }
+    },
+    "tip": {
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "bg": {
+        "$value": "{color.bg.surface}"
+      },
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "padding-inline": {
+        "$value": "{space.1}"
+      },
+      "radius": {
+        "$value": "{radius.xs}"
+      },
+      "shadow": {
+        "$value": "{elevation.tooltip}"
+      },
+      "margin-bottom": {
+        "$value": "{space.1}"
+      }
+    }
+  }
+}

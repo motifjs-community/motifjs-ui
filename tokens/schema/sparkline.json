@@ -1,0 +1,64 @@
+{
+  "sparkline": {
+    "$description": "Sparkline: a chart the size of a word, in a line of text or a row of a table.",
+    "$selector": ".mx-sparkline",
+    "width": {
+      "$type": "dimension",
+      "$description": "The width."
+    },
+    "height": {
+      "$type": "dimension",
+      "$description": "The height."
+    },
+    "color": {
+      "$type": "color",
+      "$description": "The line, the area and the bars."
+    },
+    "rise": {
+      "$type": "color",
+      "$description": "A win, as a bar up."
+    },
+    "fall": {
+      "$type": "color",
+      "$description": "A loss, as a bar down."
+    },
+    "line-width": {
+      "$type": "dimension",
+      "$description": "The width of the line."
+    },
+    "area-opacity": {
+      "$type": "number",
+      "$description": "How strong the fill under the line is."
+    },
+    "bar-gap": {
+      "$type": "dimension",
+      "$description": "The gap between bars."
+    },
+    "bar-radius": {
+      "$type": "dimension",
+      "$description": "The corners at the end of a bar."
+    },
+    "marker-size": {
+      "$type": "dimension",
+      "$description": "The size of a dot on a marked value."
+    },
+    "marker-ring": {
+      "$type": "dimension",
+      "$description": "The ring in the color behind it."
+    },
+    "reference-width": {
+      "$type": "dimension",
+      "$description": "The width of the reference line."
+    },
+    "$units": {
+      "root": {
+        "$description": "The sparkline: `color` paints its reference line.",
+        "selector": ".mx-sparkline"
+      },
+      "tip": {
+        "$description": "The value under the pointer.",
+        "selector": ".mx-sparkline__tip"
+      }
+    }
+  }
+}

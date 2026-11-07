@@ -1,7 +1,7 @@
 import { nextId } from '../../core/next-id';
 import { areaPath, barPath, circlesPath, linePath, roundRectPath, smoothPath, stepPath, type Place } from '../../parts/chart/chart-paths';
 import { bandScale, linearScale, logScale, type ChartScale } from '../../parts/chart/chart-scale';
-import { formatNumber, textWidth } from '../../parts/chart/chart-text';
+import { formatNumber, motionOf, textWidth } from '../../parts/chart/chart-text';
 import { logTicks, niceTicks } from '../../parts/chart/nice-ticks';
 import { svgPart, svgPut, TextPool } from '../../parts/chart/svg-parts';
 import { thinOut } from '../../parts/chart/thin-out';
@@ -83,6 +83,8 @@ export class ChartPlot implements PlotView {
     refLabels: TextPool;
     selectedMarks: SVGPathElement;
     brush: SVGPathElement;
+    /** The model of the last drawing: where a change moves its values from. The chart may hand over the next one early, for its texts. */
+    drawn: ChartModel | null = null;
     scales: { position: ChartScale & { size?: number }; value: ChartScale; measure: (text: string) => number } | null = null;
     frame = 0;
 
@@ -138,7 +140,7 @@ export class ChartPlot implements PlotView {
     }
 
     draw(input: PlotInput): void {
-        const before = input.animate && this.input ? this.snapshot() : null;
+        const before = input.animate && this.drawn ? this.snapshot(this.drawn) : null;
         if (this.frame) cancelAnimationFrame(this.frame);
         this.frame = 0;
         this.input = input;
@@ -206,6 +208,7 @@ export class ChartPlot implements PlotView {
         this.heatClasses = heat ? this.classesOf(model) : [];
         const positionScale = this.positionScale(box);
         this.placePoints(positionScale, valueScale);
+        this.drawn = model;
         this.scales = { position: positionScale, value: valueScale, measure };
 
         this.drawGrid(value, valueScale, positions, positionScale);
@@ -219,9 +222,9 @@ export class ChartPlot implements PlotView {
     }
 
     /** Where each value of the drawing now is. */
-    snapshot(): Map<string, Was> {
+    snapshot(model: ChartModel): Map<string, Was> {
         const was = new Map<string, Was>();
-        for (const s of this.input!.model.series) {
+        for (const s of model.series) {
             if (!s.shown) continue;
             for (const p of s.points) if (p.y !== null) was.set(keyOf(p), { px: p.px, py: p.py, rect: this.bars.get(p) });
         }
@@ -240,7 +243,7 @@ export class ChartPlot implements PlotView {
             }
         }
         const view = this.svg.ownerDocument.defaultView;
-        const duration = parseFloat(view?.getComputedStyle(this.svg).getPropertyValue('--mx-motion-duration-normal') ?? '') || 0;
+        const duration = motionOf(this.svg, '--mx-motion-duration-normal');
         if (!moves.length || moves.length > MOST_TWEENED || duration <= 0 || !view?.requestAnimationFrame) return false;
         const mix = (a: number, b: number, t: number) => a + (b - a) * t;
         const start = view.performance.now();

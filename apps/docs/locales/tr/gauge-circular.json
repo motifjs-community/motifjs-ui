@@ -1,0 +1,11 @@
+{
+  "A circular gauge shows its value on an arc or a whole circle, with the value written in the middle. It reads best for one value whose scale the reader knows, such as a speed or a share.": "Dairesel gösterge değerini bir yay ya da tam daire üzerinde, değeri ortaya yazarak gösterir. Hız ya da pay gibi ölçeğini okuyucunun bildiği tek bir değer için en iyi okunur.",
+  "Arc and circle": "Yay ve daire",
+  "`type` draws an open arc, `'arc'`, or a whole circle, `'circle'`. `angle` sets how far an arc goes round: 240 degrees by default, open at the bottom.": "`type` açık bir yay (`'arc'`) ya da tam bir daire (`'circle'`) çizer. `angle` yayın ne kadar döneceğini belirler: varsayılan 240 derece, alttan açık.",
+  "Half and quarter": "Yarım ve çeyrek",
+  "`angle` of 180 draws a half and 90 a quarter; `rotation` turns the arc, here to each corner. A quarter has little room inside, so its value is better left out with `showValue`.": "`angle` 180 olduğunda yarım, 90 olduğunda çeyrek çizer; `rotation` yayı çevirir, burada her köşeye. Çeyreğin içinde az yer olduğundan değeri `showValue` ile gizlemek daha iyidir.",
+  "Size": "Boyut",
+  "`size` sets the width of the arc's whole circle, with its ranges. Ticks, their values and marks go around it, so a scale never makes the arc smaller.": "`size` yayın aralıklarıyla birlikte tam dairesinin genişliğini belirler. Ölçek çizgileri, değerleri ve işaretler çevresine yerleşir; böylece ölçek yayı hiçbir zaman küçültmez.",
+  "Value and label": "Değer ve etiket",
+  "The value is written in the middle with `format`, and `label` under it. `showValue` leaves the value out. With a needle, the value moves under the arc to keep the middle clear.": "Değer ortaya `format` ile, `label` da altına yazılır. `showValue` değeri gizler. İbre olduğunda orta boş kalsın diye değer yayın altına geçer."
+}

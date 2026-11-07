@@ -458,6 +458,17 @@ export interface UiStrings {
   chartShowTable: string;
   chartShowChart: string;
   chartResetZoom: string;
+  chartTime: string;
+  /** Sparkline and Gauge: their names and what a screen reader hears. */
+  sparklineName: string;
+  sparklineSummary: string;
+  gaugeName: string;
+  gaugeValueIn: string;
+  gaugeMark: string;
+  gaugeMarkAt: string;
+  barGaugeName: string;
+  barGaugeBar: string;
+  barGaugeSummary: string;
   chartShare: string;
   chartRange: string;
   chartPrices: string;

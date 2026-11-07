@@ -1,0 +1,136 @@
+{
+  "bar-gauge": {
+    "size": {
+      "$value": {
+        "value": 200,
+        "unit": "px"
+      }
+    },
+    "thickness": {
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      }
+    },
+    "gap": {
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      }
+    },
+    "indent": {
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      }
+    },
+    "spacing": {
+      "$value": "{space.1}"
+    },
+    "connector-width": {
+      "$value": {
+        "value": 1,
+        "unit": "px"
+      }
+    },
+    "swatch": {
+      "$value": {
+        "value": 10,
+        "unit": "px"
+      }
+    },
+    "swatch-radius": {
+      "$value": "{radius.xs}"
+    },
+    "series-1": {
+      "$value": "{color.chart.series-1}"
+    },
+    "series-2": {
+      "$value": "{color.chart.series-2}"
+    },
+    "series-3": {
+      "$value": "{color.chart.series-3}"
+    },
+    "series-4": {
+      "$value": "{color.chart.series-4}"
+    },
+    "series-5": {
+      "$value": "{color.chart.series-5}"
+    },
+    "series-6": {
+      "$value": "{color.chart.series-6}"
+    },
+    "series-7": {
+      "$value": "{color.chart.series-7}"
+    },
+    "series-8": {
+      "$value": "{color.chart.series-8}"
+    },
+    "root": {
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "gap": {
+        "$value": "{space.2}"
+      }
+    },
+    "track": {
+      "color": {
+        "$value": "{color.fill.control.secondary}"
+      }
+    },
+    "labels": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      }
+    },
+    "connector": {
+      "color": {
+        "$value": "{color.fg.tertiary}"
+      }
+    },
+    "legend": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      }
+    },
+    "tip": {
+      "color": {
+        "$value": "{color.fg.primary}"
+      },
+      "bg": {
+        "$value": "{color.bg.surface}"
+      },
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "line-height": {
+        "$value": "{font.line.caption}"
+      },
+      "padding-inline": {
+        "$value": "{space.1}"
+      },
+      "radius": {
+        "$value": "{radius.xs}"
+      },
+      "shadow": {
+        "$value": "{elevation.tooltip}"
+      },
+      "margin-bottom": {
+        "$value": "{space.1}"
+      }
+    }
+  }
+}

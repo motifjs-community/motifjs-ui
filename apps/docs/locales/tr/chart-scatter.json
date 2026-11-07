@@ -1,0 +1,5 @@
+{
+  "Scatter and bubble charts place each row by two numbers, to show how they relate.": "Dağılım ve kabarcık grafikleri her satırı iki sayıya göre yerleştirerek aralarındaki ilişkiyi gösterir.",
+  "Scatter and bubble charts": "Dağılım ve kabarcık grafikleri",
+  "`scatter` and `bubble` plot two numeric values. `sizeField` adds a third value to a bubble, represented by its area. The pointer selects the nearest point.": "`scatter` ve `bubble` iki sayısal değeri çizer. `sizeField` kabarcığa alanıyla gösterilen üçüncü bir değer ekler. İşaretçi en yakın noktayı seçer."
+}

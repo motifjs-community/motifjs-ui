@@ -378,51 +378,6 @@
         "$value": "{radius.full}"
       }
     },
-    "table": {
-      "radius": {
-        "$value": "{radius.sm}"
-      },
-      "font-size": {
-        "$value": "{font.size.caption}"
-      }
-    },
-    "table-head": {
-      "color": {
-        "$value": "{color.fg.secondary}"
-      },
-      "font-weight": {
-        "$value": "{font.weight.medium}"
-      },
-      "padding-block": {
-        "$value": "{space.2}"
-      },
-      "padding-inline": {
-        "$value": "{space.3}"
-      },
-      "border-bottom-width": {
-        "$value": "{border.width.1}"
-      },
-      "border-bottom-color": {
-        "$value": "{color.stroke.divider}"
-      }
-    },
-    "table-cell": {
-      "color": {
-        "$value": "{color.fg.primary}"
-      },
-      "padding-block": {
-        "$value": "{space.2}"
-      },
-      "padding-inline": {
-        "$value": "{space.3}"
-      },
-      "border-bottom-width": {
-        "$value": "{border.width.1}"
-      },
-      "border-bottom-color": {
-        "$value": "{color.stroke.divider}"
-      }
-    },
     "rise": {
       "$value": "{color.success.fg}"
     },

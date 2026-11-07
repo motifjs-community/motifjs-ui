@@ -1,0 +1,144 @@
+/* Gauge: an arc or a circle with the value in its middle and the label under it, or a straight bar, across with the label
+   and the value above it, or upright with the label above and the value under it. `--_tone` is the color of the value's
+   range; `--_center-x` and `--_center-y` are the middle of an arc in the drawing. */
+@layer mx.components {
+    .mx-gauge {
+        --_size: var(--_gauge-size);
+
+        position: relative;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        box-sizing: border-box;
+        inline-size: var(--_drawn-width, var(--_size));
+        max-inline-size: 100%;
+    }
+
+    .mx-gauge__svg {
+        display: block;
+        overflow: visible;
+    }
+
+    .mx-gauge__track,
+    .mx-gauge__needle,
+    .mx-gauge__ticks,
+    .mx-gauge__minor,
+    .mx-gauge__scale,
+    .mx-gauge__mark path,
+    .mx-gauge__callout text {
+        fill: currentcolor;
+    }
+
+    .mx-gauge__fill,
+    .mx-gauge__marker,
+    .mx-gauge__needle-tip {
+        fill: var(--_tone);
+    }
+
+    .mx-gauge__band {
+        fill: var(--_band);
+    }
+
+    .mx-gauge__ticks,
+    .mx-gauge__minor {
+        stroke: currentcolor;
+        stroke-width: var(--_gauge-tick-width);
+    }
+
+    .mx-gauge__scale,
+    .mx-gauge__probe {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .mx-gauge__probe {
+        visibility: hidden;
+    }
+
+    .mx-gauge__callout path,
+    .mx-gauge__mark[data-shape='text'] path {
+        fill: var(--_gauge-callout-bg);
+        stroke: var(--_tone);
+        stroke-width: var(--_gauge-tick-width);
+    }
+
+    .mx-gauge__mark[data-shape='text'] path {
+        stroke: currentcolor;
+    }
+
+    .mx-gauge__callout text,
+    .mx-gauge__mark text {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .mx-gauge__mark text {
+        fill: var(--_gauge-callout-color);
+    }
+
+    .mx-gauge__value {
+        position: absolute;
+        inset-block-start: var(--_center-y);
+        left: var(--_center-x);
+        translate: -50% -50%;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .mx-gauge[data-needle] .mx-gauge__value {
+        position: static;
+        translate: none;
+    }
+
+    .mx-gauge__label {
+        text-align: center;
+    }
+
+    .mx-gauge__tip {
+        position: absolute;
+        z-index: var(--_over);
+        translate: -50% calc(-100% - var(--_gauge-spacing));
+        white-space: nowrap;
+        pointer-events: none;
+
+        --_over: 2;
+    }
+
+    .mx-gauge[data-orientation='horizontal'] {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            'label value'
+            'bar bar';
+        align-items: end;
+        inline-size: 100%;
+    }
+
+    .mx-gauge[data-orientation='horizontal'] .mx-gauge__svg {
+        grid-area: bar;
+        inline-size: 100%;
+    }
+
+    .mx-gauge[data-orientation='horizontal'] .mx-gauge__value {
+        grid-area: value;
+        position: static;
+        translate: none;
+    }
+
+    .mx-gauge[data-orientation='horizontal'] .mx-gauge__label {
+        grid-area: label;
+        text-align: start;
+    }
+
+    .mx-gauge[data-orientation='vertical'] {
+        inline-size: auto;
+    }
+
+    .mx-gauge[data-orientation='vertical'] .mx-gauge__label {
+        order: -1;
+        white-space: nowrap;
+    }
+
+    .mx-gauge[data-orientation='vertical'] .mx-gauge__value {
+        position: static;
+        translate: none;
+    }
+}

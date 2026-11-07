@@ -267,18 +267,6 @@
         "$description": "The key: `width`, `height` and `radius` for a bar or an area; a line takes the line's width.",
         "selector": ".mx-chart__legend-key"
       },
-      "table": {
-        "$description": "The table view.",
-        "selector": ".mx-chart__table"
-      },
-      "table-head": {
-        "$description": "A heading of the table view.",
-        "selector": ".mx-chart__table th"
-      },
-      "table-cell": {
-        "$description": "A value of the table view.",
-        "selector": ".mx-chart__table td"
-      },
       "center-value": {
         "$description": "The total in the middle of a donut.",
         "selector": ".mx-chart__center-value"

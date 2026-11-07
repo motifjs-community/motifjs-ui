@@ -66,7 +66,7 @@ describe('Chart, the parts of a whole', () => {
 
     it('lists the parts with their shares in the table', () => {
         const chart = make({ data: SHARES, xField: 'k', mode: 'table', series: [{ type: 'pie', yField: 'v', name: 'Visits' }] });
-        expect([...$$(chart, '.mx-chart__table tbody tr')[0].children].map(c => c.textContent)).toEqual(['Search', '50', '50%']);
+        expect(chart.tablePart.texts()[0]).toEqual(['Search', '50', '50%']);
     });
 
     it('stacks a funnel in the order of the rows, with what is left of the first stage', () => {
@@ -116,8 +116,7 @@ describe('Chart, more types on two axes', () => {
     it('lays a heat map out as a grid in the table', () => {
         const rows = [{ k: 'a', r: 'x', v: 1 }, { k: 'b', r: 'x', v: 2 }, { k: 'a', r: 'y', v: 3 }];
         const chart = make({ data: rows, xField: 'k', mode: 'table', series: [{ type: 'heatmap', yField: 'r', valueField: 'v' }] });
-        const body = $$(chart, '.mx-chart__table tbody tr').map(tr => [...tr.children].map(c => c.textContent));
-        expect(body).toEqual([['x', '1', '2'], ['y', '3', '']]);
+        expect(chart.tablePart.texts()).toEqual([['x', '1', '2'], ['y', '3', '']]);
     });
 
     it('draws rising candles apart from falling ones, and names the four prices', () => {
@@ -133,7 +132,7 @@ describe('Chart, more types on two axes', () => {
     it('draws a waterfall with its steps up and down, totals and the line between them', () => {
         const rows = [{ k: 'a', v: 10 }, { k: 'b', v: -4 }, { k: 'c', t: true }];
         const chart = make({ data: rows, xField: 'k', mode: 'table', series: [{ type: 'waterfall', yField: 'v', totalField: 't' }] });
-        expect($$(chart, '.mx-chart__table tbody td').map(c => c.textContent)).toEqual(['+10', '-4', '6']);
+        expect(chart.tablePart.texts().map(r => r[1])).toEqual(['+10', '-4', '6']);
         chart.mode = 'chart';
     });
 

@@ -4,6 +4,11 @@ export default async function ({ page, base, check, axeSource }) {
     await page.locator('.docs-article').waitFor();
     const lead = page.locator('.docs-article p.lead');
     const heading = page.locator('#circle');
+    const foundations = page.getByRole('button', { name: 'Foundations', exact: true });
+    if ((await foundations.getAttribute('aria-expanded')) !== 'true') await foundations.click();
+    // The menu remembers what is open, so the groups opened here in English stay open in Turkish.
+    const display = page.getByRole('button', { name: 'Display', exact: true });
+    if ((await display.getAttribute('aria-expanded')) !== 'true') await display.click();
     const sideLabel = page.locator('.docs-sidebar a[href="/keyboard"]');
     const english = await lead.textContent();
     check('English by default', english.startsWith('A floating action button') && (await heading.textContent()) === 'Circle layout');

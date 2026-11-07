@@ -17,6 +17,40 @@ const THEMES: { id: ThemeChoice; label: string }[] = [
   { id: 'high-contrast', label: 'High contrast' },
 ];
 
+
+const NAV_OPEN = 'mx-docs-nav-open';
+const NAV_SCROLL = 'mx-docs-nav-scroll';
+
+function stored(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function store(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Private mode: the menu still works, it only forgets.
+  }
+}
+
+/** The groups the reader left open; none on a first visit. */
+function readOpenGroups(): string[] {
+  try {
+    const list = JSON.parse(stored(NAV_OPEN) ?? '[]');
+    return Array.isArray(list) ? list.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveOpenGroups(open: readonly string[]): void {
+  store(NAV_OPEN, JSON.stringify(open));
+}
+
 /** The languages the kit ships a pack for. */
 const LANGUAGES: { id: string; label: string }[] = [
   { id: 'en', label: 'English' },
@@ -38,9 +72,10 @@ const READING_LINE = 140;
  */
 export class DocsLayout extends Component<HTMLDivElement> {
   private readonly nav = useNavigation();
-  private readonly state = reactive({ navOpen: false, filter: '', closed: [] as string[] });
+  private readonly state = reactive({ navOpen: false, filter: '', open: readOpenGroups() });
   private menuButton: Button | null = null;
   private main: Component<HTMLElement> | null = null;
+  private sidebar: HTMLElement | null = null;
 
   override onConfigured(): void {
     this.class.add('docs-shell');
@@ -58,6 +93,24 @@ export class DocsLayout extends Component<HTMLDivElement> {
   }
 
   override onMounted(): void {
+    // The menu comes back scrolled as the reader left it, once its open groups are drawn.
+    const sidebar = this.sidebar;
+    if (sidebar) {
+      requestAnimationFrame(() => (sidebar.scrollTop = Number(stored(NAV_SCROLL) ?? 0) || 0));
+      let queued = false;
+      sidebar.addEventListener(
+        'scroll',
+        () => {
+          if (queued) return;
+          queued = true;
+          requestAnimationFrame(() => {
+            queued = false;
+            store(NAV_SCROLL, String(Math.round(sidebar.scrollTop)));
+          });
+        },
+        { passive: true },
+      );
+    }
     const onScroll = () => this.followScroll();
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || !this.state.navOpen) return;
@@ -91,6 +144,12 @@ export class DocsLayout extends Component<HTMLDivElement> {
 
   private pageChanged(first: boolean): void {
     this.state.navOpen = false;
+    // The group of the page being read opens, so the menu shows where the reader is; it stays open until they close it.
+    const group = this.page?.group;
+    if (group && !this.state.open.includes(group)) {
+      this.state.open.push(group);
+      saveOpenGroups(this.state.open);
+    }
     // A new page is read from its top: focus goes there, as after a full page load.
     if (!first) this.main?.element.focus({ preventScroll: true });
     requestAnimationFrame(() => this.followScroll());
@@ -118,16 +177,17 @@ export class DocsLayout extends Component<HTMLDivElement> {
     return !filter || [page.label, page.title, group].some((text) => text.toLocaleLowerCase().includes(filter) || tx(text).toLocaleLowerCase().includes(filter));
   }
 
-  /** A group shows its pages unless closed; a filter shows every match. */
+  /** A group shows its pages once opened; a filter shows every match. */
   private groupOpen(title: string): boolean {
-    return !!this.state.filter.trim() || !this.state.closed.includes(title);
+    return !!this.state.filter.trim() || this.state.open.includes(title);
   }
 
   private toggleGroup(title: string): void {
-    const closed = this.state.closed;
-    const at = closed.indexOf(title);
-    if (at >= 0) closed.splice(at, 1);
-    else closed.push(title);
+    const open = this.state.open;
+    const at = open.indexOf(title);
+    if (at >= 0) open.splice(at, 1);
+    else open.push(title);
+    saveOpenGroups(open);
   }
 
   override view() {
@@ -194,7 +254,7 @@ export class DocsLayout extends Component<HTMLDivElement> {
         </header>
 
         <div class="docs-scrim" onclick={() => (s.navOpen = false)} />
-        <nav id="docs-sidebar" class="docs-sidebar" aria-label={() => tx('Documentation')}>
+        <nav id="docs-sidebar" class="docs-sidebar" aria-label={() => tx('Documentation')} ref={(c: Component<HTMLElement>) => (this.sidebar = c.element)}>
           <TextBox
             class="docs-filter"
             type="search"
