@@ -26,6 +26,18 @@ describe('chart model', () => {
         expect(model.categories).toEqual(['Jan', 'Feb', 'Mar']);
     });
 
+    it('takes the order of the categories from the chart rows when series bring rows of their own', () => {
+        const later = [{ month: 'Mar', v: 3 }, { month: 'Apr', v: 4 }];
+        const earlier = [{ month: 'Jan', v: 1 }, { month: 'Feb', v: 2 }, { month: 'Mar', v: 3 }];
+        const axis = ['Jan', 'Feb', 'Mar', 'Apr'].map(month => ({ month }));
+        const model = buildModel(input([{ data: later, yField: 'v' }, { data: earlier, yField: 'v' }], { rows: axis }));
+        expect(model.categories).toEqual(['Jan', 'Feb', 'Mar', 'Apr']);
+        expect(model.series[0].points.map(p => p.x)).toEqual([2, 3]);
+        expect(model.series[1].points.map(p => p.x)).toEqual([0, 1, 2]);
+        const alone = buildModel(input([{ data: later, yField: 'v' }, { data: earlier, yField: 'v' }], { rows: [] }));
+        expect(alone.categories).toEqual(['Mar', 'Apr', 'Jan', 'Feb']);
+    });
+
     it('reads a function as a field', () => {
         const model = buildModel(input([{ yField: row => row.a + row.b }]));
         expect(model.series[0].points[0].y).toBe(40);

@@ -612,10 +612,20 @@ export class ChartPlot implements PlotView {
                 const needed = angle ? line * 1.2 : widest + look.tickGap / 2;
                 const spacing = positions.length > 1 ? Math.abs(position.at(positions[1].value) - position.at(positions[0].value)) : box.width;
                 const every = Math.max(1, Math.ceil(needed / Math.max(1, spacing)));
+                let taken: [number, number] | null = null;
                 positions.forEach((t, i) => {
                     if (i % every) return;
                     const x = position.at(t.value);
-                    const label = this.xLabels.add(t.text, x, under, angle ? (angle < 0 ? 'end' : 'start') : 'middle');
+                    // A label that would run past an edge of the chart ends at its value instead of centering on it;
+                    // moved that way it can meet its neighbour, and then it is left out.
+                    const wide = measure(t.text);
+                    const anchor = angle ? (angle < 0 ? 'end' : 'start') : x + wide / 2 > this.input!.width ? 'end' : x - wide / 2 < 0 ? 'start' : 'middle';
+                    if (!angle) {
+                        const left = anchor === 'end' ? x - wide : anchor === 'start' ? x : x - wide / 2;
+                        if (taken && left < taken[1] + look.tickPad && left + wide > taken[0] - look.tickPad) return;
+                        taken = [left, left + wide];
+                    }
+                    const label = this.xLabels.add(t.text, x, under, anchor);
                     if (angle) label.setAttribute('transform', `rotate(${angle} ${Math.round(x)} ${Math.round(under)})`);
                 });
             }

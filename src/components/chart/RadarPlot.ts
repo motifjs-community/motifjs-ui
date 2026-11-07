@@ -36,7 +36,8 @@ export class RadarPlot implements PlotView {
         this.grid = svgPart(svg, 'path', 'mx-chart__grid');
         this.axis = svgPart(svg, 'path', 'mx-chart__axis');
         this.marks = svgPart(svg, 'g', 'mx-chart__marks');
-        this.ticks = new TextPool(svgPart(svg, 'g', 'mx-chart__ticks'));
+        // The ring values sit over the shapes: they get the halo of the value labels.
+        this.ticks = new TextPool(svgPart(svg, 'g', 'mx-chart__ticks mx-chart__ring-values'));
         this.names = new TextPool(svgPart(svg, 'g', 'mx-chart__ticks'));
         this.cross = svgPart(svg, 'path', 'mx-chart__crosshair');
         this.activeDots = svgPart(svg, 'path', 'mx-chart__active-dot');

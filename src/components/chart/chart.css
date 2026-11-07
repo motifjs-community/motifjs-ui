@@ -91,7 +91,8 @@
         font-variant-numeric: tabular-nums;
     }
 
-    .mx-chart__labels text {
+    .mx-chart__labels text,
+    .mx-chart__ring-values text {
         paint-order: stroke;
         stroke: var(--_surface);
         stroke-width: var(--_chart-marker-ring);

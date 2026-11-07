@@ -186,6 +186,8 @@ export function buildModel(input: ModelInput): ChartModel {
 
     const columns = placer();
     const lanes = placer();
+    // The chart's own rows set the order of the categories; series with rows of their own fit into it.
+    if (kind === 'category' && family !== 'parts' && xField !== null && xField !== undefined) for (const row of rows) columns.at(read(row, xField));
     const positionOf = (key: unknown, i: number): number => (kind === 'category' ? columns.at(key) : (numberOf(key) ?? i));
 
     const series: ModelSeries[] = shape.map(s => {
