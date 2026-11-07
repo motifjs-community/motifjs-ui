@@ -73,13 +73,13 @@
       "$value": "{color.accent.solid}"
     },
     "good": {
-      "$value": "{color.success.solid}"
+      "$value": "{color.chart.good}"
     },
     "warning": {
-      "$value": "{color.caution.solid}"
+      "$value": "{color.chart.warning}"
     },
     "danger": {
-      "$value": "{color.danger.solid}"
+      "$value": "{color.chart.danger}"
     },
     "root": {
       "color": {
@@ -91,7 +91,7 @@
     },
     "track": {
       "color": {
-        "$value": "{color.fill.control.secondary}"
+        "$value": "color-mix(in srgb, {color.stroke.control.strong} 60%, transparent)"
       }
     },
     "needle": {

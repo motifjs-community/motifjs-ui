@@ -76,7 +76,7 @@
     },
     "track": {
       "color": {
-        "$value": "{color.fill.control.secondary}"
+        "$value": "color-mix(in srgb, {color.stroke.control.strong} 60%, transparent)"
       }
     },
     "labels": {

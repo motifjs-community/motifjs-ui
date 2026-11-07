@@ -1544,6 +1544,7 @@
     --mx-bar-gauge-series-7: var(--mx-color-chart-series-7);
     --mx-bar-gauge-series-8: var(--mx-color-chart-series-8);
     --mx-bar-gauge-root-gap: var(--mx-space-2);
+    --mx-bar-gauge-track-color: color-mix(in srgb, var(--mx-color-stroke-control-strong) 60%, transparent);
     --mx-bar-gauge-labels-font-size: var(--mx-font-size-caption);
     --mx-bar-gauge-labels-line-height: var(--mx-font-line-caption);
     --mx-bar-gauge-legend-font-size: var(--mx-font-size-caption);
@@ -2242,7 +2243,11 @@
     --mx-gauge-series-6: var(--mx-color-chart-series-6);
     --mx-gauge-series-7: var(--mx-color-chart-series-7);
     --mx-gauge-series-8: var(--mx-color-chart-series-8);
+    --mx-gauge-good: var(--mx-color-chart-good);
+    --mx-gauge-warning: var(--mx-color-chart-warning);
+    --mx-gauge-danger: var(--mx-color-chart-danger);
     --mx-gauge-root-gap: var(--mx-space-1);
+    --mx-gauge-track-color: color-mix(in srgb, var(--mx-color-stroke-control-strong) 60%, transparent);
     --mx-gauge-value-font-size: var(--mx-font-size-title);
     --mx-gauge-value-font-weight: var(--mx-font-weight-semibold);
     --mx-gauge-value-line-height: var(--mx-font-line-title);
@@ -3405,7 +3410,6 @@
     --mx-badge-badge-outline-danger-color: var(--mx-color-danger-fg);
     --mx-badge-badge-outline-danger-border-color: var(--mx-color-danger-fg);
     --mx-bar-gauge-root-color: var(--mx-color-fg-primary);
-    --mx-bar-gauge-track-color: var(--mx-color-fill-control-secondary);
     --mx-bar-gauge-labels-color: var(--mx-color-fg-secondary);
     --mx-bar-gauge-connector-color: var(--mx-color-fg-tertiary);
     --mx-bar-gauge-legend-color: var(--mx-color-fg-secondary);
@@ -3872,11 +3876,7 @@
     --mx-gallery-play-focus-outline-color: var(--mx-focus-ring-color);
     --mx-gallery-play-glyph-bg: var(--mx-color-fg-primary);
     --mx-gauge-fill: var(--mx-color-accent-solid);
-    --mx-gauge-good: var(--mx-color-success-solid);
-    --mx-gauge-warning: var(--mx-color-caution-solid);
-    --mx-gauge-danger: var(--mx-color-danger-solid);
     --mx-gauge-root-color: var(--mx-color-fg-primary);
-    --mx-gauge-track-color: var(--mx-color-fill-control-secondary);
     --mx-gauge-needle-color: var(--mx-color-fg-primary);
     --mx-gauge-value-color: var(--mx-color-fg-primary);
     --mx-gauge-label-color: var(--mx-color-fg-secondary);

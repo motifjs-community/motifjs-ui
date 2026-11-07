@@ -72,15 +72,15 @@
     },
     "good": {
       "$type": "color",
-      "$description": "The fill in a range whose tone is good."
+      "$description": "The fill and band in a range whose tone is good: a chart status color, made to show on every background."
     },
     "warning": {
       "$type": "color",
-      "$description": "The fill in a range whose tone is warning."
+      "$description": "The fill and band in a range whose tone is warning: a chart status color, made to show on every background."
     },
     "danger": {
       "$type": "color",
-      "$description": "The fill in a range whose tone is danger."
+      "$description": "The fill and band in a range whose tone is danger: a chart status color, made to show on every background."
     },
     "$units": {
       "root": {

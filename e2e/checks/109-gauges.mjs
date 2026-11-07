@@ -218,10 +218,24 @@ export default async function ({ page, base, check, axeSource }) {
                     await document.fonts.ready;
                     await new Promise(resolve => setTimeout(resolve, 400));
                     const crowd = new Function(`return (${source})`)()('.mx-gauge, .mx-bar-gauge');
+                    // The track shows against the page: the scale must be seen, whatever the language and theme.
+                    const rgb = c => {
+                        const n = c.match(/[\d.]+/g).map(Number);
+                        return c.startsWith('color(') ? [n[0] * 255, n[1] * 255, n[2] * 255, n[3] ?? 1] : [n[0], n[1], n[2], n[3] ?? 1];
+                    };
+                    const lum = c => c.slice(0, 3).map(v => v / 255).map(v => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((t, v, i) => t + v * [0.2126, 0.7152, 0.0722][i], 0);
+                    const page = rgb(getComputedStyle(document.body).backgroundColor);
+                    const tracks = [...document.querySelectorAll('.mx-gauge__track, .mx-bar-gauge__track')].slice(0, 1).map(t => {
+                        const c = rgb(getComputedStyle(t).color);
+                        const seen = [0, 1, 2].map(i => c[i] * c[3] + page[i] * (1 - c[3]));
+                        const [a, b] = [lum(seen), lum(page)].sort((x, y) => y - x);
+                        return (a + 0.05) / (b + 0.05);
+                    });
+                    const faint = tracks.filter(ratio => ratio < 1.8).map(ratio => `track ${ratio.toFixed(2)}:1`);
                     const issues = (await window.axe.run('.docs-article', { rules: { 'color-contrast': { enabled: true } } })).violations.map(v => `${v.id}: ${v.nodes.length} ${v.nodes[0]?.target}`);
-                    return { crowd, issues };
+                    return { crowd: [...crowd, ...faint], issues };
                 }, { language, theme, source: crowding.toString() });
-                check(`${path} ${language} ${theme}: texts fit and axe is clean`, found.crowd.length === 0 && found.issues.length === 0, [...found.crowd.slice(0, 3), ...found.issues].join('; '));
+                check(`${path} ${language} ${theme}: texts fit, the track shows and axe is clean`, found.crowd.length === 0 && found.issues.length === 0, [...found.crowd.slice(0, 3), ...found.issues].join('; '));
             }
         }
         await page.evaluate(() => {

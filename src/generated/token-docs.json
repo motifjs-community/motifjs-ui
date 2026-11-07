@@ -1858,8 +1858,8 @@
     "name": "bar-gauge.track.color",
     "cssVar": "--mx-bar-gauge-track-color",
     "type": "color",
-    "ref": "color.fill.control.secondary",
-    "value": "#ebeae5"
+    "ref": null,
+    "value": "color-mix(in srgb, rgb(0 0 0 / 0.4458) 60%, transparent)"
   },
   {
     "name": "bar-gauge.labels.color",
@@ -13789,22 +13789,22 @@
     "name": "gauge.good",
     "cssVar": "--mx-gauge-good",
     "type": "color",
-    "ref": "color.success.solid",
-    "value": "#006402"
+    "ref": "color.chart.good",
+    "value": "#06915f"
   },
   {
     "name": "gauge.warning",
     "cssVar": "--mx-gauge-warning",
     "type": "color",
-    "ref": "color.caution.solid",
-    "value": "#754702"
+    "ref": "color.chart.warning",
+    "value": "#b26f06"
   },
   {
     "name": "gauge.danger",
     "cssVar": "--mx-gauge-danger",
     "type": "color",
-    "ref": "color.danger.solid",
-    "value": "#b03659"
+    "ref": "color.chart.danger",
+    "value": "#ba0329"
   },
   {
     "name": "gauge.root.color",
@@ -13824,8 +13824,8 @@
     "name": "gauge.track.color",
     "cssVar": "--mx-gauge-track-color",
     "type": "color",
-    "ref": "color.fill.control.secondary",
-    "value": "#ebeae5"
+    "ref": null,
+    "value": "color-mix(in srgb, rgb(0 0 0 / 0.4458) 60%, transparent)"
   },
   {
     "name": "gauge.needle.color",
