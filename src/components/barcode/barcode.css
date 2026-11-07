@@ -1,0 +1,28 @@
+/* Barcode: the bars and the text under them, on a light sheet in every theme, as readers expect. The sheet and the text
+   are units of the schema. A narrow parent scrolls the code rather than squeezing its bars, which would stop it reading. */
+@layer mx.components {
+    .mx-barcode {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: safe center;
+        box-sizing: border-box;
+        max-inline-size: 100%;
+        overflow-x: auto;
+    }
+
+    .mx-barcode__svg {
+        display: block;
+        flex: none;
+        max-inline-size: none;
+    }
+
+    .mx-barcode__svg[hidden],
+    .mx-barcode__text[hidden] {
+        display: none;
+    }
+
+    .mx-barcode__text {
+        white-space: pre;
+        font-variant-numeric: tabular-nums;
+    }
+}

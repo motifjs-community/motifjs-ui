@@ -1,0 +1,65 @@
+{
+  "barcode": {
+    "height": {
+      "$value": {
+        "value": 64,
+        "unit": "px"
+      }
+    },
+    "sheet": {
+      "bg": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            1,
+            1
+          ],
+          "alpha": 1
+        }
+      },
+      "color": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0,
+            0
+          ],
+          "alpha": 1
+        }
+      },
+      "radius": {
+        "$value": "{radius.md}"
+      },
+      "padding-block": {
+        "$value": "{space.2}"
+      }
+    },
+    "text": {
+      "color": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0,
+            0
+          ],
+          "alpha": 1
+        }
+      },
+      "font-size": {
+        "$value": "{font.size.caption}"
+      },
+      "padding-top": {
+        "$value": "{space.1}"
+      },
+      "letter-spacing": {
+        "$value": {
+          "value": 1,
+          "unit": "px"
+        }
+      }
+    }
+  }
+}

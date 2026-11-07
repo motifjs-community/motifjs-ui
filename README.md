@@ -42,7 +42,7 @@ component (`npm run dev`).
 | Group | Components |
 | --- | --- |
 | Buttons and commands | `Button` (menu, split, drop-down, toggle, busy), `ButtonGroup` (segmented choice), `Toolbar` (overflow menu), `MenuBar`, `ContextMenu`, `SpeedDial` (linear, circle, semi-circle and quarter-circle layouts) |
-| Display | `Badge`, `Avatar`, `AvatarGroup`, `Chip`, `ChipGroup`, `Card`, `Skeleton`, `Gallery` (slides, dots, slideshow), `TileView` (selectable, reorderable tiles on a grid), `Timeline` (vertical, or horizontal along a line of dates) |
+| Display | `QRCode`, `Barcode` (Code 128, Code 39, EAN, UPC, Interleaved 2 of 5), `Badge`, `Avatar`, `AvatarGroup`, `Chip`, `ChipGroup`, `Card`, `Skeleton`, `Gallery` (slides, dots, slideshow), `TileView` (selectable, reorderable tiles on a grid), `Timeline` (vertical, or horizontal along a line of dates) |
 | Navigation | `AppBar`, `BottomNavigation`, `Tabs`, `Accordion`, `Breadcrumb`, `Pagination`, `Stepper`, `Wizard`, `MultiView` (swipeable pages), `TabDocumentManager` |
 | More editors | `OtpInput` (one-time codes), `Signature` (strokes, image export), `Rating`, `ColorBox`, `ColorPicker` |
 | Scheduling | `Scheduler` (day, week, month, timeline, agenda; recurrence, resources, iCalendar) |

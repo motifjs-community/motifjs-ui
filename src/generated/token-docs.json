@@ -1729,6 +1729,69 @@
     "value": "0px"
   },
   {
+    "name": "barcode.height",
+    "cssVar": "--mx-barcode-height",
+    "type": "dimension",
+    "ref": null,
+    "value": "64px"
+  },
+  {
+    "name": "barcode.sheet.bg",
+    "cssVar": "--mx-barcode-sheet-bg",
+    "type": "color",
+    "ref": null,
+    "value": "#ffffff"
+  },
+  {
+    "name": "barcode.sheet.color",
+    "cssVar": "--mx-barcode-sheet-color",
+    "type": "color",
+    "ref": null,
+    "value": "#000000"
+  },
+  {
+    "name": "barcode.sheet.radius",
+    "cssVar": "--mx-barcode-sheet-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "barcode.sheet.padding-block",
+    "cssVar": "--mx-barcode-sheet-padding-block",
+    "type": "dimension",
+    "ref": "space.2",
+    "value": "0.5rem"
+  },
+  {
+    "name": "barcode.text.color",
+    "cssVar": "--mx-barcode-text-color",
+    "type": "color",
+    "ref": null,
+    "value": "#000000"
+  },
+  {
+    "name": "barcode.text.font-size",
+    "cssVar": "--mx-barcode-text-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "barcode.text.padding-top",
+    "cssVar": "--mx-barcode-text-padding-top",
+    "type": "dimension",
+    "ref": "space.1",
+    "value": "0.25rem"
+  },
+  {
+    "name": "barcode.text.letter-spacing",
+    "cssVar": "--mx-barcode-text-letter-spacing",
+    "type": "dimension",
+    "ref": null,
+    "value": "1px"
+  },
+  {
     "name": "bottom-navigation.bar.bg",
     "cssVar": "--mx-bottom-navigation-bar-bg",
     "type": "color",
@@ -15842,6 +15905,48 @@
     "type": "keyword",
     "ref": null,
     "value": "initial"
+  },
+  {
+    "name": "qr-code.size",
+    "cssVar": "--mx-qr-code-size",
+    "type": "dimension",
+    "ref": null,
+    "value": "160px"
+  },
+  {
+    "name": "qr-code.sheet.bg",
+    "cssVar": "--mx-qr-code-sheet-bg",
+    "type": "color",
+    "ref": null,
+    "value": "#ffffff"
+  },
+  {
+    "name": "qr-code.sheet.color",
+    "cssVar": "--mx-qr-code-sheet-color",
+    "type": "color",
+    "ref": null,
+    "value": "#000000"
+  },
+  {
+    "name": "qr-code.sheet.radius",
+    "cssVar": "--mx-qr-code-sheet-radius",
+    "type": "dimension",
+    "ref": "radius.md",
+    "value": "0.375rem"
+  },
+  {
+    "name": "qr-code.logo.radius",
+    "cssVar": "--mx-qr-code-logo-radius",
+    "type": "dimension",
+    "ref": "radius.xs",
+    "value": "0.25rem"
+  },
+  {
+    "name": "qr-code.logo.bg",
+    "cssVar": "--mx-qr-code-logo-bg",
+    "type": "color",
+    "ref": null,
+    "value": "#ffffff"
   },
   {
     "name": "radiogroup.gap",

@@ -257,6 +257,15 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `badge.badge.outline-danger.color` | `--mx-badge-badge-outline-danger-color` | `color.danger.fg` | `#b03659` |
 | `badge.badge.outline-danger.border-color` | `--mx-badge-badge-outline-danger-border-color` | `color.danger.fg` | `#b03659` |
 | `badge.badge.dot.padding-inline` | `--mx-badge-badge-dot-padding-inline` | `space.0` | `0px` |
+| `barcode.height` | `--mx-barcode-height` | `` | `64px` |
+| `barcode.sheet.bg` | `--mx-barcode-sheet-bg` | `` | `#ffffff` |
+| `barcode.sheet.color` | `--mx-barcode-sheet-color` | `` | `#000000` |
+| `barcode.sheet.radius` | `--mx-barcode-sheet-radius` | `radius.md` | `0.375rem` |
+| `barcode.sheet.padding-block` | `--mx-barcode-sheet-padding-block` | `space.2` | `0.5rem` |
+| `barcode.text.color` | `--mx-barcode-text-color` | `` | `#000000` |
+| `barcode.text.font-size` | `--mx-barcode-text-font-size` | `font.size.caption` | `0.75rem` |
+| `barcode.text.padding-top` | `--mx-barcode-text-padding-top` | `space.1` | `0.25rem` |
+| `barcode.text.letter-spacing` | `--mx-barcode-text-letter-spacing` | `` | `1px` |
 | `bottom-navigation.bar.bg` | `--mx-bottom-navigation-bar-bg` | `color.bg.bar` | `#ebeae5` |
 | `bottom-navigation.bar.border-top-width` | `--mx-bottom-navigation-bar-border-top-width` | `control.edge.width` | `2px` |
 | `bottom-navigation.bar.border-color` | `--mx-bottom-navigation-bar-border-color` | `color.stroke.control.edge` | `rgb(0 0 0 / 0.3)` |
@@ -2273,6 +2282,12 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `progress.rest.radius` | `--mx-progress-rest-radius` | `` | `initial` |
 | `progress.rest.indeterminate.display` | `--mx-progress-rest-indeterminate-display` | `` | `initial` |
 | `progress.stop.display` | `--mx-progress-stop-display` | `` | `initial` |
+| `qr-code.size` | `--mx-qr-code-size` | `` | `160px` |
+| `qr-code.sheet.bg` | `--mx-qr-code-sheet-bg` | `` | `#ffffff` |
+| `qr-code.sheet.color` | `--mx-qr-code-sheet-color` | `` | `#000000` |
+| `qr-code.sheet.radius` | `--mx-qr-code-sheet-radius` | `radius.md` | `0.375rem` |
+| `qr-code.logo.radius` | `--mx-qr-code-logo-radius` | `radius.xs` | `0.25rem` |
+| `qr-code.logo.bg` | `--mx-qr-code-logo-bg` | `` | `#ffffff` |
 | `radiogroup.gap` | `--mx-radiogroup-gap` | `space.2` | `0.5rem` |
 | `radiogroup.column-gap` | `--mx-radiogroup-column-gap` | `space.6` | `1.5rem` |
 | `radiogroup.help-gap` | `--mx-radiogroup-help-gap` | `space.1` | `0.25rem` |

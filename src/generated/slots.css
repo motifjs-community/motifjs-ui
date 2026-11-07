@@ -245,6 +245,18 @@
     --_badge-badge-dot-padding-inline: var(--mx-badge-badge-dot-padding-inline);
   }
 
+  .mx-barcode {
+    --_barcode-height: var(--mx-barcode-height);
+    --_barcode-sheet-bg: var(--mx-barcode-sheet-bg);
+    --_barcode-sheet-color: var(--mx-barcode-sheet-color);
+    --_barcode-sheet-radius: var(--mx-barcode-sheet-radius);
+    --_barcode-sheet-padding-block: var(--mx-barcode-sheet-padding-block);
+    --_barcode-text-color: var(--mx-barcode-text-color);
+    --_barcode-text-font-size: var(--mx-barcode-text-font-size);
+    --_barcode-text-padding-top: var(--mx-barcode-text-padding-top);
+    --_barcode-text-letter-spacing: var(--mx-barcode-text-letter-spacing);
+  }
+
   .mx-bottom-navigation {
     --_bottom-navigation-bar-bg: var(--mx-bottom-navigation-bar-bg);
     --_bottom-navigation-bar-border-top-width: var(--mx-bottom-navigation-bar-border-top-width);
@@ -2099,6 +2111,15 @@
     --_progress-rest-radius: var(--mx-progress-rest-radius);
     --_progress-rest-indeterminate-display: var(--mx-progress-rest-indeterminate-display);
     --_progress-stop-display: var(--mx-progress-stop-display);
+  }
+
+  .mx-qr-code {
+    --_qr-code-size: var(--mx-qr-code-size);
+    --_qr-code-sheet-bg: var(--mx-qr-code-sheet-bg);
+    --_qr-code-sheet-color: var(--mx-qr-code-sheet-color);
+    --_qr-code-sheet-radius: var(--mx-qr-code-sheet-radius);
+    --_qr-code-logo-radius: var(--mx-qr-code-logo-radius);
+    --_qr-code-logo-bg: var(--mx-qr-code-logo-bg);
   }
 
   .mx-radio-group {

@@ -2,7 +2,6 @@
   "A one-time code in a row of boxes. Typing, pasting a whole code, the code a phone offers from a message and screen readers work as in any text box, because the boxes are drawn over one real input.": "Bir sıra kutuda tek kullanımlık kod. Kutular tek bir gerçek input'un üzerine çizildiği için yazma, kodun tamamını yapıştırma, telefonun mesajdan önerdiği kod ve ekran okuyucular normal bir metin kutusundaki gibi çalışır.",
   "Entering a code": "Kod girme",
   "`x-model` binds the code, and `onCompleted` occurs when the last box is filled. Paste a code into the field, or type part of it and use the arrow keys.": "`x-model` kodu bağlar, `onCompleted` son kutu dolduğunda oluşur. Alana bir kod yapıştırın ya da bir kısmını yazıp ok tuşlarını kullanın.",
-  "Formats": "Biçimler",
   "`length` sets the number of boxes, and `charset` or `pattern` the characters. `groupSize` separates the boxes, `masked` hides the characters, and `placeholder` marks empty boxes.": "`length` kutu sayısını, `charset` veya `pattern` karakterleri belirler. `groupSize` kutuları ayırır, `masked` karakterleri gizler, `placeholder` boş kutuları işaretler.",
   "A code that is not complete fails on its own. `rules` adds your own checks, as in every field.": "Tamamlanmamış kod kendiliğinden hata verir. `rules` her field'da olduğu gibi kendi kontrollerinizi ekler.",
   "Sizes and states": "Boyutlar ve durumlar",

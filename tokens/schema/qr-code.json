@@ -1,0 +1,20 @@
+{
+  "qr-code": {
+    "$description": "QRCode: a code on a light sheet, in every theme.",
+    "$selector": ".mx-qr-code",
+    "size": {
+      "$type": "dimension",
+      "$description": "The width and height."
+    },
+    "$units": {
+      "sheet": {
+        "$description": "The sheet: `bg` light and `color` dark, as readers expect.",
+        "selector": ".mx-qr-code"
+      },
+      "logo": {
+        "$description": "The logo in the middle.",
+        "selector": ".mx-qr-code__logo"
+      }
+    }
+  }
+}

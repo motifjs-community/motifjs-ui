@@ -63,6 +63,8 @@ Built on MotifJS (`@motifx/core`): a component is an object, made in JSX or with
 
 ## Display
 
+- [QRCode](docs/qrcode.md): A QR code, drawn as vectors so that it stays sharp at any size. It has no dependencies, chooses the smallest version that holds the text, and can carry a logo.
+- [Barcode](docs/barcode.md): A linear barcode, drawn as vectors: Code 128, Code 39, EAN-13, EAN-8, UPC-A or Interleaved 2 of 5. It has no dependencies, works out check digits and…
 - [Badge](docs/badge.md): A short text, count or dot, shown inline or on the corner of a button, avatar or icon. A count above its maximum displays as “99+”, and a count of zero is…
 - [Avatar and AvatarGroup](docs/avatar.md): Represents a person with a picture, initials or an icon, with an optional presence indicator on its corner. A group stacks or spreads avatars and counts the…
 - [Chip and ChipGroup](docs/chip.md): A compact element with short text and an optional leading icon or avatar. Use it as a filter, as a choice among a few options, or to represent a selected…
@@ -602,6 +604,15 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `badge.badge.outline-danger.color` | `--mx-badge-badge-outline-danger-color` | `color.danger.fg` | `#b03659` |
 | `badge.badge.outline-danger.border-color` | `--mx-badge-badge-outline-danger-border-color` | `color.danger.fg` | `#b03659` |
 | `badge.badge.dot.padding-inline` | `--mx-badge-badge-dot-padding-inline` | `space.0` | `0px` |
+| `barcode.height` | `--mx-barcode-height` | `` | `64px` |
+| `barcode.sheet.bg` | `--mx-barcode-sheet-bg` | `` | `#ffffff` |
+| `barcode.sheet.color` | `--mx-barcode-sheet-color` | `` | `#000000` |
+| `barcode.sheet.radius` | `--mx-barcode-sheet-radius` | `radius.md` | `0.375rem` |
+| `barcode.sheet.padding-block` | `--mx-barcode-sheet-padding-block` | `space.2` | `0.5rem` |
+| `barcode.text.color` | `--mx-barcode-text-color` | `` | `#000000` |
+| `barcode.text.font-size` | `--mx-barcode-text-font-size` | `font.size.caption` | `0.75rem` |
+| `barcode.text.padding-top` | `--mx-barcode-text-padding-top` | `space.1` | `0.25rem` |
+| `barcode.text.letter-spacing` | `--mx-barcode-text-letter-spacing` | `` | `1px` |
 | `bottom-navigation.bar.bg` | `--mx-bottom-navigation-bar-bg` | `color.bg.bar` | `#ebeae5` |
 | `bottom-navigation.bar.border-top-width` | `--mx-bottom-navigation-bar-border-top-width` | `control.edge.width` | `2px` |
 | `bottom-navigation.bar.border-color` | `--mx-bottom-navigation-bar-border-color` | `color.stroke.control.edge` | `rgb(0 0 0 / 0.3)` |
@@ -2618,6 +2629,12 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `progress.rest.radius` | `--mx-progress-rest-radius` | `` | `initial` |
 | `progress.rest.indeterminate.display` | `--mx-progress-rest-indeterminate-display` | `` | `initial` |
 | `progress.stop.display` | `--mx-progress-stop-display` | `` | `initial` |
+| `qr-code.size` | `--mx-qr-code-size` | `` | `160px` |
+| `qr-code.sheet.bg` | `--mx-qr-code-sheet-bg` | `` | `#ffffff` |
+| `qr-code.sheet.color` | `--mx-qr-code-sheet-color` | `` | `#000000` |
+| `qr-code.sheet.radius` | `--mx-qr-code-sheet-radius` | `radius.md` | `0.375rem` |
+| `qr-code.logo.radius` | `--mx-qr-code-logo-radius` | `radius.xs` | `0.25rem` |
+| `qr-code.logo.bg` | `--mx-qr-code-logo-bg` | `` | `#ffffff` |
 | `radiogroup.gap` | `--mx-radiogroup-gap` | `space.2` | `0.5rem` |
 | `radiogroup.column-gap` | `--mx-radiogroup-column-gap` | `space.6` | `1.5rem` |
 | `radiogroup.help-gap` | `--mx-radiogroup-help-gap` | `space.1` | `0.25rem` |
@@ -13579,6 +13596,386 @@ export default function Localization() {
 | `paused` | read-only | Indicates whether the timers are currently paused. |
 
 `enabled`, `visible` and the other shared control properties work on both.
+
+## Feedback
+
+Loading issues…
+
+
+---
+
+# QRCode
+
+> Display · @motifx-community/ui 0.1.0-beta.5
+
+A QR code, drawn as vectors so that it stays sharp at any size. It has no dependencies, chooses the smallest version that holds the text, and can carry a logo.
+
+## Import
+
+```tsx
+import { QRCode } from '@motifx-community/ui';
+```
+
+## A code from a text
+
+`value` is the text of the code, and the code follows it. Change the text to see the code grow.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { QRCode, Stack, TextBox } from '@motifx-community/ui';
+
+/** A code that follows a text. The smallest version that holds the text is chosen. */
+export default function Basic() {
+    const s = reactive({ text: 'https://ui.motifjs.com' });
+    return (
+        <Stack gap="md">
+            <TextBox label="Text" x-model={() => s.text} />
+            <QRCode class="qr-basic" value={() => s.text} />
+        </Stack>
+    );
+}
+```
+
+## Error correction
+
+`level` sets how much of the code can be damaged. A higher level holds less text, so the code grows.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { ButtonGroup, QRCode, Stack, type QrLevel } from '@motifx-community/ui';
+
+/** A higher level survives more damage, and needs a larger code. */
+export default function Levels() {
+    const s = reactive({ level: 'M' as QrLevel });
+    return (
+        <Stack gap="md">
+            <ButtonGroup
+                label="Error correction"
+                x-model={() => s.level}
+                items={[
+                    { value: 'L', text: 'L' },
+                    { value: 'M', text: 'M' },
+                    { value: 'Q', text: 'Q' },
+                    { value: 'H', text: 'H' }
+                ]}
+            />
+            <QRCode class="qr-level" value="https://ui.motifjs.com/qrcode" level={() => s.level} size={200} />
+        </Stack>
+    );
+}
+```
+
+## A logo
+
+`logo` puts an image in the middle, which takes the place of some modules. Level `H` restores what it covers. `logoSize` sets its share, at most `0.3`.
+
+```tsx
+import { QRCode } from '@motifx-community/ui';
+
+/** A logo in the middle, which takes the place of some modules. Level H restores what it covers. */
+export default function Logo() {
+    return <QRCode class="qr-logo" value="https://ui.motifjs.com/qrcode" level="H" logo="/favicon.svg" size={220} />;
+}
+```
+
+## Creating an image
+
+`toDataURL()` and `toSVG()` give an image, in black on white unless you set other colors. `onEncodeFailed` occurs when a text does not fit in a code.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Button, QRCode, Stack } from '@motifx-community/ui';
+
+/** An image of the code, to download or print. */
+export default function Export() {
+    const s = reactive({ image: '' });
+    let code!: QRCode;
+    return (
+        <Stack gap="md">
+            <QRCode ref={(x: QRCode) => (code = x)} class="qr-export" value="Printed with the order" />
+            <Button text="Create the image" variant="outline" onclick={() => (s.image = code.toDataURL('image/png', { size: 256 }))} />
+            {s.image && <img class="qr-image" alt="The code as an image" src={() => s.image} />}
+        </Stack>
+    );
+}
+```
+
+## Programmatic use
+
+`new QRCode(props)` creates the code without JSX. Each prop is also a property.
+
+```tsx
+import { Component } from '@motifx/core';
+import { Button, QRCode, Stack } from '@motifx-community/ui';
+
+/** A code created programmatically. Each prop is also a property that can be set later. */
+export default class Programmatic extends Component<HTMLDivElement> {
+    constructor() {
+        super('div');
+        const code = new QRCode({ value: 'First', size: 140 });
+        const next = new Button({ text: 'Change the text', variant: 'outline', onclick: () => (code.value = 'Second') });
+        const stack = new Stack({ gap: 'md' });
+        stack.controls.add(code, next);
+        this.controls.add(stack);
+    }
+}
+```
+
+## API reference
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `Bind<string>` | `''` | The text of the code. It may hold any characters. |
+| `level` | `Bind<'L' \| 'M' \| 'Q' \| 'H'>` | `'M'` | How much of the code can be damaged: about 7, 15, 25 or 30 percent. |
+| `size` | `Bind<number \| null>` | From the design language | The width and height in pixels. |
+| `margin` | `Bind<number>` | `4` | The quiet zone around the code, in modules. Readers need at least `4`. |
+| `logo` | `Bind<string \| null>` | `null` | The address of an image in the middle of the code. Use level `H` with it. |
+| `logoSize` | `Bind<number>` | `0.2` | The share of the code the logo covers, at most `0.3`. |
+| `label` | `Bind<string>` | The kit string “QR code: …” | The accessible name. |
+
+### Properties and methods
+
+| Member | Type | Description |
+| --- | --- | --- |
+| `isInvalid` | `boolean` | Indicates that the value could not be drawn. |
+| `modules` | `number` | The number of modules along a side of the code, without its margin. |
+| `toSVG(options?)` | `string` | The code as an SVG document. The logo is not part of it. |
+| `toDataURL(type?, options?)` | `string` | The code as a data URL, a PNG by default. The logo is not part of it. |
+
+### Image options
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `size` | `number` | `512` | The width and height in pixels, rounded to whole modules. |
+| `color` | `string` | `'#000000'` | The color of the modules. |
+| `background` | `string` | `'#ffffff'` | The background. |
+
+### Events
+
+| Event | Type | Description |
+| --- | --- | --- |
+| `onEncodeFailed` | `{ value, source }` | Occurs when the text does not fit in a code, which then draws nothing. |
+
+### Accessibility
+
+| Topic | Details |
+| --- | --- |
+| `Name` | The code has the role `img`, and its name holds the text, so a screen reader can read it. |
+| `Colors` | A code stays dark on a light sheet in every theme, as readers expect. |
+| `Size` | For printing, keep a module at least 0.4 mm wide, and leave the quiet zone in place. |
+
+### Styling hooks
+
+| Hook | Description |
+| --- | --- |
+| `.mx-qr-code` | The sheet. `data-invalid` says the value could not be drawn. |
+| `.mx-qr-code__svg, .mx-qr-code__logo` | The code and the logo. |
+
+### Design tokens
+
+| Token | Description |
+| --- | --- |
+| `qr-code.size` | The width and height. |
+| `qr-code.sheet, .logo` | Units: the sheet, whose `color` is the color of the modules, and the logo. |
+
+## Feedback
+
+Loading issues…
+
+
+---
+
+# Barcode
+
+> Display · @motifx-community/ui 0.1.0-beta.5
+
+A linear barcode, drawn as vectors: Code 128, Code 39, EAN-13, EAN-8, UPC-A or Interleaved 2 of 5. It has no dependencies, works out check digits and refuses a value the format cannot hold.
+
+## Import
+
+```tsx
+import { Barcode } from '@motifx-community/ui';
+```
+
+## Formats
+
+`format` sets the kind of barcode, and `value` what it holds.
+
+| Format | Value | Description |
+| --- | --- | --- |
+| `code128` | Any ASCII text | The default, for labels, shipping and stock. Digits are packed in pairs, so it stays short. |
+| `code39` | Capitals, digits and `- . $ / + %` and space | Older industrial labels. Lower-case letters become capitals. |
+| `ean13` | 12 or 13 digits | Retail products. The check digit is worked out, and a wrong one is refused. |
+| `ean8` | 7 or 8 digits | Small retail products. |
+| `upca` | 11 or 12 digits | Retail products in North America. |
+| `itf` | Digits | Interleaved 2 of 5, for cartons. An odd number of digits gets a leading zero. |
+
+```tsx
+import { Barcode, Stack } from '@motifx-community/ui';
+
+/** Each format, with a value it can hold. */
+export default function Formats() {
+    return (
+        <Stack gap="md">
+            <Barcode class="bc-128" format="code128" value="ORDER-2026-118" />
+            <Barcode class="bc-39" format="code39" value="PART-77" />
+            <Barcode class="bc-13" format="ean13" value="400638133393" />
+            <Barcode class="bc-8" format="ean8" value="9638507" />
+            <Barcode class="bc-upc" format="upca" value="03600029145" />
+            <Barcode class="bc-itf" format="itf" value="1234567890" />
+        </Stack>
+    );
+}
+```
+
+## Size and text
+
+`moduleWidth` and `height` set the size of the bars, and `showText` the text under them. Keep the bars wide enough for the distance it is read from.
+
+```tsx
+import { Barcode, Stack } from '@motifx-community/ui';
+
+/** The size of the bars, and a code without its text. */
+export default function Options() {
+    return (
+        <Stack gap="md">
+            <Barcode class="bc-large" value="LARGE-1" moduleWidth={3} height={96} />
+            <Barcode class="bc-plain" value="NO-TEXT" showText={false} />
+        </Stack>
+    );
+}
+```
+
+## Values that do not fit
+
+A value the format cannot hold draws nothing and raises `onEncodeFailed`. Change the last digit of this EAN-13 to see it refused.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Barcode, Stack, TextBox } from '@motifx-community/ui';
+
+/** A value the format cannot hold draws nothing and raises `onEncodeFailed`. An EAN refuses a wrong check digit. */
+export default function Validation() {
+    const s = reactive({ value: '4006381333931', told: '' });
+    return (
+        <Stack gap="md">
+            <TextBox label="EAN-13" x-model={() => s.value} />
+            <Barcode
+                class="bc-valid"
+                format="ean13"
+                value={() => s.value}
+                onEncodeFailed={e => (s.told = `“${e.value}” is not a valid EAN-13.`)}
+            />
+            <output class="bc-told">{() => s.told}</output>
+        </Stack>
+    );
+}
+```
+
+## Creating an image
+
+`toDataURL()` and `toSVG()` give an image with the text under the bars, in black on white unless you set other colors.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Barcode, Button, Stack } from '@motifx-community/ui';
+
+/** An image of the code, with its text, to download or print. */
+export default function Export() {
+    const s = reactive({ image: '' });
+    let code!: Barcode;
+    return (
+        <Stack gap="md">
+            <Barcode ref={(x: Barcode) => (code = x)} class="bc-export" value="LABEL-42" />
+            <Button text="Create the image" variant="outline" onclick={() => (s.image = code.toDataURL('image/png', { scale: 2 }))} />
+            {s.image && <img class="bc-image" alt="The code as an image" src={() => s.image} />}
+        </Stack>
+    );
+}
+```
+
+## Programmatic use
+
+`new Barcode(props)` creates the code without JSX. Each prop is also a property.
+
+```tsx
+import { Component } from '@motifx/core';
+import { Barcode, Button, Stack } from '@motifx-community/ui';
+
+/** A code created programmatically. Each prop is also a property that can be set later. */
+export default class Programmatic extends Component<HTMLDivElement> {
+    constructor() {
+        super('div');
+        const code = new Barcode({ value: 'FIRST' });
+        const next = new Button({ text: 'Change the value', variant: 'outline', onclick: () => (code.value = 'SECOND') });
+        const stack = new Stack({ gap: 'md' });
+        stack.controls.add(code, next);
+        this.controls.add(stack);
+    }
+}
+```
+
+## API reference
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `Bind<string>` | `''` | The value of the code. |
+| `format` | `Bind<BarcodeFormat>` | `'code128'` | The kind of barcode. |
+| `checkDigit` | `Bind<boolean>` | `false` | Adds the optional check character of Code 39. |
+| `moduleWidth` | `Bind<number>` | `2` | The width of the thinnest bar in pixels. |
+| `height` | `Bind<number \| null>` | From the design language | The height of the bars in pixels. |
+| `margin` | `Bind<number>` | `10` | The quiet zone at each side, in modules. Readers need it. |
+| `showText` | `Bind<boolean>` | `true` | Shows the text under the bars. |
+| `label` | `Bind<string>` | The kit string “Barcode: …” | The accessible name. |
+
+### Properties and methods
+
+| Member | Type | Description |
+| --- | --- | --- |
+| `isInvalid` | `boolean` | Indicates that the value could not be drawn. |
+| `codeText` | `string` | The text under the bars, with the check digit where the format has one. |
+| `toSVG(options?)` | `string` | The code as an SVG document, with its text. |
+| `toDataURL(type?, options?)` | `string` | The code as a data URL, a PNG by default. |
+
+### Image options
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `scale` | `number` | `2` | The width of a module in pixels. |
+| `color` | `string` | `'#000000'` | The color of the bars and the text. |
+| `background` | `string` | `'#ffffff'` | The background. |
+
+### Events
+
+| Event | Type | Description |
+| --- | --- | --- |
+| `onEncodeFailed` | `{ value, format, source }` | Occurs when the format cannot hold the value, which then draws nothing. |
+
+### Accessibility
+
+| Topic | Details |
+| --- | --- |
+| `Name` | The code has the role `img`, and its name holds the value, so a screen reader can read it. |
+| `Colors` | A code stays dark on a light sheet in every theme, as readers expect. |
+| `Width` | A narrow parent scrolls the code rather than squeezing its bars, which would stop it reading. |
+
+### Styling hooks
+
+| Hook | Description |
+| --- | --- |
+| `.mx-barcode` | The sheet. `data-invalid` says the value could not be drawn. |
+| `.mx-barcode__svg, .mx-barcode__text` | The bars and the text. |
+
+### Design tokens
+
+| Token | Description |
+| --- | --- |
+| `barcode.height` | The height of the bars. |
+| `barcode.sheet, .text` | Units: the sheet, whose `color` is the color of the bars, and the text. |
 
 ## Feedback
 

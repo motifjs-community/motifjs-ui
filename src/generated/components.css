@@ -82,6 +82,11 @@
     --mx-badge-padding-lg: 0.5rem;
     --mx-badge-badge-line-height: 1rem;
     --mx-badge-badge-outline-bg: rgb(0 0 0 / 0);
+    --mx-barcode-height: 64px;
+    --mx-barcode-sheet-bg: #ffffff;
+    --mx-barcode-sheet-color: #000000;
+    --mx-barcode-text-color: #000000;
+    --mx-barcode-text-letter-spacing: 1px;
     --mx-bottom-navigation-bar-shadow: 0 0 #0000;
     --mx-bottom-navigation-list-min-height: 60px;
     --mx-bottom-navigation-indicator-width: 0px;
@@ -742,6 +747,10 @@
     --mx-progress-rest-radius: initial;
     --mx-progress-rest-indeterminate-display: initial;
     --mx-progress-stop-display: initial;
+    --mx-qr-code-size: 160px;
+    --mx-qr-code-sheet-bg: #ffffff;
+    --mx-qr-code-sheet-color: #000000;
+    --mx-qr-code-logo-bg: #ffffff;
     --mx-radiogroup-size-sm: 0.875rem;
     --mx-radiogroup-dot-size-sm: 0.375rem;
     --mx-radiogroup-dot-size-md: 0.4375rem;
@@ -1478,6 +1487,10 @@
     --mx-badge-badge-subtle-info-bg: var(--mx-color-fill-subtle-secondary);
     --mx-badge-badge-outline-border-width: var(--mx-border-width-1);
     --mx-badge-badge-dot-padding-inline: var(--mx-space-0);
+    --mx-barcode-sheet-radius: var(--mx-radius-md);
+    --mx-barcode-sheet-padding-block: var(--mx-space-2);
+    --mx-barcode-text-font-size: var(--mx-font-size-caption);
+    --mx-barcode-text-padding-top: var(--mx-space-1);
     --mx-bottom-navigation-bar-border-top-width: var(--mx-control-edge-width);
     --mx-bottom-navigation-bar-border-color: var(--mx-color-stroke-control-edge);
     --mx-bottom-navigation-list-padding-block: var(--mx-space-1);
@@ -2302,6 +2315,8 @@
     --mx-progress-label-font-weight: var(--mx-font-weight-medium);
     --mx-progress-value-font-size: var(--mx-font-size-caption);
     --mx-progress-value-font-weight: var(--mx-font-weight-regular);
+    --mx-qr-code-sheet-radius: var(--mx-radius-md);
+    --mx-qr-code-logo-radius: var(--mx-radius-xs);
     --mx-radiogroup-gap: var(--mx-space-2);
     --mx-radiogroup-column-gap: var(--mx-space-6);
     --mx-radiogroup-help-gap: var(--mx-space-1);
@@ -4297,6 +4312,7 @@
     --mx-badge-padding-sm: 0.125rem;
     --mx-badge-padding-md: 0.25rem;
     --mx-badge-padding-lg: 0.25rem;
+    --mx-barcode-height: 56px;
     --mx-bottom-navigation-list-min-height: 56px;
     --mx-bottom-navigation-icon-host-size: 20px;
     --mx-breadcrumb-height-md: 2rem;
@@ -4414,6 +4430,7 @@
     --mx-progress-rest-thickness-lg: 4px;
     --mx-progress-ring-size-md: 2rem;
     --mx-progress-ring-thickness-md: 0.25rem;
+    --mx-qr-code-size: 144px;
     --mx-radiogroup-size-sm: 1rem;
     --mx-radiogroup-size-md: 1.25rem;
     --mx-radiogroup-size-lg: 1.5rem;
@@ -5001,6 +5018,7 @@
     --mx-popover-header-border-bottom-width: initial;
     --mx-popover-header-border-bottom-color: initial;
     --mx-popup-list-box-box-disabled-shadow: 0px 0px 0px 0px rgb(0 0 0 / 0);
+    --mx-qr-code-size: 168px;
     --mx-radiogroup-size-sm: 1rem;
     --mx-radiogroup-size-md: 1.125rem;
     --mx-radiogroup-size-lg: 1.25rem;
@@ -5060,6 +5078,7 @@
     --mx-avatar-square-radius-xs: var(--mx-radius-sm);
     --mx-avatar-avatar-font-weight: var(--mx-font-weight-medium);
     --mx-badge-badge-font-weight: var(--mx-font-weight-medium);
+    --mx-barcode-sheet-radius: var(--mx-radius-lg);
     --mx-bottom-navigation-list-padding-block: var(--mx-space-2);
     --mx-bottom-navigation-indicator-radius: var(--mx-radius-lg);
     --mx-breadcrumb-link-radius: var(--mx-radius-full);
@@ -5155,6 +5174,7 @@
     --mx-popup-list-box-space-box-padding-inline: var(--mx-space-2);
     --mx-popup-surface-padding-block: var(--mx-space-2);
     --mx-popup-surface-padding: var(--mx-space-2);
+    --mx-qr-code-sheet-radius: var(--mx-radius-lg);
     --mx-radiogroup-gap: var(--mx-space-3);
     --mx-recurrence-editor-row-gap: var(--mx-space-5);
     --mx-recurrence-editor-column-gap: var(--mx-space-6);
@@ -5309,6 +5329,7 @@
     --mx-popover-arrow-bg: initial;
     --mx-popover-arrow-border-width: initial;
     --mx-popover-arrow-border-color: initial;
+    --mx-qr-code-size: 176px;
     --mx-recurrence-editor-day-button-variant: outline;
     --mx-scheduler-timeline-cell-width: 4.5rem;
     --mx-scheduler-timeline-lane-size: 2rem;

@@ -19,6 +19,8 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   bottomnavigation: () => import('../pages/bottomnavigation/BottomNavigationPage'),
   otpinput: () => import('../pages/otpinput/OtpInputPage'),
   signature: () => import('../pages/signature/SignaturePage'),
+  qrcode: () => import('../pages/qrcode/QRCodePage'),
+  barcode: () => import('../pages/barcode/BarcodePage'),
   pagination: () => import('../pages/pagination/PaginationPage'),
   stepper: () => import('../pages/stepper/StepperPage'),
   gallery: () => import('../pages/gallery/GalleryPage'),

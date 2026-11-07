@@ -428,6 +428,8 @@
   "signatureName": "signature pad",
   "signatureEmpty": "Empty",
   "signatureSigned": "Signed",
+  "qrCodeLabel": "QR code: {value}",
+  "barcodeLabel": "Barcode: {value}",
   "sheetLabel": "Sheet",
   "sheetHandle": "Sheet height",
   "sheetPeek": "Small",

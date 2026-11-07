@@ -516,6 +516,24 @@
     padding-inline-start: var(--_badge-badge-dot-padding-inline, var(--_padding));
   }
 
+  .mx-barcode {
+    padding-block-start: var(--_barcode-sheet-padding-block, 0px);
+    padding-block-end: var(--_barcode-sheet-padding-block, 0px);
+    background-color: var(--_barcode-sheet-bg, transparent);
+    border-start-start-radius: var(--_barcode-sheet-radius, 0px);
+    border-start-end-radius: var(--_barcode-sheet-radius, 0px);
+    border-end-start-radius: var(--_barcode-sheet-radius, 0px);
+    border-end-end-radius: var(--_barcode-sheet-radius, 0px);
+    color: var(--_barcode-sheet-color, inherit);
+  }
+
+  .mx-barcode__text {
+    padding-block-start: var(--_barcode-text-padding-top, 0px);
+    color: var(--_barcode-text-color, inherit);
+    font-size: var(--_barcode-text-font-size, inherit);
+    letter-spacing: var(--_barcode-text-letter-spacing, inherit);
+  }
+
   .mx-bottom-navigation {
     background-color: var(--_bottom-navigation-bar-bg, transparent);
     border-style: solid;
@@ -5346,6 +5364,23 @@
     color: var(--_progress-value-color, inherit);
     font-size: var(--_progress-value-font-size, inherit);
     font-weight: var(--_progress-value-font-weight, inherit);
+  }
+
+  .mx-qr-code {
+    background-color: var(--_qr-code-sheet-bg, transparent);
+    border-start-start-radius: var(--_qr-code-sheet-radius, 0px);
+    border-start-end-radius: var(--_qr-code-sheet-radius, 0px);
+    border-end-start-radius: var(--_qr-code-sheet-radius, 0px);
+    border-end-end-radius: var(--_qr-code-sheet-radius, 0px);
+    color: var(--_qr-code-sheet-color, inherit);
+  }
+
+  .mx-qr-code__logo {
+    background-color: var(--_qr-code-logo-bg, transparent);
+    border-start-start-radius: var(--_qr-code-logo-radius, 0px);
+    border-start-end-radius: var(--_qr-code-logo-radius, 0px);
+    border-end-start-radius: var(--_qr-code-logo-radius, 0px);
+    border-end-end-radius: var(--_qr-code-logo-radius, 0px);
   }
 
   .mx-radio-group.mx-field[data-label-mode='floating'] > .mx-field__label {

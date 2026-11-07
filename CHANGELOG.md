@@ -29,8 +29,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   `toSVG()` give an image in black, whatever the theme. `undo()`, `clear()`, buttons in the corner of the pad (`showUndo`,
   `showClear`), Ctrl+Z and Delete; `showGuide`, `placeholder`, `height`; `onStrokeBegan`, `onStrokeEnded`; a field, with
   its label, rules and `x-model`.
+- `QRCode`: a code drawn as vectors, with no dependencies. The smallest of the 40 versions that holds the text is chosen,
+  in numeric, alphanumeric or byte mode, for any characters as UTF-8. `level`, `size`, `margin`, `logo` and `logoSize`;
+  `toSVG()`, `toDataURL()`; `onEncodeFailed` for a text too long for a code. It stays dark on light in every theme.
+- `Barcode`: Code 128, Code 39, EAN-13, EAN-8, UPC-A and Interleaved 2 of 5, drawn as vectors, with no dependencies.
+  Check digits are worked out and a wrong one is refused; `moduleWidth`, `height`, `margin`, `showText`, `checkDigit`;
+  `toSVG()`, `toDataURL()`; `onEncodeFailed` for a value the format cannot hold. A narrow parent scrolls the code rather
+  than squeezing its bars.
 - The glyphs `menu` and `arrow-start`, and the kit strings `navigationMenu`, `navigation`, `appBarActions`,
-  `otpIncomplete`, `signatureHere`, `signatureUndo`, `signatureName`, `signatureEmpty` and `signatureSigned`.
+  `otpIncomplete`, `signatureHere`, `signatureUndo`, `signatureName`, `signatureEmpty`, `signatureSigned`, `qrCodeLabel`
+  and `barcodeLabel`.
 
 ### Documentation
 

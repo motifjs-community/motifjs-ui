@@ -428,6 +428,8 @@
   "signatureName": "imza alanı",
   "signatureEmpty": "Boş",
   "signatureSigned": "İmzalandı",
+  "qrCodeLabel": "QR kod: {value}",
+  "barcodeLabel": "Barkod: {value}",
   "sheetLabel": "Alt panel",
   "sheetHandle": "Panel yüksekliği",
   "sheetPeek": "Küçük",

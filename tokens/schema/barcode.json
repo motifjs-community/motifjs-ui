@@ -1,0 +1,20 @@
+{
+  "barcode": {
+    "$description": "Barcode: bars and their text on a light sheet, in every theme.",
+    "$selector": ".mx-barcode",
+    "height": {
+      "$type": "dimension",
+      "$description": "The height of the bars."
+    },
+    "$units": {
+      "sheet": {
+        "$description": "The sheet: `bg` light and `color` dark, as readers expect.",
+        "selector": ".mx-barcode"
+      },
+      "text": {
+        "$description": "The text under the bars.",
+        "selector": ".mx-barcode__text"
+      }
+    }
+  }
+}

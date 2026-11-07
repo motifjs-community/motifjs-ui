@@ -1,0 +1,53 @@
+{
+  "qr-code": {
+    "size": {
+      "$value": {
+        "value": 168,
+        "unit": "px"
+      }
+    },
+    "sheet": {
+      "bg": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            1,
+            1
+          ],
+          "alpha": 1
+        }
+      },
+      "color": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0,
+            0
+          ],
+          "alpha": 1
+        }
+      },
+      "radius": {
+        "$value": "{radius.lg}"
+      }
+    },
+    "logo": {
+      "radius": {
+        "$value": "{radius.xs}"
+      },
+      "bg": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            1,
+            1
+          ],
+          "alpha": 1
+        }
+      }
+    }
+  }
+}
