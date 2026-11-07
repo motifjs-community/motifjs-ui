@@ -1,6 +1,8 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Scatter from './examples/Scatter';
+import ScatterGroups from './examples/ScatterGroups';
+import ScatterChoose from './examples/ScatterChoose';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
@@ -22,6 +24,22 @@ export default function ChartScatterPage() {
                 </p>
                 <Example files={code('Scatter.tsx')}>
                     <Scatter />
+                </Example>
+            </Section>
+            <Section anchor="groups" title="Groups and reference lines">
+                <p>
+                    <Rich text="Each group is a series with rows of its own. References on both axes mark a mean on the horizontal axis and a threshold on the vertical one." />
+                </p>
+                <Example files={code('ScatterGroups.tsx')}>
+                    <ScatterGroups />
+                </Example>
+            </Section>
+            <Section anchor="choose" title="Choosing points">
+                <p>
+                    <Rich text="`pointSelection: 'multiple'` lets the reader choose several dots with clicks, or with the arrow keys and Enter. `onSelectionChanged` gives the chosen rows, and `tooltip.format` writes a tooltip of your own." />
+                </p>
+                <Example stack files={code('ScatterChoose.tsx')}>
+                    <ScatterChoose />
                 </Example>
             </Section>
             <Section anchor="api" title="API reference">

@@ -1,4 +1,7 @@
 {
   "A heat map shows a value for each pair of two categories as a color.": "Isı haritası iki kategorinin her çifti için bir değeri renk olarak gösterir.",
-  "`heatmap` places a cell at each pair of `xField` and `yField`, colored by `valueField` in seven steps of one hue. Values on both sides of zero take two hues that meet in a neutral middle.": "`heatmap` her `xField` ve `yField` çiftine bir hücre yerleştirir ve hücreyi `valueField` değerine göre tek tonun yedi basamağıyla renklendirir. Sıfırın iki yanına uzanan değerler, nötr bir ortada buluşan iki ton alır."
+  "`heatmap` places a cell at each pair of `xField` and `yField`, colored by `valueField` in seven steps of one hue. Values on both sides of zero take two hues that meet in a neutral middle.": "`heatmap` her `xField` ve `yField` çiftine bir hücre yerleştirir ve hücreyi `valueField` değerine göre tek tonun yedi basamağıyla renklendirir. Sıfırın iki yanına uzanan değerler, nötr bir ortada buluşan iki ton alır.",
+  "Any two categories make the grid, here weeks and weekdays. The series `format` controls how cell labels and tooltips read; compact numbers fit small cells.": "Izgarayı herhangi iki kategori oluşturur; bu örnekte haftalar ve haftanın günleri. Hücre etiketlerinin ve araç ipuçlarının nasıl görüneceğini serinin `format` ayarı belirler; kısa sayı biçimi küçük hücrelere sığar.",
+  "Many cells": "Çok sayıda hücre",
+  "In a dense grid, leave `labels` off. The color steps show the pattern, and the tooltip and the table view show each value.": "Yoğun bir ızgarada `labels` kapalı bırakılmalıdır. Örüntüyü renk basamakları gösterir; her bir değer araç ipucunda ve tablo görünümünde okunur."
 }

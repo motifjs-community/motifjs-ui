@@ -44,6 +44,76 @@ export default function Ranges() {
 }
 ```
 
+## Forecast with a range
+
+Each series can take rows of its own with `data`. Here the actual values, the forecast and its likely range share one category axis, and the band widens as the forecast goes further.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const SOLD = [420, 446, 470, 462, 498, 530, 548];
+
+// The months give the axis; the series bring their own values.
+const AXIS: Record<string, string | number>[] = MONTHS.map(month => ({ month }));
+const ACTUAL = SOLD.map((units, i) => ({ month: MONTHS[i], units }));
+// The forecast starts at the last real month and widens as it goes further.
+const FORECAST = MONTHS.slice(SOLD.length - 1).map((month, i) => {
+    const units = SOLD[SOLD.length - 1] + i * 22;
+    return { month, units, low: units - i * 16, high: units + i * 16 };
+});
+
+/** Each series with rows of its own: what was sold, the forecast, and the band it may fall in. */
+export default function RangesForecast() {
+    return (
+        <Chart
+            class="ch-range-forecast"
+            title="Units sold, and the forecast"
+            data={AXIS}
+            xField="month"
+            series={[
+                { type: 'rangeArea', data: FORECAST, lowField: 'low', highField: 'high', name: 'Likely range' },
+                { data: FORECAST, yField: 'units', name: 'Forecast', markers: true },
+                { data: ACTUAL, yField: 'units', name: 'Sold', markers: true }
+            ]}
+        />
+    );
+}
+```
+
+## Timeline
+
+`rangeBar` with `horizontal` lays out start and end values on their side, as in a project plan. A reference line marks the current week.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const TASKS = [
+    { task: 'Research', start: 1, end: 4 },
+    { task: 'Design', start: 3, end: 8 },
+    { task: 'Build', start: 6, end: 16 },
+    { task: 'Test', start: 12, end: 18 },
+    { task: 'Launch', start: 18, end: 20 }
+];
+
+/** Bars from a start to an end, laid on their side: a plan read week by week, with a line for this week. */
+export default function RangesTimeline() {
+    return (
+        <Chart
+            class="ch-range-timeline"
+            title="Project plan"
+            data={TASKS}
+            xField="task"
+            horizontal
+            legend={false}
+            yAxis={{ title: 'Week', min: 0, max: 20 }}
+            references={[{ value: 9, label: 'This week' }]}
+            series={[{ type: 'rangeBar', lowField: 'start', highField: 'end', name: 'Weeks' }]}
+        />
+    );
+}
+```
+
 ## API reference
 
 | Field | Type | Default | Description |

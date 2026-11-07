@@ -23073,6 +23073,91 @@ export default function Scatter() {
 }
 ```
 
+## Groups and reference lines
+
+Each group is a series with rows of its own. References on both axes mark a mean on the horizontal axis and a threshold on the vertical one.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+// Hours studied and the exam score of two classes.
+const CLASS_A = [2, 3, 4, 4, 5, 6, 6, 7, 8, 9, 10, 11].map((hours, i) => ({ hours, score: Math.min(98, Math.round(42 + hours * 4.6 + ((i * 7) % 9) - 4)) }));
+const CLASS_B = [1, 2, 3, 3, 4, 5, 6, 7, 7, 8, 9, 12].map((hours, i) => ({ hours, score: Math.min(98, Math.round(36 + hours * 5.1 + ((i * 5) % 11) - 5)) }));
+
+const mean = (rows: { hours: number; score: number }[], key: 'hours' | 'score') => Math.round((rows.reduce((sum, r) => sum + r[key], 0) / rows.length) * 10) / 10;
+const ALL = [...CLASS_A, ...CLASS_B];
+
+/** Two groups of dots, each with rows of its own, and lines at the means of both axes. */
+export default function ScatterGroups() {
+    return (
+        <Chart
+            class="ch-scatter-groups"
+            title="Study time and exam score"
+            xField="hours"
+            xAxis={{ title: 'Hours studied', min: 0 }}
+            yAxis={{ title: 'Score', min: 30, max: 100 }}
+            references={[
+                { axis: 'x', value: mean(ALL, 'hours'), label: 'Mean hours' },
+                { value: 70, label: 'Pass' }
+            ]}
+            series={[
+                { type: 'scatter', data: CLASS_A, yField: 'score', name: 'Class A' },
+                { type: 'scatter', data: CLASS_B, yField: 'score', name: 'Class B' }
+            ]}
+        />
+    );
+}
+```
+
+## Choosing points
+
+`pointSelection: 'multiple'` lets the reader choose several dots with clicks, or with the arrow keys and Enter. `onSelectionChanged` gives the chosen rows, and `tooltip.format` writes a tooltip of your own.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Chart, Stack } from '@motifx-community/ui';
+
+const CITIES = [
+    { city: 'Lisbon', rent: 1350, salary: 1600 },
+    { city: 'Madrid', rent: 1250, salary: 2100 },
+    { city: 'Milan', rent: 1500, salary: 2300 },
+    { city: 'Vienna', rent: 1100, salary: 2900 },
+    { city: 'Prague', rent: 950, salary: 1900 },
+    { city: 'Warsaw', rent: 900, salary: 1700 },
+    { city: 'Berlin', rent: 1400, salary: 3300 },
+    { city: 'Athens', rent: 700, salary: 1200 },
+    { city: 'Dublin', rent: 2100, salary: 3500 },
+    { city: 'Helsinki', rent: 1150, salary: 3100 }
+];
+
+/** Click dots, or move to them with the arrow keys and press Enter, to choose several; the page compares them. */
+export default function ScatterChoose() {
+    const s = reactive({ told: 'Choose cities on the chart.' });
+    return (
+        <Stack class="docs-wide" gap="sm">
+            <Chart
+                class="ch-scatter-choose"
+                title="Rent and salary"
+                subtitle="Monthly, in euros"
+                data={CITIES}
+                xField="rent"
+                pointSelection="multiple"
+                xAxis={{ title: 'Rent of a flat' }}
+                yAxis={{ title: 'Salary after tax' }}
+                tooltip={{ format: c => (c.point ? `${c.point.row.city}: rent ${c.point.xText}, salary ${c.point.yText}` : c.title) }}
+                series={[{ type: 'scatter', yField: 'salary', name: 'Cities' }]}
+                onSelectionChanged={e =>
+                    (s.told = e.points.length
+                        ? e.points.map(p => `${p.row.city}: ${Math.round((p.row.rent / p.row.salary) * 100)}% of the salary`).join(' · ')
+                        : 'Choose cities on the chart.')
+                }
+            />
+            <output class="ch-scatter-told">{() => s.told}</output>
+        </Stack>
+    );
+}
+```
+
 ## API reference
 
 | Field | Type | Default | Description |
@@ -23130,6 +23215,77 @@ export default function Parts() {
 }
 ```
 
+## Labels and starting angle
+
+`labels: 'all'` writes a value on every part that has room for it, in the series' `format`. `startAngle` turns the first part to another position, and `innerRadius` sets the width of the ring.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const DISK = [
+    { kind: 'Photos', size: 182 },
+    { kind: 'Videos', size: 124 },
+    { kind: 'Apps', size: 64 },
+    { kind: 'Documents', size: 22 },
+    { kind: 'System', size: 38 }
+];
+
+/** A thin ring that starts at the right, with every share written on its part. */
+export default function PieLabels() {
+    return (
+        <Chart
+            class="ch-pie-labels"
+            title="Disk use"
+            subtitle="430 GB of 512 GB"
+            data={DISK}
+            xField="kind"
+            series={[{ type: 'donut', yField: 'size', name: 'Size', innerRadius: 0.72, startAngle: 90, labels: 'all', format: { style: 'unit', unit: 'gigabyte' } }]}
+        />
+    );
+}
+```
+
+## Choosing a part
+
+`pointSelection` lets the reader choose a part with a click or with Enter. `onSelectionChanged` gives the chosen point, with its `share` of the whole.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Chart, Stack } from '@motifx-community/ui';
+
+const SPENDING = [
+    { item: 'Rent', amount: 1200 },
+    { item: 'Food', amount: 540 },
+    { item: 'Transport', amount: 210 },
+    { item: 'Bills', amount: 180 },
+    { item: 'Leisure', amount: 260 }
+];
+
+const money = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+
+/** A click, or Enter, chooses a part; the page tells what it is and how much of the whole it takes. */
+export default function PieChoose() {
+    const s = reactive({ told: 'Choose a part of the pie.' });
+    return (
+        <Stack class="docs-wide" gap="sm">
+            <Chart
+                class="ch-pie-choose"
+                title="Spending in March"
+                data={SPENDING}
+                xField="item"
+                pointSelection="single"
+                series={[{ type: 'pie', yField: 'amount', name: 'Amount', format: { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 } }]}
+                onSelectionChanged={e => {
+                    const p = e.points[0];
+                    s.told = p ? `${p.xText}: ${money.format(p.y)}, ${Math.round((p.share ?? 0) * 100)}% of the month` : 'Choose a part of the pie.';
+                }}
+            />
+            <output class="ch-pie-told">{() => s.told}</output>
+        </Stack>
+    );
+}
+```
+
 ## API reference
 
 | Field | Type | Default | Description |
@@ -23174,9 +23330,94 @@ export default function Funnel() {
 }
 ```
 
+## Values and clicks
+
+`labels: 'all'` writes the value on every stage. `onPointClick` gives the stage that was clicked, for a detail of your own such as the conversion from the first stage.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Chart, Stack } from '@motifx-community/ui';
+
+const STEPS = [
+    { step: 'Applied', people: 840 },
+    { step: 'Screened', people: 410 },
+    { step: 'Interviewed', people: 126 },
+    { step: 'Offered', people: 34 },
+    { step: 'Hired', people: 21 }
+];
+
+/** Every stage with its count; a click on a stage tells how many of the first stage got that far. */
+export default function FunnelLabels() {
+    const s = reactive({ told: 'Click a stage.' });
+    return (
+        <Stack class="docs-wide" gap="sm">
+            <Chart
+                class="ch-funnel-labels"
+                title="Hiring this year"
+                data={STEPS}
+                xField="step"
+                legend={false}
+                series={[{ type: 'funnel', yField: 'people', name: 'People', labels: 'all' }]}
+                onPointClick={e => (s.told = `${e.point.xText}: ${e.point.yText} people, ${Math.round((e.point.y / STEPS[0].people) * 1000) / 10}% of those who applied`)}
+            />
+            <output class="ch-funnel-told">{() => s.told}</output>
+        </Stack>
+    );
+}
+```
+
+## Another period
+
+New rows redraw the funnel, and the stages animate to their new sizes. Use this to compare periods or segments with the same stages.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { ButtonGroup, Chart, Stack } from '@motifx-community/ui';
+
+const PERIODS = {
+    march: [
+        { step: 'Opened the email', people: 5200 },
+        { step: 'Clicked the link', people: 1900 },
+        { step: 'Signed up', people: 640 },
+        { step: 'Bought', people: 180 }
+    ],
+    april: [
+        { step: 'Opened the email', people: 6100 },
+        { step: 'Clicked the link', people: 2600 },
+        { step: 'Signed up', people: 1020 },
+        { step: 'Bought', people: 310 }
+    ]
+};
+
+/** The same stages for another period: new rows, and the stages move to their new sizes. */
+export default function FunnelPeriods() {
+    const s = reactive({ period: 'march' as keyof typeof PERIODS });
+    return (
+        <Stack class="docs-wide" gap="md">
+            <ButtonGroup
+                label="Period"
+                x-model={() => s.period}
+                items={[
+                    { value: 'march', text: 'March' },
+                    { value: 'april', text: 'April' }
+                ]}
+            />
+            <Chart
+                class="ch-funnel-periods"
+                title="Spring campaign"
+                data={() => PERIODS[s.period]}
+                xField="step"
+                legend={false}
+                series={[{ type: 'funnel', yField: 'people', name: 'People', labels: 'all' }]}
+            />
+        </Stack>
+    );
+}
+```
+
 ## Feedback
 
-No open issues for this page.
+Loading issues…
 
 
 ---
@@ -23220,6 +23461,80 @@ export default function Radar() {
 }
 ```
 
+## Fixed scale and a target
+
+Set `min` and `max` on the value axis so that shapes compare against the same scale. A target series gives a reference shape; the reader can hide series in the legend.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const REVIEW = [
+    { skill: 'Delivery', target: 80, team: 86, last: 72 },
+    { skill: 'Quality', target: 85, team: 78, last: 74 },
+    { skill: 'Teamwork', target: 75, team: 88, last: 80 },
+    { skill: 'Planning', target: 70, team: 62, last: 55 },
+    { skill: 'Learning', target: 60, team: 74, last: 66 }
+];
+
+/** A fixed scale from 0 to 100, so shapes compare fairly; hide a series in the legend to compare two. */
+export default function RadarTarget() {
+    return (
+        <Chart
+            class="ch-radar-target"
+            title="Team review"
+            data={REVIEW}
+            xField="skill"
+            yAxis={{ min: 0, max: 100, tickCount: 5 }}
+            series={[
+                { type: 'radar', yField: 'target', name: 'Target' },
+                { type: 'radar', yField: 'team', name: 'This year', markers: true },
+                { type: 'radar', yField: 'last', name: 'Last year', markers: true }
+            ]}
+        />
+    );
+}
+```
+
+## A year around the circle
+
+A radar suits data that repeats in a cycle, such as the months of a year, because the last position joins the first.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const RAIN = [
+    { month: 'Jan', north: 92, south: 110 },
+    { month: 'Feb', north: 74, south: 96 },
+    { month: 'Mar', north: 68, south: 72 },
+    { month: 'Apr', north: 52, south: 48 },
+    { month: 'May', north: 46, south: 30 },
+    { month: 'Jun', north: 38, south: 12 },
+    { month: 'Jul', north: 30, south: 4 },
+    { month: 'Aug', north: 34, south: 6 },
+    { month: 'Sep', north: 48, south: 22 },
+    { month: 'Oct', north: 70, south: 58 },
+    { month: 'Nov', north: 84, south: 92 },
+    { month: 'Dec', north: 98, south: 118 }
+];
+
+/** Twelve months around the circle: a year that comes back to where it started. */
+export default function RadarYear() {
+    return (
+        <Chart
+            class="ch-radar-year"
+            title="Rain over the year"
+            data={RAIN}
+            xField="month"
+            yAxis={{ format: { style: 'unit', unit: 'millimeter' } }}
+            series={[
+                { type: 'radar', yField: 'north', name: 'North coast' },
+                { type: 'radar', yField: 'south', name: 'South coast' }
+            ]}
+        />
+    );
+}
+```
+
 ## API reference
 
 | Field | Type | Default | Description |
@@ -23255,6 +23570,64 @@ const LOAD = DAYS.flatMap((day, d) => HOURS.map((hour, h) => ({ day, hour, order
 /** A value for each pair, as a color in seven steps. The legend gives each step its values. */
 export default function Heatmap() {
     return <Chart class="ch-heat" title="Orders by day and hour" data={LOAD} xField="hour" series={[{ type: 'heatmap', yField: 'day', valueField: 'orders', name: 'Orders', labels: 'all' }]} />;
+}
+```
+
+## Calendar
+
+Any two categories make the grid, here weeks and weekdays. The series `format` controls how cell labels and tooltips read; compact numbers fit small cells.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// Five weeks of steps walked, more at the weekend.
+const STEPS = Array.from({ length: 5 }, (_, w) => `Week ${w + 1}`).flatMap((week, w) =>
+    DAYS.map((day, d) => ({ week, day, steps: Math.round(5200 + (d >= 5 ? 4200 : 0) + Math.sin(w * 2 + d) * 1800 + w * 350) }))
+);
+
+/** A calendar of weeks and days: each cell's label reads in the series' own format, short enough to fit. */
+export default function HeatmapCalendar() {
+    return (
+        <Chart
+            class="ch-heat-calendar"
+            title="Steps walked"
+            data={STEPS}
+            xField="day"
+            series={[{ type: 'heatmap', yField: 'week', valueField: 'steps', name: 'Steps', labels: 'all', format: { notation: 'compact', maximumFractionDigits: 1 } }]}
+        />
+    );
+}
+```
+
+## Many cells
+
+In a dense grid, leave `labels` off. The color steps show the pattern, and the tooltip and the table view show each value.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const HOURS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0'));
+
+// How long the server takes to answer, slower in working hours.
+const TIMES = DAYS.flatMap((day, d) =>
+    HOURS.map((hour, h) => ({ day, hour, ms: Math.round(90 + (d < 5 ? 1 : 0.4) * 160 * Math.max(0, Math.sin(((h - 6) / 14) * Math.PI)) + ((h * 7 + d * 3) % 11) * 4) }))
+);
+
+/** Many cells and no labels: the colors carry the pattern, the tooltip and the table carry the values. */
+export default function HeatmapHours() {
+    return (
+        <Chart
+            class="ch-heat-hours"
+            title="Response time by hour"
+            data={TIMES}
+            xField="hour"
+            xAxis={{ title: 'Hour of the day' }}
+            series={[{ type: 'heatmap', yField: 'day', valueField: 'ms', name: 'Response time', format: { style: 'unit', unit: 'millisecond', maximumFractionDigits: 0 } }]}
+        />
+    );
 }
 ```
 
@@ -23315,6 +23688,76 @@ export default function Ranges() {
                 { type: 'rangeArea', lowField: 'low', highField: 'high', name: 'Range' },
                 { yField: 'mean', name: 'Mean', smooth: true }
             ]}
+        />
+    );
+}
+```
+
+## Forecast with a range
+
+Each series can take rows of its own with `data`. Here the actual values, the forecast and its likely range share one category axis, and the band widens as the forecast goes further.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const SOLD = [420, 446, 470, 462, 498, 530, 548];
+
+// The months give the axis; the series bring their own values.
+const AXIS: Record<string, string | number>[] = MONTHS.map(month => ({ month }));
+const ACTUAL = SOLD.map((units, i) => ({ month: MONTHS[i], units }));
+// The forecast starts at the last real month and widens as it goes further.
+const FORECAST = MONTHS.slice(SOLD.length - 1).map((month, i) => {
+    const units = SOLD[SOLD.length - 1] + i * 22;
+    return { month, units, low: units - i * 16, high: units + i * 16 };
+});
+
+/** Each series with rows of its own: what was sold, the forecast, and the band it may fall in. */
+export default function RangesForecast() {
+    return (
+        <Chart
+            class="ch-range-forecast"
+            title="Units sold, and the forecast"
+            data={AXIS}
+            xField="month"
+            series={[
+                { type: 'rangeArea', data: FORECAST, lowField: 'low', highField: 'high', name: 'Likely range' },
+                { data: FORECAST, yField: 'units', name: 'Forecast', markers: true },
+                { data: ACTUAL, yField: 'units', name: 'Sold', markers: true }
+            ]}
+        />
+    );
+}
+```
+
+## Timeline
+
+`rangeBar` with `horizontal` lays out start and end values on their side, as in a project plan. A reference line marks the current week.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const TASKS = [
+    { task: 'Research', start: 1, end: 4 },
+    { task: 'Design', start: 3, end: 8 },
+    { task: 'Build', start: 6, end: 16 },
+    { task: 'Test', start: 12, end: 18 },
+    { task: 'Launch', start: 18, end: 20 }
+];
+
+/** Bars from a start to an end, laid on their side: a plan read week by week, with a line for this week. */
+export default function RangesTimeline() {
+    return (
+        <Chart
+            class="ch-range-timeline"
+            title="Project plan"
+            data={TASKS}
+            xField="task"
+            horizontal
+            legend={false}
+            yAxis={{ title: 'Week', min: 0, max: 20 }}
+            references={[{ value: 9, label: 'This week' }]}
+            series={[{ type: 'rangeBar', lowField: 'start', highField: 'end', name: 'Weeks' }]}
         />
     );
 }
@@ -23381,6 +23824,112 @@ export default function Candles() {
 }
 ```
 
+## Price and volume
+
+Prices and the volume traded have different units, so they go in two charts on the same time axis instead of on two scales of one plot. A reference line marks the average close.
+
+```tsx
+import { Chart, Stack } from '@motifx-community/ui';
+
+const DAYS = Array.from({ length: 30 }, (_, i) => {
+    const open = 48 + Math.round((Math.sin(i / 4) * 5 + i * 0.3) * 10) / 10;
+    const close = Math.round((open + Math.cos(i * 1.3) * 2.4) * 10) / 10;
+    const high = Math.round((Math.max(open, close) + 0.6 + (i % 3) * 0.4) * 10) / 10;
+    const low = Math.round((Math.min(open, close) - 0.6 - (i % 4) * 0.3) * 10) / 10;
+    return { day: new Date(2026, 8, i + 1), open, close, high, low, volume: Math.round(1.2e6 + Math.abs(close - open) * 6e5 + (i % 5) * 1.5e5) };
+});
+
+const average = Math.round((DAYS.reduce((sum, d) => sum + d.close, 0) / DAYS.length) * 100) / 100;
+
+/** Prices and the volume traded: two charts on one time line, never two scales on one plot. A line marks the month's average close. */
+export default function CandlesVolume() {
+    return (
+        <Stack class="docs-wide" gap="sm">
+            <Chart
+                class="ch-candles-price"
+                title="Share price in September"
+                data={DAYS}
+                xField="day"
+                height={260}
+                xAxis={{ format: { day: 'numeric' } }}
+                yAxis={{ format: { style: 'currency', currency: 'EUR' } }}
+                references={[{ value: average, label: 'Average close' }]}
+                series={[{ type: 'candlestick', openField: 'open', highField: 'high', lowField: 'low', closeField: 'close', name: 'Price' }]}
+            />
+            <Chart
+                class="ch-candles-volume"
+                label="Volume traded in September"
+                data={DAYS}
+                xField="day"
+                height={200}
+                xAxis={{ format: { day: 'numeric' } }}
+                yAxis={{ format: { notation: 'compact' } }}
+                series={[{ type: 'bar', yField: 'volume', name: 'Volume' }]}
+            />
+        </Stack>
+    );
+}
+```
+
+## Periods
+
+With `zoom` on, `zoomTo()` shows a stretch of time, for example the latest month, and `resetZoom()` shows all of it again. The reader can still drag across the plot, and `onZoomChanged` reports every change.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { ButtonGroup, Chart, Stack } from '@motifx-community/ui';
+
+const START = new Date(2026, 0, 1).getTime();
+const DAY = 24 * 60 * 60 * 1000;
+
+const YEAR = Array.from({ length: 260 }, (_, i) => {
+    const open = Math.round((120 + Math.sin(i / 18) * 14 + i * 0.12 + Math.sin(i * 2.1) * 2) * 10) / 10;
+    const close = Math.round((open + Math.cos(i * 1.7) * 3) * 10) / 10;
+    return { day: new Date(START + i * DAY), open, close, high: Math.max(open, close) + 1 + (i % 3) * 0.5, low: Math.min(open, close) - 1 - (i % 4) * 0.4 };
+});
+
+const LAST = YEAR[YEAR.length - 1].day.getTime();
+
+/** A year of prices with zoom on; the buttons zoom to the latest stretch with `zoomTo`, and dragging across the plot still works. */
+export default function CandlesPeriods() {
+    const s = reactive({ period: 'all' });
+    let chart!: Chart;
+    // A zoom of the reader's own, by dragging or the wheel, leaves no button chosen.
+    let moving = false;
+    const show = (period: string) => {
+        const days = { month: 30, quarter: 91 }[period];
+        moving = true;
+        if (days) chart.zoomTo(new Date(LAST - days * DAY), new Date(LAST));
+        else chart.resetZoom();
+        moving = false;
+    };
+    return (
+        <Stack class="docs-wide" gap="md">
+            <ButtonGroup
+                label="Period"
+                x-model={() => s.period}
+                onValueChanged={e => e.byUser && show(e.value as string)}
+                items={[
+                    { value: 'month', text: '1 month' },
+                    { value: 'quarter', text: '3 months' },
+                    { value: 'all', text: 'All' }
+                ]}
+            />
+            <Chart
+                ref={(x: Chart) => (chart = x)}
+                class="ch-candles-periods"
+                title="Share price this year"
+                data={YEAR}
+                xField="day"
+                zoom
+                series={[{ type: 'candlestick', openField: 'open', highField: 'high', lowField: 'low', closeField: 'close', name: 'Price' }]}
+                onZoomChanged={e => !moving && (s.period = e.from ? '' : 'all')}
+            />
+        </Stack>
+    );
+}
+```
+
 ## API reference
 
 | Field | Type | Default | Description |
@@ -23424,6 +23973,75 @@ const BUDGET = [
 /** Each step adds or takes away, and a total row shows where it stands. */
 export default function Waterfall() {
     return <Chart class="ch-waterfall" title="Cash over the year" data={BUDGET} xField="item" series={[{ type: 'waterfall', yField: 'change', totalField: 'total', name: 'Cash', labels: 'all' }]} />;
+}
+```
+
+## On its side
+
+`horizontal` gives long step names room to read in full. Labels follow the series `format`, here compact currency.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const BRIDGE = [
+    { step: 'Profit last year', change: 4.2 },
+    { step: 'Higher prices', change: 1.1 },
+    { step: 'More units sold', change: 0.8 },
+    { step: 'Material costs', change: -1.4 },
+    { step: 'New staff', change: -0.6 },
+    { step: 'Exchange rates', change: -0.3 },
+    { step: 'Profit this year', total: true }
+];
+
+/** On its side, so long step names read in full. */
+export default function WaterfallBridge() {
+    return (
+        <Chart
+            class="ch-waterfall-bridge"
+            title="From last year's profit to this year's"
+            subtitle="In millions of euros"
+            data={BRIDGE}
+            xField="step"
+            horizontal
+            legend={false}
+            series={[{ type: 'waterfall', yField: 'change', totalField: 'total', name: 'Profit', labels: 'all', format: { style: 'currency', currency: 'EUR', notation: 'compact', maximumFractionDigits: 1 } }]}
+        />
+    );
+}
+```
+
+## Subtotals
+
+A row with `totalField` set shows the running total at that point, so a waterfall can close each period. `labels: 'extremes'` labels only the highest and lowest bars.
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+
+const FLOW = [
+    { month: 'Opening', change: 50 },
+    { month: 'Jan', change: 12 },
+    { month: 'Feb', change: -8 },
+    { month: 'Mar', change: 15 },
+    { month: 'Q1', total: true },
+    { month: 'Apr', change: -21 },
+    { month: 'May', change: 9 },
+    { month: 'Jun', change: 18 },
+    { month: 'Q2', total: true }
+];
+
+/** Totals between the steps show where the account stands at the end of each quarter; only the highest and lowest bars carry labels. */
+export default function WaterfallQuarters() {
+    return (
+        <Chart
+            class="ch-waterfall-quarters"
+            title="Account balance, first half"
+            subtitle="In thousands of euros"
+            data={FLOW}
+            xField="month"
+            legend={false}
+            series={[{ type: 'waterfall', yField: 'change', totalField: 'total', name: 'Balance', labels: 'extremes' }]}
+        />
+    );
 }
 ```
 
@@ -23480,6 +24098,56 @@ export default function Zoom() {
                 onZoomChanged={(e) => (s.seen = e.from ? `${time.format(e.from as Date)} to ${time.format(e.to as Date)}` : 'All of it')}
             />
             <output class="ch-zoom-told">{() => s.seen}</output>
+        </Stack>
+    );
+}
+```
+
+## Zooming categories
+
+Zoom works on a category axis too. `zoomTo()` takes the first and last category to show, as they are written in the rows.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { ButtonGroup, Chart, Stack } from '@motifx-community/ui';
+
+const WEEKS = Array.from({ length: 52 }, (_, i) => ({ week: `W${i + 1}`, orders: Math.round(300 + Math.sin(i / 8) * 90 + (i > 46 ? 160 : 0) + ((i * 13) % 7) * 12) }));
+
+/** Zoom works on categories too: the buttons call `zoomTo` with the names of the first and last week to show. */
+export default function ZoomWeeks() {
+    const s = reactive({ part: 'all' });
+    let chart!: Chart;
+    let moving = false;
+    const show = (part: string) => {
+        moving = true;
+        if (part === 'first') chart.zoomTo('W1', 'W26');
+        else if (part === 'last') chart.zoomTo('W41', 'W52');
+        else chart.resetZoom();
+        moving = false;
+    };
+    return (
+        <Stack class="docs-wide" gap="md">
+            <ButtonGroup
+                label="Weeks"
+                x-model={() => s.part}
+                onValueChanged={e => e.byUser && show(e.value as string)}
+                items={[
+                    { value: 'first', text: 'First half' },
+                    { value: 'last', text: 'Last 12 weeks' },
+                    { value: 'all', text: 'All' }
+                ]}
+            />
+            <Chart
+                ref={(x: Chart) => (chart = x)}
+                class="ch-zoom-weeks"
+                title="Orders by week"
+                data={WEEKS}
+                xField="week"
+                zoom
+                legend={false}
+                series={[{ type: 'bar', yField: 'orders', name: 'Orders' }]}
+                onZoomChanged={e => !moving && (s.part = e.from ? '' : 'all')}
+            />
         </Stack>
     );
 }

@@ -1,6 +1,8 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Radar from './examples/Radar';
+import RadarTarget from './examples/RadarTarget';
+import RadarYear from './examples/RadarYear';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
@@ -21,6 +23,22 @@ export default function ChartRadarPage() {
                 </p>
                 <Example files={code('Radar.tsx')}>
                     <Radar />
+                </Example>
+            </Section>
+            <Section anchor="scale" title="Fixed scale and a target">
+                <p>
+                    <Rich text="Set `min` and `max` on the value axis so that shapes compare against the same scale. A target series gives a reference shape; the reader can hide series in the legend." />
+                </p>
+                <Example files={code('RadarTarget.tsx')}>
+                    <RadarTarget />
+                </Example>
+            </Section>
+            <Section anchor="cycle" title="A year around the circle">
+                <p>
+                    <Rich text="A radar suits data that repeats in a cycle, such as the months of a year, because the last position joins the first." />
+                </p>
+                <Example files={code('RadarYear.tsx')}>
+                    <RadarYear />
                 </Example>
             </Section>
             <Section anchor="api" title="API reference">

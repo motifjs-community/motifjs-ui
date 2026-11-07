@@ -1,6 +1,8 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Waterfall from './examples/Waterfall';
+import WaterfallBridge from './examples/WaterfallBridge';
+import WaterfallQuarters from './examples/WaterfallQuarters';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
@@ -22,6 +24,22 @@ export default function ChartWaterfallPage() {
                 </p>
                 <Example files={code('Waterfall.tsx')}>
                     <Waterfall />
+                </Example>
+            </Section>
+            <Section anchor="horizontal" title="On its side">
+                <p>
+                    <Rich text="`horizontal` gives long step names room to read in full. Labels follow the series `format`, here compact currency." />
+                </p>
+                <Example files={code('WaterfallBridge.tsx')}>
+                    <WaterfallBridge />
+                </Example>
+            </Section>
+            <Section anchor="subtotals" title="Subtotals">
+                <p>
+                    <Rich text="A row with `totalField` set shows the running total at that point, so a waterfall can close each period. `labels: 'extremes'` labels only the highest and lowest bars." />
+                </p>
+                <Example files={code('WaterfallQuarters.tsx')}>
+                    <WaterfallQuarters />
                 </Example>
             </Section>
             <Section anchor="api" title="API reference">

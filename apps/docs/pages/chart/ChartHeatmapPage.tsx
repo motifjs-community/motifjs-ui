@@ -1,6 +1,8 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Heatmap from './examples/Heatmap';
+import HeatmapCalendar from './examples/HeatmapCalendar';
+import HeatmapHours from './examples/HeatmapHours';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
@@ -22,6 +24,22 @@ export default function ChartHeatmapPage() {
                 </p>
                 <Example files={code('Heatmap.tsx')}>
                     <Heatmap />
+                </Example>
+            </Section>
+            <Section anchor="calendar" title="Calendar">
+                <p>
+                    <Rich text="Any two categories make the grid, here weeks and weekdays. The series `format` controls how cell labels and tooltips read; compact numbers fit small cells." />
+                </p>
+                <Example files={code('HeatmapCalendar.tsx')}>
+                    <HeatmapCalendar />
+                </Example>
+            </Section>
+            <Section anchor="dense" title="Many cells">
+                <p>
+                    <Rich text="In a dense grid, leave `labels` off. The color steps show the pattern, and the tooltip and the table view show each value." />
+                </p>
+                <Example files={code('HeatmapHours.tsx')}>
+                    <HeatmapHours />
                 </Example>
             </Section>
             <Section anchor="api" title="API reference">

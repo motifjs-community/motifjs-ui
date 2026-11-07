@@ -1,6 +1,8 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Parts from './examples/Parts';
+import PieLabels from './examples/PieLabels';
+import PieChoose from './examples/PieChoose';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
@@ -23,6 +25,22 @@ export default function ChartPiePage() {
                 </p>
                 <Example stack files={code('Parts.tsx')}>
                     <Parts />
+                </Example>
+            </Section>
+            <Section anchor="labels" title="Labels and starting angle">
+                <p>
+                    <Rich text="`labels: 'all'` writes a value on every part that has room for it, in the series' `format`. `startAngle` turns the first part to another position, and `innerRadius` sets the width of the ring." />
+                </p>
+                <Example files={code('PieLabels.tsx')}>
+                    <PieLabels />
+                </Example>
+            </Section>
+            <Section anchor="choose" title="Choosing a part">
+                <p>
+                    <Rich text="`pointSelection` lets the reader choose a part with a click or with Enter. `onSelectionChanged` gives the chosen point, with its `share` of the whole." />
+                </p>
+                <Example stack files={code('PieChoose.tsx')}>
+                    <PieChoose />
                 </Example>
             </Section>
             <Section anchor="api" title="API reference">

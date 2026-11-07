@@ -1,4 +1,8 @@
 {
   "A funnel follows a quantity through stages in order, and shows how much of it is left at each one.": "Huni bir miktarı sıralı aşamalar boyunca izler ve her aşamada ne kadarının kaldığını gösterir.",
-  "`funnel` shows stages in the order of the rows, each with the share of the first stage that is left. The stages take one hue, darker towards the first, as they are in order.": "`funnel` aşamaları satırların sırasıyla, her biri ilk aşamadan kalan payla birlikte gösterir. Aşamalar sıralı olduğu için tek bir renk tonu alır ve ilk aşamaya doğru koyulaşır."
+  "`funnel` shows stages in the order of the rows, each with the share of the first stage that is left. The stages take one hue, darker towards the first, as they are in order.": "`funnel` aşamaları satırların sırasıyla, her biri ilk aşamadan kalan payla birlikte gösterir. Aşamalar sıralı olduğu için tek bir renk tonu alır ve ilk aşamaya doğru koyulaşır.",
+  "Values and clicks": "Değerler ve tıklamalar",
+  "`labels: 'all'` writes the value on every stage. `onPointClick` gives the stage that was clicked, for a detail of your own such as the conversion from the first stage.": "`labels: 'all'` her aşamaya değerini yazar. `onPointClick` tıklanan aşamayı verir; ilk aşamadan dönüşüm oranı gibi size ait bir ayrıntıyı göstermek için kullanılabilir.",
+  "Another period": "Başka bir dönem",
+  "New rows redraw the funnel, and the stages animate to their new sizes. Use this to compare periods or segments with the same stages.": "Yeni satırlar hunin yeniden çizilmesini sağlar ve aşamalar yeni boyutlarına animasyonla geçer. Aynı aşamalara sahip dönemleri veya segmentleri karşılaştırmak için bu yöntemi kullanın."
 }

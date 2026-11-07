@@ -1,6 +1,8 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Ranges from './examples/Ranges';
+import RangesForecast from './examples/RangesForecast';
+import RangesTimeline from './examples/RangesTimeline';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
@@ -21,6 +23,22 @@ export default function ChartRangesPage() {
                 </p>
                 <Example files={code('Ranges.tsx')}>
                     <Ranges />
+                </Example>
+            </Section>
+            <Section anchor="forecast" title="Forecast with a range">
+                <p>
+                    <Rich text="Each series can take rows of its own with `data`. Here the actual values, the forecast and its likely range share one category axis, and the band widens as the forecast goes further." />
+                </p>
+                <Example files={code('RangesForecast.tsx')}>
+                    <RangesForecast />
+                </Example>
+            </Section>
+            <Section anchor="timeline" title="Timeline">
+                <p>
+                    <Rich text="`rangeBar` with `horizontal` lays out start and end values on their side, as in a project plan. A reference line marks the current week." />
+                </p>
+                <Example files={code('RangesTimeline.tsx')}>
+                    <RangesTimeline />
                 </Example>
             </Section>
             <Section anchor="api" title="API reference">

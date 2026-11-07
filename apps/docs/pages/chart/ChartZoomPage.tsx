@@ -1,6 +1,7 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Zoom from './examples/Zoom';
+import ZoomWeeks from './examples/ZoomWeeks';
 
 const code = sources(import.meta.glob('./examples/*', { query: '?raw', import: 'default', eager: true }));
 
@@ -17,6 +18,14 @@ export default function ChartZoomPage() {
                 </p>
                 <Example stack files={code('Zoom.tsx')}>
                     <Zoom />
+                </Example>
+            </Section>
+            <Section anchor="categories" title="Zooming categories">
+                <p>
+                    <Rich text="Zoom works on a category axis too. `zoomTo()` takes the first and last category to show, as they are written in the rows." />
+                </p>
+                <Example stack files={code('ZoomWeeks.tsx')}>
+                    <ZoomWeeks />
                 </Example>
             </Section>
         </>
