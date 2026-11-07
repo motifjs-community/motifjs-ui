@@ -1,0 +1,307 @@
+/* Chart: a title row, a plot and a legend in a grid, so the legend can take any side with the same markup. The SVG lies
+   over the plot and takes its measures from it, so it never pushes the box it sits in. Colors and sizes are tokens; the
+   geometry reads the sizes when it draws. `--_surface` is the background behind the chart, written when it draws. */
+@layer mx.components {
+    .mx-chart {
+        --_height: var(--_chart-height);
+
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
+        grid-template-areas:
+            'head head head'
+            'legend-top legend-top legend-top'
+            'legend-start plot legend-end'
+            'legend-bottom legend-bottom legend-bottom';
+        box-sizing: border-box;
+        inline-size: 100%;
+        block-size: var(--_height);
+    }
+
+    .mx-chart[data-mode='table'] {
+        block-size: auto;
+        max-block-size: var(--_height);
+    }
+
+    .mx-chart__head {
+        grid-area: head;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+    }
+
+    .mx-chart__titles {
+        min-inline-size: 0;
+    }
+
+    .mx-chart__tools {
+        flex: none;
+        margin-inline-start: auto;
+    }
+
+    .mx-chart__area-box {
+        grid-area: plot;
+        display: flex;
+        min-block-size: 0;
+        min-inline-size: 0;
+    }
+
+    .mx-chart__plot {
+        position: relative;
+        flex: 1;
+        min-block-size: 0;
+        min-inline-size: 0;
+        touch-action: pan-y;
+    }
+
+    .mx-chart__svg {
+        position: absolute;
+        inset: 0;
+        display: block;
+        direction: ltr;
+        overflow: visible;
+    }
+
+    /* An axis with nothing on it would read as values of zero. */
+    .mx-chart[data-empty] .mx-chart__svg {
+        visibility: hidden;
+    }
+
+    .mx-chart[data-loading] .mx-chart__marks {
+        opacity: var(--_chart-loading-opacity);
+    }
+
+    .mx-chart__grid {
+        fill: none;
+        stroke: currentcolor;
+        stroke-width: var(--_chart-grid-width);
+        shape-rendering: crispedges;
+    }
+
+    .mx-chart__axis {
+        fill: none;
+        stroke: currentcolor;
+        stroke-width: var(--_chart-axis-width);
+        shape-rendering: crispedges;
+    }
+
+    .mx-chart__ticks,
+    .mx-chart__axis-title,
+    .mx-chart__labels {
+        fill: currentcolor;
+    }
+
+    .mx-chart__ticks {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .mx-chart__labels text {
+        paint-order: stroke;
+        stroke: var(--_surface);
+        stroke-width: var(--_chart-marker-ring);
+        stroke-linejoin: round;
+    }
+
+    .mx-chart__line {
+        fill: none;
+        stroke: var(--_mark);
+        stroke-width: var(--_chart-line-width);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .mx-chart__area {
+        fill: var(--_mark);
+        fill-opacity: var(--_chart-area-opacity);
+    }
+
+    .mx-chart__bars {
+        fill: var(--_mark);
+    }
+
+    .mx-chart__dots,
+    .mx-chart__active-dot {
+        fill: var(--_mark);
+        stroke: var(--_surface);
+        stroke-width: var(--_chart-marker-ring);
+        paint-order: stroke;
+    }
+
+    .mx-chart__series[data-type='bubble'] .mx-chart__dots {
+        fill-opacity: var(--_chart-bubble-opacity);
+    }
+
+    .mx-chart__marks[data-reveal] .mx-chart__series {
+        animation: mx-chart-reveal var(--mx-motion-duration-slow) var(--mx-motion-easing-out);
+    }
+
+    .mx-chart:dir(rtl) .mx-chart__marks[data-reveal] .mx-chart__series {
+        animation-name: mx-chart-reveal-back;
+    }
+
+    .mx-chart__crosshair {
+        fill: none;
+        stroke: currentcolor;
+        stroke-width: var(--_chart-crosshair-width);
+        shape-rendering: crispedges;
+        pointer-events: none;
+    }
+
+    .mx-chart__active-bar {
+        fill: currentcolor;
+        opacity: var(--_chart-active-opacity);
+        pointer-events: none;
+    }
+
+    .mx-chart__message {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .mx-chart__tooltip {
+        position: absolute;
+        inset-block-start: 0;
+        left: 0;
+        z-index: var(--_over);
+        box-sizing: border-box;
+        inline-size: max-content;
+        pointer-events: none;
+
+        --_over: 2;
+    }
+
+    .mx-chart__tooltip-row {
+        display: grid;
+        grid-template-columns: auto auto minmax(0, 1fr);
+        align-items: center;
+    }
+
+    .mx-chart__tooltip-key {
+        background-color: var(--_mark);
+    }
+
+    .mx-chart__tooltip-value {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .mx-chart__legend {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        min-inline-size: 0;
+    }
+
+    .mx-chart[data-legend='top'] > .mx-chart__legend {
+        grid-area: legend-top;
+    }
+
+    .mx-chart[data-legend='bottom'] > .mx-chart__legend {
+        grid-area: legend-bottom;
+    }
+
+    .mx-chart[data-legend='start'] > .mx-chart__legend,
+    .mx-chart[data-legend='end'] > .mx-chart__legend {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        overflow-y: auto;
+    }
+
+    .mx-chart[data-legend='start'] > .mx-chart__legend {
+        grid-area: legend-start;
+    }
+
+    .mx-chart[data-legend='end'] > .mx-chart__legend {
+        grid-area: legend-end;
+    }
+
+    .mx-chart__legend-item {
+        display: inline-flex;
+        align-items: center;
+        min-inline-size: 0;
+        padding-inline: 0;
+        appearance: none;
+        background: none;
+        border: 0;
+        font: inherit;
+        cursor: pointer;
+    }
+
+    .mx-chart__legend-item:disabled {
+        cursor: default;
+    }
+
+    .mx-chart__legend-key {
+        flex: none;
+        background-color: var(--_mark);
+    }
+
+    .mx-chart__legend-key[data-type='line'] {
+        block-size: var(--_chart-line-width);
+    }
+
+    .mx-chart__legend-key[data-type='scatter'],
+    .mx-chart__legend-key[data-type='bubble'] {
+        inline-size: var(--_chart-marker-size);
+        block-size: var(--_chart-marker-size);
+        border-radius: 50%;
+    }
+
+    .mx-chart__legend-item[data-off] .mx-chart__legend-key {
+        background-color: transparent;
+        outline: var(--_chart-grid-width) solid currentcolor;
+    }
+
+    .mx-chart__legend-item[data-off] .mx-chart__legend-name {
+        text-decoration: line-through;
+    }
+
+    .mx-chart__table {
+        grid-area: plot;
+        overflow: auto;
+        min-block-size: 0;
+    }
+
+    .mx-chart__table table {
+        inline-size: 100%;
+        border-collapse: collapse;
+    }
+
+    .mx-chart__table th,
+    .mx-chart__table td {
+        text-align: start;
+        white-space: nowrap;
+    }
+
+    .mx-chart__table td {
+        text-align: end;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .mx-chart__table thead th:not(:first-child) {
+        text-align: end;
+    }
+
+    @keyframes mx-chart-reveal-back {
+        from {
+            clip-path: inset(0 0 0 100%);
+        }
+
+        to {
+            clip-path: inset(0 0 0 0);
+        }
+    }
+
+    @keyframes mx-chart-reveal {
+        from {
+            clip-path: inset(0 100% 0 0);
+        }
+
+        to {
+            clip-path: inset(0 0 0 0);
+        }
+    }
+}

@@ -622,5 +622,16 @@
   "validationSummary": "Please correct the following",
   "timeline": "Timeline",
   "timelineEarlier": "Earlier",
-  "timelineLater": "Later"
+  "timelineLater": "Later",
+  "chartName": "Chart",
+  "chartRole": "chart",
+  "chartPlot": "{name}: values",
+  "chartHelp": "Use the arrow keys to move between values.",
+  "chartValue": "{series}, {position}: {value}",
+  "chartEmpty": "No data to show",
+  "chartFailed": "The data could not be loaded",
+  "chartLegend": "Series",
+  "chartPosition": "Category",
+  "chartShowTable": "Show as a table",
+  "chartShowChart": "Show as a chart"
 }

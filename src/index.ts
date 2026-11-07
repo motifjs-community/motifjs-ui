@@ -38,6 +38,7 @@ export * from './components/bottomnavigation';
 export * from './components/otpinput';
 export * from './components/signature';
 export * from './components/qrcode';
+export * from './components/chart';
 export * from './components/barcode';
 export * from './components/validationsummary';
 export * from './components/timeline';

@@ -1,0 +1,76 @@
+{
+  "chart": {
+    "$description": "Chart: a plot with its axes, a legend and a tooltip. The marks take the design system's chart colors.",
+    "$selector": ".mx-chart",
+    "height": { "$type": "dimension", "$description": "The height with the title and the legend." },
+    "series-1": { "$type": "color", "$description": "The first series." },
+    "series-2": { "$type": "color" },
+    "series-3": { "$type": "color" },
+    "series-4": { "$type": "color" },
+    "series-5": { "$type": "color" },
+    "series-6": { "$type": "color" },
+    "series-7": { "$type": "color" },
+    "series-8": { "$type": "color" },
+    "bar-width": { "$type": "dimension", "$description": "The thickest a bar gets: the rest of a band stays air." },
+    "bar-radius": { "$type": "dimension", "$description": "The corners at the end of a bar. It stays square at the baseline." },
+    "bar-gap": { "$type": "dimension", "$description": "The gap between bars side by side, and between the pieces of a stack." },
+    "line-width": { "$type": "dimension", "$description": "The width of a line." },
+    "marker-size": { "$type": "dimension", "$description": "The size of a dot on a line and of a point of a scatter chart." },
+    "marker-ring": { "$type": "dimension", "$description": "The ring in the color behind the chart that keeps a dot apart from what it crosses." },
+    "area-opacity": { "$type": "number", "$description": "How strong the fill under a line is." },
+    "bubble-min": { "$type": "dimension", "$description": "The radius of the smallest bubble." },
+    "bubble-max": { "$type": "dimension", "$description": "The radius of the largest bubble." },
+    "bubble-opacity": { "$type": "number", "$description": "How strong a bubble is, so those behind it show." },
+    "hit-size": { "$type": "dimension", "$description": "How far from a dot the pointer still reaches it." },
+    "tick-gap": { "$type": "dimension", "$description": "The room each mark of an axis wants." },
+    "tick-pad": { "$type": "dimension", "$description": "The distance from the plot to the labels of an axis." },
+    "grid-width": { "$type": "dimension", "$description": "The width of a grid line." },
+    "axis-width": { "$type": "dimension", "$description": "The width of an axis line." },
+    "crosshair-width": { "$type": "dimension", "$description": "The width of the line that follows the pointer." },
+    "active-opacity": { "$type": "number", "$description": "How strongly a bar under the pointer lifts." },
+    "loading-opacity": { "$type": "number", "$description": "How far the marks dim while new values load." },
+    "$units": {
+      "root": { "$description": "The chart as a whole: its text color and font.", "selector": ".mx-chart" },
+      "head": { "$description": "The row of the titles and the tools.", "selector": ".mx-chart__head" },
+      "title": { "$description": "The title.", "selector": ".mx-chart__title" },
+      "subtitle": { "$description": "The line under the title.", "selector": ".mx-chart__subtitle" },
+      "plot": {
+        "$description": "The plot: `focus` when the keyboard is on it.",
+        "selector": ".mx-chart__plot",
+        "states": { "focus": ".mx-chart__plot:focus-visible" }
+      },
+      "grid": { "$description": "The grid lines: `color` paints them.", "selector": ".mx-chart__grid" },
+      "axis": { "$description": "The axis lines: `color` paints them.", "selector": ".mx-chart__axis" },
+      "ticks": { "$description": "The labels of the axes.", "selector": ".mx-chart__ticks" },
+      "axis-title": { "$description": "The title of an axis.", "selector": ".mx-chart__axis-title" },
+      "labels": { "$description": "The labels on the marks.", "selector": ".mx-chart__labels" },
+      "crosshair": { "$description": "The line that follows the pointer.", "selector": ".mx-chart__crosshair" },
+      "active-bar": { "$description": "What lies over a bar under the pointer: `color` paints it.", "selector": ".mx-chart__active-bar" },
+      "message": { "$description": "The text when there is nothing to draw.", "selector": ".mx-chart__message" },
+      "tooltip": { "$description": "The tooltip.", "selector": ".mx-chart__tooltip" },
+      "tooltip-title": { "$description": "The position in the tooltip.", "selector": ".mx-chart__tooltip-title" },
+      "tooltip-row": {
+        "$description": "A row of the tooltip: `active` for the value under the pointer.",
+        "selector": ".mx-chart__tooltip-row",
+        "states": { "active": ".mx-chart__tooltip-row[data-active]" }
+      },
+      "tooltip-key": { "$description": "The short line that names the series of a row.", "selector": ".mx-chart__tooltip-key" },
+      "tooltip-value": { "$description": "The value of a row, which leads.", "selector": ".mx-chart__tooltip-value" },
+      "tooltip-name": { "$description": "The name of the series of a row.", "selector": ".mx-chart__tooltip-name" },
+      "legend": { "$description": "The legend.", "selector": ".mx-chart__legend" },
+      "legend-item": {
+        "$description": "An item of the legend: `hover`, `focus`, and `off` when its series is hidden.",
+        "selector": ".mx-chart__legend-item",
+        "states": {
+          "hover": ".mx-chart__legend-item:hover:not(:disabled)",
+          "focus": ".mx-chart__legend-item:focus-visible",
+          "off": ".mx-chart__legend-item[data-off]"
+        }
+      },
+      "legend-key": { "$description": "The key: `width`, `height` and `radius` for a bar or an area; a line takes the line's width.", "selector": ".mx-chart__legend-key" },
+      "table": { "$description": "The table view.", "selector": ".mx-chart__table" },
+      "table-head": { "$description": "A heading of the table view.", "selector": ".mx-chart__table th" },
+      "table-cell": { "$description": "A value of the table view.", "selector": ".mx-chart__table td" }
+    }
+  }
+}

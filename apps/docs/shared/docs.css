@@ -455,6 +455,11 @@
   max-inline-size: 100%;
 }
 
+/* What takes the whole stage, like a chart with a button under it. */
+.docs-wide {
+  inline-size: 100%;
+}
+
 .docs-example__code pre {
   margin-block: 0;
 }

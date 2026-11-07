@@ -15,7 +15,6 @@
   "The spacing around a separator, and its size.": "Ayırıcının çevresindeki boşluk ve boyutu.",
   "The steps, with the current page last: `BreadcrumbItem` objects (`text`, `href`, `icon`, `enabled`, `data`) or plain text. A step with `href` is a link, and one without is a button.": "Geçerli sayfa sonda olacak şekilde adımlar: `BreadcrumbItem` nesneleri (`text`, `href`, `icon`, `enabled`, `data`) veya düz metin. `href` içeren adım bağlantıdır, içermeyen düğmedir.",
   "The `rel` of the links. `router` lets the MotifJS router handle them, including from the menu.": "Bağlantıların `rel` değeri. `router`, menüden açılanlar dahil işlemi MotifJS router'ına bırakır.",
-  "As many as fit": "Sığdığı kadar",
   "The maximum number of steps shown. The first and last stay, and those in between move to the menu.": "Gösterilen maksimum adım sayısı. İlk ve son kalır, aradakiler menüye geçer.",
   "Makes the last step the current page, which cannot be pressed and has `aria-current=\"page\"`.": "Son adımı, basılamayan ve `aria-current=\"page\"` taşıyan geçerli sayfa yapar.",
   "The kit string “Breadcrumb”": "Kit metni “İçerik haritası”",

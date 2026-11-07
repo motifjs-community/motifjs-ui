@@ -14,7 +14,6 @@
   "An image address, an element or a component before the title.": "Başlıktan önce gösterilen görsel adresi, element veya bileşen.",
   "The button at the start of the bar.": "Çubuğun başındaki düğme.",
   "The glyph of that button. The back arrow is mirrored in a right-to-left page.": "Bu düğmenin glyph'i. Geri oku sağdan sola sayfalarda aynalanır.",
-  "A kit string": "Bir kit metni",
   "The accessible name of that button.": "Bu düğmenin erişilebilir adı.",
   "The commands at the end of the bar, the same items as `Toolbar.items`.": "Çubuğun sonundaki action'lar; `Toolbar.items` ile aynı öğeler.",
   "The accessible name of the commands.": "Action'ların erişilebilir adı.",

@@ -14,7 +14,6 @@
   "Makes columns as wide as in the grid.": "Sütunları grid'deki kadar geniş yapar.",
   "The toolbar command, otherwise `false`": "Araç çubuğu komutu, aksi halde `false`",
   "Exports only the selected rows, without group rows or summaries, as with CSV.": "Yalnızca seçili satırları, grup satırları veya özetler olmadan, CSV'deki gibi aktarır.",
-  "On": "Açık",
   "The panel over the rows while they load: `true` / `false`, or `{ enabled, text, showProgress, cancelButton }`.": "Yüklenirken satırların üzerindeki panel: `true` / `false` veya `{ enabled, text, showProgress, cancelButton }`.",
   "Prefixes text that a spreadsheet would run as a formula with `'`.": "E-tablonun formül olarak çalıştıracağı metnin önüne `'` ekler.",
   "The row of column titles, which stays in view while the sheet scrolls.": "Sayfa kaydırılırken görünür kalan sütun başlıkları satırı.",

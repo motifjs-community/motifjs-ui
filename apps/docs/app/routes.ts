@@ -20,6 +20,7 @@ const LOAD: Record<PageId, () => Promise<unknown>> = {
   otpinput: () => import('../pages/otpinput/OtpInputPage'),
   signature: () => import('../pages/signature/SignaturePage'),
   qrcode: () => import('../pages/qrcode/QRCodePage'),
+  chart: () => import('../pages/chart/ChartPage'),
   barcode: () => import('../pages/barcode/BarcodePage'),
   pagination: () => import('../pages/pagination/PaginationPage'),
   stepper: () => import('../pages/stepper/StepperPage'),

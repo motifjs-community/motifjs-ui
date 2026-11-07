@@ -445,6 +445,18 @@ export interface UiStrings {
   signatureSigned: string;
   qrCodeLabel: string;
   barcodeLabel: string;
+  /** Chart: its name, what a screen reader hears, its empty and failed states, and the table view. */
+  chartName: string;
+  chartRole: string;
+  chartPlot: string;
+  chartHelp: string;
+  chartValue: string;
+  chartEmpty: string;
+  chartFailed: string;
+  chartLegend: string;
+  chartPosition: string;
+  chartShowTable: string;
+  chartShowChart: string;
   /** BottomSheet, ActionSheet and Drawer: their names when they have no title, the sheet's handle and its heights. `{height}` is filled in. */
   sheetLabel: string;
   sheetHandle: string;

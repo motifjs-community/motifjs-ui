@@ -1458,6 +1458,221 @@
     line-height: var(--_card-content-line-height, inherit);
   }
 
+  .mx-chart {
+    gap: var(--_chart-root-gap, normal);
+    color: var(--_chart-root-color, inherit);
+    font-size: var(--_chart-root-font-size, inherit);
+  }
+
+  .mx-chart__head {
+    margin-block-end: var(--_chart-head-margin-bottom, 0px);
+    gap: var(--_chart-head-gap, normal);
+  }
+
+  .mx-chart__title {
+    color: var(--_chart-title-color, inherit);
+    font-size: var(--_chart-title-font-size, inherit);
+    font-weight: var(--_chart-title-font-weight, inherit);
+    line-height: var(--_chart-title-line-height, inherit);
+  }
+
+  .mx-chart__subtitle {
+    color: var(--_chart-subtitle-color, inherit);
+    font-size: var(--_chart-subtitle-font-size, inherit);
+    line-height: var(--_chart-subtitle-line-height, inherit);
+  }
+
+  .mx-chart__plot {
+    border-start-start-radius: var(--_chart-plot-radius, 0px);
+    border-start-end-radius: var(--_chart-plot-radius, 0px);
+    border-end-start-radius: var(--_chart-plot-radius, 0px);
+    border-end-end-radius: var(--_chart-plot-radius, 0px);
+    outline-style: solid;
+    outline-width: 0px;
+  }
+
+  .mx-chart__plot:focus-visible {
+    box-shadow: var(--_chart-plot-focus-glow, 0 0 #0000), 0 0 #0000;
+    outline-width: var(--_chart-plot-focus-outline-width, 0px);
+    outline-color: var(--_chart-plot-focus-outline-color, currentcolor);
+    outline-offset: var(--_chart-plot-focus-outline-offset, 0px);
+  }
+
+  .mx-chart__grid {
+    color: var(--_chart-grid-color, inherit);
+  }
+
+  .mx-chart__axis {
+    color: var(--_chart-axis-color, inherit);
+  }
+
+  .mx-chart__ticks {
+    color: var(--_chart-ticks-color, inherit);
+    font-size: var(--_chart-ticks-font-size, inherit);
+  }
+
+  .mx-chart__axis-title {
+    color: var(--_chart-axis-title-color, inherit);
+    font-size: var(--_chart-axis-title-font-size, inherit);
+  }
+
+  .mx-chart__labels {
+    color: var(--_chart-labels-color, inherit);
+    font-size: var(--_chart-labels-font-size, inherit);
+    font-weight: var(--_chart-labels-font-weight, inherit);
+  }
+
+  .mx-chart__crosshair {
+    color: var(--_chart-crosshair-color, inherit);
+  }
+
+  .mx-chart__active-bar {
+    color: var(--_chart-active-bar-color, inherit);
+  }
+
+  .mx-chart__message {
+    color: var(--_chart-message-color, inherit);
+    font-size: var(--_chart-message-font-size, inherit);
+  }
+
+  .mx-chart__tooltip {
+    max-inline-size: var(--_chart-tooltip-max-width, none);
+    padding-block-start: var(--_chart-tooltip-padding-block, 0px);
+    padding-inline-end: var(--_chart-tooltip-padding-inline, 0px);
+    padding-block-end: var(--_chart-tooltip-padding-block, 0px);
+    padding-inline-start: var(--_chart-tooltip-padding-inline, 0px);
+    background-color: var(--_chart-tooltip-bg, transparent);
+    border-style: solid;
+    border-block-start-width: var(--_chart-tooltip-border-width, 0px);
+    border-inline-end-width: var(--_chart-tooltip-border-width, 0px);
+    border-block-end-width: var(--_chart-tooltip-border-width, 0px);
+    border-inline-start-width: var(--_chart-tooltip-border-width, 0px);
+    border-block-start-color: var(--_chart-tooltip-border-color, currentcolor);
+    border-inline-end-color: var(--_chart-tooltip-border-color, currentcolor);
+    border-block-end-color: var(--_chart-tooltip-border-color, currentcolor);
+    border-inline-start-color: var(--_chart-tooltip-border-color, currentcolor);
+    border-start-start-radius: var(--_chart-tooltip-radius, 0px);
+    border-start-end-radius: var(--_chart-tooltip-radius, 0px);
+    border-end-start-radius: var(--_chart-tooltip-radius, 0px);
+    border-end-end-radius: var(--_chart-tooltip-radius, 0px);
+    box-shadow: var(--_chart-tooltip-shadow, none);
+    color: var(--_chart-tooltip-color, inherit);
+    font-size: var(--_chart-tooltip-font-size, inherit);
+    line-height: var(--_chart-tooltip-line-height, inherit);
+  }
+
+  .mx-chart__tooltip-title {
+    margin-block-end: var(--_chart-tooltip-title-margin-bottom, 0px);
+    color: var(--_chart-tooltip-title-color, inherit);
+  }
+
+  .mx-chart__tooltip-row {
+    gap: var(--_chart-tooltip-row-gap, normal);
+  }
+
+  .mx-chart__tooltip-row[data-active] {
+    font-weight: var(--_chart-tooltip-row-active-font-weight, inherit);
+  }
+
+  .mx-chart__tooltip-key {
+    inline-size: var(--_chart-tooltip-key-width, auto);
+    block-size: var(--_chart-tooltip-key-height, auto);
+    border-start-start-radius: var(--_chart-tooltip-key-radius, 0px);
+    border-start-end-radius: var(--_chart-tooltip-key-radius, 0px);
+    border-end-start-radius: var(--_chart-tooltip-key-radius, 0px);
+    border-end-end-radius: var(--_chart-tooltip-key-radius, 0px);
+  }
+
+  .mx-chart__tooltip-value {
+    color: var(--_chart-tooltip-value-color, inherit);
+    font-weight: var(--_chart-tooltip-value-font-weight, inherit);
+  }
+
+  .mx-chart__tooltip-name {
+    color: var(--_chart-tooltip-name-color, inherit);
+  }
+
+  .mx-chart__legend {
+    padding-block-start: var(--_chart-legend-padding-top, 0px);
+    gap: var(--_chart-legend-gap, normal);
+  }
+
+  .mx-chart__legend-item {
+    padding-block-start: var(--_chart-legend-item-padding-block, 0px);
+    padding-block-end: var(--_chart-legend-item-padding-block, 0px);
+    gap: var(--_chart-legend-item-gap, normal);
+    border-start-start-radius: var(--_chart-legend-item-radius, 0px);
+    border-start-end-radius: var(--_chart-legend-item-radius, 0px);
+    border-end-start-radius: var(--_chart-legend-item-radius, 0px);
+    border-end-end-radius: var(--_chart-legend-item-radius, 0px);
+    color: var(--_chart-legend-item-color, inherit);
+    font-size: var(--_chart-legend-item-font-size, inherit);
+    line-height: var(--_chart-legend-item-line-height, inherit);
+    outline-style: solid;
+    outline-width: 0px;
+  }
+
+  .mx-chart__legend-item:hover:not(:disabled) {
+    color: var(--_chart-legend-item-hover-color, var(--_chart-legend-item-color, inherit));
+  }
+
+  .mx-chart__legend-item:focus-visible {
+    box-shadow: var(--_chart-legend-item-focus-glow, 0 0 #0000), 0 0 #0000;
+    outline-width: var(--_chart-legend-item-focus-outline-width, 0px);
+    outline-color: var(--_chart-legend-item-focus-outline-color, currentcolor);
+    outline-offset: var(--_chart-legend-item-focus-outline-offset, 0px);
+  }
+
+  .mx-chart__legend-item[data-off] {
+    color: var(--_chart-legend-item-off-color, var(--_chart-legend-item-color, inherit));
+  }
+
+  .mx-chart__legend-key {
+    inline-size: var(--_chart-legend-key-width, auto);
+    block-size: var(--_chart-legend-key-height, auto);
+    border-start-start-radius: var(--_chart-legend-key-radius, 0px);
+    border-start-end-radius: var(--_chart-legend-key-radius, 0px);
+    border-end-start-radius: var(--_chart-legend-key-radius, 0px);
+    border-end-end-radius: var(--_chart-legend-key-radius, 0px);
+  }
+
+  .mx-chart__table {
+    border-start-start-radius: var(--_chart-table-radius, 0px);
+    border-start-end-radius: var(--_chart-table-radius, 0px);
+    border-end-start-radius: var(--_chart-table-radius, 0px);
+    border-end-end-radius: var(--_chart-table-radius, 0px);
+    font-size: var(--_chart-table-font-size, inherit);
+  }
+
+  .mx-chart__table th {
+    padding-block-start: var(--_chart-table-head-padding-block, 0px);
+    padding-inline-end: var(--_chart-table-head-padding-inline, 0px);
+    padding-block-end: var(--_chart-table-head-padding-block, 0px);
+    padding-inline-start: var(--_chart-table-head-padding-inline, 0px);
+    border-style: solid;
+    border-block-start-width: 0px;
+    border-inline-end-width: 0px;
+    border-block-end-width: var(--_chart-table-head-border-bottom-width, 0px);
+    border-inline-start-width: 0px;
+    border-block-end-color: var(--_chart-table-head-border-bottom-color, currentcolor);
+    color: var(--_chart-table-head-color, inherit);
+    font-weight: var(--_chart-table-head-font-weight, inherit);
+  }
+
+  .mx-chart__table td {
+    padding-block-start: var(--_chart-table-cell-padding-block, 0px);
+    padding-inline-end: var(--_chart-table-cell-padding-inline, 0px);
+    padding-block-end: var(--_chart-table-cell-padding-block, 0px);
+    padding-inline-start: var(--_chart-table-cell-padding-inline, 0px);
+    border-style: solid;
+    border-block-start-width: 0px;
+    border-inline-end-width: 0px;
+    border-block-end-width: var(--_chart-table-cell-border-bottom-width, 0px);
+    border-inline-start-width: 0px;
+    border-block-end-color: var(--_chart-table-cell-border-bottom-color, currentcolor);
+    color: var(--_chart-table-cell-color, inherit);
+  }
+
   .mx-toggle-field.mx-field:not([data-label-mode='hidden']) > .mx-field__label {
     margin-block-start: 0px;
     margin-inline-end: 0px;

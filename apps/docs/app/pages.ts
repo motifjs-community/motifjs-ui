@@ -77,6 +77,7 @@ export const GROUPS = [
     pages: [
       { id: 'qrcode', label: 'QRCode', title: 'QRCode', path: '/qrcode', related: ['barcode', 'card'] },
       { id: 'barcode', label: 'Barcode', title: 'Barcode', path: '/barcode', related: ['qrcode', 'card'] },
+      { id: 'chart', label: 'Chart', title: 'Chart', path: '/chart', related: ['datagrid', 'card'] },
       { id: 'badge', label: 'Badge', title: 'Badge', path: '/badge', related: ['button', 'avatar'] },
       { id: 'avatar', label: 'Avatar', title: 'Avatar and AvatarGroup', path: '/avatar', related: ['badge', 'chip'] },
       { id: 'chip', label: 'Chip', title: 'Chip and ChipGroup', path: '/chip', related: ['avatar', 'tagbox'] },

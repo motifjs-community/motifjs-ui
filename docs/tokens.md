@@ -629,6 +629,114 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `card.content.font-size` | `--mx-card-content-font-size` | `font.size.body` | `0.875rem` |
 | `card.content.line-height` | `--mx-card-content-line-height` | `font.line.body` | `1.25rem` |
 | `card.content.color` | `--mx-card-content-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.height` | `--mx-chart-height` | `` | `20rem` |
+| `chart.series-1` | `--mx-chart-series-1` | `color.chart.series-1` | `#c24523` |
+| `chart.series-2` | `--mx-chart-series-2` | `color.chart.series-2` | `#853c70` |
+| `chart.series-3` | `--mx-chart-series-3` | `color.chart.series-3` | `#008c80` |
+| `chart.series-4` | `--mx-chart-series-4` | `color.chart.series-4` | `#7d5800` |
+| `chart.series-5` | `--mx-chart-series-5` | `color.chart.series-5` | `#6f6bb3` |
+| `chart.series-6` | `--mx-chart-series-6` | `color.chart.series-6` | `#587a30` |
+| `chart.series-7` | `--mx-chart-series-7` | `color.chart.series-7` | `#3b80b6` |
+| `chart.series-8` | `--mx-chart-series-8` | `color.chart.series-8` | `#a44247` |
+| `chart.bar-width` | `--mx-chart-bar-width` | `` | `24px` |
+| `chart.bar-radius` | `--mx-chart-bar-radius` | `` | `4px` |
+| `chart.bar-gap` | `--mx-chart-bar-gap` | `` | `2px` |
+| `chart.line-width` | `--mx-chart-line-width` | `` | `2px` |
+| `chart.marker-size` | `--mx-chart-marker-size` | `` | `8px` |
+| `chart.marker-ring` | `--mx-chart-marker-ring` | `` | `2px` |
+| `chart.area-opacity` | `--mx-chart-area-opacity` | `` | `0.14` |
+| `chart.bubble-min` | `--mx-chart-bubble-min` | `` | `5px` |
+| `chart.bubble-max` | `--mx-chart-bubble-max` | `` | `28px` |
+| `chart.bubble-opacity` | `--mx-chart-bubble-opacity` | `` | `0.72` |
+| `chart.hit-size` | `--mx-chart-hit-size` | `` | `24px` |
+| `chart.tick-gap` | `--mx-chart-tick-gap` | `` | `44px` |
+| `chart.tick-pad` | `--mx-chart-tick-pad` | `space.2` | `0.5rem` |
+| `chart.grid-width` | `--mx-chart-grid-width` | `border.width.1` | `1px` |
+| `chart.axis-width` | `--mx-chart-axis-width` | `border.width.1` | `1px` |
+| `chart.crosshair-width` | `--mx-chart-crosshair-width` | `border.width.1` | `1px` |
+| `chart.active-opacity` | `--mx-chart-active-opacity` | `` | `0.2` |
+| `chart.loading-opacity` | `--mx-chart-loading-opacity` | `` | `0.45` |
+| `chart.root.color` | `--mx-chart-root-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.root.font-size` | `--mx-chart-root-font-size` | `font.size.body` | `0.875rem` |
+| `chart.root.gap` | `--mx-chart-root-gap` | `space.2` | `0.5rem` |
+| `chart.head.margin-bottom` | `--mx-chart-head-margin-bottom` | `space.2` | `0.5rem` |
+| `chart.head.gap` | `--mx-chart-head-gap` | `space.2` | `0.5rem` |
+| `chart.title.color` | `--mx-chart-title-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.title.font-size` | `--mx-chart-title-font-size` | `font.size.subtitle` | `1.25rem` |
+| `chart.title.font-weight` | `--mx-chart-title-font-weight` | `font.weight.semibold` | `600` |
+| `chart.title.line-height` | `--mx-chart-title-line-height` | `font.line.subtitle` | `1.75rem` |
+| `chart.subtitle.color` | `--mx-chart-subtitle-color` | `color.fg.secondary` | `#5e5c55` |
+| `chart.subtitle.font-size` | `--mx-chart-subtitle-font-size` | `font.size.caption` | `0.75rem` |
+| `chart.subtitle.line-height` | `--mx-chart-subtitle-line-height` | `font.line.caption` | `1rem` |
+| `chart.plot.radius` | `--mx-chart-plot-radius` | `radius.sm` | `0.25rem` |
+| `chart.plot.focus.glow` | `--mx-chart-plot-focus-glow` | `focus.ring.halo` | `0px 0px 0px 1px rgb(255 255 255 / 0.7)` |
+| `chart.plot.focus.outline-width` | `--mx-chart-plot-focus-outline-width` | `focus.ring.width` | `2px` |
+| `chart.plot.focus.outline-color` | `--mx-chart-plot-focus-outline-color` | `focus.ring.color` | `#1d1c1a` |
+| `chart.plot.focus.outline-offset` | `--mx-chart-plot-focus-outline-offset` | `focus.ring.offset` | `1px` |
+| `chart.grid.color` | `--mx-chart-grid-color` | `color.chart.grid` | `rgb(0 0 0 / 0.1)` |
+| `chart.axis.color` | `--mx-chart-axis-color` | `color.fg.tertiary` | `#8c8a82` |
+| `chart.ticks.color` | `--mx-chart-ticks-color` | `color.fg.secondary` | `#5e5c55` |
+| `chart.ticks.font-size` | `--mx-chart-ticks-font-size` | `font.size.caption` | `0.75rem` |
+| `chart.axis-title.color` | `--mx-chart-axis-title-color` | `color.fg.secondary` | `#5e5c55` |
+| `chart.axis-title.font-size` | `--mx-chart-axis-title-font-size` | `font.size.caption` | `0.75rem` |
+| `chart.labels.color` | `--mx-chart-labels-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.labels.font-size` | `--mx-chart-labels-font-size` | `font.size.caption` | `0.75rem` |
+| `chart.labels.font-weight` | `--mx-chart-labels-font-weight` | `font.weight.medium` | `500` |
+| `chart.crosshair.color` | `--mx-chart-crosshair-color` | `color.fg.tertiary` | `#8c8a82` |
+| `chart.active-bar.color` | `--mx-chart-active-bar-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.message.color` | `--mx-chart-message-color` | `color.fg.secondary` | `#5e5c55` |
+| `chart.message.font-size` | `--mx-chart-message-font-size` | `font.size.body` | `0.875rem` |
+| `chart.tooltip.max-width` | `--mx-chart-tooltip-max-width` | `` | `20rem` |
+| `chart.tooltip.padding-block` | `--mx-chart-tooltip-padding-block` | `space.2` | `0.5rem` |
+| `chart.tooltip.padding-inline` | `--mx-chart-tooltip-padding-inline` | `space.3` | `0.75rem` |
+| `chart.tooltip.bg` | `--mx-chart-tooltip-bg` | `color.bg.surface` | `#f8f7f3` |
+| `chart.tooltip.radius` | `--mx-chart-tooltip-radius` | `radius.md` | `0.375rem` |
+| `chart.tooltip.color` | `--mx-chart-tooltip-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.tooltip.font-size` | `--mx-chart-tooltip-font-size` | `font.size.caption` | `0.75rem` |
+| `chart.tooltip.line-height` | `--mx-chart-tooltip-line-height` | `font.line.caption` | `1rem` |
+| `chart.tooltip.border-width` | `--mx-chart-tooltip-border-width` | `border.width.1` | `1px` |
+| `chart.tooltip.border-color` | `--mx-chart-tooltip-border-color` | `color.stroke.surface` | `rgb(117 117 117 / 0.4)` |
+| `chart.tooltip.shadow` | `--mx-chart-tooltip-shadow` | `elevation.tooltip` | `0px 4px 8px 0px rgb(0 0 0 / 0.14), 0px 0px 2px 0px rgb(0 0 0 / 0.12)` |
+| `chart.tooltip-title.color` | `--mx-chart-tooltip-title-color` | `color.fg.secondary` | `#5e5c55` |
+| `chart.tooltip-title.margin-bottom` | `--mx-chart-tooltip-title-margin-bottom` | `space.1` | `0.25rem` |
+| `chart.tooltip-row.gap` | `--mx-chart-tooltip-row-gap` | `space.2` | `0.5rem` |
+| `chart.tooltip-row.active.font-weight` | `--mx-chart-tooltip-row-active-font-weight` | `font.weight.semibold` | `600` |
+| `chart.tooltip-key.width` | `--mx-chart-tooltip-key-width` | `` | `12px` |
+| `chart.tooltip-key.height` | `--mx-chart-tooltip-key-height` | `` | `3px` |
+| `chart.tooltip-key.radius` | `--mx-chart-tooltip-key-radius` | `radius.xs` | `0.25rem` |
+| `chart.tooltip-value.color` | `--mx-chart-tooltip-value-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.tooltip-value.font-weight` | `--mx-chart-tooltip-value-font-weight` | `font.weight.semibold` | `600` |
+| `chart.tooltip-name.color` | `--mx-chart-tooltip-name-color` | `color.fg.secondary` | `#5e5c55` |
+| `chart.legend.gap` | `--mx-chart-legend-gap` | `space.4` | `1rem` |
+| `chart.legend.padding-top` | `--mx-chart-legend-padding-top` | `space.1` | `0.25rem` |
+| `chart.legend-item.color` | `--mx-chart-legend-item-color` | `color.fg.secondary` | `#5e5c55` |
+| `chart.legend-item.gap` | `--mx-chart-legend-item-gap` | `space.2` | `0.5rem` |
+| `chart.legend-item.padding-block` | `--mx-chart-legend-item-padding-block` | `space.1` | `0.25rem` |
+| `chart.legend-item.radius` | `--mx-chart-legend-item-radius` | `radius.sm` | `0.25rem` |
+| `chart.legend-item.font-size` | `--mx-chart-legend-item-font-size` | `font.size.caption` | `0.75rem` |
+| `chart.legend-item.line-height` | `--mx-chart-legend-item-line-height` | `font.line.caption` | `1rem` |
+| `chart.legend-item.hover.color` | `--mx-chart-legend-item-hover-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.legend-item.focus.glow` | `--mx-chart-legend-item-focus-glow` | `focus.ring.halo` | `0px 0px 0px 1px rgb(255 255 255 / 0.7)` |
+| `chart.legend-item.focus.outline-width` | `--mx-chart-legend-item-focus-outline-width` | `focus.ring.width` | `2px` |
+| `chart.legend-item.focus.outline-color` | `--mx-chart-legend-item-focus-outline-color` | `focus.ring.color` | `#1d1c1a` |
+| `chart.legend-item.focus.outline-offset` | `--mx-chart-legend-item-focus-outline-offset` | `focus.ring.offset` | `1px` |
+| `chart.legend-item.off.color` | `--mx-chart-legend-item-off-color` | `color.fg.disabled` | `#a2a098` |
+| `chart.legend-key.width` | `--mx-chart-legend-key-width` | `` | `12px` |
+| `chart.legend-key.height` | `--mx-chart-legend-key-height` | `` | `12px` |
+| `chart.legend-key.radius` | `--mx-chart-legend-key-radius` | `radius.xs` | `0.25rem` |
+| `chart.table.radius` | `--mx-chart-table-radius` | `radius.sm` | `0.25rem` |
+| `chart.table.font-size` | `--mx-chart-table-font-size` | `font.size.caption` | `0.75rem` |
+| `chart.table-head.color` | `--mx-chart-table-head-color` | `color.fg.secondary` | `#5e5c55` |
+| `chart.table-head.font-weight` | `--mx-chart-table-head-font-weight` | `font.weight.medium` | `500` |
+| `chart.table-head.padding-block` | `--mx-chart-table-head-padding-block` | `space.2` | `0.5rem` |
+| `chart.table-head.padding-inline` | `--mx-chart-table-head-padding-inline` | `space.3` | `0.75rem` |
+| `chart.table-head.border-bottom-width` | `--mx-chart-table-head-border-bottom-width` | `border.width.1` | `1px` |
+| `chart.table-head.border-bottom-color` | `--mx-chart-table-head-border-bottom-color` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
+| `chart.table-cell.color` | `--mx-chart-table-cell-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.table-cell.padding-block` | `--mx-chart-table-cell-padding-block` | `space.2` | `0.5rem` |
+| `chart.table-cell.padding-inline` | `--mx-chart-table-cell-padding-inline` | `space.3` | `0.75rem` |
+| `chart.table-cell.border-bottom-width` | `--mx-chart-table-cell-border-bottom-width` | `border.width.1` | `1px` |
+| `chart.table-cell.border-bottom-color` | `--mx-chart-table-cell-border-bottom-color` | `color.stroke.divider` | `rgb(0 0 0 / 0.1)` |
 | `checkbox.gap` | `--mx-checkbox-gap` | `space.2` | `0.5rem` |
 | `checkbox.size.sm` | `--mx-checkbox-size-sm` | `` | `0.875rem` |
 | `checkbox.size.md` | `--mx-checkbox-size-md` | `icon.size.md` | `1rem` |
@@ -4369,6 +4477,20 @@ Semantic tokens are the only layer a theme redefines. Switch the theme at the to
 | `color.selection.fg` | `--mx-color-selection-fg` | `#1d1c1a` | `#ffffff` | `#000000` |
 | `color.selection.border` | `--mx-color-selection-border` | `rgb(0 0 0 / 0.12)` | `rgb(255 255 255 / 0.1)` | `rgb(0 0 0 / 0)` |
 | `color.selection.indicator` | `--mx-color-selection-indicator` | `rgb(0 0 0 / 0)` | `rgb(0 0 0 / 0)` | `#000000` |
+| `color.chart.series-1` | `--mx-color-chart-series-1` | `#c24523` | `#cc5b3c` | `#d6b4fd` |
+| `color.chart.series-2` | `--mx-color-chart-series-2` | `#853c70` | `#7c78c2` | `#3ff23f` |
+| `color.chart.series-3` | `--mx-color-chart-series-3` | `#008c80` | `#1ea8a8` | `#ffffff` |
+| `color.chart.series-4` | `--mx-color-chart-series-4` | `#7d5800` | `#a87a0c` | `#ffa64d` |
+| `color.chart.series-5` | `--mx-color-chart-series-5` | `#6f6bb3` | `#ae5f95` | `#66d9ff` |
+| `color.chart.series-6` | `--mx-color-chart-series-6` | `#587a30` | `#7ca055` | `#ff8080` |
+| `color.chart.series-7` | `--mx-color-chart-series-7` | `#3b80b6` | `#5499d1` | `#ffee32` |
+| `color.chart.series-8` | `--mx-color-chart-series-8` | `#a44247` | `#d16a6c` | `#ff9ae0` |
+| `color.chart.scale-low` | `--mx-color-chart-scale-low` | `#fbe6e0` | `#3b2923` | `#202020` |
+| `color.chart.scale-high` | `--mx-color-chart-scale-high` | `#781d00` | `#ffac96` | `#ffffff` |
+| `color.chart.scale-negative` | `--mx-color-chart-scale-negative` | `#ab3511` | `#ea856a` | `#ffa64d` |
+| `color.chart.scale-middle` | `--mx-color-chart-scale-middle` | `#eae7e6` | `#353231` | `#202020` |
+| `color.chart.scale-positive` | `--mx-color-chart-scale-positive` | `#0465af` | `#60aaf3` | `#66d9ff` |
+| `color.chart.grid` | `--mx-color-chart-grid` | `rgb(0 0 0 / 0.1)` | `rgb(255 255 255 / 0.0837)` | `#666666` |
 | `focus.ring.color` | `--mx-focus-ring-color` | `#1d1c1a` | `#ffffff` | `#ffffff` |
 | `focus.ring.inner` | `--mx-focus-ring-inner` | `rgb(255 255 255 / 0.7)` | `rgb(0 0 0 / 0.7)` | `#000000` |
 | `focus.ring.halo` | `--mx-focus-ring-halo` | `0px 0px 0px 1px rgb(255 255 255 / 0.7)` | `0px 0px 0px 1px rgb(0 0 0 / 0.7)` | `0px 0px 0px 1px #000000` |

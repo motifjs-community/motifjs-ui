@@ -54,6 +54,7 @@
 @import '../components/otpinput/otpinput.css';
 @import '../components/signature/signature.css';
 @import '../components/qrcode/qrcode.css';
+@import '../components/chart/chart.css';
 @import '../components/barcode/barcode.css';
 @import '../components/validationsummary/validationsummary.css';
 @import '../components/timeline/timeline.css';

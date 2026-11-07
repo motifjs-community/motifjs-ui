@@ -622,5 +622,16 @@
   "validationSummary": "Lütfen şunları düzeltin",
   "timeline": "Zaman çizelgesi",
   "timelineEarlier": "Daha öncesi",
-  "timelineLater": "Daha sonrası"
+  "timelineLater": "Daha sonrası",
+  "chartName": "Grafik",
+  "chartRole": "grafik",
+  "chartPlot": "{name}: değerler",
+  "chartHelp": "Değerler arasında ok tuşlarıyla gezinin.",
+  "chartValue": "{series}, {position}: {value}",
+  "chartEmpty": "Gösterilecek veri yok",
+  "chartFailed": "Veriler yüklenemedi",
+  "chartLegend": "Seriler",
+  "chartPosition": "Kategori",
+  "chartShowTable": "Tablo olarak göster",
+  "chartShowChart": "Grafik olarak göster"
 }
