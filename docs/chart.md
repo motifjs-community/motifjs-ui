@@ -466,6 +466,115 @@ export default function Live() {
 }
 ```
 
+## Zooming into large data
+
+`zoom` lets the reader drag across the plot to zoom in, use Ctrl and the wheel to zoom around the pointer, Shift and the wheel to move along, and + and - with the keyboard. A button in the title row shows all of it again, and the value axis fits what is in view. `zoomTo()` and `resetZoom()` do the same programmatically.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Chart, Stack } from '@motifx-community/ui';
+
+const MINUTE = 60 * 1000;
+const START = new Date(2026, 9, 1).getTime();
+// A sensor read every minute for about ten weeks: 100,000 values.
+const READINGS = Array.from({ length: 100000 }, (_, i) => ({ time: new Date(START + i * MINUTE), load: Math.round(50 + 20 * Math.sin(i / 1440 * Math.PI * 2) + 8 * Math.sin(i / 97) + (i % 8191 === 0 ? 30 : 0)) }));
+
+/** Drag across the plot to zoom in, Ctrl and the wheel zoom around the pointer, Shift and the wheel move along. The line is thinned to the width, and its peaks stay. */
+export default function Zoom() {
+    const s = reactive({ seen: 'All of it' });
+    const time = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    return (
+        <Stack class="docs-wide" gap="sm">
+            <Chart
+                class="ch-zoom"
+                title="Server load"
+                subtitle="100,000 readings, one a minute"
+                data={READINGS}
+                xField="time"
+                zoom
+                yAxis={{ format: { style: 'unit', unit: 'percent' } }}
+                series={[{ type: 'area', yField: 'load', name: 'Load' }]}
+                onZoomChanged={(e) => (s.seen = e.from ? `${time.format(e.from as Date)} to ${time.format(e.to as Date)}` : 'All of it')}
+            />
+            <output class="ch-zoom-told">{() => s.seen}</output>
+        </Stack>
+    );
+}
+```
+
+## Live data
+
+`span` on the position axis shows only the latest stretch: a time in milliseconds, a number, or a count of categories. When the values change, the marks move from where they were, over the design language's motion.
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Button, Chart, Stack } from '@motifx-community/ui';
+
+const SECOND = 1000;
+
+/** New values arrive every second, and the chart shows the last 30 seconds. The marks move from where they were. */
+export default function Streaming() {
+    const now = Date.now();
+    const s = reactive({ running: true, points: Array.from({ length: 30 }, (_, i) => ({ time: new Date(now - (30 - i) * SECOND), value: 40 + Math.round(Math.random() * 20) })) });
+    const timer = setInterval(() => {
+        if (!s.running) return;
+        const last = s.points[s.points.length - 1];
+        const next = { time: new Date(last.time.getTime() + SECOND), value: Math.max(5, Math.min(95, last.value + Math.round(Math.random() * 14 - 7))) };
+        s.points = [...s.points.slice(-120), next];
+    }, SECOND);
+    return (
+        <Stack class="docs-wide" gap="sm" onDisposing={() => clearInterval(timer)}>
+            <Chart class="ch-stream" label="Requests a second" data={() => s.points} xField="time" xAxis={{ span: 30 * SECOND }} yAxis={{ min: 0, max: 100 }} series={[{ yField: 'value', name: 'Requests', labels: 'last' }]} />
+            <Button text={() => (s.running ? 'Pause' : 'Go on')} variant="outline" onclick={() => (s.running = !s.running)} />
+        </Stack>
+    );
+}
+```
+
+## Reference lines and bands
+
+`references` draws a line at a value or a position, or a band between two, with an optional label.
+
+```tsx
+/** Twelve months of made-up figures, shared by the examples. */
+export const SALES = [
+    { month: 'Jan', online: 4200, stores: 6100, returns: 310 },
+    { month: 'Feb', online: 4600, stores: 5800, returns: 280 },
+    { month: 'Mar', online: 5900, stores: 6400, returns: 420 },
+    { month: 'Apr', online: 6300, stores: 6000, returns: 390 },
+    { month: 'May', online: 7100, stores: 6600, returns: 450 },
+    { month: 'Jun', online: 7600, stores: 7000, returns: 520 },
+    { month: 'Jul', online: 8200, stores: 6800, returns: 610 },
+    { month: 'Aug', online: 8000, stores: 6500, returns: 580 },
+    { month: 'Sep', online: 8900, stores: 7200, returns: 640 },
+    { month: 'Oct', online: 9400, stores: 7600, returns: 700 },
+    { month: 'Nov', online: 11200, stores: 8800, returns: 930 },
+    { month: 'Dec', online: 12800, stores: 10100, returns: 1100 }
+];
+```
+
+## Choosing values
+
+`pointSelection` lets a click or Enter choose one value or several. `onSelectionChanged` gives the values chosen, `selectedPoints` reads them and `clearSelection()` lets them go.
+
+```tsx
+/** Twelve months of made-up figures, shared by the examples. */
+export const SALES = [
+    { month: 'Jan', online: 4200, stores: 6100, returns: 310 },
+    { month: 'Feb', online: 4600, stores: 5800, returns: 280 },
+    { month: 'Mar', online: 5900, stores: 6400, returns: 420 },
+    { month: 'Apr', online: 6300, stores: 6000, returns: 390 },
+    { month: 'May', online: 7100, stores: 6600, returns: 450 },
+    { month: 'Jun', online: 7600, stores: 7000, returns: 520 },
+    { month: 'Jul', online: 8200, stores: 6800, returns: 610 },
+    { month: 'Aug', online: 8000, stores: 6500, returns: 580 },
+    { month: 'Sep', online: 8900, stores: 7200, returns: 640 },
+    { month: 'Oct', online: 9400, stores: 7600, returns: 700 },
+    { month: 'Nov', online: 11200, stores: 8800, returns: 930 },
+    { month: 'Dec', online: 12800, stores: 10100, returns: 1100 }
+];
+```
+
 ## Data sources
 
 `dataSource` reads rows from any adapter of the data layer. While rows load, the current chart stays in place at reduced opacity.
@@ -578,6 +687,9 @@ export const SALES = [
 | `animation` | `Bind<boolean>` | `true` | Animates the marks when they first appear. |
 | `tableButton` | `Bind<boolean>` | `true` | Shows a button that switches between the chart and its table view. |
 | `mode` | `Bind<'chart' \| 'table'>` | `'chart'` | Shows the chart or its table view. Supports `x-model`. |
+| `zoom` | `Bind<boolean>` | `false` | Lets the reader zoom in on positions: a drag, Ctrl and the wheel, + and -. |
+| `references` | `Bind<ChartReference[]>` | `[]` | Lines and bands across the plot: `axis`, `value` or `from` and `to`, and `label`. |
+| `pointSelection` | `Bind<'none' \| 'single' \| 'multiple'>` | `'none'` | Whether a click or Enter chooses values. |
 | `emptyText` | `Bind<string>` | A kit string | The text shown when there is nothing to draw. |
 | `loading` | `Bind<boolean>` | `false` | Keeps the current chart at reduced opacity while new values load. |
 
@@ -623,6 +735,7 @@ export const SALES = [
 | `labels` | `boolean` | `true` | Shows the labels. |
 | `grid` | `boolean` | On the value axis | Draws grid lines. |
 | `line` | `boolean` | On the category axis | Draws the line of the axis. |
+| `span` | `number` |  | Shows only the latest stretch of positions: a time in milliseconds, a number, or a count of categories. |
 | `visible` | `boolean` | `true` | Shows the axis. |
 
 ### Properties and methods
@@ -632,6 +745,10 @@ export const SALES = [
 | `refresh()` | `void` | Redraws the chart from the current rows and series, after an in-place change. |
 | `setSeriesVisible(index, visible)` | `void` | Hides or shows a series, by its index in `series`. |
 | `isSeriesVisible(index)` | `boolean` | Indicates whether a series is drawn. |
+| `zoomTo(from, to)` | `void` | Shows the positions from one to another, given as in the rows. |
+| `resetZoom()` | `void` | Shows every position again. |
+| `selectedPoints` | `ChartPoint[]` | The values chosen now. |
+| `clearSelection()` | `void` | Chooses nothing. |
 | `toSVG(options?)` | `string` | Returns the chart as an SVG document, with its title and legend. |
 | `toDataURL(type?, options?)` | `Promise<string>` | Returns the chart as a data URL, a PNG by default. |
 
@@ -650,6 +767,8 @@ export const SALES = [
 | `onPointFocused` | `{ point, originalEvent, source }` | Occurs when the pointer or the keyboard reaches a value. |
 | `onSeriesToggled` | `{ series, visible, source }` | Occurs when a series is hidden or shown in the legend. |
 | `onModeChanged` | `{ mode, source }` | Occurs when the chart or its table view appears. |
+| `onZoomChanged` | `{ from, to, source }` | Occurs when the positions in view change; both are null when all of them are in view again. |
+| `onSelectionChanged` | `{ points, source }` | Occurs when values are chosen or let go. |
 | `onDataError` | `{ error, source }` | Occurs when the data source fails to load. The chart also displays a message. |
 
 ### Keyboard
@@ -659,6 +778,7 @@ export const SALES = [
 | `Arrow keys` | Move between positions along the axis, and between the series at a position across it. |
 | `Home, End` | Move to the first or the last position. |
 | `Enter, Space` | Raise `onPointClick` for the current value. |
+| `+, -, 0` | With `zoom`: zoom in and out around the value, and show all of it again. |
 | `Escape` | Hides the current value. |
 
 ### Accessibility
@@ -814,6 +934,57 @@ export default function Stacked() {
                     { type: 'bar', yField: 'stores', name: 'Stores' }
                 ]}
             />
+        </Stack>
+    );
+}
+```
+
+`References.tsx`
+
+```tsx
+import { Chart } from '@motifx-community/ui';
+import { SALES } from './sales';
+
+/** A target across the values, and a period marked on the positions. */
+export default function References() {
+    return (
+        <Chart
+            class="ch-refs"
+            title="Online sales against the target"
+            data={SALES}
+            xField="month"
+            references={[
+                { value: 8000, label: 'Target' },
+                { axis: 'x', from: 'Jun', to: 'Aug', label: 'Summer sale' }
+            ]}
+            series={[{ type: 'bar', yField: 'online', name: 'Online' }]}
+        />
+    );
+}
+```
+
+`Selection.tsx`
+
+```tsx
+import { reactive } from '@motifx/core';
+import { Chart, Stack } from '@motifx-community/ui';
+import { SALES } from './sales';
+
+/** A click, or Enter with the keyboard, chooses months; a second click lets one go. */
+export default function Selection() {
+    const s = reactive({ chosen: 'Nothing chosen' });
+    return (
+        <Stack class="docs-wide" gap="sm">
+            <Chart
+                class="ch-select"
+                label="Online sales"
+                data={SALES.slice(0, 6)}
+                xField="month"
+                pointSelection="multiple"
+                series={[{ type: 'bar', yField: 'online', name: 'Online' }]}
+                onSelectionChanged={(e) => (s.chosen = e.points.length ? e.points.map((p) => p.xText).join(', ') : 'Nothing chosen')}
+            />
+            <output class="ch-select-told">{() => s.chosen}</output>
         </Stack>
     );
 }

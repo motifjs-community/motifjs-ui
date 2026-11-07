@@ -41,6 +41,20 @@ const BANDED: ReadonlySet<ChartSeriesType> = new Set(['bar', 'rangeBar', 'candle
 const HEAT_STEPS = 7;
 
 const heatOn = (model: ChartModel) => model.series.some(s => s.shown && s.type === 'heatmap');
+/** Types whose start counts in the range of values, as the model counts it. */
+const FROM_TOO: ReadonlySet<ChartSeriesType> = new Set(['bar', 'area', 'rangeBar', 'rangeArea', 'candlestick', 'ohlc', 'waterfall']);
+/** Past this many values a change is drawn at once: following each of them would cost more than it shows. */
+const MOST_TWEENED = 3000;
+
+/** Where a value was, so that a change can move it from there. */
+interface Was {
+    px: number;
+    py: number;
+    rect?: Rect;
+}
+
+const keyOf = (p: ModelPoint) => `${p.series}|${p.key instanceof Date ? p.key.getTime() : String(p.key)}`;
+const ease = (t: number) => 1 - (1 - t) ** 3;
 
 /** The SVG of a chart: grid, marks, axes and what shows the value under the pointer. It reads a model and writes paths. */
 export class ChartPlot implements PlotView {
@@ -64,6 +78,13 @@ export class ChartPlot implements PlotView {
     xFormat: Intl.DateTimeFormatOptions | undefined;
     /** The colors of a heat map, low to high, for its legend. */
     heatClasses: HeatClass[] = [];
+    refBands: SVGPathElement;
+    refLines: SVGPathElement;
+    refLabels: TextPool;
+    selectedMarks: SVGPathElement;
+    brush: SVGPathElement;
+    scales: { position: ChartScale & { size?: number }; value: ChartScale; measure: (text: string) => number } | null = null;
+    frame = 0;
 
     constructor(host: Element) {
         const svg = svgPart(host, 'svg', 'mx-chart__svg');
@@ -76,6 +97,7 @@ export class ChartPlot implements PlotView {
         clip.id = id;
         this.clip = svgPart(clip, 'rect');
         this.grid = svgPart(svg, 'path', 'mx-chart__grid');
+        this.refBands = svgPart(svg, 'path', 'mx-chart__reference-band');
         this.marks = svgPart(svg, 'g', 'mx-chart__marks');
         this.marks.setAttribute('clip-path', `url(#${id})`);
         this.axis = svgPart(svg, 'path', 'mx-chart__axis');
@@ -83,6 +105,10 @@ export class ChartPlot implements PlotView {
         this.yLabels = new TextPool(svgPart(svg, 'g', 'mx-chart__ticks'));
         this.titles = new TextPool(svgPart(svg, 'g', 'mx-chart__axis-title'));
         this.dataLabels = new TextPool(svgPart(svg, 'g', 'mx-chart__labels'));
+        this.refLines = svgPart(svg, 'path', 'mx-chart__reference');
+        this.refLabels = new TextPool(svgPart(svg, 'g', 'mx-chart__reference-label'));
+        this.selectedMarks = svgPart(svg, 'path', 'mx-chart__selected');
+        this.brush = svgPart(svg, 'path', 'mx-chart__brush');
         this.cross = svgPart(svg, 'path', 'mx-chart__crosshair');
         this.activeBar = svgPart(svg, 'path', 'mx-chart__active-bar');
         this.activeDots = svgPart(svg, 'g', 'mx-chart__active-dots');
@@ -112,6 +138,9 @@ export class ChartPlot implements PlotView {
     }
 
     draw(input: PlotInput): void {
+        const before = input.animate && this.input ? this.snapshot() : null;
+        if (this.frame) cancelAnimationFrame(this.frame);
+        this.frame = 0;
         this.input = input;
         const { model, xAxis, yAxis, horizontal, rtl, width, height, look } = input;
         const doc = this.svg.ownerDocument;
@@ -177,12 +206,143 @@ export class ChartPlot implements PlotView {
         this.heatClasses = heat ? this.classesOf(model) : [];
         const positionScale = this.positionScale(box);
         this.placePoints(positionScale, valueScale);
+        this.scales = { position: positionScale, value: valueScale, measure };
 
         this.drawGrid(value, valueScale, positions, positionScale);
         this.drawLabels(value.ticks, valueScale, positions, positionScale, measure, { xLabelsOn, yLabelsOn });
         this.drawTitles(xTitle, yTitle);
-        this.drawSeries(positionScale, valueScale, measure);
+        this.drawReferences(positionScale, valueScale, measure);
+        this.showBrush(null, null);
+        if (!before || !this.tween(before)) this.drawSeries(positionScale, valueScale, measure);
+        this.drawSelected();
         this.showActive(null, null, false);
+    }
+
+    /** Where each value of the drawing now is. */
+    snapshot(): Map<string, Was> {
+        const was = new Map<string, Was>();
+        for (const s of this.input!.model.series) {
+            if (!s.shown) continue;
+            for (const p of s.points) if (p.y !== null) was.set(keyOf(p), { px: p.px, py: p.py, rect: this.bars.get(p) });
+        }
+        return was;
+    }
+
+    /** Moves the values that changed from where they were, over the design language's normal motion. */
+    tween(before: Map<string, Was>): boolean {
+        const { model } = this.input!;
+        const moves: { p: ModelPoint; from: Was; to: Was }[] = [];
+        for (const s of model.series) {
+            if (!s.shown) continue;
+            for (const p of s.points) {
+                const from = before.get(keyOf(p));
+                if (from && p.y !== null) moves.push({ p, from, to: { px: p.px, py: p.py, rect: this.bars.get(p) } });
+            }
+        }
+        const view = this.svg.ownerDocument.defaultView;
+        const duration = parseFloat(view?.getComputedStyle(this.svg).getPropertyValue('--mx-motion-duration-normal') ?? '') || 0;
+        if (!moves.length || moves.length > MOST_TWEENED || duration <= 0 || !view?.requestAnimationFrame) return false;
+        const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+        const start = view.performance.now();
+        const step = () => {
+            const t = Math.min(1, (view.performance.now() - start) / duration);
+            const e = ease(t);
+            for (const { p, from, to } of moves) {
+                p.px = mix(from.px, to.px, e);
+                p.py = mix(from.py, to.py, e);
+                if (from.rect && to.rect) this.bars.set(p, { left: mix(from.rect.left, to.rect.left, e), top: mix(from.rect.top, to.rect.top, e), width: mix(from.rect.width, to.rect.width, e), height: mix(from.rect.height, to.rect.height, e) });
+            }
+            const scales = this.scales!;
+            this.drawSeries(scales.position, scales.value, scales.measure);
+            this.frame = t < 1 ? view.requestAnimationFrame(step) : 0;
+            if (t >= 1) this.drawSelected();
+        };
+        step();
+        return true;
+    }
+
+    /** A position is in view: inside the zoomed part, or anywhere when nothing is zoomed. */
+    visible(x: number): boolean {
+        const window = this.input?.window;
+        return !window || (x >= window.from - 1e-9 && x <= window.to + 1e-9);
+    }
+
+    /** The value of the position axis at a place of the SVG: a category's number, a number or a moment. */
+    positionValueAt(x: number, y: number): number | null {
+        const scales = this.scales;
+        if (!scales || !this.input) return null;
+        return scales.position.valueAt(this.input.horizontal ? y : x);
+    }
+
+    /** The band being dragged to zoom, or nothing. */
+    showBrush(from: number | null, to: number | null): void {
+        const box = this.box;
+        if (from === null || to === null || !this.input) {
+            svgPut(this.brush, 'd', null);
+            return;
+        }
+        const low = Math.max(this.input.horizontal ? box.top : box.left, Math.min(from, to));
+        const high = Math.min(this.input.horizontal ? box.top + box.height : box.left + box.width, Math.max(from, to));
+        svgPut(this.brush, 'd', this.input.horizontal ? `M${box.left} ${low}h${box.width}V${high}h${-box.width}z` : `M${low} ${box.top}H${high}v${box.height}H${low}z`);
+    }
+
+    /** Lines and bands at the values and positions asked for, with their labels. */
+    drawReferences(position: ChartScale & { size?: number }, value: ChartScale, measure: (text: string) => number): void {
+        const { model, horizontal, look, references } = this.input!;
+        const box = this.box;
+        let bands = '';
+        let lines = '';
+        const place = (axis: 'x' | 'y', v: unknown): number | null => {
+            if (v === null || v === undefined) return null;
+            if (axis === 'y') return value.at(v instanceof Date ? v.getTime() : Number(v));
+            if (model.kind === 'category') {
+                const name = v instanceof Date ? v.getTime() : v;
+                const index = model.categories.findIndex(c => (c instanceof Date ? c.getTime() : c) === name);
+                return index < 0 ? null : position.at(index);
+            }
+            return position.at(v instanceof Date ? v.getTime() : Number(v));
+        };
+        for (const r of references ?? []) {
+            const axis = r.axis ?? 'y';
+            // Across the plot for a value; down it for a position. On its side, the two turn.
+            const acrossValues = (axis === 'y') !== horizontal;
+            const span = (a: number, b: number) => (acrossValues ? `M${box.left} ${Math.min(a, b)}h${box.width}V${Math.max(a, b)}h${-box.width}z` : `M${Math.min(a, b)} ${box.top}v${box.height}H${Math.max(a, b)}v${-box.height}z`);
+            const at = place(axis, r.value);
+            const from = place(axis, r.from);
+            const to = place(axis, r.to);
+            let labelAt: [number, number] | null = null;
+            if (from !== null && to !== null) {
+                bands += span(from, to);
+                labelAt = acrossValues ? [box.left + look.tickPad, Math.min(from, to) + look.line] : [Math.min(from, to) + look.tickPad, box.top + look.line];
+            } else if (at !== null) {
+                const edge = Math.round(at) + 0.5;
+                lines += acrossValues ? `M${box.left} ${edge}h${box.width}` : `M${edge} ${box.top}v${box.height}`;
+                labelAt = acrossValues ? [box.left + box.width - measure(r.label ?? '') - look.tickPad, edge - look.tickPad / 2] : [edge + look.tickPad / 2, box.top + look.line];
+            }
+            if (r.label && labelAt) this.refLabels.add(r.label, labelAt[0], labelAt[1], 'start');
+        }
+        svgPut(this.refBands, 'd', bands || null);
+        svgPut(this.refLines, 'd', lines || null);
+        this.refLabels.done();
+    }
+
+    /** A ring around each chosen value: a frame for a bar, a circle for a point. */
+    drawSelected(): void {
+        const { model, selected, look } = this.input!;
+        let d = '';
+        if (selected?.size) {
+            for (const s of model.series) {
+                if (!s.shown) continue;
+                for (const p of s.points) {
+                    if (p.y === null || !selected.has(`${p.series}:${p.index}`)) continue;
+                    const rect = this.bars.get(p);
+                    const room = look.barGap;
+                    if (rect) d += `M${rect.left - room} ${rect.top - room}h${rect.width + room * 2}v${rect.height + room * 2}h${-(rect.width + room * 2)}z`;
+                    else d += circlesPath([{ x: p.px, y: p.py, r: look.markerSize / 2 + room * 2 }]);
+                }
+            }
+        }
+        svgPut(this.selectedMarks, 'd', d || null);
     }
 
     widestLabel(series: readonly ModelSeries[], measure: (text: string) => number): number {
@@ -194,8 +354,9 @@ export class ChartPlot implements PlotView {
     valueRange(count: number): { min: number; max: number; ticks: Tick[] } {
         const { model, yAxis, locale } = this.input!;
         if (heatOn(model)) return { min: -0.5, max: Math.max(1, model.lanes.length) - 0.5, ticks: model.lanes.map((_, i) => ({ value: i, text: laneText(this.input!, i) })) };
-        const low = model.any && Number.isFinite(model.yMin) ? model.yMin : 0;
-        const high = model.any && Number.isFinite(model.yMax) ? model.yMax : 1;
+        const seen = this.input!.window ? this.valuesInView() : null;
+        const low = seen ? seen.low : model.any && Number.isFinite(model.yMin) ? model.yMin : 0;
+        const high = seen ? seen.high : model.any && Number.isFinite(model.yMax) ? model.yMax : 1;
         const fixedMin = asNumber(yAxis.min);
         const fixedMax = asNumber(yAxis.max);
         const given = fixedMin !== undefined && fixedMax !== undefined;
@@ -223,11 +384,33 @@ export class ChartPlot implements PlotView {
         return { min, max, ticks };
     }
 
+    /** The range of the values in view, counted as the model counts the whole. */
+    valuesInView(): { low: number; high: number } | null {
+        const { model, yAxis } = this.input!;
+        let low = Infinity;
+        let high = -Infinity;
+        const take = (v: number) => {
+            if (yAxis.kind === 'log' && v <= 0) return;
+            low = Math.min(low, v);
+            high = Math.max(high, v);
+        };
+        for (const s of model.series) {
+            if (!s.shown) continue;
+            for (const p of s.points) {
+                if (p.y === null || !this.visible(p.x)) continue;
+                take(p.to);
+                if (FROM_TOO.has(s.type)) take(p.from);
+            }
+        }
+        return Number.isFinite(low) ? { low, high } : null;
+    }
+
     positionTicks(length: number, measure: (text: string) => number): Tick[] {
         const { model, xAxis, look } = this.input!;
-        if (model.kind === 'category') return model.categories.map((key, i) => ({ value: i, text: this.xText(key, true) }));
-        const low = asNumber(xAxis.min) ?? (Number.isFinite(model.xMin) ? model.xMin : 0);
-        const high = asNumber(xAxis.max) ?? (Number.isFinite(model.xMax) ? model.xMax : 1);
+        const window = this.input!.window;
+        if (model.kind === 'category') return model.categories.map((key, i) => ({ value: i, text: this.xText(key, true) })).filter(t => this.visible(t.value));
+        const low = window?.from ?? asNumber(xAxis.min) ?? (Number.isFinite(model.xMin) ? model.xMin : 0);
+        const high = window?.to ?? asNumber(xAxis.max) ?? (Number.isFinite(model.xMax) ? model.xMax : 1);
         const sample = measure(this.xText(high, true));
         const count = xAxis.tickCount ?? Math.max(2, Math.floor(length / (sample + look.tickGap)));
         if (model.kind === 'time') {
@@ -236,7 +419,8 @@ export class ChartPlot implements PlotView {
             return ticks.map(value => ({ value, text: this.xText(value, true) }));
         }
         if (model.kind === 'log') return logTicks(Math.max(low, 1e-12), high).map(value => ({ value, text: this.xText(value, true) }));
-        return niceTicks(low, high, count).map(value => ({ value, text: this.xText(value, true) }));
+        // Zoomed, the axis ends where the view does: a round value past it would sit outside the plot.
+        return niceTicks(low, high, count, !!window).map(value => ({ value, text: this.xText(value, true) }));
     }
 
     positionScale(box: Rect): ChartScale & { size?: number } {
@@ -244,9 +428,14 @@ export class ChartPlot implements PlotView {
         let start = horizontal ? box.top : box.left;
         let end = horizontal ? box.top + box.height : box.left + box.width;
         if ((rtl && !horizontal) !== !!xAxis.reversed) [start, end] = [end, start];
-        if (model.kind === 'category') return bandScale(model.categories.length, start, end);
-        let low = asNumber(xAxis.min);
-        let high = asNumber(xAxis.max);
+        const window = this.input!.window;
+        if (model.kind === 'category') {
+            if (!window) return bandScale(model.categories.length, start, end);
+            const band = bandScale(window.to - window.from + 1, start, end);
+            return { size: band.size, at: i => band.at(i - window.from), valueAt: position => band.valueAt(position) + window.from };
+        }
+        let low = window?.from ?? asNumber(xAxis.min);
+        let high = window?.to ?? asNumber(xAxis.max);
         if (low === undefined || high === undefined) {
             const ticks = model.kind === 'time' ? null : niceTicks(model.xMin, model.xMax, 5);
             low ??= ticks ? ticks[0] : model.xMin;
@@ -630,8 +819,21 @@ export class ChartPlot implements PlotView {
             }
         }
         if (run.length) runs.push(run);
+        if (this.input!.window) {
+            for (let i = 0; i < runs.length; i++) {
+                const r = runs[i];
+                const first = r.findIndex(p => this.visible(p.x));
+                if (first < 0) {
+                    runs[i] = [];
+                    continue;
+                }
+                let last = first;
+                while (last + 1 < r.length && this.visible(r[last + 1].x)) last++;
+                runs[i] = r.slice(Math.max(0, first - 1), last + 2);
+            }
+        }
         const most = Math.ceil(length * 2);
-        return runs.map(r => (r.length > most ? thinOut(r, most, p => (horizontal ? p.py : p.px), p => (horizontal ? p.px : p.py)) : r));
+        return runs.filter(r => r.length).map(r => (r.length > most ? thinOut(r, most, p => (horizontal ? p.py : p.px), p => (horizontal ? p.px : p.py)) : r));
     }
 
     endOf(p: ModelPoint, value: ChartScale): 'top' | 'bottom' | 'left' | 'right' | null {

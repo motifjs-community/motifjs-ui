@@ -206,6 +206,8 @@
     --mx-chart-cell-radius: 2px;
     --mx-chart-slice-lift: 6px;
     --mx-chart-donut-hole: 0.6;
+    --mx-chart-reference-opacity: 0.08;
+    --mx-chart-brush-opacity: 0.14;
     --mx-checkbox-size-sm: 0.875rem;
     --mx-checkbox-focus-scope: box;
     --mx-checkbox-field-label-mode: top;
@@ -1721,6 +1723,8 @@
     --mx-chart-center-value-font-size: var(--mx-font-size-title);
     --mx-chart-center-value-font-weight: var(--mx-font-weight-semibold);
     --mx-chart-center-label-font-size: var(--mx-font-size-caption);
+    --mx-chart-reference-width: var(--mx-border-width-1);
+    --mx-chart-reference-label-font-size: var(--mx-font-size-caption);
     --mx-checkbox-gap: var(--mx-space-2);
     --mx-checkbox-size-md: var(--mx-icon-size-md);
     --mx-checkbox-size-lg: var(--mx-icon-size-lg);
@@ -3496,6 +3500,12 @@
     --mx-chart-connector: var(--mx-color-chart-grid);
     --mx-chart-center-value-color: var(--mx-color-fg-primary);
     --mx-chart-center-label-color: var(--mx-color-fg-secondary);
+    --mx-chart-selected-width: var(--mx-focus-ring-width);
+    --mx-chart-reference-color: var(--mx-color-fg-secondary);
+    --mx-chart-reference-band-color: var(--mx-color-fg-primary);
+    --mx-chart-reference-label-color: var(--mx-color-fg-secondary);
+    --mx-chart-selected-color: var(--mx-color-fg-primary);
+    --mx-chart-brush-color: var(--mx-color-accent-solid);
     --mx-checkbox-label-color: var(--mx-color-fg-primary);
     --mx-checkbox-label-disabled-color: var(--mx-color-fg-disabled);
     --mx-checkbox-box-bg: var(--mx-color-fill-control-default);

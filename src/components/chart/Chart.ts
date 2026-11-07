@@ -21,6 +21,10 @@ import { readLook, type ChartLook } from "./chart-look";
 import { buildModel, familyOf, type ChartFamily, type ChartModel, type ModelPoint, type ModelSlot } from "./chart-model";
 import type { ChartPoint } from "./chart-point";
 import type { ChartPointEventArgs } from "./chart-point-event-args";
+import type { ChartPointSelection } from "./chart-point-selection";
+import type { ChartReference } from "./chart-reference";
+import type { ChartSelectionChangedEventArgs } from "./chart-selection-changed-event-args";
+import type { ChartZoomChangedEventArgs } from "./chart-zoom-changed-event-args";
 import type { ChartProps } from "./chart-props";
 import type { ChartSeries } from "./chart-series";
 import type { ChartSeriesToggledEventArgs } from "./chart-series-toggled-event-args";
@@ -39,7 +43,12 @@ import type { PlotView } from "./plot-view";
 import { RadarPlot } from "./RadarPlot";
 import { formatNumber } from "../../parts/chart/chart-text";
 
-const OWN = ['data', 'dataSource', 'xField', 'series', 'horizontal', 'stacked', 'title', 'subtitle', 'label', 'xAxis', 'yAxis', 'legend', 'tooltip', 'crosshair', 'height', 'animation', 'tableButton', 'mode', 'emptyText', 'loading'] as const;
+const OWN = ['data', 'dataSource', 'xField', 'series', 'horizontal', 'stacked', 'title', 'subtitle', 'label', 'xAxis', 'yAxis', 'legend', 'tooltip', 'crosshair', 'height', 'animation', 'tableButton', 'mode', 'emptyText', 'loading', 'zoom', 'references', 'pointSelection'] as const;
+
+/** How far a press must move before it is a drag that zooms, not a click. */
+const DRAG_FROM = 4;
+/** One step of the wheel or of + and -: a fifth in or out. */
+const ZOOM_STEP = 0.8;
 
 /** Sizes for where nothing is laid out, as in a test without a browser. */
 const UNMEASURED_WIDTH = 640;
@@ -59,6 +68,15 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
     seriesToggled = new Emitter<ChartSeriesToggledEventArgs<T>>();
     modeChanged = new Emitter<ChartModeChangedEventArgs<T>>();
     dataError = new Emitter<ChartDataErrorEventArgs<T>>();
+    zoomChanged = new Emitter<ChartZoomChangedEventArgs<T>>();
+    selectionChanged = new Emitter<ChartSelectionChangedEventArgs<T>>();
+    resetButton: Button;
+    zoomWindow: { from: number; to: number } | null = null;
+    selection = new Set<string>();
+    press: { at: number; along: number; moved: boolean } | null = null;
+    skipClick = false;
+    pendingActive: { x: number; series: number } | null = null;
+    lastSize = '';
     head: Component<HTMLDivElement>;
     titles: Component<HTMLDivElement>;
     titleText: Component<HTMLDivElement>;
@@ -109,7 +127,13 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
             hint: () => (this.mode === 'table' ? uiLocale.strings.chartShowChart : uiLocale.strings.chartShowTable),
             onclick: () => this.changeMode(this.mode === 'table' ? 'chart' : 'table')
         });
-        this.tools.controls.add(this.modeButton);
+        this.resetButton = new Button({
+            variant: 'ghost',
+            icon: () => glyph('zoom-out'),
+            hint: () => uiLocale.strings.chartResetZoom,
+            onclick: () => this.resetZoom()
+        });
+        this.tools.controls.add(this.resetButton, this.modeButton);
 
         this.area = part<HTMLDivElement>(this, 'div', 'mx-chart__area-box');
         this.surface = part<HTMLDivElement>(this.area, 'div', 'mx-chart__plot');
@@ -135,6 +159,8 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         if (own.onSeriesToggled) this.onSeriesToggled(own.onSeriesToggled);
         if (own.onModeChanged) this.onModeChanged(own.onModeChanged);
         if (own.onDataError) this.onDataError(own.onDataError);
+        if (own.onZoomChanged) this.onZoomChanged(own.onZoomChanged);
+        if (own.onSelectionChanged) this.onSelectionChanged(own.onSelectionChanged);
 
         for (const name of OWN) {
             if (name === 'dataSource') this.observeProperty(name, () => this.followSource());
@@ -145,7 +171,9 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         onReState(this, () => this.again());
 
         surface.addEventListener('pointermove', e => this.pointerMoved(e));
-        surface.addEventListener('pointerdown', e => this.pointerMoved(e));
+        surface.addEventListener('pointerdown', e => this.pressed(e));
+        surface.addEventListener('pointerup', e => this.released(e));
+        surface.addEventListener('wheel', e => this.wheeled(e), { passive: false });
         // A finger leaves as it lifts: the value stays until the reader taps elsewhere.
         surface.addEventListener('pointerleave', e => {
             if (e.pointerType !== 'touch') this.clearActive();
@@ -158,7 +186,7 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
             this.watch?.disconnect();
             this.stopLook?.();
             this.listening?.dispose();
-            for (const emitter of [this.pointClick, this.pointFocused, this.seriesToggled, this.modeChanged, this.dataError]) emitter.dispose();
+            for (const emitter of [this.pointClick, this.pointFocused, this.seriesToggled, this.modeChanged, this.dataError, this.zoomChanged, this.selectionChanged]) emitter.dispose();
         });
     }
 
@@ -302,6 +330,68 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         this.assignProperty('loading', value);
     }
 
+    get zoom(): boolean {
+        return this.getProperty<boolean | undefined>('zoom') ?? false;
+    }
+    set zoom(value: Bind<boolean>) {
+        this.assignProperty('zoom', value);
+    }
+    get references(): readonly ChartReference[] {
+        return this.getProperty<readonly ChartReference[] | undefined>('references') ?? [];
+    }
+    set references(value: Bind<readonly ChartReference[]>) {
+        this.assignProperty('references', value);
+    }
+    get pointSelection(): ChartPointSelection {
+        return this.getProperty<ChartPointSelection | undefined>('pointSelection') ?? 'none';
+    }
+    set pointSelection(value: Bind<ChartPointSelection>) {
+        this.assignProperty('pointSelection', value);
+    }
+    get onZoomChanged(): MotifEvent<ChartZoomChangedEventArgs<T>> {
+        return this.zoomChanged.event;
+    }
+    get onSelectionChanged(): MotifEvent<ChartSelectionChangedEventArgs<T>> {
+        return this.selectionChanged.event;
+    }
+
+    /** The values chosen now. */
+    get selectedPoints(): ChartPoint<T>[] {
+        const model = this.model;
+        if (!model) return [];
+        const out: ChartPoint<T>[] = [];
+        for (const s of model.series) for (const p of s.points) if (this.selection.has(`${p.series}:${p.index}`) && p.y !== null) out.push(this.pointOf(p));
+        return out;
+    }
+
+    /** Chooses nothing. */
+    clearSelection(): void {
+        if (!this.selection.size) return;
+        this.selection.clear();
+        this.selectionChanged.fire({ points: [], source: this });
+        this.again();
+    }
+
+    /** Shows the positions from one to another, given as in the rows: a category, a number or a date. */
+    zoomTo(from: unknown, to: unknown): void {
+        const model = this.model;
+        if (!model) return;
+        const place = (v: unknown) => {
+            if (model.kind !== 'category') return v instanceof Date ? v.getTime() : Number(v);
+            const name = v instanceof Date ? v.getTime() : v;
+            return model.categories.findIndex(c => (c instanceof Date ? c.getTime() : c) === name);
+        };
+        const a = place(from);
+        const b = place(to);
+        if (!Number.isFinite(a) || !Number.isFinite(b) || a < 0 || b < 0) return;
+        this.setWindow({ from: Math.min(a, b), to: Math.max(a, b) });
+    }
+
+    /** Shows every position again. */
+    resetZoom(): void {
+        this.setWindow(null);
+    }
+
     get onPointClick(): MotifEvent<ChartPointEventArgs<T>> {
         return this.pointClick.event;
     }
@@ -402,10 +492,11 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         const xAxis = this.xAxis;
         const yAxis = this.yAxis;
         const model = buildModel({ rows: this.rows, series, xField: this.xField, xAxis, yAxis, stacked: this.stacked, hidden: this.hidden, hiddenParts: this.hiddenParts });
+        const window = this.windowOf(model);
         this.model = model;
         this.usePlot(model.family);
         // The texts of the legend and the table read through the plot, before it has room to draw.
-        this.plot.input = { model, xAxis, yAxis, horizontal: this.horizontal, rtl: false, width: 0, height: 0, look: this.look as ChartLook, locale: uiLocale.locale };
+        this.plot.input = { model, xAxis, yAxis, horizontal: this.horizontal, rtl: false, width: 0, height: 0, look: this.look as ChartLook, locale: uiLocale.locale, window };
         this.activeSlot = null;
         this.activePoint = null;
         this.tooltipPart.hide();
@@ -417,8 +508,12 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         shown(this.titleText.element, !!this.title);
         shown(this.subtitleText.element, !!this.subtitle);
         shown(this.titles.element, !!(this.title || this.subtitle));
-        shown(this.tools.element, this.tableButton);
-        shown(this.head.element, !!(this.title || this.subtitle || this.tableButton));
+        const zoomed = !!this.zoomWindow && model.family === 'cartesian';
+        shown(this.resetButton.element, zoomed);
+        shown(this.modeButton.element, this.tableButton);
+        shown(this.tools.element, this.tableButton || zoomed);
+        shown(this.head.element, !!(this.title || this.subtitle || this.tableButton || zoomed));
+        mark(this.surface.element, 'data-zoom', this.zoom && model.family === 'cartesian');
 
         const legend = this.legendOptions;
         const entries = this.entriesOf(model);
@@ -450,11 +545,11 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         put(surface, 'aria-description', uiLocale.strings.chartHelp);
 
         // Hidden as a table, the plot has no size to draw in; it draws when it comes back.
-        if (!table) this.drawPlot(model, xAxis, yAxis);
+        if (!table) this.drawPlot(model, xAxis, yAxis, window);
         else this.drawTable();
     }
 
-    drawPlot(model: ChartModel, xAxis: ChartAxis, yAxis: ChartAxis): void {
+    drawPlot(model: ChartModel, xAxis: ChartAxis, yAxis: ChartAxis, window: { from: number; to: number } | null): void {
         const surface = this.surface.element;
         const measured = typeof ResizeObserver !== 'undefined';
         const width = surface.clientWidth || (measured ? 0 : UNMEASURED_WIDTH);
@@ -464,7 +559,18 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
         this.look ??= readLook(el, this.cartesian.labelGroup);
         css(el, '--_surface', surfaceBehind(el));
         const rtl = el.ownerDocument.defaultView?.getComputedStyle(el).direction === 'rtl';
-        this.plot.draw({ model, xAxis, yAxis, horizontal: this.horizontal, rtl, width, height, look: this.look, locale: uiLocale.locale });
+        // The same size as last time: the values changed, and the marks move from where they were.
+        const size = `${width}x${height}`;
+        const animate = this.animation && this.drawnOnce && size === this.lastSize;
+        this.lastSize = size;
+        this.plot.draw({ model, xAxis, yAxis, horizontal: this.horizontal, rtl, width, height, look: this.look, locale: uiLocale.locale, window, references: this.references, selected: this.selection, animate });
+        const pending = this.pendingActive;
+        this.pendingActive = null;
+        if (pending) {
+            const slot = this.plot.order.find(s => s.x === pending.x);
+            const point = slot?.points.find(p => p.series === pending.series) ?? slot?.points[0];
+            if (slot && point) this.moveTo(slot, point);
+        }
         if (!this.drawnOnce && model.any) {
             this.drawnOnce = true;
             mark(this.plot.marks as unknown as HTMLElement, 'data-reveal', this.animation);
@@ -546,6 +652,16 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
     }
 
     pointerMoved(e: PointerEvent): void {
+        const press = this.press;
+        if (press) {
+            const along = this.along(e);
+            if (press.moved || Math.abs(along - press.along) > DRAG_FROM) {
+                press.moved = true;
+                this.clearActive();
+                (this.plot as ChartPlot).showBrush(press.along, along);
+                return;
+            }
+        }
         const { x, y } = this.localPlace(e);
         const found = this.plot.find(x, y);
         if (found) this.setActive(found.slot, found.point, e);
@@ -553,9 +669,145 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
     }
 
     plotClick(e: MouseEvent): void {
+        if (this.skipClick) {
+            this.skipClick = false;
+            return;
+        }
         const { x, y } = this.localPlace(e);
         const found = this.plot.find(x, y);
-        if (found?.point) this.pointClick.fire({ point: this.pointOf(found.point), originalEvent: e, source: this });
+        if (!found?.point) return;
+        this.choose(found.point);
+        this.pointClick.fire({ point: this.pointOf(found.point), originalEvent: e, source: this });
+    }
+
+    /** A click or Enter chooses a value, when the chart is asked to. */
+    choose(p: ModelPoint): void {
+        const mode = this.pointSelection;
+        if (mode === 'none') return;
+        const key = `${p.series}:${p.index}`;
+        const had = this.selection.has(key);
+        if (mode === 'single') this.selection.clear();
+        if (had) this.selection.delete(key);
+        else this.selection.add(key);
+        this.selectionChanged.fire({ points: this.selectedPoints, source: this });
+        (this.plot as ChartPlot).drawSelected?.call(this.plot);
+        if (this.plot !== this.cartesian) this.again();
+    }
+
+    /** The positions in view: the zoomed part, or the latest stretch of live data, or null for all. */
+    windowOf(model: ChartModel): { from: number; to: number } | null {
+        if (model.family !== 'cartesian' || !model.any) return null;
+        const [first, last] = this.extent(model);
+        if (this.zoomWindow) {
+            const from = Math.max(first, this.zoomWindow.from);
+            const to = Math.min(last, this.zoomWindow.to);
+            return to > from || (model.kind === 'category' && to >= from) ? { from, to } : null;
+        }
+        const span = this.xAxis.span;
+        if (!span || span <= 0) return null;
+        return model.kind === 'category' ? { from: Math.max(first, last - span + 1), to: last } : { from: Math.max(first, last - span), to: last };
+    }
+
+    /** The first and last position of the data. */
+    extent(model: ChartModel): [number, number] {
+        if (model.kind === 'category') return [0, Math.max(0, model.categories.length - 1)];
+        return [model.xMin, model.xMax];
+    }
+
+    setWindow(window: { from: number; to: number } | null): void {
+        const model = this.model;
+        let next = window;
+        if (next && model) {
+            const [first, last] = this.extent(model);
+            // A window over the whole of the data is no zoom at all.
+            if (next.from <= first && next.to >= last) next = null;
+        }
+        const same = (a: typeof next, b: typeof next) => (a === null && b === null) || (!!a && !!b && a.from === b.from && a.to === b.to);
+        if (same(next, this.zoomWindow)) return;
+        this.zoomWindow = next;
+        const key = (v: number) => (!model ? v : model.kind === 'category' ? model.categories[Math.round(v)] : model.kind === 'time' ? new Date(v) : v);
+        this.zoomChanged.fire({ from: next ? key(next.from) : null, to: next ? key(next.to) : null, source: this });
+        this.again();
+    }
+
+    /** Zooms in or out by `factor` around a position, keeping it where it is. */
+    zoomAround(center: number, factor: number): void {
+        const model = this.model;
+        if (!model || model.family !== 'cartesian') return;
+        const [first, last] = this.extent(model);
+        const now = this.zoomWindow ?? { from: first, to: last };
+        let from = center - (center - now.from) * factor;
+        let to = center + (now.to - center) * factor;
+        if (model.kind === 'category') {
+            // Whole categories, and at least one fewer or one more each step, or a short list would never zoom.
+            const width = now.to - now.from;
+            const next = factor < 1 ? Math.max(1, Math.min(width - 1, Math.round(width * factor))) : Math.max(width + 1, Math.round(width * factor));
+            from = Math.round(center - ((center - now.from) / Math.max(1, width)) * next);
+            to = from + next;
+            if (to > last) [from, to] = [last - next, last];
+            if (from < first) [from, to] = [first, first + next];
+        }
+        this.setWindow({ from: Math.max(first, from), to: Math.min(last, to) });
+    }
+
+    /** Moves the zoomed part along by a share of its width. */
+    pan(share: number): void {
+        const model = this.model;
+        const now = this.zoomWindow;
+        if (!model || !now) return;
+        const [first, last] = this.extent(model);
+        let step = (now.to - now.from) * share;
+        if (model.kind === 'category') step = Math.sign(step) * Math.max(1, Math.round(Math.abs(step)));
+        step = Math.max(first - now.from, Math.min(last - now.to, step));
+        if (step) this.setWindow({ from: now.from + step, to: now.to + step });
+    }
+
+    along(e: MouseEvent): number {
+        const { x, y } = this.localPlace(e);
+        return this.horizontal ? y : x;
+    }
+
+    pressed(e: PointerEvent): void {
+        this.pointerMoved(e);
+        if (!this.zoom || e.pointerType === 'touch' || e.button !== 0 || this.model?.family !== 'cartesian') return;
+        const { x, y } = this.localPlace(e);
+        const at = (this.plot as ChartPlot).positionValueAt(x, y);
+        if (at === null) return;
+        this.press = { at, along: this.along(e), moved: false };
+    }
+
+    released(e: PointerEvent): void {
+        const press = this.press;
+        this.press = null;
+        if (!press?.moved) return;
+        const plot = this.plot as ChartPlot;
+        plot.showBrush(null, null);
+        const { x, y } = this.localPlace(e);
+        const at = plot.positionValueAt(x, y);
+        // The press is not a click: what it went across is the new view.
+        this.skipClick = true;
+        if (at === null || !this.model) return;
+        let from = Math.min(press.at, at);
+        let to = Math.max(press.at, at);
+        if (this.model.kind === 'category') {
+            from = Math.max(0, Math.round(from));
+            to = Math.round(to);
+            if (to <= from) return;
+        }
+        this.setWindow({ from, to });
+    }
+
+    wheeled(e: WheelEvent): void {
+        if (!this.zoom || this.model?.family !== 'cartesian') return;
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            const { x, y } = this.localPlace(e);
+            const at = (this.plot as ChartPlot).positionValueAt(x, y);
+            if (at !== null) this.zoomAround(at, e.deltaY > 0 ? 1 / ZOOM_STEP : ZOOM_STEP);
+        } else if (this.zoomWindow && (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY))) {
+            e.preventDefault();
+            this.pan(Math.sign(e.deltaX || e.deltaY) * 0.1);
+        }
     }
 
     setActive(slot: ModelSlot, point: ModelPoint | null, e: Event | null): void {
@@ -620,6 +872,15 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
     }
 
     moveTo(slot: ModelSlot, point: ModelPoint): void {
+        // Zoomed in, the keyboard still walks every value: the view follows it.
+        const window = this.plot.input?.window;
+        if (window && (slot.x < window.from || slot.x > window.to) && this.zoomWindow) {
+            const width = window.to - window.from;
+            const from = slot.x < window.from ? slot.x : slot.x - width;
+            this.pendingActive = { x: slot.x, series: point.series };
+            this.setWindow({ from, to: from + width });
+            return;
+        }
         this.setActive(slot, point, null);
         const p = this.pointOf(point);
         text(this.status.element, uiLocale.text('chartValue', { series: p.series, position: p.xText, value: p.yText }));
@@ -651,7 +912,20 @@ export class Chart<T = any> extends Control<HTMLDivElement, ChartProps<T>> {
             return;
         } else if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
+            this.choose(point);
             this.pointClick.fire({ point: this.pointOf(point), originalEvent: e, source: this });
+            return;
+        } else if (this.zoom && (e.key === '+' || e.key === '=' || e.key === '-')) {
+            e.preventDefault();
+            const model = this.model as ChartModel;
+            const [first, last] = this.extent(model);
+            const now = this.zoomWindow ?? { from: first, to: last };
+            const center = this.activeSlot ? this.activeSlot.x : (now.from + now.to) / 2;
+            this.zoomAround(center, e.key === '-' ? 1 / ZOOM_STEP : ZOOM_STEP);
+            return;
+        } else if (this.zoom && e.key === '0') {
+            e.preventDefault();
+            this.resetZoom();
             return;
         } else return;
         e.preventDefault();

@@ -6,6 +6,10 @@ import type { ChartDataErrorEventArgs } from './chart-data-error-event-args';
 import type { ChartField } from './chart-field';
 import type { ChartLegendOptions } from './chart-legend-options';
 import type { ChartPointEventArgs } from './chart-point-event-args';
+import type { ChartPointSelection } from './chart-point-selection';
+import type { ChartReference } from './chart-reference';
+import type { ChartSelectionChangedEventArgs } from './chart-selection-changed-event-args';
+import type { ChartZoomChangedEventArgs } from './chart-zoom-changed-event-args';
 import type { ChartSeries } from './chart-series';
 import type { ChartSeriesToggledEventArgs } from './chart-series-toggled-event-args';
 import type { ChartStacked } from './chart-stacked';
@@ -57,9 +61,17 @@ export interface ChartProps<T = any> extends ControlProps {
     emptyText?: Bind<string>;
     /** Holds what is drawn, dimmed, while new values load. */
     loading?: Bind<boolean>;
+    /** Zooms in on positions: drag across the plot, Ctrl and the wheel, or + and -. Default: `false`. */
+    zoom?: Bind<boolean>;
+    /** Lines and bands across the plot. */
+    references?: Bind<readonly ChartReference[]>;
+    /** Whether a click or Enter chooses values. Default: `'none'`. */
+    pointSelection?: Bind<ChartPointSelection>;
     onPointClick?: On<ChartPointEventArgs<T>>;
     onPointFocused?: On<ChartPointEventArgs<T>>;
     onSeriesToggled?: On<ChartSeriesToggledEventArgs<T>>;
     onModeChanged?: On<ChartModeChangedEventArgs<T>>;
     onDataError?: On<ChartDataErrorEventArgs<T>>;
+    onZoomChanged?: On<ChartZoomChangedEventArgs<T>>;
+    onSelectionChanged?: On<ChartSelectionChangedEventArgs<T>>;
 }

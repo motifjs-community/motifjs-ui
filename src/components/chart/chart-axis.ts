@@ -25,6 +25,8 @@ export interface ChartAxis {
     grid?: boolean;
     /** Draws the line of the axis. Default: `true` on the category axis. */
     line?: boolean;
+    /** Shows only the latest stretch of positions: a time in milliseconds, a number, or a count of categories. For live data. */
+    span?: number;
     /** Shows the axis: labels, line and title. Default: `true`. */
     visible?: boolean;
 }

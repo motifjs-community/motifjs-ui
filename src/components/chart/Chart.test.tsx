@@ -206,7 +206,7 @@ describe('Chart', () => {
     it('turns into a table of the same values and back', async () => {
         const changed = vi.fn();
         const chart = make({ onModeChanged: changed });
-        const button = $(chart, '.mx-chart__tools button');
+        const button = (chart.modeButton.element as HTMLElement);
         button.click();
         await settle();
         expect(chart.element.getAttribute('data-mode')).toBe('table');

@@ -86,7 +86,7 @@ export default async function ({ page, base, check, axeSource }) {
 
     // The keyboard.
     const plot = lines.locator('.mx-chart__plot');
-    await page.locator('.ch-lines .mx-chart__tools button').focus();
+    await page.locator('.ch-lines .mx-chart__tools button').last().focus();
     await page.keyboard.press('Tab');
     const ring = await plot.evaluate(el => {
         const style = getComputedStyle(el);
@@ -151,7 +151,7 @@ export default async function ({ page, base, check, axeSource }) {
     check('percent stacking reads as shares', shares.some(t => t.includes('100')) && shares.some(t => t.includes('%')), shares.join(' '));
 
     // The table.
-    const toTable = lines.locator('.mx-chart__tools button');
+    const toTable = lines.locator('.mx-chart__tools button').last();
     await toTable.click();
     await page.waitForTimeout(100);
     const table = lines.locator('table');

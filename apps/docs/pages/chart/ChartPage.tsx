@@ -1,6 +1,10 @@
 import { ApiTable, Code, Example, Rich, Section } from '../../shared/doc';
 import { sources } from '../../shared/sources';
 import Areas from './examples/Areas';
+import Zoom from './examples/Zoom';
+import Streaming from './examples/Streaming';
+import Selection from './examples/Selection';
+import References from './examples/References';
 import Waterfall from './examples/Waterfall';
 import Ranges from './examples/Ranges';
 import Radar from './examples/Radar';
@@ -43,6 +47,9 @@ const PROPS = [
     ['animation', '`Bind<boolean>`', '`true`', 'Animates the marks when they first appear.'],
     ['tableButton', '`Bind<boolean>`', '`true`', 'Shows a button that switches between the chart and its table view.'],
     ['mode', "`Bind<'chart' | 'table'>`", "`'chart'`", 'Shows the chart or its table view. Supports `x-model`.'],
+    ['zoom', '`Bind<boolean>`', '`false`', 'Lets the reader zoom in on positions: a drag, Ctrl and the wheel, + and -.'],
+    ['references', '`Bind<ChartReference[]>`', '`[]`', 'Lines and bands across the plot: `axis`, `value` or `from` and `to`, and `label`.'],
+    ['pointSelection', "`Bind<'none' | 'single' | 'multiple'>`", "`'none'`", 'Whether a click or Enter chooses values.'],
     ['emptyText', '`Bind<string>`', 'A kit string', 'The text shown when there is nothing to draw.'],
     ['loading', '`Bind<boolean>`', '`false`', 'Keeps the current chart at reduced opacity while new values load.'],
 ];
@@ -84,6 +91,7 @@ const AXIS = [
     ['labels', '`boolean`', '`true`', 'Shows the labels.'],
     ['grid', '`boolean`', 'On the value axis', 'Draws grid lines.'],
     ['line', '`boolean`', 'On the category axis', 'Draws the line of the axis.'],
+    ['span', '`number`', '', 'Shows only the latest stretch of positions: a time in milliseconds, a number, or a count of categories.'],
     ['visible', '`boolean`', '`true`', 'Shows the axis.'],
 ];
 
@@ -91,6 +99,10 @@ const MEMBERS = [
     ['refresh()', '`void`', 'Redraws the chart from the current rows and series, after an in-place change.'],
     ['setSeriesVisible(index, visible)', '`void`', 'Hides or shows a series, by its index in `series`.'],
     ['isSeriesVisible(index)', '`boolean`', 'Indicates whether a series is drawn.'],
+    ['zoomTo(from, to)', '`void`', 'Shows the positions from one to another, given as in the rows.'],
+    ['resetZoom()', '`void`', 'Shows every position again.'],
+    ['selectedPoints', '`ChartPoint[]`', 'The values chosen now.'],
+    ['clearSelection()', '`void`', 'Chooses nothing.'],
     ['toSVG(options?)', '`string`', 'Returns the chart as an SVG document, with its title and legend.'],
     ['toDataURL(type?, options?)', '`Promise<string>`', 'Returns the chart as a data URL, a PNG by default.'],
 ];
@@ -105,6 +117,8 @@ const EVENTS = [
     ['onPointFocused', '`{ point, originalEvent, source }`', 'Occurs when the pointer or the keyboard reaches a value.'],
     ['onSeriesToggled', '`{ series, visible, source }`', 'Occurs when a series is hidden or shown in the legend.'],
     ['onModeChanged', '`{ mode, source }`', 'Occurs when the chart or its table view appears.'],
+    ['onZoomChanged', '`{ from, to, source }`', 'Occurs when the positions in view change; both are null when all of them are in view again.'],
+    ['onSelectionChanged', '`{ points, source }`', 'Occurs when values are chosen or let go.'],
     ['onDataError', '`{ error, source }`', 'Occurs when the data source fails to load. The chart also displays a message.'],
 ];
 
@@ -112,6 +126,7 @@ const KEYS = [
     ['Arrow keys', 'Move between positions along the axis, and between the series at a position across it.'],
     ['Home, End', 'Move to the first or the last position.'],
     ['Enter, Space', 'Raise `onPointClick` for the current value.'],
+    ['+, -, 0', 'With `zoom`: zoom in and out around the value, and show all of it again.'],
     ['Escape', 'Hides the current value.'],
 ];
 
@@ -309,6 +324,42 @@ import { Chart } from '@motifx-community/ui';
                 </p>
                 <Example stack files={code('Live.tsx')}>
                     <Live />
+                </Example>
+            </Section>
+
+            <Section anchor="zoom" title="Zooming into large data">
+                <p>
+                    <Rich text="`zoom` lets the reader drag across the plot to zoom in, use Ctrl and the wheel to zoom around the pointer, Shift and the wheel to move along, and + and - with the keyboard. A button in the title row shows all of it again, and the value axis fits what is in view. `zoomTo()` and `resetZoom()` do the same programmatically." />
+                </p>
+                <Example stack files={code('Zoom.tsx')}>
+                    <Zoom />
+                </Example>
+            </Section>
+
+            <Section anchor="streaming" title="Live data">
+                <p>
+                    <Rich text="`span` on the position axis shows only the latest stretch: a time in milliseconds, a number, or a count of categories. When the values change, the marks move from where they were, over the design language's motion." />
+                </p>
+                <Example stack files={code('Streaming.tsx')}>
+                    <Streaming />
+                </Example>
+            </Section>
+
+            <Section anchor="references" title="Reference lines and bands">
+                <p>
+                    <Rich text="`references` draws a line at a value or a position, or a band between two, with an optional label." />
+                </p>
+                <Example files={code('References.tsx', 'sales.ts')}>
+                    <References />
+                </Example>
+            </Section>
+
+            <Section anchor="selection" title="Choosing values">
+                <p>
+                    <Rich text="`pointSelection` lets a click or Enter choose one value or several. `onSelectionChanged` gives the values chosen, `selectedPoints` reads them and `clearSelection()` lets them go." />
+                </p>
+                <Example stack files={code('Selection.tsx', 'sales.ts')}>
+                    <Selection />
                 </Example>
             </Section>
 

@@ -47,6 +47,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   Also `pie`, `donut` and `funnel` for the parts of one whole, `radar`, `heatmap` with seven steps of one hue (two
   hues across zero), `rangeArea`, `rangeBar`, `candlestick`, `ohlc` and `waterfall`. Rising and falling candles differ in
   shape as well as color, and the legend lists the parts of a whole or the steps of a heat map.
+  `zoom` lets the reader drag, use Ctrl and the wheel, or + and - to zoom in on positions, with `zoomTo()`, `resetZoom()`
+  and `onZoomChanged`; a zoom into 100,000 values draws in about a tenth of a second. `span` on the position axis follows
+  live data, and changed values move from where they were. `references` draws lines and bands; `pointSelection`,
+  `selectedPoints`, `clearSelection()` and `onSelectionChanged` choose values.
 
 ### Documentation
 

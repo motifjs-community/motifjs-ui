@@ -457,6 +457,7 @@ export interface UiStrings {
   chartPosition: string;
   chartShowTable: string;
   chartShowChart: string;
+  chartResetZoom: string;
   chartShare: string;
   chartRange: string;
   chartPrices: string;

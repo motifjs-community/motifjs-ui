@@ -1684,6 +1684,27 @@
     font-size: var(--_chart-center-label-font-size, inherit);
   }
 
+  .mx-chart__reference {
+    color: var(--_chart-reference-color, inherit);
+  }
+
+  .mx-chart__reference-band {
+    color: var(--_chart-reference-band-color, inherit);
+  }
+
+  .mx-chart__reference-label {
+    color: var(--_chart-reference-label-color, inherit);
+    font-size: var(--_chart-reference-label-font-size, inherit);
+  }
+
+  .mx-chart__selected {
+    color: var(--_chart-selected-color, inherit);
+  }
+
+  .mx-chart__brush {
+    color: var(--_chart-brush-color, inherit);
+  }
+
   .mx-toggle-field.mx-field:not([data-label-mode='hidden']) > .mx-field__label {
     margin-block-start: 0px;
     margin-inline-end: 0px;

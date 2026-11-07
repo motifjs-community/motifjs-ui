@@ -636,5 +636,6 @@
   "chartShowChart": "Show as a chart",
   "chartShare": "Share",
   "chartRange": "{low} – {high}",
-  "chartPrices": "Open {open}, high {high}, low {low}, close {close}"
+  "chartPrices": "Open {open}, high {high}, low {low}, close {close}",
+  "chartResetZoom": "Reset zoom"
 }

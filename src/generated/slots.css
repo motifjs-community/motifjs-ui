@@ -664,6 +664,10 @@
     --_chart-cell-radius: var(--mx-chart-cell-radius);
     --_chart-slice-lift: var(--mx-chart-slice-lift);
     --_chart-donut-hole: var(--mx-chart-donut-hole);
+    --_chart-reference-width: var(--mx-chart-reference-width);
+    --_chart-reference-opacity: var(--mx-chart-reference-opacity);
+    --_chart-brush-opacity: var(--mx-chart-brush-opacity);
+    --_chart-selected-width: var(--mx-chart-selected-width);
     --_chart-root-color: var(--mx-chart-root-color);
     --_chart-root-font-size: var(--mx-chart-root-font-size);
     --_chart-root-gap: var(--mx-chart-root-gap);
@@ -750,6 +754,12 @@
     --_chart-center-value-font-weight: var(--mx-chart-center-value-font-weight);
     --_chart-center-label-color: var(--mx-chart-center-label-color);
     --_chart-center-label-font-size: var(--mx-chart-center-label-font-size);
+    --_chart-reference-color: var(--mx-chart-reference-color);
+    --_chart-reference-band-color: var(--mx-chart-reference-band-color);
+    --_chart-reference-label-color: var(--mx-chart-reference-label-color);
+    --_chart-reference-label-font-size: var(--mx-chart-reference-label-font-size);
+    --_chart-selected-color: var(--mx-chart-selected-color);
+    --_chart-brush-color: var(--mx-chart-brush-color);
   }
 
   .mx-toggle-field, .mx-check-box {

@@ -9,7 +9,9 @@ export function positionText(input: PlotInput, key: unknown, tickFormat?: Intl.D
     const format = xAxis.format;
     if (key instanceof Date || model.kind === 'time') {
         const time = key instanceof Date ? key : new Date(Number(key));
-        return formatDate(time, format, locale, tickFormat ?? { dateStyle: 'medium' });
+        // A moment within a day says its time too, to the second when it has one.
+        const clock = time.getHours() || time.getMinutes() || time.getSeconds() ? (time.getSeconds() ? 'medium' : 'short') : null;
+        return formatDate(time, format, locale, tickFormat ?? (clock ? { dateStyle: 'medium', timeStyle: clock } : { dateStyle: 'medium' }));
     }
     if (typeof key === 'number') return formatNumber(key, format, locale, { useGrouping: model.kind !== 'category' });
     return typeof format === 'function' ? format(key) : String(key ?? '');

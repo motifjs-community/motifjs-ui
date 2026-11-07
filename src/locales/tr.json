@@ -636,5 +636,6 @@
   "chartShowChart": "Grafik olarak göster",
   "chartShare": "Pay",
   "chartRange": "{low} – {high}",
-  "chartPrices": "Açılış {open}, en yüksek {high}, en düşük {low}, kapanış {close}"
+  "chartPrices": "Açılış {open}, en yüksek {high}, en düşük {low}, kapanış {close}",
+  "chartResetZoom": "Yakınlaştırmayı sıfırla"
 }

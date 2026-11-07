@@ -5208,6 +5208,76 @@
     "value": "0.75rem"
   },
   {
+    "name": "chart.reference-width",
+    "cssVar": "--mx-chart-reference-width",
+    "type": "dimension",
+    "ref": "border.width.1",
+    "value": "1px"
+  },
+  {
+    "name": "chart.reference-opacity",
+    "cssVar": "--mx-chart-reference-opacity",
+    "type": "number",
+    "ref": null,
+    "value": 0.08
+  },
+  {
+    "name": "chart.brush-opacity",
+    "cssVar": "--mx-chart-brush-opacity",
+    "type": "number",
+    "ref": null,
+    "value": 0.14
+  },
+  {
+    "name": "chart.selected-width",
+    "cssVar": "--mx-chart-selected-width",
+    "type": "dimension",
+    "ref": "focus.ring.width",
+    "value": "2px"
+  },
+  {
+    "name": "chart.reference.color",
+    "cssVar": "--mx-chart-reference-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "chart.reference-band.color",
+    "cssVar": "--mx-chart-reference-band-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "chart.reference-label.color",
+    "cssVar": "--mx-chart-reference-label-color",
+    "type": "color",
+    "ref": "color.fg.secondary",
+    "value": "#5e5c55"
+  },
+  {
+    "name": "chart.reference-label.font-size",
+    "cssVar": "--mx-chart-reference-label-font-size",
+    "type": "dimension",
+    "ref": "font.size.caption",
+    "value": "0.75rem"
+  },
+  {
+    "name": "chart.selected.color",
+    "cssVar": "--mx-chart-selected-color",
+    "type": "color",
+    "ref": "color.fg.primary",
+    "value": "#1d1c1a"
+  },
+  {
+    "name": "chart.brush.color",
+    "cssVar": "--mx-chart-brush-color",
+    "type": "color",
+    "ref": "color.accent.solid",
+    "value": "#c24523"
+  },
+  {
     "name": "checkbox.gap",
     "cssVar": "--mx-checkbox-gap",
     "type": "dimension",

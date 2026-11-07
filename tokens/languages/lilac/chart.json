@@ -492,6 +492,46 @@
       "font-size": {
         "$value": "{font.size.caption}"
       }
+    },
+    "reference-width": {
+      "$value": "{border.width.1}"
+    },
+    "reference-opacity": {
+      "$value": 0.08
+    },
+    "brush-opacity": {
+      "$value": 0.14
+    },
+    "selected-width": {
+      "$value": "{focus.ring.width}"
+    },
+    "reference": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      }
+    },
+    "reference-band": {
+      "color": {
+        "$value": "{color.fg.primary}"
+      }
+    },
+    "reference-label": {
+      "color": {
+        "$value": "{color.fg.secondary}"
+      },
+      "font-size": {
+        "$value": "{font.size.caption}"
+      }
+    },
+    "selected": {
+      "color": {
+        "$value": "{color.fg.primary}"
+      }
+    },
+    "brush": {
+      "color": {
+        "$value": "{color.accent.solid}"
+      }
     }
   }
 }

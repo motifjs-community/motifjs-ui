@@ -204,6 +204,46 @@
         animation-name: mx-chart-reveal-back;
     }
 
+    .mx-chart__plot[data-zoom] {
+        cursor: crosshair;
+    }
+
+    .mx-chart__reference {
+        fill: none;
+        stroke: currentcolor;
+        stroke-width: var(--_chart-reference-width);
+        stroke-dasharray: 4 3;
+        shape-rendering: crispedges;
+        pointer-events: none;
+    }
+
+    .mx-chart__reference-band {
+        fill: currentcolor;
+        opacity: var(--_chart-reference-opacity);
+        pointer-events: none;
+    }
+
+    .mx-chart__reference-label {
+        fill: currentcolor;
+        paint-order: stroke;
+        stroke: var(--_surface);
+        stroke-width: var(--_chart-marker-ring);
+        pointer-events: none;
+    }
+
+    .mx-chart__selected {
+        fill: none;
+        stroke: currentcolor;
+        stroke-width: var(--_chart-selected-width);
+        pointer-events: none;
+    }
+
+    .mx-chart__brush {
+        fill: currentcolor;
+        opacity: var(--_chart-brush-opacity);
+        pointer-events: none;
+    }
+
     .mx-chart__crosshair {
         fill: none;
         stroke: currentcolor;

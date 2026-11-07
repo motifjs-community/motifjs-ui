@@ -1,6 +1,7 @@
 import type { ChartAxis } from './chart-axis';
 import type { ChartLook } from './chart-look';
 import type { ChartModel, ModelPoint, ModelSlot } from './chart-model';
+import type { ChartReference } from './chart-reference';
 
 /** What a plot is drawn from. */
 export interface PlotInput {
@@ -13,6 +14,13 @@ export interface PlotInput {
     height: number;
     look: ChartLook;
     locale: string;
+    /** The part of the positions in view, once zoomed or following live data; null for all of them. */
+    window?: { from: number; to: number } | null;
+    references?: readonly ChartReference[];
+    /** Chosen values, as `series:index`. */
+    selected?: ReadonlySet<string>;
+    /** The values changed: the marks move from where they were. */
+    animate?: boolean;
 }
 
 /** A rectangle of the SVG. */

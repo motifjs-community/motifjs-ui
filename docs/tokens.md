@@ -754,6 +754,16 @@ Source: `tokens/schema/*.json` for names and types, and `tokens/languages/<langu
 | `chart.center-value.font-weight` | `--mx-chart-center-value-font-weight` | `font.weight.semibold` | `600` |
 | `chart.center-label.color` | `--mx-chart-center-label-color` | `color.fg.secondary` | `#5e5c55` |
 | `chart.center-label.font-size` | `--mx-chart-center-label-font-size` | `font.size.caption` | `0.75rem` |
+| `chart.reference-width` | `--mx-chart-reference-width` | `border.width.1` | `1px` |
+| `chart.reference-opacity` | `--mx-chart-reference-opacity` | `` | `0.08` |
+| `chart.brush-opacity` | `--mx-chart-brush-opacity` | `` | `0.14` |
+| `chart.selected-width` | `--mx-chart-selected-width` | `focus.ring.width` | `2px` |
+| `chart.reference.color` | `--mx-chart-reference-color` | `color.fg.secondary` | `#5e5c55` |
+| `chart.reference-band.color` | `--mx-chart-reference-band-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.reference-label.color` | `--mx-chart-reference-label-color` | `color.fg.secondary` | `#5e5c55` |
+| `chart.reference-label.font-size` | `--mx-chart-reference-label-font-size` | `font.size.caption` | `0.75rem` |
+| `chart.selected.color` | `--mx-chart-selected-color` | `color.fg.primary` | `#1d1c1a` |
+| `chart.brush.color` | `--mx-chart-brush-color` | `color.accent.solid` | `#c24523` |
 | `checkbox.gap` | `--mx-checkbox-gap` | `space.2` | `0.5rem` |
 | `checkbox.size.sm` | `--mx-checkbox-size-sm` | `` | `0.875rem` |
 | `checkbox.size.md` | `--mx-checkbox-size-md` | `icon.size.md` | `1rem` |

@@ -151,6 +151,22 @@
       "$type": "number",
       "$description": "The hole of a donut, as a share of its radius."
     },
+    "reference-width": {
+      "$type": "dimension",
+      "$description": "The width of a reference line."
+    },
+    "reference-opacity": {
+      "$type": "number",
+      "$description": "How strong a reference band is."
+    },
+    "brush-opacity": {
+      "$type": "number",
+      "$description": "How strong the band being dragged to zoom is."
+    },
+    "selected-width": {
+      "$type": "dimension",
+      "$description": "The width of the ring around a chosen value."
+    },
     "$units": {
       "root": {
         "$description": "The chart as a whole: its text color and font.",
@@ -270,6 +286,26 @@
       "center-label": {
         "$description": "The name under it.",
         "selector": ".mx-chart__center-label"
+      },
+      "reference": {
+        "$description": "A reference line: `color` paints it.",
+        "selector": ".mx-chart__reference"
+      },
+      "reference-band": {
+        "$description": "A reference band: `color` paints it.",
+        "selector": ".mx-chart__reference-band"
+      },
+      "reference-label": {
+        "$description": "The text of a reference.",
+        "selector": ".mx-chart__reference-label"
+      },
+      "selected": {
+        "$description": "The ring around a chosen value: `color` paints it.",
+        "selector": ".mx-chart__selected"
+      },
+      "brush": {
+        "$description": "The band dragged across the plot to zoom: `color` paints it.",
+        "selector": ".mx-chart__brush"
       }
     }
   }
