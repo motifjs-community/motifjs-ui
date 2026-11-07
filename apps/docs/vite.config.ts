@@ -42,6 +42,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    // Two apps: the docs, and the smart home panel that the showcase shows in a tablet frame.
+    rolldownOptions: {
+      input: { docs: here('index.html'), smartHome: here('smart-home/index.html') },
+    },
     // The browsers the kit supports (README: Browsers). An older target makes the minifier rewrite :dir(rtl) as a list
     // of :lang() values, which a page with dir="rtl" but another lang never matches.
     cssTarget: ['chrome120', 'edge120', 'firefox128', 'safari18'],

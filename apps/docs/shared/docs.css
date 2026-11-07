@@ -1076,6 +1076,24 @@ ul.docs-list {
   min-block-size: 3rem;
 }
 
+/* The smart home showcase: the panel drawn at a tablet's size and scaled to the page. */
+
+.sh-stage {
+  position: relative;
+  overflow: hidden;
+  inline-size: 100%;
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  border-radius: var(--mx-radius-lg);
+  background: var(--mx-color-bg-canvas);
+}
+
+.sh-tablet {
+  display: block;
+  border: 0;
+  transform: scale(var(--sh-scale, 1));
+  transform-origin: 0 0;
+}
+
 /* Scheduler page. */
 
 .sched-demo {

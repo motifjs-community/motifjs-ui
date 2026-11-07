@@ -6,6 +6,7 @@ export const GROUPS = [
     pages: [
       { id: 'home', label: 'Overview', title: '@motifx-community/ui', path: '/', related: ['tokens', 'button', 'textbox'] },
       { id: 'showcase', label: 'Showcase', title: 'Showcase: an order screen', path: '/showcase', related: ['formlayout', 'lookup', 'tabs'] },
+      { id: 'showcase-home', label: 'Showcase: smart home', title: 'Showcase: a smart home', path: '/showcase/home', related: ['gauge', 'chart', 'switch'] },
       { id: 'tokens', label: 'Design tokens', title: 'Design tokens', path: '/tokens', related: ['button', 'textbox'] },
     ],
   },

@@ -1,0 +1,638 @@
+/* The smart home panel: a rail of screens at the side, the day at the top, tiles on a twelve column grid. Made for a
+   tablet across; upright it takes two columns, on a phone one, with the rail at the bottom. */
+
+html,
+body {
+  margin: 0;
+  min-block-size: 100%;
+}
+
+.sh {
+  min-block-size: 100vh;
+}
+
+.sh-icon {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  flex: none;
+}
+
+/* The rail. */
+
+.sh-rail {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: var(--mx-z-sticky);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--mx-space-1);
+  box-sizing: border-box;
+  inline-size: 6rem;
+  padding: var(--mx-space-4) var(--mx-space-2);
+  background: var(--mx-color-bg-surface);
+  border-inline-end: var(--mx-border-width-1) solid var(--mx-color-stroke-divider);
+}
+
+.sh-logo {
+  display: grid;
+  place-items: center;
+  inline-size: 3rem;
+  block-size: 3rem;
+  margin-block-end: var(--mx-space-4);
+  border-radius: var(--mx-radius-lg);
+  background: var(--mx-color-accent-solid);
+  color: var(--mx-color-accent-on-solid);
+}
+
+.sh-rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--mx-space-1);
+  box-sizing: border-box;
+  inline-size: 5rem;
+  padding: var(--mx-space-2) var(--mx-space-1);
+  border-radius: var(--mx-radius-lg);
+  color: var(--mx-color-fg-secondary);
+  font-size: var(--mx-font-size-caption);
+  line-height: var(--mx-font-line-caption);
+  text-align: center;
+  text-decoration: none;
+}
+
+.sh-rail-item:hover {
+  background: var(--mx-color-fill-subtle-secondary);
+  color: var(--mx-color-fg-primary);
+}
+
+.sh-rail-item[aria-current='page'] {
+  background: var(--mx-color-accent-subtle);
+  color: var(--mx-color-accent-on-subtle);
+  font-weight: var(--mx-font-weight-semibold);
+}
+
+/* The top. */
+
+.sh-main {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  margin-inline-start: 6rem;
+}
+
+.sh-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mx-space-4);
+  padding: var(--mx-space-6) var(--mx-space-8) var(--mx-space-2);
+}
+
+.sh-hello {
+  display: flex;
+  flex: 1 1 16rem;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.sh-greeting {
+  margin: 0;
+  font-size: var(--mx-font-size-title);
+  font-weight: var(--mx-font-weight-semibold);
+  line-height: 1.2;
+}
+
+.sh-day,
+.sh-quiet {
+  color: var(--mx-color-fg-secondary);
+}
+
+.sh-weather {
+  display: flex;
+  align-items: center;
+  gap: var(--mx-space-2);
+  color: var(--mx-color-fg-secondary);
+}
+
+.sh-weather strong {
+  color: var(--mx-color-fg-primary);
+  font-size: var(--mx-font-size-body-large);
+}
+
+.sh-screen {
+  padding: var(--mx-space-4) var(--mx-space-8) var(--mx-space-8);
+}
+
+/* Shared parts of the tiles. */
+
+.sh-screen .mx-card {
+  box-sizing: border-box;
+  inline-size: auto;
+  block-size: 100%;
+}
+
+/* The content of a tile, one part under the other: the app's own box, whatever the card draws around it. */
+.sh-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-4);
+  min-inline-size: 0;
+}
+
+.sh-center {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: center;
+  gap: var(--mx-space-6);
+}
+
+.sh-centered {
+  justify-content: center;
+}
+
+.sh-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mx-space-2);
+}
+
+.sh-big {
+  font-size: var(--mx-font-size-title);
+  font-weight: var(--mx-font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.sh-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mx-space-3);
+  margin-block-end: var(--mx-space-3);
+}
+
+.sh-section-title {
+  margin: 0;
+  font-size: var(--mx-font-size-body-large);
+  font-weight: var(--mx-font-weight-semibold);
+}
+
+.sh-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mx-space-4);
+}
+
+.sh-stepper--small {
+  gap: var(--mx-space-2);
+}
+
+.sh-target {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-inline-size: 5rem;
+}
+
+.sh-target strong {
+  font-size: var(--mx-font-size-title);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.sh-target .sh-quiet {
+  font-size: var(--mx-font-size-caption);
+  line-height: var(--mx-font-line-caption);
+}
+
+.sh-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mx-space-4);
+}
+
+.sh-figure {
+  display: flex;
+  align-items: center;
+  gap: var(--mx-space-2);
+}
+
+.sh-figure--wide {
+  flex: 1 1 auto;
+}
+
+.sh-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mx-space-2);
+  margin-block-start: auto;
+}
+
+.sh-doors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sh-door {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mx-space-3);
+}
+
+/* Home: the dashboard. */
+
+.sh-dash {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--mx-space-5);
+}
+
+.sh-scenes {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--mx-space-4);
+}
+
+.sh-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--mx-space-1);
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: 8rem;
+  padding: var(--mx-space-4);
+  border: var(--mx-border-width-1) solid var(--mx-color-stroke-card);
+  border-radius: var(--mx-radius-lg);
+  background: var(--mx-color-bg-card);
+  color: var(--mx-color-fg-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.sh-scene:hover {
+  background: var(--mx-color-fill-subtle-secondary);
+}
+
+.sh-scene-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  margin-block-end: var(--mx-space-2);
+  border-radius: var(--mx-radius-full);
+  background: var(--mx-color-fill-subtle-secondary);
+  color: var(--mx-color-fg-secondary);
+}
+
+.sh-scene-name {
+  display: block;
+  font-size: var(--mx-font-size-body-large);
+  font-weight: var(--mx-font-weight-semibold);
+}
+
+.sh-scene .sh-quiet {
+  display: block;
+}
+
+.sh-scene[aria-pressed='true'] {
+  border-color: var(--mx-color-accent-solid);
+  background: var(--mx-color-accent-subtle);
+}
+
+.sh-scene[aria-pressed='true'] .sh-scene-icon {
+  background: var(--mx-color-accent-solid);
+  color: var(--mx-color-accent-on-solid);
+}
+
+.sh-climate,
+.sh-energy,
+.sh-security {
+  grid-column: span 4;
+}
+
+.sh-rooms {
+  grid-column: span 8;
+}
+
+.sh-activity {
+  grid-column: span 4;
+}
+
+.sh-room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--mx-space-4);
+}
+
+.sh-room-figures {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--mx-space-3);
+}
+
+.sh-room-lights {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mx-space-3);
+}
+
+/* Rooms. */
+
+.sh-rooms-screen {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--mx-space-5);
+}
+
+.sh-screen .sh-room-picker {
+  position: sticky;
+  inset-block-start: var(--mx-space-4);
+  block-size: auto;
+}
+
+.sh-room-detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--mx-space-5);
+}
+
+.sh-room-climate,
+.sh-room-lights-card,
+.sh-room-blinds {
+  grid-column: 1 / -1;
+}
+
+.sh-room-climate-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mx-space-8);
+}
+
+.sh-room-facts {
+  display: flex;
+  flex: 1 1 14rem;
+  flex-direction: column;
+  gap: var(--mx-space-4);
+}
+
+.sh-room-facts .sh-stepper {
+  justify-content: flex-start;
+}
+
+.sh-lights {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-4);
+}
+
+.sh-light {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(8rem, 12rem) minmax(8rem, 1fr) 9rem;
+  align-items: center;
+  gap: var(--mx-space-4);
+}
+
+.sh-light-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: var(--mx-radius-full);
+  background: var(--mx-color-fill-subtle-secondary);
+  color: var(--mx-color-fg-tertiary);
+}
+
+.sh-light-icon[data-on='true'] {
+  background: var(--mx-color-accent-subtle);
+  color: var(--mx-color-accent-on-subtle);
+}
+
+/* Climate. */
+
+.sh-climate-rooms {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--mx-space-4);
+  margin-block-end: var(--mx-space-5);
+}
+
+.sh-two {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1fr) minmax(0, 2fr);
+  gap: var(--mx-space-5);
+}
+
+/* The hours chart takes the whole height the row gives its card; its own height is the least. */
+.sh-history .mx-card__content,
+.sh-history .sh-stack {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.sh-hours {
+  flex: 1 0 auto;
+}
+
+/* Energy. */
+
+.sh-energy-screen,
+.sh-climate-screen,
+.sh-automations-screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mx-space-5);
+}
+
+.sh-climate-screen {
+  gap: 0;
+}
+
+.sh-three {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--mx-space-5);
+}
+
+/* Security. */
+
+.sh-security-screen {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1fr) minmax(0, 2fr);
+  grid-template-areas:
+    'alarm cameras'
+    'doors cameras'
+    'events events';
+  align-items: stretch;
+  gap: var(--mx-space-5);
+}
+
+.sh-alarm {
+  grid-area: alarm;
+}
+
+.sh-locks {
+  grid-area: doors;
+}
+
+.sh-cameras {
+  grid-area: cameras;
+}
+
+.sh-events {
+  grid-area: events;
+}
+
+.sh-alarm-state {
+  display: flex;
+  align-items: center;
+  gap: var(--mx-space-4);
+  padding: var(--mx-space-4);
+  border-radius: var(--mx-radius-lg);
+  background: var(--mx-color-fill-subtle-secondary);
+}
+
+.sh-alarm-state .sh-icon {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+}
+
+.sh-alarm-state > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.sh-alarm-state strong {
+  font-size: var(--mx-font-size-title);
+  line-height: 1.2;
+}
+
+.sh-alarm-state[data-armed='true'] {
+  background: var(--mx-color-accent-subtle);
+  color: var(--mx-color-accent-on-subtle);
+}
+
+/* Automations. */
+
+.sh-automation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: var(--mx-space-5);
+}
+
+/* A tablet upright, or a narrow window. */
+
+@media (max-width: 1100px) {
+  .sh-climate,
+  .sh-energy {
+    grid-column: span 6;
+  }
+
+  .sh-security,
+  .sh-rooms,
+  .sh-activity {
+    grid-column: 1 / -1;
+  }
+
+  .sh-scenes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sh-three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sh-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sh-security-screen {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      'alarm doors'
+      'cameras cameras'
+      'events events';
+  }
+}
+
+/* A phone: one column, the rail along the bottom. */
+
+@media (max-width: 720px) {
+  .sh {
+    padding-block-end: 5rem;
+  }
+
+  .sh-main {
+    margin-inline-start: 0;
+  }
+
+  .sh-rail {
+    inset: auto 0 0;
+    inline-size: auto;
+    flex-direction: row;
+    justify-content: space-around;
+    block-size: auto;
+    padding: var(--mx-space-1);
+    border-inline-end: none;
+    border-block-start: var(--mx-border-width-1) solid var(--mx-color-stroke-divider);
+  }
+
+  .sh-logo {
+    display: none;
+  }
+
+  .sh-rail-item {
+    inline-size: auto;
+    flex: 1 1 0;
+    font-size: var(--mx-font-size-caption);
+  }
+
+  .sh-top,
+  .sh-screen {
+    padding-inline: var(--mx-space-4);
+  }
+
+  .sh-dash > * {
+    grid-column: 1 / -1 !important;
+  }
+
+  .sh-security-screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'alarm' 'doors' 'cameras' 'events';
+  }
+
+  .sh-three,
+  .sh-rooms-screen,
+  .sh-room-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sh-room-picker {
+    position: static;
+  }
+
+  .sh-light {
+    grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, 8.5rem);
+  }
+
+  .sh-light-level {
+    grid-column: 2 / -1;
+    grid-row: 2;
+  }
+}

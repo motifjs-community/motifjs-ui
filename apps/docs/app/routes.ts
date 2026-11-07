@@ -6,6 +6,7 @@ import { loadPage } from './texts';
 const LOAD: Record<PageId, () => Promise<unknown>> = {
   home: () => import('../pages/home/HomePage'),
   showcase: () => import('../pages/showcase/ShowcasePage'),
+  'showcase-home': () => import('../pages/showcase/home/SmartHomePage'),
   tokens: () => import('../pages/tokens/TokensPage'),
   control: () => import('../pages/control/ControlPage'),
   keyboard: () => import('../pages/keyboard/KeyboardPage'),
