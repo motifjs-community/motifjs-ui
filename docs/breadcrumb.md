@@ -1,6 +1,6 @@
 # Breadcrumb
 
-> Navigation · @motifx-community/ui 0.1.0-beta.5
+> Navigation · @motifx-community/ui 0.1.0-beta.6
 
 Shows the path to the current page. Each step is a link or button, and the current page comes last. Steps that do not fit move into a menu after the first step.
 

@@ -1,6 +1,6 @@
 # Calendar
 
-> Editors · @motifx-community/ui 0.1.0-beta.5
+> Editors · @motifx-community/ui 0.1.0-beta.6
 
 A month view for selecting a date, with year and decade views for quick navigation. It serves as the DateBox picker and can also be used on its own.
 

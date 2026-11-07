@@ -1,6 +1,6 @@
 # Editors
 
-> Editors · @motifx-community/ui 0.1.0-beta.5
+> Editors · @motifx-community/ui 0.1.0-beta.6
 
 Editors take values: text, numbers, dates and times, ranges, colors, ratings, codes, files and signatures. They share one field model, so a label, help text, validation and binding work the same in all of them.
 

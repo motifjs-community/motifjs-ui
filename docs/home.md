@@ -1,6 +1,6 @@
 # @motifx-community/ui
 
-> Get started · @motifx-community/ui 0.1.0-beta.5
+> Get started · @motifx-community/ui 0.1.0-beta.6
 
 Components for MotifJS: objects you create when you need them, show anywhere and dispose when you are done, drawn from the MotifJS design system's tokens.
 

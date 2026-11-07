@@ -1,6 +1,6 @@
 # Stepper
 
-> Navigation · @motifx-community/ui 0.1.0-beta.5
+> Navigation · @motifx-community/ui 0.1.0-beta.6
 
 Shows the steps of a longer task and the user's progress through them. Each step has an indicator and text, with a line between steps, and steps before the current one are marked complete. [Wizard](wizard.md) adds a page and navigation buttons to each step.
 

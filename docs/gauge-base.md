@@ -1,6 +1,6 @@
 # Gauge: Base value
 
-> Gauges · @motifx-community/ui 0.1.0-beta.5
+> Gauges · @motifx-community/ui 0.1.0-beta.6
 
 The fill starts at the start of the scale, or at a base value inside it. A scale with values on both sides of a target then fills from the target, either way.
 

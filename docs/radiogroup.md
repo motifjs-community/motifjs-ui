@@ -1,6 +1,6 @@
 # RadioGroup
 
-> Choice · @motifx-community/ui 0.1.0-beta.5
+> Choice · @motifx-community/ui 0.1.0-beta.6
 
 A set of mutually exclusive options. Options can come from plain values, custom objects or a live list, and can be arranged vertically, horizontally or in columns. Individual options can be disabled, hidden or given help text. The group is a single Tab stop, and the arrow keys move between options.
 

@@ -1,6 +1,6 @@
 # BottomNavigation
 
-> Navigation · @motifx-community/ui 0.1.0-beta.5
+> Navigation · @motifx-community/ui 0.1.0-beta.6
 
 The destinations of an application at the bottom of the screen, each an icon with a label. The bar is one Tab stop, marks the selected item for screen readers and keeps clear of the home indicator of a phone.
 

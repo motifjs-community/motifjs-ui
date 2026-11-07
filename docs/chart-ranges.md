@@ -1,6 +1,6 @@
 # Chart: Ranges
 
-> Charts · @motifx-community/ui 0.1.0-beta.5
+> Charts · @motifx-community/ui 0.1.0-beta.6
 
 Ranges show a low and a high value for each position, as a band or as floating bars.
 

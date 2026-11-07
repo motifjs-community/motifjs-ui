@@ -1,6 +1,6 @@
 # Scheduler: Big data
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.5
+> Scheduler · @motifx-community/ui 0.1.0-beta.6
 
 Handles thousands of resources and appointments. The scheduler renders only what is visible, and recalculates the layout only for what has changed.
 

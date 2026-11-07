@@ -1,6 +1,6 @@
 # Scheduler: Tablet and phone
 
-> Scheduler · @motifx-community/ui 0.1.0-beta.5
+> Scheduler · @motifx-community/ui 0.1.0-beta.6
 
 On tablets and phones, the scheduler keeps its appointments, views and date, and changes how it presents them. On a phone, it shows the agenda, a compact toolbar and bottom sheets. Touch gestures can lift and resize appointments, swipe between days, and pinch to zoom.
 

@@ -1,6 +1,6 @@
 # DateRangeBox
 
-> Editors · @motifx-community/ui 0.1.0-beta.5
+> Editors · @motifx-community/ui 0.1.0-beta.6
 
 A single field for a start date and an end date. Users can type through two masks, or pick from two side-by-side months and a list of presets, within the allowed dates and range length. The value is a `[start, end]` pair.
 

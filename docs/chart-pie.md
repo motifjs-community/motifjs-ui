@@ -1,6 +1,6 @@
 # Chart: Pie and donut
 
-> Charts · @motifx-community/ui 0.1.0-beta.5
+> Charts · @motifx-community/ui 0.1.0-beta.6
 
 A pie or a donut splits one whole into its parts, for a share seen at a glance.
 

@@ -1,6 +1,6 @@
 # SpeedDial
 
-> Buttons · @motifx-community/ui 0.1.0-beta.5
+> Buttons · @motifx-community/ui 0.1.0-beta.6
 
 A floating action button that opens a set of related actions. Place it in a corner, on an edge or inline. Actions appear in a line with labels, or on a full, half or quarter circle around the button with tooltips. If there is only one action, the main button performs it directly.
 

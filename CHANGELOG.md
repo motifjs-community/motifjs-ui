@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.0-beta.6] - 2026-11-07
+
 ### New components
 
 - `AppBar`: the top bar of an application, a `<header>`. A menu or back button (`navigation`, `navigationGlyph`,
@@ -51,7 +53,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   and `onZoomChanged`; a zoom into 100,000 values draws in about a tenth of a second. `span` on the position axis follows
   live data, and changed values move from where they were. `references` draws lines and bands; `pointSelection`,
   `selectedPoints`, `clearSelection()` and `onSelectionChanged` choose values. The table view is the kit's `DataGrid`, so
-  100,000 rows open at once and scroll; live updates move from the values last drawn, without flicker.
+  100,000 rows open at once and scroll; live updates reach the same grid, which keeps its scroll. The table view is at
+  least eleven rows tall in every design language (`chart.table-min-height`).
 - `Sparkline`: a chart the size of a word, for a trend beside a number, in a sentence or a row of a table. `line`, `area`,
   `bar` and `winloss`; `highlight` marks the first, last, lowest or highest value, `referenceLine` draws a line at a
   value or the average; the value under the pointer shows above it, and its name sums the values up.
@@ -67,9 +70,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   that move apart, a `legend`, a tooltip, `baseValue` for bars both ways, rows read through `valueField`, `nameField` and
   `colorField`, and a changing number of bars, each new one growing from the base value.
 
+### Changed
+
+- `DataGrid` groups on the server with a pager too: over a `DataSource` that loads pages and an adapter that groups, the
+  groups come with their counts and each page asks only for the rows it shows (`loadRange`), once. Such a source was
+  grouped in the browser from every matching row before. `remoteGrouping` covers pages as well as blocks.
+
 ### Fixed
 
 - `ValidationSummary` writes a field's label without its access key marker: `&Name` reads as Name.
+- `ValidationSummary` keeps its lines while other fields change, so a line with focus keeps it; when the focused line
+  goes, the next one takes focus.
+- `Button` with `toggle` and a `pressed` bound one way keeps following its state after a click.
 
 ### Documentation
 
@@ -78,6 +90,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   starts with its groups closed, and remembers which are open and how far it was scrolled.
 - Every group of components has an overview: what the group is for, a demo that puts its components to work in one
   screen, which component to choose for a job, and what they share.
+- More examples on every chart page, and a smart home panel for a tablet in the showcase, built with the kit.
+- The DataGrid grouping page has an example of grouping on the server with a pager.
 
 ## [0.1.0-beta.5] - 2026-11-06
 

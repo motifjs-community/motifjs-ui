@@ -1,6 +1,6 @@
 # DataGrid: Editing
 
-> DataGrid · @motifx-community/ui 0.1.0-beta.5
+> DataGrid · @motifx-community/ui 0.1.0-beta.6
 
 ## Editing and save modes
 

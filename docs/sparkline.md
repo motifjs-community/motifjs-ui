@@ -1,6 +1,6 @@
 # Sparkline
 
-> Charts · @motifx-community/ui 0.1.0-beta.5
+> Charts · @motifx-community/ui 0.1.0-beta.6
 
 A chart the size of a word, for a trend beside a number, in a sentence or in a row of a table. It draws a line, an area, bars, or wins and losses, and marks the values that matter.
 

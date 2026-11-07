@@ -1,6 +1,6 @@
 # Chart: Bars
 
-> Charts · @motifx-community/ui 0.1.0-beta.5
+> Charts · @motifx-community/ui 0.1.0-beta.6
 
 Bars compare amounts. They stand on a common baseline, so lengths compare exactly, side by side, stacked, or on their side for long names.
 

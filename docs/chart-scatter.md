@@ -1,6 +1,6 @@
 # Chart: Scatter and bubble
 
-> Charts · @motifx-community/ui 0.1.0-beta.5
+> Charts · @motifx-community/ui 0.1.0-beta.6
 
 Scatter and bubble charts place each row by two numbers, to show how they relate.
 
