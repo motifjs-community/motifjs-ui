@@ -179,9 +179,23 @@ describe('round shapes', () => {
     it('draws a slice, a ring piece and a whole circle', async () => {
         const { arcPath } = await import('./chart-paths');
         expect(arcPath(50, 50, 0, 40, 0, Math.PI / 2)).toMatch(/^M50 10A40 40 0 0 1 90 50L50 50Z$/);
-        expect(arcPath(50, 50, 20, 40, 0, Math.PI).match(/A/g)).toHaveLength(2);
-        expect(arcPath(50, 50, 0, 40, 0, Math.PI * 2).match(/M/g)).toHaveLength(2);
+        expect(arcPath(50, 50, 20, 40, 0, Math.PI).match(/A/g)).toHaveLength(4);
+        expect(arcPath(50, 50, 0, 40, 0, Math.PI * 2).match(/A/g)).toHaveLength(4);
         expect(arcPath(50, 50, 0, 40, 1, 1)).toBe('');
+    });
+
+    it('never asks for an arc its radius cannot reach, so a ring keeps its thickness at every value', async () => {
+        const { arcPath } = await import('./chart-paths');
+        // Around half a turn the ends of one arc would be almost a diameter apart, and their rounding could push them past it.
+        for (let sweep = 2.9; sweep <= 3.4; sweep += 0.0007) {
+            const d = arcPath(117.3, 98.6, 99.1, 109.1, -2.356, -2.356 + sweep);
+            let at = d.match(/^M([\d.-]+) ([\d.-]+)/)!.slice(1).map(Number);
+            for (const part of d.matchAll(/([AL])([\d.-]+) ([\d.-]+)(?: 0 0 [01] ([\d.-]+) ([\d.-]+))?/g)) {
+                const end = part[1] === 'A' ? [Number(part[4]), Number(part[5])] : [Number(part[2]), Number(part[3])];
+                if (part[1] === 'A') expect(Math.hypot(end[0] - at[0], end[1] - at[1])).toBeLessThan(Number(part[2]) * 2 * 0.75);
+                at = end;
+            }
+        }
     });
 });
 

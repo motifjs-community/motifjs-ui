@@ -120,7 +120,9 @@
     .mx-gauge[data-orientation='horizontal'] .mx-gauge__value {
         grid-area: value;
         position: static;
+        min-inline-size: var(--_value-room);
         translate: none;
+        text-align: end;
     }
 
     .mx-gauge[data-orientation='horizontal'] .mx-gauge__label {
@@ -139,6 +141,19 @@
 
     .mx-gauge[data-orientation='vertical'] .mx-gauge__value {
         position: static;
+        min-inline-size: var(--_value-room);
         translate: none;
+        text-align: center;
+    }
+
+    /* Measures a value in the font of the value, out of sight. */
+    .mx-gauge__value-probe {
+        position: absolute;
+        inset-block-start: 0;
+        inset-inline-start: 0;
+        visibility: hidden;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+        pointer-events: none;
     }
 }

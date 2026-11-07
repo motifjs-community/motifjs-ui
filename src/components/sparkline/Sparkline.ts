@@ -13,6 +13,7 @@ import { linearScale } from "../../parts/chart/chart-scale";
 import { formatNumber, surfaceBehind, type ChartFormat } from "../../parts/chart/chart-text";
 import { svgPart, svgPut } from "../../parts/chart/svg-parts";
 import { thinOut } from "../../parts/chart/thin-out";
+import { TokenLengths } from "../../parts/chart/token-lengths";
 import type { ChartField } from "../chart/chart-field";
 import type { SparklineHighlight } from "./sparkline-highlight";
 import type { SparklineProps } from "./sparkline-props";
@@ -52,6 +53,7 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
     values: (number | null)[] = [];
     places: { x: number; y: number }[] = [];
     look: Look | null = null;
+    tokens: TokenLengths;
     placed = false;
     queued = false;
     watch: ResizeWatch | null = null;
@@ -91,7 +93,9 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
         onReState(this, () => this.again());
         el.addEventListener('pointermove', e => this.pointed(e));
         el.addEventListener('pointerleave', () => this.leave());
+        this.tokens = new TokenLengths(el, ['--_sparkline-line-width', '--_sparkline-marker-size', '--_sparkline-bar-gap', '--_sparkline-bar-radius'], () => this.again());
         this.motif.setDisposable(() => {
+            this.tokens.dispose();
             this.watch?.disconnect();
             this.stopLook?.();
         });
@@ -103,10 +107,7 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
         this.placed = true;
         this.watch = new ResizeWatch(() => this.again());
         this.watch.observe(this.element);
-        this.stopLook = onLookChanged(() => {
-            this.look = null;
-            this.again();
-        });
+        this.stopLook = onLookChanged(() => this.again());
         this.draw();
     }
 
@@ -217,23 +218,13 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
     }
 
     readLook(): Look {
-        const view = this.element.ownerDocument.defaultView;
-        const probe = this.element.ownerDocument.createElement('span');
-        probe.style.cssText = 'position:absolute;visibility:hidden;block-size:0;';
-        this.element.append(probe);
-        const length = (token: string, fallback: number) => {
-            probe.style.inlineSize = `var(${token})`;
-            const size = parseFloat(view?.getComputedStyle(probe).inlineSize ?? '');
-            return Number.isFinite(size) ? size : fallback;
+        const t = this.tokens;
+        return {
+            line: t.get('--_sparkline-line-width', UNMEASURED.line),
+            marker: t.get('--_sparkline-marker-size', UNMEASURED.marker),
+            gap: t.get('--_sparkline-bar-gap', UNMEASURED.gap),
+            radius: t.get('--_sparkline-bar-radius', UNMEASURED.radius)
         };
-        const look = {
-            line: length('--_sparkline-line-width', UNMEASURED.line),
-            marker: length('--_sparkline-marker-size', UNMEASURED.marker),
-            gap: length('--_sparkline-bar-gap', UNMEASURED.gap),
-            radius: length('--_sparkline-bar-radius', UNMEASURED.radius)
-        };
-        probe.remove();
-        return look;
     }
 
     valueText(value: number): string {
@@ -250,7 +241,7 @@ export class Sparkline<T = any> extends Control<HTMLSpanElement, SparklineProps<
         const width = el.clientWidth || (measured ? 0 : UNMEASURED.width);
         const height = el.clientHeight || (measured ? 0 : UNMEASURED.height);
         if (!width || !height) return;
-        this.look ??= this.readLook();
+        this.look = this.readLook();
         const look = this.look;
         css(el, '--_surface', surfaceBehind(el));
         svgPut(this.svg, 'viewBox', `0 0 ${width} ${height}`);

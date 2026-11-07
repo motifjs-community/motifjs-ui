@@ -12,6 +12,7 @@ import { uiLocale } from "../../core/ui-locale";
 import { arcPath, polar, type Place } from "../../parts/chart/chart-paths";
 import { formatNumber, textWidth, type ChartFormat } from "../../parts/chart/chart-text";
 import { svgPart, svgPut, TextPool } from "../../parts/chart/svg-parts";
+import { TokenLengths } from "../../parts/chart/token-lengths";
 import { ValueMotion } from "../../parts/chart/value-motion";
 import type { ChartField } from "../chart/chart-field";
 import type { BarGaugeProps } from "./bar-gauge-props";
@@ -62,6 +63,7 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
     legendList: HTMLUListElement;
     tip: HTMLSpanElement;
     motion: ValueMotion;
+    tokens: TokenLengths;
     bars: Bar[] = [];
     rings: Ring[] = [];
     cx = 0;
@@ -107,6 +109,7 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
         el.append(this.tip);
         shown(this.tip, false);
         this.motion = new ValueMotion(el, values => this.drawValues(values));
+        this.tokens = new TokenLengths(el, ['--_bar-gauge-size', '--_bar-gauge-thickness', '--_bar-gauge-gap', '--_bar-gauge-indent', '--_bar-gauge-spacing'], () => this.again());
 
         // A function that takes a value is the value itself, not a live one.
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, FUNCTIONS.includes(name) ? functionValue(own[name]) : own[name]);
@@ -120,6 +123,7 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
         el.addEventListener('pointerleave', () => shown(this.tip, false));
         this.motif.setDisposable(() => {
             this.motion.stop();
+            this.tokens.dispose();
             this.watch?.disconnect();
             this.stopLook?.();
             this.stopFonts?.();
@@ -291,24 +295,14 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
     }
 
     lengths(): Look {
-        const view = this.element.ownerDocument.defaultView;
-        const probe = this.element.ownerDocument.createElement('span');
-        probe.style.cssText = 'position:absolute;visibility:hidden;block-size:0;';
-        this.element.append(probe);
-        const length = (token: string, fallback: number) => {
-            probe.style.inlineSize = `var(${token})`;
-            const size = parseFloat(view?.getComputedStyle(probe).inlineSize ?? '');
-            return Number.isFinite(size) ? size : fallback;
+        const t = this.tokens;
+        return {
+            size: this.size ?? t.get('--_bar-gauge-size', UNMEASURED.size),
+            thickness: t.get('--_bar-gauge-thickness', UNMEASURED.thickness),
+            gap: t.get('--_bar-gauge-gap', UNMEASURED.gap),
+            indent: t.get('--_bar-gauge-indent', UNMEASURED.indent),
+            spacing: t.get('--_bar-gauge-spacing', UNMEASURED.spacing)
         };
-        const look = {
-            size: this.size ?? length('--_bar-gauge-size', UNMEASURED.size),
-            thickness: length('--_bar-gauge-thickness', UNMEASURED.thickness),
-            gap: length('--_bar-gauge-gap', UNMEASURED.gap),
-            indent: length('--_bar-gauge-indent', UNMEASURED.indent),
-            spacing: length('--_bar-gauge-spacing', UNMEASURED.spacing)
-        };
-        probe.remove();
-        return look;
     }
 
     draw(): void {
@@ -439,7 +433,15 @@ export class BarGauge<T = any> extends Control<HTMLDivElement, BarGaugeProps<T>>
                 list.append(item);
             }
             (item.children[0] as HTMLElement).style.setProperty('--_bar', bar.color);
-            text(item.children[1] as HTMLElement, this.barText(bar));
+            // The entry keeps the room of its widest value, so values that change do not move the entries.
+            const label = item.children[1] as HTMLElement;
+            let widest = 0;
+            for (const v of [this.min, this.max]) {
+                label.textContent = this.barText({ ...bar, value: v });
+                widest = Math.max(widest, label.getBoundingClientRect().width);
+            }
+            css(label, 'min-inline-size', widest ? `${Math.ceil(widest)}px` : '');
+            text(label, this.barText(bar));
         });
     }
 

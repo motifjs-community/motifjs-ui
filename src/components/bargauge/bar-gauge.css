@@ -55,6 +55,7 @@
         align-items: center;
         gap: var(--_bar-gauge-spacing);
         white-space: nowrap;
+        font-variant-numeric: tabular-nums;
     }
 
     .mx-bar-gauge__swatch {

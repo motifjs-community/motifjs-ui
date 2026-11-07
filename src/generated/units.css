@@ -4635,7 +4635,7 @@
     color: var(--_gauge-needle-color, inherit);
   }
 
-  .mx-gauge__value {
+  .mx-gauge__value, .mx-gauge__value-probe {
     color: var(--_gauge-value-color, inherit);
     font-size: var(--_gauge-value-font-size, inherit);
     font-weight: var(--_gauge-value-font-weight, inherit);

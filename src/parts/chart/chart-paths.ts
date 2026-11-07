@@ -124,18 +124,26 @@ export function polar(cx: number, cy: number, radius: number, angle: number): Pl
 
 /** A slice of a ring between two angles from the top, clockwise; a hole of 0 makes a slice of a pie. */
 export function arcPath(cx: number, cy: number, hole: number, radius: number, from: number, to: number): string {
-    const sweep = to - from;
+    const sweep = Math.min(to - from, Math.PI * 2);
     if (sweep <= 0 || radius <= 0) return '';
-    // A whole circle cannot be one arc: it is drawn as two halves.
-    if (sweep >= Math.PI * 2 - 1e-6) return arcPath(cx, cy, hole, radius, from, from + Math.PI) + arcPath(cx, cy, hole, radius, from + Math.PI, from + Math.PI * 2);
-    const large = sweep > Math.PI ? 1 : 0;
+    // Each edge goes in pieces of at most a quarter turn. An arc near half a turn has its ends almost a diameter apart,
+    // and the rounding of the ends can put them further apart than the diameter: a browser then makes the radius larger
+    // to reach them, and the ring swells at some values and not at others.
+    const pieces = Math.max(1, Math.ceil(sweep / (Math.PI / 2) - 1e-9));
+    const step = sweep / pieces;
+    const edge = (r: number, start: number, way: 1 | -1) => {
+        let d = '';
+        for (let i = 1; i <= pieces; i++) {
+            const [x, y] = polar(cx, cy, r, start + way * step * i);
+            d += `A${n(r)} ${n(r)} 0 0 ${way === 1 ? 1 : 0} ${n(x)} ${n(y)}`;
+        }
+        return d;
+    };
     const [x0, y0] = polar(cx, cy, radius, from);
-    const [x1, y1] = polar(cx, cy, radius, to);
-    let d = `M${n(x0)} ${n(y0)}A${n(radius)} ${n(radius)} 0 ${large} 1 ${n(x1)} ${n(y1)}`;
+    let d = `M${n(x0)} ${n(y0)}` + edge(radius, from, 1);
     if (hole > 0) {
-        const [x2, y2] = polar(cx, cy, hole, to);
-        const [x3, y3] = polar(cx, cy, hole, from);
-        d += `L${n(x2)} ${n(y2)}A${n(hole)} ${n(hole)} 0 ${large} 0 ${n(x3)} ${n(y3)}Z`;
+        const [x2, y2] = polar(cx, cy, hole, from + sweep);
+        d += `L${n(x2)} ${n(y2)}` + edge(hole, from + sweep, -1) + 'Z';
     } else d += `L${n(cx)} ${n(cy)}Z`;
     return d;
 }

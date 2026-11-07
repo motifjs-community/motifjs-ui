@@ -13,6 +13,7 @@ import type { Place } from "../../parts/chart/chart-paths";
 import { formatNumber, textWidth, type ChartFormat } from "../../parts/chart/chart-text";
 import { niceTicks } from "../../parts/chart/nice-ticks";
 import { svgPart, svgPut, TextPool } from "../../parts/chart/svg-parts";
+import { TokenLengths } from "../../parts/chart/token-lengths";
 import { ValueMotion } from "../../parts/chart/value-motion";
 import type { GaugeMark } from "./gauge-mark";
 import type { GaugeMarker } from "./gauge-marker";
@@ -86,10 +87,12 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
     needlePath: SVGPathElement;
     needleTip: SVGPathElement;
     valueText: HTMLDivElement;
+    valueProbe: HTMLSpanElement;
     labelText: HTMLDivElement;
     tip: HTMLSpanElement;
     shape = new GaugeShape();
     motion: ValueMotion;
+    tokens: TokenLengths;
     drawn: Drawn | null = null;
     placed = false;
     queued = false;
@@ -134,6 +137,10 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
             return div;
         };
         this.valueText = part('mx-gauge__value');
+        this.valueProbe = doc.createElement('span');
+        this.valueProbe.className = 'mx-gauge__value-probe';
+        this.valueProbe.setAttribute('aria-hidden', 'true');
+        el.append(this.valueProbe);
         this.labelText = part('mx-gauge__label');
         this.tip = doc.createElement('span');
         this.tip.className = 'mx-gauge__tip';
@@ -141,6 +148,7 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         el.append(this.tip);
         shown(this.tip, false);
         this.motion = new ValueMotion(el, values => this.drawValue(values[0] ?? null));
+        this.tokens = new TokenLengths(el, ['--_gauge-size', '--_gauge-length', '--_gauge-thickness', '--_gauge-range-width', '--_gauge-tick-length', '--_gauge-marker-size', '--_gauge-spacing'], () => this.again());
 
         // A function that takes a value is the value itself, not a live one.
         for (const name of OWN) if (own[name] !== undefined) this.bindProperty(name, FUNCTIONS.includes(name) ? functionValue(own[name]) : own[name]);
@@ -155,6 +163,7 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         this.motion.set([null]);
         this.motif.setDisposable(() => {
             this.motion.stop();
+            this.tokens.dispose();
             this.watch?.disconnect();
             this.stopLook?.();
             this.stopFonts?.();
@@ -355,26 +364,16 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
     }
 
     lengths(): Look {
-        const view = this.element.ownerDocument.defaultView;
-        const probe = this.element.ownerDocument.createElement('span');
-        probe.style.cssText = 'position:absolute;visibility:hidden;block-size:0;';
-        this.element.append(probe);
-        const length = (token: string, fallback: number) => {
-            probe.style.inlineSize = `var(${token})`;
-            const size = parseFloat(view?.getComputedStyle(probe).inlineSize ?? '');
-            return Number.isFinite(size) && size > 0 ? size : fallback;
+        const t = this.tokens;
+        return {
+            size: this.size ?? t.get('--_gauge-size', UNMEASURED.size),
+            length: this.size ?? t.get('--_gauge-length', UNMEASURED.length),
+            thickness: t.get('--_gauge-thickness', UNMEASURED.thickness),
+            band: t.get('--_gauge-range-width', UNMEASURED.band),
+            tick: t.get('--_gauge-tick-length', UNMEASURED.tick),
+            marker: t.get('--_gauge-marker-size', UNMEASURED.marker),
+            spacing: t.get('--_gauge-spacing', UNMEASURED.spacing)
         };
-        const look = {
-            size: this.size ?? length('--_gauge-size', UNMEASURED.size),
-            length: this.size ?? length('--_gauge-length', UNMEASURED.length),
-            thickness: length('--_gauge-thickness', UNMEASURED.thickness),
-            band: length('--_gauge-range-width', UNMEASURED.band),
-            tick: length('--_gauge-tick-length', UNMEASURED.tick),
-            marker: length('--_gauge-marker-size', UNMEASURED.marker),
-            spacing: length('--_gauge-spacing', UNMEASURED.spacing)
-        };
-        probe.remove();
-        return look;
     }
 
     /** The values of the ticks, and of the small ones between them. */
@@ -417,6 +416,9 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         const value = this.value;
         this.drawName(value);
         text(this.valueText, value === null ? '' : this.number(value));
+        // A straight gauge lays its value out beside or under the bar: it keeps the room of the widest value of the
+        // scale, so the gauge keeps its size while the value changes.
+        css(el, '--_value-room', straight ? `${this.valueRoom(min, max, value)}px` : '');
         text(this.labelText, this.label);
         shown(this.valueText, this.showValue && value !== null && marker !== 'text');
         shown(this.labelText, !!this.label);
@@ -578,6 +580,19 @@ export class Gauge extends Control<HTMLDivElement, GaugeProps> {
         const width = typeof this.probe.getComputedTextLength === 'function' ? this.probe.getComputedTextLength() : 0;
         if (!width) return { width: textWidth(value, font, this.element.ownerDocument), height };
         return { width, height: Math.max(height, this.probe.getBBox().height) };
+    }
+
+    /** The width of the widest value the gauge can show: the ends of the scale, or a value past them. */
+    valueRoom(min: number, max: number, value: number | null): number {
+        const values = [min, max];
+        if (value !== null && (value < Math.min(min, max) || value > Math.max(min, max))) values.push(value);
+        let widest = 0;
+        for (const v of values) {
+            this.valueProbe.textContent = this.number(v);
+            widest = Math.max(widest, this.valueProbe.getBoundingClientRect().width);
+        }
+        this.valueProbe.textContent = '';
+        return Math.ceil(widest);
     }
 
     markerKind(): GaugeMarker | null {

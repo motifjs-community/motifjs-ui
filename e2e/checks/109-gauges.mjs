@@ -125,6 +125,19 @@ export default async function ({ page, base, check, axeSource }) {
         return fill.right <= middle + 1 ? 'left' : fill.left >= middle - 1 ? 'right' : 'both';
     }));
     check('a loss fills left of 0 and a profit right of it', balance.join() === 'right,left,right,left', balance.join());
+    // An upright gauge keeps its place while its value changes width ("0°", "-10°"): nothing beside it shakes.
+    const upright = page.locator('.ga-base-bar .mx-gauge__track');
+    const placeOf = () => upright.evaluate(el => Math.round(el.getBoundingClientRect().left * 10) / 10);
+    const deviation = page.getByRole('slider', { name: 'Deviation' });
+    await deviation.scrollIntoViewIfNeeded();
+    const places = new Set([await placeOf()]);
+    await deviation.focus();
+    for (let i = 0; i < 8; i++) {
+        await page.keyboard.press('PageDown');
+        await page.waitForTimeout(220);
+        places.add(await placeOf());
+    }
+    check('an upright gauge stays in place while its value changes', places.size === 1, [...places].join(', '));
 
     await open('gauge/dashboards');
     // Quarters with the same scale line up, whichever way they are turned: their middles share one line.
@@ -155,6 +168,41 @@ export default async function ({ page, base, check, axeSource }) {
         fuel: document.querySelector('.ga-fuel').getAttribute('aria-valuenow')
     }));
     check('one slider drives the speedometer, the quarters and the fuel bar', dash.speed === '200' && dash.quarters === '100,0,100,0' && dash.fuel === '10', JSON.stringify(dash));
+    // A stylesheet that arrives after the gauges drew (a late sheet, a language loaded on demand): they draw again with it.
+    const thickness = () => page.locator('.ga-speed .mx-gauge__track').evaluate(el => {
+        const radii = [...el.getAttribute('d').matchAll(/A([\d.]+) /g)].map(m => Number(m[1]));
+        return Math.round((Math.max(...radii) - Math.min(...radii)) * 10) / 10;
+    });
+    await page.evaluate(() => {
+        const sheet = document.createElement('style');
+        sheet.id = 'late-sheet';
+        sheet.textContent = '.mx-gauge { --_gauge-thickness: 20px !important; }';
+        document.head.append(sheet);
+    });
+    await page.waitForTimeout(300);
+    const late = await thickness();
+    await page.evaluate(() => document.getElementById('late-sheet').remove());
+    await page.waitForTimeout(300);
+    const back = await thickness();
+    const token = await page.locator('.ga-speed').evaluate(el => parseFloat(getComputedStyle(el).getPropertyValue('--_gauge-thickness')));
+    check('a stylesheet that changes the thickness after drawing is followed at once', late === 20 && back === token, `${late}px, then ${back}px for a ${token}px token`);
+    // Around half a turn the fill keeps the thickness of the track at every value: it never swells past its outer edge.
+    const swells = [];
+    await speed.focus();
+    await page.keyboard.press('Home');
+    for (let v = 0; v <= 150; v++) {
+        await page.keyboard.press('ArrowRight');
+        if (v < 120 || v % 2) continue;
+        await page.waitForTimeout(30);
+        const edge = await page.locator('.ga-speed').evaluate(el => {
+            const fill = el.querySelector('.mx-gauge__fill').getBBox();
+            const track = el.querySelector('.mx-gauge__track').getBBox();
+            return Math.round((track.x - fill.x) * 100) / 100;
+        });
+        // Ends are written to a tenth of a pixel: what is left of that rounding is not a swelling.
+        if (Math.abs(edge) > 0.2) swells.push(`${v + 1}: ${edge}px`);
+    }
+    check('the fill keeps the thickness of the track around half a turn', swells.length === 0, swells.join(', '));
     const liveValues = () => page.locator('.ga-live').locator('xpath=../..').locator('.mx-gauge').evaluateAll(els => els.map(el => el.getAttribute('aria-valuenow')).join());
     const firstValues = await liveValues();
     await page.waitForTimeout(2300);
@@ -196,6 +244,18 @@ export default async function ({ page, base, check, axeSource }) {
     await page.getByRole('checkbox', { name: 'Shovels' }).click();
     await page.waitForTimeout(500);
     check('it comes back when chosen again', (await colors()).length === 6);
+
+    // A legend whose values change every second keeps its entries in place.
+    const live = page.locator('.bg-live .mx-bar-gauge__entry');
+    await live.first().scrollIntoViewIfNeeded();
+    const entries = () => live.evaluateAll(els => els.map(el => Math.round(el.getBoundingClientRect().left)).join());
+    const firstPlaces = await entries();
+    const placesSeen = new Set([firstPlaces]);
+    for (let i = 0; i < 6; i++) {
+        await page.waitForTimeout(500);
+        placesSeen.add(await entries());
+    }
+    check('legend entries stay in place while live values change', placesSeen.size === 1, [...placesSeen].join(' | '));
 
     await open('bar-gauge/angles');
     const many = await page.locator('.bg-many').evaluate(el => {

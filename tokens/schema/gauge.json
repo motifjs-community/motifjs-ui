@@ -97,7 +97,7 @@
       },
       "value": {
         "$description": "The value in the middle.",
-        "selector": ".mx-gauge__value"
+        "selector": ".mx-gauge__value, .mx-gauge__value-probe"
       },
       "label": {
         "$description": "What it measures.",
